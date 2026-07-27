@@ -115,10 +115,17 @@ const scrum: ScrumDashboard = {
           verification:
             "README states that --config has no default, that the config default-exports a factory, and that deno must be on PATH or `bun test` fails",
         },
+        {
+          criterion: "The documented failure behaviour happens as written",
+          verification:
+            "Break the documented quickstart config and run it under both runtimes; assert exit code 1, a tsudoi:-prefixed reason on stderr and zero bytes on stdout, matching what the README states will happen",
+        },
       ],
       status: "draft",
       notes: [
         "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
+        "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither, and all three contract facts are already pinned by PBI-1's criteria in ASCII, so no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
+        "Deliberately does NOT claim a config author's own error message passes through verbatim. It does today -- the CLI writes stderr directly and nothing in src/ decodes it -- but it cannot be asserted for non-ASCII until PBI-9 fixes spawn.ts. Documenting a claim we cannot pin is the thing refused all project, applied here against a claim the PO would like to make.",
         "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
         "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
       ],
@@ -150,6 +157,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
+        "spawn.ts's decode is what would let PBI-8 claim verbatim passthrough of a config author's own error message. THE DEPENDENCY RUNS THAT WAY ROUND: PBI-9 UNLOCKS a future README claim, it does not block the current one -- do not reorder on it.",
         "A further instance of debt item (d), added knowingly in Sprint 6: the mid-stream arrivals assertion hardcodes response ids.",
         "Accumulated test-fidelity debt, four items: (a) test/helpers/spawn.ts keeps the per-chunk decode bug fixed in lsp.ts, so no test can assert a non-ASCII config-failure message -- narrow, since the CLI writes stderr directly and nothing in src/ decodes it; (b) the 360KB Japanese test depends on OS pipe buffer sizes and would degrade to passing trivially on a platform with larger ones; (c) the example config's `if (!document) return null` branch is untested; (d) the completion arrivals assertion hardcodes response ids and demands the whole array, so a vscode-jsonrpc bump emitting window/logMessage breaks it at the array shape rather than the ordering claim it defends.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
