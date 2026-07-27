@@ -320,9 +320,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "The same per-method, spelled-out branch as hoverProvider -- NOT derived from the shape of methods. Advertise {} : no triggerCharacters, which TsudoiConfig has no surface to declare. Widen test/lifecycle.test.ts a fourth time; do not delete it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "2c4294b",
+            message: "feat(server): advertise completionProvider when the config can answer it",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED before impl at `advertises completionProvider` (positive half). PERTURBED advertise-unconditionally -> RED at `no completion handler advertises exactly what it can answer` AND at both hover advertisement tests (exact equality, collateral); the positive half stayed GREEN, as it must. Restored.",
+        ],
       },
       {
         test: "EXPECTED RED. With partialResultToken: await the first $/progress, assert its content, ASSERT THE RESPONSE HAS NOT SETTLED, release the gate with didChange, await the second $/progress, then await the response. The unsettled-response assertion IS the criterion -- an early first chunk alone proves promptness, not incrementality.",
