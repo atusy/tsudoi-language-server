@@ -33,45 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-3",
-      story: {
-        role: "editor user",
-        capability: "receive hover information for the symbol under the cursor",
-        benefit: "they can read documentation without leaving the editor",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "hoverProvider is advertised when the config supplies a hover handler, and not when it does not",
-          verification:
-            "Two configs, one with the handler and one without; assert InitializeResult advertises hoverProvider for the first and omits it for the second",
-        },
-        {
-          criterion: "The hover handler's return value reaches the client unchanged",
-          verification: "A test config returns a fixed Hover; assert the response equals it",
-        },
-        {
-          criterion: "A hover request with no handler configured answers null rather than an error",
-          verification:
-            "A config omitting the handler is driven with a hover request anyway; assert the result is null and a subsequent request is answered normally",
-        },
-        {
-          criterion: "A handler that throws or rejects does not take the server down",
-          verification:
-            "A config whose handler throws, and one whose handler rejects; each yields an error response to that request, a diagnosable message on stderr, stdout carrying only the JSON-RPC response, and a subsequent hover answered normally",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "Conditional advertisement is per-method, not a generic derivation framework -- PBI-4 makes the same call for completionProvider. This is the decision PBI-1 deferred, landing where round 1 said it would.",
-        "The third criterion covers non-conforming clients only: a conforming client never sends hover when hoverProvider is unadvertised. It survives because a server must not fail because a client misbehaves.",
-        "Position math stays the config author's job -- params.position plus getText(). This is the PBI that decides whether TextDocument needs positionAt/offsetAt (PBI-2 note 3).",
-        "Widen test/lifecycle.test.ts's capabilities assertion again, do not delete it.",
-        "Measured in Sprint 3, addressed to the fourth criterion: createProtocolConnection is passed no logger, so vscode-jsonrpc defaults to NullLogger and a throwing handler is swallowed with no stderr and no effect on the exit path. The `diagnosable message on stderr` therefore needs a logger passed in (stderr only -- stdout purity), and that logger is also what would let Sprint 3's unopened-URI live test tell `ignored` from `threw`.",
-        "That finding cannot be closed by assumption: vscode-jsonrpc turns a REQUEST-handler throw into an error response, while a NOTIFICATION-handler throw falls to the logger and is swallowed. Satisfying criterion 4 through the request path alone would leave the notification path exactly as swallowed as today. Rule explicitly on whether a notification handler's throw is surfaced, and pin it with a live test that tells ignore-by-design from throw-and-swallow. (PO states the asymmetry as the believed mechanism, not a measured one -- confirm it first.)",
-      ],
-    },
-    {
       id: "PBI-4",
       story: {
         role: "editor user",
@@ -120,6 +81,7 @@ const scrum: ScrumDashboard = {
         "Aggregation has ONE observable trigger, not two: LSP has no client capability declaring partial-result support -- a client lacking it simply omits partialResultToken -- so the brief's second trigger collapses into the first by protocol design. window.workDoneProgress is not a proxy. This closes the gap flagged at init by decision, not by dropping it.",
         "In streaming mode the response result is the RETURNED array alone, not a concatenation: the yields already went as $/progress. The brief's own rule that a null return after partials produces [] has no reason to exist under the concatenation reading, so this is the reading under which the brief is coherent.",
         "completionProvider is advertised as an empty object. No triggerCharacters: the brief does not ask for them and TsudoiConfig has no surface to declare them; that is a config-schema change and its own PBI.",
+        "reportHandlerFailure writes error.stack, which is multi-line and whose first line differs between JSC and V8. Assert the `tsudoi: <method> handler failed:` prefix, not the stack body -- the same fix the notification-throw test used against vscode-jsonrpc's wrapper text.",
         "Widen test/lifecycle.test.ts's capabilities assertion again for completionProvider, do not delete it.",
         "PO: six criteria is deliberate and each closes a distinct green-but-broken path. Do not cut one to make room.",
       ],
@@ -139,6 +101,32 @@ const scrum: ScrumDashboard = {
         },
       ],
       status: "draft",
+    },
+    {
+      id: "PBI-10",
+      story: {
+        role: "editor user",
+        capability:
+          "get a spec-correct error instead of a plausible answer when their client races the lifecycle",
+        benefit:
+          "a client's ordering bug surfaces as an error rather than as silently wrong information",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A request arriving before initialize is answered -32002 ServerNotInitialized",
+          verification:
+            "Test sends hover before initialize; assert the error code and that the server still initializes afterwards",
+        },
+        {
+          criterion: "A request arriving after shutdown is answered -32600 InvalidRequest",
+          verification:
+            "Test sends hover after shutdown; assert the error code and that exit still returns 0",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "Ordered after PBI-5: no conforming client triggers either case, so it ranks below the remaining PoC methods, but it is squarely inside success metric #2 -- answering a hover before initialize is not responding per the specification.",
+      ],
     },
     {
       id: "PBI-7",
@@ -226,6 +214,7 @@ const scrum: ScrumDashboard = {
         "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
         "Sprint 2 left the three guard rules pinned across three DIFFERENT incomplete path sets. import/extensions is pinned only at src/ and the two probe paths -- not at test/fixtures/ or examples/, which are exactly the files the cross-runtime suite executes under deno, and extensionless relative imports are the failure that bites there. Correct today by default-deny, and lifecycle.test.ts running examples/ under deno is a live backstop, so this is a missing pin rather than a hole.",
         "test/helpers/spawn.ts has the same per-chunk decode bug fixed in lsp.ts during Sprint 3. Consequence is narrow and was overstated on first reading: the CLI writes stderr directly and nothing in src/ decodes it, so a Japanese config author's error message is NOT mojibake -- what we cannot currently do is write a test asserting a non-ASCII config-failure message.",
+        "The example config's `if (!document) return null` branch is untested; the null path is covered only through the no-handler fixture.",
         "The 360KB Japanese test's failure mode depends on OS pipe buffer sizes. Deterministic here (3/3 under both runtimes), but on a platform with much larger buffers it degrades to passing trivially rather than failing.",
         "ignorePackages defends npm subpath specifiers ONLY. node:url is unflagged with or without it, so the round-2 perturbation defends the npm half alone and the node: half of PBI-6's criterion was trivially true rather than guarded.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
@@ -234,6 +223,23 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 4,
+      pbi_id: "PBI-3",
+      goal: "Complete the chain from a config author's file to a human's screen: the hover text they write is what an editor shows, with zero lines changed in tsudoi.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in d0f172a, 4a49499, 31f169f, 0cecfec, e5c49cc, fe8f153, f5c612f across 7 subtasks. Per-subtask records compacted here; git retains them.",
+        "PROVEN by an unrequested perturbation: report-without-rethrow reddens the -32603 assertions while the stderr assertions stay GREEN. A stderr-only criterion would have passed while the client silently received null. Conjunctive criteria earn their extra words -- PBI-4 and PBI-5 are written the same way.",
+        "The Scrum Master ran two FAILED reproductions (a regex matching nothing reported 0 failures; a throw inserted in createDocumentStore rather than change reported 46). Under the previous practice the first would have reached the PO as `the advertisement test is vacuous` and drawn a rejection on false evidence. The expected-versus-observed rule caught both at the moment they happened.",
+        "MEASURED, and it overturns what the plan would otherwise have assumed: a logger surfaces NOTIFICATION-handler throws only. A request-handler throw becomes a -32603 response with stderr EMPTY whether or not a logger is passed. Since hover is a request, criterion 4's `diagnosable message on stderr` CANNOT be satisfied by passing a logger -- tsudoi must catch, write its own stderr line, and rethrow.",
+        "PO checklist item 1 (a real editor attaching) is FEASIBLE and settled at planning: nvim 0.13 attaches headlessly to `bun run src/cli.ts --config examples/tsudoi.config.ts`, reporting serverInfo tsudoi and capabilities { textDocumentSync: { openClose: true, change: 1 } }. It is therefore a live demonstration item this sprint, not a dropped one.",
+        "positionAt/offsetAt deliberately NOT added and not taken to the PO yet: PBI-3 gives exactly one call site, and deciding an API from one call site is deciding from noise. Subtask 7 makes that call site real so PBI-4 inherits evidence -- if completion's author writes the same line-splitting again, that is two independent call sites converging and it becomes its own PBI with a measured justification.",
+        "PO checklist, issued at planning: (1) a real editor attaching and displaying hover; (2) driven over stdio with examples/tsudoi.config.ts as the artifact under test, unmodified -- its handler has returned a fixed Hover into a void since Sprint 1 and now answers; (3) hover contents in Japanese, permanent; (4) perturb advertisement to unconditional and name the test that reddens -- the negative half is satisfiable by advertising nothing, which is what the code does today; (5) name the test that reddens when the undefined-handler path stops answering null; (6) criterion 4 on the request path; (7) criterion 4 on the NOTIFICATION path, accepted ONLY if perturbing the store to throw demonstrably produces stderr -- otherwise a zero-stderr assertion passes vacuously; (8) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (9) both runtimes and the DoD at HEAD.",
+      ],
+    },
     {
       number: 3,
       pbi_id: "PBI-2",
@@ -288,102 +294,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 4,
-    pbi_id: "PBI-3",
-    goal: "Complete the chain from a config author's file to a human's screen: the hover text they write is what an editor shows, with zero lines changed in tsudoi.",
-    status: "review",
-    subtasks: [
-      {
-        test: "EXPECTED RED. A live session sends a notification whose handler throws; stderr carries a diagnosable message naming the method, stdout carries no unframed bytes, and shutdown/exit still completes with code 0.",
-        implementation:
-          "Pass a logger as the third argument to createProtocolConnection in src/server.ts. All four methods write to stderr ONLY -- process.stderr.write, never console.log, which would corrupt the protocol stream. Also closes Sprint 3's leftover: the unopened-URI live test can then tell ignore-by-design from throw-and-swallow.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "d0f172a", message: "feat(server): report failures to stderr", phase: "green" },
-        ],
-        notes: [],
-      },
-      {
-        test: "EXPECTED RED. A config with a hover handler yields capabilities equal to { textDocumentSync: {...}, hoverProvider: true }; a config without it yields exactly { textDocumentSync: {...} } -- the narrower shape asserted EXACTLY, not merely 'hoverProvider is absent'.",
-        implementation:
-          "Build capabilities in startServer from config.methods?.['textDocument/hover'] !== undefined. Per-method and explicit, NOT a derivation framework. Widen test/lifecycle.test.ts's assertion a third time rather than deleting it: it drives examples/tsudoi.config.ts, which HAS a hover handler, so it moves to the wider shape while the new no-hover fixture carries the narrower one.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "4a49499", message: "feat(server): advertise hoverProvider", phase: "green" },
-        ],
-        notes: [],
-      },
-      {
-        test: "EXPECTED RED. A fixture returning a fixed Hover produces a response deep-equal to it, with no transformation of contents or range.",
-        implementation:
-          "Register HoverRequest UNCONDITIONALLY -- registration and advertisement are independent, and criterion 3 needs the handler present even when unadvertised. Invoke the config handler with a RequestContext of { signal, tsudoi }. For signal, construct a per-request AbortController that is never aborted; wiring it to the connection's CancellationToken is PBI-5 and must not be smuggled in.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "31f169f", message: "feat(server): answer hover requests", phase: "green" },
-        ],
-        notes: [],
-      },
-      {
-        test: "BORN GREEN. A config omitting the hover handler, driven with a hover request anyway, answers null; a subsequent hover is answered normally.",
-        implementation:
-          "Expected to need no change if the dispatch reads (await handler?.(context, params)) ?? null. PERTURBATION: gate HoverRequest registration on the handler existing. This subtask MUST fail with a -32601 MethodNotFound instead of null, while the advertisement and pass-through subtasks stay green. This is the exact class that bit Sprint 3's subtask 4 -- a tolerance property whose satisfying path an earlier subtask already wrote.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "0cecfec", message: "test(hover): pin the null answer", phase: "green" }],
-        notes: [
-          "PERTURBATION RUN. Gating HoverRequest registration on the handler existing reddens exactly `a hover request with no handler configured is answered null, twice over` (bun and deno, 2 tests). It flips at the awaited request itself, which rejects with -32601 MethodNotFound before its toBe(null) is reached -- so what is defended is that hover is ANSWERED, and the null-versus-Hover distinction is defended by subtask 3 instead. Advertisement and pass-through stayed green, confirming registration and advertisement are independent. Restored.",
-        ],
-      },
-      {
-        test: "MIXED -- error-response and stderr assertions EXPECTED RED, stdout-purity assertion BORN GREEN. One fixture throwing synchronously and one rejecting: each yields an error response, stderr names textDocument/hover, unframedStdoutBytes is 0 across the session, and a subsequent hover is answered normally.",
-        implementation:
-          "MEASURED: the subtask-1 logger is NOT consulted for request handlers, so it cannot satisfy this. Wrap the config handler invocation in try/catch inside tsudoi's own dispatch: write the diagnosable line to process.stderr, then RETHROW so vscode-jsonrpc emits its -32603. Catching without rethrowing would turn a broken handler into a silent null, which is the failure this criterion exists to prevent. PERTURBATION for the purity half: add console.log('noise') inside the hover dispatch; unframedStdoutBytes === 0 must fail while the other assertions stay green.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "e5c49cc", message: "feat(server): report a failing handler", phase: "green" },
-        ],
-        notes: [
-          'PERTURBATION RUN. console.log("noise") in the hover dispatch reddens `expect(session.unframedStdoutBytes).toBe(0)` in every hover test carrying it -- 3 named tests when run at this subtask, 4 at HEAD once subtask 7 added the example-config test (8 across both runtimes). The -32603 and stderr assertions stayed green, so purity is what this defends and nothing else. UNDEFENDED: `the hover handler\'s return value reaches the client unchanged` carries no purity assertion and stayed green. Restored. Also measured live before the fix: -32603 arrived with stderr EMPTY, confirming the logger is not consulted for request handlers. THIRD PERTURBATION, on the recovery: making hover-throws never recover reddens `a hover handler that throws...` (2) at the awaited SECOND request, which rejects with -32603 before its toEqual(recovered) runs, while the rejects fixture stays green. SECOND PERTURBATION, on the rethrow: reporting without rethrowing reddens `expect(error.code).toBe(-32603)` in both failure tests (4) while the stderr assertions stay GREEN -- a stderr-only criterion would have passed while the client was answered a silent null.',
-        ],
-      },
-      {
-        test: "N/A (structural) -- the whole suite stays green, unchanged.",
-        implementation:
-          "Extract the try/catch-rethrow plus stderr reporting out of the hover registration into a small named helper taking method name, context and handler. PBI-4's completion dispatch needs exactly this. Extracting at one caller is justified only because criterion 4 already fixes the shape -- do not generalise: no method registry, no derivation framework.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "fe8f153",
-            message: "refactor(server): name the failure path",
-            phase: "refactoring",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "EXPECTED RED. The hover response for a known cursor position in a known buffer names the word under that position.",
-        implementation:
-          "Change examples/tsudoi.config.ts's hover handler to use params.position plus document.getText() -- split on newlines, index the line, extract the word around the character offset. Bun-free (Deno runs it), .ts extensions on relative imports. Existing lifecycle tests keep driving this file and must stay green. This exists to decide positionAt/offsetAt on evidence at PBI-4 rather than on opinion now.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "f5c612f", message: "feat(examples): hover the word", phase: "green" }],
-        notes: [],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "MEASURED, and it overturns what the plan would otherwise have assumed: a logger surfaces NOTIFICATION-handler throws only. A request-handler throw becomes a -32603 response with stderr EMPTY whether or not a logger is passed. Since hover is a request, criterion 4's `diagnosable message on stderr` CANNOT be satisfied by passing a logger -- tsudoi must catch, write its own stderr line, and rethrow.",
-      "PO checklist item 1 (a real editor attaching) is FEASIBLE and settled at planning: nvim 0.13 attaches headlessly to `bun run src/cli.ts --config examples/tsudoi.config.ts`, reporting serverInfo tsudoi and capabilities { textDocumentSync: { openClose: true, change: 1 } }. It is therefore a live demonstration item this sprint, not a dropped one.",
-      "positionAt/offsetAt deliberately NOT added and not taken to the PO yet: PBI-3 gives exactly one call site, and deciding an API from one call site is deciding from noise. Subtask 7 makes that call site real so PBI-4 inherits evidence -- if completion's author writes the same line-splitting again, that is two independent call sites converging and it becomes its own PBI with a measured justification.",
-      "PO checklist, issued at planning: (1) a real editor attaching and displaying hover; (2) driven over stdio with examples/tsudoi.config.ts as the artifact under test, unmodified -- its handler has returned a fixed Hover into a void since Sprint 1 and now answers; (3) hover contents in Japanese, permanent; (4) perturb advertisement to unconditional and name the test that reddens -- the negative half is satisfiable by advertising nothing, which is what the code does today; (5) name the test that reddens when the undefined-handler path stops answering null; (6) criterion 4 on the request path; (7) criterion 4 on the NOTIFICATION path, accepted ONLY if perturbing the store to throw demonstrably produces stderr -- otherwise a zero-stderr assertion passes vacuously; (8) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (9) both runtimes and the DoD at HEAD.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 3,
