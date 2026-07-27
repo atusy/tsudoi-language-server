@@ -332,9 +332,11 @@ const scrum: ScrumDashboard = {
         implementation:
           "Expected to need no change if the dispatch reads (await handler?.(context, params)) ?? null. PERTURBATION: gate HoverRequest registration on the handler existing. This subtask MUST fail with a -32601 MethodNotFound instead of null, while the advertisement and pass-through subtasks stay green. This is the exact class that bit Sprint 3's subtask 4 -- a tolerance property whose satisfying path an earlier subtask already wrote.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [{ hash: "0cecfec", message: "test(hover): pin the null answer", phase: "green" }],
+        notes: [
+          "PERTURBATION RUN. Gating HoverRequest registration on the handler existing reddens exactly `a hover request with no handler configured is answered null, twice over` (bun and deno, 2 tests). It flips at the awaited request itself, which rejects with -32601 MethodNotFound before its toBe(null) is reached -- so what is defended is that hover is ANSWERED, and the null-versus-Hover distinction is defended by subtask 3 instead. Advertisement and pass-through stayed green, confirming registration and advertisement are independent. Restored.",
+        ],
       },
       {
         test: "MIXED -- error-response and stderr assertions EXPECTED RED, stdout-purity assertion BORN GREEN. One fixture throwing synchronously and one rejecting: each yields an error response, stderr names textDocument/hover, unframedStdoutBytes is 0 across the session, and a subsequent hover is answered normally.",
