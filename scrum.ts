@@ -380,9 +380,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Validate partialResultToken ONLY: one call site, no framework. Treat an invalid value as absent and take the existing aggregation path. Trace per request for now; the next subtask fixes the frequency.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "4b70591",
+            message: "feat(completion): treat an invalid partialResultToken as absent, and say so",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned, at the aggregation assertion. The response is asserted with toEqual against the full three-item array -- every field of every item, in order -- so the right NUMBER of wrong items cannot pass; no length-only assertion exists on this path.",
+          "NON-ASCII (standing item 3): the trace is asserted to name a `{ id: 'トークン' }` token verbatim. PERTURBATION (JSON.stringify -> String) flipped that test on both runtimes -- `[object Object]` names nothing a config author could act on. The zero-$/progress absence carries its permanent pair: the same progressCount on a valid-token session, asserted to be 2.",
+        ],
       },
       {
         test: "EXPECTED RED. Two completion requests with null tokens in one session produce EXACTLY ONE stderr trace naming the invalid token; both responses still aggregate. Assert the prefix and the COUNT, not the message body.",
