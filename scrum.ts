@@ -258,8 +258,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "Resolve --config against cwd, then `await import(pathToFileURL(abs).href)` inside one try/catch -- the URL conversion is what makes this identical under both runtimes. The syntax-error fixture is written to os.tmpdir() at test runtime, never committed: an unparseable .ts breaks both oxfmt --check . and tsc --noEmit.",
         type: "behavioral",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "2fda9d3", message: "feat: load --config module", phase: "green" }],
         notes: [],
       },
       {
