@@ -416,9 +416,18 @@ const scrum: ScrumDashboard = {
         test: "BORN GREEN. Completion with partialResultToken 0 and with the empty string each produce $/progress per yield and the streaming response shape. PERTURBATION -- THE WHOLE POINT OF THE CRITERION: rewrite the validation as `if (!token)`. BOTH cases MUST redden while the null case stays green. Measured: both values survive sendProgress on both runtimes, so this asserts something achievable.",
         implementation: "None expected, if the validation is a real ProgressToken type check.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "581a422",
+            message: 'test(completion): pin that the falsy but valid tokens 0 and "" still stream',
+            phase: "green",
+          },
+        ],
+        notes: [
+          'Born green as planned. THE PAIR, run as one perturbation (`if (isProgressToken(requested))` rewritten to `if (requested)`): the 0 test RED and the "" test RED on both runtimes, while the null test and the once-per-session trace test BOTH stayed GREEN. Either half alone would prove nothing.',
+          "Collateral worth recording: the same perturbation also reddened the non-ASCII object-token test, since a truthiness test admits `{ id: ... }` as a token and streams under it. Further evidence that truthiness is the wrong question.",
+        ],
       },
       {
         test: "N/A (structural) -- suite stays green.",
