@@ -294,18 +294,118 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 5,
+    pbi_id: "PBI-4",
+    goal: "Make yield and return the whole of a config author's streaming API -- tsudoi decides whether that reaches the client as $/progress chunks or one aggregated response -- so the most precisely specified thing in the brief is the thing they never have to think about.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A (structural) -- BORN GREEN by construction, no assertion of its own. Perturbation: make the capture drop every notification; the streaming subtask MUST fail at waitForProgress(1). If it does not, nothing this sprint measures progress and the zero-progress assertion is decorative.",
+        implementation:
+          "test/helpers/lsp.ts currently DISCARDS every server-initiated notification, so criterion 4's zero-$/progress assertion would pass against a server streaming furiously. Record $/progress in arrival order with token and value; expose the ordered list, a count, and waitForProgress(n). Do NOT filter by token -- criterion 4 must be able to see progress sent under an INVENTED token, which is the cheat it exists to catch.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A config with a completion handler yields capabilities containing completionProvider: {}; a config without yields exactly the narrower shape, asserted exactly.",
+        implementation:
+          "The same per-method, spelled-out branch as hoverProvider -- NOT derived from the shape of methods. Advertise {} : no triggerCharacters, which TsudoiConfig has no surface to declare. Widen test/lifecycle.test.ts a fourth time; do not delete it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. With partialResultToken: await the first $/progress, assert its content, ASSERT THE RESPONSE HAS NOT SETTLED, release the gate with didChange, await the second $/progress, then await the response. The unsettled-response assertion IS the criterion -- an early first chunk alone proves promptness, not incrementality.",
+        implementation:
+          "Register CompletionRequest unconditionally. With a token present, drive the generator and await connection.sendProgress(progressType, token, chunk) once per yield. The gate fixture parks on `while (documents.get(uri)?.getText() !== 'release') await new Promise(r => setTimeout(r, 5))` -- MEASURED: awaited polling stays interruptible so the server can process the releasing didChange; a busy-loop would not. Give the test an explicit timeout below bun test's default so a gate that never opens fails rather than hangs.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN if the streaming path already returns the generator's return value. The response result equals the returned array ALONE, not a concatenation, so a client appending progress to response sees each item exactly once. Perturbation: make the streaming path return every yield plus the return; this test MUST fail while the streaming subtask stays green, since progress emission is unchanged.",
+        implementation:
+          "Return the generator's return value; do not accumulate yields in streaming mode. This is the criterion the PO derived the whole reading from -- under concatenation the brief's null-produces-[] rule has no reason to exist.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Driven with NO token: a single response containing every yielded item plus the returned items, AND the recorded progress count is exactly 0. The zero-count half is what matters -- a server streaming anyway under an invented token passes a response-only check.",
+        implementation:
+          "The aggregation branch. ONE observable trigger only: the absence of partialResultToken. Do not consult window.workDoneProgress or any client capability; LSP has none that declares partial-result support.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A fixture yielding then returning null produces []; a fixture returning null immediately with no yields produces null. Both halves in the same run against the same build -- a dispatch returning [] unconditionally passes the first and fails only the second, and vice versa.",
+        implementation:
+          "Track whether any chunk was emitted for THIS request and branch on it. Not `?? null` and not `?? []` -- the choice depends on request-local state.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "MIXED -- error-response and stderr assertions EXPECTED RED; `progress remains on stdout` and the purity assertion BORN GREEN. A handler yields once then throws: assert IN ORDER the already-sent $/progress with its distinguishable content, then an error response for that id; a stderr line matching the `tsudoi: textDocument/completion handler failed:` PREFIX only; unframedStdoutBytes === 0; and a subsequent completion answered normally.",
+        implementation:
+          "Route the generator's failure through the existing reportHandlerFailure(method, error): never. MEASURED: the error response follows progress already written, on both runtimes, with no extra work. PERTURBATIONS: (i) swallow the throw and return [] instead of rethrowing -- the error-response assertion MUST redden while stderr stays green (Sprint 4's finding applied to the streaming path); (ii) console.log inside the dispatch -- unframedStdoutBytes === 0 MUST redden alone. Assert the stderr PREFIX, never the stack body: error.stack's first line differs between JSC and V8.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural) -- suite stays green, unchanged.",
+        implementation:
+          "src/server.ts is past 150 lines with two config-backed request handlers. Move hover and completion registration into a dedicated module now that there are genuinely two call sites and their failure path is already factored. Keep reportHandlerFailure shared and the CALLS distinct -- a generator cannot share the call, and over-generalising here would undo Sprint 4's finding. No method registry.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
+      "FOUND AT PLANNING, not in review: test/helpers/lsp.ts discards every server-initiated notification, so criterion 4's zero-$/progress assertion would have passed against a server streaming furiously. It is subtask 1, not a footnote.",
+      "The stakeholder described nine methods loosely and then wrote a generic type signature plus three lines of protocol rules for this one. Whatever they were most worried about is in that type, and the worry reads clearly: a config author must never touch partialResultToken or $/progress. The async generator IS the protocol adapter. This sprint delivers that or delivers a leaky abstraction with the same signature.",
+      "PO checklist, per-sprint additions (the standing list applies unchanged): (1) streaming proven by ORDERING against the outstanding response, not by counting -- counting passes even if the server buffered every yield and flushed before responding; (2) the gate proven real by TWO labelled perturbations -- buffer all yields, the streaming test must redden (the server streams); release the gate immediately, the unsettled-response assertion must redden (the gate holds the response rather than the server merely being slow); (3) criterion 6 distinguishes `chunk arrived and stayed` from `chunk never arrived` by asserting distinguishable content and progress-then-error ordering, perturbed by suppressing progress on throw -- `clean up by not emitting chunks on failure` is a plausible thing to do deliberately; (4) criterion 5's two halves in the same run against the same build, neither satisfiable by a constant; (5) criterion 4's zero-progress assertion perturbed by emitting progress under an invented token.",
+    ],
+  },
   retrospectives: [
     {
-      sprint: 3,
+      sprint: 4,
       improvements: [
         {
           action:
-            "Every subtask in a plan must state explicitly whether its test is expected-RED or born-green; silence is not permitted, and born-green subtasks carry their perturbation. Enumerating born-green PATTERNS keeps losing the race -- Sprint 3's subtask 4 was a different pattern (a tolerance property whose satisfying path an earlier subtask already wrote) from the one being scanned for.",
+            "CONSOLIDATED, replacing the manufactured-RED rule and its three amendments: anything not perturbed is assumed unproven; every subtask declares expected-RED or born-green; every perturbation is named by the ASSERTION it flips, not by the subtask it belongs to -- and if it flips at an EARLIER assertion than the subtask's headline claim, that headline claim is still undefended and needs its own perturbation.",
           timing: "immediate",
           status: "active",
-          outcome: null,
+          outcome:
+            "Amended three times already, which is its own signal: a rule list nobody can hold in their head stops being applied at exactly the moment it is needed. Prompted by Sprint 4's subtask-4 perturbation, which flipped the test entirely but at 'hover is answered at all', never reaching the null-versus-Hover claim its name promised.",
         },
+        {
+          action:
+            "The PO's Review checklist splits into a STANDING list, recorded here once and reported against at EVERY Review, plus a short per-sprint list of what is genuinely new. Standing list: (1) driven over stdio through the real server, not against directly-constructed internals; (2) stdout carries only protocol, with non-protocol bytes COUNTED rather than eyeballed; (3) non-ASCII payloads on any new user-visible path, permanent in the suite; (4) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (5) both runtimes, and the Definition of Done at HEAD. Moving an item to the standing list removes it from the PO's authoring, NEVER from the Scrum Master's reporting -- if a standing item stops being reported, we have traded verification for convenience.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Nine items where three carried new information diluted the signal the item-by-item rule exists to protect. Counter-evidence weighed: Sprint 3's stdout-purity item LOOKED standing and found that sprint's largest defect, hence the still-reported clause.",
+        },
+      ],
+    },
+    {
+      sprint: 3,
+      improvements: [
         {
           action:
             "A Review perturbation states whether it REPRODUCES the Developer's recorded perturbation or is INDEPENDENT. Reproductions report expected versus observed failure counts, so a divergence surfaces when it occurs rather than at write-up.",
@@ -333,14 +433,6 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome: null,
-        },
-        {
-          action:
-            "Amendment to the manufactured-RED rule: the perturbation must be confirmed to flip a SPECIFIC NAMED assertion, and if it flips only part of what it was claimed to defend, the undefended part must be stated.",
-          timing: "immediate",
-          status: "active",
-          outcome:
-            "Prompted by the round-2 perturbation claiming to defend `node: and npm specifiers stay unflagged` when ignorePackages moves the npm half only -- a defence asserted without being measured.",
         },
       ],
     },
