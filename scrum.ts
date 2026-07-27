@@ -63,7 +63,7 @@ const scrum: ScrumDashboard = {
         "MEASURED, both runtimes, from node_modules: compiled .js + .d.ts starts under bun AND deno, and tsc passes in the consumer. The enabler is rewriteRelativeImportExtensions -- emit rewrites ./config.ts to ./config.js while THE SOURCE KEEPS ITS .ts EXTENSIONS, so Sprint 1's cross-runtime source and PBI-6's guard stay valid untouched. Deno's restriction is on type-STRIPPING under node_modules, not on running .js from there, so shipping .js dissolves the defect rather than working around it.",
         "MEASURED and DECLINED -- JSR: it typechecks the package with no slow-types errors, but it flags tsudoi's CORE MECHANISM (the await import(pathToFileURL(...)) that loads the user's config) as unanalyzable-dynamic-import, it REQUIRES a deno.json, and the Bun half cannot be verified without actually publishing, which needs an account and is irreversible -- impediment-class, not developer-class.",
         "The cost is real and not softened: this buys a build step and the main/bin surface PBI-7 deliberately excluded, against nine sprints of no-build-step simplicity. It is recommended because the alternative buys a deno.json, an unverifiable consumer story, and a route that may diverge by runtime -- which is what criterion 2 exists to forbid.",
-        "UNMEASURED and not asserted away: repointing exports[./types] from ./src/types.ts to ./dist/types.d.ts may break the IN-REPO self-reference examples/tsudoi.config.ts now depends on, since tsc --noEmit would then require dist/ to exist. That is the sprint's main open question and is measured first, not assumed.",
+        "ANSWERED IN SPRINT 10, replacing this note's `UNMEASURED` standing: repointing exports[./types] at ./dist/types.d.ts DOES break the in-repo self-reference -- tsc exits 1 with TS2307 at examples/tsudoi.config.ts and test/fixtures/published-specifier.ts when dist/ is absent. A CONDITIONAL map resolves it, because tsc falls through a condition whose target file does not exist; the shipped map has three arms and each is asserted in test/package-shape.test.ts. Left here rather than deleted because the risk it names is the one the remedy is built on.",
       ],
     },
     {
@@ -291,64 +291,149 @@ const scrum: ScrumDashboard = {
         implementation:
           "Determine whether repointing exports[./types] at ./dist/types.d.ts breaks in-repo self-reference for examples/tsudoi.config.ts under tsc --noEmit, and whether a conditional {types, default} resolves it. Report MEASURED, not reasoned. The one unmeasured thing in the plan goes first so nothing is built on it.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
-        notes: [],
+        notes: [
+          "SPIKE RESULT, MEASURED under tsc 7.0.2, every clause. (a) Repointing exports[./types] at ./dist/types.d.ts with no dist present DOES break in-repo self-reference: `tsc --noEmit` exits 1 with TS2307 at examples/tsudoi.config.ts(9,59) AND at test/fixtures/published-specifier.ts(6,43) -- the second file was not named in the plan's statement of the risk. (b) With dist present the same shape is green, so the failure is the missing file, not the exports shape. (c) The conditional {types: ./dist/types.d.ts, default: ./src/types.ts} with NO dist is GREEN: tsc FALLS THROUGH a condition whose target file does not exist, which is the mechanism the whole remedy rests on. (d) With dist present, a marker type added only to dist/types.d.ts resolves through that conditional, so `types` WINS when its file exists and a consumer type-checks against declarations; the control -- the same probe with the map pointing at src -- fails TS2305, so the marker really discriminates which file was read.",
+          "ADOPTED: a THREE-arm map {types, import, default}, measured green in both worlds. The two-arm form the plan asked about leaves `default` -> ./src/types.ts DANGLING in a tarball that ships dist/ alone. The `import` arm names dist/types.js, which is what a runtime actually resolves for this subpath -- measured under deno 2.9.2 and bun 1.3.13 by deleting that file and reading the error that named it.",
+          "Also measured here, because it decided `files`: shipping src/ ALONGSIDE dist/ would make the map honest more cheaply, and it was rejected. With no .ts under node_modules a user cannot aim a runtime at one even by mistake; the foot-gun is unrepresentable rather than discouraged, which is the same principle the sprint applies to stale builds.",
+        ],
       },
       {
         test: "EXPECTED RED, measured. Pack, install into a temp consumer, drive the handshake under `deno run -A`; assert it currently fails with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, and that the same route under `bun run` succeeds.",
         implementation:
           "None -- the test IS the RED. Reuse the test/resolution.test.ts pack-and-install helper.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f65bce2",
+            message: "refactor(test): let a helper run a stated command, and stage a build",
+            phase: "refactoring",
+          },
+          {
+            hash: "acc322d",
+            message: "test(installed): pin the asymmetry the deno route dies on",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED MEASURED, NOT COMMITTED -- commits never land on red. With the pre-sprint package (files: [src]) the installed copy's only entry point was src/cli.ts, and `deno run -A node_modules/@atusy/tsudoi/src/cli.ts` fails with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING naming that file, while bun reaches the CLI's own `tsudoi: failed to load config`.",
+          "What was committed is that asymmetry as a PERMANENT control, green before and after the build, because it is criterion 1's negative control. It LANDS EARLIER THAN THE HEADLINE and defends strictly less: `deno rejects a .ts entry point under node_modules` is not `the installed copy runs under deno`, which subtask 3's handshake defends and nothing here does.",
+          "Two commits, not one: f65bce2 is the structural enabler (a helper that runs a stated command verbatim, and a staging directory that can build), carrying no assertion -- the suite stayed at 151.",
+        ],
       },
       {
         test: "EXPECTED GREEN, closing the previous subtask: its Deno assertion flips to success and Bun stays green.",
         implementation:
           "tsconfig.build.json with rewriteRelativeImportExtensions: true, rootDir src, outDir dist, declaration, module/moduleResolution nodenext, noEmit false. Repoint exports, add bin, files: [dist], gitignore dist. KEEP src/ imports carrying .ts extensions -- the rewrite happens only on emit, so Sprint 1's cross-runtime source and PBI-6's guard stay valid untouched.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7b152fe",
+            message:
+              "feat(package): publish compiled .js, so a deno user can run what they install",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "prepack FIRES, and it was unverified: measured for `bun pm pack` AND `npm pack` -- both run it before collecting files, and both ship what it emitted. No packer change was needed and the existing helper's `bun pm pack` was kept.",
+          "DEVIATION, deliberate: `bin` was NOT added. A bin is reached through a shim that obeys the file's shebang, so declaring one means naming an interpreter in src/cli.ts -- and neither verified runtime reaches a package that way: deno ignores node_modules/.bin entirely, and the stated route is a file path both runtimes take identically. MEASURED, so this is a refusal and not an inability: a `#!/usr/bin/env node` line survives emit into dist/cli.js, all four DoD checks stay at 0 with it present, and node 24.18.0 runs the emitted file. It is refused because the only runtime that would exercise it is a third one this project does not test. `main` and a `.` export were not added either; published-specifier.test.ts still forbids the bare package name.",
+          "src/ imports still carry .ts extensions -- untouched, as required. The emit rewrote ./config.ts to ./config.js in dist/ and PBI-6's guard and the whole checkout suite stayed green.",
+          "PERTURBATION, measured, defending the spike's finding at the DoD: replace the conditional with a plain exports[./types] -> ./dist/types.d.ts and `tsc --noEmit` EXITS 1 while four assertions flip -- `a config importing @atusy/tsudoi/types type-checks against the shipped package.json`, `a deliberate type error in the probe is reported`, `a runtime import of the types subpath resolves in the installed copy`, `the published surface is the types subpath, compiled, and nothing else`. Everything installed stayed green, because an installed copy HAS dist/: only the checkout can tell those two spellings apart.",
+        ],
       },
       {
         test: "BORN GREEN after the build lands. The identical packed artifact and identical install command satisfy BOTH runtimes. PERTURBATION: point bin back at src/cli.ts; the Deno assertion MUST redden while Bun stays green -- measured, bun runs .ts from node_modules fine. That asymmetry is the discriminator and it is why criterion 2 exists.",
         implementation: "None expected.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "22151ea",
+            message: "test(installed): prove both runtimes take ONE route, failures included",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN, as expected. The route is a pair of command STRINGS that are split into argv, and every assertion is parameterised over them, so `bun` and `deno` cannot drift into two different routes without a test noticing.",
+          "PERTURBATION, measured, in the plan's form adjusted for the absent bin: aim the route at src/cli.ts and ship src/. FLIPPED, all four deno assertions -- `deno completes the handshake against the installed copy`, `deno serves the example's Japanese hover from the installed copy`, `deno reports a missing --config from the installed copy`, `deno reports a config with no default export from the installed copy`. STAYED GREEN, all four bun ones plus the .ts asymmetry control. That is the discriminator criterion 2 exists for, and it is why a bun-only route would have looked healthy.",
+          "PO checklist item 3 is answered by the two FAILURE assertions per runtime, against the INSTALLED copy: PBI-1's contract (exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout) had only ever been asserted from a checkout. The no-default-export case also drives the installed .js importing a .ts the user wrote -- the mechanism JSR would not analyse.",
+          "Item 4 of the checklist -- if the remedy were a second registry, both routes stated and verified -- IS NOT APPLICABLE, stated rather than skipped: the remedy is a single npm-shaped artifact, and JSR was measured and declined at planning.",
+        ],
       },
       {
         test: "EXPECTED RED until the script exists. Packing from a clean tree produces an artifact whose CLI reflects current src/.",
         implementation:
           "A prepack script running the build. dist/ is never committed, so a stale build is UNREPRESENTABLE rather than merely discouraged. MEASURE whether npm pack actually invokes prepack here -- unverified.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c6ae236",
+            message: "test(installed): make a stale artifact observable, since it cannot happen",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "The PO's perturbation -- change a source file, do not rebuild, and the installed test must redden -- CANNOT BE RUN, and that is the finding rather than a gap: there is no rebuild step to skip. prepack builds inside the packer, dist/ is gitignored and never committed, and each consumer is staged in a fresh temp directory. So the property is asserted from the other side: a rename made in src/ with no build command anywhere comes back out of the installed server's InitializeResult. The test guards its own perturbation -- a replace that matched nothing would assert the unperturbed name and pass for the wrong reason.",
+          "PERTURBATION, measured, for the mechanism itself: delete the prepack script and 15 assertions flip, including all EIGHT route assertions, `a change to src/ reaches the installed copy with no rebuild step`, `the tarball ships the compiled module the exports entry points at, and nothing else` and `packing builds, so a stale dist cannot be published`.",
+        ],
       },
       {
         test: "BORN GREEN. The existing cross-runtime lifecycle suite still runs src/*.ts directly under both runtimes; no deno.json at the root. PERTURBATION: delete src/ from the tsconfig include and point the lifecycle tests at dist/; the checkout assertions MUST redden. Naming both halves: that defends `the source route still exists`, NOT `the published route works`, which the build and no-divergence subtasks defend -- it lands earlier than this subtask's headline.",
         implementation: "None. Ensure tsc --noEmit does not typecheck dist/.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f09df43",
+            message: "test(package): keep the build out of the checks that grade the sources",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN for the checkout half, and the perturbation was run in the form this repo permits -- the root tsconfig has no `include` to delete, so the checkout's own CLI path was pointed at dist/cli.js instead. FLIPPED: 106 assertions across the cross-runtime lifecycle, protocol, cancellation, cleanup, sync, hover, completion and resolution suites. So `the repo still runs src/*.ts directly under both runtimes` is asserted by the suite, not assumed.",
+          "tsc --noEmit does not typecheck dist/, and the fix is `exclude: [dist]` in tsconfig.json. MEASURED both ways: without it, --listFiles carries 8 emitted files into the program (exit code alone does NOT notice, which is why the exclude needed a test rather than a green). The paired test needed a second measurement to be non-vacuous: skipLibCheck -- which this repo sets -- SUPPRESSES type errors inside a .d.ts even when the file is in the program, so a broken type would have exited 0 on both halves. A syntax error discriminates.",
+          "Also measured: dist/ must be gitignored, or `oxfmt --check .` exits 1 over the 14 emitted files it then walks. A DoD check reddening on generated output would have been discovered by whoever built next, not by this sprint.",
+          "The no-deno.json absence assertion ships with its pair NAMED rather than invented: a probe writing a deno.json to prove existsSync works would assert the function, not the guarantee. What pairs with it is the deno handshake in a consumer project that has no deno.json either, plus resolution.test.ts measuring what a deno.json does and does not buy.",
+        ],
       },
       {
         test: "N/A (structural).",
         implementation:
           "Extend the resolution test to assert the exports, bin and files shape, WITH THE REASONING IN THE TEST -- package.json cannot carry comments and oxfmt sorts unknown keys to the tail, so the test is the durable home. Include why JSR was measured and declined, so the next person does not re-derive it.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "d48f902",
+            message: "docs(package): give the published shape a home that fails when violated",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "DEVIATION, named: the assertions went to a NEW test/package-shape.test.ts, not to resolution.test.ts. That file is about how deno finds an npm dependency in a checkout; a shape assertion there would be filed under the wrong question, and splitting is preferred to documenting the mismatch. All the reasoning is in the one new file, not spread across two.",
+          "`//exports` was rewritten TWICE on purpose. Subtask 3 replaced it the moment the build made its claims false, with text that stands alone; subtask 7 added the pointer to test/package-shape.test.ts once that file existed. A pointer written earlier would have been a dangling reference in an intermediate commit -- the same class of false durable claim the key itself was filed against.",
+          "Two more claims this sprint made false were corrected rather than left: the header of src/types.ts called the package types-only and pointed at `//exports` for the reason, and the installed-consumer helper's failure message named PBI-7, dropped at sprint 9's review.",
+        ],
       },
     ],
-    impediments: [],
+    impediments: [
+      {
+        description:
+          "The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+        impact:
+          "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
+        request:
+          "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
+        status: "waiting_human",
+        notes: [
+          "Not raised as an impediment during the sprint because it blocked nothing: the remedy, the build and both runtimes were all verifiable without it. It is recorded now so the PO sees the one edge of the route the suite does not reach.",
+        ],
+      },
+    ],
     decisions: [
       "REMEDY CHOSEN ON EVIDENCE, not preference: compiled .js + .d.ts via rewriteRelativeImportExtensions, measured starting under BOTH runtimes from node_modules with tsc passing in the consumer. JSR was measured too and declined -- it flags the config loader's dynamic import as unanalyzable, requires a deno.json, and its Bun half cannot be verified without an irreversible publish needing an account.",
       "package.json's //exports currently asserts that an installed copy cannot run under Deno and that main/bin belong elsewhere. THIS SPRINT MAKES BOTH FALSE, in a durable home -- the note-4 failure one layer deeper, and harder to catch because nothing compacts it away. It must be updated or superseded.",
