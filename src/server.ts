@@ -9,6 +9,7 @@ import {
   InitializeRequest,
   type InitializeResult,
   type Logger,
+  type ServerCapabilities,
   ShutdownRequest,
   StreamMessageReader,
   StreamMessageWriter,
@@ -36,9 +37,10 @@ const stderrLogger: Logger = {
  * Starts serving LSP over stdio. Called only after the config has loaded, so
  * that no failure path can put bytes on stdout.
  *
- * `capabilities` carries only textDocumentSync until PBI-3/4 declare their own.
+ * `capabilities` is assembled per method from what the config actually
+ * supplies, so tsudoi never claims something the config cannot answer.
  */
-export function startServer(_config: TsudoiConfig, documents: DocumentStoreHandle): void {
+export function startServer(config: TsudoiConfig, documents: DocumentStoreHandle): void {
   const connection = createProtocolConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),
@@ -48,21 +50,26 @@ export function startServer(_config: TsudoiConfig, documents: DocumentStoreHandl
   let hasShutdown = false;
 
   connection.onRequest(InitializeRequest.type, (): InitializeResult => {
-    return {
-      capabilities: {
-        // openClose is not optional: advertising only `change` entitles a
-        // conforming client to withhold didOpen/didClose, and then the store
-        // never sees a document however correct its own code is.
-        // Full, not Incremental: the client resends the whole buffer, so no
-        // position/offset machinery is needed to answer getText().
-        textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
-      },
-      serverInfo: { name: "tsudoi" },
+    const capabilities: ServerCapabilities = {
+      // openClose is not optional: advertising only `change` entitles a
+      // conforming client to withhold didOpen/didClose, and then the store
+      // never sees a document however correct its own code is.
+      // Full, not Incremental: the client resends the whole buffer, so no
+      // position/offset machinery is needed to answer getText().
+      textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
     };
+    // Per-method and spelled out, not derived from the shape of `methods`: a
+    // client is entitled to send whatever it was told about, so each capability
+    // is claimed only where the config can actually answer it. PBI-4 makes the
+    // same call again for completionProvider.
+    if (config.methods?.["textDocument/hover"] !== undefined) {
+      capabilities.hoverProvider = true;
+    }
+    return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
   connection.onNotification(InitializedNotification.type, () => {
-    // The client is ready. Nothing to do until PBI-3/4 add capabilities.
+    // The client is ready. Nothing to do until PBI-4 adds completion.
   });
 
   // The three sync notifications are pure delegation: what a full-sync buffer

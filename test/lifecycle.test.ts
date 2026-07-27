@@ -14,11 +14,13 @@ await Promise.all(runtimes.map(requireRuntime));
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    // Widened from `toEqual({})` by PBI-2, deliberately still exact: openClose
-    // is what entitles a conforming client to send didOpen/didClose at all, so
-    // an equality assertion is the only kind that catches its loss. PBI-3 and
-    // PBI-4 widen this again for hoverProvider and completionProvider.
-    test("initialize returns a result naming tsudoi, advertising exactly full-sync textDocumentSync", async () => {
+    // Widened from `toEqual({})` by PBI-2 and again by PBI-3, deliberately
+    // still exact: openClose is what entitles a conforming client to send
+    // didOpen/didClose at all, so an equality assertion is the only kind that
+    // catches its loss. hoverProvider is here because this file drives
+    // examples/tsudoi.config.ts, which supplies a hover handler. PBI-4 widens
+    // this again for completionProvider.
+    test("initialize returns a result naming tsudoi, advertising full-sync textDocumentSync and hoverProvider", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
@@ -26,6 +28,7 @@ for (const runtime of runtimes) {
         expect(result.serverInfo?.name).toBe("tsudoi");
         expect(result.capabilities).toEqual({
           textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
+          hoverProvider: true,
         });
       } finally {
         session.dispose();
