@@ -123,6 +123,41 @@ for (const runtime of runtimes) {
       }
     });
 
+    test("didChange and didClose for a uri never opened are survivable, not fatal", async () => {
+      const session = LspSession.start(runtime, snapshotConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+
+        // The change and the close name DIFFERENT unopened documents on
+        // purpose: closing the one that was changed would hide a change that
+        // created its document implicitly, and the snapshot is the only
+        // observation point, taken once at exit.
+        session.notify("textDocument/didChange", {
+          textDocument: { uri, version: 2 },
+          contentChanges: [{ text: "text for a document nobody opened" }],
+        });
+        session.notify("textDocument/didClose", { textDocument: { uri: otherUri } });
+
+        // The server must still be alive and speaking: a notification handler
+        // that threw would have been swallowed by the JSON-RPC layer, so the
+        // exit code is what shows the difference.
+        await session.request<null>("shutdown", null);
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+
+        expect(readSnapshot(session.stderr)).toEqual([]);
+        // Nothing on stderr but the snapshot line: no stack trace, no warning.
+        const noise = session.stderr.split("\n").filter((line) => {
+          return line !== "" && !line.startsWith(marker);
+        });
+        expect(noise).toEqual([]);
+        expect(session.messagesReceived).toBe(2);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("closing one of two open documents leaves values() holding exactly the other", async () => {
       const session = LspSession.start(runtime, snapshotConfig);
       try {

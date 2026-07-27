@@ -69,9 +69,14 @@ test("change and close for a uri never opened are ignored, not fatal", () => {
   const store = createDocumentStore();
 
   store.change({ textDocument: { uri, version: 2 }, contentChanges: [{ text: "ghost" }] });
+
+  // Asserted BEFORE any close: ignored has to mean ignored, and a change that
+  // created the document implicitly would be hidden by a close that follows it.
+  expect(store.documents.get(uri)).toBeUndefined();
+  expect([...store.documents.values()]).toEqual([]);
+
   store.close({ textDocument: { uri } });
 
-  // Ignored means ignored: not created implicitly either.
   expect(store.documents.get(uri)).toBeUndefined();
   expect([...store.documents.values()]).toEqual([]);
 });
