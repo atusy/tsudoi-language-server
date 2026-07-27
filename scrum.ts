@@ -292,9 +292,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Lift the close ABOVE the mode split, where the abort check already sits. Deliberate fake-it-then-evolve: the previous subtask places the fix one branch lower precisely so this criterion fails first. The PO wrote a whole criterion for this discriminator, so it earns a real RED rather than a perturbation note. NOT a shared-implementation-moment group -- two moments, by construction.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e37784",
+            message: "feat(completion): close the generator in aggregation mode as well",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "EXPECTED RED, OBSERVED AS THE PAIR ITSELF and on both runtimes: the run that added this test read `2 pass / 2 fail` -- the two streaming tests green while the two aggregation tests timed out waiting for the same cleanup record. The mode-split pair is therefore not only a perturbation artefact; it was the working state of the tree for one commit.",
+          "The mode is ASSERTED, not assumed: the aggregating test pins progressCount 0 before the cancel and again after exit, whose permanent pair is the streaming test observing the chunk arrive from the same fixture.",
+        ],
       },
       {
         test: "EXPECTED RED. A fixture whose finally throws; assert stderr names it with the `tsudoi:` PREFIX (never the body), the server survives, a later completion is answered normally, and the session exits 0.",
