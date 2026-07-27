@@ -285,9 +285,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Add test/helpers/lint.ts exposing lintProbe(files): it mkdtemps a temp dir, COPIES the repo's real .oxlintrc.json into it (never re-declares it, or the tests stop tracking the shipped file), writes each probe at its relative path, spawns `oxlint .` with cwd set there, and removes the dir in a finally. Reuse repoRoot from test/helpers/spawn.ts. No node_modules needed. No production change -- import/extensions landed in Sprint 1.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "706c0d0",
+            message: "test(guard): pin import/extensions with a temp-dir lint probe harness",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'Born green; RED manufactured. Four tests: (1) extension-less relative import exits 1 naming the file, (2) the same import with .ts exits 0, (3) node:url + vscode-languageserver-protocol/node alone exit 0, (4) both stay unflagged in a file whose line 3 IS flagged -- asserting "src/bare.ts:3:1:" present and no diagnostic on lines 1-2, which proves oxlint linted the file rather than skipping it.',
+          "Perturbation A (delete the import/extensions entry): tests 1 and 4 FAILED, tests 2 and 3 passed.",
+          "Perturbation B (restore it, drop ignorePackages): tests 3 and 4 FAILED, tests 1 and 2 passed. Finding worth keeping: only vscode-languageserver-protocol/node flips; node:url stays unflagged either way, so ignorePackages is load-bearing for npm subpaths, not for node: builtins.",
+          "Config restored byte-identical afterwards (git diff empty).",
+        ],
       },
       {
         test: 'A probe containing Bun.file("x") makes oxlint exit 1 at all four path shapes -- src/, **/*.test.ts, test/helpers/, test/fixtures/ -- and removing it returns exit 0.',
