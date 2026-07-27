@@ -138,13 +138,23 @@ test("the published surface is the types subpath, compiled, and nothing else", (
   expect(packageJson.bin).toBeUndefined();
 });
 
+/** The scripts the manifest declares, read at test time like everything else. */
+const scripts = packageJson.scripts as Record<string, string> | undefined;
+
 // The build is a PUBLISH-TIME step, not a develop-time one: prepack runs
 // inside `bun pm pack` and `npm pack` alike (measured), so dist/ is compiled
 // from whatever src/ is present at that moment and can never be stale. A
 // `build` script that a human is trusted to remember would be exactly the
 // staleness this avoids.
+//
+// REQUIRED PRESENT WITH THIS VALUE, not `scripts equals exactly this`. The
+// equality also forbade every OTHER script, which is not a promise this project
+// ever made: adding one is a legitimate change, and a test that reddens for it
+// resists change without defending a requirement. Unlike `exports` above, where
+// an unlisted entry is unreachable and the whole map IS the public surface, a
+// second script takes nothing away from this one.
 test("packing builds, so a stale dist cannot be published", () => {
-  expect(packageJson.scripts).toEqual({ prepack: "tsc -p tsconfig.build.json" });
+  expect(scripts?.prepack).toBe("tsc -p tsconfig.build.json");
 });
 
 // PBI-13 criterion 3, and one of the two reasons JSR was declined: it REQUIRES
