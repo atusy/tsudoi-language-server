@@ -314,7 +314,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Register InitializedNotification (no response), ShutdownRequest returning null, and ExitNotification calling process.exit(0). Record in server state that shutdown was received.",
         type: "behavioral",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [],
       },
