@@ -332,6 +332,23 @@ export function registerMethods(
             // own `await` queues return() behind the pending next(), so its
             // cleanup runs only when that settles. A limit of async generators,
             // not a defect here.
+            //
+            // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
+            // record of why. MEASURED under bun 1.3.13 and deno 2.9.2: when the
+            // author's `finally` itself yields, `chunks.return(null)` resolves
+            // `{ value, done: false }` -- the return completion is suspended by
+            // that yield. CONSEQUENCE: the generator stays parked INSIDE its own
+            // finally and every statement after that yield -- the rest of their
+            // cleanup -- never runs, silently, on every superseded keystroke.
+            // `done === false` right here is the evidence tsudoi could report.
+            //
+            // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE
+            // SEMANTICS rather than tsudoi doing something wrong. Measured on
+            // both runtimes, `for await (...) { break }` over the same generator
+            // leaves it in exactly this state -- one chunk seen, the code after
+            // the yield unrun. tsudoi calls .return() correctly; the author's
+            // own cleanup defers itself. Reporting it would be reporting
+            // JavaScript, so PBI-12 was dropped on culpability, not on defect.
             chunks.return(null).then(undefined, (error: unknown) => {
               reportCleanupFailure("textDocument/completion", error);
             });
