@@ -321,8 +321,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Register HoverRequest UNCONDITIONALLY -- registration and advertisement are independent, and criterion 3 needs the handler present even when unadvertised. Invoke the config handler with a RequestContext of { signal, tsudoi }. For signal, construct a per-request AbortController that is never aborted; wiring it to the connection's CancellationToken is PBI-5 and must not be smuggled in.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          { hash: "31f169f", message: "feat(server): answer hover requests", phase: "green" },
+        ],
         notes: [],
       },
       {
