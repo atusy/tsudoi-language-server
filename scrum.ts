@@ -33,40 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-2",
-      story: {
-        role: "config author",
-        capability: "read the current text of a document from inside a handler",
-        benefit: "their handlers can answer based on what the editor actually shows",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "DocumentStore follows didOpen / didChange / didClose, with textDocumentSync advertised in InitializeResult",
-          verification:
-            "InitializeResult advertises { openClose: true, change: TextDocumentSyncKind.Full }; test sends each notification and asserts documents.values() membership after each, and that get() returns undefined once didClose has arrived",
-        },
-        {
-          criterion: "documents.get(uri) returns the text of the latest version",
-          verification:
-            "Test applies successive didChange edits and asserts getText() and version match the last one sent",
-        },
-        {
-          criterion: "A notification for a document that was never opened is ignored, not fatal",
-          verification:
-            "Test sends didChange and didClose for a URI never opened, then asserts documents.get() is undefined and the server still completes shutdown/exit with code 0",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "Full sync, not Incremental (PO call): identical getText() at PoC scale, and it avoids position/offset machinery tsudoi otherwise never needs -- handlers do their own position math on params.position.",
-        "openClose: true must be advertised explicitly. Advertising only `change` entitles a conforming client to withhold didOpen/didClose, which makes the first criterion unsatisfiable against a real editor while passing every hand-driven test.",
-        "TextDocument keeps exactly the brief's shape -- uri, languageId, version, getText(). No positionAt/offsetAt. Revisit only if PBI-3 shows every config author reimplementing position math; then it is its own PBI.",
-        "test/lifecycle.test.ts asserts capabilities equals {} exactly. Advertising textDocumentSync turns it red -- widen the assertion to the advertised shape, do not delete it. PBI-3 and PBI-4 widen it again.",
-        "Replace the empty DocumentStore implementation Sprint 1 left behind; do not change the Tsudoi shape.",
-      ],
-    },
-    {
       id: "PBI-3",
       story: {
         role: "editor user",
@@ -102,6 +68,7 @@ const scrum: ScrumDashboard = {
         "Position math stays the config author's job -- params.position plus getText(). This is the PBI that decides whether TextDocument needs positionAt/offsetAt (PBI-2 note 3).",
         "Widen test/lifecycle.test.ts's capabilities assertion again, do not delete it.",
         "Measured in Sprint 3, addressed to the fourth criterion: createProtocolConnection is passed no logger, so vscode-jsonrpc defaults to NullLogger and a throwing handler is swallowed with no stderr and no effect on the exit path. The `diagnosable message on stderr` therefore needs a logger passed in (stderr only -- stdout purity), and that logger is also what would let Sprint 3's unopened-URI live test tell `ignored` from `threw`.",
+        "That finding cannot be closed by assumption: vscode-jsonrpc turns a REQUEST-handler throw into an error response, while a NOTIFICATION-handler throw falls to the logger and is swallowed. Satisfying criterion 4 through the request path alone would leave the notification path exactly as swallowed as today. Rule explicitly on whether a notification handler's throw is surfaced, and pin it with a live test that tells ignore-by-design from throw-and-swallow. (PO states the asymmetry as the believed mechanism, not a measured one -- confirm it first.)",
       ],
     },
     {
@@ -114,25 +81,47 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "Each yield is delivered as a partial result, with completionProvider advertised in InitializeResult",
+            "completionProvider is advertised when the config supplies a completion handler, and not when it does not",
           verification:
-            "Test passes a partialResultToken and asserts one $/progress notification per yield, in order",
+            "Two configs, one with the handler and one without; assert InitializeResult advertises completionProvider for the first and omits it for the second",
         },
         {
-          criterion: "Without a partialResultToken, every chunk is aggregated into one response",
+          criterion:
+            "Each yield reaches the client as exactly one $/progress, in order, while the handler is still running",
           verification:
-            "Test omits partialResultToken and asserts a single response containing every yielded item plus the returned items",
+            "A handler yields a distinguishable chunk, blocks on a gate the test releases, then yields a second; assert the first $/progress arrives while the handler is still blocked, then the second after release, one per yield, matching content and order",
         },
         {
-          criterion: "Returning null after partial results yields an empty CompletionItem[]",
-          verification: "A test config yields then returns null; assert the final result is []",
+          criterion:
+            "With a partialResultToken the response result is the returned array alone, not a repeat of the yields",
+          verification:
+            "A handler yields two chunks and returns a third; assert the response result equals the third only, so a client concatenating progress plus response sees each item exactly once",
+        },
+        {
+          criterion:
+            "Without a partialResultToken the yields and the return are aggregated into one response, and no $/progress is sent",
+          verification:
+            "The same handler driven without the token; assert a single response containing every yielded item plus the returned items, and zero $/progress notifications",
+        },
+        {
+          criterion:
+            "A null return yields [] when partial results were already sent, and null when none were",
+          verification:
+            "Two configs, one yielding then returning null and one returning null immediately; assert [] and null respectively",
+        },
+        {
+          criterion: "A handler that throws after yielding does not take the server down",
+          verification:
+            "A handler yields once then throws; assert the already-sent $/progress remains on stdout and is followed by an error response, a diagnosable message on stderr, no non-protocol bytes on stdout, and a subsequent completion answered normally",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "Refinement gap to close before this is ready: the brief gives TWO aggregation triggers -- no partialResultToken, OR the client not advertising partial-result support. The criteria cover only the first.",
+        "Aggregation has ONE observable trigger, not two: LSP has no client capability declaring partial-result support -- a client lacking it simply omits partialResultToken -- so the brief's second trigger collapses into the first by protocol design. window.workDoneProgress is not a proxy. This closes the gap flagged at init by decision, not by dropping it.",
+        "In streaming mode the response result is the RETURNED array alone, not a concatenation: the yields already went as $/progress. The brief's own rule that a null return after partials produces [] has no reason to exist under the concatenation reading, so this is the reading under which the brief is coherent.",
+        "completionProvider is advertised as an empty object. No triggerCharacters: the brief does not ask for them and TsudoiConfig has no surface to declare them; that is a config-schema change and its own PBI.",
         "Widen test/lifecycle.test.ts's capabilities assertion again for completionProvider, do not delete it.",
-        "completionProvider is advertised conditionally, per-method, the same call PBI-3 makes for hoverProvider -- not a generic derivation framework.",
+        "PO: six criteria is deliberate and each closes a distinct green-but-broken path. Do not cut one to make room.",
       ],
     },
     {
@@ -236,6 +225,8 @@ const scrum: ScrumDashboard = {
       notes: [
         "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
         "Sprint 2 left the three guard rules pinned across three DIFFERENT incomplete path sets. import/extensions is pinned only at src/ and the two probe paths -- not at test/fixtures/ or examples/, which are exactly the files the cross-runtime suite executes under deno, and extensionless relative imports are the failure that bites there. Correct today by default-deny, and lifecycle.test.ts running examples/ under deno is a live backstop, so this is a missing pin rather than a hole.",
+        "test/helpers/spawn.ts has the same per-chunk decode bug fixed in lsp.ts during Sprint 3. Consequence is narrow and was overstated on first reading: the CLI writes stderr directly and nothing in src/ decodes it, so a Japanese config author's error message is NOT mojibake -- what we cannot currently do is write a test asserting a non-ASCII config-failure message.",
+        "The 360KB Japanese test's failure mode depends on OS pipe buffer sizes. Deterministic here (3/3 under both runtimes), but on a platform with much larger buffers it degrades to passing trivially rather than failing.",
         "ignorePackages defends npm subpath specifiers ONLY. node:url is unflagged with or without it, so the round-2 perturbation defends the npm half alone and the node: half of PBI-6's criterion was trivially true rather than guarded.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
       ],
@@ -243,6 +234,25 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 3,
+      pbi_id: "PBI-2",
+      goal: "Turn documents.get(uri) from a stub into the editor's live buffer -- the first line of the stakeholder's own example config, and the substrate every method after this one answers from.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 81ac35e, aa5b588, 1e434c5, 73b2677, e49cbb6, cc44ffe, 6c9b910, 5ce2823 across 7 subtasks. Per-subtask records compacted here; git retains them.",
+        "The mandated perturbation FAILED to work and the cause was measured, not guessed: createProtocolConnection gets no logger, so vscode-jsonrpc falls back to NullLogger and CATCHES a notification-handler throw -- no stderr, no exit-code effect. No live test here distinguishes ignore-by-design from throw-and-swallow. Routed to PBI-3 rather than fixed in place, because a stderr logger belongs to PBI-3 criterion 4.",
+        "stdout purity was BROKEN and only a perturbation found it: a stray write from didOpen failed ZERO tests, because an unanchored Content-Length search reads past stray bytes and frames the next message correctly anyway. Now counted by unframedStdoutBytes; the same perturbation fails 6 tests.",
+        'The Japanese test found a latent defect in the TEST helper, not the server: per-chunk chunk.toString("utf8") turns any multi-byte character the pipe splits into U+FFFD. Silent at small payloads, deterministic RED at 360KB under both runtimes.',
+        "STANDING, endorsed by the PO from inside the work: anything not perturbed in a sprint is assumed unproven. Two of three new assertion mechanisms here asserted nothing until perturbed.",
+        "The mutation API stays off DocumentStore: createDocumentStore() returns { documents, open, change, close }, so `documents` keeps exactly the get/values shape the config sees and the Tsudoi interface is unchanged BY CONSTRUCTION rather than by discipline.",
+        "Advertise-versus-respond is split across subtasks 1 and 6 -- the split the Developer committed to after the PBI-3 capabilities near-miss. Here it is load-bearing rather than ceremonial: subtask 6 passes without subtask 1, and that combination is the dead-product shape.",
+        "PO Review checklist, issued at planning rather than Review so the plan can target it: (1) driven over stdio through the real server, not a directly-constructed store; (2) a document containing Japanese text, end to end, kept permanently -- no test in this suite has ever contained a non-ASCII byte, and the layer expected to break is deliberately not named; (3) didChange proven to REPLACE by a replacement that makes the document SHORTER, asserted by exact equality -- a concatenating store passes any toContain assertion; (4) values() does not leak closed documents -- open two, close one, assert exactly one member; (5) textDocumentSync shown literally, plus a perturbation removing openClose that must name a test going red; (6) the unopened-URI case live; (7) stdout purity across the notification sequence; (8) the capabilities assertion widened, not deleted, and still exact; (9) document behaviour under both runtimes or an explicit statement of why not.",
+        "This sprint adds test/fixtures/snapshot-config.ts to a path import/extensions does not currently pin -- the exact gap PBI-9 closes. Known and deliberately not widened here.",
+      ],
+    },
     {
       number: 2,
       pbi_id: "PBI-6",
@@ -278,124 +288,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 3,
-    pbi_id: "PBI-2",
-    goal: "Turn documents.get(uri) from a stub into the editor's live buffer -- the first line of the stakeholder's own example config, and the substrate every method after this one answers from.",
-    status: "review",
-    subtasks: [
-      {
-        test: "The initialize result's capabilities equals { textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full } } exactly, under both runtimes.",
-        implementation:
-          "Return that object from src/server.ts's InitializeRequest handler; TextDocumentSyncKind comes from vscode-languageserver-protocol/node. WIDEN test/lifecycle.test.ts's expect(capabilities).toEqual({}) to the new exact shape -- do not delete it, do not weaken to toBeDefined(). openClose: true is not optional: advertising only `change` lets a conforming client withhold didOpen/didClose, making criterion 1 unsatisfiable against a real editor while every hand-driven test passes.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "81ac35e", message: "feat(server): advertise full-sync sync", phase: "green" },
-        ],
-        notes: [],
-      },
-      {
-        test: "On a fresh store, an open registers a document whose uri, languageId, version and getText() all match, and values() contains exactly that one document.",
-        implementation:
-          "New src/documents.ts with createDocumentStore() returning { documents, open, change, close } -- the mutation API stays OFF DocumentStore so the Tsudoi shape is untouched by construction rather than by discipline. Fake it: one entry suffices here. TextDocument keeps exactly the brief's four members; no positionAt/offsetAt.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "aa5b588",
-            message: "feat(documents): register an opened document",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "Successive changes leave getText() and version matching the last one sent; after close, get() is undefined and values() is empty.",
-        implementation:
-          "Evolve to a Map<string, TextDocument>. Under Full sync take contentChanges.at(-1)!.text -- a conforming client sends exactly one full-text change, and taking the last is the defensive read -- and take the version from params.textDocument.version, never a counter. TextDocumentContentChangeEvent is a union but `text` is present on both members, so no narrowing is needed under strict.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1e434c5",
-            message: "feat(documents): follow changes and closes",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "Applying change then close to a URI never opened throws nothing, leaves get() undefined and values() empty.",
-        implementation:
-          "Guard the map lookups: no throw, no implicit creation. Resist non-null assertions here -- they are exactly what would make this fatal.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "73b2677", message: "test(documents): pin the unopened uri", phase: "green" },
-        ],
-        notes: [
-          "Born green -- the guard shipped inside the previous subtask's change/close. RED manufactured by replacing the lookup guard with `byUri.get(uri)!`: only `change and close for a uri never opened are ignored, not fatal` failed.",
-        ],
-      },
-      {
-        test: "N/A (structural) -- the whole Sprint 1 and Sprint 2 suite must stay green, unchanged.",
-        implementation:
-          "createTsudoi() builds on createDocumentStore() and returns { documents } while handing the mutation handle to the caller for startServer. Delete emptyDocuments and its 'PBI-2 replaces this implementation' comment. The Tsudoi interface in src/types.ts is NOT touched.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "e49cbb6",
-            message: "refactor(tsudoi): back documents with the store",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "Integration, both runtimes. A: didOpen then didChange, then shutdown/exit -- the snapshot reports one document with the latest text and version. B: didOpen then didClose -- the snapshot is empty.",
-        implementation:
-          "Register DidOpen/DidChange/DidCloseTextDocumentNotification, each delegating to the mutation handle. Add test/fixtures/snapshot-config.ts -- Bun-free (deno executes it), types imported by relative path with .ts. Observation seam, verified under both runtimes: the fixture's factory registers process.on('exit', ...) which writes `TSUDOI_SNAPSHOT <json>` to stderr from [...tsudoi.documents.values()]. The test parses that line after the exit-code promise settles. This proves notifications reach the store THE CONFIG AUTHOR SEES, not merely one the server holds.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "cc44ffe",
-            message: "feat(server): feed the sync notifications in",
-            phase: "green",
-          },
-          {
-            hash: "6c9b910",
-            message: "test(lsp): make stdout purity assert",
-            phase: "refactoring",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "didChange and didClose for a URI never opened, then initialize -> shutdown -> exit: exit code 0, an empty snapshot, and no stack trace in stderr.",
-        implementation:
-          "Expected to need no production change if the guard subtask was done properly. BORN GREEN -- manufactured RED is mandatory. Perturbation: in src/documents.ts make change dereference the missing entry (non-null assertion or an explicit throw). This subtask AND the unopened-URI unit subtask must both fail; the other unit subtasks and the wiring subtask must stay green. If this one stays green, it asserts nothing -- most likely the exit code is read before the child settles, or a handler throw is swallowed by vscode-jsonrpc without affecting the exit path. Record which tests flipped, then restore.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          { hash: "5ce2823", message: "test(sync): pin the unopened uri live", phase: "green" },
-        ],
-        notes: [
-          "P1, the mandated perturbation (`byUri.get(uri)!` in change): flipped ONLY the unit test `change and close for a uri never opened are ignored, not fatal`. It did NOT flip this subtask's live test. Measured cause: createProtocolConnection is given no logger, so vscode-jsonrpc defaults to NullLogger (connection.js:296, :85) and catches the handler throw at :688 -- no stderr, no effect on the exit path. UNDEFENDED: no live test distinguishes `ignored` from `threw and was swallowed`. Routed to PBI-3, which owns handler diagnosability.",
-          "P2, added because P1 left the live test asserting nothing (implicit creation instead of a throw): flipped `expect(readSnapshot(session.stderr)).toEqual([])` in `didChange and didClose for a uri never opened are survivable, not fatal` under BOTH runtimes, plus the unit test. It only flips because both tests were first strengthened to observe the store before any close of the changed uri -- as originally written, the close hid the implicit creation and P2 flipped nothing.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "The mutation API stays off DocumentStore: createDocumentStore() returns { documents, open, change, close }, so `documents` keeps exactly the get/values shape the config sees and the Tsudoi interface is unchanged BY CONSTRUCTION rather than by discipline.",
-      "Advertise-versus-respond is split across subtasks 1 and 6 -- the split the Developer committed to after the PBI-3 capabilities near-miss. Here it is load-bearing rather than ceremonial: subtask 6 passes without subtask 1, and that combination is the dead-product shape.",
-      "PO Review checklist, issued at planning rather than Review so the plan can target it: (1) driven over stdio through the real server, not a directly-constructed store; (2) a document containing Japanese text, end to end, kept permanently -- no test in this suite has ever contained a non-ASCII byte, and the layer expected to break is deliberately not named; (3) didChange proven to REPLACE by a replacement that makes the document SHORTER, asserted by exact equality -- a concatenating store passes any toContain assertion; (4) values() does not leak closed documents -- open two, close one, assert exactly one member; (5) textDocumentSync shown literally, plus a perturbation removing openClose that must name a test going red; (6) the unopened-URI case live; (7) stdout purity across the notification sequence; (8) the capabilities assertion widened, not deleted, and still exact; (9) document behaviour under both runtimes or an explicit statement of why not.",
-      "This sprint adds test/fixtures/snapshot-config.ts to a path import/extensions does not currently pin -- the exact gap PBI-9 closes. Known and deliberately not widened here.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 2,
