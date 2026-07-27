@@ -43,9 +43,9 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "A Deno user following a documented route completes the initialize handshake against their own config",
+            "A Deno user following the stated route completes the initialize handshake against their own config",
           verification:
-            "Obtain tsudoi as the documented route instructs into a project that is not this repo; run the CLI under deno and assert an InitializeResult naming tsudoi",
+            "Obtain tsudoi as the stated route instructs into a project that is not this repo; run the CLI under deno and assert an InitializeResult naming tsudoi. The route is stated as exact commands a reader could follow without reading test code",
         },
         {
           criterion: "The same route still works for Bun",
@@ -167,14 +167,8 @@ const scrum: ScrumDashboard = {
       decisions: [
         "Shipped in 5eedbb6, 1accc45, fc75c12, 18fa8d9, 37aa189, 066dafe, plus 5204709 (structural). Per-subtask records and 7 perturbation notes compacted here; git retains them. Subtasks 1 and 2 SHARE a commit, declared: subtask 1's deliverable IS tsc going red, and the DoD forbids committing on red -- the RED was measured before exports existed and recorded.",
         "SUBTASK 6 MEASURED AND DID NOT REDDEN, stated plainly: a deno.json with an npm import map at the repo root leaves the whole suite, tsc and oxlint at exit 0. The mechanism was then measured rather than stopping at the null result -- in a checkout with NO node_modules the same deno.json STILL fails, its diagnostic changing from `found it in a package.json` to `could not find it in a node_modules folder`. So the import map IS consulted and the dependency is still demanded from node_modules: at deno 2.9.2 a deno.json does not touch npm resolution at all. SPRINT 1'S REASONED JUSTIFICATION DOES NOT SURVIVE MEASUREMENT, and the file-absence assertion was deliberately NOT built -- pinning a spelling with no demonstrated harm is the anti-pattern the Sprint 7 bounding condition names. The PROPERTY is pinned instead, in test/resolution.test.ts.",
-        "THE DoD DID NOT DEFEND THE SPRINT'S OWN HEADLINE: reverting the example to ../src/types.ts left tsc, both runtimes and all 147 tests green. Nothing in the sprint AS PLANNED could have caught the deliverable being silently undone. What closed it: the example's OWN BYTES, read at test time and type-checked INSIDE the installed consumer where no ../src exists above them.",
-        "TWO VACUOUS PERTURBATIONS IN ONE SPRINT, both reported as unproven: the planned example-points-at-a-missing-subpath perturbation leaves both runtimes green for exactly the reason decision 1 records, and the planned deno.json one did not redden. Planning caught that class once and then wrote another instance of it three subtasks later.",
         "BUN SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. This weakens nine sprints of `both runtimes stay green`: wherever the claim concerns RESOLUTION, that phrase is strong evidence under deno and weak under bun. Recorded at the top of test/resolution.test.ts. Bun auto-install is deliberately NOT pinned.",
-        "THE LIFETIME RULE HAS A HOLE FOR MACHINE-FORMATTED DATA FILES: package.json cannot carry a comment at the site -- JSON has none, and oxfmt (a DoD gate) sorts every unknown key to the tail; probed with four spellings, all moved. The reasoning sits on //exports at the bottom, and src/types.ts carries a header naming itself the published surface and pointing there.",
-        "MEASURED, and it dropped a criterion: import type is erased before either runtime resolves, so a RUNTIME test of a type-only specifier is vacuous -- the original criterion passed with nothing implemented. Only tsc discriminates.",
         "MEASURED, and NOT this sprint's to fix: an INSTALLED copy cannot run under Deno at all -- ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, from a packed-and-installed consumer under deno 2.9.2, while bun runs it fine. Success metric #3 holds for a repo checkout and FAILS for an installed copy. Raised to the PO as a new PBI ordered before PBI-8 rather than smuggled in as retroactive scope.",
-        "PO checklist, per-sprint additions: (1) the resolution mechanism proven by perturbation -- rename node_modules and require the deno handshake to FAIL; do NOT assert deno.json is absent as the requirement, since by the Sprint 8 bounding condition a deno.json preserving node_modules resolution would be equally acceptable -- pin the property, not the file; (2) if a deno.json is introduced it is a DISCLOSED DECISION carrying its reasoning, not a fix, and (1) must still hold; (3) the specifier exercised from OUTSIDE the repo, not only via self-reference -- self-reference satisfies the criterion entirely from inside while a stranger still cannot resolve it, which is green-suite-story-undelivered; (4) THE EXAMPLE ITSELF switches, or the story is not delivered.",
-        "PLANNED FOR RATHER THAN DISCOVERED: adding exports to package.json is a BREAKING CHANGE to every resolution path in the repo -- once exports exists, anything not listed becomes unreachable, potentially including src/cli.ts. A green in-repo suite BEFORE exports lands proves nothing about after.",
         "MEASURED, and it bounds the LIFETIME RULE this sprint adopted: a decision about package.json CANNOT be written at its site. JSON has no comments, and oxfmt -- a DoD gate -- sorts unknown keys to the tail of the file under every name tried. The rule needs a clause for machine-formatted data files: the comment goes as close as the formatter permits, and a SOURCE file that the data file points at carries a pointer to it. Here: `//exports` at the bottom of package.json, and a header on src/types.ts naming itself the published surface.",
         "MEASURED, and it weakens seven sprints of cross-runtime evidence: bun SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. With node_modules renamed away, deno fails to start and bun completes the handshake. Every `both runtimes stay green` in this project is therefore strong evidence under deno and weak evidence under bun, wherever the claim concerns resolution. Recorded at test/resolution.test.ts, which is deno-only for exactly this reason.",
         "MEASURED AND REFUTED, the sprint's honesty item: a deno.json does NOT flip npm resolution to deno's global cache at 2.9.2. Present at the repo root the full 151-test suite stays green; present in a checkout with no node_modules the handshake still fails, naming node_modules. Sprint 1's REASONED justification for the no-deno.json guard does not survive measurement, so the guard was not built and PBI-7's third criterion needs the PO to amend it to the property.",
@@ -293,6 +287,19 @@ const scrum: ScrumDashboard = {
   sprint: null,
   retrospectives: [
     {
+      sprint: 10,
+      improvements: [
+        {
+          action:
+            "A criterion's VERIFICATION must be able to DISCRIMINATE the property it claims, and must not be contradicted by anything else in the record. When a note or a planning-time checklist item supersedes a criterion's verification, THE CRITERION IS AMENDED IN THAT TURN -- a checklist governs one Review; a criterion governs the work.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "One rule, not two, because both instances share a root: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction. The PO named the pattern -- the checklist is where their current thinking lands and the criterion is where it was. Splitting the rule would invite exactly the drift it is filed against. An AUDIT of unlabelled old notes was rejected as self-defeating: it would be the author labelling their own notes from memory, an unmeasured assertion about which assertions were unmeasured.",
+        },
+      ],
+    },
+    {
       sprint: 9,
       improvements: [
         {
@@ -339,7 +346,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. DEFAULT for everything written before this rule: an UNLABELLED note is read as REASONED, not measured, until someone measures it.",
           timing: "immediate",
           status: "active",
           outcome:
