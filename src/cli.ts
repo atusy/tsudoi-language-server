@@ -1,9 +1,12 @@
 import process from "node:process";
 import { ConfigError, loadConfig } from "./config.ts";
+import { startServer } from "./server.ts";
 import { createTsudoi } from "./tsudoi.ts";
 
 try {
-  await loadConfig(process.argv.slice(2), createTsudoi());
+  // startServer runs only on success; that ordering is what keeps stdout clean
+  // for every config failure.
+  startServer(await loadConfig(process.argv.slice(2), createTsudoi()));
 } catch (error) {
   if (!(error instanceof ConfigError)) {
     throw error;
