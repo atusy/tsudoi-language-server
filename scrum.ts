@@ -356,18 +356,34 @@ const scrum: ScrumDashboard = {
         implementation:
           "Return the generator's return value; do not accumulate yields in streaming mode. This is the criterion the PO derived the whole reading from -- under concatenation the brief's null-produces-[] rule has no reason to exist.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1d0c0f2",
+            message: "test(completion): pin the streaming response to the returned array alone",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as declared. PERTURBED concatenate-yields-into-the-response -> RED at `expect(result).toEqual(chunksReturned)` (the headline) and, in the streaming test, at its final `expect(await response).toEqual(gateReturned)` ONLY -- waitForProgress, the unsettled-response assertion and both progress-content assertions stayed GREEN, so progress emission is unchanged as predicted. Restored.",
+        ],
       },
       {
         test: "EXPECTED RED. Driven with NO token: a single response containing every yielded item plus the returned items, AND the recorded progress count is exactly 0. The zero-count half is what matters -- a server streaming anyway under an invented token passes a response-only check.",
         implementation:
           "The aggregation branch. ONE observable trigger only: the absence of partialResultToken. Do not consult window.workDoneProgress or any client capability; LSP has none that declares partial-result support.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1a72d93",
+            message: "test(completion): pin aggregation and zero $/progress without a token",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN, NOT the declared EXPECTED RED: one async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token case too. Deviation recorded rather than manufactured away. PERTURBED emit-progress-under-an-invented-token -> RED at `expect(session.progressCount).toBe(0)` alone, both runtimes; the aggregated-response assertion stayed GREEN, which is the whole reason the zero-count half exists. Restored.",
+        ],
       },
       {
         test: "EXPECTED RED. A fixture yielding then returning null produces []; a fixture returning null immediately with no yields produces null. Both halves in the same run against the same build -- a dispatch returning [] unconditionally passes the first and fails only the second, and vice versa.",
