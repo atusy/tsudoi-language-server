@@ -287,7 +287,84 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 3,
+    pbi_id: "PBI-2",
+    goal: "Turn documents.get(uri) from a stub into the editor's live buffer -- the first line of the stakeholder's own example config, and the substrate every method after this one answers from.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The initialize result's capabilities equals { textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full } } exactly, under both runtimes.",
+        implementation:
+          "Return that object from src/server.ts's InitializeRequest handler; TextDocumentSyncKind comes from vscode-languageserver-protocol/node. WIDEN test/lifecycle.test.ts's expect(capabilities).toEqual({}) to the new exact shape -- do not delete it, do not weaken to toBeDefined(). openClose: true is not optional: advertising only `change` lets a conforming client withhold didOpen/didClose, making criterion 1 unsatisfiable against a real editor while every hand-driven test passes.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "On a fresh store, an open registers a document whose uri, languageId, version and getText() all match, and values() contains exactly that one document.",
+        implementation:
+          "New src/documents.ts with createDocumentStore() returning { documents, open, change, close } -- the mutation API stays OFF DocumentStore so the Tsudoi shape is untouched by construction rather than by discipline. Fake it: one entry suffices here. TextDocument keeps exactly the brief's four members; no positionAt/offsetAt.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Successive changes leave getText() and version matching the last one sent; after close, get() is undefined and values() is empty.",
+        implementation:
+          "Evolve to a Map<string, TextDocument>. Under Full sync take contentChanges.at(-1)!.text -- a conforming client sends exactly one full-text change, and taking the last is the defensive read -- and take the version from params.textDocument.version, never a counter. TextDocumentContentChangeEvent is a union but `text` is present on both members, so no narrowing is needed under strict.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Applying change then close to a URI never opened throws nothing, leaves get() undefined and values() empty.",
+        implementation:
+          "Guard the map lookups: no throw, no implicit creation. Resist non-null assertions here -- they are exactly what would make this fatal.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural) -- the whole Sprint 1 and Sprint 2 suite must stay green, unchanged.",
+        implementation:
+          "createTsudoi() builds on createDocumentStore() and returns { documents } while handing the mutation handle to the caller for startServer. Delete emptyDocuments and its 'PBI-2 replaces this implementation' comment. The Tsudoi interface in src/types.ts is NOT touched.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Integration, both runtimes. A: didOpen then didChange, then shutdown/exit -- the snapshot reports one document with the latest text and version. B: didOpen then didClose -- the snapshot is empty.",
+        implementation:
+          "Register DidOpen/DidChange/DidCloseTextDocumentNotification, each delegating to the mutation handle. Add test/fixtures/snapshot-config.ts -- Bun-free (deno executes it), types imported by relative path with .ts. Observation seam, verified under both runtimes: the fixture's factory registers process.on('exit', ...) which writes `TSUDOI_SNAPSHOT <json>` to stderr from [...tsudoi.documents.values()]. The test parses that line after the exit-code promise settles. This proves notifications reach the store THE CONFIG AUTHOR SEES, not merely one the server holds.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "didChange and didClose for a URI never opened, then initialize -> shutdown -> exit: exit code 0, an empty snapshot, and no stack trace in stderr.",
+        implementation:
+          "Expected to need no production change if the guard subtask was done properly. BORN GREEN -- manufactured RED is mandatory. Perturbation: in src/documents.ts make change dereference the missing entry (non-null assertion or an explicit throw). This subtask AND the unopened-URI unit subtask must both fail; the other unit subtasks and the wiring subtask must stay green. If this one stays green, it asserts nothing -- most likely the exit code is read before the child settles, or a handler throw is swallowed by vscode-jsonrpc without affecting the exit path. Record which tests flipped, then restore.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "The mutation API stays off DocumentStore: createDocumentStore() returns { documents, open, change, close }, so `documents` keeps exactly the get/values shape the config sees and the Tsudoi interface is unchanged BY CONSTRUCTION rather than by discipline.",
+      "Advertise-versus-respond is split across subtasks 1 and 6 -- the split the Developer committed to after the PBI-3 capabilities near-miss. Here it is load-bearing rather than ceremonial: subtask 6 passes without subtask 1, and that combination is the dead-product shape.",
+      "PO Review checklist, issued at planning rather than Review so the plan can target it: (1) driven over stdio through the real server, not a directly-constructed store; (2) a document containing Japanese text, end to end, kept permanently -- no test in this suite has ever contained a non-ASCII byte, and the layer expected to break is deliberately not named; (3) didChange proven to REPLACE by a replacement that makes the document SHORTER, asserted by exact equality -- a concatenating store passes any toContain assertion; (4) values() does not leak closed documents -- open two, close one, assert exactly one member; (5) textDocumentSync shown literally, plus a perturbation removing openClose that must name a test going red; (6) the unopened-URI case live; (7) stdout purity across the notification sequence; (8) the capabilities assertion widened, not deleted, and still exact; (9) document behaviour under both runtimes or an explicit statement of why not.",
+      "This sprint adds test/fixtures/snapshot-config.ts to a path import/extensions does not currently pin -- the exact gap PBI-9 closes. Known and deliberately not widened here.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 2,
