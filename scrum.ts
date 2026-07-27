@@ -392,9 +392,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Skip reportHandlerFailure when the signal is aborted; unchanged otherwise. Assert the stderr PREFIX, never the stack body.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7327cf7",
+            message: "feat(cancel): stop reporting a cancelled handler's throw as a failure",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned, at -32800 for a cancelled hover that threw (it answered -32603, the reported path). One fixture supplies BOTH methods, so the streaming path -- where the throw comes out of a generator -- is asserted too rather than assumed to follow.",
+          "PERTURBATION `remove the abort branch from the hover catch`: reddens at the EARLIER -32800 assertion, so it does not defend the headline.",
+          "PERTURBATION `write a failure line anyway while still answering -32800`, added for that reason: reddens exactly at `stderr has no handler failed:`, both runtimes. The headline is defended on its own.",
+          "The contrast lives in the SAME test against a second session: a server that reported nothing at all would satisfy the absence and fail `an uncancelled throw still reports`.",
+        ],
       },
       {
         test: "BORN GREEN. Cancel an id never issued and an id already answered; assert no error response, no stderr failure line, and a subsequent request answered normally. Perturbation: add a tsudoi-side registry that looks the id up and throws on a miss; this MUST redden while the bridge and -32800 subtasks stay green. It is also what would catch a regression if anyone later decides to track cancellation ourselves.",
