@@ -287,8 +287,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "await mod.default(tsudoi) inside try/catch, passing the Tsudoi from the previous subtask. Completes the seven-case taxonomy and yields the first successfully loaded TsudoiConfig.",
         type: "behavioral",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "1d1b96a", message: "feat: invoke factory", phase: "green" }],
         notes: [],
       },
       {
