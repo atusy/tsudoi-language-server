@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { readSnapshot, snapshotMarker } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
 
 const snapshotConfig = fixture("snapshot-config.ts");
@@ -9,24 +10,6 @@ const snapshotConfig = fixture("snapshot-config.ts");
 const runtimes = [bunRuntime, denoRuntime];
 
 await Promise.all(runtimes.map(requireRuntime));
-
-/** One entry of what the config author's own `tsudoi.documents` held at exit. */
-interface SnapshotDocument {
-  uri: string;
-  languageId: string;
-  version: number;
-  text: string;
-}
-
-const marker = "TSUDOI_SNAPSHOT ";
-
-function readSnapshot(stderr: string): SnapshotDocument[] {
-  const line = stderr.split("\n").find((candidate) => candidate.startsWith(marker));
-  if (line === undefined) {
-    throw new Error(`no ${marker.trim()} line on stderr; stderr was: ${JSON.stringify(stderr)}`);
-  }
-  return JSON.parse(line.slice(marker.length)) as SnapshotDocument[];
-}
 
 const uri = "file:///workspace/a.txt";
 const otherUri = "file:///workspace/b.txt";
@@ -148,7 +131,7 @@ for (const runtime of runtimes) {
         expect(readSnapshot(session.stderr)).toEqual([]);
         // Nothing on stderr but the snapshot line: no stack trace, no warning.
         const noise = session.stderr.split("\n").filter((line) => {
-          return line !== "" && !line.startsWith(marker);
+          return line !== "" && !line.startsWith(snapshotMarker);
         });
         expect(noise).toEqual([]);
         expect(session.messagesReceived).toBe(2);
