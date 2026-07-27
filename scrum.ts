@@ -305,8 +305,14 @@ const scrum: ScrumDashboard = {
         implementation:
           'Add "no-restricted-globals": ["error", "Bun"] to top-level rules. Assert all four paths explicitly: the ABSENCE of an exemption is the behaviour under test, not an implementation detail.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3ee8eed",
+            message: "feat(guard): ban the Bun global everywhere in the tree",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
