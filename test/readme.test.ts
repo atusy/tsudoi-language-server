@@ -3,6 +3,7 @@ import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import {
   extractQuickstart,
+  type QuickstartStep,
   QUICKSTART_STEPS,
   readReadme,
   runQuickstart,
@@ -89,5 +90,43 @@ for (const runtime of ["bun", "deno"] as const) {
     expect(outcome.serverName ?? outcome.diagnosis).toBe("tsudoi");
     // Counted, not eyeballed: one stray byte on stdout desyncs a real editor.
     expect(outcome.unframedStdoutBytes).toBe(0);
+  });
+}
+
+/** How a step reads in a test name: the command, or the file it writes. */
+function label(step: QuickstartStep): string {
+  return step.kind === "run" ? step.command : `write ${step.path}`;
+}
+
+/**
+ * THE COMPLETENESS SWEEP, and its real function is not what it looks like.
+ *
+ * It reads as a check that no documented step is USELESS. What it actually
+ * proves is that THE ENVIRONMENT IS BARE: an omitted step whose absence still
+ * produced a server would mean something other than the documented command was
+ * supplying it, and the intact run above would then be a test of the harness
+ * rather than evidence about the README. Extraction catches a STALE
+ * instruction; only this catches a MISSING one -- and a README that omits a
+ * required step is worse than no README, because a reader follows it, fails,
+ * and concludes the product is broken.
+ *
+ * ONE RUNTIME, and the licence is Sprint 10's MEASUREMENT that both runtimes
+ * take one artifact, one install and one file path -- not that two would be
+ * expensive. If that route ever diverges, this basis is void and the sweep owes
+ * both runtimes.
+ *
+ * The last step's omission looks degenerate -- run no server, get no server --
+ * and is the strongest bareness assertion here: if anything OTHER than the
+ * documented command were starting a server, this is where it would show.
+ */
+const bunSequence = sequenceFor(extractQuickstart(readme, QUICKSTART_STEPS), "bun");
+
+for (const [index, omitted] of bunSequence.entries()) {
+  test(`omitting «${label(omitted)}» leaves the quickstart with no server`, async () => {
+    const outcome = await runQuickstart(bunSequence.filter((_, position) => position !== index));
+
+    // The whole diagnosis on the failure line, so a step that turned out to be
+    // unnecessary says what did run instead of merely that something did.
+    expect(outcome.serverName === undefined ? "no server" : outcome.diagnosis).toBe("no server");
   });
 }
