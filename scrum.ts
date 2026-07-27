@@ -298,7 +298,7 @@ const scrum: ScrumDashboard = {
     number: 5,
     pbi_id: "PBI-4",
     goal: "Make yield and return the whole of a config author's streaming API -- tsudoi decides whether that reaches the client as $/progress chunks or one aggregated response -- so the most precisely specified thing in the brief is the thing they never have to think about.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "N/A (structural) -- BORN GREEN by construction, no assertion of its own. Perturbation: make the capture drop every notification; the streaming subtask MUST fail at waitForProgress(1). If it does not, nothing this sprint measures progress and the zero-progress assertion is decorative.",
@@ -426,9 +426,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/server.ts is past 150 lines with two config-backed request handlers. Move hover and completion registration into a dedicated module now that there are genuinely two call sites and their failure path is already factored. Keep reportHandlerFailure shared and the CALLS distinct -- a generator cannot share the call, and over-generalising here would undo Sprint 4's finding. No method registry.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "095cdf3",
+            message: "refactor(server): move the config-backed request handlers to methods.ts",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "Suite unchanged and green (83) before and after. server.ts 216 -> 115 lines, methods.ts 125. reportHandlerFailure and the request-context factory shared; the two CALLS kept distinct, no method registry.",
+        ],
       },
     ],
     impediments: [],
@@ -436,6 +444,8 @@ const scrum: ScrumDashboard = {
       "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
       "FOUND AT PLANNING, not in review: test/helpers/lsp.ts discards every server-initiated notification, so criterion 4's zero-$/progress assertion would have passed against a server streaming furiously. It is subtask 1, not a footnote.",
       "The stakeholder described nine methods loosely and then wrote a generic type signature plus three lines of protocol rules for this one. Whatever they were most worried about is in that type, and the worry reads clearly: a config author must never touch partialResultToken or $/progress. The async generator IS the protocol adapter. This sprint delivers that or delivers a leaky abstraction with the same signature.",
+      "EXECUTION DEVIATION, reported not smoothed: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN. One async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token branch, the null branch and the failure branch at the same moment. Their evidence therefore rests entirely on perturbation, which is why every one of them carries two. A plan that splits one dispatch across four subtasks buys sequencing it cannot pay for.",
+      "scrum.ts EXCEEDS its 600-line limit (654) with the mandatory perturbation records present. Reported rather than resolved by compacting another section, per the constraint. The obvious remedy is the one sprints 1-4 already used: compact this sprint's subtasks into decisions at Review, where git still retains them.",
       "PO checklist, per-sprint additions (the standing list applies unchanged): (1) streaming proven by ORDERING against the outstanding response, not by counting -- counting passes even if the server buffered every yield and flushed before responding; (2) the gate proven real by TWO labelled perturbations -- buffer all yields, the streaming test must redden (the server streams); release the gate immediately, the unsettled-response assertion must redden (the gate holds the response rather than the server merely being slow); (3) criterion 6 distinguishes `chunk arrived and stayed` from `chunk never arrived` by asserting distinguishable content and progress-then-error ordering, perturbed by suppressing progress on throw -- `clean up by not emitting chunks on failure` is a plausible thing to do deliberately; (4) criterion 5's two halves in the same run against the same build, neither satisfiable by a constant; (5) criterion 4's zero-progress assertion perturbed by emitting progress under an invented token.",
     ],
   },
