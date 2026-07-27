@@ -326,6 +326,7 @@ const scrum: ScrumDashboard = {
           "PERTURBATION `remove the seed` (the isCancellationRequested read): reddens `entered line-3 aborted=true` on both runtimes; isolation stays green. The two halves of the bridge are independently defended.",
           "PERTURBATION `abort every signal unconditionally`: reddens EARLIER than the isolation claim, at `entered line-1 aborted=false` -- so it defends the transition's false half and NOT isolation.",
           "PERTURBATION `one shared AbortController`, added because of that: reddens exactly at `aborted line-2 absent`, the isolation headline. This is the shape the PO caught before refinement.",
+          "The pre-dispatch path is pinned for COMPLETION too (71afcbb), where a chunk is at stake: -32800 with zero $/progress. Removing the seed reddens it at `error.code` on both runtimes, alongside the hover one.",
           "PERTURBATION for subtask 1 (`cancel(id) sends nothing`): reddens `aborted line-1 appears` on both runtimes -- every cancellation assertion this sprint would otherwise be measuring an unsent notification.",
         ],
       },
