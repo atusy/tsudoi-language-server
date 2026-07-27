@@ -79,6 +79,21 @@ interface ProgressWaiter {
 }
 
 /**
+ * One message as it was FRAMED on the wire: the length its header declared,
+ * beside the body that header introduced.
+ *
+ * Kept because the framing is otherwise unobservable from a test. The reader
+ * below consumes exactly `declaredLength` bytes, so a header that lied about a
+ * multi-byte body desynchronises the stream and the symptom is a test that
+ * hangs -- a failure whose shape depends on how much the OS pipe happened to
+ * buffer. With the pair recorded, the same defect is an equality that fails.
+ */
+interface Frame {
+  readonly declaredLength: number;
+  readonly body: string;
+}
+
+/**
  * A minimal LSP client over the CLI's stdio, framing messages with
  * Content-Length. Requests are awaited one at a time, which is what keeps the
  * shutdown response from racing the exit notification.
@@ -112,6 +127,8 @@ export class LspSession {
    * not fail: a server streaming furiously satisfied it.
    */
   readonly arrivals: Arrival[] = [];
+  /** Every message stdout carried, as it was framed. */
+  readonly frames: Frame[] = [];
   readonly #progressWaiters: ProgressWaiter[] = [];
 
   private constructor(child: ChildProcessWithoutNullStreams) {
@@ -416,6 +433,7 @@ export class LspSession {
       this.#strayBytes += match.index;
       const body = this.#buffer.subarray(bodyStart, bodyEnd).toString("utf8");
       this.#buffer = this.#buffer.subarray(bodyEnd);
+      this.frames.push({ declaredLength: Number(match[1]), body });
       this.#deliver(JSON.parse(body) as ResponseMessage);
     }
   }

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { Buffer } from "node:buffer";
 import { fileURLToPath } from "node:url";
 import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
@@ -114,6 +115,45 @@ for (const runtime of runtimes) {
         const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
         expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
 
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // Content-Length is a BYTE count; String.length counts UTF-16 units. Every
+    // ASCII response in this suite satisfies both readings at once, so nothing
+    // told them apart until a response carried Japanese.
+    //
+    // Asserted on the FRAME rather than by observing what happens: a header
+    // carrying the character count is SHORT, so the reader stops mid-body, the
+    // next header is never found and the symptom is a test that hangs -- how
+    // long depends on what the OS pipe buffered, which is not a failure mode a
+    // suite can rely on. This fails as an equality, on a payload small enough
+    // to arrive in one chunk under any buffering.
+    test("the Content-Length framing a Japanese response is its byte count, not its character count", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+        didOpen(session, "こんにちは");
+
+        const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
+        expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
+
+        const carrying = session.frames.filter((frame) => frame.body.includes(exampleHover));
+        expect(carrying).toHaveLength(1);
+        const [frame] = carrying;
+        if (frame === undefined) {
+          throw new Error(`no frame carried the hover; saw ${session.frames.length} frames`);
+        }
+
+        expect(frame.declaredLength).toBe(Buffer.byteLength(frame.body, "utf8"));
+        // The pair that makes the equality above evidence: on THIS body the two
+        // readings disagree. Without it the test would pass against an ASCII
+        // response, where a server counting characters is indistinguishable
+        // from one counting bytes.
+        expect(frame.declaredLength).not.toBe(frame.body.length);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
