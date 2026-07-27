@@ -6,8 +6,7 @@ import {
   type HoverParams,
 } from "vscode-languageserver-protocol";
 
-// The published specifier "@atusy/tsudoi/types" is PBI-7; until then, relative.
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../src/types.ts";
+import type { RequestContext, Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";
 
 /**
  * The run of non-whitespace characters containing `character`, or "" if the

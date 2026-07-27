@@ -1,7 +1,18 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
+
+/**
+ * The stakeholder-facing example's own bytes, read at test time. Not a fixture
+ * copy: the artifact under test is examples/tsudoi.config.ts itself, and a
+ * committed duplicate would drift away from the file a config author reads.
+ */
+const exampleSource = readFileSync(
+  fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url)),
+  "utf8",
+);
 
 /** What a config author outside this repo writes: no relative path into src/. */
 const consumerConfig = [
@@ -40,6 +51,33 @@ test("a deliberate type error in the installed consumer is reported", async () =
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2322");
   expect(result.output).not.toContain("TS2307");
+});
+
+// THE STORY, end to end: a config author copies the example into their own
+// project and it type-checks there. This is what defends the example's switch
+// to the published specifier -- and it is the ONLY thing that can. Reverting it
+// to `../src/types.ts` leaves the DoD's tsc green (that path resolves in-repo)
+// and leaves both runtimes green (the import is type-only and erased before
+// either resolves anything, measured). Only a consumer with no ../src above it
+// can tell the two spellings apart.
+test("the example itself, copied into an installed consumer, type-checks unchanged", async () => {
+  const result = await consumer.typeCheck({ "tsudoi.config.ts": exampleSource });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
+// The pair for the assertion above: proves it is really discriminating on the
+// specifier, and not passing for any consumer config at all.
+test("the same example spelled with a relative path into src fails in a consumer", async () => {
+  const relative = exampleSource.replace('"@atusy/tsudoi/types"', '"../src/types.ts"');
+  expect(relative).not.toBe(exampleSource);
+
+  const result = await consumer.typeCheck({ "tsudoi.config.ts": relative });
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("error TS2307");
+  expect(result.output).toContain("../src/types.ts");
 });
 
 // SCOPE, and it is deliberate: this asserts what the tarball CONTAINS, never
