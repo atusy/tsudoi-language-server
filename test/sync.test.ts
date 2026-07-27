@@ -158,6 +158,37 @@ for (const runtime of runtimes) {
       }
     });
 
+    // The companion to the test above, and what gives its silence meaning: a
+    // notification handler that DOES throw must be visible. vscode-jsonrpc
+    // catches a throwing notification handler and hands it to the connection's
+    // logger, so a connection built without one swallows it whole -- there is
+    // then no observation that tells `ignored by design` from `threw and was
+    // discarded`. Sending didOpen without a textDocument is the shape a
+    // non-conforming client actually produces, and it makes the handler throw
+    // for real rather than by an injected fault.
+    test("a malformed didOpen is reported on stderr naming the method, and the server survives", async () => {
+      const session = LspSession.start(runtime, snapshotConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("textDocument/didOpen", {});
+
+        await session.request<null>("shutdown", null);
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+
+        // The wrapper text, not the thrown TypeError's text: the wording of a
+        // destructuring failure differs between bun's JSC and deno's V8, while
+        // this line comes from vscode-jsonrpc and names the method either way.
+        expect(session.stderr).toContain("Notification handler 'textDocument/didOpen' failed");
+        // Nothing was stored, so the throw happened rather than being tolerated.
+        expect(readSnapshot(session.stderr)).toEqual([]);
+        expect(session.messagesReceived).toBe(2);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("closing one of two open documents leaves values() holding exactly the other", async () => {
       const session = LspSession.start(runtime, snapshotConfig);
       try {

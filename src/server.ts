@@ -8,6 +8,7 @@ import {
   InitializedNotification,
   InitializeRequest,
   type InitializeResult,
+  type Logger,
   ShutdownRequest,
   StreamMessageReader,
   StreamMessageWriter,
@@ -15,6 +16,21 @@ import {
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
 import type { TsudoiConfig } from "./types.ts";
+
+/**
+ * Where vscode-jsonrpc reports what it cannot answer for -- above all a
+ * notification handler that threw, which it catches and would otherwise discard
+ * in silence, since a notification has no response to carry the failure.
+ *
+ * Every level goes to stderr. stdout carries the protocol and nothing else, so
+ * console.log here would corrupt the very stream the client is framing.
+ */
+const stderrLogger: Logger = {
+  error: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
+  warn: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
+  info: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
+  log: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
+};
 
 /**
  * Starts serving LSP over stdio. Called only after the config has loaded, so
@@ -26,6 +42,7 @@ export function startServer(_config: TsudoiConfig, documents: DocumentStoreHandl
   const connection = createProtocolConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),
+    stderrLogger,
   );
 
   let hasShutdown = false;
