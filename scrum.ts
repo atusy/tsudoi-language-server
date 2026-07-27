@@ -298,8 +298,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Return that object from src/server.ts's InitializeRequest handler; TextDocumentSyncKind comes from vscode-languageserver-protocol/node. WIDEN test/lifecycle.test.ts's expect(capabilities).toEqual({}) to the new exact shape -- do not delete it, do not weaken to toBeDefined(). openClose: true is not optional: advertising only `change` lets a conforming client withhold didOpen/didClose, making criterion 1 unsatisfiable against a real editor while every hand-driven test passes.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          { hash: "81ac35e", message: "feat(server): advertise full-sync sync", phase: "green" },
+        ],
         notes: [],
       },
       {
