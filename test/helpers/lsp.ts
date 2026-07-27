@@ -27,10 +27,16 @@ export const denoRuntime: Runtime = {
   installUrl: "https://docs.deno.com/runtime/getting_started/installation/",
 };
 
+/** The `error` member of a JSON-RPC response, as it arrives on the wire. */
+export interface JsonRpcError {
+  code: number;
+  message: string;
+}
+
 interface ResponseMessage {
   id?: number;
   result?: unknown;
-  error?: unknown;
+  error?: JsonRpcError;
 }
 
 /**
@@ -58,7 +64,12 @@ export class LspSession {
         // time out with no diagnostic at all.
         for (const [id, settle] of this.#pending) {
           this.#pending.delete(id);
-          settle({ id, error: `server exited with code ${code}; stderr: ${this.stderr}` });
+          settle({
+            id,
+            // Shaped like a wire error so that requestError reports a dead
+            // server as a dead server rather than as a missing field.
+            error: { code: 0, message: `server exited with code ${code}; stderr: ${this.stderr}` },
+          });
         }
         resolve(code);
       });
@@ -89,6 +100,27 @@ export class LspSession {
           return;
         }
         resolve(message.result as T);
+      });
+      this.#send({ jsonrpc: "2.0", id, method, params });
+    });
+  }
+
+  /**
+   * The error a request was answered with. Separate from `request` because a
+   * criterion about failure has to assert on the failure's code, not on the
+   * wording of a rejection the helper composed.
+   */
+  requestError(method: string, params: unknown): Promise<JsonRpcError> {
+    const id = this.#nextId++;
+    return new Promise<JsonRpcError>((resolve, reject) => {
+      this.#pending.set(id, (message) => {
+        if (message.error === undefined) {
+          reject(
+            new Error(`${method} succeeded with ${JSON.stringify(message.result)}; expected error`),
+          );
+          return;
+        }
+        resolve(message.error);
       });
       this.#send({ jsonrpc: "2.0", id, method, params });
     });

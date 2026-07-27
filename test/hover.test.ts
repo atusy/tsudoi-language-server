@@ -8,10 +8,19 @@ import {
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixedHover } from "./fixtures/hover-fixed.ts";
+import { recoveredHover, rejectMessage } from "./fixtures/hover-rejects.ts";
+import { throwMessage } from "./fixtures/hover-throws.ts";
 import { fixture } from "./helpers/spawn.ts";
 
 const hoverFixed = fixture("hover-fixed.ts");
 const hoverAbsent = fixture("hover-absent.ts");
+
+// Two ways for the same handler to fail: one before any promise exists, one a
+// turn of the event loop later. They reach the dispatch by different paths.
+const failingFixtures = [
+  { how: "throws", path: fixture("hover-throws.ts"), message: throwMessage },
+  { how: "rejects", path: fixture("hover-rejects.ts"), message: rejectMessage },
+];
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -99,5 +108,43 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    for (const { how, path, message } of failingFixtures) {
+      test(`a hover handler that ${how} is reported and answered, and the next one succeeds`, async () => {
+        const session = LspSession.start(runtime, path);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+
+          // -32603 InternalError: the client learns this request failed, which
+          // a silent null would have hidden from it entirely.
+          const error = await session.requestError("textDocument/hover", hoverParams(0, 0));
+          expect(error.code).toBe(-32603);
+
+          // The client's error response says nothing about WHY. Without this
+          // line the config author debugs a handler they cannot see fail.
+          expect(session.stderr).toContain("textDocument/hover");
+          expect(session.stderr).toContain(message);
+
+          // The handler fails once only, so this is `answered normally` as an
+          // observation rather than as an absence of catastrophe.
+          const second = await session.request<Hover | null>(
+            "textDocument/hover",
+            hoverParams(1, 1),
+          );
+          expect(second).toEqual(recoveredHover);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+
+          // The diagnosis went to stderr and stayed there: stdout carries the
+          // JSON-RPC responses and not one byte besides.
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      });
+    }
   });
 }

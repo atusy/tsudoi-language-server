@@ -103,7 +103,20 @@ export function startServer(
     // is entitled to read from day one, and wiring it to the connection's
     // cancellation token is PBI-5's job, not something to half-do here.
     const context: RequestContext = { signal: new AbortController().signal, tsudoi };
-    return (await handler?.(context, params)) ?? null;
+    try {
+      return (await handler?.(context, params)) ?? null;
+    } catch (error) {
+      // vscode-jsonrpc turns this throw into a -32603 for the client, but it
+      // consults the connection's logger for NOTIFICATION handlers only: a
+      // failed request leaves nothing on stderr, and the config author is left
+      // debugging a handler they cannot see fail. So tsudoi reports it itself.
+      const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+      process.stderr.write(`tsudoi: textDocument/hover handler failed: ${detail}\n`);
+      // Rethrown, never swallowed: absorbing this would answer the client null,
+      // which is indistinguishable from `no hover here` -- the failure the
+      // criterion exists to prevent.
+      throw error;
+    }
   });
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
