@@ -5,6 +5,9 @@ import {
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
   ExitNotification,
+  type Hover,
+  type HoverParams,
+  HoverRequest,
   InitializedNotification,
   InitializeRequest,
   type InitializeResult,
@@ -16,7 +19,7 @@ import {
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
-import type { TsudoiConfig } from "./types.ts";
+import type { RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -40,7 +43,11 @@ const stderrLogger: Logger = {
  * `capabilities` is assembled per method from what the config actually
  * supplies, so tsudoi never claims something the config cannot answer.
  */
-export function startServer(config: TsudoiConfig, documents: DocumentStoreHandle): void {
+export function startServer(
+  config: TsudoiConfig,
+  documents: DocumentStoreHandle,
+  tsudoi: Tsudoi,
+): void {
   const connection = createProtocolConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),
@@ -84,6 +91,19 @@ export function startServer(config: TsudoiConfig, documents: DocumentStoreHandle
 
   connection.onNotification(DidCloseTextDocumentNotification.type, (params) => {
     documents.close(params);
+  });
+
+  // Registered whether or not the config supplies a handler: registration and
+  // advertisement are independent questions, and a client that sends hover
+  // without being told about it is answered null rather than MethodNotFound --
+  // a server must not fail because a client misbehaves.
+  connection.onRequest(HoverRequest.type, async (params: HoverParams): Promise<Hover | null> => {
+    const handler = config.methods?.["textDocument/hover"];
+    // A controller nobody aborts: the signal is part of the context a handler
+    // is entitled to read from day one, and wiring it to the connection's
+    // cancellation token is PBI-5's job, not something to half-do here.
+    const context: RequestContext = { signal: new AbortController().signal, tsudoi };
+    return (await handler?.(context, params)) ?? null;
   });
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the

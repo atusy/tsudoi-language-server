@@ -8,7 +8,7 @@ const { tsudoi, documents } = createTsudoi();
 try {
   // startServer runs only on success; that ordering is what keeps stdout clean
   // for every config failure.
-  startServer(await loadConfig(process.argv.slice(2), tsudoi), documents);
+  startServer(await loadConfig(process.argv.slice(2), tsudoi), documents, tsudoi);
 } catch (error) {
   if (!(error instanceof ConfigError)) {
     throw error;
