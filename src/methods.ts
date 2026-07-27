@@ -281,9 +281,11 @@ export function registerMethods(
             // the config author's `finally`. Without this the generator is left
             // suspended at its yield forever, and cleanup nobody can watch
             // succeed is silently skipped on every superseded keystroke.
-            if (token !== undefined) {
-              await chunks.return(null);
-            }
+            //
+            // Above the mode split, where the abort check already is: whether
+            // this request streamed or aggregated says what the CLIENT can take
+            // and nothing about what the HANDLER holds open.
+            await chunks.return(null);
             return null;
           }
           emitted = true;

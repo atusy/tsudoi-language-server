@@ -95,5 +95,48 @@ for (const runtime of runtimes) {
       },
       gatedTimeoutMs,
     );
+
+    // The discriminator the PO wrote a whole criterion for: the abort check
+    // sits ABOVE the mode split, so a close applied one branch lower runs the
+    // config author's cleanup for clients that asked for partial results and
+    // silently skips it for every client that did not.
+    test(
+      "a cancelled AGGREGATING completion is closed too, though nothing streamed",
+      async () => {
+        const session = LspSession.start(runtime, completionCleanup);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          // No partialResultToken, so there is no $/progress to wait for: the
+          // handler's own marker is what makes `mid-stream` sayable here.
+          const inFlight = session.issue("textDocument/completion", completionParams(undefined));
+          await session.waitForStderr(parkedMarker);
+          // The mode is asserted, not assumed. Its permanent PAIR is the
+          // streaming test above, where the same measurement over the same
+          // fixture observes a chunk arriving.
+          expect(session.progressCount).toBe(0);
+          expect(session.stderr).not.toContain(cleanupMarker);
+
+          session.cancel(inFlight.id);
+          const answered = await inFlight.response;
+          expect(answered.error?.code).toBe(requestCancelled);
+
+          await session.waitForStderr(cleanupMarker, 1000);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          // Re-read after exit: a chunk sent late is still a chunk sent, and an
+          // aggregating request must never have produced one.
+          expect(session.progressCount).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
   });
 }
