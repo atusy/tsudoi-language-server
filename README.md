@@ -29,6 +29,8 @@ longer works fails the suite.
 - **deno**, only if you want to run the server under deno.
 - **a checkout of this repository**, with `bun install` already run in it. The tarball is built
   from that checkout, and building it compiles the sources.
+- **a network connection**, the first time: installing the tarball fetches tsudoi's own
+  dependency `vscode-languageserver-protocol` unless bun's cache already holds it.
 
 Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **deno must be on
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
@@ -119,15 +121,17 @@ without it.
 
 ### Why `deno run -A`
 
-`-A` grants every permission, which is a lot to hand a server that reads your source. The
-reason is not tsudoi's: `vscode-jsonrpc`, the JSON-RPC library underneath, reads the
-`XDG_RUNTIME_DIR` environment variable **at module load**, before any of tsudoi's own code runs
-(measured: `vscode-jsonrpc/lib/node/main.js` fails a `--allow-read --allow-write` run with
-`Requires env access to "XDG_RUNTIME_DIR"`).
+`-A` grants every permission, which is a lot to hand a server that reads your source. The reason
+is not tsudoi's: `vscode-jsonrpc`, the JSON-RPC library underneath, reads the `XDG_RUNTIME_DIR`
+environment variable **at module load**, before any of tsudoi's own code runs -- measured, as
+`Requires env access to "XDG_RUNTIME_DIR"` from `vscode-jsonrpc/lib/node/main.js` on a run
+without `--allow-env`.
 
-A narrower set of flags may well be enough. It is **untested**: the minimum was never measured,
-`deno run -A` is what the suite spawns, and this README documents what is measured rather than
-what is plausible.
+A narrower set can work: measured once, under deno 2.9.2, `deno run --allow-read --allow-env`
+completed the handshake. It is **untested** all the same -- `deno run -A` is what the suite
+spawns, so nothing keeps a narrower set working from one release to the next, and the
+permissions your own handlers need (a network call, a subprocess, a file to write) are yours to
+work out rather than tsudoi's to promise.
 
 ## When the config is wrong
 

@@ -165,17 +165,23 @@ test("the deno permissions the README documents are the ones the suite spawns", 
  * The reason is OWED, not optional: a deno user handing every permission to a
  * server that reads their source needs to know it is a third-party module-load
  * env read rather than tsudoi wanting their network -- and that narrower sets
- * are untested because the minimum was never measured.
+ * are untested, whatever one measurement of one of them found.
+ *
+ * `--allow-read --allow-env` completing the handshake is a HISTORICAL claim,
+ * pinned to deno 2.9.2, and that is deliberate: the suite spawns `-A` and
+ * nothing here keeps a narrower set working, so a present-tense promise about
+ * it would be a claim the suite cannot defend. A claim about what a measurement
+ * found on a named version cannot go stale.
  */
 const permissionsFact: ReadmeFact = {
-  name: "why -A, and that narrower is untested",
+  name: "why -A, what one narrower set measured, and that narrower is untested",
   tokens: [
     /-A/,
     /vscode-jsonrpc/,
     /XDG_RUNTIME_DIR/,
     /module load/i,
     /untested/i,
-    /never measured/i,
+    /--allow-read --allow-env/,
   ],
 };
 
@@ -202,6 +208,13 @@ const facts: readonly ReadmeFact[] = [
   {
     name: "deno must be on PATH or `bun test` fails",
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
+  },
+  {
+    // Named because it is ASSUMED: the install step fetches tsudoi's own
+    // dependency on a cold cache, and a reader without a network gets a failure
+    // the README would otherwise have told them nothing about.
+    name: "the first install needs a network unless bun's cache is warm",
+    tokens: [/network/i, /cache/i, /vscode-languageserver-protocol/],
   },
   {
     name: "the package is not published",
