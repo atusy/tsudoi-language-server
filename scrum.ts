@@ -267,8 +267,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "Validate typeof mod.default === 'function' before calling it, with a distinct message per case. Two committed fixtures, both valid TypeScript.",
         type: "behavioral",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "6f02e64", message: "feat: validate default", phase: "green" }],
         notes: [],
       },
       {
