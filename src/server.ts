@@ -73,6 +73,15 @@ export function startServer(
         "The server has not been initialized; send initialize first.",
       );
     }
+    // A separate state and a separate code. `not ready yet` and `already done`
+    // are not the same refusal, and a client told ServerNotInitialized after
+    // shutdown would reasonably retry the handshake.
+    if (hasShutdown === true) {
+      return new ResponseError<void>(
+        ErrorCodes.InvalidRequest,
+        "The server has shut down; only exit is accepted now.",
+      );
+    }
     return undefined;
   }
 

@@ -108,5 +108,37 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // The other end of the same lifecycle, and a DIFFERENT diagnosis: after
+    // shutdown the server is not `not ready yet`, it is done. -32600 says the
+    // request itself was invalid at the moment it was sent, which is exactly
+    // what the client did wrong.
+    test(
+      "hover after shutdown is answered -32600, and exit still returns 0",
+      async () => {
+        const session = LspSession.start(runtime, demoConfig);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "こんにちは");
+          // The document IS open, so a server that simply served the request
+          // would answer a real Hover here -- the failure mode being refused.
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+
+          const error = await session.requestError("textDocument/hover", hoverParams(0, 0));
+          expect(error.code).toBe(-32600);
+
+          // exit is the one notification the post-shutdown gate may never
+          // drop: dropping it leaves the process alive forever and this
+          // assertion fails as a timeout rather than as a wrong code.
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
   });
 }
