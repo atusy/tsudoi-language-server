@@ -307,6 +307,8 @@ const scrum: ScrumDashboard = {
           "PERTURBATION RUN, rewording half -- rewrote TWO sentences with different structure and word order, keeping the tokens (`tsudoi ships no default config path at all; passing --config <path> is required of you...` and `No registry has @atusy/tsudoi: it is not published, to npm or anywhere else.`). ALL 32 STAYED GREEN. The two halves fail in opposite directions, as the criterion requires.",
           "The uniqueness assertion FOUND A REAL COLLISION while being written: `## When the config is wrong` restated the factory contract in the same tokens as the teaching section, so the fact had two homes. Fixed in the README's prose, not in the tokens -- weakening the tokens to dodge it would have been the proxy.",
           "The permissions fact from subtask 4 was folded into this list rather than left standing alone, so criterion 2's prose half gets the same both-ways treatment as criterion 3's.",
+          "AMENDED AFTER REVIEW OF THE PROSE ITSELF (commit d4cb846). The -A section hedged -- `a narrower set may well be enough` -- over a measurement nobody had taken, while quoting an error naming the very flag that was missing. MEASURED: `deno run --allow-read --allow-env` COMPLETES THE HANDSHAKE from the installed copy under deno 2.9.2. Stated as a HISTORICAL claim pinned to that version, because the suite spawns -A and nothing keeps a narrower set working; `untested` now means what it says instead of standing in for `unmeasured`.",
+          "SECOND AMENDMENT, same commit: `a network connection on a cold cache` was an ASSUMED prerequisite of the install step, named nowhere. Now named and defended by its own fact, whose removal was perturbed and flipped three assertions. install.ts had recorded the same dependency for its own path since Sprint 10; the README had not inherited it.",
         ],
       },
       {
@@ -343,7 +345,8 @@ const scrum: ScrumDashboard = {
         ],
         notes: [
           "Records FOUR shapes of the same defect at the site where the edit would be made: inlining an expected value makes every criterion vacuous; an extractor that finds nothing passes; invocationOf throwing rather than reporting an empty flag list; and the token-conjunction control that CANNOT FAIL, which is why uniqueness is the only removal control offered.",
-          "DoD AT HEAD, each run unpiped and captured separately: `bun test` 0, `oxlint` 0, `oxfmt --check .` 0, `tsc --noEmit` 0. 229 tests, 778 assertions -- 193/731 at sprint start.",
+          "DoD AT HEAD, each run unpiped and captured separately: `bun test` 0, `oxlint` 0, `oxfmt --check .` 0, `tsc --noEmit` 0. 232 tests, 781 assertions -- 193/731 at sprint start.",
+          "HARNESS PROPERTY, recorded rather than fixed: runQuickstart re-reads README.md to build the LAYOUT while the SEQUENCE comes from the caller's own read, so a perturbation applied mid-run would mix two versions of the file. Every perturbation here edited the file before `bun test` started, so it never bit; the alternative -- passing the layout in -- is the injection point the sweep's staging deliberately refuses.",
         ],
       },
     ],
