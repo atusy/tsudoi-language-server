@@ -35,8 +35,34 @@ export interface JsonRpcError {
 
 interface ResponseMessage {
   id?: number;
+  method?: string;
+  params?: unknown;
   result?: unknown;
   error?: JsonRpcError;
+}
+
+/** One `$/progress` as it arrived, token included and unfiltered. */
+export interface ProgressNotification {
+  readonly token: number | string;
+  readonly value: unknown;
+}
+
+/**
+ * A framed message in arrival order. Responses carry only their id: what the
+ * result was is already asserted by the awaiting request, whereas the ORDER of
+ * a response relative to the progress around it is not observable anywhere
+ * else -- and progress-then-error is a criterion in its own right.
+ */
+type Arrival =
+  | ({ readonly kind: "progress" } & ProgressNotification)
+  | {
+      readonly kind: "response";
+      readonly id: number;
+    };
+
+interface ProgressWaiter {
+  readonly count: number;
+  readonly release: () => void;
 }
 
 /**
@@ -55,6 +81,15 @@ export class LspSession {
   #nextId = 1;
   /** Every message framed off stdout, including any nothing awaits. */
   messagesReceived = 0;
+  /**
+   * Responses and `$/progress` interleaved exactly as stdout carried them.
+   *
+   * Server-initiated notifications used to be dropped here on the grounds that
+   * nothing awaited them, which made `zero $/progress` an assertion that could
+   * not fail: a server streaming furiously satisfied it.
+   */
+  readonly arrivals: Arrival[] = [];
+  readonly #progressWaiters: ProgressWaiter[] = [];
 
   private constructor(child: ChildProcessWithoutNullStreams) {
     this.#child = child;
@@ -140,6 +175,48 @@ export class LspSession {
     return Buffer.concat(this.#stderrChunks).toString("utf8");
   }
 
+  /**
+   * Every `$/progress` so far, in arrival order. Deliberately NOT filtered by
+   * token: a server that streamed under a token it invented is the cheat the
+   * zero-progress criterion exists to catch, and filtering would hide it.
+   */
+  get progress(): ProgressNotification[] {
+    return this.arrivals.filter((arrival) => arrival.kind === "progress");
+  }
+
+  get progressCount(): number {
+    return this.progress.length;
+  }
+
+  /**
+   * Resolves once `count` `$/progress` have arrived, and REJECTS on timeout
+   * rather than hanging -- a server that buffers its yields must fail here by
+   * name, saying how many it did send, instead of stalling the suite.
+   */
+  waitForProgress(count: number, timeoutMs = 2000): Promise<void> {
+    if (this.progressCount >= count) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.#dropWaiter(waiter);
+        reject(
+          new Error(
+            `timed out after ${timeoutMs}ms waiting for ${count} $/progress; saw ${this.progressCount}`,
+          ),
+        );
+      }, timeoutMs);
+      const waiter: ProgressWaiter = {
+        count,
+        release: () => {
+          clearTimeout(timer);
+          resolve();
+        },
+      };
+      this.#progressWaiters.push(waiter);
+    });
+  }
+
   waitForExit(): Promise<number | null> {
     return this.#exited;
   }
@@ -197,12 +274,30 @@ export class LspSession {
   #deliver(message: ResponseMessage): void {
     this.messagesReceived++;
     if (message.id === undefined) {
-      return; // A server-initiated notification; nothing awaits it here.
+      if (message.method === "$/progress") {
+        const { token, value } = message.params as ProgressNotification;
+        this.arrivals.push({ kind: "progress", token, value });
+        for (const waiter of [...this.#progressWaiters]) {
+          if (this.progressCount >= waiter.count) {
+            this.#dropWaiter(waiter);
+            waiter.release();
+          }
+        }
+      }
+      return; // Any other server-initiated notification; nothing awaits it.
     }
+    this.arrivals.push({ kind: "response", id: message.id });
     const settle = this.#pending.get(message.id);
     if (settle !== undefined) {
       this.#pending.delete(message.id);
       settle(message);
+    }
+  }
+
+  #dropWaiter(waiter: ProgressWaiter): void {
+    const index = this.#progressWaiters.indexOf(waiter);
+    if (index !== -1) {
+      this.#progressWaiters.splice(index, 1);
     }
   }
 }
