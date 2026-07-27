@@ -277,132 +277,15 @@ const scrum: ScrumDashboard = {
     pbi_id: "PBI-7",
     goal: "Make the stakeholder's own example importable -- @atusy/tsudoi/types rather than a relative path into our source -- from outside this repo and under both runtimes.",
     status: "review",
-    subtasks: [
-      {
-        test: "EXPECTED RED, measured: add test/fixtures/published-specifier.ts importing Tsudoi and TsudoiConfig from @atusy/tsudoi/types; the DoD's tsc --noEmit goes red with TS2307.",
-        implementation: "None -- the fixture IS the RED.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5eedbb6",
-            message: "feat(package): publish @atusy/tsudoi/types as the whole surface",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "SHARED IMPLEMENTATION MOMENT, declared: this subtask and the next land in ONE commit. The RED is a tsc failure, and the DoD forbids committing with tsc non-zero, so the fixture could not be committed on its own. The RED was MEASURED before the exports entry existed: `test/fixtures/published-specifier.ts(6,43): error TS2307: Cannot find module '@atusy/tsudoi/types' or its corresponding type declarations.`",
-        ],
-      },
-      {
-        test: "EXPECTED GREEN, closing the previous subtask: tsc --noEmit passes with the fixture in place.",
-        implementation:
-          'name: "@atusy/tsudoi", exports: { "./types": "./src/types.ts" }, files: ["src"]. Comment AT THE EXPORTS SITE recording why it is types-only -- the durable copy, per this sprint\'s lifetime rule.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5eedbb6",
-            message: "feat(package): publish @atusy/tsudoi/types as the whole surface",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PERTURBATION, MEASURED, and it is the sprint's central finding restated as evidence: with `exports` deleted from the real package.json, tsc goes red with TS2307 while the cross-runtime lifecycle tests stay 8/8 GREEN. Only tsc discriminates.",
-          "THE PLANNED-FOR BREAKAGE DID NOT HAPPEN, and here is why it could not: `exports` gates BARE-SPECIFIER resolution into the package only. Every in-repo path -- src/cli.ts by path, --config by path, relative imports -- bypasses it, and the repo has no bare self-imports. Full suite plus all four DoD checks run immediately after the entry landed: 137 pass, 0 fail, all four exit 0.",
-          "MEASURED CONSTRAINT ON THE LIFETIME RULE: package.json cannot carry a comment AT the site. JSON has no comments, and oxfmt -- a DoD gate -- sorts every unknown key to the TAIL of the file, alphabetically, whichever name it is given (probed with `//`, `//exports`, `exports//`, `exportsComment`; all four moved). The reasoning therefore sits on a `//exports` key at the bottom of package.json, and src/types.ts carries a header naming itself the published surface and pointing at it. The package.json key is the durable copy; the types.ts header is the one a reader hits first.",
-        ],
-      },
-      {
-        test: "BORN GREEN after the identity lands. Spawn tsc against a generated temp project -- the test/helpers/lint.ts pattern -- asserting TS2307 WITHOUT the exports entry and clean WITH it, COPYING the repo's real package.json rather than re-declaring it. This is the permanent pair the absence rule requires, replacing a one-time probe with a standing one. PERTURBATION: delete the exports entry from the real package.json; this MUST redden on the with-exports half WHILE the runtime tests stay green -- which is precisely the vacuity this sprint discovered.",
-        implementation:
-          "test/helpers/typecheck.ts alongside lint.ts, plus test/published-specifier.test.ts.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1accc45",
-            message: "test(package): stand a permanent control behind @atusy/tsudoi/types",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PERTURBATION, MEASURED: deleting `exports` from the REAL package.json reddens both positive halves (`type-checks against the shipped package.json`, `a deliberate type error is reported`) while the two negative halves stay green and test/lifecycle.test.ts stays 8/8 green under both runtimes.",
-          'TWO FALSE-SIGNAL TRAPS FOUND BY MEASUREMENT, both of which would have produced a red that LOOKS like a resolution failure and is not. (1) Copying the repo tsconfig brings `types: ["node", "bun"]`, which an outside project has no reason to carry. (2) tsc\'s default `include` walks the symlinked src/ and reports TS2591 for every `node:` import in cli.ts and config.ts. The helper writes its own compiler options and names the probe files as compilation roots; both facts are recorded as comments in test/helpers/typecheck.ts.',
-          "A FOURTH TEST NOT IN THE PLAN: a deliberate type error in the probe must be reported. Without it, a harness that compiled NO files would exit 0 and every positive assertion here is a green -- indistinguishable from resolution succeeding.",
-          "MEASURED, no limitation to disclose: the specifier resolves under moduleResolution bundler, node16 and nodenext alike. node10 is not a candidate -- TypeScript 7.0.2 removed it.",
-        ],
-      },
-      {
-        test: 'BORN GREEN, measured passing. Pack the package, install it into a temp consumer project, assert tsc --noEmit passes there over a config importing the published specifier. PERTURBATION: drop "./types" from exports; must redden. SCOPE: type resolution ONLY -- do NOT assert the installed CLI runs, which is measured broken under Deno and belongs to the new PBI.',
-        implementation:
-          "test/helpers/install.ts and test/installed-specifier.test.ts; no src/ change, as expected.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "fc75c12",
-            message:
-              "test(package): prove the specifier from outside the repo, not by self-reference",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PACKING WORKED, no limitation to state. `bun pm pack` produces a 9-file tarball; `bun install <tgz>` into a fresh project pulls vscode-languageserver-protocol in transitively; tsc there passes under bundler, node16 and nodenext. The whole file runs in ~190ms.",
-          "PERTURBATION, MEASURED: emptying `exports` on the copy that gets PACKED makes the consumer fail with TS2307. The edit is applied BEFORE packing on purpose -- editing the installed copy afterwards would prove something about a directory on this machine, not about what this repo publishes.",
-          "SCOPE HELD: what the tarball CONTAINS is asserted; that an installed copy RUNS is not, and cannot be, since it fails under Deno with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING. The reason is written into the test.",
-          "ONE ENVIRONMENTAL DEPENDENCY ADDED, disclosed rather than hidden: `bun install` needs the network on a COLD bun cache. Warm, it is 7ms. The helper fails with a message naming the criterion rather than skipping, matching the runtime preflight's convention.",
-        ],
-      },
-      {
-        test: "BORN GREEN, measured: self-reference resolves at runtime and the import is erased anyway. The existing cross-runtime lifecycle tests driving examples/tsudoi.config.ts stay green under bun and deno after the switch. PERTURBATION: point the example at a specifier exports does not expose, e.g. @atusy/tsudoi/nope; both runtimes' lifecycle tests MUST redden AT CONFIG LOAD. Naming both halves: that flip defends `the example still loads`, NOT `the specifier resolves for types`, which the two preceding subtasks defend -- it lands earlier than this subtask's headline.",
-        implementation:
-          "Change the example's type import from the relative path to @atusy/tsudoi/types. Remove the `PBI-7 until then, relative` comment it has carried since Sprint 1. BOTH DONE.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "18fa8d9",
-            message: "feat(example): import the example's types by the published specifier",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE PLANNED PERTURBATION WAS MEASURED VACUOUS -- the second of this class in one sprint. Pointing the example at `@atusy/tsudoi/nope`: lifecycle 8/8 GREEN, hover+completion+protocol 54/54 GREEN under both runtimes; only tsc flipped, with TS2307 at examples/tsudoi.config.ts. The planned headline -- `both runtimes MUST redden AT CONFIG LOAD` -- is FALSE, for exactly the reason decision 1 records: the import is type-only and erased before either runtime resolves anything. No runtime assertion can defend a type-only import.",
-          "AND THE DoD's tsc IS NO BETTER, which is the defect this subtask actually found. Reverting the example to `../src/types.ts`: tsc --noEmit exits 0, both runtimes stay green, the whole 147-test suite stays green. NOTHING in the suite as planned could have caught the deliverable being silently undone.",
-          "WHAT WAS BUILT INSTEAD, and it is the strongest thing in the sprint: the example's OWN BYTES are read at test time and type-checked INSIDE the installed consumer, where no ../src exists above them. PERTURBATION, MEASURED: reverting the specifier reddens those two assertions and nothing else in the repo. Standing item 6 is preserved -- the artifact under test is examples/tsudoi.config.ts itself, read at test time, with no committed fixture copy.",
-        ],
-      },
-      {
-        test: "BORN GREEN. Assert no deno.json or deno.jsonc exists at the repo root. PERTURBATION, AND THIS ONE MUST BE MEASURED RATHER THAN ASSUMED: add a deno.json with an npm import map and run the cross-runtime suite. If it reddens, record that as the measured justification for the guard. IF IT DOES NOT REDDEN, SAY SO -- then this file-absence assertion is the only thing carrying a constraint whose harm is unproven, and that must be recorded honestly rather than dressed up.",
-        implementation:
-          "test/helpers/checkout.ts and test/resolution.test.ts; LspSession.start gained an optional cwd, defaulted to the repo.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "37aa189",
-            message:
-              "test(resolution): pin how deno finds its dependency, not the absence of a file",
-            phase: "green",
-          },
-          {
-            hash: "066dafe",
-            message: "docs(resolution): record the bun/deno asymmetry where it is load-bearing",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "IT DID NOT REDDEN, AND THIS SAYS SO. A deno.json with an npm import map at the repo root, measured against the FINAL suite: 151 pass, 0 fail, bun test exit 0, tsc exit 0, oxlint exit 0. Sprint 1's reasoned justification for the guard is measurably unsupported at deno 2.9.2.",
-          "AND THE MECHANISM ITSELF WAS MEASURED, which is what settles it rather than merely weakening it: in an isolated checkout with NO node_modules, adding the same deno.json still FAILS. The import map IS consulted -- deno's diagnostic changes from `found it in a package.json` to `could not find it in a node_modules folder` -- and the dependency is still demanded from node_modules. A deno.json does not flip resolution to the global cache; it does not touch resolution at all.",
-          "SO THE FILE-ABSENCE ASSERTION WAS DELIBERATELY NOT BUILT. Its harm is unproven, the PO's checklist item 1 already directs pinning the property instead, and an assertion that pins a spelling nobody has shown to matter is the anti-pattern the Sprint 7 bounding condition names. FOR THE PO: PBI-7's third criterion still reads `no deno.json exists in the repo` and now has nothing implementing it -- it needs amending to the property, and that is the PO's edit, not the Developer's.",
-          "THE PROPERTY IS PINNED PERMANENTLY AND NON-DESTRUCTIVELY: an isolated copy of package.json, src/ and the example, into which node_modules can be linked or withheld. Deno fails to start without it -- naming node_modules AND the package it wanted, so any error at all does not satisfy the assertion -- and the same copy starts once it is restored. The rename-node_modules perturbation the PO asked for was ALSO run against the real repo: deno FAILED, exactly as required.",
-          "FOUND WHILE RUNNING THAT PERTURBATION: with the repo's node_modules renamed away, BUN COMPLETED THE HANDSHAKE ANYWAY (200 bytes of stdout, serverInfo present), satisfying the dependency from its own global cache. The property is pinned for deno only, because under bun there is no assertion that could fail. Consequence, recorded at the top of test/resolution.test.ts: bun's greens across this suite are WEAKER EVIDENCE about resolution than deno's. Bun's auto-install is deliberately NOT pinned -- nothing requires it.",
-        ],
-      },
-    ],
+    subtasks: [],
     impediments: [],
     decisions: [
+      "Shipped in 5eedbb6, 1accc45, fc75c12, 18fa8d9, 37aa189, 066dafe, plus 5204709 (structural). Per-subtask records and 7 perturbation notes compacted here; git retains them. Subtasks 1 and 2 SHARE a commit, declared: subtask 1's deliverable IS tsc going red, and the DoD forbids committing on red -- the RED was measured before exports existed and recorded.",
+      "SUBTASK 6 MEASURED AND DID NOT REDDEN, stated plainly: a deno.json with an npm import map at the repo root leaves the whole suite, tsc and oxlint at exit 0. The mechanism was then measured rather than stopping at the null result -- in a checkout with NO node_modules the same deno.json STILL fails, its diagnostic changing from `found it in a package.json` to `could not find it in a node_modules folder`. So the import map IS consulted and the dependency is still demanded from node_modules: at deno 2.9.2 a deno.json does not touch npm resolution at all. SPRINT 1'S REASONED JUSTIFICATION DOES NOT SURVIVE MEASUREMENT, and the file-absence assertion was deliberately NOT built -- pinning a spelling with no demonstrated harm is the anti-pattern the Sprint 7 bounding condition names. The PROPERTY is pinned instead, in test/resolution.test.ts.",
+      "THE DoD DID NOT DEFEND THE SPRINT'S OWN HEADLINE: reverting the example to ../src/types.ts left tsc, both runtimes and all 147 tests green. Nothing in the sprint AS PLANNED could have caught the deliverable being silently undone. What closed it: the example's OWN BYTES, read at test time and type-checked INSIDE the installed consumer where no ../src exists above them.",
+      "TWO VACUOUS PERTURBATIONS IN ONE SPRINT, both reported as unproven: the planned example-points-at-a-missing-subpath perturbation leaves both runtimes green for exactly the reason decision 1 records, and the planned deno.json one did not redden. Planning caught that class once and then wrote another instance of it three subtasks later.",
+      "BUN SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. This weakens nine sprints of `both runtimes stay green`: wherever the claim concerns RESOLUTION, that phrase is strong evidence under deno and weak under bun. Recorded at the top of test/resolution.test.ts. Bun auto-install is deliberately NOT pinned.",
+      "THE LIFETIME RULE HAS A HOLE FOR MACHINE-FORMATTED DATA FILES: package.json cannot carry a comment at the site -- JSON has none, and oxfmt (a DoD gate) sorts every unknown key to the tail; probed with four spellings, all moved. The reasoning sits on //exports at the bottom, and src/types.ts carries a header naming itself the published surface and pointing there.",
       "MEASURED, and it dropped a criterion: import type is erased before either runtime resolves, so a RUNTIME test of a type-only specifier is vacuous -- the original criterion passed with nothing implemented. Only tsc discriminates.",
       "MEASURED, and NOT this sprint's to fix: an INSTALLED copy cannot run under Deno at all -- ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, from a packed-and-installed consumer under deno 2.9.2, while bun runs it fine. Success metric #3 holds for a repo checkout and FAILS for an installed copy. Raised to the PO as a new PBI ordered before PBI-8 rather than smuggled in as retroactive scope.",
       "PO checklist, per-sprint additions: (1) the resolution mechanism proven by perturbation -- rename node_modules and require the deno handshake to FAIL; do NOT assert deno.json is absent as the requirement, since by the Sprint 8 bounding condition a deno.json preserving node_modules resolution would be equally acceptable -- pin the property, not the file; (2) if a deno.json is introduced it is a DISCLOSED DECISION carrying its reasoning, not a fix, and (1) must still hold; (3) the specifier exercised from OUTSIDE the repo, not only via self-reference -- self-reference satisfies the criterion entirely from inside while a stranger still cannot resolve it, which is green-suite-story-undelivered; (4) THE EXAMPLE ITSELF switches, or the story is not delivered.",
