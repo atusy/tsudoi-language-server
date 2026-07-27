@@ -313,6 +313,40 @@ for (const runtime of runtimes) {
       }
     });
 
+    // The frequency is part of the remedy, not a detail of it. A client whose
+    // serialisation produces a bad token produces it on EVERY keystroke, and a
+    // line per completion buries everything else in the LSP log -- the one
+    // channel a config author has for a handler that failed.
+    test("two invalid-token completions in one session trace exactly once, and both aggregate", async () => {
+      const session = LspSession.start(runtime, completionChunks);
+      try {
+        await session.request("initialize", initializeParams);
+
+        const aggregated = [...firstChunk, ...secondChunk, ...returnedItems];
+        const first = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionWithToken(null),
+        );
+        const second = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionWithToken(null),
+        );
+
+        // Asserted BEFORE the count: quietening the trace must not have been
+        // paid for by stopping the second request being answered properly.
+        expect(first).toEqual(aggregated);
+        expect(second).toEqual(aggregated);
+
+        // The PREFIX and the COUNT, never the body: the wording is free to
+        // improve, the frequency is the requirement.
+        const traces = tsudoiLines(session).filter((line) => line.startsWith(invalidTokenTrace));
+        expect(traces).toHaveLength(1);
+        expect(session.progressCount).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // Standing checklist item 3: the trace is a new user-visible path, and a
     // token is client-supplied data that can be anything. String(value) on an
     // object yields `[object Object]` and loses this entirely.

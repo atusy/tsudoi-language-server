@@ -149,22 +149,20 @@ function isProgressToken(value: unknown): value is ProgressToken {
  * user simply sees fewer candidates than the handler produced.
  *
  * Validation lives here and nowhere else. One call site, no seam: the story is
- * protocol-violation handling, the implementation is one concrete case.
+ * protocol-violation handling, the implementation is one concrete case. HOW
+ * OFTEN the refusal is reported is the caller's business, not this function's.
  */
-function streamingToken(requested: unknown): ProgressToken | undefined {
+function streamingToken(
+  requested: unknown,
+  report: (requested: unknown) => void,
+): ProgressToken | undefined {
   if (requested === undefined) {
     return undefined;
   }
   if (isProgressToken(requested)) {
     return requested;
   }
-  // JSON.stringify, not String(): a token is client data of any shape, and
-  // `[object Object]` would name nothing the config author could act on.
-  process.stderr.write(
-    `tsudoi: ignoring an invalid partialResultToken ${JSON.stringify(requested)}; ` +
-      `a ProgressToken is an integer or a string, so this completion is answered ` +
-      `as one aggregated response.\n`,
-  );
+  report(requested);
   return undefined;
 }
 
@@ -182,6 +180,33 @@ export function registerMethods(
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
 ): void {
+  /**
+   * Whether this SESSION has already been told about an invalid token. One
+   * process serves one client, so the flag's lifetime is the session's.
+   */
+  let invalidTokenReported = false;
+
+  /**
+   * Names a refused token on stderr ONCE. A client whose serialisation
+   * produces a bad token produces it on every keystroke, and a line per
+   * completion buries everything else in the LSP log -- the one channel a
+   * config author has for a handler that failed. Once is diagnosable; a
+   * thousand times is noise that makes the log useless for anything else.
+   */
+  function reportInvalidToken(requested: unknown): void {
+    if (invalidTokenReported === true) {
+      return;
+    }
+    invalidTokenReported = true;
+    // JSON.stringify, not String(): a token is client data of any shape, and
+    // `[object Object]` would name nothing the config author could act on.
+    process.stderr.write(
+      `tsudoi: ignoring an invalid partialResultToken ${JSON.stringify(requested)}; ` +
+        `a ProgressToken is an integer or a string, so this completion is answered ` +
+        `as one aggregated response.\n`,
+    );
+  }
+
   connection.onRequest(
     HoverRequest.type,
     async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
@@ -223,7 +248,7 @@ export function registerMethods(
       // describes what a CONFORMING client sends, and this path exists for the
       // one that does not.
       const requestedToken: unknown = params.partialResultToken;
-      const token = streamingToken(requestedToken);
+      const token = streamingToken(requestedToken, reportInvalidToken);
       return answerUnlessCancelled("textDocument/completion", context.signal, async () => {
         // What the author yielded, kept only when there is no token to stream
         // it under. In streaming mode this stays empty, which is what lets one
