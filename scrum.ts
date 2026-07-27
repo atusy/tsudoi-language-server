@@ -220,8 +220,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "Create .gitignore with node_modules/ and __ignored/. oxfmt and oxlint read it but not the user's global gitignore, which is why `oxfmt --check .` currently fails on __ignored/prompt.md.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "eb92147", message: "chore: add .gitignore", phase: "refactoring" }],
         notes: [],
       },
       {
