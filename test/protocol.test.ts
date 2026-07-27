@@ -368,5 +368,39 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // The reason the validation is a TYPE test. ProgressToken is `integer |
+    // string`, so both of these are legal AND falsy: `if (!token)` fixes the
+    // null case and silently stops streaming for every client that numbers its
+    // tokens from zero or names one with the empty string.
+    for (const token of [0, ""]) {
+      test(`a partialResultToken of ${JSON.stringify(token)} streams per yield like any other`, async () => {
+        const session = LspSession.start(runtime, completionChunks);
+        try {
+          await session.request("initialize", initializeParams);
+
+          const result = await session.request<CompletionItem[] | null>(
+            "textDocument/completion",
+            completionWithToken(token),
+          );
+
+          // Addressed to the token the client actually sent, one per yield.
+          expect(session.progress).toEqual([
+            { token, value: firstChunk },
+            { token, value: secondChunk },
+          ]);
+          // The streaming response shape: the RETURNED array alone, the yields
+          // having already left as $/progress.
+          expect(result).toEqual(returnedItems);
+          // Nothing was refused, so nothing was traced. The paired positive
+          // control for this silence is the invalid-token tests above, which
+          // use this same function and DO see the line.
+          expect(tsudoiLines(session)).toEqual([]);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      });
+    }
   });
 }
