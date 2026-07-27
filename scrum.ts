@@ -267,143 +267,14 @@ const scrum: ScrumDashboard = {
     pbi_id: "PBI-11",
     goal: "Keep a promise JavaScript already makes -- a config author's finally runs when their completion is abandoned -- so cleanup they can never watch succeed is not silently skipped on every keystroke, and the last gate on releasing this thing comes down.",
     status: "review",
-    subtasks: [
-      {
-        test: "EXPECTED RED. A fixture generator records into stderr from its finally; cancel mid-stream WITH a partialResultToken; assert the record appears, -32800 still arrives, and the session exits 0.",
-        implementation:
-          "On abort call chunks.return() before returning out of the driving loop. Minimal placement -- INSIDE the streaming branch. Await it inline for now; a later subtask evolves that.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "24b70a7",
-            message:
-              "feat(completion): close the generator when a streaming completion is cancelled",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED RED, OBSERVED on both runtimes at the headline assertion: -32800 arrived, then waitForStderr(cleanupMarker) timed out quoting a stderr that held only the fixture's `parked` marker -- the generator was left suspended at its yield. Green after `await chunks.return(null)`.",
-          "chunks.return(NULL), not `undefined as never` as the plan's snippet wrote it. MEASURED against the type: MethodMap's TReturn is `CompletionItem[] | null`, so null needs no assertion and `as never` would be a cast with nothing to buy. The binding substance -- floating call, attached rejection handler -- is untouched.",
-          "The absence assertion `stderr does not yet contain the cleanup record` ships its permanent pair IN THE SAME TEST: absent while the handler is provably mid-stream, present after the cancellation. Without the pair it would also pass against a generator that had already finished on its own.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. The same fixture cancelled mid-stream WITHOUT a partialResultToken; assert the same finally record appears.",
-        implementation:
-          "Lift the close ABOVE the mode split, where the abort check already sits. Deliberate fake-it-then-evolve: the previous subtask places the fix one branch lower precisely so this criterion fails first. The PO wrote a whole criterion for this discriminator, so it earns a real RED rather than a perturbation note. NOT a shared-implementation-moment group -- two moments, by construction.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e37784",
-            message: "feat(completion): close the generator in aggregation mode as well",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED RED, OBSERVED AS THE PAIR ITSELF and on both runtimes: the run that added this test read `2 pass / 2 fail` -- the two streaming tests green while the two aggregation tests timed out waiting for the same cleanup record. The mode-split pair is therefore not only a perturbation artefact; it was the working state of the tree for one commit.",
-          "The mode is ASSERTED, not assumed: the aggregating test pins progressCount 0 before the cancel and again after exit, whose permanent pair is the streaming test observing the chunk arrive from the same fixture.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. A fixture whose finally throws; assert stderr names it with the `tsudoi:` PREFIX (never the body), the server survives, a later completion is answered normally, and the session exits 0.",
-        implementation:
-          "Catch the rejection from chunks.return() -- measured, a throwing finally rejects it -- and report through a cleanup-specific reporter. Do NOT rethrow: unlike a handler failure the client already has its -32800 and there is no response left to correct.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "a88d3a6",
-            message: "feat(completion): report cleanup that throws, without rethrowing it",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "SPLIT IN TWO under the new rule, and the split earned itself immediately: `reported` was EXPECTED RED (both runtimes, timing out on the missing `tsudoi: textDocument/completion cleanup failed:` prefix while the fixture's own marker showed cleanup had run and thrown), whereas `survives and answers a later completion` was BORN GREEN here -- under the still-awaited form the rejection is absorbed by answerUnlessCancelled's catch and answers -32800 anyway. Bundled, the survival claim would have had no perturbation that reached it; it is defended at HEAD by the RETHROW perturbation instead.",
-          "Non-ASCII on the new user-visible path, permanent: the fixture throws 後始末に失敗しました and the test asserts that string as well as the prefix. Reading the standing `never the message body` rule as it is already applied at test/cancellation.test.ts (prefix asserted for tsudoi's own prose, the fixture's message asserted separately) -- otherwise a brand-new stderr path ships with standing item 3 unproven.",
-          "The throwing fixture fails only when context.signal.aborted, which is EXACT rather than convenient: tsudoi closes a generator from its abort path alone. A finally that always threw could not answer a later completion, so `the server survived` would be unsayable in the very session that had the failure.",
-          "`throw` written as a named failCleanup() call: a bare throw in a finally trips oxlint's no-unsafe-finally (correctness). Naming it says what a disable comment would have silenced.",
-        ],
-      },
-      {
-        test: "EXPECTED RED -- measured, the awaited form never settles, so this test hangs to its timeout before the change. A fixture whose finally never settles: assert -32800 still arrives within an explicit timeout and a later completion is answered.",
-        implementation:
-          "Convert the inline await to the FLOATING form with the rejection handler still attached. Comment the language limit rather than testing it: a generator parked inside its own await queues return() behind the pending next(), so cleanup runs when it next settles -- a limit of async generators, not a defect.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "cd08905",
-            message: "feat(completion): fire the close instead of awaiting it",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED RED, OBSERVED in two shapes for one cause: deno reported `this test timed out after 6000ms`, bun's await on the response resolved only when the disposed child closed (code 0 from the helper's dead-server shape). Both say the same thing -- the awaited close never settles, so -32800 is never sent.",
-          "ORDERING, NOT TIMING, and the strong form held: at the instant the -32800 resolves, `finished cleanup` is ABSENT while `entered cleanup` is already PRESENT -- so the absence says the response overtook a cleanup that had provably started, not that nothing was closed. Opening the gate then makes the record appear. Ran 5x over both runtimes with no flake; the assertion cannot pass because the machine was fast, because only the test can release that gate.",
-          "The absence/presence pair is the same two markers, so it can never drift apart.",
-        ],
-      },
-      {
-        test: "BORN GREEN after the two preceding subtasks. For both the throwing-cleanup and hanging-cleanup sessions assert THE SESSION'S OWN EXIT CODE IS 0 and its shutdown/exit completed. PAIRED POSITIVE CONTROL, permanent: a fixture producing a floating rejection with no handler makes the same measurement observe EXIT 1. PERTURBATION: remove the rejection handler from chunks.return(); the throwing-cleanup session MUST redden to exit 1 while the aggregation-close assertion stays green.",
-        implementation:
-          "None expected. Measured: an unhandled rejection KILLS the child on both runtimes, so it cannot be laundered into whichever test runs next -- it destroys the session that caused it. Assert exit codes, never diagnostic text: bun prints a source frame, deno prints `error: Uncaught (in promise)`.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "f61846a",
-            message: "test(cleanup): assert the rejection where it cannot be laundered",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN as declared, no production change. Three sessions of one build: cleanup that threw exits 0, cleanup still PARKED at shutdown exits 0 (its gate is never opened, so it also shows a hung finally cannot hold up exit), and the control exits 1.",
-          "The plan's measurement re-confirmed independently before the test was written, with a standalone script holding the event loop open under a timer: exit 1 on bun AND deno, 0 bytes on stdout, and the `still alive` line never printed. So the death is prompt, not deferred to teardown.",
-          "The exit code is made the assertion that FLIPS, not one that a rejected await beats to it: shutdown goes through `issue` (which settles either way on a dead session) rather than `request`, and test/helpers/lsp.ts now swallows stdin write errors -- a dead session's broken pipe must not surface as an uncaught EPIPE from a stream nothing listens to. It hides nothing: a write that went nowhere still shows up as a response that never arrives.",
-        ],
-      },
-      {
-        test: "N/A -- DELIBERATELY NOT ASSERTED, per the PO's correction of their own Sprint 6 note. Asserting it would require making the example cancellable, the artifact-for-test-convenience change already declined.",
-        implementation:
-          "Add a finally to examples/tsudoi.config.ts's completion generator with a comment explaining it runs when the client cancels. It must read as DOCUMENTATION for a config author, not as a test hook. Bun-free, .ts extensions. Existing lifecycle tests stay green.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "138ccba",
-            message: "docs(example): show the config author where cleanup belongs",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "The block is EMPTY but for its comment, and that is the honest form: this example holds nothing to release, so a stand-in resource with a close() method would be test scaffolding wearing documentation's clothes. What a reader needs is WHEN it runs, which the comment says -- including that cleanup written after the loop instead would never run at all.",
-          "No stderr write, deliberately, and the reason is stated as CHECKED rather than as the one first drafted. The draft said it might redden an existing `stderr is clean` assertion; that premise is FALSE -- every such assertion (protocol.test.ts's tsudoiLines/readSnapshot, sync.test.ts's noise filter, cancellation.test.ts's `not.toContain(\"tsudoi:\")`) runs against snapshot-config.ts, completion-chunks.ts or hover-cancellable.ts, and the two suites that DO drive the example assert nothing about stderr. The real reason stands on its own: the example answers every completion in those suites, so a marker would be noise in the one channel a config author reads.",
-          "Suite unchanged at 137 pass either side of it, so the artifact-under-test stayed green without being asserted.",
-        ],
-      },
-      {
-        test: "N/A (structural) -- suite stays green.",
-        implementation:
-          "Place the cleanup reporter beside reportHandlerFailure, sharing the `tsudoi:` stderr convention but NOT the rethrow -- the asymmetry is the point and deserves the comment. Keep the scope boundary explicit there: client cancellation only, do not wire shutdown->cancel; an in-flight completion finishing across shutdown is correct-by-spec and deliberately unpinned, and this file is exactly where someone would assume otherwise.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "ca0535e",
-            message: "refactor(methods): name the cleanup reporter and its asymmetry",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "Structural, suite unchanged at 137 pass / 554 assertions either side.",
-          "One tidy beyond the plan: the `error.stack ?? error.message : String(error)` line was identical in both reporters, so it became failureDetail(). Both callers are pinned by existing assertions -- the handler line by cancellation/hover/completion tests, the cleanup line by this sprint's -- so the extraction is covered rather than merely believed.",
-        ],
-      },
-    ],
+    subtasks: [],
     impediments: [],
     decisions: [
+      "Shipped in 24b70a7, 7e37784, a88d3a6, cd08905, f61846a, 138ccba, ca0535e across 7 subtasks, plus 01e36d8 fixing a helper defect found while perturbing. Per-subtask records and 6 perturbation notes compacted here; git retains them.",
+      "P5 IS THE EMPIRICAL ARGUMENT FOR THE PO'S OWN NON-LAUNDERABLE CLAUSE: rethrowing inside the cleanup handler flips report, survival AND exit-code tests on deno, but on BUN only the exit code flips -- the session survived long enough to answer a later completion AND to print its tsudoi: line. Every survival-shaped and stderr-shaped assertion passed; only the session's own exit code caught it.",
+      "P4 REPRODUCED THE CONFLICT INSIDE THE RULING EXACTLY: awaiting the close before responding reddens the hang test by its own timeout on both runtimes WHILE the throwing-cleanup report test stays green. The awaited form satisfies one half of criterion 2 and makes the other impossible.",
+      "WEAKNESS found by reading then MEASURED, not built: a finally containing a YIELD hijacks the close. return() resolves {value, done:false} identically on both runtimes, leaving the generator suspended INSIDE its own finally, and the rest of that cleanup runs only if someone calls next() again, which tsudoi never does. Unlike the parked-in-await limit this one is INVISIBLE rather than documented -- and unlike that one tsudoi COULD detect it, since done === false is right there in the result. For the PO to rule on.",
+      "Subtask 6's original note justified `no stderr write` by a risk of reddening an existing stderr-clean assertion. THE DEVELOPER CHECKED AND THE PREMISE WAS FALSE -- the two suites driving the example assert nothing about stderr. The note now rests on the noise argument alone. The justification-standard rule catching exactly its intended shape, in the sprint it was filed.",
       "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
       "The measurement hands criterion 2 a STRONGER non-launderable assertion than a stderr match: since an unhandled rejection destroys the session that caused it, assert the session's own exit code rather than searching for text that another test could have produced.",
       "PO checklist, per-sprint additions: (1) the mode-split perturbation reported as a PAIR -- aggregation red WHILE streaming green; (2) the hang case proven by ORDERING not timing -- the finally's record absent at the moment -32800 arrives, present after release, which cannot pass because of fast hardware; (3) the unhandled-rejection assertion made where it cannot be laundered; (4) cleanup that throws proven by SURVIVAL as well as stderr -- a later completion answers normally.",
