@@ -61,6 +61,21 @@ test("close removes the document, leaving get() undefined and values() empty", (
   expect([...store.documents.values()]).toEqual([]);
 });
 
+// A client may legitimately send these after a close it did not see us process,
+// and a misbehaving one may send them for a document it never opened. Neither
+// may throw: a throw here reaches vscode-jsonrpc's notification path, where
+// nothing is waiting to report it to anyone.
+test("change and close for a uri never opened are ignored, not fatal", () => {
+  const store = createDocumentStore();
+
+  store.change({ textDocument: { uri, version: 2 }, contentChanges: [{ text: "ghost" }] });
+  store.close({ textDocument: { uri } });
+
+  // Ignored means ignored: not created implicitly either.
+  expect(store.documents.get(uri)).toBeUndefined();
+  expect([...store.documents.values()]).toEqual([]);
+});
+
 test("closing one of two open documents leaves exactly the other one", () => {
   const store = createDocumentStore();
   store.open(opened(uri, "first"));
