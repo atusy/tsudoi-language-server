@@ -19,7 +19,7 @@ import {
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
+import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -35,6 +35,27 @@ const stderrLogger: Logger = {
   info: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
   log: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
 };
+
+/**
+ * Reports a config handler's failure and rethrows it.
+ *
+ * vscode-jsonrpc answers the client -32603 for a throwing REQUEST handler, so
+ * the client knows the request failed -- but it consults the connection's
+ * logger for NOTIFICATION handlers only, leaving stderr empty and the config
+ * author debugging a handler they cannot see fail. Hence tsudoi's own line.
+ *
+ * The rethrow is the load-bearing half. Absorbing the failure here would answer
+ * the client null, which reads as `nothing to say about this position` and
+ * hides a broken handler behind a plausible answer.
+ *
+ * Only the reporting is shared: PBI-4's completion handler is an async
+ * generator, so the CALL differs while this failure path does not.
+ */
+function reportHandlerFailure(method: Method, error: unknown): never {
+  const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  process.stderr.write(`tsudoi: ${method} handler failed: ${detail}\n`);
+  throw error;
+}
 
 /**
  * Starts serving LSP over stdio. Called only after the config has loaded, so
@@ -106,16 +127,7 @@ export function startServer(
     try {
       return (await handler?.(context, params)) ?? null;
     } catch (error) {
-      // vscode-jsonrpc turns this throw into a -32603 for the client, but it
-      // consults the connection's logger for NOTIFICATION handlers only: a
-      // failed request leaves nothing on stderr, and the config author is left
-      // debugging a handler they cannot see fail. So tsudoi reports it itself.
-      const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
-      process.stderr.write(`tsudoi: textDocument/hover handler failed: ${detail}\n`);
-      // Rethrown, never swallowed: absorbing this would answer the client null,
-      // which is indistinguishable from `no hover here` -- the failure the
-      // criterion exists to prevent.
-      throw error;
+      reportHandlerFailure("textDocument/hover", error);
     }
   });
 
