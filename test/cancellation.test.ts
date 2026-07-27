@@ -159,6 +159,30 @@ for (const runtime of runtimes) {
       }
     });
 
+    // The same pre-dispatch path on the streaming side, where a chunk is at
+    // stake rather than just a return value: the generator is pulled once and
+    // does yield, and that chunk must be discarded before it reaches the wire.
+    test("a completion cancelled before it is dispatched answers -32800 and streams nothing", async () => {
+      const session = LspSession.start(runtime, completionCancel);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        // Gate open from the start: nothing releases this handler but itself.
+        didOpen(session, gateOpen);
+
+        const inFlight = session.issueThenCancel("textDocument/completion", completionParams());
+        expect((await inFlight.response).error?.code).toBe(requestCancelled);
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.progressCount).toBe(0);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // The response shape is PINNED, for both methods, rather than left to
     // whatever the handler happened to produce. LSP 3.17 permits answering a
     // cancelled request normally; tsudoi does not, because the client has
