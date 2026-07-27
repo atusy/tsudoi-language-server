@@ -339,9 +339,13 @@ const scrum: ScrumDashboard = {
         implementation:
           "Guard the map lookups: no throw, no implicit creation. Resist non-null assertions here -- they are exactly what would make this fatal.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          { hash: "73b2677", message: "test(documents): pin the unopened uri", phase: "green" },
+        ],
+        notes: [
+          "Born green -- the guard shipped inside the previous subtask's change/close. RED manufactured by replacing the lookup guard with `byUri.get(uri)!`: only `change and close for a uri never opened are ignored, not fatal` failed.",
+        ],
       },
       {
         test: "N/A (structural) -- the whole Sprint 1 and Sprint 2 suite must stay green, unchanged.",
