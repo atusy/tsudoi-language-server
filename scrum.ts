@@ -343,9 +343,11 @@ const scrum: ScrumDashboard = {
         implementation:
           "Parameterize the harness over runtime descriptors for bun and deno, gated by the preflight. Fixture configs must stay Bun-free because Deno executes them, and import types by relative path (the published specifier is PBI-7).",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [{ hash: "f5f76a0", message: "test: lifecycle on deno", phase: "green" }],
+        notes: [
+          "No RED: deno passed on first run because src/ was already runtime-agnostic. Verified the deno branch is live by perturbing its run args and seeing all three deno tests fail.",
+        ],
       },
     ],
     impediments: [],
