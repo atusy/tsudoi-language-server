@@ -9,8 +9,8 @@ import {
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixedHover } from "./fixtures/hover-fixed.ts";
-import { recoveredHover, rejectMessage } from "./fixtures/hover-rejects.ts";
-import { throwMessage } from "./fixtures/hover-throws.ts";
+import { recoveredHover as rejectsRecovered, rejectMessage } from "./fixtures/hover-rejects.ts";
+import { recoveredHover as throwsRecovered, throwMessage } from "./fixtures/hover-throws.ts";
 import { fixture } from "./helpers/spawn.ts";
 
 const hoverFixed = fixture("hover-fixed.ts");
@@ -20,8 +20,18 @@ const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.
 // Two ways for the same handler to fail: one before any promise exists, one a
 // turn of the event loop later. They reach the dispatch by different paths.
 const failingFixtures = [
-  { how: "throws", path: fixture("hover-throws.ts"), message: throwMessage },
-  { how: "rejects", path: fixture("hover-rejects.ts"), message: rejectMessage },
+  {
+    how: "throws",
+    path: fixture("hover-throws.ts"),
+    message: throwMessage,
+    recovered: throwsRecovered,
+  },
+  {
+    how: "rejects",
+    path: fixture("hover-rejects.ts"),
+    message: rejectMessage,
+    recovered: rejectsRecovered,
+  },
 ];
 
 const runtimes = [bunRuntime, denoRuntime];
@@ -111,7 +121,7 @@ for (const runtime of runtimes) {
       }
     });
 
-    for (const { how, path, message } of failingFixtures) {
+    for (const { how, path, message, recovered } of failingFixtures) {
       test(`a hover handler that ${how} is reported and answered, and the next one succeeds`, async () => {
         const session = LspSession.start(runtime, path);
         try {
@@ -134,7 +144,7 @@ for (const runtime of runtimes) {
             "textDocument/hover",
             hoverParams(1, 1),
           );
-          expect(second).toEqual(recoveredHover);
+          expect(second).toEqual(recovered);
 
           expect(await session.request<null>("shutdown", null)).toBeNull();
           session.notify("exit", null);
