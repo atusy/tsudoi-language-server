@@ -33,72 +33,35 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-10",
-      story: {
-        role: "editor user",
-        capability:
-          "get a spec-correct response instead of a plausible but wrong one when their client sends something the specification does not allow",
-        benefit:
-          "a client bug surfaces as an error or a correct fallback, never as silently missing information",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A request arriving before initialize is answered -32002 ServerNotInitialized",
-          verification:
-            "Test sends hover before initialize and asserts the code, then asserts initialize still succeeds afterwards, and that exit sent before any initialize still exits 1 rather than hanging",
-        },
-        {
-          criterion:
-            "After shutdown a request is answered -32600 InvalidRequest and a notification is ignored",
-          verification:
-            "Test sends hover after shutdown asserting the code, sends didOpen after shutdown asserting zero stderr and that the document never appears, then asserts exit still returns 0; the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr",
-        },
-        {
-          criterion:
-            "A partialResultToken that is not a valid ProgressToken is treated as absent, with a diagnosable trace",
-          verification:
-            'A request sends partialResultToken as null; assert the client receives every item the handler produced in one aggregated response and that stderr names the invalid token, while the valid falsy tokens 0 and "" still stream',
-        },
-        {
-          criterion:
-            "An unknown method after initialize still receives -32601 MethodNotFound, not -32002",
-          verification:
-            "Test sends an unregistered method after initialize and asserts -32601; a gate answering -32002 for everything unregistered reddens it",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "ORGANISING PRINCIPLE: diagnosability is proportional to harm. An invalid token loses user items, so it reports; a post-shutdown notification changes nothing observable, so it stays silent like PBI-2's unopened URI. The two rulings are not exceptions to each other.",
-        "Remedy chosen at refinement: normalise-and-report. -32602 would cost an editor user every completion for their client's serialisation quirk; normalising silently is the invisible-client-bug failure mode. The trace must NOT be per request -- once per session is enough, and flooding an LSP log makes it useless for everything else.",
-        "Validate partialResultToken ONLY. A seam with one call site is a framework justified by one user, which PBI-3 rejected and PBI-1 withdrew. The STORY is protocol-violation handling; the IMPLEMENTATION is three concrete cases and no framework.",
-        'The falsy-valid-token guard is a CRITERION, not a note: ProgressToken is integer | string, so 0 and "" are valid and falsy, and `if (!token)` fixes the null case while breaking legitimate clients. Only an assertion catches that.',
-        "If the empty string does not survive connection.sendProgress, the binding half of criterion 3 is 0 alone, which still defeats a truthiness fix. DISTINGUISH THE FAILURE MODE: throwing is covered by the handler-failure path, but silently DROPPING is the same silent-item-loss defect as the null token and takes the same normalise-and-report remedy.",
-        "The pre-initialize gate must not swallow -32601: an unknown method after initialize must still get MethodNotFound, not ServerNotInitialized. Nothing currently asserts -32601, so a green suite would not show that regression.",
-        "Boundary closed by decision, not omission: unknown methods already get -32601 from vscode-jsonrpc, and malformed positions belong to the config author's handler, which owns the position math.",
-        'CONFIRM EMPIRICALLY before treating the criteria as binding: that `exit` is the correct notification carve-out before initialize in the LSP version targeted, and that 0 and "" survive connection.sendProgress. Both are cheap probes and both would ship a wrong criterion if assumed.',
-      ],
-    },
-    {
       id: "PBI-11",
       story: {
         role: "config author",
-        capability: "have their handler's cleanup run when a request is abandoned",
+        capability: "have their completion handler's cleanup run when a request is abandoned",
         benefit:
           "resources a streaming handler holds are released instead of leaking on every superseded keystroke",
       },
       acceptance_criteria: [
         {
           criterion:
-            "A cancelled completion closes the generator, so a finally block in the handler runs",
+            "A cancelled completion closes the generator in both streaming and aggregation modes",
           verification:
-            "A fixture generator records in its finally block; cancel mid-stream and assert the record appears, and that it does not appear when the generator is left suspended",
+            "A fixture generator records in its finally; cancel mid-stream with a partialResultToken and again without one, asserting the record appears in both runs -- closing only the streaming branch reddens the second",
+        },
+        {
+          criterion:
+            "Cleanup that throws is reported, and cleanup that hangs does not delay the response",
+          verification:
+            "One fixture whose finally throws: assert stderr names it, the server survives and a later completion answers. One whose finally never settles: assert -32800 still arrives, with the rejection asserted where it cannot be laundered into another test's result",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "src/methods.ts returns out of the driving loop on abort without calling chunks.return(), so the generator stays suspended at its yield. A manual next() loop does not close an iterator the way for await...of does.",
-        "Completion is the MOST-CANCELLED request in LSP -- every keystroke supersedes the previous one -- so an unclosed generator leaks on the hottest path in the protocol, and the config author most likely to hit it is exactly the one streaming was built for, holding a database handle or HTTP stream across yields.",
-        "This is when examples/tsudoi.config.ts should gain cancellation coverage: a try/finally in its generator is exemplary code a config author should see, unlike making the example artificially slow, which would be changing the artifact for test convenience.",
+        "Scope boundary: this PBI covers CLIENT CANCELLATION, not shutdown. An in-flight completion deliberately finishes across shutdown -- LSP constrains the client, not the server, and the window before exit is negligible. Decided at Sprint 7 Review and UNPINNED ON PURPOSE, since cancelling at shutdown would be equally acceptable; a test would pin an arbitrary choice rather than a requirement.",
+        "Completion ONLY. A promise has no close operation, so a hover handler's own finally runs when its awaited work settles -- extending this to hover would mean INVENTING an abandonment mechanism rather than using one the language provides.",
+        "src/methods.ts returns out of the driving loop on abort without calling chunks.return(), leaving the generator suspended at its yield. The abort check sits ABOVE the mode split, so a fix applied one branch lower would be invisible in aggregation -- that is the discriminator, and why one criterion was not enough.",
+        "A generator parked inside its own await cannot be closed early: async generator requests are queued, so return() waits for the pending next() regardless. Cleanup runs when it next settles -- a limit of the language, not a defect.",
+        "The example config gains a finally only if it reads as documentation. PO correcting their own Sprint 6 note: asserting it would pin it under standing item 6, and pinning requires making the example cancellable -- the artifact-for-test-convenience change already declined. Cancellation coverage stays in fixtures.",
+        "Criterion 2's non-launderable clause is load-bearing: Sprint 6 showed an unhandled rejection being attributed to whichever test ran next, across runtimes, twice. A test asserting cleanliness in its own body can pass while the rejection surfaces elsewhere.",
       ],
     },
     {
@@ -196,6 +159,26 @@ const scrum: ScrumDashboard = {
 
   completed: [
     {
+      number: 7,
+      pbi_id: "PBI-10",
+      goal: "Make tsudoi safe to hand to a stranger -- when a client sends what the specification forbids, it gets an error or a correct fallback with a trace, never silently fewer items than the handler produced.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in adcff14, 8e71fcc, eb616dd, e50ecc2, 63a87e4, adc95ef, 4b70591, 0c804b9, 581a422, 1b0b2d1 across 9 subtasks. Per-subtask records and 12 perturbation notes compacted here; git retains them.",
+        "SEVENTH named target beyond the PO's six: pre-initialize notification DROPPING is LSP behaviour with no acceptance criterion. Rather than ship it unproven it got a permanent test and its own perturbation -- and it is what makes subtask 1's exit carve-out load-bearing.",
+        "WEAKNESS, found by reading and NOT built: an in-flight completion streams $/progress past shutdown. The gate is consulted once, at dispatch, so a completion started before shutdown keeps calling sendProgress and its chunks and response arrive AFTER the shutdown response is on the wire. No test sends that sequence, so it is unproven in either direction. Arguably correct -- LSP forbids accepting NEW requests -- but this sprint closed the door only at dispatch.",
+        "ACCEPTED with its justification CORRECTED by the PO, because a note carrying a false premise is worse than no note: isProgressToken admits integers outside LSP's int32 (Number.isInteger(2**40) is true). Rejecting would NOT lose the client's items -- under normalise-and-report an invalid token aggregates, so every item still arrives in the response body. The real reason to honour it is that the CLIENT chose that token and can correlate it, so honouring delivers the streaming they asked for, whereas rejecting silently downgrades a working client to aggregation plus a stderr line it did not need.",
+        "UNPROVEN, reported as such: the arrow wrapper keeping methods.ts away from the lifecycle mutators is covered by INFERENCE from two branch perturbations, not by a perturbation of its own.",
+        "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
+        "PROBE 1 with its limit stated: vscode-languageserver-protocol@3.18.2 (LSP 3.17); ErrorCodes.ServerNotInitialized is a real constant. Bare `exit` with no initialize already exits 1 with empty stdout on both runtimes, and NO test sends it -- so the carve-out is confirmed NECESSARY, since a gate dropping all pre-initialize notifications turns a measured exit=1 into a hang with nothing objecting. The Developer verified the version, the constant and the behaviour, but NOT the specification prose -- no spec text ships in the package. That sentence is a human-side check.",
+        "The two opening subtasks are born-green REGRESSION GUARDS that exist to object when the gate lands. Ordering them first is the point: they must exist before the change they guard against.",
+        "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
+        "PO checklist, per-sprint additions: (1) ONE PERTURBATION PER SUB-CLAIM, each naming its target assertion -- criteria 1 and 2 bundle three claims each, and a single gate-widening perturbation flips whichever assertion runs first and leaves the rest undefended, which is precisely the Sprint 6 failure; six named targets, not two; (2) the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr; (3) the falsy-token discriminator as a PAIR -- implement as `if (!token)` and confirm the 0 test reddens WHILE the null test stays green, since either half alone proves nothing; (4) the once-per-session trace pinned, perturbed by emitting per request -- the only item guarding a requirement stated as a value constraint rather than a mechanism; (5) the normalised response asserted ITEM BY ITEM, not by count, since a count passes if the right number of wrong items arrives.",
+      ],
+    },
+    {
       number: 6,
       pbi_id: "PBI-5",
       goal: "Make slow sources safe as well as first-class -- when the client cancels, context.signal aborts and a config author's handler can stop -- so the streaming API built last sprint never leaves abandoned work running.",
@@ -277,26 +260,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 7,
-    pbi_id: "PBI-10",
-    goal: "Make tsudoi safe to hand to a stranger -- when a client sends what the specification forbids, it gets an error or a correct fallback with a trace, never silently fewer items than the handler produced.",
-    status: "review",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in adcff14, 8e71fcc, eb616dd, e50ecc2, 63a87e4, adc95ef, 4b70591, 0c804b9, 581a422, 1b0b2d1 across 9 subtasks. Per-subtask records and 12 perturbation notes compacted here; git retains them.",
-      "SEVENTH named target beyond the PO's six: pre-initialize notification DROPPING is LSP behaviour with no acceptance criterion. Rather than ship it unproven it got a permanent test and its own perturbation -- and it is what makes subtask 1's exit carve-out load-bearing.",
-      "WEAKNESS, found by reading and NOT built: an in-flight completion streams $/progress past shutdown. The gate is consulted once, at dispatch, so a completion started before shutdown keeps calling sendProgress and its chunks and response arrive AFTER the shutdown response is on the wire. No test sends that sequence, so it is unproven in either direction. Arguably correct -- LSP forbids accepting NEW requests -- but this sprint closed the door only at dispatch.",
-      "WEAKNESS, found by reading and NOT built: isProgressToken accepts integers outside LSP's int32. Number.isInteger(2**40) is true, so a 2^40 token passes as valid. Rejecting it would LOSE the client's items, contrary to harm-proportionality, so accepting is probably right -- but it is an undocumented deviation from the type the doc comment cites.",
-      "UNPROVEN, reported as such: the arrow wrapper keeping methods.ts away from the lifecycle mutators is covered by INFERENCE from two branch perturbations, not by a perturbation of its own.",
-      "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
-      "PROBE 1 with its limit stated: vscode-languageserver-protocol@3.18.2 (LSP 3.17); ErrorCodes.ServerNotInitialized is a real constant. Bare `exit` with no initialize already exits 1 with empty stdout on both runtimes, and NO test sends it -- so the carve-out is confirmed NECESSARY, since a gate dropping all pre-initialize notifications turns a measured exit=1 into a hang with nothing objecting. The Developer verified the version, the constant and the behaviour, but NOT the specification prose -- no spec text ships in the package. That sentence is a human-side check.",
-      "The two opening subtasks are born-green REGRESSION GUARDS that exist to object when the gate lands. Ordering them first is the point: they must exist before the change they guard against.",
-      "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
-      "PO checklist, per-sprint additions: (1) ONE PERTURBATION PER SUB-CLAIM, each naming its target assertion -- criteria 1 and 2 bundle three claims each, and a single gate-widening perturbation flips whichever assertion runs first and leaves the rest undefended, which is precisely the Sprint 6 failure; six named targets, not two; (2) the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr; (3) the falsy-token discriminator as a PAIR -- implement as `if (!token)` and confirm the 0 test reddens WHILE the null test stays green, since either half alone proves nothing; (4) the once-per-session trace pinned, perturbed by emitting per request -- the only item guarding a requirement stated as a value constraint rather than a mechanism; (5) the normalised response asserted ITEM BY ITEM, not by count, since a count passes if the right number of wrong items arrives.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 6,
