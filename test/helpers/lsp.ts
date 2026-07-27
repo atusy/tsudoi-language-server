@@ -129,6 +129,11 @@ export class LspSession {
   readonly arrivals: Arrival[] = [];
   /** Every message stdout carried, as it was framed. */
   readonly frames: Frame[] = [];
+  /**
+   * Every failure the child's stdin reported, in order. Empty for the whole
+   * life of a healthy session, which is what makes a non-empty one evidence.
+   */
+  readonly writeFailures: string[] = [];
   readonly #progressWaiters: ProgressWaiter[] = [];
 
   private constructor(child: ChildProcessWithoutNullStreams) {
@@ -155,10 +160,17 @@ export class LspSession {
     });
     // A session that DIED leaves stdin broken, and a test that then writes to
     // it must fail on its own assertion -- `the exit code was 1` -- rather than
-    // on an uncaught EPIPE from a stream nothing is listening to. Ignoring the
-    // error hides nothing: a write that went nowhere shows up as a response
-    // that never arrives.
-    child.stdin.on("error", () => {});
+    // on an uncaught EPIPE from a stream nothing is listening to.
+    //
+    // RECORDED rather than ignored, which is the correction: the previous
+    // reasoning here was that ignoring hid nothing, since a write that went
+    // nowhere shows up as a response that never arrives. That is only true of
+    // REQUESTS, and it describes a HANG. A `notify` awaits nothing at all, so a
+    // notification whose write failed left no trace anywhere -- the helper
+    // swallowed the one piece of evidence that the client never spoke.
+    child.stdin.on("error", (error: Error) => {
+      this.writeFailures.push(error.message);
+    });
   }
 
   /**
@@ -260,9 +272,10 @@ export class LspSession {
     const id = this.#nextId++;
     const response = new Promise<ResponseMessage>((resolve) => {
       this.#pend(id, resolve);
-      this.#child.stdin.write(
+      this.#write(
         this.#frame({ jsonrpc: "2.0", id, method, params }) +
           this.#frame({ jsonrpc: "2.0", method: "$/cancelRequest", params: { id } }),
+        `${method} #${id} with its cancellation`,
       );
     });
     return { id, response };
@@ -305,6 +318,25 @@ export class LspSession {
         throw new Error(
           `timed out after ${timeoutMs}ms waiting for stderr ${text}; saw: ${this.stderr}`,
         );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+
+  /**
+   * Resolves with the first stdin failure, and REJECTS on timeout saying none
+   * arrived -- the stream reports its error on a later turn, so a test that
+   * merely read `writeFailures` would be racing it.
+   */
+  async waitForWriteFailure(timeoutMs = 2000): Promise<string> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const [first] = this.writeFailures;
+      if (first !== undefined) {
+        return first;
+      }
+      if (Date.now() > deadline) {
+        throw new Error(`timed out after ${timeoutMs}ms waiting for a stdin write to fail`);
       }
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
@@ -408,7 +440,34 @@ export class LspSession {
   }
 
   #send(message: unknown): void {
-    this.#child.stdin.write(this.#frame(message));
+    const { method, id } = message as { method?: string; id?: number };
+    this.#write(this.#frame(message), `${method ?? "message"}${id === undefined ? "" : ` #${id}`}`);
+  }
+
+  /**
+   * Writes to the child's stdin, and records it when the bytes went nowhere.
+   *
+   * MEASURED under bun 1.3.13, and it is why the stream's own reporting is not
+   * enough: once the child has died, `write()` RETURNS TRUE and its callback is
+   * invoked with NO ERROR, while `writable` is false and `destroyed` is true.
+   * node would report ERR_STREAM_DESTROYED; here the stream state is the only
+   * evidence there is. The callback is still consulted for the case the stream
+   * does report -- an EPIPE while it is still open.
+   *
+   * A `notify` awaits nothing, so without this a notification written to a dead
+   * session left no trace whatsoever: not a rejected promise, not a missing
+   * response, nothing.
+   */
+  #write(payload: string, what: string): void {
+    if (this.#child.stdin.writable === false) {
+      this.writeFailures.push(`${what} was not written: stdin is closed`);
+      return;
+    }
+    this.#child.stdin.write(payload, (error?: Error | null) => {
+      if (error !== undefined && error !== null) {
+        this.writeFailures.push(`${what} failed to write: ${error.message}`);
+      }
+    });
   }
 
   #drain(): void {
