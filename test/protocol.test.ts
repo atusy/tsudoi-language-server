@@ -3,8 +3,11 @@ import { fileURLToPath } from "node:url";
 import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { readSnapshot } from "./helpers/snapshot.ts";
+import { fixture } from "./helpers/spawn.ts";
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
+const snapshotConfig = fixture("snapshot-config.ts");
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -32,6 +35,20 @@ function hoverParams(line: number, character: number): unknown {
 
 /** What the example config answers over `こんにちは` at the first character. */
 const exampleHover = "**こんにちは** はカーソル位置の語です。";
+
+/**
+ * What the SERVER itself said on stderr, the fixture's own snapshot line
+ * excluded. `tsudoi:` is the prefix of every line the connection logger and the
+ * handler-failure reporter write, so this is the one measurement that answers
+ * `did tsudoi complain`.
+ *
+ * Used for the absence half AND the presence half of the silence claims below,
+ * deliberately the same function: a `nothing was logged` assertion measured by
+ * a function that can never see anything is satisfied by a broken measurement.
+ */
+function tsudoiLines(session: LspSession): string[] {
+  return session.stderr.split("\n").filter((line) => line.startsWith("tsudoi:"));
+}
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
@@ -133,6 +150,100 @@ for (const runtime of runtimes) {
           // assertion fails as a timeout rather than as a wrong code.
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
+
+    // Harm-proportionality, the same ruling PBI-2 made for an unopened URI: a
+    // notification produces no response, so a client cannot be told anything
+    // about it, and there is nothing for it to have got wrong that it could
+    // act on. Dropping it changes nothing observable, so it stays SILENT --
+    // unlike the invalid token below, which loses the user items.
+    // Split from the silence claim below on purpose: one test per sub-claim is
+    // what lets a perturbation aimed at the drop be seen NOT to disturb the
+    // silence, and vice versa. Bundled, whichever assertion ran first would
+    // mask the other.
+    test(
+      "didOpen after shutdown leaves the document absent, and exit still returns 0",
+      async () => {
+        const session = LspSession.start(runtime, snapshotConfig);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
+          await session.request<null>("shutdown", null);
+          // WELL-FORMED, and after shutdown: the handler would succeed if it
+          // ran, so an empty store means the notification was dropped rather
+          // than that it failed.
+          didOpen(session, "こんにちは");
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+
+          expect(readSnapshot(session.stderr)).toEqual([]);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
+
+    test(
+      "the dropped didOpen is not reported on stderr, in a run where a failing one is",
+      async () => {
+        // The PAIR, permanent: the same tsudoiLines measurement in a session
+        // where a notification handler really does fail. Without it, `zero
+        // tsudoi: lines` would also pass against a stderr nobody ever reads.
+        const noisy = LspSession.start(runtime, snapshotConfig);
+        const quiet = LspSession.start(runtime, snapshotConfig);
+        try {
+          await noisy.request("initialize", initializeParams);
+          // Malformed on purpose, BEFORE shutdown, so the handler is reached
+          // and throws for real rather than by an injected fault.
+          noisy.notify("textDocument/didOpen", {});
+          await noisy.request<null>("shutdown", null);
+          noisy.notify("exit", null);
+          expect(await noisy.waitForExit()).toBe(0);
+          expect(tsudoiLines(noisy).join("\n")).toContain("textDocument/didOpen");
+
+          await quiet.request("initialize", initializeParams);
+          quiet.notify("initialized", {});
+          await quiet.request<null>("shutdown", null);
+          didOpen(quiet, "こんにちは");
+          quiet.notify("exit", null);
+          expect(await quiet.waitForExit()).toBe(0);
+
+          expect(tsudoiLines(quiet)).toEqual([]);
+        } finally {
+          noisy.dispose();
+          quiet.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
+
+    // The other side of the same drop, and what makes subtask 1's carve-out
+    // load-bearing: LSP drops notifications sent before initialize too, with
+    // `exit` the one exception. No acceptance criterion asks for this, so it
+    // is pinned here rather than left to be discovered by a client.
+    test(
+      "didOpen before initialize is dropped, and the session still serves afterwards",
+      async () => {
+        const session = LspSession.start(runtime, snapshotConfig);
+        try {
+          didOpen(session, "こんにちは");
+
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
+          await session.request<null>("shutdown", null);
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+
+          expect(readSnapshot(session.stderr)).toEqual([]);
+          expect(tsudoiLines(session)).toEqual([]);
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();

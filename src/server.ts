@@ -113,6 +113,20 @@ export function startServer(
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
+  /**
+   * Whether a notification arriving now may be acted on.
+   *
+   * Outside the serving window LSP says to DROP one, silently: a notification
+   * has no response, so there is nothing a client could be told and nothing it
+   * could act on -- the same ruling PBI-2 made for an unopened URI. `exit` is
+   * deliberately not routed through here; it is the one notification that must
+   * be obeyed at every moment of the lifecycle, and a gate written without
+   * that exception leaves the process alive forever.
+   */
+  function notificationAccepted(): boolean {
+    return initialized === true && hasShutdown === false;
+  }
+
   connection.onNotification(InitializedNotification.type, () => {
     // The client is ready. Registered rather than left unhandled so that
     // vscode-jsonrpc does not log it as unanswered on every session.
@@ -121,14 +135,23 @@ export function startServer(
   // The three sync notifications are pure delegation: what a full-sync buffer
   // means is documents.ts's business, and none of them answers the client.
   connection.onNotification(DidOpenTextDocumentNotification.type, (params) => {
+    if (notificationAccepted() === false) {
+      return;
+    }
     documents.open(params);
   });
 
   connection.onNotification(DidChangeTextDocumentNotification.type, (params) => {
+    if (notificationAccepted() === false) {
+      return;
+    }
     documents.change(params);
   });
 
   connection.onNotification(DidCloseTextDocumentNotification.type, (params) => {
+    if (notificationAccepted() === false) {
+      return;
+    }
     documents.close(params);
   });
 
