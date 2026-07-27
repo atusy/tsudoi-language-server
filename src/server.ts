@@ -88,10 +88,16 @@ export function startServer(
     };
     // Per-method and spelled out, not derived from the shape of `methods`: a
     // client is entitled to send whatever it was told about, so each capability
-    // is claimed only where the config can actually answer it. PBI-4 makes the
-    // same call again for completionProvider.
+    // is claimed only where the config can actually answer it.
     if (config.methods?.["textDocument/hover"] !== undefined) {
       capabilities.hoverProvider = true;
+    }
+    // Empty options, not triggerCharacters: TsudoiConfig has no surface for a
+    // config author to declare them, and claiming trigger characters nobody
+    // configured would have the client ask at moments the handler knows
+    // nothing about.
+    if (config.methods?.["textDocument/completion"] !== undefined) {
+      capabilities.completionProvider = {};
     }
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
