@@ -24,6 +24,7 @@ import {
 const completionCleanup = fixture("completion-cleanup.ts");
 const cleanupThrows = fixture("completion-cleanup-throws.ts");
 const cleanupHangs = fixture("completion-cleanup-hangs.ts");
+const unhandledRejection = fixture("completion-unhandled-rejection.ts");
 
 /**
  * The line a config author is meant to act on -- the PREFIX tsudoi composes,
@@ -74,6 +75,9 @@ function openGate(session: LspSession): void {
 
 /** A test's own timeout, below `bun test`'s default, so a park fails by name. */
 const gatedTimeoutMs = 6000;
+
+/** Three sessions in one test, so the same margin per session as the others. */
+const exitTimeoutMs = 18000;
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
@@ -291,6 +295,74 @@ for (const runtime of runtimes) {
         }
       },
       gatedTimeoutMs,
+    );
+
+    // Where the rejection is asserted so it CANNOT be laundered. An unhandled
+    // rejection does not leave a trace for another test to find -- it destroys
+    // the session that caused it -- so the session's OWN exit code is the
+    // measurement, and the third session is the permanent proof that this
+    // measurement can observe a death when there is one.
+    //
+    // Exit codes, never diagnostic text: bun prints a source frame here and
+    // deno prints `error: Uncaught (in promise)`, and a suite that asserted
+    // either would be pinning a runtime's wording.
+    test(
+      "cleanup that threw or is still parked leaves the session exiting 0, where an unhandled rejection exits 1",
+      async () => {
+        const threw = LspSession.start(runtime, cleanupThrows);
+        const parked = LspSession.start(runtime, cleanupHangs);
+        const control = LspSession.start(runtime, unhandledRejection);
+        try {
+          for (const session of [threw, parked, control]) {
+            await session.request<InitializeResult>("initialize", initializeParams);
+            session.notify("initialized", {});
+            didOpen(session, "hold");
+          }
+
+          for (const [session, marker] of [
+            [threw, throwsCleanupMarker],
+            [parked, cleanupEntered],
+          ] as const) {
+            const inFlight = session.issue(
+              "textDocument/completion",
+              completionParams(streamingToken),
+            );
+            await session.waitForProgress(1);
+            session.cancel(inFlight.id);
+            expect((await inFlight.response).error?.code).toBe(requestCancelled);
+            // Cleanup has provably run -- and for `parked`, is still running:
+            // its gate is never opened, so this session shuts down with cleanup
+            // outstanding, which is exactly the state that must not hold it up.
+            await session.waitForStderr(marker, 1000);
+          }
+
+          // The control is not cancelled at all: its handler simply drops a
+          // rejection nothing handles, the way tsudoi would if the close were
+          // fired with `void` instead of a handler.
+          control.issue("textDocument/completion", completionParams(streamingToken));
+          expect(await control.waitForExit()).toBe(1);
+          // The runtime's own crash diagnostic went to stderr, not into the
+          // stream a client is framing.
+          expect(control.unframedStdoutBytes).toBe(0);
+
+          for (const session of [threw, parked]) {
+            // `issue`, not `request`: a session that died settles this with a
+            // wire-shaped error, so the assertion that flips is the EXIT CODE
+            // rather than an await that rejects one line earlier.
+            const shutdown = session.issue("shutdown", null);
+            await shutdown.response;
+            session.notify("exit", null);
+            expect(await session.waitForExit()).toBe(0);
+            expect((await shutdown.response).error).toBeUndefined();
+            expect(session.unframedStdoutBytes).toBe(0);
+          }
+        } finally {
+          threw.dispose();
+          parked.dispose();
+          control.dispose();
+        }
+      },
+      exitTimeoutMs,
     );
   });
 }

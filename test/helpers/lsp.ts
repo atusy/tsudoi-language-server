@@ -132,6 +132,12 @@ export class LspSession {
     child.stderr.on("data", (chunk: Buffer) => {
       this.#stderrChunks.push(chunk);
     });
+    // A session that DIED leaves stdin broken, and a test that then writes to
+    // it must fail on its own assertion -- `the exit code was 1` -- rather than
+    // on an uncaught EPIPE from a stream nothing is listening to. Ignoring the
+    // error hides nothing: a write that went nowhere shows up as a response
+    // that never arrives.
+    child.stdin.on("error", () => {});
   }
 
   static start(runtime: Runtime, configPath: string): LspSession {
