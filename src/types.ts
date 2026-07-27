@@ -1,3 +1,9 @@
+// THE PUBLISHED SURFACE. package.json maps `@atusy/tsudoi/types` here, and this
+// is the only path a config author outside the repo can reach by bare specifier,
+// so every exported name below is public API and renaming one breaks configs we
+// cannot see. The reasoning for keeping the package types-only lives on the
+// `//exports` key in package.json -- oxfmt sorts unknown keys to the tail of the
+// file, so it sits at the bottom rather than beside `exports`.
 import type {
   CompletionItem,
   CompletionParams,
