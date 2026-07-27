@@ -4,13 +4,11 @@ import {
   DidChangeTextDocumentNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
-  ErrorCodes,
   ExitNotification,
   InitializedNotification,
   InitializeRequest,
   type InitializeResult,
   type Logger,
-  ResponseError,
   type ServerCapabilities,
   ShutdownRequest,
   StreamMessageReader,
@@ -18,6 +16,7 @@ import {
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
+import { createLifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
 
@@ -54,41 +53,17 @@ export function startServer(
     stderrLogger,
   );
 
-  let hasShutdown = false;
-  let initialized = false;
-
-  /**
-   * The error a request must be answered with at this moment in the lifecycle,
-   * or undefined when it may be served.
-   *
-   * Consulted by the handlers tsudoi REGISTERED, never by the dispatch as a
-   * whole -- that is what leaves a method nobody registered falling through to
-   * vscode-jsonrpc's MethodNotFound. `not initialized yet` and `no such method`
-   * are different diagnoses, and a client is entitled to both.
-   */
-  function requestRejection(): ResponseError<void> | undefined {
-    if (initialized === false) {
-      return new ResponseError<void>(
-        ErrorCodes.ServerNotInitialized,
-        "The server has not been initialized; send initialize first.",
-      );
-    }
-    // A separate state and a separate code. `not ready yet` and `already done`
-    // are not the same refusal, and a client told ServerNotInitialized after
-    // shutdown would reasonably retry the handshake.
-    if (hasShutdown === true) {
-      return new ResponseError<void>(
-        ErrorCodes.InvalidRequest,
-        "The server has shut down; only exit is accepted now.",
-      );
-    }
-    return undefined;
-  }
+  // Every question about WHEN a message is allowed goes to this one object.
+  // The gate it backs is consulted by the handlers tsudoi REGISTERED, never by
+  // the dispatch as a whole -- that is what leaves a method nobody registered
+  // falling through to vscode-jsonrpc's MethodNotFound, since `not initialized
+  // yet` and `no such method` are different diagnoses.
+  const lifecycle = createLifecycle();
 
   connection.onRequest(InitializeRequest.type, (): InitializeResult => {
     // initialize is the one request the gate may never refuse -- refusing it
     // would make the state it guards unreachable.
-    initialized = true;
+    lifecycle.initialize();
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -113,20 +88,6 @@ export function startServer(
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
-  /**
-   * Whether a notification arriving now may be acted on.
-   *
-   * Outside the serving window LSP says to DROP one, silently: a notification
-   * has no response, so there is nothing a client could be told and nothing it
-   * could act on -- the same ruling PBI-2 made for an unopened URI. `exit` is
-   * deliberately not routed through here; it is the one notification that must
-   * be obeyed at every moment of the lifecycle, and a gate written without
-   * that exception leaves the process alive forever.
-   */
-  function notificationAccepted(): boolean {
-    return initialized === true && hasShutdown === false;
-  }
-
   connection.onNotification(InitializedNotification.type, () => {
     // The client is ready. Registered rather than left unhandled so that
     // vscode-jsonrpc does not log it as unanswered on every session.
@@ -135,21 +96,21 @@ export function startServer(
   // The three sync notifications are pure delegation: what a full-sync buffer
   // means is documents.ts's business, and none of them answers the client.
   connection.onNotification(DidOpenTextDocumentNotification.type, (params) => {
-    if (notificationAccepted() === false) {
+    if (lifecycle.acceptsNotification() === false) {
       return;
     }
     documents.open(params);
   });
 
   connection.onNotification(DidChangeTextDocumentNotification.type, (params) => {
-    if (notificationAccepted() === false) {
+    if (lifecycle.acceptsNotification() === false) {
       return;
     }
     documents.change(params);
   });
 
   connection.onNotification(DidCloseTextDocumentNotification.type, (params) => {
-    if (notificationAccepted() === false) {
+    if (lifecycle.acceptsNotification() === false) {
       return;
     }
     documents.close(params);
@@ -158,21 +119,23 @@ export function startServer(
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
   // config author wrote and have a failure path of their own.
-  registerMethods(connection, config, tsudoi, requestRejection);
+  registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection());
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.
   connection.onRequest(ShutdownRequest.type, (): void => {
-    const rejection = requestRejection();
+    const rejection = lifecycle.requestRejection();
     if (rejection !== undefined) {
       throw rejection;
     }
-    hasShutdown = true;
+    lifecycle.shutDown();
   });
 
-  // LSP exit-code semantics: 0 only when shutdown came first, otherwise 1.
+  // `exit` is the one notification NOT routed through acceptsNotification: it
+  // must be obeyed at every moment of the lifecycle, and a gate written
+  // without that exception leaves the process alive forever.
   connection.onNotification(ExitNotification.type, () => {
-    process.exit(hasShutdown ? 0 : 1);
+    process.exit(lifecycle.exitCode());
   });
 
   connection.listen();
