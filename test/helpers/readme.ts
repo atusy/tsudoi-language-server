@@ -290,3 +290,84 @@ export async function runQuickstart(
   }
   return { serverName, unframedStdoutBytes, diagnosis: notes.join("\n") };
 }
+
+/** A command line split the way a runtime reads it. */
+export interface Invocation {
+  readonly program: string;
+  /** What comes before the script path: `run`, and any permission flags. */
+  readonly runArgs: string[];
+  readonly script: string;
+  readonly args: string[];
+}
+
+/**
+ * Splits a documented command into the parts a runtime distinguishes.
+ *
+ * THROWS when there is no script path, and therefore no flags to speak of: a
+ * command that parsed to an empty flag list would make `the documented flags
+ * are the ones the suite spawns` true of nothing at all -- the same vacuity as
+ * an extractor that finds no blocks, one level down.
+ */
+export function invocationOf(command: string): Invocation {
+  const [program, ...rest] = command.split(" ");
+  const scriptIndex = rest.findIndex((token) => token.includes("/"));
+  if (program === undefined || scriptIndex === -1) {
+    throw new Error(`README quickstart: no script path in ${command}`);
+  }
+  const runArgs = rest.slice(0, scriptIndex);
+  if (runArgs.length === 0) {
+    throw new Error(`README quickstart: nothing between the runtime and the script in ${command}`);
+  }
+  return {
+    program,
+    runArgs,
+    script: rest[scriptIndex] ?? "",
+    args: rest.slice(scriptIndex + 1),
+  };
+}
+
+/** The one step that starts the server under `runtime`. */
+export function startStep(steps: readonly QuickstartStep[], runtime: "bun" | "deno"): RunStep {
+  const step = steps.find((candidate) => candidate.kind === "run" && candidate.starts === runtime);
+  if (step === undefined || step.kind !== "run") {
+    throw new Error(`README quickstart: no step starts the server under ${runtime}`);
+  }
+  return step;
+}
+
+/**
+ * A fact the README owes a reader, as the TOKENS that discriminate it.
+ *
+ * Tokens rather than sentences, in both directions: rewording a sentence must
+ * still find the fact, and deleting the fact must lose it. A test that matched
+ * a sentence would fail on an improvement to the prose, which teaches the next
+ * person to delete the test.
+ */
+export interface ReadmeFact {
+  readonly name: string;
+  /** All of these must appear within ONE section of the document. */
+  readonly tokens: readonly RegExp[];
+}
+
+/**
+ * Sections, not paragraphs: a fact and its reason routinely span two
+ * paragraphs, and a paragraph-scoped match would push the author to cram them
+ * into one sentence. The discrimination lost is bought back by the permanent
+ * pair -- every token of every fact is deleted from a copy of the README and
+ * the fact must then be ABSENT.
+ */
+function sections(markdown: string): string[] {
+  return markdown.split(/\n(?=#{1,6} )/);
+}
+
+export function statesFact(markdown: string, fact: ReadmeFact): boolean {
+  return sections(markdown).some((section) => fact.tokens.every((token) => token.test(section)));
+}
+
+/** The same document with every occurrence of `token` gone -- the fact's removal. */
+export function withoutToken(markdown: string, token: RegExp): string {
+  return markdown.replaceAll(
+    new RegExp(token.source, token.flags.includes("g") ? token.flags : `${token.flags}g`),
+    "",
+  );
+}

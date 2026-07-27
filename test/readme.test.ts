@@ -3,6 +3,10 @@ import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import {
   extractQuickstart,
+  invocationOf,
+  type ReadmeFact,
+  startStep,
+  statesFact,
   type QuickstartStep,
   QUICKSTART_STEPS,
   readReadme,
@@ -130,3 +134,46 @@ for (const [index, omitted] of bunSequence.entries()) {
     expect(outcome.serverName === undefined ? "no server" : outcome.diagnosis).toBe("no server");
   });
 }
+
+/**
+ * CRITERION 2, COMPARED TWO-SIDEDLY. The README's flags are read out of its own
+ * bytes; the suite's come from `denoRuntime` IMPORTED from the helper every
+ * other test spawns with -- not from parsing that helper's source. The compared
+ * value is therefore the one that really runs, and no second parsing mechanism
+ * enters needing a vacuity guard of its own.
+ *
+ * Both directions matter and neither alone is enough: narrowing the README
+ * alone must redden, and narrowing `denoRuntime.runArgs` alone must redden. A
+ * one-sided test passes when the two drift TOGETHER, which is the drift this
+ * criterion exists to catch.
+ */
+test("the deno permissions the README documents are the ones the suite spawns", () => {
+  const invocation = invocationOf(
+    startStep(extractQuickstart(readme, QUICKSTART_STEPS), "deno").command,
+  );
+
+  expect(invocation.program).toBe(denoRuntime.command);
+  expect(invocation.runArgs).toEqual([...denoRuntime.runArgs]);
+});
+
+/**
+ * The reason is OWED, not optional: a deno user handing every permission to a
+ * server that reads their source needs to know it is a third-party module-load
+ * env read rather than tsudoi wanting their network -- and that narrower sets
+ * are untested because the minimum was never measured.
+ */
+const permissionsFact: ReadmeFact = {
+  name: "why -A, and that narrower is untested",
+  tokens: [
+    /-A/,
+    /vscode-jsonrpc/,
+    /XDG_RUNTIME_DIR/,
+    /module load/i,
+    /untested/i,
+    /never measured/i,
+  ],
+};
+
+test("the README says why -A, and that narrower sets are untested", () => {
+  expect(statesFact(readme, permissionsFact)).toBe(true);
+});
