@@ -45,6 +45,7 @@ export class LspSession {
   readonly #exited: Promise<number | null>;
   readonly #stderrChunks: Buffer[] = [];
   #buffer = Buffer.alloc(0);
+  #strayBytes = 0;
   #nextId = 1;
   /** Every message framed off stdout, including any nothing awaits. */
   messagesReceived = 0;
@@ -112,12 +113,18 @@ export class LspSession {
   }
 
   /**
-   * Bytes stdout produced that no framed message accounts for. Read after the
-   * process has exited, anything but 0 means something wrote to stdout that is
-   * not JSON-RPC -- which desyncs a real editor rather than failing loudly.
+   * Bytes stdout produced that no framed message accounts for: whatever
+   * preceded a header, plus whatever trails the last complete message. Read
+   * after the process has exited, anything but 0 means something wrote to
+   * stdout that is not JSON-RPC -- which desyncs a real editor rather than
+   * failing loudly.
+   *
+   * The leading half is not hypothetical: a stray write lands in front of the
+   * next header, where an unanchored Content-Length search reads straight past
+   * it and frames the message correctly anyway.
    */
   get unframedStdoutBytes(): number {
-    return this.#buffer.length;
+    return this.#strayBytes + this.#buffer.length;
   }
 
   dispose(): void {
@@ -145,6 +152,10 @@ export class LspSession {
       if (this.#buffer.length < bodyEnd) {
         return;
       }
+      // Bytes ahead of the header field itself belong to no message. Counted
+      // only once the frame is complete: a frame split across chunks re-enters
+      // this loop over the same header, and counting above would double it.
+      this.#strayBytes += match.index;
       const body = this.#buffer.subarray(bodyStart, bodyEnd).toString("utf8");
       this.#buffer = this.#buffer.subarray(bodyEnd);
       this.#deliver(JSON.parse(body) as ResponseMessage);

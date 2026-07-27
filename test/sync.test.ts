@@ -175,6 +175,8 @@ for (const runtime of runtimes) {
         expect(readSnapshot(session.stderr)).toEqual([
           { uri: otherUri, languageId: "plaintext", version: 1, text: "second" },
         ]);
+        expect(session.messagesReceived).toBe(2);
+        expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
       }
