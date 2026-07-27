@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
 import {
+  CompletionItemKind,
   type CompletionItem,
   type InitializeResult,
   type TextDocumentSyncOptions,
@@ -19,9 +21,13 @@ import {
   gateOpen,
   returnedItems as gateReturned,
 } from "./fixtures/completion-gate.ts";
+import { partialChunk } from "./fixtures/completion-null-after-yield.ts";
 
 const completionChunks = fixture("completion-chunks.ts");
 const completionGate = fixture("completion-gate.ts");
+const nullAfterYield = fixture("completion-null-after-yield.ts");
+const nullOnly = fixture("completion-null-only.ts");
+const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 // Supplies hover and NOT completion: a stronger negative than an empty
 // `methods`, because a server advertising from `methods` being non-empty
 // passes the empty fixture and fails this one.
@@ -198,6 +204,68 @@ for (const runtime of runtimes) {
         // progress nobody asked for.
         expect(session.progressCount).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // Both halves in one run against one build. A dispatch answering [] for
+    // every null passes the first and fails the second; one answering null for
+    // every null does the reverse. Neither is satisfiable by a constant.
+    test("a null return is [] after a partial result and null when there was none", async () => {
+      const afterYield = LspSession.start(runtime, nullAfterYield);
+      const immediate = LspSession.start(runtime, nullOnly);
+      try {
+        await afterYield.request<InitializeResult>("initialize", initializeParams);
+        await immediate.request<InitializeResult>("initialize", initializeParams);
+
+        const afterYieldResult = await afterYield.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(partialResultToken),
+        );
+        // The chunk did leave, so the client already has it: [] says `nothing
+        // further`, and repeating the chunk here would double it.
+        expect(afterYield.progress).toEqual([{ token: partialResultToken, value: partialChunk }]);
+        expect(afterYieldResult).toEqual([]);
+
+        const immediateResult = await immediate.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(partialResultToken),
+        );
+        // Nothing left, so null says `nothing to say` -- which [] would have
+        // reported to the client as an answered request with no candidates.
+        expect(immediate.progressCount).toBe(0);
+        expect(immediateResult).toBeNull();
+      } finally {
+        afterYield.dispose();
+        immediate.dispose();
+      }
+    });
+
+    // The artifact a config author copies, in the shape a client that does not
+    // ask for partial results sees it: the example yields one item and returns
+    // null, and that item is the whole answer. Answering [] here would lose it.
+    test("the example config's yield-then-null aggregates to the item it yielded", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        didOpen(session, "こんにちは");
+
+        const result = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(),
+        );
+
+        expect(result).toEqual([
+          {
+            label: "HelloWorld",
+            kind: CompletionItemKind.Text,
+            detail: "Example completion item",
+            documentation: "This is a sample completion item.",
+          },
+        ]);
+        expect(session.progressCount).toBe(0);
       } finally {
         session.dispose();
       }
