@@ -367,8 +367,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Register DidOpen/DidChange/DidCloseTextDocumentNotification, each delegating to the mutation handle. Add test/fixtures/snapshot-config.ts -- Bun-free (deno executes it), types imported by relative path with .ts. Observation seam, verified under both runtimes: the fixture's factory registers process.on('exit', ...) which writes `TSUDOI_SNAPSHOT <json>` to stderr from [...tsudoi.documents.values()]. The test parses that line after the exit-code promise settles. This proves notifications reach the store THE CONFIG AUTHOR SEES, not merely one the server holds.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "cc44ffe",
+            message: "feat(server): feed the sync notifications in",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
