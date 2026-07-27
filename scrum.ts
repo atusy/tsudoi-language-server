@@ -372,6 +372,11 @@ const scrum: ScrumDashboard = {
             message: "feat(server): feed the sync notifications in",
             phase: "green",
           },
+          {
+            hash: "6c9b910",
+            message: "test(lsp): make stdout purity assert",
+            phase: "refactoring",
+          },
         ],
         notes: [],
       },
