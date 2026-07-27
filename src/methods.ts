@@ -8,6 +8,7 @@ import {
   type HoverParams,
   HoverRequest,
   LSPErrorCodes,
+  type ProgressToken,
   ProgressType,
   type ProtocolConnection,
   ResponseError,
@@ -127,6 +128,47 @@ async function answerUnlessCancelled<T>(
 }
 
 /**
+ * Whether a value is a ProgressToken: LSP defines the type as `integer |
+ * string`, so `0` and `""` are both legitimate AND falsy. That is why this is a
+ * type test rather than a truthiness test -- `if (!token)` would fix the null
+ * case and break every client that numbers its tokens from zero.
+ */
+function isProgressToken(value: unknown): value is ProgressToken {
+  return typeof value === "string" || (typeof value === "number" && Number.isInteger(value));
+}
+
+/**
+ * The token this completion may stream under, or undefined when it must be
+ * aggregated into one response instead.
+ *
+ * NORMALISE AND REPORT, chosen on harm-proportionality. Answering -32602 would
+ * cost an editor user every completion for their client's serialisation quirk;
+ * normalising in silence is the invisible-client-bug failure mode. Streaming
+ * under the invalid token is worse than either: null survives sendProgress, so
+ * the items leave addressed to a `$/progress` no client can correlate and the
+ * user simply sees fewer candidates than the handler produced.
+ *
+ * Validation lives here and nowhere else. One call site, no seam: the story is
+ * protocol-violation handling, the implementation is one concrete case.
+ */
+function streamingToken(requested: unknown): ProgressToken | undefined {
+  if (requested === undefined) {
+    return undefined;
+  }
+  if (isProgressToken(requested)) {
+    return requested;
+  }
+  // JSON.stringify, not String(): a token is client data of any shape, and
+  // `[object Object]` would name nothing the config author could act on.
+  process.stderr.write(
+    `tsudoi: ignoring an invalid partialResultToken ${JSON.stringify(requested)}; ` +
+      `a ProgressToken is an integer or a string, so this completion is answered ` +
+      `as one aggregated response.\n`,
+  );
+  return undefined;
+}
+
+/**
  * Registers the request handlers a config can answer.
  *
  * Every one is registered whether or not the config supplies a handler:
@@ -177,7 +219,11 @@ export function registerMethods(
         return null;
       }
       const context = requestContext(tsudoi, cancellation);
-      const token = params.partialResultToken;
+      // Read through `unknown` on purpose: the declared ProgressToken type
+      // describes what a CONFORMING client sends, and this path exists for the
+      // one that does not.
+      const requestedToken: unknown = params.partialResultToken;
+      const token = streamingToken(requestedToken);
       return answerUnlessCancelled("textDocument/completion", context.signal, async () => {
         // What the author yielded, kept only when there is no token to stream
         // it under. In streaming mode this stays empty, which is what lets one

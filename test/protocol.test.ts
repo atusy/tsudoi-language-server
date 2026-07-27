@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
+import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
+import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot } from "./helpers/snapshot.ts";
@@ -8,6 +9,7 @@ import { fixture } from "./helpers/spawn.ts";
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 const snapshotConfig = fixture("snapshot-config.ts");
+const completionChunks = fixture("completion-chunks.ts");
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -49,6 +51,24 @@ const exampleHover = "**こんにちは** はカーソル位置の語です。";
 function tsudoiLines(session: LspSession): string[] {
   return session.stderr.split("\n").filter((line) => line.startsWith("tsudoi:"));
 }
+
+/**
+ * A completion request carrying `partialResultToken` EXACTLY as given --
+ * including values LSP does not allow, which is the whole point here. The
+ * parameter is `unknown` because the wire can carry anything; the declared
+ * `ProgressToken` type describes what a conforming client sends, not what
+ * arrives.
+ */
+function completionWithToken(token: unknown): unknown {
+  return {
+    textDocument: { uri },
+    position: { line: 0, character: 0 },
+    partialResultToken: token,
+  };
+}
+
+/** The prefix of the one line tsudoi writes about a token it refused. */
+const invalidTokenTrace = "tsudoi: ignoring an invalid partialResultToken";
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
@@ -251,5 +271,68 @@ for (const runtime of runtimes) {
       },
       hangTimeoutMs,
     );
+
+    // The defect this PBI exists for, and it is NOT `streaming fails`: null
+    // survives connection.sendProgress, so today's server addresses every
+    // chunk to a `$/progress` with token null that no client can correlate --
+    // silent misdelivery. The remedy is normalise-and-report: the token is
+    // treated as absent, the items reach the client whole, and stderr says so.
+    test("a null partialResultToken aggregates every item into one response and streams nothing", async () => {
+      const invalid = LspSession.start(runtime, completionChunks);
+      // The PAIR, permanent: the same progressCount, in a session whose token
+      // IS valid. `zero $/progress` measured by a counter that never counts
+      // anything is satisfied by a server streaming furiously.
+      const valid = LspSession.start(runtime, completionChunks);
+      try {
+        await invalid.request("initialize", initializeParams);
+        await valid.request("initialize", initializeParams);
+
+        const result = await invalid.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionWithToken(null),
+        );
+
+        // Every item the handler produced, in order, compared field by field:
+        // a length check passes when the right NUMBER of wrong items arrives.
+        expect(result).toEqual([...firstChunk, ...secondChunk, ...returnedItems]);
+        expect(invalid.progressCount).toBe(0);
+
+        await valid.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionWithToken("valid-token-1"),
+        );
+        expect(valid.progressCount).toBe(2);
+
+        // Reported, not silent: an invalid token LOSES the user items unless
+        // tsudoi intervenes, so the config author gets a line naming it.
+        expect(invalid.stderr).toContain(`${invalidTokenTrace} null;`);
+        expect(invalid.unframedStdoutBytes).toBe(0);
+      } finally {
+        invalid.dispose();
+        valid.dispose();
+      }
+    });
+
+    // Standing checklist item 3: the trace is a new user-visible path, and a
+    // token is client-supplied data that can be anything. String(value) on an
+    // object yields `[object Object]` and loses this entirely.
+    test("the trace names a non-ASCII token as the client sent it", async () => {
+      const session = LspSession.start(runtime, completionChunks);
+      try {
+        await session.request("initialize", initializeParams);
+
+        const result = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionWithToken({ id: "トークン" }),
+        );
+
+        expect(result).toEqual([...firstChunk, ...secondChunk, ...returnedItems]);
+        expect(session.progressCount).toBe(0);
+        expect(session.stderr).toContain(`${invalidTokenTrace} {"id":"トークン"};`);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
