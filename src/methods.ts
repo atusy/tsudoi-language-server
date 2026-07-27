@@ -1,5 +1,6 @@
 import process from "node:process";
 import {
+  type CancellationToken,
   type CompletionItem,
   type CompletionParams,
   CompletionRequest,
@@ -42,12 +43,26 @@ function reportHandlerFailure(method: Method, error: unknown): never {
 }
 
 /**
- * A controller nobody aborts: the signal is part of the context a handler is
- * entitled to read from day one, and wiring it to the connection's cancellation
- * token is PBI-5's job, not something to half-do here.
+ * Bridges the connection's CancellationToken onto the AbortSignal a config
+ * author already has, ONE controller per request: a shared one would abort
+ * every handler in flight when the client cancelled any single request.
+ *
+ * tsudoi bridges rather than tracking `$/cancelRequest` itself. It could not
+ * track it if it wanted to -- vscode-jsonrpc consumes that notification before
+ * consulting any handler, and a request handler is never told its own id.
  */
-function requestContext(tsudoi: Tsudoi): RequestContext {
-  return { signal: new AbortController().signal, tsudoi };
+function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
+  const controller = new AbortController();
+  // Read BEFORE subscribing, and not merely to save a turn: when the client
+  // cancels before the request is dispatched, vscode-jsonrpc cancels the token
+  // source ahead of the handler, which installs CancellationToken.Cancelled --
+  // whose onCancellationRequested is Event.None and never fires at all. The
+  // flag is the only evidence of that cancellation.
+  if (cancellation.isCancellationRequested) {
+    controller.abort();
+  }
+  cancellation.onCancellationRequested(() => controller.abort());
+  return { signal: controller.signal, tsudoi };
 }
 
 /**
@@ -63,15 +78,18 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
 ): void {
-  connection.onRequest(HoverRequest.type, async (params: HoverParams): Promise<Hover | null> => {
-    const handler = config.methods?.["textDocument/hover"];
-    const context = requestContext(tsudoi);
-    try {
-      return (await handler?.(context, params)) ?? null;
-    } catch (error) {
-      reportHandlerFailure("textDocument/hover", error);
-    }
-  });
+  connection.onRequest(
+    HoverRequest.type,
+    async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
+      const handler = config.methods?.["textDocument/hover"];
+      const context = requestContext(tsudoi, cancellation);
+      try {
+        return (await handler?.(context, params)) ?? null;
+      } catch (error) {
+        reportHandlerFailure("textDocument/hover", error);
+      }
+    },
+  );
 
   // This handler is the whole of the streaming API. A config author writes
   // `yield` and `return`; whether that leaves as $/progress or as one
@@ -82,12 +100,15 @@ export function registerMethods(
   // describes are one trigger.
   connection.onRequest(
     CompletionRequest.type,
-    async (params: CompletionParams): Promise<CompletionItem[] | null> => {
+    async (
+      params: CompletionParams,
+      cancellation: CancellationToken,
+    ): Promise<CompletionItem[] | null> => {
       const handler = config.methods?.["textDocument/completion"];
       if (handler === undefined) {
         return null;
       }
-      const context = requestContext(tsudoi);
+      const context = requestContext(tsudoi, cancellation);
       const token = params.partialResultToken;
       // What the author yielded, kept only when there is no token to stream it
       // under. In streaming mode this stays empty, which is what lets one
