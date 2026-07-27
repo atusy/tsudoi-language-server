@@ -287,9 +287,17 @@ const scrum: ScrumDashboard = {
         test: "BORN GREEN. `exit` as the very first message, no initialize: exits 1 with zero stdout bytes, both runtimes, within an explicit timeout so a hang fails as a timeout rather than stalling. PERTURBATION: add a pre-initialize gate that drops ALL notifications including exit; this MUST redden as a timeout. It exists solely to be the thing that objects when the gate lands -- without it the gate can hang the process with a fully green suite.",
         implementation: "None -- measured working today on both runtimes.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "adcff14",
+            message: "test(protocol): pin that exit before initialize exits 1 rather than hanging",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "Born green as planned. PERTURBATION (gate dropping all pre-initialize notifications, exit included) flipped `waitForExit() === 1` on BOTH runtimes as a 4000ms timeout -- the named target, and the first assertion in the test.",
+        ],
       },
       {
         test: "BORN GREEN. After a successful initialize, an unregistered method is answered -32601 and a subsequent hover is answered normally. PERTURBATION: make the gate answer -32002 for any method tsudoi did not register; this MUST redden to -32002 while the pre-initialize subtask stays green. Nothing asserts -32601 today, so this regression is currently invisible.",
