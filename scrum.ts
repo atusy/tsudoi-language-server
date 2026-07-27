@@ -33,34 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-6",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "detect Deno-incompatible patterns in the source automatically",
-        benefit: "Deno compatibility cannot regress unnoticed between releases",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "The check flags the Bun global and bun: module imports",
-          verification: "Adding a Bun.file call makes `oxlint` fail; removing it makes it pass",
-        },
-        {
-          criterion:
-            "The check flags relative imports lacking an explicit .ts extension, without flagging bare node: or npm specifiers",
-          verification:
-            "Changing ./lib.ts to ./lib makes `oxlint` fail; restoring the extension makes it pass, while node:url and vscode-languageserver-protocol/node stay unflagged throughout",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "Spiked round 2: this is .oxlintrc.json configuration only, zero custom code. Plain `oxlint` auto-discovers the config, so the guard lands INSIDE existing DoD check #2 -- the Definition of Done needs no amendment.",
-        "Scope is default-deny: the Bun global ban and import/extensions apply everywhere; bun:* imports are exempted only in **/*.test.ts and test/helpers/**, the minimum surface `bun test` needs. Fixture configs execute under deno, so they must stay Bun-free.",
-        "import/extensions requires ignorePackages: true, or it also flags bare node:/npm specifiers.",
-        "A rot detector, not an airtight barrier: (globalThis as {...}).Bun and oxlint-disable comments both bypass it, and no static rule proves Deno actually runs the server. It does not replace PBI-1's live deno smoke test.",
-        "Sprint boundary: Sprint 1 creates .oxlintrc.json with import/extensions ONLY (PBI-1 needs it for its own Deno correctness). This PBI adds the Bun rules, the override scoping and the flag/unflag tests.",
-      ],
-    },
-    {
       id: "PBI-2",
       story: {
         role: "config author",
@@ -251,16 +223,39 @@ const scrum: ScrumDashboard = {
           verification:
             "The seven cases are parameterised over bun and deno; each asserts exit 1, non-empty stderr and 0-byte stdout",
         },
+        {
+          criterion: "Every guard rule is pinned at every path shape a .ts file takes in this repo",
+          verification:
+            "One shared path-shape list covering src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/ drives the Bun-global, bun:* and import/extensions tests alike; each rule is asserted flagged or exempt at every shape",
+        },
       ],
       status: "draft",
       notes: [
         "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
+        "Sprint 2 left the three guard rules pinned across three DIFFERENT incomplete path sets. import/extensions is pinned only at src/ and the two probe paths -- not at test/fixtures/ or examples/, which are exactly the files the cross-runtime suite executes under deno, and extensionless relative imports are the failure that bites there. Correct today by default-deny, and lifecycle.test.ts running examples/ under deno is a live backstop, so this is a missing pin rather than a hole.",
+        "ignorePackages defends npm subpath specifiers ONLY. node:url is unflagged with or without it, so the round-2 perturbation defends the npm half alone and the node: half of PBI-6's criterion was trivially true rather than guarded.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
       ],
     },
   ],
 
   completed: [
+    {
+      number: 2,
+      pbi_id: "PBI-6",
+      goal: "Make Deno support stop depending on anyone remembering it -- the codebase itself rejects the changes that would quietly break the second runtime, before the sprints that write most of the source.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 706c0d0, 1cd4137, 3ee8eed, e05e45d, d1687f1 across 4 subtasks. Per-subtask records compacted here; git retains them.",
+        "Start from the Developer's verified spike at scratchpad/guard/.oxlintrc.json rather than prose -- the first application of the retrospective's spike-attachment rule. Delta to the repo config is two top-level rules plus one overrides entry.",
+        "Manufactured RED is mandatory for subtask 1 because import/extensions already passes, so its test is born green. Perturbation A: delete the rule, the extension-less case must fail. Perturbation B: restore it but drop ignorePackages, the bare-specifier case must fail. Green under either perturbation means the test asserts nothing.",
+        "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
+        "Developer declined to automate the complementary `tsc accepts Bun.file` assertion: honest options were mutating the repo's own src/ mid-test or a slow temp dir with node_modules that still is not the real config. Recorded as a comment instead, and flagged rather than papered over.",
+        "The runCli dual-runtime fix was routed to PBI-9, not smuggled into this sprint under PBI-6's benefit statement -- the Developer named that temptation and declined it.",
+      ],
+    },
     {
       number: 1,
       pbi_id: "PBI-1",
@@ -290,93 +285,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 2,
-    pbi_id: "PBI-6",
-    goal: "Make Deno support stop depending on anyone remembering it -- the codebase itself rejects the changes that would quietly break the second runtime, before the sprints that write most of the source.",
-    status: "review",
-    subtasks: [
-      {
-        test: "Given a probe source file, oxlint exits 1 when a relative import omits .ts and 0 when it carries .ts, while node:url and vscode-languageserver-protocol/node imports never trigger the rule.",
-        implementation:
-          "Add test/helpers/lint.ts exposing lintProbe(files): it mkdtemps a temp dir, COPIES the repo's real .oxlintrc.json into it (never re-declares it, or the tests stop tracking the shipped file), writes each probe at its relative path, spawns `oxlint .` with cwd set there, and removes the dir in a finally. Reuse repoRoot from test/helpers/spawn.ts. No node_modules needed. No production change -- import/extensions landed in Sprint 1.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "706c0d0",
-            message: "test(guard): pin import/extensions with a temp-dir lint probe harness",
-            phase: "green",
-          },
-          {
-            hash: "1cd4137",
-            message: "test(guard): prove import/extensions reaches inside the overrides scope",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          'Born green; RED manufactured. Four tests: (1) extension-less relative import exits 1 naming the file, (2) the same import with .ts exits 0, (3) node:url + vscode-languageserver-protocol/node alone exit 0, (4) both stay unflagged in a file whose line 3 IS flagged -- asserting "src/bare.ts:3:1:" present and no diagnostic on lines 1-2, which proves oxlint linted the file rather than skipping it.',
-          "Perturbation A (delete the import/extensions entry): tests 1 and 4 FAILED, tests 2 and 3 passed.",
-          "Perturbation B (restore it, drop ignorePackages): tests 3 and 4 FAILED, tests 1 and 2 passed. Finding worth keeping: only vscode-languageserver-protocol/node flips; node:url stays unflagged either way, so ignorePackages is load-bearing for npm subpaths, not for node: builtins.",
-          "Config restored byte-identical afterwards (git diff empty). Added post-hoc at 1cd4137, after subtask 4: import/extensions was asserted only under src/, never inside the overrides scope, where a plugin rule could have been silently dead. It is not -- and perturbation A re-run over the added cases failed both.",
-        ],
-      },
-      {
-        test: 'A probe containing Bun.file("x") makes oxlint exit 1 at all four path shapes -- src/, **/*.test.ts, test/helpers/, test/fixtures/ -- and removing it returns exit 0.',
-        implementation:
-          'Add "no-restricted-globals": ["error", "Bun"] to top-level rules. Assert all four paths explicitly: the ABSENCE of an exemption is the behaviour under test, not an implementation detail.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "3ee8eed",
-            message: "feat(guard): ban the Bun global everywhere in the tree",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "A probe importing bun:sqlite makes oxlint exit 1 at src/ and test/fixtures/, and exit 0 at **/*.test.ts and test/helpers/**.",
-        implementation:
-          'Add "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] to top-level rules, plus one overrides entry turning it "off" for ["**/*.test.ts", "test/helpers/**/*.ts"]. Both halves are under test: the exemption existing, and it not being wider than specified -- fixture configs execute under deno and must stay Bun-free.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e05e45d",
-            message: "feat(guard): restrict bun: imports, exempting only what `bun test` needs",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "N/A (structural)",
-        implementation:
-          "Comment .oxlintrc.json with the why-not: default-deny rather than src/-only because fixture configs execute under deno; ignorePackages is load-bearing; @types/bun declares the Bun global so tsc --noEmit ACCEPTS Bun.file() in src/ and this lint is the only thing that catches it; and this is a rot detector, not a barrier -- globalThis casts and oxlint-disable comments bypass it, so it does not replace the live deno smoke test. Confirm oxfmt --check . does not reflow it.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "d1687f1",
-            message: "docs(guard): record the why-nots behind the lint config",
-            phase: "refactoring",
-          },
-        ],
-        notes: [],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "Start from the Developer's verified spike at scratchpad/guard/.oxlintrc.json rather than prose -- the first application of the retrospective's spike-attachment rule. Delta to the repo config is two top-level rules plus one overrides entry.",
-      "Manufactured RED is mandatory for subtask 1 because import/extensions already passes, so its test is born green. Perturbation A: delete the rule, the extension-less case must fail. Perturbation B: restore it but drop ignorePackages, the bare-specifier case must fail. Green under either perturbation means the test asserts nothing.",
-      "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
-      "Developer declined to automate the complementary `tsc accepts Bun.file` assertion: honest options were mutating the repo's own src/ mid-test or a slow temp dir with node_modules that still is not the real config. Recorded as a comment instead, and flagged rather than papered over.",
-      "The runCli dual-runtime fix was routed to PBI-9, not smuggled into this sprint under PBI-6's benefit statement -- the Developer named that temptation and declined it.",
-    ],
-  },
-
+  sprint: null,
   retrospectives: [
     {
       sprint: 1,
