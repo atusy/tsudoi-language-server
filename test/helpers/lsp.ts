@@ -91,6 +91,14 @@ export class LspSession {
   readonly #stderrChunks: Buffer[] = [];
   /** Kept whole and undecoded so a suppressed value can be searched for. */
   readonly #stdoutChunks: Buffer[] = [];
+  /**
+   * How the child closed, or undefined while it is still running. Pending
+   * requests are flushed ONCE, at the close event, so a request registered
+   * afterwards would wait forever for a settle that has already happened. The
+   * rule from Sprint 5 is that a helper settles every promise it owns; it
+   * applies just as much when the process died BEFORE the request as after it.
+   */
+  #closed: { readonly code: number | null } | undefined = undefined;
   #buffer = Buffer.alloc(0);
   #strayBytes = 0;
   #nextId = 1;
@@ -110,16 +118,12 @@ export class LspSession {
     this.#child = child;
     this.#exited = new Promise((resolve) => {
       child.on("close", (code) => {
+        this.#closed = { code };
         // Without this, a server that dies mid-request leaves the caller to
         // time out with no diagnostic at all.
         for (const [id, settle] of this.#pending) {
           this.#pending.delete(id);
-          settle({
-            id,
-            // Shaped like a wire error so that requestError reports a dead
-            // server as a dead server rather than as a missing field.
-            error: { code: 0, message: `server exited with code ${code}; stderr: ${this.stderr}` },
-          });
+          settle(this.#deadServer(id));
         }
         resolve(code);
       });
@@ -151,7 +155,7 @@ export class LspSession {
   request<T>(method: string, params: unknown): Promise<T> {
     const id = this.#nextId++;
     return new Promise<T>((resolve, reject) => {
-      this.#pending.set(id, (message) => {
+      this.#pend(id, (message) => {
         if (message.error !== undefined) {
           reject(new Error(`${method} failed: ${JSON.stringify(message.error)}`));
           return;
@@ -170,7 +174,7 @@ export class LspSession {
   requestError(method: string, params: unknown): Promise<JsonRpcError> {
     const id = this.#nextId++;
     return new Promise<JsonRpcError>((resolve, reject) => {
-      this.#pending.set(id, (message) => {
+      this.#pend(id, (message) => {
         if (message.error === undefined) {
           reject(
             new Error(`${method} succeeded with ${JSON.stringify(message.result)}; expected error`),
@@ -196,7 +200,7 @@ export class LspSession {
     // The executor runs synchronously, so the frame is on the wire before this
     // returns and the caller can cancel the id it was handed.
     const response = new Promise<ResponseMessage>((resolve) => {
-      this.#pending.set(id, resolve);
+      this.#pend(id, resolve);
       this.#send({ jsonrpc: "2.0", id, method, params });
     });
     return { id, response };
@@ -214,7 +218,7 @@ export class LspSession {
   issueThenCancel(method: string, params: unknown): InFlightRequest {
     const id = this.#nextId++;
     const response = new Promise<ResponseMessage>((resolve) => {
-      this.#pending.set(id, resolve);
+      this.#pend(id, resolve);
       this.#child.stdin.write(
         this.#frame({ jsonrpc: "2.0", id, method, params }) +
           this.#frame({ jsonrpc: "2.0", method: "$/cancelRequest", params: { id } }),
@@ -330,6 +334,31 @@ export class LspSession {
 
   dispose(): void {
     this.#child.kill("SIGKILL");
+  }
+
+  /**
+   * Registers what settles a request, or settles it AT ONCE when the server is
+   * already gone -- so `the session died` is reported as an assertion failure
+   * naming the death, never as a test that hangs to its timeout.
+   */
+  #pend(id: number, settle: (message: ResponseMessage) => void): void {
+    if (this.#closed === undefined) {
+      this.#pending.set(id, settle);
+      return;
+    }
+    settle(this.#deadServer(id));
+  }
+
+  /**
+   * Shaped like a wire error so that requestError reports a dead server as a
+   * dead server rather than as a missing field.
+   */
+  #deadServer(id: number): ResponseMessage {
+    const code = this.#closed?.code;
+    return {
+      id,
+      error: { code: 0, message: `server exited with code ${code}; stderr: ${this.stderr}` },
+    };
   }
 
   #frame(message: unknown): string {
