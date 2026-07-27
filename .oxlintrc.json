@@ -1,12 +1,34 @@
+// Deno-compatibility guard. Behaviour is pinned by test/guard.test.ts, which
+// COPIES this file into a temp dir and lints probes there -- the probes contain
+// violations, so committing them would make `oxlint` over the repo exit 1.
+//
+// Default-deny, not src/-only: test/fixtures/*.ts are executed by deno in the
+// cross-runtime suite, so scoping the ban to src/ would leave the highest-risk
+// files unguarded.
+//
+// A rot detector, not a barrier. (globalThis as { Bun: ... }).Bun and an
+// oxlint-disable comment both walk straight past it, and no static rule proves
+// deno actually runs the server. It does not replace the live deno smoke test.
 {
   "plugins": ["import"],
   "rules": {
+    // ignorePackages is load-bearing: without it this also flags every bare
+    // specifier, including node:url and vscode-languageserver-protocol/node.
     "import/extensions": ["error", "always", { "ignorePackages": true }],
+
+    // Not exempted anywhere, deliberately. @types/bun declares the Bun global,
+    // so `tsc --noEmit` ACCEPTS Bun.file() in src/ and this rule is the only
+    // check that rejects it. That complementary "tsc still accepts it"
+    // assertion is not automated: the honest ways to write it were mutating
+    // src/ mid-test or standing up a temp project with node_modules that is
+    // still not this config, so it is stated here instead of faked in a test.
     "no-restricted-globals": ["error", "Bun"],
     "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }]
   },
   "overrides": [
     {
+      // The minimum surface `bun test` needs, and no wider. Extending this to
+      // test/fixtures/** would silence the breakage the suite exists to catch.
       "files": ["**/*.test.ts", "test/helpers/**/*.ts"],
       "rules": { "no-restricted-imports": "off" }
     }
