@@ -104,16 +104,32 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "The hover handler's return value reaches the client unchanged, with hoverProvider advertised in InitializeResult",
+            "hoverProvider is advertised when the config supplies a hover handler, and not when it does not",
+          verification:
+            "Two configs, one with the handler and one without; assert InitializeResult advertises hoverProvider for the first and omits it for the second",
+        },
+        {
+          criterion: "The hover handler's return value reaches the client unchanged",
           verification: "A test config returns a fixed Hover; assert the response equals it",
         },
         {
-          criterion: "An undefined handler responds with null rather than an error",
+          criterion: "A hover request with no handler configured answers null rather than an error",
           verification:
-            "A test config omits the handler; assert the result is null and no error is raised",
+            "A config omitting the handler is driven with a hover request anyway; assert the result is null and a subsequent request is answered normally",
+        },
+        {
+          criterion: "A handler that throws or rejects does not take the server down",
+          verification:
+            "A config whose handler throws, and one whose handler rejects; each yields an error response to that request, a diagnosable message on stderr, stdout carrying only the JSON-RPC response, and a subsequent hover answered normally",
         },
       ],
-      status: "draft",
+      status: "ready",
+      notes: [
+        "Conditional advertisement is per-method, not a generic derivation framework -- PBI-4 makes the same call for completionProvider. This is the decision PBI-1 deferred, landing where round 1 said it would.",
+        "The third criterion covers non-conforming clients only: a conforming client never sends hover when hoverProvider is unadvertised. It survives because a server must not fail because a client misbehaves.",
+        "Position math stays the config author's job -- params.position plus getText(). This is the PBI that decides whether TextDocument needs positionAt/offsetAt (PBI-2 note 3).",
+        "Widen test/lifecycle.test.ts's capabilities assertion again, do not delete it.",
+      ],
     },
     {
       id: "PBI-4",
@@ -278,7 +294,7 @@ const scrum: ScrumDashboard = {
     number: 2,
     pbi_id: "PBI-6",
     goal: "Make Deno support stop depending on anyone remembering it -- the codebase itself rejects the changes that would quietly break the second runtime, before the sprints that write most of the source.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "Given a probe source file, oxlint exits 1 when a relative import omits .ts and 0 when it carries .ts, while node:url and vscode-languageserver-protocol/node imports never trigger the rule.",
