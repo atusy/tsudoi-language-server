@@ -130,6 +130,8 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "Refinement gap to close before this is ready: the brief gives TWO aggregation triggers -- no partialResultToken, OR the client not advertising partial-result support. The criteria cover only the first.",
+        "Widen test/lifecycle.test.ts's capabilities assertion again for completionProvider, do not delete it.",
+        "completionProvider is advertised conditionally, per-method, the same call PBI-3 makes for hoverProvider -- not a generic derivation framework.",
       ],
     },
     {
@@ -288,6 +290,34 @@ const scrum: ScrumDashboard = {
   sprint: null,
   retrospectives: [
     {
+      sprint: 2,
+      improvements: [
+        {
+          action:
+            "A note addressed to a PBI other than the one it sits on must be written onto THAT PBI when the note is created, not left to be rescued at compaction. This removes the compaction-time check rather than adding a second thing to remember.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "First application found a real orphan immediately: PBI-2 said 'PBI-3 and PBI-4 widen it again', PBI-3 carried its copy, PBI-4 carried nothing. Written onto PBI-4.",
+        },
+        {
+          action:
+            "An attached spike must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask. A scratchpad path is a pointer, not an attachment -- it dies with the session, and a fresh executor would re-derive or guess.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "Amendment to the manufactured-RED rule: the perturbation must be confirmed to flip a SPECIFIC NAMED assertion, and if it flips only part of what it was claimed to defend, the undefended part must be stated.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Prompted by the round-2 perturbation claiming to defend `node: and npm specifiers stay unflagged` when ignorePackages moves the npm half only -- a defence asserted without being measured.",
+        },
+      ],
+    },
+    {
       sprint: 1,
       improvements: [
         {
@@ -310,12 +340,6 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome: null,
-        },
-        {
-          action: "Drop the unused export on cliPath in test/helpers/spawn.ts.",
-          timing: "immediate",
-          status: "completed",
-          outcome: "Applied at 45c00ba; all four DoD checks exit 0.",
         },
         {
           action:
