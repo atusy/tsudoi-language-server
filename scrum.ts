@@ -297,6 +297,19 @@ const scrum: ScrumDashboard = {
   sprint: null,
   retrospectives: [
     {
+      sprint: 11,
+      improvements: [
+        {
+          action:
+            "When a perturbation CANNOT BE CONSTRUCTED, classify it. NOT CONSTRUCTED: the means were lacking -- the assertion is undefended, say what remains at risk. FORECLOSED: the design makes the failure UNREPRESENTABLE -- name the design property that forecloses it. These are OPPOSITE findings and must never share wording. Corollary, and the more useful half: FORECLOSING A FAILURE BEATS DETECTING IT -- a test that cannot be written because the bug cannot exist is a better outcome than a test that catches the bug.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Filed by the Developer against themselves: their vocabulary had three outcomes -- reddened, did not redden, could not build it -- and the third defaulted to the pessimistic reading, so they reported a DESIGN SUCCESS in the language of a coverage gap. Sprint 10's case was foreclosure: dist/ is gitignored and built by prepack, so a stale published build is not a failure the suite must catch, it is a state the design cannot enter.",
+        },
+      ],
+    },
+    {
       sprint: 10,
       improvements: [
         {
