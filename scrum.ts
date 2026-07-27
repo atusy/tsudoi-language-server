@@ -335,8 +335,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Comment .oxlintrc.json with the why-not: default-deny rather than src/-only because fixture configs execute under deno; ignorePackages is load-bearing; @types/bun declares the Bun global so tsc --noEmit ACCEPTS Bun.file() in src/ and this lint is the only thing that catches it; and this is a rot detector, not a barrier -- globalThis casts and oxlint-disable comments bypass it, so it does not replace the live deno smoke test. Confirm oxfmt --check . does not reflow it.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "d1687f1",
+            message: "docs(guard): record the why-nots behind the lint config",
+            phase: "refactoring",
+          },
+        ],
         notes: [],
       },
     ],
