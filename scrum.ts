@@ -299,8 +299,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Pass a logger as the third argument to createProtocolConnection in src/server.ts. All four methods write to stderr ONLY -- process.stderr.write, never console.log, which would corrupt the protocol stream. Also closes Sprint 3's leftover: the unopened-URI live test can then tell ignore-by-design from throw-and-swallow.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          { hash: "d0f172a", message: "feat(server): report failures to stderr", phase: "green" },
+        ],
         notes: [],
       },
       {
