@@ -292,7 +292,7 @@ const scrum: ScrumDashboard = {
     number: 4,
     pbi_id: "PBI-3",
     goal: "Complete the chain from a config author's file to a human's screen: the hover text they write is what an editor shows, with zero lines changed in tsudoi.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "EXPECTED RED. A live session sends a notification whose handler throws; stderr carries a diagnosable message naming the method, stdout carries no unframed bytes, and shutdown/exit still completes with code 0.",
@@ -348,7 +348,7 @@ const scrum: ScrumDashboard = {
           { hash: "e5c49cc", message: "feat(server): report a failing handler", phase: "green" },
         ],
         notes: [
-          'PERTURBATION RUN. console.log("noise") in the hover dispatch reddens `expect(session.unframedStdoutBytes).toBe(0)` in exactly three named tests, bun and deno both (6): `...answered null, twice over`, `a hover handler that throws...`, `a hover handler that rejects...`. The -32603 and stderr assertions stayed green, so purity is what this defends and nothing else. UNDEFENDED: `the hover handler\'s return value reaches the client unchanged` carries no purity assertion and stayed green. Restored. Also measured live before the fix: -32603 arrived with stderr EMPTY, confirming the logger is not consulted for request handlers.',
+          'PERTURBATION RUN. console.log("noise") in the hover dispatch reddens `expect(session.unframedStdoutBytes).toBe(0)` in exactly three named tests, bun and deno both (6): `...answered null, twice over`, `a hover handler that throws...`, `a hover handler that rejects...`. The -32603 and stderr assertions stayed green, so purity is what this defends and nothing else. UNDEFENDED: `the hover handler\'s return value reaches the client unchanged` carries no purity assertion and stayed green. Restored. Also measured live before the fix: -32603 arrived with stderr EMPTY, confirming the logger is not consulted for request handlers. SECOND PERTURBATION, on the rethrow: reporting without rethrowing reddens `expect(error.code).toBe(-32603)` in both failure tests (4) while the stderr assertions stay GREEN -- a stderr-only criterion would have passed while the client was answered a silent null.',
         ],
       },
       {
