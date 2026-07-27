@@ -310,9 +310,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Catch the rejection from chunks.return() -- measured, a throwing finally rejects it -- and report through a cleanup-specific reporter. Do NOT rethrow: unlike a handler failure the client already has its -32800 and there is no response left to correct.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a88d3a6",
+            message: "feat(completion): report cleanup that throws, without rethrowing it",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "SPLIT IN TWO under the new rule, and the split earned itself immediately: `reported` was EXPECTED RED (both runtimes, timing out on the missing `tsudoi: textDocument/completion cleanup failed:` prefix while the fixture's own marker showed cleanup had run and thrown), whereas `survives and answers a later completion` was BORN GREEN here -- under the still-awaited form the rejection is absorbed by answerUnlessCancelled's catch and answers -32800 anyway. Bundled, the survival claim would have had no perturbation that reached it; it is defended at HEAD by the RETHROW perturbation instead.",
+          "Non-ASCII on the new user-visible path, permanent: the fixture throws 後始末に失敗しました and the test asserts that string as well as the prefix. Reading the standing `never the message body` rule as it is already applied at test/cancellation.test.ts (prefix asserted for tsudoi's own prose, the fixture's message asserted separately) -- otherwise a brand-new stderr path ships with standing item 3 unproven.",
+          "The throwing fixture fails only when context.signal.aborted, which is EXACT rather than convenient: tsudoi closes a generator from its abort path alone. A finally that always threw could not answer a later completion, so `the server survived` would be unsayable in the very session that had the failure.",
+          "`throw` written as a named failCleanup() call: a bare throw in a finally trips oxlint's no-unsafe-finally (correctness). Naming it says what a disable comment would have silenced.",
+        ],
       },
       {
         test: "EXPECTED RED -- measured, the awaited form never settles, so this test hangs to its timeout before the change. A fixture whose finally never settles: assert -32800 still arrives within an explicit timeout and a later completion is answered.",
