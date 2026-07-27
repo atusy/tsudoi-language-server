@@ -75,6 +75,18 @@ export function createLifecycle(): Lifecycle {
     // LSP exit-code semantics: 0 only when shutdown came first, otherwise 1.
     // Compared against the phase by name -- there is no boolean here to read
     // for truth rather than for value.
+    //
+    // WHY NOT, so that nobody `fixes` it: the PIPELINED shutdown-then-exit is
+    // DELIBERATELY UNDEFENDED. A client that writes `shutdown` and `exit` in ONE
+    // write lets `exit` be dispatched before the shutdown RESPONSE has been
+    // written, so server.ts calls process.exit(this) and the response the client
+    // is waiting for is never flushed -- an editor hanging on shutdown. That is
+    // spec-defensible: LSP tells the client to await the shutdown response
+    // before sending exit, and a server is not obliged to serve a client that
+    // does not. Ruled at Sprint 3 and never revisited; no test sends that
+    // sequence, so it is unproven in either direction rather than known-good.
+    // Pacing the exit behind the in-flight response would ALSO be acceptable,
+    // which is why this is recorded here instead of pinned by a test.
     exitCode(): number {
       return phase === "shutdown" ? 0 : 1;
     },
