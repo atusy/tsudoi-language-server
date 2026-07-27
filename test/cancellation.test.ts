@@ -315,6 +315,44 @@ for (const runtime of runtimes) {
       }
     });
 
+    // A client races: it cancels an id that has just been answered, or one it
+    // has already given up on. Neither may produce a response, a diagnostic,
+    // or a server that stops working.
+    test("cancelling an unknown or already-answered id is ignored", async () => {
+      const session = LspSession.start(runtime, hoverCancellable);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        // Gate open from the start, so these hovers answer without a release.
+        didOpen(session, gateOpen);
+
+        const answered = session.issue("textDocument/hover", hoverParams(5));
+        expect((await answered.response).result).toEqual(hoverFor(tagOf(5)));
+
+        const framedBefore = session.messagesReceived;
+        // An id this session never issued, and one it issued and had answered.
+        session.cancel(4242);
+        session.cancel(answered.id);
+        // Load-bearing: without it `nothing came back` is equally true of a
+        // server that has not yet read either notification.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(session.messagesReceived).toBe(framedBefore);
+
+        const next = await session.request<Hover>("textDocument/hover", hoverParams(6));
+        expect(next).toEqual(hoverFor(tagOf(6)));
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        // Every line tsudoi itself writes carries this prefix, whether it came
+        // from a handler failure or from the connection's own logger.
+        expect(session.stderr).not.toContain("tsudoi:");
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // Where cancellation earns its keep: bounding the streaming API. The
     // fixture yields AGAIN after the abort releases its gate, so `exactly one`
     // is a claim about what tsudoi refuses to forward, not about a cooperative
