@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 // import.meta.dir is Bun-only; the URL form works under both runtimes.
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-export const cliPath = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
+const cliPath = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
 
 /** Absolute path of a committed fixture config under test/fixtures. */
 export function fixture(name: string): string {
