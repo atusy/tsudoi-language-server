@@ -48,6 +48,14 @@ for (const runtime of runtimes) {
           const error = await session.requestError("textDocument/hover", hoverParams);
 
           expect(error.message).toContain("server exited with code 1");
+          // BOTH SURFACES, because a test using only the first would leave
+          // `rejects` -- the word the acceptance criterion uses -- unchecked.
+          // requestError RESOLVES with the wire-shaped error, which is how a
+          // criterion about an error CODE must read it; `request` rejects,
+          // which is what a caller awaiting a result actually experiences.
+          await expect(session.request("textDocument/hover", hoverParams)).rejects.toThrow(
+            "server exited with code 1",
+          );
         } finally {
           session.dispose();
         }

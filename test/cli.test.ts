@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { japaneseFailure } from "./fixtures/factory-rejects-japanese.ts";
 import { bunRuntime, denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { fixture, runCli } from "./helpers/spawn.ts";
+import { type CliResult, fixture, runCli } from "./helpers/spawn.ts";
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -13,14 +13,40 @@ const runtimes = [bunRuntime, denoRuntime];
 // this file rather than quietly halving what it checks.
 await Promise.all(runtimes.map(requireRuntime));
 
+/**
+ * THE FAILURE CONTRACT, one assertion for every case: exit 1, a tsudoi:-
+ * prefixed reason on stderr, and nothing at all on stdout.
+ *
+ * The PREFIX half was named by three sprints of criteria and pinned by
+ * NOTHING. Measured before writing this: deleting `tsudoi: ` from src/cli.ts
+ * left every ASCII case green, because each asserted only the substring it
+ * cared about. It is the one thing here a config author greps for -- every
+ * line tsudoi writes carries it, and a message without it is indistinguishable
+ * from whatever the runtime printed.
+ *
+ * STARTS WITH rather than contains, measured across all seven cases under both
+ * runtimes: the reason is the FIRST thing on stderr, so nothing the config
+ * author did not ask for precedes it.
+ */
+function expectFailureContract(result: CliResult): void {
+  expect(result.code).toBe(1);
+  expect(result.stderr.startsWith("tsudoi: ")).toBe(true);
+  expect(result.stdout).toBe("");
+}
+
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     test("omitting --config exits 1 with a stderr message and no stdout", async () => {
       const result = await runCli(runtime, []);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain("--config");
-      expect(result.stdout).toBe("");
+      // THE PAIR for the Japanese case's `stderrPerChunk differs`, permanent
+      // and carried here because this message is short and ASCII: the same
+      // measurement observes AGREEMENT when nothing was split. Without it, a
+      // per-chunk accumulator that quietly stopped collecting would satisfy
+      // `the two decodings differ` and take the straddle precondition with it.
+      expect(result.stderrPerChunk).toBe(result.stderr);
     });
 
     test("a --config path that does not exist exits 1 naming the path, with no stdout", async () => {
@@ -28,9 +54,8 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", missing]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(missing);
-      expect(result.stdout).toBe("");
     });
 
     test("a config with a TypeScript syntax error exits 1 naming the path, with no stdout", async () => {
@@ -42,9 +67,8 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", broken]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(broken);
-      expect(result.stdout).toBe("");
     });
 
     test("a config that throws while being imported exits 1 naming the path, with no stdout", async () => {
@@ -52,9 +76,8 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", throwing]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(throwing);
-      expect(result.stdout).toBe("");
     });
 
     test("a config with no default export exits 1 saying so, with no stdout", async () => {
@@ -62,10 +85,9 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", path]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(path);
       expect(result.stderr).toContain("no default export");
-      expect(result.stdout).toBe("");
     });
 
     test("a config whose default export is not a function exits 1 saying so, with no stdout", async () => {
@@ -73,10 +95,9 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", path]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(path);
       expect(result.stderr).toContain("not a function");
-      expect(result.stdout).toBe("");
     });
 
     test("a config whose factory rejects exits 1 reporting the reason, with no stdout", async () => {
@@ -84,10 +105,9 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", path]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toContain(path);
       expect(result.stderr).toContain("the factory rejects");
-      expect(result.stdout).toBe("");
     });
 
     // The eighth case, and the one the other seven cannot make: every message
@@ -100,11 +120,10 @@ for (const runtime of runtimes) {
 
       const result = await runCli(runtime, ["--config", path]);
 
-      expect(result.code).toBe(1);
+      expectFailureContract(result);
       expect(result.stderr).toBe(
         `tsudoi: the config factory in ${path} failed\n  Error: ${japaneseFailure}\n`,
       );
-      expect(result.stdout).toBe("");
       // The equality above is only evidence if a character REALLY WAS split
       // across two chunks on this run, and that was MEASURED to vary: at 360KB
       // the same payload straddled under bun every time and under deno most
