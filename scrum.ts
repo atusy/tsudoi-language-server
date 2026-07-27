@@ -305,7 +305,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "test/helpers/lsp.ts currently DISCARDS every server-initiated notification, so criterion 4's zero-$/progress assertion would pass against a server streaming furiously. Record $/progress in arrival order with token and value; expose the ordered list, a count, and waitForProgress(n). Do NOT filter by token -- criterion 4 must be able to see progress sent under an INVENTED token, which is the cheat it exists to catch.",
         type: "structural",
-        status: "refactoring",
+        status: "completed",
         commits: [
           {
             hash: "12fda1b",
@@ -313,7 +313,9 @@ const scrum: ScrumDashboard = {
             phase: "refactoring",
           },
         ],
-        notes: [],
+        notes: [
+          "PERTURBED drop-every-notification -> RED at waitForProgress(1) in the streaming test, both runtimes. Restored. FOUND while perturbing: a failing gated test leaves the completion request outstanding, dispose's synthetic error becomes an unhandled rejection, and bun reports it against whichever test runs NEXT -- it blamed a passing test in the other runtime. The test now marks that rejection handled.",
+        ],
       },
       {
         test: "EXPECTED RED. A config with a completion handler yields capabilities containing completionProvider: {}; a config without yields exactly the narrower shape, asserted exactly.",
@@ -337,9 +339,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "Register CompletionRequest unconditionally. With a token present, drive the generator and await connection.sendProgress(progressType, token, chunk) once per yield. The gate fixture parks on `while (documents.get(uri)?.getText() !== 'release') await new Promise(r => setTimeout(r, 5))` -- MEASURED: awaited polling stays interruptible so the server can process the releasing didChange; a busy-loop would not. Give the test an explicit timeout below bun test's default so a gate that never opens fails rather than hangs.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e82e7ae",
+            message: "feat(server): stream each completion yield as one $/progress",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED before impl at -32601 Unhandled method. PERTURBED (A) buffer every yield until the generator completes -> RED at waitForProgress(1), both runtimes, and `expect(settled).toBe(false)` was NEVER REACHED -- A proves the server streams and leaves the headline undefended, exactly the earlier-assertion trap. PERTURBED (B) release the gate immediately -> RED at `expect(settled).toBe(false)` itself, both runtimes, with waitForProgress(1) and the progress[0] content assertion GREEN. Restored.",
+        ],
       },
       {
         test: "BORN GREEN if the streaming path already returns the generator's return value. The response result equals the returned array ALONE, not a concatenation, so a client appending progress to response sees each item exactly once. Perturbation: make the streaming path return every yield plus the return; this test MUST fail while the streaming subtask stays green, since progress emission is unchanged.",
