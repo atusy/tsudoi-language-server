@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import type { InitializeResult } from "vscode-languageserver-protocol";
+import { type InitializeResult, TextDocumentSyncKind } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 
@@ -14,13 +14,19 @@ await Promise.all(runtimes.map(requireRuntime));
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    test("initialize returns a result naming tsudoi, with capabilities present and empty", async () => {
+    // Widened from `toEqual({})` by PBI-2, deliberately still exact: openClose
+    // is what entitles a conforming client to send didOpen/didClose at all, so
+    // an equality assertion is the only kind that catches its loss. PBI-3 and
+    // PBI-4 widen this again for hoverProvider and completionProvider.
+    test("initialize returns a result naming tsudoi, advertising exactly full-sync textDocumentSync", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
         expect(result.serverInfo?.name).toBe("tsudoi");
-        expect(result.capabilities).toEqual({});
+        expect(result.capabilities).toEqual({
+          textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
+        });
       } finally {
         session.dispose();
       }

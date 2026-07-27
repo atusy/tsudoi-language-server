@@ -8,6 +8,7 @@ import {
   ShutdownRequest,
   StreamMessageReader,
   StreamMessageWriter,
+  TextDocumentSyncKind,
 } from "vscode-languageserver-protocol/node";
 import type { TsudoiConfig } from "./types.ts";
 
@@ -15,7 +16,7 @@ import type { TsudoiConfig } from "./types.ts";
  * Starts serving LSP over stdio. Called only after the config has loaded, so
  * that no failure path can put bytes on stdout.
  *
- * `capabilities` stays empty until PBI-2/3/4 declare their own.
+ * `capabilities` carries only textDocumentSync until PBI-3/4 declare their own.
  */
 export function startServer(_config: TsudoiConfig): void {
   const connection = createProtocolConnection(
@@ -26,11 +27,21 @@ export function startServer(_config: TsudoiConfig): void {
   let hasShutdown = false;
 
   connection.onRequest(InitializeRequest.type, (): InitializeResult => {
-    return { capabilities: {}, serverInfo: { name: "tsudoi" } };
+    return {
+      capabilities: {
+        // openClose is not optional: advertising only `change` entitles a
+        // conforming client to withhold didOpen/didClose, and then the store
+        // never sees a document however correct its own code is.
+        // Full, not Incremental: the client resends the whole buffer, so no
+        // position/offset machinery is needed to answer getText().
+        textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
+      },
+      serverInfo: { name: "tsudoi" },
+    };
   });
 
   connection.onNotification(InitializedNotification.type, () => {
-    // The client is ready. Nothing to do until PBI-2/3/4 add capabilities.
+    // The client is ready. Nothing to do until PBI-3/4 add capabilities.
   });
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
