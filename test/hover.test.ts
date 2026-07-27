@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
 import {
   type Hover,
   type InitializeResult,
@@ -14,6 +15,7 @@ import { fixture } from "./helpers/spawn.ts";
 
 const hoverFixed = fixture("hover-fixed.ts");
 const hoverAbsent = fixture("hover-absent.ts");
+const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 
 // Two ways for the same handler to fail: one before any promise exists, one a
 // turn of the event loop later. They reach the dispatch by different paths.
@@ -146,5 +148,51 @@ for (const runtime of runtimes) {
         }
       });
     }
+
+    // The example config is the artifact a config author copies, and this is
+    // the whole chain in one test: their file reads the live buffer, does its
+    // own position math, and the markdown it composes is what an editor shows.
+    // Japanese because hover contents are prose a human reads.
+    test("the example config answers with the word under the cursor", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        session.notify("textDocument/didOpen", {
+          textDocument: {
+            uri,
+            languageId: "plaintext",
+            version: 1,
+            text: "こんにちは 世界\nさようなら 世界",
+          },
+        });
+
+        // Character 7 is inside 世界, which starts at code unit 6 of line 0.
+        const onWorld = await session.request<Hover | null>(
+          "textDocument/hover",
+          hoverParams(0, 7),
+        );
+        expect(onWorld).toEqual({
+          contents: { kind: "markdown", value: "**世界** はカーソル位置の語です。" },
+        });
+
+        // A different line AND a different word: a handler that ignored the
+        // position, or split lines wrongly, answers the same thing twice.
+        const onFarewell = await session.request<Hover | null>(
+          "textDocument/hover",
+          hoverParams(1, 2),
+        );
+        expect(onFarewell).toEqual({
+          contents: { kind: "markdown", value: "**さようなら** はカーソル位置の語です。" },
+        });
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }

@@ -9,6 +9,25 @@ import {
 // The published specifier "@atusy/tsudoi/types" is PBI-7; until then, relative.
 import type { RequestContext, Tsudoi, TsudoiConfig } from "../src/types.ts";
 
+/**
+ * The run of non-whitespace characters containing `character`, or "" if the
+ * cursor sits on whitespace. Whitespace is the crudest word rule there is, and
+ * that is the point: a real config author replaces this one function with their
+ * own language's notion of a word.
+ */
+function wordAt(line: string, character: number): string {
+  const isBoundary = (index: number): boolean => /\s/u.test(line[index] ?? " ");
+  let start = character;
+  while (start > 0 && !isBoundary(start - 1)) {
+    start -= 1;
+  }
+  let end = character;
+  while (end < line.length && !isBoundary(end)) {
+    end += 1;
+  }
+  return line.slice(start, end);
+}
+
 export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
@@ -47,11 +66,26 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           return null;
         }
 
-        // Example: Return a static hover response
+        // Position math is the config author's job: tsudoi hands over the live
+        // buffer and the cursor, and what counts as a `word` in this language
+        // is exactly what only this file knows.
+        //
+        // Both LSP `character` and JavaScript string indices count UTF-16 code
+        // units, so plain slicing is correct here -- iterating code points
+        // instead would drift on the first character outside the BMP.
+        const line = document.getText().split(/\r?\n/)[params.position.line];
+        if (line === undefined) {
+          return null;
+        }
+        const word = wordAt(line, params.position.character);
+        if (word === "") {
+          return null;
+        }
+
         return {
           contents: {
             kind: "markdown",
-            value: "This is a sample hover response.",
+            value: `**${word}** はカーソル位置の語です。`,
           },
           range: undefined,
         };
