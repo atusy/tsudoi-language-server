@@ -101,6 +101,7 @@ const scrum: ScrumDashboard = {
         "The third criterion covers non-conforming clients only: a conforming client never sends hover when hoverProvider is unadvertised. It survives because a server must not fail because a client misbehaves.",
         "Position math stays the config author's job -- params.position plus getText(). This is the PBI that decides whether TextDocument needs positionAt/offsetAt (PBI-2 note 3).",
         "Widen test/lifecycle.test.ts's capabilities assertion again, do not delete it.",
+        "Measured in Sprint 3, addressed to the fourth criterion: createProtocolConnection is passed no logger, so vscode-jsonrpc defaults to NullLogger and a throwing handler is swallowed with no stderr and no effect on the exit path. The `diagnosable message on stderr` therefore needs a logger passed in (stderr only -- stdout purity), and that logger is also what would let Sprint 3's unopened-URI live test tell `ignored` from `threw`.",
       ],
     },
     {
@@ -379,9 +380,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Expected to need no production change if the guard subtask was done properly. BORN GREEN -- manufactured RED is mandatory. Perturbation: in src/documents.ts make change dereference the missing entry (non-null assertion or an explicit throw). This subtask AND the unopened-URI unit subtask must both fail; the other unit subtasks and the wiring subtask must stay green. If this one stays green, it asserts nothing -- most likely the exit code is read before the child settles, or a handler throw is swallowed by vscode-jsonrpc without affecting the exit path. Record which tests flipped, then restore.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          { hash: "5ce2823", message: "test(sync): pin the unopened uri live", phase: "green" },
+        ],
+        notes: [
+          "P1, the mandated perturbation (`byUri.get(uri)!` in change): flipped ONLY the unit test `change and close for a uri never opened are ignored, not fatal`. It did NOT flip this subtask's live test. Measured cause: createProtocolConnection is given no logger, so vscode-jsonrpc defaults to NullLogger (connection.js:296, :85) and catches the handler throw at :688 -- no stderr, no effect on the exit path. UNDEFENDED: no live test distinguishes `ignored` from `threw and was swallowed`. Routed to PBI-3, which owns handler diagnosability.",
+          "P2, added because P1 left the live test asserting nothing (implicit creation instead of a throw): flipped `expect(readSnapshot(session.stderr)).toEqual([])` in `didChange and didClose for a uri never opened are survivable, not fatal` under BOTH runtimes, plus the unit test. It only flips because both tests were first strengthened to observe the store before any close of the changed uri -- as originally written, the close hid the implicit creation and P2 flipped nothing.",
+        ],
       },
     ],
     impediments: [],
