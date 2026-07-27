@@ -349,9 +349,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "None expected. Measured: an unhandled rejection KILLS the child on both runtimes, so it cannot be laundered into whichever test runs next -- it destroys the session that caused it. Assert exit codes, never diagnostic text: bun prints a source frame, deno prints `error: Uncaught (in promise)`.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f61846a",
+            message: "test(cleanup): assert the rejection where it cannot be laundered",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as declared, no production change. Three sessions of one build: cleanup that threw exits 0, cleanup still PARKED at shutdown exits 0 (its gate is never opened, so it also shows a hung finally cannot hold up exit), and the control exits 1.",
+          "The plan's measurement re-confirmed independently before the test was written, with a standalone script holding the event loop open under a timer: exit 1 on bun AND deno, 0 bytes on stdout, and the `still alive` line never printed. So the death is prompt, not deferred to teardown.",
+          "The exit code is made the assertion that FLIPS, not one that a rejected await beats to it: shutdown goes through `issue` (which settles either way on a dead session) rather than `request`, and test/helpers/lsp.ts now swallows stdin write errors -- a dead session's broken pipe must not surface as an uncaught EPIPE from a stream nothing listens to. It hides nothing: a write that went nowhere still shows up as a response that never arrives.",
+        ],
       },
       {
         test: "N/A -- DELIBERATELY NOT ASSERTED, per the PO's correction of their own Sprint 6 note. Asserting it would require making the example cancellable, the artifact-for-test-convenience change already declined.",
