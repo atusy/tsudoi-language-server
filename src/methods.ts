@@ -277,6 +277,13 @@ export function registerMethods(
           // the generator, which is the point of cancelling at all. The value
           // is discarded either way -- the answer is already -32800.
           if (context.signal.aborted) {
+            // Returning stops DRIVING the generator; closing it is what runs
+            // the config author's `finally`. Without this the generator is left
+            // suspended at its yield forever, and cleanup nobody can watch
+            // succeed is silently skipped on every superseded keystroke.
+            if (token !== undefined) {
+              await chunks.return(null);
+            }
             return null;
           }
           emitted = true;
