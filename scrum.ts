@@ -313,9 +313,20 @@ const scrum: ScrumDashboard = {
         test: "EXPECTED RED. Break the documented quickstart config; run it under both runtimes; assert exit code, tsudoi:-prefixed stderr reason and zero stdout bytes -- EACH COMPARED AGAINST THE VALUE EXTRACTED FROM README.md, never a constant the test holds. PERTURBATION: change the README's stated exit code to 2; MUST redden. That is the whole criterion -- the README is the source of the expectation.",
         implementation: "None beyond the assertions.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "01963af",
+            message: "test(readme): take the failure contract's every value from the README",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "PERTURBATION RUN, the one the criterion names -- README's stated exit code `1` -> `2`. FLIPPED: BOTH `the documented failure behaviour is what happens under bun` and `... under deno`. Everything else stayed green.",
+          "TWO MORE, since a criterion is only defended at the values that were perturbed: stderr prefix `tsudoi: ` -> `tsudoi! ` FLIPPED (Expected `tsudoi! `, Received `tsudoi: `); stdout bytes `0` -> `3` FLIPPED. All three documented values are load-bearing, not just the exit code.",
+          "The contract's values live in the RENDERED TABLE, not in a marker: a value hidden in an HTML comment could drift from the sentence beside it while every test passed. What is asserted is what is read.",
+          "The zero-bytes-on-stdout absence ships its PERMANENT pair -- the same byte counting, same stream, same helper, sees bytes during the setup commands. Sprint 6's rule, and it applies to a value extracted from prose exactly as to one a test holds.",
+        ],
       },
       {
         test: "N/A (structural).",
