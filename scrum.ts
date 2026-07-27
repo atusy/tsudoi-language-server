@@ -43,36 +43,36 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: "The documented quickstart runs as written",
+          criterion:
+            "The documented quickstart runs as written, EXTRACTED from the README rather than mirrored",
           verification:
-            "Run the README's quickstart command verbatim, obtaining tsudoi exactly as the README instructs, under both bun and deno; each returns an InitializeResult naming tsudoi",
+            "The test reads the commands out of README.md and executes them verbatim under both bun and deno, each returning an InitializeResult naming tsudoi. NEGATIVE CONTROL: editing a command in the README reddens it, which a test holding its own copy would not",
         },
         {
-          criterion: "The deno permission set is documented and matches what the suite spawns",
+          criterion:
+            "The documented deno permissions are the ones the suite spawns, with the reason a reader needs to judge them",
           verification:
-            "The README names the permissions deno actually requires and why; test/helpers/lsp.ts spawns that same set, so docs and suite cannot drift",
+            "The flags are read out of README.md and compared to what test/helpers/lsp.ts spawns. The README states WHY -- vscode-jsonrpc reads XDG_RUNTIME_DIR at module load, so -A is a DEPENDENCY'S demand rather than tsudoi's -- and that narrower sets are untested. NEGATIVE CONTROL: narrowing either side alone reddens",
         },
         {
-          criterion: "The contract a reader cannot guess is stated",
+          criterion: "The contract a reader cannot guess is stated, TOLERANTLY asserted",
           verification:
-            "README states that --config has no default, that the config default-exports a factory, and that deno must be on PATH or `bun test` fails",
+            "README.md carries that --config has no default, that the config default-exports a factory, and that deno must be on PATH or `bun test` fails. BOTH halves: rewording a sentence must still PASS, and removing a fact must FAIL",
         },
         {
           criterion: "The documented failure behaviour happens as written",
           verification:
-            "Break the documented quickstart config and run it under both runtimes; assert exit code 1, a tsudoi:-prefixed reason on stderr and zero bytes on stdout, matching what the README states will happen",
+            "Break the documented quickstart config and run it under both runtimes; assert exit 1, a tsudoi:-prefixed reason on stderr and zero bytes on stdout, EACH COMPARED AGAINST WHAT README.md STATES. NEGATIVE CONTROL: changing the README's stated exit code reddens it",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
-        "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither. The three contract facts ARE pinned: exit 1 and 0-byte stdout by PBI-1, the tsudoi: prefix by PBI-9 -- NOT by PBI-1, which this note originally asserted WITHOUT CHECKING. The conclusion stands: no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
-        "Deliberately does NOT claim a config author's own error message passes through verbatim. It does today -- the CLI writes stderr directly and nothing in src/ decodes it -- but it cannot be asserted for non-ASCII until PBI-9 fixes spawn.ts. Documenting a claim we cannot pin is the thing refused all project, applied here against a claim the PO would like to make.",
-        "If the README documents the cleanup guarantee it must claim that TSUDOI CLOSES THE GENERATOR, not that the author's cleanup COMPLETES. That is precisely the overclaim dropping PBI-12 would otherwise licence, and PBI-8 is the last chance to record it before the backlog ends.",
-        "OPEN IMPEDIMENT, waiting_human: the route's FIRST line -- how a user OBTAINS the package -- is verified for `install ./tarball` only. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible. The README must not claim the registry route until that is unblocked.",
-        "RISK the post-publication check must look for, and NOT `npm will do npm things`: `install ./tarball` and `deno add npm:` are DIFFERENT MECHANISMS -- the first populates node_modules, the second can resolve through Deno's OWN npm cache depending on whether the consumer has a package.json. Sprint 9 established Deno demands the dependency from node_modules, so the unverified first line could produce an on-disk shape the verified second line does not assume.",
-        "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
-        "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
+        "ALL FOUR CRITERIA ARE VACUOUS UNLESS THE TESTS READ THE README'S OWN BYTES. A plausible-but-wrong README -- right shape, stale command, wrong flag, wrong exit code -- passes every test holding its own copy and fails one that EXTRACTS. Standing item 6 applied to prose; it is the mechanism that has kept examples/tsudoi.config.ts from rotting for eleven sprints. Four criteria is the right COUNT; the discriminator is EXTRACTION, not enumeration.",
+        "SHIPS DESPITE THE OPEN IMPEDIMENT: a README instructing a route nobody can take is useless, and blocking the last deliverable on a human publication decision leaves the project permanently without one. Document the TARBALL route as the working instruction, state the registry route as intended-and-unverified, and SAY PLAINLY THAT THE PACKAGE IS UNPUBLISHED -- otherwise a reader wonders why they are packing a tarball.",
+        "The -A reason is OWED: a Deno user handing all permissions to a server that reads their source needs to know it is a third-party MODULE-LOAD ENV READ, not tsudoi wanting their network -- and that a narrower set is UNTESTED, since the minimum was never measured.",
+        "If the README documents cleanup at all, the claim is that tsudoi CLOSES the generator, never that the author's cleanup COMPLETES. The reason is at src/methods.ts, where the measurement and the language semantics are recorded. A note rather than a criterion: a criterion satisfiable by SILENCE is one nothing would make fail.",
+        "OPEN IMPEDIMENT, waiting_human: `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible.",
+        "RISK a post-publication check must look for, and NOT `npm will do npm things`: install-from-tarball and `deno add npm:` are DIFFERENT MECHANISMS -- the first populates node_modules, the second can resolve through Deno's OWN cache depending on whether the consumer has a package.json.",
       ],
     },
   ],
@@ -85,18 +85,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "Shipped in 6d2ceba, dfdbcd4, ce0befa, 960e91a, 0992bb7, 201024b, 687ef2d, 36d280b, 2477ebc, dc4845b, e61da36 across 10 subtasks. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
-        "THE SPRINT FOUND ITS OWN DEFECT IN ITS OWN DELIVERY: the seven ASCII config-failure cases NEVER PINNED the `tsudoi:` prefix the criterion names -- built to the plan's wording rather than the criterion's. Stripping the prefix from src/cli.ts left 14 OF 16 CASES GREEN before the fix. It also FALSIFIES PBI-8's note that all three contract facts were already pinned in ASCII.",
-        "THE PLAN'S CHUNK-BOUNDARY REMEDY WAS INSUFFICIENT, and the mechanism is the finding: stderr arrives in chunks at exact multiples of one size (192KiB/256KiB), so EVERY boundary shares one offset mod 3 -- all split or none do. At 360KB the deno case PASSED WITH THE DEFECT PRESENT on its first run. The fixture now uses three blocks separated by one and then two single-byte characters, covering all three residues: 15/15 runs split on both runtimes. Established twice -- by a residue probe, and PERMANENTLY by asserting the per-chunk decode differs from the whole, so a payload arriving whole fails loudly.",
-        "REMOVED ASSERTIONS, each named with what it defended: two response-ordering assertions defended `initialize answered before the progress`, now carried by the test's own await; arrival-list EXHAUSTIVENESS defended `the server sends nothing else`, WHICH WAS NEVER PROMISED; two hardcoded ids defended NOTHING and are now the id the helper returns; scripts exact equality defended `no other script exists`, which nobody promised, and has NO new home by design.",
-        "FORECLOSED, not NOT CONSTRUCTED, in the sprint the vocabulary was filed: an ordering inversion for cancellation.test.ts is UNREPRESENTABLE because the test waits for the chunk before cancelling. And one gap named honestly the other way -- the arrivals TOLERANCE half cannot be made permanent, since tsudoi sends no notification but $/progress, so reverting the delivery path would redden nothing; the injection to re-run is named.",
-        "MEASURED, AND IT WOULD HAVE MADE THIS SPRINT'S HEADLINE TEST INTERMITTENTLY VACUOUS: a non-ASCII payload does NOT become more likely to straddle a pipe chunk boundary by being made BIGGER. Chunks arrive at exact multiples of one size, so every boundary shares one offset modulo the character width -- all split or none do. At 360KB the deno half passed WITH THE DEFECT PRESENT on the first run and on 7 of 15 probe runs. The fix is alignment, not size: single-byte separators covering all three residues. The general rule for the next such test -- ASSERT THE HARD CASE HAPPENED, do not size for it and hope.",
-        "MEASURED, and it corrects a comment this project has been relying on: under bun 1.3.13 a write to a DEAD child's stdin returns TRUE and its callback is invoked with NO ERROR -- only `writable` reports the truth. node raises ERR_STREAM_DESTROYED. Any helper in any project here that trusts a stream to report its own failure is trusting something bun does not do.",
-        "MEASURED, and it retires a seven-sprint-old assumption: the deno half of the config-failure contract was UNRUNNABLE, not broken. All seven cases passed under deno the first time they were allowed to run. `Never executed` and `would fail` had been treated as one thing.",
-        "FORECLOSED rather than NOT CONSTRUCTED, using the vocabulary filed last retro: the wrong-ordering perturbation for cancellation.test.ts's arrivals assertion cannot be built, because the test waits for the chunk before it cancels -- the response CANNOT precede it. The design of the test forecloses the failure; the assertion's remaining job is content, and that half was perturbed and shown to flip alone.",
-        "ONE PERTURBATION RAN INSIDE node_modules, disclosed: vscode-jsonrpc's message writer was edited to frame by character count and restored from a backup in the same step. It is the only way to perturb framing this project does not own, and it answered the criterion's own worry -- the failure arrives as a NAMED PARSE ERROR in ~32ms, not as a hang.",
-      ],
+      decisions: [],
     },
     {
       number: 10,
@@ -127,13 +116,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "MEASURED, and it bounds the LIFETIME RULE this sprint adopted: a decision about package.json CANNOT be written at its site. JSON has no comments, and oxfmt -- a DoD gate -- sorts unknown keys to the tail of the file under every name tried. The rule needs a clause for machine-formatted data files: the comment goes as close as the formatter permits, and a SOURCE file that the data file points at carries a pointer to it. Here: `//exports` at the bottom of package.json, and a header on src/types.ts naming itself the published surface.",
-        "MEASURED, and it weakens seven sprints of cross-runtime evidence: bun SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. With node_modules renamed away, deno fails to start and bun completes the handshake. Every `both runtimes stay green` in this project is therefore strong evidence under deno and weak evidence under bun, wherever the claim concerns resolution. Recorded at test/resolution.test.ts, which is deno-only for exactly this reason.",
-        "MEASURED AND REFUTED, the sprint's honesty item: a deno.json does NOT flip npm resolution to deno's global cache at 2.9.2. Present at the repo root the full 151-test suite stays green; present in a checkout with no node_modules the handshake still fails, naming node_modules. Sprint 1's REASONED justification for the no-deno.json guard does not survive measurement, so the guard was not built and PBI-7's third criterion needs the PO to amend it to the property.",
-        "FOR THE PO, a correction rather than a question: PBI-7 note 4 -- `the example proves SELF-REFERENCE, not installed resolution` -- is now FALSE. The example's own bytes are type-checked inside a packed-and-installed consumer, and that is the only assertion in the repo that catches a reversion to the relative path.",
-        "ONE ENVIRONMENTAL DEPENDENCY ADDED to the suite, disclosed: the installed-consumer probe runs `bun install`, which needs the network on a cold bun cache. It fails loudly rather than skipping.",
-      ],
+      decisions: [],
     },
     {
       number: 8,
@@ -151,10 +134,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "ACCEPTED with its justification CORRECTED by the PO, because a note carrying a false premise is worse than no note: isProgressToken admits integers outside LSP's int32 (Number.isInteger(2**40) is true). Rejecting would NOT lose the client's items -- under normalise-and-report an invalid token aggregates, so every item still arrives in the response body. The real reason to honour it is that the CLIENT chose that token and can correlate it, so honouring delivers the streaming they asked for, whereas rejecting silently downgrades a working client to aggregation plus a stderr line it did not need.",
-        "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
-      ],
+      decisions: [],
     },
     {
       number: 6,
@@ -163,9 +143,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
-      ],
+      decisions: [],
     },
     {
       number: 5,
@@ -203,9 +181,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
-      ],
+      decisions: [],
     },
     {
       number: 1,
@@ -214,9 +190,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "No deno.json, deliberately -- Deno 2 auto-detects package.json + node_modules, and adding one can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
-      ],
+      decisions: [],
     },
   ],
 
@@ -231,6 +205,27 @@ const scrum: ScrumDashboard = {
 
   sprint: null,
   retrospectives: [
+    {
+      sprint: 13,
+      improvements: [
+        {
+          action:
+            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "The measured-or-reasoned label does not help here: the falsified note did not read as unlabelled, it read as CHECKED. Coverage claims are cheap to verify and expensive when wrong, and this one was the premise for a scheduling decision.",
+        },
+        {
+          action:
+            "A PLAN INSTRUCTION STATES THE PROPERTY TO ESTABLISH, NOT THE MECHANISM TO USE. Where it must name a mechanism, it says whether the mechanism was MEASURED to produce the property.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "Filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard -- it makes correctness depend on someone downstream remembering to look, and the piped-exit-code defect shows how slowly that works when they do not: nine sprints. Honest limit stated by the PO: this covers the chunk-boundary case and NOT the piped exit code, which is measurement hygiene rather than mechanism-specification and is already fixed by capturing each check unpiped.",
+        },
+      ],
+    },
     {
       sprint: 12,
       improvements: [
