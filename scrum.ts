@@ -58,7 +58,7 @@ const scrum: ScrumDashboard = {
             "The initialize handshake completes for both `bun run src/cli.ts --config ...` and `deno run -A src/cli.ts --config ...`",
         },
       ],
-      status: "ready",
+      status: "done",
       notes: [
         "--config has no default; omitting it is an error. The module default-exports (tsudoi: Tsudoi) => Promise<TsudoiConfig>.",
         "Cross-runtime is carried by this PBI's criteria, not by a separate DoD check. It is enforced transitively: the integration test spawns both runtimes and runs under `bun test`, which IS a DoD check. `deno` is therefore a hard toolchain requirement and its absence must fail loudly, never skip.",
@@ -212,173 +212,175 @@ const scrum: ScrumDashboard = {
     },
   ],
 
-  sprint: {
-    number: 1,
-    pbi_id: "PBI-1",
-    goal: "One config file brings up a real language server process under whichever runtime the user already has, with nothing repo-specific making it work and no failure mode that leaves them guessing.",
-    status: "review",
-    subtasks: [
-      {
-        test: "N/A (structural)",
-        implementation:
-          "Create .gitignore with node_modules/ and __ignored/. oxfmt and oxlint read it but not the user's global gitignore, which is why `oxfmt --check .` currently fails on __ignored/prompt.md.",
-        type: "structural",
-        status: "completed",
-        commits: [{ hash: "eb92147", message: "chore: add .gitignore", phase: "refactoring" }],
-        notes: [],
-      },
-      {
-        test: "N/A (structural)",
-        implementation:
-          "package.json with type: module; dependency vscode-languageserver-protocol; devDependencies @types/node and @types/bun, both required for the tsc --noEmit check. Run bun install and commit bun.lock. No deno.json, deliberately.",
-        type: "structural",
-        status: "completed",
-        commits: [{ hash: "f6b2d82", message: "chore: add package.json", phase: "refactoring" }],
-        notes: [],
-      },
-      {
-        test: "N/A (structural)",
-        implementation:
-          'tsconfig.json with allowImportingTsExtensions, noEmit, strict, and an explicit types: ["node", "bun"] array -- tsc does not auto-discover node_modules/@types here. .oxlintrc.json containing import/extensions ["error", "always", {ignorePackages: true}] and nothing else; ignorePackages is load-bearing or bare node:/npm specifiers get flagged too.',
-        type: "structural",
-        status: "completed",
-        commits: [
-          { hash: "2474909", message: "chore: add tsconfig, oxlint", phase: "refactoring" },
-        ],
-        notes: [],
-      },
-      {
-        test: "Spawning the CLI with no arguments exits 1 with stderr naming --config and zero bytes on stdout.",
-        implementation:
-          "test/helpers/spawn.ts wrapping node:child_process; src/cli.ts (AC pins this exact path) reading process.argv from node:process. Never use import.meta.dir, which is Bun-only -- use fileURLToPath(new URL(..., import.meta.url)). First test file, so this also closes the `bun test` exits-1-on-zero-matches gap.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "70fdd38", message: "feat: require --config", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "Missing file, TypeScript syntax error, and a module throwing at import each exit 1 with stderr naming the config path, and empty stdout.",
-        implementation:
-          "Resolve --config against cwd, then `await import(pathToFileURL(abs).href)` inside one try/catch -- the URL conversion is what makes this identical under both runtimes. The syntax-error fixture is written to os.tmpdir() at test runtime, never committed: an unparseable .ts breaks both oxfmt --check . and tsc --noEmit.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "2fda9d3", message: "feat: load --config module", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "A module with no default export, and one whose default export is not a function, each exit 1 with non-empty stderr and empty stdout.",
-        implementation:
-          "Validate typeof mod.default === 'function' before calling it, with a distinct message per case. Two committed fixtures, both valid TypeScript.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "6f02e64", message: "feat: validate default", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "N/A (structural) -- verified by tsc --noEmit only",
-        implementation:
-          "Transcribe the brief's type-definition block into src/types.ts. Add a read-only DocumentStore whose get() returns undefined and values() yields nothing; PBI-2 replaces the implementation, not the shape.",
-        type: "structural",
-        status: "completed",
-        commits: [{ hash: "ebe98ea", message: "chore: add types", phase: "refactoring" }],
-        notes: [
-          "The brief misspells the factory type as TsudioiConfigFactory; transcribed as TsudoiConfigFactory.",
-        ],
-      },
-      {
-        test: "A config whose default export returns a rejecting Promise exits 1 with non-empty stderr and empty stdout.",
-        implementation:
-          "await mod.default(tsudoi) inside try/catch, passing the Tsudoi from the previous subtask. Completes the seven-case taxonomy and yields the first successfully loaded TsudoiConfig.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "1d1b96a", message: "feat: invoke factory", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "N/A (structural) -- existing tests stay green, unchanged",
-        implementation:
-          "Move argv parsing and the load-and-validate pipeline out of src/cli.ts into src/config.ts exposing loadConfig(argv, tsudoi), throwing a typed error the CLI maps to stderr + exit 1. The relative import needs its .ts extension.",
-        type: "structural",
-        status: "completed",
-        commits: [{ hash: "5537ae4", message: "refactor: loadConfig", phase: "refactoring" }],
-        notes: [],
-      },
-      {
-        test: "Driving initialize over stdio returns a result whose serverInfo.name is 'tsudoi' and whose capabilities is present and empty.",
-        implementation:
-          "src/server.ts using createProtocolConnection with StreamMessageReader/Writer over node:process streams, all imported from the vscode-languageserver-protocol/node subpath. Fake the result. connection.listen() runs only AFTER config loading succeeds -- that ordering is what keeps stdout clean on failure. Add a framing client helper using Content-Length with Buffer.byteLength.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "ccdd1bf", message: "feat: serve initialize", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "initialize, initialized, shutdown, exit produces a null shutdown result and exit code 0.",
-        implementation:
-          "Register InitializedNotification (no response), ShutdownRequest returning null, and ExitNotification calling process.exit(0). Record in server state that shutdown was received.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "7732df5", message: "feat: shutdown and exit", phase: "green" }],
-        notes: [
-          "ShutdownRequest.type declares result void, not null; vscode-jsonrpc still puts null on the wire.",
-        ],
-      },
-      {
-        test: "exit sent after initialize with no shutdown in between exits with code 1.",
-        implementation:
-          "Branch ExitNotification on the recorded state: process.exit(hasShutdown ? 0 : 1). This is where the fake becomes a real state machine.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "5d091ee", message: "feat: exit code semantics", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "The runtime preflight against a non-existent binary fails -- never skips -- with a message naming the cross-runtime criterion and an install pointer, not a raw ENOENT.",
-        implementation:
-          "A preflight in test/helpers probing `deno --version` and throwing an actionable error on ENOENT. Ordered immediately before the test that can trigger it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "23b6e74", message: "feat: runtime preflight", phase: "green" }],
-        notes: [],
-      },
-      {
-        test: "The happy-path lifecycle also passes when the CLI is spawned as `deno run -A src/cli.ts --config ...`, not only under bun.",
-        implementation:
-          "Parameterize the harness over runtime descriptors for bun and deno, gated by the preflight. Fixture configs must stay Bun-free because Deno executes them, and import types by relative path (the published specifier is PBI-7).",
-        type: "behavioral",
-        status: "completed",
-        commits: [{ hash: "f5f76a0", message: "test: lifecycle on deno", phase: "green" }],
-        notes: [
-          "deno needs -A (or at least --allow-env): vscode-jsonrpc/lib/node/main.js reads process.env.XDG_RUNTIME_DIR at module load and dies without it.",
-        ],
-      },
-      {
-        test: "N/A (structural) -- Review-driven, comment only",
-        implementation:
-          "Document in examples/tsudoi.config.ts why the completion generator's explicit `return null` diverges from the brief's example: the declared AsyncGenerator type requires an explicit return, and the brief's own MethodMap comment makes a null result after partial responses an empty CompletionItem[].",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "4d553af",
-            message: "docs(examples): explain the deliberate `return null` divergence",
-            phase: "refactoring",
-          },
-        ],
-        notes: [],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "PBI-1 is not split: the ten PoC methods partition exactly across PBI-1..5, and PBI-1 is precisely one LSP lifecycle state machine with a legal ordering. Splitting it would put a state machine across a sprint boundary.",
-      "Scrum Master enforced 1 Sprint = 1 PBI over the Developer's suggestion that PBI-6 might ride along. Sprint 1 therefore ships .oxlintrc.json with import/extensions only; the Bun rules are Sprint 2.",
-      "Developer spike overrode the PO's assumption that PBI-6 would add a DoD check: plain oxlint auto-discovers .oxlintrc.json, so the guard lands inside an existing check. PO conceded, calling it strictly better.",
-      "Guard scope is the Developer's default-deny rule, not the PO's src/-only proposal. PO conceded: fixture configs execute under deno, so src/-only would leave the highest-risk files unguarded.",
-      "No deno.json, deliberately -- Deno 2 auto-detects package.json + node_modules, and adding one can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
-      "PO withdrew a proposed editor-attach demo: no LSP client is verified present in this environment, and with capabilities empty an attached editor would visibly do nothing.",
-      "PO will not accept on a green suite alone, because the tests are written by the same agent that writes the implementation. Review requires live demonstration: a two-runtime boot of a stakeholder-shaped config, three PO-chosen failure cases each showing 0-byte stdout, the exit-without-shutdown code, the missing-deno message, and the import/extensions rule both failing and passing.",
-    ],
-  },
+  completed: [
+    {
+      number: 1,
+      pbi_id: "PBI-1",
+      goal: "One config file brings up a real language server process under whichever runtime the user already has, with nothing repo-specific making it work and no failure mode that leaves them guessing.",
+      status: "done",
+      subtasks: [
+        {
+          test: "N/A (structural)",
+          implementation:
+            "Create .gitignore with node_modules/ and __ignored/. oxfmt and oxlint read it but not the user's global gitignore, which is why `oxfmt --check .` currently fails on __ignored/prompt.md.",
+          type: "structural",
+          status: "completed",
+          commits: [{ hash: "eb92147", message: "chore: add .gitignore", phase: "refactoring" }],
+          notes: [],
+        },
+        {
+          test: "N/A (structural)",
+          implementation:
+            "package.json with type: module; dependency vscode-languageserver-protocol; devDependencies @types/node and @types/bun, both required for the tsc --noEmit check. Run bun install and commit bun.lock. No deno.json, deliberately.",
+          type: "structural",
+          status: "completed",
+          commits: [{ hash: "f6b2d82", message: "chore: add package.json", phase: "refactoring" }],
+          notes: [],
+        },
+        {
+          test: "N/A (structural)",
+          implementation:
+            'tsconfig.json with allowImportingTsExtensions, noEmit, strict, and an explicit types: ["node", "bun"] array -- tsc does not auto-discover node_modules/@types here. .oxlintrc.json containing import/extensions ["error", "always", {ignorePackages: true}] and nothing else; ignorePackages is load-bearing or bare node:/npm specifiers get flagged too.',
+          type: "structural",
+          status: "completed",
+          commits: [
+            { hash: "2474909", message: "chore: add tsconfig, oxlint", phase: "refactoring" },
+          ],
+          notes: [],
+        },
+        {
+          test: "Spawning the CLI with no arguments exits 1 with stderr naming --config and zero bytes on stdout.",
+          implementation:
+            "test/helpers/spawn.ts wrapping node:child_process; src/cli.ts (AC pins this exact path) reading process.argv from node:process. Never use import.meta.dir, which is Bun-only -- use fileURLToPath(new URL(..., import.meta.url)). First test file, so this also closes the `bun test` exits-1-on-zero-matches gap.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "70fdd38", message: "feat: require --config", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "Missing file, TypeScript syntax error, and a module throwing at import each exit 1 with stderr naming the config path, and empty stdout.",
+          implementation:
+            "Resolve --config against cwd, then `await import(pathToFileURL(abs).href)` inside one try/catch -- the URL conversion is what makes this identical under both runtimes. The syntax-error fixture is written to os.tmpdir() at test runtime, never committed: an unparseable .ts breaks both oxfmt --check . and tsc --noEmit.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "2fda9d3", message: "feat: load --config module", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "A module with no default export, and one whose default export is not a function, each exit 1 with non-empty stderr and empty stdout.",
+          implementation:
+            "Validate typeof mod.default === 'function' before calling it, with a distinct message per case. Two committed fixtures, both valid TypeScript.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "6f02e64", message: "feat: validate default", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "N/A (structural) -- verified by tsc --noEmit only",
+          implementation:
+            "Transcribe the brief's type-definition block into src/types.ts. Add a read-only DocumentStore whose get() returns undefined and values() yields nothing; PBI-2 replaces the implementation, not the shape.",
+          type: "structural",
+          status: "completed",
+          commits: [{ hash: "ebe98ea", message: "chore: add types", phase: "refactoring" }],
+          notes: [
+            "The brief misspells the factory type as TsudioiConfigFactory; transcribed as TsudoiConfigFactory.",
+          ],
+        },
+        {
+          test: "A config whose default export returns a rejecting Promise exits 1 with non-empty stderr and empty stdout.",
+          implementation:
+            "await mod.default(tsudoi) inside try/catch, passing the Tsudoi from the previous subtask. Completes the seven-case taxonomy and yields the first successfully loaded TsudoiConfig.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "1d1b96a", message: "feat: invoke factory", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "N/A (structural) -- existing tests stay green, unchanged",
+          implementation:
+            "Move argv parsing and the load-and-validate pipeline out of src/cli.ts into src/config.ts exposing loadConfig(argv, tsudoi), throwing a typed error the CLI maps to stderr + exit 1. The relative import needs its .ts extension.",
+          type: "structural",
+          status: "completed",
+          commits: [{ hash: "5537ae4", message: "refactor: loadConfig", phase: "refactoring" }],
+          notes: [],
+        },
+        {
+          test: "Driving initialize over stdio returns a result whose serverInfo.name is 'tsudoi' and whose capabilities is present and empty.",
+          implementation:
+            "src/server.ts using createProtocolConnection with StreamMessageReader/Writer over node:process streams, all imported from the vscode-languageserver-protocol/node subpath. Fake the result. connection.listen() runs only AFTER config loading succeeds -- that ordering is what keeps stdout clean on failure. Add a framing client helper using Content-Length with Buffer.byteLength.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "ccdd1bf", message: "feat: serve initialize", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "initialize, initialized, shutdown, exit produces a null shutdown result and exit code 0.",
+          implementation:
+            "Register InitializedNotification (no response), ShutdownRequest returning null, and ExitNotification calling process.exit(0). Record in server state that shutdown was received.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "7732df5", message: "feat: shutdown and exit", phase: "green" }],
+          notes: [
+            "ShutdownRequest.type declares result void, not null; vscode-jsonrpc still puts null on the wire.",
+          ],
+        },
+        {
+          test: "exit sent after initialize with no shutdown in between exits with code 1.",
+          implementation:
+            "Branch ExitNotification on the recorded state: process.exit(hasShutdown ? 0 : 1). This is where the fake becomes a real state machine.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "5d091ee", message: "feat: exit code semantics", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "The runtime preflight against a non-existent binary fails -- never skips -- with a message naming the cross-runtime criterion and an install pointer, not a raw ENOENT.",
+          implementation:
+            "A preflight in test/helpers probing `deno --version` and throwing an actionable error on ENOENT. Ordered immediately before the test that can trigger it.",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "23b6e74", message: "feat: runtime preflight", phase: "green" }],
+          notes: [],
+        },
+        {
+          test: "The happy-path lifecycle also passes when the CLI is spawned as `deno run -A src/cli.ts --config ...`, not only under bun.",
+          implementation:
+            "Parameterize the harness over runtime descriptors for bun and deno, gated by the preflight. Fixture configs must stay Bun-free because Deno executes them, and import types by relative path (the published specifier is PBI-7).",
+          type: "behavioral",
+          status: "completed",
+          commits: [{ hash: "f5f76a0", message: "test: lifecycle on deno", phase: "green" }],
+          notes: [
+            "deno needs -A (or at least --allow-env): vscode-jsonrpc/lib/node/main.js reads process.env.XDG_RUNTIME_DIR at module load and dies without it.",
+          ],
+        },
+        {
+          test: "N/A (structural) -- Review-driven, comment only",
+          implementation:
+            "Document in examples/tsudoi.config.ts why the completion generator's explicit `return null` diverges from the brief's example: the declared AsyncGenerator type requires an explicit return, and the brief's own MethodMap comment makes a null result after partial responses an empty CompletionItem[].",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "4d553af",
+              message: "docs(examples): explain the deliberate `return null` divergence",
+              phase: "refactoring",
+            },
+          ],
+          notes: [],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "PBI-1 is not split: the ten PoC methods partition exactly across PBI-1..5, and PBI-1 is precisely one LSP lifecycle state machine with a legal ordering. Splitting it would put a state machine across a sprint boundary.",
+        "Scrum Master enforced 1 Sprint = 1 PBI over the Developer's suggestion that PBI-6 might ride along. Sprint 1 therefore ships .oxlintrc.json with import/extensions only; the Bun rules are Sprint 2.",
+        "Developer spike overrode the PO's assumption that PBI-6 would add a DoD check: plain oxlint auto-discovers .oxlintrc.json, so the guard lands inside an existing check. PO conceded, calling it strictly better.",
+        "Guard scope is the Developer's default-deny rule, not the PO's src/-only proposal. PO conceded: fixture configs execute under deno, so src/-only would leave the highest-risk files unguarded.",
+        "No deno.json, deliberately -- Deno 2 auto-detects package.json + node_modules, and adding one can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
+        "PO withdrew a proposed editor-attach demo: no LSP client is verified present in this environment, and with capabilities empty an attached editor would visibly do nothing.",
+        "PO will not accept on a green suite alone, because the tests are written by the same agent that writes the implementation. Review requires live demonstration: a two-runtime boot of a stakeholder-shaped config, three PO-chosen failure cases each showing 0-byte stdout, the exit-without-shutdown code, the missing-deno message, and the import/extensions rule both failing and passing.",
+      ],
+    },
+  ],
 
   definition_of_done: {
     checks: [
@@ -389,7 +391,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  completed: [],
+  sprint: null,
 
   retrospectives: [],
 };
