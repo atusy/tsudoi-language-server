@@ -32,52 +32,32 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [
-    {
-      id: "PBI-8",
-      story: {
-        role: "config author",
-        capability: "learn how to start tsudoi against their own config without reading its source",
-        benefit:
-          "they can stand up a server without reverse-engineering the CLI or its runtime flags",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The documented quickstart runs as written, EXTRACTED from the README rather than mirrored",
-          verification:
-            "The test reads the commands out of README.md and executes them verbatim under both bun and deno, FROM A STAGED ENVIRONMENT THAT SUPPLIES NOTHING THE README ASKS THE READER TO DO, each returning an InitializeResult naming tsudoi. Extraction asserts an EXPECTED NON-ZERO COMMAND COUNT before asserting anything about what it found. Omitting any single documented step must then make the quickstart fail, swept under ONE runtime -- licensed by Sprint 10's measurement that the route is one file path both runtimes take identically, NOT by cost. NEGATIVE CONTROLS: editing a command in the README reddens it, which a test holding its own copy would not; and a step whose omission STILL SUCCEEDS means either the README documents something unnecessary or THE HARNESS IS SUPPLYING IT, and either way the pass was not evidence",
-        },
-        {
-          criterion:
-            "The documented deno permissions are the ones the suite spawns, with the reason a reader needs to judge them",
-          verification:
-            "The flags are read out of README.md and compared to what test/helpers/lsp.ts spawns. The README states WHY -- vscode-jsonrpc reads XDG_RUNTIME_DIR at module load, so -A is a DEPENDENCY'S demand rather than tsudoi's -- and that narrower sets are untested. NEGATIVE CONTROL: narrowing either side alone reddens",
-        },
-        {
-          criterion: "The contract a reader cannot guess is stated, TOLERANTLY asserted",
-          verification:
-            "README.md carries that --config has no default, that the config default-exports a factory, and that deno must be on PATH or `bun test` fails. BOTH halves: rewording a sentence must still PASS, and removing a fact must FAIL",
-        },
-        {
-          criterion: "The documented failure behaviour happens as written",
-          verification:
-            "Break the documented quickstart config and run it under both runtimes; assert exit 1, a tsudoi:-prefixed reason on stderr and zero bytes on stdout, EACH COMPARED AGAINST WHAT README.md STATES. NEGATIVE CONTROL: changing the README's stated exit code reddens it",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "ALL FOUR CRITERIA ARE VACUOUS UNLESS THE TESTS READ THE README'S OWN BYTES. A plausible-but-wrong README -- right shape, stale command, wrong flag, wrong exit code -- passes every test holding its own copy and fails one that EXTRACTS. Standing item 6 applied to prose; it is the mechanism that has kept examples/tsudoi.config.ts from rotting for eleven sprints. Four criteria is the right COUNT; the discriminator is EXTRACTION, not enumeration.",
-        "SHIPS DESPITE THE OPEN IMPEDIMENT: a README instructing a route nobody can take is useless, and blocking the last deliverable on a human publication decision leaves the project permanently without one. Document the TARBALL route as the working instruction, state the registry route as intended-and-unverified, and SAY PLAINLY THAT THE PACKAGE IS UNPUBLISHED -- otherwise a reader wonders why they are packing a tarball.",
-        "The -A reason is OWED: a Deno user handing all permissions to a server that reads their source needs to know it is a third-party MODULE-LOAD ENV READ, not tsudoi wanting their network -- and that a narrower set is UNTESTED, since the minimum was never measured.",
-        "If the README documents cleanup at all, the claim is that tsudoi CLOSES the generator, never that the author's cleanup COMPLETES. The reason is at src/methods.ts, where the measurement and the language semantics are recorded. A note rather than a criterion: a criterion satisfiable by SILENCE is one nothing would make fail.",
-        "OPEN IMPEDIMENT, waiting_human: `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible.",
-        "RISK a post-publication check must look for, and NOT `npm will do npm things`: install-from-tarball and `deno add npm:` are DIFFERENT MECHANISMS -- the first populates node_modules, the second can resolve through Deno's OWN cache depending on whether the consumer has a package.json.",
-      ],
-    },
-  ],
+  product_backlog: [],
 
   completed: [
+    {
+      number: 12,
+      pbi_id: "PBI-8",
+      goal: "Make eleven sprints reachable by someone who was not here -- a README whose own bytes are what the suite runs, so the instructions cannot drift from the product.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 (post-review prose fix) across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
+        "A DEFECT INSIDE THE DEVELOPER'S OWN REMEDY, AGAIN, and caught by writing it: the planned permanent removal control for the contract criterion -- delete a token, assert the fact is gone -- CANNOT FAIL, because the assertion is a CONJUNCTION and therefore holds for every document including an empty one. Replaced with UNIQUENESS (each fact has exactly one home section), which can fail and DID: it exposed a real collision where a failure section restated the factory contract in the same tokens. Fixed in the prose, not by weakening the tokens.",
+        "A PROSE DEFECT FOUND AT REVIEW, and the fix is the standard applied to prose: the -A section HEDGED (`a narrower set may well be enough`) over an UNRUN measurement while quoting an error naming the missing flag. Measured: deno run --allow-read --allow-env COMPLETES the handshake under deno 2.9.2. Now stated as a historical claim pinned to that version -- UNTESTED means untested, not unmeasured.",
+        "AN UNNAMED PREREQUISITE, which the stipulated-reader rule exists to catch: the install fetches vscode-languageserver-protocol on a cold cache. install.ts had recorded it since Sprint 10 and the README had not inherited it. Now named and defended by its own fact.",
+        "DEVIATION from the plan's `reuse installConsumer()`: it PERFORMS the pack and the install -- two DOCUMENTED steps -- which the PO's bareness reframe forbids, since a harness supplying a documented step makes the intact run a test of the harness. The checkout staging is duplicated instead, with the reason at the site.",
+        "NOT CONSTRUCTED, not foreclosed: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
+        "THE DEVELOPER FOUND A VACUITY MODE INSIDE THE PO'S OWN REMEDY, before building it: AN EXTRACTOR THAT FINDS NOTHING PASSES. If the fence markers move, extraction yields zero commands, `every extracted command succeeds` is VACUOUSLY TRUE, and the README rots exactly as if the tests held their own copy. Mechanism satisfied, property false -- the mod-3 residue shape, in a fourth place. Every extraction therefore asserts an expected non-zero count FIRST, permanently.",
+        "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
+        "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
+        "The PO applied the property-not-mechanism rule TO THEMSELVES one turn after handing it over: the property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`. N pack-and-install cycles is one mechanism, and a cheaper one is the Developer's to take unseen.",
+        "EXECUTION FOUND A SECOND VACUITY MODE, this time inside the Developer's own planned control: the removal half of criterion 3 as planned -- delete a discriminating token, assert the fact is gone -- CANNOT FAIL for any document, because statesFact is a conjunction. It was replaced by a control that can: each fact must have EXACTLY ONE home section. Same shape as the extractor's zero-match mode, in a fifth place, and it survived planning, refinement and one Review-grade rule about vacuous criteria.",
+        "WHAT THE SUITE STILL DOES NOT DEFEND, stated rather than left to be discovered: the README's config snippet is EXECUTED but never TYPE-CHECKED. A snippet with a type error runs fine under type stripping and would greet a reader running tsc with errors. NOT CONSTRUCTED rather than foreclosed -- installConsumer.typeCheck exists and would do it, and this was scope, not impossibility.",
+        "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. It is the most likely defect in a document written by people who have internalised every step, and omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
+      ],
+    },
     {
       number: 11,
       pbi_id: "PBI-9",
@@ -203,29 +183,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 12,
-    pbi_id: "PBI-8",
-    goal: "Make eleven sprints reachable by someone who was not here -- a README whose own bytes are what the suite runs, so the instructions cannot drift from the product.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 (post-review prose fix) across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-      "A DEFECT INSIDE THE DEVELOPER'S OWN REMEDY, AGAIN, and caught by writing it: the planned permanent removal control for the contract criterion -- delete a token, assert the fact is gone -- CANNOT FAIL, because the assertion is a CONJUNCTION and therefore holds for every document including an empty one. Replaced with UNIQUENESS (each fact has exactly one home section), which can fail and DID: it exposed a real collision where a failure section restated the factory contract in the same tokens. Fixed in the prose, not by weakening the tokens.",
-      "A PROSE DEFECT FOUND AT REVIEW, and the fix is the standard applied to prose: the -A section HEDGED (`a narrower set may well be enough`) over an UNRUN measurement while quoting an error naming the missing flag. Measured: deno run --allow-read --allow-env COMPLETES the handshake under deno 2.9.2. Now stated as a historical claim pinned to that version -- UNTESTED means untested, not unmeasured.",
-      "AN UNNAMED PREREQUISITE, which the stipulated-reader rule exists to catch: the install fetches vscode-languageserver-protocol on a cold cache. install.ts had recorded it since Sprint 10 and the README had not inherited it. Now named and defended by its own fact.",
-      "DEVIATION from the plan's `reuse installConsumer()`: it PERFORMS the pack and the install -- two DOCUMENTED steps -- which the PO's bareness reframe forbids, since a harness supplying a documented step makes the intact run a test of the harness. The checkout staging is duplicated instead, with the reason at the site.",
-      "NOT CONSTRUCTED, not foreclosed: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
-      "THE DEVELOPER FOUND A VACUITY MODE INSIDE THE PO'S OWN REMEDY, before building it: AN EXTRACTOR THAT FINDS NOTHING PASSES. If the fence markers move, extraction yields zero commands, `every extracted command succeeds` is VACUOUSLY TRUE, and the README rots exactly as if the tests held their own copy. Mechanism satisfied, property false -- the mod-3 residue shape, in a fourth place. Every extraction therefore asserts an expected non-zero count FIRST, permanently.",
-      "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
-      "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
-      "The PO applied the property-not-mechanism rule TO THEMSELVES one turn after handing it over: the property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`. N pack-and-install cycles is one mechanism, and a cheaper one is the Developer's to take unseen.",
-      "EXECUTION FOUND A SECOND VACUITY MODE, this time inside the Developer's own planned control: the removal half of criterion 3 as planned -- delete a discriminating token, assert the fact is gone -- CANNOT FAIL for any document, because statesFact is a conjunction. It was replaced by a control that can: each fact must have EXACTLY ONE home section. Same shape as the extractor's zero-match mode, in a fifth place, and it survived planning, refinement and one Review-grade rule about vacuous criteria.",
-      "WHAT THE SUITE STILL DOES NOT DEFEND, stated rather than left to be discovered: the README's config snippet is EXECUTED but never TYPE-CHECKED. A snippet with a type error runs fine under type stripping and would greet a reader running tsc with errors. NOT CONSTRUCTED rather than foreclosed -- installConsumer.typeCheck exists and would do it, and this was scope, not impossibility.",
-      "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. It is the most likely defect in a document written by people who have internalised every step, and omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 13,
