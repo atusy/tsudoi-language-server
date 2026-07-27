@@ -181,7 +181,9 @@ export class LspSession {
    * zero-progress criterion exists to catch, and filtering would hide it.
    */
   get progress(): ProgressNotification[] {
-    return this.arrivals.filter((arrival) => arrival.kind === "progress");
+    return this.arrivals.flatMap((arrival) =>
+      arrival.kind === "progress" ? [{ token: arrival.token, value: arrival.value }] : [],
+    );
   }
 
   get progressCount(): number {

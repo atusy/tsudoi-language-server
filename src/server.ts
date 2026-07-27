@@ -1,5 +1,8 @@
 import process from "node:process";
 import {
+  type CompletionItem,
+  type CompletionParams,
+  CompletionRequest,
   createProtocolConnection,
   DidChangeTextDocumentNotification,
   DidCloseTextDocumentNotification,
@@ -12,6 +15,7 @@ import {
   InitializeRequest,
   type InitializeResult,
   type Logger,
+  ProgressType,
   type ServerCapabilities,
   ShutdownRequest,
   StreamMessageReader,
@@ -35,6 +39,13 @@ const stderrLogger: Logger = {
   info: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
   log: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
 };
+
+/**
+ * Types the `value` of the `$/progress` notifications completion streams. A
+ * single instance because ProgressType carries no state: it exists so that the
+ * payload is a CompletionItem[] and nothing else.
+ */
+const completionProgress = new ProgressType<CompletionItem[]>();
 
 /**
  * Reports a config handler's failure and rethrows it.
@@ -136,6 +147,59 @@ export function startServer(
       reportHandlerFailure("textDocument/hover", error);
     }
   });
+
+  // Registered unconditionally, for the same reason hover is: what the server
+  // advertised and what it will answer are separate questions.
+  //
+  // This handler is the whole of the streaming API. A config author writes
+  // `yield` and `return`; whether that leaves as $/progress or as one
+  // aggregated response is decided here, from the one thing the protocol
+  // actually offers -- the presence of partialResultToken. There is no client
+  // capability declaring partial-result support, so a client that cannot take
+  // partial results simply omits the token, and the two triggers the brief
+  // describes are one trigger.
+  connection.onRequest(
+    CompletionRequest.type,
+    async (params: CompletionParams): Promise<CompletionItem[] | null> => {
+      const handler = config.methods?.["textDocument/completion"];
+      if (handler === undefined) {
+        return null;
+      }
+      const context: RequestContext = { signal: new AbortController().signal, tsudoi };
+      const token = params.partialResultToken;
+      // What the author yielded, kept only when there is no token to stream it
+      // under. In streaming mode this stays empty, which is what lets one
+      // expression below answer for both modes.
+      const collected: CompletionItem[] = [];
+      let emitted = false;
+      try {
+        const chunks = handler(context, params);
+        for (;;) {
+          const next = await chunks.next();
+          if (next.done === true) {
+            // The RETURNED array alone in streaming mode: the yields have
+            // already left as $/progress, so concatenating them here would
+            // make a client that appends the response see every item twice.
+            if (next.value !== null) {
+              return [...collected, ...next.value];
+            }
+            // [] versus null turns on whether THIS request produced a chunk.
+            // `nothing further to add` and `nothing to say at all` are
+            // different answers, and only request-local state tells them apart.
+            return emitted ? collected : null;
+          }
+          emitted = true;
+          if (token === undefined) {
+            collected.push(...next.value);
+          } else {
+            await connection.sendProgress(completionProgress, token, next.value);
+          }
+        }
+      } catch (error) {
+        reportHandlerFailure("textDocument/completion", error);
+      }
+    },
+  );
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.
