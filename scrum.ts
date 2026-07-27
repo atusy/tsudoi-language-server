@@ -251,7 +251,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 706c0d0, 1cd4137, 3ee8eed, e05e45d, d1687f1 across 4 subtasks. Per-subtask records compacted here; git retains them.",
-        "Start from the Developer's verified spike at scratchpad/guard/.oxlintrc.json rather than prose -- the first application of the retrospective's spike-attachment rule. Delta to the repo config is two top-level rules plus one overrides entry.",
         "Manufactured RED is mandatory for subtask 1 because import/extensions already passes, so its test is born green. Perturbation A: delete the rule, the extension-less case must fail. Perturbation B: restore it but drop ignorePackages, the bare-specifier case must fail. Green under either perturbation means the test asserts nothing.",
         "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
         "Developer declined to automate the complementary `tsc accepts Bun.file` assertion: honest options were mutating the repo's own src/ mid-test or a slow temp dir with node_modules that still is not the real config. Recorded as a comment instead, and flagged rather than papered over.",
@@ -269,8 +268,6 @@ const scrum: ScrumDashboard = {
         "Shipped in eb92147..f5f76a0 across 15 TDD subtasks, plus 4d553af (Review-driven fix) and 45c00ba (retrospective action). Per-subtask records compacted here; git retains them.",
         "PBI-1 is not split: the ten PoC methods partition exactly across PBI-1..5, and PBI-1 is precisely one LSP lifecycle state machine with a legal ordering. Splitting it would put a state machine across a sprint boundary.",
         "Scrum Master enforced 1 Sprint = 1 PBI over the Developer's suggestion that PBI-6 might ride along. Sprint 1 therefore ships .oxlintrc.json with import/extensions only; the Bun rules are Sprint 2.",
-        "Developer spike overrode the PO's assumption that PBI-6 would add a DoD check: plain oxlint auto-discovers .oxlintrc.json, so the guard lands inside an existing check. PO conceded, calling it strictly better.",
-        "Guard scope is the Developer's default-deny rule, not the PO's src/-only proposal. PO conceded: fixture configs execute under deno, so src/-only would leave the highest-risk files unguarded.",
         "No deno.json, deliberately -- Deno 2 auto-detects package.json + node_modules, and adding one can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
         "PO withdrew a proposed editor-attach demo: no LSP client is verified present in this environment, and with capabilities empty an attached editor would visibly do nothing.",
         "PO will not accept on a green suite alone, because the tests are written by the same agent that writes the implementation. Review requires live demonstration: a two-runtime boot of a stakeholder-shaped config, three PO-chosen failure cases each showing 0-byte stdout, the exit-without-shutdown code, the missing-deno message, and the import/extensions rule both failing and passing.",
