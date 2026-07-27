@@ -320,9 +320,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Gate ONLY the handlers tsudoi registered, not the dispatch as a whole -- that is what leaves unknown methods falling through to -32601, satisfying the guard by construction rather than by care. Use ErrorCodes.ServerNotInitialized, never a literal.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "eb616dd",
+            message: "feat(lifecycle): answer -32002 for a request arriving before initialize",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned, and for the RIGHT reason: pre-fix the server answered hover `null` -- the plausible lie, not an error.",
+          "PERTURBATION (gate applied to initialize too, carve-out removed) flipped `serverInfo.name === 'tsudoi'` while the EARLIER `-32002` assertion stayed green -- the target, not an earlier one. Collateral: 72 of 107 suite failures, everything that initializes. The exit-first guard stayed green.",
+        ],
       },
       {
         test: "EXPECTED RED. hover after shutdown answers -32600; exit afterwards still returns 0.",
