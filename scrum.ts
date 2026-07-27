@@ -349,6 +349,21 @@ const scrum: ScrumDashboard = {
           "deno needs -A (or at least --allow-env): vscode-jsonrpc/lib/node/main.js reads process.env.XDG_RUNTIME_DIR at module load and dies without it.",
         ],
       },
+      {
+        test: "N/A (structural) -- Review-driven, comment only",
+        implementation:
+          "Document in examples/tsudoi.config.ts why the completion generator's explicit `return null` diverges from the brief's example: the declared AsyncGenerator type requires an explicit return, and the brief's own MethodMap comment makes a null result after partial responses an empty CompletionItem[].",
+        type: "structural",
+        status: "completed",
+        commits: [
+          {
+            hash: "4d553af",
+            message: "docs(examples): explain the deliberate `return null` divergence",
+            phase: "refactoring",
+          },
+        ],
+        notes: [],
+      },
     ],
     impediments: [],
     decisions: [
