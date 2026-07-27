@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import {
   cpSync,
   mkdirSync,
@@ -391,4 +392,117 @@ export function reword(markdown: string): string {
   return sections(markdown)
     .map((section) => section.split(". ").reverse().join(". ").replaceAll("\n", " "))
     .join("\n");
+}
+
+/** What the README says an editor sees when the config is wrong. */
+export interface FailureContract {
+  readonly exitCode: number;
+  readonly stderrPrefix: string;
+  readonly stdoutBytes: number;
+}
+
+/**
+ * The failure contract, read out of the table a READER reads.
+ *
+ * The values live in the rendered table rather than in a marker, on purpose: a
+ * value hidden in an HTML comment could drift from the sentence beside it and
+ * every test here would still pass while the README lied. What is asserted has
+ * to be what is read.
+ *
+ * THROWS unless all three rows are found, for the same reason the quickstart
+ * extractor throws on a count: a contract of no values is satisfied by anything.
+ */
+export function extractFailureContract(markdown: string): FailureContract {
+  const marker = markdown.indexOf("<!-- failure-contract -->");
+  if (marker === -1) {
+    throw new Error("README failure contract: no <!-- failure-contract --> marker");
+  }
+  const values = new Map<string, string>();
+  for (const line of markdown.slice(marker).split("\n").slice(1)) {
+    if (line.trim() === "") {
+      continue;
+    }
+    if (!line.startsWith("|")) {
+      break;
+    }
+    const row = /^\|([^|]+)\|\s*`([^`]*)`\s*\|$/.exec(line);
+    if (row !== null) {
+      values.set((row[1] ?? "").trim(), row[2] ?? "");
+    }
+  }
+
+  const find = (what: RegExp): string => {
+    const hit = [...values].find(([label]) => what.test(label));
+    if (hit === undefined) {
+      throw new Error(
+        `README failure contract: no row for ${String(what)} among ${[...values.keys()].join(", ")}`,
+      );
+    }
+    return hit[1];
+  };
+  const number = (what: RegExp): number => {
+    const value = Number(find(what));
+    if (!Number.isInteger(value)) {
+      throw new Error(`README failure contract: ${String(what)} is not a whole number`);
+    }
+    return value;
+  };
+  return {
+    exitCode: number(/exit code/i),
+    stderrPrefix: find(/stderr/i),
+    stdoutBytes: number(/stdout/i),
+  };
+}
+
+/** What a run of the quickstart with a BROKEN config produced. */
+export interface BrokenConfigOutcome {
+  readonly code: number | null;
+  readonly stdout: string;
+  readonly stderr: string;
+  /**
+   * Bytes THIS measurement saw on stdout during the setup steps -- the
+   * permanent pair for `zero bytes on stdout`. An apparatus that counted
+   * nothing anywhere would satisfy the absence assertion on every run.
+   */
+  readonly stdoutBytesSeenElsewhere: number;
+}
+
+/** A config that loads and exports the wrong thing: the reader's likeliest mistake. */
+const brokenConfig = "export const notDefault = 1;\n";
+
+/**
+ * Runs the documented sequence, replaces the config the README told the reader
+ * to write with one that has no default export, and runs the documented start
+ * command to COMPLETION.
+ *
+ * The command is the README's own start line, unchanged: a failure case run
+ * against some other entry point would prove nothing about the route a reader
+ * takes.
+ */
+export async function runQuickstartWithBrokenConfig(
+  sequence: readonly QuickstartStep[],
+): Promise<BrokenConfigOutcome> {
+  const layout = extractQuickstart(readReadme(), QUICKSTART_STEPS);
+  const stage = stageQuickstart(layout.map((step) => step.dir));
+  let stdoutBytesSeenElsewhere = 0;
+  try {
+    for (const step of sequence) {
+      const cwd = join(stage.root, step.dir);
+      if (step.kind === "write") {
+        mkdirSync(dirname(join(cwd, step.path)), { recursive: true });
+        writeFileSync(join(cwd, step.path), brokenConfig);
+        continue;
+      }
+      if (step.starts === undefined) {
+        const result = await runCommand(step.command, cwd);
+        stdoutBytesSeenElsewhere += Buffer.byteLength(result.stdout, "utf8");
+        continue;
+      }
+      const failed = await runCommand(step.command, cwd);
+      return { ...failed, stdoutBytesSeenElsewhere };
+    }
+    throw new Error("README quickstart: nothing in this sequence starts the server");
+  } finally {
+    stage.dispose();
+  }
 }

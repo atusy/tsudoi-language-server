@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test";
+import { Buffer } from "node:buffer";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import {
+  extractFailureContract,
   extractQuickstart,
   invocationOf,
   type ReadmeFact,
@@ -13,6 +15,7 @@ import {
   QUICKSTART_STEPS,
   readReadme,
   runQuickstart,
+  runQuickstartWithBrokenConfig,
   sequenceFor,
 } from "./helpers/readme.ts";
 
@@ -249,3 +252,42 @@ for (const fact of facts) {
     expect(statesFact(reword(readme), fact)).toBe(true);
   });
 }
+
+/**
+ * CRITERION 4, and the whole of it is that THE README IS THE SOURCE OF THE
+ * EXPECTATION. Every value asserted below comes out of the table a reader
+ * reads: the exit code, the prefix on stderr, the byte count on stdout. A test
+ * holding its own `1` would pass against a README that promised `2`, which is
+ * the failure this criterion exists to catch.
+ */
+for (const runtime of ["bun", "deno"] as const) {
+  test(`the documented failure behaviour is what happens under ${runtime}`, async () => {
+    const contract = extractFailureContract(readme);
+    const outcome = await runQuickstartWithBrokenConfig(
+      sequenceFor(extractQuickstart(readme, QUICKSTART_STEPS), runtime),
+    );
+
+    expect(outcome.code).toBe(contract.exitCode);
+    expect(outcome.stderr.slice(0, contract.stderrPrefix.length)).toBe(contract.stderrPrefix);
+    expect(Buffer.byteLength(outcome.stdout, "utf8")).toBe(contract.stdoutBytes);
+    // THE PAIR for that absence, permanent: the same counting, on the same
+    // stream, through the same helper, DOES see bytes when a command produces
+    // them. Without it, an apparatus that counted nothing would satisfy `zero
+    // bytes on stdout` on every run forever.
+    expect(outcome.stdoutBytesSeenElsewhere).toBeGreaterThan(0);
+  });
+}
+
+// The failure contract's own vacuity guard, permanent: a table nothing points
+// at yields no values, and a contract of no values is satisfied by anything.
+test("a README with no failure-contract table states no contract, and says so", () => {
+  const unmarked = readme.replace("<!-- failure-contract -->", "");
+
+  expect(() => extractFailureContract(unmarked)).toThrow("no <!-- failure-contract --> marker");
+});
+
+test("a failure contract missing a row says which one", () => {
+  const rowless = readme.replaceAll(/^\| exit code.*$/gm, "");
+
+  expect(() => extractFailureContract(rowless)).toThrow("exit code");
+});
