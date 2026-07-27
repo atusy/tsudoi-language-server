@@ -1,5 +1,8 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+// TYPE-ONLY, and it has to stay that way: lsp.ts imports repoRoot from here, so
+// a value import would close the cycle. A type import erases at emit.
+import type { Runtime } from "./lsp.ts";
 
 // import.meta.dir is Bun-only; the URL form works under both runtimes.
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -16,9 +19,17 @@ export interface CliResult {
   stderr: string;
 }
 
-/** Runs the CLI to completion under bun and collects its exit code and streams. */
-export function runCli(args: readonly string[]): Promise<CliResult> {
-  return runCommand(`bun run ${cliPath}`, repoRoot, args);
+/**
+ * Runs the CLI to completion under the GIVEN runtime and collects its exit code
+ * and streams.
+ *
+ * The runtime is a parameter for the same reason LspSession.start has taken one
+ * since Sprint 1: every claim this project makes about failing is a claim about
+ * both runtimes, and a helper hardcoding `bun` made the deno half of the
+ * config-failure contract unrunnable rather than merely unrun.
+ */
+export function runCli(runtime: Runtime, args: readonly string[]): Promise<CliResult> {
+  return runCommand(`${runtime.command} ${runtime.runArgs.join(" ")} ${cliPath}`, repoRoot, args);
 }
 
 /**
