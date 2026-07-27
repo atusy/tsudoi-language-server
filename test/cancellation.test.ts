@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InitializeResult } from "vscode-languageserver-protocol";
+import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -10,8 +10,24 @@ import {
   hoverFor,
   tagOf,
 } from "./fixtures/hover-cancellable.ts";
+import {
+  abortedMarker as completionAborted,
+  beforeGate,
+  returnedItems,
+} from "./fixtures/completion-cancel.ts";
 
 const hoverCancellable = fixture("hover-cancellable.ts");
+const completionCancel = fixture("completion-cancel.ts");
+
+/**
+ * LSP's RequestCancelled. Written out rather than imported so that the wire
+ * value is pinned here: an implementation that swapped the constant for
+ * another of the library's error codes would still compile.
+ */
+const requestCancelled = -32800;
+
+/** A client that wants partial results names a token; one that does not omits it. */
+const partialResultToken = "cancel-partial-1";
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -21,6 +37,14 @@ const uri = "file:///workspace/a.txt";
 
 function hoverParams(line: number): unknown {
   return { textDocument: { uri }, position: { line, character: 0 } };
+}
+
+function completionParams(): unknown {
+  return {
+    textDocument: { uri },
+    position: { line: 0, character: 0 },
+    partialResultToken,
+  };
 }
 
 function didOpen(session: LspSession, text: string): void {
@@ -114,5 +138,82 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // The response shape is PINNED, for both methods, rather than left to
+    // whatever the handler happened to produce. LSP 3.17 permits answering a
+    // cancelled request normally; tsudoi does not, because the client has
+    // already discarded the request's context.
+    test(
+      "a cancelled hover is answered -32800 and the next hover is answered normally",
+      async () => {
+        const session = LspSession.start(runtime, hoverCancellable);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const cancelled = session.issue("textDocument/hover", hoverParams(1));
+          await session.waitForStderr(enteredMarker(tagOf(1), false));
+          session.cancel(cancelled.id);
+
+          const answered = await cancelled.response;
+          expect(answered.error?.code).toBe(requestCancelled);
+          // The handler's Hover is DISCARDED, not delivered alongside: a stale
+          // answer to a request the client has forgotten is the desync this
+          // choice exists to prevent.
+          expect(answered.result).toBeUndefined();
+
+          openGate(session);
+          const next = await session.request<Hover>("textDocument/hover", hoverParams(4));
+          expect(next).toEqual(hoverFor(tagOf(4)));
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    test(
+      "a cancelled completion is answered -32800 and the next completion is answered normally",
+      async () => {
+        const session = LspSession.start(runtime, completionCancel);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const cancelled = session.issue("textDocument/completion", completionParams());
+          // Cancelled while provably mid-stream: one chunk has already left.
+          await session.waitForProgress(1);
+          expect(session.progress[0]).toEqual({ token: partialResultToken, value: beforeGate });
+          session.cancel(cancelled.id);
+          await session.waitForStderr(completionAborted);
+
+          const answered = await cancelled.response;
+          expect(answered.error?.code).toBe(requestCancelled);
+          expect(answered.result).toBeUndefined();
+
+          openGate(session);
+          const next = await session.request<CompletionItem[]>(
+            "textDocument/completion",
+            completionParams(),
+          );
+          expect(next).toEqual(returnedItems);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
   });
 }

@@ -7,8 +7,10 @@ import {
   type Hover,
   type HoverParams,
   HoverRequest,
+  LSPErrorCodes,
   ProgressType,
   type ProtocolConnection,
+  ResponseError,
 } from "vscode-languageserver-protocol/node";
 import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
@@ -40,6 +42,21 @@ function reportHandlerFailure(method: Method, error: unknown): never {
   const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
   process.stderr.write(`tsudoi: ${method} handler failed: ${detail}\n`);
   throw error;
+}
+
+/**
+ * How a cancelled request is answered, whatever its handler produced.
+ *
+ * LSP 3.17 permits answering normally instead, so this is a CHOICE: the client
+ * has already discarded the request's context, and a stale result invites the
+ * desync that partial results are careful to avoid.
+ *
+ * Thrown rather than returned because vscode-jsonrpc replies a thrown
+ * ResponseError verbatim -- which keeps every handler's return type the config
+ * author's own, with no error shape mixed into it.
+ */
+function requestCancelled(): never {
+  throw new ResponseError(LSPErrorCodes.RequestCancelled, "Request cancelled");
 }
 
 /**
@@ -83,11 +100,18 @@ export function registerMethods(
     async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
       const handler = config.methods?.["textDocument/hover"];
       const context = requestContext(tsudoi, cancellation);
+      let hover: Hover | null;
       try {
-        return (await handler?.(context, params)) ?? null;
+        hover = (await handler?.(context, params)) ?? null;
       } catch (error) {
         reportHandlerFailure("textDocument/hover", error);
       }
+      // Checked at SETTLE time, after the handler has had its say: a handler
+      // that ignores the signal entirely still has its answer suppressed.
+      if (context.signal.aborted) {
+        requestCancelled();
+      }
+      return hover;
     },
   );
 
@@ -115,6 +139,7 @@ export function registerMethods(
       // expression below answer for both modes.
       const collected: CompletionItem[] = [];
       let emitted = false;
+      let items: CompletionItem[] | null;
       try {
         const chunks = handler(context, params);
         for (;;) {
@@ -124,12 +149,14 @@ export function registerMethods(
             // already left as $/progress, so concatenating them here would
             // make a client that appends the response see every item twice.
             if (next.value !== null) {
-              return [...collected, ...next.value];
+              items = [...collected, ...next.value];
+              break;
             }
             // [] versus null turns on whether THIS request produced a chunk.
             // `nothing further to add` and `nothing to say at all` are
             // different answers, and only request-local state tells them apart.
-            return emitted ? collected : null;
+            items = emitted ? collected : null;
+            break;
           }
           emitted = true;
           if (token === undefined) {
@@ -141,6 +168,10 @@ export function registerMethods(
       } catch (error) {
         reportHandlerFailure("textDocument/completion", error);
       }
+      if (context.signal.aborted) {
+        requestCancelled();
+      }
+      return items;
     },
   );
 }
