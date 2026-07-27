@@ -167,15 +167,9 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in adcff14, 8e71fcc, eb616dd, e50ecc2, 63a87e4, adc95ef, 4b70591, 0c804b9, 581a422, 1b0b2d1 across 9 subtasks. Per-subtask records and 12 perturbation notes compacted here; git retains them.",
-        "SEVENTH named target beyond the PO's six: pre-initialize notification DROPPING is LSP behaviour with no acceptance criterion. Rather than ship it unproven it got a permanent test and its own perturbation -- and it is what makes subtask 1's exit carve-out load-bearing.",
-        "WEAKNESS, found by reading and NOT built: an in-flight completion streams $/progress past shutdown. The gate is consulted once, at dispatch, so a completion started before shutdown keeps calling sendProgress and its chunks and response arrive AFTER the shutdown response is on the wire. No test sends that sequence, so it is unproven in either direction. Arguably correct -- LSP forbids accepting NEW requests -- but this sprint closed the door only at dispatch.",
         "ACCEPTED with its justification CORRECTED by the PO, because a note carrying a false premise is worse than no note: isProgressToken admits integers outside LSP's int32 (Number.isInteger(2**40) is true). Rejecting would NOT lose the client's items -- under normalise-and-report an invalid token aggregates, so every item still arrives in the response body. The real reason to honour it is that the CLIENT chose that token and can correlate it, so honouring delivers the streaming they asked for, whereas rejecting silently downgrades a working client to aggregation plus a stderr line it did not need.",
-        "UNPROVEN, reported as such: the arrow wrapper keeping methods.ts away from the lifecycle mutators is covered by INFERENCE from two branch perturbations, not by a perturbation of its own.",
         "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
-        "PROBE 1 with its limit stated: vscode-languageserver-protocol@3.18.2 (LSP 3.17); ErrorCodes.ServerNotInitialized is a real constant. Bare `exit` with no initialize already exits 1 with empty stdout on both runtimes, and NO test sends it -- so the carve-out is confirmed NECESSARY, since a gate dropping all pre-initialize notifications turns a measured exit=1 into a hang with nothing objecting. The Developer verified the version, the constant and the behaviour, but NOT the specification prose -- no spec text ships in the package. That sentence is a human-side check.",
-        "The two opening subtasks are born-green REGRESSION GUARDS that exist to object when the gate lands. Ordering them first is the point: they must exist before the change they guard against.",
         "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
-        "PO checklist, per-sprint additions: (1) ONE PERTURBATION PER SUB-CLAIM, each naming its target assertion -- criteria 1 and 2 bundle three claims each, and a single gate-widening perturbation flips whichever assertion runs first and leaves the rest undefended, which is precisely the Sprint 6 failure; six named targets, not two; (2) the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr; (3) the falsy-token discriminator as a PAIR -- implement as `if (!token)` and confirm the 0 test reddens WHILE the null test stays green, since either half alone proves nothing; (4) the once-per-session trace pinned, perturbed by emitting per request -- the only item guarding a requirement stated as a value constraint rather than a mechanism; (5) the normalised response asserted ITEM BY ITEM, not by count, since a count passes if the right number of wrong items arrives.",
       ],
     },
     {
@@ -187,7 +181,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 7b6e133, 5cba2c2, 7481a22, 26e12a9, 81983b0, 7327cf7, 5913ad9, 25302fc across 8 subtasks, plus a85ba96 and 71afcbb closing gaps. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "SHIPPING-GRADE HOLE the plan could not have known about, found by READING THE LIBRARY rather than by timing: vscode-jsonrpc's handleRequest calls cancellationSource.cancel() BEFORE ever reading .token. With _token unmaterialised, cancel() installs CancellationToken.Cancelled, whose onCancellationRequested is Event.None -- returns a disposable and NEVER invokes the callback. A subscribe-only bridge therefore never aborts for a client that cancels before dispatch, and the settle-time check then reads aborted === false and puts the handler result on the wire. Fixed by reading isCancellationRequested BEFORE subscribing. A source-ordering argument, not a timeout, which could not distinguish never-fires from fires-late.",
         "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
       ],
     },
@@ -260,8 +253,118 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 8,
+    pbi_id: "PBI-11",
+    goal: "Keep a promise JavaScript already makes -- a config author's finally runs when their completion is abandoned -- so cleanup they can never watch succeed is not silently skipped on every keystroke, and the last gate on releasing this thing comes down.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "EXPECTED RED. A fixture generator records into stderr from its finally; cancel mid-stream WITH a partialResultToken; assert the record appears, -32800 still arrives, and the session exits 0.",
+        implementation:
+          "On abort call chunks.return() before returning out of the driving loop. Minimal placement -- INSIDE the streaming branch. Await it inline for now; a later subtask evolves that.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. The same fixture cancelled mid-stream WITHOUT a partialResultToken; assert the same finally record appears.",
+        implementation:
+          "Lift the close ABOVE the mode split, where the abort check already sits. Deliberate fake-it-then-evolve: the previous subtask places the fix one branch lower precisely so this criterion fails first. The PO wrote a whole criterion for this discriminator, so it earns a real RED rather than a perturbation note. NOT a shared-implementation-moment group -- two moments, by construction.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A fixture whose finally throws; assert stderr names it with the `tsudoi:` PREFIX (never the body), the server survives, a later completion is answered normally, and the session exits 0.",
+        implementation:
+          "Catch the rejection from chunks.return() -- measured, a throwing finally rejects it -- and report through a cleanup-specific reporter. Do NOT rethrow: unlike a handler failure the client already has its -32800 and there is no response left to correct.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED -- measured, the awaited form never settles, so this test hangs to its timeout before the change. A fixture whose finally never settles: assert -32800 still arrives within an explicit timeout and a later completion is answered.",
+        implementation:
+          "Convert the inline await to the FLOATING form with the rejection handler still attached. Comment the language limit rather than testing it: a generator parked inside its own await queues return() behind the pending next(), so cleanup runs when it next settles -- a limit of async generators, not a defect.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN after the two preceding subtasks. For both the throwing-cleanup and hanging-cleanup sessions assert THE SESSION'S OWN EXIT CODE IS 0 and its shutdown/exit completed. PAIRED POSITIVE CONTROL, permanent: a fixture producing a floating rejection with no handler makes the same measurement observe EXIT 1. PERTURBATION: remove the rejection handler from chunks.return(); the throwing-cleanup session MUST redden to exit 1 while the aggregation-close assertion stays green.",
+        implementation:
+          "None expected. Measured: an unhandled rejection KILLS the child on both runtimes, so it cannot be laundered into whichever test runs next -- it destroys the session that caused it. Assert exit codes, never diagnostic text: bun prints a source frame, deno prints `error: Uncaught (in promise)`.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A -- DELIBERATELY NOT ASSERTED, per the PO's correction of their own Sprint 6 note. Asserting it would require making the example cancellable, the artifact-for-test-convenience change already declined.",
+        implementation:
+          "Add a finally to examples/tsudoi.config.ts's completion generator with a comment explaining it runs when the client cancels. It must read as DOCUMENTATION for a config author, not as a test hook. Bun-free, .ts extensions. Existing lifecycle tests stay green.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural) -- suite stays green.",
+        implementation:
+          "Place the cleanup reporter beside reportHandlerFailure, sharing the `tsudoi:` stderr convention but NOT the rethrow -- the asymmetry is the point and deserves the comment. Keep the scope boundary explicit there: client cancellation only, do not wire shutdown->cancel; an in-flight completion finishing across shutdown is correct-by-spec and deliberately unpinned, and this file is exactly where someone would assume otherwise.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
+      "The measurement hands criterion 2 a STRONGER non-launderable assertion than a stderr match: since an unhandled rejection destroys the session that caused it, assert the session's own exit code rather than searching for text that another test could have produced.",
+      "PO checklist, per-sprint additions: (1) the mode-split perturbation reported as a PAIR -- aggregation red WHILE streaming green; (2) the hang case proven by ORDERING not timing -- the finally's record absent at the moment -32800 arrives, present after release, which cannot pass because of fast hardware; (3) the unhandled-rejection assertion made where it cannot be laundered; (4) cleanup that throws proven by SURVIVAL as well as stderr -- a later completion answers normally.",
+    ],
+  },
   retrospectives: [
+    {
+      sprint: 8,
+      improvements: [
+        {
+          action:
+            "PREFER SPLITTING OVER DOCUMENTING: when a perturbation would flip at an earlier assertion than the sub-claim it targets, that is a signal the test BUNDLES independent sub-claims. Split the test so each sub-claim can fail alone, rather than recording that the headline claim is undefended.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Better than covered -- it DISSOLVES what the earlier-assertion clause only documents. Sprint 7's subtask 5 needed exactly this and it was discovered during execution rather than declared at planning; as a planning-time rule the fix moves earlier and the retro carries less.",
+        },
+        {
+          action:
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Filed at the Developer's request after they named it at second occurrence. Sprint 2: a perturbation claimed to defend node: specifiers defended only the npm half. Sprint 7: rejecting an out-of-range token was said to lose the client's items when normalise-and-report delivers every one of them. Both times the DECISION was right and the stated REASON false -- the more dangerous failure, because a false premise is what someone acts on two sprints later. The consolidated rule disciplines assertions and perturbations; it said nothing about prose.",
+        },
+      ],
+    },
+    {
+      sprint: 7,
+      improvements: [
+        {
+          action:
+            "A behaviour is pinned by a test where ONE outcome is required. Where TWO outcomes would both be acceptable, record the decision and leave it unpinned -- and the burden is to NAME THE ALTERNATIVE that would also be acceptable.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "A bounding condition on seven sprints of pin-everything pressure, whose cost is already visible: PBI-9 carries three separate instances of hardcoded-response-id brittleness -- tests that resist legitimate change without defending a requirement. The name-the-alternative clause is what stops it becoming an escape hatch: `there is nothing to preserve` is easy to assert, `cancelling in-flight requests at shutdown would be equally acceptable` is falsifiable.",
+        },
+      ],
+    },
     {
       sprint: 6,
       improvements: [
