@@ -303,6 +303,8 @@ for (const runtime of runtimes) {
         // Not one line of the stack either: the message is what a leak would
         // carry, and this fixture's is unmistakable.
         expect(session.stderr).not.toContain(cancelledThrowMessage);
+        // And the suppressed diagnosis did not go to stdout instead.
+        expect(session.unframedStdoutBytes).toBe(0);
 
         await uncancelled.request<InitializeResult>("initialize", initializeParams);
         const error = await uncancelled.requestError("textDocument/hover", hoverParams(0));
