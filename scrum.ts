@@ -330,9 +330,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Convert the inline await to the FLOATING form with the rejection handler still attached. Comment the language limit rather than testing it: a generator parked inside its own await queues return() behind the pending next(), so cleanup runs when it next settles -- a limit of async generators, not a defect.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "cd08905",
+            message: "feat(completion): fire the close instead of awaiting it",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "EXPECTED RED, OBSERVED in two shapes for one cause: deno reported `this test timed out after 6000ms`, bun's await on the response resolved only when the disposed child closed (code 0 from the helper's dead-server shape). Both say the same thing -- the awaited close never settles, so -32800 is never sent.",
+          "ORDERING, NOT TIMING, and the strong form held: at the instant the -32800 resolves, `finished cleanup` is ABSENT while `entered cleanup` is already PRESENT -- so the absence says the response overtook a cleanup that had provably started, not that nothing was closed. Opening the gate then makes the record appear. Ran 5x over both runtimes with no flake; the assertion cannot pass because the machine was fast, because only the test can release that gate.",
+          "The absence/presence pair is the same two markers, so it can never drift apart.",
+        ],
       },
       {
         test: "BORN GREEN after the two preceding subtasks. For both the throwing-cleanup and hanging-cleanup sessions assert THE SESSION'S OWN EXIT CODE IS 0 and its shutdown/exit completed. PAIRED POSITIVE CONTROL, permanent: a fixture producing a floating rejection with no handler makes the same measurement observe EXIT 1. PERTURBATION: remove the rejection handler from chunks.return(); the throwing-cleanup session MUST redden to exit 1 while the aggregation-close assertion stays green.",
