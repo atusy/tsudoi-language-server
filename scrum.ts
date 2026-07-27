@@ -343,9 +343,13 @@ const scrum: ScrumDashboard = {
         implementation:
           "MEASURED: the subtask-1 logger is NOT consulted for request handlers, so it cannot satisfy this. Wrap the config handler invocation in try/catch inside tsudoi's own dispatch: write the diagnosable line to process.stderr, then RETHROW so vscode-jsonrpc emits its -32603. Catching without rethrowing would turn a broken handler into a silent null, which is the failure this criterion exists to prevent. PERTURBATION for the purity half: add console.log('noise') inside the hover dispatch; unframedStdoutBytes === 0 must fail while the other assertions stay green.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          { hash: "e5c49cc", message: "feat(server): report a failing handler", phase: "green" },
+        ],
+        notes: [
+          'PERTURBATION RUN. console.log("noise") in the hover dispatch reddens `expect(session.unframedStdoutBytes).toBe(0)` in exactly three named tests, bun and deno both (6): `...answered null, twice over`, `a hover handler that throws...`, `a hover handler that rejects...`. The -32603 and stderr assertions stayed green, so purity is what this defends and nothing else. UNDEFENDED: `the hover handler\'s return value reaches the client unchanged` carries no purity assertion and stayed green. Restored. Also measured live before the fix: -32603 arrived with stderr EMPTY, confirming the logger is not consulted for request handlers.',
+        ],
       },
       {
         test: "N/A (structural) -- the whole suite stays green, unchanged.",
