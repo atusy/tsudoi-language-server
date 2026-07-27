@@ -34,39 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-13",
-      story: {
-        role: "config author",
-        capability: "obtain and run tsudoi under Deno without cloning this repository",
-        benefit: "the cross-runtime promise survives distribution, not only development",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A Deno user obtains and runs tsudoi without cloning the repository",
-          verification:
-            "Pack the package, install it into a project that is not this repo, and complete the initialize handshake under `deno run -A`; NEGATIVE CONTROL: shipping .ts sources instead of compiled .js makes the same check fail with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING",
-        },
-        {
-          criterion: "The same route works for Bun, without a runtime-specific install path",
-          verification:
-            "The identical packed artifact and identical install completes the handshake under `bun run`; NEGATIVE CONTROL: a route only Deno can consume fails this",
-        },
-        {
-          criterion:
-            "The published artifact is built from current source, and the repo still runs from a checkout",
-          verification:
-            "The packaged CLI is produced by the build rather than committed; the existing cross-runtime lifecycle suite still runs src/*.ts directly under both runtimes; no deno.json exists",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MEASURED, both runtimes, from node_modules: compiled .js + .d.ts starts under bun AND deno, and tsc passes in the consumer. The enabler is rewriteRelativeImportExtensions -- emit rewrites ./config.ts to ./config.js while THE SOURCE KEEPS ITS .ts EXTENSIONS, so Sprint 1's cross-runtime source and PBI-6's guard stay valid untouched. Deno's restriction is on type-STRIPPING under node_modules, not on running .js from there, so shipping .js dissolves the defect rather than working around it.",
-        "MEASURED and DECLINED -- JSR: it typechecks the package with no slow-types errors, but it flags tsudoi's CORE MECHANISM (the await import(pathToFileURL(...)) that loads the user's config) as unanalyzable-dynamic-import, it REQUIRES a deno.json, and the Bun half cannot be verified without actually publishing, which needs an account and is irreversible -- impediment-class, not developer-class.",
-        "The cost is real and not softened: this buys a build step and the main/bin surface PBI-7 deliberately excluded, against nine sprints of no-build-step simplicity. It is recommended because the alternative buys a deno.json, an unverifiable consumer story, and a route that may diverge by runtime -- which is what criterion 2 exists to forbid.",
-        "ANSWERED IN SPRINT 10, replacing this note's `UNMEASURED` standing: repointing exports[./types] at ./dist/types.d.ts DOES break the in-repo self-reference -- tsc exits 1 with TS2307 at examples/tsudoi.config.ts and test/fixtures/published-specifier.ts when dist/ is absent. A CONDITIONAL map resolves it, because tsc falls through a condition whose target file does not exist; the shipped map has three arms and each is asserted in test/package-shape.test.ts. Left here rather than deleted because the risk it names is the one the remedy is built on.",
-      ],
-    },
-    {
       id: "PBI-8",
       story: {
         role: "config author",
@@ -101,6 +68,8 @@ const scrum: ScrumDashboard = {
         "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
         "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither, and all three contract facts are already pinned by PBI-1's criteria in ASCII, so no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
         "Deliberately does NOT claim a config author's own error message passes through verbatim. It does today -- the CLI writes stderr directly and nothing in src/ decodes it -- but it cannot be asserted for non-ASCII until PBI-9 fixes spawn.ts. Documenting a claim we cannot pin is the thing refused all project, applied here against a claim the PO would like to make.",
+        "OPEN IMPEDIMENT, waiting_human: the route's FIRST line -- how a user OBTAINS the package -- is verified for `install ./tarball` only. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible. The README must not claim the registry route until that is unblocked.",
+        "RISK the post-publication check must look for, and NOT `npm will do npm things`: `install ./tarball` and `deno add npm:` are DIFFERENT MECHANISMS -- the first populates node_modules, the second can resolve through Deno's OWN npm cache depending on whether the consumer has a package.json. Sprint 9 established Deno demands the dependency from node_modules, so the unverified first line could produce an on-disk shape the verified second line does not assume.",
         "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
         "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
       ],
@@ -109,34 +78,48 @@ const scrum: ScrumDashboard = {
       id: "PBI-9",
       story: {
         role: "tsudoi maintainer",
-        capability: "keep the lifecycle and config-failure guarantees pinned by automated tests",
-        benefit: "behaviour verified only by hand at Sprint 1 Review cannot regress unnoticed",
+        capability: "trust what the suite says, and only what it says",
+        benefit:
+          "a green run is evidence for the claims made, and does not resist changes nobody promised not to make",
       },
       acceptance_criteria: [
         {
-          criterion: "The shutdown response is pinned for spec-compliant pacing",
+          criterion:
+            "The config-failure cases run under both runtimes, including a non-ASCII message",
           verification:
-            "Test awaits the shutdown response, asserts it arrives, then sends exit and asserts code 0",
+            "The seven cases are parameterised over bun and deno, each asserting exit 1, tsudoi:-prefixed stderr and 0-byte stdout, with one case whose message is Japanese. NEGATIVE CONTROL: reverting spawn.ts to per-chunk decode reddens the non-ASCII assertion",
         },
         {
-          criterion: "The config-failure cases run under both runtimes",
+          criterion: "Content-Length is asserted as a byte count, deterministically",
           verification:
-            "The seven cases are parameterised over bun and deno; each asserts exit 1, non-empty stderr and 0-byte stdout",
+            "A multi-byte payload asserts the header equals Buffer.byteLength rather than string length, without depending on OS pipe buffer sizes. NEGATIVE CONTROL: string length reddens it by assertion rather than by timeout",
         },
         {
-          criterion: "Every guard rule is pinned at every path shape a .ts file takes in this repo",
+          criterion: "One shared path-shape list drives all three guard rules",
           verification:
-            "One shared path-shape list covering src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/ drives the Bun-global, bun:* and import/extensions tests alike; each rule is asserted flagged or exempt at every shape",
+            "src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/ drive the Bun-global, bun:* and import/extensions tests alike. NEGATIVE CONTROL: adding examples/** to the oxlint overrides reddens the examples shape",
+        },
+        {
+          criterion: "The session helper settles every promise it owns and swallows nothing",
+          verification:
+            "A request issued to an already-dead session rejects naming the exit, and a failed stdin write surfaces. NEGATIVE CONTROL: restoring the close-only pending flush makes the first hang instead of rejecting",
+        },
+        {
+          criterion:
+            "Arrivals assertions defend ordering and content without pinning message shape",
+          verification:
+            "BOTH halves, or the rewrite only weakens the suite: injecting an extra window/logMessage-shaped notification must still PASS, and a genuinely wrong ordering must still FAIL",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
-        "spawn.ts's decode is what would let PBI-8 claim verbatim passthrough of a config author's own error message. THE DEPENDENCY RUNS THAT WAY ROUND: PBI-9 UNLOCKS a future README claim, it does not block the current one -- do not reorder on it.",
-        "A further instance of debt item (d), added knowingly in Sprint 6: the mid-stream arrivals assertion hardcodes response ids.",
-        "Added in Sprint 8, debt item (e): test/helpers/lsp.ts gained two behaviours that NO green test asserts -- a request issued after the child has already closed settles at once with the dead-server shape (previously it waited forever), and stdin write errors are swallowed so a test driving a dead session fails on its assertion rather than on an uncaught EPIPE. Both were found by running a perturbation and are exercised only under one; the helper's own behaviour is unpinned.",
-        "Accumulated test-fidelity debt, four items: (a) test/helpers/spawn.ts keeps the per-chunk decode bug fixed in lsp.ts, so no test can assert a non-ASCII config-failure message -- narrow, since the CLI writes stderr directly and nothing in src/ decodes it; (b) the 360KB Japanese test depends on OS pipe buffer sizes and would degrade to passing trivially on a platform with larger ones; (c) the example config's `if (!document) return null` branch is untested; (d) the completion arrivals assertion hardcodes response ids and demands the whole array, so a vscode-jsonrpc bump emitting window/logMessage breaks it at the array shape rather than the ordering claim it defends.",
-        "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
+        "RE-PRICED at Sprint 10 refinement by applying the negative-control rule to criteria written seven sprints ago. Dropped the shutdown-pacing criterion: test/lifecycle.test.ts already awaits the shutdown response and asserts null under both runtimes, and the pipelined-exit half was ruled deliberately undefended at Sprint 3, so nothing remained to pin. RELOCATE THAT RULING TO src/lifecycle.ts BEFORE DROPPING IT.",
+        "Dropped the example's `if (!document) return null` branch: its failure mode is already covered by PBI-2's unopened-URI criterion at the store level.",
+        "The fourth and fifth criteria REMOVE test code. The fifth is trivially passable by DELETING assertions, which is why both halves are ONE criterion rather than a criterion plus a hope.",
+        "Verbatim stderr passthrough of a config author's own message stays out of the README whether or not this lands first: it is GUESSABLE, so its absence is silence rather than a gap. The decode fix still lands here for the internal reason that it blocks asserting a non-ASCII failure message at all.",
+        "Stays ONE PBI. The Sprint 5 reasoning (two PBIs both ordered last buy no scheduling benefit) rested on everything being last; the conclusion survives on different grounds -- all five criteria sit on one seam, the test suite and its helpers, and with the PBI-8 claim optional there is no scheduling cleavage to split along.",
+        "prepack depends on an UNPINNED tsc -- typescript is not a devDependency, so nothing pins the compiler that builds the published artifact. The artifact under test and the artifact published must come from the same toolchain, and today that holds only because one machine did both.",
+        "package-shape.test.ts asserts scripts equals EXACTLY {prepack} -- a fresh instance of exactly what the over-pinning criterion exists to remove. Two outcomes are acceptable since adding a script is legitimate, so it should require prepack PRESENT WITH THE RIGHT VALUE rather than exact equality.",
       ],
     },
     {
@@ -163,6 +146,37 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 10,
+      pbi_id: "PBI-13",
+      goal: "Make the cross-runtime promise survive distribution: a Deno user obtains tsudoi the stated way and it starts, without Bun losing the route it already has.",
+      status: "done",
+      subtasks: [],
+      impediments: [
+        {
+          description:
+            "The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+          impact:
+            "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
+          request:
+            "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
+          status: "waiting_human",
+          notes: [
+            "Not raised as an impediment during the sprint because it blocked nothing: the remedy, the build and both runtimes were all verifiable without it. It is recorded now so the PO sees the one edge of the route the suite does not reach.",
+          ],
+        },
+      ],
+      decisions: [
+        "THE skipLibCheck TRAP -- the sprint's real catch, found by the Developer against their own plan: the planned exclude-dist perturbation pair would have been VACUOUS, because skipLibCheck suppresses TYPE errors inside a .d.ts even when the file is in the program, so both halves exited 0. A SYNTAX error discriminates. Related: the exclude's exit code alone never notices -- --listFiles shows 8 emitted files entering the program without it.",
+        "SPIKE MEASURED (tsc 7.0.2), and it found more than the plan stated: repointing exports at dist/types.d.ts with NO dist breaks in-repo self-reference at examples/tsudoi.config.ts AND at test/fixtures/published-specifier.ts -- the second file was not named in the risk. The remedy rests on tsc FALLING THROUGH a condition whose target file does not exist. Adopted a THREE-arm map (types -> dist/types.d.ts, import -> dist/types.js, default -> src/types.ts): the two-arm form leaves default dangling in a tarball shipping dist/ alone. Shipping src/ alongside dist/ was measured and REJECTED -- with no .ts under node_modules the foot-gun is unrepresentable, not merely discouraged.",
+        "TWO PLANNED PERTURBATIONS COULD NOT BE RUN, and that IS the finding: `change a source file, do not rebuild` has NO REBUILD STEP TO SKIP -- prepack builds inside the packer, dist/ is gitignored, each consumer stages a fresh temp dir. The runnable substitute asserts a rename in src/ reaching the installed server's InitializeResult, and guards its own perturbation so a replace matching nothing cannot pass.",
+        "bin was NOT added, against the plan, and the measurements show it was NOT BLOCKED: a node shebang survives emit, all four DoD checks stay 0, and node 24.18.0 runs the emitted file. Refused because a bin is reached through a shim obeying the shebang, and NEITHER VERIFIED RUNTIME reaches a package that way -- deno ignores node_modules/.bin entirely, and the stated route is one file path both runtimes take identically. A node shebang would be a third runtime's claim nothing here tests.",
+        "prepack FIRES -- measured, previously unverified: bun pm pack AND npm pack both run it before collecting files and both ship what it emitted.",
+        "REMEDY CHOSEN ON EVIDENCE, not preference: compiled .js + .d.ts via rewriteRelativeImportExtensions, measured starting under BOTH runtimes from node_modules with tsc passing in the consumer. JSR was measured too and declined -- it flags the config loader's dynamic import as unanalyzable, requires a deno.json, and its Bun half cannot be verified without an irreversible publish needing an account.",
+        "package.json's //exports currently asserts that an installed copy cannot run under Deno and that main/bin belong elsewhere. THIS SPRINT MAKES BOTH FALSE, in a durable home -- the note-4 failure one layer deeper, and harder to catch because nothing compacts it away. It must be updated or superseded.",
+        "PO checklist, per-sprint additions: (1) the route stated as EXACT COMMANDS a reader could follow without reading test code -- a route only a test knows is not a route a user can take; (2) if the remedy introduces a build, the artifact under test is PRODUCED FROM CURRENT SOURCE AT TEST TIME, perturbed by changing a source file without rebuilding -- the hazard of a build step is not the step, it is a stale artifact passing while the source has moved; (3) checkout and installed proven NOT TO DIVERGE, asserting the handshake AND a config-failure case against the INSTALLED copy under both runtimes rather than inferring from the checkout, since Sprint 9's headline finding was exactly that nothing tested the installed consumer; (4) if the remedy is a second registry, both routes stated and both verified; (5) package.json's //exports updated or superseded.",
+      ],
+    },
     {
       number: 9,
       pbi_id: "PBI-7",
@@ -280,37 +294,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 10,
-    pbi_id: "PBI-13",
-    goal: "Make the cross-runtime promise survive distribution: a Deno user obtains tsudoi the stated way and it starts, without Bun losing the route it already has.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [
-      {
-        description:
-          "The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
-        impact:
-          "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
-        request:
-          "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
-        status: "waiting_human",
-        notes: [
-          "Not raised as an impediment during the sprint because it blocked nothing: the remedy, the build and both runtimes were all verifiable without it. It is recorded now so the PO sees the one edge of the route the suite does not reach.",
-        ],
-      },
-    ],
-    decisions: [
-      "THE skipLibCheck TRAP -- the sprint's real catch, found by the Developer against their own plan: the planned exclude-dist perturbation pair would have been VACUOUS, because skipLibCheck suppresses TYPE errors inside a .d.ts even when the file is in the program, so both halves exited 0. A SYNTAX error discriminates. Related: the exclude's exit code alone never notices -- --listFiles shows 8 emitted files entering the program without it.",
-      "SPIKE MEASURED (tsc 7.0.2), and it found more than the plan stated: repointing exports at dist/types.d.ts with NO dist breaks in-repo self-reference at examples/tsudoi.config.ts AND at test/fixtures/published-specifier.ts -- the second file was not named in the risk. The remedy rests on tsc FALLING THROUGH a condition whose target file does not exist. Adopted a THREE-arm map (types -> dist/types.d.ts, import -> dist/types.js, default -> src/types.ts): the two-arm form leaves default dangling in a tarball shipping dist/ alone. Shipping src/ alongside dist/ was measured and REJECTED -- with no .ts under node_modules the foot-gun is unrepresentable, not merely discouraged.",
-      "TWO PLANNED PERTURBATIONS COULD NOT BE RUN, and that IS the finding: `change a source file, do not rebuild` has NO REBUILD STEP TO SKIP -- prepack builds inside the packer, dist/ is gitignored, each consumer stages a fresh temp dir. The runnable substitute asserts a rename in src/ reaching the installed server's InitializeResult, and guards its own perturbation so a replace matching nothing cannot pass.",
-      "bin was NOT added, against the plan, and the measurements show it was NOT BLOCKED: a node shebang survives emit, all four DoD checks stay 0, and node 24.18.0 runs the emitted file. Refused because a bin is reached through a shim obeying the shebang, and NEITHER VERIFIED RUNTIME reaches a package that way -- deno ignores node_modules/.bin entirely, and the stated route is one file path both runtimes take identically. A node shebang would be a third runtime's claim nothing here tests.",
-      "prepack FIRES -- measured, previously unverified: bun pm pack AND npm pack both run it before collecting files and both ship what it emitted.",
-      "REMEDY CHOSEN ON EVIDENCE, not preference: compiled .js + .d.ts via rewriteRelativeImportExtensions, measured starting under BOTH runtimes from node_modules with tsc passing in the consumer. JSR was measured too and declined -- it flags the config loader's dynamic import as unanalyzable, requires a deno.json, and its Bun half cannot be verified without an irreversible publish needing an account.",
-      "package.json's //exports currently asserts that an installed copy cannot run under Deno and that main/bin belong elsewhere. THIS SPRINT MAKES BOTH FALSE, in a durable home -- the note-4 failure one layer deeper, and harder to catch because nothing compacts it away. It must be updated or superseded.",
-      "PO checklist, per-sprint additions: (1) the route stated as EXACT COMMANDS a reader could follow without reading test code -- a route only a test knows is not a route a user can take; (2) if the remedy introduces a build, the artifact under test is PRODUCED FROM CURRENT SOURCE AT TEST TIME, perturbed by changing a source file without rebuilding -- the hazard of a build step is not the step, it is a stale artifact passing while the source has moved; (3) checkout and installed proven NOT TO DIVERGE, asserting the handshake AND a config-failure case against the INSTALLED copy under both runtimes rather than inferring from the checkout, since Sprint 9's headline finding was exactly that nothing tested the installed consumer; (4) if the remedy is a second registry, both routes stated and both verified; (5) package.json's //exports updated or superseded.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 10,
