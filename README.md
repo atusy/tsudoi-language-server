@@ -10,10 +10,12 @@ artifact.
 
 ## The package is not published
 
-`@atusy/tsudoi` is **not published** to npm or to any other registry. Once it is, `bun add
-@atusy/tsudoi` and `deno add npm:@atusy/tsudoi` are the intended way to get it -- and both are
-**unverified**: nothing has ever run them, and installing a tarball and resolving `npm:` through
-deno's own cache are different mechanisms, so one of them working says little about the other.
+`@atusy/tsudoi` is **not published** to npm or to any other registry.
+
+Once it is, `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` are the intended way to get
+it -- and both are **unverified**: nothing has ever run them, and installing a tarball and
+resolving `npm:` through deno's own cache are different mechanisms, so one of them working says
+little about the other.
 
 Until then the working route is the one below: build a tarball out of a checkout and install
 that. It is the route the test suite runs, and it runs it from this file's own bytes -- the
@@ -129,8 +131,9 @@ what is plausible.
 
 ## When the config is wrong
 
-If `--config` is missing, if the file does not exist, if it has no default export, or if the
-factory throws, tsudoi never starts the protocol. It reports the problem and stops:
+If `--config` is missing, if the file does not exist, if it exports nothing by default, or if
+what it does export throws when called, tsudoi never starts the protocol. It reports the problem
+and stops:
 
 <!-- failure-contract -->
 

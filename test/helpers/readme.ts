@@ -361,13 +361,34 @@ function sections(markdown: string): string[] {
 }
 
 export function statesFact(markdown: string, fact: ReadmeFact): boolean {
-  return sections(markdown).some((section) => fact.tokens.every((token) => token.test(section)));
+  return sectionsStating(markdown, fact).length > 0;
 }
 
-/** The same document with every occurrence of `token` gone -- the fact's removal. */
-export function withoutToken(markdown: string, token: RegExp): string {
-  return markdown.replaceAll(
-    new RegExp(token.source, token.flags.includes("g") ? token.flags : `${token.flags}g`),
-    "",
-  );
+/**
+ * The sections that state `fact` -- normally exactly one, and the test that it
+ * IS one is the removal half of criterion 3.
+ *
+ * NOT OFFERED, deliberately: a `withoutToken` that deletes a token and asserts
+ * the fact is gone. That assertion holds for every conjunction of tokens over
+ * every document, including a document that says nothing -- a test that cannot
+ * fail. Uniqueness can fail, and it fails exactly when a fact is satisfied
+ * INCIDENTALLY by tokens scattered somewhere that does not state it.
+ */
+export function sectionsStating(markdown: string, fact: ReadmeFact): string[] {
+  return sections(markdown).filter((section) => fact.tokens.every((token) => token.test(section)));
+}
+
+/**
+ * The document with every section's sentences REORDERED and its lines reflowed
+ * onto one -- a mechanical stand-in for the edit a writer makes when they
+ * improve the prose.
+ *
+ * A fact that stops being found here was matched on sentence structure rather
+ * than on tokens, which is the half of criterion 3 that fails in the opposite
+ * direction from removal.
+ */
+export function reword(markdown: string): string {
+  return sections(markdown)
+    .map((section) => section.split(". ").reverse().join(". ").replaceAll("\n", " "))
+    .join("\n");
 }

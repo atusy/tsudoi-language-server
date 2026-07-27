@@ -7,6 +7,8 @@ import {
   type ReadmeFact,
   startStep,
   statesFact,
+  reword,
+  sectionsStating,
   type QuickstartStep,
   QUICKSTART_STEPS,
   readReadme,
@@ -174,6 +176,76 @@ const permissionsFact: ReadmeFact = {
   ],
 };
 
-test("the README says why -A, and that narrower sets are untested", () => {
-  expect(statesFact(readme, permissionsFact)).toBe(true);
-});
+/**
+ * CRITERION 3, and the reader is STIPULATED: someone who was not here. Every
+ * prerequisite that reader is assumed to have is named below, because an
+ * unnamed prerequisite cannot be perturbed and is therefore not defended.
+ *
+ * Matched on DISCRIMINATING TOKENS rather than on sentences, in both
+ * directions: rewording must still find the fact, and removing it must lose it.
+ * A test matching a sentence fails on an improvement to the prose, which is how
+ * a test teaches the next person to delete it.
+ */
+const facts: readonly ReadmeFact[] = [
+  permissionsFact,
+  {
+    name: "--config has no default and is required",
+    tokens: [/--config/, /no default/i, /required/i],
+  },
+  {
+    name: "the config's default export is a factory",
+    tokens: [/default export/i, /factory/i],
+  },
+  {
+    name: "deno must be on PATH or `bun test` fails",
+    tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
+  },
+  {
+    name: "the package is not published",
+    tokens: [/not published/i, /registry/i],
+  },
+  {
+    name: "the registry route is intended and unverified",
+    tokens: [/bun add @atusy\/tsudoi/, /deno add npm:@atusy\/tsudoi/, /unverified/i],
+  },
+  {
+    // The claim is that tsudoi CLOSES the generator, never that the author's
+    // cleanup COMPLETES: a `finally` that awaits something which never settles
+    // never finishes, measured in Sprint 8 and recorded at src/methods.ts.
+    // Promising completion would document something the language forbids.
+    name: "cleanup runs because tsudoi closes the generator, and completion is not promised",
+    tokens: [/closes the generator/i, /finally/, /does not promise/i, /completes/i],
+  },
+];
+
+for (const fact of facts) {
+  test(`the README states: ${fact.name}`, () => {
+    expect(statesFact(readme, fact)).toBe(true);
+  });
+
+  /**
+   * THE REMOVAL HALF, and the only form of it that can fail.
+   *
+   * `delete a token, the fact goes` is true of every conjunction ever written
+   * -- a test that cannot fail, which is the vacuity this whole sprint is
+   * about. What CAN fail is this: the fact must have exactly ONE home in the
+   * document. Then deleting that section is what loses it, and a fact
+   * satisfied incidentally by tokens scattered through some other section
+   * fails here instead of passing quietly.
+   */
+  test(`«${fact.name}» is stated in exactly one section, so deleting it loses it`, () => {
+    const homes = sectionsStating(readme, fact);
+
+    expect(homes.map((home) => home.split("\n")[0])).toHaveLength(1);
+  });
+
+  /**
+   * THE REWORDING HALF: the sentences of every section reordered and the
+   * paragraphs reflowed onto one line -- the edit a writer actually makes.
+   * The fact must survive it, or the next person to improve the prose is
+   * punished for it.
+   */
+  test(`«${fact.name}» survives having its section reworded`, () => {
+    expect(statesFact(reword(readme), fact)).toBe(true);
+  });
+}
