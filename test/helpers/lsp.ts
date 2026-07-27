@@ -65,12 +65,22 @@ export interface ProgressNotification {
  * result was is already asserted by the awaiting request, whereas the ORDER of
  * a response relative to the progress around it is not observable anywhere
  * else -- and progress-then-error is a criterion in its own right.
+ *
+ * EVERY server-initiated notification is recorded, not only `$/progress`.
+ * Dropping the rest made `nothing else arrived` unfalsifiable here: a server
+ * that logged on every keystroke was indistinguishable from one that said
+ * nothing, and a test claiming not to care about message shape could not be
+ * shown to mean it.
  */
-type Arrival =
+export type Arrival =
   | ({ readonly kind: "progress" } & ProgressNotification)
   | {
       readonly kind: "response";
       readonly id: number;
+    }
+  | {
+      readonly kind: "notification";
+      readonly method: string;
     };
 
 interface ProgressWaiter {
@@ -120,11 +130,17 @@ export class LspSession {
   /** Every message framed off stdout, including any nothing awaits. */
   messagesReceived = 0;
   /**
-   * Responses and `$/progress` interleaved exactly as stdout carried them.
+   * EVERY framed message, exactly as stdout carried it -- responses,
+   * `$/progress` and any other server-initiated notification alike.
    *
-   * Server-initiated notifications used to be dropped here on the grounds that
-   * nothing awaited them, which made `zero $/progress` an assertion that could
-   * not fail: a server streaming furiously satisfied it.
+   * Notifications were dropped here on the grounds that nothing awaited them,
+   * twice over: first for `$/progress`, which made `zero $/progress` an
+   * assertion a server streaming furiously satisfied, and then for the rest,
+   * which made `tolerates an unexpected notification` unfalsifiable.
+   *
+   * Complete on purpose, and read through `arrivalsFor` on purpose: what a
+   * claim is about is the CALLER's business, and a list that leaves things out
+   * takes that decision away from them.
    */
   readonly arrivals: Arrival[] = [];
   /** Every message stdout carried, as it was framed. */
@@ -358,6 +374,28 @@ export class LspSession {
   }
 
   /**
+   * The arrivals ONE claim is about: every `$/progress`, whatever token it came
+   * under, plus the response to `id` -- in the order stdout carried them.
+   *
+   * This is what an ordering assertion should be made against. Comparing the
+   * WHOLE arrival list instead pins three things a claim about ordering never
+   * meant to require: that no other message exists, that the ids of unrelated
+   * requests are what they are, and that the server never speaks unprompted.
+   * The first is why a `window/logMessage` would have broken tests about
+   * cancellation; the second is the hardcoded-id brittleness recorded at
+   * Sprint 7.
+   *
+   * Progress is deliberately NOT filtered by token: a server that streamed
+   * under a token it invented is exactly the cheat these tests exist to catch.
+   */
+  arrivalsFor(id: number): Arrival[] {
+    return this.arrivals.filter(
+      (arrival) =>
+        arrival.kind === "progress" || (arrival.kind === "response" && arrival.id === id),
+    );
+  }
+
+  /**
    * Resolves once `count` `$/progress` have arrived, and REJECTS on timeout
    * rather than hanging -- a server that buffers its yields must fail here by
    * name, saying how many it did send, instead of stalling the suite.
@@ -510,7 +548,11 @@ export class LspSession {
           }
         }
       }
-      return; // Any other server-initiated notification; nothing awaits it.
+      // Recorded rather than dropped: nothing awaits it, but a test that means
+      // to tolerate it must be able to SEE it, or tolerance is not a property
+      // anyone can check.
+      this.arrivals.push({ kind: "notification", method: message.method ?? "" });
+      return;
     }
     this.arrivals.push({ kind: "response", id: message.id });
     const settle = this.#pending.get(message.id);

@@ -407,10 +407,14 @@ for (const runtime of runtimes) {
           // Content AND order: nothing retracts a chunk already on the wire,
           // and `arrived and stayed` reads the same as `never arrived` unless
           // the error's position after it is asserted too.
-          expect(session.arrivals).toEqual([
-            { kind: "response", id: 1 },
+          //
+          // Every $/progress and THIS request's response, by the id the helper
+          // handed back. The full arrival list would additionally require that
+          // the initialize response is #1 and that the server never speaks
+          // unprompted -- neither of which is what cancellation promises.
+          expect(session.arrivalsFor(inFlight.id)).toEqual([
             { kind: "progress", token: partialResultToken, value: beforeGate },
-            { kind: "response", id: 2 },
+            { kind: "response", id: inFlight.id },
           ]);
 
           expect(await session.request<null>("shutdown", null)).toBeNull();

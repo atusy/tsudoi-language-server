@@ -280,22 +280,29 @@ for (const runtime of runtimes) {
         session.notify("initialized", {});
 
         // -32603 InternalError: the client learns this request failed, which a
-        // plausible [] would have hidden from it entirely.
-        const error = await session.requestError(
+        // plausible [] would have hidden from it entirely. Issued rather than
+        // awaited by name so the id below is THE ONE THIS REQUEST GOT, instead
+        // of a 2 that is only correct while nothing above it changes.
+        const completion = session.issue(
           "textDocument/completion",
           completionParams(partialResultToken),
         );
-        expect(error.code).toBe(-32603);
+        const answered = await completion.response;
+        expect(answered.error?.code).toBe(-32603);
 
         // The chunk was already on the wire, and nothing retracts what has been
         // written. `arrived and stayed` and `never arrived` are the same
         // silence unless the content AND the order against the failure are
         // asserted -- cleaning up by not emitting chunks on failure is a
         // plausible thing to do deliberately, and it would lose this.
-        expect(session.arrivals).toEqual([
-          { kind: "response", id: 1 },
+        //
+        // Every $/progress and THIS request's response, in wire order. What is
+        // no longer required is that nothing else exists: a server that also
+        // logged to the client would have broken this test while breaking no
+        // promise it ever made.
+        expect(session.arrivalsFor(completion.id)).toEqual([
           { kind: "progress", token: partialResultToken, value: sentBeforeThrow },
-          { kind: "response", id: 2 },
+          { kind: "response", id: completion.id },
         ]);
 
         // The PREFIX only: error.stack's first line differs between JSC and V8.
