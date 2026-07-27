@@ -305,8 +305,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "test/helpers/lsp.ts currently DISCARDS every server-initiated notification, so criterion 4's zero-$/progress assertion would pass against a server streaming furiously. Record $/progress in arrival order with token and value; expose the ordered list, a count, and waitForProgress(n). Do NOT filter by token -- criterion 4 must be able to see progress sent under an INVENTED token, which is the cheat it exists to catch.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "refactoring",
+        commits: [
+          {
+            hash: "12fda1b",
+            message: "refactor(test): record $/progress instead of discarding it",
+            phase: "refactoring",
+          },
+        ],
         notes: [],
       },
       {
