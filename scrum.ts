@@ -41,14 +41,16 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: "initialize / initialized / shutdown / exit complete over stdio",
+          criterion:
+            "initialize / initialized / shutdown / exit complete over stdio, with LSP exit-code semantics",
           verification:
-            "Integration test drives the server over stdio and asserts an InitializeResult, then a clean exit with code 0",
+            "Integration test asserts an InitializeResult naming serverInfo 'tsudoi', then exit code 0 for exit after shutdown, and exit code 1 for exit without a prior shutdown",
         },
         {
-          criterion: "A config that fails to load reports to stderr and exits with code 1",
+          criterion:
+            "Every config load failure reports to stderr and exits 1 before any LSP traffic is emitted",
           verification:
-            "Test spawns the CLI with a broken --config and asserts exit code 1 with non-empty stderr",
+            "One case each for --config omitted, file missing, TS syntax error, module throws on import, no default export, default export not a function, factory rejects; each asserts exit code 1, non-empty stderr and no bytes on stdout",
         },
         {
           criterion: "The CLI starts under both bun and deno",
@@ -56,10 +58,42 @@ const scrum: ScrumDashboard = {
             "The initialize handshake completes for both `bun run src/cli.ts --config ...` and `deno run -A src/cli.ts --config ...`",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
         "--config has no default; omitting it is an error. The module default-exports (tsudoi: Tsudoi) => Promise<TsudoiConfig>.",
-        "Cross-runtime support is carried by this PBI's criteria, deliberately not by the Definition of Done.",
+        "Cross-runtime is carried by this PBI's criteria, not by a separate DoD check. It is enforced transitively: the integration test spawns both runtimes and runs under `bun test`, which IS a DoD check. `deno` is therefore a hard toolchain requirement and its absence must fail loudly, never skip.",
+        "A missing `deno` must fail with an actionable message naming this PBI's cross-runtime criterion plus an install pointer, not a raw ENOENT from spawn. (PO value requirement, round 2.)",
+        "Spiked round 2: `await import(pathToFileURL(abs).href)` of a user .ts config resolves bare npm specifiers identically under bun and deno. No deno.json is added, deliberately -- Deno 2 auto-detects package.json + node_modules, and a deno.json can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
+        "Passes a Tsudoi carrying an empty read-only DocumentStore; PBI-2 replaces the implementation, not the shape. InitializeResult.capabilities stays empty until PBI-2/3/4 declare their own.",
+        "Fixtures import types by relative path; the published specifier @atusy/tsudoi/types is deferred to PBI-7.",
+      ],
+    },
+    {
+      id: "PBI-6",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "detect Deno-incompatible patterns in the source automatically",
+        benefit: "Deno compatibility cannot regress unnoticed between releases",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "The check flags the Bun global and bun: module imports",
+          verification: "Adding a Bun.file call makes `oxlint` fail; removing it makes it pass",
+        },
+        {
+          criterion:
+            "The check flags relative imports lacking an explicit .ts extension, without flagging bare node: or npm specifiers",
+          verification:
+            "Changing ./lib.ts to ./lib makes `oxlint` fail; restoring the extension makes it pass, while node:url and vscode-languageserver-protocol/node stay unflagged throughout",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "Spiked round 2: this is .oxlintrc.json configuration only, zero custom code. Plain `oxlint` auto-discovers the config, so the guard lands INSIDE existing DoD check #2 -- the Definition of Done needs no amendment.",
+        "Scope is default-deny: the Bun global ban and import/extensions apply everywhere; bun:* imports are exempted only in **/*.test.ts and test/helpers/**, the minimum surface `bun test` needs. Fixture configs execute under deno, so they must stay Bun-free.",
+        "import/extensions requires ignorePackages: true, or it also flags bare node:/npm specifiers.",
+        "A rot detector, not an airtight barrier: (globalThis as {...}).Bun and oxlint-disable comments both bypass it, and no static rule proves Deno actually runs the server. It does not replace PBI-1's live deno smoke test.",
+        "Sprint boundary: Sprint 1 creates .oxlintrc.json with import/extensions ONLY (PBI-1 needs it for its own Deno correctness). This PBI adds the Bun rules, the override scoping and the flag/unflag tests.",
       ],
     },
     {
@@ -127,6 +161,9 @@ const scrum: ScrumDashboard = {
         },
       ],
       status: "draft",
+      notes: [
+        "Refinement gap to close before this is ready: the brief gives TWO aggregation triggers -- no partialResultToken, OR the client not advertising partial-result support. The criteria cover only the first.",
+      ],
     },
     {
       id: "PBI-5",
@@ -145,20 +182,30 @@ const scrum: ScrumDashboard = {
       status: "draft",
     },
     {
-      id: "PBI-6",
+      id: "PBI-7",
       story: {
-        role: "tsudoi maintainer",
-        capability: "detect Bun-specific APIs creeping into the source automatically",
-        benefit: "Deno compatibility cannot regress unnoticed between releases",
+        role: "config author",
+        capability:
+          "import tsudoi's types by the published package specifier from their own project",
+        benefit: "their config type-checks without relative paths into tsudoi's source tree",
       },
       acceptance_criteria: [
         {
-          criterion: "The check flags Bun.* and bun: usage",
-          verification: "Adding a Bun.file call makes the check fail; removing it makes it pass",
+          criterion: 'A config importing from "@atusy/tsudoi/types" loads under both bun and deno',
+          verification:
+            "A fixture config imports types by the published specifier; the initialize handshake completes under `bun run` and `deno run -A`",
+        },
+        {
+          criterion: "The published specifier resolves for type checking, not only at runtime",
+          verification: "tsc --noEmit passes over that fixture config",
         },
       ],
       status: "draft",
-      notes: ["Only Node-compatible APIs and standard Web APIs are permitted in src/."],
+      notes: [
+        "Deferred out of PBI-1 in round 2. Needs package self-reference (name + exports in package.json), unverified under Deno. Not an impediment: self-reference is entirely local, needing no registry, npm account or publish.",
+        "Type-only imports are erased at runtime, so no PoC method behavior depends on this; ordered last for that reason.",
+        "Regression risk: the obvious fix is a deno.json import map, which is exactly what PBI-1 deliberately avoids. PBI-1's cross-runtime criterion must still pass on completion.",
+      ],
     },
   ],
 
