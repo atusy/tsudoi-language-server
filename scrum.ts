@@ -320,8 +320,14 @@ const scrum: ScrumDashboard = {
         implementation:
           'Add "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] to top-level rules, plus one overrides entry turning it "off" for ["**/*.test.ts", "test/helpers/**/*.ts"]. Both halves are under test: the exemption existing, and it not being wider than specified -- fixture configs execute under deno and must stay Bun-free.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e05e45d",
+            message: "feat(guard): restrict bun: imports, exempting only what `bun test` needs",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
