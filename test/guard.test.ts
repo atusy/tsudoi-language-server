@@ -49,6 +49,24 @@ test("node:url and a package subpath stay unflagged in a file that is itself fla
   expect(result.output).not.toContain("src/bare.ts:2:");
 });
 
+// The overrides entry turns one rule off for these paths. `plugins` is declared
+// only at the top level, so this asserts the plugin rule still reaches inside
+// that scope -- otherwise import/extensions would be silently dead across every
+// test file and helper, half the repo's TypeScript.
+for (const path of ["test/probe.test.ts", "test/helpers/probe.ts"]) {
+  test(`a relative import without .ts is still flagged in ${path}`, async () => {
+    const result = await lintProbe({
+      "test/lib.ts": lib,
+      "test/helpers/lib.ts": lib,
+      [path]: importer("./lib"),
+    });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("import(extensions)");
+    expect(result.output).toContain(path);
+  });
+}
+
 // The four shapes a .ts file can take in this repo. The Bun global is banned at
 // every one of them, so the ABSENCE of an exemption is what these assert; each
 // path is named so a leak reports which shape leaked.
@@ -100,7 +118,7 @@ for (const path of ["test/probe.test.ts", "test/helpers/probe.ts"]) {
   });
 }
 
-test('an extensionless "bun" import is flagged too, not only the bun: namespace', async () => {
+test('a bare "bun" import is flagged, not only the bun: namespace', async () => {
   const result = await lintProbe({ "src/server.ts": importsBunModule("bun") });
 
   expect(result.code).toBe(1);
