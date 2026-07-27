@@ -214,9 +214,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "README.md quickstart documenting the TARBALL route as the working instruction, stating plainly that the package is unpublished and that bun add / deno add npm: are intended-and-unverified. test/helpers/readme.ts. Reuse installConsumer() -- the quickstart IS the route it already implements. PROSE CONSTRAINT settled before the first line: commands must be runnable VERBATIM from a STATED working directory, so the README says where the reader is standing and uses relative paths.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f6cb1aa",
+            message: "docs(readme): a quickstart whose own bytes the suite extracts",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED OBSERVED: `Cannot find module ./helpers/readme.ts` -- there was no README and no extractor.",
+          "DEVIATION from the subtask's `reuse installConsumer()`: installConsumer PERFORMS the pack and the install, which are two of the documented steps. Reusing it would stage an environment supplying what the README asks the reader to do, which is precisely what the PO's bareness reframe forbids. The checkout staging is duplicated instead, at test/helpers/readme.ts, with the reason recorded there.",
+          "MEASURED, and it is why the quickstart needs no `bun init`: `bun install <tarball>` in an EMPTY directory succeeds and writes the package.json itself (bun 1.3.13).",
+          "The marker grammar carries the working directory, which the prose states too -- so the extractor REFUSES a directory no reader is shown. Without that the mechanism reintroduces the two-copy defect it exists to prevent.",
+        ],
       },
       {
         test: "EXPECTED RED. Each extracted command executes verbatim under bun and deno from a staged environment supplying NOTHING the README asks the reader to do; the handshake returns an InitializeResult naming tsudoi. PERTURBATION: edit a command in README.md -- change a flag, stale a path. MUST redden. If it does not, the test is holding its own copy and the criterion is vacuous. RUN IT; do not infer it from the extractor's existence.",
