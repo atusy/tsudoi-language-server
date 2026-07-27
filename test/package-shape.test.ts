@@ -70,6 +70,74 @@ test("the same tree fails once the dist exclusion is removed", async () => {
   expect(await typeCheckWith(withoutExclude, brokenDeclaration)).toBe(1);
 });
 
+/** The shipped manifest's own bytes, read at test time. */
+const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
+  string,
+  unknown
+>;
+
+/**
+ * THE PUBLISHED SHAPE, asserted whole rather than key by key: `exports` makes
+ * every path not listed unreachable by bare specifier, so adding an entry is a
+ * decision about the public surface and never a convenience, and an equality
+ * assertion is the only kind that notices one appearing.
+ *
+ * Each arm, measured under tsc 7.0.2, deno 2.9.2 and bun 1.3.13:
+ *
+ * - `types` -> dist/types.d.ts wins whenever dist/ exists, so a consumer type-
+ *   checks against the DECLARATIONS, not against sources they were not sent.
+ * - `import` -> dist/types.js is what a runtime import of the subpath actually
+ *   resolves to, and it names a file the tarball contains. Pinned by
+ *   test/installed-runtime.test.ts, with the pair that drops it.
+ * - `default` -> src/types.ts is the IN-REPO FALLBACK and is reached only
+ *   because tsc falls through a condition whose target file is missing. That
+ *   fall-through is what lets `tsc --noEmit` stay green in a checkout that has
+ *   never run a build; repointing this subpath at dist/ unconditionally was
+ *   measured to break examples/tsudoi.config.ts and
+ *   test/fixtures/published-specifier.ts with TS2307.
+ *
+ * No `main` and no `.` export: the package name alone still must not resolve,
+ * which test/published-specifier.test.ts asserts.
+ *
+ * NO `bin`, and this is a deliberate refusal rather than an omission. A bin is
+ * executed through a shim that obeys the file's shebang, so declaring one means
+ * naming an interpreter in src/cli.ts. This project verifies exactly two
+ * runtimes and neither of them reaches a package this way: deno does not use
+ * node_modules/.bin at all, and the stated route is a file path both runtimes
+ * take identically. A shebang naming node would be a third runtime's claim
+ * that nothing here tests.
+ *
+ * JSR WAS MEASURED AND DECLINED, recorded here so the next person does not
+ * re-derive it: it type-checks this package with no slow-types errors, but it
+ * flags tsudoi's CORE MECHANISM -- the `await import(pathToFileURL(...))` in
+ * src/config.ts that loads the user's config -- as unanalyzable-dynamic-
+ * import; it REQUIRES a deno.json, which the assertion below forbids; and its
+ * bun half cannot be verified without an irreversible publish needing an
+ * account. Compiled .js on npm serves both runtimes from one artifact, which
+ * is what criterion 2 asks for.
+ */
+test("the published surface is the types subpath, compiled, and nothing else", () => {
+  expect(packageJson.exports).toEqual({
+    "./types": {
+      types: "./dist/types.d.ts",
+      import: "./dist/types.js",
+      default: "./src/types.ts",
+    },
+  });
+  expect(packageJson.files).toEqual(["dist"]);
+  expect(packageJson.main).toBeUndefined();
+  expect(packageJson.bin).toBeUndefined();
+});
+
+// The build is a PUBLISH-TIME step, not a develop-time one: prepack runs
+// inside `bun pm pack` and `npm pack` alike (measured), so dist/ is compiled
+// from whatever src/ is present at that moment and can never be stale. A
+// `build` script that a human is trusted to remember would be exactly the
+// staleness this avoids.
+test("packing builds, so a stale dist cannot be published", () => {
+  expect(packageJson.scripts).toEqual({ prepack: "tsc -p tsconfig.build.json" });
+});
+
 // PBI-13 criterion 3, and one of the two reasons JSR was declined: it REQUIRES
 // a deno.json, which this project has done without for ten sprints.
 //

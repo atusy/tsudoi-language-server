@@ -1,9 +1,13 @@
-// THE PUBLISHED SURFACE. package.json maps `@atusy/tsudoi/types` here, and this
-// is the only path a config author outside the repo can reach by bare specifier,
-// so every exported name below is public API and renaming one breaks configs we
-// cannot see. The reasoning for keeping the package types-only lives on the
-// `//exports` key in package.json -- oxfmt sorts unknown keys to the tail of the
-// file, so it sits at the bottom rather than beside `exports`.
+// THE PUBLISHED TYPE SURFACE. package.json maps `@atusy/tsudoi/types` here, and
+// this is the only path a config author outside the repo can reach by bare
+// specifier, so every exported name below is public API and renaming one breaks
+// configs we cannot see.
+//
+// What ships is the COMPILED dist/types.d.ts, not this file: since sprint 10 the
+// package publishes dist/ alone, so that a deno user can run the CLI from
+// node_modules at all. The shape of that surface and the reason for every arm of
+// the exports map are asserted in test/package-shape.test.ts, which is where a
+// decision about a file that cannot carry comments lives.
 import type {
   CompletionItem,
   CompletionParams,

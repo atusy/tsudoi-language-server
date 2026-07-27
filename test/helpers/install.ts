@@ -69,9 +69,10 @@ function fail(step: string, result: TypeCheckResult): never {
   throw new Error(
     [
       `${step} failed with exit code ${String(result.code)} while building the installed consumer.`,
-      "PBI-7 accepts `@atusy/tsudoi/types` resolves from an INSTALLED copy only by packing and",
-      "installing for real, so this fails the suite instead of falling back to self-reference --",
-      "self-reference passes entirely from inside the repo while a stranger still cannot resolve it.",
+      "PBI-13 accepts `a deno user obtains and runs tsudoi` only from a packed-and-installed copy,",
+      "so this fails the suite instead of falling back to the checkout -- everything passes from",
+      "inside the repo while a stranger still cannot resolve, or run, what they were sent.",
+      "`bun pm pack` runs prepack, so a build failure in tsconfig.build.json surfaces here too.",
       "A cold bun cache needs network for vscode-languageserver-protocol; that is the one",
       "environmental dependency this probe adds.",
       result.output,

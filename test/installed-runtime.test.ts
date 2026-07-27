@@ -169,6 +169,59 @@ for (const [runtime, command] of Object.entries(route)) {
 }
 
 /**
+ * The exports map's MIDDLE ARM, which nothing else would notice the loss of.
+ *
+ * `types` is what tsc takes and `default` is the in-repo fallback that keeps a
+ * never-built checkout resolving; between them sits `import`, and it is there
+ * so that the arm a RUNTIME matches names a file the tarball actually
+ * contains. Without it a runtime resolving this subpath is sent to
+ * ./src/types.ts, which is deliberately not published -- a package.json
+ * pointing at a file it does not ship.
+ *
+ * The subpath is type-only, so no config author has cause to import it for
+ * value. That is exactly why this is asserted rather than left to be noticed.
+ */
+const importsTheSubpath = 'import "@atusy/tsudoi/types";\n';
+
+test("a runtime import of the types subpath resolves in the installed copy", async () => {
+  consumer.write("probe.js", importsTheSubpath);
+
+  for (const runtime of [bunRuntime, denoRuntime]) {
+    const result = await runCommand(
+      `${runtime.command} ${runtime.runArgs.join(" ")} ./probe.js`,
+      consumer.dir,
+    );
+
+    expect(`${runtime.name}: ${String(result.code)} ${result.stderr}`).toBe(`${runtime.name}: 0 `);
+  }
+});
+
+// The pair, perturbing WHAT GETS PACKED rather than the installed directory:
+// drop the middle arm and the same import lands on the unpublished source.
+test("dropping the import arm sends a runtime at a file the tarball does not ship", async () => {
+  const perturbed = await installConsumer({
+    editPackage: (packageJson) => {
+      packageJson.exports = {
+        "./types": { types: "./dist/types.d.ts", default: "./src/types.ts" },
+      };
+    },
+  });
+  try {
+    perturbed.write("probe.js", importsTheSubpath);
+
+    const result = await runCommand(
+      `${denoRuntime.command} ${denoRuntime.runArgs.join(" ")} ./probe.js`,
+      perturbed.dir,
+    );
+
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain("src/types.ts");
+  } finally {
+    perturbed.dispose();
+  }
+});
+
+/**
  * Criterion 3's other half: the packaged CLI is PRODUCED BY THE BUILD, not
  * committed. The hazard a build step introduces is not the step, it is a stale
  * artifact passing while the source has moved.
