@@ -1,6 +1,9 @@
 import { Buffer } from "node:buffer";
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import { cliPath, repoRoot } from "./spawn.ts";
+import { repoRoot } from "./spawn.ts";
+
+/** Kept relative so sessions run the acceptance criterion's own command form. */
+const cliArg = "src/cli.ts";
 
 /** How to invoke the CLI under one runtime. `-A` must precede the script path. */
 export interface Runtime {
@@ -48,6 +51,12 @@ export class LspSession {
     this.#child = child;
     this.#exited = new Promise((resolve) => {
       child.on("close", (code) => {
+        // Without this, a server that dies mid-request leaves the caller to
+        // time out with no diagnostic at all.
+        for (const [id, settle] of this.#pending) {
+          this.#pending.delete(id);
+          settle({ id, error: `server exited with code ${code}; stderr: ${this.stderr}` });
+        }
         resolve(code);
       });
     });
@@ -61,7 +70,7 @@ export class LspSession {
   }
 
   static start(runtime: Runtime, configPath: string): LspSession {
-    const child = spawn(runtime.command, [...runtime.runArgs, cliPath, "--config", configPath], {
+    const child = spawn(runtime.command, [...runtime.runArgs, cliArg, "--config", configPath], {
       cwd: repoRoot,
       stdio: ["pipe", "pipe", "pipe"],
     });

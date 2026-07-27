@@ -26,6 +26,19 @@ for (const runtime of runtimes) {
       }
     });
 
+    test("a --config path relative to the working directory resolves", async () => {
+      // Exactly the acceptance criterion's command form, run from the repo root:
+      //   <runtime> src/cli.ts --config examples/tsudoi.config.ts
+      const session = LspSession.start(runtime, "examples/tsudoi.config.ts");
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.serverInfo?.name).toBe("tsudoi");
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("initialize, initialized, shutdown, exit yields a null shutdown result and exit code 0", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
