@@ -39,8 +39,9 @@ export function startServer(_config: TsudoiConfig): void {
     hasShutdown = true;
   });
 
+  // LSP exit-code semantics: 0 only when shutdown came first, otherwise 1.
   connection.onNotification(ExitNotification.type, () => {
-    process.exit(0);
+    process.exit(hasShutdown ? 0 : 1);
   });
 
   connection.listen();

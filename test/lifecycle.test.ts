@@ -34,3 +34,15 @@ test("initialize, initialized, shutdown, exit yields a null shutdown result and 
     session.dispose();
   }
 });
+
+test("exit sent after initialize with no shutdown in between exits with code 1", async () => {
+  const session = LspSession.start(bunRuntime, demoConfig);
+  try {
+    await session.request<InitializeResult>("initialize", initializeParams);
+
+    session.notify("exit", null);
+    expect(await session.waitForExit()).toBe(1);
+  } finally {
+    session.dispose();
+  }
+});
