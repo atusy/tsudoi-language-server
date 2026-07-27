@@ -334,9 +334,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Respond ErrorCodes.RequestCancelled (the constant, never a literal) instead of the handler's value when the signal is aborted at settle time.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7481a22",
+            message: "feat(cancel): answer a cancelled request -32800 RequestCancelled",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned, at `error.code === -32800` for hover and completion alike on both runtimes. Src uses LSPErrorCodes.RequestCancelled; the TEST spells -32800 out, so swapping the constant for another of the library's codes still reddens.",
+          "PERTURBATION `remove the settle-time abort check` (both call sites): reddens both -32800 tests at `error.code`, all four runtime combinations. This is the SHARED moment subtask 4 declares.",
+          "Thrown, not returned: vscode-jsonrpc replies a thrown ResponseError verbatim, so no error shape enters a handler's return type.",
+        ],
       },
       {
         test: "BORN GREEN -- SHARES ONE IMPLEMENTATION MOMENT with the previous subtask. A fixture never referencing context.signal, cancelled mid-flight, answers -32800 and its returned label appears nowhere on stdout.",
