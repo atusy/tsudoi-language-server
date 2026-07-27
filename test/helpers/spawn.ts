@@ -5,6 +5,11 @@ import { fileURLToPath } from "node:url";
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 export const cliPath = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
 
+/** Absolute path of a committed fixture config under test/fixtures. */
+export function fixture(name: string): string {
+  return fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
+}
+
 export interface CliResult {
   code: number | null;
   stdout: string;
