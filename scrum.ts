@@ -292,12 +292,17 @@ const scrum: ScrumDashboard = {
             message: "test(guard): pin import/extensions with a temp-dir lint probe harness",
             phase: "green",
           },
+          {
+            hash: "1cd4137",
+            message: "test(guard): prove import/extensions reaches inside the overrides scope",
+            phase: "refactoring",
+          },
         ],
         notes: [
           'Born green; RED manufactured. Four tests: (1) extension-less relative import exits 1 naming the file, (2) the same import with .ts exits 0, (3) node:url + vscode-languageserver-protocol/node alone exit 0, (4) both stay unflagged in a file whose line 3 IS flagged -- asserting "src/bare.ts:3:1:" present and no diagnostic on lines 1-2, which proves oxlint linted the file rather than skipping it.',
           "Perturbation A (delete the import/extensions entry): tests 1 and 4 FAILED, tests 2 and 3 passed.",
           "Perturbation B (restore it, drop ignorePackages): tests 3 and 4 FAILED, tests 1 and 2 passed. Finding worth keeping: only vscode-languageserver-protocol/node flips; node:url stays unflagged either way, so ignorePackages is load-bearing for npm subpaths, not for node: builtins.",
-          "Config restored byte-identical afterwards (git diff empty).",
+          "Config restored byte-identical afterwards (git diff empty). Added post-hoc at 1cd4137, after subtask 4: import/extensions was asserted only under src/, never inside the overrides scope, where a plugin rule could have been silently dead. It is not -- and perturbation A re-run over the added cases failed both.",
         ],
       },
       {
