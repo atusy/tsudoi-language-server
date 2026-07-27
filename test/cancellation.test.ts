@@ -16,8 +16,16 @@ import {
   returnedItems,
 } from "./fixtures/completion-cancel.ts";
 
+import {
+  asciiHalf,
+  enteredMarker as ignoresEntered,
+  ignoredHover,
+  label as ignoredLabel,
+} from "./fixtures/hover-ignores-signal.ts";
+
 const hoverCancellable = fixture("hover-cancellable.ts");
 const completionCancel = fixture("completion-cancel.ts");
+const hoverIgnoresSignal = fixture("hover-ignores-signal.ts");
 
 /**
  * LSP's RequestCancelled. Written out rather than imported so that the wire
@@ -177,6 +185,44 @@ for (const runtime of runtimes) {
       },
       gatedTimeoutMs,
     );
+
+    // Two sessions, one build. The cancelled one must not carry the label; the
+    // control must -- otherwise `nowhere on stdout` is a claim about a broken
+    // accumulator rather than about the server.
+    test("a handler that never reads its signal still has its result suppressed", async () => {
+      const cancelled = LspSession.start(runtime, hoverIgnoresSignal);
+      const control = LspSession.start(runtime, hoverIgnoresSignal);
+      try {
+        await cancelled.request<InitializeResult>("initialize", initializeParams);
+        await control.request<InitializeResult>("initialize", initializeParams);
+
+        const inFlight = cancelled.issue("textDocument/hover", hoverParams(0));
+        await cancelled.waitForStderr(ignoresEntered);
+        cancelled.cancel(inFlight.id);
+
+        const answered = await inFlight.response;
+        expect(answered.error?.code).toBe(requestCancelled);
+        expect(answered.result).toBeUndefined();
+
+        // Read after exit: a value delivered LATE is still delivered.
+        expect(await cancelled.request<null>("shutdown", null)).toBeNull();
+        cancelled.notify("exit", null);
+        expect(await cancelled.waitForExit()).toBe(0);
+        expect(cancelled.stdout).not.toContain(ignoredLabel);
+        // The load-bearing half: an escaped 破棄される候補 would defeat the
+        // check above, and cannot defeat this one.
+        expect(cancelled.stdout).not.toContain(asciiHalf);
+        expect(cancelled.unframedStdoutBytes).toBe(0);
+
+        const uncancelled = await control.request<Hover>("textDocument/hover", hoverParams(0));
+        expect(uncancelled).toEqual(ignoredHover);
+        expect(control.stdout).toContain(ignoredLabel);
+        expect(control.stdout).toContain(asciiHalf);
+      } finally {
+        cancelled.dispose();
+        control.dispose();
+      }
+    });
 
     test(
       "a cancelled completion is answered -32800 and the next completion is answered normally",
