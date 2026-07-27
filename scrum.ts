@@ -238,8 +238,10 @@ const scrum: ScrumDashboard = {
         implementation:
           'tsconfig.json with allowImportingTsExtensions, noEmit, strict, and an explicit types: ["node", "bun"] array -- tsc does not auto-discover node_modules/@types here. .oxlintrc.json containing import/extensions ["error", "always", {ignorePackages: true}] and nothing else; ignorePackages is load-bearing or bare node:/npm specifiers get flagged too.',
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          { hash: "2474909", message: "chore: add tsconfig, oxlint", phase: "refactoring" },
+        ],
         notes: [],
       },
       {
