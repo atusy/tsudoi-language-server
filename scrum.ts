@@ -33,38 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-11",
-      story: {
-        role: "config author",
-        capability: "have their completion handler's cleanup run when a request is abandoned",
-        benefit:
-          "resources a streaming handler holds are released instead of leaking on every superseded keystroke",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A cancelled completion closes the generator in both streaming and aggregation modes",
-          verification:
-            "A fixture generator records in its finally; cancel mid-stream with a partialResultToken and again without one, asserting the record appears in both runs -- closing only the streaming branch reddens the second",
-        },
-        {
-          criterion:
-            "Cleanup that throws is reported, and cleanup that hangs does not delay the response",
-          verification:
-            "One fixture whose finally throws: assert stderr names it, the server survives and a later completion answers. One whose finally never settles: assert -32800 still arrives, with the rejection asserted where it cannot be laundered into another test's result",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "Scope boundary: this PBI covers CLIENT CANCELLATION, not shutdown. An in-flight completion deliberately finishes across shutdown -- LSP constrains the client, not the server, and the window before exit is negligible. Decided at Sprint 7 Review and UNPINNED ON PURPOSE, since cancelling at shutdown would be equally acceptable; a test would pin an arbitrary choice rather than a requirement.",
-        "Completion ONLY. A promise has no close operation, so a hover handler's own finally runs when its awaited work settles -- extending this to hover would mean INVENTING an abandonment mechanism rather than using one the language provides.",
-        "src/methods.ts returns out of the driving loop on abort without calling chunks.return(), leaving the generator suspended at its yield. The abort check sits ABOVE the mode split, so a fix applied one branch lower would be invisible in aggregation -- that is the discriminator, and why one criterion was not enough.",
-        "A generator parked inside its own await cannot be closed early: async generator requests are queued, so return() waits for the pending next() regardless. Cleanup runs when it next settles -- a limit of the language, not a defect.",
-        "The example config gains a finally only if it reads as documentation. PO correcting their own Sprint 6 note: asserting it would pin it under standing item 6, and pinning requires making the example cancellable -- the artifact-for-test-convenience change already declined. Cancellation coverage stays in fixtures.",
-        "Criterion 2's non-launderable clause is load-bearing: Sprint 6 showed an unhandled rejection being attributed to whichever test ran next, across runtimes, twice. A test asserting cleanliness in its own body can pass while the rejection surfaces elsewhere.",
-      ],
-    },
-    {
       id: "PBI-7",
       story: {
         role: "config author",
@@ -164,9 +132,53 @@ const scrum: ScrumDashboard = {
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
       ],
     },
+    {
+      id: "PBI-12",
+      story: {
+        role: "config author",
+        capability: "be told when their cleanup did not finish",
+        benefit: "a finally that never completes is visible instead of silently skipped",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A close that leaves the generator suspended is reported once",
+          verification:
+            "A fixture whose finally yields; assert chunks.return resolves done === false, that stderr names it once per session, and that a later completion answers normally",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "Ordered LAST: unlike the null token or a plain try/finally, YIELDING FROM CLEANUP is pathological rather than a plausible mistake. Same silent-cleanup harm, far lower probability -- it may reasonably never be reached, and saying so beats pretending otherwise.",
+        "Remedy follows normalise-and-report and report-and-survive: report on done !== true, do NOT rethrow and do NOT keep calling next(), which a finally yielding in a loop would make unbounded.",
+        "MEASURED on both runtimes: chunks.return(null) resolves {value, done:false}, leaving the generator suspended INSIDE its own finally. Unlike the parked-in-await limit this is INVISIBLE rather than documented, and unlike that one tsudoi CAN detect it -- done === false is in the result currently discarded.",
+      ],
+    },
   ],
 
   completed: [
+    {
+      number: 8,
+      pbi_id: "PBI-11",
+      goal: "Keep a promise JavaScript already makes -- a config author's finally runs when their completion is abandoned -- so cleanup they can never watch succeed is not silently skipped on every keystroke, and the last gate on releasing this thing comes down.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 24b70a7, 7e37784, a88d3a6, cd08905, f61846a, 138ccba, ca0535e across 7 subtasks, plus 01e36d8 fixing a helper defect found while perturbing. Per-subtask records and 6 perturbation notes compacted here; git retains them.",
+        "P5 IS THE EMPIRICAL ARGUMENT FOR THE PO'S OWN NON-LAUNDERABLE CLAUSE: rethrowing inside the cleanup handler flips report, survival AND exit-code tests on deno, but on BUN only the exit code flips -- the session survived long enough to answer a later completion AND to print its tsudoi: line. Every survival-shaped and stderr-shaped assertion passed; only the session's own exit code caught it.",
+        "P4 REPRODUCED THE CONFLICT INSIDE THE RULING EXACTLY: awaiting the close before responding reddens the hang test by its own timeout on both runtimes WHILE the throwing-cleanup report test stays green. The awaited form satisfies one half of criterion 2 and makes the other impossible.",
+        "WEAKNESS found by reading then MEASURED, not built: a finally containing a YIELD hijacks the close. return() resolves {value, done:false} identically on both runtimes, leaving the generator suspended INSIDE its own finally, and the rest of that cleanup runs only if someone calls next() again, which tsudoi never does. Unlike the parked-in-await limit this one is INVISIBLE rather than documented -- and unlike that one tsudoi COULD detect it, since done === false is right there in the result. For the PO to rule on.",
+        "Subtask 6's original note justified `no stderr write` by a risk of reddening an existing stderr-clean assertion. THE DEVELOPER CHECKED AND THE PREMISE WAS FALSE -- the two suites driving the example assert nothing about stderr. The note now rests on the noise argument alone. The justification-standard rule catching exactly its intended shape, in the sprint it was filed.",
+        "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
+        "The measurement hands criterion 2 a STRONGER non-launderable assertion than a stderr match: since an unhandled rejection destroys the session that caused it, assert the session's own exit code rather than searching for text that another test could have produced.",
+        "PO checklist, per-sprint additions: (1) the mode-split perturbation reported as a PAIR -- aggregation red WHILE streaming green; (2) the hang case proven by ORDERING not timing -- the finally's record absent at the moment -32800 arrives, present after release, which cannot pass because of fast hardware; (3) the unhandled-rejection assertion made where it cannot be laundered; (4) cleanup that throws proven by SURVIVAL as well as stderr -- a later completion answers normally.",
+        "PERTURBATIONS RUN AT HEAD, each named by the assertion it flipped, all over BOTH runtimes. (P1) delete the close: all 12 cleanup tests red, the two mode tests on waitForStderr(cleanupMarker) and the hang test on `entered cleanup` present. (P2) THE PAIR, close guarded by `token !== undefined`: the aggregating test red on waitForStderr(cleanupMarker) while the streaming test AND every token-carrying test stay green -- 10 pass / 2 fail. (P3) drop the rejection handler for `void`: bun flips the named assertion, waitForExit() 0 -> 1; deno dies sooner still and flips the -32800 arrival of the very request whose cleanup failed; the aggregation-close and streaming-close tests STAY GREEN, as does the hang test. (P4) await the close before responding: the hang test red by its own 6s timeout on both runtimes, while the throwing-cleanup REPORT test stays green -- the ruling's conflict reproduced exactly, one half of criterion 2 satisfied by the awaited form and the other impossible under it. (P5) rethrow inside the handler: on deno the report, survival and exit-code tests all flip at the response of the cancelled request; on BUN only the exit code flips -- the session survives long enough to answer the later completion and to print its stderr line. (P6) report the prefix without failureDetail(error): flips exactly at toContain(cleanupThrowMessage) with the prefix assertion one line above still green.",
+        "P5 IS THE ARGUMENT FOR THE PO's OWN CLAUSE, measured rather than assumed: under a rethrow, bun's session still answered a later completion and still wrote the tsudoi: line. Every survival- or stderr-shaped assertion passed. Only the session's own exit code caught it -- so `assert it where it cannot be laundered` was not belt-and-braces, it was the only thing that held on one of the two runtimes.",
+        "DEFECT FOUND BY RUNNING A PERTURBATION, fixed in 01e36d8 (test-only): LspSession flushed its pending map once, at the child's close event, so a request issued AFTER a session had already died never settled -- P3 reddened as an 18s timeout on bun instead of an assertion. Sprint 5's rule (a helper settles every promise it owns) applies to the process that died BEFORE the request too. Also added: stdin write errors are ignored, so a test driving a dead session fails on its assertion rather than on an uncaught EPIPE.",
+        "UNPROVEN, and named as such: nothing perturbs the example config's finally, by the PO's own ruling; and the language limit (a generator parked inside its own await queues return() behind the pending next()) is COMMENTED at the call site and deliberately untested.",
+        "WEAKNESS FOUND BY READING, THEN MEASURED, not built -- for the PO to rule on. tsudoi discards the IteratorResult that chunks.return() resolves with, and a `finally` containing a `yield` HIJACKS the close: measured identically on bun and deno, return() resolves {value: 99, done: FALSE}, the generator is left suspended inside its own finally, and the rest of that cleanup runs only if someone calls next() again -- which tsudoi never does. So a config author who yields one last chunk from their cleanup gets a server that believes it closed them. Same family as the parked-in-await limit, but unlike that one it is INVISIBLE rather than documented, and unlike that one tsudoi could detect it, since done === false is right there in the result.",
+      ],
+    },
     {
       number: 7,
       pbi_id: "PBI-10",
@@ -262,29 +274,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 8,
-    pbi_id: "PBI-11",
-    goal: "Keep a promise JavaScript already makes -- a config author's finally runs when their completion is abandoned -- so cleanup they can never watch succeed is not silently skipped on every keystroke, and the last gate on releasing this thing comes down.",
-    status: "review",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in 24b70a7, 7e37784, a88d3a6, cd08905, f61846a, 138ccba, ca0535e across 7 subtasks, plus 01e36d8 fixing a helper defect found while perturbing. Per-subtask records and 6 perturbation notes compacted here; git retains them.",
-      "P5 IS THE EMPIRICAL ARGUMENT FOR THE PO'S OWN NON-LAUNDERABLE CLAUSE: rethrowing inside the cleanup handler flips report, survival AND exit-code tests on deno, but on BUN only the exit code flips -- the session survived long enough to answer a later completion AND to print its tsudoi: line. Every survival-shaped and stderr-shaped assertion passed; only the session's own exit code caught it.",
-      "P4 REPRODUCED THE CONFLICT INSIDE THE RULING EXACTLY: awaiting the close before responding reddens the hang test by its own timeout on both runtimes WHILE the throwing-cleanup report test stays green. The awaited form satisfies one half of criterion 2 and makes the other impossible.",
-      "WEAKNESS found by reading then MEASURED, not built: a finally containing a YIELD hijacks the close. return() resolves {value, done:false} identically on both runtimes, leaving the generator suspended INSIDE its own finally, and the rest of that cleanup runs only if someone calls next() again, which tsudoi never does. Unlike the parked-in-await limit this one is INVISIBLE rather than documented -- and unlike that one tsudoi COULD detect it, since done === false is right there in the result. For the PO to rule on.",
-      "Subtask 6's original note justified `no stderr write` by a risk of reddening an existing stderr-clean assertion. THE DEVELOPER CHECKED AND THE PREMISE WAS FALSE -- the two suites driving the example assert nothing about stderr. The note now rests on the noise argument alone. The justification-standard rule catching exactly its intended shape, in the sprint it was filed.",
-      "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
-      "The measurement hands criterion 2 a STRONGER non-launderable assertion than a stderr match: since an unhandled rejection destroys the session that caused it, assert the session's own exit code rather than searching for text that another test could have produced.",
-      "PO checklist, per-sprint additions: (1) the mode-split perturbation reported as a PAIR -- aggregation red WHILE streaming green; (2) the hang case proven by ORDERING not timing -- the finally's record absent at the moment -32800 arrives, present after release, which cannot pass because of fast hardware; (3) the unhandled-rejection assertion made where it cannot be laundered; (4) cleanup that throws proven by SURVIVAL as well as stderr -- a later completion answers normally.",
-      "PERTURBATIONS RUN AT HEAD, each named by the assertion it flipped, all over BOTH runtimes. (P1) delete the close: all 12 cleanup tests red, the two mode tests on waitForStderr(cleanupMarker) and the hang test on `entered cleanup` present. (P2) THE PAIR, close guarded by `token !== undefined`: the aggregating test red on waitForStderr(cleanupMarker) while the streaming test AND every token-carrying test stay green -- 10 pass / 2 fail. (P3) drop the rejection handler for `void`: bun flips the named assertion, waitForExit() 0 -> 1; deno dies sooner still and flips the -32800 arrival of the very request whose cleanup failed; the aggregation-close and streaming-close tests STAY GREEN, as does the hang test. (P4) await the close before responding: the hang test red by its own 6s timeout on both runtimes, while the throwing-cleanup REPORT test stays green -- the ruling's conflict reproduced exactly, one half of criterion 2 satisfied by the awaited form and the other impossible under it. (P5) rethrow inside the handler: on deno the report, survival and exit-code tests all flip at the response of the cancelled request; on BUN only the exit code flips -- the session survives long enough to answer the later completion and to print its stderr line. (P6) report the prefix without failureDetail(error): flips exactly at toContain(cleanupThrowMessage) with the prefix assertion one line above still green.",
-      "P5 IS THE ARGUMENT FOR THE PO's OWN CLAUSE, measured rather than assumed: under a rethrow, bun's session still answered a later completion and still wrote the tsudoi: line. Every survival- or stderr-shaped assertion passed. Only the session's own exit code caught it -- so `assert it where it cannot be laundered` was not belt-and-braces, it was the only thing that held on one of the two runtimes.",
-      "DEFECT FOUND BY RUNNING A PERTURBATION, fixed in 01e36d8 (test-only): LspSession flushed its pending map once, at the child's close event, so a request issued AFTER a session had already died never settled -- P3 reddened as an 18s timeout on bun instead of an assertion. Sprint 5's rule (a helper settles every promise it owns) applies to the process that died BEFORE the request too. Also added: stdin write errors are ignored, so a test driving a dead session fails on its assertion rather than on an uncaught EPIPE.",
-      "UNPROVEN, and named as such: nothing perturbs the example config's finally, by the PO's own ruling; and the language limit (a generator parked inside its own await queues return() behind the pending next()) is COMMENTED at the call site and deliberately untested.",
-      "WEAKNESS FOUND BY READING, THEN MEASURED, not built -- for the PO to rule on. tsudoi discards the IteratorResult that chunks.return() resolves with, and a `finally` containing a `yield` HIJACKS the close: measured identically on bun and deno, return() resolves {value: 99, done: FALSE}, the generator is left suspended inside its own finally, and the rest of that cleanup runs only if someone calls next() again -- which tsudoi never does. So a config author who yields one last chunk from their cleanup gets a server that believes it closed them. Same family as the parked-in-await limit, but unlike that one it is INVISIBLE rather than documented, and unlike that one tsudoi could detect it, since done === false is right there in the result.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 8,
