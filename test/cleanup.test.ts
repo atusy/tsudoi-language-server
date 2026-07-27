@@ -15,8 +15,15 @@ import {
   returnedItems as throwsReturnedItems,
 } from "./fixtures/completion-cleanup-throws.ts";
 
+import {
+  cleanupEntered,
+  cleanupFinished,
+  returnedItems as hangsReturnedItems,
+} from "./fixtures/completion-cleanup-hangs.ts";
+
 const completionCleanup = fixture("completion-cleanup.ts");
 const cleanupThrows = fixture("completion-cleanup-throws.ts");
+const cleanupHangs = fixture("completion-cleanup-hangs.ts");
 
 /**
  * The line a config author is meant to act on -- the PREFIX tsudoi composes,
@@ -225,6 +232,55 @@ for (const runtime of runtimes) {
             completionParams(streamingToken),
           );
           expect(next).toEqual(throwsReturnedItems);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    // Proven by ORDER, never by a stopwatch. A timeout would only say the
+    // machine was fast enough; here cleanup is held open by a gate only this
+    // test can release, so the -32800 provably overtakes it -- and the record
+    // that could not have existed yet appears the moment the gate is opened.
+    test(
+      "cleanup that never settles does not delay the -32800",
+      async () => {
+        const session = LspSession.start(runtime, cleanupHangs);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue(
+            "textDocument/completion",
+            completionParams(streamingToken),
+          );
+          await session.waitForProgress(1);
+          session.cancel(inFlight.id);
+
+          // The response arrives while cleanup is still parked...
+          expect((await inFlight.response).error?.code).toBe(requestCancelled);
+          expect(session.stderr).not.toContain(cleanupFinished);
+          // ...and it had provably STARTED, so the absence above says the
+          // response overtook cleanup rather than that nothing was closed.
+          expect(session.stderr).toContain(cleanupEntered);
+
+          // Release it, and the same measurement observes the record: the
+          // permanent pair for the absence asserted above.
+          openGate(session);
+          await session.waitForStderr(cleanupFinished, 1000);
+
+          const next = await session.request<CompletionItem[]>(
+            "textDocument/completion",
+            completionParams(streamingToken),
+          );
+          expect(next).toEqual(hangsReturnedItems);
 
           expect(await session.request<null>("shutdown", null)).toBeNull();
           session.notify("exit", null);

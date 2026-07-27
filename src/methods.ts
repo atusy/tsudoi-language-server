@@ -285,16 +285,28 @@ export function registerMethods(
             // Above the mode split, where the abort check already is: whether
             // this request streamed or aggregated says what the CLIENT can take
             // and nothing about what the HANDLER holds open.
-            try {
-              await chunks.return(null);
-            } catch (error) {
-              // A `finally` that throws rejects this. Reported and NOT
-              // rethrown: unlike a handler failure, the client already has its
-              // -32800 and there is no response left to correct.
+            //
+            // FIRED, NEVER AWAITED, and the rejection handler is not optional.
+            // Measured on both runtimes: a `finally` that never settles leaves
+            // this promise pending forever, so awaiting it would mean the
+            // -32800 the client is waiting for is never sent at all -- and a
+            // `finally` that throws rejects it, which unhandled kills the
+            // process. That one handler does both jobs: it is how a throwing
+            // cleanup gets reported, and it is what stops the same rejection
+            // being fatal. Drop it and both halves fail together.
+            //
+            // What no arrangement of this can do: a generator parked inside its
+            // own `await` queues return() behind the pending next(), so its
+            // cleanup runs only when that settles. A limit of async generators,
+            // not a defect here.
+            chunks.return(null).then(undefined, (error: unknown) => {
+              // Reported and NOT rethrown: unlike a handler failure the client
+              // already has its -32800, and there is no response left to
+              // correct.
               const detail =
                 error instanceof Error ? (error.stack ?? error.message) : String(error);
               process.stderr.write(`tsudoi: textDocument/completion cleanup failed: ${detail}\n`);
-            }
+            });
             return null;
           }
           emitted = true;
