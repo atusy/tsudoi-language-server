@@ -144,9 +144,16 @@ export class LspSession {
     child.stdin.on("error", () => {});
   }
 
-  static start(runtime: Runtime, configPath: string): LspSession {
+  /**
+   * `cwd` defaults to the repo, which is where every criterion about THIS
+   * checkout is driven from. It is overridable so a test can drive an isolated
+   * copy of the sources and observe what changes -- module resolution is a
+   * property of the directory a runtime starts in, and no assertion made
+   * inside the repo can tell where a dependency was found.
+   */
+  static start(runtime: Runtime, configPath: string, cwd: string = repoRoot): LspSession {
     const child = spawn(runtime.command, [...runtime.runArgs, cliArg, "--config", configPath], {
-      cwd: repoRoot,
+      cwd,
       stdio: ["pipe", "pipe", "pipe"],
     });
     return new LspSession(child);
