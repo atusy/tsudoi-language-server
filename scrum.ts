@@ -232,6 +232,19 @@ const scrum: ScrumDashboard = {
   sprint: null,
   retrospectives: [
     {
+      sprint: 12,
+      improvements: [
+        {
+          action:
+            "A PLAN MAY NOT SUBSTITUTE A PROXY FOR A CRITERION'S PROPERTY. Where a subtask offers a RECIPE, it must NAME the property that recipe is meant to achieve and REQUIRE THAT PROPERTY BE MEASURED -- so the executor can detect the recipe failing to deliver it.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "One layer below the checklist-versus-criterion drift: there the reviewer's thinking runs ahead of the criterion; here the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test. Sprint 11's criterion required a PROPERTY (reverting spawn.ts reddens the non-ASCII assertion); both the Scrum Master's instruction and the Developer's subtask replaced it with a PROXY (size the payload past the pipe buffer). The proxy was satisfied while the property was FALSE -- chunk boundaries at multiples of one size share one offset mod 3, so at 360KB deno's first run split nothing. Covers Scrum-Master-authored and Developer-authored plan text alike: the artifact is the plan, whoever wrote the sentence.",
+        },
+      ],
+    },
+    {
       sprint: 11,
       improvements: [
         {
