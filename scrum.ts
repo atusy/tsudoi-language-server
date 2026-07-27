@@ -304,88 +304,192 @@ const scrum: ScrumDashboard = {
         implementation:
           "BINDING PRE-STEP, first and non-negotiable: before the shutdown-pacing criterion is dropped, move its ruling -- that the pipelined-exit half is DELIBERATELY undefended -- into a comment at exitCode() in src/lifecycle.ts, where someone would otherwise `fix` it. The comment says WHY NOT, not what: spec-defensible, deliberately not defended, symptom would be an editor hanging on shutdown. The criterion is that ruling's only home until this lands, and it is deleted this sprint.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "6d2ceba",
+            message: "docs(lifecycle): keep the pipelined exit deliberately undefended",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "FIRST COMMIT OF THE SPRINT, verifiable by order: 6d2ceba sits directly on b8b1f6a, ahead of every test commit. The criterion was already absent from PBI-9 at the plan commit, so `before or with the drop` could only mean `before anything else`.",
+          "CONTENT, not a pointer: the comment states the MECHANISM (shutdown and exit in one write lets exit dispatch before the shutdown response is flushed), the SYMPTOM (an editor waiting forever on a response never written), the SPEC GROUND (LSP tells the client to await the response first), and the NAMED ALTERNATIVE required by the Sprint 7 rule (pacing the exit behind the in-flight response would be equally acceptable, which is why it is recorded rather than pinned).",
+        ],
       },
       {
         test: "N/A (structural). Suite stays green.",
         implementation:
           "Record the dropped PBI-12 finding at src/methods.ts where the IteratorResult is discarded, carrying THREE things: the MEASUREMENT (both runtimes, chunks.return(null) resolves {value, done:false}), the CONSEQUENCE (the generator stays suspended inside its own finally and the rest of that cleanup never runs), and THE REASON IT IS NOT HANDLED (language semantics -- for await...of does the same -- deliberately not compensated). Without the measurement it becomes an unlabelled note read as reasoned.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "dfdbcd4",
+            message: "docs(methods): say why the cleanup result is discarded",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "RE-MEASURED rather than copied forward, because a note carrying someone else's measurement is a reasoned note wearing a measured label. bun 1.3.13 and deno 2.9.2, identical output: chunks.return(null) resolves {value:[99],done:false} and the statement after the yield in the finally never runs.",
+          "THE CULPABILITY HALF IS NOW MEASURED TOO, and it was not before: `for await (const c of handler()) { break }` over the same generator leaves the identical state on both runtimes -- one chunk seen, the code after the yield unrun. The claim that tsudoi is not the cause is therefore observed rather than argued.",
+        ],
       },
       {
         test: "EXPECTED RED, but only if sized correctly: a config failure whose message is Japanese round-trips BYTE-EXACT through runCli. The payload MUST straddle a chunk boundary deterministically -- a short Japanese string arrives in one chunk and the test is BORN GREEN BY ACCIDENT. Size it past the pipe buffer and assert exact equality so the control reddens by assertion rather than by luck.",
         implementation:
           "Replace per-chunk chunk.toString('utf8') in spawn.ts with buffered concatenation decoded once, or a TextDecoder with { stream: true }.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "0992bb7",
+            message: "fix(test): decode a child's stderr once, and prove the payload was split",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE TRAP WAS DEEPER THAN THE PLAN STATED, and this is the sprint's main finding. MEASURED: SIZE ALONE DOES NOT BUY THE STRADDLE. stderr arrives in chunks at exact multiples of ONE size (192KiB or 256KiB here), so every boundary sits at the SAME offset modulo the 3 bytes of a Japanese character -- either all of them split a character or none do. At 360KB of one repeated character the run was intermittently vacuous: 12/15 split under bun, 8/15 under deno, and the first test run had the deno case pass WITH THE DEFECT PRESENT.",
+          "REMEDY, deterministic by construction: three blocks of Japanese separated by ONE and then TWO single-byte characters, so the blocks cover all three residues mod 3 and no chunk size or message prefix can leave every boundary aligned (0,1,3 is not an affine sequence mod 3, which is what an all-aligned run would require). Re-measured: 15/15 runs split a character on both runtimes, and the test file ran green 6/6 times.",
+          "AND IT IS NOT TRUSTED: CliResult carries the same stderr bytes decoded PER CHUNK, and the case asserts the two decodings DIFFER. That converts `the payload probably straddled` into an assertion, so a payload that ever arrives whole fails loudly instead of passing vacuously.",
+          "NEGATIVE CONTROL (criterion 1's own): reverting spawn.ts to per-chunk decode reddens `expect(result.stderr).toBe(...)` on BOTH runtimes on 3/3 runs, by assertion. The straddle assertion reddens under it too, by construction -- the two decodings become the same expression.",
+          "KNOWN LIMIT, stated rather than found later: the block size (300_000 bytes) clears the 192KiB and 256KiB reads measured here. A machine reading in much larger chunks could deliver a block with no boundary in it; the straddle assertion then FAILS, which is the intended direction -- it never passes vacuously.",
+        ],
       },
       {
         test: "EXPECTED RED for the deno half, which has never executed. All seven config-failure cases assert exit 1, tsudoi:-prefixed stderr and 0-byte stdout under bun AND deno.",
         implementation:
           "Give runCli the Runtime parameter LspSession.start has had since Sprint 1. This is the original seven-sprint-old item.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ce0befa",
+            message: "test(cli): run the config-failure contract under deno too",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN, against the plan's EXPECTED RED: all seven cases passed under deno on the first run. The deno half was UNRUNNABLE rather than broken -- runCli hardcoded `bun` -- so what was missing was evidence, not behaviour. Confirmed by hand outside the suite as well: `deno run -A src/cli.ts --config test/fixtures/factory-rejects.ts` exits 1 with the tsudoi:-prefixed reason.",
+          "Runtime is imported into spawn.ts TYPE-ONLY, because lsp.ts already imports repoRoot from spawn.ts; a value import would close the cycle. The alternative -- extracting a third module -- would have touched nine files to no benefit.",
+        ],
       },
       {
         test: "EXPECTED RED -- nothing asserts this today. A multi-byte payload asserts the Content-Length header equals Buffer.byteLength, not string length. It MUST fail BY ASSERTION, never by timeout: a length mismatch manifesting as a hang is a test whose failure mode depends on OS pipe sizing.",
         implementation: "None expected beyond the assertion.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "201024b",
+            message: "test(protocol): pin Content-Length to the byte count it must be",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "The reader now records every FRAME -- the length its header declared beside the body it introduced -- because framing is otherwise unobservable from a test. The example config's Japanese hover frames 133 bytes of 99 characters, so the two readings disagree; a paired assertion states that disagreement, or the test would pass against any ASCII response.",
+          "NEGATIVE CONTROL (the criterion's own): asserting the character count reddens it as an equality in ~32ms on both runtimes -- expected 99, received 133. By assertion, never by timeout.",
+          "INDEPENDENT PRODUCTION-SIDE PERTURBATION, and it corrects the criterion's fear: editing vscode-jsonrpc's writer under node_modules to frame by character count (restored afterwards) reddens this test on both runtimes in ~32ms -- as a NAMED JSON parse error inside the reader, not as a hang. So the equality is what defends the claim, and the parse is what would notice first in the field. It reddened 7 other tests carrying Japanese too.",
+        ],
       },
       {
         test: "BORN GREEN -- .oxlintrc.json is already default-deny, so examples/ is COVERED BY THE CONFIG and merely unasserted. One shared path-shape list drives the Bun-global, bun:* and import/extensions tests alike across src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/. PERTURBATION (already in the criterion's verification): add examples/** to the oxlint overrides; the examples shape MUST redden while src/ stays green.",
         implementation:
           "Extract the list and drive all three rules from it, removing the divergence where import/extensions was pinned at three paths while the Bun rules were pinned at others.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "687ef2d",
+            message: "test(guard): drive all three rules from one list of path shapes",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as planned. One list of five shapes, each declaring whether bun:* is exempt there, drives all three rules; 20 tests where there were 13, and examples/ is asserted for the first time.",
+          "THE CRITERION'S PERTURBATION IS NARROWER THAN ITS WORDING, measured: adding examples/** to the EXISTING overrides entry reddens the bun:sqlite examples assertion ONLY, because that entry disables just no-restricted-imports. The Bun-global and import/extensions assertions for examples/ stay green, as does every src/ assertion. A SECOND perturbation -- an overrides entry disabling all three for examples/** -- reddens all three examples assertions and nothing else.",
+          "REMOVED ASSERTIONS, named: (1) `a relative import without .ts is flagged` at src/main.ts -- same claim, now made at src/server.ts inside the shared loop; (2) the standalone loop asserting the same at test/probe.test.ts and test/helpers/probe.ts -- absorbed by the shared loop, and the reason it existed (that `plugins` is declared only at the top level, so the plugin rule must be shown to reach inside the overrides scope) is preserved as a comment on that loop. NOTHING ELSE was dropped: the bare-specifier tests, the `src/bare.ts:3:1:` proof that oxlint really linted the file, and the bare `bun` import test are unchanged.",
+        ],
       },
       {
         test: "EXPECTED RED. A request issued to an already-dead session REJECTS NAMING THE EXIT rather than hanging; a failed stdin write surfaces rather than vanishing. Give the test an explicit timeout -- the negative control (restoring the close-only flush) makes the first HANG, which is the Sprint 6 misattribution shape, so a hang must fail as a timeout attributable to THIS test and never as a stall poisoning the next one.",
         implementation: "Settle pending promises on every terminal path, not only close.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "36d280b",
+            message: "test(helpers): make the session report what it drops",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "HALF ONE WAS BORN GREEN, not expected RED: the settle-on-registration was already written at commit 01e36d8 in Sprint 8, found by running a perturbation, and never asserted. The new test/session.test.ts asserts it for the first time.",
+          "NEGATIVE CONTROL for half one (the criterion's own): removing the already-closed branch from #pend makes the request hang, and with the test's explicit 4000ms timeout it fails as a timeout NAMING THIS TEST. Run across the WHOLE suite under that control: 190 pass, 2 fail, nothing else disturbed -- so the Sprint 6 misattribution shape does not recur.",
+          "HALF TWO NEEDED A REMEDY, and the measurement changed its shape. Under bun 1.3.13, a write to a dead child's stdin RETURNS TRUE and its callback is invoked with NO ERROR; only `writable` is false and `destroyed` true. node would report ERR_STREAM_DESTROYED. So the stream's own reporting could not surface it and the helper checks the state instead, still consulting the callback and the error event for an EPIPE on an open stream.",
+          "THE COMMENT THAT SAID OTHERWISE IS CORRECTED, not orphaned: `ignoring the error hides nothing, since a write that went nowhere shows up as a response that never arrives` is true of REQUESTS only and describes a hang. A `notify` awaits nothing, so its loss left no trace at all -- which is why the test drives a notification.",
+          "NEGATIVE CONTROL for half two: removing the closed-stdin check reddens it on both runtimes, as waitForWriteFailure's named 2000ms timeout. The absence half ships its pair in the same test -- a live session's writeFailures is asserted empty by the same accessor that sees the dead one's entry.",
+        ],
       },
       {
         test: "MIXED -- BOTH HALVES, ONE CRITERION. Injecting a window/logMessage-shaped notification must still PASS (expected RED today: over-pinned assertions reject an unexpected notification). A genuinely wrong ordering must still FAIL (born green -- this is the POSITIVE CONTROL that stops the criterion being passed by deleting assertions). PERTURBATION for the born-green half: delete the ordering assertions entirely; the wrong-ordering half MUST redden -- if it does not, the loosening removed the guarantee rather than the over-pinning.",
         implementation:
           "Loosen the arrivals assertions to filter for the messages under test rather than pinning the full arrival sequence.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "2477ebc",
+            message: "test(arrivals): defend ordering and content, not message shape",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE PASS HALF WOULD HAVE BEEN VACUOUS AS PLANNED, and this had to be fixed before anything else: #deliver DROPPED every server-initiated notification that was not $/progress, so injecting a window/logMessage could not have failed any assertion in either direction. arrivals now records every framed message, and tests read it through arrivalsFor(id).",
+          "MATCHED PAIR, PASS half: with a window/logMessage-shaped notification injected into the completion path in src/methods.ts, both rewritten tests PASS on both runtimes -- and the SAME injection reddens the OLD assertions in both tests on both runtimes (4 failures). That second run is what makes the pass evidence rather than an artefact of a helper that cannot see.",
+          "MATCHED PAIR, FAIL half, completion.test.ts: deferring sendProgress by 50ms so the chunk lands AFTER the response reddens the rewritten test on both runtimes. Deleting ONLY its arrivals assertion under that same injection makes it pass again -- so the arrivals assertion is what caught the inversion, not an earlier assertion.",
+          "FORECLOSED, not NOT CONSTRUCTED, cancellation.test.ts: an ordering inversion cannot be represented there, because the test waits for the chunk (waitForProgress) BEFORE it cancels, so the response cannot precede it. Its arrivals assertion is shown to defend CONTENT instead: streaming an empty chunk in place of the handler's items reddens it, and deleting only that assertion makes it pass. A third injection -- forwarding a chunk after the abort -- reddens it too, but progressCount catches that one as well, so it does not isolate the assertion.",
+          "REMOVED ASSERTIONS, named: (1) `{kind:'response', id:1}` in both tests, which defended `the initialize response arrived before the progress` -- already guaranteed by the awaited initialize above it, so the defence lives in the test's own sequencing; (2) the EXHAUSTIVENESS of the arrival list, which defended `the server sends nothing else` -- a promise never made, and the thing the criterion exists to remove; (3) the hardcoded id 2 for the request under test, which defended nothing beyond `no request was added above this line` -- it is now the id the helper handed back, which is the Sprint 7 brittleness item.",
+        ],
       },
       {
         test: "MIXED -- added-script half EXPECTED RED, changed-command half BORN GREEN with the same delete-the-assertion perturbation. An unrelated script added alongside prepack still PASSES; a changed prepack command still FAILS.",
         implementation:
           "package-shape.test.ts requires prepack present with the right value rather than scripts equalling exactly {prepack}.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "dc4845b",
+            message: "test(package): require prepack, rather than forbid every other script",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BOTH HALVES, on the same rewritten assertion. Adding an unrelated `lint` script to package.json: PASSES with the loosened assertion, and REDDENS under the old equality -- so what changed is the over-pinning, not the test's attention. Changing prepack's command to another tsconfig: still FAILS.",
+          "DELETE-THE-ASSERTION CONTROL: with the assertion removed, the changed prepack command passes unnoticed. That is what separates removing the over-pinning from removing the guarantee.",
+          "REMOVED ASSERTION, named: `scripts equals exactly {prepack}` defended, beyond prepack's presence and value, that NO OTHER SCRIPT EXISTS. That defended nothing anyone promised -- adding a script is legitimate -- and it has no new home. `exports` keeps its equality for the reason stated at its own site: an entry not listed there is unreachable, so the map IS the public surface.",
+        ],
       },
       {
         test: "EXPECTED RED. typescript resolves from the repo's own dependencies at a declared version and prepack uses that resolution. NEGATIVE CONTROL, REPAIRED BY THE PO: removing the declaration must redden an assertion EVEN THOUGH an ambient tsc on PATH would still produce a working build -- otherwise the test never distinguishes the pinned compiler from whatever happened to be installed.",
         implementation:
           "Add typescript to devDependencies at the version currently building the artifact; assert the property in package-shape.test.ts, whose reason lives in the test because package.json cannot carry comments.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e61da36",
+            message: "feat(package): pin the compiler that builds what we publish",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "typescript 7.0.2 declared EXACTLY, not as a range: a range declares a set, and the artifact under test and the artifact published must come from ONE compiler. It matches the tsc that had been building it from PATH, so nothing about the output changed.",
+          "THE PROPERTY IN FOUR STEPS, each able to fail alone: the declared version is the installed one; node_modules/.bin/tsc RESOLVES INSIDE that package (realpath, not by name); running it reports that version; prepack names it by BARE NAME, which is what makes that resolution apply. No build is run, deliberately -- that is the vacuity the PO repaired.",
+          "NEGATIVE CONTROL, BOTH HALVES MEASURED. Removing the declaration reddens step 1 (expected 7.0.2, received undefined). And with the declaration removed AND node_modules/typescript plus node_modules/.bin moved aside, `bun run prepack` STILL EXITS 0 and emits all 16 files using the tsc on PATH -- so a `prepack builds` test would have passed with the machine's compiler and distinguished nothing.",
+          "THE ONE STEP THAT WOULD OTHERWISE BE ASSUMED IS MEASURED: in a throwaway project whose node_modules/.bin/tsc is a marker-printing shim, with a real tsc on PATH, BOTH `bun run` and `npm run` execute the shim. Script resolution puts node_modules/.bin ahead of PATH, which is what the bare name in prepack relies on.",
+        ],
       },
     ],
     impediments: [],
@@ -394,6 +498,11 @@ const scrum: ScrumDashboard = {
       "THE PO REPAIRED A VACUOUS NEGATIVE CONTROL IN THE DEVELOPER'S OWN PROPOSAL: `removing the devDependency reddens an assertion` does not hold if tsc remains on PATH -- prepack still builds and any `run prepack, it works` test passes with the ambient compiler. That is the exact vacuous-perturbation shape the Developer caught in themselves last sprint, reappearing in their proposal. Criterion 7 is also worded around the PROPERTY rather than a package.json key, or it would become an instance of what criterion 6 removes.",
       "PBI-12 IS DROPPED ON CULPABILITY, NOT DEFECT -- and the PO put on record that the criterion binds, to avoid softening it to justify the outcome. Every item promoted to a fix was tsudoi doing something wrong; a yield inside a finally suspends a return completion BY SPECIFICATION, and for await...of behaves identically. tsudoi calls .return() correctly and the author's own cleanup defers itself. The silent-is-the-disqualifier rule was built on cases where we were the cause.",
       "PO checklist, per-sprint additions: (1) criterion 5 demonstrated as a MATCHED PAIR against the same rewritten test, reported together -- the FAIL half proves the test still asserts something, the PASS half proves it no longer over-pins, and either alone is satisfiable by a test that asserts nothing; (2) EVERY REMOVED ASSERTION NAMED with what it defended and where that defence now lives, or that it defended nothing -- the compaction rule applied to test code, and counting assertions would be a weak proxy where naming them is not; (3) the src/lifecycle.ts relocation verified BY CONTENT AND BY COMMIT ORDER, landing before or with the criterion's drop and carrying the reasoning rather than a pointer.",
+      "MEASURED, AND IT WOULD HAVE MADE THIS SPRINT'S HEADLINE TEST INTERMITTENTLY VACUOUS: a non-ASCII payload does NOT become more likely to straddle a pipe chunk boundary by being made BIGGER. Chunks arrive at exact multiples of one size, so every boundary shares one offset modulo the character width -- all split or none do. At 360KB the deno half passed WITH THE DEFECT PRESENT on the first run and on 7 of 15 probe runs. The fix is alignment, not size: single-byte separators covering all three residues. The general rule for the next such test -- ASSERT THE HARD CASE HAPPENED, do not size for it and hope.",
+      "MEASURED, and it corrects a comment this project has been relying on: under bun 1.3.13 a write to a DEAD child's stdin returns TRUE and its callback is invoked with NO ERROR -- only `writable` reports the truth. node raises ERR_STREAM_DESTROYED. Any helper in any project here that trusts a stream to report its own failure is trusting something bun does not do.",
+      "MEASURED, and it retires a seven-sprint-old assumption: the deno half of the config-failure contract was UNRUNNABLE, not broken. All seven cases passed under deno the first time they were allowed to run. `Never executed` and `would fail` had been treated as one thing.",
+      "FORECLOSED rather than NOT CONSTRUCTED, using the vocabulary filed last retro: the wrong-ordering perturbation for cancellation.test.ts's arrivals assertion cannot be built, because the test waits for the chunk before it cancels -- the response CANNOT precede it. The design of the test forecloses the failure; the assertion's remaining job is content, and that half was perturbed and shown to flip alone.",
+      "ONE PERTURBATION RAN INSIDE node_modules, disclosed: vscode-jsonrpc's message writer was edited to frame by character count and restored from a backup in the same step. It is the only way to perturb framing this project does not own, and it answered the criterion's own worry -- the failure arrives as a NAMED PARSE ERROR in ~32ms, not as a hang.",
     ],
   },
   retrospectives: [
