@@ -208,150 +208,15 @@ const scrum: ScrumDashboard = {
     pbi_id: "PBI-8",
     goal: "Make eleven sprints reachable by someone who was not here -- a README whose own bytes are what the suite runs, so the instructions cannot drift from the product.",
     status: "in_progress",
-    subtasks: [
-      {
-        test: "EXPECTED RED -- no README exists. The extractor reads README.md and yields the quickstart commands, asserting the EXPECTED COUNT. PAIRED POSITIVE CONTROL, permanent: a probe README missing them yields zero and fails.",
-        implementation:
-          "README.md quickstart documenting the TARBALL route as the working instruction, stating plainly that the package is unpublished and that bun add / deno add npm: are intended-and-unverified. test/helpers/readme.ts. Reuse installConsumer() -- the quickstart IS the route it already implements. PROSE CONSTRAINT settled before the first line: commands must be runnable VERBATIM from a STATED working directory, so the README says where the reader is standing and uses relative paths.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "f6cb1aa",
-            message: "docs(readme): a quickstart whose own bytes the suite extracts",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED OBSERVED: `Cannot find module ./helpers/readme.ts` -- there was no README and no extractor.",
-          "DEVIATION from the subtask's `reuse installConsumer()`: installConsumer PERFORMS the pack and the install, which are two of the documented steps. Reusing it would stage an environment supplying what the README asks the reader to do, which is precisely what the PO's bareness reframe forbids. The checkout staging is duplicated instead, at test/helpers/readme.ts, with the reason recorded there.",
-          "MEASURED, and it is why the quickstart needs no `bun init`: `bun install <tarball>` in an EMPTY directory succeeds and writes the package.json itself (bun 1.3.13).",
-          "The marker grammar carries the working directory, which the prose states too -- so the extractor REFUSES a directory no reader is shown. Without that the mechanism reintroduces the two-copy defect it exists to prevent.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Each extracted command executes verbatim under bun and deno from a staged environment supplying NOTHING the README asks the reader to do; the handshake returns an InitializeResult naming tsudoi. PERTURBATION: edit a command in README.md -- change a flag, stale a path. MUST redden. If it does not, the test is holding its own copy and the criterion is vacuous. RUN IT; do not infer it from the extractor's existence.",
-        implementation:
-          "Whatever the README's commands require to be runnable from the stated working directory.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7b8b15e",
-            message: "test(readme): run the documented commands from a bare environment",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PERTURBATION RUN, not inferred. (a) STALED A PATH -- dist/cli.js -> dist/main.js in the BUN start command only. FLIPPED: `the README's quickstart brings up a server under bun` at `expect(outcome.serverName ?? outcome.diagnosis).toBe('tsudoi')`, reporting `Module not found dist/main.js`. STAYED GREEN: the deno half and all four extraction tests -- the discrimination is per-command, not per-file.",
-          "PERTURBATION RUN. (b) CHANGED A FLAG'S VALUE -- `--filename tsudoi.tgz` -> `tsudoi-x.tgz` in step 1 alone. FLIPPED: BOTH quickstart assertions, at the install step (`../tsudoi-language-server/tsudoi.tgz failed to resolve`). A test holding its own copy of the commands would have stayed green through both.",
-          "The staged environment is BARE and that is asserted structurally rather than promised: runQuickstart builds its own stage per call and exposes no way to pass one in, so the sweep cannot be `optimised` into sharing one.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. For each step i in the extracted quickstart, run the sequence with step i omitted and assert it FAILS. Swept under ONE runtime -- licensed by Sprint 10's measured route-identity, not by cost.",
-        implementation:
-          "The sweep's real function is to prove THE ENVIRONMENT IS BARE: an omitted step that still succeeds means something other than the documented command is supplying it, which makes the intact run's pass a test of the harness rather than evidence. The property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`; N pack-and-install cycles is ONE mechanism, and a cheaper one establishing the same property is the Developer's to take.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "95fd3dd",
-            message: "test(readme): sweep every documented step's omission",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN BY CONSTRUCTION, not expected-RED: subtasks 2 and 3 share ONE implementation moment (runQuickstart), so only the first could claim RED. Sprint 5's rule, applied without being reminded of it.",
-          "SWEEP RESULT PER STEP, each failing for its OWN reason rather than one generic failure. omit `bun pm pack --filename tsudoi.tgz` -> install has no tarball to resolve, start reports `Module not found dist/cli.js`. omit `bun install ../tsudoi-language-server/tsudoi.tgz` -> same symptom from the other cause, node_modules never exists. omit `write tsudoi.config.ts` -> `tsudoi: failed to load config ...` and exit 1. omit the start command -> `no step started a server`.",
-          "THE CHEAPER MECHANISM the PO left open was taken, and it was not fewer cycles: it is that `bun install <tarball>` needs no package.json and `bun pm pack --filename` needs no version-dependent name, which cuts the documented sequence to four steps. MEASURED cost of a full cycle: pack 0.05s, install 0.16s -- five fresh stages run in 0.47s, so sharing a stage would have bought nothing and cost the omit-pack iteration its meaning.",
-          "The last step's omission is DEGENERATE-LOOKING and kept deliberately: it is the strongest bareness assertion here, since anything other than the documented command starting a server would show up exactly there.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. The flags extracted from README.md equal what the suite actually spawns. TWO PERTURBATIONS, BOTH REQUIRED: narrow the README's flags alone -> must redden; narrow denoRuntime.runArgs alone -> must redden. A one-sided test passes when both drift TOGETHER, which is the failure this criterion exists to catch.",
-        implementation:
-          "IMPORT denoRuntime from test/helpers/lsp.ts and read runArgs rather than parsing the helper's source -- the compared value then comes from the thing that really runs, and no second parsing mechanism enters needing its own vacuity guard. Separately, tolerantly assert the README states WHY: vscode-jsonrpc reads XDG_RUNTIME_DIR at module load, so -A is a DEPENDENCY'S demand rather than tsudoi's, and narrower sets are UNTESTED because the minimum was never measured.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "3397dda",
-            message: "test(readme): compare the documented deno flags with what is spawned",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PERTURBATION A RUN -- narrowed the README ALONE, `deno run -A` -> `deno run --allow-read`. FLIPPED: `the deno permissions the README documents are the ones the suite spawns`, run in ISOLATION with -t so the signal could not be an earlier test's corpse. Also flipped `the README's quickstart brings up a server under deno`; the bun half and every extraction test STAYED GREEN.",
-          "PERTURBATION B RUN -- narrowed `denoRuntime.runArgs` ALONE, ['run','-A'] -> ['run']. FLIPPED IN ISOLATION: the same flags assertion, expecting '-A' and receiving a list without it. Across the whole suite it reddens 65 tests, which is why it was run isolated: a perturbation that only killed the file would not have defended THIS assertion.",
-          "Perturbation B also RE-MEASURED the README's own claim: every one of those 65 failures is `NotCapable: Requires env access to XDG_RUNTIME_DIR` from vscode-jsonrpc/lib/node/main.js:191, at module load. The reason the README gives a reader is measured, not reasoned.",
-          "The vacuity guard for this criterion lives in invocationOf, which THROWS when a command has no script path or nothing between the runtime and it -- an empty flag list would make `the documented flags are what is spawned` true of nothing.",
-        ],
-      },
-      {
-        test: "EXPECTED RED, BOTH HALVES perturbation-tested. README.md carries that --config has no default, that the config default-exports a factory, that deno must be on PATH or `bun test` fails, and that the package is unpublished. Rewording a sentence must still PASS; removing a fact must FAIL. Neither half is optional and they fail in OPPOSITE directions.",
-        implementation:
-          "Match on the DISCRIMINATING TOKENS of each fact, not on sentences. The reader is stipulated, so every assumed prerequisite is named -- an unnamed prerequisite cannot be perturbed and therefore is not defended.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "b62d295",
-            message: "test(readme): pin the facts a stranger cannot guess, both ways",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "A VACUITY MODE FOUND INSIDE THIS SUBTASK'S OWN REMEDY, the second of the sprint: the planned permanent removal control -- delete a token, assert the fact is gone -- CANNOT FAIL. statesFact is a conjunction, so deleting a required token falsifies it for EVERY document, including one that says nothing. Replaced by a control that can fail: each fact is stated in EXACTLY ONE section, which is what makes deleting that section lose it, and which reddens when a fact is satisfied INCIDENTALLY by tokens scattered somewhere that does not state it.",
-          "PERTURBATION RUN, removal half -- deleted the sentence `There is no default config path: --config <path> is required...` FLIPPED, all three and only those three: `the README states: --config has no default and is required`, its uniqueness assertion, and its rewording assertion. Everything else STAYED GREEN.",
-          "PERTURBATION RUN, rewording half -- rewrote TWO sentences with different structure and word order, keeping the tokens (`tsudoi ships no default config path at all; passing --config <path> is required of you...` and `No registry has @atusy/tsudoi: it is not published, to npm or anywhere else.`). ALL 32 STAYED GREEN. The two halves fail in opposite directions, as the criterion requires.",
-          "The uniqueness assertion FOUND A REAL COLLISION while being written: `## When the config is wrong` restated the factory contract in the same tokens as the teaching section, so the fact had two homes. Fixed in the README's prose, not in the tokens -- weakening the tokens to dodge it would have been the proxy.",
-          "The permissions fact from subtask 4 was folded into this list rather than left standing alone, so criterion 2's prose half gets the same both-ways treatment as criterion 3's.",
-          "AMENDED AFTER REVIEW OF THE PROSE ITSELF (commit d4cb846). The -A section hedged -- `a narrower set may well be enough` -- over a measurement nobody had taken, while quoting an error naming the very flag that was missing. MEASURED: `deno run --allow-read --allow-env` COMPLETES THE HANDSHAKE from the installed copy under deno 2.9.2. Stated as a HISTORICAL claim pinned to that version, because the suite spawns -A and nothing keeps a narrower set working; `untested` now means what it says instead of standing in for `unmeasured`.",
-          "SECOND AMENDMENT, same commit: `a network connection on a cold cache` was an ASSUMED prerequisite of the install step, named nowhere. Now named and defended by its own fact, whose removal was perturbed and flipped three assertions. install.ts had recorded the same dependency for its own path since Sprint 10; the README had not inherited it.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Break the documented quickstart config; run it under both runtimes; assert exit code, tsudoi:-prefixed stderr reason and zero stdout bytes -- EACH COMPARED AGAINST THE VALUE EXTRACTED FROM README.md, never a constant the test holds. PERTURBATION: change the README's stated exit code to 2; MUST redden. That is the whole criterion -- the README is the source of the expectation.",
-        implementation: "None beyond the assertions.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "01963af",
-            message: "test(readme): take the failure contract's every value from the README",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PERTURBATION RUN, the one the criterion names -- README's stated exit code `1` -> `2`. FLIPPED: BOTH `the documented failure behaviour is what happens under bun` and `... under deno`. Everything else stayed green.",
-          "TWO MORE, since a criterion is only defended at the values that were perturbed: stderr prefix `tsudoi: ` -> `tsudoi! ` FLIPPED (Expected `tsudoi! `, Received `tsudoi: `); stdout bytes `0` -> `3` FLIPPED. All three documented values are load-bearing, not just the exit code.",
-          "The contract's values live in the RENDERED TABLE, not in a marker: a value hidden in an HTML comment could drift from the sentence beside it while every test passed. What is asserted is what is read.",
-          "The zero-bytes-on-stdout absence ships its PERMANENT pair -- the same byte counting, same stream, same helper, sees bytes during the setup commands. Sprint 6's rule, and it applies to a value extracted from prose exactly as to one a test holds.",
-        ],
-      },
-      {
-        test: "N/A (structural).",
-        implementation:
-          "Record at test/helpers/readme.ts -- the site where someone would `simplify` by inlining an expected command -- that all four criteria are VACUOUS unless the tests read the README's own bytes, AND the zero-match vacuity mode, since that is the specific way a future edit would silently disable everything. A decision whose violation is a code edit lives at the edit site, and this PBI's note compacts.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "6bc5229",
-            message: "docs(readme-helper): record what a `simplification` here would destroy",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "Records FOUR shapes of the same defect at the site where the edit would be made: inlining an expected value makes every criterion vacuous; an extractor that finds nothing passes; invocationOf throwing rather than reporting an empty flag list; and the token-conjunction control that CANNOT FAIL, which is why uniqueness is the only removal control offered.",
-          "DoD AT HEAD, each run unpiped and captured separately: `bun test` 0, `oxlint` 0, `oxfmt --check .` 0, `tsc --noEmit` 0. 232 tests, 781 assertions -- 193/731 at sprint start.",
-          "HARNESS PROPERTY, recorded rather than fixed: runQuickstart re-reads README.md to build the LAYOUT while the SEQUENCE comes from the caller's own read, so a perturbation applied mid-run would mix two versions of the file. Every perturbation here edited the file before `bun test` started, so it never bit; the alternative -- passing the layout in -- is the injection point the sweep's staging deliberately refuses.",
-        ],
-      },
-    ],
+    subtasks: [],
     impediments: [],
     decisions: [
+      "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 (post-review prose fix) across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
+      "A DEFECT INSIDE THE DEVELOPER'S OWN REMEDY, AGAIN, and caught by writing it: the planned permanent removal control for the contract criterion -- delete a token, assert the fact is gone -- CANNOT FAIL, because the assertion is a CONJUNCTION and therefore holds for every document including an empty one. Replaced with UNIQUENESS (each fact has exactly one home section), which can fail and DID: it exposed a real collision where a failure section restated the factory contract in the same tokens. Fixed in the prose, not by weakening the tokens.",
+      "A PROSE DEFECT FOUND AT REVIEW, and the fix is the standard applied to prose: the -A section HEDGED (`a narrower set may well be enough`) over an UNRUN measurement while quoting an error naming the missing flag. Measured: deno run --allow-read --allow-env COMPLETES the handshake under deno 2.9.2. Now stated as a historical claim pinned to that version -- UNTESTED means untested, not unmeasured.",
+      "AN UNNAMED PREREQUISITE, which the stipulated-reader rule exists to catch: the install fetches vscode-languageserver-protocol on a cold cache. install.ts had recorded it since Sprint 10 and the README had not inherited it. Now named and defended by its own fact.",
+      "DEVIATION from the plan's `reuse installConsumer()`: it PERFORMS the pack and the install -- two DOCUMENTED steps -- which the PO's bareness reframe forbids, since a harness supplying a documented step makes the intact run a test of the harness. The checkout staging is duplicated instead, with the reason at the site.",
+      "NOT CONSTRUCTED, not foreclosed: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
       "THE DEVELOPER FOUND A VACUITY MODE INSIDE THE PO'S OWN REMEDY, before building it: AN EXTRACTOR THAT FINDS NOTHING PASSES. If the fence markers move, extraction yields zero commands, `every extracted command succeeds` is VACUOUSLY TRUE, and the README rots exactly as if the tests held their own copy. Mechanism satisfied, property false -- the mod-3 residue shape, in a fourth place. Every extraction therefore asserts an expected non-zero count FIRST, permanently.",
       "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
       "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
