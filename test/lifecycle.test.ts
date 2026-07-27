@@ -16,3 +16,21 @@ test("initialize returns a result naming tsudoi, with capabilities present and e
     session.dispose();
   }
 });
+
+test("initialize, initialized, shutdown, exit yields a null shutdown result and exit code 0", async () => {
+  const session = LspSession.start(bunRuntime, demoConfig);
+  try {
+    await session.request<InitializeResult>("initialize", initializeParams);
+    session.notify("initialized", {});
+
+    // Awaiting the shutdown response before notifying exit is what keeps the
+    // response from racing the server's process.exit.
+    const shutdownResult = await session.request<null>("shutdown", null);
+    expect(shutdownResult).toBeNull();
+
+    session.notify("exit", null);
+    expect(await session.waitForExit()).toBe(0);
+  } finally {
+    session.dispose();
+  }
+});

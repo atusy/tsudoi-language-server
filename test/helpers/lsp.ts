@@ -26,12 +26,19 @@ interface ResponseMessage {
 export class LspSession {
   readonly #child: ChildProcessWithoutNullStreams;
   readonly #pending = new Map<number, (message: ResponseMessage) => void>();
+  /** Captured at construction so waitForExit cannot miss an early close. */
+  readonly #exited: Promise<number | null>;
   #buffer = Buffer.alloc(0);
   #nextId = 1;
   stderr = "";
 
   private constructor(child: ChildProcessWithoutNullStreams) {
     this.#child = child;
+    this.#exited = new Promise((resolve) => {
+      child.on("close", (code) => {
+        resolve(code);
+      });
+    });
     child.stdout.on("data", (chunk: Buffer) => {
       this.#buffer = Buffer.concat([this.#buffer, chunk]);
       this.#drain();
@@ -68,11 +75,7 @@ export class LspSession {
   }
 
   waitForExit(): Promise<number | null> {
-    return new Promise((resolve) => {
-      this.#child.on("close", (code) => {
-        resolve(code);
-      });
-    });
+    return this.#exited;
   }
 
   dispose(): void {
