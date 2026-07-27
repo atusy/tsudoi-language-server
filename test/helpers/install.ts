@@ -6,6 +6,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -37,11 +38,31 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
 
 /** A throwaway project with tsudoi installed from a tarball, as a stranger has it. */
 export interface InstalledConsumer {
+  /**
+   * The consumer project's root -- where a config author's own tsudoi.config.ts
+   * sits, and the cwd every command in the stated route is run from.
+   */
+  readonly dir: string;
   /** Where the tarball was unpacked to, for asserting what did and did not ship. */
   readonly packageDir: string;
+  /** Writes a file into the consumer project, e.g. the config a route names. */
+  write(path: string, contents: string): void;
   /** Type-checks probe sources, keyed by path relative to the consumer root. */
   typeCheck(files: Record<string, string>): Promise<TypeCheckResult>;
   dispose(): void;
+}
+
+/** How one throwaway consumer differs from the one a stranger would get. */
+export interface InstallOptions {
+  /** Perturbs the package.json that gets PACKED, never the installed copy. */
+  readonly editPackage?: PackageEdit;
+  /**
+   * Perturbs the STAGED COPY of src/ before the build runs, so a change to the
+   * sources reaches the tarball with no rebuild step of anyone's -- which is
+   * what makes `the artifact is produced from current source at test time`
+   * observable rather than merely intended.
+   */
+  readonly editSource?: (srcDir: string) => void;
 }
 
 function fail(step: string, result: TypeCheckResult): never {
@@ -68,10 +89,18 @@ function fail(step: string, result: TypeCheckResult): never {
  *
  * src/ is copied, never symlinked -- `bun pm pack` follows the `files` field
  * and a symlinked directory is not what the registry would receive.
+ *
+ * THE TARBALL IS BUILT HERE, NOT FOUND: the stage carries src/ and
+ * tsconfig.build.json, and `bun pm pack` runs the `prepack` script before it
+ * collects files (MEASURED -- `bun pm pack` and `npm pack` both fire prepack
+ * and both include what it emitted). So dist/ inside the tarball is compiled
+ * from the src/ copied one line above, at test time, and a stale artifact
+ * cannot be what a test observed. node_modules is symlinked in only because
+ * the build needs to resolve vscode-languageserver-protocol's types; `files`
+ * keeps it out of the tarball, which
+ * test/installed-runtime.test.ts asserts rather than assumes.
  */
-export async function installConsumer(
-  editPackage: PackageEdit = () => {},
-): Promise<InstalledConsumer> {
+export async function installConsumer(options: InstallOptions = {}): Promise<InstalledConsumer> {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-pack-"));
   const consumer = mkdtempSync(join(tmpdir(), "tsudoi-consumer-"));
   const dispose = (): void => {
@@ -82,9 +111,12 @@ export async function installConsumer(
     const packageJson: Record<string, unknown> = JSON.parse(
       readFileSync(join(repoRoot, "package.json"), "utf8"),
     ) as Record<string, unknown>;
-    editPackage(packageJson);
+    options.editPackage?.(packageJson);
     writeFileSync(join(stage, "package.json"), JSON.stringify(packageJson, null, 2));
     cpSync(join(repoRoot, "src"), join(stage, "src"), { recursive: true });
+    options.editSource?.(join(stage, "src"));
+    cpSync(join(repoRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
+    symlinkSync(join(repoRoot, "node_modules"), join(stage, "node_modules"), "dir");
 
     const packed = await run("bun", ["pm", "pack", "--destination", stage], stage);
     if (packed.code !== 0) {
@@ -109,7 +141,13 @@ export async function installConsumer(
     }
 
     return {
+      dir: consumer,
       packageDir: join(consumer, "node_modules", "@atusy", "tsudoi"),
+      write: (path: string, contents: string): void => {
+        const target = join(consumer, path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, contents);
+      },
       typeCheck: async (files: Record<string, string>): Promise<TypeCheckResult> => {
         writeFileSync(
           join(consumer, "tsconfig.json"),

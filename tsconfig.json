@@ -8,5 +8,6 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["node", "bun"]
-  }
+  },
+  "exclude": ["dist"]
 }

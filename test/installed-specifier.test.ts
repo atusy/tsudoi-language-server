@@ -93,8 +93,10 @@ test("the tarball ships the module the exports entry points at, and no test tree
 // than what got installed -- the claim under test is about what this repo
 // publishes, not about a directory on this machine.
 test("dropping ./types from the packed exports makes the consumer fail with TS2307", async () => {
-  const perturbed = await installConsumer((packageJson) => {
-    packageJson.exports = {};
+  const perturbed = await installConsumer({
+    editPackage: (packageJson) => {
+      packageJson.exports = {};
+    },
   });
   try {
     const result = await perturbed.typeCheck({ "tsudoi.config.ts": consumerConfig });

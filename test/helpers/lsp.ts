@@ -159,6 +159,23 @@ export class LspSession {
     return new LspSession(child);
   }
 
+  /**
+   * Starts a session by running a COMMAND LINE VERBATIM -- the whole string,
+   * runtime included, split on spaces.
+   *
+   * This exists so a documented route cannot drift from what is executed. A
+   * route stated in prose beside independently assembled spawn arguments is
+   * two things that must be kept equal by hand; here the stated string IS the
+   * argv, so there is nothing to keep equal.
+   */
+  static startCommand(command: string, cwd: string): LspSession {
+    const [program, ...args] = command.split(" ");
+    if (program === undefined) {
+      throw new Error(`not a command: ${command}`);
+    }
+    return new LspSession(spawn(program, args, { cwd, stdio: ["pipe", "pipe", "pipe"] }));
+  }
+
   request<T>(method: string, params: unknown): Promise<T> {
     const id = this.#nextId++;
     return new Promise<T>((resolve, reject) => {
