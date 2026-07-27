@@ -43,9 +43,11 @@ export class LspSession {
   readonly #pending = new Map<number, (message: ResponseMessage) => void>();
   /** Captured at construction so waitForExit cannot miss an early close. */
   readonly #exited: Promise<number | null>;
+  readonly #stderrChunks: Buffer[] = [];
   #buffer = Buffer.alloc(0);
   #nextId = 1;
-  stderr = "";
+  /** Every message framed off stdout, including any nothing awaits. */
+  messagesReceived = 0;
 
   private constructor(child: ChildProcessWithoutNullStreams) {
     this.#child = child;
@@ -65,7 +67,7 @@ export class LspSession {
       this.#drain();
     });
     child.stderr.on("data", (chunk: Buffer) => {
-      this.stderr += chunk.toString("utf8");
+      this.#stderrChunks.push(chunk);
     });
   }
 
@@ -95,8 +97,27 @@ export class LspSession {
     this.#send({ jsonrpc: "2.0", method, params });
   }
 
+  /**
+   * Everything the child wrote to stderr, decoded once over the whole thing.
+   * Decoding chunk by chunk instead would turn any multi-byte character the
+   * pipe happened to split into two U+FFFD -- invisible in ASCII, and silently
+   * wrong for exactly the Japanese payloads this suite exists to check.
+   */
+  get stderr(): string {
+    return Buffer.concat(this.#stderrChunks).toString("utf8");
+  }
+
   waitForExit(): Promise<number | null> {
     return this.#exited;
+  }
+
+  /**
+   * Bytes stdout produced that no framed message accounts for. Read after the
+   * process has exited, anything but 0 means something wrote to stdout that is
+   * not JSON-RPC -- which desyncs a real editor rather than failing loudly.
+   */
+  get unframedStdoutBytes(): number {
+    return this.#buffer.length;
   }
 
   dispose(): void {
@@ -131,6 +152,7 @@ export class LspSession {
   }
 
   #deliver(message: ResponseMessage): void {
+    this.messagesReceived++;
     if (message.id === undefined) {
       return; // A server-initiated notification; nothing awaits it here.
     }

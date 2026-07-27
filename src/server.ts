@@ -1,6 +1,9 @@
 import process from "node:process";
 import {
   createProtocolConnection,
+  DidChangeTextDocumentNotification,
+  DidCloseTextDocumentNotification,
+  DidOpenTextDocumentNotification,
   ExitNotification,
   InitializedNotification,
   InitializeRequest,
@@ -19,7 +22,7 @@ import type { TsudoiConfig } from "./types.ts";
  *
  * `capabilities` carries only textDocumentSync until PBI-3/4 declare their own.
  */
-export function startServer(_config: TsudoiConfig, _documents: DocumentStoreHandle): void {
+export function startServer(_config: TsudoiConfig, documents: DocumentStoreHandle): void {
   const connection = createProtocolConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),
@@ -43,6 +46,20 @@ export function startServer(_config: TsudoiConfig, _documents: DocumentStoreHand
 
   connection.onNotification(InitializedNotification.type, () => {
     // The client is ready. Nothing to do until PBI-3/4 add capabilities.
+  });
+
+  // The three sync notifications are pure delegation: what a full-sync buffer
+  // means is documents.ts's business, and none of them answers the client.
+  connection.onNotification(DidOpenTextDocumentNotification.type, (params) => {
+    documents.open(params);
+  });
+
+  connection.onNotification(DidChangeTextDocumentNotification.type, (params) => {
+    documents.change(params);
+  });
+
+  connection.onNotification(DidCloseTextDocumentNotification.type, (params) => {
+    documents.close(params);
   });
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
