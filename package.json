@@ -2,11 +2,18 @@
   "name": "@atusy/tsudoi",
   "version": "0.0.0",
   "files": [
-    "src"
+    "dist"
   ],
   "type": "module",
   "exports": {
-    "./types": "./src/types.ts"
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./src/types.ts"
+    }
+  },
+  "scripts": {
+    "prepack": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "vscode-languageserver-protocol": "^3.17.5"
@@ -15,5 +22,5 @@
     "@types/bun": "^1.3.0",
     "@types/node": "^24.0.0"
   },
-  "//exports": "TYPES ONLY, deliberately. `./types` is the whole published surface: no `main`, no `bin`. An installed copy CANNOT RUN under Deno today (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, measured under deno 2.9.2 against a packed-and-installed consumer, while bun runs it fine), so publishing a runnable entry point here would ship that defect under this package's name. A runnable distribution is its own backlog item; when it lands, `main` and `bin` are added THERE, with the Deno story solved, not here. Note also that `exports` makes every path NOT listed unreachable by bare specifier, so adding an entry is a decision about the public surface, never a convenience."
+  "//exports": "SUPERSEDES the note this key carried through sprint 9, which said an installed copy CANNOT run under deno and that main/bin belong elsewhere. That is now false: this package ships COMPILED .js built by prepack, and deno's restriction is on type-STRIPPING under node_modules, not on running .js from there. The published surface is dist/ alone -- src/ is deliberately NOT shipped, so no user can aim a runtime at a .ts entry point under node_modules and hit that error at all. There is still no `main`, no `.` export and no `bin`."
 }

@@ -80,13 +80,25 @@ test("the same example spelled with a relative path into src fails in a consumer
   expect(result.output).toContain("../src/types.ts");
 });
 
-// SCOPE, and it is deliberate: this asserts what the tarball CONTAINS, never
-// that the installed copy RUNS. An installed copy cannot run under Deno today
-// (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING), which is its own backlog item;
-// asserting it here would import that defect into this one.
-test("the tarball ships the module the exports entry points at, and no test tree", () => {
-  expect(existsSync(join(consumer.packageDir, "src", "types.ts"))).toBe(true);
+// SCOPE: this file asserts what the tarball CONTAINS and what type-checks
+// against it. That the installed copy RUNS is asserted in
+// test/installed-runtime.test.ts -- it now does, under both runtimes, which is
+// what sprint 10 changed. The note this comment used to carry, that an
+// installed copy cannot run under deno, was true until the package started
+// shipping compiled .js and is retained nowhere.
+//
+// `src/types.ts` is deliberately absent: dist/ is the whole published tree, so
+// a user cannot aim a runtime at a .ts file under node_modules even by
+// mistake. What deno does when they can is pinned in installed-runtime.
+test("the tarball ships the compiled module the exports entry points at, and nothing else", () => {
+  expect(existsSync(join(consumer.packageDir, "dist", "types.d.ts"))).toBe(true);
+  expect(existsSync(join(consumer.packageDir, "dist", "cli.js"))).toBe(true);
+  expect(existsSync(join(consumer.packageDir, "src"))).toBe(false);
   expect(existsSync(join(consumer.packageDir, "test"))).toBe(false);
+  // The build needs node_modules in the staging directory to resolve
+  // vscode-languageserver-protocol's types; `files` is what keeps it out of
+  // the tarball, and only this says so.
+  expect(existsSync(join(consumer.packageDir, "node_modules"))).toBe(false);
 });
 
 // The paired control for the installed case, perturbing what gets PACKED rather
