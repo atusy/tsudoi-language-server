@@ -338,9 +338,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Second branch on the same lifecycle state. Shares the SEAM with the previous subtask but not the implementation moment: two states, two codes, two branches.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e50ecc2",
+            message: "feat(lifecycle): answer -32600 for a request arriving after shutdown",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned: pre-fix, hover after shutdown answered a REAL Hover, the document still being open.",
+          "THREE perturbations, each at its own target. (a) not-initialized branch deleted -> flips subtask 3's -32002 ONLY, -32600 stays green. (b) the shutdown branch's CODE swapped to ServerNotInitialized -> flips -32600 ONLY, subtask 3's -32002 stays green; a code swap rather than a branch deletion, so it defends `two codes` and not merely error-versus-success. (c) exit dropped once hasShutdown -> flips `waitForExit() === 0` as a 4000ms timeout on both runtimes, with the earlier -32600 assertion still green.",
+        ],
       },
       {
         test: "MIXED -- `the document never appears` EXPECTED RED (didOpen after shutdown is processed today); `zero stderr` BORN GREEN. didOpen after shutdown leaves the document absent and produces zero stderr; exit still returns 0. PAIRED POSITIVE CONTROL, permanent in the suite: the same stderr measurement, in a session where a notification handler does throw, observes a non-empty `tsudoi:` line. PERTURBATION for the zero-stderr half: log the dropped notification; that assertion MUST redden while `the document never appears` stays green.",
