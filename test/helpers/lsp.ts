@@ -33,12 +33,25 @@ export interface JsonRpcError {
   message: string;
 }
 
-interface ResponseMessage {
+export interface ResponseMessage {
   id?: number;
   method?: string;
   params?: unknown;
   result?: unknown;
   error?: JsonRpcError;
+}
+
+/** A request that has been sent and not yet answered. */
+export interface InFlightRequest {
+  /** The id `$/cancelRequest` names -- exposed because cancellation needs it. */
+  readonly id: number;
+  /**
+   * How it settled, result and error alike, RESOLVED either way. A rejection
+   * here would go unhandled whenever an assertion fails before the await, and
+   * be reported against whichever test ran next -- the misattribution Sprint 5
+   * recorded as a suite-integrity failure.
+   */
+  readonly response: Promise<ResponseMessage>;
 }
 
 /** One `$/progress` as it arrived, token included and unfiltered. */
@@ -76,6 +89,8 @@ export class LspSession {
   /** Captured at construction so waitForExit cannot miss an early close. */
   readonly #exited: Promise<number | null>;
   readonly #stderrChunks: Buffer[] = [];
+  /** Kept whole and undecoded so a suppressed value can be searched for. */
+  readonly #stdoutChunks: Buffer[] = [];
   #buffer = Buffer.alloc(0);
   #strayBytes = 0;
   #nextId = 1;
@@ -110,6 +125,7 @@ export class LspSession {
       });
     });
     child.stdout.on("data", (chunk: Buffer) => {
+      this.#stdoutChunks.push(chunk);
       this.#buffer = Buffer.concat([this.#buffer, chunk]);
       this.#drain();
     });
@@ -166,6 +182,47 @@ export class LspSession {
   }
 
   /**
+   * Sends a request without awaiting it, exposing the id so it can be
+   * cancelled while it is still running.
+   */
+  issue(method: string, params: unknown): InFlightRequest {
+    const id = this.#nextId++;
+    // The executor runs synchronously, so the frame is on the wire before this
+    // returns and the caller can cancel the id it was handed.
+    const response = new Promise<ResponseMessage>((resolve) => {
+      this.#pending.set(id, resolve);
+      this.#send({ jsonrpc: "2.0", id, method, params });
+    });
+    return { id, response };
+  }
+
+  /**
+   * Sends a request and its cancellation in ONE write, so both are framed
+   * before the server's message queue turns.
+   *
+   * That is the pre-dispatch path, and it is not a nicety: vscode-jsonrpc then
+   * hands the handler CancellationToken.Cancelled, whose
+   * onCancellationRequested is Event.None and NEVER fires. A bridge that only
+   * subscribes sees no cancellation at all here.
+   */
+  issueThenCancel(method: string, params: unknown): InFlightRequest {
+    const id = this.#nextId++;
+    const response = new Promise<ResponseMessage>((resolve) => {
+      this.#pending.set(id, resolve);
+      this.#child.stdin.write(
+        this.#frame({ jsonrpc: "2.0", id, method, params }) +
+          this.#frame({ jsonrpc: "2.0", method: "$/cancelRequest", params: { id } }),
+      );
+    });
+    return { id, response };
+  }
+
+  /** Asks the server to cancel a request by id, as a client's `$/cancelRequest` does. */
+  cancel(id: number): void {
+    this.notify("$/cancelRequest", { id });
+  }
+
+  /**
    * Everything the child wrote to stderr, decoded once over the whole thing.
    * Decoding chunk by chunk instead would turn any multi-byte character the
    * pipe happened to split into two U+FFFD -- invisible in ASCII, and silently
@@ -173,6 +230,33 @@ export class LspSession {
    */
   get stderr(): string {
     return Buffer.concat(this.#stderrChunks).toString("utf8");
+  }
+
+  /**
+   * Every byte stdout carried, headers included, decoded once over the whole
+   * thing for the same reason stderr is. `unframedStdoutBytes` says whether
+   * anything unaccounted-for arrived; this says WHAT arrived, which is the
+   * only way to assert that a value the client must never see never left.
+   */
+  get stdout(): string {
+    return Buffer.concat(this.#stdoutChunks).toString("utf8");
+  }
+
+  /**
+   * Resolves once stderr contains `text`, and REJECTS on timeout quoting what
+   * stderr did say -- a marker that never arrives must name itself rather than
+   * stall the suite.
+   */
+  async waitForStderr(text: string, timeoutMs = 2000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (!this.stderr.includes(text)) {
+      if (Date.now() > deadline) {
+        throw new Error(
+          `timed out after ${timeoutMs}ms waiting for stderr ${text}; saw: ${this.stderr}`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
   }
 
   /**
@@ -242,9 +326,13 @@ export class LspSession {
     this.#child.kill("SIGKILL");
   }
 
-  #send(message: unknown): void {
+  #frame(message: unknown): string {
     const json = JSON.stringify(message);
-    this.#child.stdin.write(`Content-Length: ${Buffer.byteLength(json, "utf8")}\r\n\r\n${json}`);
+    return `Content-Length: ${Buffer.byteLength(json, "utf8")}\r\n\r\n${json}`;
+  }
+
+  #send(message: unknown): void {
+    this.#child.stdin.write(this.#frame(message));
   }
 
   #drain(): void {
