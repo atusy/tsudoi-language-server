@@ -226,13 +226,7 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "The new earlier-assertion clause caught its first case IN THE ACT: perturbation A (buffer every yield) reddened at waitForProgress(1) and never reached expect(settled).toBe(false), so it proved the SERVER streams while leaving the headline claim undefended. Perturbation B (release the gate immediately) is what defends it -- without B a fast server passes A by accident.",
-        "DECOMPOSITION FINDING, not an execution apology: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN, because one async generator cannot be dispatched twice -- subtask 3's handler necessarily decided the no-token, null and failure branches at the same moment. A plan that splits one dispatch across four subtasks cannot buy the sequencing it assumes.",
-        "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
         "MEASURED, outside the six criteria and deliberately NOT fixed: a client sending `partialResultToken: null` instead of omitting it is streamed to under token null and then receives only the returned array, silently losing every yielded item. Both runtimes; the server does not fail and stdout stays clean. The remedy is one operator, but `null` is a token PRESENT, so treating it as absent invents the second aggregation trigger PBI-4's notes exist to collapse -- and shipping it untested would be an unperturbed branch. PO's call, not the executor's.",
-        "EXECUTION DEVIATION, reported not smoothed: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN. One async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token branch, the null branch and the failure branch at the same moment. Their evidence therefore rests entirely on perturbation, which is why every one of them carries two. A plan that splits one dispatch across four subtasks buys sequencing it cannot pay for.",
-        "scrum.ts EXCEEDS its 600-line limit (655) with the mandatory perturbation records present. Reported rather than resolved by compacting another section, per the constraint. The obvious remedy is the one sprints 1-4 already used: compact this sprint's subtasks into decisions at Review, where git still retains them.",
-        "PO checklist, per-sprint additions (the standing list applies unchanged): (1) streaming proven by ORDERING against the outstanding response, not by counting -- counting passes even if the server buffered every yield and flushed before responding; (2) the gate proven real by TWO labelled perturbations -- buffer all yields, the streaming test must redden (the server streams); release the gate immediately, the unsettled-response assertion must redden (the gate holds the response rather than the server merely being slow); (3) criterion 6 distinguishes `chunk arrived and stayed` from `chunk never arrived` by asserting distinguishable content and progress-then-error ordering, perturbed by suppressing progress on throw -- `clean up by not emitting chunks on failure` is a plausible thing to do deliberately; (4) criterion 5's two halves in the same run against the same build, neither satisfiable by a constant; (5) criterion 4's zero-progress assertion perturbed by emitting progress under an invented token.",
       ],
     },
     {
@@ -244,10 +238,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in d0f172a, 4a49499, 31f169f, 0cecfec, e5c49cc, fe8f153, f5c612f across 7 subtasks. Per-subtask records compacted here; git retains them.",
-        "MEASURED, and it overturns what the plan would otherwise have assumed: a logger surfaces NOTIFICATION-handler throws only. A request-handler throw becomes a -32603 response with stderr EMPTY whether or not a logger is passed. Since hover is a request, criterion 4's `diagnosable message on stderr` CANNOT be satisfied by passing a logger -- tsudoi must catch, write its own stderr line, and rethrow.",
-        "PO checklist item 1 (a real editor attaching) is FEASIBLE and settled at planning: nvim 0.13 attaches headlessly to `bun run src/cli.ts --config examples/tsudoi.config.ts`, reporting serverInfo tsudoi and capabilities { textDocumentSync: { openClose: true, change: 1 } }. It is therefore a live demonstration item this sprint, not a dropped one.",
-        "positionAt/offsetAt deliberately NOT added and not taken to the PO yet: PBI-3 gives exactly one call site, and deciding an API from one call site is deciding from noise. Subtask 7 makes that call site real so PBI-4 inherits evidence -- if completion's author writes the same line-splitting again, that is two independent call sites converging and it becomes its own PBI with a measured justification.",
-        "PO checklist, issued at planning: (1) a real editor attaching and displaying hover; (2) driven over stdio with examples/tsudoi.config.ts as the artifact under test, unmodified -- its handler has returned a fixed Hover into a void since Sprint 1 and now answers; (3) hover contents in Japanese, permanent; (4) perturb advertisement to unconditional and name the test that reddens -- the negative half is satisfiable by advertising nothing, which is what the code does today; (5) name the test that reddens when the undefined-handler path stops answering null; (6) criterion 4 on the request path; (7) criterion 4 on the NOTIFICATION path, accepted ONLY if perturbing the store to throw demonstrably produces stderr -- otherwise a zero-stderr assertion passes vacuously; (8) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (9) both runtimes and the DoD at HEAD.",
       ],
     },
     {
@@ -260,11 +250,6 @@ const scrum: ScrumDashboard = {
       decisions: [
         "Shipped in 81ac35e, aa5b588, 1e434c5, 73b2677, e49cbb6, cc44ffe, 6c9b910, 5ce2823 across 7 subtasks. Per-subtask records compacted here; git retains them.",
         'The Japanese test found a latent defect in the TEST helper, not the server: per-chunk chunk.toString("utf8") turns any multi-byte character the pipe splits into U+FFFD. Silent at small payloads, deterministic RED at 360KB under both runtimes.',
-        "STANDING, endorsed by the PO from inside the work: anything not perturbed in a sprint is assumed unproven. Two of three new assertion mechanisms here asserted nothing until perturbed.",
-        "The mutation API stays off DocumentStore: createDocumentStore() returns { documents, open, change, close }, so `documents` keeps exactly the get/values shape the config sees and the Tsudoi interface is unchanged BY CONSTRUCTION rather than by discipline.",
-        "Advertise-versus-respond is split across subtasks 1 and 6 -- the split the Developer committed to after the PBI-3 capabilities near-miss. Here it is load-bearing rather than ceremonial: subtask 6 passes without subtask 1, and that combination is the dead-product shape.",
-        "PO Review checklist, issued at planning rather than Review so the plan can target it: (1) driven over stdio through the real server, not a directly-constructed store; (2) a document containing Japanese text, end to end, kept permanently -- no test in this suite has ever contained a non-ASCII byte, and the layer expected to break is deliberately not named; (3) didChange proven to REPLACE by a replacement that makes the document SHORTER, asserted by exact equality -- a concatenating store passes any toContain assertion; (4) values() does not leak closed documents -- open two, close one, assert exactly one member; (5) textDocumentSync shown literally, plus a perturbation removing openClose that must name a test going red; (6) the unopened-URI case live; (7) stdout purity across the notification sequence; (8) the capabilities assertion widened, not deleted, and still exact; (9) document behaviour under both runtimes or an explicit statement of why not.",
-        "This sprint adds test/fixtures/snapshot-config.ts to a path import/extensions does not currently pin -- the exact gap PBI-9 closes. Known and deliberately not widened here.",
       ],
     },
     {
@@ -311,7 +296,7 @@ const scrum: ScrumDashboard = {
       {
         test: "N/A (structural) -- BORN GREEN by construction. Perturbation: make cancel(id) send nothing; subtask 2 MUST fail. Without it every cancellation assertion this sprint is measuring an unsent notification.",
         implementation:
-          "LspSession: expose an in-flight request's id (requestRaw -> { id, settled }) and add cancel(id). The helper owns ids privately today, so no test can target one. Settle every pending promise on teardown -- Sprint 5's killed-child hazard applies directly, since cancellation tests deliberately leave requests outstanding.",
+          "LspSession: expose an in-flight request's id and add cancel(id). Settle every pending promise on teardown -- Sprint 5's killed-child hazard applies directly here.",
         type: "structural",
         status: "pending",
         commits: [],
@@ -320,7 +305,7 @@ const scrum: ScrumDashboard = {
       {
         test: "EXPECTED RED. Two concurrent requests; cancelling one flips only its fixture's abort marker on stderr, and the other completes normally.",
         implementation:
-          "In src/methods.ts take the CancellationToken vscode-jsonrpc already supplies and call controller.abort() from token.onCancellationRequested. Delete the 'nobody aborts' comment. Bridge, do not track: registering our own $/cancelRequest handler would race one the library already consumes.",
+          "Call controller.abort() from the CancellationToken vscode-jsonrpc already supplies. Bridge, do not track -- our own handler would race one the library consumes.",
         type: "behavioral",
         status: "pending",
         commits: [],
@@ -329,7 +314,7 @@ const scrum: ScrumDashboard = {
       {
         test: "EXPECTED RED. A cancelled hover and a cancelled completion each answer error.code === -32800; a subsequent request of the same method is answered normally.",
         implementation:
-          "When the request's signal is aborted at settle time, respond RequestCancelled instead of the handler's value. Use the protocol's ErrorCodes.RequestCancelled constant, never a literal.",
+          "Respond ErrorCodes.RequestCancelled (the constant, never a literal) instead of the handler's value when the signal is aborted at settle time.",
         type: "behavioral",
         status: "pending",
         commits: [],
@@ -338,7 +323,7 @@ const scrum: ScrumDashboard = {
       {
         test: "BORN GREEN -- SHARES ONE IMPLEMENTATION MOMENT with the previous subtask. A fixture never referencing context.signal, cancelled mid-flight, answers -32800 and its returned label appears nowhere on stdout.",
         implementation:
-          "None expected -- the same suppression branch. PERTURBATION AND WHAT IT DEFENDS: the only perturbation that reddens this (deliver the handler's value whenever it produced one, -32800 only when it produced nothing) ALSO reddens the previous subtask, because that fixture returns a value too. So it defends the SHARED claim (an aborted request's response is replaced), not this headline claim. The headline is defended STRUCTURALLY: the fixture never mentions context.signal, so an implementation that suppressed by asking the handler could not make it pass.",
+          "None expected -- same suppression branch. The only perturbation that reddens this also reddens the previous subtask, so it defends the SHARED claim, not this headline. The headline is defended STRUCTURALLY: the fixture never mentions context.signal, so suppressing by asking the handler could not pass.",
         type: "behavioral",
         status: "pending",
         commits: [],
@@ -347,7 +332,7 @@ const scrum: ScrumDashboard = {
       {
         test: "MIXED -- `no further chunks` and -32800 EXPECTED RED; `the already-sent chunk remains` BORN GREEN (measured: nothing retracts it). Gate after one chunk, cancel, release; assert exactly one $/progress, then -32800, and unframedStdoutBytes === 0.",
         implementation:
-          "Check the signal before each sendProgress and stop driving the generator once aborted. PERTURBATION: remove the pre-sendProgress check so the post-abort chunk is emitted; the exactly-one-$/progress assertion MUST redden while -32800 stays green.",
+          "Check the signal before each sendProgress and stop driving the generator once aborted. PERTURBATION: remove that check; exactly-one-$/progress MUST redden while -32800 stays green.",
         type: "behavioral",
         status: "pending",
         commits: [],
@@ -356,7 +341,7 @@ const scrum: ScrumDashboard = {
       {
         test: "EXPECTED RED. A fixture throwing once aborted answers -32800 with NO `tsudoi: <method> handler failed:` line on stderr, while the existing non-cancelled throwing fixture still produces one.",
         implementation:
-          "In the catch path, skip reportHandlerFailure when the signal is aborted; report unchanged otherwise. Assert the stderr PREFIX, never the stack body -- error.stack's first line differs between JSC and V8.",
+          "Skip reportHandlerFailure when the signal is aborted; unchanged otherwise. Assert the stderr PREFIX, never the stack body.",
         type: "behavioral",
         status: "pending",
         commits: [],
@@ -373,7 +358,7 @@ const scrum: ScrumDashboard = {
       {
         test: "N/A (structural) -- suite stays green, unchanged.",
         implementation:
-          "src/methods.ts now carries context construction, the abort bridge, the suppression branch and two distinct handler calls. Extract the per-request cancellation concern into one named place. Keep the hover and completion CALLS separate -- a generator cannot share the call.",
+          "Extract the per-request cancellation concern into one named place. Keep the hover and completion CALLS separate -- a generator cannot share the call.",
         type: "structural",
         status: "pending",
         commits: [],
