@@ -371,8 +371,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "Change examples/tsudoi.config.ts's hover handler to use params.position plus document.getText() -- split on newlines, index the line, extract the word around the character offset. Bun-free (Deno runs it), .ts extensions on relative imports. Existing lifecycle tests keep driving this file and must stay green. This exists to decide positionAt/offsetAt on evidence at PBI-4 rather than on opinion now.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "f5c612f", message: "feat(examples): hover the word", phase: "green" }],
         notes: [],
       },
     ],
