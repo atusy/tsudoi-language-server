@@ -333,9 +333,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Record at test/helpers/readme.ts -- the site where someone would `simplify` by inlining an expected command -- that all four criteria are VACUOUS unless the tests read the README's own bytes, AND the zero-match vacuity mode, since that is the specific way a future edit would silently disable everything. A decision whose violation is a code edit lives at the edit site, and this PBI's note compacts.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "6bc5229",
+            message: "docs(readme-helper): record what a `simplification` here would destroy",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "Records FOUR shapes of the same defect at the site where the edit would be made: inlining an expected value makes every criterion vacuous; an extractor that finds nothing passes; invocationOf throwing rather than reporting an empty flag list; and the token-conjunction control that CANNOT FAIL, which is why uniqueness is the only removal control offered.",
+          "DoD AT HEAD, each run unpiped and captured separately: `bun test` 0, `oxlint` 0, `oxfmt --check .` 0, `tsc --noEmit` 0. 229 tests, 778 assertions -- 193/731 at sprint start.",
+        ],
       },
     ],
     impediments: [],
@@ -344,6 +353,8 @@ const scrum: ScrumDashboard = {
       "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
       "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
       "The PO applied the property-not-mechanism rule TO THEMSELVES one turn after handing it over: the property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`. N pack-and-install cycles is one mechanism, and a cheaper one is the Developer's to take unseen.",
+      "EXECUTION FOUND A SECOND VACUITY MODE, this time inside the Developer's own planned control: the removal half of criterion 3 as planned -- delete a discriminating token, assert the fact is gone -- CANNOT FAIL for any document, because statesFact is a conjunction. It was replaced by a control that can: each fact must have EXACTLY ONE home section. Same shape as the extractor's zero-match mode, in a fifth place, and it survived planning, refinement and one Review-grade rule about vacuous criteria.",
+      "WHAT THE SUITE STILL DOES NOT DEFEND, stated rather than left to be discovered: the README's config snippet is EXECUTED but never TYPE-CHECKED. A snippet with a type error runs fine under type stripping and would greet a reader running tsc with errors. NOT CONSTRUCTED rather than foreclosed -- installConsumer.typeCheck exists and would do it, and this was scope, not impossibility.",
       "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. It is the most likely defect in a document written by people who have internalised every step, and omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
     ],
   },
