@@ -353,9 +353,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "None expected -- same suppression branch. The only perturbation that reddens this also reddens the previous subtask, so it defends the SHARED claim, not this headline. The headline is defended STRUCTURALLY: the fixture never mentions context.signal, so suppressing by asking the handler could not pass.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "26e12a9",
+            message: "test(cancel): pin that an ignoring handler's result never reaches stdout",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as declared: no src change. The shared perturbation reddens it at `error.code === -32800`, which is subtask 3's headline and EARLIER than `nowhere on stdout` -- exactly what the plan predicted.",
+          "`nowhere on stdout` gets a POSITIVE CONTROL instead of a perturbation: a second session runs the same fixture uncancelled and asserts the label IS on stdout, so an absence cannot pass because the accumulator is broken.",
+          "The label is mixed script (`破棄される候補 / discarded-candidate`) because a raw-substring search for Japanese alone would be defeated by \\uXXXX escaping. MEASURED: the control's stdout carries the Japanese unescaped on both runtimes, so both halves are real checks.",
+        ],
       },
       {
         test: "MIXED -- `no further chunks` and -32800 EXPECTED RED; `the already-sent chunk remains` BORN GREEN (measured: nothing retracts it). Gate after one chunk, cancel, release; assert exactly one $/progress, then -32800, and unframedStdoutBytes === 0.",
