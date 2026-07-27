@@ -10,6 +10,7 @@ import {
   StreamMessageWriter,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol/node";
+import type { DocumentStoreHandle } from "./documents.ts";
 import type { TsudoiConfig } from "./types.ts";
 
 /**
@@ -18,7 +19,7 @@ import type { TsudoiConfig } from "./types.ts";
  *
  * `capabilities` carries only textDocumentSync until PBI-3/4 declare their own.
  */
-export function startServer(_config: TsudoiConfig): void {
+export function startServer(_config: TsudoiConfig, _documents: DocumentStoreHandle): void {
   const connection = createProtocolConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),
