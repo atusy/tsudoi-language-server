@@ -31,6 +31,10 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           },
         ];
 
+        // Deliberate divergence from the brief's example, which falls off the end here.
+        // The declared AsyncGenerator return type requires an explicit return, and per the
+        // brief's own MethodMap comment a null result after partial responses is delivered
+        // to the client as an empty CompletionItem[].
         return null;
       },
 
