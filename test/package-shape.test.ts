@@ -4,13 +4,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { repoRoot } from "./helpers/spawn.ts";
+import { join, sep } from "node:path";
+import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 
 /**
@@ -155,6 +156,54 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // second script takes nothing away from this one.
 test("packing builds, so a stale dist cannot be published", () => {
   expect(scripts?.prepack).toBe("tsc -p tsconfig.build.json");
+});
+
+/**
+ * THE COMPILER THAT BUILDS THE PUBLISHED ARTIFACT IS THE REPO'S, NOT THE
+ * MACHINE'S -- the property, in four steps, each of which can fail alone.
+ *
+ * It could not be asserted by running prepack and checking that it worked: a
+ * tsc on PATH builds this package perfectly well, so `the build succeeds` is
+ * true whether the compiler was pinned or merely present. That is why nothing
+ * below runs a build. What the steps establish instead is that the tsc a
+ * package manager REACHES FIRST is the one this repo declares, at the version
+ * it declares, and that prepack names it in the way that takes that resolution.
+ *
+ * MEASURED, and the step that would otherwise be an assumption: in a throwaway
+ * project holding node_modules/.bin/tsc as a marker-printing shim, with a real
+ * tsc on PATH, both `bun run` and `npm run` execute the shim. Script resolution
+ * puts node_modules/.bin ahead of PATH, which is what makes step 2 apply to the
+ * bare `tsc` in step 4.
+ *
+ * The version is declared EXACTLY, not as a range. A range declares a set, and
+ * the artifact under test and the artifact published have to come from one
+ * compiler rather than from whatever a later install resolved.
+ */
+test("the compiler prepack builds with is pinned by this repo, at a version it declares", async () => {
+  const devDependencies = packageJson.devDependencies as Record<string, string> | undefined;
+  const declared = devDependencies?.typescript;
+  const installed = JSON.parse(
+    readFileSync(join(repoRoot, "node_modules", "typescript", "package.json"), "utf8"),
+  ) as { version?: string };
+
+  // 1. The repo DECLARES the compiler, and what is installed under it is that
+  //    version -- not merely something satisfying a range.
+  expect(declared).toBe(installed.version);
+
+  // 2. The executable a package manager reaches first belongs to that package,
+  //    resolved through the link rather than trusted by name.
+  const binary = join(repoRoot, "node_modules", ".bin", "tsc");
+  const packageDirectory = join(repoRoot, "node_modules", "typescript") + sep;
+  expect(realpathSync(binary).startsWith(packageDirectory)).toBe(true);
+
+  // 3. And it really is that compiler when run, rather than a stale link.
+  const version = await runCommand(`${binary} --version`, repoRoot);
+  expect(version.stdout.trim()).toBe(`Version ${declared}`);
+
+  // 4. prepack names it by BARE NAME. An absolute path would be someone's
+  //    machine, and `npx tsc` would be the network's choice rather than this
+  //    repo's; only the bare name takes the resolution steps 2 and 3 pin.
+  expect(scripts?.prepack.split(" ")[0]).toBe("tsc");
 });
 
 // PBI-13 criterion 3, and one of the two reasons JSR was declined: it REQUIRES
