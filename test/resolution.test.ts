@@ -6,10 +6,22 @@ import { requireRuntime } from "./helpers/preflight.ts";
 
 await requireRuntime(denoRuntime);
 
+// DENO ONLY, and that is a finding rather than an oversight. The same
+// perturbation does not discriminate under bun: with node_modules renamed
+// away, bun completed the handshake anyway (measured -- bun 1.3.13 satisfies a
+// missing dependency from its own global cache), so there is no bun assertion
+// that could fail here. The consequence is worth carrying: bun's greens
+// elsewhere in this suite are weaker evidence about resolution than deno's,
+// because bun will paper over a node_modules that is wrong or missing.
+//
+// Deliberately NOT pinned: bun's auto-install. Nothing in this project requires
+// it, and a test asserting it would resist a legitimate change to bun rather
+// than defend anything we promised.
+
 /**
  * A deno.json carrying an npm import map -- the file Sprint 1 argued would flip
  * npm resolution to deno's global cache. That argument was never measured; the
- * tests below measure it.
+ * tests below measure it, and it does not hold at deno 2.9.2.
  */
 const denoJsonWithNpmImports = `${JSON.stringify(
   {
@@ -79,10 +91,12 @@ test("the same checkout starts once node_modules is present", async () => {
   expect(result?.serverInfo?.name).toBe("tsudoi");
 });
 
-// MEASURED, and it refutes the reason the guard was written for: a deno.json
-// with an npm import map does NOT flip resolution to deno's global cache. The
-// import map is consulted -- deno's diagnostic changes wording -- and the
-// dependency is still demanded from node_modules.
+// MEASURED AT DENO 2.9.2, and it refutes the reason the guard was written for:
+// a deno.json with an npm import map does NOT flip resolution to deno's global
+// cache. The import map is consulted -- deno's diagnostic changes wording, from
+// `found it in a package.json` to `could not find it in a node_modules folder`
+// -- and the dependency is still demanded from node_modules. Both stderr
+// assertions below are coupled to that release's wording.
 test("a deno.json with an npm import map does not make node_modules dispensable", async () => {
   checkout.write("deno.json", denoJsonWithNpmImports);
 
