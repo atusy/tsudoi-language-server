@@ -325,7 +325,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Branch ExitNotification on the recorded state: process.exit(hasShutdown ? 0 : 1). This is where the fake becomes a real state machine.",
         type: "behavioral",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [],
       },
