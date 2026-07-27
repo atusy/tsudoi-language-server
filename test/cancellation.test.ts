@@ -261,5 +261,52 @@ for (const runtime of runtimes) {
       },
       gatedTimeoutMs,
     );
+
+    // Where cancellation earns its keep: bounding the streaming API. The
+    // fixture yields AGAIN after the abort releases its gate, so `exactly one`
+    // is a claim about what tsudoi refuses to forward, not about a cooperative
+    // handler.
+    test(
+      "cancelling mid-stream leaves the chunk already sent and sends none after",
+      async () => {
+        const session = LspSession.start(runtime, completionCancel);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue("textDocument/completion", completionParams());
+          await session.waitForProgress(1);
+          session.cancel(inFlight.id);
+          await session.waitForStderr(completionAborted);
+
+          const answered = await inFlight.response;
+          expect(answered.error?.code).toBe(requestCancelled);
+
+          // The handler's second yield has had time to arrive if anything
+          // would forward it; without this pause `none after` would be true of
+          // a server that simply had not got there yet.
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          // Content AND order: nothing retracts a chunk already on the wire,
+          // and `arrived and stayed` reads the same as `never arrived` unless
+          // the error's position after it is asserted too.
+          expect(session.arrivals).toEqual([
+            { kind: "response", id: 1 },
+            { kind: "progress", token: partialResultToken, value: beforeGate },
+            { kind: "response", id: 2 },
+          ]);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          // Re-read after exit: a chunk sent late is still a chunk sent.
+          expect(session.progressCount).toBe(1);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
   });
 }

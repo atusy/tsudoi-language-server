@@ -158,6 +158,15 @@ export function registerMethods(
             items = emitted ? collected : null;
             break;
           }
+          // Checked HERE, between pulling a chunk and sending it: the abort
+          // typically lands while `next()` is parked, so a check at the top of
+          // the loop would already have passed and this chunk would go out to
+          // a client that has stopped listening. Breaking also stops driving
+          // the generator, which is the point of cancelling at all.
+          if (context.signal.aborted) {
+            items = null;
+            break;
+          }
           emitted = true;
           if (token === undefined) {
             collected.push(...next.value);
