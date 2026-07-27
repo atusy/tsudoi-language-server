@@ -1,5 +1,15 @@
 import { expect, test } from "bun:test";
-import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
+import { denoRuntime } from "./helpers/lsp.ts";
+import { requireRuntime } from "./helpers/preflight.ts";
+import {
+  extractQuickstart,
+  QUICKSTART_STEPS,
+  readReadme,
+  runQuickstart,
+  sequenceFor,
+} from "./helpers/readme.ts";
+
+await requireRuntime(denoRuntime);
 
 const readme = readReadme();
 
@@ -57,3 +67,27 @@ test("a directory named only in a marker is refused", () => {
 
   expect(() => extractQuickstart(hidden, QUICKSTART_STEPS)).toThrow("elsewhere");
 });
+
+/**
+ * CRITERION 1. The commands are not mirrored here: they are the README's own
+ * bytes, run in order, in a staged environment that supplies NOTHING the README
+ * asks the reader to do -- no tarball, no node_modules, no config file. A
+ * checkout of this repository with its dependencies installed is the one thing
+ * staged, and the README names it as a prerequisite rather than a step.
+ *
+ * Both runtimes, because "starts under bun and deno" is the product goal's own
+ * metric and a route only bun can take looks healthy from bun.
+ */
+for (const runtime of ["bun", "deno"] as const) {
+  test(`the README's quickstart brings up a server under ${runtime}`, async () => {
+    const outcome = await runQuickstart(
+      sequenceFor(extractQuickstart(readme, QUICKSTART_STEPS), runtime),
+    );
+
+    // Falls back to the diagnosis rather than to undefined so a broken step
+    // reports WHICH command failed and with what, on the assertion line.
+    expect(outcome.serverName ?? outcome.diagnosis).toBe("tsudoi");
+    // Counted, not eyeballed: one stray byte on stdout desyncs a real editor.
+    expect(outcome.unframedStdoutBytes).toBe(0);
+  });
+}

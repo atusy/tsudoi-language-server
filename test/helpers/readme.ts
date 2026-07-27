@@ -1,5 +1,18 @@
-import { readFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { InitializeResult } from "vscode-languageserver-protocol";
+import { initializeParams, LspSession } from "./lsp.ts";
+import { repoRoot, runCommand } from "./spawn.ts";
 
 /** README.md itself -- the artifact under test, read at call time. */
 export function readReadme(): string {
@@ -113,4 +126,167 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
     }
   }
   return steps;
+}
+
+/** The steps ONE runtime's reader follows: the shared ones, plus its own start. */
+export function sequenceFor(
+  steps: readonly QuickstartStep[],
+  runtime: "bun" | "deno",
+): QuickstartStep[] {
+  return steps.filter(
+    (step) => step.kind !== "run" || step.starts === undefined || step.starts === runtime,
+  );
+}
+
+/** What running a documented sequence produced, and why when it produced nothing. */
+export interface QuickstartOutcome {
+  /** `serverInfo.name` from the handshake, or undefined if there was none. */
+  readonly serverName: string | undefined;
+  /**
+   * Bytes on stdout no framed message accounts for -- UNDEFINED when no server
+   * was started, so `zero stray bytes` cannot pass for a run that never
+   * produced any bytes at all.
+   */
+  readonly unframedStdoutBytes: number | undefined;
+  /** Every step, with what it exited with; the failure's own account of itself. */
+  readonly diagnosis: string;
+}
+
+/**
+ * A parent directory holding the layout the README draws, with the checkout
+ * populated and the reader's own project EMPTY.
+ *
+ * THE ENVIRONMENT IS BARE, and that is the point rather than a detail: no
+ * tarball, no node_modules, no config file, nothing dist/. Criterion 1 asks
+ * whether the documented steps are SUFFICIENT, and a stage that supplied any of
+ * them would make the quickstart's pass a test of this function instead.
+ *
+ * The staging here duplicates a few lines of installConsumer deliberately.
+ * installConsumer PERFORMS the pack and the install -- two of the documented
+ * steps -- so reusing it would supply exactly what the reader is asked to do.
+ * What the two share is `what a checkout with its dependencies installed
+ * contains`, and if that ever drifts the build fails loudly here rather than
+ * passing quietly.
+ *
+ * The checkout's directory name is not chosen: it is this repository's own
+ * directory name, which is what `git clone` creates. A README that renamed it
+ * in the marker would be staged with no checkout, and the pack step would say so.
+ */
+function stageQuickstart(dirs: readonly string[]): { readonly root: string; dispose: () => void } {
+  const checkoutName = basename(repoRoot);
+  const distinct = [...new Set(dirs)];
+  if (!distinct.includes(checkoutName)) {
+    throw new Error(
+      `README quickstart: no step runs in ${checkoutName}, so nothing stages the checkout the tarball is built from`,
+    );
+  }
+  if (distinct.length < 2) {
+    throw new Error("README quickstart: every step runs in the checkout; nothing is the reader's");
+  }
+
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-readme-"));
+  try {
+    for (const dir of distinct) {
+      mkdirSync(join(root, dir), { recursive: true });
+    }
+    const checkout = join(root, checkoutName);
+    cpSync(join(repoRoot, "package.json"), join(checkout, "package.json"));
+    cpSync(join(repoRoot, "tsconfig.build.json"), join(checkout, "tsconfig.build.json"));
+    cpSync(join(repoRoot, "src"), join(checkout, "src"), { recursive: true });
+    // `bun install` already run, which the README names as a prerequisite: the
+    // prepack build needs vscode-languageserver-protocol's types to compile.
+    symlinkSync(join(repoRoot, "node_modules"), join(checkout, "node_modules"), "dir");
+    return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
+  } catch (cause) {
+    rmSync(root, { recursive: true, force: true });
+    throw cause;
+  }
+}
+
+/** Long enough that a slow machine is not a failure, short enough to fail rather than hang. */
+const handshakeTimeoutMs = 20_000;
+
+async function shakeHands(
+  command: string,
+  cwd: string,
+): Promise<{ name: string | undefined; bytes: number; note: string }> {
+  const session = LspSession.startCommand(command, cwd);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const settled = await Promise.race([
+      session.request<InitializeResult>("initialize", initializeParams).then(
+        (value) => value,
+        (cause: unknown) => (cause instanceof Error ? cause : new Error(String(cause))),
+      ),
+      new Promise<Error>((resolve) => {
+        timer = setTimeout(
+          () => resolve(new Error(`no answer to initialize in ${String(handshakeTimeoutMs)}ms`)),
+          handshakeTimeoutMs,
+        );
+      }),
+    ]);
+    if (settled instanceof Error) {
+      return { name: undefined, bytes: session.unframedStdoutBytes, note: settled.message };
+    }
+    return {
+      name: settled.serverInfo?.name,
+      bytes: session.unframedStdoutBytes,
+      note: `initialize answered by ${settled.serverInfo?.name ?? "a server naming nothing"}`,
+    };
+  } finally {
+    clearTimeout(timer);
+    session.dispose();
+  }
+}
+
+/**
+ * Runs a documented sequence in a FRESH bare environment and reports what it
+ * produced.
+ *
+ * The stage is created in here, per call, with no way for a caller to hand one
+ * in. The omission sweep runs this many times, and a stage shared between runs
+ * would carry the previous run's tarball into the iteration that omits the pack
+ * step -- an omitted step passing because the environment kept its output is
+ * the exact failure the sweep exists to detect.
+ *
+ * The layout comes from the WHOLE quickstart rather than from the sequence being
+ * run, so omitting a step changes what is EXECUTED and never what exists.
+ */
+export async function runQuickstart(
+  sequence: readonly QuickstartStep[],
+): Promise<QuickstartOutcome> {
+  const layout = extractQuickstart(readReadme(), QUICKSTART_STEPS);
+  const stage = stageQuickstart(layout.map((step) => step.dir));
+  const notes: string[] = [];
+  let serverName: string | undefined;
+  let unframedStdoutBytes: number | undefined;
+  try {
+    for (const step of sequence) {
+      const cwd = join(stage.root, step.dir);
+      if (step.kind === "write") {
+        mkdirSync(dirname(join(cwd, step.path)), { recursive: true });
+        writeFileSync(join(cwd, step.path), step.contents);
+        notes.push(`wrote ${step.path}`);
+        continue;
+      }
+      if (step.starts === undefined) {
+        // Not aborted on failure: a reader who fumbled step 2 still has step 3
+        // in front of them, and `the rest ran anyway and still produced no
+        // server` is the stronger claim.
+        const result = await runCommand(step.command, cwd);
+        notes.push(`${step.command} -> exit ${String(result.code)} ${result.stderr.trim()}`);
+        continue;
+      }
+      const handshake = await shakeHands(step.command, cwd);
+      serverName = handshake.name;
+      unframedStdoutBytes = handshake.bytes;
+      notes.push(`${step.command} -> ${handshake.note}`);
+    }
+  } finally {
+    stage.dispose();
+  }
+  if (serverName === undefined) {
+    notes.push("no step started a server");
+  }
+  return { serverName, unframedStdoutBytes, diagnosis: notes.join("\n") };
 }
