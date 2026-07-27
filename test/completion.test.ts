@@ -9,6 +9,11 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
+  firstChunk,
+  returnedItems as chunksReturned,
+  secondChunk,
+} from "./fixtures/completion-chunks.ts";
+import {
   afterGate,
   beforeGate,
   gateOpen,
@@ -140,5 +145,29 @@ for (const runtime of runtimes) {
       },
       gatedTimeoutMs,
     );
+
+    // The yields already left as $/progress. A client that appends this
+    // response to what it collected must see each item exactly once, so a
+    // server concatenating here would hand it 一番目 twice.
+    test("with a partialResultToken the response carries the returned array alone", async () => {
+      const session = LspSession.start(runtime, completionChunks);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const result = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(partialResultToken),
+        );
+
+        expect(result).toEqual(chunksReturned);
+        expect(session.progress).toEqual([
+          { token: partialResultToken, value: firstChunk },
+          { token: partialResultToken, value: secondChunk },
+        ]);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
