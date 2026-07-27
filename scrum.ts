@@ -66,7 +66,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
-        "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither, and all three contract facts are already pinned by PBI-1's criteria in ASCII, so no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
+        "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither. The three contract facts ARE pinned: exit 1 and 0-byte stdout by PBI-1, the tsudoi: prefix by PBI-9 -- NOT by PBI-1, which this note originally asserted WITHOUT CHECKING. The conclusion stands: no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
         "Deliberately does NOT claim a config author's own error message passes through verbatim. It does today -- the CLI writes stderr directly and nothing in src/ decodes it -- but it cannot be asserted for non-ASCII until PBI-9 fixes spawn.ts. Documenting a claim we cannot pin is the thing refused all project, applied here against a claim the PO would like to make.",
         "If the README documents the cleanup guarantee it must claim that TSUDOI CLOSES THE GENERATOR, not that the author's cleanup COMPLETES. That is precisely the overclaim dropping PBI-12 would otherwise licence, and PBI-8 is the last chance to record it before the backlog ends.",
         "OPEN IMPEDIMENT, waiting_human: the route's FIRST line -- how a user OBTAINS the package -- is verified for `install ./tarball` only. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible. The README must not claim the registry route until that is unblocked.",
@@ -75,89 +75,29 @@ const scrum: ScrumDashboard = {
         "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
       ],
     },
-    {
-      id: "PBI-9",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust what the suite says, and only what it says",
-        benefit:
-          "a green run is evidence for the claims made, and does not resist changes nobody promised not to make",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The config-failure cases run under both runtimes, including a non-ASCII message",
-          verification:
-            "The seven cases are parameterised over bun and deno, each asserting exit 1, tsudoi:-prefixed stderr and 0-byte stdout, with one case whose message is Japanese. NEGATIVE CONTROL: reverting spawn.ts to per-chunk decode reddens the non-ASCII assertion",
-        },
-        {
-          criterion: "Content-Length is asserted as a byte count, deterministically",
-          verification:
-            "A multi-byte payload asserts the header equals Buffer.byteLength rather than string length, without depending on OS pipe buffer sizes. NEGATIVE CONTROL: string length reddens it by assertion rather than by timeout",
-        },
-        {
-          criterion: "One shared path-shape list drives all three guard rules",
-          verification:
-            "src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/ drive the Bun-global, bun:* and import/extensions tests alike. NEGATIVE CONTROL: adding examples/** to the oxlint overrides reddens the examples shape",
-        },
-        {
-          criterion: "The session helper settles every promise it owns and swallows nothing",
-          verification:
-            "A request issued to an already-dead session rejects naming the exit, and a failed stdin write surfaces. NEGATIVE CONTROL: restoring the close-only pending flush makes the first hang instead of rejecting",
-        },
-        {
-          criterion:
-            "Arrivals assertions defend ordering and content without pinning message shape",
-          verification:
-            "BOTH halves, or the rewrite only weakens the suite: injecting an extra window/logMessage-shaped notification must still PASS, and a genuinely wrong ordering must still FAIL",
-        },
-        {
-          criterion: "Shape assertions require what is promised, not what happens to be there",
-          verification:
-            "package-shape.test.ts requires prepack present with the right value rather than scripts equalling exactly {prepack}. BOTH halves: adding an unrelated script must still PASS, and changing prepack's command must still FAIL",
-        },
-        {
-          criterion:
-            "The compiler that builds the published artifact is pinned by the repo, not by the machine",
-          verification:
-            "typescript resolves from the repo's own dependencies at a version the repo declares, and prepack uses that resolution. NEGATIVE CONTROL: removing the declaration reddens an assertion EVEN THOUGH an ambient tsc on PATH would still produce a working build",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "RE-PRICED at Sprint 10 refinement by applying the negative-control rule to criteria written seven sprints ago. Dropped the shutdown-pacing criterion: test/lifecycle.test.ts already awaits the shutdown response and asserts null under both runtimes, and the pipelined-exit half was ruled deliberately undefended at Sprint 3, so nothing remained to pin. RELOCATE THAT RULING TO src/lifecycle.ts BEFORE DROPPING IT.",
-        "Dropped the example's `if (!document) return null` branch: its failure mode is already covered by PBI-2's unopened-URI criterion at the store level.",
-        "The fourth and fifth criteria REMOVE test code. The fifth is trivially passable by DELETING assertions, which is why both halves are ONE criterion rather than a criterion plus a hope.",
-        "Verbatim stderr passthrough of a config author's own message stays out of the README whether or not this lands first: it is GUESSABLE, so its absence is silence rather than a gap. The decode fix still lands here for the internal reason that it blocks asserting a non-ASCII failure message at all.",
-        "Stays ONE PBI. The Sprint 5 reasoning (two PBIs both ordered last buy no scheduling benefit) rested on everything being last; the conclusion survives on different grounds -- all five criteria sit on one seam, the test suite and its helpers, and with the PBI-8 claim optional there is no scheduling cleavage to split along.",
-        "prepack depends on an UNPINNED tsc -- typescript is not a devDependency, so nothing pins the compiler that builds the published artifact. The artifact under test and the artifact published must come from the same toolchain, and today that holds only because one machine did both.",
-        "package-shape.test.ts asserts scripts equals EXACTLY {prepack} -- a fresh instance of exactly what the over-pinning criterion exists to remove. Two outcomes are acceptable since adding a script is legitimate, so it should require prepack PRESENT WITH THE RIGHT VALUE rather than exact equality.",
-      ],
-    },
-    {
-      id: "PBI-12",
-      story: {
-        role: "config author",
-        capability: "be told when their cleanup did not finish",
-        benefit: "a finally that never completes is visible instead of silently skipped",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A close that leaves the generator suspended is reported once",
-          verification:
-            "A fixture whose finally yields; assert chunks.return resolves done === false, that stderr names it once per session, and that a later completion answers normally",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "Ordered LAST: unlike the null token or a plain try/finally, YIELDING FROM CLEANUP is pathological rather than a plausible mistake. Same silent-cleanup harm, far lower probability -- it may reasonably never be reached, and saying so beats pretending otherwise.",
-        "Remedy follows normalise-and-report and report-and-survive: report on done !== true, do NOT rethrow and do NOT keep calling next(), which a finally yielding in a loop would make unbounded.",
-        "MEASURED on both runtimes: chunks.return(null) resolves {value, done:false}, leaving the generator suspended INSIDE its own finally. Unlike the parked-in-await limit this is INVISIBLE rather than documented, and unlike that one tsudoi CAN detect it -- done === false is in the result currently discarded.",
-      ],
-    },
   ],
 
   completed: [
+    {
+      number: 11,
+      pbi_id: "PBI-9",
+      goal: "Make a green run mean exactly what we claim -- no less, by pinning what only hands have checked; no more, by unpinning what nobody promised.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 6d2ceba, dfdbcd4, ce0befa, 960e91a, 0992bb7, 201024b, 687ef2d, 36d280b, 2477ebc, dc4845b, e61da36 across 10 subtasks. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
+        "THE SPRINT FOUND ITS OWN DEFECT IN ITS OWN DELIVERY: the seven ASCII config-failure cases NEVER PINNED the `tsudoi:` prefix the criterion names -- built to the plan's wording rather than the criterion's. Stripping the prefix from src/cli.ts left 14 OF 16 CASES GREEN before the fix. It also FALSIFIES PBI-8's note that all three contract facts were already pinned in ASCII.",
+        "THE PLAN'S CHUNK-BOUNDARY REMEDY WAS INSUFFICIENT, and the mechanism is the finding: stderr arrives in chunks at exact multiples of one size (192KiB/256KiB), so EVERY boundary shares one offset mod 3 -- all split or none do. At 360KB the deno case PASSED WITH THE DEFECT PRESENT on its first run. The fixture now uses three blocks separated by one and then two single-byte characters, covering all three residues: 15/15 runs split on both runtimes. Established twice -- by a residue probe, and PERMANENTLY by asserting the per-chunk decode differs from the whole, so a payload arriving whole fails loudly.",
+        "REMOVED ASSERTIONS, each named with what it defended: two response-ordering assertions defended `initialize answered before the progress`, now carried by the test's own await; arrival-list EXHAUSTIVENESS defended `the server sends nothing else`, WHICH WAS NEVER PROMISED; two hardcoded ids defended NOTHING and are now the id the helper returns; scripts exact equality defended `no other script exists`, which nobody promised, and has NO new home by design.",
+        "FORECLOSED, not NOT CONSTRUCTED, in the sprint the vocabulary was filed: an ordering inversion for cancellation.test.ts is UNREPRESENTABLE because the test waits for the chunk before cancelling. And one gap named honestly the other way -- the arrivals TOLERANCE half cannot be made permanent, since tsudoi sends no notification but $/progress, so reverting the delivery path would redden nothing; the injection to re-run is named.",
+        "MEASURED, AND IT WOULD HAVE MADE THIS SPRINT'S HEADLINE TEST INTERMITTENTLY VACUOUS: a non-ASCII payload does NOT become more likely to straddle a pipe chunk boundary by being made BIGGER. Chunks arrive at exact multiples of one size, so every boundary shares one offset modulo the character width -- all split or none do. At 360KB the deno half passed WITH THE DEFECT PRESENT on the first run and on 7 of 15 probe runs. The fix is alignment, not size: single-byte separators covering all three residues. The general rule for the next such test -- ASSERT THE HARD CASE HAPPENED, do not size for it and hope.",
+        "MEASURED, and it corrects a comment this project has been relying on: under bun 1.3.13 a write to a DEAD child's stdin returns TRUE and its callback is invoked with NO ERROR -- only `writable` reports the truth. node raises ERR_STREAM_DESTROYED. Any helper in any project here that trusts a stream to report its own failure is trusting something bun does not do.",
+        "MEASURED, and it retires a seven-sprint-old assumption: the deno half of the config-failure contract was UNRUNNABLE, not broken. All seven cases passed under deno the first time they were allowed to run. `Never executed` and `would fail` had been treated as one thing.",
+        "FORECLOSED rather than NOT CONSTRUCTED, using the vocabulary filed last retro: the wrong-ordering perturbation for cancellation.test.ts's arrivals assertion cannot be built, because the test waits for the chunk before it cancels -- the response CANNOT precede it. The design of the test forecloses the failure; the assertion's remaining job is content, and that half was perturbed and shown to flip alone.",
+        "ONE PERTURBATION RAN INSIDE node_modules, disclosed: vscode-jsonrpc's message writer was edited to frame by character count and restored from a backup in the same step. It is the only way to perturb framing this project does not own, and it answered the criterion's own worry -- the failure arrives as a NAMED PARSE ERROR in ~32ms, not as a hang.",
+      ],
+    },
     {
       number: 10,
       pbi_id: "PBI-13",
@@ -289,26 +229,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 11,
-    pbi_id: "PBI-9",
-    goal: "Make a green run mean exactly what we claim -- no less, by pinning what only hands have checked; no more, by unpinning what nobody promised.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in 6d2ceba, dfdbcd4, ce0befa, 960e91a, 0992bb7, 201024b, 687ef2d, 36d280b, 2477ebc, dc4845b, e61da36 across 10 subtasks. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
-      "THE SPRINT FOUND ITS OWN DEFECT IN ITS OWN DELIVERY: the seven ASCII config-failure cases NEVER PINNED the `tsudoi:` prefix the criterion names -- built to the plan's wording rather than the criterion's. Stripping the prefix from src/cli.ts left 14 OF 16 CASES GREEN before the fix. It also FALSIFIES PBI-8's note that all three contract facts were already pinned in ASCII.",
-      "THE PLAN'S CHUNK-BOUNDARY REMEDY WAS INSUFFICIENT, and the mechanism is the finding: stderr arrives in chunks at exact multiples of one size (192KiB/256KiB), so EVERY boundary shares one offset mod 3 -- all split or none do. At 360KB the deno case PASSED WITH THE DEFECT PRESENT on its first run. The fixture now uses three blocks separated by one and then two single-byte characters, covering all three residues: 15/15 runs split on both runtimes. Established twice -- by a residue probe, and PERMANENTLY by asserting the per-chunk decode differs from the whole, so a payload arriving whole fails loudly.",
-      "REMOVED ASSERTIONS, each named with what it defended: two response-ordering assertions defended `initialize answered before the progress`, now carried by the test's own await; arrival-list EXHAUSTIVENESS defended `the server sends nothing else`, WHICH WAS NEVER PROMISED; two hardcoded ids defended NOTHING and are now the id the helper returns; scripts exact equality defended `no other script exists`, which nobody promised, and has NO new home by design.",
-      "FORECLOSED, not NOT CONSTRUCTED, in the sprint the vocabulary was filed: an ordering inversion for cancellation.test.ts is UNREPRESENTABLE because the test waits for the chunk before cancelling. And one gap named honestly the other way -- the arrivals TOLERANCE half cannot be made permanent, since tsudoi sends no notification but $/progress, so reverting the delivery path would redden nothing; the injection to re-run is named.",
-      "MEASURED, AND IT WOULD HAVE MADE THIS SPRINT'S HEADLINE TEST INTERMITTENTLY VACUOUS: a non-ASCII payload does NOT become more likely to straddle a pipe chunk boundary by being made BIGGER. Chunks arrive at exact multiples of one size, so every boundary shares one offset modulo the character width -- all split or none do. At 360KB the deno half passed WITH THE DEFECT PRESENT on the first run and on 7 of 15 probe runs. The fix is alignment, not size: single-byte separators covering all three residues. The general rule for the next such test -- ASSERT THE HARD CASE HAPPENED, do not size for it and hope.",
-      "MEASURED, and it corrects a comment this project has been relying on: under bun 1.3.13 a write to a DEAD child's stdin returns TRUE and its callback is invoked with NO ERROR -- only `writable` reports the truth. node raises ERR_STREAM_DESTROYED. Any helper in any project here that trusts a stream to report its own failure is trusting something bun does not do.",
-      "MEASURED, and it retires a seven-sprint-old assumption: the deno half of the config-failure contract was UNRUNNABLE, not broken. All seven cases passed under deno the first time they were allowed to run. `Never executed` and `would fail` had been treated as one thing.",
-      "FORECLOSED rather than NOT CONSTRUCTED, using the vocabulary filed last retro: the wrong-ordering perturbation for cancellation.test.ts's arrivals assertion cannot be built, because the test waits for the chunk before it cancels -- the response CANNOT precede it. The design of the test forecloses the failure; the assertion's remaining job is content, and that half was perturbed and shown to flip alone.",
-      "ONE PERTURBATION RAN INSIDE node_modules, disclosed: vscode-jsonrpc's message writer was edited to frame by character count and restored from a backup in the same step. It is the only way to perturb framing this project does not own, and it answered the criterion's own worry -- the failure arrives as a NAMED PARSE ERROR in ~32ms, not as a hang.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 11,
