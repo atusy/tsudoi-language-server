@@ -368,9 +368,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Add a finally to examples/tsudoi.config.ts's completion generator with a comment explaining it runs when the client cancels. It must read as DOCUMENTATION for a config author, not as a test hook. Bun-free, .ts extensions. Existing lifecycle tests stay green.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "138ccba",
+            message: "docs(example): show the config author where cleanup belongs",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "The block is EMPTY but for its comment, and that is the honest form: this example holds nothing to release, so a stand-in resource with a close() method would be test scaffolding wearing documentation's clothes. What a reader needs is WHEN it runs, which the comment says -- including that cleanup written after the loop instead would never run at all.",
+          "No stderr write, deliberately: the example runs on every completion in the lifecycle and completion suites, and a marker there would be noise in the one channel a config author reads -- and would risk reddening an existing `stderr is clean` assertion for a reason that has nothing to do with cleanup.",
+          "Suite unchanged at 137 pass either side of it, so the artifact-under-test stayed green without being asserted.",
+        ],
       },
       {
         test: "N/A (structural) -- suite stays green.",
