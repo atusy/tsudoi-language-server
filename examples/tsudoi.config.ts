@@ -40,21 +40,35 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           return [];
         }
 
-        // Example: Return a static completion item
-        yield [
-          {
-            label: "HelloWorld",
-            kind: CompletionItemKind.Text,
-            detail: "Example completion item",
-            documentation: "This is a sample completion item.",
-          },
-        ];
+        try {
+          // Example: Return a static completion item
+          yield [
+            {
+              label: "HelloWorld",
+              kind: CompletionItemKind.Text,
+              detail: "Example completion item",
+              documentation: "This is a sample completion item.",
+            },
+          ];
 
-        // Deliberate divergence from the brief's example, which falls off the end here.
-        // The declared AsyncGenerator return type requires an explicit return, and per the
-        // brief's own MethodMap comment a null result after partial responses is delivered
-        // to the client as an empty CompletionItem[].
-        return null;
+          // Deliberate divergence from the brief's example, which falls off the end here.
+          // The declared AsyncGenerator return type requires an explicit return, and per the
+          // brief's own MethodMap comment a null result after partial responses is delivered
+          // to the client as an empty CompletionItem[].
+          return null;
+        } finally {
+          // Where a handler releases what it held: an index reader, a child
+          // process, a temporary file. There is nothing to release here, and
+          // the block is kept anyway because WHEN it runs is the part worth
+          // knowing.
+          //
+          // It runs on the ordinary path, and it also runs when the editor
+          // gives up on this request -- which it does on every keystroke that
+          // supersedes the last one. tsudoi closes this generator then, so
+          // cleanup written here happens even though the request is answered
+          // `RequestCancelled` and nothing here can be watched succeeding.
+          // Cleanup written AFTER the loop instead would simply never run.
+        }
       },
 
       "textDocument/hover": async (
