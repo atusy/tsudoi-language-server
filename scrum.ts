@@ -229,8 +229,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "package.json with type: module; dependency vscode-languageserver-protocol; devDependencies @types/node and @types/bun, both required for the tsc --noEmit check. Run bun install and commit bun.lock. No deno.json, deliberately.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "f6b2d82", message: "chore: add package.json", phase: "refactoring" }],
         notes: [],
       },
       {
