@@ -42,22 +42,28 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion:
-            "A Deno user following the stated route completes the initialize handshake against their own config",
+          criterion: "A Deno user obtains and runs tsudoi without cloning the repository",
           verification:
-            "Obtain tsudoi as the stated route instructs into a project that is not this repo; run the CLI under deno and assert an InitializeResult naming tsudoi. The route is stated as exact commands a reader could follow without reading test code",
+            "Pack the package, install it into a project that is not this repo, and complete the initialize handshake under `deno run -A`; NEGATIVE CONTROL: shipping .ts sources instead of compiled .js makes the same check fail with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING",
         },
         {
-          criterion: "The same route still works for Bun",
+          criterion: "The same route works for Bun, without a runtime-specific install path",
           verification:
-            "The identical obtain-and-run sequence under bun, so Deno is not fixed by breaking Bun",
+            "The identical packed artifact and identical install completes the handshake under `bun run`; NEGATIVE CONTROL: a route only Deno can consume fails this",
+        },
+        {
+          criterion:
+            "The published artifact is built from current source, and the repo still runs from a checkout",
+          verification:
+            "The packaged CLI is produced by the build rather than committed; the existing cross-runtime lifecycle suite still runs src/*.ts directly under both runtimes; no deno.json exists",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "MEASURED at Sprint 9 planning: an installed .ts CLI fails under deno with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING -- Deno refuses to type-strip files under node_modules. Bun runs it fine. Metric #3 holds for a checkout and FAILS for an install, which is why that target now names both modes.",
-        "Deliberately OUTCOME-ONLY. The remedy is open and the options differ in cost: shipping compiled .js introduces a build step and a main/bin surface PBI-7 deliberately excluded, while publishing to JSR handles .ts natively and may cost nothing. Refinement decides; this story does not presuppose.",
-        "package.json's //exports already records this constraint at the site someone would edit to break it: main and bin are added HERE when the Deno story is solved, not in the types-only surface.",
+        "MEASURED, both runtimes, from node_modules: compiled .js + .d.ts starts under bun AND deno, and tsc passes in the consumer. The enabler is rewriteRelativeImportExtensions -- emit rewrites ./config.ts to ./config.js while THE SOURCE KEEPS ITS .ts EXTENSIONS, so Sprint 1's cross-runtime source and PBI-6's guard stay valid untouched. Deno's restriction is on type-STRIPPING under node_modules, not on running .js from there, so shipping .js dissolves the defect rather than working around it.",
+        "MEASURED and DECLINED -- JSR: it typechecks the package with no slow-types errors, but it flags tsudoi's CORE MECHANISM (the await import(pathToFileURL(...)) that loads the user's config) as unanalyzable-dynamic-import, it REQUIRES a deno.json, and the Bun half cannot be verified without actually publishing, which needs an account and is irreversible -- impediment-class, not developer-class.",
+        "The cost is real and not softened: this buys a build step and the main/bin surface PBI-7 deliberately excluded, against nine sprints of no-build-step simplicity. It is recommended because the alternative buys a deno.json, an unverifiable consumer story, and a route that may diverge by runtime -- which is what criterion 2 exists to forbid.",
+        "UNMEASURED and not asserted away: repointing exports[./types] from ./src/types.ts to ./dist/types.d.ts may break the IN-REPO self-reference examples/tsudoi.config.ts now depends on, since tsc --noEmit would then require dist/ to exist. That is the sprint's main open question and is measured first, not assumed.",
       ],
     },
     {
@@ -165,9 +171,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in 5eedbb6, 1accc45, fc75c12, 18fa8d9, 37aa189, 066dafe, plus 5204709 (structural). Per-subtask records and 7 perturbation notes compacted here; git retains them. Subtasks 1 and 2 SHARE a commit, declared: subtask 1's deliverable IS tsc going red, and the DoD forbids committing on red -- the RED was measured before exports existed and recorded.",
-        "SUBTASK 6 MEASURED AND DID NOT REDDEN, stated plainly: a deno.json with an npm import map at the repo root leaves the whole suite, tsc and oxlint at exit 0. The mechanism was then measured rather than stopping at the null result -- in a checkout with NO node_modules the same deno.json STILL fails, its diagnostic changing from `found it in a package.json` to `could not find it in a node_modules folder`. So the import map IS consulted and the dependency is still demanded from node_modules: at deno 2.9.2 a deno.json does not touch npm resolution at all. SPRINT 1'S REASONED JUSTIFICATION DOES NOT SURVIVE MEASUREMENT, and the file-absence assertion was deliberately NOT built -- pinning a spelling with no demonstrated harm is the anti-pattern the Sprint 7 bounding condition names. The PROPERTY is pinned instead, in test/resolution.test.ts.",
-        "BUN SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. This weakens nine sprints of `both runtimes stay green`: wherever the claim concerns RESOLUTION, that phrase is strong evidence under deno and weak under bun. Recorded at the top of test/resolution.test.ts. Bun auto-install is deliberately NOT pinned.",
         "MEASURED, and NOT this sprint's to fix: an INSTALLED copy cannot run under Deno at all -- ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, from a packed-and-installed consumer under deno 2.9.2, while bun runs it fine. Success metric #3 holds for a repo checkout and FAILS for an installed copy. Raised to the PO as a new PBI ordered before PBI-8 rather than smuggled in as retroactive scope.",
         "MEASURED, and it bounds the LIFETIME RULE this sprint adopted: a decision about package.json CANNOT be written at its site. JSON has no comments, and oxfmt -- a DoD gate -- sorts unknown keys to the tail of the file under every name tried. The rule needs a clause for machine-formatted data files: the comment goes as close as the formatter permits, and a SOURCE file that the data file points at carries a pointer to it. Here: `//exports` at the bottom of package.json, and a header on src/types.ts naming itself the published surface.",
         "MEASURED, and it weakens seven sprints of cross-runtime evidence: bun SATISFIES A MISSING DEPENDENCY FROM ITS GLOBAL CACHE. With node_modules renamed away, deno fails to start and bun completes the handshake. Every `both runtimes stay green` in this project is therefore strong evidence under deno and weak evidence under bun, wherever the claim concerns resolution. Recorded at test/resolution.test.ts, which is deno-only for exactly this reason.",
@@ -183,11 +186,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "Shipped in 24b70a7, 7e37784, a88d3a6, cd08905, f61846a, 138ccba, ca0535e across 7 subtasks, plus 01e36d8 fixing a helper defect found while perturbing. Per-subtask records and 6 perturbation notes compacted here; git retains them.",
-        "P5 IS THE EMPIRICAL ARGUMENT FOR THE PO'S OWN NON-LAUNDERABLE CLAUSE: rethrowing inside the cleanup handler flips report, survival AND exit-code tests on deno, but on BUN only the exit code flips -- the session survived long enough to answer a later completion AND to print its tsudoi: line. Every survival-shaped and stderr-shaped assertion passed; only the session's own exit code caught it.",
-        "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
-      ],
+      decisions: [],
     },
     {
       number: 7,
@@ -197,7 +196,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in adcff14, 8e71fcc, eb616dd, e50ecc2, 63a87e4, adc95ef, 4b70591, 0c804b9, 581a422, 1b0b2d1 across 9 subtasks. Per-subtask records and 12 perturbation notes compacted here; git retains them.",
         "ACCEPTED with its justification CORRECTED by the PO, because a note carrying a false premise is worse than no note: isProgressToken admits integers outside LSP's int32 (Number.isInteger(2**40) is true). Rejecting would NOT lose the client's items -- under normalise-and-report an invalid token aggregates, so every item still arrives in the response body. The real reason to honour it is that the CLIENT chose that token and can correlate it, so honouring delivers the streaming they asked for, whereas rejecting silently downgrades a working client to aggregation plus a stderr line it did not need.",
         "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
         "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
@@ -222,9 +220,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-      ],
+      decisions: [],
     },
     {
       number: 4,
@@ -284,8 +280,103 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 10,
+    pbi_id: "PBI-13",
+    goal: "Make the cross-runtime promise survive distribution: a Deno user obtains tsudoi the stated way and it starts, without Bun losing the route it already has.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A -- a SPIKE, recorded in this subtask's notes. No RED/green claim.",
+        implementation:
+          "Determine whether repointing exports[./types] at ./dist/types.d.ts breaks in-repo self-reference for examples/tsudoi.config.ts under tsc --noEmit, and whether a conditional {types, default} resolves it. Report MEASURED, not reasoned. The one unmeasured thing in the plan goes first so nothing is built on it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED, measured. Pack, install into a temp consumer, drive the handshake under `deno run -A`; assert it currently fails with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, and that the same route under `bun run` succeeds.",
+        implementation:
+          "None -- the test IS the RED. Reuse the test/resolution.test.ts pack-and-install helper.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED GREEN, closing the previous subtask: its Deno assertion flips to success and Bun stays green.",
+        implementation:
+          "tsconfig.build.json with rewriteRelativeImportExtensions: true, rootDir src, outDir dist, declaration, module/moduleResolution nodenext, noEmit false. Repoint exports, add bin, files: [dist], gitignore dist. KEEP src/ imports carrying .ts extensions -- the rewrite happens only on emit, so Sprint 1's cross-runtime source and PBI-6's guard stay valid untouched.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN after the build lands. The identical packed artifact and identical install command satisfy BOTH runtimes. PERTURBATION: point bin back at src/cli.ts; the Deno assertion MUST redden while Bun stays green -- measured, bun runs .ts from node_modules fine. That asymmetry is the discriminator and it is why criterion 2 exists.",
+        implementation: "None expected.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED until the script exists. Packing from a clean tree produces an artifact whose CLI reflects current src/.",
+        implementation:
+          "A prepack script running the build. dist/ is never committed, so a stale build is UNREPRESENTABLE rather than merely discouraged. MEASURE whether npm pack actually invokes prepack here -- unverified.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN. The existing cross-runtime lifecycle suite still runs src/*.ts directly under both runtimes; no deno.json at the root. PERTURBATION: delete src/ from the tsconfig include and point the lifecycle tests at dist/; the checkout assertions MUST redden. Naming both halves: that defends `the source route still exists`, NOT `the published route works`, which the build and no-divergence subtasks defend -- it lands earlier than this subtask's headline.",
+        implementation: "None. Ensure tsc --noEmit does not typecheck dist/.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural).",
+        implementation:
+          "Extend the resolution test to assert the exports, bin and files shape, WITH THE REASONING IN THE TEST -- package.json cannot carry comments and oxfmt sorts unknown keys to the tail, so the test is the durable home. Include why JSR was measured and declined, so the next person does not re-derive it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "REMEDY CHOSEN ON EVIDENCE, not preference: compiled .js + .d.ts via rewriteRelativeImportExtensions, measured starting under BOTH runtimes from node_modules with tsc passing in the consumer. JSR was measured too and declined -- it flags the config loader's dynamic import as unanalyzable, requires a deno.json, and its Bun half cannot be verified without an irreversible publish needing an account.",
+      "package.json's //exports currently asserts that an installed copy cannot run under Deno and that main/bin belong elsewhere. THIS SPRINT MAKES BOTH FALSE, in a durable home -- the note-4 failure one layer deeper, and harder to catch because nothing compacts it away. It must be updated or superseded.",
+      "PO checklist, per-sprint additions: (1) the route stated as EXACT COMMANDS a reader could follow without reading test code -- a route only a test knows is not a route a user can take; (2) if the remedy introduces a build, the artifact under test is PRODUCED FROM CURRENT SOURCE AT TEST TIME, perturbed by changing a source file without rebuilding -- the hazard of a build step is not the step, it is a stale artifact passing while the source has moved; (3) checkout and installed proven NOT TO DIVERGE, asserting the handshake AND a config-failure case against the INSTALLED copy under both runtimes rather than inferring from the checkout, since Sprint 9's headline finding was exactly that nothing tested the installed consumer; (4) if the remedy is a second registry, both routes stated and both verified; (5) package.json's //exports updated or superseded.",
+    ],
+  },
   retrospectives: [
+    {
+      sprint: 10,
+      improvements: [
+        {
+          action:
+            "A criterion's NEGATIVE CONTROL belongs in its `verification` TEXT, not in the plan's perturbations. When refinement or planning discovers the discriminating change, hand back amended verification wording rather than recording a perturbation privately.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "The lifetime argument applied to criteria: the verification field travels with the criterion through every compaction, a plan evaporates at Review. Diagnosed by the Developer as WHY the negative-control rule did not fire twice in Sprint 9 -- it did fire, and the answer landed in the plan rather than the criterion. It is also the Developer-side fix for the PO's checklist-versus-criteria drift: if the discriminating change is written into the verification, the checklist cannot drift ahead of the criterion.",
+        },
+        {
+          action:
+            "When a decision must live in a MACHINE-FORMATTED FILE that cannot carry comments, its durable home is a TEST THAT ASSERTS IT. The file carries the decision; the test carries the reason.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Closes the hole in the lifetime rule rather than patching it. package.json has no comments and oxfmt sorts unknown keys to the tail; a pointer header decays. test/resolution.test.ts already proved the pattern -- PBI-7's criterion 3 compacted unamended precisely because a TEST, not a note, was holding it. A test is executable documentation that cannot silently drift and fails when someone violates it.",
+        },
+      ],
+    },
     {
       sprint: 10,
       improvements: [
