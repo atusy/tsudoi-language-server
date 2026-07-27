@@ -48,3 +48,29 @@ test("node:url and a package subpath stay unflagged in a file that is itself fla
   expect(result.output).not.toContain("src/bare.ts:1:");
   expect(result.output).not.toContain("src/bare.ts:2:");
 });
+
+// The four shapes a .ts file can take in this repo. The Bun global is banned at
+// every one of them, so the ABSENCE of an exemption is what these assert; each
+// path is named so a leak reports which shape leaked.
+const pathShapes = [
+  "src/server.ts",
+  "test/probe.test.ts",
+  "test/helpers/probe.ts",
+  "test/fixtures/probe.ts",
+];
+
+for (const path of pathShapes) {
+  test(`the Bun global is flagged in ${path}`, async () => {
+    const result = await lintProbe({ [path]: 'export const read = () => Bun.file("x").text();\n' });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("no-restricted-globals");
+    expect(result.output).toContain(path);
+  });
+
+  test(`removing the Bun global from ${path} leaves it unflagged`, async () => {
+    const result = await lintProbe({ [path]: 'export const read = () => fetch("x").text();\n' });
+
+    expect(result.code).toBe(0);
+  });
+}
