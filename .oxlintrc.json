@@ -2,6 +2,13 @@
   "plugins": ["import"],
   "rules": {
     "import/extensions": ["error", "always", { "ignorePackages": true }],
-    "no-restricted-globals": ["error", "Bun"]
-  }
+    "no-restricted-globals": ["error", "Bun"],
+    "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "test/helpers/**/*.ts"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
 }

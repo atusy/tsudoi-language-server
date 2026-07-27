@@ -74,3 +74,35 @@ for (const path of pathShapes) {
     expect(result.code).toBe(0);
   });
 }
+
+function importsBunModule(specifier: string): string {
+  return `import { Database } from "${specifier}";\nexport const db = Database;\n`;
+}
+
+// bun:* imports are exempted only where `bun test` needs them. Both halves are
+// under test: that the exemption exists, and that it is no wider -- fixture
+// configs execute under deno, so test/fixtures/ must stay Bun-free.
+for (const path of ["src/server.ts", "test/fixtures/probe.ts"]) {
+  test(`a bun:sqlite import is flagged in ${path}`, async () => {
+    const result = await lintProbe({ [path]: importsBunModule("bun:sqlite") });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("no-restricted-imports");
+    expect(result.output).toContain(path);
+  });
+}
+
+for (const path of ["test/probe.test.ts", "test/helpers/probe.ts"]) {
+  test(`a bun:sqlite import is exempt in ${path}`, async () => {
+    const result = await lintProbe({ [path]: importsBunModule("bun:sqlite") });
+
+    expect(result.code).toBe(0);
+  });
+}
+
+test('an extensionless "bun" import is flagged too, not only the bun: namespace', async () => {
+  const result = await lintProbe({ "src/server.ts": importsBunModule("bun") });
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("no-restricted-imports");
+});
