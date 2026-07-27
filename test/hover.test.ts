@@ -72,5 +72,32 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // A conforming client never sends this: hoverProvider was not advertised.
+    // The server answers it anyway, because a server that fails when a client
+    // misbehaves is a server that takes the editor down with it.
+    test("a hover request with no handler configured is answered null, twice over", async () => {
+      const session = LspSession.start(runtime, hoverAbsent);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        expect(await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0))).toBe(
+          null,
+        );
+        // The second one is the point: null must be an answer the session
+        // survives, not an error the connection happens to have absorbed once.
+        expect(await session.request<Hover | null>("textDocument/hover", hoverParams(2, 4))).toBe(
+          null,
+        );
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
