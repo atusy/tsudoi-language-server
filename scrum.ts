@@ -213,7 +213,7 @@ const scrum: ScrumDashboard = {
     number: 1,
     pbi_id: "PBI-1",
     goal: "One config file brings up a real language server process under whichever runtime the user already has, with nothing repo-specific making it work and no failure mode that leaves them guessing.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "N/A (structural)",
@@ -346,7 +346,7 @@ const scrum: ScrumDashboard = {
         status: "completed",
         commits: [{ hash: "f5f76a0", message: "test: lifecycle on deno", phase: "green" }],
         notes: [
-          "No RED: deno passed on first run because src/ was already runtime-agnostic. Verified the deno branch is live by perturbing its run args and seeing all three deno tests fail.",
+          "deno needs -A (or at least --allow-env): vscode-jsonrpc/lib/node/main.js reads process.env.XDG_RUNTIME_DIR at module load and dies without it.",
         ],
       },
     ],
