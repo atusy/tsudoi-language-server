@@ -72,15 +72,27 @@ const scrum: ScrumDashboard = {
           criterion:
             "DocumentStore follows didOpen / didChange / didClose, with textDocumentSync advertised in InitializeResult",
           verification:
-            "Test sends each notification and asserts documents.values() membership after each",
+            "InitializeResult advertises { openClose: true, change: TextDocumentSyncKind.Full }; test sends each notification and asserts documents.values() membership after each, and that get() returns undefined once didClose has arrived",
         },
         {
           criterion: "documents.get(uri) returns the text of the latest version",
           verification:
-            "Test applies successive didChange edits and asserts getText() and version match",
+            "Test applies successive didChange edits and asserts getText() and version match the last one sent",
+        },
+        {
+          criterion: "A notification for a document that was never opened is ignored, not fatal",
+          verification:
+            "Test sends didChange and didClose for a URI never opened, then asserts documents.get() is undefined and the server still completes shutdown/exit with code 0",
         },
       ],
-      status: "draft",
+      status: "ready",
+      notes: [
+        "Full sync, not Incremental (PO call): identical getText() at PoC scale, and it avoids position/offset machinery tsudoi otherwise never needs -- handlers do their own position math on params.position.",
+        "openClose: true must be advertised explicitly. Advertising only `change` entitles a conforming client to withhold didOpen/didClose, which makes the first criterion unsatisfiable against a real editor while passing every hand-driven test.",
+        "TextDocument keeps exactly the brief's shape -- uri, languageId, version, getText(). No positionAt/offsetAt. Revisit only if PBI-3 shows every config author reimplementing position math; then it is its own PBI.",
+        "test/lifecycle.test.ts asserts capabilities equals {} exactly. Advertising textDocumentSync turns it red -- widen the assertion to the advertised shape, do not delete it. PBI-3 and PBI-4 widen it again.",
+        "Replace the empty DocumentStore implementation Sprint 1 left behind; do not change the Tsudoi shape.",
+      ],
     },
     {
       id: "PBI-3",
@@ -262,7 +274,58 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 2,
+    pbi_id: "PBI-6",
+    goal: "Make Deno support stop depending on anyone remembering it -- the codebase itself rejects the changes that would quietly break the second runtime, before the sprints that write most of the source.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "Given a probe source file, oxlint exits 1 when a relative import omits .ts and 0 when it carries .ts, while node:url and vscode-languageserver-protocol/node imports never trigger the rule.",
+        implementation:
+          "Add test/helpers/lint.ts exposing lintProbe(files): it mkdtemps a temp dir, COPIES the repo's real .oxlintrc.json into it (never re-declares it, or the tests stop tracking the shipped file), writes each probe at its relative path, spawns `oxlint .` with cwd set there, and removes the dir in a finally. Reuse repoRoot from test/helpers/spawn.ts. No node_modules needed. No production change -- import/extensions landed in Sprint 1.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: 'A probe containing Bun.file("x") makes oxlint exit 1 at all four path shapes -- src/, **/*.test.ts, test/helpers/, test/fixtures/ -- and removing it returns exit 0.',
+        implementation:
+          'Add "no-restricted-globals": ["error", "Bun"] to top-level rules. Assert all four paths explicitly: the ABSENCE of an exemption is the behaviour under test, not an implementation detail.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A probe importing bun:sqlite makes oxlint exit 1 at src/ and test/fixtures/, and exit 0 at **/*.test.ts and test/helpers/**.",
+        implementation:
+          'Add "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] to top-level rules, plus one overrides entry turning it "off" for ["**/*.test.ts", "test/helpers/**/*.ts"]. Both halves are under test: the exemption existing, and it not being wider than specified -- fixture configs execute under deno and must stay Bun-free.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural)",
+        implementation:
+          "Comment .oxlintrc.json with the why-not: default-deny rather than src/-only because fixture configs execute under deno; ignorePackages is load-bearing; @types/bun declares the Bun global so tsc --noEmit ACCEPTS Bun.file() in src/ and this lint is the only thing that catches it; and this is a rot detector, not a barrier -- globalThis casts and oxlint-disable comments bypass it, so it does not replace the live deno smoke test. Confirm oxfmt --check . does not reflow it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "Start from the Developer's verified spike at scratchpad/guard/.oxlintrc.json rather than prose -- the first application of the retrospective's spike-attachment rule. Delta to the repo config is two top-level rules plus one overrides entry.",
+      "Manufactured RED is mandatory for subtask 1 because import/extensions already passes, so its test is born green. Perturbation A: delete the rule, the extension-less case must fail. Perturbation B: restore it but drop ignorePackages, the bare-specifier case must fail. Green under either perturbation means the test asserts nothing.",
+      "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
+      "Developer declined to automate the complementary `tsc accepts Bun.file` assertion: honest options were mutating the repo's own src/ mid-test or a slow temp dir with node_modules that still is not the real config. Recorded as a comment instead, and flagged rather than papered over.",
+      "The runCli dual-runtime fix was routed to PBI-9, not smuggled into this sprint under PBI-6's benefit statement -- the Developer named that temptation and declined it.",
+    ],
+  },
 
   retrospectives: [
     {
