@@ -245,11 +245,11 @@ const scrum: ScrumDashboard = {
         notes: [],
       },
       {
-        test: "Spawning the CLI with no arguments exits 1 with non-empty stderr and zero bytes on stdout.",
+        test: "Spawning the CLI with no arguments exits 1 with stderr naming --config and zero bytes on stdout.",
         implementation:
           "test/helpers/spawn.ts wrapping node:child_process; src/cli.ts (AC pins this exact path) reading process.argv from node:process. Never use import.meta.dir, which is Bun-only -- use fileURLToPath(new URL(..., import.meta.url)). First test file, so this also closes the `bun test` exits-1-on-zero-matches gap.",
         type: "behavioral",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [],
       },
