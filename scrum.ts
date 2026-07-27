@@ -445,7 +445,7 @@ const scrum: ScrumDashboard = {
         notes: [
           "Suite green across the change, 125 tests, no behavioural edit. src/lifecycle.ts now holds a three-valued phase; the two booleans that could disagree are gone, and `process.exit(hasShutdown ? 0 : 1)` -- the last implicit read of lifecycle state -- became `lifecycle.exitCode()`, chosen by naming a phase.",
           "CONSTRAINT VERIFIED BY GREP, not by impression: 12 explicit === / !== undefined comparisons in src/, and NO truthiness test on any token, id or lifecycle flag. The only bare `if (x)` reads left in src/ are `cancellation.isCancellationRequested` and `signal.aborted`, both platform booleans.",
-          "PERTURBATIONS RE-MEASURED AT HEAD after the consolidation, as REPRODUCTIONS of subtask 4's (a) and (b): expected 2 failures each, observed 2 each, same two tests. The two branches still discriminate independently, which a green suite alone could not have shown.",
+          "PERTURBATIONS RE-MEASURED AT HEAD after the consolidation, as REPRODUCTIONS of subtask 4's (a) and (b): expected 2 failures each, observed 2 each, same two tests. (b), the CODE SWAP, is what shows the two branches still discriminate independently. (a) post-refactor was a branch DELETION, so it does not defend the phase transition in lifecycle.initialize() -- subtask 3's `initialize still succeeds` sub-claim does. The arrow wrapper handing methods.ts a live requestRejection instead of the mutators is covered by inference from (a) and (b), NOT by its own perturbation.",
         ],
       },
     ],
