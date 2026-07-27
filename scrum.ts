@@ -41,12 +41,47 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: "$/cancelRequest aborts context.signal for the targeted request",
+          criterion:
+            "$/cancelRequest aborts context.signal for the targeted request and for no other in flight",
           verification:
-            "A test config awaits the signal; send $/cancelRequest and assert signal.aborted becomes true and the request settles",
+            "Two concurrent requests with distinguishable fixtures; cancel one. The targeted fixture reports abort on stderr; the other reports it was never aborted and is answered normally",
+        },
+        {
+          criterion:
+            "A cancelled request is answered -32800 RequestCancelled, for hover and completion alike",
+          verification:
+            "Cancel each; assert error.code === -32800 and that a subsequent request of the same method is answered normally",
+        },
+        {
+          criterion: "A handler that never reads its signal still has its result suppressed",
+          verification:
+            "A fixture that never references context.signal and runs to completion; assert the response is -32800 and the handler's value appears nowhere on stdout",
+        },
+        {
+          criterion:
+            "Cancelling a streaming completion leaves already-sent $/progress on stdout and sends none after the abort",
+          verification:
+            "Gate the handler after one chunk, cancel, release; assert exactly one $/progress, then -32800, and zero non-protocol bytes on stdout",
+        },
+        {
+          criterion: "A cancelled handler's throw is not reported as a handler failure",
+          verification:
+            "A fixture that throws once aborted; assert -32800 and NO `tsudoi: <method> handler failed:` line on stderr, while a non-cancelled throwing handler still produces one",
+        },
+        {
+          criterion: "$/cancelRequest for an unknown or already-settled id is ignored",
+          verification:
+            "Cancel an id never issued and an id already answered; assert no error response, no stderr failure line, and a subsequent request answered normally",
         },
       ],
-      status: "draft",
+      status: "ready",
+      notes: [
+        "MEASURED on both runtimes: vscode-jsonrpc already plumbs $/cancelRequest to a CancellationToken on onRequest handlers, so tsudoi BRIDGES rather than tracking the notification itself -- tracking it would mean racing a handler the library already consumes. But the library synthesises NO -32800 and does not suppress an ignoring handler's result; both are tsudoi's to build.",
+        "A cancelled request answers -32800, discarding whatever the handler produced. LSP 3.17 permits both this and a normal result, so it is a CHOICE: the client has already discarded the request's context, and delivering a stale result invites the desync PBI-4's criterion 6 exists to prevent.",
+        "A cancelled handler's throw is NOT reported: an aborted fetch rejects by design, and writing a failure line plus a stack for every cancellation would train config authors to ignore the one stderr channel that means something.",
+        "Observability seam: the fixture registers signal.addEventListener('abort', ...) and writes a marker to stderr -- a standard Web API, Bun-free and Deno-safe.",
+        "ESCALATED, not decided: letting a config author DECLINE cancellation (LSP allows returning a normal result anyway) needs a TsudoiConfig surface to declare it -- a config-schema change, the same reasoning that kept triggerCharacters out of PBI-4. Its own PBI if anyone wants it.",
+      ],
     },
     {
       id: "PBI-10",
@@ -105,6 +140,7 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
+        "PBI-10 must complete first: it fixes a defect that silently loses user items, and these two are what make the package installable.",
         "Deferred out of PBI-1 in round 2. Needs package self-reference (name + exports in package.json), unverified under Deno. Not an impediment: self-reference is entirely local, needing no registry, npm account or publish.",
         "Type-only imports are erased at runtime, so no PoC method behavior depends on this; ordered last for that reason.",
         "Regression risk: the obvious fix is a deno.json import map, which is exactly what Sprint 1 deliberately avoided. The cross-runtime lifecycle tests must still pass on completion.",
@@ -137,6 +173,7 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
+        "PBI-10 must complete first: it fixes a defect that silently loses user items, and these two are what make the package installable.",
         "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
         "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
       ],
@@ -191,10 +228,7 @@ const scrum: ScrumDashboard = {
         "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
         "The new earlier-assertion clause caught its first case IN THE ACT: perturbation A (buffer every yield) reddened at waitForProgress(1) and never reached expect(settled).toBe(false), so it proved the SERVER streams while leaving the headline claim undefended. Perturbation B (release the gate immediately) is what defends it -- without B a fast server passes A by accident.",
         "DECOMPOSITION FINDING, not an execution apology: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN, because one async generator cannot be dispatched twice -- subtask 3's handler necessarily decided the no-token, null and failure branches at the same moment. A plan that splits one dispatch across four subtasks cannot buy the sequencing it assumes.",
-        "Sprint 4's report-without-rethrow finding reproduced on the streaming path: an out-of-suite probe against the perturbed build returned RESULT [] with PROGRESS present and the stderr line present, so a stderr-only OR progress-only criterion would have passed while the client was handed a plausible empty answer.",
         "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
-        "FOUND AT PLANNING, not in review: test/helpers/lsp.ts discards every server-initiated notification, so criterion 4's zero-$/progress assertion would have passed against a server streaming furiously. It is subtask 1, not a footnote.",
-        "The stakeholder described nine methods loosely and then wrote a generic type signature plus three lines of protocol rules for this one. Whatever they were most worried about is in that type, and the worry reads clearly: a config author must never touch partialResultToken or $/progress. The async generator IS the protocol adapter. This sprint delivers that or delivers a leaky abstraction with the same signature.",
         "MEASURED, outside the six criteria and deliberately NOT fixed: a client sending `partialResultToken: null` instead of omitting it is streamed to under token null and then receives only the returned array, silently losing every yielded item. Both runtimes; the server does not fail and stdout stays clean. The remedy is one operator, but `null` is a token PRESENT, so treating it as absent invents the second aggregation trigger PBI-4's notes exist to collapse -- and shipping it untested would be an unperturbed branch. PO's call, not the executor's.",
         "EXECUTION DEVIATION, reported not smoothed: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN. One async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token branch, the null branch and the failure branch at the same moment. Their evidence therefore rests entirely on perturbation, which is why every one of them carries two. A plan that splits one dispatch across four subtasks buys sequencing it cannot pay for.",
         "scrum.ts EXCEEDS its 600-line limit (655) with the mandatory perturbation records present. Reported rather than resolved by compacting another section, per the constraint. The obvious remedy is the one sprints 1-4 already used: compact this sprint's subtasks into decisions at Review, where git still retains them.",
@@ -210,8 +244,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in d0f172a, 4a49499, 31f169f, 0cecfec, e5c49cc, fe8f153, f5c612f across 7 subtasks. Per-subtask records compacted here; git retains them.",
-        "PROVEN by an unrequested perturbation: report-without-rethrow reddens the -32603 assertions while the stderr assertions stay GREEN. A stderr-only criterion would have passed while the client silently received null. Conjunctive criteria earn their extra words -- PBI-4 and PBI-5 are written the same way.",
-        "The Scrum Master ran two FAILED reproductions (a regex matching nothing reported 0 failures; a throw inserted in createDocumentStore rather than change reported 46). Under the previous practice the first would have reached the PO as `the advertisement test is vacuous` and drawn a rejection on false evidence. The expected-versus-observed rule caught both at the moment they happened.",
         "MEASURED, and it overturns what the plan would otherwise have assumed: a logger surfaces NOTIFICATION-handler throws only. A request-handler throw becomes a -32603 response with stderr EMPTY whether or not a logger is passed. Since hover is a request, criterion 4's `diagnosable message on stderr` CANNOT be satisfied by passing a logger -- tsudoi must catch, write its own stderr line, and rethrow.",
         "PO checklist item 1 (a real editor attaching) is FEASIBLE and settled at planning: nvim 0.13 attaches headlessly to `bun run src/cli.ts --config examples/tsudoi.config.ts`, reporting serverInfo tsudoi and capabilities { textDocumentSync: { openClose: true, change: 1 } }. It is therefore a live demonstration item this sprint, not a dropped one.",
         "positionAt/offsetAt deliberately NOT added and not taken to the PO yet: PBI-3 gives exactly one call site, and deciding an API from one call site is deciding from noise. Subtask 7 makes that call site real so PBI-4 inherits evidence -- if completion's author writes the same line-splitting again, that is two independent call sites converging and it becomes its own PBI with a measured justification.",
@@ -227,8 +259,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 81ac35e, aa5b588, 1e434c5, 73b2677, e49cbb6, cc44ffe, 6c9b910, 5ce2823 across 7 subtasks. Per-subtask records compacted here; git retains them.",
-        "The mandated perturbation FAILED to work and the cause was measured, not guessed: createProtocolConnection gets no logger, so vscode-jsonrpc falls back to NullLogger and CATCHES a notification-handler throw -- no stderr, no exit-code effect. No live test here distinguishes ignore-by-design from throw-and-swallow. Routed to PBI-3 rather than fixed in place, because a stderr logger belongs to PBI-3 criterion 4.",
-        "stdout purity was BROKEN and only a perturbation found it: a stray write from didOpen failed ZERO tests, because an unanchored Content-Length search reads past stray bytes and frames the next message correctly anyway. Now counted by unframedStdoutBytes; the same perturbation fails 6 tests.",
         'The Japanese test found a latent defect in the TEST helper, not the server: per-chunk chunk.toString("utf8") turns any multi-byte character the pipe splits into U+FFFD. Silent at small payloads, deterministic RED at 360KB under both runtimes.',
         "STANDING, endorsed by the PO from inside the work: anything not perturbed in a sprint is assumed unproven. Two of three new assertion mechanisms here asserted nothing until perturbed.",
         "The mutation API stays off DocumentStore: createDocumentStore() returns { documents, open, change, close }, so `documents` keeps exactly the get/values shape the config sees and the Tsudoi interface is unchanged BY CONSTRUCTION rather than by discipline.",
@@ -272,8 +302,123 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 6,
+    pbi_id: "PBI-5",
+    goal:
+      "Make slow sources safe as well as first-class -- when the client cancels, context.signal aborts and a config author's handler can stop -- so the streaming API built last sprint never leaves abandoned work running.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A (structural) -- BORN GREEN by construction. Perturbation: make cancel(id) send nothing; subtask 2 MUST fail. Without it every cancellation assertion this sprint is measuring an unsent notification.",
+        implementation:
+          "LspSession: expose an in-flight request's id (requestRaw -> { id, settled }) and add cancel(id). The helper owns ids privately today, so no test can target one. Settle every pending promise on teardown -- Sprint 5's killed-child hazard applies directly, since cancellation tests deliberately leave requests outstanding.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Two concurrent requests; cancelling one flips only its fixture's abort marker on stderr, and the other completes normally.",
+        implementation:
+          "In src/methods.ts take the CancellationToken vscode-jsonrpc already supplies and call controller.abort() from token.onCancellationRequested. Delete the 'nobody aborts' comment. Bridge, do not track: registering our own $/cancelRequest handler would race one the library already consumes.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A cancelled hover and a cancelled completion each answer error.code === -32800; a subsequent request of the same method is answered normally.",
+        implementation:
+          "When the request's signal is aborted at settle time, respond RequestCancelled instead of the handler's value. Use the protocol's ErrorCodes.RequestCancelled constant, never a literal.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN -- SHARES ONE IMPLEMENTATION MOMENT with the previous subtask. A fixture never referencing context.signal, cancelled mid-flight, answers -32800 and its returned label appears nowhere on stdout.",
+        implementation:
+          "None expected -- the same suppression branch. PERTURBATION AND WHAT IT DEFENDS: the only perturbation that reddens this (deliver the handler's value whenever it produced one, -32800 only when it produced nothing) ALSO reddens the previous subtask, because that fixture returns a value too. So it defends the SHARED claim (an aborted request's response is replaced), not this headline claim. The headline is defended STRUCTURALLY: the fixture never mentions context.signal, so an implementation that suppressed by asking the handler could not make it pass.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "MIXED -- `no further chunks` and -32800 EXPECTED RED; `the already-sent chunk remains` BORN GREEN (measured: nothing retracts it). Gate after one chunk, cancel, release; assert exactly one $/progress, then -32800, and unframedStdoutBytes === 0.",
+        implementation:
+          "Check the signal before each sendProgress and stop driving the generator once aborted. PERTURBATION: remove the pre-sendProgress check so the post-abort chunk is emitted; the exactly-one-$/progress assertion MUST redden while -32800 stays green.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A fixture throwing once aborted answers -32800 with NO `tsudoi: <method> handler failed:` line on stderr, while the existing non-cancelled throwing fixture still produces one.",
+        implementation:
+          "In the catch path, skip reportHandlerFailure when the signal is aborted; report unchanged otherwise. Assert the stderr PREFIX, never the stack body -- error.stack's first line differs between JSC and V8.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN. Cancel an id never issued and an id already answered; assert no error response, no stderr failure line, and a subsequent request answered normally. Perturbation: add a tsudoi-side registry that looks the id up and throws on a miss; this MUST redden while the bridge and -32800 subtasks stay green. It is also what would catch a regression if anyone later decides to track cancellation ourselves.",
+        implementation: "Expected none -- the library consumes $/cancelRequest itself.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural) -- suite stays green, unchanged.",
+        implementation:
+          "src/methods.ts now carries context construction, the abort bridge, the suppression branch and two distinct handler calls. Extract the per-request cancellation concern into one named place. Keep the hover and completion CALLS separate -- a generator cannot share the call.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "MEASURED before deciding, and it overturned an option: vscode-jsonrpc plumbs $/cancelRequest to a CancellationToken on both runtimes, so tsudoi bridges rather than tracks. But it synthesises no -32800 and lets an ignoring handler's result reach the wire -- both are tsudoi's to build.",
+      "PO caught a green-but-broken shape BEFORE refinement: the original single criterion is satisfied completely by one SHARED AbortController, as long as only one request is in flight. Signal isolation under concurrency and settlement despite an ignoring handler were added as requirements, not suggestions.",
+      "Explicit === undefined comparisons throughout: 0 and \\"\\" are falsy but valid, so a check written as `if (!requestId)` would mishandle id 0. PBI-10 exists to fix that class; this sprint must not add new instances of it.",
+      "PO checklist, per-sprint additions (standing list applies unchanged): (1) abort proven by TRANSITION not state -- aborted === false while running, then cancel, then true; asserting only the final state passes if the signal aborted for any unrelated reason; (2) signal isolation under concurrency, the discriminator a shared controller fails; (3) cancellation mid-stream stops further $/progress, which is where the value actually lands since it is PBI-4's work cancellation exists to bound; (4) the response shape a cancelled request produces is PINNED by a test -- the PO does not choose the mechanism, only that it cannot be left implicit and drift; (5) two labelled perturbations -- unwire the cancel registration and name the test that reddens, and abort every signal unconditionally and confirm the isolation test reddens.",
+    ],
+  },
   retrospectives: [
+    {
+      sprint: 5,
+      improvements: [
+        {
+          action:
+            "A plan must declare which subtasks share ONE IMPLEMENTATION MOMENT. Within such a group only the first can claim expected-RED; the rest are born-green-by-construction and carry perturbations, however distinct their criteria are.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Sprint 5's subtasks 5-7 were planned expected-RED and came out born green: one async generator cannot be dispatched twice. `Do not split a single dispatch` is the WRONG lesson -- the split is what produced six independently perturbable criteria. The plan simply bought sequencing it could not have.",
+        },
+        {
+          action:
+            "A helper that terminates a subprocess must settle every promise it owns before the process dies. Cross-test misattribution is a suite-integrity failure, not a single-test bug.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Fixed in Sprint 5; recorded so the shape is recognisable if PBI-9's helper work recurs it.",
+        },
+        {
+          action:
+            "Standing-list amendment (item 6 above): the stakeholder-facing example is the artifact under test with no fixture copy in existence. It is why the example cannot rot without the suite going red, and why Sprint 4's hover demo could be the stakeholder's own file, unmodified.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Today it survives only because test/lifecycle.test.ts happens to load that file; nothing stops a duplicate fixture appearing. Sprint 5 covered it by the Developer's initiative, not by structure.",
+        },
+      ],
+    },
     {
       sprint: 4,
       improvements: [
@@ -287,7 +432,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "The PO's Review checklist splits into a STANDING list, recorded here once and reported against at EVERY Review, plus a short per-sprint list of what is genuinely new. Standing list: (1) driven over stdio through the real server, not against directly-constructed internals; (2) stdout carries only protocol, with non-protocol bytes COUNTED rather than eyeballed; (3) non-ASCII payloads on any new user-visible path, permanent in the suite; (4) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (5) both runtimes, and the Definition of Done at HEAD. Moving an item to the standing list removes it from the PO's authoring, NEVER from the Scrum Master's reporting -- if a standing item stops being reported, we have traded verification for convenience.",
+            "The PO's Review checklist splits into a STANDING list, recorded here once and reported against at EVERY Review, plus a short per-sprint list of what is genuinely new. Standing list: (1) driven over stdio through the real server, not against directly-constructed internals; (2) stdout carries only protocol, with non-protocol bytes COUNTED rather than eyeballed; (3) non-ASCII payloads on any new user-visible path, permanent in the suite; (4) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (5) both runtimes, and the Definition of Done at HEAD; (6) the stakeholder-facing example examples/tsudoi.config.ts is the ARTIFACT UNDER TEST, with no fixture copy of it in existence -- a PRODUCT property rather than a test property, which is why it belongs here rather than being rediscovered. Moving an item to the standing list removes it from the PO's authoring, NEVER from the Scrum Master's reporting -- if a standing item stops being reported, we have traded verification for convenience.",
           timing: "immediate",
           status: "active",
           outcome:
