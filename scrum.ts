@@ -356,9 +356,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "Drop notifications once shut down, silently -- the same principle as PBI-2's unopened URI, which changes nothing observable and so stays silent.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "63a87e4",
+            message: "refactor(test): share the snapshot reader between test files",
+            phase: "refactoring",
+          },
+          {
+            hash: "adc95ef",
+            message: "feat(lifecycle): drop a notification that arrives outside the serving window",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "SPLIT INTO TWO TESTS rather than the planned one, so each perturbation flips exactly one sub-claim: bundled, whichever assertion ran first would mask the other. `zero stderr` came out BORN GREEN as planned; the absence half is measured by tsudoiLines(), the SAME function the paired positive control uses on a session whose didOpen handler really throws.",
+          "PERTURBATIONS. (a) post-shutdown drop removed -> flips the document-absent test ONLY; the silence test stayed green. (b) the dropped notification logged -> flips `tsudoiLines(quiet) === []` while document-absent stayed GREEN, so the zero-stderr half counts. (c) pre-initialize drop removed -> flips the pre-initialize test ONLY.",
+          "SEVENTH NAMED TARGET, beyond the PO's six: pre-initialize notification dropping is LSP behaviour with no acceptance criterion, so it got its own permanent test and its own perturbation (c) rather than shipping unproven. It is also what makes subtask 1's exit carve-out load-bearing.",
+        ],
       },
       {
         test: "EXPECTED RED. A completion with partialResultToken: null produces ONE aggregated response containing every yielded item plus the returned items, and ZERO $/progress -- with the paired positive control that the same counter records progress in a valid-token session.",
