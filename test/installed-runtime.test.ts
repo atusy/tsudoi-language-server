@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
@@ -92,7 +93,10 @@ for (const [runtime, command] of Object.entries(route)) {
   test(`${runtime} completes the handshake against the installed copy`, async () => {
     const started = await start(command);
 
-    expect(started.result?.serverInfo?.name).toBe("tsudoi");
+    // Falls back to stderr rather than to undefined so a server that never
+    // started reports WHY on the assertion line, instead of leaving a reader
+    // to rerun it by hand to find out.
+    expect(started.result?.serverInfo?.name ?? started.stderr).toBe("tsudoi");
     // Counted, not eyeballed: one stray byte on stdout desyncs a real editor.
     expect(started.unframedStdoutBytes).toBe(0);
   });
@@ -163,6 +167,55 @@ for (const [runtime, command] of Object.entries(route)) {
     expect(result.stdout).toBe("");
   });
 }
+
+/**
+ * Criterion 3's other half: the packaged CLI is PRODUCED BY THE BUILD, not
+ * committed. The hazard a build step introduces is not the step, it is a stale
+ * artifact passing while the source has moved.
+ *
+ * The plan's perturbation was `change a source file, do not rebuild, and this
+ * must redden`. It cannot be run: there is no rebuild step to skip. `bun pm
+ * pack` runs prepack before it collects files (MEASURED -- so does `npm
+ * pack`), dist/ is gitignored and never committed, and installConsumer stages
+ * a fresh temp directory per call, so the tarball's dist/ can only ever be
+ * this compilation of these sources. A stale build is unrepresentable rather
+ * than discouraged, and this test is the observable form of that: a change
+ * made to the sources with no build command anywhere reaches the installed
+ * consumer's behaviour.
+ *
+ * The assertion it defends by flipping is `<runtime> completes the handshake
+ * against the installed copy`, which asserts the name `tsudoi` that this one
+ * changes.
+ */
+test("a change to src/ reaches the installed copy with no rebuild step", async () => {
+  const perturbed = await installConsumer({
+    editSource: (srcDir) => {
+      const server = join(srcDir, "server.ts");
+      const source = readFileSync(server, "utf8");
+      const renamed = source.replace(
+        'serverInfo: { name: "tsudoi" }',
+        'serverInfo: { name: "見" }',
+      );
+      // A replace that silently matched nothing would leave this test asserting
+      // the unperturbed name and passing for the wrong reason.
+      expect(renamed).not.toBe(source);
+      writeFileSync(server, renamed);
+    },
+  });
+  try {
+    perturbed.write("tsudoi.config.ts", exampleConfig);
+    const session = LspSession.startCommand(route.deno, perturbed.dir);
+    try {
+      const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+      expect(result.serverInfo?.name).toBe("見");
+    } finally {
+      session.dispose();
+    }
+  } finally {
+    perturbed.dispose();
+  }
+});
 
 /**
  * PBI-13 criterion 1's NEGATIVE CONTROL, kept as a permanent test rather than
