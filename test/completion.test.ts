@@ -22,11 +22,13 @@ import {
   returnedItems as gateReturned,
 } from "./fixtures/completion-gate.ts";
 import { partialChunk } from "./fixtures/completion-null-after-yield.ts";
+import { recoveredItems, sentBeforeThrow, throwMessage } from "./fixtures/completion-throws.ts";
 
 const completionChunks = fixture("completion-chunks.ts");
 const completionGate = fixture("completion-gate.ts");
 const nullAfterYield = fixture("completion-null-after-yield.ts");
 const nullOnly = fixture("completion-null-only.ts");
+const completionThrows = fixture("completion-throws.ts");
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 // Supplies hover and NOT completion: a stronger negative than an empty
 // `methods`, because a server advertising from `methods` being non-empty
@@ -266,6 +268,54 @@ for (const runtime of runtimes) {
           },
         ]);
         expect(session.progressCount).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    test("a completion handler that throws after yielding keeps the chunk it already sent", async () => {
+      const session = LspSession.start(runtime, completionThrows);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        // -32603 InternalError: the client learns this request failed, which a
+        // plausible [] would have hidden from it entirely.
+        const error = await session.requestError(
+          "textDocument/completion",
+          completionParams(partialResultToken),
+        );
+        expect(error.code).toBe(-32603);
+
+        // The chunk was already on the wire, and nothing retracts what has been
+        // written. `arrived and stayed` and `never arrived` are the same
+        // silence unless the content AND the order against the failure are
+        // asserted -- cleaning up by not emitting chunks on failure is a
+        // plausible thing to do deliberately, and it would lose this.
+        expect(session.arrivals).toEqual([
+          { kind: "response", id: 1 },
+          { kind: "progress", token: partialResultToken, value: sentBeforeThrow },
+          { kind: "response", id: 2 },
+        ]);
+
+        // The PREFIX only: error.stack's first line differs between JSC and V8.
+        expect(session.stderr).toContain("tsudoi: textDocument/completion handler failed:");
+        expect(session.stderr).toContain(throwMessage);
+
+        // The handler fails once only, so this is `answered normally` as an
+        // observation rather than as an absence of catastrophe.
+        const second = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(partialResultToken),
+        );
+        expect(second).toEqual(recoveredItems);
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+
+        // The diagnosis went to stderr and stayed there.
+        expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
       }
