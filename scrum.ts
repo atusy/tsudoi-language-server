@@ -253,9 +253,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "The sweep's real function is to prove THE ENVIRONMENT IS BARE: an omitted step that still succeeds means something other than the documented command is supplying it, which makes the intact run's pass a test of the harness rather than evidence. The property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`; N pack-and-install cycles is ONE mechanism, and a cheaper one establishing the same property is the Developer's to take.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "95fd3dd",
+            message: "test(readme): sweep every documented step's omission",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN BY CONSTRUCTION, not expected-RED: subtasks 2 and 3 share ONE implementation moment (runQuickstart), so only the first could claim RED. Sprint 5's rule, applied without being reminded of it.",
+          "SWEEP RESULT PER STEP, each failing for its OWN reason rather than one generic failure. omit `bun pm pack --filename tsudoi.tgz` -> install has no tarball to resolve, start reports `Module not found dist/cli.js`. omit `bun install ../tsudoi-language-server/tsudoi.tgz` -> same symptom from the other cause, node_modules never exists. omit `write tsudoi.config.ts` -> `tsudoi: failed to load config ...` and exit 1. omit the start command -> `no step started a server`.",
+          "THE CHEAPER MECHANISM the PO left open was taken, and it was not fewer cycles: it is that `bun install <tarball>` needs no package.json and `bun pm pack --filename` needs no version-dependent name, which cuts the documented sequence to four steps. MEASURED cost of a full cycle: pack 0.05s, install 0.16s -- five fresh stages run in 0.47s, so sharing a stage would have bought nothing and cost the omit-pack iteration its meaning.",
+          "The last step's omission is DEGENERATE-LOOKING and kept deliberately: it is the strongest bareness assertion here, since anything other than the documented command starting a server would show up exactly there.",
+        ],
       },
       {
         test: "EXPECTED RED. The flags extracted from README.md equal what the suite actually spawns. TWO PERTURBATIONS, BOTH REQUIRED: narrow the README's flags alone -> must redden; narrow denoRuntime.runArgs alone -> must redden. A one-sided test passes when both drift TOGETHER, which is the failure this criterion exists to catch.",
