@@ -67,3 +67,14 @@ test("a config whose default export is not a function exits 1 saying so, with no
   expect(result.stderr).toContain("not a function");
   expect(result.stdout).toBe("");
 });
+
+test("a config whose factory rejects exits 1 reporting the reason, with no stdout", async () => {
+  const path = fixture("factory-rejects.ts");
+
+  const result = await runCli(["--config", path]);
+
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain(path);
+  expect(result.stderr).toContain("the factory rejects");
+  expect(result.stdout).toBe("");
+});

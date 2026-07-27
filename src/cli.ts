@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { createTsudoi } from "./tsudoi.ts";
+import type { TsudoiConfig, TsudoiConfigFactory } from "./types.ts";
 
 // Setting exitCode rather than calling process.exit lets the stderr pipe drain;
 // process.exit can truncate it. Nothing holds the event loop open yet.
@@ -25,12 +27,19 @@ if (configPath === undefined) {
     fail(`failed to load config ${absolutePath}\n  ${String(cause)}`);
   }
 
+  let config: TsudoiConfig | undefined;
   if (module !== undefined) {
     const factory = module.default;
     if (factory === undefined) {
       fail(`config ${absolutePath} has no default export`);
     } else if (typeof factory !== "function") {
       fail(`the default export of config ${absolutePath} is not a function`);
+    } else {
+      try {
+        config = await (factory as TsudoiConfigFactory)(createTsudoi());
+      } catch (cause) {
+        fail(`the config factory in ${absolutePath} failed\n  ${String(cause)}`);
+      }
     }
   }
 }
