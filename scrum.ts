@@ -249,8 +249,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "test/helpers/spawn.ts wrapping node:child_process; src/cli.ts (AC pins this exact path) reading process.argv from node:process. Never use import.meta.dir, which is Bun-only -- use fileURLToPath(new URL(..., import.meta.url)). First test file, so this also closes the `bun test` exits-1-on-zero-matches gap.",
         type: "behavioral",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "70fdd38", message: "feat: require --config", phase: "green" }],
         notes: [],
       },
       {
