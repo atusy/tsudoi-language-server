@@ -82,49 +82,87 @@ async function start(command: string): Promise<Started> {
   }
 }
 
-// PBI-13 criterion 1, and the sprint's headline: a deno user who obtained
-// tsudoi the stated way gets a server that starts. Nothing in the checkout can
-// stand in for this -- sprint 9's finding was that everything green in a
-// checkout stayed green when the installed route was broken.
-test("deno completes the handshake against the installed copy", async () => {
-  const started = await start(route.deno);
+// PBI-13 criteria 1 AND 2, parameterised rather than written twice: the
+// property under test is that ONE artifact and ONE install serve both
+// runtimes, and two hand-written tests could drift into two different routes
+// without either failing. Nothing in the checkout can stand in for these --
+// sprint 9's finding was that everything green in a checkout stayed green
+// while the installed route was broken.
+for (const [runtime, command] of Object.entries(route)) {
+  test(`${runtime} completes the handshake against the installed copy`, async () => {
+    const started = await start(command);
 
-  expect(started.result?.serverInfo?.name).toBe("tsudoi");
-  // Counted, not eyeballed: one stray byte on stdout desyncs a real editor.
-  expect(started.unframedStdoutBytes).toBe(0);
-});
+    expect(started.result?.serverInfo?.name).toBe("tsudoi");
+    // Counted, not eyeballed: one stray byte on stdout desyncs a real editor.
+    expect(started.unframedStdoutBytes).toBe(0);
+  });
 
-// Non-ASCII over the newly reachable path, permanently. The example answers
-// hover in Japanese, so this also proves the installed server does not merely
-// start: it loads the user's config and runs their handler, with multi-byte
-// text surviving the pipe in both directions.
-test("deno serves the example's Japanese hover from the installed copy", async () => {
-  const session = LspSession.startCommand(route.deno, consumer.dir);
-  try {
-    await session.request<InitializeResult>("initialize", initializeParams);
-    session.notify("textDocument/didOpen", {
-      textDocument: {
-        uri: "file:///こんにちは.txt",
-        languageId: "plaintext",
-        version: 1,
-        text: "こんにちは 世界",
-      },
-    });
+  // Non-ASCII over the newly reachable path, permanently. The example answers
+  // hover in Japanese, so this also proves the installed server does not merely
+  // start: it loads the config author's own file and runs their handler, with
+  // multi-byte text surviving the pipe in both directions.
+  test(`${runtime} serves the example's Japanese hover from the installed copy`, async () => {
+    const session = LspSession.startCommand(command, consumer.dir);
+    try {
+      await session.request<InitializeResult>("initialize", initializeParams);
+      session.notify("textDocument/didOpen", {
+        textDocument: {
+          uri: "file:///こんにちは.txt",
+          languageId: "plaintext",
+          version: 1,
+          text: "こんにちは 世界",
+        },
+      });
 
-    const hover = await session.request<Hover | null>("textDocument/hover", {
-      textDocument: { uri: "file:///こんにちは.txt" },
-      position: { line: 0, character: 1 },
-    });
+      const hover = await session.request<Hover | null>("textDocument/hover", {
+        textDocument: { uri: "file:///こんにちは.txt" },
+        position: { line: 0, character: 1 },
+      });
 
-    expect(hover?.contents).toEqual({
-      kind: "markdown",
-      value: "**こんにちは** はカーソル位置の語です。",
-    });
-    expect(session.unframedStdoutBytes).toBe(0);
-  } finally {
-    session.dispose();
-  }
-});
+      expect(hover?.contents).toEqual({
+        kind: "markdown",
+        value: "**こんにちは** はカーソル位置の語です。",
+      });
+      expect(session.unframedStdoutBytes).toBe(0);
+    } finally {
+      session.dispose();
+    }
+  });
+
+  // The FAILURE half of `checkout and installed do not diverge`. A handshake
+  // proves the happy path; PBI-1's contract -- exit 1, a tsudoi:-prefixed
+  // reason on stderr, zero bytes on stdout -- is what an editor sees when the
+  // config author gets it wrong, and until now it was only ever asserted
+  // against a checkout. The run command is DERIVED from the stated route so a
+  // failure case cannot quietly test a different entry point.
+  const runCommandOnly = command.split(" --config ")[0] ?? command;
+
+  test(`${runtime} reports a missing --config from the installed copy`, async () => {
+    const result = await runCommand(runCommandOnly, consumer.dir);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("tsudoi: --config <path> is required");
+    expect(result.stdout).toBe("");
+  });
+
+  // The config author's OWN file failing, imported by the installed CLI. This
+  // is the mechanism JSR flagged as an unanalyzable dynamic import: the
+  // installed .js reaching out to a .ts the user wrote, outside node_modules
+  // where deno will strip types happily.
+  test(`${runtime} reports a config with no default export from the installed copy`, async () => {
+    consumer.write("broken.config.ts", "export const notDefault = 1;\n");
+
+    const result = await runCommand(runCommandOnly, consumer.dir, [
+      "--config",
+      "./broken.config.ts",
+    ]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("has no default export");
+    expect(result.stderr).toContain("broken.config.ts");
+    expect(result.stdout).toBe("");
+  });
+}
 
 /**
  * PBI-13 criterion 1's NEGATIVE CONTROL, kept as a permanent test rather than
