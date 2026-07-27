@@ -303,9 +303,17 @@ const scrum: ScrumDashboard = {
         test: "BORN GREEN. After a successful initialize, an unregistered method is answered -32601 and a subsequent hover is answered normally. PERTURBATION: make the gate answer -32002 for any method tsudoi did not register; this MUST redden to -32002 while the pre-initialize subtask stays green. Nothing asserts -32601 today, so this regression is currently invisible.",
         implementation: "None -- vscode-jsonrpc already does this.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "8e71fcc",
+            message: "test(protocol): pin -32601 for an unregistered method after initialize",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "Born green as planned. PERTURBATION (star request handler throwing ServerNotInitialized) flipped `error.code === -32601` to -32002 on both runtimes and NOTHING ELSE in the 105-test suite -- so every registered handler still wins over the star handler, which is the follow-on-hover half.",
+        ],
       },
       {
         test: "EXPECTED RED. hover before initialize answers -32002; initialize then still succeeds and hover works.",
