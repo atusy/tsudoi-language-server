@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { japaneseFailure } from "./fixtures/factory-rejects-japanese.ts";
 import { bunRuntime, denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture, runCli } from "./helpers/spawn.ts";
@@ -87,6 +88,32 @@ for (const runtime of runtimes) {
       expect(result.stderr).toContain(path);
       expect(result.stderr).toContain("the factory rejects");
       expect(result.stdout).toBe("");
+    });
+
+    // The eighth case, and the one the other seven cannot make: every message
+    // above is ASCII, so a reader that decodes each pipe chunk on its own gets
+    // them all right. EXACT EQUALITY over the whole stream, not toContain: a
+    // decode that mangles a split character produces U+FFFD in the middle of a
+    // message that still contains every substring one might think to look for.
+    test("a config failure message in Japanese survives the pipe byte-exact", async () => {
+      const path = fixture("factory-rejects-japanese.ts");
+
+      const result = await runCli(runtime, ["--config", path]);
+
+      expect(result.code).toBe(1);
+      expect(result.stderr).toBe(
+        `tsudoi: the config factory in ${path} failed\n  Error: ${japaneseFailure}\n`,
+      );
+      expect(result.stdout).toBe("");
+      // The equality above is only evidence if a character REALLY WAS split
+      // across two chunks on this run, and that was MEASURED to vary: at 360KB
+      // the same payload straddled under bun every time and under deno most
+      // times, so a test that merely hoped would have been intermittently
+      // vacuous rather than wrong. This says the run just performed was the
+      // hard case -- decoding these very chunks one at a time would have
+      // produced something else -- and it fails loudly if the payload is ever
+      // shrunk below a pipe chunk.
+      expect(result.stderrPerChunk).not.toBe(result.stderr);
     });
   });
 }
