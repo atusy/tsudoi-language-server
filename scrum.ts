@@ -356,8 +356,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extract the try/catch-rethrow plus stderr reporting out of the hover registration into a small named helper taking method name, context and handler. PBI-4's completion dispatch needs exactly this. Extracting at one caller is justified only because criterion 4 already fixes the shape -- do not generalise: no method registry, no derivation framework.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "fe8f153",
+            message: "refactor(server): name the failure path",
+            phase: "refactoring",
+          },
+        ],
         notes: [],
       },
       {
