@@ -68,6 +68,7 @@ const scrum: ScrumDashboard = {
         "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
         "Documents the failure CONTRACT -- exit 1, a tsudoi:-prefixed reason on stderr, zero bytes on stdout -- NOT the seven-case taxonomy. The contract is stable and unguessable; the catalogue is neither, and all three contract facts are already pinned by PBI-1's criteria in ASCII, so no PBI-9 work is a prerequisite. The fourth criterion breaks THE DOCUMENTED CONFIG ITSELF rather than shipping a second broken example that could drift.",
         "Deliberately does NOT claim a config author's own error message passes through verbatim. It does today -- the CLI writes stderr directly and nothing in src/ decodes it -- but it cannot be asserted for non-ASCII until PBI-9 fixes spawn.ts. Documenting a claim we cannot pin is the thing refused all project, applied here against a claim the PO would like to make.",
+        "If the README documents the cleanup guarantee it must claim that TSUDOI CLOSES THE GENERATOR, not that the author's cleanup COMPLETES. That is precisely the overclaim dropping PBI-12 would otherwise licence, and PBI-8 is the last chance to record it before the backlog ends.",
         "OPEN IMPEDIMENT, waiting_human: the route's FIRST line -- how a user OBTAINS the package -- is verified for `install ./tarball` only. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package never published, and publishing needs an account and is irreversible. The README must not claim the registry route until that is unblocked.",
         "RISK the post-publication check must look for, and NOT `npm will do npm things`: `install ./tarball` and `deno add npm:` are DIFFERENT MECHANISMS -- the first populates node_modules, the second can resolve through Deno's OWN npm cache depending on whether the consumer has a package.json. Sprint 9 established Deno demands the dependency from node_modules, so the unverified first line could produce an on-disk shape the verified second line does not assume.",
         "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
@@ -109,6 +110,17 @@ const scrum: ScrumDashboard = {
             "Arrivals assertions defend ordering and content without pinning message shape",
           verification:
             "BOTH halves, or the rewrite only weakens the suite: injecting an extra window/logMessage-shaped notification must still PASS, and a genuinely wrong ordering must still FAIL",
+        },
+        {
+          criterion: "Shape assertions require what is promised, not what happens to be there",
+          verification:
+            "package-shape.test.ts requires prepack present with the right value rather than scripts equalling exactly {prepack}. BOTH halves: adding an unrelated script must still PASS, and changing prepack's command must still FAIL",
+        },
+        {
+          criterion:
+            "The compiler that builds the published artifact is pinned by the repo, not by the machine",
+          verification:
+            "typescript resolves from the repo's own dependencies at a version the repo declares, and prepack uses that resolution. NEGATIVE CONTROL: removing the declaration reddens an assertion EVEN THOUGH an ambient tsc on PATH would still produce a working build",
         },
       ],
       status: "ready",
@@ -167,13 +179,6 @@ const scrum: ScrumDashboard = {
         },
       ],
       decisions: [
-        "THE skipLibCheck TRAP -- the sprint's real catch, found by the Developer against their own plan: the planned exclude-dist perturbation pair would have been VACUOUS, because skipLibCheck suppresses TYPE errors inside a .d.ts even when the file is in the program, so both halves exited 0. A SYNTAX error discriminates. Related: the exclude's exit code alone never notices -- --listFiles shows 8 emitted files entering the program without it.",
-        "SPIKE MEASURED (tsc 7.0.2), and it found more than the plan stated: repointing exports at dist/types.d.ts with NO dist breaks in-repo self-reference at examples/tsudoi.config.ts AND at test/fixtures/published-specifier.ts -- the second file was not named in the risk. The remedy rests on tsc FALLING THROUGH a condition whose target file does not exist. Adopted a THREE-arm map (types -> dist/types.d.ts, import -> dist/types.js, default -> src/types.ts): the two-arm form leaves default dangling in a tarball shipping dist/ alone. Shipping src/ alongside dist/ was measured and REJECTED -- with no .ts under node_modules the foot-gun is unrepresentable, not merely discouraged.",
-        "TWO PLANNED PERTURBATIONS COULD NOT BE RUN, and that IS the finding: `change a source file, do not rebuild` has NO REBUILD STEP TO SKIP -- prepack builds inside the packer, dist/ is gitignored, each consumer stages a fresh temp dir. The runnable substitute asserts a rename in src/ reaching the installed server's InitializeResult, and guards its own perturbation so a replace matching nothing cannot pass.",
-        "bin was NOT added, against the plan, and the measurements show it was NOT BLOCKED: a node shebang survives emit, all four DoD checks stay 0, and node 24.18.0 runs the emitted file. Refused because a bin is reached through a shim obeying the shebang, and NEITHER VERIFIED RUNTIME reaches a package that way -- deno ignores node_modules/.bin entirely, and the stated route is one file path both runtimes take identically. A node shebang would be a third runtime's claim nothing here tests.",
-        "prepack FIRES -- measured, previously unverified: bun pm pack AND npm pack both run it before collecting files and both ship what it emitted.",
-        "REMEDY CHOSEN ON EVIDENCE, not preference: compiled .js + .d.ts via rewriteRelativeImportExtensions, measured starting under BOTH runtimes from node_modules with tsc passing in the consumer. JSR was measured too and declined -- it flags the config loader's dynamic import as unanalyzable, requires a deno.json, and its Bun half cannot be verified without an irreversible publish needing an account.",
-        "package.json's //exports currently asserts that an installed copy cannot run under Deno and that main/bin belong elsewhere. THIS SPRINT MAKES BOTH FALSE, in a durable home -- the note-4 failure one layer deeper, and harder to catch because nothing compacts it away. It must be updated or superseded.",
         "PO checklist, per-sprint additions: (1) the route stated as EXACT COMMANDS a reader could follow without reading test code -- a route only a test knows is not a route a user can take; (2) if the remedy introduces a build, the artifact under test is PRODUCED FROM CURRENT SOURCE AT TEST TIME, perturbed by changing a source file without rebuilding -- the hazard of a build step is not the step, it is a stale artifact passing while the source has moved; (3) checkout and installed proven NOT TO DIVERGE, asserting the handshake AND a config-failure case against the INSTALLED copy under both runtimes rather than inferring from the checkout, since Sprint 9's headline finding was exactly that nothing tested the installed consumer; (4) if the remedy is a second registry, both routes stated and both verified; (5) package.json's //exports updated or superseded.",
       ],
     },
@@ -223,7 +228,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in 7b6e133, 5cba2c2, 7481a22, 26e12a9, 81983b0, 7327cf7, 5913ad9, 25302fc across 8 subtasks, plus a85ba96 and 71afcbb closing gaps. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
         "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
       ],
     },
@@ -243,9 +247,7 @@ const scrum: ScrumDashboard = {
       status: "done",
       subtasks: [],
       impediments: [],
-      decisions: [
-        "Shipped in d0f172a, 4a49499, 31f169f, 0cecfec, e5c49cc, fe8f153, f5c612f across 7 subtasks. Per-subtask records compacted here; git retains them.",
-      ],
+      decisions: [],
     },
     {
       number: 3,
@@ -255,7 +257,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in 81ac35e, aa5b588, 1e434c5, 73b2677, e49cbb6, cc44ffe, 6c9b910, 5ce2823 across 7 subtasks. Per-subtask records compacted here; git retains them.",
         'The Japanese test found a latent defect in the TEST helper, not the server: per-chunk chunk.toString("utf8") turns any multi-byte character the pipe splits into U+FFFD. Silent at small payloads, deterministic RED at 360KB under both runtimes.',
       ],
     },
@@ -267,7 +268,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in 706c0d0, 1cd4137, 3ee8eed, e05e45d, d1687f1 across 4 subtasks. Per-subtask records compacted here; git retains them.",
         "PO invariant, settled at planning rather than Review: the guard's tests must be automated AND all four DoD checks must still exit 0 at HEAD with them present. Committed violation fixtures would make oxlint exit 1; the temp-dir probe harness is what reconciles this.",
       ],
     },
@@ -279,7 +279,6 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in eb92147..f5f76a0 across 15 TDD subtasks, plus 4d553af (Review-driven fix) and 45c00ba (retrospective action). Per-subtask records compacted here; git retains them.",
         "No deno.json, deliberately -- Deno 2 auto-detects package.json + node_modules, and adding one can flip npm resolution to the global cache and silently break the cross-runtime criterion.",
       ],
     },
@@ -294,7 +293,109 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 11,
+    pbi_id: "PBI-9",
+    goal: "Make a green run mean exactly what we claim -- no less, by pinning what only hands have checked; no more, by unpinning what nobody promised.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A (structural). Suite stays green.",
+        implementation:
+          "BINDING PRE-STEP, first and non-negotiable: before the shutdown-pacing criterion is dropped, move its ruling -- that the pipelined-exit half is DELIBERATELY undefended -- into a comment at exitCode() in src/lifecycle.ts, where someone would otherwise `fix` it. The comment says WHY NOT, not what: spec-defensible, deliberately not defended, symptom would be an editor hanging on shutdown. The criterion is that ruling's only home until this lands, and it is deleted this sprint.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural). Suite stays green.",
+        implementation:
+          "Record the dropped PBI-12 finding at src/methods.ts where the IteratorResult is discarded, carrying THREE things: the MEASUREMENT (both runtimes, chunks.return(null) resolves {value, done:false}), the CONSEQUENCE (the generator stays suspended inside its own finally and the rest of that cleanup never runs), and THE REASON IT IS NOT HANDLED (language semantics -- for await...of does the same -- deliberately not compensated). Without the measurement it becomes an unlabelled note read as reasoned.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED, but only if sized correctly: a config failure whose message is Japanese round-trips BYTE-EXACT through runCli. The payload MUST straddle a chunk boundary deterministically -- a short Japanese string arrives in one chunk and the test is BORN GREEN BY ACCIDENT. Size it past the pipe buffer and assert exact equality so the control reddens by assertion rather than by luck.",
+        implementation:
+          "Replace per-chunk chunk.toString('utf8') in spawn.ts with buffered concatenation decoded once, or a TextDecoder with { stream: true }.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED for the deno half, which has never executed. All seven config-failure cases assert exit 1, tsudoi:-prefixed stderr and 0-byte stdout under bun AND deno.",
+        implementation:
+          "Give runCli the Runtime parameter LspSession.start has had since Sprint 1. This is the original seven-sprint-old item.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED -- nothing asserts this today. A multi-byte payload asserts the Content-Length header equals Buffer.byteLength, not string length. It MUST fail BY ASSERTION, never by timeout: a length mismatch manifesting as a hang is a test whose failure mode depends on OS pipe sizing.",
+        implementation: "None expected beyond the assertion.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN -- .oxlintrc.json is already default-deny, so examples/ is COVERED BY THE CONFIG and merely unasserted. One shared path-shape list drives the Bun-global, bun:* and import/extensions tests alike across src/, **/*.test.ts, test/helpers/, test/fixtures/ and examples/. PERTURBATION (already in the criterion's verification): add examples/** to the oxlint overrides; the examples shape MUST redden while src/ stays green.",
+        implementation:
+          "Extract the list and drive all three rules from it, removing the divergence where import/extensions was pinned at three paths while the Bun rules were pinned at others.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A request issued to an already-dead session REJECTS NAMING THE EXIT rather than hanging; a failed stdin write surfaces rather than vanishing. Give the test an explicit timeout -- the negative control (restoring the close-only flush) makes the first HANG, which is the Sprint 6 misattribution shape, so a hang must fail as a timeout attributable to THIS test and never as a stall poisoning the next one.",
+        implementation: "Settle pending promises on every terminal path, not only close.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "MIXED -- BOTH HALVES, ONE CRITERION. Injecting a window/logMessage-shaped notification must still PASS (expected RED today: over-pinned assertions reject an unexpected notification). A genuinely wrong ordering must still FAIL (born green -- this is the POSITIVE CONTROL that stops the criterion being passed by deleting assertions). PERTURBATION for the born-green half: delete the ordering assertions entirely; the wrong-ordering half MUST redden -- if it does not, the loosening removed the guarantee rather than the over-pinning.",
+        implementation:
+          "Loosen the arrivals assertions to filter for the messages under test rather than pinning the full arrival sequence.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "MIXED -- added-script half EXPECTED RED, changed-command half BORN GREEN with the same delete-the-assertion perturbation. An unrelated script added alongside prepack still PASSES; a changed prepack command still FAILS.",
+        implementation:
+          "package-shape.test.ts requires prepack present with the right value rather than scripts equalling exactly {prepack}.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. typescript resolves from the repo's own dependencies at a declared version and prepack uses that resolution. NEGATIVE CONTROL, REPAIRED BY THE PO: removing the declaration must redden an assertion EVEN THOUGH an ambient tsc on PATH would still produce a working build -- otherwise the test never distinguishes the pinned compiler from whatever happened to be installed.",
+        implementation:
+          "Add typescript to devDependencies at the version currently building the artifact; assert the property in package-shape.test.ts, whose reason lives in the test because package.json cannot carry comments.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "TWO CRITERIA WERE HANDED BACK RATHER THAN SMUGGLED IN: the Developer found that notes routed to PBI-9 at Sprint 10 Review described work NO criterion covered, and refused to build it. The PO took both, stating this is NOT their Review-time refusal -- that exists to stop goalposts moving on work already DELIVERED, and no work is delivered at Planning, with Sprint 6's PBI-5 criteria as precedent.",
+      "THE PO REPAIRED A VACUOUS NEGATIVE CONTROL IN THE DEVELOPER'S OWN PROPOSAL: `removing the devDependency reddens an assertion` does not hold if tsc remains on PATH -- prepack still builds and any `run prepack, it works` test passes with the ambient compiler. That is the exact vacuous-perturbation shape the Developer caught in themselves last sprint, reappearing in their proposal. Criterion 7 is also worded around the PROPERTY rather than a package.json key, or it would become an instance of what criterion 6 removes.",
+      "PBI-12 IS DROPPED ON CULPABILITY, NOT DEFECT -- and the PO put on record that the criterion binds, to avoid softening it to justify the outcome. Every item promoted to a fix was tsudoi doing something wrong; a yield inside a finally suspends a return completion BY SPECIFICATION, and for await...of behaves identically. tsudoi calls .return() correctly and the author's own cleanup defers itself. The silent-is-the-disqualifier rule was built on cases where we were the cause.",
+      "PO checklist, per-sprint additions: (1) criterion 5 demonstrated as a MATCHED PAIR against the same rewritten test, reported together -- the FAIL half proves the test still asserts something, the PASS half proves it no longer over-pins, and either alone is satisfiable by a test that asserts nothing; (2) EVERY REMOVED ASSERTION NAMED with what it defended and where that defence now lives, or that it defended nothing -- the compaction rule applied to test code, and counting assertions would be a weak proxy where naming them is not; (3) the src/lifecycle.ts relocation verified BY CONTENT AND BY COMMIT ORDER, landing before or with the criterion's drop and carrying the reasoning rather than a pointer.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 11,
