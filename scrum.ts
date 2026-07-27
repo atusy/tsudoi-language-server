@@ -310,8 +310,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Build capabilities in startServer from config.methods?.['textDocument/hover'] !== undefined. Per-method and explicit, NOT a derivation framework. Widen test/lifecycle.test.ts's assertion a third time rather than deleting it: it drives examples/tsudoi.config.ts, which HAS a hover handler, so it moves to the wider shape while the new no-hover fixture carries the narrower one.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          { hash: "4a49499", message: "feat(server): advertise hoverProvider", phase: "green" },
+        ],
         notes: [],
       },
       {
