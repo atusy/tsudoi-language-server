@@ -234,9 +234,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Whatever the README's commands require to be runnable from the stated working directory.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7b8b15e",
+            message: "test(readme): run the documented commands from a bare environment",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "PERTURBATION RUN, not inferred. (a) STALED A PATH -- dist/cli.js -> dist/main.js in the BUN start command only. FLIPPED: `the README's quickstart brings up a server under bun` at `expect(outcome.serverName ?? outcome.diagnosis).toBe('tsudoi')`, reporting `Module not found dist/main.js`. STAYED GREEN: the deno half and all four extraction tests -- the discrimination is per-command, not per-file.",
+          "PERTURBATION RUN. (b) CHANGED A FLAG'S VALUE -- `--filename tsudoi.tgz` -> `tsudoi-x.tgz` in step 1 alone. FLIPPED: BOTH quickstart assertions, at the install step (`../tsudoi-language-server/tsudoi.tgz failed to resolve`). A test holding its own copy of the commands would have stayed green through both.",
+          "The staged environment is BARE and that is asserted structurally rather than promised: runQuickstart builds its own stage per call and exposes no way to pass one in, so the sweep cannot be `optimised` into sharing one.",
+        ],
       },
       {
         test: "EXPECTED RED. For each step i in the extracted quickstart, run the sequence with step i omitted and assert it FAILS. Swept under ONE runtime -- licensed by Sprint 10's measured route-identity, not by cost.",
