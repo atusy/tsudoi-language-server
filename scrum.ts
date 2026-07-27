@@ -324,8 +324,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Evolve to a Map<string, TextDocument>. Under Full sync take contentChanges.at(-1)!.text -- a conforming client sends exactly one full-text change, and taking the last is the defensive read -- and take the version from params.textDocument.version, never a counter. TextDocumentContentChangeEvent is a union but `text` is present on both members, so no narrowing is needed under strict.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1e434c5",
+            message: "feat(documents): follow changes and closes",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
