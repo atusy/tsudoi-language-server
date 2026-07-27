@@ -42,21 +42,29 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: 'A config importing from "@atusy/tsudoi/types" loads under both bun and deno',
+          criterion:
+            "The published specifier @atusy/tsudoi/types resolves for TYPE CHECKING, both inside this repo and from an installed copy",
           verification:
-            "A fixture config imports types by the published specifier; the initialize handshake completes under `bun run` and `deno run -A`",
+            "tsc --noEmit passes over a config importing by the published specifier, in-repo and in a packed-and-installed consumer project; PAIRED CONTROL: removing the exports entry makes the same check fail with TS2307",
         },
         {
-          criterion: "The published specifier resolves for type checking, not only at runtime",
-          verification: "tsc --noEmit passes over that fixture config",
+          criterion: "The example config imports its types by the published specifier",
+          verification:
+            "examples/tsudoi.config.ts imports from @atusy/tsudoi/types, and the cross-runtime lifecycle tests that drive it stay green under bun and deno",
+        },
+        {
+          criterion: "Adding the package identity does not regress cross-runtime loading",
+          verification:
+            "The full suite stays green under both runtimes and no deno.json exists in the repo",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
-        "Deferred out of PBI-1 in round 2. Needs package self-reference (name + exports in package.json), unverified under Deno. Not an impediment: self-reference is entirely local, needing no registry, npm account or publish.",
-        "Type-only imports are erased at runtime, so no PoC method behavior depends on this; ordered last for that reason.",
-        "Regression risk: the obvious fix is a deno.json import map, which is exactly what Sprint 1 deliberately avoided. The cross-runtime lifecycle tests must still pass on completion.",
+        "THE ORIGINAL RUNTIME CRITERION WAS MEASURABLY VACUOUS AND IS DROPPED: `a config importing @atusy/tsudoi/types loads under both bun and deno` passes with NO exports, NO name change, nothing implemented -- import type is erased before either runtime resolves anything, and only tsc discriminates. This PBI's own third note stated that mechanism and the criterion was written as a runtime test anyway.",
+        "./types is the WHOLE surface for this PBI. No main, no bin -- those belong to the runnable-distribution PBI the Deno finding forces, and entangling them here would import that defect into this sprint.",
+        "The example switching to the published specifier is THE POINT, not a hazard: the brief's example imports it, ours imports a relative path into src/, and a config author copies the example. Unlike the two changes declined before, this one is the user-visible deliverable rather than test convenience.",
+        "Honest limit: the example proves SELF-REFERENCE, not installed resolution. The external case is proven separately by pack-and-install, and only for the type import.",
+        "The no-deno.json guard is stated as REASONED, not measured -- Sprint 1's argument about npm resolution flipping to the global cache was never tested. This sprint measures it, and if adding a deno.json does NOT redden the suite, that must be recorded honestly rather than dressed up.",
       ],
     },
     {
@@ -166,17 +174,7 @@ const scrum: ScrumDashboard = {
       decisions: [
         "Shipped in 24b70a7, 7e37784, a88d3a6, cd08905, f61846a, 138ccba, ca0535e across 7 subtasks, plus 01e36d8 fixing a helper defect found while perturbing. Per-subtask records and 6 perturbation notes compacted here; git retains them.",
         "P5 IS THE EMPIRICAL ARGUMENT FOR THE PO'S OWN NON-LAUNDERABLE CLAUSE: rethrowing inside the cleanup handler flips report, survival AND exit-code tests on deno, but on BUN only the exit code flips -- the session survived long enough to answer a later completion AND to print its tsudoi: line. Every survival-shaped and stderr-shaped assertion passed; only the session's own exit code caught it.",
-        "P4 REPRODUCED THE CONFLICT INSIDE THE RULING EXACTLY: awaiting the close before responding reddens the hang test by its own timeout on both runtimes WHILE the throwing-cleanup report test stays green. The awaited form satisfies one half of criterion 2 and makes the other impossible.",
-        "WEAKNESS found by reading then MEASURED, not built: a finally containing a YIELD hijacks the close. return() resolves {value, done:false} identically on both runtimes, leaving the generator suspended INSIDE its own finally, and the rest of that cleanup runs only if someone calls next() again, which tsudoi never does. Unlike the parked-in-await limit this one is INVISIBLE rather than documented -- and unlike that one tsudoi COULD detect it, since done === false is right there in the result. For the PO to rule on.",
-        "Subtask 6's original note justified `no stderr write` by a risk of reddening an existing stderr-clean assertion. THE DEVELOPER CHECKED AND THE PREMISE WAS FALSE -- the two suites driving the example assert nothing about stderr. The note now rests on the noise argument alone. The justification-standard rule catching exactly its intended shape, in the sprint it was filed.",
         "MEASURED, AND IT EXPOSES A CONFLICT INSIDE THE RULING: a throwing finally REJECTS chunks.return(); a hanging finally means it NEVER SETTLES; an unhandled rejection KILLS the child with exit 1 on both runtimes. So `await chunks.return()` in the response path cannot satisfy both halves of criterion 2 -- a hanging finally would mean -32800 is never sent. Resolution, read as what the ruling MEANS rather than a departure from it: fire return() with an ATTACHED REJECTION HANDLER and never await it in the response path. That single handler does two jobs -- it is how a throwing finally gets reported, and it is what stops that same rejection becoming fatal. Drop it and both halves fail together.",
-        "The measurement hands criterion 2 a STRONGER non-launderable assertion than a stderr match: since an unhandled rejection destroys the session that caused it, assert the session's own exit code rather than searching for text that another test could have produced.",
-        "PO checklist, per-sprint additions: (1) the mode-split perturbation reported as a PAIR -- aggregation red WHILE streaming green; (2) the hang case proven by ORDERING not timing -- the finally's record absent at the moment -32800 arrives, present after release, which cannot pass because of fast hardware; (3) the unhandled-rejection assertion made where it cannot be laundered; (4) cleanup that throws proven by SURVIVAL as well as stderr -- a later completion answers normally.",
-        "PERTURBATIONS RUN AT HEAD, each named by the assertion it flipped, all over BOTH runtimes. (P1) delete the close: all 12 cleanup tests red, the two mode tests on waitForStderr(cleanupMarker) and the hang test on `entered cleanup` present. (P2) THE PAIR, close guarded by `token !== undefined`: the aggregating test red on waitForStderr(cleanupMarker) while the streaming test AND every token-carrying test stay green -- 10 pass / 2 fail. (P3) drop the rejection handler for `void`: bun flips the named assertion, waitForExit() 0 -> 1; deno dies sooner still and flips the -32800 arrival of the very request whose cleanup failed; the aggregation-close and streaming-close tests STAY GREEN, as does the hang test. (P4) await the close before responding: the hang test red by its own 6s timeout on both runtimes, while the throwing-cleanup REPORT test stays green -- the ruling's conflict reproduced exactly, one half of criterion 2 satisfied by the awaited form and the other impossible under it. (P5) rethrow inside the handler: on deno the report, survival and exit-code tests all flip at the response of the cancelled request; on BUN only the exit code flips -- the session survives long enough to answer the later completion and to print its stderr line. (P6) report the prefix without failureDetail(error): flips exactly at toContain(cleanupThrowMessage) with the prefix assertion one line above still green.",
-        "P5 IS THE ARGUMENT FOR THE PO's OWN CLAUSE, measured rather than assumed: under a rethrow, bun's session still answered a later completion and still wrote the tsudoi: line. Every survival- or stderr-shaped assertion passed. Only the session's own exit code caught it -- so `assert it where it cannot be laundered` was not belt-and-braces, it was the only thing that held on one of the two runtimes.",
-        "DEFECT FOUND BY RUNNING A PERTURBATION, fixed in 01e36d8 (test-only): LspSession flushed its pending map once, at the child's close event, so a request issued AFTER a session had already died never settled -- P3 reddened as an 18s timeout on bun instead of an assertion. Sprint 5's rule (a helper settles every promise it owns) applies to the process that died BEFORE the request too. Also added: stdin write errors are ignored, so a test driving a dead session fails on its assertion rather than on an uncaught EPIPE.",
-        "UNPROVEN, and named as such: nothing perturbs the example config's finally, by the PO's own ruling; and the language limit (a generator parked inside its own await queues return() behind the pending next()) is COMMENTED at the call site and deliberately untested.",
-        "WEAKNESS FOUND BY READING, THEN MEASURED, not built -- for the PO to rule on. tsudoi discards the IteratorResult that chunks.return() resolves with, and a `finally` containing a `yield` HIJACKS the close: measured identically on bun and deno, return() resolves {value: 99, done: FALSE}, the generator is left suspended inside its own finally, and the rest of that cleanup runs only if someone calls next() again -- which tsudoi never does. So a config author who yields one last chunk from their cleanup gets a server that believes it closed them. Same family as the parked-in-await limit, but unlike that one it is INVISIBLE rather than documented, and unlike that one tsudoi could detect it, since done === false is right there in the result.",
       ],
     },
     {
@@ -274,8 +272,93 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 9,
+    pbi_id: "PBI-7",
+    goal: "Make the stakeholder's own example importable -- @atusy/tsudoi/types rather than a relative path into our source -- from outside this repo and under both runtimes.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "EXPECTED RED, measured: add test/fixtures/published-specifier.ts importing Tsudoi and TsudoiConfig from @atusy/tsudoi/types; the DoD's tsc --noEmit goes red with TS2307.",
+        implementation: "None -- the fixture IS the RED.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED GREEN, closing the previous subtask: tsc --noEmit passes with the fixture in place.",
+        implementation:
+          'name: "@atusy/tsudoi", exports: { "./types": "./src/types.ts" }, files: ["src"]. Comment AT THE EXPORTS SITE recording why it is types-only -- the durable copy, per this sprint\'s lifetime rule.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN after the identity lands. Spawn tsc against a generated temp project -- the test/helpers/lint.ts pattern -- asserting TS2307 WITHOUT the exports entry and clean WITH it, COPYING the repo's real package.json rather than re-declaring it. This is the permanent pair the absence rule requires, replacing a one-time probe with a standing one. PERTURBATION: delete the exports entry from the real package.json; this MUST redden on the with-exports half WHILE the runtime tests stay green -- which is precisely the vacuity this sprint discovered.",
+        implementation: "New helper alongside lint.ts.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: 'BORN GREEN, measured passing. Pack the package, install it into a temp consumer project, assert tsc --noEmit passes there over a config importing the published specifier. PERTURBATION: drop "./types" from exports; must redden. SCOPE: type resolution ONLY -- do NOT assert the installed CLI runs, which is measured broken under Deno and belongs to the new PBI.',
+        implementation: "None expected.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN, measured: self-reference resolves at runtime and the import is erased anyway. The existing cross-runtime lifecycle tests driving examples/tsudoi.config.ts stay green under bun and deno after the switch. PERTURBATION: point the example at a specifier exports does not expose, e.g. @atusy/tsudoi/nope; both runtimes' lifecycle tests MUST redden AT CONFIG LOAD. Naming both halves: that flip defends `the example still loads`, NOT `the specifier resolves for types`, which the two preceding subtasks defend -- it lands earlier than this subtask's headline.",
+        implementation:
+          "Change the example's type import from the relative path to @atusy/tsudoi/types. Remove the `PBI-7 until then, relative` comment it has carried since Sprint 1.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN. Assert no deno.json or deno.jsonc exists at the repo root. PERTURBATION, AND THIS ONE MUST BE MEASURED RATHER THAN ASSUMED: add a deno.json with an npm import map and run the cross-runtime suite. If it reddens, record that as the measured justification for the guard. IF IT DOES NOT REDDEN, SAY SO -- then this file-absence assertion is the only thing carrying a constraint whose harm is unproven, and that must be recorded honestly rather than dressed up.",
+        implementation: "None.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "MEASURED, and it dropped a criterion: import type is erased before either runtime resolves, so a RUNTIME test of a type-only specifier is vacuous -- the original criterion passed with nothing implemented. Only tsc discriminates.",
+      "MEASURED, and NOT this sprint's to fix: an INSTALLED copy cannot run under Deno at all -- ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING, from a packed-and-installed consumer under deno 2.9.2, while bun runs it fine. Success metric #3 holds for a repo checkout and FAILS for an installed copy. Raised to the PO as a new PBI ordered before PBI-8 rather than smuggled in as retroactive scope.",
+      "PO checklist, per-sprint additions: (1) the resolution mechanism proven by perturbation -- rename node_modules and require the deno handshake to FAIL; do NOT assert deno.json is absent as the requirement, since by the Sprint 8 bounding condition a deno.json preserving node_modules resolution would be equally acceptable -- pin the property, not the file; (2) if a deno.json is introduced it is a DISCLOSED DECISION carrying its reasoning, not a fix, and (1) must still hold; (3) the specifier exercised from OUTSIDE the repo, not only via self-reference -- self-reference satisfies the criterion entirely from inside while a stranger still cannot resolve it, which is green-suite-story-undelivered; (4) THE EXAMPLE ITSELF switches, or the story is not delivered.",
+      "PLANNED FOR RATHER THAN DISCOVERED: adding exports to package.json is a BREAKING CHANGE to every resolution path in the repo -- once exports exists, anything not listed becomes unreachable, potentially including src/cli.ts. A green in-repo suite BEFORE exports lands proves nothing about after.",
+    ],
+  },
   retrospectives: [
+    {
+      sprint: 9,
+      improvements: [
+        {
+          action:
+            "SHARPENED ON LIFETIME, replacing the route-to-a-PBI rule: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; a decision that shapes WHAT TO BUILD NEXT belongs on the PBI. When it does both it goes in both -- and the SOURCE COMMENT IS THE DURABLE COPY, because a dashboard note has the lifetime of a PBI and every PBI eventually compacts. When in doubt, put it in the source.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction. Evidence: the Sprint 7 shutdown ruling survives in src/methods.ts with its reasoning intact while the PBI carrying it compacted away.",
+        },
+        {
+          action:
+            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME: name the change that would make it fail. If nothing would, the criterion is VACUOUS and must be rewritten before it binds.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "The absence-pairing rule moved from assertions to criteria and from execution to refinement. PBI-7's runtime criterion would have consumed a sprint and produced a green test proving nothing -- and the fact that made it vacuous was already written in its own PBI's notes. It was caught only because the probe was ordered first.",
+        },
+      ],
+    },
     {
       sprint: 9,
       improvements: [
