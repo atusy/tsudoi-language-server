@@ -272,9 +272,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "On abort call chunks.return() before returning out of the driving loop. Minimal placement -- INSIDE the streaming branch. Await it inline for now; a later subtask evolves that.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "24b70a7",
+            message:
+              "feat(completion): close the generator when a streaming completion is cancelled",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "EXPECTED RED, OBSERVED on both runtimes at the headline assertion: -32800 arrived, then waitForStderr(cleanupMarker) timed out quoting a stderr that held only the fixture's `parked` marker -- the generator was left suspended at its yield. Green after `await chunks.return(null)`.",
+          "chunks.return(NULL), not `undefined as never` as the plan's snippet wrote it. MEASURED against the type: MethodMap's TReturn is `CompletionItem[] | null`, so null needs no assertion and `as never` would be a cast with nothing to buy. The binding substance -- floating call, attached rejection handler -- is untouched.",
+          "The absence assertion `stderr does not yet contain the cleanup record` ships its permanent pair IN THE SAME TEST: absent while the handler is provably mid-stream, present after the cancellation. Without the pair it would also pass against a generator that had already finished on its own.",
+        ],
       },
       {
         test: "EXPECTED RED. The same fixture cancelled mid-stream WITHOUT a partialResultToken; assert the same finally record appears.",
