@@ -1,5 +1,8 @@
 // ============================================================
 // Dashboard Data (AI edits this section)
+//
+// Compaction target for this project: 500 lines (overrides the
+// scrum-dashboard skill's default of 300).
 // ============================================================
 
 const userStoryRoles = [
@@ -69,11 +72,13 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion: "DocumentStore follows didOpen / didChange / didClose",
-          verification: "Test sends each notification and asserts documents.values() membership after each",
+          verification:
+            "Test sends each notification and asserts documents.values() membership after each",
         },
         {
           criterion: "documents.get(uri) returns the text of the latest version",
-          verification: "Test applies successive didChange edits and asserts getText() and version match",
+          verification:
+            "Test applies successive didChange edits and asserts getText() and version match",
         },
       ],
       status: "draft",
@@ -92,7 +97,8 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion: "An undefined handler responds with null rather than an error",
-          verification: "A test config omits the handler; assert the result is null and no error is raised",
+          verification:
+            "A test config omits the handler; assert the result is null and no error is raised",
         },
       ],
       status: "draft",
@@ -180,12 +186,7 @@ const scrum: ScrumDashboard = {
 type PBIStatus = "draft" | "refining" | "ready" | "done";
 
 // Sprint lifecycle
-type SprintStatus =
-  | "planning"
-  | "in_progress"
-  | "review"
-  | "done"
-  | "cancelled";
+type SprintStatus = "planning" | "in_progress" | "review" | "done" | "cancelled";
 
 // TDD cycle: pending -> red (test written) -> green (impl done) -> refactoring -> completed
 type SubtaskStatus = "pending" | "red" | "green" | "refactoring" | "completed";
