@@ -312,9 +312,22 @@ const scrum: ScrumDashboard = {
         implementation:
           "Call controller.abort() from the CancellationToken vscode-jsonrpc already supplies. Bridge, do not track -- our own handler would race one the library consumes.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5cba2c2",
+            message: "feat(cancel): abort a request's signal when the client cancels it",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned, both runtimes. A second test came with it: a cancel arriving BEFORE dispatch, which a subscribe-only bridge cannot see at all.",
+          "PERTURBATION `unwire the subscription` (cancellation.onCancellationRequested removed): reddens `aborted line-1 appears` on both runtimes; the pre-dispatch test STAYS GREEN, because the seed alone answers that path.",
+          "PERTURBATION `remove the seed` (the isCancellationRequested read): reddens `entered line-3 aborted=true` on both runtimes; isolation stays green. The two halves of the bridge are independently defended.",
+          "PERTURBATION `abort every signal unconditionally`: reddens EARLIER than the isolation claim, at `entered line-1 aborted=false` -- so it defends the transition's false half and NOT isolation.",
+          "PERTURBATION `one shared AbortController`, added because of that: reddens exactly at `aborted line-2 absent`, the isolation headline. This is the shape the PO caught before refinement.",
+          "PERTURBATION for subtask 1 (`cancel(id) sends nothing`): reddens `aborted line-1 appears` on both runtimes -- every cancellation assertion this sprint would otherwise be measuring an unsent notification.",
+        ],
       },
       {
         test: "EXPECTED RED. A cancelled hover and a cancelled completion each answer error.code === -32800; a subsequent request of the same method is answered normally.",
