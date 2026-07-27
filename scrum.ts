@@ -408,9 +408,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Route the generator's failure through the existing reportHandlerFailure(method, error): never. MEASURED: the error response follows progress already written, on both runtimes, with no extra work. PERTURBATIONS: (i) swallow the throw and return [] instead of rethrowing -- the error-response assertion MUST redden while stderr stays green (Sprint 4's finding applied to the streaming path); (ii) console.log inside the dispatch -- unframedStdoutBytes === 0 MUST redden alone. Assert the stderr PREFIX, never the stack body: error.stack's first line differs between JSC and V8.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8af57a",
+            message: "test(completion): pin that a chunk sent before a throw stays sent",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN throughout, not the declared MIXED: subtask 3's dispatch already routed the generator's failure through reportHandlerFailure. PERTURBED (i) report-without-rethrow answering [] -> RED at the -32603 assertion; an out-of-suite probe against that same build shows stderr AND the $/progress both still correct, so a stderr-only or progress-only criterion would have passed while the client was handed a plausible []. Sprint 4's finding, reproduced on the streaming path.",
+          "PERTURBED (ii) console.log in the dispatch -> RED at `unframedStdoutBytes === 0` ALONE, in the two tests asserting it; -32603, the arrivals ordering, stderr and recovery all stayed GREEN. PERTURBED (iii) suppress progress on failure (buffer, flush only on success) -> RED at `expect(session.arrivals).toEqual(...)` with the -32603 assertion before it GREEN, so progress-arrived-and-stayed is defended separately from the error response. Both runtimes. Restored.",
+        ],
       },
       {
         test: "N/A (structural) -- suite stays green, unchanged.",
