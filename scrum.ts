@@ -305,7 +305,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/server.ts using createProtocolConnection with StreamMessageReader/Writer over node:process streams, all imported from the vscode-languageserver-protocol/node subpath. Fake the result. connection.listen() runs only AFTER config loading succeeds -- that ordering is what keeps stdout clean on failure. Add a framing client helper using Content-Length with Buffer.byteLength.",
         type: "behavioral",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [],
       },
