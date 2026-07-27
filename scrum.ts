@@ -46,7 +46,7 @@ const scrum: ScrumDashboard = {
           criterion:
             "The documented quickstart runs as written, EXTRACTED from the README rather than mirrored",
           verification:
-            "The test reads the commands out of README.md and executes them verbatim under both bun and deno, each returning an InitializeResult naming tsudoi. NEGATIVE CONTROL: editing a command in the README reddens it, which a test holding its own copy would not",
+            "The test reads the commands out of README.md and executes them verbatim under both bun and deno, FROM A STAGED ENVIRONMENT THAT SUPPLIES NOTHING THE README ASKS THE READER TO DO, each returning an InitializeResult naming tsudoi. Extraction asserts an EXPECTED NON-ZERO COMMAND COUNT before asserting anything about what it found. Omitting any single documented step must then make the quickstart fail, swept under ONE runtime -- licensed by Sprint 10's measurement that the route is one file path both runtimes take identically, NOT by cost. NEGATIVE CONTROLS: editing a command in the README reddens it, which a test holding its own copy would not; and a step whose omission STILL SUCCEEDS means either the README documents something unnecessary or THE HARNESS IS SUPPLYING IT, and either way the pass was not evidence",
         },
         {
           criterion:
@@ -203,7 +203,84 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 12,
+    pbi_id: "PBI-8",
+    goal: "Make eleven sprints reachable by someone who was not here -- a README whose own bytes are what the suite runs, so the instructions cannot drift from the product.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "EXPECTED RED -- no README exists. The extractor reads README.md and yields the quickstart commands, asserting the EXPECTED COUNT. PAIRED POSITIVE CONTROL, permanent: a probe README missing them yields zero and fails.",
+        implementation:
+          "README.md quickstart documenting the TARBALL route as the working instruction, stating plainly that the package is unpublished and that bun add / deno add npm: are intended-and-unverified. test/helpers/readme.ts. Reuse installConsumer() -- the quickstart IS the route it already implements. PROSE CONSTRAINT settled before the first line: commands must be runnable VERBATIM from a STATED working directory, so the README says where the reader is standing and uses relative paths.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Each extracted command executes verbatim under bun and deno from a staged environment supplying NOTHING the README asks the reader to do; the handshake returns an InitializeResult naming tsudoi. PERTURBATION: edit a command in README.md -- change a flag, stale a path. MUST redden. If it does not, the test is holding its own copy and the criterion is vacuous. RUN IT; do not infer it from the extractor's existence.",
+        implementation:
+          "Whatever the README's commands require to be runnable from the stated working directory.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. For each step i in the extracted quickstart, run the sequence with step i omitted and assert it FAILS. Swept under ONE runtime -- licensed by Sprint 10's measured route-identity, not by cost.",
+        implementation:
+          "The sweep's real function is to prove THE ENVIRONMENT IS BARE: an omitted step that still succeeds means something other than the documented command is supplying it, which makes the intact run's pass a test of the harness rather than evidence. The property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`; N pack-and-install cycles is ONE mechanism, and a cheaper one establishing the same property is the Developer's to take.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. The flags extracted from README.md equal what the suite actually spawns. TWO PERTURBATIONS, BOTH REQUIRED: narrow the README's flags alone -> must redden; narrow denoRuntime.runArgs alone -> must redden. A one-sided test passes when both drift TOGETHER, which is the failure this criterion exists to catch.",
+        implementation:
+          "IMPORT denoRuntime from test/helpers/lsp.ts and read runArgs rather than parsing the helper's source -- the compared value then comes from the thing that really runs, and no second parsing mechanism enters needing its own vacuity guard. Separately, tolerantly assert the README states WHY: vscode-jsonrpc reads XDG_RUNTIME_DIR at module load, so -A is a DEPENDENCY'S demand rather than tsudoi's, and narrower sets are UNTESTED because the minimum was never measured.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED, BOTH HALVES perturbation-tested. README.md carries that --config has no default, that the config default-exports a factory, that deno must be on PATH or `bun test` fails, and that the package is unpublished. Rewording a sentence must still PASS; removing a fact must FAIL. Neither half is optional and they fail in OPPOSITE directions.",
+        implementation:
+          "Match on the DISCRIMINATING TOKENS of each fact, not on sentences. The reader is stipulated, so every assumed prerequisite is named -- an unnamed prerequisite cannot be perturbed and therefore is not defended.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Break the documented quickstart config; run it under both runtimes; assert exit code, tsudoi:-prefixed stderr reason and zero stdout bytes -- EACH COMPARED AGAINST THE VALUE EXTRACTED FROM README.md, never a constant the test holds. PERTURBATION: change the README's stated exit code to 2; MUST redden. That is the whole criterion -- the README is the source of the expectation.",
+        implementation: "None beyond the assertions.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural).",
+        implementation:
+          "Record at test/helpers/readme.ts -- the site where someone would `simplify` by inlining an expected command -- that all four criteria are VACUOUS unless the tests read the README's own bytes, AND the zero-match vacuity mode, since that is the specific way a future edit would silently disable everything. A decision whose violation is a code edit lives at the edit site, and this PBI's note compacts.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE DEVELOPER FOUND A VACUITY MODE INSIDE THE PO'S OWN REMEDY, before building it: AN EXTRACTOR THAT FINDS NOTHING PASSES. If the fence markers move, extraction yields zero commands, `every extracted command succeeds` is VACUOUSLY TRUE, and the README rots exactly as if the tests held their own copy. Mechanism satisfied, property false -- the mod-3 residue shape, in a fourth place. Every extraction therefore asserts an expected non-zero count FIRST, permanently.",
+      "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
+      "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
+      "The PO applied the property-not-mechanism rule TO THEMSELVES one turn after handing it over: the property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`. N pack-and-install cycles is one mechanism, and a cheaper one is the Developer's to take unseen.",
+      "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. It is the most likely defect in a document written by people who have internalised every step, and omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 13,
