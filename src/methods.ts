@@ -83,6 +83,43 @@ function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): Reques
 }
 
 /**
+ * Runs one config handler to the answer the client receives, under that
+ * request's cancellation.
+ *
+ * Everything cancellation changes about a request is here and nowhere else: a
+ * cancelled request answers -32800 whatever its handler produced, and a
+ * cancelled handler's failure is not reported, because being aborted is why it
+ * failed. The abort is re-read AFTER the handler settles, so a handler that
+ * never looks at its signal is suppressed exactly like one that does.
+ *
+ * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
+ * awaited once and a completion handler is driven a chunk at a time, and
+ * `produce` is where that difference lives.
+ */
+async function answerUnlessCancelled<T>(
+  method: Method,
+  signal: AbortSignal,
+  produce: () => Promise<T>,
+): Promise<T> {
+  let value: T;
+  try {
+    value = await produce();
+  } catch (error) {
+    // A cancelled handler is EXPECTED to fail: an aborted fetch rejects by
+    // design. A failure line plus a stack for every cancellation would train
+    // the config author to ignore the one stderr channel that means something.
+    if (signal.aborted) {
+      requestCancelled();
+    }
+    reportHandlerFailure(method, error);
+  }
+  if (signal.aborted) {
+    requestCancelled();
+  }
+  return value;
+}
+
+/**
  * Registers the request handlers a config can answer.
  *
  * Every one is registered whether or not the config supplies a handler:
@@ -100,25 +137,9 @@ export function registerMethods(
     async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
       const handler = config.methods?.["textDocument/hover"];
       const context = requestContext(tsudoi, cancellation);
-      let hover: Hover | null;
-      try {
-        hover = (await handler?.(context, params)) ?? null;
-      } catch (error) {
-        // A cancelled handler is EXPECTED to fail: an aborted fetch rejects by
-        // design. A failure line plus a stack for every cancellation would
-        // train the config author to ignore the one stderr channel that means
-        // something. Nothing changes for a handler that failed on its own.
-        if (context.signal.aborted) {
-          requestCancelled();
-        }
-        reportHandlerFailure("textDocument/hover", error);
-      }
-      // Checked at SETTLE time, after the handler has had its say: a handler
-      // that ignores the signal entirely still has its answer suppressed.
-      if (context.signal.aborted) {
-        requestCancelled();
-      }
-      return hover;
+      return answerUnlessCancelled("textDocument/hover", context.signal, async () => {
+        return (await handler?.(context, params)) ?? null;
+      });
     },
   );
 
@@ -141,13 +162,12 @@ export function registerMethods(
       }
       const context = requestContext(tsudoi, cancellation);
       const token = params.partialResultToken;
-      // What the author yielded, kept only when there is no token to stream it
-      // under. In streaming mode this stays empty, which is what lets one
-      // expression below answer for both modes.
-      const collected: CompletionItem[] = [];
-      let emitted = false;
-      let items: CompletionItem[] | null;
-      try {
+      return answerUnlessCancelled("textDocument/completion", context.signal, async () => {
+        // What the author yielded, kept only when there is no token to stream
+        // it under. In streaming mode this stays empty, which is what lets one
+        // expression below answer for both modes.
+        const collected: CompletionItem[] = [];
+        let emitted = false;
         const chunks = handler(context, params);
         for (;;) {
           const next = await chunks.next();
@@ -156,23 +176,21 @@ export function registerMethods(
             // already left as $/progress, so concatenating them here would
             // make a client that appends the response see every item twice.
             if (next.value !== null) {
-              items = [...collected, ...next.value];
-              break;
+              return [...collected, ...next.value];
             }
             // [] versus null turns on whether THIS request produced a chunk.
             // `nothing further to add` and `nothing to say at all` are
             // different answers, and only request-local state tells them apart.
-            items = emitted ? collected : null;
-            break;
+            return emitted ? collected : null;
           }
           // Checked HERE, between pulling a chunk and sending it: the abort
           // typically lands while `next()` is parked, so a check at the top of
           // the loop would already have passed and this chunk would go out to
-          // a client that has stopped listening. Breaking also stops driving
-          // the generator, which is the point of cancelling at all.
+          // a client that has stopped listening. Returning also stops driving
+          // the generator, which is the point of cancelling at all. The value
+          // is discarded either way -- the answer is already -32800.
           if (context.signal.aborted) {
-            items = null;
-            break;
+            return null;
           }
           emitted = true;
           if (token === undefined) {
@@ -181,16 +199,7 @@ export function registerMethods(
             await connection.sendProgress(completionProgress, token, next.value);
           }
         }
-      } catch (error) {
-        if (context.signal.aborted) {
-          requestCancelled();
-        }
-        reportHandlerFailure("textDocument/completion", error);
-      }
-      if (context.signal.aborted) {
-        requestCancelled();
-      }
-      return items;
+      });
     },
   );
 }
