@@ -27,7 +27,7 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * in cli.ts and config.ts -- a red that looks like a resolution failure and is
  * not one.
  */
-const compilerOptions = {
+export const consumerCompilerOptions = {
   target: "esnext",
   module: "esnext",
   moduleResolution: "bundler",
@@ -38,7 +38,7 @@ const compilerOptions = {
   types: [],
 };
 
-function runTsc(cwd: string): Promise<TypeCheckResult> {
+export function runTsc(cwd: string): Promise<TypeCheckResult> {
   return new Promise((resolve, reject) => {
     const child = spawn("tsc", ["--noEmit"], { cwd, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
@@ -86,7 +86,11 @@ export async function typeCheckProbe(
     symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir");
     writeFileSync(
       join(dir, "tsconfig.json"),
-      JSON.stringify({ compilerOptions, files: Object.keys(files) }, null, 2),
+      JSON.stringify(
+        { compilerOptions: consumerCompilerOptions, files: Object.keys(files) },
+        null,
+        2,
+      ),
     );
     for (const [path, source] of Object.entries(files)) {
       const target = join(dir, path);
