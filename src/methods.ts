@@ -47,9 +47,42 @@ const completionProgress = new ProgressType<CompletionItem[]>();
  * is no shape both fit into that is not an invention.
  */
 function reportHandlerFailure(method: Method, error: unknown): never {
-  const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
-  process.stderr.write(`tsudoi: ${method} handler failed: ${detail}\n`);
+  process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
   throw error;
+}
+
+/**
+ * Reports a config handler's CLEANUP failure -- and stops there.
+ *
+ * Shares the `tsudoi:` convention above, because one prefix is what makes the
+ * LSP log greppable, and deliberately NOT its rethrow. The asymmetry is the
+ * point: a handler failure still has a response to decide, so absorbing it
+ * would answer the client a plausible `nothing to say`, whereas cleanup fails
+ * only after the client already holds its -32800 and there is no response left
+ * to correct. Rethrowing could only take down a session otherwise able to
+ * answer the next completion -- and on the floating call this is attached to it
+ * would do that by way of an unhandled rejection, which kills the process.
+ *
+ * SCOPE, stated here because this is the file where the opposite would be
+ * assumed: cleanup runs for CLIENT CANCELLATION only. tsudoi does not wire
+ * shutdown to cancellation, so an in-flight completion finishes across
+ * shutdown. That is correct by specification -- LSP constrains the client, not
+ * the server -- and it is left unpinned on purpose, since cancelling in-flight
+ * requests at shutdown would be equally acceptable and a test would pin an
+ * arbitrary choice rather than a requirement.
+ */
+function reportCleanupFailure(method: Method, error: unknown): void {
+  process.stderr.write(`tsudoi: ${method} cleanup failed: ${failureDetail(error)}\n`);
+}
+
+/**
+ * What a config author is shown of a failure: the stack when there is one,
+ * since that is what locates the line in THEIR file, and the value itself when
+ * something other than an Error was thrown. Shared so the two reports above
+ * cannot drift into saying different amounts about the same kind of failure.
+ */
+function failureDetail(error: unknown): string {
+  return error instanceof Error ? (error.stack ?? error.message) : String(error);
 }
 
 /**
@@ -300,12 +333,7 @@ export function registerMethods(
             // cleanup runs only when that settles. A limit of async generators,
             // not a defect here.
             chunks.return(null).then(undefined, (error: unknown) => {
-              // Reported and NOT rethrown: unlike a handler failure the client
-              // already has its -32800, and there is no response left to
-              // correct.
-              const detail =
-                error instanceof Error ? (error.stack ?? error.message) : String(error);
-              process.stderr.write(`tsudoi: textDocument/completion cleanup failed: ${detail}\n`);
+              reportCleanupFailure("textDocument/completion", error);
             });
             return null;
           }
