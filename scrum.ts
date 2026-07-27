@@ -296,8 +296,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "Move argv parsing and the load-and-validate pipeline out of src/cli.ts into src/config.ts exposing loadConfig(argv, tsudoi), throwing a typed error the CLI maps to stderr + exit 1. The relative import needs its .ts extension.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "5537ae4", message: "refactor: loadConfig", phase: "refactoring" }],
         notes: [],
       },
       {
