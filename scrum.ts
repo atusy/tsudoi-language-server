@@ -309,8 +309,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "New src/documents.ts with createDocumentStore() returning { documents, open, change, close } -- the mutation API stays OFF DocumentStore so the Tsudoi shape is untouched by construction rather than by discipline. Fake it: one entry suffices here. TextDocument keeps exactly the brief's four members; no positionAt/offsetAt.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "aa5b588",
+            message: "feat(documents): register an opened document",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
