@@ -293,9 +293,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "LspSession: expose an in-flight request's id and add cancel(id). Settle every pending promise on teardown -- Sprint 5's killed-child hazard applies directly here.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7b6e133",
+            message: "test(lsp): let a session cancel a request and read raw stdout",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "Also added, both needed by later subtasks: waitForStderr (rejects quoting stderr, never hangs) and a raw `stdout` getter decoded once over the whole buffer, which is the only way to assert a suppressed value never left.",
+          "MEASURED, and it forced a helper nobody planned: vscode-jsonrpc cancels the token source BEFORE the handler runs when the cancel is already queued, and CancellationTokenSource.cancel() on an unmaterialised token installs CancellationToken.Cancelled, whose onCancellationRequested is Event.None -- it NEVER fires. A subscribe-only bridge sees nothing on that path. issueThenCancel writes both frames in ONE stdin write so the path is reachable deterministically.",
+          "PERTURBATION result recorded on subtask 2, where the test it defends lives.",
+        ],
       },
       {
         test: "EXPECTED RED. Two concurrent requests; cancelling one flips only its fixture's abort marker on stderr, and the other completes normally.",
