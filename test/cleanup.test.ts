@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InitializeResult } from "vscode-languageserver-protocol";
+import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -9,8 +9,21 @@ import {
   gateOpen,
   parkedMarker,
 } from "./fixtures/completion-cleanup.ts";
+import {
+  cleanupMarker as throwsCleanupMarker,
+  cleanupThrowMessage,
+  returnedItems as throwsReturnedItems,
+} from "./fixtures/completion-cleanup-throws.ts";
 
 const completionCleanup = fixture("completion-cleanup.ts");
+const cleanupThrows = fixture("completion-cleanup-throws.ts");
+
+/**
+ * The line a config author is meant to act on -- the PREFIX tsudoi composes,
+ * never its wording. It names the method and the phase, which is everything
+ * that distinguishes this from the handler-failure line beside it.
+ */
+const cleanupFailureLine = "tsudoi: textDocument/completion cleanup failed:";
 
 /**
  * LSP's RequestCancelled. Written out rather than imported so that the wire
@@ -131,6 +144,91 @@ for (const runtime of runtimes) {
           // Re-read after exit: a chunk sent late is still a chunk sent, and an
           // aggregating request must never have produced one.
           expect(session.progressCount).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    // Reporting and surviving are SEPARATE claims, so they are separate tests:
+    // one perturbation cannot flip an assertion that is not there, and bundling
+    // them would leave whichever came second defended by nothing.
+    test(
+      "cleanup that throws is named on stderr with tsudoi's own prefix",
+      async () => {
+        const session = LspSession.start(runtime, cleanupThrows);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue(
+            "textDocument/completion",
+            completionParams(streamingToken),
+          );
+          await session.waitForProgress(1);
+          // The PAIR: nothing is reported while nothing has failed, so the
+          // presence below is a claim about this failure and not about a server
+          // that writes that line whenever it starts a completion.
+          expect(session.stderr).not.toContain(cleanupFailureLine);
+
+          session.cancel(inFlight.id);
+          expect((await inFlight.response).error?.code).toBe(requestCancelled);
+
+          await session.waitForStderr(cleanupFailureLine, 1000);
+          // The config author's OWN message, not tsudoi's prose: a failure
+          // reported without it names a method and nothing to act on, and a
+          // path that mangles non-ASCII would say `後始末に失敗しました` in
+          // replacement characters instead.
+          expect(session.stderr).toContain(cleanupThrowMessage);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    // The other half of the PO's checklist item: survival, proven by the server
+    // going on to answer. A cleanup failure has no response left to correct --
+    // the client already has its -32800 -- so it must not be rethrown into a
+    // path that takes the session down with it.
+    test(
+      "a session whose cleanup threw answers a later completion normally",
+      async () => {
+        const session = LspSession.start(runtime, cleanupThrows);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue(
+            "textDocument/completion",
+            completionParams(streamingToken),
+          );
+          await session.waitForProgress(1);
+          session.cancel(inFlight.id);
+          expect((await inFlight.response).error?.code).toBe(requestCancelled);
+          // The FIXTURE's own marker, not tsudoi's report: this test must not
+          // assert the report it is not defending.
+          await session.waitForStderr(throwsCleanupMarker, 1000);
+
+          openGate(session);
+          const next = await session.request<CompletionItem[]>(
+            "textDocument/completion",
+            completionParams(streamingToken),
+          );
+          expect(next).toEqual(throwsReturnedItems);
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();

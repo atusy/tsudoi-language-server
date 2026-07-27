@@ -285,7 +285,16 @@ export function registerMethods(
             // Above the mode split, where the abort check already is: whether
             // this request streamed or aggregated says what the CLIENT can take
             // and nothing about what the HANDLER holds open.
-            await chunks.return(null);
+            try {
+              await chunks.return(null);
+            } catch (error) {
+              // A `finally` that throws rejects this. Reported and NOT
+              // rethrown: unlike a handler failure, the client already has its
+              // -32800 and there is no response left to correct.
+              const detail =
+                error instanceof Error ? (error.stack ?? error.message) : String(error);
+              process.stderr.write(`tsudoi: textDocument/completion cleanup failed: ${detail}\n`);
+            }
             return null;
           }
           emitted = true;
