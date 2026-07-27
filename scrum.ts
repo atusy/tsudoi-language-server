@@ -314,9 +314,11 @@ const scrum: ScrumDashboard = {
         implementation:
           "Register InitializedNotification (no response), ShutdownRequest returning null, and ExitNotification calling process.exit(0). Record in server state that shutdown was received.",
         type: "behavioral",
-        status: "red",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [{ hash: "7732df5", message: "feat: shutdown and exit", phase: "green" }],
+        notes: [
+          "ShutdownRequest.type declares result void, not null; vscode-jsonrpc still puts null on the wire.",
+        ],
       },
       {
         test: "exit sent after initialize with no shutdown in between exits with code 1.",
