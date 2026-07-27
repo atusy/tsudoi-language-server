@@ -281,7 +281,7 @@ const scrum: ScrumDashboard = {
     number: 7,
     pbi_id: "PBI-10",
     goal: "Make tsudoi safe to hand to a stranger -- when a client sends what the specification forbids, it gets an error or a correct fallback with a trace, never silently fewer items than the handler produced.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "BORN GREEN. `exit` as the very first message, no initialize: exits 1 with zero stdout bytes, both runtimes, within an explicit timeout so a hang fails as a timeout rather than stalling. PERTURBATION: add a pre-initialize gate that drops ALL notifications including exit; this MUST redden as a timeout. It exists solely to be the thing that objects when the gate lands -- without it the gate can hang the process with a fully green suite.",
@@ -434,9 +434,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "hasShutdown is a loose flag in src/server.ts and this sprint adds an initialized flag and two guards. Consolidate into one named lifecycle state, with explicit === undefined comparisons throughout and no truthiness tests anywhere near tokens or ids -- the bug this PBI exists to fix must not be reintroduced by the fix.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1b0b2d1",
+            message: "refactor(lifecycle): make the session's phase one named state",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "Suite green across the change, 125 tests, no behavioural edit. src/lifecycle.ts now holds a three-valued phase; the two booleans that could disagree are gone, and `process.exit(hasShutdown ? 0 : 1)` -- the last implicit read of lifecycle state -- became `lifecycle.exitCode()`, chosen by naming a phase.",
+          "CONSTRAINT VERIFIED BY GREP, not by impression: 12 explicit === / !== undefined comparisons in src/, and NO truthiness test on any token, id or lifecycle flag. The only bare `if (x)` reads left in src/ are `cancellation.isCancellationRequested` and `signal.aborted`, both platform booleans.",
+          "PERTURBATIONS RE-MEASURED AT HEAD after the consolidation, as REPRODUCTIONS of subtask 4's (a) and (b): expected 2 failures each, observed 2 each, same two tests. The two branches still discriminate independently, which a green suite alone could not have shown.",
+        ],
       },
     ],
     impediments: [],
@@ -444,6 +454,7 @@ const scrum: ScrumDashboard = {
       "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
       "PROBE 1 with its limit stated: vscode-languageserver-protocol@3.18.2 (LSP 3.17); ErrorCodes.ServerNotInitialized is a real constant. Bare `exit` with no initialize already exits 1 with empty stdout on both runtimes, and NO test sends it -- so the carve-out is confirmed NECESSARY, since a gate dropping all pre-initialize notifications turns a measured exit=1 into a hang with nothing objecting. The Developer verified the version, the constant and the behaviour, but NOT the specification prose -- no spec text ships in the package. That sentence is a human-side check.",
       "The two opening subtasks are born-green REGRESSION GUARDS that exist to object when the gate lands. Ordering them first is the point: they must exist before the change they guard against.",
+      "TWO WEAKNESSES FOUND BY READING THE CODE, neither built, both for the PO to rule on. (1) The lifecycle gate is consulted ONCE, at dispatch: a completion already streaming when `shutdown` arrives keeps calling sendProgress, so $/progress and then its response land AFTER the shutdown response. No test sends that sequence, so it is unproven in either direction; arguably correct, since LSP forbids accepting NEW requests, but this sprint closed the door only at dispatch. (2) isProgressToken accepts any JS integer, while LSP's `integer` is int32 -- a token of 2^40 passes. Rejecting it would LOSE the client's items, contrary to the harm-proportionality ruling, so accepting is probably right, but it is an undocumented deviation from the type the doc comment cites.",
       "PO checklist, per-sprint additions: (1) ONE PERTURBATION PER SUB-CLAIM, each naming its target assertion -- criteria 1 and 2 bundle three claims each, and a single gate-widening perturbation flips whichever assertion runs first and leaves the rest undefended, which is precisely the Sprint 6 failure; six named targets, not two; (2) the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr; (3) the falsy-token discriminator as a PAIR -- implement as `if (!token)` and confirm the 0 test reddens WHILE the null test stays green, since either half alone proves nothing; (4) the once-per-session trace pinned, perturbed by emitting per request -- the only item guarding a requirement stated as a value constraint rather than a mechanism; (5) the normalised response asserted ITEM BY ITEM, not by count, since a count passes if the right number of wrong items arrives.",
     ],
   },
