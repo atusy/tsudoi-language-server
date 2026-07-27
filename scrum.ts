@@ -282,7 +282,7 @@ const scrum: ScrumDashboard = {
     number: 3,
     pbi_id: "PBI-2",
     goal: "Turn documents.get(uri) from a stub into the editor's live buffer -- the first line of the stakeholder's own example config, and the substrate every method after this one answers from.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "The initialize result's capabilities equals { textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full } } exactly, under both runtimes.",
