@@ -411,9 +411,19 @@ const scrum: ScrumDashboard = {
         test: "BORN GREEN. Cancel an id never issued and an id already answered; assert no error response, no stderr failure line, and a subsequent request answered normally. Perturbation: add a tsudoi-side registry that looks the id up and throws on a miss; this MUST redden while the bridge and -32800 subtasks stay green. It is also what would catch a regression if anyone later decides to track cancellation ourselves.",
         implementation: "Expected none -- the library consumes $/cancelRequest itself.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5913ad9",
+            message: "test(cancel): pin that an unknown or already-answered id is ignored",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as planned. Ids come from the session rather than being hardcoded, so a shifted response id cannot break this at the wrong claim.",
+          "The PLANNED perturbation is UNBUILDABLE, which is a finding rather than an excuse: vscode-jsonrpc's handleNotification returns early for $/cancelRequest before consulting any registered handler, AND a request handler is never passed its own id. A tsudoi-side registry has nothing to hook and nothing to key on. That is the empirical reason `bridge, do not track` is the only option, not a preference.",
+          "SUBSTITUTE perturbation `cancel a LIVE id instead of a settled one`: reddens exactly at `no further message arrived`, both runtimes. It proves the assertion can fail and that cancel(id) reaches the server; it does NOT prove tsudoi preserves the ignore path, because tsudoi has no code on that path.",
+        ],
       },
       {
         test: "N/A (structural) -- suite stays green, unchanged.",
