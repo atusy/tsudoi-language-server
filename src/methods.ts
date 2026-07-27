@@ -104,6 +104,13 @@ export function registerMethods(
       try {
         hover = (await handler?.(context, params)) ?? null;
       } catch (error) {
+        // A cancelled handler is EXPECTED to fail: an aborted fetch rejects by
+        // design. A failure line plus a stack for every cancellation would
+        // train the config author to ignore the one stderr channel that means
+        // something. Nothing changes for a handler that failed on its own.
+        if (context.signal.aborted) {
+          requestCancelled();
+        }
         reportHandlerFailure("textDocument/hover", error);
       }
       // Checked at SETTLE time, after the handler has had its say: a handler
@@ -175,6 +182,9 @@ export function registerMethods(
           }
         }
       } catch (error) {
+        if (context.signal.aborted) {
+          requestCancelled();
+        }
         reportHandlerFailure("textDocument/completion", error);
       }
       if (context.signal.aborted) {

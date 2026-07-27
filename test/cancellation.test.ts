@@ -23,9 +23,21 @@ import {
   label as ignoredLabel,
 } from "./fixtures/hover-ignores-signal.ts";
 
+import {
+  completionEntered,
+  hoverEntered,
+  throwMessage as cancelledThrowMessage,
+} from "./fixtures/throws-on-cancel.ts";
+import { throwMessage as uncancelledThrowMessage } from "./fixtures/hover-throws.ts";
+
 const hoverCancellable = fixture("hover-cancellable.ts");
 const completionCancel = fixture("completion-cancel.ts");
 const hoverIgnoresSignal = fixture("hover-ignores-signal.ts");
+const throwsOnCancel = fixture("throws-on-cancel.ts");
+const hoverThrows = fixture("hover-throws.ts");
+
+/** The line a config author is meant to act on -- the PREFIX, never the stack. */
+const failureLine = "tsudoi: textDocument/hover handler failed:";
 
 /**
  * LSP's RequestCancelled. Written out rather than imported so that the wire
@@ -261,6 +273,47 @@ for (const runtime of runtimes) {
       },
       gatedTimeoutMs,
     );
+
+    // Both halves in one run, against two sessions of one build: a server that
+    // reported nothing at all would satisfy the absence and fail the contrast.
+    test("a cancelled handler's throw is not reported, while an uncancelled one still is", async () => {
+      const session = LspSession.start(runtime, throwsOnCancel);
+      const uncancelled = LspSession.start(runtime, hoverThrows);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const hover = session.issue("textDocument/hover", hoverParams(0));
+        await session.waitForStderr(hoverEntered);
+        session.cancel(hover.id);
+        expect((await hover.response).error?.code).toBe(requestCancelled);
+
+        // The same claim for the streaming path, where the throw arrives out
+        // of a generator rather than out of an awaited promise.
+        const completion = session.issue("textDocument/completion", completionParams());
+        await session.waitForStderr(completionEntered);
+        session.cancel(completion.id);
+        expect((await completion.response).error?.code).toBe(requestCancelled);
+
+        // Read after exit, so nothing written late is missed.
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.stderr).not.toContain("handler failed:");
+        // Not one line of the stack either: the message is what a leak would
+        // carry, and this fixture's is unmistakable.
+        expect(session.stderr).not.toContain(cancelledThrowMessage);
+
+        await uncancelled.request<InitializeResult>("initialize", initializeParams);
+        const error = await uncancelled.requestError("textDocument/hover", hoverParams(0));
+        expect(error.code).toBe(-32603);
+        expect(uncancelled.stderr).toContain(failureLine);
+        expect(uncancelled.stderr).toContain(uncancelledThrowMessage);
+      } finally {
+        session.dispose();
+        uncancelled.dispose();
+      }
+    });
 
     // Where cancellation earns its keep: bounding the streaming API. The
     // fixture yields AGAIN after the abort releases its gate, so `exactly one`
