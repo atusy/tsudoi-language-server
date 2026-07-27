@@ -1,3 +1,31 @@
+// THE README IS THE ARTIFACT UNDER TEST, AND EVERY CRITERION HERE IS VACUOUS
+// UNLESS THE TESTS READ ITS OWN BYTES.
+//
+// This file is where someone will one day `simplify` a test by inlining the
+// command, the flag, the exit code or the prefix it expects. That edit costs
+// nothing and destroys everything: a plausible-but-wrong README -- right shape,
+// stale command, wrong flag, wrong exit code -- passes every test holding its
+// own copy, and fails one that EXTRACTS. It is the same property that has kept
+// examples/tsudoi.config.ts from rotting for eleven sprints, applied to prose.
+// If you need a constant here, ask first whether a README that contradicted it
+// would still be green.
+//
+// SECOND, AND THE SUBTLER ONE: AN EXTRACTOR THAT FINDS NOTHING PASSES. Move the
+// markers, rename an attribute, reformat a table, and extraction yields no
+// commands at all -- `every extracted command succeeds` is then VACUOUSLY TRUE,
+// and the README rots exactly as if the tests held their own copy. Mechanism
+// satisfied, property false. So every extractor in this file THROWS on an
+// unexpected count before it returns anything, the count is a constant the
+// tests hold rather than one read out of the document, and test/readme.test.ts
+// keeps a permanent probe -- this README with its markers deleted -- that
+// asserts the throw happens. Those guards are not one-time perturbations and
+// must not be relaxed into `return []`.
+//
+// The same shape twice more, recorded because it is not obvious both times:
+// invocationOf throws rather than reporting an empty flag list, and a fact
+// asserted by token-conjunction can only be defended by UNIQUENESS -- deleting
+// a token always falsifies a conjunction, so that control cannot fail and is
+// deliberately not offered.
 import { Buffer } from "node:buffer";
 import {
   cpSync,
