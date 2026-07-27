@@ -17,10 +17,20 @@ if (configPath === undefined) {
   fail("--config <path> is required");
 } else {
   const absolutePath = resolve(process.cwd(), configPath);
+  let module: { default?: unknown } | undefined;
   try {
     // pathToFileURL is what makes this resolve identically under bun and deno.
-    await import(pathToFileURL(absolutePath).href);
+    module = (await import(pathToFileURL(absolutePath).href)) as { default?: unknown };
   } catch (cause) {
     fail(`failed to load config ${absolutePath}\n  ${String(cause)}`);
+  }
+
+  if (module !== undefined) {
+    const factory = module.default;
+    if (factory === undefined) {
+      fail(`config ${absolutePath} has no default export`);
+    } else if (typeof factory !== "function") {
+      fail(`the default export of config ${absolutePath} is not a function`);
+    }
   }
 }

@@ -45,3 +45,25 @@ test("a config that throws while being imported exits 1 naming the path, with no
   expect(result.stderr).toContain(throwing);
   expect(result.stdout).toBe("");
 });
+
+test("a config with no default export exits 1 saying so, with no stdout", async () => {
+  const path = fixture("no-default-export.ts");
+
+  const result = await runCli(["--config", path]);
+
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain(path);
+  expect(result.stderr).toContain("no default export");
+  expect(result.stdout).toBe("");
+});
+
+test("a config whose default export is not a function exits 1 saying so, with no stdout", async () => {
+  const path = fixture("default-not-a-function.ts");
+
+  const result = await runCli(["--config", path]);
+
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain(path);
+  expect(result.stderr).toContain("not a function");
+  expect(result.stdout).toBe("");
+});
