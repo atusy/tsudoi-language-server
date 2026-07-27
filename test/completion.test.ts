@@ -169,5 +169,38 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // The same handler, driven the way a client that cannot take partial
+    // results drives it: no token. That absence is the ONE observable trigger
+    // -- LSP has no capability declaring partial-result support, so the second
+    // trigger the brief describes collapses into this one.
+    test("without a partialResultToken the yields and the return arrive as one response, and nothing streams", async () => {
+      const session = LspSession.start(runtime, completionChunks);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const result = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(),
+        );
+
+        expect(result).toEqual([...firstChunk, ...secondChunk, ...chunksReturned]);
+        // ZERO, not `none under the token I sent`: a server that streamed
+        // anyway under a token it invented answers this response correctly and
+        // still floods a client that never asked for partial results.
+        expect(session.progressCount).toBe(0);
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        // Re-read after exit: progress sent AFTER the response is still
+        // progress nobody asked for.
+        expect(session.progressCount).toBe(0);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
