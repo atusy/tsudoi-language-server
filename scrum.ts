@@ -293,9 +293,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "Match on the DISCRIMINATING TOKENS of each fact, not on sentences. The reader is stipulated, so every assumed prerequisite is named -- an unnamed prerequisite cannot be perturbed and therefore is not defended.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b62d295",
+            message: "test(readme): pin the facts a stranger cannot guess, both ways",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "A VACUITY MODE FOUND INSIDE THIS SUBTASK'S OWN REMEDY, the second of the sprint: the planned permanent removal control -- delete a token, assert the fact is gone -- CANNOT FAIL. statesFact is a conjunction, so deleting a required token falsifies it for EVERY document, including one that says nothing. Replaced by a control that can fail: each fact is stated in EXACTLY ONE section, which is what makes deleting that section lose it, and which reddens when a fact is satisfied INCIDENTALLY by tokens scattered somewhere that does not state it.",
+          "PERTURBATION RUN, removal half -- deleted the sentence `There is no default config path: --config <path> is required...` FLIPPED, all three and only those three: `the README states: --config has no default and is required`, its uniqueness assertion, and its rewording assertion. Everything else STAYED GREEN.",
+          "PERTURBATION RUN, rewording half -- rewrote TWO sentences with different structure and word order, keeping the tokens (`tsudoi ships no default config path at all; passing --config <path> is required of you...` and `No registry has @atusy/tsudoi: it is not published, to npm or anywhere else.`). ALL 32 STAYED GREEN. The two halves fail in opposite directions, as the criterion requires.",
+          "The uniqueness assertion FOUND A REAL COLLISION while being written: `## When the config is wrong` restated the factory contract in the same tokens as the teaching section, so the fact had two homes. Fixed in the README's prose, not in the tokens -- weakening the tokens to dodge it would have been the proxy.",
+          "The permissions fact from subtask 4 was folded into this list rather than left standing alone, so criterion 2's prose half gets the same both-ways treatment as criterion 3's.",
+        ],
       },
       {
         test: "EXPECTED RED. Break the documented quickstart config; run it under both runtimes; assert exit code, tsudoi:-prefixed stderr reason and zero stdout bytes -- EACH COMPARED AGAINST THE VALUE EXTRACTED FROM README.md, never a constant the test holds. PERTURBATION: change the README's stated exit code to 2; MUST redden. That is the whole criterion -- the README is the source of the expectation.",
