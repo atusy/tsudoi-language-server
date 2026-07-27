@@ -334,8 +334,8 @@ const scrum: ScrumDashboard = {
         implementation:
           "A preflight in test/helpers probing `deno --version` and throwing an actionable error on ENOENT. Ordered immediately before the test that can trigger it.",
         type: "behavioral",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [{ hash: "23b6e74", message: "feat: runtime preflight", phase: "green" }],
         notes: [],
       },
       {
