@@ -4,11 +4,13 @@ import {
   DidChangeTextDocumentNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  ErrorCodes,
   ExitNotification,
   InitializedNotification,
   InitializeRequest,
   type InitializeResult,
   type Logger,
+  ResponseError,
   type ServerCapabilities,
   ShutdownRequest,
   StreamMessageReader,
@@ -53,8 +55,31 @@ export function startServer(
   );
 
   let hasShutdown = false;
+  let initialized = false;
+
+  /**
+   * The error a request must be answered with at this moment in the lifecycle,
+   * or undefined when it may be served.
+   *
+   * Consulted by the handlers tsudoi REGISTERED, never by the dispatch as a
+   * whole -- that is what leaves a method nobody registered falling through to
+   * vscode-jsonrpc's MethodNotFound. `not initialized yet` and `no such method`
+   * are different diagnoses, and a client is entitled to both.
+   */
+  function requestRejection(): ResponseError<void> | undefined {
+    if (initialized === false) {
+      return new ResponseError<void>(
+        ErrorCodes.ServerNotInitialized,
+        "The server has not been initialized; send initialize first.",
+      );
+    }
+    return undefined;
+  }
 
   connection.onRequest(InitializeRequest.type, (): InitializeResult => {
+    // initialize is the one request the gate may never refuse -- refusing it
+    // would make the state it guards unreachable.
+    initialized = true;
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -101,11 +126,15 @@ export function startServer(
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
   // config author wrote and have a failure path of their own.
-  registerMethods(connection, config, tsudoi);
+  registerMethods(connection, config, tsudoi, requestRejection);
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.
   connection.onRequest(ShutdownRequest.type, (): void => {
+    const rejection = requestRejection();
+    if (rejection !== undefined) {
+      throw rejection;
+    }
     hasShutdown = true;
   });
 

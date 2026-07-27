@@ -15,6 +15,13 @@ import {
 import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
+ * Asks the lifecycle what a request arriving NOW must be answered with, or
+ * undefined when it may be served. Owned by server.ts, which knows the
+ * lifecycle; consulted here, where the config author's handlers are called.
+ */
+export type RequestRejection = () => ResponseError<void> | undefined;
+
+/**
  * Types the `value` of the `$/progress` notifications completion streams. A
  * single instance because ProgressType carries no state: it exists so that the
  * payload is a CompletionItem[] and nothing else.
@@ -131,10 +138,15 @@ export function registerMethods(
   connection: ProtocolConnection,
   config: TsudoiConfig,
   tsudoi: Tsudoi,
+  requestRejection: RequestRejection,
 ): void {
   connection.onRequest(
     HoverRequest.type,
     async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
+      const rejection = requestRejection();
+      if (rejection !== undefined) {
+        throw rejection;
+      }
       const handler = config.methods?.["textDocument/hover"];
       const context = requestContext(tsudoi, cancellation);
       return answerUnlessCancelled("textDocument/hover", context.signal, async () => {
@@ -156,6 +168,10 @@ export function registerMethods(
       params: CompletionParams,
       cancellation: CancellationToken,
     ): Promise<CompletionItem[] | null> => {
+      const rejection = requestRejection();
+      if (rejection !== undefined) {
+        throw rejection;
+      }
       const handler = config.methods?.["textDocument/completion"];
       if (handler === undefined) {
         return null;

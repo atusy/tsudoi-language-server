@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import type { Hover } from "vscode-languageserver-protocol";
+import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 
@@ -74,6 +74,32 @@ for (const runtime of runtimes) {
 
         // The connection survives the unknown method and still serves: an
         // absence of catastrophe would be satisfied by a dead server too.
+        const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
+        expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
+
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // Before initialize the server knows nothing about the client -- not its
+    // capabilities, not its root. Answering null here is a PLAUSIBLE lie: the
+    // client reads `no hover available at that position` and never learns it
+    // asked too early. -32002 is the diagnosis.
+    test("hover before initialize is answered -32002, and initialize then still succeeds", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const error = await session.requestError("textDocument/hover", hoverParams(0, 0));
+        expect(error.code).toBe(-32002);
+
+        // The gate must REFUSE the request, not poison the session: initialize
+        // is the one request it may not gate, and everything after it works.
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+        expect(result.serverInfo?.name).toBe("tsudoi");
+        session.notify("initialized", {});
+        didOpen(session, "こんにちは");
+
         const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
         expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
 
