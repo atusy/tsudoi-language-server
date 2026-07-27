@@ -273,9 +273,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "IMPORT denoRuntime from test/helpers/lsp.ts and read runArgs rather than parsing the helper's source -- the compared value then comes from the thing that really runs, and no second parsing mechanism enters needing its own vacuity guard. Separately, tolerantly assert the README states WHY: vscode-jsonrpc reads XDG_RUNTIME_DIR at module load, so -A is a DEPENDENCY'S demand rather than tsudoi's, and narrower sets are UNTESTED because the minimum was never measured.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3397dda",
+            message: "test(readme): compare the documented deno flags with what is spawned",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "PERTURBATION A RUN -- narrowed the README ALONE, `deno run -A` -> `deno run --allow-read`. FLIPPED: `the deno permissions the README documents are the ones the suite spawns`, run in ISOLATION with -t so the signal could not be an earlier test's corpse. Also flipped `the README's quickstart brings up a server under deno`; the bun half and every extraction test STAYED GREEN.",
+          "PERTURBATION B RUN -- narrowed `denoRuntime.runArgs` ALONE, ['run','-A'] -> ['run']. FLIPPED IN ISOLATION: the same flags assertion, expecting '-A' and receiving a list without it. Across the whole suite it reddens 65 tests, which is why it was run isolated: a perturbation that only killed the file would not have defended THIS assertion.",
+          "Perturbation B also RE-MEASURED the README's own claim: every one of those 65 failures is `NotCapable: Requires env access to XDG_RUNTIME_DIR` from vscode-jsonrpc/lib/node/main.js:191, at module load. The reason the README gives a reader is measured, not reasoned.",
+          "The vacuity guard for this criterion lives in invocationOf, which THROWS when a command has no script path or nothing between the runtime and it -- an empty flag list would make `the documented flags are what is spawned` true of nothing.",
+        ],
       },
       {
         test: "EXPECTED RED, BOTH HALVES perturbation-tested. README.md carries that --config has no default, that the config default-exports a factory, that deno must be on PATH or `bun test` fails, and that the package is unpublished. Rewording a sentence must still PASS; removing a fact must FAIL. Neither half is optional and they fail in OPPOSITE directions.",
