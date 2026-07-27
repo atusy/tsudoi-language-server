@@ -352,8 +352,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "createTsudoi() builds on createDocumentStore() and returns { documents } while handing the mutation handle to the caller for startServer. Delete emptyDocuments and its 'PBI-2 replaces this implementation' comment. The Tsudoi interface in src/types.ts is NOT touched.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e49cbb6",
+            message: "refactor(tsudoi): back documents with the store",
+            phase: "green",
+          },
+        ],
         notes: [],
       },
       {
