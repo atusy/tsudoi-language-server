@@ -59,6 +59,12 @@ const scrum: ScrumDashboard = {
           verification:
             'A request sends partialResultToken as null; assert the client receives every item the handler produced in one aggregated response and that stderr names the invalid token, while the valid falsy tokens 0 and "" still stream',
         },
+        {
+          criterion:
+            "An unknown method after initialize still receives -32601 MethodNotFound, not -32002",
+          verification:
+            "Test sends an unregistered method after initialize and asserts -32601; a gate answering -32002 for everything unregistered reddens it",
+        },
       ],
       status: "ready",
       notes: [
@@ -66,6 +72,7 @@ const scrum: ScrumDashboard = {
         "Remedy chosen at refinement: normalise-and-report. -32602 would cost an editor user every completion for their client's serialisation quirk; normalising silently is the invisible-client-bug failure mode. The trace must NOT be per request -- once per session is enough, and flooding an LSP log makes it useless for everything else.",
         "Validate partialResultToken ONLY. A seam with one call site is a framework justified by one user, which PBI-3 rejected and PBI-1 withdrew. The STORY is protocol-violation handling; the IMPLEMENTATION is three concrete cases and no framework.",
         'The falsy-valid-token guard is a CRITERION, not a note: ProgressToken is integer | string, so 0 and "" are valid and falsy, and `if (!token)` fixes the null case while breaking legitimate clients. Only an assertion catches that.',
+        "If the empty string does not survive connection.sendProgress, the binding half of criterion 3 is 0 alone, which still defeats a truthiness fix. DISTINGUISH THE FAILURE MODE: throwing is covered by the handler-failure path, but silently DROPPING is the same silent-item-loss defect as the null token and takes the same normalise-and-report remedy.",
         "The pre-initialize gate must not swallow -32601: an unknown method after initialize must still get MethodNotFound, not ServerNotInitialized. Nothing currently asserts -32601, so a green suite would not show that regression.",
         "Boundary closed by decision, not omission: unknown methods already get -32601 from vscode-jsonrpc, and malformed positions belong to the config author's handler, which owns the position math.",
         'CONFIRM EMPIRICALLY before treating the criteria as binding: that `exit` is the correct notification carve-out before initialize in the LSP version targeted, and that 0 and "" survive connection.sendProgress. Both are cheap probes and both would ship a wrong criterion if assumed.',
@@ -198,13 +205,7 @@ const scrum: ScrumDashboard = {
       decisions: [
         "Shipped in 7b6e133, 5cba2c2, 7481a22, 26e12a9, 81983b0, 7327cf7, 5913ad9, 25302fc across 8 subtasks, plus a85ba96 and 71afcbb closing gaps. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
         "SHIPPING-GRADE HOLE the plan could not have known about, found by READING THE LIBRARY rather than by timing: vscode-jsonrpc's handleRequest calls cancellationSource.cancel() BEFORE ever reading .token. With _token unmaterialised, cancel() installs CancellationToken.Cancelled, whose onCancellationRequested is Event.None -- returns a disposable and NEVER invokes the callback. A subscribe-only bridge therefore never aborts for a client that cancels before dispatch, and the settle-time check then reads aborted === false and puts the handler result on the wire. Fixed by reading isCancellationRequested BEFORE subscribing. A source-ordering argument, not a timeout, which could not distinguish never-fires from fires-late.",
-        "PO checklist item 5's second perturbation was INSUFFICIENT AS SPECIFIED: abort-every-signal flips at `entered line-1 aborted=false`, an earlier assertion, so it defends the transition's false half and leaves isolation undefended. One shared AbortController is the perturbation that flips isolation itself -- the exact shape the PO caught before refinement.",
-        "Subtask 7's planned perturbation is UNBUILDABLE, and that is the empirical basis for `bridge, do not track`: handleNotification returns early for $/cancelRequest before consulting any registered handler, and a request handler is never passed its own id, so a tsudoi-side registry has nothing to hook and nothing to key on.",
-        "MEASURED before deciding, and it overturned an option: vscode-jsonrpc plumbs $/cancelRequest to a CancellationToken on both runtimes, so tsudoi bridges rather than tracks. But it synthesises no -32800 and lets an ignoring handler's result reach the wire -- both are tsudoi's to build.",
-        "PO caught a green-but-broken shape BEFORE refinement: the original single criterion is satisfied completely by one SHARED AbortController, as long as only one request is in flight. Signal isolation under concurrency and settlement despite an ignoring handler were added as requirements, not suggestions.",
-        "Explicit === undefined comparisons throughout: 0 and the empty string are falsy but valid, so a check written as `if (!requestId)` would mishandle id 0. PBI-10 exists to fix that class; this sprint must not add new instances of it.",
         "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
-        "PO checklist, per-sprint additions (standing list applies unchanged): (1) abort proven by TRANSITION not state -- aborted === false while running, then cancel, then true; asserting only the final state passes if the signal aborted for any unrelated reason; (2) signal isolation under concurrency, the discriminator a shared controller fails; (3) cancellation mid-stream stops further $/progress, which is where the value actually lands since it is PBI-4's work cancellation exists to bound; (4) the response shape a cancelled request produces is PINNED by a test -- the PO does not choose the mechanism, only that it cannot be left implicit and drift; (5) two labelled perturbations -- unwire the cancel registration and name the test that reddens, and abort every signal unconditionally and confirm the isolation test reddens.",
       ],
     },
     {
@@ -216,7 +217,6 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "MEASURED, outside the six criteria and deliberately NOT fixed: a client sending `partialResultToken: null` instead of omitting it is streamed to under token null and then receives only the returned array, silently losing every yielded item. Both runtimes; the server does not fail and stdout stays clean. The remedy is one operator, but `null` is a token PRESENT, so treating it as absent invents the second aggregation trigger PBI-4's notes exist to collapse -- and shipping it untested would be an unperturbed branch. PO's call, not the executor's.",
       ],
     },
     {
@@ -277,8 +277,121 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 7,
+    pbi_id: "PBI-10",
+    goal: "Make tsudoi safe to hand to a stranger -- when a client sends what the specification forbids, it gets an error or a correct fallback with a trace, never silently fewer items than the handler produced.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "BORN GREEN. `exit` as the very first message, no initialize: exits 1 with zero stdout bytes, both runtimes, within an explicit timeout so a hang fails as a timeout rather than stalling. PERTURBATION: add a pre-initialize gate that drops ALL notifications including exit; this MUST redden as a timeout. It exists solely to be the thing that objects when the gate lands -- without it the gate can hang the process with a fully green suite.",
+        implementation: "None -- measured working today on both runtimes.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN. After a successful initialize, an unregistered method is answered -32601 and a subsequent hover is answered normally. PERTURBATION: make the gate answer -32002 for any method tsudoi did not register; this MUST redden to -32002 while the pre-initialize subtask stays green. Nothing asserts -32601 today, so this regression is currently invisible.",
+        implementation: "None -- vscode-jsonrpc already does this.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. hover before initialize answers -32002; initialize then still succeeds and hover works.",
+        implementation:
+          "Gate ONLY the handlers tsudoi registered, not the dispatch as a whole -- that is what leaves unknown methods falling through to -32601, satisfying the guard by construction rather than by care. Use ErrorCodes.ServerNotInitialized, never a literal.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. hover after shutdown answers -32600; exit afterwards still returns 0.",
+        implementation:
+          "Second branch on the same lifecycle state. Shares the SEAM with the previous subtask but not the implementation moment: two states, two codes, two branches.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "MIXED -- `the document never appears` EXPECTED RED (didOpen after shutdown is processed today); `zero stderr` BORN GREEN. didOpen after shutdown leaves the document absent and produces zero stderr; exit still returns 0. PAIRED POSITIVE CONTROL, permanent in the suite: the same stderr measurement, in a session where a notification handler does throw, observes a non-empty `tsudoi:` line. PERTURBATION for the zero-stderr half: log the dropped notification; that assertion MUST redden while `the document never appears` stays green.",
+        implementation:
+          "Drop notifications once shut down, silently -- the same principle as PBI-2's unopened URI, which changes nothing observable and so stays silent.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A completion with partialResultToken: null produces ONE aggregated response containing every yielded item plus the returned items, and ZERO $/progress -- with the paired positive control that the same counter records progress in a valid-token session.",
+        implementation:
+          "Validate partialResultToken ONLY: one call site, no framework. Treat an invalid value as absent and take the existing aggregation path. Trace per request for now; the next subtask fixes the frequency.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Two completion requests with null tokens in one session produce EXACTLY ONE stderr trace naming the invalid token; both responses still aggregate. Assert the prefix and the COUNT, not the message body.",
+        implementation:
+          "Evolve the per-request write to a session-scoped flag. Kept separate from the previous subtask deliberately -- folding it in would have made this born green and the RED claim fiction.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN GREEN. Completion with partialResultToken 0 and with the empty string each produce $/progress per yield and the streaming response shape. PERTURBATION -- THE WHOLE POINT OF THE CRITERION: rewrite the validation as `if (!token)`. BOTH cases MUST redden while the null case stays green. Measured: both values survive sendProgress on both runtimes, so this asserts something achievable.",
+        implementation: "None expected, if the validation is a real ProgressToken type check.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural) -- suite stays green.",
+        implementation:
+          "hasShutdown is a loose flag in src/server.ts and this sprint adds an initialized flag and two guards. Consolidate into one named lifecycle state, with explicit === undefined comparisons throughout and no truthiness tests anywhere near tokens or ids -- the bug this PBI exists to fix must not be reintroduced by the fix.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "PROBE 2 SHARPENS THE HARM MODEL: 0, the empty string AND null all survive connection.sendProgress on both runtimes. So today's pre-fix behaviour is not `streaming fails` -- it is SILENT MISDELIVERY, items emitted to a `$/progress` addressed to null that no client can correlate. Measured, not assumed, and it makes criterion 3 genuinely RED today.",
+      "PROBE 1 with its limit stated: vscode-languageserver-protocol@3.18.2 (LSP 3.17); ErrorCodes.ServerNotInitialized is a real constant. Bare `exit` with no initialize already exits 1 with empty stdout on both runtimes, and NO test sends it -- so the carve-out is confirmed NECESSARY, since a gate dropping all pre-initialize notifications turns a measured exit=1 into a hang with nothing objecting. The Developer verified the version, the constant and the behaviour, but NOT the specification prose -- no spec text ships in the package. That sentence is a human-side check.",
+      "The two opening subtasks are born-green REGRESSION GUARDS that exist to object when the gate lands. Ordering them first is the point: they must exist before the change they guard against.",
+      "PO checklist, per-sprint additions: (1) ONE PERTURBATION PER SUB-CLAIM, each naming its target assertion -- criteria 1 and 2 bundle three claims each, and a single gate-widening perturbation flips whichever assertion runs first and leaves the rest undefended, which is precisely the Sprint 6 failure; six named targets, not two; (2) the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr; (3) the falsy-token discriminator as a PAIR -- implement as `if (!token)` and confirm the 0 test reddens WHILE the null test stays green, since either half alone proves nothing; (4) the once-per-session trace pinned, perturbed by emitting per request -- the only item guarding a requirement stated as a value constraint rather than a mechanism; (5) the normalised response asserted ITEM BY ITEM, not by count, since a count passes if the right number of wrong items arrives.",
+    ],
+  },
   retrospectives: [
+    {
+      sprint: 6,
+      improvements: [
+        {
+          action:
+            "Every assertion that something is ABSENT -- zero stderr, zero $/progress, a label not on stdout -- ships with a PAIRED assertion, permanent in the suite, that the same measurement observes it when present. A perturbation proves the apparatus once, on the day it was run; the pair proves it on every run, including after someone refactors the accumulator two sprints later.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Generalises what the PO had been imposing by hand criterion by criterion. Absence assertions are the ones least often perturbed, because `nothing happened` feels self-evident.",
+        },
+        {
+          action:
+            "A perturbation specified by the PRODUCT OWNER names the assertion it is required to flip, not just the mutation to make. If it flips an earlier assertion instead, it has not defended the claim it was written for and a different perturbation is required.",
+          timing: "sprint",
+          status: "active",
+          outcome:
+            "Filed separately from the perturbation-LABELLING rule on purpose: that one governs how the Scrum Master REPORTS (reproduction versus independent, expected versus observed), this one governs how the PO AUTHORS. Different owners, different phases; merging them would lose what makes each actionable.",
+        },
+      ],
+    },
     {
       sprint: 5,
       improvements: [
