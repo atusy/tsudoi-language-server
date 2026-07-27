@@ -390,9 +390,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Track whether any chunk was emitted for THIS request and branch on it. Not `?? null` and not `?? []` -- the choice depends on request-local state.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "38fe70b",
+            message: "test(completion): pin [] versus null to whether a chunk was emitted",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN, not the declared EXPECTED RED, for subtask 5's reason. PERTURBED (i) always [] -> RED at `expect(immediateResult).toBeNull()` with the [] half GREEN; (ii) always null -> RED at `expect(afterYieldResult).toEqual([])` with the null half GREEN. Both runtimes, both halves in one run. Restored.",
+          "ADDED beyond plan: the example config driven with NO token must aggregate its yield-then-return-null to the yielded item, not to []. Both perturbations above redden it, so the aggregation half of the null rule is proven too -- and that path is what a client which never sends partialResultToken actually gets from the artifact a config author copies.",
+        ],
       },
       {
         test: "MIXED -- error-response and stderr assertions EXPECTED RED; `progress remains on stdout` and the purity assertion BORN GREEN. A handler yields once then throws: assert IN ORDER the already-sent $/progress with its distinguishable content, then an error response for that id; a stderr line matching the `tsudoi: textDocument/completion handler failed:` PREFIX only; unframedStdoutBytes === 0; and a subsequent completion answered normally.",
