@@ -387,9 +387,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Place the cleanup reporter beside reportHandlerFailure, sharing the `tsudoi:` stderr convention but NOT the rethrow -- the asymmetry is the point and deserves the comment. Keep the scope boundary explicit there: client cancellation only, do not wire shutdown->cancel; an in-flight completion finishing across shutdown is correct-by-spec and deliberately unpinned, and this file is exactly where someone would assume otherwise.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ca0535e",
+            message: "refactor(methods): name the cleanup reporter and its asymmetry",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "Structural, suite unchanged at 137 pass / 554 assertions either side.",
+          "One tidy beyond the plan: the `error.stack ?? error.message : String(error)` line was identical in both reporters, so it became failureDetail(). Both callers are pinned by existing assertions -- the handler line by cancellation/hover/completion tests, the cleanup line by this sprint's -- so the extraction is covered rather than merely believed.",
+        ],
       },
     ],
     impediments: [],
