@@ -398,9 +398,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Evolve the per-request write to a session-scoped flag. Kept separate from the previous subtask deliberately -- folding it in would have made this born green and the RED claim fiction.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "0c804b9",
+            message:
+              "feat(completion): report an invalid token once per session, not once per request",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "HONESTLY RED, which the fake-it-then-evolve split is what bought: 2 traces observed where 1 was required. Subtask 6 asserts the trace with toContain and never a count, so this claim was genuinely unmet before this commit.",
+          "PERTURBATION (the once-per-session guard removed, so the trace is emitted per request) flipped `traces.toHaveLength(1)` on both runtimes, with BOTH aggregation assertions -- which run first -- still green. The frequency is the only requirement in this sprint stated as a value constraint rather than a mechanism.",
+        ],
       },
       {
         test: "BORN GREEN. Completion with partialResultToken 0 and with the empty string each produce $/progress per yield and the streaming response shape. PERTURBATION -- THE WHOLE POINT OF THE CRITERION: rewrite the validation as `if (!token)`. BOTH cases MUST redden while the null case stays green. Measured: both values survive sendProgress on both runtimes, so this asserts something achievable.",
