@@ -430,9 +430,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extract the per-request cancellation concern into one named place. Keep the hover and completion CALLS separate -- a generator cannot share the call.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "25302fc",
+            message: "refactor(methods): put the whole cancellation concern in one named place",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "Suite unchanged and green, 99 tests. answerUnlessCancelled(method, signal, produce) holds BOTH halves -- suppression and non-reporting -- so they cannot drift apart between the two methods; the calls stay separate, as `produce`.",
+          "It also let the completion loop go back to returning instead of assigning-and-breaking, which subtask 5 had forced.",
+        ],
       },
     ],
     impediments: [],
