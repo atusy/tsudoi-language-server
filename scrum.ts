@@ -276,9 +276,11 @@ const scrum: ScrumDashboard = {
         implementation:
           "Transcribe the brief's type-definition block into src/types.ts. Add a read-only DocumentStore whose get() returns undefined and values() yields nothing; PBI-2 replaces the implementation, not the shape.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [{ hash: "ebe98ea", message: "chore: add types", phase: "refactoring" }],
+        notes: [
+          "The brief misspells the factory type as TsudioiConfigFactory; transcribed as TsudoiConfigFactory.",
+        ],
       },
       {
         test: "A config whose default export returns a rejecting Promise exits 1 with non-empty stderr and empty stdout.",
