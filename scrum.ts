@@ -33,60 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-4",
-      story: {
-        role: "editor user",
-        capability: "receive completion candidates incrementally",
-        benefit: "slow sources do not block the first candidates from appearing",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "completionProvider is advertised when the config supplies a completion handler, and not when it does not",
-          verification:
-            "Two configs, one with the handler and one without; assert InitializeResult advertises completionProvider for the first and omits it for the second",
-        },
-        {
-          criterion:
-            "Each yield reaches the client as exactly one $/progress, in order, while the handler is still running",
-          verification:
-            "A handler yields a distinguishable chunk, blocks on a gate the test releases, then yields a second; assert the first $/progress arrives while the handler is still blocked, then the second after release, one per yield, matching content and order",
-        },
-        {
-          criterion:
-            "With a partialResultToken the response result is the returned array alone, not a repeat of the yields",
-          verification:
-            "A handler yields two chunks and returns a third; assert the response result equals the third only, so a client concatenating progress plus response sees each item exactly once",
-        },
-        {
-          criterion:
-            "Without a partialResultToken the yields and the return are aggregated into one response, and no $/progress is sent",
-          verification:
-            "The same handler driven without the token; assert a single response containing every yielded item plus the returned items, and zero $/progress notifications",
-        },
-        {
-          criterion:
-            "A null return yields [] when partial results were already sent, and null when none were",
-          verification:
-            "Two configs, one yielding then returning null and one returning null immediately; assert [] and null respectively",
-        },
-        {
-          criterion: "A handler that throws after yielding does not take the server down",
-          verification:
-            "A handler yields once then throws; assert the already-sent $/progress remains on stdout and is followed by an error response, a diagnosable message on stderr, no non-protocol bytes on stdout, and a subsequent completion answered normally",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "Aggregation has ONE observable trigger, not two: LSP has no client capability declaring partial-result support -- a client lacking it simply omits partialResultToken -- so the brief's second trigger collapses into the first by protocol design. window.workDoneProgress is not a proxy. This closes the gap flagged at init by decision, not by dropping it.",
-        "In streaming mode the response result is the RETURNED array alone, not a concatenation: the yields already went as $/progress. The brief's own rule that a null return after partials produces [] has no reason to exist under the concatenation reading, so this is the reading under which the brief is coherent.",
-        "completionProvider is advertised as an empty object. No triggerCharacters: the brief does not ask for them and TsudoiConfig has no surface to declare them; that is a config-schema change and its own PBI.",
-        "reportHandlerFailure writes error.stack, which is multi-line and whose first line differs between JSC and V8. Assert the `tsudoi: <method> handler failed:` prefix, not the stack body -- the same fix the notification-throw test used against vscode-jsonrpc's wrapper text.",
-        "Widen test/lifecycle.test.ts's capabilities assertion again for completionProvider, do not delete it.",
-        "PO: six criteria is deliberate and each closes a distinct green-but-broken path. Do not cut one to make room.",
-      ],
-    },
-    {
       id: "PBI-5",
       story: {
         role: "config author",
@@ -107,9 +53,9 @@ const scrum: ScrumDashboard = {
       story: {
         role: "editor user",
         capability:
-          "get a spec-correct error instead of a plausible answer when their client races the lifecycle",
+          "get a spec-correct response instead of a plausible but wrong one when their client sends something the specification does not allow",
         benefit:
-          "a client's ordering bug surfaces as an error rather than as silently wrong information",
+          "a client bug surfaces as an error or a correct fallback, never as silently missing information",
       },
       acceptance_criteria: [
         {
@@ -122,10 +68,20 @@ const scrum: ScrumDashboard = {
           verification:
             "Test sends hover after shutdown; assert the error code and that exit still returns 0",
         },
+        {
+          criterion:
+            "A partialResultToken that is not a valid ProgressToken does not cause silent item loss",
+          verification:
+            "A request sends partialResultToken as null; assert the client receives every item the handler produced, none stranded under an uncorrelatable token",
+        },
       ],
       status: "draft",
       notes: [
-        "Ordered after PBI-5: no conforming client triggers either case, so it ranks below the remaining PoC methods, but it is squarely inside success metric #2 -- answering a hover before initialize is not responding per the specification.",
+        "Ordered after PBI-5: no conforming client triggers these, so they rank below the remaining PoC methods, but they are squarely inside success metric #2 -- answering a hover before initialize is not responding per the specification.",
+        "MEASURED in Sprint 5: partialResultToken sent as null takes the streaming path (src/methods.ts branches on token === undefined), so items are streamed under an uncorrelatable token and the response carries only the return value. No error, no stderr, two items silently gone -- the worst failure class in this project.",
+        "PO overruled the Developer's protocol reasoning while endorsing their process: ProgressToken is integer | string, so null is a MALFORMED value in a field that exists, not a token that is present. Normalising it is input validation, not the second aggregation trigger PBI-4 collapsed -- that trigger was a client capability with NO wire representation at all, which is why it collapsed.",
+        'The third criterion is worded around VALIDITY, not around null, deliberately: 0 and "" are valid ProgressTokens while being falsy, so a fix written as `if (!token)` would break legitimate clients while fixing the null case. Refinement must not produce a truthiness check.',
+        "The criterion states the value requirement, not the mechanism. Refinement settles normalise-to-absent versus -32602 versus normalise-plus-stderr.",
       ],
     },
     {
@@ -215,6 +171,7 @@ const scrum: ScrumDashboard = {
         "Sprint 2 left the three guard rules pinned across three DIFFERENT incomplete path sets. import/extensions is pinned only at src/ and the two probe paths -- not at test/fixtures/ or examples/, which are exactly the files the cross-runtime suite executes under deno, and extensionless relative imports are the failure that bites there. Correct today by default-deny, and lifecycle.test.ts running examples/ under deno is a live backstop, so this is a missing pin rather than a hole.",
         "test/helpers/spawn.ts has the same per-chunk decode bug fixed in lsp.ts during Sprint 3. Consequence is narrow and was overstated on first reading: the CLI writes stderr directly and nothing in src/ decodes it, so a Japanese config author's error message is NOT mojibake -- what we cannot currently do is write a test asserting a non-ASCII config-failure message.",
         "The example config's `if (!document) return null` branch is untested; the null path is covered only through the no-handler fixture.",
+        "The completion arrivals assertion hardcodes response ids and demands the whole array; a vscode-jsonrpc bump emitting window/logMessage would break it at the array shape rather than at the ordering claim it defends.",
         "The 360KB Japanese test's failure mode depends on OS pipe buffer sizes. Deterministic here (3/3 under both runtimes), but on a platform with much larger buffers it degrades to passing trivially rather than failing.",
         "ignorePackages defends npm subpath specifiers ONLY. node:url is unflagged with or without it, so the round-2 perturbation defends the npm half alone and the node: half of PBI-6's criterion was trivially true rather than guarded.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
@@ -223,6 +180,27 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 5,
+      pbi_id: "PBI-4",
+      goal: "Make yield and return the whole of a config author's streaming API -- tsudoi decides whether that reaches the client as $/progress chunks or one aggregated response -- so the most precisely specified thing in the brief is the thing they never have to think about.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
+        "The new earlier-assertion clause caught its first case IN THE ACT: perturbation A (buffer every yield) reddened at waitForProgress(1) and never reached expect(settled).toBe(false), so it proved the SERVER streams while leaving the headline claim undefended. Perturbation B (release the gate immediately) is what defends it -- without B a fast server passes A by accident.",
+        "DECOMPOSITION FINDING, not an execution apology: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN, because one async generator cannot be dispatched twice -- subtask 3's handler necessarily decided the no-token, null and failure branches at the same moment. A plan that splits one dispatch across four subtasks cannot buy the sequencing it assumes.",
+        "Sprint 4's report-without-rethrow finding reproduced on the streaming path: an out-of-suite probe against the perturbed build returned RESULT [] with PROGRESS present and the stderr line present, so a stderr-only OR progress-only criterion would have passed while the client was handed a plausible empty answer.",
+        "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
+        "FOUND AT PLANNING, not in review: test/helpers/lsp.ts discards every server-initiated notification, so criterion 4's zero-$/progress assertion would have passed against a server streaming furiously. It is subtask 1, not a footnote.",
+        "The stakeholder described nine methods loosely and then wrote a generic type signature plus three lines of protocol rules for this one. Whatever they were most worried about is in that type, and the worry reads clearly: a config author must never touch partialResultToken or $/progress. The async generator IS the protocol adapter. This sprint delivers that or delivers a leaky abstraction with the same signature.",
+        "MEASURED, outside the six criteria and deliberately NOT fixed: a client sending `partialResultToken: null` instead of omitting it is streamed to under token null and then receives only the returned array, silently losing every yielded item. Both runtimes; the server does not fail and stdout stays clean. The remedy is one operator, but `null` is a token PRESENT, so treating it as absent invents the second aggregation trigger PBI-4's notes exist to collapse -- and shipping it untested would be an unperturbed branch. PO's call, not the executor's.",
+        "EXECUTION DEVIATION, reported not smoothed: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN. One async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token branch, the null branch and the failure branch at the same moment. Their evidence therefore rests entirely on perturbation, which is why every one of them carries two. A plan that splits one dispatch across four subtasks buys sequencing it cannot pay for.",
+        "scrum.ts EXCEEDS its 600-line limit (655) with the mandatory perturbation records present. Reported rather than resolved by compacting another section, per the constraint. The obvious remedy is the one sprints 1-4 already used: compact this sprint's subtasks into decisions at Review, where git still retains them.",
+        "PO checklist, per-sprint additions (the standing list applies unchanged): (1) streaming proven by ORDERING against the outstanding response, not by counting -- counting passes even if the server buffered every yield and flushed before responding; (2) the gate proven real by TWO labelled perturbations -- buffer all yields, the streaming test must redden (the server streams); release the gate immediately, the unsettled-response assertion must redden (the gate holds the response rather than the server merely being slow); (3) criterion 6 distinguishes `chunk arrived and stayed` from `chunk never arrived` by asserting distinguishable content and progress-then-error ordering, perturbed by suppressing progress on throw -- `clean up by not emitting chunks on failure` is a plausible thing to do deliberately; (4) criterion 5's two halves in the same run against the same build, neither satisfiable by a constant; (5) criterion 4's zero-progress assertion perturbed by emitting progress under an invented token.",
+      ],
+    },
     {
       number: 4,
       pbi_id: "PBI-3",
@@ -294,27 +272,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 5,
-    pbi_id: "PBI-4",
-    goal: "Make yield and return the whole of a config author's streaming API -- tsudoi decides whether that reaches the client as $/progress chunks or one aggregated response -- so the most precisely specified thing in the brief is the thing they never have to think about.",
-    status: "review",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in 12fda1b, 2c4294b, e82e7ae, 1d0c0f2, 1a72d93, 38fe70b, e8af57a, 095cdf3 across 8 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-      "The new earlier-assertion clause caught its first case IN THE ACT: perturbation A (buffer every yield) reddened at waitForProgress(1) and never reached expect(settled).toBe(false), so it proved the SERVER streams while leaving the headline claim undefended. Perturbation B (release the gate immediately) is what defends it -- without B a fast server passes A by accident.",
-      "DECOMPOSITION FINDING, not an execution apology: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN, because one async generator cannot be dispatched twice -- subtask 3's handler necessarily decided the no-token, null and failure branches at the same moment. A plan that splits one dispatch across four subtasks cannot buy the sequencing it assumes.",
-      "Sprint 4's report-without-rethrow finding reproduced on the streaming path: an out-of-suite probe against the perturbed build returned RESULT [] with PROGRESS present and the stderr line present, so a stderr-only OR progress-only criterion would have passed while the client was handed a plausible empty answer.",
-      "MEASURED under both runtimes: sendProgress emits exactly one $/progress per call in order; an awaited-polling handler stays interruptible so an in-band notification can gate it mid-request; and an error response still follows progress already written, with nothing retracting it.",
-      "FOUND AT PLANNING, not in review: test/helpers/lsp.ts discards every server-initiated notification, so criterion 4's zero-$/progress assertion would have passed against a server streaming furiously. It is subtask 1, not a footnote.",
-      "The stakeholder described nine methods loosely and then wrote a generic type signature plus three lines of protocol rules for this one. Whatever they were most worried about is in that type, and the worry reads clearly: a config author must never touch partialResultToken or $/progress. The async generator IS the protocol adapter. This sprint delivers that or delivers a leaky abstraction with the same signature.",
-      "MEASURED, outside the six criteria and deliberately NOT fixed: a client sending `partialResultToken: null` instead of omitting it is streamed to under token null and then receives only the returned array, silently losing every yielded item. Both runtimes; the server does not fail and stdout stays clean. The remedy is one operator, but `null` is a token PRESENT, so treating it as absent invents the second aggregation trigger PBI-4's notes exist to collapse -- and shipping it untested would be an unperturbed branch. PO's call, not the executor's.",
-      "EXECUTION DEVIATION, reported not smoothed: subtasks 5, 6 and 7 were planned EXPECTED RED and came out BORN GREEN. One async generator cannot be dispatched twice, so subtask 3's handler necessarily decided the no-token branch, the null branch and the failure branch at the same moment. Their evidence therefore rests entirely on perturbation, which is why every one of them carries two. A plan that splits one dispatch across four subtasks buys sequencing it cannot pay for.",
-      "scrum.ts EXCEEDS its 600-line limit (655) with the mandatory perturbation records present. Reported rather than resolved by compacting another section, per the constraint. The obvious remedy is the one sprints 1-4 already used: compact this sprint's subtasks into decisions at Review, where git still retains them.",
-      "PO checklist, per-sprint additions (the standing list applies unchanged): (1) streaming proven by ORDERING against the outstanding response, not by counting -- counting passes even if the server buffered every yield and flushed before responding; (2) the gate proven real by TWO labelled perturbations -- buffer all yields, the streaming test must redden (the server streams); release the gate immediately, the unsettled-response assertion must redden (the gate holds the response rather than the server merely being slow); (3) criterion 6 distinguishes `chunk arrived and stayed` from `chunk never arrived` by asserting distinguishable content and progress-then-error ordering, perturbed by suppressing progress on throw -- `clean up by not emitting chunks on failure` is a plausible thing to do deliberately; (4) criterion 5's two halves in the same run against the same build, neither satisfiable by a constant; (5) criterion 4's zero-progress assertion perturbed by emitting progress under an invented token.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 4,
