@@ -7,10 +7,22 @@ export interface Runtime {
   readonly name: string;
   readonly command: string;
   readonly runArgs: readonly string[];
+  readonly installUrl: string;
 }
 
-export const bunRuntime: Runtime = { name: "bun", command: "bun", runArgs: ["run"] };
-export const denoRuntime: Runtime = { name: "deno", command: "deno", runArgs: ["run", "-A"] };
+export const bunRuntime: Runtime = {
+  name: "bun",
+  command: "bun",
+  runArgs: ["run"],
+  installUrl: "https://bun.sh/docs/installation",
+};
+
+export const denoRuntime: Runtime = {
+  name: "deno",
+  command: "deno",
+  runArgs: ["run", "-A"],
+  installUrl: "https://docs.deno.com/runtime/getting_started/installation/",
+};
 
 interface ResponseMessage {
   id?: number;
