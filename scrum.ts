@@ -33,57 +33,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-5",
-      story: {
-        role: "config author",
-        capability: "abandon work for a request the client has cancelled",
-        benefit: "their handlers stop burning time on results nobody will read",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "$/cancelRequest aborts context.signal for the targeted request and for no other in flight",
-          verification:
-            "Two concurrent requests with distinguishable fixtures; cancel one. The targeted fixture reports abort on stderr; the other reports it was never aborted and is answered normally",
-        },
-        {
-          criterion:
-            "A cancelled request is answered -32800 RequestCancelled, for hover and completion alike",
-          verification:
-            "Cancel each; assert error.code === -32800 and that a subsequent request of the same method is answered normally",
-        },
-        {
-          criterion: "A handler that never reads its signal still has its result suppressed",
-          verification:
-            "A fixture that never references context.signal and runs to completion; assert the response is -32800 and the handler's value appears nowhere on stdout",
-        },
-        {
-          criterion:
-            "Cancelling a streaming completion leaves already-sent $/progress on stdout and sends none after the abort",
-          verification:
-            "Gate the handler after one chunk, cancel, release; assert exactly one $/progress, then -32800, and zero non-protocol bytes on stdout",
-        },
-        {
-          criterion: "A cancelled handler's throw is not reported as a handler failure",
-          verification:
-            "A fixture that throws once aborted; assert -32800 and NO `tsudoi: <method> handler failed:` line on stderr, while a non-cancelled throwing handler still produces one",
-        },
-        {
-          criterion: "$/cancelRequest for an unknown or already-settled id is ignored",
-          verification:
-            "Cancel an id never issued and an id already answered; assert no error response, no stderr failure line, and a subsequent request answered normally",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MEASURED on both runtimes: vscode-jsonrpc already plumbs $/cancelRequest to a CancellationToken on onRequest handlers, so tsudoi BRIDGES rather than tracking the notification itself -- tracking it would mean racing a handler the library already consumes. But the library synthesises NO -32800 and does not suppress an ignoring handler's result; both are tsudoi's to build.",
-        "A cancelled request answers -32800, discarding whatever the handler produced. LSP 3.17 permits both this and a normal result, so it is a CHOICE: the client has already discarded the request's context, and delivering a stale result invites the desync PBI-4's criterion 6 exists to prevent.",
-        "A cancelled handler's throw is NOT reported: an aborted fetch rejects by design, and writing a failure line plus a stack for every cancellation would train config authors to ignore the one stderr channel that means something.",
-        "Observability seam: the fixture registers signal.addEventListener('abort', ...) and writes a marker to stderr -- a standard Web API, Bun-free and Deno-safe.",
-        "ESCALATED, not decided: letting a config author DECLINE cancellation (LSP allows returning a normal result anyway) needs a TsudoiConfig surface to declare it -- a config-schema change, the same reasoning that kept triggerCharacters out of PBI-4. Its own PBI if anyone wants it.",
-      ],
-    },
-    {
       id: "PBI-10",
       story: {
         role: "editor user",
@@ -96,27 +45,53 @@ const scrum: ScrumDashboard = {
         {
           criterion: "A request arriving before initialize is answered -32002 ServerNotInitialized",
           verification:
-            "Test sends hover before initialize; assert the error code and that the server still initializes afterwards",
-        },
-        {
-          criterion: "A request arriving after shutdown is answered -32600 InvalidRequest",
-          verification:
-            "Test sends hover after shutdown; assert the error code and that exit still returns 0",
+            "Test sends hover before initialize and asserts the code, then asserts initialize still succeeds afterwards, and that exit sent before any initialize still exits 1 rather than hanging",
         },
         {
           criterion:
-            "A partialResultToken that is not a valid ProgressToken does not cause silent item loss",
+            "After shutdown a request is answered -32600 InvalidRequest and a notification is ignored",
           verification:
-            "A request sends partialResultToken as null; assert the client receives every item the handler produced, none stranded under an uncorrelatable token",
+            "Test sends hover after shutdown asserting the code, sends didOpen after shutdown asserting zero stderr and that the document never appears, then asserts exit still returns 0; the zero-stderr half counts only if a perturbation that logs there demonstrably produces stderr",
+        },
+        {
+          criterion:
+            "A partialResultToken that is not a valid ProgressToken is treated as absent, with a diagnosable trace",
+          verification:
+            'A request sends partialResultToken as null; assert the client receives every item the handler produced in one aggregated response and that stderr names the invalid token, while the valid falsy tokens 0 and "" still stream',
+        },
+      ],
+      status: "ready",
+      notes: [
+        "ORGANISING PRINCIPLE: diagnosability is proportional to harm. An invalid token loses user items, so it reports; a post-shutdown notification changes nothing observable, so it stays silent like PBI-2's unopened URI. The two rulings are not exceptions to each other.",
+        "Remedy chosen at refinement: normalise-and-report. -32602 would cost an editor user every completion for their client's serialisation quirk; normalising silently is the invisible-client-bug failure mode. The trace must NOT be per request -- once per session is enough, and flooding an LSP log makes it useless for everything else.",
+        "Validate partialResultToken ONLY. A seam with one call site is a framework justified by one user, which PBI-3 rejected and PBI-1 withdrew. The STORY is protocol-violation handling; the IMPLEMENTATION is three concrete cases and no framework.",
+        'The falsy-valid-token guard is a CRITERION, not a note: ProgressToken is integer | string, so 0 and "" are valid and falsy, and `if (!token)` fixes the null case while breaking legitimate clients. Only an assertion catches that.',
+        "The pre-initialize gate must not swallow -32601: an unknown method after initialize must still get MethodNotFound, not ServerNotInitialized. Nothing currently asserts -32601, so a green suite would not show that regression.",
+        "Boundary closed by decision, not omission: unknown methods already get -32601 from vscode-jsonrpc, and malformed positions belong to the config author's handler, which owns the position math.",
+        'CONFIRM EMPIRICALLY before treating the criteria as binding: that `exit` is the correct notification carve-out before initialize in the LSP version targeted, and that 0 and "" survive connection.sendProgress. Both are cheap probes and both would ship a wrong criterion if assumed.',
+      ],
+    },
+    {
+      id: "PBI-11",
+      story: {
+        role: "config author",
+        capability: "have their handler's cleanup run when a request is abandoned",
+        benefit:
+          "resources a streaming handler holds are released instead of leaking on every superseded keystroke",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A cancelled completion closes the generator, so a finally block in the handler runs",
+          verification:
+            "A fixture generator records in its finally block; cancel mid-stream and assert the record appears, and that it does not appear when the generator is left suspended",
         },
       ],
       status: "draft",
       notes: [
-        "Ordered after PBI-5: no conforming client triggers these, so they rank below the remaining PoC methods, but they are squarely inside success metric #2 -- answering a hover before initialize is not responding per the specification.",
-        "MEASURED in Sprint 5: partialResultToken sent as null takes the streaming path (src/methods.ts branches on token === undefined), so items are streamed under an uncorrelatable token and the response carries only the return value. No error, no stderr, two items silently gone -- the worst failure class in this project.",
-        "PO overruled the Developer's protocol reasoning while endorsing their process: ProgressToken is integer | string, so null is a MALFORMED value in a field that exists, not a token that is present. Normalising it is input validation, not the second aggregation trigger PBI-4 collapsed -- that trigger was a client capability with NO wire representation at all, which is why it collapsed.",
-        'The third criterion is worded around VALIDITY, not around null, deliberately: 0 and "" are valid ProgressTokens while being falsy, so a fix written as `if (!token)` would break legitimate clients while fixing the null case. Refinement must not produce a truthiness check.',
-        "The criterion states the value requirement, not the mechanism. Refinement settles normalise-to-absent versus -32602 versus normalise-plus-stderr.",
+        "src/methods.ts returns out of the driving loop on abort without calling chunks.return(), so the generator stays suspended at its yield. A manual next() loop does not close an iterator the way for await...of does.",
+        "Completion is the MOST-CANCELLED request in LSP -- every keystroke supersedes the previous one -- so an unclosed generator leaks on the hottest path in the protocol, and the config author most likely to hit it is exactly the one streaming was built for, holding a database handle or HTTP stream across yields.",
+        "This is when examples/tsudoi.config.ts should gain cancellation coverage: a try/finally in its generator is exemplary code a config author should see, unlike making the example artificially slow, which would be changing the artifact for test convenience.",
       ],
     },
     {
@@ -140,7 +115,7 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "PBI-10 must complete first: it fixes a defect that silently loses user items, and these two are what make the package installable.",
+        "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
         "Deferred out of PBI-1 in round 2. Needs package self-reference (name + exports in package.json), unverified under Deno. Not an impediment: self-reference is entirely local, needing no registry, npm account or publish.",
         "Type-only imports are erased at runtime, so no PoC method behavior depends on this; ordered last for that reason.",
         "Regression risk: the obvious fix is a deno.json import map, which is exactly what Sprint 1 deliberately avoided. The cross-runtime lifecycle tests must still pass on completion.",
@@ -173,7 +148,7 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "PBI-10 must complete first: it fixes a defect that silently loses user items, and these two are what make the package installable.",
+        "PBI-10 AND PBI-11 must both complete first: PBI-10 fixes a defect that silently loses user items, PBI-11 stops a streaming handler leaking on every superseded keystroke, and these two PBIs are what make the package installable. Both are named here because each is dropped on completion.",
         "Ordered after PBI-7 so the documented import is @atusy/tsudoi/types, not a relative path -- writing it earlier guarantees a rewrite.",
         "The permission criterion says 'the permissions deno actually requires' rather than promising to beat -A: vscode-jsonrpc may pull in more than --allow-env --allow-read, and a docs deliverable must not be held hostage by an open investigation. The anti-drift mechanism is the part that matters.",
       ],
@@ -205,6 +180,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "Both behaviours already pass, so each test must be proven to fail before it is trusted -- perturb the exit path and the deno args, confirm red, restore.",
+        "A further instance of debt item (d), added knowingly in Sprint 6: the mid-stream arrivals assertion hardcodes response ids.",
         "Accumulated test-fidelity debt, four items: (a) test/helpers/spawn.ts keeps the per-chunk decode bug fixed in lsp.ts, so no test can assert a non-ASCII config-failure message -- narrow, since the CLI writes stderr directly and nothing in src/ decodes it; (b) the 360KB Japanese test depends on OS pipe buffer sizes and would degrade to passing trivially on a platform with larger ones; (c) the example config's `if (!document) return null` branch is untested; (d) the completion arrivals assertion hardcodes response ids and demands the whole array, so a vscode-jsonrpc bump emitting window/logMessage breaks it at the array shape rather than the ordering claim it defends.",
         "PO calls this the lowest-value item in the backlog and ordered it last, honestly: it pins behaviour already verified by hand and already ruled non-blocking.",
       ],
@@ -212,6 +188,25 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 6,
+      pbi_id: "PBI-5",
+      goal: "Make slow sources safe as well as first-class -- when the client cancels, context.signal aborts and a config author's handler can stop -- so the streaming API built last sprint never leaves abandoned work running.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 7b6e133, 5cba2c2, 7481a22, 26e12a9, 81983b0, 7327cf7, 5913ad9, 25302fc across 8 subtasks, plus a85ba96 and 71afcbb closing gaps. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
+        "SHIPPING-GRADE HOLE the plan could not have known about, found by READING THE LIBRARY rather than by timing: vscode-jsonrpc's handleRequest calls cancellationSource.cancel() BEFORE ever reading .token. With _token unmaterialised, cancel() installs CancellationToken.Cancelled, whose onCancellationRequested is Event.None -- returns a disposable and NEVER invokes the callback. A subscribe-only bridge therefore never aborts for a client that cancels before dispatch, and the settle-time check then reads aborted === false and puts the handler result on the wire. Fixed by reading isCancellationRequested BEFORE subscribing. A source-ordering argument, not a timeout, which could not distinguish never-fires from fires-late.",
+        "PO checklist item 5's second perturbation was INSUFFICIENT AS SPECIFIED: abort-every-signal flips at `entered line-1 aborted=false`, an earlier assertion, so it defends the transition's false half and leaves isolation undefended. One shared AbortController is the perturbation that flips isolation itself -- the exact shape the PO caught before refinement.",
+        "Subtask 7's planned perturbation is UNBUILDABLE, and that is the empirical basis for `bridge, do not track`: handleNotification returns early for $/cancelRequest before consulting any registered handler, and a request handler is never passed its own id, so a tsudoi-side registry has nothing to hook and nothing to key on.",
+        "MEASURED before deciding, and it overturned an option: vscode-jsonrpc plumbs $/cancelRequest to a CancellationToken on both runtimes, so tsudoi bridges rather than tracks. But it synthesises no -32800 and lets an ignoring handler's result reach the wire -- both are tsudoi's to build.",
+        "PO caught a green-but-broken shape BEFORE refinement: the original single criterion is satisfied completely by one SHARED AbortController, as long as only one request is in flight. Signal isolation under concurrency and settlement despite an ignoring handler were added as requirements, not suggestions.",
+        "Explicit === undefined comparisons throughout: 0 and the empty string are falsy but valid, so a check written as `if (!requestId)` would mishandle id 0. PBI-10 exists to fix that class; this sprint must not add new instances of it.",
+        "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
+        "PO checklist, per-sprint additions (standing list applies unchanged): (1) abort proven by TRANSITION not state -- aborted === false while running, then cancel, then true; asserting only the final state passes if the signal aborted for any unrelated reason; (2) signal isolation under concurrency, the discriminator a shared controller fails; (3) cancellation mid-stream stops further $/progress, which is where the value actually lands since it is PBI-4's work cancellation exists to bound; (4) the response shape a cancelled request produces is PINNED by a test -- the PO does not choose the mechanism, only that it cannot be left implicit and drift; (5) two labelled perturbations -- unwire the cancel registration and name the test that reddens, and abort every signal unconditionally and confirm the isolation test reddens.",
+      ],
+    },
     {
       number: 5,
       pbi_id: "PBI-4",
@@ -282,25 +277,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 6,
-    pbi_id: "PBI-5",
-    goal: "Make slow sources safe as well as first-class -- when the client cancels, context.signal aborts and a config author's handler can stop -- so the streaming API built last sprint never leaves abandoned work running.",
-    status: "review",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in 7b6e133, 5cba2c2, 7481a22, 26e12a9, 81983b0, 7327cf7, 5913ad9, 25302fc across 8 subtasks, plus a85ba96 and 71afcbb closing gaps. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-      "SHIPPING-GRADE HOLE the plan could not have known about, found by READING THE LIBRARY rather than by timing: vscode-jsonrpc's handleRequest calls cancellationSource.cancel() BEFORE ever reading .token. With _token unmaterialised, cancel() installs CancellationToken.Cancelled, whose onCancellationRequested is Event.None -- returns a disposable and NEVER invokes the callback. A subscribe-only bridge therefore never aborts for a client that cancels before dispatch, and the settle-time check then reads aborted === false and puts the handler result on the wire. Fixed by reading isCancellationRequested BEFORE subscribing. A source-ordering argument, not a timeout, which could not distinguish never-fires from fires-late.",
-      "PO checklist item 5's second perturbation was INSUFFICIENT AS SPECIFIED: abort-every-signal flips at `entered line-1 aborted=false`, an earlier assertion, so it defends the transition's false half and leaves isolation undefended. One shared AbortController is the perturbation that flips isolation itself -- the exact shape the PO caught before refinement.",
-      "Subtask 7's planned perturbation is UNBUILDABLE, and that is the empirical basis for `bridge, do not track`: handleNotification returns early for $/cancelRequest before consulting any registered handler, and a request handler is never passed its own id, so a tsudoi-side registry has nothing to hook and nothing to key on.",
-      "MEASURED before deciding, and it overturned an option: vscode-jsonrpc plumbs $/cancelRequest to a CancellationToken on both runtimes, so tsudoi bridges rather than tracks. But it synthesises no -32800 and lets an ignoring handler's result reach the wire -- both are tsudoi's to build.",
-      "PO caught a green-but-broken shape BEFORE refinement: the original single criterion is satisfied completely by one SHARED AbortController, as long as only one request is in flight. Signal isolation under concurrency and settlement despite an ignoring handler were added as requirements, not suggestions.",
-      "Explicit === undefined comparisons throughout: 0 and the empty string are falsy but valid, so a check written as `if (!requestId)` would mishandle id 0. PBI-10 exists to fix that class; this sprint must not add new instances of it.",
-      "MEASURED at HEAD, after the extraction: removing the settle-time check reddens the four -32800 tests but NOT the cancelled-throw test, which the catch-side branch answers. The two branches of answerUnlessCancelled are independently defended.",
-      "PO checklist, per-sprint additions (standing list applies unchanged): (1) abort proven by TRANSITION not state -- aborted === false while running, then cancel, then true; asserting only the final state passes if the signal aborted for any unrelated reason; (2) signal isolation under concurrency, the discriminator a shared controller fails; (3) cancellation mid-stream stops further $/progress, which is where the value actually lands since it is PBI-4's work cancellation exists to bound; (4) the response shape a cancelled request produces is PINNED by a test -- the PO does not choose the mechanism, only that it cannot be left implicit and drift; (5) two labelled perturbations -- unwire the cancel registration and name the test that reddens, and abort every signal unconditionally and confirm the isolation test reddens.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 5,
