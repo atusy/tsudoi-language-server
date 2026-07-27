@@ -372,9 +372,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Check the signal before each sendProgress and stop driving the generator once aborted. PERTURBATION: remove that check; exactly-one-$/progress MUST redden while -32800 stays green.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "81983b0",
+            message: "feat(cancel): stop streaming a completion the client cancelled",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "MIXED as declared: -32800 passed on first run, the arrivals assertion reddened with the second chunk (取消後) present.",
+          "PERTURBATION `remove the pre-send check`: reddens ONLY this test, at the arrivals assertion, both runtimes; -32800 and every other cancellation test stay green.",
+          "The check sits BETWEEN pulling a chunk and sending it, not at the top of the loop: the abort lands while next() is parked, so a top-of-loop check has already passed and that chunk still goes out. Placement is load-bearing, and the test is what proves it.",
+          "CONSEQUENCE, accepted and not built: an abandoned generator is never resumed, so a config author's `finally` does not run on cancellation. Outside PBI-5's criteria; needs its own decision.",
+        ],
       },
       {
         test: "EXPECTED RED. A fixture throwing once aborted answers -32800 with NO `tsudoi: <method> handler failed:` line on stderr, while the existing non-cancelled throwing fixture still produces one.",
