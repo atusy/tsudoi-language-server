@@ -45,16 +45,22 @@ const scrum: ScrumDashboard = {
         {
           criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
           verification:
-            "Gate notifications in ONE place and assert a handler that does NOT consult the gate itself is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes this only because each handler remembers -- delete the check from any one handler body and nothing reddens",
+            "BYPASS MUST BE UNREPRESENTABLE, NOT MERELY TESTED: the REGISTRATION MECHANISM applies the gate, so a handler that skips it cannot be written -- foreclosing over detecting, which is the whole argument for doing this at all. Assert that a handler whose own body consults NOTHING is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes that assertion only because each handler remembers, so deleting the check from any one handler body reddens nothing",
         },
         {
           criterion: "exit survives the gate, in EVERY state rather than the one already tested",
           verification:
             "exit before initialize AND exit after shutdown both still exit, with the codes PBI-10 and Sprint 3 pinned. THE PO CORRECTING THEIR OWN REASONING: PBI-10 covers exit BEFORE initialize only, so a blanket gate could get the carve-out wrong in ways that test never reaches -- this criterion exists because inheriting someone else's coverage is what would hide it",
         },
+        {
+          criterion: "The three hand-written checks are GONE, not left alongside the structure",
+          verification:
+            "assert no handler body calls acceptsNotification() -- by reading src/server.ts as the suite reads the README, so the claim cannot rot. THE REASON THIS IS A CRITERION AND NOT BOILERPLATE: if the convention survives, THE STRUCTURAL GATE CAN BE INERT AND EVERY TEST STILL PASSES -- the gate is added, the old checks do the work, and nothing proves which one is enforcing. NEGATIVE CONTROL: neutralise the structural gate; with the hand-written checks gone the lifecycle tests must redden",
+        },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
+        "THE FIRST APPLICATION OF THE SUBTRACTION RULE FILED ONE TURN BEFORE IT: three deliberate deletions, each needing its defence named and re-homed onto the structure. The PO required it as a criterion because they expected it to be the missing one.",
         "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention. WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
         "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure. DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
       ],
@@ -76,7 +82,13 @@ const scrum: ScrumDashboard = {
         {
           criterion: "A folder removed after initialize stops being observable",
           verification:
-            "Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one",
+            "MATCH THE URI STRING EXACTLY AND DO NOT NORMALISE. Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one. THE DISCRIMINATING CASE, which an ECHOING ORACLE CANNOT PASS: add BOTH spellings of one directory -- `…/plain` and `…/plain/` -- remove one, assert the other REMAINS",
+        },
+        {
+          criterion:
+            "A handler sees the folders as they were WHEN ITS REQUEST STARTED, not as they are when it reads them",
+          verification:
+            "Change the folders while a streaming completion is in flight and assert that request finishes on the list it began with, while the NEXT request sees the change. NEGATIVE CONTROL: a live read makes the in-flight response carry items from two different root sets",
         },
         {
           criterion:
@@ -87,6 +99,10 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
+        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client.",
+        "PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
+        "THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
+        "THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
         "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap.",
         "THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
@@ -155,6 +171,19 @@ const scrum: ScrumDashboard = {
   sprint: null,
   retrospectives: [
     {
+      sprint: 16,
+      improvements: [
+        {
+          action:
+            "DELETING A TEST THAT DEFENDS AN ACCEPTED CRITERION IS A SCOPE DECISION, NOT A FIX, and it goes to the PO before it is re-homed. Applies to ANY change, not only sprint work.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Filed after three stakeholder-driven increments landed between sprints with tests green and perturbations run -- the fast loop working -- while one of them silently withdrew PBI-15's legibility criterion, accepted one sprint earlier, by deleting its two tests. The signal was there (eight tests reddened); what was missing was routing it back. FILED AS ITS OWN ENTRY rather than merged into Sprint 11's classification, which covers a perturbation that could not be CONSTRUCTED -- this covers a defence deliberately REMOVED, and collapsing them would lose the same kind of distinction that kept the justification standard and the coverage rule apart.",
+        },
+      ],
+    },
+    {
       sprint: 15,
       improvements: [
         {
@@ -201,7 +230,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage.",
+            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage. SUBJECT WIDENED AT SPRINT 16, not a new rule: a claim about WHAT THE RULE SET CONTAINS is checked against the rule set. The PO asserted a filed improvement existed and it never had been -- the fourth catch by their own rule, and the first where the Scrum Master caught it by applying that rule TO the PO rather than taking their word.",
           timing: "sprint",
           status: "active",
           outcome:
