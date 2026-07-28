@@ -34,47 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-19",
-      story: {
-        role: "config author",
-        capability: "see the root the editor named, however that client spelled it",
-        benefit:
-          "a project that IS open stops looking like no project at all, because the client used the field its LSP version had",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A client that sends rootUri but no workspaceFolders still reaches a handler with a folder",
-          verification:
-            "Drive initialize with rootUri set and workspaceFolders ABSENT; assert the handler observes one folder resolving to that root. VERIFIED SYNTHETICALLY, SAID PLAINLY ON THE PBI RATHER THAN AT REVIEW: MEASURED across all three capability declarations, nvim sends rootUri and workspaceFolders TOGETHER OR NEITHER, so NO MEASURED CLIENT PRODUCES THIS CASE -- the spec contemplates a rootUri-only client and such clients existed, which is why the item stands, but nobody should read it as this stakeholder's. NEGATIVE CONTROL: absence must still be absence -- a client sending NEITHER leaves the list EMPTY, never a folder synthesised from cwd or from anything else this process could invent",
-        },
-        {
-          criterion: "The protocol's own precedence is what decides, not ours",
-          verification:
-            "workspaceFolders > rootUri > rootPath, each asserted against the pair below it: folders present WINS over a conflicting rootUri, and rootUri wins over a conflicting rootPath. MEASURED FROM THE INSTALLED TYPES, which state the second half outright -- `If both rootPath and rootUri are set rootUri wins`",
-        },
-        {
-          criterion:
-            "A synthesised entry is an ORDINARY MEMBER of the list, and deltas apply to it",
-          verification:
-            "With a folder synthesised from rootUri, send workspace/didChangeWorkspaceFolders adding another and assert BOTH are present; send one removing the synthesised URI and assert it goes like any other entry. NEGATIVE CONTROL: discarding the fallback on the first change leaves the list holding the DELTA ALONE -- a first event of `added: [Y]` yields [Y] where the client may well hold [root, Y]",
-        },
-        {
-          criterion: "A client `added` naming the SYNTHESISED URI yields TWO entries",
-          verification:
-            "Synthesise from rootUri, then send added: [that same URI] and assert the list holds it TWICE. NEGATIVE CONTROL: any collapse reddens it -- and a well-meaning `do not duplicate our own entry` check passes EVERY OTHER criterion, the identical hazard shape to PBI-20's `includes` guard, which was measured passing everything else. APPEND RATHER THAN REPLACE, and the losing argument is recorded because it is strong: one folder guessed and once confirmed is arguably not two, and OUR entry is an estimate where the client's is a statement. It loses on MECHANISM COST -- replace reintroduces PROVENANCE one turn after the uniformity ruling removed the need for it, and an exception for our own entry makes the synthesised entry EXTRAORDINARY again",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MEASURED FROM THE INSTALLED PROTOCOL TYPES, and this is the whole argument: workspaceFolders `is only available IF THE CLIENT SUPPORTS WORKSPACE FOLDERS`, while rootPath is deprecated in favour of rootUri and rootUri in favour of workspaceFolders. So a client without that capability sends NO folders and may still send a root -- and today tsudoi hands such an author an empty list, from which they conclude the editor opened no project when it opened one and said so in the deprecated field. The silent-absence class, through a door PBI-15 did not cover. A PREMISE THE PO FLAGGED AS UNCONFIRMED AND ASKED FOR BEFORE FILING, THEN FALSIFIED BY READING THE DECLARATIONS RATHER THAN THE PROSE: they reasoned that such a client could never send didChangeWorkspaceFolders, which would have made synthesis and tracking DISJOINT. It is not declared, AND THE STAKEHOLDER NAMED WHY, which is more useful than the absence: THE CLIENT CAPABILITY'S JOB IS THE REQUEST DIRECTION. CM<C, S> is { client, server }; the server-to-client REQUEST workspace/workspaceFolders declares CM<`workspace.workspaceFolders`, `workspace.workspaceFolders`>, while the client-to-server NOTIFICATION declares CM<undefined, `workspace.workspaceFolders.changeNotifications`> -- no client capability at all, and the only gate named is the SERVER's registration switch, which Sprint 14 measured nvim ignores anyway. So the capability says whether the server may ASK the client for folders; it says nothing about whether the client volunteers changes. Separateness therefore rests on DIFFERENT FAILURE MODES, which hold regardless: PBI-17 fixes a list going STALE, this fixes a list being EMPTY when the client did name a root.",
-        "CRITERION 3'S PREMISE IS CONFIRMED BY MEASUREMENT rather than inherited, which the PO required: driving nvim 0.13 with workspace.workspaceFolders declared TRUE, FALSE and OMITTED, the notification ARRIVES IN ALL THREE -- including when the client declared FALSE. So its arrival does not depend on the declaration, which is the client-side confirmation of the stakeholder's reading that the capability governs the server-to-client REQUEST direction only.",
-        "`name` IS SYNTHESISED AS THE FULL PATH -- `fileURLToPath(rootUri)`, and rootPath verbatim since it is already a path -- ON THE HONEST BASIS, the PO correcting the reason while KEEPING the choice: NOT because it matches the measured client, since the fallback only exists for clients that never send workspaceFolders and nvim ALWAYS does, so WE WOULD NEVER SYNTHESISE FOR THE CLIENT WHOSE CONVENTION WAS MEASURED. It stands because it is DERIVABLE FROM THE URI WITHOUT INVENTION.",
-        "THE PO OVERTURNED THEIR OWN CRITERION 3 AT REFINEMENT, which is the REASONED label working exactly as designed -- marked so it could be corrected rather than inherited, and it was. The dropped rule was `a change notification proves the client can tell us folders, so discard the fallback`. TWO THINGS KILLED IT. (a) A CHANGE NOTIFICATION IS A DELTA, NOT A STATEMENT OF THE LIST: discarding replaces our only estimate of the pre-existing state with a delta-only view -- strictly less information, and the loss is SILENT. (b) THE MEASUREMENT UNDERCUT THE PREMISE: a client sends the notification while declaring the capability FALSE, so sending changes proves very little about what it declared or holds. CONSEQUENCE WORTH NAMING: the provenance flag the Developer designed to resolve the old tension is now UNNECESSARY -- an elegant answer to a problem the overturn removed, and better found before it was built than after. A LIMIT RECORDED SO NOBODY READS THIS AS THE STAKEHOLDER'S FIX: with the bare on_dir() their kakehashi uses, nvim sends rootUri: null, rootPath: null AND workspaceFolders: null -- ALL THREE EMPTY. There is nothing to convert. This helps clients that name a root without naming folders, a real but small population containing no known user, which is why it is ordered after PBI-17.",
-        "THE NAME STAYS `workspaceFolders` -- a folder derived from rootUri genuinely IS a workspace folder expressed in an older field, and src/types.ts's own header says renaming an export breaks configs we cannot see. WHAT BECOMES FALSE IS THE COMMENT, which says the value is what the client SENT: it changes in the SAME COMMIT and must name the precedence chain, so an author meeting a synthesised `name` knows where it came from. A PROBE WORTH RUNNING DURING THE SPRINT, NOT AS A GATE ON IT: whether a client can be made to send didChangeWorkspaceFolders while declaring workspace.workspaceFolders false or omitting it. Its best outcome leaves the case REPRESENTABLE in the protocol, so this PBI must define behaviour either way -- a measurement that cannot change the deliverable does not block refinement.",
-      ],
-    },
-    {
       id: "PBI-20",
       story: {
         role: "config author",
@@ -99,6 +58,24 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 18,
+      pbi_id: "PBI-19",
+      goal: "Let a config author see the root the editor named, whichever field that client's LSP version used to name it.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in c4432d0, 88b376a, b1967ba, 9286da6 and 01e3fbf. 317 tests green from 293, each DoD command run separately with its exit read directly. The chain is workspaceFolders > rootUri > rootPath, computed ONCE at initialize and stored -- never at read time.",
+        "THE READ-TIME TRAP IS THE SPRINT'S CENTRAL CONTROL, and it broke TWO WAYS from one perturbation: `folders.length > 0 ? folders : synthesise(rootUri)` passes criterion 1 PERFECTLY, then loses the root to the first `added` and makes it REAPPEAR when a later `removed` empties the list -- a folder the client explicitly removed coming back. The Scrum Master rebuilt it INDEPENDENTLY at a different site, reaching 4 tests per runtime where the executor reached 3, and labelled it an independent construction rather than a reproduction.",
+        "A THIRD GENUINE RED THE PLAN DID NOT PREDICT, named by the executor as their own split rather than a surprise: the chain has two COMPARISONS but three SITES, and the rootPath-alone test is the only thing pinning the second synthesis site's convention. Without it that convention ships unasserted.",
+        "PINNED AT REVIEW BECAUSE NOTHING DEFENDED IT: making `[]` or null stop the chain reddened NOTHING across 315 tests. Correct behaviour with zero defence is what the first-to-fail rule was sharpened to catch, and a stronger case than the exit carve-out -- there the detection was real but unnamed, here there was none. THE REASON WAS ALSO CORRECTED: fall-through holds on HARM ASYMMETRY, not on a config author being unable to see which spelling arrived, which is observability. The spec-precedence counter is recorded at the site as considered.",
+        "TWO DECISIONS UNPINNED BY CHOICE, a THIRD CATEGORY beside NOT CONSTRUCTED and FORECLOSED, each recorded with what was chosen and what was rejected. A non-file rootUri: `initialize is still answered` admits ONE outcome and is pinned, while what the list holds admits more than one and is not -- the rejected alternative would have introduced a THIRD naming convention.",
+        "A RULE OF OURS BLINDING A CONTROL OF OURS: under the cwd-fallback perturbation the example-level absence test stayed GREEN, because PBI-14's dedup-by-inserted-text collapses the identical item a cwd root produces. Annotated at the site rather than deleted, so nobody reads two tests as two defences; the context-level test carries that criterion alone.",
+        "THE COMMENT PERTURBATION IS A NEW TECHNIQUE and it found three site comments asserting what nothing checked. Distinct from the standing prose item, which catches prose that BECAME false: this catches prose that was NEVER checked. The enabling measurement is at test/workspace.test.ts -- every URI in the suite round-tripped through the URL parser unchanged, so `we kept the client's bytes` and `we reparsed and got lucky` were indistinguishable until `%6A`, an unreserved character, made the round trip lossy.",
+        "CRITERION 1 IS VERIFIED SYNTHETICALLY, restated at acceptance as the checklist required: MEASURED across all three capability declarations, nvim sends rootUri and workspaceFolders TOGETHER OR NEITHER, so no measured client produces this case. Nothing here shows the fix working for a client anyone has seen.",
+      ],
+    },
     {
       number: 17,
       pbi_id: "PBI-17",
@@ -151,114 +128,21 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 18,
-    pbi_id: "PBI-19",
-    goal: "Let a config author see the root the editor named, whichever field that client's LSP version used to name it.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "A client sending rootUri but no workspaceFolders reaches a handler with a folder",
-        implementation:
-          "SYNTHESISE INTO THE LIST AT INITIALIZE, never compute at read time. `name` is fileURLToPath(rootUri); for the rootPath rung `name` is rootPath VERBATIM and `uri` comes from pathToFileURL -- one convention covering both synthesis sites, so the second does not invent its own.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4432d0",
-            message: "feat: show the root the editor named, whichever field it used",
-            phase: "green",
-          },
-          {
-            hash: "b1967ba",
-            message: "docs: say why three fields of InitializeParams are read, not one",
-            phase: "green",
-          },
-          {
-            hash: "9286da6",
-            message: "test: pin what src/workspace.ts's comments claim but nothing checked",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ONE IMPLEMENTATION MOMENT WITH SUBTASK 4, and the reason is unusual: subtask 4 has NO implementation of its own -- it is true or false depending on HOW this one is written.",
-          "THE NAME'S ONLY REAL JUSTIFICATION is that it is DERIVABLE FROM WHAT THE CLIENT SENT with nothing invented. The shape-consistency argument is deliberately NOT recorded beside it: the fallback fires only for clients that never send workspaceFolders, and nvim always does, so matching the measured client is not an argument available here. A non-argument beside a real one is worse than the real one alone, because a reader cannot tell which is load-bearing.",
-          "GENUINE RED, OBSERVED ON BOTH RUNTIMES before any implementation: the handler saw [] where one folder was expected. Synthesis is `initialWorkspaceFolders` in src/workspace.ts, called from the ONE line in src/server.ts's initialize handler; nothing computes at read time. THE NAME IS PINNED AT BOTH SITES INDEPENDENTLY, which no single perturbation would have shown: basename at the rootUri site reddens 5 tests per runtime and leaves the rootPath rung GREEN, basename at the rootPath site reddens 1 and leaves the rootUri rung GREEN.",
-          "THE SYNTHETIC VERIFICATION RESTATED AT EXECUTION, not left on the PBI, so no reader takes this green for more than it is: MEASURED across all three capability declarations, nvim sends rootUri and workspaceFolders TOGETHER OR NEITHER, so NO MEASURED CLIENT PRODUCES THIS CASE. The specification contemplates a rootUri-only client and such clients existed; nothing here shows the fix working for a client anyone has seen.",
-          "A DECISION NOBODY RULED ON, SURFACED RATHER THAN BURIED. A rootUri that names NO LOCAL PATH -- any non-file scheme -- is treated as naming no root, and the chain falls to rootPath. The alternative is `fileURLToPath` THROWING inside the initialize handler, which answers the handshake with an error and leaves the author no server at all. REASONED as to WHICH outcome, since no observed client sends one; SPLIT ON WHETHER IT IS PINNABLE, and the split is what resolves the Sprint 7 tension: WHAT THE LIST HOLDS has more than one defensible outcome and is NOT pinned, while `initialize is still answered` has exactly ONE and now is. The test asserts the handshake and DELIBERATELY NOTHING about the list, leaving the debatable half to the PO.",
-          "A SECOND UNRULED DECISION, AND THE ONE THAT IS GENUINELY UNDEFENDED: an EMPTY `workspaceFolders` falls through to the rungs below, so the three spellings of `no folders here` -- omitted, null and [] -- are treated ALIKE. MEASURED FROM THE INSTALLED TYPES, this is arguable rather than obvious: null means `the client supports workspace folders but none are configured`, a STATEMENT of emptiness where omission is the absence of one, so a reading that stopped the chain on null and continued on omission is available. Refused because a config author cannot see which spelling arrived, and a root appearing or vanishing on a distinction nobody can observe is worse than either rule. UNPINNED BY CHOICE, NOT FOR LACK OF MEANS, and MEASURED SO: making `[]` and null stop the chain reddens NOTHING across 315 tests. WHAT REMAINS AT RISK is precisely one client shape -- folders empty or null WITH a root named -- which would silently change meaning if someone reversed this line.",
-          "THREE CLAIMS SAT IN COMMENTS WITH NOTHING BEHIND THEM, found by perturbing what the comments asserted rather than what the criteria did, and each reddened NOTHING on the first attempt: the client's URI is kept BYTE FOR BYTE, the `name` is the path those bytes DECODE to, and a non-file rootUri does not take the handshake down. THE REASON THE FIRST TWO WERE UNTESTABLE IS WORTH KEEPING: every URI in the suite ROUND-TRIPS through the URL parser unchanged, so `we kept the client's bytes` and `we reparsed and got lucky` were indistinguishable. Pinned with a spelling where the round trip is LOSSY (`%6A` is an unreserved `j`); the round-trip perturbation now reddens both, each on its own test's first assertion, and dropping the non-file guard reddens the handshake test alone.",
-        ],
-      },
-      {
-        test: "Absence stays absence -- a client sending NEITHER leaves the list empty",
-        implementation: "Born green. THE CRITERION CARRYING THIS PBI'S HONESTY.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4432d0",
-            message: "feat: show the root the editor named, whichever field it used",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE CONTROL THAT MUST BE RUN: synthesise from cwd and this must redden while subtask 1 stays green. MEASURED -- cwd is nvim's own launch directory when no root is found, so a cwd fallback LOOKS CORRECT IN EVERY SCENARIO except the one this criterion exists to make visible.",
-          "THE CONTROL WAS RUN AND BEHAVED AS REQUIRED: adding a cwd rung below rootPath reddened 12 tests on both runtimes -- both absent spellings, the never-cwd test, and two PBI-17 delta tests that open with no folders -- while subtask 1's test stayed GREEN. So the honesty criterion discriminates the fallback that looks correct everywhere else.",
-          'A DOOR `?? []` DOES NOT COVER, FOUND WHILE BUILDING THE rootPath RUNG AND PINNED: `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so a rootPath of "" or "." would have synthesised a cwd-derived root -- the fabrication this criterion forbids, arriving through the new code rather than through the old absence. Guarded with `isAbsolute`; dropping the guard reddens the new test and NOTHING ELSE, so the guard is proven and the test is not vacuous.',
-          "A WEAKNESS THE CONTROL EXPOSED IN AN EXISTING TEST, reported because nobody asked: `with no workspace sent, no item is attributed to a workspace root` -- the example-level absence assertion -- DID NOT REDDEN under the cwd fallback. PBI-14's dedup-by-inserted-text collapses the identical item the cwd root would have produced, so that assertion is BLIND to the very substitution its sibling names. The context-level test carries this criterion alone; the example-level one is a pair for a different failure.",
-        ],
-      },
-      {
-        test: "Precedence: workspaceFolders > rootUri > rootPath",
-        implementation:
-          "Three assertions, each against the pair below it. MIXED: the top rung is born green (today's behaviour), the rootUri > rootPath rung is a genuine RED.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4432d0",
-            message: "feat: show the root the editor named, whichever field it used",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "REPORT WHICH RUNGS WERE BORN GREEN, so the chain's evidence is legible rather than implied.",
-          "ONE TEST PER RUNG, NEVER THREE ASSERTIONS IN ONE, and the reason is this very report: a bundled test STOPS AT ITS FIRST FAILURE, so which rungs were already satisfied and which had to be built could not have been observed at all.",
-          "THE RUNGS AS OBSERVED. workspaceFolders > rootUri: BORN GREEN, today's behaviour. rootUri > rootPath: GENUINE RED on both runtimes, the one the plan expected. THERE WAS A SECOND RED THE PLAN DID NOT PREDICT, AND THE DISCREPANCY IS THE EXECUTOR'S OWN SPLIT rather than a surprise about the code: the chain has TWO COMPARISONS but THREE SITES, so a third test drives rootPath ALONE. It is the only test that pins the second synthesis site's convention (`name` VERBATIM, uri derived) -- the mirror of the rung above, where the uri arrived and the name was derived -- and without it that convention would have shipped unasserted.",
-          "THE BORN-GREEN RUNG IS NOT VACUOUS, which a born-green claim otherwise cannot show: appending the synthesised root ALONGSIDE the folders the client sent reddens that test and NOTHING ELSE. Flipping the chain to rootPath-before-rootUri reddens the middle rung and NOTHING ELSE. Each rung's test discriminates its own rung.",
-        ],
-      },
-      {
-        test: "Deltas apply to the synthesised entry like any other, and a client `added` for its URI yields TWO entries",
-        implementation:
-          "BORN GREEN BY CONSTRUCTION, WITH NO IMPLEMENTATION OF ITS OWN -- a consequence of not special-casing, since an ordinary member of the list the notification writes through gets uniformity free.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "88b376a",
-            message: "test: pin that the synthesised root is an ordinary member",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE WHOLE VALUE IS THE CONTROL, and the wrong implementation is the TEMPTING one: a READ-TIME fallback, `folders.length > 0 ? folders : synthesise(rootUri)`, passes subtask 1 perfectly. REPORT BOTH DIRECTIONS FROM THAT ONE PERTURBATION: a first `added: [Y]` yields [Y] rather than [root, Y], AND a later `removed` that empties the list makes the fallback REAPPEAR. The second is the worse hazard -- a folder the client EXPLICITLY REMOVED coming back -- and reporting one while the other goes unnamed leaves half of it undefended.",
-          "THE DUPLICATE HALF IS PINNED because a well-meaning `do not duplicate our own entry` check passes every OTHER criterion. RESIDUAL, named rather than glossed: the list can hold two entries for one folder, our estimate beside the client's statement. Mild in practice -- PBI-14's dedup-by-inserted-text collapses identical strings, so the example produces one item -- and visible only to a config author counting roots.",
-          "BORN GREEN AND OBSERVED SO: the three tests were written AFTER the implementation landed and passed on both runtimes at once. No RED was manufactured for a subtask that has no implementation of its own.",
-          "BOTH DIRECTIONS REPORTED FROM ONE PERTURBATION, and each on ITS OWN test's FIRST assertion, which is what made the second observable at all. Implementing the fallback as `folders.length > 0 ? folders : synthesise(...)` at read time left criterion 1 and all three precedence rungs GREEN and reddened exactly three tests on both runtimes. (a) A first `added: [Y]` yielded [Y] -- the root the session opened with GONE. (b) A `removed` naming the synthesised URI yielded [root] where [] was expected: THE FOLDER THE CLIENT EXPLICITLY REMOVED CAME BACK. Had (b) been bundled onto the end of (a)'s test it could never have been seen -- that test fails at its own first assertion under the same perturbation and stops.",
-          "THE PINNED HAZARD, MEASURED TO BE EXACTLY AS PREDICTED: a `do not duplicate our own entry` guard -- provenance plumbed through initialize so it touches only the synthesised entry -- reddens THIS criterion's test and NOTHING ELSE across 309 tests. Criterion 1, all three rungs, both delta halves and PBI-17's own `a URI added twice is held twice` all stay GREEN. That is why it is a criterion rather than a note.",
-          "NOTHING WAS CLASSIFIED NOT CONSTRUCTED THIS SPRINT, said as a sentence rather than left as an absence: every perturbation named in the plan was built and run, on both runtimes. Nothing is FORECLOSED either. The unpinned decisions recorded on subtask 1 are a THIRD category and must not be read as this one -- they lack a RULING, not the means, and one of them was measured to be undefended precisely so it could be said so.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PO'S CHECKLIST: (1) the read-time trap controlled IN BOTH DIRECTIONS from one perturbation; (2) subtask 2's cwd control RUN; (3) criterion 1's synthetic verification RESTATED at Review, so the result does not read as `this works for a client we have seen`; (4) the duplicate case pinned, both halves; (5) which precedence rungs were born green, reported.",
-      "THE REVERSAL'S CLEAREST PAYOFF, named by the PO: subtask 4 became IMPLEMENTATION-FREE. Under the old rule dropping the fallback was work; under the new one uniformity is a consequence of not special-casing. Its entire value moved into its control.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 18,
+      improvements: [
+        {
+          action:
+            "A HAZARD MUST OWN A TEST WHOSE FIRST ASSERTION IT IS. Two hazards sharing one test means the second can never be OBSERVED: the same perturbation flips the first and the test stops there.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Found at Sprint 18, where a read-time fallback broke TWO ways -- the first delta replacing the root, and a later removal making the root REAPPEAR -- and the second was visible only because it owned its own test. A PRECONDITION FOR THE PERTURBATION-DISCIPLINE RULE RATHER THAN ITS MIRROR, which is why it is an entry rather than a clause: in the bundled counterfactual the perturbation flips AT the headline rather than earlier, so `flips earlier than the headline` never fires -- and in a two-claim test `the headline` has no single referent, so that rule cannot be applied reliably at all. Different trigger, different actor, different moment: the TEST AUTHOR before any perturbation is run, not the perturbation runner interpreting a flip.",
+        },
+      ],
+    },
     {
       sprint: 16,
       improvements: [
@@ -378,7 +262,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. ADDED AT SPRINT 18: A COMMENT ASSERTING CURRENT BEHAVIOUR STATES WHETHER AN ASSERTION BACKS IT -- three site comments were found claiming things nothing checked, each reddening nothing on first attempt. It targets the BIRTH defect, prose that was never checked, where the standing prose item targets DRIFT, prose that became false; and it is bounded at write time rather than requiring perpetual re-perturbation, which would be claim-extraction wearing a review practice.",
           timing: "immediate",
           status: "active",
           outcome:
