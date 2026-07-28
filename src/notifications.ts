@@ -134,11 +134,17 @@ export function registerNotifications<P extends readonly unknown[]>(
 
 /**
  * A connection with neither `onNotification` NOR `onUnhandledNotification` ON
- * ITS TYPE -- the two members through which a holder could see notification
- * traffic without the gate. `onUnhandledNotification` is an EVENT PROPERTY
- * holding a callable rather than a method, which changes nothing here: `Omit`
- * removes a property whatever its type is, and calling it is what installs the
- * listener.
+ * ITS TYPE: the two members that install a general notification observer --
+ * one per method, one for everything nothing registered.
+ *
+ * DELIBERATELY NOT `THE TWO WAYS TO SEE NOTIFICATION TRAFFIC`, which is what
+ * this sentence said when it was written and which is FALSE. The members left
+ * are enumerated at `createGatedConnection`, and two of them observe inbound
+ * traffic. What this type claims is bounded to what it removes.
+ *
+ * `onUnhandledNotification` is an EVENT PROPERTY holding a callable rather than
+ * a method, which changes nothing here: `Omit` removes a property whatever its
+ * type is, and calling it is what installs the listener.
  *
  * `Omit`, not a hand-written interface: the remainder then tracks whatever
  * `ProtocolConnection` grows, and only the members this narrowing is about are
@@ -219,8 +225,8 @@ export type RequestOnlyConnection = Omit<
  * from this module, which is why test/notifications.test.ts asserts this module
  * exports no factory. Both are the deliberate-evasion class, not slips.
  *
- * THE THIRD GAP IS NOW CLOSED, AND IT WAS THE STRONGEST OF THE RESIDUALS RATHER
- * THAN THE SMALLEST: `onUnhandledNotification` used to survive the `Omit`, and
+ * THE THIRD GAP IS NOW CLOSED, AND IT WAS THE STRONGEST OF THE RESIDUALS THEN
+ * KNOWN: `onUnhandledNotification` used to survive the `Omit`, and
  * reaching it needed NO DELIBERATE ACT -- it sat on the handle THIS FUNCTION
  * HANDS OUT, so `no longer reachable by accident`, the argument that made the
  * import ban adequate, never covered it. It was held open on ONE QUESTION,
@@ -239,14 +245,37 @@ export type RequestOnlyConnection = Omit<
  * a gap at all -- that is SENDING a notification, not installing a handler for
  * one.
  *
- * WHAT IT DOES NOT CLOSE, named so it is not read as closing more than it does:
- * the deliberate-evasion routes above are UNCHANGED -- `await import(...)`, and
+ * WHAT IT DOES NOT CLOSE, named so it is not read as closing more than it does.
+ * The deliberate-evasion routes above are UNCHANGED -- `await import(...)`, and
  * a wrapper exported from this module -- as is the exemption in .oxlintrc.json
- * that switches the factory ban off in test files and test/helpers/. Both remain
- * accepted residuals. THE ADEQUACY ARGUMENT RECORDED AT THAT RULE IS
- * LIKEWISE UNAFFECTED, checked rather than assumed: it rests on what this
- * function returns being the sole connection-shaped value in startServer's
- * scope, and a wider `Omit` widens that narrowing rather than moving it.
+ * that switches the factory ban off in test files and test/helpers/. All remain
+ * accepted residuals. THE ADEQUACY ARGUMENT RECORDED AT THAT RULE IS LIKEWISE
+ * UNAFFECTED, checked rather than assumed: it rests on what this function
+ * returns being the sole connection-shaped value in startServer's scope, and a
+ * wider `Omit` widens that narrowing rather than moving it.
+ *
+ * AND TWO ROUTES SEEN ONLY WHEN THE REMAINDER WAS ENUMERATED, which is why they
+ * are recorded rather than quietly closed. `ProtocolConnection`'s members are
+ * `sendRequest`, `onRequest`, `sendNotification`, `onNotification`,
+ * `onProgress`, `sendProgress`, `trace`, `onError`, `onClose`,
+ * `onUnhandledNotification`, `onDispose`, `end`, `dispose`,
+ * `hasPendingResponse` and `listen` -- READ OFF
+ * vscode-languageserver-protocol 3.18.2's connection.d.ts rather than recalled,
+ * and the version is named because a dependency bump can add to it silently.
+ * TWO OF THEM STILL OBSERVE INBOUND TRAFFIC: `onProgress` installs a handler for
+ * `$/progress` under a token, and `trace(value, tracer)` hands every received
+ * notification to a caller-supplied `Tracer` -- MEASURED at
+ * vscode-jsonrpc/lib/common/connection.js, where `traceReceivedNotification`
+ * runs on the receive path whether or not a handler exists.
+ *
+ * THEY ARE AS REACHABLE AS THE ONE JUST CLOSED -- both sit on this handle and
+ * need no deliberate act -- SO THE STANDING ARGUMENT DOES NOT COVER THEM
+ * EITHER. They are NOT added to the `Omit` here: the accepted criterion names
+ * two members, and widening it unreviewed is exactly what closing
+ * `onUnhandledNotification` was made to avoid one sprint earlier. Their closure
+ * is the same one token each, and unlike that one it is NOT obviously free --
+ * `$/progress` is how work-done reporting arrives, and tracing is how a client
+ * asks to see the wire.
  */
 export function createGatedConnection<P extends readonly unknown[]>(
   reader: MessageReader,
