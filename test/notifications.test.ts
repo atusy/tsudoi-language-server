@@ -267,3 +267,101 @@ test("exit's entry declares always, and every other entry declares lifecycle", (
   ]);
   expect(gates.filter((entry) => entry.gate === "lifecycle")).toHaveLength(gates.length - 1);
 });
+
+/**
+ * A probe source binding the narrowed connection and doing `body` with it.
+ *
+ * The binding is called `connection` because that is the IDENTIFIER the
+ * rejected `no-restricted-properties` rule matched on; the renamed pair below
+ * is what shows the type does not care.
+ */
+function narrowedSource(body: string[]): string {
+  return [
+    'import { InitializedNotification, ShutdownRequest } from "vscode-languageserver-protocol/node";',
+    'import type { RequestOnlyConnection } from "./src/notifications.ts";',
+    "",
+    "const connection = null as unknown as RequestOnlyConnection;",
+    ...body,
+    "",
+  ].join("\n");
+}
+
+/** The forbidden call and the permitted one, as ONE project tsc checks together. */
+const forbidsAndPermits: Record<string, string> = {
+  "forbids.ts": narrowedSource([
+    "connection.onNotification(InitializedNotification.type, () => {});",
+  ]),
+  "permits.ts": narrowedSource(["connection.onRequest(ShutdownRequest.type, (): void => {});"]),
+};
+
+// CRITERION 1, BOTH HALVES IN ONE RUN -- one project, one tsconfig, one tsc
+// invocation, so the pass and the failure are read off the SAME measurement and
+// cannot differ by anything the probe set up.
+//
+// A FIRING-HALF-ONLY PROBE WOULD PASS A TYPE THAT FORBIDS EVERYTHING, which is
+// why the permitted half is not optional: `Omit<ProtocolConnection, keyof
+// ProtocolConnection>` satisfies the failing half perfectly and would leave
+// src/server.ts unable to register a request.
+//
+// THE DIAGNOSTIC IS BOUND TO THE FILE ON ONE LINE, not asserted as two
+// independent `toContain`s: in a multi-file run a diagnostic in permits.ts
+// mentioning onNotification would satisfy a bare substring check and record
+// nothing.
+test("the narrowed connection rejects onNotification and accepts onRequest, in one type-check", async () => {
+  const result = await typeCheckProbe(forbidsAndPermits);
+
+  expect(result.output).toMatch(
+    /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'onNotification' does not exist/,
+  );
+  // The permitted half: NOT `exit 0`, which the failing half already denies --
+  // no diagnostic anywhere names this file.
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+// THE PRESENCE PAIR for the absence assertion above, permanent: the same
+// measurement, the same file name, the same binding -- with one member that is
+// genuinely not there. Without it, `no diagnostic names permits.ts` would also
+// hold for a probe that never compiled permits.ts at all, or one whose tsconfig
+// left it out of `files`.
+//
+// The error is put ON THE BINDING rather than in free-standing code so the pair
+// shows tsc checked THE NARROWED CONNECTION in that file, not merely that it
+// parsed the file.
+test("the same run does name permits.ts when the narrowed connection there is misused", async () => {
+  const result = await typeCheckProbe({
+    "forbids.ts": forbidsAndPermits["forbids.ts"] as string,
+    "permits.ts": narrowedSource(["connection.definitelyNotAMethod();"]),
+  });
+
+  expect(result.output).toMatch(
+    /permits\.ts\(\d+,\d+\): error TS\d+: Property 'definitelyNotAMethod' does not exist/,
+  );
+});
+
+/**
+ * The same two halves reached through a SECOND binding under a different name.
+ *
+ * `const conn = connection` is not an arbitrary rename: it is the exact shape
+ * MEASURED to walk straight past `no-restricted-properties`, the working lint
+ * rule this route was chosen over. Driving it here is what makes
+ * rename-independence ASSERTED rather than inferred from `types do not read
+ * identifiers` -- and that property is the whole reason the type route was
+ * preferred, so leaving it to inference would leave the route's justification
+ * unpinned.
+ */
+const aliasedSource = (call: string): string =>
+  narrowedSource(["const conn = connection;", `conn.${call}`]);
+
+test("the same two outcomes hold through an alias under a different name", async () => {
+  const result = await typeCheckProbe({
+    "renamed.ts": aliasedSource("onNotification(InitializedNotification.type, () => {});"),
+    "permits.ts": aliasedSource("onRequest(ShutdownRequest.type, (): void => {});"),
+  });
+
+  expect(result.output).toMatch(
+    /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'onNotification' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
