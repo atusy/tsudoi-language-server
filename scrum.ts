@@ -178,10 +178,17 @@ const scrum: ScrumDashboard = {
         implementation:
           'Add the ENTRY to the defineNotifications table with `gate: "lifecycle"`, handling event.added ONLY. Params are typed from the `type` beside them by defineNotifications -- do NOT annotate them by hand.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5bb6239",
+            message: "feat: answer from the workspace as it is now, for a folder the user adds",
+            phase: "green",
+          },
+        ],
         notes: [
           "PBI-18 CHANGED WHAT THIS COSTS: you add an ENTRY, not a handler that remembers to consult the gate. Forgetting is now a compile error. ONE IMPLEMENTATION MOMENT WITH SUBTASK 4: the entry and its gate are a single edit, and subtask 4's value is entirely in its control rather than in new code.",
+          "RED OBSERVED on both runtimes before the entry existed: the hover observed the initialize folder ALONE and the assertion failed on the missing second entry -- which IS criterion 1's stated negative control, met as the starting state rather than as a separate probe. WRONG-PARAMS PROBE RUN, reproducing Sprint 16's perturbation on the FIRST entry added since defineNotifications landed: annotating this handler's params as DidOpenTextDocumentParams fails tsc with TS2322 naming DidChangeWorkspaceFoldersParams, so the inference still reaches a new entry.",
         ],
       },
       {
@@ -200,10 +207,18 @@ const scrum: ScrumDashboard = {
         implementation:
           'Born green once the entry carries `gate: "lifecycle"`; same moment as subtask 2.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5bb6239",
+            message: "feat: answer from the workspace as it is now, for a folder the user adds",
+            phase: "green",
+          },
+        ],
         notes: [
           'THE CONTROL IS THE WRONG GATE ASSIGNMENT, since bypass is now unrepresentable: change the entry to `gate: "always"` and this must redden while subtasks 2 and 3 stay GREEN.',
+          'CONTROL FIRED, EXACTLY TWO TESTS: `gate: "always"` reddens the new router test AND the entry-table test, and leaves criterion 1 GREEN on both runtimes. The two are different claims -- the table asserts what the entry DECLARES, the router asserts what the declaration DOES -- so this is the S9 both-directions addition rather than a control that can never be first.',
+          "NEITHER HALF IS OBSERVABLE END-TO-END, found while writing the test and recorded because it decides where the test lives: before initialize the list is REPLACED by what initialize states, so an ungated write leaves no trace; after shutdown every request is refused, so no handler remains to read the list back. The router-level test with the handle read directly is the only honest home.",
         ],
       },
       {
@@ -232,9 +247,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/types.ts's comment changes from `snapshot of initialize` to `snapshot of REQUEST START`. Part of this deliverable, never a follow-up -- landing tracking without it puts a false statement in a durable home.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5bb6239",
+            message: "feat: answer from the workspace as it is now, for a folder the user adds",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "SAME COMMIT AS SUBTASK 2, which is the point. TWO MORE PROSE HOMES FOUND AND CHANGED IN IT, both in src/server.ts: the `WHERE didChangeWorkspaceFolders WOULD GO` block is gone, and the logger's unregistered-notification measurement no longer cites this message as an example of one -- the measurement stands, the message has left the class. CHECKED AND UNCHANGED: README.md and examples/completion-path.ts make no tracking claim.",
+        ],
       },
     ],
     impediments: [],
