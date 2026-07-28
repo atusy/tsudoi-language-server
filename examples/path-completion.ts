@@ -15,7 +15,7 @@
  */
 import { opendir, stat } from "node:fs/promises";
 import type { Dirent } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
@@ -125,10 +125,40 @@ export function sourcesFor(fragment: PathFragment, uri: string, cwd: string): Pa
   if (fragment.text.startsWith("/")) {
     return [{ name: "absolute", root: "/" }];
   }
-  return [
-    { name: "document", root: dirname(fileURLToPath(uri)) },
-    { name: "cwd", root: cwd },
-  ];
+  const parent = documentParent(uri);
+  const relative: PathSource[] = [{ name: "cwd", root: cwd }];
+  // The document first, so a collision between the two is attributed to the
+  // more local root.
+  return parent === undefined ? relative : [{ name: "document", root: parent }, ...relative];
+}
+
+/**
+ * The document's parent directory, or undefined when it HAS NO NAME.
+ *
+ * THE GUARD IS `AN UNNAMED DOCUMENT HAS NO PARENT`, AND NEVER `REJECT / AS A
+ * ROOT`. `/` is the legitimate root of a document that really does sit at the
+ * filesystem root, and it is the only root the absolute source ever has -- so
+ * a guard spelled the other way deletes the feature this file exists for while
+ * passing every test about unnamed documents.
+ *
+ * MEASURED under bun 1.3.13 and deno 2.9.2, identically, and the two
+ * degenerate URIs fail in OPPOSITE directions:
+ *
+ *   fileURLToPath("file://")             -> "/", silently; basename is ""
+ *   fileURLToPath("untitled:Untitled-1") -> throws TypeError
+ *
+ * so the value check and the catch are both load-bearing and neither implies
+ * the other. An editor sends the second for a buffer the user has not saved,
+ * which is a scratch buffer rather than an exotic case.
+ */
+function documentParent(uri: string): string | undefined {
+  let path: string;
+  try {
+    path = fileURLToPath(uri);
+  } catch {
+    return undefined;
+  }
+  return basename(path) === "" ? undefined : dirname(path);
 }
 
 /**

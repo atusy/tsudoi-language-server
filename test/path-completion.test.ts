@@ -478,3 +478,41 @@ describe("items with identical inserted text collapse to one", () => {
     }
   });
 });
+
+describe("a document with no parent directory contributes nothing", () => {
+  // THE GUARD IS `an unnamed document has no parent`, NEVER `reject / as a
+  // root`. The two degenerate URIs fail in OPPOSITE directions, measured on
+  // both runtimes: `file://` resolves to `/` silently, `untitled:` throws. So
+  // one of them needs a value check and the other needs a catch, and neither
+  // implies the other.
+  //
+  // The fragment is chosen so that `/` REALLY HAS matches for it. With a
+  // fragment `/` cannot match, `no document-relative items` would be satisfied
+  // by a module with no guard at all.
+  test("file:// and untitled: yield no document-relative items, and still answer", async () => {
+    const fixture = tree(["usable.txt"]);
+    try {
+      for (const uri of ["file://", "untitled:Untitled-1"]) {
+        const items = await complete({ uri, line: "us" }, fixture.root);
+
+        // ANSWERED, not merely quiet: cwd's own match is the evidence that the
+        // request survived, and `/usr` on this machine is what would arrive if
+        // the document source had fallen back to the filesystem root.
+        expect(inserted(items)).toEqual(["usable.txt"]);
+        expect(items[0]?.label).toContain(`(cwd: ${fixture.root})`);
+      }
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE PERMANENT PAIR, and the reason the guard is worded as it is: a
+  // document that really does sit at the filesystem root HAS a parent, and it
+  // is `/`. A guard spelled `reject /` passes the test above and deletes this.
+  test("a document that really sits at the filesystem root keeps / as its root", () => {
+    expect(sourcesFor(only("us"), "file:///a.txt", "/somewhere")).toEqual([
+      { name: "document", root: "/" },
+      { name: "cwd", root: "/somewhere" },
+    ]);
+  });
+});
