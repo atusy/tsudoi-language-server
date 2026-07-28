@@ -13,6 +13,16 @@
  * line read out of the document is therefore the ONLY source of what the user
  * has typed, and reading it needs no new tsudoi API.
  */
+import { opendir } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import {
+  CompletionItemKind,
+  type CompletionItem,
+  type CompletionParams,
+} from "vscode-languageserver-protocol";
+import type { RequestContext } from "@atusy/tsudoi/types";
 
 /** One candidate for the path the user is typing. */
 export interface PathFragment {
@@ -75,4 +85,114 @@ function fragmentAt(line: string, start: number, character: number): PathFragmen
   // listing. That split is what makes this completion per segment.
   const cut = text.lastIndexOf("/") + 1;
   return { text, start, directory: text.slice(0, cut), name: text.slice(cut) };
+}
+
+/** Where one class of item comes from, and how the user is told which. */
+export interface PathSource {
+  /** `document`, `cwd` or `absolute` -- what produced the item. */
+  readonly name: string;
+  /** The absolute directory the item's inserted text is read against. */
+  readonly root: string;
+}
+
+/** What the caller may override; everything else is read from the request. */
+export interface PathCompletionOptions {
+  /**
+   * The directory a bare relative path is read against. Defaults to the
+   * server's own, read LAZILY inside the handler -- reading it at import time
+   * would turn a permission a runtime withholds into a failure of the
+   * HANDSHAKE, in a file the config author has not reached yet.
+   */
+  readonly cwd?: string;
+}
+
+/**
+ * The roots that make sense for THIS fragment.
+ *
+ * A fragment beginning at the filesystem root is answered by the absolute
+ * source ALONE. The negative half is the whole rule: without it, every source
+ * answers every keystroke and typing `/` offers the current directory's
+ * children beside the filesystem root's.
+ *
+ * workspaceFolder-relative is a FOURTH source that is deliberately absent: the
+ * client sends workspace folders at initialize, tsudoi does not expose them
+ * yet, and inventing one from cwd would be silently wrong exactly when it
+ * matters. It is PBI-15, and a public API addition rather than a config
+ * author's business.
+ */
+export function sourcesFor(fragment: PathFragment, uri: string, cwd: string): PathSource[] {
+  if (fragment.text.startsWith("/")) {
+    return [{ name: "absolute", root: "/" }];
+  }
+  return [
+    { name: "document", root: dirname(fileURLToPath(uri)) },
+    { name: "cwd", root: cwd },
+  ];
+}
+
+/**
+ * The completion items for one fragment under one root, in batches.
+ *
+ * THE HAZARD THIS FORECLOSES, and the reason nothing here recurses: the
+ * listing is ONE directory -- the fragment's own directory part -- filtered by
+ * the fragment's trailing name. Completion is per SEGMENT, so unbounded walks,
+ * recursion depth and symlink CYCLES are not merely unhandled, they are
+ * UNREPRESENTABLE: a cycle requires traversal, and one readdir cannot
+ * traverse. Someone adding recursion here brings all three back at once.
+ *
+ * A directory that does not exist, is not a directory, or cannot be read
+ * contributes NOTHING and does not fail the request. A user types `/nonexi`
+ * constantly, and answering -32603 for it would kill the completion they are
+ * in the middle of.
+ */
+export async function* itemsFrom(
+  source: PathSource,
+  fragment: PathFragment,
+): AsyncGenerator<CompletionItem[], void, void> {
+  const directory = join(source.root, fragment.directory);
+  const items: CompletionItem[] = [];
+  try {
+    const listing = await opendir(directory);
+    for await (const entry of listing) {
+      if (!entry.name.startsWith(fragment.name)) {
+        continue;
+      }
+      const insertText = fragment.directory + entry.name;
+      items.push({ label: insertText, kind: CompletionItemKind.File, insertText });
+    }
+  } catch {
+    return;
+  }
+  if (items.length > 0) {
+    yield items;
+  }
+}
+
+/**
+ * A `textDocument/completion` handler that completes paths.
+ *
+ * Written as the config author's own generator: every `yield` reaches the
+ * client as one `$/progress` when it asked for partial results, and is
+ * aggregated into the response when it did not. That is tsudoi's half.
+ */
+export async function* pathCompletion(
+  context: RequestContext,
+  params: CompletionParams,
+  options: PathCompletionOptions = {},
+): AsyncGenerator<CompletionItem[], null, void> {
+  const document = context.tsudoi.documents.get(params.textDocument.uri);
+  if (document === undefined) {
+    return null;
+  }
+  const line = document.getText().split(/\r?\n/)[params.position.line];
+  if (line === undefined) {
+    return null;
+  }
+  const cwd = options.cwd ?? process.cwd();
+  for (const fragment of pathFragments(line, params.position.character)) {
+    for (const source of sourcesFor(fragment, params.textDocument.uri, cwd)) {
+      yield* itemsFrom(source, fragment);
+    }
+  }
+  return null;
 }

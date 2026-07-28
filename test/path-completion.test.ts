@@ -1,5 +1,100 @@
 import { describe, expect, test } from "bun:test";
-import { pathFragments } from "../examples/path-completion.ts";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import type { CompletionItem } from "vscode-languageserver-protocol";
+import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
+import { pathCompletion, pathFragments } from "../examples/path-completion.ts";
+
+/**
+ * A throwaway directory tree, WITH NO DOTFILES IN IT.
+ *
+ * Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and a
+ * fixture that happened to contain one would pin a decision nobody made. The
+ * same rule is why nothing here is named `./x` or `../x`.
+ *
+ * realpathSync is not cosmetic: on macOS the system temp directory lives under
+ * /var, which IS a symlink to /private/var, and a child process started with
+ * cwd there reports the resolved path. Comparing the two spellings is a
+ * failure that looks like a logic error and is not one.
+ */
+interface Tree {
+  readonly root: string;
+  dispose(): void;
+}
+
+function tree(entries: readonly string[]): Tree {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-paths-")));
+  for (const entry of entries) {
+    if (entry.endsWith("/")) {
+      mkdirSync(join(root, entry), { recursive: true });
+    } else {
+      mkdirSync(join(root, entry, ".."), { recursive: true });
+      writeFileSync(join(root, entry), "");
+    }
+  }
+  return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
+}
+
+/** The document a completion is driven against: one line, and its uri. */
+interface Buffer {
+  readonly uri: string;
+  readonly line: string;
+}
+
+/**
+ * Drives the module the way tsudoi drives a config handler -- through the
+ * public RequestContext, with the line in a real document -- and returns every
+ * item it yielded, in order.
+ *
+ * The context is built here rather than spawned because these claims are about
+ * WHAT THE HANDLER PRODUCES. The claims about what reaches a client over the
+ * wire are driven through a real server further down this file.
+ */
+async function complete(
+  buffer: Buffer,
+  cwd: string,
+  character?: number,
+): Promise<CompletionItem[]> {
+  const document: TextDocument = {
+    uri: buffer.uri,
+    languageId: "plaintext",
+    version: 1,
+    getText: () => buffer.line,
+  };
+  const context: RequestContext = {
+    signal: new AbortController().signal,
+    tsudoi: {
+      documents: { get: () => document, values: () => [document] },
+    },
+  };
+  const items: CompletionItem[] = [];
+  const chunks = pathCompletion(
+    context,
+    {
+      textDocument: { uri: buffer.uri },
+      position: { line: 0, character: character ?? buffer.line.length },
+    },
+    { cwd },
+  );
+  for (;;) {
+    const next = await chunks.next();
+    if (next.done === true) {
+      return items;
+    }
+    items.push(...next.value);
+  }
+}
+
+/** What an item puts in the buffer, which is also the key dedup collapses on. */
+function inserted(items: readonly CompletionItem[]): string[] {
+  return items.map((item) => item.insertText ?? "").sort();
+}
+
+/** A document that does not exist, so only cwd answers a relative fragment. */
+const elsewhere = { uri: "file:///workspace/a.txt" } as const;
 
 // WHAT THIS FILE DRIVES: examples/path-completion.ts itself, the artifact a
 // config author reads, with no fixture copy of it in existence. The rule is
@@ -44,5 +139,52 @@ describe("path fragments", () => {
       { text: "foo (1).p", start: 4, directory: "", name: "foo (1).p" },
       { text: "see foo (1).p", start: 0, directory: "", name: "see foo (1).p" },
     ]);
+  });
+});
+
+describe("the typed prefix selects the source class", () => {
+  test("a relative fragment is answered by the relative sources", async () => {
+    const fixture = tree(["src/foo.ts", "src/bar.ts", "notes/"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "src/" }, fixture.root);
+
+      expect(inserted(items)).toEqual(["src/bar.ts", "src/foo.ts"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE NEGATIVE HALF IS THE DISCRIMINATOR. cwd here HAS CHILDREN OF ITS OWN,
+  // so an implementation where every source answers every keystroke would
+  // still pass the positive half above and fail here.
+  //
+  // This is the stakeholder's own example -- typing `/` completes the
+  // filesystem root -- with cwd deliberately not being it.
+  test("a /-prefixed fragment is answered by the absolute source ALONE", async () => {
+    const fixture = tree(["src/foo.ts", "notes/", "doc.txt"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "/" }, fixture.root);
+
+      // Every one of them, not merely the presence of a root entry: a
+      // cwd-relative item is exactly one whose inserted text is NOT anchored.
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.filter((item) => !(item.insertText ?? "").startsWith("/"))).toEqual([]);
+      // And nothing extra. Compared against a listing this test performs
+      // ITSELF, so the oracle is the filesystem rather than the module.
+      //
+      // Hidden entries are dropped from BOTH sides on purpose: whether a
+      // completion offers them is UNRULED, and a set equality including them
+      // would decide it here by accident.
+      const visible = (name: string): boolean => !name.startsWith(".");
+      const rootEntries = (await readdir("/")).filter(visible);
+      expect(
+        inserted(items)
+          .map((text) => text.slice(1))
+          .filter(visible)
+          .sort(),
+      ).toEqual(rootEntries.sort());
+    } finally {
+      fixture.dispose();
+    }
   });
 });
