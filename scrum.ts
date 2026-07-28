@@ -134,29 +134,60 @@ const scrum: ScrumDashboard = {
         implementation:
           "One token added to the existing Omit. BOTH HALVES in one probe run -- a firing-half-only probe would pass a type that forbids everything.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9c25a44",
+            message: "feat: close the residual that needed no deliberate act to reach",
+            phase: "green",
+          },
+        ],
         notes: [
           "ASSERT ON THE DIAGNOSTIC, BOUND TO THE FILE AND THE SYMBOL, never on a bare non-zero exit: Sprint 21 measured that against a module lacking the export ENTIRELY, an exit-code-only assertion goes GREEN.",
+          'RED FIRST, at the headline assertion, with `Received: ""` -- the pre-edit type compiles the call, so the probe\'s own tsc exits 0. THAT IS THE TRAP MADE CONCRETE: an exit-code-only assertion would have been GREEN here before the token existed.',
+          "A SECOND EXIT-CODE TRAP FOUND ON THE WAY, NOT ON THE PLAN AND WORSE THAN THE ONE THE PLAN NAMED: `Omit<T, K>` ACCEPTS A KEY THAT IS NOT IN `keyof T` and hands back T UNCHANGED. MEASURED -- spelled `onUnhandledNotifcation`, tsc is 0 and NOTHING objects, so a narrowing that narrows nothing is indistinguishable from one that works unless an assertion NAMES the symbol. Both probes name it; both redden on the misspelling.",
+          "A SEPARATE TEST RATHER THAN A SECOND CALL IN forbids.ts, on the Sprint 18 rule: appended there, this hazard could only ever be the SECOND assertion.",
+          "onUnhandledNotification IS AN EVENT PROPERTY holding a callable, NOT A METHOD -- checked against the declaration at vscode-jsonrpc/lib/common/connection.d.ts:352, `Event<NotificationMessage>`. It changes nothing about the remedy, and it is FLAGGED RATHER THAN EDITED: PBI-24's criterion says `THESE TWO METHODS`, and acceptance_criteria are not the Developer's to edit. The site prose says MEMBERS.",
+          "THE TWO KEYS ARE INDEPENDENTLY DEFENDED, not one passing off the other, and that took its own perturbation: keeping ONLY the new key reddens the three onNotification probes and leaves BOTH new tests GREEN, while dropping only the new key does the exact reverse. Neither direction was inferable from the other.",
+          "FORECLOSED rather than NOT CONSTRUCTED, and what would un-foreclose it is named: onUnhandledNotification reached THROUGH THE FACTORY owns no probe of its own, because the return annotation cannot be widened for one key only -- any widening reddens the existing factory probe, MEASURED at 342 pass 1 fail. A SECOND, DIFFERENTLY-ANNOTATED RETURN PATH out of this module would un-foreclose it. A control that can never be first to fail is not a control.",
+          "NOT CONSTRUCTED, and the risk stated: the aliased pair's `no diagnostic names permits.ts` has no presence pair OF ITS OWN -- the permanent one covers the unaliased binding. The unaliased new probe reuses the SAME STRING for permits.ts, so that pair transfers textually rather than by claim; the aliased one does not. AT RISK: an aliased permits.ts that tsc never checked would satisfy the absence half silently. Pre-existing shape, carried unchanged from Sprint 21 rather than introduced here.",
+          "THE REMAINDER RE-RAN BEFORE ANY src/ EDIT, with the TWO-KEY Omit written INLINE rather than reached through RequestOnlyConnection, so it measured the FUTURE state and not the current one: onRequest at both arities, sendProgress and listen compile at exit 0 with zero diagnostics, while each removed member errors under its own name (TS2551, TS2339).",
         ],
       },
       {
         test: "The same rejection under a DIFFERENT variable name",
         implementation: "Born green -- the type matches on the type.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9c25a44",
+            message: "feat: close the residual that needed no deliberate act to reach",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE PLAN'S `BORN GREEN` IS TRUE IN THE SEQUENCING SENSE ONLY, and the boundary is carried rather than the word inherited: this needs NO IMPLEMENTATION OF ITS OWN, but it was RED before the token, exactly like subtask 1, because `conn.onUnhandledNotification(...)` compiled. Both went green on the SAME one token. Sprint 21's handling of the same distinction.",
+        ],
       },
       {
         test: "N/A (prose, same commit)",
         implementation:
           "The site comment currently records this as a THIRD GAP with its closure and its open question. Once closed, that paragraph describes a state that no longer exists -- REVERSE STALENESS. The boundary replaces it: the narrowing forecloses these two methods and NOTHING ELSE, with the dynamic import and the test-file exemption unchanged and still accepted.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9c25a44",
+            message: "feat: close the residual that needed no deliberate act to reach",
+            phase: "green",
+          },
+        ],
         notes: [
-          "AND THE ADEQUACY DEPENDENCY RECORDED AT PBI-23'S SITE IS UNAFFECTED BY THIS: the lint's sufficiency still rests on the narrowing, which this widens rather than moves.",
+          "AND THE ADEQUACY DEPENDENCY RECORDED AT PBI-23'S SITE IS UNAFFECTED BY THIS: the lint's sufficiency still rests on the narrowing, which this widens rather than moves. CHECKED against .oxlintrc.json and against src/server.ts, not assumed -- `createGatedConnection`'s return is still the only connection-shaped value startServer binds. NO EDIT MADE THERE. Its message string `returns a handle with no onNotification` is now true-but-incomplete rather than false, so it was deliberately LEFT: it states a property that still holds, not a count or an exclusivity.",
+          "THE SECOND PASS FOUND THREE MORE CLAIMS THE FILE MAKES ABOUT ITSELF, and the retrospective rule filed last sprint is what found them -- all three survived writing the edit. (1) The header `only the ONE member this narrowing is about is named here` falsifies at the same token. (2) The function header `onNotification gone from what the caller holds` was true-but-half. (3) A sentence of MY OWN, written this sprint and wrong when written: `nothing in this file's defence rests on an exit code`, while both probes do assert `result.code`. Corrected to what is actually true -- no probe may DISCRIMINATE on the exit code.",
+          "CHECKED AND LEFT STANDING, so the pass is auditable rather than only its catches: `onRequest has five overloads` (counted, 5), the Sprint 21 factory-seam sentence `that perturbation reddens it and it alone` (re-run this sprint: 342 pass, 1 fail), and `test/notifications.test.ts asserts this module exports no factory`.",
+          'THE `AND NOTHING ELSE` HALF WOULD HAVE BEEN AN UNBACKED SENTENCE, so it was given an assertion rather than a label: `BoundaryIsExactlyTwoMembers` in test/notifications.test.ts pins `Exclude<keyof ProtocolConnection, keyof RequestOnlyConnection>` as EXACTLY those two names, both directions, checked by the DoD\'s own tsc. NOT REDUNDANT, MEASURED: appending `| "sendNotification"` to the Omit runs at 343 TESTS GREEN with every probe passing -- the boundary sentence turns false and NOTHING ELSE IN THE REPO SEES IT. Deliberately not dressed as a bun test: a runtime `expect(true).toBe(true)` beside it observes the same thing either way.',
         ],
       },
     ],
