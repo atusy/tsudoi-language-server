@@ -246,22 +246,60 @@ for (const runtime of runtimes) {
       }
     });
 
-    // The artifact a config author copies, in the shape a client that does not
-    // ask for partial results sees it: the example yields and returns null, and
-    // what it yielded is the whole answer. Answering [] here would lose it.
+    // THE THIRD MODE, and until Sprint 13 its only home was the example config.
+    // `emitted ? collected : null` in src/methods.ts answers all three, which
+    // is why one expression needs three cases to be pinned:
     //
-    // THE SUBJECT CHANGED IN SPRINT 13 AND THE PROPERTY DID NOT. This test used
-    // to drive the example's static HelloWorld item, which the stakeholder
-    // asked to remove; the property it defends is PBI-4's -- a null return
-    // after a partial result is not the same as having nothing to say -- and it
-    // is asserted here against a PATH item instead. Deleting the item without
-    // moving the property would have left the rule unasserted against the one
-    // artifact a config author actually copies.
+    //   streamed, yields then null -> []   (the test above)
+    //   streamed, nothing at all    -> null (the test above)
+    //   AGGREGATED, yields then null -> THE COLLECTED YIELDS, never []
+    //
+    // The third is the one a client that cannot take partial results sees, and
+    // [] there does not merely lose the shape -- it loses the CANDIDATES, and
+    // the user is told there are none.
+    //
+    // A PURPOSE-BUILT FIXTURE rather than the example, per amended standing
+    // item 6: this property is stable, the example is not, and a property whose
+    // home moves whenever the example changes is a property that can be lost by
+    // a change unrelated to it. The example is still driven -- see the tests
+    // below -- it is simply no longer the only thing carrying this.
+    test("without a partialResultToken a yields-then-null handler answers the yields, not []", async () => {
+      const session = LspSession.start(runtime, nullAfterYield);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+
+        const result = await session.request<CompletionItem[] | null>(
+          "textDocument/completion",
+          completionParams(),
+        );
+
+        expect(result).toEqual(partialChunk);
+        // The pair: nothing streamed, because nothing asked it to. Without it
+        // `the response carries the chunk` is satisfied by a server that also
+        // sent it as progress, which would double it for a client that appends.
+        expect(session.progressCount).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE EXAMPLE IS EXECUTED, which is what amended standing item 6 requires
+    // of it: the config a reader copies is loaded and DRIVEN, end to end,
+    // through the same server everything else here goes through. A change that
+    // breaks it -- its import, or what its handler does -- reddens THIS.
+    //
+    // What it is no longer is the home of PBI-4's aggregation rule. That
+    // property now lives on a purpose-built fixture above, because it is
+    // stable and the example is not: the example lost its static demo item at
+    // the stakeholder's request mid-sprint, and a property whose only home
+    // moves with the example can be lost by a change that had nothing to do
+    // with it. Item 6 was bundling `the example is executed` with `the example
+    // is the sole subject`; only the first was ever load-bearing.
     //
     // The document lives in a throwaway directory so the fixture is the test's
     // own: the example answers from the document's parent, and the session's
     // cwd is the repo, which holds nothing matching this fragment.
-    test("the example config's yield-then-null aggregates to the items it yielded", async () => {
+    test("the example config is driven end to end and answers from the document's own directory", async () => {
       const documents = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-aggregate-")));
       writeFileSync(join(documents, "aggregated.txt"), "");
       const documentUri = pathToFileURL(join(documents, "doc.txt")).href;
@@ -284,7 +322,9 @@ for (const runtime of runtimes) {
         // THE PAIR, and it is what keeps the assertion above from being
         // satisfiable by a server that answers [] for everything: a request
         // that yields NOTHING is answered null -- `nothing to say at all` --
-        // rather than the [] that means `nothing further to add`.
+        // rather than the [] that means `nothing further to add`. The example
+        // reaching BOTH outcomes is what makes `it is really being driven`
+        // evidence rather than a single lucky call.
         const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },
