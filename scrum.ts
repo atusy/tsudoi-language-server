@@ -179,18 +179,35 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extend the REPLACE end only when line.slice(fragmentStart, fragmentStart + candidate.length) === candidate. Expected RED: today's end is the first whitespace after the cursor.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9c7f5e1",
+            message: "feat(example): replace the whole filename the line already carries",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED OBSERVED AT THE HEADLINE ASSERTION and at the reported string: `spaced (1).txt (1).txt`, the same line the editor measurement produced from today's end. The rule landed in itemsFrom rather than pathFragments, which HAS NO CANDIDATE to compare the line against -- carried as a new required `line` parameter, since a field on PathFragment would have reddened three toEqual assertions as pure noise. The site comment changed in the SAME commit, and it now says what is DECLINED rather than what is unfixed. PERTURBATION `return fragment.end`, the rule removed: reddens THIS TEST ALONE of the 29 in the file.",
+        ],
       },
       {
         test: "The rule can never be worse than today",
         implementation:
           "Born green by construction -- the comparison fires only on an exact match. THE CASE IS THE ONE PREFIX MATCHING WOULD MANGLE.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "12775cf",
+            message: "test: pin what the replace end must NOT do, before it can do anything",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THREE HAZARDS, THREE TESTS, AND EACH PERTURBATION REDDENS EXACTLY ONE OF THEM. A PREFIX (longest-common-prefix) match reddens `a line carrying a DIFFERENT candidate keeps today's end` and writes `spaced (2).txt1).txt`, the PBI's predicted mangling. Matching ANYWHERE on the line reddens `a candidate the line carries ELSEWHERE keeps today's end`, which needed its OWN line `sp| spaced (1).txt`: on the first line the two comparisons agree, so that test could never have been the first thing a loosened START breaks.",
+          "A THIRD HAZARD FOUND IN EXECUTION AND NOT IN THE PLAN, and it is criterion 2's own property rather than scope creep: THE RULE CAN SHRINK A RANGE. Completing `fo` to `foo` where the line reads `foo.txt` matches VERBATIM AT THE START, and an end taken from the candidate's length alone pulls it back from 7 to 3 -- leaving `.txt` standing, WORSE than today, on a line with no space in it at all. The `spaced (2).txt` case cannot catch it, since there the comparison fails and today's end is reached by the other branch. Guarded by returning today's end when the candidate stops at or before it, and ASSERTED: dropping that guard reddens `a candidate SHORTER than the word under the cursor keeps today's end` and nothing else.",
+          "BORN GREEN MEASURED RATHER THAN LABELLED, by Sprint 19's own method and for its reason: all four born-green tests were written, RUN AGAINST THE UNCHANGED MODULE where they passed, and COMMITTED FIRST in 12775cf. They share a file with the red test, so the claim would have been unmeasurable once the rule they bound existed.",
           "THE DECLINED GENERALISATION OWNS THIS TEST rather than being defended incidentally -- the Sprint 18 entry applied AT AUTHORING TIME, which is where it was filed to apply. CONTROL: relax the comparison to a PREFIX match and it reddens. A SECOND CONTROL IF CHEAP: relax the comparison's START -- match anywhere on the line rather than at fragmentStart -- which is a DIFFERENT wrong implementation producing a different mangling, so by the granularity rule it is a second hazard.",
         ],
       },
@@ -198,9 +215,16 @@ const scrum: ScrumDashboard = {
         test: "The insert arm still ends at the cursor",
         implementation: "Born green. Asserted rather than assumed.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "12775cf",
+            message: "test: pin what the replace end must NOT do, before it can do anything",
+            phase: "green",
+          },
+        ],
         notes: [
+          "GREEN AS PREDICTED, and the control reddens TWO tests rather than one -- disclosed rather than reported as one. Extending `insert` to the same end reddens `the insert arm still ends at the cursor` AND Sprint 13's `the range starts at the filename, not after the space inside it`, which asserts the same property on a different line. Neither is redundant under the Sprint 15 sharpening: each is FIRST TO FAIL on its own line, and the new test is the one whose FIRST assertion is the insert end.",
           "CONTROL: extending `insert` too reddens it. AND THE REASON IS STRUCTURAL rather than a regression: extending insert's end past the cursor stops it being an insert AT ALL, so the two arms CONVERGE -- undoing Sprint 13's InsertReplaceEdit ruling rather than inconveniencing one setting.",
         ],
       },
