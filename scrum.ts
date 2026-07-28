@@ -32,38 +32,36 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [
-    {
-      id: "PBI-20",
-      story: {
-        role: "config author",
-        capability: "have a folder removed once removed once, not have every copy of it vanish",
-        benefit:
-          "the list keeps saying exactly what the client said, on remove as it already does on add",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "N `removed` entries for one URI remove N copies -- SEQUENTIALLY",
-          verification:
-            "Add a URI twice, send ONE removed entry for it, assert ONE copy REMAINS; send a second event and assert it is gone. NEGATIVE CONTROL: today's filter -- which matches every entry with that URI -- reddens the first assertion",
-        },
-        {
-          criterion: "N `removed` entries for one URI remove N copies -- IN ONE EVENT",
-          verification:
-            "Add a URI twice, send ONE event carrying TWO removed entries for it, assert BOTH are gone. A SEPARATE TEST BECAUSE THE HAZARDS AND THEIR CONTROLS DIFFER, which is the granularity rule's first real application: today's filter PASSES this case, so the sequential control cannot cover it, and the wrong implementation here is `new Set(removed.map(f => f.uri))` -- the identical shape to an `includes` guard, which passes the SEQUENTIAL test and fails this one. NEGATIVE CONTROL: deduping the removed array reddens it. LIKELY BORN GREEN, to be reported as such rather than as a pass",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "THE BATCHED CASE WAS MISSING AND THE PO CAUGHT IT AT REFINEMENT: their ruling turned on `a client that removes two copies sends TWO removed entries` -- IN ONE EVENT -- and the criterion as first written tested only SEQUENTIAL events. Two hazards with different controls, so two tests.",
-        "FILED AT SPRINT 17'S REVIEW, where the PO OVERTURNED an unpinned ruling. The Developer had recorded remove-all as `equally defensible` under the Sprint 7 one-outcome rule; the method was right and the input wrong. REMOVE-ALL DISCARDS WHAT THE EVENT CARRIED: a client removing two copies sends TWO `removed` entries and one removing a single copy sends ONE, so N entries should remove N copies -- an exact mirror. PBI-17's duplicate criterion honours multiplicity on ADD; symmetry honours it on REMOVE. One outcome IS required.",
-        "NOT DONE AT REVIEW, and the line is the one held since Sprint 1: it arrived at Review, no observed client produces the case, and forcing src/ behaviour changes there is retroactive scope. The SITE COMMENT was corrected before the tag instead -- src/workspace.ts now says which behaviour is correct and that this is not it -- because wrong reasoning sitting where someone reads it is the thing that propagates.",
-        "CONTRIVED, and saying so is what keeps the ordering honest: nothing observed produces a duplicate URI in a real client. ORDERING BASIS REPLACED AT SPRINT 18 rather than repeated: PBI-19 was ordered first for serving a real population, and measurement showed NO CLIENT PRODUCES ITS CASE EITHER -- both are speculative now. It still leads on two narrower grounds: the HARM IS LARGER (no root at all versus losing a duplicate), and its case is CONTEMPLATED BY THE SPECIFICATION where this one is an interaction of two of our OWN criteria that nothing anticipates.",
-      ],
-    },
-  ],
+  product_backlog: [],
 
   completed: [
+    {
+      number: 19,
+      pbi_id: "PBI-20",
+      goal: "Remove a folder as many times as the client removed it -- so the list keeps saying exactly what the client said, on remove as it already does on add.",
+      status: "done",
+      subtasks: [],
+      impediments: [
+        {
+          description:
+            "CARRIED FORWARD FROM SPRINT 10 THROUGH EVERY COMPACTION SINCE, because it is the one open decision no sprint can close. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+          impact:
+            "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
+          request:
+            "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
+          status: "waiting_human",
+          notes: [],
+        },
+      ],
+      decisions: [
+        "SPRINT 16'S RECORD DROPPED AT SPRINT 19, homes checked: the baseline measurement that two of three gate copies were pure convention is at src/notifications.ts, the only place it survives; the exit carve-out is asserted as a value in test/notifications.test.ts; and the disarmed-control finding became the re-run improvement's second rationale. Sprint 10's npm impediment rides here, still open and still the only unverified step in the product goal. Shipped in 9def17f, 87db56c, 2a90e78, aba57c9, 0ef93a9 and 9cadcad. 323 tests green from 317, each DoD command run separately with its exit read directly.",
+        "THE TWO-TEST RULING MEASURED, and the GREEN cells are the load-bearing half: the pre-sprint remove-all filter reddens the SEQUENTIAL test and leaves the BATCHED one green; a dedupe of the removed array does the exact reverse. NEITHER CONTROL COVERS BOTH. The granularity rule's first real application, arriving on its own terms one sprint after being filed.",
+        "BORN-GREEN REPORTING DONE AS A MEASUREMENT RATHER THAN A LABEL, and it is the first time anyone here sequenced COMMITS to make a claim checkable: the batched test was written and run against UNCHANGED src/ where it passed, and committed FIRST -- both tests share a file, so a born-green claim made after the fix landed would have been unmeasurable.",
+        "THIS SPRINT DISARMED A CONTROL OF PBI-17'S, and repairing it is the subtraction rule applying BY EFFECT: trailing-slash normalisation used to redden the exact-match test and afterwards reddened NOTHING across 321 tests -- behaviour unchanged, defence gone. Re-armed before the tag by naming the NON-FIRST spelling in the removal, since with the first named one-copy-per-entry lands on the intended target either way.",
+        "A PRE-EXISTING GAP REVEALED AND CLOSED OPPORTUNISTICALLY, named that way so it does not read as scope creep: nothing has EVER defended removed-before-added -- applying `added` first reddened nothing across 321 tests, nor across the 317 predating this sprint. Pinned because the PO ruled it ONE REQUIRED OUTCOME at Sprint 17 and a one-test PBI is disproportionate. THE FIRST ATTEMPT AT THAT TEST DID NOT DISCRIMINATE: pre-adding the folder makes the two orders AGREE under one-copy-per-entry, so the test starts from an EMPTY list.",
+        "UNPINNED AND MEASURED RATHER THAN ASSUMED: findLastIndex instead of findIndex reddens NOTHING in 321, so WHICH copy an entry takes is not pinned. The client said remove one and did not say which; two defensible outcomes, recorded rather than fixed.",
+      ],
+    },
     {
       number: 18,
       pbi_id: "PBI-19",
@@ -99,30 +97,6 @@ const scrum: ScrumDashboard = {
         "SINGLE-OBSERVER EXCEPT TWO, disclosed rather than presented as five: the executor wrote and ran all five perturbations. The Scrum Master re-ran the dedupe guard, and the wrong-params probe is a REPRODUCTION of Sprint 16's -- landing on the FIRST entry added since defineNotifications, which is the case most likely to have lost the contextual typing that extraction cost last sprint. That is also this Review's cross-sprint re-run.",
       ],
     },
-    {
-      number: 16,
-      pbi_id: "PBI-18",
-      goal: "Make the lifecycle gate impossible to forget -- a notification added without deciding when it may run should fail to compile, not ship ungated.",
-      status: "done",
-      subtasks: [],
-      impediments: [
-        {
-          description:
-            "CARRIED FORWARD FROM SPRINT 10 THROUGH EVERY COMPACTION SINCE, because it is the one open decision no sprint can close. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
-          impact:
-            "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
-          request:
-            "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
-          status: "waiting_human",
-          notes: [],
-        },
-      ],
-      decisions: [
-        "COMPACTED AT SPRINT 17: this sprint's own prose-item catch is homed in the standing improvement it exercised, and its PBI-17 consequences are ON PBI-17 -- the opt-in note deleted, criterion 4's control moved to a wrong gate assignment. SPRINT 15'S RECORD DROPPED, homes checked: the published-arm controls ARE test/published-artifacts.test.ts and still run; the stays-green FORECLOSURE and the deleted inert control are comments in that file; the README install instruction and the drift sentence are the README's own bytes, extracted by the suite. Sprint 10's npm impediment rides here, still open. Shipped in e8c2a8c, 2d0afad and 5fcabcf. 284 tests green, each DoD command run separately with its exit read directly. src/notifications.ts routes every notification through one gate; `gate` is a REQUIRED field with no default, so an entry that decides nothing does not TYPE-CHECK -- asserted, not argued: a probe omitting it fails with TS2741.",
-        "THE BASELINE CONTROL FALSIFIED THE PO'S OWN CRITERION, and the truth is a better argument than the claim it replaced. `deleting the check from ANY ONE handler body reddens nothing` was measured on all three: didChange NOTHING, didClose NOTHING, didOpen FOUR TESTS that never mention it. TWO OF THREE COPIES WERE PURE CONVENTION AND THE THIRD WAS DEFENDED ONLY INCIDENTALLY -- exactly the state a structural gate exists to end. The control is now FORECLOSED (no body check remains), so the measurement is homed at src/notifications.ts, which is the only place it survives. THE EXIT CARVE-OUT, and the ruling that Sprint 3's hang precedent DOES NOT REACH IT: that hang was BUFFERING-CONTINGENT, this one is a structural consequence of a dropped notification. So the timeout is a real control -- gating exit times out lifecycle.test.ts on both runtimes and takes a twelve-second suite past two minutes. A DETERMINISTIC assertion was added anyway, on the S15 sharpening READ IN THE OTHER DIRECTION: the hang can never be FIRST to fail, so it names nothing. exit's gate is asserted AS A VALUE off the entry table, paired with every other entry declaring `lifecycle` so a blanket table cannot satisfy it.",
-        "SATISFYING ONE REQUIREMENT DISARMED ANOTHER CONTROL, AND THE DoD STAYED GREEN THROUGHOUT. Extracting the table so its gates could be read as values dropped the contextual typing each handler's params gets from the `type` beside it -- three fell to implicit `any`, and the wrong-params compile error stopped being one. Caught by re-running the Developer's perturbation after the Scrum Master's own edit; fixed with defineNotifications, an identity carrying the router's inference to wherever a table is built. Recorded as the re-run improvement's SECOND rationale. PROPERTY-NOT-MECHANISM PAYING OFF VISIBLY, which the PO noted is rare because it usually pays off invisibly: they asked for the gate asserted AS A VALUE and left HOW open. The obvious implementation -- a plain helper returning the table -- was the one that silently disarmed the typing. Had they specified the mechanism they would have shipped the regression themselves.",
-      ],
-    },
   ],
 
   definition_of_done: {
@@ -134,94 +108,21 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 19,
-    pbi_id: "PBI-20",
-    goal: "Remove a folder as many times as the client removed it -- so the list keeps saying exactly what the client said, on remove as it already does on add.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "One `removed` entry for a URI held twice leaves ONE copy",
-        implementation:
-          "Remove ONE COPY PER `removed` ENTRY instead of filtering every match. Expected RED: today's filter matches every entry with that URI.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "87db56c",
-            message: "feat: remove one copy per `removed` entry, not every match",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED OBSERVED, NOT ASSUMED, on BOTH runtimes and at the FIRST assertion: with two copies held and one `removed` entry sent, the hover observed `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`. Re-run as a perturbation after the fix -- restoring the remove-all filter reddens THIS TEST ONLY, 319 pass 2 fail, and leaves the batched test GREEN.",
-          "THE TWO COPIES ARE BYTE-IDENTICAL so the outcome is SINGLE-VALUED and pinnable as a whole array: which copy a one-per-entry removal takes -- first match or last -- has more than one defensible answer, so identical copies dissolve that question instead of pinning it, per the Sprint 7 one-outcome rule. The `removed` entry carries a DIFFERENT NAME, so nothing passes by matching whole folders.",
-          "THE SECOND ASSERTION HAS ITS OWN CONTROL, added after the first justification written for it was FALSE: it said the second event catches a removal that took nothing, which the FIRST assertion already catches, since a no-op leaves three entries against a whole-array expectation of two. What it pins is REPEATABILITY, and the control is a guard removing a copy only when the URI occurs MORE THAN ONCE -- measured: the first assertion stays GREEN and the second reddens. That guard also reddens three PBI-17/19 removal tests, all of which remove a last copy.",
-        ],
-      },
-      {
-        test: "One event carrying TWO `removed` entries for a URI held twice removes BOTH",
-        implementation:
-          "LIKELY BORN GREEN -- today's filter already handles this case correctly. REPORT IT AS BORN GREEN rather than as a pass.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "9def17f",
-            message: "test: pin that one event removing a URI twice takes both copies",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ITS OWN TEST BECAUSE THE HAZARDS DIFFER, the granularity rule's first real application: today's filter PASSES this case while failing the sequential one, and `new Set(removed.map(f => f.uri))` does the reverse. Neither control covers both.",
-          "BORN GREEN AND OBSERVED AS SUCH, not inferred: it was WRITTEN AND RUN AGAINST UNCHANGED src/ and passed there, which is why it was committed FIRST -- the listed order is inverted deliberately, since the two tests share a file and a born-green claim made after the fix would be unmeasurable.",
-          "THE FOUR-CELL MATRIX WAS MEASURED, and the GREEN cells are the load-bearing half. Remove-all filter: sequential RED, this one GREEN. One-per-entry with `new Set(event.removed.map(f => f.uri))` around the loop: sequential GREEN, this one RED. Each perturbation reddened exactly 2 tests -- one test on each of two runtimes -- and nothing else in 321.",
-        ],
-      },
-      {
-        test: "N/A (prose, same commit as the behaviour)",
-        implementation:
-          "src/workspace.ts's comment says one-per-entry is CORRECT and that this is NOT it. The moment the behaviour lands that sentence describes a deviation THAT NO LONGER EXISTS -- REVERSE STALENESS, the standing prose item's subject from the unfamiliar direction. It must also state which assertion backs it, per the clause filed last sprint. Both new rules' first applications in one item.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "87db56c",
-            message: "feat: remove one copy per `removed` entry, not every match",
-            phase: "green",
-          },
-          {
-            hash: "2a90e78",
-            message: "docs: say what PBI-20 blinded, and what nothing was ever asserting",
-            phase: "green",
-          },
-          {
-            hash: "aba57c9",
-            message: "docs: correct two false claims about this sprint's own tests",
-            phase: "green",
-          },
-          {
-            hash: "0ef93a9",
-            message: "docs: measure the not-pinned claim, label the un-blinding one as reasoned",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "SHIPPED IN THE BEHAVIOUR'S OWN COMMIT. The deviation framing is gone; the REASON one-per-entry is correct STAYS, since its violation would be a code edit at that site. It now names which test reddens for which mistake, and the matrix above is what makes that clause an assertion rather than a claim.",
-          "THE PROSE SWEEP FOUND ONE MORE HOME, reported because silence is not an answer: src/types.ts's config-author-facing `MIRRORED, NOT INTERPRETED` carried only the ADD half of the mirror. The REMOVE half is now stated beside it, in the same commit. SWEPT TWICE, since the first pass was one grep for `remov` and multiplicity prose need not carry that stem: a second pass over README.md, examples/ and src/ for `twice|duplicat|copies|copy|multiplicit|mirror` found nothing else about workspace-folder multiplicity -- the example's `the same path TWICE` is completion-source dedup.",
-          "A FOURTH COMMIT, because two more comment claims were unbacked. `WHICH copy an entry takes is NOT pinned` is a claim about what the suite does NOT defend, so it may not be reasoned: MEASURED with `findLastIndex`, which leaves all 321 green, and the comment now says so. And the un-blinding condition for the blinded normalisation control sat under a MEASURED heading while never having been run -- running it needs a test that does not exist -- so it is labelled REASONED where it stands.",
-          "A THIRD COMMIT CORRECTING THIS SPRINT'S OWN PROSE, and the rule it broke is the one about stating a consequence without checking it: TWO comments written here were FALSE about the tests beside them. The sequential test's second half was justified as catching a no-op removal (the first assertion does that), and the batched test's presence pair was justified by an argument that is INVERTED -- with the initialize folder present, a session that dropped every notification produces EXACTLY the expected value. Both corrected; the second now states what it does not rule out, and why that is deliberate.",
-          "A SECOND COMMIT, DELIBERATELY SEPARATE, for two comment-only findings the perturbations turned up -- both MEASURED, neither repaired, both for the PO. (1) THIS SPRINT BLINDED A CONTROL OF PBI-17's: trailing-slash normalisation reddens `a folder removed stops being observable...` under the old filter and reddens NOTHING under the new one, because one-per-entry deletes exactly one folder and first-match lands on the intended target. Not NOT CONSTRUCTED and not FORECLOSED -- a control that no longer discriminates. Un-blinding it needs a removal naming the spelling that is NOT first in the list; the existing case names the first because that is the direction measured against nvim. (2) REMOVED-BEFORE-ADDED IS ASSERTED BY NOTHING, and NOT by this sprint's doing: applying `added` first reddens nothing in 321 tests now and reddened nothing in the 317 that predate the sprint.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PO'S CHECKLIST: (1) the site comment changes in the SAME commit and states which assertion backs it; (2) the two hazards own SEPARATE tests; (3) born-green reporting for the batched case.",
-      "AFTER THIS THE BACKLOG IS EMPTY, and the PO ruled what follows rather than letting it be filled to keep the loop running: FILE the replace-range whitespace defect (present-tense harm, in the feature the stakeholder uses, reachable with their own confirmBehavior: replace) and FILE a lint guard forbidding connection.onNotification outside the router -- which is a gap in work the PO ACCEPTED last sprint, since PBI-18 forecloses bypass WITHIN the router and not OF it. HOLD the free-string sweep, LEAVE the non-local workspace URI as a site comment. The npm decision is surfaced ALONGSIDE, not instead, as the only thing that generates new capability rather than cleanup.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 19,
+      improvements: [
+        {
+          action:
+            "A CLAIM IN A COMMENT IS CHECKED AGAINST WHAT IT CLAIMS, not merely against whether something backs it. A justification can be BACKED AND STILL WRONG.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Two false comments shipped and were caught on a SECOND self-review pass, in the sprint whose whole subject was prose correctness. One justified a test's second half by a property its FIRST assertion already covered; the other justified a presence pair with an INVERTED argument -- with the initialize folder present, a session dropping EVERY notification produces exactly the expected value. THE CLAUSE FILED ONE SPRINT EARLIER WOULD NOT HAVE CAUGHT EITHER: it catches UNBACKED claims, and both of these were backed and wrongly reasoned. AND THE FIX'S SHAPE IS THE BETTER PATTERN: a comment stating what it does NOT rule out, and why that is deliberate, beats one asserting only what it covers.",
+        },
+      ],
+    },
     {
       sprint: 18,
       improvements: [
