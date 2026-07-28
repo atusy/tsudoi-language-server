@@ -604,6 +604,120 @@ describe("a filename containing a space is completed whole", () => {
   });
 });
 
+/** Where an item's two ranges end, or undefined when it carries a single range. */
+function endsOf(item: CompletionItem): { insert: number; replace: number } | undefined {
+  const edit = item.textEdit;
+  if (edit === undefined || "range" in edit) {
+    return undefined;
+  }
+  return { insert: edit.insert.end.character, replace: edit.replace.end.character };
+}
+
+/** The one item a test means, out of what a completion produced. */
+function itemInserting(items: readonly CompletionItem[], text: string): CompletionItem {
+  const item = items.find((candidate) => candidate.insertText === text);
+  if (item === undefined) {
+    throw new Error(`no item inserting ${text} in ${JSON.stringify(inserted(items))}`);
+  }
+  return item;
+}
+
+describe("a replace range covers a filename the line already carries", () => {
+  // WHAT MAKES THE EXTENSION SAFE IS THAT IT NEVER FIRES ON A LINE THAT DOES
+  // NOT ALREADY READ THE CANDIDATE, and the three tests below are the three
+  // ways `already reads it` can be relaxed. Each is a DIFFERENT wrong line, so
+  // each owns its own test rather than sharing one.
+  //
+  // BORN GREEN, and measured as such: all three were written and run against
+  // the UNCHANGED module, where they pass because the whitespace end is the
+  // only end there is. They are here to stay green ACROSS the change.
+  test("a line carrying a DIFFERENT candidate keeps today's end", async () => {
+    const fixture = tree(["spaced (2).txt"]);
+    try {
+      // The line reads `(1)` and the only candidate is `(2)`: same length,
+      // same prefix, different file.
+      const line = "spaced (1).txt";
+      const cursor = "spa".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+      const item = itemInserting(items, "spaced (2).txt");
+
+      expect(endsOf(item)?.replace).toBe("spaced".length);
+      // DECLINED, NOT FIXED: the tail is still left behind here, and that is
+      // the point. A prefix match would extend to the common prefix and write
+      // `spaced (2).txt1).txt` instead -- worse than the defect, which is why
+      // the comparison is exact.
+      expect(applyAsClient(line, cursor, item, "replace")).toBe("spaced (2).txt (1).txt");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // A SECOND HAZARD, and it needs its OWN line: on the line above, matching
+  // anywhere and matching at the fragment's start give the same answer, so
+  // that test cannot be the first thing a loosened START breaks.
+  test("a candidate the line carries ELSEWHERE keeps today's end", async () => {
+    const fixture = tree(["spaced (1).txt"]);
+    try {
+      // The user is typing a NEW `sp` in front of a filename that is already
+      // there. The candidate does occur on this line -- just not where they
+      // are typing.
+      const line = "sp spaced (1).txt";
+      const cursor = "sp".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+      const item = itemInserting(items, "spaced (1).txt");
+
+      expect(endsOf(item)?.replace).toBe(cursor);
+      // Matching anywhere would end at 17 and swallow the filename beside the
+      // cursor -- text the user never typed over.
+      expect(applyAsClient(line, cursor, item, "replace")).toBe("spaced (1).txt spaced (1).txt");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // A THIRD HAZARD, and the only one that makes the rule SHRINK a range: the
+  // candidate is SHORTER than the word under the cursor. Nothing above can
+  // catch it -- there the comparison fails and today's end is reached by the
+  // other branch.
+  test("a candidate SHORTER than the word under the cursor keeps today's end", async () => {
+    const fixture = tree(["foo", "foo.txt"]);
+    try {
+      const line = "foo.txt";
+      const cursor = "fo".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+      const item = itemInserting(items, "foo");
+
+      // 7, the whole word -- NOT 3, where `foo` stops. An end taken from the
+      // candidate's length alone would pull the range BACK and leave `.txt`
+      // standing behind the completion.
+      expect(endsOf(item)?.replace).toBe(line.length);
+      expect(applyAsClient(line, cursor, item, "replace")).toBe("foo");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE INSERT ARM, asserted rather than assumed. Extending it past the cursor
+  // would stop it being an insert at all and make the two arms one, which is
+  // exactly what carrying an InsertReplaceEdit exists to prevent.
+  test("the insert arm still ends at the cursor", async () => {
+    const fixture = tree(["spaced (1).txt"]);
+    try {
+      const line = "spaced (1).txt";
+      const cursor = "spa".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+      const item = itemInserting(items, "spaced (1).txt");
+
+      expect(endsOf(item)?.insert).toBe(cursor);
+      // Everything right of the cursor stands, which is what the user asked
+      // for by choosing `insert`.
+      expect(applyAsClient(line, cursor, item, "insert")).toBe("spaced (1).txtced (1).txt");
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 /**
  * The line after a client applies `item`, with the cursor at `character`.
  *
