@@ -32,40 +32,26 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [
-    {
-      id: "PBI-25",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "judge the completeness of the gate against the protocol rather than against memory",
-        benefit:
-          "the claim `these are all the ungated views` becomes a judgement made against an enumerated set, and a new one cannot arrive silently",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "onProgress and trace are unreachable on the handle startServer holds",
-          verification:
-            "Extend the same Omit. BOTH-HALVES typeCheckProbe per member, plus the rename-independent form. NEGATIVE CONTROL per member, since P2 showed keys can pass each other off: dropping ONE key must redden ITS probes while the others stay green",
-        },
-        {
-          criterion:
-            "ProtocolConnection's member set is ENUMERATED AND PINNED against the primary source",
-          verification:
-            "Pin the set difference so a member added by the dependency, or a key added to the Omit, REDDENS. MEASURED PRECEDENT: appending `sendNotification` to the Omit reddens the existing pin ALONE while all 343 tests pass. AND THE PIN'S LIMIT IS CLAIMED: it asserts THE SET, never that no other member exposes traffic -- the completeness claim stays a JUDGEMENT, and what changes is what it is made against",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "FILED AFTER `THE LAST ITEM OF ITS KIND` WAS FALSIFIED IN THE SPRINT THAT SHIPPED IT. Closing two members is the SMALL part; the real deliverable is MAKING THE COMPLETENESS CLAIM ASSERTABLE, since the mechanism that would have caught that false claim already exists -- P4 demonstrated it.",
-        "trace IS THE WORST OF THE THREE, not the questionable one, and the Scrum Master's ranking was backwards. The objection was that a config author might legitimately want it: A CONFIG AUTHOR CANNOT REACH IT -- RequestOnlyConnection is internal to src/, and config authors get Tsudoi and RequestContext. The only party that could want it is src/ ITSELF, and SPRINT 15 ALREADY RULED AGAINST TRACING by leaving $/setTrace deliberately silent. Same answer, same source. CORRECTED AT SPRINT 24, MEASURED AGAINST vscode-jsonrpc 9.0.1: the claim that traceReceivedNotification fires `whether or not a handler exists` IS FALSE -- the third site sits INSIDE `if (notificationHandler || starNotificationHandler)`, and the else branch emits unhandledNotification with NO trace call. So a Tracer sees every notification THAT HAS A HANDLER plus $/cancelRequest at the two cancel sites: COMPLEMENTARY to onUnhandledNotification, not broader. IT CHANGES NO SCOPE, and the corrected reading is the STRONGER justification -- what puts trace in the Omit is ORDER, not breadth: the trace call PRECEDES the handler, and the gate lives INSIDE the handler.",
-        "onProgress: yes by the PBI-24 reasoning exactly -- on the handle, no deliberate act, one-token reversible, and nothing receives $/progress.",
-        "A LIMIT OF THE PIN, NAMED AT FILING: it is a claim about a PINNED DEPENDENCY at a stated version. SUPERSEDED BY THE SPRINT ITSELF: an ENUMERATION pin was built, and adding a member to the dependency's own .d.ts REDDENS it -- constructed, not argued, and skipLibCheck does not blind it. What remains bounded is narrower: the pin covers the TYPE while the VALUE is wider, since createProtocolConnection returns createMessageConnection's result unchanged and MessageConnection declares members ProtocolConnection does not. Off the type, off the pin, reachable only by a cast.",
-      ],
-    },
-  ],
+  product_backlog: [],
 
   completed: [
+    {
+      number: 24,
+      pbi_id: "PBI-25",
+      goal: "Judge the completeness of the notification gate against the protocol rather than against memory.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 9c18681, a62dccd and 54d3b4a. 347 tests green from 343, each DoD command run separately with its exit read directly -- and an earlier TRUE green was DISCARDED because it was taken against the wrong tree state and re-run at HEAD. Nobody asked for that: a correct number attached to the wrong thing is still a false report.",
+        "THE MECHANISM THE PO NAMED WAS INSUFFICIENT FOR HALF ITS OWN PROPERTY, measured both ways: a member the DEPENDENCY adds lands on BOTH sides of the set difference and CANCELS OUT. Following the named mechanism literally would have shipped a green suite against the criterion's own headline case. Delivered by TWO pins instead. THE PO'S SECOND MECHANISM FAILURE, and the first against a clause THEY authored -- not filed, because the rule caught it and the implementer caught it inside the sprint, which would be filing for a success.",
+        "THE PROJECT'S FIRST FALSE `MEASURED` LABEL, and the PO insisted on attributing it correctly rather than conveniently: `fires whether or not a handler exists` came from Sprint 23 CARRYING THE TAG, so deriving from it was legitimate -- RELYING ON A MEASURED LABEL IS WHAT THE LABEL IS FOR. Their own part was amplifying a COMPARATIVE without marking it DERIVED. MEASURED AT 9.0.1: the third site sits INSIDE `if (notificationHandler || starNotificationHandler)`, so a Tracer sees every notification THAT HAS A HANDLER plus the two cancel sites -- COMPLEMENTARY, not broader. Scope unchanged, and THE CORRECTED READING IS THE STRONGER JUSTIFICATION: what puts trace in the Omit is ORDER, not breadth -- the trace call precedes the handler and the gate lives inside it.",
+        "THE ENUMERATION IS DONE BY tsc, NOT BY PROSE: keyof ProtocolConnection asserted equal to a fifteen-name union whose left side the COMPILER reads out of the installed .d.ts, so the two cannot quietly agree. A PROSE LIST IS EXACTLY WHAT LET onProgress AND trace SIT UNNOTICED. Weakness stated: the diagnostic is TS2344 on a boolean -- it names file and line, NOT which member moved.",
+        "THE HEADLINE CASE WAS CONSTRUCTED RATHER THAN ARGUED: a member added to the dependency's OWN .d.ts reddens the enumeration pin alone, skipLibCheck was shown NOT to blind it, and the tree was reverted from a byte-verified copy. And a star-handler OVERLOAD added to the dependency exits 0, which converts `the pin sees NAMES, not BEHAVIOUR` from reasoned to measured.",
+        "A THIRD LIMIT NEARLY SHIPPED UNNAMED: createProtocolConnection returns createMessageConnection's result UNCHANGED, and MessageConnection declares inspect and onUnhandledProgress which ProtocolConnection does not -- so THE PIN COVERS THE TYPE WHILE THE VALUE IS WIDER. Off the type, off the pin, reachable only by a cast: the deliberate-evasion class, fourth of its kind. It is why the headline sentence is bounded to `on its type`.",
+        "THE SELF-REFERENTIAL RULE FIRED SIX TIMES on prose written this sprint, all caught on a second pass -- including two TRUE counts replaced by names, and a type NAME, BoundaryIsExactlyTwoMembers, whose count was true when written and false one widening later.",
+      ],
+    },
     {
       number: 23,
       pbi_id: "PBI-24",
@@ -90,30 +76,13 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "SPRINT 20'S RECORD DROPPED AT SPRINT 23, homes checked: the exact-match rule and its extension-only guard are examples/completion-path.ts's own code and comments, the declined generalisation owns a test that still runs, and the still-mangles boundary is pinned. SPRINT 19'S RECORD DROPPED EARLIER, homes checked: one-copy-per-entry and its symmetry reasoning are at src/workspace.ts, the re-armed trailing-slash control and the ordering pin are tests that still run, and the two-tests-two-controls finding became the granularity entry. Shipped in cbd7dab, 39dc7c4, 1996c24, 7409422, 84309eb, ef69ca1 and 95156c1. 341 tests green from 332, each DoD command run separately with its exit read directly.",
+        "SPRINT 21'S RECORD DROPPED AT SPRINT 24, homes checked: the type narrowing and its residuals are src/notifications.ts's own code and comments, and the control-designed-not-to-lie is the diagnostic-bound assertion those probes still carry. SPRINT 20'S RECORD DROPPED EARLIER, homes checked: the exact-match rule and its extension-only guard are examples/completion-path.ts's own code and comments, the declined generalisation owns a test that still runs, and the still-mangles boundary is pinned. SPRINT 19'S RECORD DROPPED EARLIER, homes checked: one-copy-per-entry and its symmetry reasoning are at src/workspace.ts, the re-armed trailing-slash control and the ordering pin are tests that still run, and the two-tests-two-controls finding became the granularity entry. Shipped in cbd7dab, 39dc7c4, 1996c24, 7409422, 84309eb, ef69ca1 and 95156c1. 341 tests green from 332, each DoD command run separately with its exit read directly.",
         "A PREMISE INSIDE THE CRITERION WAS MEASURED FALSE, and the ROUTE IN is what the PO named: they did not invent `server.ts, methods.ts and the fixtures` -- they INHERITED it from a handback and PROMOTED IT INTO A CRITERION AS FACT. An unlabelled claim in a handback reads as REASONED under their own default, and putting it in a criterion converted it to ESTABLISHED without measurement. MEASURED: no fixture and no example imports that subpath at all -- all 24 of their protocol imports are the BARE specifier. The Scrum Master's independent re-run reddened FIVE where the executor's reddened three, because guard.test.ts carries two bare-specifier assertions a module-wide ban breaks -- the same finding from the other direction, which is what makes the correction trustworthy rather than one unmeasured list swapped for another.",
         "THE MOST VALUABLE FINDING WAS NOT ON THE PLAN: spelling the exemption `off` rather than REDECLARING reddens exactly one test -- the bun:sqlite assertion at src/notifications.ts -- because an override REPLACES options rather than merging them. A SILENT DISABLING OF A DIFFERENT GUARD, in the file whose whole purpose is guarding, found by measurement rather than by reading.",
         "TWO DEGENERACY CATCHES BEFORE ANYTHING FALSE WAS RECORDED, the Sprint 20 widening applied at authoring time TWICE in one sprint: an assertion reading its target path out of THE RULE'S OWN HELP TEXT, so a clean file and a flagged file produced the SAME observation; and a comment claiming half 3 was the only one a module-wide ban fails, which perturbation says is false of all three -- BACKED AND STILL WRONG. Corrected to what it actually buys: the only half that NAMES THE CAUSE, since the others fail on an absent WORDING indistinguishable from a message-format change.",
         "THE LAUNDERING HAZARD MEASURED RATHER THAN ARGUED: adding the re-export reddens the export test at its FIRST assertion, nothing else in 341, and oxlint STAYS 0. The exemption really is a hole the ban cannot see -- which is the precondition the criterion rested on.",
         "DECLINING TO ASSERT THE TEST-FILE EXEMPTIONS IS THE HARDER CALL AND THE PO NAMED IT AS SUCH: those branches would be bare exit-0 assertions carrying exactly the defect the widening names, and an assertion that cannot discriminate is WORSE than none because it reads as coverage.",
         "NOT CONSTRUCTED, correctly labelled and correctly homed: the PBI-22 SUFFICIENCY ARGUMENT. The probes redden if createGatedConnection's return annotation is widened, so THE FACT is defended; the claim that a mere detector SUFFICES is an argument, and arguments have no assertion. At risk: startServer re-binding a wide connection while the lint keeps passing AND KEEPS READING LIKE A GUARD. Also measured: `await import(...)` walks past, in a run where a static import of the same name in a sibling file was flagged.",
-      ],
-    },
-    {
-      number: 21,
-      pbi_id: "PBI-22",
-      goal: "Make a notification handler unregisterable outside the router -- so the gate cannot be avoided by not using the thing that applies it.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "SPRINT 18'S RECORD DROPPED HERE, homes checked: the chain and its precedence are src/workspace.ts's own code and comments, the harm-asymmetry reasoning and the spec-precedence counter sit beside them, and the read-time trap is pinned by tests that still run. Shipped in c771080, 8c391db, c81327a, 04fa547 and 17522f6. 332 tests green, each DoD command run separately with its exit read directly. startServer never binds the wide type: createGatedConnection creates, registers the table, and hands back Omit<ProtocolConnection, `onNotification`>.",
-        "A CONTROL DESIGNED NOT TO LIE, RATHER THAN CAUGHT LYING -- the sprint's most durable output. Against UNCHANGED src/, all three probes fail with TS2305 `no exported member`, so AN EXIT-CODE-ONLY ASSERTION WOULD HAVE GONE GREEN AGAINST A MODULE WITH NO NARROWING WHATSOEVER. A file-bound diagnostic regex refuses that. Third instance of this class here and THE FIRST PREVENTED AT AUTHORING rather than caught at review. The born-green claim carries its boundary accordingly: green with respect to src/ AT THE STRUCTURAL COMMIT, not pre-sprint.",
-        "THE REMAINDER CHECK RAN BEFORE ANY src/ EDIT, with its own control, because five overloads through a mapped type made `it will be fine` unavailable: onRequest with and without params, sendProgress and listen all type-check, while appending onNotification exits 1 naming TS2551. No contortion, so no handback.",
-        "A SEAM NEARLY MISLABELLED AND CLOSED: widening the FACTORY'S RETURN ANNOTATION while leaving the alias untouched left all three probes GREEN, tsc 0, and an ungated onNotification in src/server.ts COMPILING -- foreclosure entirely gone with nothing saying so. A fourth probe takes its connection from the factory; the same perturbation now reddens it and only it.",
-        "A FALSE NOT-CONSTRUCTED OF THEIR OWN, self-caught by the coverage-claim rule: they first recorded that `startServer holds the narrowed type` was carried by nothing executable, which BUNDLED TWO SEAMS -- only the import is beyond a type's reach. Sprint 11's classification running in reverse.",
-        "THE PERMITTED HALF STAYS, and NOT for the reason first offered. `Survives on sequence` is weak, since DoD order is no guarantee. What holds is that the repo's tsc catches it only INCIDENTALLY, as a side effect of src/ currently exercising onRequest on the narrowed type -- if src/ stopped, that coverage would evaporate SILENTLY. So `can never be first to fail` means never FOR A STABLE REASON, and incidental coverage is not coverage. Second time this rule has needed that reading.",
-        "NOTE 5 OF PBI-22 SAID `NO TYPE CAN DO THIS` AND THIS SPRINT FALSIFIED IT. The executor FLAGGED rather than edited a field that is not theirs -- the standing prose item working across the who-may-edit-what boundary -- and it was CORRECTED rather than deleted, because that sentence is exactly what a future reader would cite to re-propose the evadable route.",
       ],
     },
   ],
@@ -127,99 +96,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 24,
-    pbi_id: "PBI-25",
-    goal: "Judge the completeness of the notification gate AGAINST THE PROTOCOL rather than against memory: close onProgress and trace, and make `these are all the ungated views` a judgement against an ENUMERATED, MACHINE-PINNED member set rather than a recollection.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "BOTH-HALVES typeCheckProbe per member and per form -- onProgress direct, onProgress aliased, trace direct, trace aliased -- each asserting the diagnostic BOUND TO FILE AND SYMBOL and that no diagnostic names permits.ts",
-        implementation:
-          "Extend RequestOnlyConnection's Omit with `onProgress` and `trace`, and update the set-difference pin's union in THE SAME EDIT -- declared in advance as ONE EDIT, because the pin goes red the instant the Omit changes, so a separate subtask for it would be a born-green RED.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "9c18681",
-            message: "feat: judge the gate's completeness against an enumerated protocol",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED-RED: both members exist on the handle today, so all four probes compile clean and the regex finds nothing.",
-          'RED OBSERVED AS PREDICTED AND FOR THE PREDICTED REASON: all four failed with `Received: ""` -- tsc emitted NO diagnostic at all, which is what a member that IS present looks like. A red carrying some OTHER diagnostic would have been a probe failing for a reason unrelated to the narrowing.',
-          "GREEN in the declared one edit. 15 pass / 4 fail became 19 pass / 0 fail in test/notifications.test.ts.",
-        ],
-      },
-      {
-        test: "A type-level pin asserting `keyof ProtocolConnection` is EXACTLY the fifteen names read off vscode-languageserver-protocol 3.18.2's connection.d.ts, checked by the repo's own tsc --noEmit",
-        implementation:
-          "The enumeration is performed BY tsc against node_modules rather than by a human reading -- the union literal is the only recalled half, and any disagreement with the primary source is a TS2344 at that line.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "9c18681",
-            message: "feat: judge the gate's completeness against an enumerated protocol",
-            phase: "green",
-          },
-          {
-            hash: "a62dccd",
-            message: "docs: claim the pin's third limit -- it pins the type, not the value",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "BORN-GREEN AND DECLARED AS SUCH: it is a claim about the dependency that already holds. Writing a deliberately wrong list first would manufacture a RED that proves nothing about the delivered artifact; the wrong list is the DISCRIMINATING CONTROL, run at authoring time.",
-          "ONE COMMIT WITH SUBTASKS 1 AND 4 RATHER THAN ITS OWN, and this is a PLAN CORRECTION rather than a discovery, so it is recorded as one. Subtask 4's prose at src/notifications.ts REFERS TO THIS PIN -- `pinned in test/notifications.test.ts, checked by tsc against the dependency's own connection.d.ts`. Splitting the commits would have landed that sentence in a commit where the pin did not yet exist: a claim a file makes about the repo, false in the commit that wrote it, which is the exact failure the Sprint 22 rule names. The plan should have declared them one edit; it declared only the Omit and the set-difference pin.",
-          "A MECHANISM NAMED INSIDE CRITERION 2 WAS MEASURED INSUFFICIENT FOR HALF OF ITS OWN PROPERTY, which is the Sprint 22 shape and the PO's own property-not-mechanism rule firing on their own verification text. It says `PIN THE SET DIFFERENCE so a member added by the dependency, OR a key added to the Omit, REDDENS`. The set difference CANNOT produce the first half at all: a member the dependency adds lands on both sides of the Exclude and cancels. MEASURED both ways -- A3 reddens the enumeration pin and NOT the difference; B5 reddens the difference and NOT the enumeration. The property was delivered; the mechanism the criterion named could only ever have delivered half of it, and following it literally would have shipped a green suite against the criterion's headline case.",
-          "TWO PINS, NOT ONE, AND NEITHER SUBSTITUTES: the set difference `Exclude<keyof ProtocolConnection, keyof RequestOnlyConnection>` cancels a member the dependency adds, since it lands on BOTH sides; the enumeration has no RequestOnlyConnection in it, so a key added to the Omit leaves it untouched. MEASURED in both directions -- B5 reddens the difference pin and not the enumeration, A3 reddens the enumeration and not the difference.",
-        ],
-      },
-      {
-        test: "The perturbation set: four drop-one controls (one per Omit key), one add-a-key control, and THREE controls on the enumeration pin including one applied to the DEPENDENCY'S OWN .d.ts",
-        implementation:
-          "Each named by the ASSERTION it flips. PREDICTED BEFORE RUNNING, so `reddened its probes alone` cannot be reported falsely: each drop-one reddens ITS member's probes AND the set-difference pin, and no OTHER member's probes.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "EVERY PREDICTION HELD, AND THE ONE THAT MATTERED WAS THE ONE ABOUT THE PIN. Dropping `onNotification` reddens its three probes (direct, aliased, factory); `onUnhandledNotification`, `onProgress` and `trace` redden their two each; NO OTHER MEMBER'S PROBE MOVES IN ANY OF THE FOUR. So the four keys are INDEPENDENTLY defended and none passes another off, which is what P2 showed cannot be assumed. Each ALSO reddens the set-difference pin `BoundaryIsTheObservingMembers` with TS2344 -- predicted before running, because the removed set changed, and reporting `its probes alone` would have been false.",
-          "THE CRITERION'S HEADLINE DIRECTION IS CONSTRUCTED, NOT ARGUED. Adding `onEverything(handler)` to ProtocolConnection in node_modules/vscode-languageserver-protocol/lib/common/connection.d.ts reddens the ENUMERATION pin `ProtocolConnectionHasTheseMembers` and NOTHING ELSE in tsc -- so `a member added by the dependency REDDENS` is MEASURED rather than reasoned. skipLibCheck does not blind it: the declaration is still read for `keyof`. Reverted from a byte copy taken first.",
-          'THE OTHER TWO ENUMERATION CONTROLS, both at `ProtocolConnectionHasTheseMembers` and nothing else: dropping `| "listen"` from the union, and adding an `| "onNothing"` that is not on the interface. So the pin discriminates in BOTH directions, not merely against a shrinking dependency.',
-          "THE SURPLUS-KEY CONTROL RE-RUN AT THE NEW WIDTH, reproducing Sprint 23's rather than being independent: appending `| \"sendNotification\"` to the Omit leaves ALL 347 TESTS GREEN and reddens the set-difference pin ALONE. The misspelling control also re-run -- `onUnhandledNotifcation` reddens that member's two probes plus the pin, and `Omit` silently accepts the key.",
-          "TWO LIMITS THAT WERE REASONED ARE NOW MEASURED, because the pin's own docblock stated them as fact in a file whose standard is measured-or-reasoned. `A star-handler overload would redden nothing here`: adding `onRequest(handler: (method, ...params) => any)` to the dependency's interface leaves tsc AT EXIT 0 -- the limit is real, and it is the one whose falsity would have mattered most. And `adds, REMOVES or renames` rested on the add case alone: deleting `listen(): void;` reddens `ProtocolConnectionHasTheseMembers`, and also the `connection.listen()` call in src/server.ts, which really did lose a method it calls. A rename is those two at once and was not run separately.",
-          "EVERY PERTURBATION ABOVE WAS RUN BY THE SAME PERSON WHO WROTE THE CODE. Single-observer sprint; the record is reproducible but unaudited, which is exactly the condition the Sprint 14 re-run item exists to repair at Review.",
-        ],
-      },
-      {
-        test: "Prose sweep: every sentence in src/notifications.ts and test/notifications.test.ts that this sprint falsifies, checked AGAINST ITS OWN FILE before the edit lands",
-        implementation:
-          "Rename the count-bearing symbol, name the members rather than counting them, and correct the trace claim measured false below.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "9c18681",
-            message: "feat: judge the gate's completeness against an enumerated protocol",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "A MEASURED CLAIM IN src/notifications.ts IS FALSE, found by reading the dependency rather than the note: `traceReceivedNotification runs on the receive path whether or not a handler exists`, so trace `hands EVERY received notification` to the Tracer. MEASURED at vscode-jsonrpc 9.0.1 connection.js -- the third site is INSIDE `if (notificationHandler || starNotificationHandler)`, and the else branch fires unhandledNotificationEmitter with NO trace call. An unhandled non-cancel notification is NOT traced, so trace is not broader than onUnhandledNotification; it is COMPLEMENTARY to it. CHANGES NO SCOPE: the criterion names both members outright.",
-          "TWO PBI-25 NOTES ARE NOW FALSE AND ARE FLAGGED RATHER THAN EDITED, since the PBI is not the executor's field -- the Sprint 21 precedent. Note 2 says trace `fires at THREE SITES whether or not a handler exists, so it sees EVERY received notification -- broader than either member closed so far`: measured false above, and it is COMPLEMENTARY rather than broader. Note 4 says `Nothing reddens if a future release adds an observing member`: TRUE AT FILING AND SUPERSEDED BY THE DELIVERY -- A3 measures that the enumeration pin does redden. Neither changes what was built; both would mislead a reader who cited them later.",
-          "AND THE CORRECTED READING IS STRONGER FOR THIS SPRINT THAN THE FALSE ONE WAS: what puts `trace` in the Omit is ORDER, not breadth. traceReceivedNotification runs IMMEDIATELY BEFORE the registered handler is awaited, and this module's gate lives INSIDE that handler -- so a tracer sees a gated notification whatever the gate then decides. That is watching around the gate, which is the property being denied. The breadth claim was never what justified it.",
-          "FOUR MORE CLAIMS CAUGHT ON THE SECOND PASS, all written THIS SPRINT and all about their own file, so the Sprint 22 rule fired four times inside the sprint that was warned about it. (1) `tsc says WHICH NAME MOVED` -- it does not; TS2344 on a boolean names the file and line only, and reading the two lists against each other is left to whoever it stops. (2) `all ELEVEN surviving members` and `THE OTHER EIGHT` -- true counts, replaced by names on the naming-over-counting clause. (3) `the permitted half of every probe` -- the entry-gate probes have no such half; narrowed to every NARROWED-CONNECTION probe. (4) `a config author is handed Tsudoi and RequestContext` -- src/types.ts exports more than those two, and the load-bearing claim is that it does NOT export this type, which is what it now says.",
-          "THE COUNT-BEARING SYMBOL IS GONE: BoundaryIsExactlyTwoMembers became BoundaryIsTheObservingMembers, and `THE BOUNDARY ... IS EXACTLY TWO MEMBERS` became `the members named in the Omit above`. That sentence was TRUE WHEN WRITTEN and false one widening later, which is the clause's own demonstration and is now recorded beside it.",
-          "THE PIN'S THIRD LIMIT, AND IT IS THE ONE NEAREST THE CRITERION'S OWN WORDS -- it was not on the plan and was nearly shipped unnamed. THIS PINS THE TYPE, AND THE VALUE IS WIDER THAN THE TYPE. MEASURED at vscode-languageserver-protocol 3.18.2's connection.js: createProtocolConnection returns createMessageConnection's result UNCHANGED, and MessageConnection declares `inspect` and `onUnhandledProgress`, which ProtocolConnection does not. THE SECOND OBSERVES INBOUND TRAFFIC -- at vscode-jsonrpc 9.0.1 connection.js:1261-1268 the library's own $/progress handler fires unhandledProgressEmitter for every progress notification whose token has no handler, and tsudoi registers NONE, so that is EVERY ONE. Off the type, off the pin, reachable only by a CAST: the deliberate-evasion class this module already accepts for `await import(...)` and for a wrapper, NOT the by-accident class the Omit closes. It is why the type's headline sentence is bounded to `on its type` and stops short of `nothing can observe traffic`.",
-          "THE REMAINDER MEASUREMENT THE PROSE CLAIMS WAS ACTUALLY RUN, and CHECKED FOR DISCRIMINATION rather than trusted at exit 0: every surviving member driven through the four-key narrowing in one project exits 0, and appending an onProgress call to that same project exits 1 on TS2551. WHAT THE SUITE PERMANENTLY BACKS IS LESS, and the comment now says so in three tiers -- onRequest has a standing assertion, sendProgress and listen have INCIDENTAL coverage via src/, and the remaining eight have nothing executable at all.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 22,
@@ -379,7 +256,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. ADDED AT SPRINT 18: A COMMENT ASSERTING CURRENT BEHAVIOUR STATES WHETHER AN ASSERTION BACKS IT -- three site comments were found claiming things nothing checked, each reddening nothing on first attempt. It targets the BIRTH defect, prose that was never checked, where the standing prose item targets DRIFT, prose that became false; and it is bounded at write time rather than requiring perpetual re-perturbation, which would be claim-extraction wearing a review practice.",
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. ADDED AT SPRINT 24: A MEASURED CLAIM RECORDS WHAT WOULD LET IT BE RE-RUN, NOT ONLY ITS CONCLUSION. For a DEPENDENCY that means VERSION AND PATH; for THIS REPOSITORY it means an anchor that SURVIVES EDITS, since a line number moves when prose is added above it. THE ASYMMETRY IS NAMED because it tells a writer where to be careful when pressed: a path WITHOUT a version MISLEADS -- it looks precise, points at the wrong lines after a bump, and READS AS RE-CHECKABLE WHEN IT IS NOT -- where a version without a path merely COSTS A SEARCH. Filed after THE PROJECT'S FIRST FALSE `MEASURED` LABEL: `traceReceivedNotification fires at three sites whether or not a handler exists` could not be re-checked, while its correction -- vscode-jsonrpc 9.0.1, connection.js:646-648 -- could, AND THAT DIFFERENCE IS WHY THE ERROR SURVIVED A SPRINT. The internal case belongs here too: a record cited TWO different line numbers for the SAME assertion, because prose added between runs moved it. ADDED AT SPRINT 18: A COMMENT ASSERTING CURRENT BEHAVIOUR STATES WHETHER AN ASSERTION BACKS IT -- three site comments were found claiming things nothing checked, each reddening nothing on first attempt. It targets the BIRTH defect, prose that was never checked, where the standing prose item targets DRIFT, prose that became false; and it is bounded at write time rather than requiring perpetual re-perturbation, which would be claim-extraction wearing a review practice.",
           timing: "immediate",
           status: "active",
           outcome:
