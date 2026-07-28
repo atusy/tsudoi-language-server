@@ -163,6 +163,7 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
 ## Where to look next
 
 - `examples/tsudoi.config.ts` in this repository is the fuller example: streaming completion,
-  hover, and a `finally` that documents when it runs. The test suite runs that file itself, so
-  it cannot drift from what tsudoi does.
+  hover, and a `finally` that documents when it runs. It imports `examples/path-completion.ts`,
+  which completes filesystem paths, so copy **both** files or the import fails. The test suite
+  runs those files themselves, so they cannot drift from what tsudoi does.
 - `src/types.ts` is the whole published type surface, reachable as `@atusy/tsudoi/types`.
