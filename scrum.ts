@@ -200,10 +200,16 @@ const scrum: ScrumDashboard = {
             message: "docs: correct two false claims about this sprint's own tests",
             phase: "green",
           },
+          {
+            hash: "0ef93a9",
+            message: "docs: measure the not-pinned claim, label the un-blinding one as reasoned",
+            phase: "green",
+          },
         ],
         notes: [
           "SHIPPED IN THE BEHAVIOUR'S OWN COMMIT. The deviation framing is gone; the REASON one-per-entry is correct STAYS, since its violation would be a code edit at that site. It now names which test reddens for which mistake, and the matrix above is what makes that clause an assertion rather than a claim.",
           "THE PROSE SWEEP FOUND ONE MORE HOME, reported because silence is not an answer: src/types.ts's config-author-facing `MIRRORED, NOT INTERPRETED` carried only the ADD half of the mirror. The REMOVE half is now stated beside it, in the same commit. SWEPT TWICE, since the first pass was one grep for `remov` and multiplicity prose need not carry that stem: a second pass over README.md, examples/ and src/ for `twice|duplicat|copies|copy|multiplicit|mirror` found nothing else about workspace-folder multiplicity -- the example's `the same path TWICE` is completion-source dedup.",
+          "A FOURTH COMMIT, because two more comment claims were unbacked. `WHICH copy an entry takes is NOT pinned` is a claim about what the suite does NOT defend, so it may not be reasoned: MEASURED with `findLastIndex`, which leaves all 321 green, and the comment now says so. And the un-blinding condition for the blinded normalisation control sat under a MEASURED heading while never having been run -- running it needs a test that does not exist -- so it is labelled REASONED where it stands.",
           "A THIRD COMMIT CORRECTING THIS SPRINT'S OWN PROSE, and the rule it broke is the one about stating a consequence without checking it: TWO comments written here were FALSE about the tests beside them. The sequential test's second half was justified as catching a no-op removal (the first assertion does that), and the batched test's presence pair was justified by an argument that is INVERTED -- with the initialize folder present, a session that dropped every notification produces EXACTLY the expected value. Both corrected; the second now states what it does not rule out, and why that is deliberate.",
           "A SECOND COMMIT, DELIBERATELY SEPARATE, for two comment-only findings the perturbations turned up -- both MEASURED, neither repaired, both for the PO. (1) THIS SPRINT BLINDED A CONTROL OF PBI-17's: trailing-slash normalisation reddens `a folder removed stops being observable...` under the old filter and reddens NOTHING under the new one, because one-per-entry deletes exactly one folder and first-match lands on the intended target. Not NOT CONSTRUCTED and not FORECLOSED -- a control that no longer discriminates. Un-blinding it needs a removal naming the spelling that is NOT first in the list; the existing case names the first because that is the direction measured against nvim. (2) REMOVED-BEFORE-ADDED IS ASSERTED BY NOTHING, and NOT by this sprint's doing: applying `added` first reddens nothing in 321 tests now and reddened nothing in the 317 that predate the sprint.",
         ],
