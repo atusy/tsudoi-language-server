@@ -10,10 +10,10 @@ import {
   LSPErrorCodes,
   type ProgressToken,
   ProgressType,
-  type ProtocolConnection,
   ResponseError,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
+import type { RequestOnlyConnection } from "./notifications.ts";
 import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
@@ -220,9 +220,15 @@ function streamingToken(
  * registration and advertisement are independent questions, and a client that
  * sends a request it was never told about is answered emptily rather than
  * MethodNotFound -- a server must not fail because a client misbehaves.
+ *
+ * TAKES THE NARROWED CONNECTION, and that is not merely what the caller happens
+ * to hold: this module registers REQUESTS, so an `onNotification` on its
+ * parameter would be a second door out of the router in the one other file that
+ * is handed the connection at all. `onRequest` and `sendProgress` are all it
+ * uses, and both survive the narrowing.
  */
 export function registerMethods(
-  connection: ProtocolConnection,
+  connection: RequestOnlyConnection,
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,

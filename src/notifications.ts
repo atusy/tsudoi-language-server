@@ -1,7 +1,12 @@
-import type {
-  Disposable,
-  NotificationType,
-  NotificationType0,
+import {
+  createProtocolConnection,
+  type Disposable,
+  type Logger,
+  type MessageReader,
+  type MessageWriter,
+  type NotificationType,
+  type NotificationType0,
+  type ProtocolConnection,
 } from "vscode-languageserver-protocol/node";
 import type { Lifecycle } from "./lifecycle.ts";
 
@@ -47,10 +52,12 @@ export type NotificationGate = "lifecycle" | "always";
  * INCIDENTALLY. That control cannot be re-run -- there is no body check left to
  * delete -- so this sentence is the evidence.
  *
- * WHAT THIS DOES NOT FORECLOSE, so nobody reads it as wider than it is: a
- * future edit that calls `connection.onNotification` directly bypasses this
- * file entirely. Foreclosing THAT needs a lint rule of the shape .oxlintrc.json
- * already carries, and no type can do it.
+ * WHAT THIS DOES NOT FORECLOSE, AND THE SENTENCE THAT USED TO STAND HERE WAS
+ * WRONG: it said a future edit calling `connection.onNotification` directly
+ * bypasses this file, that only a lint rule could stop it, and that NO TYPE
+ * COULD. A type can, and `createGatedConnection` below is it -- src/server.ts
+ * never holds a value that HAS an `onNotification` to call. What that does and
+ * does not reach is named at that function rather than repeated here.
  */
 export interface NotificationEntry<P> {
   /** The protocol message. `NotificationType0` is how `exit` is declared. */
@@ -123,4 +130,68 @@ export function registerNotifications<P extends readonly unknown[]>(
       entry.handler(params);
     });
   }
+}
+
+/**
+ * A connection with no `onNotification` ON ITS TYPE.
+ *
+ * `Omit`, not a hand-written interface: the remainder then tracks whatever
+ * `ProtocolConnection` grows, and only the ONE member this narrowing is about
+ * is named here.
+ *
+ * THE REMAINDER WAS MEASURED, not assumed, before this type existed --
+ * `onRequest` with params and without, `sendProgress` and `listen` all compile
+ * through it with no cast and no helper. `onRequest` has five overloads and
+ * `Omit` is a mapped type; overload survival through one of those is exactly
+ * the thing worth checking rather than reasoning about.
+ */
+export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
+
+/**
+ * The connection tsudoi serves on, with its notification table ALREADY
+ * REGISTERED and `onNotification` gone from what the caller holds.
+ *
+ * THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED, and that is what
+ * makes this the whole mechanism rather than a tidy-up: the caller cannot
+ * NARROW A CONNECTION AFTER CREATING ONE, because the wide value would still be
+ * in scope beside the narrow one. The only way the narrow handle is the only
+ * handle is for the wide one never to be bound, so creation moves here.
+ *
+ * WHY A TYPE RATHER THAN A LINT, MEASURED AT REFINEMENT: oxlint 1.73.0 does not
+ * merely fail to match on `no-restricted-syntax`, it FAILS TO PARSE that
+ * config. `no-restricted-properties` does work, and matches the IDENTIFIER
+ * `connection` -- so `const conn = connection` walks straight past it, and a
+ * guard a rename evades forecloses nothing. A type cannot be renamed away, and
+ * test/notifications.test.ts drives that exact alias rather than inferring it.
+ *
+ * THE RESIDUAL, NAMED RATHER THAN GUARDED: this forecloses the call only while
+ * NO WIDE VALUE IS IN SCOPE. An `import { createProtocolConnection }` added to
+ * src/server.ts puts one back, and nothing here notices. WHAT WOULD CLOSE IT: a
+ * lint on the IMPORT SPECIFIER -- the lint route reappearing at a target where
+ * it actually works, since a specifier cannot be renamed the way a variable
+ * can. That is a SECOND GAP rather than a second guard on this one, so the
+ * argument against two guards on one gap does not forbid closing it.
+ *
+ * A THIRD GAP, weaker and still real, AND NO ASSERTION BACKS THIS SENTENCE --
+ * it is read off the remainder above, so what is at risk if it rots is only its
+ * own accuracy: `onUnhandledNotification` SURVIVES the `Omit` and is an ungated
+ * way to see notification traffic. It is weaker because it fires only for
+ * messages nothing registered and carries no per-method dispatch. Deliberately
+ * NOT added to the `Omit`: the accepted criterion is scoped to
+ * `onNotification`, and widening it here would swap a reviewed boundary for an
+ * unreviewed one. `sendNotification` survives too and is not a gap at all --
+ * that is SENDING a notification, not installing a handler for one.
+ */
+export function createGatedConnection<P extends readonly unknown[]>(
+  reader: MessageReader,
+  writer: MessageWriter,
+  logger: Logger,
+  lifecycle: Lifecycle,
+  entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
+): RequestOnlyConnection {
+  // The one place the wide type is ever bound, and it does not escape this
+  // function: the return annotation is what the caller gets.
+  const connection = createProtocolConnection(reader, writer, logger);
+  registerNotifications(connection, lifecycle, entries);
+  return connection;
 }

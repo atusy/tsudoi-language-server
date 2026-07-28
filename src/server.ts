@@ -1,6 +1,5 @@
 import process from "node:process";
 import {
-  createProtocolConnection,
   DidChangeTextDocumentNotification,
   DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
@@ -20,7 +19,7 @@ import {
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
-import { defineNotifications, registerNotifications } from "./notifications.ts";
+import { createGatedConnection, defineNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
 import {
   createWorkspaceFolders,
@@ -73,12 +72,6 @@ export function startServer(
   documents: DocumentStoreHandle,
   tsudoi: Tsudoi,
 ): void {
-  const connection = createProtocolConnection(
-    new StreamMessageReader(process.stdin),
-    new StreamMessageWriter(process.stdout),
-    stderrLogger,
-  );
-
   // Every question about WHEN a message is allowed goes to this one object.
   // The gate it backs reaches what tsudoi REGISTERED, never the dispatch as a
   // whole -- that is what leaves a method nobody registered falling through to
@@ -96,6 +89,28 @@ export function startServer(
   // local: what writes it and what reads it are different messages, and
   // workspace.ts is where that split lives.
   const workspaceFolders = createWorkspaceFolders();
+
+  // EVERY notification tsudoi answers is declared here, and each one DECIDES
+  // when it may run. The gate is applied by the router, never by a handler
+  // body: a body that could consult it is a body that could forget to, which is
+  // what these entries replaced.
+  //
+  // AND THE CONNECTION COMES BACK WITHOUT AN `onNotification` TO CALL. This
+  // line is the only connection this file has, so a future edit cannot register
+  // a notification beside the table instead of in it -- not by writing
+  // `connection.onNotification`, and not by copying the value under another
+  // name. `startServer` must NEVER bind the wide type: narrowing after the fact
+  // would leave the wide value in scope and foreclose nothing, which is why
+  // creation lives in the module that owns the table. The residual -- importing
+  // `createProtocolConnection` here and getting a wide one back -- is named at
+  // `createGatedConnection`, together with the lint that would close it.
+  const connection = createGatedConnection(
+    new StreamMessageReader(process.stdin),
+    new StreamMessageWriter(process.stdout),
+    stderrLogger,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+  );
 
   connection.onRequest(InitializeRequest.type, (params: InitializeParams): InitializeResult => {
     // initialize is the one request the gate may never refuse -- refusing it
@@ -148,16 +163,6 @@ export function startServer(
     }
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
-
-  // EVERY notification tsudoi answers is declared here, and each one DECIDES
-  // when it may run. The gate is applied by registerNotifications, never by a
-  // handler body: a body that could consult it is a body that could forget to,
-  // which is what these entries replaced.
-  registerNotifications(
-    connection,
-    lifecycle,
-    notificationEntries(documents, lifecycle, workspaceFolders),
-  );
 
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
