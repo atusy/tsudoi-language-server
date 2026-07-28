@@ -167,9 +167,12 @@ const scrum: ScrumDashboard = {
         implementation:
           "Drive ONE end-to-end confirm in the stakeholder's own stack and observe that an EXTENDED replace range is honoured. This converts the analysis's only remaining inference -- ddc's confirm path DERIVED FROM SOURCE -- into OBSERVED. IT LANDS BEFORE ANY REMEDY IS BUILT ON IT: the remedy's entire value rests on it, so discovering otherwise at Review means the deliverable does not work, where discovering it first stops the sprint cheaply.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
-        notes: [],
+        notes: [
+          "MEASURED AND IT HOLDS. Driven end to end in the stakeholder's own nvim 0.13.0-nightly + ddc + ddc-source-lsp with THEIR confirmBehavior `replace`, under a real pty because pum.vim opens no popup without a UI. A throwaway stdio LSP server handed ddc ONE item -- newText `spaced (1).new`, insert [0,3), replace [0,14) -- so the question was asked WITHOUT the remedy existing to answer it. Typed `spa` in front of `ced (1).old`, selected the lsp item BY SOURCE NAME and confirmed: THE LINE BECAME `spaced (1).new`. The extended replace end is honoured at confirm.",
+          "PAIRED CONTROL IN THE SAME HARNESS, today's whitespace end 6: `spaced (1).new (1).old` -- the reported defect reproduced end to end, and what makes the positive result evidence rather than a line that never moved. THE THREE OUTCOMES WERE MADE DISTINGUISHABLE FIRST, and the first design was not: with a candidate equal to the line's own text, `the extended range was honoured` and `ddc inserted its truncated word and did nothing else` PRODUCE THE SAME LINE. createSelectText's truncation was OBSERVED beside it -- the item's word is `spaced` while its abbr is `spaced (1).new` -- so display-and-filtering versus confirm really are the two paths the analysis derived from source.",
+        ],
       },
       {
         test: "Completing over a filename already on the line replaces the whole of it",
