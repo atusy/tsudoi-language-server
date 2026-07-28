@@ -32,7 +32,32 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-24",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "be unable to watch notification traffic around the gate",
+        benefit:
+          "the most reachable way left to see notifications ungated closes, at the same cost as the one that closed the first",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "onUnhandledNotification is unreachable on the handle startServer holds, whatever the variable is called",
+          verification:
+            "Omit<ProtocolConnection, `onNotification` | `onUnhandledNotification`>; a BOTH-HALVES typeCheckProbe -- a source binding that type and calling onUnhandledNotification FAILS while one calling onRequest PASSES -- plus the rename-independent form, since a type matches on the type. THE BOUNDARY CLAIMED: the narrowing forecloses THESE TWO METHODS AND NOTHING ELSE. The dynamic-import evasion and the test-file exemption are UNCHANGED and remain accepted residuals",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE OPEN QUESTION THAT HELD THIS IS ALREADY ANSWERED, by a ruling made three sprints earlier: Sprint 15 MEASURED that unregistered notifications produce ZERO BYTES, and the PO endorsed that silence deliberately. So nothing wants this hook for diagnostics -- and `there is an open question` was the whole reason for holding it.",
+        "THE STRONGEST OF THE FOUR RESIDUALS RATHER THAN THE SMALLEST, and the reason is reachability: IT SITS ON THE HANDLE WE HAND OUT. Unlike the factory import, reaching it needs NO DELIBERATE ACT -- so PBI-22's adequacy argument, `no longer reachable by accident`, DOES NOT COVER IT.",
+        "THE FORECLOSURE IS REVERSIBLE AT THE SAME ONE TOKEN, so the diagnostic capability is DEFERRED rather than surrendered.",
+        "AND IT IS THE LAST ITEM OF ITS KIND ANYONE CAN SEE. Stated when filed rather than discovered afterwards, so the sprint that follows reads as the honest stop rather than leaving the stakeholder wondering whether more will keep appearing.",
+      ],
+    },
+  ],
 
   completed: [
     {
@@ -98,7 +123,48 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 23,
+    pbi_id: "PBI-24",
+    goal: "Close the most reachable residual -- notification traffic cannot be watched around the gate on the handle startServer holds.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The narrowed handle rejects onUnhandledNotification and accepts onRequest",
+        implementation:
+          "One token added to the existing Omit. BOTH HALVES in one probe run -- a firing-half-only probe would pass a type that forbids everything.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ASSERT ON THE DIAGNOSTIC, BOUND TO THE FILE AND THE SYMBOL, never on a bare non-zero exit: Sprint 21 measured that against a module lacking the export ENTIRELY, an exit-code-only assertion goes GREEN.",
+        ],
+      },
+      {
+        test: "The same rejection under a DIFFERENT variable name",
+        implementation: "Born green -- the type matches on the type.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (prose, same commit)",
+        implementation:
+          "The site comment currently records this as a THIRD GAP with its closure and its open question. Once closed, that paragraph describes a state that no longer exists -- REVERSE STALENESS. The boundary replaces it: the narrowing forecloses these two methods and NOTHING ELSE, with the dynamic import and the test-file exemption unchanged and still accepted.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "AND THE ADEQUACY DEPENDENCY RECORDED AT PBI-23'S SITE IS UNAFFECTED BY THIS: the lint's sufficiency still rests on the narrowing, which this widens rather than moves.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO OVERTURNED THE SCRUM MASTER'S READ, who had argued none of Sprint 22's four residuals was fileable. Item 4 was agreed NOT fileable but for a SHARPER reason than offered: its MECHANISMS ARE items 2 and 3 -- a wide connection reaches startServer only by dynamic import or the test-file exemption, both accepted -- so it is the CONSEQUENCE of two ruled residuals rather than unassertable in principle. That distinction matters if someone later closes 2 or 3 and asks whether 4 survives.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 22,
