@@ -234,9 +234,17 @@ const scrum: ScrumDashboard = {
         test: "A duplicate `added` yields two entries",
         implementation: "Born green from the append in subtask 2; the value is the control.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a4adbcd",
+            message: "test: pin that a URI added twice is held twice",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN AS PLANNED, and THE CONTROL FIRED AND CONFIRMED THE PBI'S OWN CLAIM rather than merely passing: a uri-comparing dedupe guard reddens `observedFolders toEqual [addedFolder, addedAgain]` on both runtimes AND NOTHING ELSE -- so `an includes guard passes every other criterion` is now measured, not reasoned.",
+          "TWO EVENTS, NOT ONE `added` ARRAY OF TWO, which the control forced: a guard comparing the incoming array against the list AS IT STANDS admits both copies when they arrive together, so a single-event test would have been satisfied by the very implementation it was written against. The second entry also carries a DIFFERENT NAME, which is where the `name` question folds in.",
           "AN `includes` GUARD PASSES EVERY OTHER CRITERION, which is why this is pinned rather than noted. The tiebreak is OBSERVABILITY: a phantom entry shows as visibly wrong items, a missing one is silent absence.",
         ],
       },
