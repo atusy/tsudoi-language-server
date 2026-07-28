@@ -45,14 +45,16 @@ const scrum: ScrumDashboard = {
         {
           criterion: "The README's config snippet type-checks in an installed consumer",
           verification:
-            "Extract the snippet from README.md, place it in the installed-consumer project and run tsc. NEGATIVE CONTROL: introducing a type error in the snippet reddens it, which EXECUTION ALONE DOES NOT, since type stripping runs it regardless",
+            "THE SNIPPET IS EXTRACTED FROM README.md's OWN BYTES -- named in the criterion because test/helpers/install.ts:185 exposes typeCheck(files) for ARBITRARY probe sources, so a check pointed at the example would satisfy the machinery while satisfying nothing this PBI exists for. Same extraction discipline as PBI-8: the prose must BE the source, never a copy of it. NEGATIVE CONTROL: introducing a type error in the README reddens it, which EXECUTION ALONE DOES NOT, since type stripping runs it regardless",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
         "FILED AT SPRINT 13 BY THE Q2 FILTER, on its first firing and for exactly what it was built to catch: a decision whose home was neither executable nor sited. It had lived as prose in Sprint 12's decisions since the sprint that found it, and the next compaction would have met it again.",
         "THE PO REVERSING THEIR OWN CLOSE-OUT REFUSAL, with the condition named: they declined a PBI then on the grounds that inventory nobody reaches is dishonest -- true of an EMPTY BACKLOG, false now that PBI-14 and PBI-15 are live. The means exists (installConsumer.typeCheck); the alternative to filing is evaporation.",
-        "Ordered AFTER PBI-15: capability before verification-hardening, the same reasoning that put PBI-9 last.",
+        "ORDER HELD AT SPRINT 15 REFINEMENT ON EVIDENCE RATHER THAN SIZE: PBI-17's value is CONTINGENT on a config choice Sprint 14 measured the stakeholder has not made -- with the bare on_dir() their only comparable server uses, no folders are sent and the workspace source is inactive for them. This one helps any reader unconditionally.",
+        "CHECKED, NOT REASONED, because the PBI was filed before Sprint 14 touched the example it points at: README.md:77-90 is HOVER-ONLY -- context.tsudoi.documents and nothing else -- so the workspace source and the once-per-session report, which live in examples/, did not drift into it. This PBI is the CHECK, not the check plus a rewrite.",
+        "A NOTE AND DELIBERATELY NOT A CRITERION, put here so whoever is in that file sees it: README.md:97 says `@atusy/tsudoi/types is the only import a config needs`, which is true read as `the only import FROM TSUDOI` and false read as `the only import at all` -- install.ts:168-174 records that the example imports node: modules to read the filesystem. Ambiguous rather than plainly wrong, so it does not bind a sprint.",
       ],
     },
     {
@@ -74,9 +76,18 @@ const scrum: ScrumDashboard = {
           verification:
             "Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one",
         },
+        {
+          criterion:
+            "A folder change arriving before initialize or after shutdown does not mutate the folder list",
+          verification:
+            "Send the notification outside the initialized window and assert the list is unchanged, then assert a normal change still applies. NEGATIVE CONTROL: a handler that mutates WITHOUT consulting the gate passes a test that only sends the notification in the normal window -- which is every test anyone would write first",
+        },
       ],
       status: "draft",
       notes: [
+        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap.",
+        "THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite.",
+        "THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
         "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
