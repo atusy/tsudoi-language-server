@@ -419,3 +419,62 @@ describe("an item names the root that produced it", () => {
     expect(fallback.map((item) => item.label)).not.toEqual(legitimate.map((item) => item.label));
   });
 });
+
+describe("items with identical inserted text collapse to one", () => {
+  // The collision built from sources this PBI actually has: the document's
+  // parent IS cwd, so two sources list the same directory and produce the same
+  // string. Dedup is by INSERTED TEXT and never by resolved file -- resolving
+  // first would force an arbitrary choice of which root to attribute the
+  // survivor to, which is the criterion above.
+  test("the document's parent being cwd yields ONE item, not two", async () => {
+    const fixture = tree(["notes/deep.txt"]);
+    try {
+      const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
+      const items = await complete({ uri, line: "notes/" }, fixture.root);
+
+      expect(inserted(items)).toEqual(["notes/deep.txt"]);
+      // WHICH root the survivor names is decided by SOURCE ORDER, and it is
+      // pinned so it cannot drift silently: the document is asked first.
+      expect(items[0]?.label).toContain(`(document: ${fixture.root})`);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE DISCRIMINATOR between the two dedup rules, which the collision above
+  // cannot supply: there both rules collapse, because one directory reached
+  // twice has one path. Here the SAME directory is reached by two DIFFERENT
+  // absolute paths -- cwd is a symlink to the document's parent -- so the
+  // inserted text is one string while the roots are two.
+  //
+  // Dedup by resolved file would keep both and then have to pick a root to
+  // label the pair with, which is the arbitrary choice the criterion refuses.
+  test("two roots reaching one directory by different paths still collapse", async () => {
+    const fixture = tree(["notes/deep.txt"], [["mirror", "."]]);
+    try {
+      const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
+      const items = await complete({ uri, line: "notes/" }, join(fixture.root, "mirror"));
+
+      expect(inserted(items)).toEqual(["notes/deep.txt"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE PERMANENT PAIR for the collapse above: the same measurement over two
+  // roots holding DIFFERENT names keeps both. Without it, `exactly one item`
+  // is equally satisfied by a module that drops everything but the first.
+  test("two roots holding different names keep both items", async () => {
+    const documentTree = tree(["notes/deep.txt"]);
+    const cwdTree = tree(["notes/wide.txt"]);
+    try {
+      const uri = pathToFileURL(join(documentTree.root, "doc.txt")).href;
+      const items = await complete({ uri, line: "notes/" }, cwdTree.root);
+
+      expect(inserted(items)).toEqual(["notes/deep.txt", "notes/wide.txt"]);
+    } finally {
+      documentTree.dispose();
+      cwdTree.dispose();
+    }
+  });
+});

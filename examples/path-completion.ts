@@ -270,9 +270,37 @@ export async function* pathCompletion(
     return null;
   }
   const cwd = options.cwd ?? process.cwd();
+  // DEDUP BY INSERTED TEXT, NEVER BY RESOLVED FILE. Two roots that hold the
+  // same relative path produce the same string, and the same string is the
+  // same edit whichever root it came from. Deduplicating by the file each one
+  // resolves to would instead collapse `src/foo.ts` with `../src/foo.ts` --
+  // two DIFFERENT edits -- and force an arbitrary choice of which root to
+  // attribute the survivor to, contradicting the label above.
+  //
+  // A CONSEQUENCE, AND A REAL LOSS, stated because it is the cost of the rule
+  // rather than an oversight: when the document's parent and cwd are different
+  // directories that BOTH hold `src/foo.ts`, one item survives and it names
+  // the root asked first. The user sees one truth out of two -- but the text
+  // inserted is the same either way, so what is lost is the attribution, not
+  // the edit.
+  const seen = new Set<string>();
   for (const fragment of pathFragments(line, params.position.character)) {
     for (const source of sourcesFor(fragment, params.textDocument.uri, cwd)) {
-      yield* itemsFrom(source, fragment);
+      for await (const batch of itemsFrom(source, fragment)) {
+        const fresh = batch.filter((item) => {
+          const text = item.insertText ?? "";
+          if (seen.has(text)) {
+            return false;
+          }
+          seen.add(text);
+          return true;
+        });
+        // An emptied batch is not yielded: a `$/progress` carrying nothing is
+        // noise a client has to parse to learn there was nothing in it.
+        if (fresh.length > 0) {
+          yield fresh;
+        }
+      }
     }
   }
   return null;
