@@ -38,7 +38,8 @@ const scrum: ScrumDashboard = {
       story: {
         role: "config author",
         capability: "complete a path from the roots that make sense where their cursor is",
-        benefit: "they type a path fragment and get the file they meant, not a file listing",
+        benefit:
+          "they can rely on it as their path completion, not merely read it -- the item they pick inserts the path they meant",
       },
       acceptance_criteria: [
         {
@@ -55,7 +56,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Items with identical inserted text collapse to one",
           verification:
-            "Drive a case where two sources resolve to the same directory -- MEASURED: nvim spawns the server with cwd = root_dir, so cwd and workspaceFolder coincide -- and assert one item, not two. Dedup is by INSERTED TEXT, not by resolved file, which would force an arbitrary choice of which root to label it with",
+            "Drive a case where the document's parent IS cwd, so the document-relative and cwd-relative sources produce identical inserted text, and assert ONE item, not two. Dedup is by INSERTED TEXT, not by resolved file, which would force an arbitrary choice of which root to label it with",
         },
         {
           criterion: "Each item is attributable to the source that produced it",
@@ -83,12 +84,17 @@ const scrum: ScrumDashboard = {
           verification:
             "Assert the item names its source root. Dedup-by-inserted-text leaves distinct strings, but src/foo.ts from cwd and ../src/foo.ts from the document's parent look unrelated, so four-source completion is incomprehensible without it",
         },
+        {
+          criterion: "The item replaces the whole path fragment, not the client's idea of a word",
+          verification:
+            "Each item carries a textEdit whose range starts where the path fragment starts, INCLUDING any / and . already typed, so applying it yields the path the item names rather than a concatenation. DISCRIMINATOR: an implementation returning insertText only, or a range covering just the last segment, fails",
+        },
       ],
       status: "ready",
       notes: [
         "MEASURED FROM THE STAKEHOLDER'S OWN ddc CONFIG -- branch 1: ddc drives queries off autoCompleteEvents (TextChangedI) and the lsp source's volatilePattern [\\p{P}\\p{S}], which / matches, NOT off advertised triggerCharacters. So the trigger-character config surface we were one measurement from building WOULD HAVE FIXED NOTHING. QUALIFICATION, unsoftened: measured for THIS user's editor; it does NOT establish reachability for built-in completion or another plugin, and no prose may claim general reachability. Their lsp forceCompletionPattern covers . :: -> but NOT /, so / REFRESHES an active completion rather than necessarily opening the popup from nothing -- a real difference from their literal example.",
-        "THE ddc file SOURCE ALREADY COVERS PART OF THIS, found by reading their config: forceCompletionPattern \\S/\\S* -- the same shape this feature targets. So sources 1 and 4 are TEACHING-ONLY for such a user, duplicating capability they have; sources 2 and 3 are STRUCTURALLY tsudoi-only, since ddc file is not LSP-aware and can know neither. NO SCOPE CUT: dropping 1 and 4 would design tsudoi's teaching example around one user's plugin, and 4 is what makes prefix-selects-source-class necessary at all.",
-        "The example must SAY that running alongside an existing filesystem source produces items from both, DEDUPLICATED BY NEITHER. tsudoi cannot fix it -- cross-source dedup is the completion plugin's job and tsudoi cannot know what other sources exist -- so saying so beats letting a user find doubles and blame us.",
+        "RETRACTED, and the reasoning with it: an earlier note framed sources 1 and 4 as teaching-only because ddc already covers them. That framing rested on judging tsudoi's example by ONE user's plugin configuration -- the very thing refused one turn earlier when the scope cut was declined. The surviving halves are re-homed: the non-LSP-source-cannot-know-workspace-folders argument to PBI-15, and the overlap warning to the example's prose, generalised.",
+        "The example must SAY, generically rather than about ddc: a user who KEEPS a filesystem completion source will see items from both, DEDUPLICATED BY NEITHER, and anyone REPLACING one should check their plugin still opens the popup on /. tsudoi cannot fix it -- cross-source dedup is the completion plugin's job and tsudoi cannot know what other sources exist -- so saying so beats letting a user find doubles and blame us.",
         "ZERO LINES IN src/. The module reads the current line out of the document itself -- documents.get(uri).getText() split at params.position -- because MEASURED: CompletionParams carries textDocument, position and context only, NOT the typed prefix, and on an invoked completion triggerCharacter is null.",
         "REACHABILITY IS NOT A CRITERION HERE and must not appear as one. Whether a real user TYPING / reaches the handler is unmeasured -- see the open impediment. Criteria are protocol-level, as all 232 existing tests are; the PBI-8 precedent is exact, where the tarball route was verified and the registry route shipped explicitly labelled unverified.",
         "The stakeholder's example is the right SPECIFICATION and the wrong TARGET: it specifies precisely what the handler must do with a /-prefixed request, and specifies nothing tsudoi controls about whether that request is sent.",
@@ -197,7 +203,110 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 13,
+    pbi_id: "PBI-14",
+    goal: "Give a config author a path completion that knows which root it is answering from -- so the item they pick inserts the path they meant, from the root they meant.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "EXPECTED RED. Given a document and a position, the module returns the path fragment under the cursor: foo/ba -> dir foo/, fragment ba; /usr/lo -> dir /usr/, fragment lo; a line with no path characters yields nothing.",
+        implementation:
+          "examples/path-completion.ts reads the line from documents.get(uri).getText() split at params.position. MEASURED: CompletionParams carries no typed prefix and triggerCharacter is null on invoke, so the document is the ONLY source of it. Zero lines in src/.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. A /-prefixed fragment is answered by the ABSOLUTE source alone; anything else by the relative sources. THE NEGATIVE HALF IS THE DISCRIMINATOR: with cwd set to a directory that has children of its own, typing / yields filesystem-root items AND NO cwd-relative items. PERTURBATION: make every source answer every request; the negative half MUST redden while the positive half stays green -- without it an implementation ignoring the prefix entirely passes.",
+        implementation: "The dispatch rule.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Folder versus File for a real directory, a real file, A SYMLINK TO A DIRECTORY and A SYMLINK TO A FILE; a dangling symlink is listed without the request failing. PERTURBATION: trust dirent.isDirectory() alone; the symlink-to-directory case MUST redden while the real-directory case stays green.",
+        implementation:
+          "MEASURED on both runtimes: readdir withFileTypes reports a symlink-to-directory as NOT a directory, so the obvious implementation labels it File -- and the obvious fix, stat every entry, THROWS ENOENT on a dangling symlink, which under tsudoi's dispatch becomes -32603 plus a stack and kills the whole completion. Not exotic: on macOS /tmp IS a symlink. Resolve with stat INSIDE a catch and degrade an unresolvable entry rather than dropping the request.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. For each of the three sources, resolving the item's inserted text against that source's root yields the real path. NEGATIVE CONTROL: an absolute path where the source is a named root, or a relative path where the source IS the filesystem root, fails to resolve.",
+        implementation: "The resolve-against-the-source's-root property.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Assert PER SOURCE, never over the merged list; each item names the root that produced it.",
+        implementation:
+          "Carry the root on the item where a user sees it without resolving anything. This is what stops source 4 masking source 1: MEASURED, file:// becomes / without throwing, so a broken document-relative source falling back to / is indistinguishable from the absolute source's legitimate output unless attribution is asserted.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. With the document's parent set as cwd, two sources produce the same inserted text and EXACTLY ONE item results.",
+        implementation:
+          "Dedup by INSERTED TEXT, never by resolved file -- resolving first would force an arbitrary choice of which root to attribute it to, contradicting the attribution subtask.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Drive file:// and untitled:; assert NO document-relative items and that the request STILL ANSWERS in both cases. PERTURBATION: implement the guard as `reject /`; the /-prefix subtask MUST redden while this one stays green -- that is the whole reason the criterion words the guard as it does.",
+        implementation:
+          "The guard is `an unnamed document has no parent`, NEVER `reject / as a root` -- / is the legitimate root for the absolute source. MEASURED: the two degenerate URIs fail in OPPOSITE directions, file:// resolving silently to / and untitled: throwing.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Protocol-level with a partialResultToken present: one $/progress per yielded batch, against a directory large enough to need more than one. PERTURBATION: collect the listing and return it whole; the progress-count assertion MUST redden while every content assertion stays green.",
+        implementation:
+          "Yield batches from the single listing, reusing the existing streaming machinery unchanged. The foreclosure below does NOT soften this: a single directory can hold 100k entries, so batching stays a live requirement.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "The existing cross-runtime lifecycle tests driving examples/tsudoi.config.ts stay green.",
+        implementation:
+          "Call the module from the example's completion handler. Prose must state that running alongside an existing filesystem source produces items from BOTH, deduplicated by NEITHER -- tsudoi cannot know what other sources exist. It must NOT claim general reachability: whether typing / reaches the handler is measured for ONE user's ddc configuration only. Record at the module the foreclosure and both symlink measurements, since that is where someone would later `simplify` to dirent.isDirectory() or add recursion.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "EXPECTED RED. Applying the item's textEdit to the document yields the path the item names, for a MULTI-SEGMENT fragment. PERTURBATION: return insertText only, then a textEdit covering just the last segment; BOTH must redden while a single-segment fragment stays green -- single-segment is where the two are indistinguishable.",
+        implementation:
+          "LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and / and . are not word characters in most clients -- so a multi-segment path gets its last segment replaced and the rest left behind. The range starts where the path fragment starts, including any / and . already typed.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE SYMLINK HAZARD IS FORECLOSED BY DESIGN, not measured: path completion is PER SEGMENT -- resolve the prefix's directory part, list THAT ONE DIRECTORY, filter by the trailing fragment. No criterion requires recursion, so recursion depth, unbounded walks and symlink CYCLES are all unrepresentable: a cycle requires traversal and one readdir cannot traverse. The Developer had flagged cycles as needing measurement and instead removed the need.",
+      "A CRITERION ERROR THE DEVELOPER HANDED BACK RATHER THAN WORKING AROUND: criterion 3's verification cited cwd-and-workspaceFolder coinciding, but workspaceFolders is PBI-15's deferred API and is NOT a source in this PBI. Replaced with document-parent-equals-cwd, which constructs the same collision from sources this PBI actually has.",
+      "FIXTURES MUST CONTAIN NO DOTFILES. Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and an incidental fixture would pin it silently. Unruled behaviour pinned by accident is how a decision gets made by nobody.",
+      "SCOPE, from the stakeholder directly: `置き換える予定だけど、いったん要求したものができてればいい`. Parity with ddc-source-file is NOT a criterion. The replacement intent is context -- it is why sources 1 and 4 are load-bearing rather than decorative -- and increments come later.",
+      "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\\\S/\\\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 13,
@@ -224,8 +333,7 @@ const scrum: ScrumDashboard = {
       sprint: 12,
       improvements: [
         {
-          action:
-            "A PLAN MAY NOT SUBSTITUTE A PROXY FOR A CRITERION'S PROPERTY. Where a subtask offers a RECIPE, it must NAME the property that recipe is meant to achieve and REQUIRE THAT PROPERTY BE MEASURED -- so the executor can detect the recipe failing to deliver it.",
+          action: "A PLAN MAY NOT SUBSTITUTE A PROXY FOR A CRITERION'S PROPERTY.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -238,7 +346,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "When a perturbation CANNOT BE CONSTRUCTED, classify it. NOT CONSTRUCTED: the means were lacking -- the assertion is undefended, say what remains at risk. FORECLOSED: the design makes the failure UNREPRESENTABLE -- name the design property that forecloses it. These are OPPOSITE findings and must never share wording. Corollary, and the more useful half: FORECLOSING A FAILURE BEATS DETECTING IT -- a test that cannot be written because the bug cannot exist is a better outcome than a test that catches the bug.",
+            "When a perturbation CANNOT BE CONSTRUCTED, classify it. NOT CONSTRUCTED: the means were lacking -- the assertion is undefended, say what remains at risk.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -251,7 +359,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A criterion's NEGATIVE CONTROL belongs in its `verification` TEXT, not in the plan's perturbations. When refinement or planning discovers the discriminating change, hand back amended verification wording rather than recording a perturbation privately.",
+            "A criterion's NEGATIVE CONTROL belongs in its `verification` TEXT, not in the plan's perturbations.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -271,7 +379,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A criterion's VERIFICATION must be able to DISCRIMINATE the property it claims, and must not be contradicted by anything else in the record. When a note or a planning-time checklist item supersedes a criterion's verification, THE CRITERION IS AMENDED IN THAT TURN -- a checklist governs one Review; a criterion governs the work.",
+            "A criterion's VERIFICATION must be able to DISCRIMINATE the property it claims, and must not be contradicted by anything else in the record.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -284,7 +392,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "SHARPENED ON LIFETIME, replacing the route-to-a-PBI rule: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; a decision that shapes WHAT TO BUILD NEXT belongs on the PBI. When it does both it goes in both -- and the SOURCE COMMENT IS THE DURABLE COPY, because a dashboard note has the lifetime of a PBI and every PBI eventually compacts. When in doubt, put it in the source.",
+            "SHARPENED ON LIFETIME, replacing the route-to-a-PBI rule: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; a decision that shapes WHAT TO BUILD NEXT belongs on the PBI.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -305,7 +413,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "COMPACTION may not drop a recorded decision unless it has a DURABLE HOME elsewhere -- a comment at the code site it constrains, an acceptance criterion, or a note on an OPEN PBI -- and each compaction NAMES where every dropped decision went. A commit message is NOT a durable home. Improvements with status active are never compacted.",
+            "COMPACTION may not drop a recorded decision unless it has a DURABLE HOME elsewhere -- a comment at the code site it constrains, an acceptance criterion, or a note on an OPEN PBI -- and each compaction NAMES where every dropped decision went.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -318,7 +426,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "PREFER SPLITTING OVER DOCUMENTING: when a perturbation would flip at an earlier assertion than the sub-claim it targets, that is a signal the test BUNDLES independent sub-claims. Split the test so each sub-claim can fail alone, rather than recording that the headline claim is undefended.",
+            "PREFER SPLITTING OVER DOCUMENTING: when a perturbation would flip at an earlier assertion than the sub-claim it targets, that is a signal the test BUNDLES independent sub-claims.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -326,7 +434,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. DEFAULT for everything written before this rule: an UNLABELLED note is read as REASONED, not measured, until someone measures it.",
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
           timing: "immediate",
           status: "active",
           outcome: "Filed at the Developer's request after they named it at second occurrence.",
@@ -337,8 +445,7 @@ const scrum: ScrumDashboard = {
       sprint: 7,
       improvements: [
         {
-          action:
-            "A behaviour is pinned by a test where ONE outcome is required. Where TWO outcomes would both be acceptable, record the decision and leave it unpinned -- and the burden is to NAME THE ALTERNATIVE that would also be acceptable.",
+          action: "A behaviour is pinned by a test where ONE outcome is required.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -351,14 +458,14 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "Every assertion that something is ABSENT -- zero stderr, zero $/progress, a label not on stdout -- ships with a PAIRED assertion, permanent in the suite, that the same measurement observes it when present. A perturbation proves the apparatus once, on the day it was run; the pair proves it on every run, including after someone refactors the accumulator two sprints later.",
+            "Every assertion that something is ABSENT -- zero stderr, zero $/progress, a label not on stdout -- ships with a PAIRED assertion, permanent in the suite, that the same measurement observes it when present.",
           timing: "immediate",
           status: "active",
           outcome: "Generalises what the PO had been imposing by hand criterion by criterion.",
         },
         {
           action:
-            "A perturbation specified by the PRODUCT OWNER names the assertion it is required to flip, not just the mutation to make. If it flips an earlier assertion instead, it has not defended the claim it was written for and a different perturbation is required.",
+            "A perturbation specified by the PRODUCT OWNER names the assertion it is required to flip, not just the mutation to make.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -370,8 +477,7 @@ const scrum: ScrumDashboard = {
       sprint: 5,
       improvements: [
         {
-          action:
-            "A plan must declare which subtasks share ONE IMPLEMENTATION MOMENT. Within such a group only the first can claim expected-RED; the rest are born-green-by-construction and carry perturbations, however distinct their criteria are.",
+          action: "A plan must declare which subtasks share ONE IMPLEMENTATION MOMENT.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -387,7 +493,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "Standing-list amendment (item 6 above): the stakeholder-facing example is the artifact under test with no fixture copy in existence. It is why the example cannot rot without the suite going red, and why Sprint 4's hover demo could be the stakeholder's own file, unmodified.",
+            "Standing-list amendment (item 6 above): the stakeholder-facing example is the artifact under test with no fixture copy in existence.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -408,7 +514,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "The PO's Review checklist splits into a STANDING list, recorded here once and reported against at EVERY Review, plus a short per-sprint list of what is genuinely new. Standing list: (1) driven over stdio through the real server, not against directly-constructed internals; (2) stdout carries only protocol, with non-protocol bytes COUNTED rather than eyeballed; (3) non-ASCII payloads on any new user-visible path, permanent in the suite; (4) every new assertion mechanism named with the perturbation that flipped it, anything unperturbed reported as unproven; (5) both runtimes, and the Definition of Done at HEAD; (6) the stakeholder-facing example examples/tsudoi.config.ts is the ARTIFACT UNDER TEST, with no fixture copy of it in existence -- a PRODUCT property rather than a test property, which is why it belongs here rather than being rediscovered. Moving an item to the standing list removes it from the PO's authoring, NEVER from the Scrum Master's reporting -- if a standing item stops being reported, we have traded verification for convenience.",
+            "The PO's Review checklist splits into a STANDING list, recorded here once and reported against at EVERY Review, plus a short per-sprint list of what is genuinely new.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -421,7 +527,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A Review perturbation states whether it REPRODUCES the Developer's recorded perturbation or is INDEPENDENT. Reproductions report expected versus observed failure counts, so a divergence surfaces when it occurs rather than at write-up.",
+            "A Review perturbation states whether it REPRODUCES the Developer's recorded perturbation or is INDEPENDENT.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -434,7 +540,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A note addressed to a PBI other than the one it sits on must be written onto THAT PBI when the note is created, not left to be rescued at compaction. This removes the compaction-time check rather than adding a second thing to remember.",
+            "A note addressed to a PBI other than the one it sits on must be written onto THAT PBI when the note is created, not left to be rescued at compaction.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -442,7 +548,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "An attached spike must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask. A scratchpad path is a pointer, not an attachment -- it dies with the session, and a fresh executor would re-derive or guess.",
+            "An attached spike must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask.",
           timing: "immediate",
           status: "active",
           outcome: null,
@@ -454,7 +560,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "The PO's acceptance checklist is issued at Sprint PLANNING, not at Review, so the plan can target it. Review measurements are then reported item by item against it, in the checklist's own numbering, including items that pass trivially -- so an omission is visible as an omission.",
+            "The PO's acceptance checklist is issued at Sprint PLANNING, not at Review, so the plan can target it.",
           timing: "sprint",
           status: "active",
           outcome: null,
