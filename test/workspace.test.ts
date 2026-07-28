@@ -113,6 +113,27 @@ const elsewhereUri = "file:///home/me/elsewhere";
 const elsewherePath = "/home/me/elsewhere";
 
 /**
+ * A rootUri THAT DOES NOT SURVIVE A ROUND TRIP through the URL parser: `%6A` is
+ * `j`, an unreserved character no encoder is obliged to escape, so
+ * `pathToFileURL(fileURLToPath(this))` hands back `…/project` -- DIFFERENT
+ * BYTES from what the client sent.
+ *
+ * That is what makes it the discriminating case for two claims a clean URI
+ * cannot test at all, because for a clean URI the round trip is the identity:
+ * the synthesised `uri` is the client's OWN BYTES, and the synthesised `name`
+ * is the path those bytes DECODE to.
+ */
+const encodedRootUri = "file:///home/me/pro%6Aect";
+const encodedRootFolder: WorkspaceFolder = { uri: encodedRootUri, name: "/home/me/project" };
+
+/**
+ * A rootUri NAMING NO LOCAL PATH. `fileURLToPath` THROWS on it, which is the
+ * hazard: thrown from inside the initialize handler it answers the handshake
+ * with an error and leaves the config author no server at all.
+ */
+const remoteRootUri = "vscode-remote://ssh-remote%2Bexample/home/me/rooted";
+
+/**
  * What the handler observed ON ITS OWN RequestContext, read back through the
  * fixture's hover.
  *
@@ -363,6 +384,78 @@ for (const runtime of runtimes) {
         session.notify("initialized", {});
 
         expect(await observedFolders(session)).toEqual([rootedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE TWO HALVES OF THE SYNTHESIS CONVENTION, ON A URI WHERE THEY CAN BE
+    // TOLD APART: `uri` is what the CLIENT SPELLED, byte for byte, and `name`
+    // is what those bytes DECODE to. On a clean URI the round trip is the
+    // identity, so no test using one can distinguish `we kept the client's
+    // bytes` from `we reparsed and got lucky`.
+    test("a percent-encoded rootUri is held as the client spelled it and named by the path it decodes to", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: encodedRootUri,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([encodedRootFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // WHY THE BYTES MATTER, as its own test rather than a second assertion on
+    // the one above: `change` matches URIs as EXACT STRINGS, so a synthesised
+    // entry holding a reparsed URI is one the client can never remove -- it
+    // would send back the spelling it sent, and nothing would match.
+    //
+    // A SEPARATE TEST BECAUSE THE CONSEQUENCE IS THE POINT. Appended to the
+    // test above it could never be observed: that one fails first under the
+    // same perturbation and stops.
+    //
+    // Its permanent presence pair is the test above, where the same reader
+    // observes the folder present.
+    test("a removal spelling the rootUri exactly as the client did finds the synthesised folder", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: encodedRootUri,
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { removed: [{ uri: encodedRootUri, name: "whatever" }] });
+
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE HANDSHAKE SURVIVES A rootUri THAT NAMES NO LOCAL PATH, and that is
+    // ALL this asserts. `fileURLToPath` throws on such a URI, and thrown from
+    // the initialize handler it answers the handshake with an error: the author
+    // gets no server at all, which is a strictly worse failure than any list.
+    //
+    // WHAT THE LIST SHOULD THEN HOLD IS DELIBERATELY NOT ASSERTED. More than
+    // one outcome is defensible -- fall to the rung below, as tsudoi does, or
+    // keep the URI under some invented name -- and no ruling exists. Pinning
+    // the debatable half here would freeze a choice nobody made; pinning the
+    // non-debatable half is what stops the catastrophic one.
+    test("a rootUri naming no local path still completes the handshake", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        const result = await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: remoteRootUri,
+        });
+
+        expect(result.capabilities).toBeDefined();
       } finally {
         session.dispose();
       }
