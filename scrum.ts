@@ -162,21 +162,44 @@ const scrum: ScrumDashboard = {
         implementation:
           "SYNTHESISE INTO THE LIST AT INITIALIZE, never compute at read time. `name` is fileURLToPath(rootUri); for the rootPath rung `name` is rootPath VERBATIM and `uri` comes from pathToFileURL -- one convention covering both synthesis sites, so the second does not invent its own.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c4432d0",
+            message: "feat: show the root the editor named, whichever field it used",
+            phase: "green",
+          },
+          {
+            hash: "b1967ba",
+            message: "docs: say why three fields of InitializeParams are read, not one",
+            phase: "green",
+          },
+        ],
         notes: [
           "ONE IMPLEMENTATION MOMENT WITH SUBTASK 4, and the reason is unusual: subtask 4 has NO implementation of its own -- it is true or false depending on HOW this one is written.",
           "THE NAME'S ONLY REAL JUSTIFICATION is that it is DERIVABLE FROM WHAT THE CLIENT SENT with nothing invented. The shape-consistency argument is deliberately NOT recorded beside it: the fallback fires only for clients that never send workspaceFolders, and nvim always does, so matching the measured client is not an argument available here. A non-argument beside a real one is worse than the real one alone, because a reader cannot tell which is load-bearing.",
+          "GENUINE RED, OBSERVED ON BOTH RUNTIMES before any implementation: the handler saw [] where one folder was expected. Synthesis is `initialWorkspaceFolders` in src/workspace.ts, called from the ONE line in src/server.ts's initialize handler; nothing computes at read time. THE NAME IS PINNED AT BOTH SITES INDEPENDENTLY, which no single perturbation would have shown: basename at the rootUri site reddens 4 tests and leaves the rootPath rung GREEN, basename at the rootPath site reddens 1 and leaves the rootUri rung GREEN.",
+          "A DECISION NOBODY RULED ON, SURFACED RATHER THAN BURIED, and it is the one place this sprint chose for the PO. A rootUri that names NO LOCAL PATH -- any non-file scheme -- is treated as naming no root, and the chain falls to rootPath. The alternative is `fileURLToPath` THROWING inside the initialize handler, which answers the handshake with an error and leaves the author no server at all. REASONED, not measured: no observed client sends one. NOT PINNED BY A TEST, because more than one outcome is defensible (the uri could be kept with the uri itself as name, which invents a name) -- recorded at the site instead, per the Sprint 7 bound.",
+          "A SECOND UNRULED DECISION, SAME TREATMENT: an EMPTY `workspaceFolders` falls through to the rungs below, so the three spellings of `no folders here` -- omitted, null and [] -- are treated ALIKE. MEASURED FROM THE INSTALLED TYPES, this is arguable rather than obvious: null means `the client supports workspace folders but none are configured`, which is a STATEMENT of emptiness where omission is the absence of one, so a reading that stopped the chain on null and continued on omission is available. It was refused because a config author cannot see which spelling arrived, and a root that appeared or vanished on that distinction would be unobservable to the only person affected. NOT PINNED, per the Sprint 7 bound; the PO may overturn it.",
         ],
       },
       {
         test: "Absence stays absence -- a client sending NEITHER leaves the list empty",
         implementation: "Born green. THE CRITERION CARRYING THIS PBI'S HONESTY.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c4432d0",
+            message: "feat: show the root the editor named, whichever field it used",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE CONTROL THAT MUST BE RUN: synthesise from cwd and this must redden while subtask 1 stays green. MEASURED -- cwd is nvim's own launch directory when no root is found, so a cwd fallback LOOKS CORRECT IN EVERY SCENARIO except the one this criterion exists to make visible.",
+          "THE CONTROL WAS RUN AND BEHAVED AS REQUIRED: adding a cwd rung below rootPath reddened 12 tests on both runtimes -- both absent spellings, the never-cwd test, and two PBI-17 delta tests that open with no folders -- while subtask 1's test stayed GREEN. So the honesty criterion discriminates the fallback that looks correct everywhere else.",
+          'A DOOR `?? []` DOES NOT COVER, FOUND WHILE BUILDING THE rootPath RUNG AND PINNED: `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so a rootPath of "" or "." would have synthesised a cwd-derived root -- the fabrication this criterion forbids, arriving through the new code rather than through the old absence. Guarded with `isAbsolute`; dropping the guard reddens the new test and NOTHING ELSE, so the guard is proven and the test is not vacuous.',
+          "A WEAKNESS THE CONTROL EXPOSED IN AN EXISTING TEST, reported because nobody asked: `with no workspace sent, no item is attributed to a workspace root` -- the example-level absence assertion -- DID NOT REDDEN under the cwd fallback. PBI-14's dedup-by-inserted-text collapses the identical item the cwd root would have produced, so that assertion is BLIND to the very substitution its sibling names. The context-level test carries this criterion alone; the example-level one is a pair for a different failure.",
         ],
       },
       {
@@ -184,10 +207,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Three assertions, each against the pair below it. MIXED: the top rung is born green (today's behaviour), the rootUri > rootPath rung is a genuine RED.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c4432d0",
+            message: "feat: show the root the editor named, whichever field it used",
+            phase: "green",
+          },
+        ],
         notes: [
           "REPORT WHICH RUNGS WERE BORN GREEN, so the chain's evidence is legible rather than implied.",
+          "ONE TEST PER RUNG, NEVER THREE ASSERTIONS IN ONE, and the reason is this very report: a bundled test STOPS AT ITS FIRST FAILURE, so which rungs were already satisfied and which had to be built could not have been observed at all.",
+          "THE RUNGS AS OBSERVED. workspaceFolders > rootUri: BORN GREEN, today's behaviour. rootUri > rootPath: GENUINE RED on both runtimes. rootPath alone: ALSO A GENUINE RED, and it is a rung rather than a restatement -- it is the only test that pins the second synthesis site's convention (`name` VERBATIM, uri derived), which is the mirror of the rung above where the uri arrived and the name was derived. The plan expected one RED and there were two.",
+          "THE BORN-GREEN RUNG IS NOT VACUOUS, which a born-green claim otherwise cannot show: appending the synthesised root ALONGSIDE the folders the client sent reddens that test and NOTHING ELSE. Flipping the chain to rootPath-before-rootUri reddens the middle rung and NOTHING ELSE. Each rung's test discriminates its own rung.",
         ],
       },
       {
@@ -195,11 +227,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "BORN GREEN BY CONSTRUCTION, WITH NO IMPLEMENTATION OF ITS OWN -- a consequence of not special-casing, since an ordinary member of the list the notification writes through gets uniformity free.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "88b376a",
+            message: "test: pin that the synthesised root is an ordinary member",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE WHOLE VALUE IS THE CONTROL, and the wrong implementation is the TEMPTING one: a READ-TIME fallback, `folders.length > 0 ? folders : synthesise(rootUri)`, passes subtask 1 perfectly. REPORT BOTH DIRECTIONS FROM THAT ONE PERTURBATION: a first `added: [Y]` yields [Y] rather than [root, Y], AND a later `removed` that empties the list makes the fallback REAPPEAR. The second is the worse hazard -- a folder the client EXPLICITLY REMOVED coming back -- and reporting one while the other goes unnamed leaves half of it undefended.",
           "THE DUPLICATE HALF IS PINNED because a well-meaning `do not duplicate our own entry` check passes every OTHER criterion. RESIDUAL, named rather than glossed: the list can hold two entries for one folder, our estimate beside the client's statement. Mild in practice -- PBI-14's dedup-by-inserted-text collapses identical strings, so the example produces one item -- and visible only to a config author counting roots.",
+          "BORN GREEN AND OBSERVED SO: the three tests were written AFTER the implementation landed and passed on both runtimes at once. No RED was manufactured for a subtask that has no implementation of its own.",
+          "BOTH DIRECTIONS REPORTED FROM ONE PERTURBATION, and each on ITS OWN test's FIRST assertion, which is what made the second observable at all. Implementing the fallback as `folders.length > 0 ? folders : synthesise(...)` at read time left criterion 1 and all three precedence rungs GREEN and reddened exactly three tests on both runtimes. (a) A first `added: [Y]` yielded [Y] -- the root the session opened with GONE. (b) A `removed` naming the synthesised URI yielded [root] where [] was expected: THE FOLDER THE CLIENT EXPLICITLY REMOVED CAME BACK. Had (b) been bundled onto the end of (a)'s test it could never have been seen -- that test fails at its own first assertion under the same perturbation and stops.",
+          "THE PINNED HAZARD, MEASURED TO BE EXACTLY AS PREDICTED: a `do not duplicate our own entry` guard -- provenance plumbed through initialize so it touches only the synthesised entry -- reddens THIS criterion's test and NOTHING ELSE across 309 tests. Criterion 1, all three rungs, both delta halves and PBI-17's own `a URI added twice is held twice` all stay GREEN. That is why it is a criterion rather than a note.",
         ],
       },
     ],
