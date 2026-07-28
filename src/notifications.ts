@@ -164,17 +164,28 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  * guard a rename evades forecloses nothing. A type cannot be renamed away, and
  * test/notifications.test.ts drives that exact alias rather than inferring it.
  *
- * THE RESIDUAL, NAMED RATHER THAN GUARDED: this forecloses the call only while
- * NO WIDE VALUE IS IN SCOPE. An `import { createProtocolConnection }` added to
- * src/server.ts puts one back, and nothing here notices. MEASURED, not
- * reasoned, and the number is the point: src/server.ts was rewritten to import
- * it, register the table on the WIDE value, add an ungated
- * `onNotification` beside it and narrow only afterwards -- 331 tests green,
- * `tsc --noEmit` 0, `oxlint` 0. NOTHING DETECTS IT. WHAT WOULD CLOSE IT: a lint
- * on the IMPORT SPECIFIER -- the lint route reappearing at a target where it
- * actually works, since a specifier cannot be renamed the way a variable can.
- * That is a SECOND GAP rather than a second guard on this one, so the argument
- * against two guards on one gap does not forbid closing it.
+ * THE RESIDUAL IS NOW DETECTED, AND THE DETECTOR LEANS ON THIS FUNCTION. This
+ * type forecloses the call only while NO WIDE VALUE IS IN SCOPE: an
+ * `import { createProtocolConnection }` added to src/server.ts puts one back,
+ * and nothing here notices. MEASURED before any remedy existed, and the number
+ * was the point -- src/server.ts rewritten to import it, register the table on
+ * the WIDE value and call an ungated `onNotification` beside it ran at 331 tests
+ * green, `tsc --noEmit` 0, `oxlint` 0. .oxlintrc.json now bans that import in
+ * every file but this one: the lint route at a target where it works, since a
+ * specifier cannot be renamed the way a variable can. A SECOND GAP rather than a
+ * second guard on this one, which is what allowed closing it at all.
+ *
+ * AND THE DEBT THAT CREATES IS OWED BY THIS FUNCTION, which is why it is
+ * recorded here rather than only beside the rule. That lint is a ROT DETECTOR,
+ * NOT A BARRIER -- no rule can stop a module importing a third party's export --
+ * and it is adequate ONLY BECAUSE WHAT THIS FUNCTION RETURNS IS THE SOLE
+ * CONNECTION-SHAPED VALUE IN startServer's SCOPE, so importing a factory nothing
+ * there needs is a conspicuous act rather than a slip. WIDEN THE RETURN
+ * ANNOTATION, OR LET startServer BIND A WIDE CONNECTION AGAIN, AND THAT
+ * SUFFICIENCY ARGUMENT GOES WITH IT while the lint still passes and still reads
+ * like a guard. The probes in test/notifications.test.ts redden on the
+ * annotation; NOTHING REDDENS ON THE ARGUMENT, so this paragraph is the only
+ * thing that carries it.
  *
  * THE RETURN ANNOTATION BELOW IS A SEPARATE SEAM, and it was briefly written
  * off as part of the same residual before being measured: it is not. Widening
@@ -185,8 +196,11 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  * takes its connection FROM THIS FUNCTION rather than binding the alias, and
  * that perturbation reddens it and it alone.
  *
- * SO WHAT REMAINS UNGUARDED IS THE IMPORT ALONE, not `startServer holds the
- * narrowed type` in general. A type can carry that, and now does.
+ * SO NOTHING HERE IS UNGUARDED BY ACCIDENT ANY MORE: the type carries the
+ * handle, the lint carries the import. What neither reaches is named at the
+ * rule -- `await import(...)`, MEASURED to walk past it, and a WRAPPER exported
+ * from this module, which is why test/notifications.test.ts asserts this module
+ * exports no factory. Both are the deliberate-evasion class, not slips.
  *
  * A THIRD GAP, weaker and still real, AND NO ASSERTION BACKS THIS SENTENCE --
  * it is read off the remainder above, so what is at risk if it rots is only its

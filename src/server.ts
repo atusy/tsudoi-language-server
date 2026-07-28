@@ -103,9 +103,10 @@ export function startServer(
   // `connection.onNotification`, and not by copying the value under another
   // name. `startServer` must NEVER bind the wide type: narrowing after the fact
   // would leave the wide value in scope and foreclose nothing, which is why
-  // creation lives in the module that owns the table. The residual -- importing
-  // `createProtocolConnection` here and getting a wide one back -- is named at
-  // `createGatedConnection`, together with the lint that would close it.
+  // creation lives in the module that owns the table. The one route left --
+  // importing `createProtocolConnection` here and getting a wide one back -- is
+  // now BANNED IN THIS FILE by .oxlintrc.json; why a detector is enough for it,
+  // and what that depends on, is at `createGatedConnection`.
   const connection = createGatedConnection(
     new StreamMessageReader(process.stdin),
     new StreamMessageWriter(process.stdout),

@@ -381,8 +381,11 @@ test("the same two outcomes hold through an alias under a different name", async
  *
  * This is the probe with a perturbation of its own: that return annotation
  * reddens THIS and only this. What it still does not reach is src/server.ts
- * choosing to call `createProtocolConnection` instead, which no type can catch
- * and which is named as the residual at `createGatedConnection`.
+ * choosing to call `createProtocolConnection` instead, which no type can catch:
+ * that route is banned by .oxlintrc.json and asserted in test/guard.test.ts.
+ * THE TWO ARE NOT INDEPENDENT -- widening this annotation also destroys the
+ * argument that a mere lint suffices over there, and only this probe would say
+ * so.
  */
 function factorySource(body: string[]): string {
   return [
