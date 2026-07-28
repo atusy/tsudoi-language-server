@@ -124,6 +124,18 @@ function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
   return items.filter((item) => item.label.includes("(workspace: "));
 }
 
+/**
+ * What the example writes when the client opened no workspace. Matched on a
+ * DISCRIMINATING SUBSTRING rather than the whole sentence, so rewording the
+ * report keeps the test honest and REMOVING it still loses the match.
+ */
+const noWorkspaceMarker = "no workspace folders";
+
+/** The report lines alone, so a count of them cannot be reached by other traffic. */
+function reportLines(stderr: string): string[] {
+  return stderr.split("\n").filter((line) => line.includes(noWorkspaceMarker));
+}
+
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // CRITERION 1's positive half, and the PERMANENT PAIR for every absence
@@ -233,6 +245,51 @@ for (const runtime of runtimes) {
         // cwd answered, so the source really did run for this fragment.
         expect(inserted(items)).toEqual(["notes/cwd-only.txt"]);
         expect(workspaceItems(items)).toEqual([]);
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    // SILENT ABSENCE IS THE HARM, so the example says so -- ONCE. Two requests
+    // are what make `once` mean anything: a single-request test cannot tell
+    // reports-once from reports-per-request, and per-request is not a tidiness
+    // question here. MEASURED from the target editor's own configuration: its
+    // autoCompleteEvents include TextChangedI, which fires on EVERY CHARACTER
+    // TYPED, so per-request IS per-keystroke and would bury the one channel a
+    // config author is told to trust.
+    //
+    // THE PAIR, and it is why the failing hover is here rather than in a test
+    // of its own: `exactly one line` is satisfied by an implementation that
+    // writes NOTHING while something else in the session writes one line, and
+    // it is satisfied trivially if the handler returns before ever reaching
+    // the report. Driving a genuine second session-level line through the SAME
+    // reader is what distinguishes `we wrote one` from `one line exists`.
+    test("with no workspace known the example says so once, however many requests", async () => {
+      const fixture = tree(["notes/cwd-only.txt"]);
+      const session = exampleSession(runtime, fixture.root);
+      try {
+        await openWith(session, undefined, "notes/");
+
+        await completeAt(session, "notes/");
+        await completeAt(session, "notes/");
+        await session.waitForStderr(noWorkspaceMarker);
+
+        expect(reportLines(session.stderr)).toHaveLength(1);
+
+        // THE PRESENCE HALF, in the same session and through the same reader:
+        // a hover with no position at all makes the example's own handler
+        // throw, which tsudoi reports. If the reader could not observe a
+        // second line, the assertion above would pass for the wrong reason.
+        await session
+          .request("textDocument/hover", { textDocument: { uri } })
+          .catch(() => undefined);
+        await session.waitForStderr("handler failed");
+
+        expect(reportLines(session.stderr)).toHaveLength(1);
+        expect(session.stderr.split("\n").filter((line) => line.startsWith("tsudoi"))).toHaveLength(
+          2,
+        );
       } finally {
         session.dispose();
         fixture.dispose();

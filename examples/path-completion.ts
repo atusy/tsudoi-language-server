@@ -23,6 +23,7 @@ import {
   type CompletionItem,
   type CompletionParams,
   type Position,
+  type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 import type { RequestContext } from "@atusy/tsudoi/types";
 
@@ -407,6 +408,41 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
 }
 
 /**
+ * Whether this session has already said that no workspace was opened.
+ *
+ * ONE PER PROCESS, which is one per session: tsudoi loads this module once and
+ * the server serves one client until it exits. A per-request report would be
+ * per KEYSTROKE in a client that completes as the user types -- and stderr is
+ * the one channel a config author is told to watch for their own errors, so
+ * burying it is worse than saying nothing.
+ */
+let saidNoWorkspace = false;
+
+/**
+ * Says ONCE, on stderr, that the client opened no workspace.
+ *
+ * SILENT ABSENCE IS THE FAILURE THIS EXISTS TO PREVENT. With no folders the
+ * workspace source contributes nothing, and nothing looks exactly like a
+ * working source in a project that happens to hold no matches -- so a config
+ * author debugging `why do I get no workspace paths` has no way to tell which
+ * one they are looking at. tsudoi cannot answer it for them: whether the
+ * client sends folders is the editor's configuration, not tsudoi's behaviour.
+ *
+ * Deliberately NOT a client-visible diagnostic: it is a fact about the
+ * SESSION, not about any document, and there is no position to attach it to.
+ */
+function reportOnceIfNoWorkspace(folders: readonly WorkspaceFolder[]): void {
+  if (folders.length > 0 || saidNoWorkspace) {
+    return;
+  }
+  saidNoWorkspace = true;
+  process.stderr.write(
+    "tsudoi example: the client sent no workspace folders, so workspace-relative paths are not offered this session. " +
+      "That is the editor's configuration rather than tsudoi -- a language server started without a project root has no workspace to answer from.\n",
+  );
+}
+
+/**
  * A `textDocument/completion` handler that completes paths.
  *
  * Written as the config author's own generator: every `yield` reaches the
@@ -427,6 +463,7 @@ export async function* pathCompletion(
     return null;
   }
   const cwd = options.cwd ?? process.cwd();
+  reportOnceIfNoWorkspace(context.workspaceFolders);
   // DEDUP BY INSERTED TEXT, NEVER BY RESOLVED FILE. Two roots that hold the
   // same relative path produce the same string, and the same string is the
   // same edit whichever root it came from. Deduplicating by the file each one
