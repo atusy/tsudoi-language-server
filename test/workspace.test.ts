@@ -692,9 +692,17 @@ for (const runtime of runtimes) {
         session.notify("initialized", {});
 
         changeFolders(session, { added: [plainFolder, plainSlashFolder] });
-        changeFolders(session, { removed: [plainFolder] });
+        // THE NON-FIRST SPELLING, and the choice is what makes this test
+        // discriminate. Removing `…/plain` -- the first entry -- leaves
+        // `…/plain/` under exact matching AND under normalisation, because
+        // one-copy-per-entry deletes one folder and first-match lands on the
+        // intended target either way. MEASURED at Sprint 19: with the removal
+        // naming the FIRST entry, a normalising matcher reddened NOTHING across
+        // 321 tests. Naming the SECOND separates them -- exact matching leaves
+        // `…/plain`, normalisation leaves `…/plain/`.
+        changeFolders(session, { removed: [plainSlashFolder] });
 
-        expect(await observedFolders(session)).toEqual([plainSlashFolder]);
+        expect(await observedFolders(session)).toEqual([plainFolder]);
       } finally {
         session.dispose();
       }
@@ -718,6 +726,38 @@ for (const runtime of runtimes) {
     // The second entry carries a DIFFERENT NAME, which is where the `name`
     // question folds in: both survive, so nothing here reconciles by name
     // either.
+    // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
+    // two orders apart, and the reason `removed` before `added` had been
+    // UNDEFENDED since it was decided at Sprint 17. MEASURED at Sprint 19:
+    // applying `added` first reddened NOTHING across 321 tests, and equally
+    // nothing across the 317 that predate that sprint.
+    //
+    // PINNED OPPORTUNISTICALLY, not as repair: this sprint did not break the
+    // ordering, it REVEALED that nothing defended it. It earns a test because
+    // the PO ruled it ONE REQUIRED OUTCOME -- a client spelling a rename as one
+    // event ends HOLDING the folder, a phantom that is visible if wrong, where
+    // the other order ends holding NOTHING, which is silent.
+    test("one event removing and adding the same URI ends holding the folder", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        // THE LIST MUST NOT ALREADY HOLD IT, and that is the whole
+        // construction: with the folder already held, one-copy-per-entry makes
+        // the two orders AGREE -- remove-then-add gives [X], and add-then-
+        // remove gives [X, X] minus one, also [X]. MEASURED: a first attempt
+        // that pre-added the folder reddened NOTHING under the flipped order.
+        // Starting empty separates them -- remove-then-add ends HOLDING it,
+        // add-then-remove ends with nothing.
+        changeFolders(session, { removed: [plainFolder], added: [plainFolder] });
+
+        expect(await observedFolders(session)).toEqual([plainFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("a URI added twice is held twice", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
