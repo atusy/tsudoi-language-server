@@ -34,38 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-18",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "add a notification handler without being able to forget the lifecycle gate",
-        benefit:
-          "a handler that mutates state after shutdown becomes unwritable rather than merely untested",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
-          verification:
-            "BYPASS MUST BE UNREPRESENTABLE, NOT MERELY TESTED: the REGISTRATION MECHANISM applies the gate, so a handler that skips it cannot be written -- foreclosing over detecting, which is the whole argument for doing this at all. Assert that a handler whose own body consults NOTHING is still refused outside the initialized window. THE BOUNDARY IT CLAIMS, narrowed to what it holds: this forecloses A HANDLER THAT FORGETS ITS GATE, by making the gate a REQUIRED field with no default -- so adding a notification without deciding fails tsc. It does NOT foreclose a future edit calling connection.onNotification directly; that would need a PBI-6-shaped lint guard and is out of scope. NEGATIVE CONTROL, RUN AT THE BASELINE AND FORECLOSED AFTERWARDS: today deleting the check from any one handler body reddens nothing, and after the change there is no body check left to delete -- so the baseline run IS the evidence, and anyone attempting it later should record FORECLOSED rather than NOT CONSTRUCTED",
-        },
-        {
-          criterion: "exit survives the gate, in EVERY state rather than the one already tested",
-          verification:
-            "exit before initialize AND exit after shutdown both still exit, with the codes PBI-10 and Sprint 3 pinned. THE PO CORRECTING THEIR OWN REASONING: PBI-10 covers exit BEFORE initialize only, so a blanket gate could get the carve-out wrong in ways that test never reaches -- this criterion exists because inheriting someone else's coverage is what would hide it",
-        },
-        {
-          criterion: "The three hand-written checks are GONE, not left alongside the structure",
-          verification:
-            "assert no handler body calls acceptsNotification() -- by reading src/server.ts as the suite reads the README, so the claim cannot rot. THE SURVIVING EVIDENCE IS NAMED, so it is not swept up as the old convention's tests: protocol.test.ts drives didOpen before initialize and after shutdown and asserts OBSERVABLE behaviour, so both survive the refactor untouched and become the proof that the router enforces. THE REASON THIS IS A CRITERION AND NOT BOILERPLATE: if the convention survives, THE STRUCTURAL GATE CAN BE INERT AND EVERY TEST STILL PASSES -- the gate is added, the old checks do the work, and nothing proves which one is enforcing. NEGATIVE CONTROL: neutralise the structural gate; with the hand-written checks gone the lifecycle tests must redden",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "THE FIRST APPLICATION OF THE SUBTRACTION RULE FILED ONE TURN BEFORE IT: three deliberate deletions, each needing its defence named and re-homed onto the structure. The PO required it as a criterion because they expected it to be the missing one.",
-        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention. WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
-        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure. DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
-      ],
-    },
-    {
       id: "PBI-17",
       story: {
         role: "config author",
@@ -94,14 +62,14 @@ const scrum: ScrumDashboard = {
           criterion:
             "A folder change arriving before initialize or after shutdown does not mutate the folder list",
           verification:
-            "Send the notification outside the initialized window and assert the list is unchanged, then assert a normal change still applies. NEGATIVE CONTROL: a handler that mutates WITHOUT consulting the gate passes a test that only sends the notification in the normal window -- which is every test anyone would write first",
+            'Send the notification outside the initialized window and assert the list is unchanged, then assert a normal change still applies. NEGATIVE CONTROL AMENDED AT SPRINT 16, and the change is the reorder paying off: the BYPASS this control used to name is now UNREPRESENTABLE, since a handler registered through the router cannot skip the gate. The representable failure is a WRONG GATE ASSIGNMENT -- registering this handler with `gate: "always"` must redden it. Thin but real, and the criterion reduces to one honest assertion',
         },
       ],
       status: "draft",
       notes: [
         "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
         "THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
-        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
+        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
       ],
@@ -109,6 +77,24 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 16,
+      pbi_id: "PBI-18",
+      goal: "Make the lifecycle gate impossible to forget -- a notification added without deciding when it may run should fail to compile, not ship ungated.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in e8c2a8c, 2d0afad and 5fcabcf. 284 tests green, each DoD command run separately with its exit read directly. src/notifications.ts routes every notification through one gate; `gate` is a REQUIRED field with no default, so an entry that decides nothing does not TYPE-CHECK -- asserted, not argued: a probe omitting it fails with TS2741.",
+        "THE BASELINE CONTROL FALSIFIED THE PO'S OWN CRITERION, and the truth is a better argument than the claim it replaced. `deleting the check from ANY ONE handler body reddens nothing` was measured on all three: didChange NOTHING, didClose NOTHING, didOpen FOUR TESTS that never mention it. TWO OF THREE COPIES WERE PURE CONVENTION AND THE THIRD WAS DEFENDED ONLY INCIDENTALLY -- exactly the state a structural gate exists to end. The control is now FORECLOSED (no body check remains), so the measurement is homed at src/notifications.ts, which is the only place it survives.",
+        "THE EXIT CARVE-OUT, and the ruling that Sprint 3's hang precedent DOES NOT REACH IT: that hang was BUFFERING-CONTINGENT, this one is a structural consequence of a dropped notification. So the timeout is a real control -- gating exit times out lifecycle.test.ts on both runtimes and takes a twelve-second suite past two minutes. A DETERMINISTIC assertion was added anyway, on the S15 sharpening READ IN THE OTHER DIRECTION: the hang can never be FIRST to fail, so it names nothing. exit's gate is asserted AS A VALUE off the entry table, paired with every other entry declaring `lifecycle` so a blanket table cannot satisfy it.",
+        "SATISFYING ONE REQUIREMENT DISARMED ANOTHER CONTROL, AND THE DoD STAYED GREEN THROUGHOUT. Extracting the table so its gates could be read as values dropped the contextual typing each handler's params gets from the `type` beside it -- three fell to implicit `any`, and the wrong-params compile error stopped being one. Caught by re-running the Developer's perturbation after the Scrum Master's own edit; fixed with defineNotifications, an identity carrying the router's inference to wherever a table is built. Recorded as the re-run improvement's SECOND rationale.",
+        "PROPERTY-NOT-MECHANISM PAYING OFF VISIBLY, which the PO noted is rare because it usually pays off invisibly: they asked for the gate asserted AS A VALUE and left HOW open. The obvious implementation -- a plain helper returning the table -- was the one that silently disarmed the typing. Had they specified the mechanism they would have shipped the regression themselves.",
+        "PBI-17 IS CHANGED BY THIS SPRINT rather than merely unblocked: its `the gate is opt-in per handler` note was DELETED as false, and criterion 4's negative control moved from BYPASS -- now unrepresentable -- to a WRONG GATE ASSIGNMENT. The reorder's payoff, stated: the criterion PBI-17 would have needed no longer needs writing.",
+        "NOT CONSTRUCTED, with its residual and its end condition: `initialized`'s gate choice has no observable consequence, because the body is empty and a dropped delivery has nothing to fail to do. Writing `always` there is entirely REPRESENTABLE, which is why this is not FORECLOSED. Unverified until the handler has its first line of body.",
+        "THE STANDING PROSE ITEM CAUGHT ITS OWN AUTHOR: the executor fixed src/server.ts's falsified comment in the causing commit and missed src/lifecycle.ts's `a notification handler` arm, catching it only at self-review.",
+      ],
+    },
     {
       number: 15,
       pbi_id: "PBI-16",
@@ -147,117 +133,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 16,
-    pbi_id: "PBI-18",
-    goal: "Make the lifecycle gate impossible to forget -- a notification added without deciding when it may run should fail to compile, not ship ungated.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "A handler whose body consults NOTHING is still refused outside the initialized window",
-        implementation:
-          "src/notifications.ts exporting registerNotifications(connection, lifecycle, entries), each entry `{ type, handler, gate }` with GATE REQUIRED AND NO DEFAULT -- `lifecycle` | `always`. Handler bodies never see `lifecycle`. Move initialized, the three sync notifications and exit onto it, AND DELETE THE THREE HAND-WRITTEN CHECKS IN THE SAME EDIT.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8c2a8c",
-            message: "feat: make a notification decide when it may run, or not compile",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ONE IMPLEMENTATION MOMENT WITH SUBTASK 2, declared at planning: routing through the gate while LEAVING the checks in place is precisely the inert-gate state criterion 3 forbids, so they cannot honestly be separated.",
-          "THE PERTURBATION THAT PROVES THE GATE DOES THE WORK belongs here: neutralise the router's gate and, with the hand-written checks gone, protocol.test.ts's before-initialize and after-shutdown didOpen tests must BOTH redden. TODAY THAT SAME PERTURBATION REDDENS NOTHING, because each handler remembers on its own -- which is the whole argument for this PBI.",
-          "TYPE-LEVEL FORECLOSURE, the same shape the stakeholder asked for on PathSource.name: adding a notification without deciding its gate does not TYPE-CHECK. The realistic failure becomes a compile error rather than a convention.",
-          "RUN, AND IT FIRED ON EXACTLY THE NAMED ASSERTION: the gate neutralised to `false && ...` reddened `expect(readSnapshot(session.stderr)).toEqual([])` in BOTH didOpen tests on BOTH runtimes (4 of 283) plus the new router test's `expect(seen).toEqual([])`, while the `always` test stayed green -- it must not be sensitive to this, and was not.",
-          "THE BASELINE CONTROL, RUN BEFORE ANY CHANGE AND NOW FORECLOSED, and it CORRECTS CRITERION 1'S WORDING: `deleting the check from ANY ONE handler body reddens nothing` is TRUE for didChange (277 pass, exit 0) and for didClose (277 pass, exit 0), and FALSE for didOpen, which reddens 4. So two of the three copies were pure convention and the third was defended by tests that never mention it -- a sharper argument for the change than the criterion made, and the same two tests are now the router's own evidence.",
-          "TYPE-LEVEL FORECLOSURE IS ASSERTED, NOT ASSUMED, and it is why the claim cannot rot: test/notifications.test.ts type-checks a throwaway project whose only entry omits `gate` and requires the DIAGNOSTIC to name it -- MEASURED as `error TS2741: Property 'gate' is missing ... but required in type 'NotificationEntry'`. Paired with the same entry plus a gate, which exits 0 with empty output. A non-zero exit alone would also be produced by an unresolved import, which is the wrong-cause failure this project has caught twice.",
-          'FORECLOSED, NOT UNRUN, FOR `initialized`: it had NO check before and now carries `gate: "lifecycle"`, and no test can tell the two gates apart because the handler body is EMPTY -- a dropped delivery has nothing to fail to do. WHAT WOULD UN-FORECLOSE IT: the first line of body it ever gets, at which point the choice becomes observable and needs a test. The choice is labelled REASONED at the site.',
-          "THE ONE ERASURE WAS MEASURED NOT TO COST PARAM TYPING: a heterogeneous entries array needs a cast inside the router's loop, so the control was to type didChange's handler against DidOpenTextDocumentParams -- tsc reddened TS2345, so each entry's params are still checked against the `type` beside it.",
-        ],
-      },
-      {
-        test: "No handler body calls acceptsNotification()",
-        implementation:
-          "Read src/server.ts's own bytes, as the suite reads the README, so the claim cannot rot. Born green after subtask 1; same moment.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8c2a8c",
-            message: "feat: make a notification decide when it may run, or not compile",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN as planned, and PERTURBED TWICE rather than assumed. Re-adding one hand-written check to the didClose entry reddened this test ALONE -- 282 pass, 1 fail, MEASURED over the WHOLE suite because `alone` is a claim about the whole suite and the first run of it was one file. And the PAIR is the real router rather than a synthetic string, so it catches the vacuity a rename would cause: blinding the scanner to return nothing reddened the pair while `src/server.ts calls it nowhere` stayed GREEN -- which is exactly the false pass the pair exists to make visible.",
-          "THE SCAN STRIPS COMMENTS, which is a decision and not an oversight: notifications.ts QUOTES the deleted check in the comment that re-homes its defence, and criterion 3 is about what a handler body CALLS. The stripper is itself defended by the pair above, which reads 0 if it ever removes too much.",
-        ],
-      },
-      {
-        test: "exit before initialize still exits 1",
-        implementation:
-          "Born green -- PBI-10 covers this half -- but asserted HERE rather than inherited, because a blanket gate getting the carve-out wrong is this sprint's specific hazard.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8c2a8c",
-            message: "feat: make a notification decide when it may run, or not compile",
-            phase: "green",
-          },
-        ],
-        notes: [
-          'EXIT SURVIVES AS `gate: "always"` AT EXACTLY ONE SITE: the entry itself, with the reason beside it. Not a branch in the router and not a name in a set elsewhere -- the router contains NO knowledge that exit is special, so there is no second place to get the carve-out wrong.',
-          'BORN GREEN, AND ASSERTED AT THE LAYER THAT IS NEW rather than by a second spawned session. protocol.test.ts\'s "exit as the very first message, with no initialize, exits 1 rather than hanging" still pins the CODE end to end and passes untouched; a copy of it here could never be the first thing to fail, which is the test Sprint 15 deleted one for failing. What is new is the router carve-out those codes now depend on, so test/notifications.test.ts asserts that an entry gated `always` reaches its handler in the uninitialized phase.',
-        ],
-      },
-      {
-        test: "exit after shutdown still exits 0",
-        implementation:
-          "Born green. PBI-10 does NOT cover this half -- separate test from subtask 3 because the two states are what the carve-out must survive, and one passing tells you nothing about the other.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8c2a8c",
-            message: "feat: make a notification decide when it may run, or not compile",
-            phase: "green",
-          },
-        ],
-        notes: [
-          'BORN GREEN, same shape as subtask 3 and kept SEPARATE: the router test delivers to the `always` entry in the SHUTDOWN phase as its own assertion, and the end-to-end code stays pinned by protocol.test.ts\'s "hover after shutdown is answered -32600, and exit still returns 0" and lifecycle.test.ts\'s "initialize, initialized, shutdown, exit yields a null shutdown result and exit code 0", both untouched by the refactor.',
-          "WHAT NO TEST HERE PROVES, said rather than implied: the two phases are asserted at the router with a stub connection, and end to end by tests that spawn a real server. Neither covers the other -- a wiring mistake in startServer is invisible to the first, and the second cannot reach a gate value no entry uses.",
-        ],
-      },
-      {
-        test: "N/A (structural)",
-        implementation:
-          "Re-home the three deletions' defences onto the router's comment: what each hand-written check prevented, and why the entry's required `gate` field now prevents it.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8c2a8c",
-            message: "feat: make a notification decide when it may run, or not compile",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE FIRST APPLICATION of the subtraction rule filed one turn before this sprint. The three deletions are SOURCE CHECKS, not tests -- and protocol.test.ts's two didOpen tests are NOT among them: they assert observable behaviour, survive untouched, and become the evidence the router enforces.",
-          "LANDED IN THE SAME COMMIT AS THE DELETIONS, not as a follow-up tidy: splitting them would ship a commit that removes three defences with no record of what they defended. The comment on NotificationEntry states what each check prevented -- a document mutation applied before initialize or after shutdown -- and why a required `gate` prevents it now, and it QUOTES the deleted two lines so the archaeology survives.",
-          "THE PROSE THE CHANGE FALSIFIED, AND IT WAS TWO SITES, NOT ONE. src/server.ts's lifecycle comment -- the gate is `consulted by the handlers tsudoi REGISTERED` -- was fixed IN the causing commit; src/lifecycle.ts's interface doc, which says the three questions are asked by a request handler, A NOTIFICATION HANDLER and exit, was MISSED there and fixed at self-review in 2d0afad. Recorded as two because the standing item's value is the EARLIER catch, and the second site got the later one. THE SCAN THAT SHOULD HAVE FOUND IT is the criterion-3 one already in the suite: its single remaining call sits in notifications.ts, which is not a handler.",
-          "NOT FORECLOSED, and named at the site so nobody reads the guarantee as wider: a future edit calling connection.onNotification directly walks past this file entirely. That needs a PBI-6-shaped lint rule and is out of scope, which is the boundary handback (b) already narrowed the criterion to.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THREE HANDBACKS TAKEN BEFORE THE SPRINT, all narrowing to what holds. (a) Criterion 1's negative control is RUNNABLE ONLY AT THE BASELINE: after the change there is no body check left to delete, so the baseline run IS the evidence and a later attempt should record FORECLOSED rather than NOT CONSTRUCTED. (b) `unrepresentable` now claims the boundary it actually holds -- a handler that FORGETS its gate cannot be written, but a direct connection.onNotification call is not foreclosed and would need a PBI-6-shaped lint guard. (c) The two surviving tests are NAMED as evidence so they are not swept up as the old convention's.",
-      "REORDERED AHEAD OF PBI-17 at refinement, against the PO's own earlier ordering: PBI-17's value needs TWO unmeasured conditions to both hold, this one's is unconditional, and going first deletes the fourth hand-written copy PBI-17 would have written.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 16,
@@ -310,7 +186,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "The remedy for a single-observer sprint, and it works because the perturbations are REPRODUCIBLE even when they were not independently observed -- the record was auditable though unaudited, which is what item-by-item reporting was built to produce. Costs almost nothing and restores a second observer retroactively for at least one claim.",
+            "A SECOND RATIONALE, found at Sprint 16 and recorded because it is the answer if the cost is ever questioned: IT ALSO DETECTS DISARMED CONTROLS. Extracting a table to satisfy one requirement silently dropped the contextual typing that made a DIFFERENT control fire, and the DoD STAYED GREEN THROUGHOUT -- caught only by re-running someone else's perturbation after one's own edit, which no check in this project performs. The remedy for a single-observer sprint, and it works because the perturbations are REPRODUCIBLE even when they were not independently observed -- the record was auditable though unaudited, which is what item-by-item reporting was built to produce. Costs almost nothing and restores a second observer retroactively for at least one claim.",
         },
       ],
     },
@@ -319,7 +195,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage. SUBJECT WIDENED AT SPRINT 16, not a new rule: a claim about WHAT THE RULE SET CONTAINS is checked against the rule set. The PO asserted a filed improvement existed and it never had been -- the fourth catch by their own rule, and the first where the Scrum Master caught it by applying that rule TO the PO rather than taking their word.",
+            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage. SUBJECT WIDENED TWICE AT SPRINT 16, neither a new rule: a claim about WHAT THE RULE SET CONTAINS is checked against the rule set, and a claim that the suite does NOT defend something is a coverage claim too. THE RECURRING SHAPE, named because it is where all five instances live: A FACTUAL PREMISE STATED INSIDE A CRITERION IS A CLAIM REQUIRING MEASUREMENT, NOT FRAMING -- premises go unchecked because reviewers read the REQUIREMENT. The PO asserted a filed improvement existed and it never had been -- the fourth catch by their own rule, and the first where the Scrum Master caught it by applying that rule TO the PO rather than taking their word.",
           timing: "sprint",
           status: "active",
           outcome:
@@ -365,7 +241,7 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME, written into its `verification` TEXT: name the change that would make it fail, check that the verification can DISCRIMINATE the property claimed, and check that nothing else in the record contradicts it. If no change would make it fail, the criterion is VACUOUS and must be rewritten before it binds. SHARPENED AT SPRINT 15, and it does not over-delete useful redundancy: A CONTROL THAT CAN NEVER BE THE FIRST THING TO FAIL IS NOT A CONTROL -- ask whether something else would have failed first. Two tests reddening on one bug is fine; a test that reddens only after another already has adds nothing.",
+            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME, written into its `verification` TEXT: name the change that would make it fail, check that the verification can DISCRIMINATE the property claimed, and check that nothing else in the record contradicts it. If no change would make it fail, the criterion is VACUOUS and must be rewritten before it binds. SHARPENED AT SPRINT 15, and it does not over-delete useful redundancy: A CONTROL THAT CAN NEVER BE THE FIRST THING TO FAIL IS NOT A CONTROL -- ask whether something else would have failed first. Two tests reddening on one bug is fine; a test that reddens only after another already has adds nothing. IT READS IN BOTH DIRECTIONS, added at Sprint 16 with the guard that stops it becoming a licence: one that WOULD be first to fail is worth ADDING when the existing detection is real but ARRIVES WITHOUT NAMING ITS CAUSE. Gating exit cleared that bar -- a genuine detection that named nothing and cost two minutes of hang; most gaps will not.",
           timing: "immediate",
           status: "active",
           outcome:
