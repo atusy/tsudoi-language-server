@@ -197,6 +197,11 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  * `onNotification`, and widening it here would swap a reviewed boundary for an
  * unreviewed one. `sendNotification` survives too and is not a gap at all --
  * that is SENDING a notification, not installing a handler for one.
+ *
+ * ITS CLOSURE IS ONE TOKEN -- `Omit<..., "onNotification" | "onUnhandledNotification">`
+ * -- AND THE OPEN QUESTION IS WHY IT IS NOT TAKEN YET: whether anything wants
+ * that hook for DIAGNOSTICS. Removal is not obviously free, which is what keeps
+ * this a question rather than an oversight.
  */
 export function createGatedConnection<P extends readonly unknown[]>(
   reader: MessageReader,
