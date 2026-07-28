@@ -341,6 +341,15 @@ export async function* pathCompletion(
     return null;
   }
   const cwd = options.cwd ?? process.cwd();
+  // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
+  // rather than an oversight -- recorded here because someone would otherwise
+  // re-add the report believing it was required.
+  //
+  // An earlier version wrote one line to stderr per session: with no workspace
+  // the workspace source contributes nothing, and nothing looks exactly like a
+  // working source in a project that holds no matches. The stakeholder removed
+  // it as noise. THE COST STANDS: a config author whose editor opened no
+  // workspace now gets no items from that source and no explanation of why.
   const seen = new Set<string>();
   for (const fragment of pathFragments(line, params.position.character)) {
     let named = false;
