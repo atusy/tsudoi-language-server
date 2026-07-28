@@ -195,7 +195,15 @@ function documentParent(uri: string): string | undefined {
 export async function* itemsFrom(
   source: PathSource,
   fragment: PathFragment,
-  position: Position = { line: 0, character: fragment.start + fragment.text.length },
+  /**
+   * The cursor. REQUIRED, and it was briefly defaulted: a default assuming
+   * line 0 is dead on every call this module makes and silently wrong for a
+   * cursor anywhere else -- it would build a range on a line other than the
+   * cursor's, which is MEASURED to make the item vanish from the target client
+   * with no error and no fallback. A convenience for one caller is not worth a
+   * default that can only be wrong.
+   */
+  position: Position,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];

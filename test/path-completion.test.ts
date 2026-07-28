@@ -280,7 +280,10 @@ function resolvesTo(root: string, insertedText: string): string | undefined {
 /** Every item one source produced, in order. */
 async function fromSource(source: PathSource, fragment: PathFragment): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
-  for await (const batch of itemsFrom(source, fragment)) {
+  // The cursor, spelled out: itemsFrom takes it rather than defaulting it,
+  // because a default can only assume line 0 and would be wrong anywhere else.
+  const position = { line: 0, character: fragment.start + fragment.text.length };
+  for await (const batch of itemsFrom(source, fragment, position)) {
     items.push(...batch);
   }
   return items;
