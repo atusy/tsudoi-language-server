@@ -253,9 +253,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "BORN GREEN -- per-request capture already exists at src/methods.ts. New fixture completion-workspace-gate.ts reusing completion-gate.ts's didChange release: park a streaming completion, deliver the change WHILE IT IS PARKED, release it, and assert its second yield matches its first; then a NEW completion sees the change.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "8fa78e3",
+            message: "test: pin that a request answers on the workspace it started with",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN, AS DECLARED IN ADVANCE, and THE PERTURBATION FIRED AT THE NAMED ASSERTION: making RequestContext hold the thunk and read lazily (a getter over the WorkspaceFolders thunk in methods.ts) reddens `session.progress[1] toEqual itemsFor(before)` -- the IN-FLIGHT half -- on both runtimes and NOTHING ELSE in 293 tests. tsc stayed 0 under it, which is the point: no type forbids the lazy read, only this assertion does.",
+          "THE FIXTURE READS `context.workspaceFolders` AT EACH YIELD rather than hoisting it, and that is why the perturbation can fire at all -- a fixture capturing it once would pass under the lazy read and prove nothing. Recorded because it is the difference between this test and reusing completion-gate.ts.",
           "PROVEN BY ORDERING, NOT BY A TIMING BOUND: the in-flight response carries request-start roots WHILE A CHANGE HAS ALREADY BEEN DELIVERED. Same shape as `settled === false`. THE SECOND HALF IS LOAD-BEARING: without the new-request assertion this passes against a server that applies NOTHING. THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and read lazily, and the in-flight assertion must redden.",
         ],
       },
