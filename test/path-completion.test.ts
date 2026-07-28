@@ -2,11 +2,18 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, normalize } from "node:path";
 import { pathToFileURL } from "node:url";
 import { CompletionItemKind, type CompletionItem } from "vscode-languageserver-protocol";
 import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
-import { pathCompletion, pathFragments } from "../examples/path-completion.ts";
+import {
+  itemsFrom,
+  pathCompletion,
+  pathFragments,
+  sourcesFor,
+  type PathFragment,
+  type PathSource,
+} from "../examples/path-completion.ts";
 
 /**
  * A throwaway directory tree, WITH NO DOTFILES IN IT.
@@ -238,6 +245,119 @@ describe("directories are distinguishable from files", () => {
       // Degraded to File rather than dropped: there is nothing to resolve, and
       // a user who typed the name is entitled to see it exists.
       expect(kinds(dangling)).toEqual({ dangling: CompletionItemKind.File });
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+/**
+ * Where `insertedText` points when it is read the way its root says to read
+ * it, or undefined when the two do not go together at all.
+ *
+ * JOIN, NEVER `resolve`: path.resolve DISCARDS the root the moment the text is
+ * absolute, so an item carrying `/a/b/c` under the root `/a/b` would be called
+ * correct for naming the same file by accident. And under the FILESYSTEM root
+ * join is the identity, which makes relative and absolute text
+ * indistinguishable by it -- so there the text has to be absolute in its own
+ * right, which is the only thing that makes it readable from anywhere.
+ */
+function resolvesTo(root: string, insertedText: string): string | undefined {
+  if (root === "/") {
+    return isAbsolute(insertedText) ? normalize(insertedText) : undefined;
+  }
+  return isAbsolute(insertedText) ? undefined : join(root, insertedText);
+}
+
+/** Every item one source produced, in order. */
+async function fromSource(source: PathSource, fragment: PathFragment): Promise<CompletionItem[]> {
+  const items: CompletionItem[] = [];
+  for await (const batch of itemsFrom(source, fragment)) {
+    items.push(...batch);
+  }
+  return items;
+}
+
+/** The one fragment a test means, out of the candidates for that line. */
+function only(line: string): PathFragment {
+  const [fragment] = pathFragments(line, line.length);
+  if (fragment === undefined) {
+    throw new Error(`no fragment in ${line}`);
+  }
+  return fragment;
+}
+
+describe("an item resolves against its own source's root", () => {
+  // ASSERTED PER SOURCE, never over the merged list. The two trees hold
+  // DIFFERENT names on purpose: an item attributed to the wrong root resolves
+  // to a path that does not exist, so this fails rather than passing by
+  // coincidence.
+  test("each source's items resolve, under that source's root, to the files it holds", async () => {
+    const documentTree = tree(["notes/deep.txt"]);
+    const cwdTree = tree(["notes/wide.txt"]);
+    try {
+      const uri = pathToFileURL(join(documentTree.root, "doc.txt")).href;
+      const relative = only("notes/");
+      const absolute = only("/us");
+      const sources = [
+        ...sourcesFor(relative, uri, cwdTree.root),
+        ...sourcesFor(absolute, uri, cwdTree.root),
+      ];
+      expect(sources.map((source) => source.name)).toEqual(["document", "cwd", "absolute"]);
+
+      // WHAT THE ROOT MUST BE, stated by the test rather than read off the
+      // module. Without this the oracle below derives its expectation FROM
+      // source.root and compares the module to itself: swapping the document
+      // and cwd roots swaps both sides together and nothing reddens. Measured
+      // -- the swap perturbation passed until this assertion existed.
+      const expectedRoot: Record<string, string> = {
+        document: documentTree.root,
+        cwd: cwdTree.root,
+        absolute: "/",
+      };
+
+      for (const source of sources) {
+        expect(source.root).toBe(expectedRoot[source.name] ?? "");
+        const fragment = source.name === "absolute" ? absolute : relative;
+        const items = await fromSource(source, fragment);
+        // Not vacuous: a source that produced nothing would satisfy every
+        // `for` below without resolving anything.
+        expect(items.length).toBeGreaterThan(0);
+
+        const directory = join(source.root, fragment.directory);
+        const real = (await readdir(directory))
+          .filter((name) => name.startsWith(fragment.name))
+          .map((name) => join(directory, name))
+          .sort();
+        expect(items.map((item) => resolvesTo(source.root, item.insertText ?? "")).sort()).toEqual(
+          real,
+        );
+      }
+    } finally {
+      documentTree.dispose();
+      cwdTree.dispose();
+    }
+  });
+
+  // THE NEGATIVE CONTROLS the criterion names, on REAL items rather than on
+  // invented ones: each mutation is the plausible implementation mistake, and
+  // each must stop resolving.
+  test("an absolute text under a named root, or a relative one under /, fails to resolve", async () => {
+    const fixture = tree(["notes/deep.txt"]);
+    try {
+      const named = { name: "cwd", root: fixture.root };
+      const [item] = await fromSource(named, only("notes/"));
+      const insertText = item?.insertText ?? "";
+      expect(resolvesTo(named.root, insertText)).toBe(join(fixture.root, "notes/deep.txt"));
+      // The item carries an ABSOLUTE path while its source is a NAMED root.
+      expect(resolvesTo(named.root, join(fixture.root, insertText))).toBeUndefined();
+
+      const [rootItem] = await fromSource({ name: "absolute", root: "/" }, only("/us"));
+      const absoluteText = rootItem?.insertText ?? "";
+      expect(resolvesTo("/", absoluteText)).toBe(absoluteText);
+      // The item carries a RELATIVE path while its source IS the filesystem
+      // root -- which reads against whatever directory happens to be current.
+      expect(resolvesTo("/", absoluteText.slice(1))).toBeUndefined();
     } finally {
       fixture.dispose();
     }
