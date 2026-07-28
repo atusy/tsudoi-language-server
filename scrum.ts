@@ -42,13 +42,18 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: "A call to connection.onNotification outside the router does not lint",
+          criterion:
+            "A call to onNotification outside the router is a COMPILE ERROR, whatever the variable is called",
           verification:
-            "A rule of the shape .oxlintrc.json already carries, asserted by the same probe mechanism the Bun-global and bun:* guards use. NEGATIVE CONTROL: a direct call added to src/server.ts must fail lint, and the router's own call must NOT",
+            'startServer holds `Omit<ProtocolConnection, "onNotification">`; a probe binding that type and calling onNotification FAILS tsc while one calling onRequest PASSES -- both halves, since a firing-half-only probe would pass a type that forbids everything. AND RENAME-INDEPENDENCE ASSERTED RATHER THAN INFERRED: a probe binding the narrowed type under a DIFFERENT variable name still fails. That is the property that DECIDED the route, so without it the route\'s whole justification sits unpinned and nothing distinguishes it from the name-based rule rejected below',
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
+        "THE LINT ROUTE IS DECLINED WITH ITS MEASUREMENT, so nobody re-proposes it from this PBI's original wording: oxlint 1.73.0 does not merely fail to MATCH on `no-restricted-syntax`, it FAILS TO PARSE THE CONFIG -- the instrument the criterion originally named does not exist. `no-restricted-properties` works with PBI-6's override shape but matches the IDENTIFIER `connection`, so `const conn = connection` walks straight past it.",
+        "AND THE ROUTE WAS CHOSEN ON VALUE, NOT PREFERENCE: this PBI exists because PBI-18 forecloses bypass WITHIN the router and not OF it, and a guard a rename evades forecloses NOTHING -- it notices some bypasses. Choosing it would ship a criterion claiming less than the story above it. THE PO NAMED THE GENERALISATION: a route whose criterion must DISCLAIM MOST OF ITS OWN VALUE is a route the disclaimer is telling you about, which makes the claim-the-actual-boundary rule a ROUTE-SELECTION signal and not only a wording discipline.",
+        "THE COST, MEASURED NOT TO CONTORT: foreclosure needs src/server.ts never to BIND the wide type, since narrowing afterwards leaves the wide value in scope -- so connection creation moves into the module that owns the notification table. tsc exits 0 with onRequest, sendProgress and listen intact. CONFIRM THE Omit REMAINDER against what src/server.ts actually uses: a missing method would surface as a CONTORTION rather than a clean narrowing, and that is the signal to stop.",
+        "A RESIDUAL NAMED RATHER THAN GUARDED: the type forecloses the call only while NO WIDE VALUE IS IN SCOPE -- importing createProtocolConnection directly in src/server.ts restores it. THIS IS A SECOND GAP, NOT A SECOND GUARD ON THE SAME ONE, so the PBI-18 argument against two guards does not forbid closing it later. What would close it: A LINT ON THE IMPORT SPECIFIER, which cannot be renamed away the way a variable can -- the lint route reappearing at a target where it actually works.",
         "A GAP IN WORK THE PO ACCEPTED, found by asking what comes next rather than by anything reddening: PBI-18 forecloses bypass WITHIN the router -- an entry that decides no gate does not type-check -- but NOT bypass OF it. A future edit calling connection.onNotification directly answers to nothing. The foreclosure endorsed at Sprint 16 is partial, and src/notifications.ts says so at its own site. NO TYPE CAN DO THIS, which is why it is a lint rule rather than more of what PBI-18 built. It is PBI-6's shape, and PBI-6 is the precedent that the codebase itself rejects the changes that would quietly break a promise. CONDITIONALLY ORDERED: after PBI-21 because that harm is present-tense while this needs future notification work that is not scheduled -- but BEFORE any new notification work, whenever that arrives.",
       ],
     },
@@ -122,7 +127,59 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 21,
+    pbi_id: "PBI-22",
+    goal: "Make a notification handler unregisterable outside the router -- so the gate cannot be avoided by not using the thing that applies it.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A (structural, and it comes first)",
+        implementation:
+          'createGatedConnection(reader, writer, logger, lifecycle, entries): RequestOnlyConnection in src/notifications.ts -- creates the connection, registers the notification table, and hands back `Omit<ProtocolConnection, "onNotification">`. startServer never binds the wide type. CONFIRM THE REMAINDER against what src/server.ts actually uses BEFORE building: a missing method is a CONTORTION rather than a clean narrowing, and that is the signal to STOP and hand back.',
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED -- better structure on its own terms, which is why this is tidy-first rather than a cost paid for the type.",
+        ],
+      },
+      {
+        test: "A source binding the narrowed type and calling onNotification fails tsc; one calling onRequest passes",
+        implementation: "typeCheckProbe, BOTH HALVES in one run.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A FIRING-HALF-ONLY PROBE WOULD PASS A TYPE THAT FORBIDS EVERYTHING, which is the same shape as a lint probe that only checks the file where the rule must fire.",
+        ],
+      },
+      {
+        test: "The same failure under a DIFFERENT variable name",
+        implementation: "Born green by construction -- the type matches on the type, not the name.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THIS IS THE PROPERTY THAT DECIDED THE ROUTE, so it is asserted rather than inferred: without it the route's whole justification sits unpinned and nothing distinguishes it from the name-based lint rule that was rejected.",
+        ],
+      },
+      {
+        test: "N/A (prose, same commit)",
+        implementation:
+          "Name the residual at the site: the type forecloses only while no wide value is in scope, and importing createProtocolConnection directly restores it. Record that A LINT ON THE IMPORT SPECIFIER would close it -- the lint route at a target where it works, since a specifier cannot be renamed away.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO'S CHECKLIST: (1) both halves of the type probe; (2) rename-independence asserted rather than inferred; (3) the residual named at the site with the import-specifier lint recorded as its future closure.",
+      "FOUR MEASUREMENTS BEFORE ANY CODE, and the criterion changed as a result rather than the implementation bending to fit it: the named instrument DOES NOT PARSE, a working alternative exists, its boundary is a rename, and a better route was measured NOT to contort.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 19,
