@@ -81,5 +81,26 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // THE SECOND ABSENT STATE, split from the first rather than bundled with
+    // it: `workspaceFolders` is declared `WorkspaceFolder[] | null` AND
+    // optional, so a client may spell `no workspace` either way, and a
+    // normalisation covering one of them passes a test that only sends the
+    // other. One test per spelling is what lets a perturbation aimed at null
+    // be seen to leave the omitted case green.
+    test("a client sending a null workspaceFolders leaves the handler observing an empty array", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: null,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
