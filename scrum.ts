@@ -87,7 +87,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Applying the item yields the path it names",
           verification:
-            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. MEASUREMENT DECIDED the mechanism -- see the next criterion: clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path gets its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
+            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. MEASUREMENT DECIDED the mechanism, and the MID-PATH criterion (`the client's own confirmBehavior in charge of the tail`) carries it: clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path gets its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
         },
         {
           criterion:
@@ -159,7 +159,7 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "COMPACTED AT SPRINT 13, every dropped decision named with the durable home it went to, per the Sprint 9 rule. The three conjunction/zero-match vacuity records -- the planned removal control that cannot fail, statesFact is a conjunction, an extractor that finds nothing passes -- are generalised in Sprint 11's NOT-CONSTRUCTED classification and Sprint 10's discriminating-verification improvement, and each is now defended by a permanent uniqueness or non-zero-count assertion in readme.test.ts. The -A flag hedge and the unnamed cold-cache prerequisite are README facts pinned by that same suite. The installConsumer deviation carries its reason at its site. The one-runtime sweep's licence is Sprint 10's measured route-identity, recorded there.",
+        "COMPACTED AT SPRINT 13, every dropped decision named with the durable home it went to, per the Sprint 9 rule. The three conjunction/zero-match vacuity records -- the planned removal control that cannot fail, statesFact is a conjunction, an extractor that finds nothing passes -- are generalised in the negative-control-at-refinement improvement (a criterion no change can redden is VACUOUS), and CHECKED AGAINST THE SUITE rather than recalled: test/readme.test.ts:252 asserts each fact has exactly one home section, and extractQuickstart THROWS on a zero or short match with its count asserted at :31, so the extractor cannot pass by finding nothing. An earlier draft of this record credited Sprint 11's NOT-CONSTRUCTED classification, which is about UNBUILDABLE PERTURBATIONS and does not cover conjunction vacuity. The -A flag hedge and the unnamed cold-cache prerequisite are README facts pinned by that same suite. The installConsumer deviation carries its reason at its site. The one-runtime sweep's licence is Sprint 10's measured route-identity, recorded there.",
         "THE BARENESS REFRAME, kept because nothing else carries it: the sweep's function is not NECESSITY (no documented step is useless) but proving THE ENVIRONMENT IS BARE. Criterion 1 delivers sufficiency -- nothing undocumented is required -- ONLY if the staged environment supplies nothing the README asks the reader to do; otherwise it is a test of the harness.",
         "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. Omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
         "NOT CONSTRUCTED, not foreclosed, and still open: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
@@ -249,11 +249,11 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A CLAIM RECORDED IN A NOTE is held to the assertion standard: say whether it was MEASURED or REASONED; check any claim about WHAT THE SUITE COVERS against the suite before recording it; and never state a consequence without checking it against the remedy it justifies.",
-          timing: "immediate",
+            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage.",
+          timing: "sprint",
           status: "active",
           outcome:
-            "MERGED AT SPRINT 13, nothing dropped. Filed at the Developer's request after they named it at second occurrence (S8), and extended at S13 where the measured-or-reasoned label did NOT help: the falsified note did not read as unlabelled, it read as CHECKED. Recalled coverage is not coverage.",
+            "SPLIT BACK OUT at the PO's ruling one turn after being merged into the S8 justification standard, on the same live-reason test that kept the perturbation pair apart: the justification standard PERMITS `reasoned`, and this rule FORBIDS it. A coverage claim may not be labelled reasoned and left there, because checking is cheap and the failure mode was asserting a measurement nobody had done. A strengthening that removes an option the parent rule allows is not a restatement of it. The measured-or-reasoned label does not help here: the falsified note did not read as unlabelled, it read as CHECKED.",
         },
         {
           action:
@@ -295,7 +295,7 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "THE LIFETIME RULE, three findings in one: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; one that shapes WHAT TO BUILD NEXT belongs on the PBI; one whose only home is a MACHINE-FORMATTED FILE that cannot carry comments belongs in a TEST THAT ASSERTS IT -- the file carries the decision, the test carries the reason. COMPACTION may drop a recorded decision ONLY when it has such a home, and each compaction NAMES where every dropped decision went.",
+            "THE LIFETIME RULE, three findings in one: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; one that shapes WHAT TO BUILD NEXT belongs on the PBI; one whose only home is a MACHINE-FORMATTED FILE that cannot carry comments belongs in a TEST THAT ASSERTS IT -- the file carries the decision, the test carries the reason. COMPACTION may drop a recorded decision ONLY when it has such a home, and each compaction NAMES where every dropped decision went -- in the commit message, which is the AUDIT TRAIL for the move and never itself a home. AMENDED AT SPRINT 13 on measurement, once `tighten the wording` was shown to name a lever that does not exist (oxfmt puts each string on one line, so an improvement costs the same whatever it says and the only lever is fewer objects): active improvements MAY BE MERGED when they state ONE RULE, content preserved and provenance named; none may be dropped. And what gets SURFACED to the PO rather than merely recorded is the short list that can still evaporate -- drops whose home is NOT a permanent assertion, a comment at the site it constrains, or an active improvement.",
           timing: "immediate",
           status: "active",
           outcome:
@@ -314,6 +314,14 @@ const scrum: ScrumDashboard = {
     {
       sprint: 8,
       improvements: [
+        {
+          action:
+            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "Filed at the Developer's request after they named it at second occurrence. Its S13 STRENGTHENING lives separately: a claim about what the suite covers may not take the `reasoned` option this rule allows.",
+        },
         {
           action:
             "PREFER SPLITTING OVER DOCUMENTING: when a perturbation would flip at an earlier assertion than the sub-claim it targets, that is a signal the test BUNDLES independent sub-claims.",
