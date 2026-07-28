@@ -85,9 +85,9 @@ const scrum: ScrumDashboard = {
             "Assert the item names its source root. Dedup-by-inserted-text leaves distinct strings, but src/foo.ts from cwd and ../src/foo.ts from the document's parent look unrelated, so four-source completion is incomprehensible without it",
         },
         {
-          criterion: "The item replaces the whole path fragment, not the client's idea of a word",
+          criterion: "Applying the item yields the path it names",
           verification:
-            "Each item carries a textEdit whose range starts where the path fragment starts, INCLUDING any / and . already typed, so applying it yields the path the item names rather than a concatenation. DISCRIMINATOR: an implementation returning insertText only, or a range covering just the last segment, fails",
+            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. The PROPERTY, not a mechanism: whether an explicit textEdit is needed is for measurement to decide -- LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path can get its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
         },
       ],
       status: "ready",
