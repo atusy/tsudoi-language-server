@@ -56,7 +56,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Items with identical inserted text collapse to one",
           verification:
-            "Drive a case where the document's parent IS cwd, so the document-relative and cwd-relative sources produce identical inserted text, and assert ONE item, not two. Dedup is by INSERTED TEXT, not by resolved file, which would force an arbitrary choice of which root to label it with",
+            "TWO cases, because they catch DIFFERENT wrong implementations. (a) cwd is a SYMLINK to the document's parent: a naive resolved-path dedup that joins without realpath keeps both, where inserted-text dedup collapses them to one. (b) NESTED roots -- the document's parent inside cwd, so one file yields `foo.ts` and `b/foo.ts`: different strings, same file, and BOTH MUST SURVIVE, which is what a realpath-based dedup would wrongly collapse. Dedup is by INSERTED TEXT, never by resolved file, which would force an arbitrary choice of which root to label it with",
         },
         {
           criterion: "Each item is attributable to the source that produced it",
@@ -88,6 +88,11 @@ const scrum: ScrumDashboard = {
           criterion: "Applying the item yields the path it names",
           verification:
             "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. The PROPERTY, not a mechanism: whether an explicit textEdit is needed is for measurement to decide -- LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path can get its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
+        },
+        {
+          criterion: "A path containing a space or a parenthesis is emitted complete",
+          verification:
+            "A fixture directory holds `spaced (1).txt`; assert the item's label, inserted text and textEdit range each cover the whole filename. NEGATIVE CONTROL: detecting the fragment by splitting on whitespace truncates it at `spaced`, which is the most natural wrong implementation of fragment detection",
         },
       ],
       status: "ready",
@@ -208,216 +213,17 @@ const scrum: ScrumDashboard = {
     pbi_id: "PBI-14",
     goal: "Give a config author a path completion that knows which root it is answering from -- so the item they pick inserts the path they meant, from the root they meant.",
     status: "in_progress",
-    subtasks: [
-      {
-        test: "EXPECTED RED. Given a document and a position, the module returns the path fragment under the cursor: foo/ba -> dir foo/, fragment ba; /usr/lo -> dir /usr/, fragment lo; a line with no path characters yields nothing.",
-        implementation:
-          "examples/path-completion.ts reads the line from documents.get(uri).getText() split at params.position. MEASURED: CompletionParams carries no typed prefix and triggerCharacter is null on invoke, so the document is the ONLY source of it. Zero lines in src/.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "3222fb0",
-            message: "feat(example): find the path fragment under the cursor, spaces included",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED as planned (the module did not exist), then green. PERTURBATION: stop at the nearest word boundary -- a whitespace split. The spaced-filename assertion reddened; the other three stayed green.",
-          "WIDENED BY THE PO'S SPACED-FILENAME RULING, which arrived mid-subtask: pathFragments returns CANDIDATES shortest-first rather than one fragment, because `see foo (1).png` cannot be split by any rule reading the line alone. Which candidate wins is decided against the filesystem in subtask 11.",
-          "A DECISION NOBODY ASKED FOR, so it is stated rather than left implicit: a candidate ending IN whitespace is not produced, so `foo ` does not offer `foo bar.txt` until the `b` is typed. The alternative is a completion popup on the space bar.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. A /-prefixed fragment is answered by the ABSOLUTE source alone; anything else by the relative sources. THE NEGATIVE HALF IS THE DISCRIMINATOR: with cwd set to a directory that has children of its own, typing / yields filesystem-root items AND NO cwd-relative items. PERTURBATION: make every source answer every request; the negative half MUST redden while the positive half stays green -- without it an implementation ignoring the prefix entirely passes.",
-        implementation: "The dispatch rule.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "94e46c0",
-            message: "feat(example): answer a /-prefixed fragment from the filesystem root alone",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATION: every source answers every request. The NEGATIVE half reddened; the positive half stayed green, which is the criterion's own prediction and the reason it names the negative half the discriminator.",
-          "The oracle for `and nothing extra` is a listing the TEST performs itself, so the module is not compared against itself. Hidden entries are dropped from BOTH sides, or the set equality would decide the unruled hidden-entry question by accident.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Folder versus File for a real directory, a real file, A SYMLINK TO A DIRECTORY and A SYMLINK TO A FILE; a dangling symlink is listed without the request failing. PERTURBATION: trust dirent.isDirectory() alone; the symlink-to-directory case MUST redden while the real-directory case stays green.",
-        implementation:
-          "MEASURED on both runtimes: readdir withFileTypes reports a symlink-to-directory as NOT a directory, so the obvious implementation labels it File -- and the obvious fix, stat every entry, THROWS ENOENT on a dangling symlink, which under tsudoi's dispatch becomes -32603 plus a stack and kills the whole completion. Not exotic: on macOS /tmp IS a symlink. Resolve with stat INSIDE a catch and degrade an unresolvable entry rather than dropping the request.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c0db79e",
-            message: "feat(example): label an entry by what it IS, and survive a dangling link",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATION A, trust the dirent: the symlink assertion reddened, the real-directory assertion that runs BEFORE it stayed green. PERTURBATION B, lift the stat out of its catch: the dangling assertion reddened AND SO DID THE /-PREFIX TEST -- `it kills the whole completion` observed on the real filesystem root rather than argued.",
-          "SHARPER THAN PLANNED, measured here: `/` on this macOS carries a DANGLING symlink of its own, .VolumeIcon.icns, and /tmp /var /etc /home /run are symlinks TO directories. So both halves of the planned hazard are on the stakeholder's very first keystroke, not in a contrived fixture.",
-          "A THIRD MEASUREMENT, NOT IN THE PLAN AND FOUND BY A GREEN TEST GOING RED: deno REJECTS opendir for a missing directory; bun RESOLVES it and defers the scandir to the FIRST ITERATION. A catch around the open alone is correct under deno and lets ENOENT escape under bun. Both are inside one try -- and the catch tests the errno rather than swallowing everything, so a defect in this file cannot be answered to the client as `nothing here`.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. For each of the three sources, resolving the item's inserted text against that source's root yields the real path. NEGATIVE CONTROL: an absolute path where the source is a named root, or a relative path where the source IS the filesystem root, fails to resolve.",
-        implementation: "The resolve-against-the-source's-root property.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "771b319",
-            message: "test(example): resolve each source's items against that source's own root",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN, not RED: subtasks 2 and 3 had already built what it asserts. One implementation moment, so the planned RED was not observed and the assertions are defended by perturbation instead. PERTURBATION: insert the entry name without its directory part -- this and three earlier assertions redden.",
-          "A DEFECT IN THE TEST, FOUND BY ITS OWN PERTURBATION: swapping the document and cwd roots reddened NOTHING, because the expectation was derived from source.root and the oracle was comparing the module to itself. The roots are now stated by the test; the swap reddens. Same shape as sprint 12's cannot-fail control, in a sixth place.",
-          "The two negative controls are asserted on REAL items rather than invented ones, and the oracle JOINS, never resolves: path.resolve discards the root the moment the text is absolute and would call a wrong item correct.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Assert PER SOURCE, never over the merged list; each item names the root that produced it.",
-        implementation:
-          "Carry the root on the item where a user sees it without resolving anything. This is what stops source 4 masking source 1: MEASURED, file:// becomes / without throwing, so a broken document-relative source falling back to / is indistinguishable from the absolute source's legitimate output unless attribution is asserted.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "4a1bdfa",
-            message: "feat(example): name the source and the root on every item's label",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATIONS: drop the attribution -- both attribution tests redden. Name the ROOT but not the SOURCE -- both redden again, which is what proves the source name is load-bearing rather than decoration.",
-          "THE CARRIER MOVED FROM detail TO label on a measurement of the target client: detail is displayed only when an option that DEFAULTS OFF is set. The label's ORDER is load-bearing too -- the inserted text first, because a client with no filterText filters on the label and would otherwise filter our own items away.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. With the document's parent set as cwd, two sources produce the same inserted text and EXACTLY ONE item results.",
-        implementation:
-          "Dedup by INSERTED TEXT, never by resolved file -- resolving first would force an arbitrary choice of which root to attribute it to, contradicting the attribution subtask.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "258f726",
-            message:
-              "feat(example): collapse items by the text they insert, not the file they name",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATION: remove dedup -- the collision test reddens.",
-          "THE PLANNED COLLISION CANNOT DISCRIMINATE THE RULE IT DEFENDS, found by perturbing: with the document's parent EQUAL to cwd, one directory is reached twice by one path, so dedup by RESOLVED FILE passes it unchanged. A third case supplies the discriminator -- cwd is a SYMLINK to the document's parent, so one inserted text has two roots -- and only it reddens under that perturbation.",
-          "A REAL LOSS THE RULE CAUSES, recorded at the site rather than discovered later: two different directories that both hold `src/foo.ts` yield ONE item, naming the root asked first. The edit is identical either way; what is lost is the attribution, one truth out of two.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Drive file:// and untitled:; assert NO document-relative items and that the request STILL ANSWERS in both cases. PERTURBATION: implement the guard as `reject /`; the /-prefix subtask MUST redden while this one stays green -- that is the whole reason the criterion words the guard as it does.",
-        implementation:
-          "The guard is `an unnamed document has no parent`, NEVER `reject / as a root` -- / is the legitimate root for the absolute source. MEASURED: the two degenerate URIs fail in OPPOSITE directions, file:// resolving silently to / and untitled: throwing.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7c97fe7",
-            message: "feat(example): an unnamed document has no parent -- which is not `reject /`",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATION, at ONE site: filter every source rooted at `/`. The unnamed-document test STAYED GREEN while three others reddened, including its own permanent pair. That is the criterion's own prediction, observed.",
-          "The absence assertion ships its pair: a document that REALLY sits at the filesystem root keeps `/` as its root, which is what a `reject /` guard deletes. And the fragment is one `/` really has matches for -- with a fragment it cannot match, `no document-relative items` holds for a module with no guard at all.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Protocol-level with a partialResultToken present: one $/progress per yielded batch, against a directory large enough to need more than one. PERTURBATION: collect the listing and return it whole; the progress-count assertion MUST redden while every content assertion stays green.",
-        implementation:
-          "Yield batches from the single listing, reusing the existing streaming machinery unchanged. The foreclosure below does NOT soften this: a single directory can hold 100k entries, so batching stays a live requirement.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "f18159e",
-            message: "feat(example): stream a large directory batch by batch, not all at once",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green, driven over the wire under BOTH runtimes -- a client receiving one message or three is the only place this property exists at all. PERTURBATION: collect the listing and hand it over whole. Every CONTENT assertion passed and only the batch count reddened.",
-          "THE ASSERTION ORDER IS PART OF THE TEST: content first, batching second. The other order flips at the batching assertion and leaves `and it is all there` undefended -- the earlier-assertion clause of the sprint-4 rule, applied before it could bite.",
-          "opendir, never readdir: readdir builds the whole array before returning. A CONSEQUENCE recorded at the site so it does not read as an omission -- nothing sorts, because sorting is exactly the operation that needs the whole listing first.",
-        ],
-      },
-      {
-        test: "The existing cross-runtime lifecycle tests driving examples/tsudoi.config.ts stay green.",
-        implementation:
-          "Call the module from the example's completion handler. Prose must state that running alongside an existing filesystem source produces items from BOTH, deduplicated by NEITHER -- tsudoi cannot know what other sources exist. It must NOT claim general reachability: whether typing / reaches the handler is measured for ONE user's ddc configuration only. Record at the module the foreclosure and both symlink measurements, since that is where someone would later `simplify` to dirent.isDirectory() or add recursion.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "43fca61",
-            message: "feat(example): call path completion from the config, and say what it costs",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THREE HELPERS COPIED THE EXAMPLE AS A SINGLE FILE and would have broken on its new relative import: the isolated checkout, the installed consumer, and the consumer type-check. All three now take BOTH files from one function, so the pair cannot drift. Found by reading the suite rather than by a red, which the recalled-coverage rule is exactly about.",
-          "MEASURED, and it moved a contract nobody expected to touch: a source importing `node:` is reported TS2591 unless @types/node is installed AND `node` is named in `types` -- neither half alone. The example reads the filesystem now, so the consumer probe carries what any config author doing the same carries. @types/node is BORROWED from this repo rather than fetched, for the reason typecheck.ts already borrows node_modules.",
-          "The prose says, generically and without naming any plugin: both sources' items appear deduplicated by NEITHER; replacing a source changes what OPENS the popup, which is not tsudoi's surface and is claimed nowhere; a plugin may truncate inserted text at a space; and two of the stakeholder's settings are made INERT by choices of ours -- a plain textEdit bypasses insert-versus-replace, and no resolveProvider is advertised.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. Applying the item's textEdit to the document yields the path the item names, for a MULTI-SEGMENT fragment. PERTURBATION: return insertText only, then a textEdit covering just the last segment; BOTH must redden while a single-segment fragment stays green -- single-segment is where the two are indistinguishable.",
-        implementation:
-          "LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and / and . are not word characters in most clients -- so a multi-segment path gets its last segment replaced and the rest left behind. The range starts where the path fragment starts, including any / and . already typed.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "8932b45",
-            message:
-              "feat(example): replace the whole path fragment, not the client's idea of a word",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATIONS: insertText only, then a range covering just the last segment. BOTH reddened the MULTI-SEGMENT case and BOTH left the SINGLE-SEGMENT case green -- the discriminator observed in both directions.",
-          "THE MECHANISM IS THE ANSWER AFTER ALL, and it is handed back rather than folded in: the criterion was restated as a property with the mechanism left to measurement, and measurement says an explicit textEdit IS required. Both fields carry the same text and one assertion pins that, because two client classes read different ones.",
-          "A CHOICE NO CRITERION RULES ON, recorded at the site: the range ends AT the cursor and never past it. Completing in the middle of an existing path then leaves the tail -- `foo (1).p|ng` yields `foo (1).pngng` -- and the alternative deletes what the user has to the right of their cursor.",
-        ],
-      },
-      {
-        test: "EXPECTED RED. ADDED MID-SPRINT by the PO's spaced-filename ruling. For a document line `see foo (1).png` with the cursor after `(1).p`, the item's inserted text, its label and its range all cover `foo (1).png` -- the range starts at the `f`, NOT after the space. PERTURBATION: split the fragment on whitespace; this reddens and every single-word fragment stays green.",
-        implementation:
-          "pathFragments returns candidates shortest-first and pathCompletion takes the first that NAMES SOMETHING, so the fragment widens across a space only when the narrower one matched nothing. The fixture must contain nothing matching the narrower candidate, or the test passes at the wrong candidate and the widening is never exercised.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "b78fd74",
-            message: "feat(example): complete a filename that contains a space, whole",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED then green. PERTURBATION: take the nearest word boundary only, as a whitespace split gives. The spaced-filename test reddened and every single-word fragment in the file stayed green.",
-          "TWO COSTS OF THE RULING, at the site rather than left to be found: the chosen fragment DEPENDS ON WHAT IS ON DISK, so one line can produce different ranges on different machines; and each candidate costs a listing attempt, so a prose line of many words over a huge directory is the pathological case. No rule reading the line alone can do better -- a space is both a legal filename character and a word separator.",
-          "The stop at the first productive candidate is what keeps ONE response from carrying items that replace DIFFERENT spans of the line, where which item the user picked would decide how much of their line disappeared. Its own test, since the ruling's own case cannot see it.",
-        ],
-      },
-    ],
+    subtasks: [],
     impediments: [],
     decisions: [
+      "Shipped in 3222fb0, 94e46c0, c0db79e, 771b319, 4a1bdfa, 258f726, 7c97fe7, f18159e, 43fca61, 8932b45, b78fd74, plus structural 4fe716c. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
+      "A TEST CONVENIENCE REACHED THE PUBLIC SURFACE: itemsFrom defaulted position, which could only assume line 0 -- dead for every real call and silently wrong elsewhere, producing exactly the off-cursor-line range MEASURED to make items VANISH in the client. Undefended: no test drives a line above the first. Fixed structurally.",
+      "A SELF-REFERENTIAL ORACLE, found by perturbing: the resolution test derived its expectation from source.root, so swapping the document and cwd roots swapped BOTH SIDES and reddened nothing. Roots are now stated by the test.",
+      "THE PLANNED DEDUP COLLISION CANNOT DISCRIMINATE ITS OWN RULE: document-parent-equals-cwd is ONE directory reached by ONE path, so dedup-by-resolved-file passes it unchanged. A third case -- cwd a symlink to the document parent -- supplies the discriminator.",
+      "CROSS-RUNTIME DIFFERENCE nobody had: deno REJECTS opendir for a missing directory; bun RESOLVES it and defers the scandir to the first iteration. A catch correct under one runtime lets ENOENT escape under the other.",
+      "WEAKNESS recorded at the site: dedup collapses TWO DIFFERENT FILES when doc-parent is not cwd and both hold src/foo.ts -- one item, attributed to whichever source ran first. The edit is identical; the attribution is one truth of two.",
+      "UNRESOLVABLE TENSION, recorded not managed: a visible root in label and enableMatchLabel safety cannot both hold -- that option requires the word to CONTAIN the label, and src/foo.ts does not contain `src/foo.ts (cwd)`, so a decorated label would be DROPPED ENTIRELY. No other carrier is measured to display; labelDetails is unmeasured in ddc.",
+      "NOT CONSTRUCTED, property named: nothing asserts a real editor reaches the handler by typing /. No prose claims it. And unruled-by-design, with fixtures containing no dotfiles so nothing pins them: hidden entries, ./ and ../ handling, trailing / on directories, ~ and quoted paths.",
       "HANDED BACK, not folded in privately: criterion 9 was restated as the PROPERTY `applying the item yields the path it names`, with the mechanism left to measurement. MEASURED FROM ddc-source-lsp's SOURCE, via the Scrum Master: the word comes from `insertText` and `textEdit` is consulted ONLY to move the offset, which is the sole way an item can replace characters to the LEFT of the client's word boundary. So an explicit textEdit IS required, the withdrawn mechanism is the answer, and the criterion should keep saying the property while the module records the measurement. Constraints measured with it: a multi-line range, a range whose start is not the cursor's line, or an empty label make the item VANISH silently.",
       "THE SPACED-FILENAME CRITERION IS NOT IN THIS FILE AND NEEDS THE PO'S HAND. It arrived as prose -- `for a filename containing a space or a parenthesis, tsudoi emits the complete path: label, inserted text and range all covering it` -- and is built and tested as subtask 11. Criterion 1 now carries five negative controls; per the PO's advance agreement they are SPLIT across tests rather than documented, since one perturbation flips whichever assertion runs first and leaves the rest undefended.",
       "CARRIER MEASURED, and it changes criterion 8's shape: the target client displays `detail` only when an option that DEFAULTS OFF is set, and this user does not set it. A root named in `detail` would satisfy the criterion at the protocol level and show the user nothing -- the green-suite-dead-feature shape. The root goes in `label`, which is displayed unconditionally.",
