@@ -325,6 +325,14 @@ for (const runtime of runtimes) {
         // rather than the [] that means `nothing further to add`. The example
         // reaching BOTH outcomes is what makes `it is really being driven`
         // evidence rather than a single lucky call.
+        //
+        // DO NOT DROP THIS HALF TO SIMPLIFY THE TEST. It is not a second nice
+        // assertion -- it is the ONLY half that carries amended standing item
+        // 6's `breaking a handler's return must redden` control. Once a handler
+        // has yielded, aggregation concatenates, so returning [] instead of
+        // null is INDISTINGUISHABLE at the populated call above; the empty call
+        // is where the difference becomes visible. Measured at Sprint 13:
+        // `[]` in place of the example's `null` reddens exactly here.
         const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },

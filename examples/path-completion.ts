@@ -78,6 +78,21 @@ export function pathFragments(line: string, character: number): PathFragment[] {
   }
   // Scanned ONCE, before the candidates: every candidate ends at the same
   // place, since they differ only in where they begin.
+  //
+  // WHY NOT SMARTER, because this end feeds the REPLACE range and looks wrong
+  // there: a filename holding a further space -- `spaced (1).txt` completed at
+  // `spa` -- stops the replace range at the first space, so replace mode leaves
+  // the tail behind and mangles the line. That is a DEFECT WE HAVE NOT FIXED,
+  // not a chosen limit, and it is recorded as an increment candidate rather
+  // than papered over. It is not fixed HERE because a smarter end needs forward
+  // disk probing and is undecidable in general.
+  //
+  // What bounds the loss, MEASURED SEPARATELY AND NOT TOGETHER: ddc's own
+  // createSelectText truncates the word at space, tab, brackets and quotes
+  // anyway, so a longer range would be cut back by that client regardless. The
+  // two measurements are of ddc's stop characters and of this heuristic; their
+  // INTERACTION is unmeasured, so this bound is a reason not to rush, never
+  // evidence the defect is invisible.
   let end = character;
   while (!isBoundary(end)) {
     end += 1;
