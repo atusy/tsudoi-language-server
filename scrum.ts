@@ -268,36 +268,75 @@ const scrum: ScrumDashboard = {
         test: "EXPECTED RED. For each of the three sources, resolving the item's inserted text against that source's root yields the real path. NEGATIVE CONTROL: an absolute path where the source is a named root, or a relative path where the source IS the filesystem root, fails to resolve.",
         implementation: "The resolve-against-the-source's-root property.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "771b319",
+            message: "test(example): resolve each source's items against that source's own root",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN, not RED: subtasks 2 and 3 had already built what it asserts. One implementation moment, so the planned RED was not observed and the assertions are defended by perturbation instead. PERTURBATION: insert the entry name without its directory part -- this and three earlier assertions redden.",
+          "A DEFECT IN THE TEST, FOUND BY ITS OWN PERTURBATION: swapping the document and cwd roots reddened NOTHING, because the expectation was derived from source.root and the oracle was comparing the module to itself. The roots are now stated by the test; the swap reddens. Same shape as sprint 12's cannot-fail control, in a sixth place.",
+          "The two negative controls are asserted on REAL items rather than invented ones, and the oracle JOINS, never resolves: path.resolve discards the root the moment the text is absolute and would call a wrong item correct.",
+        ],
       },
       {
         test: "EXPECTED RED. Assert PER SOURCE, never over the merged list; each item names the root that produced it.",
         implementation:
           "Carry the root on the item where a user sees it without resolving anything. This is what stops source 4 masking source 1: MEASURED, file:// becomes / without throwing, so a broken document-relative source falling back to / is indistinguishable from the absolute source's legitimate output unless attribution is asserted.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "4a1bdfa",
+            message: "feat(example): name the source and the root on every item's label",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATIONS: drop the attribution -- both attribution tests redden. Name the ROOT but not the SOURCE -- both redden again, which is what proves the source name is load-bearing rather than decoration.",
+          "THE CARRIER MOVED FROM detail TO label on a measurement of the target client: detail is displayed only when an option that DEFAULTS OFF is set. The label's ORDER is load-bearing too -- the inserted text first, because a client with no filterText filters on the label and would otherwise filter our own items away.",
+        ],
       },
       {
         test: "EXPECTED RED. With the document's parent set as cwd, two sources produce the same inserted text and EXACTLY ONE item results.",
         implementation:
           "Dedup by INSERTED TEXT, never by resolved file -- resolving first would force an arbitrary choice of which root to attribute it to, contradicting the attribution subtask.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "258f726",
+            message:
+              "feat(example): collapse items by the text they insert, not the file they name",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATION: remove dedup -- the collision test reddens.",
+          "THE PLANNED COLLISION CANNOT DISCRIMINATE THE RULE IT DEFENDS, found by perturbing: with the document's parent EQUAL to cwd, one directory is reached twice by one path, so dedup by RESOLVED FILE passes it unchanged. A third case supplies the discriminator -- cwd is a SYMLINK to the document's parent, so one inserted text has two roots -- and only it reddens under that perturbation.",
+          "A REAL LOSS THE RULE CAUSES, recorded at the site rather than discovered later: two different directories that both hold `src/foo.ts` yield ONE item, naming the root asked first. The edit is identical either way; what is lost is the attribution, one truth out of two.",
+        ],
       },
       {
         test: "EXPECTED RED. Drive file:// and untitled:; assert NO document-relative items and that the request STILL ANSWERS in both cases. PERTURBATION: implement the guard as `reject /`; the /-prefix subtask MUST redden while this one stays green -- that is the whole reason the criterion words the guard as it does.",
         implementation:
           "The guard is `an unnamed document has no parent`, NEVER `reject / as a root` -- / is the legitimate root for the absolute source. MEASURED: the two degenerate URIs fail in OPPOSITE directions, file:// resolving silently to / and untitled: throwing.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7c97fe7",
+            message: "feat(example): an unnamed document has no parent -- which is not `reject /`",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATION, at ONE site: filter every source rooted at `/`. The unnamed-document test STAYED GREEN while three others reddened, including its own permanent pair. That is the criterion's own prediction, observed.",
+          "The absence assertion ships its pair: a document that REALLY sits at the filesystem root keeps `/` as its root, which is what a `reject /` guard deletes. And the fragment is one `/` really has matches for -- with a fragment it cannot match, `no document-relative items` holds for a module with no guard at all.",
+        ],
       },
       {
         test: "EXPECTED RED. Protocol-level with a partialResultToken present: one $/progress per yielded batch, against a directory large enough to need more than one. PERTURBATION: collect the listing and return it whole; the progress-count assertion MUST redden while every content assertion stays green.",
