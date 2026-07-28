@@ -34,35 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-16",
-      story: {
-        role: "config author",
-        capability:
-          "copy an artifact this repository publishes and have it type-check against what actually ships",
-        benefit: "the first thing they copy does not fail in their project while passing in ours",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The README's snippet AND examples/tsudoi.config.ts type-check in an installed consumer, resolving through the PUBLISHED arm",
-          verification:
-            "Extract the snippet from README.md's OWN BYTES and place it, and the example, in the installed-consumer project; run tsc there. TWO NEGATIVE CONTROLS: a type error in the README reddens it, which EXECUTION ALONE DOES NOT since type stripping runs it regardless; and pointing the check at IN-REPO sources satisfies nothing, because that is exactly what tsc --noEmit already does",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "RESIZED AT SPRINT 15 REFINEMENT BY A MEASUREMENT NOBODY ASKED FOR, and the hole is not the one this was filed for: PBI-9's installed-consumer check calls typeCheckProbe from ONE test and passes SYNTHETIC probe sources only, so examples/ is checked solely by the repo's own tsc --noEmit -- which resolves @atusy/tsudoi/types through the IN-REPO `default` arm and NEVER through the published dist/types.d.ts. Sprint 9's failure class exactly: resolves in-repo, not through what ships, everything green. The snippet was the smaller half, and the example costs ONE more probe source in a mechanism that already exists.",
-        "MEASURED, so the compile half is not the gap: the README's snippet type-checks CLEAN against the current surface, with the checker shown capable of failing -- perturbing context.tsudoi.documents to notAThing yields TS2339. Sprint 14's additions were additive and landed where the snippet does not look.",
-        "THE RESEMBLANCE GAP IS DESIGN, NOT DEFECT, and gets no item: the snippet is a minimal starter, the example is the fuller one, and the README says so. What may be STALE is the README's own DESCRIPTION of the example -- `streaming completion, hover, and a finally that documents when it runs`, written before path completion existed and NOT VERIFIED. Check it as part of this PBI rather than asserting it is fine.",
-        "THE PO NAMING THEIR OWN INSTRUMENT'S WEAKNESS rather than glossing it: a note is exactly what let the Sprint 13 prose defect ship for a sprint. Chosen anyway, because documentation accuracy is not testable without the claim-extraction mechanism declined twice, and the standing prose-reporting item is the backstop. IF IT FAILS AGAIN the trigger has fired twice and the mechanism gets reconsidered rather than the note.",
-        "FILED AT SPRINT 13 BY THE Q2 FILTER, on its first firing and for exactly what it was built to catch: a decision whose home was neither executable nor sited. It had lived as prose in Sprint 12's decisions since the sprint that found it, and the next compaction would have met it again.",
-        "THE PO REVERSING THEIR OWN CLOSE-OUT REFUSAL, with the condition named: they declined a PBI then on the grounds that inventory nobody reaches is dishonest -- true of an EMPTY BACKLOG, false now that PBI-14 and PBI-15 are live. The means exists (installConsumer.typeCheck); the alternative to filing is evaporation.",
-        "ORDER HELD AT SPRINT 15 REFINEMENT ON EVIDENCE RATHER THAN SIZE: PBI-17's value is CONTINGENT on a config choice Sprint 14 measured the stakeholder has not made -- with the bare on_dir() their only comparable server uses, no folders are sent and the workspace source is inactive for them. This one helps any reader unconditionally.",
-        "CHECKED, NOT REASONED, because the PBI was filed before Sprint 14 touched the example it points at: README.md:77-90 is HOVER-ONLY -- context.tsudoi.documents and nothing else -- so the workspace source and the once-per-session report, which live in examples/, did not drift into it. This PBI is the CHECK, not the check plus a rewrite.",
-        "A NOTE AND DELIBERATELY NOT A CRITERION, put here so whoever is in that file sees it: README.md:97 says `@atusy/tsudoi/types is the only import a config needs`, which is true read as `the only import FROM TSUDOI` and false read as `the only import at all` -- install.ts:168-174 records that the example imports node: modules to read the filesystem. Ambiguous rather than plainly wrong, so it does not bind a sprint.",
-      ],
-    },
-    {
       id: "PBI-17",
       story: {
         role: "config author",
@@ -127,6 +98,35 @@ const scrum: ScrumDashboard = {
 
   completed: [
     {
+      number: 15,
+      pbi_id: "PBI-16",
+      goal: "Make what this repository publishes type-check as a stranger receives it -- so an artifact that passes here cannot fail in their project.",
+      status: "done",
+      subtasks: [],
+      impediments: [
+        {
+          description:
+            "CARRIED FORWARD FROM SPRINT 10 rather than evaporating with its record, and LIVE FOR THIS SPRINT: PBI-16 type-checks against a PACKED TARBALL, which is `what ships` in every sense except the one a stranger uses. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+          impact:
+            "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
+          request:
+            "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
+          status: "waiting_human",
+          notes: [],
+        },
+      ],
+      decisions: [
+        "Shipped in d59eb1e and e3f550d. 279 tests green, each DoD command run separately with its exit read directly. BORN GREEN throughout and stated as such: every artifact already compiled, measured twice before the sprint, so ALL the value is in the controls -- and every control the plan named was built and shown to fire.",
+        "THE OBSERVER SPLIT WAS DECLARED AT PLANNING AND HELD -- the Developer built, the Scrum Master verified and RE-RAN the non-hoisting control themselves rather than reading the report. The Sprint 14 improvement doing what it was filed for, on the sprint after it was filed.",
+        "A CONTROL THAT WOULD HAVE FIRED FOR THE WRONG CAUSE, caught before anything was built and before any result was recorded. The planned hoisting control removed vscode-languageserver-protocol outright -- which fails even a BARE config, because it also removes TSUDOI'S OWN DECLARED DEPENDENCY. The Developer disclosed their own broken first attempt BEFORE reporting the measurement, which is the ordering that kept the question from closing on a false proof. Corrected to the nested layout, which is what pnpm default and npm-strict produce.",
+        "THE LEVER CHANGED AT EXECUTION, measured: dropping the `types` export condition ALONE still resolves, because tsc follows `import` to dist/types.js and picks up the sibling .d.ts. BOTH published arms must go, leaving `default` pointing into src/, which files: [dist] does not ship -- so a consumer loses the types while this repo, which HAS src/, is unaffected. That asymmetry IS the pair the criterion asks for. FORECLOSED, not NOT CONSTRUCTED, for the source-level alternative: no perturbation of src/types.ts compiles, because src/ consumes it in full.",
+        "THE PO RECLASSIFIED THEIR OWN CHECKLIST ITEM rather than marking it unmet: the pair they specified -- redden the probe WHILE tsc --noEmit stays green, tied by ONE measurement -- is FORECLOSED BY THE STAGING DESIGN, since the perturbation lands on the copy that gets PACKED and the repo is untouched by construction. Same shape as Sprint 10's change-a-source-file-without-rebuilding, a mechanism the PO named that the better implementation forecloses.",
+        "THE REMEDY WAS RULED A -- the README instructs the install -- and THE DOCUMENTED ROUTE AND THE VERIFIED ROUTE CONVERGED rather than the finding being recorded for later: the probes perform the same install the README documents, so test/installed-runtime.test.ts's example-running assertions no longer rest on a hoisting assumption. Not a peerDependency, because measurement showed a BARE CONFIG EXITS 0 -- the artifact a reader meets first needs nothing from that package, and overstating a requirement is the same class of error as understating it. Not inlining the enum values, which contradicts the stakeholder's own closed-union request one sprint earlier. VERSION SKEW across a major boundary is recorded as the genuine peer-dependency argument and is UNMEASURED, so it reads as declined rather than unconsidered.",
+        "PLACEMENT DECIDED BY MEASUREMENT, applying the decline-C reasoning to a decision nobody had made: the install instruction went to `Where to look next` and NOT the quickstart, because the quickstart's snippet imports only @atusy/tsudoi/types and genuinely does not need the protocol package.",
+        "A SENTENCE MADE FALSE BY THE PO'S OWN RULING, caught IN THE COMMIT THAT CAUSED IT rather than at Review -- the earlier detection the standing prose item was meant to produce. The file header said every control there is a test and never a comment; deleting the inert test and writing its reasoning as a comment made that false. SECOND TIME a PO ruling has falsified prose, and the first one shipped for a sprint.",
+      ],
+    },
+    {
       number: 14,
       pbi_id: "PBI-15",
       goal: "Let a config author answer from the workspace the editor actually opened -- and, when the editor opened none, say so once instead of going quiet.",
@@ -152,132 +152,21 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 15,
-    pbi_id: "PBI-16",
-    goal: "Make what this repository publishes type-check as a stranger receives it -- so an artifact that passes here cannot fail in their project.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "The README's snippet, extracted from its own bytes, type-checks in an installed consumer",
-        implementation:
-          "One typeCheck(files) call through the PUBLISHED arm. Assert a NON-ZERO extraction count FIRST: an extractor that finds nothing passes everything after it, which is the vacuity mode Sprint 12 met twice.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN, declared rather than dressed with a fictional RED: every artifact already compiles, measured twice -- the snippet in-repo and the example in a real consumer -- so what is missing is the CHECK, not a fix, and ALL the value is in the controls below. A verification PBI like PBI-9. SHARED IMPLEMENTATION MOMENT with subtask 2, also declared at planning: two probe sources into one typeCheck(files) call is ONE change wearing two names.",
-        ],
-      },
-      {
-        test: "examples/tsudoi.config.ts and path-completion.ts type-check the same way",
-        implementation:
-          "The same call, two more probe sources. Born green, same moment as subtask 1.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "Each artifact can redden ALONE",
-        implementation:
-          "A type error in the snippet must not be maskable by the example, or the reverse.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE HAZARD IS BAKED IN BY THE SHARED MOMENT: one call over several sources means a single failure may not identify its source. That is why this is a subtask rather than a hope.",
-        ],
-      },
-      {
-        test: "The PUBLISHED arm is what is exercised, not the in-repo one again",
-        implementation:
-          "THE CONTROL THAT PROVES THE PBI DID ITS JOB, and the PAIR is the whole point: perturbing the published types must REDDEN the probe WHILE `tsc --noEmit` STAYS GREEN. Also assert the converse -- pointing the check at in-repo sources satisfies nothing, since that is exactly what tsc --noEmit already does.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "Without the stays-green half this is `checked again` wearing the words `checked through the published arm`.",
-          "MEASURED AT EXECUTION, and it changed the lever: dropping the `types` condition ALONE still resolves, because tsc follows `import` -> dist/types.js and picks up the sibling dist/types.d.ts. BOTH published arms must go, leaving only `default` -> ./src/types.ts, which `files: [dist]` does not ship -- so a consumer loses the types while this repo, which has src/, does not. That asymmetry IS the pair. The lever is the exports map rather than an edit to src/types.ts because that file is consumed in full by src/, so every source edit fails the build instead of shipping a different surface.",
-        ],
-      },
-      {
-        test: "The hoisting precondition is ASSERTED, and its blast radius reported",
-        implementation:
-          "THE MECHANISM IS THE NESTED LAYOUT, corrected before anything was built because the blunt version FIRES FOR THE WRONG CAUSE: removing node_modules/vscode-languageserver-protocol outright fails even a BARE config, since it also removes TSUDOI'S OWN DECLARED DEPENDENCY -- a control that reddens by breaking the package and would have been recorded as proof the precondition was asserted. Keep it reachable FROM TSUDOI (nested under node_modules/@atusy/tsudoi/node_modules/) and unreachable from the consumer root, which is what pnpm default and npm-strict produce; the example probe must redden and a bare config must not. REMEDY RULED A: the README instructs installing the package, so the POSITIVE case is the documented setup and the nested layout WITHOUT it is the deliberate NEGATIVE one. Not C -- a peerDependency would declare MANDATORY what measurement shows is CONDITIONAL, since a bare config exits 0 and the artifact a reader meets first needs nothing from that package; overstating a requirement is the same class of error as understating it. Not B -- inlining 19/17 for CompletionItemKind contradicts the stakeholder's own closed-union request one sprint earlier. A IS ADEQUATE HERE FOR A NAMED REASON, refining the prose-is-weak rule rather than excepting it: DOCUMENTATION SUFFICES WHEN THE FAILURE IT GUARDS ANNOUNCES ITSELF AND NAMES ITS OWN REMEDY -- TS2307 naming the module at a named line, and at runtime PBI-1's own config-load taxonomy. THE TRIGGER FOR REVISITING C is this failure ever presenting silently or misleadingly. VERSION SKEW is the real peer-dependency argument and is UNMEASURED: a consumer on a different major could produce structurally incompatible CompletionItem types across the boundary, which neither A nor B addresses -- recorded so it reads as declined rather than unconsidered. REPORT WHAT ELSE REDDENS: the example imports it as a BARE SPECIFIER THE CONSUMER NEVER DECLARES, and it resolves today only because bun HOISTS it as a transitive dependency of @atusy/tsudoi. Under pnpm's default or npm with strict resolution it fails, LOOKING LIKE A TYPE ERROR.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "IN SCOPE BECAUSE IT FALSIFIES THIS PBI'S OWN STORY: `type-check against what actually ships` is what a criterion passing only under a hoisting installer would be green about and wrong about. Second widening in two turns, and the PO named it as such -- the first found the real hole, this names the condition under which even that check lies.",
-          "MEASURED, ANSWERING THE PO'S QUESTION: CompletionItemKind IS a value import -- examples/path-completion.ts:22 takes it without `type` and uses it at four sites -- so the example needs the package AT RUNTIME. RADIUS BOUNDED IN BOTH DIRECTIONS: tsudoi itself is NOT at risk, because vlp is a DECLARED dependency of @atusy/tsudoi that every correct installer resolves, so PBI-13's CLI-starts claim survives; but PBI-13's EXAMPLE-RUNNING assertions rest on the assumption. Under the nested layout both runtimes exit 1 with TS2307, and the runtime failure surfaces as `tsudoi: failed to load config` -- diagnosed through PBI-1's taxonomy rather than crashing.",
-        ],
-      },
-      {
-        test: "N/A (prose, in the same commit as the criterion it belongs to)",
-        implementation:
-          "The README gains the install instruction a copying reader needs, and its drift sentence -- `The test suite runs those files themselves, so they cannot drift from what tsudoi does` -- gains its TYPE-CHECKING half. Literally true about running, and adjacent to the very claim this PBI exists to make true.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "d59eb1e",
-            message: "test: check published artifacts as a consumer receives them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE PBI-13 CONSEQUENCE IS ACTIONABLE HERE AND MUST NOT BECOME A NOTE: if the README documents installing the package, the INSTALLED-CONSUMER PROBES INSTALL IT TOO, so the documented route and the verified route converge again and test/installed-runtime.test.ts stops resting on a hoisting assumption. SAME TREATMENT AS PBI-17'S TYPE COMMENT: a claim that becomes true BECAUSE OF THIS WORK is part of this work, never a follow-up. Found by the Developer reading the file, one sentence past where the PO's note pointed -- the standing prose item working one sprint after it was filed.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "CARRIED FORWARD FROM SPRINT 10 rather than evaporating with its record, and LIVE FOR THIS SPRINT: PBI-16 type-checks against a PACKED TARBALL, which is `what ships` in every sense except the one a stranger uses. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
-        impact:
-          "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
-        request:
-          "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
-        status: "waiting_human",
-        notes: [],
-      },
-    ],
-    decisions: [
-      "THE RE-RUN IMPROVEMENT FIRED ON ITS FIRST OUTING AND CORRECTED THE FACILITATOR. The Developer independently reproduced Sprint 14's keep-only-the-first-folder perturbation -- baseline 14 pass, perturbed 12 pass 2 fail at test/workspace.test.ts:287 under both runtimes, restored clean -- and corrected `2 assertions` to 2 FAILING TESTS. Same magnitude in a unit that SOUNDS STRONGER, which is the direction least likely to be questioned. Flagged because inheriting the first observer's phrasing would defeat the point of a second observer. BORN GREEN IS A REPORTING EXPECTATION HERE, not an omission: the Review states it so the absence of expected-REDs reads as honesty.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 15,
+      improvements: [
+        {
+          action:
+            "A COMMAND WHOSE EXIT CODE IS BEING REPORTED IS RUN UNPIPED, and the report carries the COMMAND AS RUN rather than only its exit.",
+          timing: "immediate",
+          status: "active",
+          outcome:
+            "THIRD OCCURRENCE OF ONE CLASS, two people, one of them persisting nine sprints, and the consequence every time is a FALSE MEASUREMENT: the reported exit belongs to the LAST command in the pipe. The Developer read tail's status instead of bun test's; the Scrum Master lost an exit to ${PIPESTATUS[0]}, which is empty in zsh; and at Sprint 15's verification the Scrum Master reported oxlint exit 1 that was GREP FINDING NO MATCH. Caught in the same turn and re-run unpiped, so nothing false was recorded. The DoD instruction covers the four DoD commands; the gap is ANY exit being reported. THE SECOND CLAUSE IS LOAD-BEARING, and is why this is not the conscientiousness-dependent kind twice refused: a habit that leaves no trace cannot be audited, and a report carrying the command shows its own defect to any reader.",
+        },
+      ],
+    },
     {
       sprint: 14,
       improvements: [
@@ -358,11 +247,11 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME, written into its `verification` TEXT: name the change that would make it fail, check that the verification can DISCRIMINATE the property claimed, and check that nothing else in the record contradicts it. If no change would make it fail, the criterion is VACUOUS and must be rewritten before it binds.",
+            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME, written into its `verification` TEXT: name the change that would make it fail, check that the verification can DISCRIMINATE the property claimed, and check that nothing else in the record contradicts it. If no change would make it fail, the criterion is VACUOUS and must be rewritten before it binds. SHARPENED AT SPRINT 15, and it does not over-delete useful redundancy: A CONTROL THAT CAN NEVER BE THE FIRST THING TO FAIL IS NOT A CONTROL -- ask whether something else would have failed first. Two tests reddening on one bug is fine; a test that reddens only after another already has adds nothing.",
           timing: "immediate",
           status: "active",
           outcome:
-            "MERGED AT SPRINT 13 from three statements of one rule, nothing dropped. S9: the absence-pairing rule moved from assertions to criteria and from execution to refinement. S10: the verification field travels with the criterion through every compaction, where a plan evaporates at Review -- so the control lives there, not in the plan's perturbations. S10: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction.",
+            "MERGED AT SPRINT 13 from three statements of one rule, nothing dropped. S9: the absence-pairing rule moved from assertions to criteria and from execution to refinement. S10: the verification field travels with the criterion through every compaction, where a plan evaporates at Review -- so the control lives there, not in the plan's perturbations. S10: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note. S15: a test calling runTsc(repoRoot) -- which IS the DoD's own tsc --noEmit -- was DELETED before the tag, since it could not fail unless the DoD had already failed. AND THE TRIGGER FOR SOMETHING STRUCTURAL, stated rather than left to be derived: a control has now twice been found to fire for the WRONG CAUSE -- skipLibCheck at S10, a dependency-removal control at S15 -- both caught by their author BEFORE the result was recorded. Twice caught in time is the rule set composing; ONCE RECORDED would be a false proof closing a question, which is the highest-cost error in this project's economy.",
         },
       ],
     },
