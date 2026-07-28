@@ -343,36 +343,77 @@ const scrum: ScrumDashboard = {
         implementation:
           "Yield batches from the single listing, reusing the existing streaming machinery unchanged. The foreclosure below does NOT soften this: a single directory can hold 100k entries, so batching stays a live requirement.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f18159e",
+            message: "feat(example): stream a large directory batch by batch, not all at once",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green, driven over the wire under BOTH runtimes -- a client receiving one message or three is the only place this property exists at all. PERTURBATION: collect the listing and hand it over whole. Every CONTENT assertion passed and only the batch count reddened.",
+          "THE ASSERTION ORDER IS PART OF THE TEST: content first, batching second. The other order flips at the batching assertion and leaves `and it is all there` undefended -- the earlier-assertion clause of the sprint-4 rule, applied before it could bite.",
+          "opendir, never readdir: readdir builds the whole array before returning. A CONSEQUENCE recorded at the site so it does not read as an omission -- nothing sorts, because sorting is exactly the operation that needs the whole listing first.",
+        ],
       },
       {
         test: "The existing cross-runtime lifecycle tests driving examples/tsudoi.config.ts stay green.",
         implementation:
           "Call the module from the example's completion handler. Prose must state that running alongside an existing filesystem source produces items from BOTH, deduplicated by NEITHER -- tsudoi cannot know what other sources exist. It must NOT claim general reachability: whether typing / reaches the handler is measured for ONE user's ddc configuration only. Record at the module the foreclosure and both symlink measurements, since that is where someone would later `simplify` to dirent.isDirectory() or add recursion.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "43fca61",
+            message: "feat(example): call path completion from the config, and say what it costs",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THREE HELPERS COPIED THE EXAMPLE AS A SINGLE FILE and would have broken on its new relative import: the isolated checkout, the installed consumer, and the consumer type-check. All three now take BOTH files from one function, so the pair cannot drift. Found by reading the suite rather than by a red, which the recalled-coverage rule is exactly about.",
+          "MEASURED, and it moved a contract nobody expected to touch: a source importing `node:` is reported TS2591 unless @types/node is installed AND `node` is named in `types` -- neither half alone. The example reads the filesystem now, so the consumer probe carries what any config author doing the same carries. @types/node is BORROWED from this repo rather than fetched, for the reason typecheck.ts already borrows node_modules.",
+          "The prose says, generically and without naming any plugin: both sources' items appear deduplicated by NEITHER; replacing a source changes what OPENS the popup, which is not tsudoi's surface and is claimed nowhere; a plugin may truncate inserted text at a space; and two of the stakeholder's settings are made INERT by choices of ours -- a plain textEdit bypasses insert-versus-replace, and no resolveProvider is advertised.",
+        ],
       },
       {
         test: "EXPECTED RED. Applying the item's textEdit to the document yields the path the item names, for a MULTI-SEGMENT fragment. PERTURBATION: return insertText only, then a textEdit covering just the last segment; BOTH must redden while a single-segment fragment stays green -- single-segment is where the two are indistinguishable.",
         implementation:
           "LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and / and . are not word characters in most clients -- so a multi-segment path gets its last segment replaced and the rest left behind. The range starts where the path fragment starts, including any / and . already typed.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "8932b45",
+            message:
+              "feat(example): replace the whole path fragment, not the client's idea of a word",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATIONS: insertText only, then a range covering just the last segment. BOTH reddened the MULTI-SEGMENT case and BOTH left the SINGLE-SEGMENT case green -- the discriminator observed in both directions.",
+          "THE MECHANISM IS THE ANSWER AFTER ALL, and it is handed back rather than folded in: the criterion was restated as a property with the mechanism left to measurement, and measurement says an explicit textEdit IS required. Both fields carry the same text and one assertion pins that, because two client classes read different ones.",
+          "A CHOICE NO CRITERION RULES ON, recorded at the site: the range ends AT the cursor and never past it. Completing in the middle of an existing path then leaves the tail -- `foo (1).p|ng` yields `foo (1).pngng` -- and the alternative deletes what the user has to the right of their cursor.",
+        ],
       },
       {
         test: "EXPECTED RED. ADDED MID-SPRINT by the PO's spaced-filename ruling. For a document line `see foo (1).png` with the cursor after `(1).p`, the item's inserted text, its label and its range all cover `foo (1).png` -- the range starts at the `f`, NOT after the space. PERTURBATION: split the fragment on whitespace; this reddens and every single-word fragment stays green.",
         implementation:
           "pathFragments returns candidates shortest-first and pathCompletion takes the first that NAMES SOMETHING, so the fragment widens across a space only when the narrower one matched nothing. The fixture must contain nothing matching the narrower candidate, or the test passes at the wrong candidate and the widening is never exercised.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b78fd74",
+            message: "feat(example): complete a filename that contains a space, whole",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATION: take the nearest word boundary only, as a whitespace split gives. The spaced-filename test reddened and every single-word fragment in the file stayed green.",
+          "TWO COSTS OF THE RULING, at the site rather than left to be found: the chosen fragment DEPENDS ON WHAT IS ON DISK, so one line can produce different ranges on different machines; and each candidate costs a listing attempt, so a prose line of many words over a huge directory is the pathological case. No rule reading the line alone can do better -- a space is both a legal filename character and a word separator.",
+          "The stop at the first productive candidate is what keeps ONE response from carrying items that replace DIFFERENT spans of the line, where which item the user picked would decide how much of their line disappeared. Its own test, since the ruling's own case cannot see it.",
+        ],
       },
     ],
     impediments: [],
@@ -385,6 +426,9 @@ const scrum: ScrumDashboard = {
       "FIXTURES MUST CONTAIN NO DOTFILES. Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and an incidental fixture would pin it silently. Unruled behaviour pinned by accident is how a decision gets made by nobody.",
       "SCOPE, from the stakeholder directly: `置き換える予定だけど、いったん要求したものができてればいい`. Parity with ddc-source-file is NOT a criterion. The replacement intent is context -- it is why sources 1 and 4 are load-bearing rather than decorative -- and increments come later.",
       "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\\\S/\\\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
+      'WHAT IS DELIBERATELY NOT BUILT, so nobody reads its absence as an oversight: no trailing `/` on a directory item (the user types it); `~` is not expanded; a quoted path such as `"./ba` does not complete, because a quote is not a fragment boundary; and hidden entries and ./ ../ are UNRULED and remain so -- the fixtures contain none, and no test pins either way.',
+      "NOT CONSTRUCTED, and the property named: nothing asserts that a REAL editor reaches this handler by typing /. Reachability is not a criterion here and the example claims none. The suite's evidence stops at the protocol boundary, exactly as PBI-8's registry route did.",
+      "A COST OF THE EXAMPLE'S SHAPE, reported rather than fixed: the example yields its HelloWorld demo item before delegating, so every path completion carries one item that is not a path. Changing it would edit an assertion in completion.test.ts that predates this sprint, and the demo item is what the rest of the file exists to teach.",
     ],
   },
   retrospectives: [
