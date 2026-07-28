@@ -1,15 +1,35 @@
 import { describe, expect, test } from "bun:test";
-import type { Hover, InitializeResult, WorkspaceFolder } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import type {
+  CompletionItem,
+  Hover,
+  InitializeResult,
+  WorkspaceFolder,
+} from "vscode-languageserver-protocol";
+import {
+  bunRuntime,
+  denoRuntime,
+  initializeParams,
+  LspSession,
+  type Runtime,
+} from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { fixture } from "./helpers/spawn.ts";
+import { fixture, repoRoot } from "./helpers/spawn.ts";
+import { tree } from "./helpers/tree.ts";
 
 const echoConfig = fixture("workspace-folders.ts");
+const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 
 const runtimes = [bunRuntime, denoRuntime];
 
 await Promise.all(runtimes.map(requireRuntime));
 
+/**
+ * The document every session here opens. Its directory DOES NOT EXIST, so the
+ * example's document-relative source contributes nothing and an item can be
+ * attributed to cwd or to the workspace without a third source in the way.
+ */
 const uri = "file:///workspace/a.txt";
 
 /**
@@ -40,6 +60,68 @@ async function observedFolders(session: LspSession): Promise<unknown> {
   const contents = hover.contents as { value?: string };
   const observation = JSON.parse(contents.value ?? "{}") as { workspaceFolders?: unknown };
   return observation.workspaceFolders;
+}
+
+/**
+ * A session running the EXAMPLE config from a cwd of the test's choosing.
+ *
+ * startCommand, not start: `start` spells the CLI path relative to the repo,
+ * and every session below needs a cwd that is NOT the repo. Forcing cwd apart
+ * from the workspace is the only way to attribute an item to one of them --
+ * and it is a SYNTHETIC ISOLATION STATE, never an observed editor one, since
+ * nvim spawns the server with cwd = root_dir whenever it found a root.
+ */
+function exampleSession(runtime: Runtime, cwd: string): LspSession {
+  return LspSession.startCommand(
+    `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${demoConfig}`,
+    cwd,
+  );
+}
+
+/**
+ * Initialises with `folders` -- omitting the field entirely when they are
+ * undefined, which is what a client that opened no workspace sends -- and
+ * opens `line` as the session's one document.
+ */
+async function openWith(
+  session: LspSession,
+  folders: readonly WorkspaceFolder[] | undefined,
+  line: string,
+): Promise<void> {
+  await session.request<InitializeResult>(
+    "initialize",
+    folders === undefined ? initializeParams : { ...initializeParams, workspaceFolders: folders },
+  );
+  session.notify("initialized", {});
+  session.notify("textDocument/didOpen", {
+    textDocument: { uri, languageId: "plaintext", version: 1, text: line },
+  });
+}
+
+/** One completion at the end of `line`, aggregated as a client without a token sees it. */
+async function completeAt(session: LspSession, line: string): Promise<CompletionItem[]> {
+  const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+    textDocument: { uri },
+    position: { line: 0, character: line.length },
+  });
+  return result ?? [];
+}
+
+/** What each item puts in the buffer. */
+function inserted(items: readonly CompletionItem[]): string[] {
+  return items.map((item) => item.insertText ?? "").sort();
+}
+
+/**
+ * The items attributed to a WORKSPACE root, read off the label the example
+ * writes -- `<text> (<source>: <root>)`.
+ *
+ * Used for the absence half AND the presence half, deliberately the same
+ * function: a `nothing came from a workspace` assertion measured by a filter
+ * that can never match anything is satisfied by a broken measurement.
+ */
+function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
+  return items.filter((item) => item.label.includes("(workspace: "));
 }
 
 for (const runtime of runtimes) {
@@ -100,6 +182,60 @@ for (const runtime of runtimes) {
         expect(await observedFolders(session)).toEqual([]);
       } finally {
         session.dispose();
+      }
+    });
+
+    // ABSENCE IS NOT COERCED, with cwd forced apart from anything a workspace
+    // could be. THE THREE SUBSTITUTIONS THIS ASSERTION EXISTS TO REDDEN, each
+    // a plausible implementation and each defaulting absence to a root:
+    // process.cwd(), `/`, and an empty list treated as a root.
+    //
+    // The cwd one is the dangerous one, and the reason the session is started
+    // somewhere of this test's choosing: nvim's cwd IS its own launch
+    // directory when no root was found, so a cwd default looks correct in
+    // every test that lets the two coincide.
+    test("with no workspace sent, a handler observes an empty list and never cwd", async () => {
+      const fixture = tree(["notes/cwd-only.txt"]);
+      const session = LspSession.startCommand(
+        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${echoConfig}`,
+        fixture.root,
+      );
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        // EXACTLY [], not `falsy` and not `length === 0`: a fabricated root is
+        // a list of length one, and each substitution above produces one.
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    // THE SAME PROPERTY WHERE A CONFIG AUTHOR MEETS IT: not what the context
+    // carries, but what the user is offered. `treat an empty list as a root`
+    // is a mistake a config author makes DOWNSTREAM of the normalisation
+    // above, so it cannot be caught by reading the context back -- it shows up
+    // as an item attributed to a workspace nobody opened.
+    //
+    // Its permanent pair is the workspace-source test below, where the same
+    // filter over the same wire DOES find items.
+    test("with no workspace sent, no item is attributed to a workspace root", async () => {
+      const fixture = tree(["notes/cwd-only.txt"]);
+      const session = exampleSession(runtime, fixture.root);
+      try {
+        await openWith(session, undefined, "notes/");
+
+        const items = await completeAt(session, "notes/");
+
+        // NOT VACUOUS, and this is what makes the emptiness below evidence:
+        // cwd answered, so the source really did run for this fragment.
+        expect(inserted(items)).toEqual(["notes/cwd-only.txt"]);
+        expect(workspaceItems(items)).toEqual([]);
+      } finally {
+        session.dispose();
+        fixture.dispose();
       }
     });
   });
