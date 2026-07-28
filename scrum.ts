@@ -201,11 +201,18 @@ const scrum: ScrumDashboard = {
             message: "docs: say the last route is closed, and what the closure leans on",
             phase: "refactoring",
           },
+          {
+            hash: "ef69ca1",
+            message: "docs(guard): three sentences this sprint made false, found on a second pass",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THREE SITES WERE FALSE, NOT ONE, and the third was found only by grepping for the claim rather than for the subject: src/notifications.ts said NOTHING DETECTS IT, src/server.ts said the lint WOULD close it, and test/notifications.test.ts's factory probe said the import route is unreachable by any check. Prose drift caught in the same sprint that caused it.",
           "THE CONDITIONAL DEPENDENCY IS HOMED AT createGatedConnection RATHER THAN AT THE RULE, by the lifetime rule: the edit that destroys the sufficiency argument -- widening the return annotation, or letting startServer bind a wide connection again -- is made THERE. The rule site carries a pointer to it, not the load-bearing copy.",
           "AND THE PARAGRAPH SAYS SO ITSELF: the probes redden on the ANNOTATION, NOTHING REDDENS ON THE ARGUMENT. A detector justified by a foreclosure elsewhere cannot have that justification asserted, so the comment is the only carrier and says which half is which.",
+          "THREE MORE FALSE SENTENCES, ALL WRITTEN BY THIS SPRINT AND ALL MISSED BY THE FIRST PASS -- second occurrence of the Sprint 19 shape within one sprint, and the second pass is what found them both: PathShape.path claimed EVERY rule is exercised at every path when rule 4 deliberately is not, the list header said ONE list drives all THREE rules when there are now four, and .oxlintrc.json's header filed src/notifications.ts under the DEFAULT-DENY argument, which is not where that shape comes from. THE MEASURABLE LESSON IS THE TRIGGER, not diligence: adding a rule to a file whose prose COUNTS its rules makes every count a claim, and nothing checks counts.",
+          "AND THE NO-LOOP DECISION MOVED FROM HERE TO THE SITE, by the lifetime rule applied to my own note: the edit it forbids -- adding a rule-4 loop for symmetry -- is made in test/guard.test.ts, while a sprint note evaporates at compaction. What it says there is the degeneracy reason, not the conclusion.",
           "NOT SHIPPED IN THE SAME COMMIT AS THE RULE, contrary to this subtask's own `same commit` label: the rule's OWN prose went with the rule, where it is inseparable from what it explains, while the three CORRECTIONS in src/ and test/ are a behaviour-preserving change to files the rule commit does not touch. Tidy First reading, and it makes the drift-correction auditable on its own.",
         ],
       },
