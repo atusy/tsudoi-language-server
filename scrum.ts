@@ -32,7 +32,51 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-21",
+      story: {
+        role: "editor user",
+        capability: "complete a spaced filename mid-path without the tail being mangled",
+        benefit:
+          "their own insert-versus-replace setting does what they set it to, instead of producing a line neither mode would have written",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A replace range covers the WHOLE filename, spaces and all",
+          verification:
+            "Complete `spaced (1).txt` from `spa` and apply the item as a client set to REPLACE would; assert the resulting line is the filename ALONE. NEGATIVE CONTROL: today's whitespace-delimited word end produces `spaced (1).txt (1).txt` -- the tail left behind",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "PRESENT-TENSE HARM, in the feature the stakeholder actively uses, and REACHABLE WITH THEIR OWN SETTING: their confirmBehavior is `replace`. Recorded at examples/completion-path.ts since Sprint 13 as A DEFECT WE HAVE NOT FIXED rather than a chosen limit, because a mangled insertion is the exact harm the range criterion exists to prevent.",
+        "WHY IT WAS DEFERRED AND WHAT THAT COSTS: a smarter word end needs FORWARD DISK PROBING and is undecidable in general -- the same fragment can be one filename on one machine and two words on another. Refinement decides whether the answer is probing, a narrower rule, or accepting the limit and saying so; the PBI does NOT presuppose one.",
+        "MEASURED SEPARATELY AND NOT TOGETHER, so nobody reads it as bounded: ddc's own createSelectText truncates the word at space, tab, brackets and quotes anyway, so a longer range would be cut back by THAT client regardless. The two measurements are of ddc's stop characters and of our heuristic; their INTERACTION is unmeasured.",
+      ],
+    },
+    {
+      id: "PBI-22",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "register a notification without being able to sidestep the router entirely",
+        benefit: "the gate cannot be avoided by not using the thing that applies it",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A call to connection.onNotification outside the router does not lint",
+          verification:
+            "A rule of the shape .oxlintrc.json already carries, asserted by the same probe mechanism the Bun-global and bun:* guards use. NEGATIVE CONTROL: a direct call added to src/server.ts must fail lint, and the router's own call must NOT",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "A GAP IN WORK THE PO ACCEPTED, found by asking what comes next rather than by anything reddening: PBI-18 forecloses bypass WITHIN the router -- an entry that decides no gate does not type-check -- but NOT bypass OF it. A future edit calling connection.onNotification directly answers to nothing. The foreclosure endorsed at Sprint 16 is partial, and src/notifications.ts says so at its own site.",
+        "NO TYPE CAN DO THIS, which is why it is a lint rule rather than more of what PBI-18 built. It is PBI-6's shape, and PBI-6 is the precedent that the codebase itself rejects the changes that would quietly break a promise.",
+        "CONDITIONALLY ORDERED: after PBI-21 because that harm is present-tense while this needs future notification work that is not scheduled -- but BEFORE any new notification work, whenever that arrives.",
+      ],
+    },
+  ],
 
   completed: [
     {
