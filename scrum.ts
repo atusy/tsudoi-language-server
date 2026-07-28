@@ -34,32 +34,47 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-22",
+      id: "PBI-23",
       story: {
         role: "tsudoi maintainer",
-        capability: "register a notification without being able to sidestep the router entirely",
-        benefit: "the gate cannot be avoided by not using the thing that applies it",
+        capability: "be unable to obtain an ungated connection in the first place",
+        benefit:
+          "the one route left around the notification gate closes, and closing it needs no new machinery",
       },
       acceptance_criteria: [
         {
-          criterion:
-            "A call to onNotification outside the router is a COMPILE ERROR, whatever the variable is called",
+          criterion: "Importing createProtocolConnection outside the router does not lint",
           verification:
-            'startServer holds `Omit<ProtocolConnection, "onNotification">`; a probe binding that type and calling onNotification FAILS tsc while one calling onRequest PASSES -- both halves, since a firing-half-only probe would pass a type that forbids everything. AND RENAME-INDEPENDENCE ASSERTED RATHER THAN INFERRED: a probe binding the narrowed type under a DIFFERENT variable name still fails. That is the property that DECIDED the route, so without it the route\'s whole justification sits unpinned and nothing distinguishes it from the name-based rule rejected below',
+            "A rule on the IMPORT SPECIFIER, which -- unlike a variable -- CANNOT BE RENAMED AWAY, asserted by the lintProbe the Bun-global and bun:* guards already use. BOTH HALVES IN ONE RUN: a constructed src/server.ts importing it must FAIL and a constructed src/notifications.ts must NOT, since a firing-half-only probe would pass a rule that forbids it everywhere and breaks the router itself",
         },
       ],
-      status: "ready",
+      status: "draft",
       notes: [
-        "THE LINT ROUTE IS DECLINED WITH ITS MEASUREMENT, so nobody re-proposes it from this PBI's original wording: oxlint 1.73.0 does not merely fail to MATCH on `no-restricted-syntax`, it FAILS TO PARSE THE CONFIG -- the instrument the criterion originally named does not exist. `no-restricted-properties` works with PBI-6's override shape but matches the IDENTIFIER `connection`, so `const conn = connection` walks straight past it.",
-        "AND THE ROUTE WAS CHOSEN ON VALUE, NOT PREFERENCE: this PBI exists because PBI-18 forecloses bypass WITHIN the router and not OF it, and a guard a rename evades forecloses NOTHING -- it notices some bypasses. Choosing it would ship a criterion claiming less than the story above it. THE PO NAMED THE GENERALISATION: a route whose criterion must DISCLAIM MOST OF ITS OWN VALUE is a route the disclaimer is telling you about, which makes the claim-the-actual-boundary rule a ROUTE-SELECTION signal and not only a wording discipline.",
-        "THE COST, MEASURED NOT TO CONTORT: foreclosure needs src/server.ts never to BIND the wide type, since narrowing afterwards leaves the wide value in scope -- so connection creation moves into the module that owns the notification table. tsc exits 0 with onRequest, sendProgress and listen intact. CONFIRM THE Omit REMAINDER against what src/server.ts actually uses: a missing method would surface as a CONTORTION rather than a clean narrowing, and that is the signal to stop.",
-        "A RESIDUAL NAMED RATHER THAN GUARDED: the type forecloses the call only while NO WIDE VALUE IS IN SCOPE -- importing createProtocolConnection directly in src/server.ts restores it. THIS IS A SECOND GAP, NOT A SECOND GUARD ON THE SAME ONE, so the PBI-18 argument against two guards does not forbid closing it later. What would close it: A LINT ON THE IMPORT SPECIFIER, which cannot be renamed away the way a variable can -- the lint route reappearing at a target where it actually works.",
-        "A GAP IN WORK THE PO ACCEPTED, found by asking what comes next rather than by anything reddening: PBI-18 forecloses bypass WITHIN the router -- an entry that decides no gate does not type-check -- but NOT bypass OF it. A future edit calling connection.onNotification directly answers to nothing. The foreclosure endorsed at Sprint 16 is partial, and src/notifications.ts says so at its own site. FALSIFIED AT SPRINT 21 AND CORRECTED HERE, since this note claimed `NO TYPE CAN DO THIS` as the reason for choosing a lint: A TYPE CAN. Omit<ProtocolConnection, `onNotification`> makes the call a compile error matched on the TYPE rather than on a variable's name, and the lint route was measured to be evadable by `const conn = connection`. The note is corrected rather than deleted because the sentence it replaces is exactly what a future reader would otherwise cite to re-propose the lint. CONDITIONALLY ORDERED: after PBI-21 because that harm is present-tense while this needs future notification work that is not scheduled -- but BEFORE any new notification work, whenever that arrives.",
+        "THE RESIDUAL IS A MEASURED NUMBER, NOT AN ADJECTIVE, which is what made the PO file this: src/server.ts rewritten to import createProtocolConnection, register the table on the WIDE value, call an UNGATED onNotification beside it and narrow afterwards runs at 331 pass, tsc 0, oxlint 0 -- A COMPLETE UNGATED BYPASS WITH NOTHING OBJECTING, reachable by a careless edit.",
+        "NOT THE TWO-GUARDS-ONE-GAP SHAPE THE PO REJECTED, and the distinction is the whole reason this is filable: THE TYPE GUARDS THE HANDLE, THIS GUARDS OBTAINING A WIDE ONE. Two gaps, as ruled at Sprint 21's refinement -- so PBI-18's argument that two guards leave neither obviously load-bearing does not apply.",
+        "THE LINT ROUTE REAPPEARING AT A TARGET WHERE IT WORKS. It was declined for onNotification because no-restricted-properties matches the IDENTIFIER, so `const conn = connection` evades it. An import specifier has no such escape.",
       ],
     },
   ],
 
   completed: [
+    {
+      number: 21,
+      pbi_id: "PBI-22",
+      goal: "Make a notification handler unregisterable outside the router -- so the gate cannot be avoided by not using the thing that applies it.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "SPRINT 18'S RECORD DROPPED HERE, homes checked: the chain and its precedence are src/workspace.ts's own code and comments, the harm-asymmetry reasoning and the spec-precedence counter sit beside them, and the read-time trap is pinned by tests that still run. Shipped in c771080, 8c391db, c81327a, 04fa547 and 17522f6. 332 tests green, each DoD command run separately with its exit read directly. startServer never binds the wide type: createGatedConnection creates, registers the table, and hands back Omit<ProtocolConnection, `onNotification`>.",
+        "A CONTROL DESIGNED NOT TO LIE, RATHER THAN CAUGHT LYING -- the sprint's most durable output. Against UNCHANGED src/, all three probes fail with TS2305 `no exported member`, so AN EXIT-CODE-ONLY ASSERTION WOULD HAVE GONE GREEN AGAINST A MODULE WITH NO NARROWING WHATSOEVER. A file-bound diagnostic regex refuses that. Third instance of this class here and THE FIRST PREVENTED AT AUTHORING rather than caught at review. The born-green claim carries its boundary accordingly: green with respect to src/ AT THE STRUCTURAL COMMIT, not pre-sprint.",
+        "THE REMAINDER CHECK RAN BEFORE ANY src/ EDIT, with its own control, because five overloads through a mapped type made `it will be fine` unavailable: onRequest with and without params, sendProgress and listen all type-check, while appending onNotification exits 1 naming TS2551. No contortion, so no handback.",
+        "A SEAM NEARLY MISLABELLED AND CLOSED: widening the FACTORY'S RETURN ANNOTATION while leaving the alias untouched left all three probes GREEN, tsc 0, and an ungated onNotification in src/server.ts COMPILING -- foreclosure entirely gone with nothing saying so. A fourth probe takes its connection from the factory; the same perturbation now reddens it and only it.",
+        "A FALSE NOT-CONSTRUCTED OF THEIR OWN, self-caught by the coverage-claim rule: they first recorded that `startServer holds the narrowed type` was carried by nothing executable, which BUNDLED TWO SEAMS -- only the import is beyond a type's reach. Sprint 11's classification running in reverse.",
+        "THE PERMITTED HALF STAYS, and NOT for the reason first offered. `Survives on sequence` is weak, since DoD order is no guarantee. What holds is that the repo's tsc catches it only INCIDENTALLY, as a side effect of src/ currently exercising onRequest on the narrowed type -- if src/ stopped, that coverage would evaporate SILENTLY. So `can never be first to fail` means never FOR A STABLE REASON, and incidental coverage is not coverage. Second time this rule has needed that reading.",
+        "NOTE 5 OF PBI-22 SAID `NO TYPE CAN DO THIS` AND THIS SPRINT FALSIFIED IT. The executor FLAGGED rather than edited a field that is not theirs -- the standing prose item working across the who-may-edit-what boundary -- and it was CORRECTED rather than deleted, because that sentence is exactly what a future reader would cite to re-propose the evadable route.",
+      ],
+    },
     {
       number: 20,
       pbi_id: "PBI-21",
@@ -102,20 +117,6 @@ const scrum: ScrumDashboard = {
         "UNPINNED AND MEASURED RATHER THAN ASSUMED: findLastIndex instead of findIndex reddens NOTHING in 321, so WHICH copy an entry takes is not pinned. The client said remove one and did not say which; two defensible outcomes, recorded rather than fixed. SPRINT 17'S RECORD DROPPED AT SPRINT 20, homes checked: the mirror-don't-normalise principle and its nvim measurement are at src/workspace.ts, the per-request capture ruling is at src/types.ts, and the remove-all deviation became PBI-20 which is now done. SPRINT 16'S RECORD DROPPED AT SPRINT 19, homes checked: the baseline measurement that two of three gate copies were pure convention is at src/notifications.ts, the only place it survives; the exit carve-out is asserted as a value in test/notifications.test.ts; and the disarmed-control finding became the re-run improvement's second rationale. Sprint 10's npm impediment rides here, still open and still the only unverified step in the product goal. Shipped in 9def17f, 87db56c, 2a90e78, aba57c9, 0ef93a9 and 9cadcad. 323 tests green from 317, each DoD command run separately with its exit read directly.",
       ],
     },
-    {
-      number: 18,
-      pbi_id: "PBI-19",
-      goal: "Let a config author see the root the editor named, whichever field that client's LSP version used to name it.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in c4432d0, 88b376a, b1967ba, 9286da6 and 01e3fbf. 317 tests green from 293, each DoD command run separately with its exit read directly. The chain is workspaceFolders > rootUri > rootPath, computed ONCE at initialize and stored -- never at read time.",
-        "PINNED AT REVIEW BECAUSE NOTHING DEFENDED IT: making `[]` or null stop the chain reddened NOTHING across 315 tests. Correct behaviour with zero defence is what the first-to-fail rule was sharpened to catch, and a stronger case than the exit carve-out -- there the detection was real but unnamed, here there was none. THE REASON WAS ALSO CORRECTED: fall-through holds on HARM ASYMMETRY, not on a config author being unable to see which spelling arrived, which is observability. The spec-precedence counter is recorded at the site as considered. TWO DECISIONS UNPINNED BY CHOICE, a THIRD CATEGORY beside NOT CONSTRUCTED and FORECLOSED, each recorded with what was chosen and what was rejected. A non-file rootUri: `initialize is still answered` admits ONE outcome and is pinned, while what the list holds admits more than one and is not -- the rejected alternative would have introduced a THIRD naming convention.",
-        "A RULE OF OURS BLINDING A CONTROL OF OURS: under the cwd-fallback perturbation the example-level absence test stayed GREEN, because PBI-14's dedup-by-inserted-text collapses the identical item a cwd root produces. Annotated at the site rather than deleted, so nobody reads two tests as two defences; the context-level test carries that criterion alone. THE COMMENT PERTURBATION IS A NEW TECHNIQUE and it found three site comments asserting what nothing checked. Distinct from the standing prose item, which catches prose that BECAME false: this catches prose that was NEVER checked. The enabling measurement is at test/workspace.test.ts -- every URI in the suite round-tripped through the URL parser unchanged, so `we kept the client's bytes` and `we reparsed and got lucky` were indistinguishable until `%6A`, an unreserved character, made the round trip lossy.",
-        "CRITERION 1 IS VERIFIED SYNTHETICALLY, restated at acceptance as the checklist required: MEASURED across all three capability declarations, nvim sends rootUri and workspaceFolders TOGETHER OR NEITHER, so no measured client produces this case. Nothing here shows the fix working for a client anyone has seen. THE READ-TIME TRAP IS THE SPRINT'S CENTRAL CONTROL, and it broke TWO WAYS from one perturbation: `folders.length > 0 ? folders : synthesise(rootUri)` passes criterion 1 PERFECTLY, then loses the root to the first `added` and makes it REAPPEAR when a later `removed` empties the list -- a folder the client explicitly removed coming back. The Scrum Master rebuilt it INDEPENDENTLY at a different site, reaching 4 tests per runtime where the executor reached 3, and labelled it an independent construction rather than a reproduction. A THIRD GENUINE RED THE PLAN DID NOT PREDICT, named by the executor as their own split rather than a surprise: the chain has two COMPARISONS but three SITES, and the rootPath-alone test is the only thing pinning the second synthesis site's convention. Without it that convention ships unasserted.",
-      ],
-    },
   ],
 
   definition_of_done: {
@@ -127,113 +128,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 21,
-    pbi_id: "PBI-22",
-    goal: "Make a notification handler unregisterable outside the router -- so the gate cannot be avoided by not using the thing that applies it.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "N/A (structural, and it comes first)",
-        implementation:
-          'createGatedConnection(reader, writer, logger, lifecycle, entries): RequestOnlyConnection in src/notifications.ts -- creates the connection, registers the notification table, and hands back `Omit<ProtocolConnection, "onNotification">`. startServer never binds the wide type. CONFIRM THE REMAINDER against what src/server.ts actually uses BEFORE building: a missing method is a CONTORTION rather than a clean narrowing, and that is the signal to STOP and hand back.',
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "c771080",
-            message: "refactor: hand back a connection that has no onNotification to call",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED -- better structure on its own terms, which is why this is tidy-first rather than a cost paid for the type.",
-          'THE STOP CONDITION WAS RUN AS A MEASUREMENT BEFORE ANY src/ EDIT, not as reasoning about how Omit treats a mapped type: a throwaway source binding `Omit<ProtocolConnection, "onNotification">` and calling onRequest WITH params, onRequest WITHOUT params, sendProgress and listen compiles at tsc exit 0 with NO cast and NO helper. The control on the probe itself: adding an onNotification call to that same source exits 1 with TS2551. NO CONTORTION, so no handback. Worth measuring rather than reasoning: onRequest carries five overloads.',
-          "registerMethods NARROWED TOO, and the judgement that this is propagation rather than a workaround is REASONED from the PO's own measurement: sendProgress appears nowhere in src/server.ts -- it is at src/methods.ts:376 -- so the trio measured reachable already spans both files, which is only true if the remainder was measured with methods.ts narrowed. Its own reason stands without that: methods.ts registers REQUESTS, so an onNotification on its parameter would be a second door out of the router in the one other file handed the connection.",
-          "A CLAIM OF OURS THAT THIS SPRINT MADE FALSE, rewritten in the commit that falsified it: src/notifications.ts said a direct onNotification bypass needs a lint rule and that NO TYPE CAN DO IT. THE SAME PHRASE IS STILL LIVE ON PBI-22's NOTE 5 and is the Scrum Master's field, not this one.",
-        ],
-      },
-      {
-        test: "A source binding the narrowed type and calling onNotification fails tsc; one calling onRequest passes",
-        implementation: "typeCheckProbe, BOTH HALVES in one run.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "8c391db",
-            message: "test: assert the narrowing forbids one member and only that one",
-            phase: "green",
-          },
-          {
-            hash: "04fa547",
-            message: "test: assert what the FACTORY hands back, not only what the type means",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "A FIRING-HALF-ONLY PROBE WOULD PASS A TYPE THAT FORBIDS EVERYTHING, which is the same shape as a lint probe that only checks the file where the rule must fire.",
-          "AND THAT HAZARD WAS DRIVEN RATHER THAN ARGUED: `Omit<ProtocolConnection, keyof ProtocolConnection>` leaves the FIRST assertion passing -- onNotification is still absent -- and flips the SECOND, which is the permitted half. So the hazard is reached instead of being hidden behind an earlier flip, which is what the one-hazard-one-test rule exists to secure.",
-          "THE PRE-SPRINT RUN IS THE REAL NEGATIVE CONTROL AND IT CAUGHT A WRONG CAUSE BEFORE ANYTHING WAS RECORDED: against unchanged src/ all three probes fail with TS2305, `no exported member RequestOnlyConnection`, EXIT 1. A probe asserting only a non-zero exit would have gone GREEN there, against a module with no narrowing at all. The regex binds the diagnostic to its FILE on one line, which is why it refused. Third instance in this project of a control firing for a cause it did not name, and the first prevented by the assertion's design rather than caught at review.",
-          "BORN GREEN WITH RESPECT TO src/ AT c771080, stated with its boundary because unqualified it would read as a claim against pre-sprint src/, which the paragraph above shows is false.",
-          "SINGLE OBSERVER, DISCLOSED AT THE TIME RATHER THAN LEFT FOR REVIEW TO INFER: every perturbation in this sprint was authored and run by the same agent. Sprint 14's entry is explicit that `INDEPENDENT` goes vacuous in exactly this situation while still reading as reassurance, so nothing here is labelled that way. All five perturbations are reproducible from the notes.",
-          "A WEAKNESS NOBODY ASKED ABOUT, and it is the S15 shape: THE PERMITTED HALF CANNOT BE THE FIRST THING TO FAIL IN ISOLATION. Every perturbation that flips it removes a member src/server.ts or src/methods.ts actually calls, so the DoD's own `tsc --noEmit` fails too and names the same cause -- MEASURED under the forbids-everything perturbation, which reddens src/methods.ts and src/server.ts by name. It survives on two grounds and NEITHER IS `it feels useful`: bun test runs BEFORE tsc in the DoD, so in the sequence as run it IS first; and the coverage it duplicates is INCIDENTAL, holding only while src/ happens to call onRequest. NOT DELETED, because the PO required both halves and withdrawing a defence of an accepted criterion is a scope decision.",
-        ],
-      },
-      {
-        test: "The same failure under a DIFFERENT variable name",
-        implementation: "Born green by construction -- the type matches on the type, not the name.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "8c391db",
-            message: "test: assert the narrowing forbids one member and only that one",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THIS IS THE PROPERTY THAT DECIDED THE ROUTE, so it is asserted rather than inferred: without it the route's whole justification sits unpinned and nothing distinguishes it from the name-based lint rule that was rejected.",
-          "THE ALIAS IS NOT AN ARBITRARY RENAME. The probe drives `const conn = connection` and calls through `conn` -- the EXACT shape measured at refinement to walk straight past no-restricted-properties. So the assertion is aimed at the recorded evasion rather than at a different name chosen for the sake of being different.",
-          "FORECLOSED, not NOT CONSTRUCTED, and the distinction is Sprint 20's: no perturbation reddens this probe while leaving the same-shaped `connection`-named probe green, because a type cannot read an identifier -- there is nothing here to be wrong about, so NOT CONSTRUCTED would report a design success in the language of a coverage gap. WHAT WOULD UN-FORECLOSE IT: adopting a guard that matches identifiers, which is the rejected no-restricted-properties route. AND THE PAIR IS NOT REDUNDANT UNDER THE FIRST-TO-FAIL RULE even though both flip together: they name DIFFERENT CAUSES -- `the narrowing works` and `the narrowing is name-blind` -- which is the S16 clause that keeps a control naming its own cause.",
-        ],
-      },
-      {
-        test: "N/A (prose, same commit)",
-        implementation:
-          "Name the residual at the site: the type forecloses only while no wide value is in scope, and importing createProtocolConnection directly restores it. Record that A LINT ON THE IMPORT SPECIFIER would close it -- the lint route at a target where it works, since a specifier cannot be renamed away.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "c771080",
-            message: "refactor: hand back a connection that has no onNotification to call",
-            phase: "refactoring",
-          },
-          {
-            hash: "c81327a",
-            message: "docs: put a number on the residual instead of an adjective",
-            phase: "refactoring",
-          },
-          {
-            hash: "04fa547",
-            message: "test: assert what the FACTORY hands back, not only what the type means",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE RESIDUAL IS MEASURED RATHER THAN REASONED, and the number is what makes it a record instead of an adjective: src/server.ts was rewritten to import createProtocolConnection, register the table on the WIDE value, call an UNGATED onNotification beside it and narrow only afterwards. 331 tests green, tsc 0, oxlint 0. NOTHING DETECTS IT.",
-          "A NOT-CONSTRUCTED LABEL OF MINE THAT WAS FALSE, corrected before the sprint closed and worth more than the thing it mislabelled: I wrote that `startServer holds the narrowed type` was carried by nothing executable. That bundled TWO seams. Only the IMPORT is beyond a type. THE OTHER WAS A REAL HOLE: widening createGatedConnection's RETURN ANNOTATION while leaving the alias untouched left all three probes green, tsc 0, 331 passing -- and an ungated `connection.onNotification` added to src/server.ts COMPILED. Foreclosure entirely gone, nothing saying so. Sprint 11's rule running in REVERSE, reporting a closable gap as unclosable, and Sprint 13's coverage-claim rule is what catches it: a claim that the suite does not defend something is a coverage claim and gets checked.",
-          "CLOSED in 04fa547 by a fourth probe that takes its connection FROM THE FACTORY. It has a perturbation of its own -- the return annotation reddens it and ONLY it, 1 of 332 -- which is what earns it a place beside the three that flip together. THE REVERSE DIRECTION, recorded rather than left for Review: widening the alias reddens all four, so this probe STRICTLY DOMINATES the other three. They are not deleted, because the accepted criterion names `a probe binding that type` and withdrawing a defence of an accepted criterion is a scope decision.",
-          "A THIRD GAP FOUND WHILE CONFIRMING THE REMAINDER AND DELIBERATELY LEFT OPEN: `onUnhandledNotification` SURVIVES the Omit and is an ungated way to see notification traffic -- weaker, since it fires only for messages nothing registered and carries no per-method dispatch, but real. Not added to the Omit: the accepted criterion is scoped to onNotification, and widening it mid-sprint trades a reviewed boundary for an unreviewed one. NO ASSERTION BACKS THAT SENTENCE and it says so in place, so what is at risk if it rots is its own accuracy and nothing else. `sendNotification` survives too and is NOT a gap -- that is sending, not installing a handler.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PO'S CHECKLIST: (1) both halves of the type probe; (2) rename-independence asserted rather than inferred; (3) the residual named at the site with the import-specifier lint recorded as its future closure.",
-      "FOUR MEASUREMENTS BEFORE ANY CODE, and the criterion changed as a result rather than the implementation bending to fit it: the named instrument DOES NOT PARSE, a working alternative exists, its boundary is a rename, and a better route was measured NOT to contort.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 19,
