@@ -128,7 +128,8 @@ environment variable **at module load**, before any of tsudoi's own code runs --
 without `--allow-env`.
 
 A narrower set can work: measured once, under deno 2.9.2, `deno run --allow-read --allow-env`
-completed the handshake. It is **untested** all the same -- `deno run -A` is what the suite
+completed the handshake and served a real path completion from the example config, with empty
+stderr. It is **untested** all the same -- `deno run -A` is what the suite
 spawns, so nothing keeps a narrower set working from one release to the next, and the
 permissions your own handlers need (a network call, a subprocess, a file to write) are yours to
 work out rather than tsudoi's to promise.
