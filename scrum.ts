@@ -232,18 +232,37 @@ const scrum: ScrumDashboard = {
         test: "EXPECTED RED. A /-prefixed fragment is answered by the ABSOLUTE source alone; anything else by the relative sources. THE NEGATIVE HALF IS THE DISCRIMINATOR: with cwd set to a directory that has children of its own, typing / yields filesystem-root items AND NO cwd-relative items. PERTURBATION: make every source answer every request; the negative half MUST redden while the positive half stays green -- without it an implementation ignoring the prefix entirely passes.",
         implementation: "The dispatch rule.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "94e46c0",
+            message: "feat(example): answer a /-prefixed fragment from the filesystem root alone",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATION: every source answers every request. The NEGATIVE half reddened; the positive half stayed green, which is the criterion's own prediction and the reason it names the negative half the discriminator.",
+          "The oracle for `and nothing extra` is a listing the TEST performs itself, so the module is not compared against itself. Hidden entries are dropped from BOTH sides, or the set equality would decide the unruled hidden-entry question by accident.",
+        ],
       },
       {
         test: "EXPECTED RED. Folder versus File for a real directory, a real file, A SYMLINK TO A DIRECTORY and A SYMLINK TO A FILE; a dangling symlink is listed without the request failing. PERTURBATION: trust dirent.isDirectory() alone; the symlink-to-directory case MUST redden while the real-directory case stays green.",
         implementation:
           "MEASURED on both runtimes: readdir withFileTypes reports a symlink-to-directory as NOT a directory, so the obvious implementation labels it File -- and the obvious fix, stat every entry, THROWS ENOENT on a dangling symlink, which under tsudoi's dispatch becomes -32603 plus a stack and kills the whole completion. Not exotic: on macOS /tmp IS a symlink. Resolve with stat INSIDE a catch and degrade an unresolvable entry rather than dropping the request.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c0db79e",
+            message: "feat(example): label an entry by what it IS, and survive a dangling link",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED then green. PERTURBATION A, trust the dirent: the symlink assertion reddened, the real-directory assertion that runs BEFORE it stayed green. PERTURBATION B, lift the stat out of its catch: the dangling assertion reddened AND SO DID THE /-PREFIX TEST -- `it kills the whole completion` observed on the real filesystem root rather than argued.",
+          "SHARPER THAN PLANNED, measured here: `/` on this macOS carries a DANGLING symlink of its own, .VolumeIcon.icns, and /tmp /var /etc /home /run are symlinks TO directories. So both halves of the planned hazard are on the stakeholder's very first keystroke, not in a contrived fixture.",
+          "A THIRD MEASUREMENT, NOT IN THE PLAN AND FOUND BY A GREEN TEST GOING RED: deno REJECTS opendir for a missing directory; bun RESOLVES it and defers the scandir to the FIRST ITERATION. A catch around the open alone is correct under deno and lets ENOENT escape under bun. Both are inside one try -- and the catch tests the errno rather than swallowing everything, so a defect in this file cannot be answered to the client as `nothing here`.",
+        ],
       },
       {
         test: "EXPECTED RED. For each of the three sources, resolving the item's inserted text against that source's root yields the real path. NEGATIVE CONTROL: an absolute path where the source is a named root, or a relative path where the source IS the filesystem root, fails to resolve.",
