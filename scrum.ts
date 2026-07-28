@@ -34,85 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-14",
-      story: {
-        role: "config author",
-        capability: "complete a path from the roots that make sense where their cursor is",
-        benefit:
-          "they can rely on it as their path completion, not merely read it -- the item they pick inserts the path they meant",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "An item's inserted text, resolved against its source's root, yields the file the item names",
-          verification:
-            "For each source -- document-relative, cwd-relative, absolute -- resolve the item's inserted text against that source's root and compare to the real path. NEGATIVE CONTROL: an item carrying an absolute path where its source is a named root, or a relative path where the source IS the filesystem root, fails to resolve",
-        },
-        {
-          criterion: "The typed prefix selects the source class",
-          verification:
-            "A prefix beginning with / is answered by the ABSOLUTE source alone; everything else by the relative sources. With cwd set to a directory that HAS CHILDREN OF ITS OWN, typing / yields filesystem-root items AND NO cwd-relative items -- the negative half is the discriminator, since without it an implementation where every source answers every keystroke passes",
-        },
-        {
-          criterion: "Items with identical inserted text collapse to one",
-          verification:
-            "TWO cases, because they catch DIFFERENT wrong implementations. (a) cwd is a SYMLINK to the document's parent: a naive resolved-path dedup that joins without realpath keeps both, where inserted-text dedup collapses them to one. (b) NESTED roots -- the document's parent inside cwd, so one file yields `foo.ts` and `b/foo.ts`: different strings, same file, and BOTH MUST SURVIVE, which is what a realpath-based dedup would wrongly collapse. Dedup is by INSERTED TEXT, never by resolved file, which would force an arbitrary choice of which root to label it with",
-        },
-        {
-          criterion: "Each item is attributable to the source that produced it",
-          verification:
-            "Assert per source rather than over the merged list. NEGATIVE CONTROL: source 4 MASKS source 1's degenerate case -- an unnamed document sends uri file://, which fileURLToPath turns into / without throwing, so a broken source 1 falling back to / is indistinguishable from source 4's legitimate output unless attribution is asserted",
-        },
-        {
-          criterion:
-            "A document with no parent directory contributes nothing from the document-relative source",
-          verification:
-            "Drive completion for uri file:// and for untitled:; assert no document-relative items and that the request still answers. The guard is `an unnamed document has no parent`, NEVER `reject / as a root` -- / is the LEGITIMATE root for the absolute source, and the two degenerate URIs fail in OPPOSITE directions: file:// silently resolves, untitled: throws",
-        },
-        {
-          criterion: "The walk yields rather than collecting",
-          verification:
-            "Assert one $/progress per yielded batch with a partialResultToken present. NEGATIVE CONTROL: a module that collects the whole tree then returns passes every content assertion while discarding the streaming property four sprints were spent on",
-        },
-        {
-          criterion: "Directories are distinguishable from files",
-          verification:
-            "Assert CompletionItemKind.Folder versus .File. NEGATIVE CONTROL: a wrong kind still completes and still displays, so nothing but the assertion catches it",
-        },
-        {
-          criterion: "A user can tell which root produced an item without resolving it themselves",
-          verification:
-            "Assert the item names its source root. Dedup-by-inserted-text leaves distinct strings, but src/foo.ts from cwd and ../src/foo.ts from the document's parent look unrelated, so four-source completion is incomprehensible without it",
-        },
-        {
-          criterion: "Applying the item yields the path it names",
-          verification:
-            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. MEASUREMENT DECIDED the mechanism, and the MID-PATH criterion (`the client's own confirmBehavior in charge of the tail`) carries it: clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path gets its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
-        },
-        {
-          criterion:
-            "Completing MID-PATH leaves the client's own confirmBehavior in charge of the tail",
-          verification:
-            "Each item carries BOTH an insert range ending at the cursor AND a replace range covering the whole fragment, so the client's own preference selects between them -- the options were never leave-the-tail versus delete-the-tail, they were WE choose versus THE USER'S CLIENT chooses. NEGATIVE CONTROL: a plain TextEdit, which satisfies any assertion that `a range exists` while removing that choice",
-        },
-        {
-          criterion: "A path containing a space or a parenthesis is emitted complete",
-          verification:
-            "A fixture directory holds `spaced (1).txt`; assert the item's label, inserted text and textEdit range each cover the whole filename. NEGATIVE CONTROL: detecting the fragment by splitting on whitespace truncates it at `spaced`, which is the most natural wrong implementation of fragment detection",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MEASURED FROM THE STAKEHOLDER'S OWN ddc CONFIG -- branch 1: ddc drives queries off autoCompleteEvents (TextChangedI) and the lsp source's volatilePattern [\\p{P}\\p{S}], which / matches, NOT off advertised triggerCharacters. So the trigger-character config surface we were one measurement from building WOULD HAVE FIXED NOTHING. QUALIFICATION, unsoftened: measured for THIS user's editor; it does NOT establish reachability for built-in completion or another plugin, and no prose may claim general reachability. Their lsp forceCompletionPattern covers . :: -> but NOT /, so / REFRESHES an active completion rather than necessarily opening the popup from nothing -- a real difference from their literal example.",
-        "RETRACTED, and the reasoning with it: an earlier note framed sources 1 and 4 as teaching-only because ddc already covers them. That framing rested on judging tsudoi's example by ONE user's plugin configuration -- the very thing refused one turn earlier when the scope cut was declined. The surviving halves are re-homed: the non-LSP-source-cannot-know-workspace-folders argument to PBI-15, and the overlap warning to the example's prose, generalised.",
-        "The example must SAY, generically rather than about ddc: a user who KEEPS a filesystem completion source will see items from both, DEDUPLICATED BY NEITHER, and anyone REPLACING one should check their plugin still opens the popup on /. tsudoi cannot fix it -- cross-source dedup is the completion plugin's job and tsudoi cannot know what other sources exist -- so saying so beats letting a user find doubles and blame us.",
-        "ZERO LINES IN src/. The module reads the current line out of the document itself -- documents.get(uri).getText() split at params.position -- because MEASURED: CompletionParams carries textDocument, position and context only, NOT the typed prefix, and on an invoked completion triggerCharacter is null.",
-        "REACHABILITY IS NOT A CRITERION HERE and must not appear as one. Whether a real user TYPING / reaches the handler is unmeasured -- see the open impediment. Criteria are protocol-level, as all 232 existing tests are; the PBI-8 precedent is exact, where the tarball route was verified and the registry route shipped explicitly labelled unverified.",
-        "The stakeholder's example is the right SPECIFICATION and the wrong TARGET: it specifies precisely what the handler must do with a /-prefixed request, and specifies nothing tsudoi controls about whether that request is sent.",
-        "OPEN for refinement, not assumed: hidden entries, walk depth, symlink cycles (UNMEASURED -- if recursion ships, cycle behaviour needs measuring before a criterion is written), and whether ./ selects the document-relative source alone. The stakeholder did not ask and it is not invented here.",
-      ],
-    },
-    {
       id: "PBI-15",
       story: {
         role: "config author",
@@ -147,9 +68,49 @@ const scrum: ScrumDashboard = {
         "SECOND DATA POINT for the same shape, from Sprint 13: src/server.ts's InitializeRequest handler takes NO params, so InsertReplaceEdit ships UNCONDITIONALLY -- LSP 3.16's completion.completionItem.insertReplaceSupport capability is unreadable from a config, exactly as workspaceFolders is. Two independent needs for the same discarded argument; whatever shape this PBI gives InitializeParams should be able to carry both, and the conformance gap is a KNOWN one, not an oversight.",
       ],
     },
+    {
+      id: "PBI-16",
+      story: {
+        role: "config author",
+        capability: "copy the README's config snippet and have it type-check",
+        benefit:
+          "the first thing they copy does not greet them with an error, in a document whose selling point is that handlers are typed",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "The README's config snippet type-checks in an installed consumer",
+          verification:
+            "Extract the snippet from README.md, place it in the installed-consumer project and run tsc. NEGATIVE CONTROL: introducing a type error in the snippet reddens it, which EXECUTION ALONE DOES NOT, since type stripping runs it regardless",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AT SPRINT 13 BY THE Q2 FILTER, on its first firing and for exactly what it was built to catch: a decision whose home was neither executable nor sited. It had lived as prose in Sprint 12's decisions since the sprint that found it, and the next compaction would have met it again.",
+        "THE PO REVERSING THEIR OWN CLOSE-OUT REFUSAL, with the condition named: they declined a PBI then on the grounds that inventory nobody reaches is dishonest -- true of an EMPTY BACKLOG, false now that PBI-14 and PBI-15 are live. The means exists (installConsumer.typeCheck); the alternative to filing is evaporation.",
+        "Ordered AFTER PBI-15: capability before verification-hardening, the same reasoning that put PBI-9 last.",
+      ],
+    },
   ],
 
   completed: [
+    {
+      number: 13,
+      pbi_id: "PBI-14",
+      goal: "Give a config author a path completion that knows which root it is answering from -- so the item they pick inserts the path they meant, from the root they meant.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 3222fb0, 94e46c0, c0db79e, 771b319, 4a1bdfa, 258f726, 7c97fe7, f18159e, 43fca61, 8932b45, b78fd74, af48333, fbdf474, 55fa0d9, 1d214aa, plus structural 4fe716c. 258 tests green under both runtimes, ZERO LINES IN src/ across the whole sprint. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
+        "COMPACTED AT CLOSE under the PO's Q2 filter, which surfaces only drops whose home is NOT a permanent assertion, a comment at the site it constrains, or an active improvement. Fifteen decisions dropped, every one of them sited, and the four I was least sure of were CHECKED BY READING THE CODE rather than recalled: the opendir cross-runtime difference at examples/path-completion.ts:358, the detail-versus-label carrier at :269 with the enableMatchLabel tension at :277, per-segment foreclosure at :118, and the dedup attribution weakness at :440. The unruled-behaviour list is at test/path-completion.test.ts:29 and :204. PBI-14 leaves the backlog done, and each criterion's ruling lives in the test that verifies it.",
+        "NOT CONSTRUCTED, and KEPT HERE because it has no other home: nothing asserts that a REAL editor reaches this handler by typing /. Reachability was never a criterion and no prose claims it. The suite's evidence stops at the protocol boundary, exactly as PBI-8's registry route does.",
+        "MEASURED ONCE, NOT PINNED, kept for the same reason: `deno run --allow-read --allow-env` -- the narrow flag set Sprint 12 pinned FOR THE HANDSHAKE -- serves a real path completion with empty stderr under deno 2.9.2. Measured by hand; no test asserts it, and nothing in the repo claims otherwise.",
+        "SCOPE, from the stakeholder directly: parity with ddc-source-file is NOT a criterion -- `置き換える予定だけど、いったん要求したものができてればいい`. The replacement intent is context, and it is why the document-relative and absolute sources are load-bearing rather than decorative; increments come later.",
+        "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\S/\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
+        'WHAT IS DELIBERATELY NOT BUILT, so nobody reads its absence as an oversight: no trailing `/` on a directory item (the user types it); `~` is not expanded; a quoted path such as `"./ba` does not complete, because a quote is not a fragment boundary; and hidden entries and ./ ../ are UNRULED and remain so -- the fixtures contain none, and no test pins either way.',
+        "ACCEPTED WITH FOUR RULINGS, two of which NARROWED criteria to what was verified rather than adding to delivered work -- the PO drew that line explicitly: narrowing to what holds is the criterion-verification rule, widening is goalpost-moving. Criterion 3(b) had described a state per-segment completion makes IMPOSSIBLE, which the PO called worse than a vacuous criterion since it cannot even be exercised. Criterion 11's replace-range shortfall is recorded as a DEFECT DEFERRED, never a limit, because a mangled insertion is the exact harm the range criterion prevents.",
+      ],
+    },
     {
       number: 12,
       pbi_id: "PBI-8",
@@ -164,15 +125,6 @@ const scrum: ScrumDashboard = {
         "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. Omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
         "NOT CONSTRUCTED, not foreclosed, and still open: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
       ],
-    },
-    {
-      number: 11,
-      pbi_id: "PBI-9",
-      goal: "Make a green run mean exactly what we claim -- no less, by pinning what only hands have checked; no more, by unpinning what nobody promised.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
     },
     {
       number: 10,
@@ -207,42 +159,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 13,
-    pbi_id: "PBI-14",
-    goal: "Give a config author a path completion that knows which root it is answering from -- so the item they pick inserts the path they meant, from the root they meant.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "Shipped in 3222fb0, 94e46c0, c0db79e, 771b319, 4a1bdfa, 258f726, 7c97fe7, f18159e, 43fca61, 8932b45, b78fd74, plus structural 4fe716c. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
-      "A TEST CONVENIENCE REACHED THE PUBLIC SURFACE: itemsFrom defaulted position, which could only assume line 0 -- dead for every real call and silently wrong elsewhere, producing exactly the off-cursor-line range MEASURED to make items VANISH in the client. Undefended: no test drives a line above the first. Fixed structurally.",
-      "A SELF-REFERENTIAL ORACLE, found by perturbing: the resolution test derived its expectation from source.root, so swapping the document and cwd roots swapped BOTH SIDES and reddened nothing. Roots are now stated by the test.",
-      "THE PLANNED DEDUP COLLISION CANNOT DISCRIMINATE ITS OWN RULE: document-parent-equals-cwd is ONE directory reached by ONE path, so dedup-by-resolved-file passes it unchanged. A third case -- cwd a symlink to the document parent -- supplies the discriminator.",
-      "CROSS-RUNTIME DIFFERENCE nobody had: deno REJECTS opendir for a missing directory; bun RESOLVES it and defers the scandir to the first iteration. A catch correct under one runtime lets ENOENT escape under the other.",
-      "WEAKNESS recorded at the site: dedup collapses TWO DIFFERENT FILES when doc-parent is not cwd and both hold src/foo.ts -- one item, attributed to whichever source ran first. The edit is identical; the attribution is one truth of two.",
-      "UNRESOLVABLE TENSION, recorded not managed: a visible root in label and enableMatchLabel safety cannot both hold -- that option requires the word to CONTAIN the label, and src/foo.ts does not contain `src/foo.ts (cwd)`, so a decorated label would be DROPPED ENTIRELY. No other carrier is measured to display; labelDetails is unmeasured in ddc.",
-      "NOT CONSTRUCTED, property named: nothing asserts a real editor reaches the handler by typing /. No prose claims it. And unruled-by-design, with fixtures containing no dotfiles so nothing pins them: hidden entries, ./ and ../ handling, trailing / on directories, ~ and quoted paths.",
-      "HANDED BACK, not folded in privately: criterion 9 was restated as the PROPERTY `applying the item yields the path it names`, with the mechanism left to measurement. MEASURED FROM ddc-source-lsp's SOURCE, via the Scrum Master: the word comes from `insertText` and `textEdit` is consulted ONLY to move the offset, which is the sole way an item can replace characters to the LEFT of the client's word boundary. So an explicit textEdit IS required, the withdrawn mechanism is the answer, and the criterion should keep saying the property while the module records the measurement. Constraints measured with it: a multi-line range, a range whose start is not the cursor's line, or an empty label make the item VANISH silently.",
-      "THE SPACED-FILENAME CRITERION IS NOT IN THIS FILE AND NEEDS THE PO'S HAND. It arrived as prose -- `for a filename containing a space or a parenthesis, tsudoi emits the complete path: label, inserted text and range all covering it` -- and is built and tested as subtask 11. Criterion 1 now carries five negative controls; per the PO's advance agreement they are SPLIT across tests rather than documented, since one perturbation flips whichever assertion runs first and leaves the rest undefended.",
-      "CARRIER MEASURED, and it changes criterion 8's shape: the target client displays `detail` only when an option that DEFAULTS OFF is set, and this user does not set it. A root named in `detail` would satisfy the criterion at the protocol level and show the user nothing -- the green-suite-dead-feature shape. The root goes in `label`, which is displayed unconditionally.",
-      "THE SYMLINK HAZARD IS FORECLOSED BY DESIGN, not measured: path completion is PER SEGMENT -- resolve the prefix's directory part, list THAT ONE DIRECTORY, filter by the trailing fragment. No criterion requires recursion, so recursion depth, unbounded walks and symlink CYCLES are all unrepresentable: a cycle requires traversal and one readdir cannot traverse. The Developer had flagged cycles as needing measurement and instead removed the need.",
-      "A CRITERION ERROR THE DEVELOPER HANDED BACK RATHER THAN WORKING AROUND: criterion 3's verification cited cwd-and-workspaceFolder coinciding, but workspaceFolders is PBI-15's deferred API and is NOT a source in this PBI. Replaced with document-parent-equals-cwd, which constructs the same collision from sources this PBI actually has.",
-      "FIXTURES MUST CONTAIN NO DOTFILES. Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and an incidental fixture would pin it silently. Unruled behaviour pinned by accident is how a decision gets made by nobody.",
-      "SCOPE, from the stakeholder directly: `置き換える予定だけど、いったん要求したものができてればいい`. Parity with ddc-source-file is NOT a criterion. The replacement intent is context -- it is why sources 1 and 4 are load-bearing rather than decorative -- and increments come later.",
-      "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\\\S/\\\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
-      'WHAT IS DELIBERATELY NOT BUILT, so nobody reads its absence as an oversight: no trailing `/` on a directory item (the user types it); `~` is not expanded; a quoted path such as `"./ba` does not complete, because a quote is not a fragment boundary; and hidden entries and ./ ../ are UNRULED and remain so -- the fixtures contain none, and no test pins either way.',
-      "THE README NAMED ONE FILE and the example is now two. All three TEST helpers that copy it were repaired during subtask 9; the line a HUMAN follows was not, and readme.test.ts cannot catch it because it extracts fenced commands and this is prose. Fixed, after checking that no pinned fact has a home in that section.",
-      "MEASURED ONCE, NOT PINNED, and the difference is stated rather than blurred: `deno run --allow-read --allow-env` -- the narrow flag set Sprint 12 pinned FOR THE HANDSHAKE -- serves a real path completion, with empty stderr, under deno 2.9.2. Making cwd lazy kept the handshake clean and left the COMPLETION path under those flags unverified; it is now measured, by hand, and no test asserts it. Nothing in the repo claims otherwise.",
-      "SUPERSEDED BY THE STAKEHOLDER, and the claim it rested on was FALSIFIED IN THE DOING: this recorded the HelloWorld demo item as a cost reported rather than fixed, on the reasoning that the item was what the rest of the file existed to teach. 「remove helloworld」. The config still teaches both shapes without it -- an inline hover handler with its own position math, and a completion handler that delegates -- so removing it improved what the example teaches rather than costing it anything.",
-      "WHAT THE REMOVED ITEM DEFENDED, AND WHERE THAT DEFENCE NOW LIVES. Exactly two assertions ever drove the example's completion response; checked against the suite rather than recalled, since protocol.test.ts drives completion against FIXTURES throughout. (a) completion.test.ts's yield-then-null test carried PBI-4's rule in AGGREGATION mode -- yields collected rather than streamed, so a null return must produce the collected items and NOT [] -- and it was the ONLY home for that mode anywhere. MEASURED FIRST, over the wire, on the artifact with the item already removed: the example still yields and still returns null, and a request matching nothing is answered null rather than []. So the property is re-subjected onto a PATH item without being contrived and stays on the artifact a config author copies, with its pair beside it. PERTURBATION: make the aggregation answer [] instead of the collected items -- the re-subjected assertion reddens under both runtimes and NOTHING ELSE IN EITHER FILE DOES, which is the same measurement that confirms it was the only home. (b) path-completion.test.ts's batching test asserted the streamed items past a leading HelloWorld; its set equality is unchanged, but it no longer discriminates `path items AMONG OTHERS` because there are no others. Named because its defensive value changed, not because it was deleted.",
-      "A CLAIM OF MINE THAT WAS FALSE FOR ONE COMMIT, and the correction is the whole story of the mid-path criterion: the module recorded InsertReplaceEdit as an upgrade path with the target plugin's support UNMEASURED. It is measured -- the plugin indexes the edit BY THE NAME OF ITS OWN SETTING -- which INVERTED which option is conservative. A plain TextEdit does not default to inserting; it makes the user's setting INERT so tsudoi chooses for them. NOW BUILT, per the PO's ruling: each item carries insert (fragment start to cursor) and replace (fragment start to word end). PERTURBATIONS: a plain TextEdit -- the criterion's own negative control -- reddens 3 assertions; a replace range covering only the last segment reddens the multi-segment case while single-segment stays green; a replace range that merely COPIES insert reddens ONLY the mid-path case, which is the whose-choice-is-it claim in isolation.",
-      "A CONFORMANCE GAP THAT IS TSUDOI'S, recorded at the module because the example cannot fix it: LSP 3.16 has the client advertise textDocument.completion.completionItem.insertReplaceSupport and a server should condition on it. The example sends unconditionally, because src/server.ts's InitializeRequest handler takes NO PARAMS and a config author cannot see client capabilities AT ALL. Second data point for PBI-15's shape in two turns, after workspaceFolders -- evidence, not a decision.",
-      "STANDING ITEM 6 AMENDED, AND THE PROPERTY MOVED HOUSE IN THE RIGHT ORDER. The aggregation-null rule -- yields collected rather than streamed must answer the COLLECTED ITEMS and never [] -- had the example as its ONLY home anywhere in the suite. The fixture home was added and VERIFIED FIRST: with `emitted ? collected : null` perturbed to `emitted ? [] : null` the new fixture assertion reddens under both runtimes, so at no point between commits was the property undefended. The example's test stays, retargeted to what item 6 actually needs: the config a reader copies is LOADED AND DRIVEN.",
-      "THE TWO NEGATIVE CONTROLS AMENDED ITEM 6 NAMES, both run: breaking the example's IMPORT reddens 34 assertions across 6 files, including the installed-consumer type-check; breaking a HANDLER'S RETURN -- [] where the completion handler returns null -- reddens exactly the example-execution test on both runtimes, AND IT IS THE PAIR ASSERTION THAT CATCHES IT, since the request matching nothing must answer null. Breaking the hover handler instead reddens 10. A control that reddened nothing would have meant the example was loaded but not driven.",
-      "THE DEDUP AMENDMENT IS BUILT, AND ITS LITERAL FORM HANDED BACK. Case (b) as written -- one file yielding `foo.ts` AND `b/foo.ts` in one response -- CANNOT OCCUR: completion is per segment, so the typed fragment supplies ONE directory part to every source. Typing `fo` asks each root for its own `fo*`; typing `b/fo` asks each for `b/fo*`. No request asks one root for `foo.ts` while asking another for `b/foo.ts`. The PROPERTY it defends is built with nested roots plus one file under TWO NAMES, the only construction in which two roots produce two strings for one file. GREEN ON ARRIVAL -- a missing test, not a missing behaviour -- and it is the ONLY test in the file that reddens under a realpath-based dedup, which is the implementation it was added to catch.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 13,
