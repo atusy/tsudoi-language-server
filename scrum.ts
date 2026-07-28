@@ -53,6 +53,11 @@ const scrum: ScrumDashboard = {
             "MATCH THE URI STRING EXACTLY AND DO NOT NORMALISE. Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one. THE DISCRIMINATING CASE, which an ECHOING ORACLE CANNOT PASS: add BOTH spellings of one directory -- `…/plain` and `…/plain/` -- remove one, assert the other REMAINS",
         },
         {
+          criterion: "A duplicate `added` yields TWO entries",
+          verification:
+            "Add a URI already in the list and assert the list holds it twice. NEGATIVE CONTROL: an `includes` guard reddens it -- and that guard passes every other criterion, which is why this is a criterion rather than a note. DECIDED ON OBSERVABILITY, NOT PRINCIPLE: mirroring a duplicate can be wrong too, so the tiebreak is that a PHANTOM entry shows up as visibly wrong items while a MISSING one is silent absence. `name` differences fold in here: the event says what was ADDED and we reconcile by neither URI nor name, because LSP has no rename event -- a client wanting one sends `removed` then `added`",
+        },
+        {
           criterion:
             "A handler sees the folders as they were WHEN ITS REQUEST STARTED, not as they are when it reads them",
           verification:
@@ -67,12 +72,9 @@ const scrum: ScrumDashboard = {
       ],
       status: "ready",
       notes: [
-        "READY AT SPRINT 17 REFINEMENT: the stakeholder confirmed they WILL use add_workspace_folder(), so one of the two unmeasured conditions is ANSWERED. The other -- that they give tsudoi a real root at all -- is the same condition ANY workspace feature needs, so it no longer distinguishes this item from its alternatives.",
-        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
-        "THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
-        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
-        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
-        "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
+        "READY AT SPRINT 17 REFINEMENT: the stakeholder confirmed they WILL use add_workspace_folder(), so one of the two unmeasured conditions is ANSWERED. The other -- that they give tsudoi a real root at all -- is the same condition ANY workspace feature needs, so it no longer distinguishes this item from its alternatives. THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
+        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`. THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
+        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check. MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
       ],
     },
     {
@@ -104,12 +106,9 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "MEASURED FROM THE INSTALLED PROTOCOL TYPES, and this is the whole argument: workspaceFolders `is only available IF THE CLIENT SUPPORTS WORKSPACE FOLDERS`, while rootPath is deprecated in favour of rootUri and rootUri in favour of workspaceFolders. So a client without that capability sends NO folders and may still send a root -- and today tsudoi hands such an author an empty list, from which they conclude the editor opened no project when it opened one and said so in the deprecated field. The silent-absence class, through a door PBI-15 did not cover.",
-        "A PREMISE THE PO FLAGGED AS UNCONFIRMED AND ASKED FOR BEFORE FILING, THEN FALSIFIED BY READING THE DECLARATIONS RATHER THAN THE PROSE: they reasoned that such a client could never send didChangeWorkspaceFolders, which would have made synthesis and tracking DISJOINT. It is not declared, AND THE STAKEHOLDER NAMED WHY, which is more useful than the absence: THE CLIENT CAPABILITY'S JOB IS THE REQUEST DIRECTION. CM<C, S> is { client, server }; the server-to-client REQUEST workspace/workspaceFolders declares CM<`workspace.workspaceFolders`, `workspace.workspaceFolders`>, while the client-to-server NOTIFICATION declares CM<undefined, `workspace.workspaceFolders.changeNotifications`> -- no client capability at all, and the only gate named is the SERVER's registration switch, which Sprint 14 measured nvim ignores anyway. So the capability says whether the server may ASK the client for folders; it says nothing about whether the client volunteers changes. Separateness therefore rests on DIFFERENT FAILURE MODES, which hold regardless: PBI-17 fixes a list going STALE, this fixes a list being EMPTY when the client did name a root.",
-        "THE INTERACTION IS OWNED BY WHICHEVER LANDS SECOND, which the ordering settles as this one. The rule, REASONED and offered for refinement to CONFIRM rather than inherit: if a change notification ever arrives, DROP the synthesised entry -- the fallback existed because we inferred the client could not tell us folders, and a change notification proves it can. That keeps mirror-don't-normalise intact, since the synthesised entry is the one thing in the list that never was client state.",
-        "A LIMIT RECORDED SO NOBODY READS THIS AS THE STAKEHOLDER'S FIX: with the bare on_dir() their kakehashi uses, nvim sends rootUri: null, rootPath: null AND workspaceFolders: null -- ALL THREE EMPTY. There is nothing to convert. This helps clients that name a root without naming folders, a real but small population containing no known user, which is why it is ordered after PBI-17.",
-        "THE NAME STAYS `workspaceFolders` -- a folder derived from rootUri genuinely IS a workspace folder expressed in an older field, and src/types.ts's own header says renaming an export breaks configs we cannot see. WHAT BECOMES FALSE IS THE COMMENT, which says the value is what the client SENT: it changes in the SAME COMMIT and must name the precedence chain, so an author meeting a synthesised `name` knows where it came from.",
-        "A PROBE WORTH RUNNING DURING THE SPRINT, NOT AS A GATE ON IT: whether a client can be made to send didChangeWorkspaceFolders while declaring workspace.workspaceFolders false or omitting it. Its best outcome leaves the case REPRESENTABLE in the protocol, so this PBI must define behaviour either way -- a measurement that cannot change the deliverable does not block refinement.",
+        "MEASURED FROM THE INSTALLED PROTOCOL TYPES, and this is the whole argument: workspaceFolders `is only available IF THE CLIENT SUPPORTS WORKSPACE FOLDERS`, while rootPath is deprecated in favour of rootUri and rootUri in favour of workspaceFolders. So a client without that capability sends NO folders and may still send a root -- and today tsudoi hands such an author an empty list, from which they conclude the editor opened no project when it opened one and said so in the deprecated field. The silent-absence class, through a door PBI-15 did not cover. A PREMISE THE PO FLAGGED AS UNCONFIRMED AND ASKED FOR BEFORE FILING, THEN FALSIFIED BY READING THE DECLARATIONS RATHER THAN THE PROSE: they reasoned that such a client could never send didChangeWorkspaceFolders, which would have made synthesis and tracking DISJOINT. It is not declared, AND THE STAKEHOLDER NAMED WHY, which is more useful than the absence: THE CLIENT CAPABILITY'S JOB IS THE REQUEST DIRECTION. CM<C, S> is { client, server }; the server-to-client REQUEST workspace/workspaceFolders declares CM<`workspace.workspaceFolders`, `workspace.workspaceFolders`>, while the client-to-server NOTIFICATION declares CM<undefined, `workspace.workspaceFolders.changeNotifications`> -- no client capability at all, and the only gate named is the SERVER's registration switch, which Sprint 14 measured nvim ignores anyway. So the capability says whether the server may ASK the client for folders; it says nothing about whether the client volunteers changes. Separateness therefore rests on DIFFERENT FAILURE MODES, which hold regardless: PBI-17 fixes a list going STALE, this fixes a list being EMPTY when the client did name a root.",
+        "THE INTERACTION IS OWNED BY WHICHEVER LANDS SECOND, which the ordering settles as this one. The rule, REASONED and offered for refinement to CONFIRM rather than inherit: if a change notification ever arrives, DROP the synthesised entry -- the fallback existed because we inferred the client could not tell us folders, and a change notification proves it can. That keeps mirror-don't-normalise intact, since the synthesised entry is the one thing in the list that never was client state. A LIMIT RECORDED SO NOBODY READS THIS AS THE STAKEHOLDER'S FIX: with the bare on_dir() their kakehashi uses, nvim sends rootUri: null, rootPath: null AND workspaceFolders: null -- ALL THREE EMPTY. There is nothing to convert. This helps clients that name a root without naming folders, a real but small population containing no known user, which is why it is ordered after PBI-17.",
+        "THE NAME STAYS `workspaceFolders` -- a folder derived from rootUri genuinely IS a workspace folder expressed in an older field, and src/types.ts's own header says renaming an export breaks configs we cannot see. WHAT BECOMES FALSE IS THE COMMENT, which says the value is what the client SENT: it changes in the SAME COMMIT and must name the precedence chain, so an author meeting a synthesised `name` knows where it came from. A PROBE WORTH RUNNING DURING THE SPRINT, NOT AS A GATE ON IT: whether a client can be made to send didChangeWorkspaceFolders while declaring workspace.workspaceFolders false or omitting it. Its best outcome leaves the case REPRESENTABLE in the protocol, so this PBI must define behaviour either way -- a measurement that cannot change the deliverable does not block refinement.",
       ],
     },
   ],
@@ -121,28 +120,10 @@ const scrum: ScrumDashboard = {
       goal: "Make the lifecycle gate impossible to forget -- a notification added without deciding when it may run should fail to compile, not ship ungated.",
       status: "done",
       subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in e8c2a8c, 2d0afad and 5fcabcf. 284 tests green, each DoD command run separately with its exit read directly. src/notifications.ts routes every notification through one gate; `gate` is a REQUIRED field with no default, so an entry that decides nothing does not TYPE-CHECK -- asserted, not argued: a probe omitting it fails with TS2741.",
-        "THE BASELINE CONTROL FALSIFIED THE PO'S OWN CRITERION, and the truth is a better argument than the claim it replaced. `deleting the check from ANY ONE handler body reddens nothing` was measured on all three: didChange NOTHING, didClose NOTHING, didOpen FOUR TESTS that never mention it. TWO OF THREE COPIES WERE PURE CONVENTION AND THE THIRD WAS DEFENDED ONLY INCIDENTALLY -- exactly the state a structural gate exists to end. The control is now FORECLOSED (no body check remains), so the measurement is homed at src/notifications.ts, which is the only place it survives.",
-        "THE EXIT CARVE-OUT, and the ruling that Sprint 3's hang precedent DOES NOT REACH IT: that hang was BUFFERING-CONTINGENT, this one is a structural consequence of a dropped notification. So the timeout is a real control -- gating exit times out lifecycle.test.ts on both runtimes and takes a twelve-second suite past two minutes. A DETERMINISTIC assertion was added anyway, on the S15 sharpening READ IN THE OTHER DIRECTION: the hang can never be FIRST to fail, so it names nothing. exit's gate is asserted AS A VALUE off the entry table, paired with every other entry declaring `lifecycle` so a blanket table cannot satisfy it.",
-        "SATISFYING ONE REQUIREMENT DISARMED ANOTHER CONTROL, AND THE DoD STAYED GREEN THROUGHOUT. Extracting the table so its gates could be read as values dropped the contextual typing each handler's params gets from the `type` beside it -- three fell to implicit `any`, and the wrong-params compile error stopped being one. Caught by re-running the Developer's perturbation after the Scrum Master's own edit; fixed with defineNotifications, an identity carrying the router's inference to wherever a table is built. Recorded as the re-run improvement's SECOND rationale.",
-        "PROPERTY-NOT-MECHANISM PAYING OFF VISIBLY, which the PO noted is rare because it usually pays off invisibly: they asked for the gate asserted AS A VALUE and left HOW open. The obvious implementation -- a plain helper returning the table -- was the one that silently disarmed the typing. Had they specified the mechanism they would have shipped the regression themselves.",
-        "PBI-17 IS CHANGED BY THIS SPRINT rather than merely unblocked: its `the gate is opt-in per handler` note was DELETED as false, and criterion 4's negative control moved from BYPASS -- now unrepresentable -- to a WRONG GATE ASSIGNMENT. The reorder's payoff, stated: the criterion PBI-17 would have needed no longer needs writing.",
-        "NOT CONSTRUCTED, with its residual and its end condition: `initialized`'s gate choice has no observable consequence, because the body is empty and a dropped delivery has nothing to fail to do. Writing `always` there is entirely REPRESENTABLE, which is why this is not FORECLOSED. Unverified until the handler has its first line of body.",
-        "THE STANDING PROSE ITEM CAUGHT ITS OWN AUTHOR: the executor fixed src/server.ts's falsified comment in the causing commit and missed src/lifecycle.ts's `a notification handler` arm, catching it only at self-review.",
-      ],
-    },
-    {
-      number: 15,
-      pbi_id: "PBI-16",
-      goal: "Make what this repository publishes type-check as a stranger receives it -- so an artifact that passes here cannot fail in their project.",
-      status: "done",
-      subtasks: [],
       impediments: [
         {
           description:
-            "CARRIED FORWARD FROM SPRINT 10 rather than evaporating with its record, and LIVE FOR THIS SPRINT: PBI-16 type-checks against a PACKED TARBALL, which is `what ships` in every sense except the one a stranger uses. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+            "CARRIED FORWARD FROM SPRINT 10 THROUGH EVERY COMPACTION SINCE, because it is the one open decision no sprint can close. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
           impact:
             "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
           request:
@@ -152,12 +133,9 @@ const scrum: ScrumDashboard = {
         },
       ],
       decisions: [
-        "SPRINT 14'S RECORD DROPPED AT SPRINT 16, every decision homed and CHECKED: the single-observer finding produced the re-run improvement and the handover rule, both active; the synthetic-verification honesty is in the README's `Where to look next` and in examples/completion-path.ts's own comment, which now states the silent no-workspace case as a choice with its cost; and the once-per-session NOT-CONSTRUCTED risk is MOOT -- the stakeholder removed that report, so there is no module-state flag left to double-report. Shipped in d59eb1e and e3f550d. 279 tests green, each DoD command run separately with its exit read directly. BORN GREEN throughout and stated as such: every artifact already compiled, measured twice before the sprint, so ALL the value is in the controls -- and every control the plan named was built and shown to fire.",
-        "THE OBSERVER SPLIT WAS DECLARED AT PLANNING AND HELD -- the Developer built, the Scrum Master verified and RE-RAN the non-hoisting control themselves rather than reading the report. The Sprint 14 improvement doing what it was filed for, on the sprint after it was filed.",
-        "A CONTROL THAT WOULD HAVE FIRED FOR THE WRONG CAUSE, caught before anything was built and before any result was recorded. The planned hoisting control removed vscode-languageserver-protocol outright -- which fails even a BARE config, because it also removes TSUDOI'S OWN DECLARED DEPENDENCY. The Developer disclosed their own broken first attempt BEFORE reporting the measurement, which is the ordering that kept the question from closing on a false proof. Corrected to the nested layout, which is what pnpm default and npm-strict produce.",
-        "THE LEVER CHANGED AT EXECUTION, measured: dropping the `types` export condition ALONE still resolves, because tsc follows `import` to dist/types.js and picks up the sibling .d.ts. BOTH published arms must go, leaving `default` pointing into src/, which files: [dist] does not ship -- so a consumer loses the types while this repo, which HAS src/, is unaffected. That asymmetry IS the pair the criterion asks for. FORECLOSED, not NOT CONSTRUCTED, for the source-level alternative: no perturbation of src/types.ts compiles, because src/ consumes it in full. THE PO RECLASSIFIED THEIR OWN CHECKLIST ITEM rather than marking it unmet: the pair they specified -- redden the probe WHILE tsc --noEmit stays green, tied by ONE measurement -- is FORECLOSED BY THE STAGING DESIGN, since the perturbation lands on the copy that gets PACKED and the repo is untouched by construction. Same shape as Sprint 10's change-a-source-file-without-rebuilding, a mechanism the PO named that the better implementation forecloses.",
-        "THE REMEDY WAS RULED A -- the README instructs the install -- and THE DOCUMENTED ROUTE AND THE VERIFIED ROUTE CONVERGED rather than the finding being recorded for later: the probes perform the same install the README documents, so test/installed-runtime.test.ts's example-running assertions no longer rest on a hoisting assumption. Not a peerDependency, because measurement showed a BARE CONFIG EXITS 0 -- the artifact a reader meets first needs nothing from that package, and overstating a requirement is the same class of error as understating it. Not inlining the enum values, which contradicts the stakeholder's own closed-union request one sprint earlier. VERSION SKEW across a major boundary is recorded as the genuine peer-dependency argument and is UNMEASURED, so it reads as declined rather than unconsidered. PLACEMENT DECIDED BY MEASUREMENT, applying the decline-C reasoning to a decision nobody had made: the install instruction went to `Where to look next` and NOT the quickstart, because the quickstart's snippet imports only @atusy/tsudoi/types and genuinely does not need the protocol package.",
-        "A SENTENCE MADE FALSE BY THE PO'S OWN RULING, caught IN THE COMMIT THAT CAUSED IT rather than at Review -- the earlier detection the standing prose item was meant to produce. The file header said every control there is a test and never a comment; deleting the inert test and writing its reasoning as a comment made that false. SECOND TIME a PO ruling has falsified prose, and the first one shipped for a sprint.",
+        "COMPACTED AT SPRINT 17: this sprint's own prose-item catch is homed in the standing improvement it exercised, and its PBI-17 consequences are ON PBI-17 -- the opt-in note deleted, criterion 4's control moved to a wrong gate assignment. SPRINT 15'S RECORD DROPPED, homes checked: the published-arm controls ARE test/published-artifacts.test.ts and still run; the stays-green FORECLOSURE and the deleted inert control are comments in that file; the README install instruction and the drift sentence are the README's own bytes, extracted by the suite. Sprint 10's npm impediment rides here, still open. Shipped in e8c2a8c, 2d0afad and 5fcabcf. 284 tests green, each DoD command run separately with its exit read directly. src/notifications.ts routes every notification through one gate; `gate` is a REQUIRED field with no default, so an entry that decides nothing does not TYPE-CHECK -- asserted, not argued: a probe omitting it fails with TS2741.",
+        "THE BASELINE CONTROL FALSIFIED THE PO'S OWN CRITERION, and the truth is a better argument than the claim it replaced. `deleting the check from ANY ONE handler body reddens nothing` was measured on all three: didChange NOTHING, didClose NOTHING, didOpen FOUR TESTS that never mention it. TWO OF THREE COPIES WERE PURE CONVENTION AND THE THIRD WAS DEFENDED ONLY INCIDENTALLY -- exactly the state a structural gate exists to end. The control is now FORECLOSED (no body check remains), so the measurement is homed at src/notifications.ts, which is the only place it survives. THE EXIT CARVE-OUT, and the ruling that Sprint 3's hang precedent DOES NOT REACH IT: that hang was BUFFERING-CONTINGENT, this one is a structural consequence of a dropped notification. So the timeout is a real control -- gating exit times out lifecycle.test.ts on both runtimes and takes a twelve-second suite past two minutes. A DETERMINISTIC assertion was added anyway, on the S15 sharpening READ IN THE OTHER DIRECTION: the hang can never be FIRST to fail, so it names nothing. exit's gate is asserted AS A VALUE off the entry table, paired with every other entry declaring `lifecycle` so a blanket table cannot satisfy it.",
+        "SATISFYING ONE REQUIREMENT DISARMED ANOTHER CONTROL, AND THE DoD STAYED GREEN THROUGHOUT. Extracting the table so its gates could be read as values dropped the contextual typing each handler's params gets from the `type` beside it -- three fell to implicit `any`, and the wrong-params compile error stopped being one. Caught by re-running the Developer's perturbation after the Scrum Master's own edit; fixed with defineNotifications, an identity carrying the router's inference to wherever a table is built. Recorded as the re-run improvement's SECOND rationale. PROPERTY-NOT-MECHANISM PAYING OFF VISIBLY, which the PO noted is rare because it usually pays off invisibly: they asked for the gate asserted AS A VALUE and left HOW open. The obvious implementation -- a plain helper returning the table -- was the one that silently disarmed the typing. Had they specified the mechanism they would have shipped the regression themselves.",
       ],
     },
   ],
@@ -171,7 +149,93 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 17,
+    pbi_id: "PBI-17",
+    goal: "Answer from the workspace as it is now -- a folder the user adds mid-session changes what they are offered, and one they remove stops answering.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "N/A (structural)",
+        implementation:
+          "`let workspaceFolders` in startServer becomes createWorkspaceFolders(), a HANDLE in the shape of DocumentStoreHandle -- which is what this codebase already uses for state that NOTIFICATIONS write and REQUESTS read, and the right answer to a second writer arriving. initialize writes through it; methods.ts reads through it. Suite green and unchanged.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TIDY FIRST, with the existing suite as the check: the two writers become symmetric instead of one being a closure variable and the other a parameter, and the entry gets a way to write without notificationEntries reaching back into startServer's locals.",
+        ],
+      },
+      {
+        test: "A folder added after initialize is observable by a config handler",
+        implementation:
+          'Add the ENTRY to the defineNotifications table with `gate: "lifecycle"`, handling event.added ONLY. Params are typed from the `type` beside them by defineNotifications -- do NOT annotate them by hand.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PBI-18 CHANGED WHAT THIS COSTS: you add an ENTRY, not a handler that remembers to consult the gate. Forgetting is now a compile error. ONE IMPLEMENTATION MOMENT WITH SUBTASK 4: the entry and its gate are a single edit, and subtask 4's value is entirely in its control rather than in new code.",
+        ],
+      },
+      {
+        test: "A folder removed stops being observable, matching the URI EXACTLY",
+        implementation:
+          "Handle event.removed. Deliberately fake-it-then-evolve from subtask 2 so this is a REAL RED rather than falling out of one payload handler.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE DISCRIMINATING CASE, which an echoing oracle cannot pass: add BOTH `…/plain` and `…/plain/`, remove `…/plain`, assert `…/plain/` REMAINS. Measured against nvim, which accepts the two as different folders -- so normalising would delete a folder the client still holds. REPORT THE RED AS OBSERVED, NOT ASSUMED: the sequencing was DESIGNED to produce it, and a designed-for RED that turns out born green is a FINDING rather than a formality.",
+        ],
+      },
+      {
+        test: "A change before initialize or after shutdown does not mutate the list",
+        implementation:
+          'Born green once the entry carries `gate: "lifecycle"`; same moment as subtask 2.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          'THE CONTROL IS THE WRONG GATE ASSIGNMENT, since bypass is now unrepresentable: change the entry to `gate: "always"` and this must redden while subtasks 2 and 3 stay GREEN.',
+        ],
+      },
+      {
+        test: "A duplicate `added` yields two entries",
+        implementation: "Born green from the append in subtask 2; the value is the control.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "AN `includes` GUARD PASSES EVERY OTHER CRITERION, which is why this is pinned rather than noted. The tiebreak is OBSERVABILITY: a phantom entry shows as visibly wrong items, a missing one is silent absence.",
+        ],
+      },
+      {
+        test: "A handler sees the folders as of its REQUEST START",
+        implementation:
+          "BORN GREEN -- per-request capture already exists at src/methods.ts. New fixture completion-workspace-gate.ts reusing completion-gate.ts's didChange release: park a streaming completion, deliver the change WHILE IT IS PARKED, release it, and assert its second yield matches its first; then a NEW completion sees the change.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PROVEN BY ORDERING, NOT BY A TIMING BOUND: the in-flight response carries request-start roots WHILE A CHANGE HAS ALREADY BEEN DELIVERED. Same shape as `settled === false`. THE SECOND HALF IS LOAD-BEARING: without the new-request assertion this passes against a server that applies NOTHING. THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and read lazily, and the in-flight assertion must redden.",
+        ],
+      },
+      {
+        test: "N/A (prose, same commit as the criterion)",
+        implementation:
+          "src/types.ts's comment changes from `snapshot of initialize` to `snapshot of REQUEST START`. Part of this deliverable, never a follow-up -- landing tracking without it puts a false statement in a durable home.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO'S CHECKLIST, issued at planning: (1) src/types.ts's comment in the SAME commit; (2) per-request capture proven by ORDERING rather than a timing bound; (3) the mirror-on-add rule pinned with both halves; (4) criterion 4's wrong-gate control fires; (5) subtask 3's removal RED REPORTED AS OBSERVED, since a designed-for RED that arrives green is a finding.",
+      "THE STAKEHOLDER SHARPENED THE RECORD TWICE THIS SPRINT, and the PO's ruling on how to answer is to CITE where it is covered rather than build process: the client capability governs the REQUEST direction only -- their reading, better than the `not declared` we had -- and workspace folder changes carry removals, which criterion 2 and subtask 3 already hold. They read the primary source more carefully than either of us did on the capability question.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 16,
@@ -245,7 +309,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "MERGED AT SPRINT 14 from two statements of one rule, nothing dropped. S12: the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test -- one layer below checklist-versus-criterion drift, where the reviewer's thinking runs ahead of the criterion. S13: filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard, since it makes correctness depend on someone downstream remembering to look -- and the piped-exit-code defect shows how slowly that works when they do: nine sprints.",
+            "MERGED AT SPRINT 14 from two statements of one rule, nothing dropped. S12: the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test -- one layer below checklist-versus-criterion drift, where the reviewer's thinking runs ahead of the criterion. S13: filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard, since it makes correctness depend on someone downstream remembering to look -- and the piped-exit-code defect shows how slowly that works when they do: nine sprints. MERGED AT SPRINT 17 from the S5 shared-moment rule, which is the same rule about a different axis: a plan that hides which subtasks are ONE EDIT produces a born-green RED, and declaring it in advance is the property-not-mechanism discipline applied to sequencing.",
         },
       ],
     },
@@ -275,7 +339,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction. Filed after the Scrum Master raised the compaction half about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record. MERGED AT SPRINT 13, nothing dropped: absorbs the route-to-a-PBI sharpening (S9) and the machine-formatted-file corollary (S10), which were three statements of one rule.",
+            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction. Filed after the Scrum Master raised the compaction half about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record. MERGED AT SPRINT 13, nothing dropped: absorbs the route-to-a-PBI sharpening (S9) and the machine-formatted-file corollary (S10), which were three statements of one rule. MERGED AT SPRINT 17: the S2 orphan-note rule is this rule's second clause made specific -- a note addressed to ANOTHER PBI is written onto THAT PBI when created, never left to be rescued at compaction. First application found a real orphan immediately: PBI-2 said `PBI-3 and PBI-4 widen it again`, PBI-3 carried its copy, PBI-4 carried nothing.",
         },
         {
           action:
@@ -336,13 +400,6 @@ const scrum: ScrumDashboard = {
       sprint: 5,
       improvements: [
         {
-          action: "A plan must declare which subtasks share ONE IMPLEMENTATION MOMENT.",
-          timing: "immediate",
-          status: "active",
-          outcome:
-            "Sprint 5's subtasks 5-7 were planned expected-RED and came out born green: one async generator cannot be dispatched twice.",
-        },
-        {
           action:
             "A helper that terminates a subprocess must settle every promise it owns before the process dies. Cross-test misattribution is a suite-integrity failure, not a single-test bug.",
           timing: "immediate",
@@ -377,7 +434,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Nine items where three carried new information diluted the signal the item-by-item rule exists to protect.",
+            "Nine items where three carried new information diluted the signal the item-by-item rule exists to protect. MERGED AT SPRINT 17 from the S1 timing rule, one rule about one artifact: the checklist is ISSUED AT PLANNING rather than at Review, so the plan can target it.",
         },
       ],
     },
@@ -399,14 +456,6 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A note addressed to a PBI other than the one it sits on must be written onto THAT PBI when the note is created, not left to be rescued at compaction.",
-          timing: "sprint",
-          status: "active",
-          outcome:
-            "First application found a real orphan immediately: PBI-2 said 'PBI-3 and PBI-4 widen it again', PBI-3 carried its copy, PBI-4 carried nothing.",
-        },
-        {
-          action:
             "When a planning spike produces passing code, ATTACH it for the executor to start from -- the plan then says what to change about it instead of re-deriving it in prose -- and the attachment must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask.",
           timing: "sprint",
           status: "active",
@@ -417,15 +466,7 @@ const scrum: ScrumDashboard = {
     },
     {
       sprint: 1,
-      improvements: [
-        {
-          action:
-            "The PO's acceptance checklist is issued at Sprint PLANNING, not at Review, so the plan can target it.",
-          timing: "sprint",
-          status: "active",
-          outcome: null,
-        },
-      ],
+      improvements: [],
     },
   ],
 };
