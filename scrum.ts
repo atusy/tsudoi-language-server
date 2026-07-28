@@ -34,50 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-17",
-      story: {
-        role: "config author",
-        capability: "answer from the workspace as it is now, not as it was at startup",
-        benefit:
-          "adding a folder mid-session changes what they are offered, instead of leaving them with a root the editor no longer considers current",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A folder added after initialize is observable by a config handler",
-          verification:
-            "Drive initialize with one folder, send workspace/didChangeWorkspaceFolders adding a second, and assert a handler observes BOTH. NEGATIVE CONTROL: a snapshot captured at initialize observes only the first",
-        },
-        {
-          criterion: "A folder removed after initialize stops being observable",
-          verification:
-            "MATCH THE URI STRING EXACTLY AND DO NOT NORMALISE. Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one. THE DISCRIMINATING CASE, which an ECHOING ORACLE CANNOT PASS: add BOTH spellings of one directory -- `…/plain` and `…/plain/` -- remove one, assert the other REMAINS",
-        },
-        {
-          criterion: "A duplicate `added` yields TWO entries",
-          verification:
-            "Add a URI already in the list and assert the list holds it twice. NEGATIVE CONTROL: an `includes` guard reddens it -- and that guard passes every other criterion, which is why this is a criterion rather than a note. DECIDED ON OBSERVABILITY, NOT PRINCIPLE: mirroring a duplicate can be wrong too, so the tiebreak is that a PHANTOM entry shows up as visibly wrong items while a MISSING one is silent absence. `name` differences fold in here: the event says what was ADDED and we reconcile by neither URI nor name, because LSP has no rename event -- a client wanting one sends `removed` then `added`",
-        },
-        {
-          criterion:
-            "A handler sees the folders as they were WHEN ITS REQUEST STARTED, not as they are when it reads them",
-          verification:
-            "BORN GREEN AND SAYING SO, because per-request capture is ALREADY today's behaviour -- src/methods.ts calls the thunk once when building RequestContext -- and someone expecting a RED would find green and `fix` what is correct. Change the folders while a streaming completion is PARKED and assert that request finishes on the list it began with, while the NEXT request sees the change; the second half is what stops it passing against a server that applies NOTHING. THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and read lazily, and the in-flight assertion must redden",
-        },
-        {
-          criterion:
-            "A folder change arriving before initialize or after shutdown does not mutate the folder list",
-          verification:
-            'Send the notification outside the initialized window and assert the list is unchanged, then assert a normal change still applies. NEGATIVE CONTROL AMENDED AT SPRINT 16, and the change is the reorder paying off: the BYPASS this control used to name is now UNREPRESENTABLE, since a handler registered through the router cannot skip the gate. The representable failure is a WRONG GATE ASSIGNMENT -- registering this handler with `gate: "always"` must redden it. Thin but real, and the criterion reduces to one honest assertion',
-        },
-      ],
-      status: "ready",
-      notes: [
-        "READY AT SPRINT 17 REFINEMENT: the stakeholder confirmed they WILL use add_workspace_folder(), so one of the two unmeasured conditions is ANSWERED. The other -- that they give tsudoi a real root at all -- is the same condition ANY workspace feature needs, so it no longer distinguishes this item from its alternatives. THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
-        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`. THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
-        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check. MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
-      ],
-    },
-    {
       id: "PBI-19",
       story: {
         role: "config author",
@@ -111,9 +67,48 @@ const scrum: ScrumDashboard = {
         "THE NAME STAYS `workspaceFolders` -- a folder derived from rootUri genuinely IS a workspace folder expressed in an older field, and src/types.ts's own header says renaming an export breaks configs we cannot see. WHAT BECOMES FALSE IS THE COMMENT, which says the value is what the client SENT: it changes in the SAME COMMIT and must name the precedence chain, so an author meeting a synthesised `name` knows where it came from. A PROBE WORTH RUNNING DURING THE SPRINT, NOT AS A GATE ON IT: whether a client can be made to send didChangeWorkspaceFolders while declaring workspace.workspaceFolders false or omitting it. Its best outcome leaves the case REPRESENTABLE in the protocol, so this PBI must define behaviour either way -- a measurement that cannot change the deliverable does not block refinement.",
       ],
     },
+    {
+      id: "PBI-20",
+      story: {
+        role: "config author",
+        capability: "have a folder removed once removed once, not have every copy of it vanish",
+        benefit:
+          "the list keeps saying exactly what the client said, on remove as it already does on add",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "N `removed` entries for one URI remove N copies, no more",
+          verification:
+            "Add a URI twice, send ONE removed entry for it, assert ONE copy REMAINS; send a second and assert it is gone. NEGATIVE CONTROL: today's filter -- which matches every entry with that URI -- reddens the first assertion",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AT SPRINT 17'S REVIEW, where the PO OVERTURNED an unpinned ruling. The Developer had recorded remove-all as `equally defensible` under the Sprint 7 one-outcome rule; the method was right and the input wrong. REMOVE-ALL DISCARDS WHAT THE EVENT CARRIED: a client removing two copies sends TWO `removed` entries and one removing a single copy sends ONE, so N entries should remove N copies -- an exact mirror. PBI-17's duplicate criterion honours multiplicity on ADD; symmetry honours it on REMOVE. One outcome IS required.",
+        "NOT DONE AT REVIEW, and the line is the one held since Sprint 1: it arrived at Review, no observed client produces the case, and forcing src/ behaviour changes there is retroactive scope. The SITE COMMENT was corrected before the tag instead -- src/workspace.ts now says which behaviour is correct and that this is not it -- because wrong reasoning sitting where someone reads it is the thing that propagates.",
+        "CONTRIVED, and saying so is what keeps the ordering honest: nothing observed produces a duplicate URI in a real client. Ordered after PBI-19, which serves a real if small population.",
+      ],
+    },
   ],
 
   completed: [
+    {
+      number: 17,
+      pbi_id: "PBI-17",
+      goal: "Answer from the workspace as it is now -- a folder the user adds mid-session changes what they are offered, and one they remove stops answering.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in 5c3588d, 5bb6239, 4d3bc75, a4adbcd, 8fa78e3 and bd6e33a. 293 tests green (up from 284), each DoD command run separately with its exit read directly. src/workspace.ts is a HANDLE in the shape of DocumentStoreHandle -- the codebase's own answer to state that notifications write and requests read.",
+        "THE DESIGNED-FOR RED WAS OBSERVED, NOT ASSUMED, which the PO's checklist required precisely because a designed-for RED arriving green is a finding: with `added` handled and `removed` deliberately not, the removal test failed on BOTH runtimes with the folder still present.",
+        "THE PO'S OWN CRITERION MEASURED RATHER THAN REASONED, and re-run by the Scrum Master: a URI-comparing dedupe guard on `added` reddens `a URI added twice is held twice` on both runtimes and NOTHING ELSE. That is the exact hazard the Developer predicted -- the guard passes every OTHER criterion, which is why the rule was pinned rather than noted.",
+        "THE PO OVERTURNED AN UNPINNED RULING OF THE DEVELOPER'S, and the method was right while the input was wrong. A URI held twice and removed once loses BOTH copies; that was recorded as `equally defensible` under the Sprint 7 one-outcome rule. But REMOVE-ALL DISCARDS WHAT THE EVENT CARRIED -- N `removed` entries should remove N copies, an exact mirror, and this list honours multiplicity on ADD. One outcome IS required. The site comment was corrected BEFORE THE TAG; the behaviour change is an INCREMENT, because forcing src/ changes at Review is the retroactive-scope line held since Sprint 1.",
+        "REMOVED-BEFORE-ADDED STOPPED BEING DEFENSIBLE BY ACCIDENT: it is decided by the visible-over-silent principle, since a rename spelled as one event ends HOLDING the folder -- a phantom, visible if wrong -- where the other order ends holding nothing, which is silent.",
+        "NOT CONSTRUCTED, with the residual named: criterion 5's before-initialize and after-shutdown halves are NOT observable end to end -- initialize REPLACES the list so an ungated write leaves no trace, and after shutdown every request is refused so no handler remains to read it back. The test sits at the router with the stub registrar, so `the real stdio connection drops this outside the serving window` is proven THERE ONLY. Criteria 1-3 carry the inside-the-window wiring, which is what makes the gap narrow rather than open.",
+        "SINGLE-OBSERVER EXCEPT TWO, disclosed rather than presented as five: the executor wrote and ran all five perturbations. The Scrum Master re-ran the dedupe guard, and the wrong-params probe is a REPRODUCTION of Sprint 16's -- landing on the FIRST entry added since defineNotifications, which is the case most likely to have lost the contextual typing that extraction cost last sprint. That is also this Review's cross-sprint re-run.",
+      ],
+    },
     {
       number: 16,
       pbi_id: "PBI-18",
@@ -149,148 +144,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 17,
-    pbi_id: "PBI-17",
-    goal: "Answer from the workspace as it is now -- a folder the user adds mid-session changes what they are offered, and one they remove stops answering.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "N/A (structural)",
-        implementation:
-          "`let workspaceFolders` in startServer becomes createWorkspaceFolders(), a HANDLE in the shape of DocumentStoreHandle -- which is what this codebase already uses for state that NOTIFICATIONS write and REQUESTS read, and the right answer to a second writer arriving. initialize writes through it; methods.ts reads through it. Suite green and unchanged.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "5c3588d",
-            message: "refactor: give the workspace folders a handle, as documents already have",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "TIDY FIRST, with the existing suite as the check: the two writers become symmetric instead of one being a closure variable and the other a parameter, and the entry gets a way to write without notificationEntries reaching back into startServer's locals.",
-          "DONE. src/workspace.ts holds createWorkspaceFolders(); `current` is the read thunk methods.ts already wanted and `initialize` is the write. NORMALISATION STAYED AT THE initialize REQUEST, deliberately: `params.workspaceFolders ?? []` is a fact about InitializeParams' two absent states, and its comment constrains the site that reads params. Suite green and UNCHANGED at 284 tests, which is the whole check a structural change gets.",
-        ],
-      },
-      {
-        test: "A folder added after initialize is observable by a config handler",
-        implementation:
-          'Add the ENTRY to the defineNotifications table with `gate: "lifecycle"`, handling event.added ONLY. Params are typed from the `type` beside them by defineNotifications -- do NOT annotate them by hand.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5bb6239",
-            message: "feat: answer from the workspace as it is now, for a folder the user adds",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PBI-18 CHANGED WHAT THIS COSTS: you add an ENTRY, not a handler that remembers to consult the gate. Forgetting is now a compile error. ONE IMPLEMENTATION MOMENT WITH SUBTASK 4: the entry and its gate are a single edit, and subtask 4's value is entirely in its control rather than in new code.",
-          "RED OBSERVED on both runtimes before the entry existed: the hover observed the initialize folder ALONE and the assertion failed on the missing second entry -- which IS criterion 1's stated negative control, met as the starting state rather than as a separate probe. WRONG-PARAMS PROBE RUN, reproducing Sprint 16's perturbation on the FIRST entry added since defineNotifications landed: annotating this handler's params as DidOpenTextDocumentParams fails tsc with TS2322 naming DidChangeWorkspaceFoldersParams, so the inference still reaches a new entry.",
-        ],
-      },
-      {
-        test: "A folder removed stops being observable, matching the URI EXACTLY",
-        implementation:
-          "Handle event.removed. Deliberately fake-it-then-evolve from subtask 2 so this is a REAL RED rather than falling out of one payload handler.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "4d3bc75",
-            message: "feat: a folder the user removes stops being answered from",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED OBSERVED, NOT ASSUMED, on both runtimes: with `added` alone handled, the removed folder was STILL IN THE LIST and the assertion failed on the extra entry. The fake-it-then-evolve sequencing did what it was designed to do; it did not arrive born green.",
-          "NORMALISATION PERTURBATION RUN, and it flips the assertion `observedFolders toEqual [plainSlashFolder]`: stripping a trailing slash on both sides of the removal filter reddens THIS TEST ON BOTH RUNTIMES and nothing else -- criterion 1's added test stays green, which is the point of naming the discriminating case.",
-          "UNSPECIFIED AND SURFACED RATHER THAN PINNED: a URI held TWICE and removed ONCE loses BOTH copies, since the filter matches every entry. Removing one copy per `removed` entry is equally defensible, no criterion rules it and no observed client produces it, so it is a comment at the site and NOT a test -- pinning it would fix an arbitrary choice under the S7 rule.",
-          "THE DISCRIMINATING CASE, which an echoing oracle cannot pass: add BOTH `…/plain` and `…/plain/`, remove `…/plain`, assert `…/plain/` REMAINS. Measured against nvim, which accepts the two as different folders -- so normalising would delete a folder the client still holds. REPORT THE RED AS OBSERVED, NOT ASSUMED: the sequencing was DESIGNED to produce it, and a designed-for RED that turns out born green is a FINDING rather than a formality.",
-        ],
-      },
-      {
-        test: "A change before initialize or after shutdown does not mutate the list",
-        implementation:
-          'Born green once the entry carries `gate: "lifecycle"`; same moment as subtask 2.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5bb6239",
-            message: "feat: answer from the workspace as it is now, for a folder the user adds",
-            phase: "green",
-          },
-        ],
-        notes: [
-          'THE CONTROL IS THE WRONG GATE ASSIGNMENT, since bypass is now unrepresentable: change the entry to `gate: "always"` and this must redden while subtasks 2 and 3 stay GREEN.',
-          'CONTROL FIRED, EXACTLY TWO TESTS: `gate: "always"` reddens the new router test AND the entry-table test, and leaves criterion 1 GREEN on both runtimes. The two are different claims -- the table asserts what the entry DECLARES, the router asserts what the declaration DOES -- so this is the S9 both-directions addition rather than a control that can never be first.',
-          "NEITHER HALF IS OBSERVABLE END-TO-END, found while writing the test and recorded because it decides where the test lives: before initialize the list is REPLACED by what initialize states, so an ungated write leaves no trace; after shutdown every request is refused, so no handler remains to read the list back. The router-level test with the handle read directly is the only honest home.",
-        ],
-      },
-      {
-        test: "A duplicate `added` yields two entries",
-        implementation: "Born green from the append in subtask 2; the value is the control.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "a4adbcd",
-            message: "test: pin that a URI added twice is held twice",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN AS PLANNED, and THE CONTROL FIRED AND CONFIRMED THE PBI'S OWN CLAIM rather than merely passing: a uri-comparing dedupe guard reddens `observedFolders toEqual [addedFolder, addedAgain]` on both runtimes AND NOTHING ELSE -- so `an includes guard passes every other criterion` is now measured, not reasoned.",
-          "TWO EVENTS, NOT ONE `added` ARRAY OF TWO, which the control forced: a guard comparing the incoming array against the list AS IT STANDS admits both copies when they arrive together, so a single-event test would have been satisfied by the very implementation it was written against. The second entry also carries a DIFFERENT NAME, which is where the `name` question folds in.",
-          "AN `includes` GUARD PASSES EVERY OTHER CRITERION, which is why this is pinned rather than noted. The tiebreak is OBSERVABILITY: a phantom entry shows as visibly wrong items, a missing one is silent absence.",
-        ],
-      },
-      {
-        test: "A handler sees the folders as of its REQUEST START",
-        implementation:
-          "BORN GREEN -- per-request capture already exists at src/methods.ts. New fixture completion-workspace-gate.ts reusing completion-gate.ts's didChange release: park a streaming completion, deliver the change WHILE IT IS PARKED, release it, and assert its second yield matches its first; then a NEW completion sees the change.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "8fa78e3",
-            message: "test: pin that a request answers on the workspace it started with",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN, AS DECLARED IN ADVANCE, and THE PERTURBATION FIRED AT THE NAMED ASSERTION: making RequestContext hold the thunk and read lazily (a getter over the WorkspaceFolders thunk in methods.ts) reddens `session.progress[1] toEqual itemsFor(before)` -- the IN-FLIGHT half -- on both runtimes and NOTHING ELSE in 293 tests. tsc stayed 0 under it, which is the point: no type forbids the lazy read, only this assertion does.",
-          "THE FIXTURE READS `context.workspaceFolders` AT EACH YIELD rather than hoisting it, and that is why the perturbation can fire at all -- a fixture capturing it once would pass under the lazy read and prove nothing. Recorded because it is the difference between this test and reusing completion-gate.ts.",
-          "PROVEN BY ORDERING, NOT BY A TIMING BOUND: the in-flight response carries request-start roots WHILE A CHANGE HAS ALREADY BEEN DELIVERED. Same shape as `settled === false`. THE SECOND HALF IS LOAD-BEARING: without the new-request assertion this passes against a server that applies NOTHING. THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and read lazily, and the in-flight assertion must redden.",
-        ],
-      },
-      {
-        test: "N/A (prose, same commit as the criterion)",
-        implementation:
-          "src/types.ts's comment changes from `snapshot of initialize` to `snapshot of REQUEST START`. Part of this deliverable, never a follow-up -- landing tracking without it puts a false statement in a durable home.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "5bb6239",
-            message: "feat: answer from the workspace as it is now, for a folder the user adds",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "SAME COMMIT AS SUBTASK 2, which is the point. TWO MORE PROSE HOMES FOUND AND CHANGED IN IT, both in src/server.ts: the `WHERE didChangeWorkspaceFolders WOULD GO` block is gone, and the logger's unregistered-notification measurement no longer cites this message as an example of one -- the measurement stands, the message has left the class. CHECKED AND UNCHANGED: README.md and examples/completion-path.ts make no tracking claim.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PO'S CHECKLIST, issued at planning: (1) src/types.ts's comment in the SAME commit; (2) per-request capture proven by ORDERING rather than a timing bound; (3) the mirror-on-add rule pinned with both halves; (4) criterion 4's wrong-gate control fires; (5) subtask 3's removal RED REPORTED AS OBSERVED, since a designed-for RED that arrives green is a finding.",
-      "THE STAKEHOLDER SHARPENED THE RECORD TWICE THIS SPRINT, and the PO's ruling on how to answer is to CITE where it is covered rather than build process: the client capability governs the REQUEST direction only -- their reading, better than the `not declared` we had -- and workspace folder changes carry removals, which criterion 2 and subtask 3 already hold. They read the primary source more carefully than either of us did on the capability question.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 16,
