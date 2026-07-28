@@ -2,6 +2,7 @@ import process from "node:process";
 import {
   createProtocolConnection,
   DidChangeTextDocumentNotification,
+  DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
   ExitNotification,
@@ -21,7 +22,7 @@ import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
 import { defineNotifications, registerNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
-import { createWorkspaceFolders } from "./workspace.ts";
+import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -34,11 +35,16 @@ import { createWorkspaceFolders } from "./workspace.ts";
  * WHAT THIS LOGGER DOES NOT COVER, recorded because the natural inference from
  * the paragraph above is WRONG and would manufacture a defect that does not
  * exist: a notification with NO REGISTERED HANDLER never reaches this logger at
- * all. MEASURED on both runtimes -- `workspace/didChangeWorkspaceFolders`,
- * `$/setTrace` and an invented `totally/madeUp` each produced ZERO BYTES here,
- * with a throwing hover in the SAME session through the SAME reader writing its
- * line, so the silence is real and not a reader that cannot see stderr. The
- * session stayed functional and exited 0: inert, not merely quiet.
+ * all. MEASURED on both runtimes -- `$/setTrace` and an invented
+ * `totally/madeUp` each produced ZERO BYTES here, with a throwing hover in the
+ * SAME session through the SAME reader writing its line, so the silence is real
+ * and not a reader that cannot see stderr. The session stayed functional and
+ * exited 0: inert, not merely quiet.
+ *
+ * The same measurement was made on `workspace/didChangeWorkspaceFolders`, and
+ * that example is no longer available here: tsudoi REGISTERS it now, so it
+ * reaches a handler rather than nothing. The measurement stands for the
+ * unregistered case; the message it was taken on has left that case.
  *
  * So the reach is `a handler that threw`, never `anything the client sent that
  * we do not answer`. Someone reasoning from the throwing case to the
@@ -140,23 +146,11 @@ export function startServer(
   // when it may run. The gate is applied by registerNotifications, never by a
   // handler body: a body that could consult it is a body that could forget to,
   // which is what these entries replaced.
-  //
-  // WHERE workspace/didChangeWorkspaceFolders WOULD GO, and why it is not here
-  // yet: the folders read above are a SNAPSHOT of initialize, and a user adding
-  // or removing a folder mid-session leaves it stale. MEASURED both ways -- the
-  // notification arrives even when the server advertises `capabilities: {}` --
-  // so this is ignored rather than opted out of, and staleness cannot be
-  // foreclosed by declining to advertise.
-  //
-  // Also measured, and it is what makes ignoring it tolerable for now rather
-  // than urgent: an unregistered notification is SILENT and INERT. Nothing
-  // reaches stderr, the session stays functional and exits 0.
-  //
-  // Handling it means updating the captured list and is a separate story --
-  // whoever takes it adds an ENTRY HERE and writes through the workspace
-  // folders handle above, and should say at the type that the value tracks
-  // changes once it does.
-  registerNotifications(connection, lifecycle, notificationEntries(documents, lifecycle));
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+  );
 
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
@@ -194,7 +188,11 @@ export function startServer(
  * leaves the server alive after the client asked it to die, and the only
  * symptom is a run that used to take twelve seconds taking minutes.
  */
-export function notificationEntries(documents: DocumentStoreHandle, lifecycle: Lifecycle) {
+export function notificationEntries(
+  documents: DocumentStoreHandle,
+  lifecycle: Lifecycle,
+  workspaceFolders: WorkspaceFoldersHandle,
+) {
   return defineNotifications([
     {
       type: InitializedNotification.type,
@@ -226,6 +224,28 @@ export function notificationEntries(documents: DocumentStoreHandle, lifecycle: L
     {
       type: DidCloseTextDocumentNotification.type,
       handler: (params) => documents.close(params),
+      gate: "lifecycle",
+    },
+    {
+      type: DidChangeWorkspaceFoldersNotification.type,
+      // Pure delegation, exactly as the sync notifications are: what a change
+      // event MEANS is workspace.ts's business. The params are typed from the
+      // `type` on the line above by defineNotifications -- annotating them here
+      // by hand would compile against the WRONG notification's shape just as
+      // happily, which is the error this table exists to keep impossible.
+      handler: (params) => workspaceFolders.change(params.event),
+      // MEASURED, and it is why this entry exists at all: the notification
+      // arrives whether or not the server advertises
+      // `workspace.workspaceFolders.changeNotifications` -- tested against
+      // `capabilities: {}` and against full advertisement, both received. So
+      // tsudoi does not opt into this message and cannot opt out of it.
+      //
+      // REASONED for the gate itself: a folder change outside the serving
+      // window has no session to change. Before `initialize` there is no client
+      // state and the folder list is about to be REPLACED by what initialize
+      // states anyway; after `shutdown` the session is over. LSP's own rule for
+      // a mistimed notification is to drop it silently, which is what
+      // `lifecycle` does.
       gate: "lifecycle",
     },
     {

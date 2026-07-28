@@ -55,8 +55,9 @@ export interface RequestContext {
   readonly signal: AbortSignal;
   readonly tsudoi: Tsudoi;
   /**
-   * The workspace folders the client sent at `initialize`, or an EMPTY LIST
-   * when it sent none.
+   * The workspace folders this request started on -- what the client stated at
+   * `initialize`, plus every change it has notified since -- or an EMPTY LIST
+   * when it has named none.
    *
    * Absence is a state a config author must be able to SEE: it is never
    * defaulted to the working directory, to `/`, or to anything else this
@@ -67,18 +68,27 @@ export interface RequestContext {
    * sent as null -- arrive here as the same empty list, so a config author
    * never has to know there were two.
    *
-   * WHAT IT DOES NOT DO, stated at the type because this is where someone
-   * would otherwise assume otherwise: it is a SNAPSHOT of `initialize` and it
-   * DOES NOT TRACK CHANGES. LSP has `workspace/didChangeWorkspaceFolders`, a
-   * user really can add or remove a folder mid-session, and tsudoi does not
-   * handle that notification -- so after such a change this list is what the
-   * session STARTED with, not what the editor considers current. MEASURED: the
-   * notification arrives whether or not a server advertises for it, so this is
-   * a thing tsudoi currently IGNORES rather than one it opts out of.
+   * WHAT IT IS A SNAPSHOT OF, stated at the type because the answer CHANGED
+   * and `snapshot` alone would let a reader assume the old one: it is a
+   * snapshot of REQUEST START, not of `initialize`. tsudoi handles
+   * `workspace/didChangeWorkspaceFolders`, so a folder the user adds or removes
+   * mid-session reaches the NEXT request -- while a request already in flight
+   * keeps the list it began with. That is what stops one response carrying
+   * items attributed to a root that no longer exists beside items from one that
+   * just appeared, and it matters because a completion handler may stream over
+   * time rather than answer at once.
    *
-   * The name is deliberately not `initialWorkspaceFolders`. That would be
-   * accurate today and WRONG the moment tracking lands, and every exported
-   * name here is public API -- renaming one breaks configs nobody can see.
+   * MIRRORED, NOT INTERPRETED. What arrives is what the client said, and
+   * nothing here normalises it: two spellings of one directory are TWO folders,
+   * and a URI added twice is held twice, because this list is the CLIENT's
+   * state rather than the filesystem's. MEASURED against nvim, which accepts
+   * `…/plain` and `…/plain/` as different folders and removes them separately
+   * -- so a normalising implementation would delete a folder the client still
+   * holds.
+   *
+   * The name is deliberately not `initialWorkspaceFolders`. It was refused
+   * BEFORE tracking landed, and tracking is why: every exported name here is
+   * public API, so a name that became false would have had to stay.
    */
   readonly workspaceFolders: readonly WorkspaceFolder[];
 }

@@ -46,6 +46,13 @@ const sentFolders: WorkspaceFolder[] = [
 ];
 
 /**
+ * The folder a client adds mid-session -- a THIRD path, distinct from both
+ * `sentFolders`, so that an implementation appending it cannot be confused with
+ * one that never applied the change at all.
+ */
+const addedFolder: WorkspaceFolder = { uri: "file:///home/me/added", name: "added" };
+
+/**
  * What the handler observed ON ITS OWN RequestContext, read back through the
  * fixture's hover.
  *
@@ -60,6 +67,26 @@ async function observedFolders(session: LspSession): Promise<unknown> {
   const contents = hover.contents as { value?: string };
   const observation = JSON.parse(contents.value ?? "{}") as { workspaceFolders?: unknown };
   return observation.workspaceFolders;
+}
+
+/**
+ * `workspace/didChangeWorkspaceFolders` as a client sends it.
+ *
+ * Both arms are always spelled, empty when nothing moved, because the protocol
+ * declares them as arrays rather than optionals -- and a helper that omitted
+ * one would be testing tsudoi against a client shape no client sends.
+ *
+ * DELIVERED BY ORDERING, never by a timing bound: this is a notification
+ * written to the same stdin as the request that reads the result back, and the
+ * server frames what it is sent in order. Nothing here sleeps.
+ */
+function changeFolders(
+  session: LspSession,
+  event: { added?: readonly WorkspaceFolder[]; removed?: readonly WorkspaceFolder[] },
+): void {
+  session.notify("workspace/didChangeWorkspaceFolders", {
+    event: { added: event.added ?? [], removed: event.removed ?? [] },
+  });
 }
 
 /**
@@ -185,6 +212,35 @@ for (const runtime of runtimes) {
         session.notify("initialized", {});
 
         expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-17 CRITERION 1. The client opened with one folder and added a second
+    // WHILE THE SESSION WAS RUNNING, which is what `add_workspace_folder()`
+    // sends. The handler must see the workspace as it is NOW.
+    //
+    // ITS NEGATIVE CONTROL IS THE STATE THIS REPLACED, and it was observed
+    // rather than argued: before the entry existed the notification was
+    // unregistered and inert, the hover observed `[sentFolders[0]]` alone, and
+    // this assertion failed on the missing second entry.
+    //
+    // BOTH folders, in order, and never `toContain`: a list that lost what the
+    // session started with is exactly as wrong as one that never gained what
+    // the user added.
+    test("a folder added after initialize is observable by a config handler", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: [sentFolders[0]],
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [addedFolder] });
+
+        expect(await observedFolders(session)).toEqual([sentFolders[0], addedFolder]);
       } finally {
         session.dispose();
       }

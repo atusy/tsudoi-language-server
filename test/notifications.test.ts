@@ -1,11 +1,16 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { type Disposable, NotificationType } from "vscode-languageserver-protocol/node";
+import {
+  type Disposable,
+  NotificationType,
+  type WorkspaceFolder,
+} from "vscode-languageserver-protocol/node";
 import { createDocumentStore } from "../src/documents.ts";
 import { createLifecycle } from "../src/lifecycle.ts";
 import { type NotificationRegistrar, registerNotifications } from "../src/notifications.ts";
 import { notificationEntries } from "../src/server.ts";
+import { createWorkspaceFolders } from "../src/workspace.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
@@ -101,6 +106,51 @@ test("an entry gated always reaches its handler before initialize and after shut
   deliver("test/ungated", { mark: "after shutdown" });
 
   expect(seen).toEqual(["before initialize", "serving", "after shutdown"]);
+});
+
+// PBI-17 CRITERION 5, at the ONLY place where it is observable at all, which is
+// why it is here and not beside the other workspace criteria: NEITHER half can
+// be driven end-to-end. Before `initialize` the folder list is REPLACED by
+// whatever initialize states, so an ungated write leaves no trace to find;
+// after `shutdown` every request is refused, so no handler is left to read the
+// list back through. The handle is read directly instead.
+//
+// THE CONTROL IS A WRONG GATE ASSIGNMENT -- the only failure still
+// representable, since a handler registered through this router cannot skip the
+// gate. Giving the entry `gate: "always"` reddens this while the added and
+// removed criteria stay green, because those deliver inside the window.
+//
+// NOT THE CLAIM THE ENTRY-TABLE TEST BELOW MAKES, though the same control
+// reddens both: that one asserts what the entry DECLARES, this one asserts what
+// the declaration DOES -- that nothing reaches the folder list outside the
+// window. A table could declare correctly and a router could ignore it.
+test("a folder change outside the initialized window does not mutate the list, and one inside does", () => {
+  const lifecycle = createLifecycle();
+  const workspaceFolders = createWorkspaceFolders();
+  const { connection, deliver } = recordingConnection();
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(createDocumentStore(), lifecycle, workspaceFolders),
+  );
+  const early: WorkspaceFolder = { uri: "file:///too/early", name: "early" };
+  const served: WorkspaceFolder = { uri: "file:///served", name: "served" };
+  const late: WorkspaceFolder = { uri: "file:///too/late", name: "late" };
+
+  deliver("workspace/didChangeWorkspaceFolders", { event: { added: [early], removed: [] } });
+  expect(workspaceFolders.current()).toEqual([]);
+
+  // THE PAIRED PRESENCE, and it is what the criterion asks for in as many
+  // words: a normal change STILL APPLIES. Without it, `the list is unchanged`
+  // would also hold for a router that registered nothing, for a stub that
+  // dropped every delivery, and for a handle that ignores its own writer.
+  lifecycle.initialize();
+  deliver("workspace/didChangeWorkspaceFolders", { event: { added: [served], removed: [] } });
+  expect(workspaceFolders.current()).toEqual([served]);
+
+  lifecycle.shutDown();
+  deliver("workspace/didChangeWorkspaceFolders", { event: { added: [late], removed: [] } });
+  expect(workspaceFolders.current()).toEqual([served]);
 });
 
 /**
@@ -202,7 +252,11 @@ test("the same entry with a gate type-checks", async () => {
  * measurement, which a table returning one blanket value could not satisfy.
  */
 test("exit's entry declares always, and every other entry declares lifecycle", () => {
-  const entries = notificationEntries(createDocumentStore(), createLifecycle());
+  const entries = notificationEntries(
+    createDocumentStore(),
+    createLifecycle(),
+    createWorkspaceFolders(),
+  );
   const gates = entries.map((entry) => ({
     method: (entry.type as { method?: string }).method ?? String(entry.type),
     gate: entry.gate,
