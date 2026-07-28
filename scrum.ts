@@ -180,7 +180,7 @@ const scrum: ScrumDashboard = {
     number: 14,
     pbi_id: "PBI-15",
     goal: "Let a config author answer from the workspace the editor actually opened -- and, when the editor opened none, say so once instead of going quiet.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "A handler observes the workspace folders the client sent at initialize",
@@ -228,7 +228,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Expected RED. Config-author code at ZERO LINES in src/, mirroring PBI-10's normalise-and-report.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "THE PROPERTY, not the mechanism: the report count is one AND the same stderr reader is demonstrated, IN THE SAME SESSION, to grow when a second session-level line is genuinely emitted. A bare count of one passes when the implementation emits ZERO and something else wrote the line, and passes trivially when the source short-circuits before reaching the report. PRESENCE HALF IS MEASURED, not hoped: Sprint 14 planning measured `tsudoi: textDocument/hover handler failed` reaching this exact reader on both runtimes in a session where three other messages were silent. TWO REQUESTS are what make the claim mean anything -- a single-request test cannot tell once from per-request. REASON RECORDED AS MEASURED, NOT INHERITED: this stakeholder's autoCompleteEvents includes TextChangedI, so in their stack PER-REQUEST IS PER-KEYSTROKE, which is a stronger basis than PBI-10's precedent.",
@@ -239,7 +239,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Expected RED. With a workspace folder set and cwd elsewhere, a relative-prefix completion carries workspace-rooted items resolving against that folder.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "SEQUENCED AFTER THE REPORT ON PURPOSE, and this is the second shared implementation moment declared at planning: both land in the same branch -- no root known, report; root known, yield items -- so WHICHEVER IS WRITTEN SECOND ARRIVES BORN GREEN. If this one is written first, the report subtask arrives green and its once-per-session claim is FICTION.",
@@ -251,7 +251,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Snapshot semantics at the type in src/types.ts, stating what it does NOT do -- it reflects initialize and does not track workspace/didChangeWorkspaceFolders -- plus the PBI-17 boundary recorded at the site where someone would otherwise wire that notification.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "NOT A DoD CHECK AND NO TEST IS BUILT FOR IT. The Scrum Master ruled it a REVIEW-TIME REPORTING ITEM: the PO's checklist item 4 said `verified by content and site, not by a test`, which does not distinguish done from not-done. Asserting a comment's text is ceremony; a checklist line that LOOKS testable and is not is worse.",
