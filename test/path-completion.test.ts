@@ -472,6 +472,42 @@ describe("items with identical inserted text collapse to one", () => {
     }
   });
 
+  // THE SECOND DISCRIMINATOR, against a DIFFERENT wrong implementation: the
+  // symlink case above catches a resolved-path dedup that joins without
+  // realpath, and CANNOT catch one that calls realpath -- that one collapses
+  // the symlink case correctly. Only a case where one file has two DIFFERENT
+  // inserted texts separates them, and both texts must survive: they are two
+  // different edits, and the user picked the one they can read.
+  //
+  // NESTED ROOTS, as the criterion asks: the document's parent is INSIDE cwd,
+  // which is what lets both roots see one file at all.
+  //
+  // HANDED BACK, not worked around: the criterion spells this `one file yields
+  // foo.ts and b/foo.ts`, and that pair CANNOT occur. Completion is per
+  // segment, so the typed fragment supplies ONE directory part to every source
+  // -- typing `fo` asks each root for its own `fo*`, typing `b/fo` asks each
+  // for `b/fo*`, and no single request asks one root for `foo.ts` while asking
+  // another for `b/foo.ts`. The property the criterion defends is reached by
+  // giving one file two NAMES instead, which is the only way two roots produce
+  // two strings for it.
+  test("one file under two names in nested roots keeps BOTH items", async () => {
+    const fixture = tree(["b/foo.ts"], [["foo-link.ts", "b/foo.ts"]]);
+    try {
+      // The document's parent is `b`; cwd is the tree above it.
+      const uri = pathToFileURL(join(fixture.root, "b", "doc.txt")).href;
+      const items = await complete({ uri, line: "foo" }, fixture.root);
+
+      // Two strings, one file: `foo.ts` under the document's parent and
+      // `foo-link.ts` under cwd resolve to the same bytes on disk.
+      expect(realpathSync(join(fixture.root, "b", "foo.ts"))).toBe(
+        realpathSync(join(fixture.root, "foo-link.ts")),
+      );
+      expect(inserted(items)).toEqual(["foo-link.ts", "foo.ts"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
   // THE PERMANENT PAIR for the collapse above: the same measurement over two
   // roots holding DIFFERENT names keeps both. Without it, `exactly one item`
   // is equally satisfied by a module that drops everything but the first.

@@ -274,11 +274,22 @@ export async function* itemsFrom(
         // inert, which the example's prose says out loud.
         //
         // THE RANGE ENDS AT THE CURSOR AND NEVER PAST IT -- insert semantics,
-        // chosen rather than inherited. Completing in the MIDDLE of an
-        // existing path then leaves the tail alone: on `foo (1).p|ng` the
-        // result is `foo (1).pngng`, which is ugly. The alternative deletes
-        // whatever the user has to the right of their cursor, which is worse,
-        // and no criterion rules on it.
+        // and a RULED choice rather than an inherited one. Completing in the
+        // MIDDLE of an existing path then leaves the tail alone: on
+        // `foo (1).p|ng` the result is `foo (1).pngng`, which is ugly. It is
+        // the conservative half of the trade on purpose: a visible tail is
+        // something the user can delete, where text of theirs we deleted is
+        // gone.
+        //
+        // THE UPGRADE PATH, named so it is not reinvented from scratch:
+        // `InsertReplaceEdit` carries BOTH ranges -- insert to the cursor,
+        // replace to the end of the fragment -- and lets the client's own
+        // setting decide between them, which is the only form that serves both
+        // users. It is NOT built here for one reason, stated as what it is:
+        // whether the target completion plugin honours that shape is
+        // UNMEASURED. Measure it before switching; a client that ignores it
+        // would fall back to its own word boundaries and lose the range
+        // entirely, which is the vanish the constraints above are about.
         textEdit: {
           range: { start: { line: position.line, character: fragment.start }, end: position },
           newText: insertText,
