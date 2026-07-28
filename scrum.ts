@@ -203,13 +203,13 @@ const scrum: ScrumDashboard = {
       {
         test: "The hoisting precondition is ASSERTED, and its blast radius reported",
         implementation:
-          "Remove vscode-languageserver-protocol from the consumer's reachable modules; the example probe must redden. REPORT WHAT ELSE REDDENS: the example imports it as a BARE SPECIFIER THE CONSUMER NEVER DECLARES, and it resolves today only because bun HOISTS it as a transitive dependency of @atusy/tsudoi. Under pnpm's default or npm with strict resolution it fails, LOOKING LIKE A TYPE ERROR.",
+          "THE MECHANISM IS THE NESTED LAYOUT, corrected before anything was built because the blunt version FIRES FOR THE WRONG CAUSE: removing node_modules/vscode-languageserver-protocol outright fails even a BARE config, since it also removes TSUDOI'S OWN DECLARED DEPENDENCY -- a control that reddens by breaking the package and would have been recorded as proof the precondition was asserted. Keep it reachable FROM TSUDOI (nested under node_modules/@atusy/tsudoi/node_modules/) and unreachable from the consumer root, which is what pnpm default and npm-strict produce; the example probe must redden and a bare config must not. REPORT WHAT ELSE REDDENS: the example imports it as a BARE SPECIFIER THE CONSUMER NEVER DECLARES, and it resolves today only because bun HOISTS it as a transitive dependency of @atusy/tsudoi. Under pnpm's default or npm with strict resolution it fails, LOOKING LIKE A TYPE ERROR.",
         type: "behavioral",
         status: "pending",
         commits: [],
         notes: [
           "IN SCOPE BECAUSE IT FALSIFIES THIS PBI'S OWN STORY: `type-check against what actually ships` is what a criterion passing only under a hoisting installer would be green about and wrong about. Second widening in two turns, and the PO named it as such -- the first found the real hole, this names the condition under which even that check lies.",
-          "CONFIRM WHETHER CompletionItemKind IS A VALUE IMPORT. If it is, the example needs that package AT RUNTIME, so PBI-13's installed-runtime verification rests on the same assumption -- which makes the blast radius the most valuable thing this sprint produces.",
+          "MEASURED, ANSWERING THE PO'S QUESTION: CompletionItemKind IS a value import -- examples/path-completion.ts:22 takes it without `type` and uses it at four sites -- so the example needs the package AT RUNTIME. RADIUS BOUNDED IN BOTH DIRECTIONS: tsudoi itself is NOT at risk, because vlp is a DECLARED dependency of @atusy/tsudoi that every correct installer resolves, so PBI-13's CLI-starts claim survives; but PBI-13's EXAMPLE-RUNNING assertions rest on the assumption. Under the nested layout both runtimes exit 1 with TS2307, and the runtime failure surfaces as `tsudoi: failed to load config` -- diagnosed through PBI-1's taxonomy rather than crashing.",
         ],
       },
       {
