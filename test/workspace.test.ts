@@ -53,6 +53,23 @@ const sentFolders: WorkspaceFolder[] = [
 const addedFolder: WorkspaceFolder = { uri: "file:///home/me/added", name: "added" };
 
 /**
+ * ONE DIRECTORY, TWO SPELLINGS, and they are TWO FOLDERS here.
+ *
+ * MEASURED against Neovim, adding four folders and removing three: it accepts
+ * `…/plain` and `…/plain/` as different folders, and removing `…/plain` leaves
+ * `…/plain/` in place. Also measured, and it is what makes a plain string
+ * filter correct for this client: every `removed` URI arrives BYTE-IDENTICAL to
+ * the `added` one it refers to.
+ *
+ * So this pair is not a curiosity -- it is the case an implementation that
+ * NORMALISES gets wrong by deleting a folder the client still holds. THE
+ * WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE
+ * INTERPRET.
+ */
+const plainFolder: WorkspaceFolder = { uri: "file:///home/me/plain", name: "plain" };
+const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name: "plain-slash" };
+
+/**
  * What the handler observed ON ITS OWN RequestContext, read back through the
  * fixture's hover.
  *
@@ -241,6 +258,36 @@ for (const runtime of runtimes) {
         changeFolders(session, { added: [addedFolder] });
 
         expect(await observedFolders(session)).toEqual([sentFolders[0], addedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-17 CRITERION 2, and it is THE DISCRIMINATING CASE for it: an
+    // implementation that only appends passes the added criterion above and
+    // fails here, and one that NORMALISES URIs passes a naive removal test and
+    // fails here too, because it would treat these two folders as one and
+    // delete the survivor along with the target.
+    //
+    // AN ECHOING ORACLE CANNOT PASS THIS. A server that answered with whatever
+    // the last event mentioned, or that compared paths rather than strings,
+    // produces something other than exactly `…/plain/` -- and the assertion is
+    // the whole array, so `the survivor is in there somewhere` is not what is
+    // being claimed.
+    //
+    // The session opens with NO folders on purpose: the survivor is then ALONE
+    // in the list, which is what the criterion asks for, rather than sitting
+    // beside something initialize put there.
+    test("a folder removed stops being observable, and the other spelling of it remains", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [plainFolder, plainSlashFolder] });
+        changeFolders(session, { removed: [plainFolder] });
+
+        expect(await observedFolders(session)).toEqual([plainSlashFolder]);
       } finally {
         session.dispose();
       }

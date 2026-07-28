@@ -62,7 +62,32 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // would pass every other requirement while silently disagreeing with the
       // client about what is open. Decided on OBSERVABILITY -- a phantom entry
       // shows up as visibly wrong items, a missing one is silent absence.
-      folders = [...folders, ...event.added];
+      //
+      // MATCHED AS A STRING, EXACTLY. DO NOT NORMALISE, DO NOT RESOLVE, DO NOT
+      // DECODE. MEASURED against nvim over four folders added and three
+      // removed: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT
+      // FOLDERS, removing one leaves the other, percent-encoding arrives with
+      // LOWERCASE hex, and every `removed` URI is BYTE-IDENTICAL to the `added`
+      // one it refers to. A normalising filter would delete a folder the client
+      // still holds -- silently, and only for the users whose paths collide
+      // under whatever rule it applied.
+      //
+      // BY URI AND NOT BY NAME: LSP has no rename event, so a client that wants
+      // one sends `removed` then `added`, and a name that differs is a
+      // different statement about the same folder rather than a mismatch.
+      //
+      // REMOVED FIRST, THEN ADDED, and LSP specifies no order for the two arms:
+      // this way a client that spells a rename as one event -- the same URI in
+      // both arms -- ends with the folder it named last, where the other order
+      // would leave it holding nothing.
+      //
+      // WHAT IS UNSPECIFIED AND WENT THIS WAY BY DEFAULT, recorded rather than
+      // pinned by a test, since nobody has chosen an outcome: a URI held TWICE
+      // and removed ONCE loses BOTH copies, because this filter matches every
+      // entry. The alternative -- removing one copy per `removed` entry -- is
+      // equally defensible and no client observed here produces the case.
+      const removed = new Set(event.removed.map((folder) => folder.uri));
+      folders = [...folders.filter((folder) => removed.has(folder.uri) === false), ...event.added];
     },
   };
 }
