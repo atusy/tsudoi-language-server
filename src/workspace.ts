@@ -239,7 +239,9 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       //
       // WHICH copy an entry takes is deliberately NOT pinned -- both tests hold
       // BYTE-IDENTICAL copies, so first-match and last-match are indis-
-      // tinguishable there. Nothing downstream may rely on it.
+      // tinguishable there. Nothing downstream may rely on it, and that is
+      // MEASURED rather than intended: `findLastIndex` here leaves all 321
+      // tests green. Swapping it is therefore free, which is the point.
       //
       // A LOCAL COPY spliced, never `folders` itself, for the same reason the
       // rebind above is a new array: an in-flight handler is holding the old

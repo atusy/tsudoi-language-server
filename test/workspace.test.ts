@@ -668,8 +668,9 @@ for (const runtime of runtimes) {
     // slash before comparing reddens this test under the old filter and reddens
     // NOTHING in 321 tests under the current one.
     //
-    // WHAT WOULD UN-BLIND IT is a removal naming the spelling that is NOT first
-    // in the list; the case here names the first, because that is the direction
+    // WHAT WOULD UN-BLIND IT, REASONED and not measured -- measuring it needs a
+    // test that does not exist -- is a removal naming the spelling that is NOT
+    // first in the list; the case here names the first, because that is the direction
     // MEASURED against nvim and a synthetic direction would not be. SO THE
     // RESIDUAL IS REAL: a normalising implementation now ships undetected in
     // the measured direction, and nobody should read this test as defending
