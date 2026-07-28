@@ -166,11 +166,20 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  *
  * THE RESIDUAL, NAMED RATHER THAN GUARDED: this forecloses the call only while
  * NO WIDE VALUE IS IN SCOPE. An `import { createProtocolConnection }` added to
- * src/server.ts puts one back, and nothing here notices. WHAT WOULD CLOSE IT: a
- * lint on the IMPORT SPECIFIER -- the lint route reappearing at a target where
- * it actually works, since a specifier cannot be renamed the way a variable
- * can. That is a SECOND GAP rather than a second guard on this one, so the
- * argument against two guards on one gap does not forbid closing it.
+ * src/server.ts puts one back, and nothing here notices. MEASURED, not
+ * reasoned, and the number is the point: src/server.ts was rewritten to import
+ * it, register the table on the WIDE value, add an ungated
+ * `onNotification` beside it and narrow only afterwards -- 331 tests green,
+ * `tsc --noEmit` 0, `oxlint` 0. NOTHING DETECTS IT. WHAT WOULD CLOSE IT: a lint
+ * on the IMPORT SPECIFIER -- the lint route reappearing at a target where it
+ * actually works, since a specifier cannot be renamed the way a variable can.
+ * That is a SECOND GAP rather than a second guard on this one, so the argument
+ * against two guards on one gap does not forbid closing it.
+ *
+ * AND THAT SAME MEASUREMENT BOUNDS THE PROBES: they assert what the TYPE
+ * permits and forbids, never that src/server.ts still holds it. `startServer`
+ * never binding the wide type is carried by this function's existence and by
+ * the comment at its call site, by nothing executable.
  *
  * A THIRD GAP, weaker and still real, AND NO ASSERTION BACKS THIS SENTENCE --
  * it is read off the remainder above, so what is at risk if it rots is only its
