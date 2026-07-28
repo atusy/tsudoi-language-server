@@ -160,10 +160,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "`let workspaceFolders` in startServer becomes createWorkspaceFolders(), a HANDLE in the shape of DocumentStoreHandle -- which is what this codebase already uses for state that NOTIFICATIONS write and REQUESTS read, and the right answer to a second writer arriving. initialize writes through it; methods.ts reads through it. Suite green and unchanged.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5c3588d",
+            message: "refactor: give the workspace folders a handle, as documents already have",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "TIDY FIRST, with the existing suite as the check: the two writers become symmetric instead of one being a closure variable and the other a parameter, and the entry gets a way to write without notificationEntries reaching back into startServer's locals.",
+          "DONE. src/workspace.ts holds createWorkspaceFolders(); `current` is the read thunk methods.ts already wanted and `initialize` is the write. NORMALISATION STAYED AT THE initialize REQUEST, deliberately: `params.workspaceFolders ?? []` is a fact about InitializeParams' two absent states, and its comment constrains the site that reads params. Suite green and UNCHANGED at 284 tests, which is the whole check a structural change gets.",
         ],
       },
       {
