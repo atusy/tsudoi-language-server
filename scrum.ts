@@ -127,7 +127,58 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 24,
+    pbi_id: "PBI-25",
+    goal: "Judge the completeness of the notification gate AGAINST THE PROTOCOL rather than against memory: close onProgress and trace, and make `these are all the ungated views` a judgement against an ENUMERATED, MACHINE-PINNED member set rather than a recollection.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "BOTH-HALVES typeCheckProbe per member and per form -- onProgress direct, onProgress aliased, trace direct, trace aliased -- each asserting the diagnostic BOUND TO FILE AND SYMBOL and that no diagnostic names permits.ts",
+        implementation:
+          "Extend RequestOnlyConnection's Omit with `onProgress` and `trace`, and update the set-difference pin's union in THE SAME EDIT -- declared in advance as ONE EDIT, because the pin goes red the instant the Omit changes, so a separate subtask for it would be a born-green RED.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED-RED: both members exist on the handle today, so all four probes compile clean and the regex finds nothing.",
+        ],
+      },
+      {
+        test: "A type-level pin asserting `keyof ProtocolConnection` is EXACTLY the fifteen names read off vscode-languageserver-protocol 3.18.2's connection.d.ts, checked by the repo's own tsc --noEmit",
+        implementation:
+          "The enumeration is performed BY tsc against node_modules rather than by a human reading -- the union literal is the only recalled half, and any disagreement with the primary source is a TS2344 at that line.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN-GREEN AND DECLARED AS SUCH: it is a claim about the dependency that already holds. Writing a deliberately wrong list first would manufacture a RED that proves nothing about the delivered artifact; the wrong list is the DISCRIMINATING CONTROL, run at authoring time.",
+        ],
+      },
+      {
+        test: "The perturbation set: four drop-one controls (one per Omit key), one add-a-key control, and THREE controls on the enumeration pin including one applied to the DEPENDENCY'S OWN .d.ts",
+        implementation:
+          "Each named by the ASSERTION it flips. PREDICTED BEFORE RUNNING, so `reddened its probes alone` cannot be reported falsely: each drop-one reddens ITS member's probes AND the set-difference pin, and no OTHER member's probes.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Prose sweep: every sentence in src/notifications.ts and test/notifications.test.ts that this sprint falsifies, checked AGAINST ITS OWN FILE before the edit lands",
+        implementation:
+          "Rename the count-bearing symbol, name the members rather than counting them, and correct the trace claim measured false below.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A MEASURED CLAIM IN src/notifications.ts IS FALSE, found by reading the dependency rather than the note: `traceReceivedNotification runs on the receive path whether or not a handler exists`, so trace `hands EVERY received notification` to the Tracer. MEASURED at vscode-jsonrpc 9.0.1 connection.js -- the third site is INSIDE `if (notificationHandler || starNotificationHandler)`, and the else branch fires unhandledNotificationEmitter with NO trace call. An unhandled non-cancel notification is NOT traced, so trace is not broader than onUnhandledNotification; it is COMPLEMENTARY to it. CHANGES NO SCOPE: the criterion names both members outright.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [],
+  },
   retrospectives: [
     {
       sprint: 22,
