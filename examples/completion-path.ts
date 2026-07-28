@@ -228,18 +228,25 @@ function documentParent(uri: string): string | undefined {
  *
  * EXACT, AND ANCHORED AT `fragment.start`, and both halves are asserted by
  * their own test in test/completion-path.test.ts because each relaxation
- * writes a DIFFERENT wrong line:
+ * writes a DIFFERENT wrong line. The three lines below are MEASURED -- each
+ * relaxation was built and the line it leaves was read -- rather than derived
+ * from what the rule looks like it would do:
  *
- *   - a PREFIX match would extend `spa|ced (1).txt` completing to
- *     `spaced (2).txt` as far as the common prefix and write
- *     `spaced (2).txt1).txt` -- worse than the defect it set out to fix;
- *   - a match ANYWHERE on the line would swallow a word the user never typed
- *     over: `sp| spaced (1).txt` would take the filename beside the cursor.
+ *   - a PREFIX match extends `spa|ced (1).txt` completing to `spaced (2).txt`
+ *     as far as the common prefix, end 8, and writes `spaced (2).txt1).txt`:
+ *     worse than the defect it set out to fix;
+ *   - a match ANYWHERE on the line swallows a word the user never typed over
+ *     -- `sp| spaced (1).txt` reaches end 17 and writes `spaced (1).txt`, the
+ *     filename beside the cursor gone.
  *
  * EXTENSION ONLY, never a shrink, which is the third assertion: a candidate
  * SHORTER than the word under the cursor -- completing `fo` to `foo` where the
- * line reads `foo.txt` -- would otherwise pull the end back to 3 and leave
- * `.txt` standing.
+ * line reads `foo.txt` -- pulls the end back to 3 without the guard and leaves
+ * `foo.txt`, the `.txt` standing behind the completion.
+ *
+ * NEVER PAST THE END OF THE LINE, by construction rather than by a check:
+ * `slice` truncates, so the equality below cannot hold unless the line really
+ * carries that many code units.
  *
  * WHAT REMAINS UNFIXED IS DECLINED RATHER THAN MISSED. A PARTIALLY-TYPED tail
  * (`spa|ced (1).tx`) and a tail belonging to a DIFFERENT candidate keep the
