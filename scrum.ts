@@ -155,7 +155,8 @@ const scrum: ScrumDashboard = {
         ],
         notes: [
           "RED OBSERVED, NOT ASSUMED, on BOTH runtimes and at the FIRST assertion: with two copies held and one `removed` entry sent, the hover observed `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`. Re-run as a perturbation after the fix -- restoring the remove-all filter reddens THIS TEST ONLY, 319 pass 2 fail, and leaves the batched test GREEN.",
-          "THE TWO COPIES ARE BYTE-IDENTICAL so the outcome is SINGLE-VALUED and pinnable as a whole array: which copy a one-per-entry removal takes -- first match or last -- has more than one defensible answer, so identical copies dissolve that question instead of pinning it, per the Sprint 7 one-outcome rule. The `removed` entry carries a DIFFERENT NAME, so nothing passes by matching whole folders. The second event is load-bearing: a removal that took NOTHING also leaves one copy standing.",
+          "THE TWO COPIES ARE BYTE-IDENTICAL so the outcome is SINGLE-VALUED and pinnable as a whole array: which copy a one-per-entry removal takes -- first match or last -- has more than one defensible answer, so identical copies dissolve that question instead of pinning it, per the Sprint 7 one-outcome rule. The `removed` entry carries a DIFFERENT NAME, so nothing passes by matching whole folders.",
+          "THE SECOND ASSERTION HAS ITS OWN CONTROL, added after the first justification written for it was FALSE: it said the second event catches a removal that took nothing, which the FIRST assertion already catches, since a no-op leaves three entries against a whole-array expectation of two. What it pins is REPEATABILITY, and the control is a guard removing a copy only when the URI occurs MORE THAN ONCE -- measured: the first assertion stays GREEN and the second reddens. That guard also reddens three PBI-17/19 removal tests, all of which remove a last copy.",
         ],
       },
       {
@@ -194,10 +195,16 @@ const scrum: ScrumDashboard = {
             message: "docs: say what PBI-20 blinded, and what nothing was ever asserting",
             phase: "green",
           },
+          {
+            hash: "aba57c9",
+            message: "docs: correct two false claims about this sprint's own tests",
+            phase: "green",
+          },
         ],
         notes: [
           "SHIPPED IN THE BEHAVIOUR'S OWN COMMIT. The deviation framing is gone; the REASON one-per-entry is correct STAYS, since its violation would be a code edit at that site. It now names which test reddens for which mistake, and the matrix above is what makes that clause an assertion rather than a claim.",
-          "THE PROSE SWEEP FOUND ONE MORE HOME, reported because silence is not an answer: src/types.ts's config-author-facing `MIRRORED, NOT INTERPRETED` carried only the ADD half of the mirror. The REMOVE half is now stated beside it, in the same commit. README.md, examples/ and every other src/ comment were checked and say nothing about removal multiplicity.",
+          "THE PROSE SWEEP FOUND ONE MORE HOME, reported because silence is not an answer: src/types.ts's config-author-facing `MIRRORED, NOT INTERPRETED` carried only the ADD half of the mirror. The REMOVE half is now stated beside it, in the same commit. SWEPT TWICE, since the first pass was one grep for `remov` and multiplicity prose need not carry that stem: a second pass over README.md, examples/ and src/ for `twice|duplicat|copies|copy|multiplicit|mirror` found nothing else about workspace-folder multiplicity -- the example's `the same path TWICE` is completion-source dedup.",
+          "A THIRD COMMIT CORRECTING THIS SPRINT'S OWN PROSE, and the rule it broke is the one about stating a consequence without checking it: TWO comments written here were FALSE about the tests beside them. The sequential test's second half was justified as catching a no-op removal (the first assertion does that), and the batched test's presence pair was justified by an argument that is INVERTED -- with the initialize folder present, a session that dropped every notification produces EXACTLY the expected value. Both corrected; the second now states what it does not rule out, and why that is deliberate.",
           "A SECOND COMMIT, DELIBERATELY SEPARATE, for two comment-only findings the perturbations turned up -- both MEASURED, neither repaired, both for the PO. (1) THIS SPRINT BLINDED A CONTROL OF PBI-17's: trailing-slash normalisation reddens `a folder removed stops being observable...` under the old filter and reddens NOTHING under the new one, because one-per-entry deletes exactly one folder and first-match lands on the intended target. Not NOT CONSTRUCTED and not FORECLOSED -- a control that no longer discriminates. Un-blinding it needs a removal naming the spelling that is NOT first in the list; the existing case names the first because that is the direction measured against nvim. (2) REMOVED-BEFORE-ADDED IS ASSERTED BY NOTHING, and NOT by this sprint's doing: applying `added` first reddens nothing in 321 tests now and reddened nothing in the 317 that predate the sprint.",
         ],
       },
