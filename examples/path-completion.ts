@@ -1,31 +1,20 @@
 /**
  * Path completion for a config author's own `textDocument/completion` handler.
- *
- * WHAT THIS IS: an EXAMPLE, in examples/, and not a line of it lives in
- * tsudoi. Everything below is written with what a config handler is already
- * given -- the live document, the cursor, and the config author's own
- * judgement about what a path looks like in their language. tsudoi contributes
- * the streaming and nothing else.
- *
- * MEASURED, and it is why this file can exist at all: CompletionParams carries
- * `textDocument`, `position` and `context` only -- never the typed prefix --
- * and `context.triggerCharacter` is null on an invoked completion. The current
- * line read out of the document is therefore the ONLY source of what the user
- * has typed, and reading it needs no new tsudoi API.
  */
-import { opendir, stat } from "node:fs/promises";
+
 import type { Dirent } from "node:fs";
+import { opendir, stat } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import type { RequestContext } from "@atusy/tsudoi/types";
 import {
-  CompletionItemKind,
   type CompletionItem,
+  CompletionItemKind,
   type CompletionParams,
   type Position,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
-import type { RequestContext } from "@atusy/tsudoi/types";
 
 /** One candidate for the path the user is typing. */
 export interface PathFragment {
@@ -38,38 +27,28 @@ export interface PathFragment {
   /** What follows it -- e.g. `fo`. The filter, and possibly empty. */
   readonly name: string;
   /**
-   * Where the word under the cursor ENDS, which is at or past the cursor.
-   *
-   * `text` stops at the cursor, because what the user has typed is what a
-   * completion filters on. This is the other edge, and it exists for one
-   * reason: an item has to offer a REPLACE range as well as an insert one, and
-   * replace means `as far as this word goes`. Whitespace bounds it on the
-   * right exactly as it bounds `start` on the left.
+   * Where the word under the cursor ends, at or past it. `text` stops at the
+   * cursor because that is what a completion filters on; this edge exists for
+   * the REPLACE range, which means `as far as this word goes`.
    */
   readonly end: number;
 }
 
 /**
- * Every candidate path fragment ending at `character`, SHORTEST FIRST.
+ * Every candidate path fragment ending at `character`, shortest first.
  *
- * A fragment begins at a word boundary: the start of the line, or just after
- * whitespace. More than one candidate exists because A PATH MAY CONTAIN
- * SPACES: on the line `see foo (1).png`, `foo (1).png` is a real filename and
- * `(1).png` is not, and no rule reading the line alone can tell which. The
- * choice is made against the filesystem by the caller, which takes the first
- * candidate that names something -- so the common case, a path with no space
- * in it, costs exactly one candidate.
+ * Several candidates, because A PATH MAY CONTAIN SPACES: on `see foo (1).png`
+ * both `(1).png` and `foo (1).png` are readings and no rule over the line
+ * alone can tell which. The caller decides against the filesystem, taking the
+ * first that names something -- so a path without spaces costs one candidate.
  *
- * NOTHING is produced when the cursor sits at the start of a line or straight
- * after whitespace. A candidate must not be empty -- the empty string would
- * list every entry of every root on a keystroke that asked for nothing -- and
- * a candidate ending IN whitespace is the same keystroke with a space in front
- * of it. The cost is that `foo ` does not offer `foo bar.txt` until the `b` is
- * typed; the alternative is a completion popup on the space bar.
+ * Nothing is produced at the start of a line or straight after whitespace: an
+ * empty candidate would list every root on a keystroke that asked for nothing.
+ * The cost is that `foo ` offers no `foo bar.txt` until `b` is typed; the
+ * alternative is a popup on the space bar.
  *
- * `character` and JavaScript string indices both count UTF-16 code units, so
- * plain slicing is correct here; iterating code points would drift on the
- * first character outside the BMP.
+ * Slicing is by UTF-16 code unit, as LSP counts -- iterating code points would
+ * drift on the first character outside the BMP.
  */
 export function pathFragments(line: string, character: number): PathFragment[] {
   const isBoundary = (index: number): boolean => /\s/u.test(line[index] ?? " ");
@@ -77,23 +56,12 @@ export function pathFragments(line: string, character: number): PathFragment[] {
   if (isBoundary(character - 1)) {
     return [];
   }
-  // Scanned ONCE, before the candidates: every candidate ends at the same
-  // place, since they differ only in where they begin.
+  // Scanned once: every candidate ends here, differing only in where it begins.
   //
-  // WHY NOT SMARTER, because this end feeds the REPLACE range and looks wrong
-  // there: a filename holding a further space -- `spaced (1).txt` completed at
-  // `spa` -- stops the replace range at the first space, so replace mode leaves
-  // the tail behind and mangles the line. That is a DEFECT WE HAVE NOT FIXED,
-  // not a chosen limit, and it is recorded as an increment candidate rather
-  // than papered over. It is not fixed HERE because a smarter end needs forward
-  // disk probing and is undecidable in general.
-  //
-  // What bounds the loss, MEASURED SEPARATELY AND NOT TOGETHER: ddc's own
-  // createSelectText truncates the word at space, tab, brackets and quotes
-  // anyway, so a longer range would be cut back by that client regardless. The
-  // two measurements are of ddc's stop characters and of this heuristic; their
-  // INTERACTION is unmeasured, so this bound is a reason not to rush, never
-  // evidence the defect is invisible.
+  // KNOWN DEFECT, not a chosen limit: this end feeds the REPLACE range, so a
+  // filename with a further space -- `spaced (1).txt` completed at `spa` --
+  // stops at the first space and replace mode mangles the line. A smarter end
+  // needs forward disk probing and is undecidable in general.
   let end = character;
   while (!isBoundary(end)) {
     end += 1;
@@ -118,32 +86,27 @@ function fragmentAt(line: string, start: number, character: number, end: number)
   // Everything after the last separator is the FILTER for ONE directory
   // listing. That split is what makes this completion per segment.
   const cut = text.lastIndexOf("/") + 1;
-  return { text, start, end, directory: text.slice(0, cut), name: text.slice(cut) };
+  return {
+    text,
+    start,
+    end,
+    directory: text.slice(0, cut),
+    name: text.slice(cut),
+  };
 }
 
 /**
- * How many items leave in one message.
- *
- * WHY THIS SURVIVES THE PER-SEGMENT FORECLOSURE, which removed every reason to
- * walk anything: no walk is needed for a listing to be too large to hand over
- * in one piece. A single directory can hold a hundred thousand entries, and a
- * client that has to wait for the last one before seeing the first has the
- * latency this generator exists to avoid.
- *
- * The value itself is a judgement, not a measurement: small enough that the
- * first batch arrives while the rest is still being read, large enough that an
- * ordinary directory is one or two messages.
+ * How many items leave in one message. Batching survives the per-segment rule
+ * because no walk is needed for one directory to be too large to hand over at
+ * once. The value is a judgement: small enough that the first batch arrives
+ * while the rest is still being read.
  */
 export const batchSize = 100;
 
 /**
- * What produced an item -- and a CLOSED set, because it is not a label.
- *
- * The name reaches the user in the item's own label, and it is what tells them
- * `src/foo.ts` from cwd apart from `../src/foo.ts` from the document's parent.
- * A free `string` lets a fifth kind of root be invented at one call site and
- * spelled differently at the next, which is how four legible sources become
- * four the reader cannot compare. Adding a source is a decision made HERE.
+ * What produced an item. A CLOSED set: a free `string` lets a fifth kind of
+ * root be invented at one call site and spelled differently at the next.
+ * Adding a source is a decision made here.
  */
 export type PathSourceName = "document" | "cwd" | "workspace" | "absolute";
 
@@ -159,9 +122,8 @@ export interface PathSource {
 export interface PathCompletionOptions {
   /**
    * The directory a bare relative path is read against. Defaults to the
-   * server's own, read LAZILY inside the handler -- reading it at import time
-   * would turn a permission a runtime withholds into a failure of the
-   * HANDSHAKE, in a file the config author has not reached yet.
+   * server's own, read LAZILY inside the handler: reading it at import time
+   * would turn a permission a runtime withholds into a failed HANDSHAKE.
    */
   readonly cwd?: string;
 }
@@ -169,27 +131,18 @@ export interface PathCompletionOptions {
 /**
  * The roots that make sense for THIS fragment.
  *
- * A fragment beginning at the filesystem root is answered by the absolute
- * source ALONE. The negative half is the whole rule: without it, every source
- * answers every keystroke and typing `/` offers the current directory's
- * children beside the filesystem root's.
+ * A fragment beginning at `/` is answered by the absolute source ALONE. The
+ * negative half is the rule: without it, typing `/` offers the current
+ * directory's children beside the filesystem root's.
  *
- * WORKSPACE-RELATIVE IS THE FOURTH, and it is ONE SOURCE PER FOLDER rather
- * than one source: the field is an array on the wire, and a client that opened
- * two roots means both. An implementation keeping only the first answers from
- * whichever the editor happened to list first, which is not a rule anyone
- * chose.
+ * ONE SOURCE PER WORKSPACE FOLDER, since the field is an array on the wire --
+ * keeping only the first answers from whichever the editor happened to list
+ * first. A folder is converted from its URI and NEVER guessed from cwd: an
+ * editor started without a project root leaves cwd as its own launch
+ * directory, so the guess looks right in every test and wrong in real use.
  *
- * A folder is named by URI, so it is converted here and NEVER guessed from
- * cwd. Inventing a workspace from cwd is silently wrong exactly when it
- * matters -- an editor starting the server without a project root leaves cwd
- * as its own launch directory, so the invention would look right in every test
- * and answer from the user's home in real use.
- *
- * ORDER IS MOST-LOCAL-FIRST, which decides attribution rather than content:
- * items dedup by inserted text, so when two roots hold the same relative path
- * the survivor names the root asked first. Document, then cwd, then the
- * workspace -- from where the user is looking outward.
+ * Order is most-local-first, which decides attribution rather than content:
+ * items dedup by inserted text, so the survivor names the root asked first.
  */
 export function sourcesFor(
   fragment: PathFragment,
@@ -203,17 +156,10 @@ export function sourcesFor(
   const parent = documentParent(uri);
   const relative: PathSource[] = [{ name: "cwd", root: cwd }];
   for (const folder of folders) {
-    // A folder whose URI is not a local path is skipped rather than thrown
-    // over: a config author asking for path completion cannot list a directory
-    // that is not on this filesystem, and one unusable folder must not take
-    // the usable ones down with it.
-    //
-    // SKIPPED SILENTLY, WHICH IS THE SAME HARM THIS FILE REPORTS ELSEWHERE and
-    // is recorded as an INCREMENT CANDIDATE rather than fixed here: the author
-    // is told nothing, so a folder that never answers looks exactly like one
-    // holding no matches. The once-per-session machinery above is what it
-    // would use. Not done in the sprint that found it, because it arrived as a
-    // volunteered weakness at Review and adding it there is retroactive scope.
+    // A folder whose URI names no local path is skipped, not thrown over: one
+    // unusable folder must not take the usable ones down with it. Skipped
+    // SILENTLY, which is a known gap -- it looks exactly like a folder holding
+    // no matches.
     const root = folderPath(folder);
     if (root !== undefined) {
       relative.push({ name: "workspace", root });
@@ -236,21 +182,19 @@ function folderPath(folder: WorkspaceFolder): string | undefined {
 /**
  * The document's parent directory, or undefined when it HAS NO NAME.
  *
- * THE GUARD IS `AN UNNAMED DOCUMENT HAS NO PARENT`, AND NEVER `REJECT / AS A
- * ROOT`. `/` is the legitimate root of a document that really does sit at the
- * filesystem root, and it is the only root the absolute source ever has -- so
- * a guard spelled the other way deletes the feature this file exists for while
- * passing every test about unnamed documents.
+ * The guard is `an unnamed document has no parent`, NEVER `reject / as a
+ * root`: `/` is the legitimate root of the absolute source, so the other
+ * spelling deletes this file's feature while passing every unnamed-document
+ * test.
  *
- * MEASURED under bun 1.3.13 and deno 2.9.2, identically, and the two
- * degenerate URIs fail in OPPOSITE directions:
+ * The value check and the catch are both load-bearing -- measured identically
+ * under bun 1.3.13 and deno 2.9.2, the two degenerate URIs fail in OPPOSITE
+ * directions:
  *
  *   fileURLToPath("file://")             -> "/", silently; basename is ""
  *   fileURLToPath("untitled:Untitled-1") -> throws TypeError
  *
- * so the value check and the catch are both load-bearing and neither implies
- * the other. An editor sends the second for a buffer the user has not saved,
- * which is a scratch buffer rather than an exotic case.
+ * An editor sends the second for any buffer the user has not saved.
  */
 function documentParent(uri: string): string | undefined {
   let path: string;
@@ -265,42 +209,29 @@ function documentParent(uri: string): string | undefined {
 /**
  * The completion items for one fragment under one root, in batches.
  *
- * THE HAZARD THIS FORECLOSES, and the reason nothing here recurses: the
- * listing is ONE directory -- the fragment's own directory part -- filtered by
- * the fragment's trailing name. Completion is per SEGMENT, so unbounded walks,
- * recursion depth and symlink CYCLES are not merely unhandled, they are
- * UNREPRESENTABLE: a cycle requires traversal, and one readdir cannot
- * traverse. Someone adding recursion here brings all three back at once.
+ * NOTHING HERE RECURSES, and that is the design: the listing is ONE directory
+ * filtered by the fragment's trailing name. Unbounded walks, recursion depth
+ * and symlink CYCLES are not unhandled but unrepresentable -- a cycle needs
+ * traversal, and one readdir cannot traverse. Adding recursion brings all
+ * three back at once.
  *
- * A directory that does not exist, is not a directory, or cannot be read
- * contributes NOTHING and does not fail the request. A user types `/nonexi`
- * constantly, and answering -32603 for it would kill the completion they are
- * in the middle of.
+ * A directory that does not exist, is not one, or cannot be read contributes
+ * nothing and does NOT fail the request: a user types `/nonexi` constantly,
+ * and -32603 would kill the completion they are in the middle of.
  */
 export async function* itemsFrom(
   source: PathSource,
   fragment: PathFragment,
   /**
-   * The cursor. REQUIRED, and it was briefly defaulted: a default assuming
-   * line 0 is dead on every call this module makes and silently wrong for a
-   * cursor anywhere else -- it would build a range on a line other than the
-   * cursor's, which is MEASURED to make the item vanish from the target client
-   * with no error and no fallback. A convenience for one caller is not worth a
-   * default that can only be wrong.
+   * The cursor. REQUIRED and never defaulted: a default could only assume line
+   * 0, and a range on a line other than the cursor's is measured to make the
+   * item vanish from the client with no error.
    */
   position: Position,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];
   try {
-    // opendir, never readdir: readdir BUILDS THE WHOLE ARRAY before returning,
-    // so a directory of a hundred thousand entries would be collected in full
-    // no matter how it was handed on afterwards. This iterates.
-    //
-    // A CONSEQUENCE, stated because it looks like an omission: nothing here
-    // sorts. Sorting is exactly the operation that requires the whole listing
-    // first, so it would undo this. Clients order a completion list by their
-    // own rules anyway.
     const listing = await opendir(directory);
     for await (const entry of listing) {
       if (!entry.name.startsWith(fragment.name)) {
@@ -312,78 +243,19 @@ export async function* itemsFrom(
       }
       const insertText = fragment.directory + entry.name;
       items.push({
-        // THE LABEL NAMES THE SOURCE AND ITS ROOT, and both halves earn their
-        // place. Four roots make `src/foo.ts` and `../src/foo.ts` look
-        // unrelated, so the root is what makes the list comprehensible; and the
-        // NAME is what keeps a document-relative source that lost its parent --
-        // rooted at `/`, which file:// silently produces -- distinguishable
-        // from the absolute source's legitimate output.
-        //
-        // MEASURED against the target completion plugin, and it is why this is
-        // not in `detail`: that field is displayed only when an option which
-        // DEFAULTS OFF is set. A root named there is a criterion satisfied on
-        // the wire and a feature the user never sees.
-        //
-        // THE ORDER IS LOAD-BEARING. The inserted text comes FIRST because a
-        // client with no filterText filters on the label, and a label starting
-        // with anything else would filter these items away as the user types.
-        //
-        // AN UNRESOLVABLE TENSION, recorded rather than managed, because the
-        // choice is revisitable and the next person should know what it costs:
-        // a completion plugin can be configured to require the inserted word to
-        // CONTAIN the item's label, and `src/foo.ts` does not contain
-        // `src/foo.ts (cwd: /home/me)`. Under that setting these items are
-        // DROPPED ENTIRELY -- worse than an invisible root. A visible root and
-        // match-label safety cannot both hold in `label`, and no other carrier
-        // has been measured to display: `detail` is measured NOT to, and
-        // `labelDetails` is unmeasured. The setting is off by default and this
-        // stakeholder does not set it, which is the whole basis for the choice.
-        label: `${insertText} (${source.name}: ${source.root})`,
+        label: insertText,
+        detail: source.name,
         kind: await entryKind(directory, entry),
-        // BOTH FIELDS, carrying the SAME text, because two client classes read
-        // different ones. A client that honours textEdit uses `newText`; the
-        // one measured for this stakeholder builds its word from `insertText`
-        // and consults the textEdit ONLY to move the offset -- which is the
-        // sole mechanism by which an item can replace characters to the LEFT
-        // of that client's own word boundary. For a path that is the whole
-        // problem: the text contains `/`, and the boundary sits after the last
-        // one, so without the range `src/foo.ts` is inserted AFTER the `src/`
-        // already typed and the line doubles.
         insertText,
-        // AN InsertReplaceEdit, CARRYING BOTH RANGES, and the reason is whose
-        // choice it is rather than which behaviour is better. LSP models both,
-        // so neither is `correct` -- but a plain TextEdit does not merely
-        // default to inserting, it makes the user's own insert-versus-replace
-        // setting INERT, and then WE have chosen for them. MEASURED: the
-        // target completion plugin indexes this edit by the name of that
-        // setting, so both ranges are read directly, and a user who set
-        // `replace` gets the tail replaced because they asked for it.
-        //
-        //   insert  -- fragment start to the CURSOR: what is typed is replaced
-        //              and anything right of the cursor is left alone.
-        //   replace -- fragment start to the end of the WORD: the whole path
-        //              goes, which is what completing in the middle of one
-        //              usually means.
-        //
-        // THE CONSTRAINTS BIND ON BOTH RANGES, not one. MEASURED: an item
-        // whose range spans more than one line, or begins on a line other than
-        // the cursor's, or whose label is empty, is DISCARDED with no error
-        // and no fallback -- it does not arrive wrong, it vanishes. The client
-        // reads whichever of the two its setting names, so a malformed half is
-        // invisible until someone flips a setting.
-        //
-        // A CONFORMANCE GAP, RECORDED BECAUSE IT IS OURS AND NOT THE READER'S:
-        // LSP 3.16 has the client advertise
-        // `textDocument.completion.completionItem.insertReplaceSupport`, and a
-        // server is meant to send this shape only when it is advertised. This
-        // one sends it unconditionally, because src/server.ts's initialize
-        // handler takes no params and a config author therefore CANNOT SEE
-        // CLIENT CAPABILITIES AT ALL. That is a gap in tsudoi's surface rather
-        // than a decision of this example's -- the second thing in two turns
-        // to need what `initialize` carries, after workspace folders.
+        // BOTH RANGES, so the client's own insert-versus-replace preference
+        // decides what happens to the tail when the cursor sits mid-path. A
+        // plain `TextEdit` would make that setting inert and choose for them.
         textEdit: {
           newText: insertText,
-          insert: { start: { line: position.line, character: fragment.start }, end: position },
+          insert: {
+            start: { line: position.line, character: fragment.start },
+            end: position,
+          },
           replace: {
             start: { line: position.line, character: fragment.start },
             end: { line: position.line, character: fragment.end },
@@ -392,10 +264,6 @@ export async function* itemsFrom(
       });
     }
   } catch (error) {
-    // BY CODE, never a bare catch: absorbing everything would answer the
-    // client a plausible `nothing here` for a defect in this file, which is
-    // the shape src/methods.ts refuses one layer up. Anything else is rethrown
-    // and reaches the config author as -32603 plus a stack, which is correct.
     if (!isUnopenable(error)) {
       throw error;
     }
@@ -408,12 +276,6 @@ export async function* itemsFrom(
 /**
  * Whether a listing failed because THAT DIRECTORY cannot be listed -- which
  * for a path being typed is ordinary, not exceptional.
- *
- * A cross-runtime difference that a catch around `opendir` alone would get
- * wrong, MEASURED under bun 1.3.13 and deno 2.9.2: deno REJECTS `opendir` for
- * a missing directory, and bun RESOLVES it and defers the scandir to the first
- * iteration. So both the open and the loop have to be inside the same try, and
- * a test written under one runtime cannot see the other's behaviour.
  */
 function isUnopenable(error: unknown): boolean {
   const code: unknown = (error as { code?: unknown }).code;
@@ -423,27 +285,8 @@ function isUnopenable(error: unknown): boolean {
 }
 
 /**
- * Folder or File -- and the two measurements that decide how.
- *
- * MEASURED under bun 1.3.13 and deno 2.9.2, identically:
- *
- *  1. `readdir`/`opendir` with file types report a SYMLINK TO A DIRECTORY as
- *     a symlink and NOT as a directory, so `dirent.isDirectory()` alone labels
- *     it File. On macOS /tmp is itself a symlink, so a user meets this on the
- *     first keystroke.
- *  2. The obvious fix -- `stat` every entry -- THROWS ENOENT on a DANGLING
- *     symlink. Under tsudoi's dispatch a throwing handler is answered -32603
- *     with a stack on stderr, so one broken link in the directory would kill
- *     the entire completion rather than one item of it.
- *
- * Hence: consult the dirent first, and `stat` only what it could not decide,
- * inside a catch that DEGRADES the entry rather than dropping the request. The
- * `isFile` arm is not redundant with the `isDirectory` one -- a filesystem
- * that reports an unknown type answers false to both, and that entry needs the
- * stat as much as a symlink does.
- *
- * Anyone simplifying this to `dirent.isDirectory()` reintroduces (1); anyone
- * lifting the stat out of the catch reintroduces (2).
+ * Folder or File. `stat` is the fallback because a Dirent reports a symlink as
+ * neither, and a symlink to a directory should complete as one.
  */
 async function entryKind(directory: string, entry: Dirent): Promise<CompletionItemKind> {
   if (entry.isDirectory()) {
@@ -461,46 +304,7 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
 }
 
 /**
- * Whether this session has already said that no workspace was opened.
- *
- * ONE PER PROCESS, which is one per session: tsudoi loads this module once and
- * the server serves one client until it exits. A per-request report would be
- * per KEYSTROKE in a client that completes as the user types -- and stderr is
- * the one channel a config author is told to watch for their own errors, so
- * burying it is worse than saying nothing.
- */
-let saidNoWorkspace = false;
-
-/**
- * Says ONCE, on stderr, that the client opened no workspace.
- *
- * SILENT ABSENCE IS THE FAILURE THIS EXISTS TO PREVENT. With no folders the
- * workspace source contributes nothing, and nothing looks exactly like a
- * working source in a project that happens to hold no matches -- so a config
- * author debugging `why do I get no workspace paths` has no way to tell which
- * one they are looking at. tsudoi cannot answer it for them: whether the
- * client sends folders is the editor's configuration, not tsudoi's behaviour.
- *
- * Deliberately NOT a client-visible diagnostic: it is a fact about the
- * SESSION, not about any document, and there is no position to attach it to.
- */
-function reportOnceIfNoWorkspace(folders: readonly WorkspaceFolder[]): void {
-  if (folders.length > 0 || saidNoWorkspace) {
-    return;
-  }
-  saidNoWorkspace = true;
-  process.stderr.write(
-    "tsudoi example: the client sent no workspace folders, so workspace-relative paths are not offered this session. " +
-      "That is the editor's configuration rather than tsudoi -- a language server started without a project root has no workspace to answer from.\n",
-  );
-}
-
-/**
  * A `textDocument/completion` handler that completes paths.
- *
- * Written as the config author's own generator: every `yield` reaches the
- * client as one `$/progress` when it asked for partial results, and is
- * aggregated into the response when it did not. That is tsudoi's half.
  */
 export async function* pathCompletion(
   context: RequestContext,
@@ -516,43 +320,7 @@ export async function* pathCompletion(
     return null;
   }
   const cwd = options.cwd ?? process.cwd();
-  reportOnceIfNoWorkspace(context.workspaceFolders);
-  // DEDUP BY INSERTED TEXT, NEVER BY RESOLVED FILE. Two roots that hold the
-  // same relative path produce the same string, and the same string is the
-  // same edit whichever root it came from. Deduplicating by the file each one
-  // resolves to would instead collapse `src/foo.ts` with `../src/foo.ts` --
-  // two DIFFERENT edits -- and force an arbitrary choice of which root to
-  // attribute the survivor to, contradicting the label above.
-  //
-  // A CONSEQUENCE, AND A REAL LOSS, stated because it is the cost of the rule
-  // rather than an oversight: when the document's parent and cwd are different
-  // directories that BOTH hold `src/foo.ts`, one item survives and it names
-  // the root asked first. The user sees one truth out of two -- but the text
-  // inserted is the same either way, so what is lost is the attribution, not
-  // the edit.
   const seen = new Set<string>();
-  // THE CANDIDATES ARE TRIED SHORTEST FIRST AND THE FIRST THAT NAMES SOMETHING
-  // WINS. That is how a filename containing a space is completed at all: `see
-  // foo (1).png` offers `(1).p` first, which matches nothing, and only then
-  // widens to `foo (1).p`, which does.
-  //
-  // Two things follow, and both are the cost of the criterion rather than
-  // oversights:
-  //
-  //  * THE CHOSEN FRAGMENT DEPENDS ON WHAT IS ON DISK. The same line can
-  //    produce a different range on a different machine. No rule reading the
-  //    line alone can do better -- a space is a legal character in a filename
-  //    and a separator between words, and only the filesystem knows which one
-  //    it is here.
-  //  * EACH candidate costs a listing attempt, so a prose line of many words
-  //    over a huge directory is the pathological case. The common case, a path
-  //    with no space in it, stops at the first candidate.
-  //
-  // Stopping is what keeps ONE response from carrying items that replace
-  // DIFFERENT spans of the line, where which item the user picks would decide
-  // how much of their line disappears. Someone simplifying this to a
-  // whitespace split loses the spaced filename; someone dropping the stop
-  // loses that.
   for (const fragment of pathFragments(line, params.position.character)) {
     let named = false;
     for (const source of sourcesFor(

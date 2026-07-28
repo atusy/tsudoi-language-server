@@ -113,27 +113,14 @@ function inserted(items: readonly CompletionItem[]): string[] {
 }
 
 /**
- * The items attributed to a WORKSPACE root, read off the label the example
- * writes -- `<text> (<source>: <root>)`.
+ * The items attributed to a WORKSPACE root, read off `detail`.
  *
  * Used for the absence half AND the presence half, deliberately the same
  * function: a `nothing came from a workspace` assertion measured by a filter
  * that can never match anything is satisfied by a broken measurement.
  */
 function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
-  return items.filter((item) => item.label.includes("(workspace: "));
-}
-
-/**
- * What the example writes when the client opened no workspace. Matched on a
- * DISCRIMINATING SUBSTRING rather than the whole sentence, so rewording the
- * report keeps the test honest and REMOVING it still loses the match.
- */
-const noWorkspaceMarker = "no workspace folders";
-
-/** The report lines alone, so a count of them cannot be reached by other traffic. */
-function reportLines(stderr: string): string[] {
-  return stderr.split("\n").filter((line) => line.includes(noWorkspaceMarker));
+  return items.filter((item) => item.detail === "workspace");
 }
 
 for (const runtime of runtimes) {
@@ -252,16 +239,16 @@ for (const runtime of runtimes) {
     });
 
     // THE FOURTH SOURCE, and the PERMANENT PRESENCE PAIR for the absence
-    // assertion above: the same `(workspace: ` filter over the same wire finds
-    // items here, so an empty result there is evidence rather than a filter
-    // that could never match.
+    // assertion above: the same `detail === "workspace"` filter over the same
+    // wire finds items here, so an empty result there is evidence rather than
+    // a filter that could never match.
     //
     // cwd and the workspace are DIFFERENT DIRECTORIES holding DIFFERENT files,
     // which is the only way to tell which root produced an item. It is a
     // SYNTHETIC ISOLATION STATE and no editor produces it -- nvim spawns the
     // server with cwd = root_dir whenever it found a root -- and nobody should
     // later read it as an observed one.
-    test("every workspace folder is answered from, and its items name their root", async () => {
+    test("every workspace folder is answered from, and its items say so", async () => {
       const cwd = tree(["notes/cwd-only.txt"]);
       const first = tree(["notes/first-only.txt"]);
       const second = tree(["notes/second-only.txt"]);
@@ -294,68 +281,19 @@ for (const runtime of runtimes) {
             .map((item) => item.insertText)
             .sort(),
         ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
-        // The root is NAMED, not merely used, and each item names ITS OWN: four
-        // sources whose items look alike are four sources the user cannot tell
-        // apart, and one label reused for both folders is the same failure.
-        const labels = workspaceItems(items)
-          .map((item) => item.label)
-          .join("\n");
-        expect(labels).toContain(first.root);
-        expect(labels).toContain(second.root);
-        // And no report, because a workspace IS known -- the other half of the
-        // once-per-session test, which would otherwise be satisfied by an
-        // example that reports unconditionally.
-        expect(reportLines(session.stderr)).toEqual([]);
+        // The SOURCE KIND is carried; WHICH of the two folders answered is
+        // not, and that is a deliberate cost of dropping the decorated label.
+        // Both folders are still shown to answer -- by their files above, not
+        // by their names.
+        expect(workspaceItems(items).map((item) => item.detail)).toEqual([
+          "workspace",
+          "workspace",
+        ]);
       } finally {
         session.dispose();
         cwd.dispose();
         first.dispose();
         second.dispose();
-      }
-    });
-
-    // SILENT ABSENCE IS THE HARM, so the example says so -- ONCE. Two requests
-    // are what make `once` mean anything: a single-request test cannot tell
-    // reports-once from reports-per-request, and per-request is not a tidiness
-    // question here. MEASURED from the target editor's own configuration: its
-    // autoCompleteEvents include TextChangedI, which fires on EVERY CHARACTER
-    // TYPED, so per-request IS per-keystroke and would bury the one channel a
-    // config author is told to trust.
-    //
-    // THE PAIR, and it is why the failing hover is here rather than in a test
-    // of its own: `exactly one line` is satisfied by an implementation that
-    // writes NOTHING while something else in the session writes one line, and
-    // it is satisfied trivially if the handler returns before ever reaching
-    // the report. Driving a genuine second session-level line through the SAME
-    // reader is what distinguishes `we wrote one` from `one line exists`.
-    test("with no workspace known the example says so once, however many requests", async () => {
-      const fixture = tree(["notes/cwd-only.txt"]);
-      const session = exampleSession(runtime, fixture.root);
-      try {
-        await openWith(session, undefined, "notes/");
-
-        await completeAt(session, "notes/");
-        await completeAt(session, "notes/");
-        await session.waitForStderr(noWorkspaceMarker);
-
-        expect(reportLines(session.stderr)).toHaveLength(1);
-
-        // THE PRESENCE HALF, in the same session and through the same reader:
-        // a hover with no position at all makes the example's own handler
-        // throw, which tsudoi reports. If the reader could not observe a
-        // second line, the assertion above would pass for the wrong reason.
-        await session
-          .request("textDocument/hover", { textDocument: { uri } })
-          .catch(() => undefined);
-        await session.waitForStderr("handler failed");
-
-        expect(reportLines(session.stderr)).toHaveLength(1);
-        expect(session.stderr.split("\n").filter((line) => line.startsWith("tsudoi"))).toHaveLength(
-          2,
-        );
-      } finally {
-        session.dispose();
-        fixture.dispose();
       }
     });
   });
