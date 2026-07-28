@@ -66,6 +66,19 @@ export interface RequestContext {
    * Both of the protocol's absent states -- the field omitted and the field
    * sent as null -- arrive here as the same empty list, so a config author
    * never has to know there were two.
+   *
+   * WHAT IT DOES NOT DO, stated at the type because this is where someone
+   * would otherwise assume otherwise: it is a SNAPSHOT of `initialize` and it
+   * DOES NOT TRACK CHANGES. LSP has `workspace/didChangeWorkspaceFolders`, a
+   * user really can add or remove a folder mid-session, and tsudoi does not
+   * handle that notification -- so after such a change this list is what the
+   * session STARTED with, not what the editor considers current. MEASURED: the
+   * notification arrives whether or not a server advertises for it, so this is
+   * a thing tsudoi currently IGNORES rather than one it opts out of.
+   *
+   * The name is deliberately not `initialWorkspaceFolders`. That would be
+   * accurate today and WRONG the moment tracking lands, and every exported
+   * name here is public API -- renaming one breaks configs nobody can see.
    */
   readonly workspaceFolders: readonly WorkspaceFolder[];
 }

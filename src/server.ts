@@ -137,6 +137,21 @@ export function startServer(
     // vscode-jsonrpc does not log it as unanswered on every session.
   });
 
+  // WHERE workspace/didChangeWorkspaceFolders WOULD GO, and why it is not here
+  // yet: the folders read above are a SNAPSHOT of initialize, and a user adding
+  // or removing a folder mid-session leaves it stale. MEASURED both ways -- the
+  // notification arrives even when the server advertises `capabilities: {}` --
+  // so this is ignored rather than opted out of, and staleness cannot be
+  // foreclosed by declining to advertise.
+  //
+  // Also measured, and it is what makes ignoring it tolerable for now rather
+  // than urgent: an unregistered notification is SILENT and INERT. Nothing
+  // reaches stderr, the session stays functional and exits 0.
+  //
+  // Handling it means updating the captured list and is a separate story --
+  // whoever takes it edits HERE and at the `let workspaceFolders` above, and
+  // should say at the type that the value tracks changes once it does.
+
   // The three sync notifications are pure delegation: what a full-sync buffer
   // means is documents.ts's business, and none of them answers the client.
   connection.onNotification(DidOpenTextDocumentNotification.type, (params) => {

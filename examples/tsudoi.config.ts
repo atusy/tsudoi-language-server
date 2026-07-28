@@ -41,8 +41,9 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
 
         try {
           // Paths from the roots that make sense where the cursor is: the
-          // document's own directory, the working directory, and the
-          // filesystem root when the fragment starts at one. Each yield here
+          // document's own directory, the working directory, every workspace
+          // folder the editor opened, and the filesystem root when the
+          // fragment starts at one. Each yield here
           // is another `$/progress` for a client that asked for partial
           // results, which is why a directory of any size streams.
           //
@@ -62,11 +63,20 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           //    containing a space or shell punctuation can arrive truncated at
           //    the first one. tsudoi emits the whole path; what the plugin
           //    does with it afterwards is the plugin's.
-          //  * Items carry a plain `textEdit` with a range. A plugin option
-          //    that chooses between inserting and replacing consults an
-          //    `InsertReplaceEdit` only, so setting it has NO EFFECT on these
-          //    items -- a setting of yours quietly disabled by a choice of
-          //    ours, which is worth knowing rather than discovering.
+          //  * Items carry an `InsertReplaceEdit` -- an insert range ending at
+          //    the cursor and a replace range covering the whole fragment --
+          //    so a plugin option that chooses between inserting and replacing
+          //    is YOURS to set and does what you set it to. Completing in the
+          //    MIDDLE of a path is where the two differ.
+          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR SENDS FOLDERS
+          //    at `initialize`, which is its configuration and not tsudoi's
+          //    behaviour: a language server started without a project root has
+          //    no workspace to answer from, and its working directory is then
+          //    wherever the editor itself was launched -- which is a root, but
+          //    not the one you meant. HOW YOU WILL KNOW: this handler says so
+          //    once on stderr per session, because a source that silently
+          //    contributes nothing is indistinguishable from one that works in
+          //    a project holding no matches.
           //  * An option that resolves items lazily is equally inert: tsudoi
           //    advertises `completionProvider` with no `resolveProvider`, so
           //    `completionItem/resolve` is never sent.

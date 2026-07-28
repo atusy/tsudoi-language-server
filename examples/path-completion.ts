@@ -138,7 +138,7 @@ export const batchSize = 100;
 
 /** Where one class of item comes from, and how the user is told which. */
 export interface PathSource {
-  /** `document`, `cwd` or `absolute` -- what produced the item. */
+  /** `document`, `cwd`, `workspace` or `absolute` -- what produced the item. */
   readonly name: string;
   /** The absolute directory the item's inserted text is read against. */
   readonly root: string;
