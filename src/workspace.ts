@@ -210,24 +210,41 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // it is wrong and therefore visible. The other order ends holding
       // NOTHING, which is a gap and therefore silent.
       //
-      // A KNOWN DEVIATION, not an open question: a URI held TWICE and removed
-      // ONCE loses BOTH copies here, because this filter matches every entry.
-      // ONE COPY PER `removed` ENTRY IS THE CORRECT BEHAVIOUR and this is not
-      // it.
+      // ONE COPY PER `removed` ENTRY, which is why this is a loop taking the
+      // FIRST match each time rather than a filter over a Set of URIs. A URI
+      // held TWICE and removed ONCE keeps one copy; removed twice in ONE event
+      // it keeps none.
       //
       // WHY IT IS CORRECT rather than merely defensible, which is how it was
       // first recorded: REMOVING ALL COPIES DISCARDS WHAT THE EVENT CARRIED. A
       // client removing two copies sends two `removed` entries and one removing
-      // a single copy sends one, so N entries should remove N copies -- an exact
+      // a single copy sends one, so N entries remove N copies -- an exact
       // mirror. Remove-all wipes an unknown number whatever the client said.
       // This list honours multiplicity on ADD, and symmetry honours it on
       // REMOVE.
       //
-      // NOT FIXED HERE because it arrived at Review, no observed client
-      // produces the case, and changing src/ behaviour at Review is retroactive
-      // scope. Filed as an increment.
-      const removed = new Set(event.removed.map((folder) => folder.uri));
-      folders = [...folders.filter((folder) => removed.has(folder.uri) === false), ...event.added];
+      // ASSERTED, NOT ASSUMED, and the two halves are pinned SEPARATELY in
+      // test/workspace.test.ts because their hazards differ: `a URI held twice
+      // loses one copy per removal, not both to one` reddens if this becomes a
+      // filter over every match, and `one event removing a URI twice takes both
+      // copies of it` reddens if the `removed` entries are deduplicated before
+      // this loop. Neither of those two mistakes reddens the other's test.
+      //
+      // WHICH copy an entry takes is deliberately NOT pinned -- both tests hold
+      // BYTE-IDENTICAL copies, so first-match and last-match are indis-
+      // tinguishable there. Nothing downstream may rely on it.
+      //
+      // A LOCAL COPY spliced, never `folders` itself, for the same reason the
+      // rebind above is a new array: an in-flight handler is holding the old
+      // one.
+      const remaining = [...folders];
+      for (const folder of event.removed) {
+        const index = remaining.findIndex((held) => held.uri === folder.uri);
+        if (index !== -1) {
+          remaining.splice(index, 1);
+        }
+      }
+      folders = [...remaining, ...event.added];
     },
   };
 }

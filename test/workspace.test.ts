@@ -712,6 +712,52 @@ for (const runtime of runtimes) {
       }
     });
 
+    // PBI-20 CRITERION 1, and it is the discriminating case for the whole PBI:
+    // N `removed` entries take N copies, so ONE entry against TWO copies leaves
+    // ONE. A filter that matches every entry with that URI wipes both and
+    // reddens the FIRST assertion here -- observed, not argued, as
+    // `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`.
+    //
+    // THE SECOND HALF IS LOAD-BEARING and is not a repetition of the first: a
+    // removal that took NOTHING would leave one copy standing too, and only a
+    // second event proves the first one removed something rather than being
+    // dropped.
+    //
+    // THE TWO COPIES ARE BYTE-IDENTICAL, which is what makes the outcome
+    // SINGLE-VALUED and therefore pinnable as a whole array. Which copy a
+    // one-per-entry removal takes -- the first match or the last -- is a
+    // question with more than one defensible answer, and identical copies
+    // dissolve it instead of pinning it.
+    //
+    // THE REMOVED ENTRY CARRIES A DIFFERENT NAME than the copies it takes, so
+    // this cannot pass by matching whole folders rather than URIs.
+    //
+    // sentFolders[0] IS THE PAIRED PRESENCE for the absence in the second
+    // assertion, in that same assertion: `the copies are gone` measured against
+    // an empty list is also what a session that applied nothing produces.
+    test("a URI held twice loses one copy per removal, not both to one", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: [sentFolders[0]],
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [addedFolder] });
+        changeFolders(session, { added: [addedFolder] });
+        changeFolders(session, { removed: [addedAgain] });
+
+        expect(await observedFolders(session)).toEqual([sentFolders[0], addedFolder]);
+
+        changeFolders(session, { removed: [addedAgain] });
+
+        expect(await observedFolders(session)).toEqual([sentFolders[0]]);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // PBI-20 CRITERION 2, AND IT IS BORN GREEN AND SAYS SO: it was written
     // against UNCHANGED src/ and passed there, because the remove-all filter it
     // was written to outlive already gets this case right.

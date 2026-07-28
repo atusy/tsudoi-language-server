@@ -86,6 +86,12 @@ export interface RequestContext {
    * -- so a normalising implementation would delete a folder the client still
    * holds.
    *
+   * THE MIRROR HOLDS ON REMOVE TOO, which is the half that is easy to assume
+   * rather than read: a URI held twice and removed ONCE still appears here
+   * ONCE. N removals take N copies, whether they arrive in N events or in one
+   * event carrying N entries. Pinned by two tests in test/workspace.test.ts,
+   * one per arrival shape; see src/workspace.ts for which mistake each catches.
+   *
    * WHICH FIELD THE CLIENT SAID IT IN IS NOT VISIBLE HERE, and that is the one
    * place this list is more than a mirror. A client may name its project in
    * `workspaceFolders`, in `rootUri` or in `rootPath`, the last two being the
