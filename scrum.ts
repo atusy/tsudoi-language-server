@@ -59,6 +59,11 @@ const scrum: ScrumDashboard = {
           verification:
             "With a folder synthesised from rootUri, send workspace/didChangeWorkspaceFolders adding another and assert BOTH are present; send one removing the synthesised URI and assert it goes like any other entry. NEGATIVE CONTROL: discarding the fallback on the first change leaves the list holding the DELTA ALONE -- a first event of `added: [Y]` yields [Y] where the client may well hold [root, Y]",
         },
+        {
+          criterion: "A client `added` naming the SYNTHESISED URI yields TWO entries",
+          verification:
+            "Synthesise from rootUri, then send added: [that same URI] and assert the list holds it TWICE. NEGATIVE CONTROL: any collapse reddens it -- and a well-meaning `do not duplicate our own entry` check passes EVERY OTHER criterion, the identical hazard shape to PBI-20's `includes` guard, which was measured passing everything else. APPEND RATHER THAN REPLACE, and the losing argument is recorded because it is strong: one folder guessed and once confirmed is arguably not two, and OUR entry is an estimate where the client's is a statement. It loses on MECHANISM COST -- replace reintroduces PROVENANCE one turn after the uniformity ruling removed the need for it, and an exception for our own entry makes the synthesised entry EXTRAORDINARY again",
+        },
       ],
       status: "ready",
       notes: [
@@ -146,7 +151,64 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 18,
+    pbi_id: "PBI-19",
+    goal: "Let a config author see the root the editor named, whichever field that client's LSP version used to name it.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A client sending rootUri but no workspaceFolders reaches a handler with a folder",
+        implementation:
+          "SYNTHESISE INTO THE LIST AT INITIALIZE, never compute at read time. `name` is fileURLToPath(rootUri); for the rootPath rung `name` is rootPath VERBATIM and `uri` comes from pathToFileURL -- one convention covering both synthesis sites, so the second does not invent its own.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ONE IMPLEMENTATION MOMENT WITH SUBTASK 4, and the reason is unusual: subtask 4 has NO implementation of its own -- it is true or false depending on HOW this one is written.",
+          "THE NAME'S ONLY REAL JUSTIFICATION is that it is DERIVABLE FROM WHAT THE CLIENT SENT with nothing invented. The shape-consistency argument is deliberately NOT recorded beside it: the fallback fires only for clients that never send workspaceFolders, and nvim always does, so matching the measured client is not an argument available here. A non-argument beside a real one is worse than the real one alone, because a reader cannot tell which is load-bearing.",
+        ],
+      },
+      {
+        test: "Absence stays absence -- a client sending NEITHER leaves the list empty",
+        implementation: "Born green. THE CRITERION CARRYING THIS PBI'S HONESTY.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE CONTROL THAT MUST BE RUN: synthesise from cwd and this must redden while subtask 1 stays green. MEASURED -- cwd is nvim's own launch directory when no root is found, so a cwd fallback LOOKS CORRECT IN EVERY SCENARIO except the one this criterion exists to make visible.",
+        ],
+      },
+      {
+        test: "Precedence: workspaceFolders > rootUri > rootPath",
+        implementation:
+          "Three assertions, each against the pair below it. MIXED: the top rung is born green (today's behaviour), the rootUri > rootPath rung is a genuine RED.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "REPORT WHICH RUNGS WERE BORN GREEN, so the chain's evidence is legible rather than implied.",
+        ],
+      },
+      {
+        test: "Deltas apply to the synthesised entry like any other, and a client `added` for its URI yields TWO entries",
+        implementation:
+          "BORN GREEN BY CONSTRUCTION, WITH NO IMPLEMENTATION OF ITS OWN -- a consequence of not special-casing, since an ordinary member of the list the notification writes through gets uniformity free.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE WHOLE VALUE IS THE CONTROL, and the wrong implementation is the TEMPTING one: a READ-TIME fallback, `folders.length > 0 ? folders : synthesise(rootUri)`, passes subtask 1 perfectly. REPORT BOTH DIRECTIONS FROM THAT ONE PERTURBATION: a first `added: [Y]` yields [Y] rather than [root, Y], AND a later `removed` that empties the list makes the fallback REAPPEAR. The second is the worse hazard -- a folder the client EXPLICITLY REMOVED coming back -- and reporting one while the other goes unnamed leaves half of it undefended.",
+          "THE DUPLICATE HALF IS PINNED because a well-meaning `do not duplicate our own entry` check passes every OTHER criterion. RESIDUAL, named rather than glossed: the list can hold two entries for one folder, our estimate beside the client's statement. Mild in practice -- PBI-14's dedup-by-inserted-text collapses identical strings, so the example produces one item -- and visible only to a config author counting roots.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO'S CHECKLIST: (1) the read-time trap controlled IN BOTH DIRECTIONS from one perturbation; (2) subtask 2's cwd control RUN; (3) criterion 1's synthetic verification RESTATED at Review, so the result does not read as `this works for a client we have seen`; (4) the duplicate case pinned, both halves; (5) which precedence rungs were born green, reported.",
+      "THE REVERSAL'S CLEAREST PAYOFF, named by the PO: subtask 4 became IMPLEMENTATION-FREE. Under the old rule dropping the fallback was work; under the new one uniformity is a consequence of not special-casing. Its entire value moved into its control.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 16,
