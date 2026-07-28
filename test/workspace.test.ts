@@ -327,6 +327,41 @@ for (const runtime of runtimes) {
       }
     });
 
+    // THE THREE SPELLINGS OF `NO FOLDERS HERE` ARE TREATED ALIKE -- omitted,
+    // null, and the EMPTY ARRAY all fall through to the rung below.
+    //
+    // PINNED AT SPRINT 18'S REVIEW, and the reason it had to be is measured:
+    // making `[]` or null STOP the chain reddened NOTHING across 315 tests.
+    // Correct behaviour with zero defence is what the first-to-fail rule was
+    // sharpened to catch.
+    //
+    // THE COUNTER-ARGUMENT, recorded because it is grounded in the same chain
+    // this feature is built on: the installed types say `null` means `supports
+    // workspace folders but none are configured` -- a STATEMENT of emptiness,
+    // where omission is the absence of one -- and workspaceFolders supersedes
+    // rootUri. It loses on HARM ASYMMETRY, not on being wrong: a client that
+    // supports folders, has none configured, and still sends rootUri is most
+    // plausibly saying `I do not do multi-root` rather than `there is no
+    // project`. Falling through hands that author the root; stopping hands them
+    // SILENT ABSENCE of a root the editor did name.
+    test("an empty workspaceFolders falls through to rootUri, as omitting it does", async () => {
+      for (const spelling of [[], null]) {
+        const session = LspSession.start(runtime, echoConfig);
+        try {
+          await session.request<InitializeResult>("initialize", {
+            ...initializeParams,
+            workspaceFolders: spelling,
+            rootUri: rootedUri,
+          });
+          session.notify("initialized", {});
+
+          expect(await observedFolders(session)).toEqual([rootedFolder]);
+        } finally {
+          session.dispose();
+        }
+      }
+    });
+
     // PBI-19 CRITERION 2, TOP RUNG: workspaceFolders > rootUri.
     //
     // ONE TEST PER RUNG, never three assertions in one test: a bundled test
@@ -803,6 +838,13 @@ for (const runtime of runtimes) {
     //
     // Its permanent pair is the workspace-source test below, where the same
     // filter over the same wire DOES find items.
+    //
+    // WHAT THIS DOES NOT DEFEND, measured at Sprint 18 and recorded so nobody
+    // reads two tests as two defences: it is BLIND TO THE cwd SUBSTITUTION its
+    // sibling names. Under a cwd fallback this test stays GREEN, because
+    // PBI-14's dedup-by-inserted-text collapses the identical item a cwd root
+    // produces. THE CONTEXT-LEVEL TEST CARRIES THAT CRITERION ALONE -- one of
+    // this project's own rules blinding one of its own controls.
     test("with no workspace sent, no item is attributed to a workspace root", async () => {
       const fixture = tree(["notes/cwd-only.txt"]);
       const session = exampleSession(runtime, fixture.root);

@@ -67,6 +67,15 @@ export interface WorkspaceFoldersHandle {
  * worth reading twice: the alternative is `fileURLToPath` THROWING inside the
  * initialize handler, which answers the handshake with an error and leaves the
  * author no server at all. Falling to the rung below is the smaller loss.
+ *
+ * WHAT THE LIST HOLDS IS NOT PINNED, and that is a split rather than an
+ * oversight: `initialize is still answered` admits exactly ONE outcome and IS
+ * pinned; what a non-file root leaves in the list admits more than one, so the
+ * test asserts the handshake and deliberately nothing about the list. THE
+ * ALTERNATIVE CONSIDERED AND REJECTED: hold the folder with a `name` that is
+ * not derived from the uri. It loses because it would introduce a THIRD naming
+ * convention beside the two below -- the very thing one convention for both
+ * synthesis sites exists to prevent.
  */
 function rootUriFolder(rootUri: string | null | undefined): WorkspaceFolder | undefined {
   if (rootUri === null || rootUri === undefined) {
@@ -128,9 +137,22 @@ function rootPathFolder(rootPath: string | null | undefined): WorkspaceFolder | 
  *
  * AN EMPTY `workspaceFolders` FALLS THROUGH TO THE RUNGS BELOW, and the three
  * spellings of `no folders here` -- omitted, null and `[]` -- are treated
- * ALIKE. A config author cannot see which one arrived, so a chain that stopped
- * on one of them and continued on the others would make the root visible or
- * invisible for reasons nobody could observe.
+ * ALIKE.
+ *
+ * ON HARM ASYMMETRY, which is the reason that holds, rather than on a config
+ * author being unable to see which spelling arrived -- that is observability,
+ * and they do not need to see the spelling, they need the right answer. A
+ * client that supports workspace folders, has NONE CONFIGURED, and still sends
+ * `rootUri` is most plausibly saying `I do not do multi-root` rather than
+ * `there is no project`; belt-and-braces compatibility is a real client
+ * behaviour. Falling through hands that author the root, where stopping hands
+ * them SILENT ABSENCE of a root the editor did name.
+ *
+ * THE COUNTER-ARGUMENT, recorded as considered because it is grounded in this
+ * same chain: the installed types call `null` a client that `supports workspace
+ * folders but none are configured` -- a STATEMENT of emptiness, where omission
+ * is the absence of one -- and workspaceFolders supersedes rootUri. It loses on
+ * the asymmetry above, not on being wrong.
  */
 export function initialWorkspaceFolders(
   params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">,
