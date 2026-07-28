@@ -161,9 +161,9 @@ for (const runtime of runtimes) {
 
     // The example config is the artifact a config author copies, and this is
     // the whole chain in one test: their file reads the live buffer, does its
-    // own position math, and the markdown it composes is what an editor shows.
-    // Japanese because hover contents are prose a human reads.
-    test("the example config answers with the word under the cursor", async () => {
+    // own position math, goes to a DICTIONARY for the answer, and the markdown
+    // it composes is what an editor shows.
+    test("the example config answers with the definition of the word under the cursor", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
@@ -173,28 +173,56 @@ for (const runtime of runtimes) {
             uri,
             languageId: "plaintext",
             version: 1,
-            text: "こんにちは 世界\nさようなら 世界",
+            text: "the hover request\nreads a dictionary",
           },
         });
 
-        // Character 7 is inside 世界, which starts at code unit 6 of line 0.
-        const onWorld = await session.request<Hover | null>(
+        // Character 6 is inside `hover`, which starts at code unit 4 of line 0.
+        const onHover = await session.request<Hover | null>(
           "textDocument/hover",
-          hoverParams(0, 7),
+          hoverParams(0, 6),
         );
-        expect(onWorld).toEqual({
-          contents: { kind: "markdown", value: "**世界** はカーソル位置の語です。" },
-        });
+        const contents = (onHover?.contents ?? {}) as { kind?: string; value?: string };
+        expect(contents.kind).toBe("markdown");
+        // The WORD, then WordNet's own answer: the part of speech and the
+        // glossary. Matched on discriminating fragments rather than the whole
+        // string, so a database revision that rewords a definition does not
+        // fail a test about the wiring.
+        expect(contents.value).toContain("**hover**");
+        expect(contents.value).toContain("*verb*");
+        expect(contents.value).toContain("be undecided about something");
 
         // A different line AND a different word: a handler that ignored the
         // position, or split lines wrongly, answers the same thing twice.
-        const onFarewell = await session.request<Hover | null>(
+        const onDictionary = await session.request<Hover | null>(
           "textDocument/hover",
-          hoverParams(1, 2),
+          hoverParams(1, 10),
         );
-        expect(onFarewell).toEqual({
-          contents: { kind: "markdown", value: "**さようなら** はカーソル位置の語です。" },
+        const second = (onDictionary?.contents ?? {}) as { value?: string };
+        expect(second.value).toContain("**dictionary**");
+        expect(second.value).toContain("*noun*");
+
+        // THE PAIR for the two assertions above, and the reason the example
+        // catches rather than propagates: WordNet is English, so a word it has
+        // never heard of is `nothing to say` and NOT a failed request. Without
+        // this half, an implementation answering some canned string for every
+        // word passes everything above.
+        session.notify("textDocument/didOpen", {
+          textDocument: {
+            uri: `${uri}.jp`,
+            languageId: "plaintext",
+            version: 1,
+            text: "さようなら 世界",
+          },
         });
+        const onJapanese = await session.request<Hover | null>("textDocument/hover", {
+          textDocument: { uri: `${uri}.jp` },
+          position: { line: 0, character: 2 },
+        });
+        expect(onJapanese).toBeNull();
+        // And the session is still healthy afterwards, which is what
+        // distinguishes a caught miss from a handler that died quietly.
+        expect(session.stderr).toBe("");
 
         expect(await session.request<null>("shutdown", null)).toBeNull();
         session.notify("exit", null);

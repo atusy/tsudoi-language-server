@@ -90,7 +90,7 @@ export function startServer(
     // ONE FIELD, DELIBERATELY. `params` carries the client's capabilities too,
     // and a config author cannot see them -- LSP 3.16's
     // `completion.completionItem.insertReplaceSupport` is the known case, and
-    // examples/path-completion.ts sends that shape unconditionally because of
+    // examples/completion-path.ts sends that shape unconditionally because of
     // it. That is a SECOND consumer of this argument, not a reason to widen
     // this line: retaining `params` wholesale would put the whole of
     // InitializeParams on tsudoi's surface as a side effect of needing one

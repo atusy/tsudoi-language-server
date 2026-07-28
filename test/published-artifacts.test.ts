@@ -75,7 +75,7 @@ test("a type error in the snippet reddens the snippet, not the example", async (
 
   expect(result.code).not.toBe(0);
   expect(result.output).toContain("readme-snippet.ts");
-  expect(result.output).not.toContain("path-completion.ts");
+  expect(result.output).not.toContain("completion-path.ts");
 });
 
 test("a type error in the example reddens the example, not the snippet", async () => {
@@ -83,11 +83,11 @@ test("a type error in the example reddens the example, not the snippet", async (
   const result = await consumer.typeCheck({
     "readme-snippet.ts": readmeSnippet(),
     ...sources,
-    "path-completion.ts": withTypeError(sources["path-completion.ts"] ?? ""),
+    "completion-path.ts": withTypeError(sources["completion-path.ts"] ?? ""),
   });
 
   expect(result.code).not.toBe(0);
-  expect(result.output).toContain("path-completion.ts");
+  expect(result.output).toContain("completion-path.ts");
   expect(result.output).not.toContain("readme-snippet.ts");
 });
 

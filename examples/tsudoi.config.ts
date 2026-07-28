@@ -1,31 +1,8 @@
-import {
-  type CompletionItem,
-  type CompletionParams,
-  type Hover,
-  type HoverParams,
-} from "vscode-languageserver-protocol";
+import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
 
 import type { RequestContext, Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";
-import { pathCompletion } from "./path-completion.ts";
-
-/**
- * The run of non-whitespace characters containing `character`, or "" if the
- * cursor sits on whitespace. Whitespace is the crudest word rule there is, and
- * that is the point: a real config author replaces this one function with their
- * own language's notion of a word.
- */
-function wordAt(line: string, character: number): string {
-  const isBoundary = (index: number): boolean => /\s/u.test(line[index] ?? " ");
-  let start = character;
-  while (start > 0 && !isBoundary(start - 1)) {
-    start -= 1;
-  }
-  let end = character;
-  while (end < line.length && !isBoundary(end)) {
-    end += 1;
-  }
-  return line.slice(start, end);
-}
+import { pathCompletion } from "./completion-path.ts";
+import { hoverWordnet } from "./hover-wordnet.ts";
 
 export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
   return Promise.resolve({
@@ -102,39 +79,10 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
         }
       },
 
-      "textDocument/hover": async (
-        context: RequestContext,
-        params: HoverParams,
-      ): Promise<Hover | null> => {
-        const document = context.tsudoi.documents.get(params.textDocument.uri);
-        if (!document) {
-          return null;
-        }
-
-        // Position math is the config author's job: tsudoi hands over the live
-        // buffer and the cursor, and what counts as a `word` in this language
-        // is exactly what only this file knows.
-        //
-        // Both LSP `character` and JavaScript string indices count UTF-16 code
-        // units, so plain slicing is correct here -- iterating code points
-        // instead would drift on the first character outside the BMP.
-        const line = document.getText().split(/\r?\n/)[params.position.line];
-        if (line === undefined) {
-          return null;
-        }
-        const word = wordAt(line, params.position.character);
-        if (word === "") {
-          return null;
-        }
-
-        return {
-          contents: {
-            kind: "markdown",
-            value: `**${word}** はカーソル位置の語です。`,
-          },
-          range: undefined,
-        };
-      },
+      // DELEGATED, exactly as completion is: the handler a config author
+      // writes can be one line when the work has a home of its own. What stays
+      // here is the CHOICE of which method this config answers.
+      "textDocument/hover": hoverWordnet,
     },
   });
 };

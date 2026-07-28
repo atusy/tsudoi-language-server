@@ -21,7 +21,7 @@ import {
   sourcesFor,
   type PathFragment,
   type PathSource,
-} from "../examples/path-completion.ts";
+} from "../examples/completion-path.ts";
 
 /** The document a completion is driven against: one line, and its uri. */
 interface Buffer {
@@ -93,7 +93,7 @@ function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemK
   return Object.fromEntries(items.map((item) => [item.insertText ?? "", item.kind]));
 }
 
-// WHAT THIS FILE DRIVES: examples/path-completion.ts itself, the artifact a
+// WHAT THIS FILE DRIVES: examples/completion-path.ts itself, the artifact a
 // config author reads, with no fixture copy of it in existence. The rule is
 // Sprint 5's, and it is why the assertions below import the example directly
 // rather than a duplicate that would drift away from it.

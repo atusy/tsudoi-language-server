@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { fileURLToPath } from "node:url";
 import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
+import { fixedHover } from "./fixtures/hover-fixed.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot } from "./helpers/snapshot.ts";
@@ -36,8 +37,19 @@ function hoverParams(line: number, character: number): unknown {
   return { textDocument: { uri }, position: { line, character } };
 }
 
-/** What the example config answers over `こんにちは` at the first character. */
-const exampleHover = "**こんにちは** はカーソル位置の語です。";
+/**
+ * A word the example's dictionary knows, and the heading it puts above the
+ * definition. Matched as a FRAGMENT: the glossary is WordNet's text and a
+ * database revision may reword it, which is not what these tests are about.
+ */
+const knownWord = "dictionary";
+const exampleHeading = `**${knownWord}**`;
+
+/** The Hover the example answered, as markdown, or "" if it answered none. */
+function markdown(hover: Hover | null): string {
+  const contents = hover?.contents as { value?: string } | undefined;
+  return contents?.value ?? "";
+}
 
 /**
  * What the SERVER itself said on stderr, the fixture's own snapshot line
@@ -105,7 +117,7 @@ for (const runtime of runtimes) {
       try {
         await session.request("initialize", initializeParams);
         session.notify("initialized", {});
-        didOpen(session, "こんにちは");
+        didOpen(session, knownWord);
 
         const error = await session.requestError("textDocument/definition", hoverParams(0, 0));
         expect(error.code).toBe(-32601);
@@ -113,7 +125,7 @@ for (const runtime of runtimes) {
         // The connection survives the unknown method and still serves: an
         // absence of catastrophe would be satisfied by a dead server too.
         const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
-        expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
+        expect(markdown(hover)).toContain(exampleHeading);
 
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
@@ -123,7 +135,14 @@ for (const runtime of runtimes) {
 
     // Content-Length is a BYTE count; String.length counts UTF-16 units. Every
     // ASCII response in this suite satisfies both readings at once, so nothing
-    // told them apart until a response carried Japanese.
+    // tells them apart unless a response carries Japanese.
+    //
+    // DRIVEN THROUGH A FIXTURE rather than the example, since the example
+    // became an ENGLISH dictionary and answers null for a word WordNet has
+    // never heard of -- its markdown is now ASCII. The property is tsudoi's
+    // framing rather than the example's prose, so the fixture is its home: a
+    // property whose only carrier is an artifact free to change its language
+    // is a property that can be lost by a change unrelated to it.
     //
     // Asserted on the FRAME rather than by observing what happens: a header
     // carrying the character count is SHORT, so the reader stops mid-body, the
@@ -132,16 +151,20 @@ for (const runtime of runtimes) {
     // suite can rely on. This fails as an equality, on a payload small enough
     // to arrive in one chunk under any buffering.
     test("the Content-Length framing a Japanese response is its byte count, not its character count", async () => {
-      const session = LspSession.start(runtime, demoConfig);
+      const session = LspSession.start(runtime, fixture("hover-fixed.ts"));
       try {
         await session.request("initialize", initializeParams);
         session.notify("initialized", {});
         didOpen(session, "こんにちは");
 
+        // A fragment WITHOUT a newline: the frame body is JSON, where the
+        // fixture's real newlines are the two characters `\n`, so the whole
+        // value never appears in it literally.
+        const japanese = "**識別子** の説明です。";
         const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
-        expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
+        expect(hover?.contents).toEqual(fixedHover.contents);
 
-        const carrying = session.frames.filter((frame) => frame.body.includes(exampleHover));
+        const carrying = session.frames.filter((frame) => frame.body.includes(japanese));
         expect(carrying).toHaveLength(1);
         const [frame] = carrying;
         if (frame === undefined) {
@@ -175,10 +198,10 @@ for (const runtime of runtimes) {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
         expect(result.serverInfo?.name).toBe("tsudoi");
         session.notify("initialized", {});
-        didOpen(session, "こんにちは");
+        didOpen(session, knownWord);
 
         const hover = await session.request<Hover | null>("textDocument/hover", hoverParams(0, 0));
-        expect(hover?.contents).toEqual({ kind: "markdown", value: exampleHover });
+        expect(markdown(hover)).toContain(exampleHeading);
 
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {

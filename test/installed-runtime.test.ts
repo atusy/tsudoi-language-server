@@ -101,11 +101,16 @@ for (const [runtime, command] of Object.entries(route)) {
     expect(started.unframedStdoutBytes).toBe(0);
   });
 
-  // Non-ASCII over the newly reachable path, permanently. The example answers
-  // hover in Japanese, so this also proves the installed server does not merely
-  // start: it loads the config author's own file and runs their handler, with
-  // multi-byte text surviving the pipe in both directions.
-  test(`${runtime} serves the example's Japanese hover from the installed copy`, async () => {
+  // The installed server does not merely START: it loads the config author's
+  // own file, runs their handler, and that handler reaches a THIRD-PARTY
+  // PACKAGE the consumer installed separately -- which is the part an install
+  // can break without breaking the handshake.
+  //
+  // Multi-byte text still crosses the pipe here, in the REQUEST direction: the
+  // document's uri and its text are Japanese. The response direction is ASCII
+  // now that the example answers with an English dictionary, and the byte-count
+  // property lives on a fixture that answers Japanese -- see protocol.test.ts.
+  test(`${runtime} serves the example's dictionary hover from the installed copy`, async () => {
     const session = LspSession.startCommand(command, consumer.dir);
     try {
       await session.request<InitializeResult>("initialize", initializeParams);
@@ -114,19 +119,22 @@ for (const [runtime, command] of Object.entries(route)) {
           uri: "file:///こんにちは.txt",
           languageId: "plaintext",
           version: 1,
-          text: "こんにちは 世界",
+          text: "こんにちは dictionary 世界",
         },
       });
 
       const hover = await session.request<Hover | null>("textDocument/hover", {
         textDocument: { uri: "file:///こんにちは.txt" },
-        position: { line: 0, character: 1 },
+        // Inside `dictionary`, which starts at code unit 6 -- past the
+        // Japanese, so the handler's own position math is counting UTF-16
+        // units the way LSP does.
+        position: { line: 0, character: 8 },
       });
 
-      expect(hover?.contents).toEqual({
-        kind: "markdown",
-        value: "**こんにちは** はカーソル位置の語です。",
-      });
+      const contents = hover?.contents as { kind?: string; value?: string } | undefined;
+      expect(contents?.kind).toBe("markdown");
+      expect(contents?.value).toContain("**dictionary**");
+      expect(contents?.value).toContain("*noun*");
       expect(session.unframedStdoutBytes).toBe(0);
     } finally {
       session.dispose();

@@ -163,19 +163,30 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
 
 ## Where to look next
 
-- `examples/tsudoi.config.ts` in this repository is the fuller example: streaming completion,
-  path completion, hover, and a `finally` that documents when it runs. It imports
-  `examples/path-completion.ts`, which completes filesystem paths, so copy **both** files or the
-  import fails. Those two also need the protocol package in your own project, because they use
-  `CompletionItemKind` as a value rather than only as a type:
+- `examples/tsudoi.config.ts` in this repository is the fuller example. It chooses which methods
+  the config answers and delegates the work to a module per method, which is the shape worth
+  copying:
+
+  | file                          | what it does                                                                  |
+  | ----------------------------- | ----------------------------------------------------------------------------- |
+  | `examples/tsudoi.config.ts`   | the config itself: which methods, and a `finally` that documents when it runs |
+  | `examples/completion-path.ts` | streaming completion of filesystem paths                                      |
+  | `examples/hover-wordnet.ts`   | hover that looks a word up in a dictionary                                    |
+  | `examples/wordnet.d.ts`       | types for `wordnet`, which ships none                                         |
+
+  **Copy all four**, or the imports fail. They also need two packages in your own project:
 
   ```sh
-  bun install vscode-languageserver-protocol
+  bun install vscode-languageserver-protocol wordnet
   ```
 
-  Without it they fail to type-check and fail to load, naming the missing module either way. The
-  quickstart config above does not need it: it imports only `@atusy/tsudoi/types`. The test suite
-  runs those files themselves and type-checks them as an installed consumer receives them, so they
-  cannot drift from what tsudoi does or from what it publishes.
+  The first because the completion module uses `CompletionItemKind` as a value rather than only
+  as a type; the second because the hover module reads its definitions from it (~27MB, MIT, and
+  loaded on the first hover rather than at startup). Without either, the example fails to
+  type-check and fails to load, naming the missing module both ways.
+
+  The quickstart config above needs neither: it imports only `@atusy/tsudoi/types`. The test
+  suite runs these files themselves and type-checks them as an installed consumer receives them,
+  so they cannot drift from what tsudoi does or from what it publishes.
 
 - `src/types.ts` is the whole published type surface, reachable as `@atusy/tsudoi/types`.

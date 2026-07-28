@@ -54,8 +54,21 @@ export function exampleSources(): Record<string, string> {
       fileURLToPath(new URL("../../examples/tsudoi.config.ts", import.meta.url)),
       "utf8",
     ),
-    "path-completion.ts": readFileSync(
-      fileURLToPath(new URL("../../examples/path-completion.ts", import.meta.url)),
+    "completion-path.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/completion-path.ts", import.meta.url)),
+      "utf8",
+    ),
+    // THE DECLARATION IS PART OF THE EXAMPLE, not of this harness: `wordnet`
+    // ships no types and has no DefinitelyTyped entry, so a reader who copies
+    // the two .ts files and not this one gets TS7016 in their own project.
+    // Including it here is what makes the published-artifacts check answer the
+    // question a reader actually has.
+    "hover-wordnet.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/hover-wordnet.ts", import.meta.url)),
+      "utf8",
+    ),
+    "wordnet.d.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/wordnet.d.ts", import.meta.url)),
       "utf8",
     ),
   };
@@ -173,6 +186,16 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     // specifier would add a dependency and no information. It is a devDependency
     // of this package and never ships, so nothing here can reach a user.
     symlinkSync(join(repoRoot, "node_modules", "@types"), join(consumer, "node_modules", "@types"));
+    // `wordnet` BORROWED for the same reason and on the same terms. The README
+    // tells a reader to install it, and this stands in for that install: the
+    // property under test is that the example works WHEN ITS DEPENDENCY IS
+    // PRESENT, never that bun can reach the registry. It is 27MB, so fetching
+    // it once per consumer would cost minutes across this suite and prove
+    // nothing tsudoi is responsible for.
+    symlinkSync(
+      join(repoRoot, "node_modules", "wordnet"),
+      join(consumer, "node_modules", "wordnet"),
+    );
 
     return {
       dir: consumer,
