@@ -45,13 +45,15 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Importing createProtocolConnection outside the router does not lint",
           verification:
-            "A rule on the IMPORT SPECIFIER, which -- unlike a variable -- CANNOT BE RENAMED AWAY, asserted by the lintProbe the Bun-global and bun:* guards already use. BOTH HALVES IN ONE RUN: a constructed src/server.ts importing it must FAIL and a constructed src/notifications.ts must NOT, since a firing-half-only probe would pass a rule that forbids it everywhere and breaks the router itself",
+            "A rule on the IMPORT SPECIFIER, which -- unlike a variable -- CANNOT BE RENAMED AWAY. THREE HALVES, ALL PERMANENT: it FIRES in a constructed src/server.ts, is SILENT in src/notifications.ts under the override, and is SILENT for a DIFFERENT export from the same module. The third proves importNames scopes to a NAME rather than a SPECIFIER -- a module-wide ban passes the first two while breaking server.ts, methods.ts and the fixtures. AND THE LAUNDERING HAZARD OWNS ITS OWN TEST: assert src/notifications.ts does NOT export createProtocolConnection, control being that adding the re-export reddens that test and nothing else. THE NEGATIVE ONLY, never an exhaustive export list -- that is the `scripts` exact-equality over-pinning removed at PBI-9, and this module will grow. THE BOUNDARY IT CLAIMS, sixth application: `await import(...)` is MISSED, and so is a WRAPPER -- `export const makeConnection = () => createProtocolConnection(...)` defeats a does-not-export-X assertion. Both are the DELIBERATE-EVASION class the Bun guard already names, not slips",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
         "THE RESIDUAL IS A MEASURED NUMBER, NOT AN ADJECTIVE, which is what made the PO file this: src/server.ts rewritten to import createProtocolConnection, register the table on the WIDE value, call an UNGATED onNotification beside it and narrow afterwards runs at 331 pass, tsc 0, oxlint 0 -- A COMPLETE UNGATED BYPASS WITH NOTHING OBJECTING, reachable by a careless edit.",
         "NOT THE TWO-GUARDS-ONE-GAP SHAPE THE PO REJECTED, and the distinction is the whole reason this is filable: THE TYPE GUARDS THE HANDLE, THIS GUARDS OBTAINING A WIDE ONE. Two gaps, as ruled at Sprint 21's refinement -- so PBI-18's argument that two guards leave neither obviously load-bearing does not apply.",
+        "A ROT DETECTOR, NOT A BARRIER, and there is no cheaper foreclosure: a module cannot stop another module importing a third party's export. WHY A DETECTOR IS ADEQUATE HERE -- stated so nobody mistakes adequacy for oversight: PBI-22 made the only connection-shaped value in startServer's scope the NARROWED HANDLE, so this bypass is no longer reachable by accident and requires deliberately importing a factory nothing there needs. The guard's job is to make A CONSPICUOUS ACT FAIL EARLY, not to prevent a slip.",
+        "THE ADEQUACY IS CONDITIONAL ON PBI-22, AND THE DEPENDENCY IS RECORDED BECAUSE IT DECAYS SILENTLY: if that narrowing were ever undone, this detector's sufficiency argument goes with it AND NOTHING WOULD ANNOUNCE IT. First time in this project a detector has been justified by a foreclosure ELSEWHERE -- a shape rather than an instance, and exactly the reasoning that rots when its support moves.",
         "THE LINT ROUTE REAPPEARING AT A TARGET WHERE IT WORKS. It was declined for onNotification because no-restricted-properties matches the IDENTIFIER, so `const conn = connection` evades it. An import specifier has no such escape.",
       ],
     },
@@ -128,7 +130,50 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 22,
+    pbi_id: "PBI-23",
+    goal: "Close the one route left around the notification gate -- make obtaining an ungated connection fail early rather than silently.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The rule fires in server.ts, is silent in the router, and is silent for a different export",
+        implementation:
+          "no-restricted-imports with paths[].importNames, plus PBI-6's override shape. ALL THREE HALVES PERMANENT rather than a one-off probe.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE THIRD HALF IS THE ONE THAT WOULD BE DROPPED: it proves importNames scopes to a NAME rather than a SPECIFIER. A module-wide ban passes the first two halves while breaking server.ts, methods.ts and the fixtures -- making it permanent stops that distinction being rediscovered.",
+        ],
+      },
+      {
+        test: "The router does not export createProtocolConnection",
+        implementation:
+          "ASSERT THE NEGATIVE ONLY. Record the current export list in the test's prose as CONTEXT -- what the module legitimately provides -- never as the assertion: an exhaustive list is the `scripts` exact-equality over-pinning removed at PBI-9, and this module will grow.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE LAUNDERING HAZARD OWNS THIS TEST, and it is a PRECONDITION for the first rather than a separate claim: if the router re-exports the factory, every other module imports it from there and the guard is SILENT -- an edit made inside THE ONE FILE THE GUARD CANNOT SEE. Control: adding the re-export reddens this and nothing else.",
+        ],
+      },
+      {
+        test: "N/A (prose, same commit)",
+        implementation:
+          "Record at the site that this is A ROT DETECTOR, NOT A BARRIER, and that its adequacy is CONDITIONAL ON PBI-22's narrowing -- if that is undone, the sufficiency argument goes with it and nothing announces it. Also record the claimed boundary: dynamic import and a wrapper function are both missed, both deliberate-evasion rather than slips.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "ONE CRITERION, TWO TESTS: the export assertion is not a separate claim, it is WHAT MAKES THE FIRST CLAIM TRUE, since the guard is silent if the router launders. The granularity entry requires each HAZARD to own a test, not each to own a criterion.",
+      "THE INSTRUMENT WAS VERIFIED BEFORE ANYTHING ELSE, because PBI-22's criterion named a rule oxlint cannot even PARSE. The PO noted this was the previous sprint's lesson applied without a rule requiring it.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 19,
