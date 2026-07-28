@@ -207,6 +207,13 @@ export function sourcesFor(
     // over: a config author asking for path completion cannot list a directory
     // that is not on this filesystem, and one unusable folder must not take
     // the usable ones down with it.
+    //
+    // SKIPPED SILENTLY, WHICH IS THE SAME HARM THIS FILE REPORTS ELSEWHERE and
+    // is recorded as an INCREMENT CANDIDATE rather than fixed here: the author
+    // is told nothing, so a folder that never answers looks exactly like one
+    // holding no matches. The once-per-session machinery above is what it
+    // would use. Not done in the sprint that found it, because it arrived as a
+    // volunteered weakness at Review and adding it there is retroactive scope.
     const root = folderPath(folder);
     if (root !== undefined) {
       relative.push({ name: "workspace", root });
