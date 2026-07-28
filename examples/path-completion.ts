@@ -234,6 +234,17 @@ export async function* itemsFrom(
         // THE ORDER IS LOAD-BEARING. The inserted text comes FIRST because a
         // client with no filterText filters on the label, and a label starting
         // with anything else would filter these items away as the user types.
+        //
+        // AN UNRESOLVABLE TENSION, recorded rather than managed, because the
+        // choice is revisitable and the next person should know what it costs:
+        // a completion plugin can be configured to require the inserted word to
+        // CONTAIN the item's label, and `src/foo.ts` does not contain
+        // `src/foo.ts (cwd: /home/me)`. Under that setting these items are
+        // DROPPED ENTIRELY -- worse than an invisible root. A visible root and
+        // match-label safety cannot both hold in `label`, and no other carrier
+        // has been measured to display: `detail` is measured NOT to, and
+        // `labelDetails` is unmeasured. The setting is off by default and this
+        // stakeholder does not set it, which is the whole basis for the choice.
         label: `${insertText} (${source.name}: ${source.root})`,
         kind: await entryKind(directory, entry),
         // BOTH FIELDS, carrying the SAME text, because two client classes read
@@ -253,6 +264,13 @@ export async function* itemsFrom(
         // no error and no fallback -- it does not arrive wrong, it vanishes.
         // The plain form also leaves a user's insert-versus-replace setting
         // inert, which the example's prose says out loud.
+        //
+        // THE RANGE ENDS AT THE CURSOR AND NEVER PAST IT -- insert semantics,
+        // chosen rather than inherited. Completing in the MIDDLE of an
+        // existing path then leaves the tail alone: on `foo (1).p|ng` the
+        // result is `foo (1).pngng`, which is ugly. The alternative deletes
+        // whatever the user has to the right of their cursor, which is worse,
+        // and no criterion rules on it.
         textEdit: {
           range: { start: { line: position.line, character: fragment.start }, end: position },
           newText: insertText,
@@ -363,7 +381,30 @@ export async function* pathCompletion(
   // inserted is the same either way, so what is lost is the attribution, not
   // the edit.
   const seen = new Set<string>();
+  // THE CANDIDATES ARE TRIED SHORTEST FIRST AND THE FIRST THAT NAMES SOMETHING
+  // WINS. That is how a filename containing a space is completed at all: `see
+  // foo (1).png` offers `(1).p` first, which matches nothing, and only then
+  // widens to `foo (1).p`, which does.
+  //
+  // Two things follow, and both are the cost of the criterion rather than
+  // oversights:
+  //
+  //  * THE CHOSEN FRAGMENT DEPENDS ON WHAT IS ON DISK. The same line can
+  //    produce a different range on a different machine. No rule reading the
+  //    line alone can do better -- a space is a legal character in a filename
+  //    and a separator between words, and only the filesystem knows which one
+  //    it is here.
+  //  * EACH candidate costs a listing attempt, so a prose line of many words
+  //    over a huge directory is the pathological case. The common case, a path
+  //    with no space in it, stops at the first candidate.
+  //
+  // Stopping is what keeps ONE response from carrying items that replace
+  // DIFFERENT spans of the line, where which item the user picks would decide
+  // how much of their line disappears. Someone simplifying this to a
+  // whitespace split loses the spaced filename; someone dropping the stop
+  // loses that.
   for (const fragment of pathFragments(line, params.position.character)) {
+    let named = false;
     for (const source of sourcesFor(fragment, params.textDocument.uri, cwd)) {
       for await (const batch of itemsFrom(source, fragment, params.position)) {
         const fresh = batch.filter((item) => {
@@ -377,9 +418,13 @@ export async function* pathCompletion(
         // An emptied batch is not yielded: a `$/progress` carrying nothing is
         // noise a client has to parse to learn there was nothing in it.
         if (fresh.length > 0) {
+          named = true;
           yield fresh;
         }
       }
+    }
+    if (named) {
+      return null;
     }
   }
   return null;

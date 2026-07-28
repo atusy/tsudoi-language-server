@@ -525,6 +525,59 @@ describe("a document with no parent directory contributes nothing", () => {
   });
 });
 
+describe("a filename containing a space is completed whole", () => {
+  // THE PO'S RULING, and it lands in OUR code rather than the client's: the
+  // natural way to find a path fragment is to split on whitespace, and that
+  // cuts `foo (1).png` at the space -- so the range would start after it and
+  // the item would insert half a name over the other half.
+  //
+  // The fixture holds NOTHING matching the narrower candidate `(1).p`. With
+  // one, the test would pass at the wrong candidate and never exercise the
+  // widening at all.
+  test("the range starts at the filename, not after the space inside it", async () => {
+    const fixture = tree(["foo (1).png"]);
+    try {
+      const line = "see foo (1).png";
+      const cursor = "see foo (1).p".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+
+      expect(items).toHaveLength(1);
+      const item = items[0] as CompletionItem;
+      expect(item.insertText).toBe("foo (1).png");
+      expect(item.label).toContain("foo (1).png");
+      const edit = item.textEdit;
+      const range = edit !== undefined && "range" in edit ? edit.range : undefined;
+      // 4, where `foo` begins -- NOT 8, where `(1).p` does.
+      expect(range?.start.character).toBe(4);
+      // APPLIED against what the user has actually TYPED, which is the line
+      // above without its tail. The item's range ends at the CURSOR and never
+      // past it, so on the line above -- where `ng` sits to the right of the
+      // cursor already -- applying it yields `see foo (1).pngng`. That is
+      // insert semantics, and it is a CHOICE recorded at the module: the
+      // alternative deletes whatever the user has to the right of the cursor.
+      const typed = "see foo (1).p";
+      expect(applyAsClient(typed, cursor, item)).toBe("see foo (1).png");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE OTHER HALF OF THE RULE: a fragment widens across a space ONLY when the
+  // narrower one names nothing. Without this, a line whose words BOTH match
+  // produces items replacing different spans of it in one response, and which
+  // one the user picks decides how much of their line disappears.
+  test("a fragment widens only when the narrower one names nothing", async () => {
+    const fixture = tree(["foo.txt", "see foo.txt"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "see foo" }, fixture.root);
+
+      expect(inserted(items)).toEqual(["foo.txt"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 /**
  * The line after a client applies `item`, with the cursor at `character`.
  *
