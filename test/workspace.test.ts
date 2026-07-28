@@ -97,6 +97,13 @@ const rootedPath = "/home/me/rooted";
 const rootedFolder: WorkspaceFolder = { uri: rootedUri, name: rootedPath };
 
 /**
+ * THE CLIENT'S OWN STATEMENT ABOUT THE URI WE GUESSED, under a name it chose:
+ * a client that later adds the folder synthesised for it is saying it holds
+ * that folder, and this list holds what the client says.
+ */
+const rootedAgain: WorkspaceFolder = { uri: rootedUri, name: "rooted again" };
+
+/**
  * A SECOND, CONFLICTING root, so each precedence rung is asserted against the
  * rung below it: a list that merely contains the winner cannot be told from one
  * that took the loser too, and identical values would let a rung pass by
@@ -388,6 +395,100 @@ for (const runtime of runtimes) {
       } finally {
         session.dispose();
         fixture.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 3. BORN GREEN BY CONSTRUCTION and recorded as such: the
+    // synthesised folder is an ORDINARY MEMBER of the list the notification
+    // writes through, so uniformity is a consequence of not special-casing
+    // rather than of any code written for it.
+    //
+    // THE WHOLE VALUE IS THE CONTROL, and the wrong implementation is the
+    // TEMPTING one: a READ-TIME `folders.length > 0 ? folders :
+    // synthesise(rootUri)` passes every assertion of criterion 1 perfectly and
+    // reddens HERE, because the first `added` finds an empty stored list and
+    // the read hands back the delta ALONE -- [added] where the client holds
+    // [root, added].
+    //
+    // BOTH folders, in order, and never `toContain`: losing the root the
+    // session opened with is exactly the failure this PBI exists against.
+    test("a folder added after a root was synthesised joins it rather than replacing it", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: rootedUri,
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [addedFolder] });
+
+        expect(await observedFolders(session)).toEqual([rootedFolder, addedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 3, THE REMOVE HALF, AND THE WORSE HAZARD OF THE TWO: a
+    // read-time fallback never stored the root, so removing it is a no-op on an
+    // already-empty list and the next read SYNTHESISES IT AGAIN -- a folder the
+    // client EXPLICITLY REMOVED coming back.
+    //
+    // ITS OWN TEST, AND THE REAPPEARANCE IS ITS FIRST ASSERTION. Bundled onto
+    // the end of the test above it could never be observed: that test would
+    // fail at its own first assertion under the same perturbation and stop,
+    // leaving the hazard this one names unreported.
+    //
+    // ITS PERMANENT PRESENCE PAIR is the criterion 1 test above -- the same
+    // fixture, the same hover, the same reader, observing [rootedFolder] when
+    // the root IS there. An emptiness claim measured by a path that can never
+    // observe anything is satisfied by a broken measurement.
+    test("the synthesised folder is removed like any other, and does not come back", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: rootedUri,
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { removed: [rootedFolder] });
+
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 4, PINNED BECAUSE A WELL-MEANING GUARD PASSES EVERY
+    // OTHER ONE: a `do not duplicate our own entry` check would leave criteria
+    // 1, 2 and 3 green while silently disagreeing with the client -- the
+    // identical hazard shape to the `includes` guard pinned above.
+    //
+    // APPEND, NEVER REPLACE, and the losing argument is strong enough to
+    // record: one folder guessed and then confirmed is arguably not two, and
+    // OUR entry is an estimate where the client's is a statement. It loses on
+    // MECHANISM COST -- replacing means knowing which entry is ours, which
+    // reintroduces the provenance the uniformity ruling removed the need for,
+    // and an exception for our own entry makes the synthesised entry
+    // EXTRAORDINARY again.
+    //
+    // THE RESIDUAL, named rather than glossed: the list can then hold two
+    // entries for one folder, our estimate beside the client's statement.
+    test("an added folder naming the synthesised URI is held beside it, not merged into it", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: rootedUri,
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [rootedAgain] });
+
+        expect(await observedFolders(session)).toEqual([rootedFolder, rootedAgain]);
+      } finally {
+        session.dispose();
       }
     });
 
