@@ -163,21 +163,56 @@ export interface PathCompletionOptions {
  * answers every keystroke and typing `/` offers the current directory's
  * children beside the filesystem root's.
  *
- * workspaceFolder-relative is a FOURTH source that is deliberately absent: the
- * client sends workspace folders at initialize, tsudoi does not expose them
- * yet, and inventing one from cwd would be silently wrong exactly when it
- * matters. It is PBI-15, and a public API addition rather than a config
- * author's business.
+ * WORKSPACE-RELATIVE IS THE FOURTH, and it is ONE SOURCE PER FOLDER rather
+ * than one source: the field is an array on the wire, and a client that opened
+ * two roots means both. An implementation keeping only the first answers from
+ * whichever the editor happened to list first, which is not a rule anyone
+ * chose.
+ *
+ * A folder is named by URI, so it is converted here and NEVER guessed from
+ * cwd. Inventing a workspace from cwd is silently wrong exactly when it
+ * matters -- an editor starting the server without a project root leaves cwd
+ * as its own launch directory, so the invention would look right in every test
+ * and answer from the user's home in real use.
+ *
+ * ORDER IS MOST-LOCAL-FIRST, which decides attribution rather than content:
+ * items dedup by inserted text, so when two roots hold the same relative path
+ * the survivor names the root asked first. Document, then cwd, then the
+ * workspace -- from where the user is looking outward.
  */
-export function sourcesFor(fragment: PathFragment, uri: string, cwd: string): PathSource[] {
+export function sourcesFor(
+  fragment: PathFragment,
+  uri: string,
+  cwd: string,
+  folders: readonly WorkspaceFolder[] = [],
+): PathSource[] {
   if (fragment.text.startsWith("/")) {
     return [{ name: "absolute", root: "/" }];
   }
   const parent = documentParent(uri);
   const relative: PathSource[] = [{ name: "cwd", root: cwd }];
+  for (const folder of folders) {
+    // A folder whose URI is not a local path is skipped rather than thrown
+    // over: a config author asking for path completion cannot list a directory
+    // that is not on this filesystem, and one unusable folder must not take
+    // the usable ones down with it.
+    const root = folderPath(folder);
+    if (root !== undefined) {
+      relative.push({ name: "workspace", root });
+    }
+  }
   // The document first, so a collision between the two is attributed to the
   // more local root.
   return parent === undefined ? relative : [{ name: "document", root: parent }, ...relative];
+}
+
+/** A workspace folder's directory, or undefined when its URI names no local path. */
+function folderPath(folder: WorkspaceFolder): string | undefined {
+  try {
+    return fileURLToPath(folder.uri);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -502,7 +537,12 @@ export async function* pathCompletion(
   // loses that.
   for (const fragment of pathFragments(line, params.position.character)) {
     let named = false;
-    for (const source of sourcesFor(fragment, params.textDocument.uri, cwd)) {
+    for (const source of sourcesFor(
+      fragment,
+      params.textDocument.uri,
+      cwd,
+      context.workspaceFolders,
+    )) {
       for await (const batch of itemsFrom(source, fragment, params.position)) {
         const fresh = batch.filter((item) => {
           const text = item.insertText ?? "";

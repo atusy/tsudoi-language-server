@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type {
   CompletionItem,
   Hover,
@@ -248,6 +248,69 @@ for (const runtime of runtimes) {
       } finally {
         session.dispose();
         fixture.dispose();
+      }
+    });
+
+    // THE FOURTH SOURCE, and the PERMANENT PRESENCE PAIR for the absence
+    // assertion above: the same `(workspace: ` filter over the same wire finds
+    // items here, so an empty result there is evidence rather than a filter
+    // that could never match.
+    //
+    // cwd and the workspace are DIFFERENT DIRECTORIES holding DIFFERENT files,
+    // which is the only way to tell which root produced an item. It is a
+    // SYNTHETIC ISOLATION STATE and no editor produces it -- nvim spawns the
+    // server with cwd = root_dir whenever it found a root -- and nobody should
+    // later read it as an observed one.
+    test("every workspace folder is answered from, and its items name their root", async () => {
+      const cwd = tree(["notes/cwd-only.txt"]);
+      const first = tree(["notes/first-only.txt"]);
+      const second = tree(["notes/second-only.txt"]);
+      const session = exampleSession(runtime, cwd.root);
+      try {
+        // TWO FOLDERS, because the field is an array on the wire: an
+        // implementation keeping only the first answers from whichever root
+        // the editor happened to list first, which is not a rule anyone chose.
+        await openWith(
+          session,
+          [
+            { uri: pathToFileURL(first.root).href, name: "first" },
+            { uri: pathToFileURL(second.root).href, name: "second" },
+          ],
+          "notes/",
+        );
+
+        const items = await completeAt(session, "notes/");
+
+        // ALL THREE ROOTS ANSWER. The cwd entry is not decoration: if the
+        // workspace sources had REPLACED the relative ones rather than joining
+        // them, every workspace assertion below would still pass.
+        expect(inserted(items)).toEqual([
+          "notes/cwd-only.txt",
+          "notes/first-only.txt",
+          "notes/second-only.txt",
+        ]);
+        expect(
+          workspaceItems(items)
+            .map((item) => item.insertText)
+            .sort(),
+        ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
+        // The root is NAMED, not merely used, and each item names ITS OWN: four
+        // sources whose items look alike are four sources the user cannot tell
+        // apart, and one label reused for both folders is the same failure.
+        const labels = workspaceItems(items)
+          .map((item) => item.label)
+          .join("\n");
+        expect(labels).toContain(first.root);
+        expect(labels).toContain(second.root);
+        // And no report, because a workspace IS known -- the other half of the
+        // once-per-session test, which would otherwise be satisfied by an
+        // example that reports unconditionally.
+        expect(reportLines(session.stderr)).toEqual([]);
+      } finally {
+        session.dispose();
+        cwd.dispose();
+        first.dispose();
+        second.dispose();
       }
     });
 
