@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { CompletionItem } from "vscode-languageserver-protocol";
+import { CompletionItemKind, type CompletionItem } from "vscode-languageserver-protocol";
 import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
 import { pathCompletion, pathFragments } from "../examples/path-completion.ts";
 
@@ -25,7 +25,10 @@ interface Tree {
   dispose(): void;
 }
 
-function tree(entries: readonly string[]): Tree {
+function tree(
+  entries: readonly string[],
+  links: readonly (readonly [string, string])[] = [],
+): Tree {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-paths-")));
   for (const entry of entries) {
     if (entry.endsWith("/")) {
@@ -34,6 +37,9 @@ function tree(entries: readonly string[]): Tree {
       mkdirSync(join(root, entry, ".."), { recursive: true });
       writeFileSync(join(root, entry), "");
     }
+  }
+  for (const [name, target] of links) {
+    symlinkSync(target, join(root, name));
   }
   return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
 }
@@ -95,6 +101,11 @@ function inserted(items: readonly CompletionItem[]): string[] {
 
 /** A document that does not exist, so only cwd answers a relative fragment. */
 const elsewhere = { uri: "file:///workspace/a.txt" } as const;
+
+/** The kind each item carries, keyed by what it inserts. */
+function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemKind | undefined> {
+  return Object.fromEntries(items.map((item) => [item.insertText ?? "", item.kind]));
+}
 
 // WHAT THIS FILE DRIVES: examples/path-completion.ts itself, the artifact a
 // config author reads, with no fixture copy of it in existence. The rule is
@@ -183,6 +194,50 @@ describe("the typed prefix selects the source class", () => {
           .filter(visible)
           .sort(),
       ).toEqual(rootEntries.sort());
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+describe("directories are distinguishable from files", () => {
+  // A WRONG KIND STILL COMPLETES AND STILL DISPLAYS, so nothing but this
+  // assertion catches it.
+  //
+  // The symlinks are not decoration. MEASURED on bun 1.3.13 and deno 2.9.2:
+  // readdir/opendir report a symlink-to-directory as NOT a directory, so an
+  // implementation trusting the dirent alone labels `linkdir` a File -- and on
+  // macOS /tmp is itself a symlink, so this is the first keystroke rather than
+  // an exotic case.
+  test("a symlink is the kind of what it points AT, and a dangling one still lists", async () => {
+    const fixture = tree(
+      ["realdir/", "realfile.txt"],
+      [
+        ["linkdir", "realdir"],
+        ["linkfile", "realfile.txt"],
+        ["dangling", "nowhere-at-all"],
+      ],
+    );
+    try {
+      const items = await complete({ ...elsewhere, line: "real" }, fixture.root);
+      const links = await complete({ ...elsewhere, line: "link" }, fixture.root);
+      // The DANGLING half: the entry is offered and the request still answers.
+      // MEASURED: the obvious fix for the line above -- stat every entry --
+      // throws ENOENT here, which under tsudoi's dispatch becomes -32603 plus
+      // a stack and kills the whole completion, not merely this one item.
+      const dangling = await complete({ ...elsewhere, line: "dang" }, fixture.root);
+
+      expect(kinds(items)).toEqual({
+        realdir: CompletionItemKind.Folder,
+        "realfile.txt": CompletionItemKind.File,
+      });
+      expect(kinds(links)).toEqual({
+        linkdir: CompletionItemKind.Folder,
+        linkfile: CompletionItemKind.File,
+      });
+      // Degraded to File rather than dropped: there is nothing to resolve, and
+      // a user who typed the name is entitled to see it exists.
+      expect(kinds(dangling)).toEqual({ dangling: CompletionItemKind.File });
     } finally {
       fixture.dispose();
     }

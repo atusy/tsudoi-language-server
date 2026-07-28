@@ -13,7 +13,8 @@
  * line read out of the document is therefore the ONLY source of what the user
  * has typed, and reading it needs no new tsudoi API.
  */
-import { opendir } from "node:fs/promises";
+import { opendir, stat } from "node:fs/promises";
+import type { Dirent } from "node:fs";
 import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -158,13 +159,74 @@ export async function* itemsFrom(
         continue;
       }
       const insertText = fragment.directory + entry.name;
-      items.push({ label: insertText, kind: CompletionItemKind.File, insertText });
+      items.push({ label: insertText, kind: await entryKind(directory, entry), insertText });
     }
-  } catch {
-    return;
+  } catch (error) {
+    // BY CODE, never a bare catch: absorbing everything would answer the
+    // client a plausible `nothing here` for a defect in this file, which is
+    // the shape src/methods.ts refuses one layer up. Anything else is rethrown
+    // and reaches the config author as -32603 plus a stack, which is correct.
+    if (!isUnopenable(error)) {
+      throw error;
+    }
   }
   if (items.length > 0) {
     yield items;
+  }
+}
+
+/**
+ * Whether a listing failed because THAT DIRECTORY cannot be listed -- which
+ * for a path being typed is ordinary, not exceptional.
+ *
+ * A cross-runtime difference that a catch around `opendir` alone would get
+ * wrong, MEASURED under bun 1.3.13 and deno 2.9.2: deno REJECTS `opendir` for
+ * a missing directory, and bun RESOLVES it and defers the scandir to the first
+ * iteration. So both the open and the loop have to be inside the same try, and
+ * a test written under one runtime cannot see the other's behaviour.
+ */
+function isUnopenable(error: unknown): boolean {
+  const code: unknown = (error as { code?: unknown }).code;
+  return (
+    typeof code === "string" && ["ENOENT", "ENOTDIR", "EACCES", "EPERM", "ELOOP"].includes(code)
+  );
+}
+
+/**
+ * Folder or File -- and the two measurements that decide how.
+ *
+ * MEASURED under bun 1.3.13 and deno 2.9.2, identically:
+ *
+ *  1. `readdir`/`opendir` with file types report a SYMLINK TO A DIRECTORY as
+ *     a symlink and NOT as a directory, so `dirent.isDirectory()` alone labels
+ *     it File. On macOS /tmp is itself a symlink, so a user meets this on the
+ *     first keystroke.
+ *  2. The obvious fix -- `stat` every entry -- THROWS ENOENT on a DANGLING
+ *     symlink. Under tsudoi's dispatch a throwing handler is answered -32603
+ *     with a stack on stderr, so one broken link in the directory would kill
+ *     the entire completion rather than one item of it.
+ *
+ * Hence: consult the dirent first, and `stat` only what it could not decide,
+ * inside a catch that DEGRADES the entry rather than dropping the request. The
+ * `isFile` arm is not redundant with the `isDirectory` one -- a filesystem
+ * that reports an unknown type answers false to both, and that entry needs the
+ * stat as much as a symlink does.
+ *
+ * Anyone simplifying this to `dirent.isDirectory()` reintroduces (1); anyone
+ * lifting the stat out of the catch reintroduces (2).
+ */
+async function entryKind(directory: string, entry: Dirent): Promise<CompletionItemKind> {
+  if (entry.isDirectory()) {
+    return CompletionItemKind.Folder;
+  }
+  if (entry.isFile()) {
+    return CompletionItemKind.File;
+  }
+  try {
+    const target = await stat(join(directory, entry.name));
+    return target.isDirectory() ? CompletionItemKind.Folder : CompletionItemKind.File;
+  } catch {
+    return CompletionItemKind.File;
   }
 }
 
