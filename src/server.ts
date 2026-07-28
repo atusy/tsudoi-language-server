@@ -20,6 +20,7 @@ import {
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
+import { registerNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
@@ -69,10 +70,16 @@ export function startServer(
   );
 
   // Every question about WHEN a message is allowed goes to this one object.
-  // The gate it backs is consulted by the handlers tsudoi REGISTERED, never by
-  // the dispatch as a whole -- that is what leaves a method nobody registered
-  // falling through to vscode-jsonrpc's MethodNotFound, since `not initialized
-  // yet` and `no such method` are different diagnoses.
+  // The gate it backs reaches what tsudoi REGISTERED, never the dispatch as a
+  // whole -- that is what leaves a method nobody registered falling through to
+  // vscode-jsonrpc's MethodNotFound, since `not initialized yet` and `no such
+  // method` are different diagnoses.
+  //
+  // NOTIFICATIONS NO LONGER CONSULT IT ONE BY ONE, and the sentence above used
+  // to say they did: each entry below DECLARES when it may run and
+  // registerNotifications applies that. Requests still ask for themselves, in
+  // methods.ts, because a refused request must be ANSWERED with a code the
+  // handler's own signature can carry.
   const lifecycle = createLifecycle();
 
   /**
@@ -132,11 +139,11 @@ export function startServer(
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
-  connection.onNotification(InitializedNotification.type, () => {
-    // The client is ready. Registered rather than left unhandled so that
-    // vscode-jsonrpc does not log it as unanswered on every session.
-  });
-
+  // EVERY notification tsudoi answers is declared here, and each one DECIDES
+  // when it may run. The gate is applied by registerNotifications, never by a
+  // handler body: a body that could consult it is a body that could forget to,
+  // which is what these entries replaced.
+  //
   // WHERE workspace/didChangeWorkspaceFolders WOULD GO, and why it is not here
   // yet: the folders read above are a SNAPSHOT of initialize, and a user adding
   // or removing a folder mid-session leaves it stale. MEASURED both ways -- the
@@ -149,31 +156,51 @@ export function startServer(
   // reaches stderr, the session stays functional and exits 0.
   //
   // Handling it means updating the captured list and is a separate story --
-  // whoever takes it edits HERE and at the `let workspaceFolders` above, and
-  // should say at the type that the value tracks changes once it does.
-
-  // The three sync notifications are pure delegation: what a full-sync buffer
-  // means is documents.ts's business, and none of them answers the client.
-  connection.onNotification(DidOpenTextDocumentNotification.type, (params) => {
-    if (lifecycle.acceptsNotification() === false) {
-      return;
-    }
-    documents.open(params);
-  });
-
-  connection.onNotification(DidChangeTextDocumentNotification.type, (params) => {
-    if (lifecycle.acceptsNotification() === false) {
-      return;
-    }
-    documents.change(params);
-  });
-
-  connection.onNotification(DidCloseTextDocumentNotification.type, (params) => {
-    if (lifecycle.acceptsNotification() === false) {
-      return;
-    }
-    documents.close(params);
-  });
+  // whoever takes it adds an ENTRY HERE and edits the `let workspaceFolders`
+  // above, and should say at the type that the value tracks changes once it
+  // does.
+  registerNotifications(connection, lifecycle, [
+    {
+      type: InitializedNotification.type,
+      // The client is ready. Registered rather than left unhandled so that
+      // vscode-jsonrpc does not log it as unanswered on every session.
+      handler: () => {},
+      // REASONED, not measured, and behaviourally invisible today: a conforming
+      // client sends this once, inside the window, so no test can tell the two
+      // gates apart here. `lifecycle` is what the message MEANS -- `the client
+      // is ready to serve` outside a serving session says nothing.
+      gate: "lifecycle",
+    },
+    // The three sync notifications are pure delegation: what a full-sync buffer
+    // means is documents.ts's business, and none of them answers the client.
+    {
+      type: DidOpenTextDocumentNotification.type,
+      handler: (params) => documents.open(params),
+      gate: "lifecycle",
+    },
+    {
+      type: DidChangeTextDocumentNotification.type,
+      handler: (params) => documents.change(params),
+      gate: "lifecycle",
+    },
+    {
+      type: DidCloseTextDocumentNotification.type,
+      handler: (params) => documents.close(params),
+      gate: "lifecycle",
+    },
+    {
+      type: ExitNotification.type,
+      // Reads the lifecycle for the CODE, never for permission -- exitCode() is
+      // not the gate, and this handler decides nothing about whether it runs.
+      handler: () => process.exit(lifecycle.exitCode()),
+      // THE ONE SITE AT WHICH exit's carve-out EXISTS: a client is entitled to
+      // send `exit` at any moment, and a gate applied to it leaves the process
+      // alive forever -- a hang instead of an exit code. Written here rather
+      // than as a branch in the router or a name in a set, so there is no
+      // second place to get it wrong.
+      gate: "always",
+    },
+  ]);
 
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
@@ -194,13 +221,6 @@ export function startServer(
       throw rejection;
     }
     lifecycle.shutDown();
-  });
-
-  // `exit` is the one notification NOT routed through acceptsNotification: it
-  // must be obeyed at every moment of the lifecycle, and a gate written
-  // without that exception leaves the process alive forever.
-  connection.onNotification(ExitNotification.type, () => {
-    process.exit(lifecycle.exitCode());
   });
 
   connection.listen();
