@@ -101,15 +101,16 @@ export function startServer(
     // initialize is the one request the gate may never refuse -- refusing it
     // would make the state it guards unreachable.
     lifecycle.initialize();
-    // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE. `params` carries the
-    // client's capabilities too,
-    // and a config author cannot see them -- LSP 3.16's
+    // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE -- they are the three the
+    // protocol lets a client name a ROOT in, and nothing else here is read.
+    // `params` carries the client's capabilities too, and a config author
+    // cannot see them -- LSP 3.16's
     // `completion.completionItem.insertReplaceSupport` is the known case, and
     // examples/completion-path.ts sends that shape unconditionally because of
     // it. That is a SECOND consumer of this argument, not a reason to widen
     // this line: retaining `params` wholesale would put the whole of
-    // InitializeParams on tsudoi's surface as a side effect of needing one
-    // field of it. Whoever needs capabilities opens a seam for capabilities.
+    // InitializeParams on tsudoi's surface as a side effect of needing three
+    // fields of it. Whoever needs capabilities opens a seam for capabilities.
     //
     // REDUCED IN workspace.ts AND NOWHERE ELSE, which is where the precedence
     // chain, the absent states and the two synthesis conventions are all
