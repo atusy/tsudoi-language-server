@@ -29,8 +29,9 @@ export interface PathFragment {
   readonly name: string;
   /**
    * Where the word under the cursor ends, at or past it. `text` stops at the
-   * cursor because that is what a completion filters on; this edge exists for
-   * the REPLACE range, which means `as far as this word goes`.
+   * cursor because that is what a completion filters on; this edge is the
+   * FLOOR of the REPLACE range -- `as far as this word goes` -- which
+   * `replaceEnd` reaches past for a candidate the line already carries.
    */
   readonly end: number;
 }
@@ -59,10 +60,11 @@ export function pathFragments(line: string, character: number): PathFragment[] {
   }
   // Scanned once: every candidate ends here, differing only in where it begins.
   //
-  // KNOWN DEFECT, not a chosen limit: this end feeds the REPLACE range, so a
-  // filename with a further space -- `spaced (1).txt` completed at `spa` --
-  // stops at the first space and replace mode mangles the line. A smarter end
-  // needs forward disk probing and is undecidable in general.
+  // THE FLOOR OF THE REPLACE RANGE, not the whole of it. A filename with a
+  // further space -- `spaced (1).txt` completed at `spa` -- stops here at the
+  // first space, and `replaceEnd` reaches past it PER CANDIDATE when the line
+  // already carries that candidate verbatim. The decision cannot be made here:
+  // this function has no candidate to compare the line against.
   let end = character;
   while (!isBoundary(end)) {
     end += 1;
@@ -208,6 +210,55 @@ function documentParent(uri: string): string | undefined {
 }
 
 /**
+ * How far the REPLACE range reaches for ONE candidate.
+ *
+ * The fragment's end stops at the first whitespace, so completing `spa` on a
+ * line already reading `spaced (1).txt` would delete `spaced` alone and insert
+ * the whole filename over it -- leaving ` (1).txt` behind, a line NEITHER
+ * insert nor replace would have written. The end reaches to the end of the
+ * candidate WHEN THE LINE ALREADY CARRIES IT VERBATIM from the fragment's
+ * start. Per candidate, which the protocol permits because each item carries
+ * its own `textEdit`, and off disk entirely.
+ *
+ * MEASURED IN THE STAKEHOLDER'S OWN EDITOR, and this rule rests on it: nvim
+ * with ddc and ddc-source-lsp under `confirmBehavior: replace` HONOURS an
+ * extended replace end at confirm, and the same harness with the whitespace
+ * end reproduces the mangled line. That measurement needs their editor, so it
+ * is not in this suite; it is recorded on Sprint 20.
+ *
+ * EXACT, AND ANCHORED AT `fragment.start`, and both halves are asserted by
+ * their own test in test/completion-path.test.ts because each relaxation
+ * writes a DIFFERENT wrong line:
+ *
+ *   - a PREFIX match would extend `spa|ced (1).txt` completing to
+ *     `spaced (2).txt` as far as the common prefix and write
+ *     `spaced (2).txt1).txt` -- worse than the defect it set out to fix;
+ *   - a match ANYWHERE on the line would swallow a word the user never typed
+ *     over: `sp| spaced (1).txt` would take the filename beside the cursor.
+ *
+ * EXTENSION ONLY, never a shrink, which is the third assertion: a candidate
+ * SHORTER than the word under the cursor -- completing `fo` to `foo` where the
+ * line reads `foo.txt` -- would otherwise pull the end back to 3 and leave
+ * `.txt` standing.
+ *
+ * WHAT REMAINS UNFIXED IS DECLINED RATHER THAN MISSED. A PARTIALLY-TYPED tail
+ * (`spa|ced (1).tx`) and a tail belonging to a DIFFERENT candidate keep the
+ * whitespace end, so replace still takes the first word alone and leaves the
+ * rest -- exactly today's outcome, since this rule fires only on an exact
+ * match. Deciding those needs FORWARD DISK PROBING, one stat per extension
+ * step on a path where a huge directory is already the pathological case, and
+ * it cannot terminate honestly: `a b c` is one filename on one machine and
+ * three words on another.
+ */
+function replaceEnd(line: string, fragment: PathFragment, candidate: string): number {
+  const whole = fragment.start + candidate.length;
+  if (whole <= fragment.end) {
+    return fragment.end;
+  }
+  return line.slice(fragment.start, whole) === candidate ? whole : fragment.end;
+}
+
+/**
  * The completion items for one fragment under one root, in batches.
  *
  * NOTHING HERE RECURSES, and that is the design: the listing is ONE directory
@@ -229,6 +280,13 @@ export async function* itemsFrom(
    * item vanish from the client with no error.
    */
   position: Position,
+  /**
+   * The cursor's whole line. REQUIRED for the same reason as `position`: the
+   * replace end is decided by what the line already reads, and a default could
+   * only be the fragment's own text -- which is the line up to the cursor and
+   * says nothing about the tail this rule exists to cover.
+   */
+  line: string,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];
@@ -259,7 +317,7 @@ export async function* itemsFrom(
           },
           replace: {
             start: { line: position.line, character: fragment.start },
-            end: { line: position.line, character: fragment.end },
+            end: { line: position.line, character: replaceEnd(line, fragment, insertText) },
           },
         },
       });
@@ -359,7 +417,7 @@ export async function* pathCompletion(
       cwd,
       context.workspaceFolders,
     )) {
-      for await (const batch of itemsFrom(source, fragment, params.position)) {
+      for await (const batch of itemsFrom(source, fragment, params.position, line)) {
         const fresh = batch.filter((item) => {
           const text = item.insertText ?? "";
           if (seen.has(text)) {

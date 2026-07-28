@@ -251,12 +251,20 @@ function resolvesTo(root: string, insertedText: string): string | undefined {
 }
 
 /** Every item one source produced, in order. */
-async function fromSource(source: PathSource, fragment: PathFragment): Promise<CompletionItem[]> {
+async function fromSource(
+  source: PathSource,
+  fragment: PathFragment,
+  // These callers build their fragment with `only(line)`, whose cursor is at
+  // the END of the line -- so the fragment's text IS the line. Spelled as a
+  // default here and never in the module: a module-level default would decide
+  // the replace end from a line it was not given.
+  line: string = fragment.text,
+): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
   // The cursor, spelled out: itemsFrom takes it rather than defaulting it,
   // because a default can only assume line 0 and would be wrong anywhere else.
   const position = { line: 0, character: fragment.start + fragment.text.length };
-  for await (const batch of itemsFrom(source, fragment, position)) {
+  for await (const batch of itemsFrom(source, fragment, position, line)) {
     items.push(...batch);
   }
   return items;
@@ -623,6 +631,30 @@ function itemInserting(items: readonly CompletionItem[], text: string): Completi
 }
 
 describe("a replace range covers a filename the line already carries", () => {
+  // THE HARM, in the feature the stakeholder uses with the setting they set:
+  // the fragment's end stops at the first space, so `replace` used to delete
+  // `spaced` alone and insert the whole filename over it -- leaving ` (1).txt`
+  // standing and writing a line NEITHER mode would have produced.
+  //
+  // MEASURED IN THEIR OWN EDITOR before this was built, because everything
+  // here rests on it: an extended replace end is honoured at confirm by nvim +
+  // ddc + ddc-source-lsp, and today's end reproduces the mangled line there.
+  test("completing over the filename replaces the whole of it", async () => {
+    const fixture = tree(["spaced (1).txt"]);
+    try {
+      const line = "spaced (1).txt";
+      const cursor = "spa".length;
+      const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
+      const item = itemInserting(items, "spaced (1).txt");
+
+      // The filename ALONE: no tail, and nothing of the old line left.
+      expect(applyAsClient(line, cursor, item, "replace")).toBe("spaced (1).txt");
+      expect(endsOf(item)?.replace).toBe(line.length);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
   // WHAT MAKES THE EXTENSION SAFE IS THAT IT NEVER FIRES ON A LINE THAT DOES
   // NOT ALREADY READ THE CANDIDATE, and the three tests below are the three
   // ways `already reads it` can be relaxed. Each is a DIFFERENT wrong line, so
