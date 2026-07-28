@@ -81,6 +81,31 @@ const plainFolder: WorkspaceFolder = { uri: "file:///home/me/plain", name: "plai
 const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name: "plain-slash" };
 
 /**
+ * A ROOT THE CLIENT NAMES IN THE DEPRECATED FIELDS -- the case PBI-19 exists
+ * for: `workspaceFolders` is only available if the client supports workspace
+ * folders, so a client without that capability sends none and may still say
+ * which project the editor opened.
+ *
+ * THE TWO SPELLINGS ARE SEPARATE LITERALS, never one derived from the other by
+ * fileURLToPath/pathToFileURL. Those are the very functions the implementation
+ * uses, so an expectation computed with them would assert that a function
+ * equals itself and would stop pinning the convention -- `name` is the PATH and
+ * `uri` is the client's own bytes.
+ */
+const rootedUri = "file:///home/me/rooted";
+const rootedPath = "/home/me/rooted";
+const rootedFolder: WorkspaceFolder = { uri: rootedUri, name: rootedPath };
+
+/**
+ * A SECOND, CONFLICTING root, so each precedence rung is asserted against the
+ * rung below it: a list that merely contains the winner cannot be told from one
+ * that took the loser too, and identical values would let a rung pass by
+ * accident.
+ */
+const elsewhereUri = "file:///home/me/elsewhere";
+const elsewherePath = "/home/me/elsewhere";
+
+/**
  * What the handler observed ON ITS OWN RequestContext, read back through the
  * fixture's hover.
  *
@@ -242,6 +267,127 @@ for (const runtime of runtimes) {
         expect(await observedFolders(session)).toEqual([]);
       } finally {
         session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 1. The client named a root and sent NO workspaceFolders,
+    // which is what a client without that capability does -- and the handler
+    // must still be handed the project the editor opened.
+    //
+    // VERIFIED SYNTHETICALLY, AND SAYING SO IS PART OF THE RESULT: MEASURED
+    // across all three capability declarations, nvim sends rootUri and
+    // workspaceFolders TOGETHER OR NEITHER, so NO MEASURED CLIENT PRODUCES THIS
+    // CASE. The specification contemplates a rootUri-only client and such
+    // clients existed, which is why this stands -- but nobody should read a
+    // green here as `this works for a client we have seen`.
+    //
+    // THE WHOLE FOLDER, not just its uri: `name` is the property that carries
+    // the convention, and asserting the uri alone would leave the second
+    // synthesis site free to invent its own.
+    test("a client sending rootUri but no workspaceFolders reaches a handler with a folder", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: rootedUri,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([rootedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 2, TOP RUNG: workspaceFolders > rootUri.
+    //
+    // ONE TEST PER RUNG, never three assertions in one test: a bundled test
+    // stops at its first failure, so which rungs were already satisfied and
+    // which had to be built could not be reported at all.
+    //
+    // ASSERTED AGAINST A CONFLICTING rootUri, so a `folders win` claim cannot
+    // be satisfied by an implementation that appends the root as well.
+    test("workspace folders the client sent win over a conflicting rootUri", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: elsewhereUri,
+          workspaceFolders: sentFolders,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual(sentFolders);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 2, LOWER RUNG: rootUri > rootPath. MEASURED FROM THE
+    // INSTALLED TYPES, which state it outright: `If both rootPath and rootUri
+    // are set rootUri wins`.
+    test("rootUri wins over a conflicting rootPath", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: rootedUri,
+          rootPath: elsewherePath,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([rootedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 2, BOTTOM RUNG, and it is the test that pins the SECOND
+    // synthesis site's convention: rootPath is already a path, so `name` is
+    // that string VERBATIM and the uri is derived from it -- the mirror of the
+    // rung above, where the uri arrived and the name was derived.
+    test("a client naming only rootPath reaches a handler with a folder named by that path verbatim", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootPath: rootedPath,
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([rootedFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 1'S NEGATIVE CONTROL, THE BACK DOOR HALF: cwd must not
+    // re-enter through the rootPath rung. `pathToFileURL` RESOLVES A RELATIVE
+    // PATH AGAINST cwd, so a rootPath of "" or "." would synthesise a
+    // cwd-derived root -- exactly the fabrication the criterion exists to keep
+    // out, arriving by a route `?? []` does not cover because "" is neither
+    // null nor undefined.
+    //
+    // REASONED, NOT MEASURED: no observed client sends this, and it is pinned
+    // because the failure would be silent and indistinguishable from a correct
+    // root.
+    test("a rootPath that names no absolute path is not a root, and never becomes cwd", async () => {
+      const fixture = tree(["notes/cwd-only.txt"]);
+      const session = LspSession.startCommand(
+        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${echoConfig}`,
+        fixture.root,
+      );
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootPath: "",
+        });
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+        fixture.dispose();
       }
     });
 

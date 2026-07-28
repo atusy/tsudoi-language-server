@@ -86,6 +86,21 @@ export interface RequestContext {
    * -- so a normalising implementation would delete a folder the client still
    * holds.
    *
+   * WHICH FIELD THE CLIENT SAID IT IN IS NOT VISIBLE HERE, and that is the one
+   * place this list is more than a mirror. A client may name its project in
+   * `workspaceFolders`, in `rootUri` or in `rootPath`, the last two being the
+   * deprecated spellings a client without the workspace-folders capability
+   * still has -- and only the first is a list. So when a session opens with no
+   * `workspaceFolders`, ONE FOLDER IS SYNTHESISED from `rootUri`, or failing
+   * that from `rootPath`, and it appears here as an ORDINARY MEMBER: nothing
+   * marks it, and a later add or remove applies to it like any other. Its
+   * `name` is THE FULL PATH, since that is what can be derived from what the
+   * client sent without inventing anything -- so a `name` here is not
+   * guaranteed to be a label the user would recognise.
+   *
+   * WHAT IS NEVER SYNTHESISED IS A ROOT THE CLIENT DID NOT NAME. A client
+   * naming none of the three leaves this EMPTY -- never cwd, never `/`.
+   *
    * The name is deliberately not `initialWorkspaceFolders`. It was refused
    * BEFORE tracking landed, and tracking is why: every exported name here is
    * public API, so a name that became false would have had to stay.

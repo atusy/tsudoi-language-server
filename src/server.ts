@@ -22,7 +22,11 @@ import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
 import { defineNotifications, registerNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
-import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
+import {
+  createWorkspaceFolders,
+  initialWorkspaceFolders,
+  type WorkspaceFoldersHandle,
+} from "./workspace.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -97,7 +101,8 @@ export function startServer(
     // initialize is the one request the gate may never refuse -- refusing it
     // would make the state it guards unreachable.
     lifecycle.initialize();
-    // ONE FIELD, DELIBERATELY. `params` carries the client's capabilities too,
+    // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE. `params` carries the
+    // client's capabilities too,
     // and a config author cannot see them -- LSP 3.16's
     // `completion.completionItem.insertReplaceSupport` is the known case, and
     // examples/completion-path.ts sends that shape unconditionally because of
@@ -106,18 +111,19 @@ export function startServer(
     // InitializeParams on tsudoi's surface as a side effect of needing one
     // field of it. Whoever needs capabilities opens a seam for capabilities.
     //
-    // NORMALISED HERE AND NOWHERE ELSE. The protocol has TWO absent states --
-    // the field omitted, and the field sent as null -- and no config author
-    // should have to know that, nor should either be able to reach one of
-    // their handlers wearing the shape of a value. `??` is what covers both;
-    // an `=== undefined` check covers one and lets the other through.
+    // REDUCED IN workspace.ts AND NOWHERE ELSE, which is where the precedence
+    // chain, the absent states and the two synthesis conventions are all
+    // recorded together. THIS LINE IS THE ONLY MOMENT IT RUNS: the list is
+    // synthesised once, at initialize, and stored -- computing it when the
+    // list is READ would let a delta replace the root and let a removal bring
+    // it back.
     //
     // What absence must NEVER become is a ROOT. cwd is the tempting default
     // and the dangerous one: nvim spawns the server with cwd = root_dir when a
     // root is found and its own launch directory when not, so a cwd fallback
     // looks correct in every test and is silently wrong for the user who has
-    // no root -- which is the state this normalisation exists to make visible.
-    workspaceFolders.initialize(params.workspaceFolders ?? []);
+    // no root -- which is the state this reduction exists to make visible.
+    workspaceFolders.initialize(initialWorkspaceFolders(params));
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
