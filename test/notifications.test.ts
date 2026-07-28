@@ -2,8 +2,10 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { type Disposable, NotificationType } from "vscode-languageserver-protocol/node";
+import { createDocumentStore } from "../src/documents.ts";
 import { createLifecycle } from "../src/lifecycle.ts";
 import { type NotificationRegistrar, registerNotifications } from "../src/notifications.ts";
+import { notificationEntries } from "../src/server.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
@@ -179,4 +181,35 @@ test("the same entry with a gate type-checks", async () => {
 
   expect(result.output).toBe("");
   expect(result.code).toBe(0);
+});
+
+/**
+ * `exit`'s carve-out, asserted AS A VALUE rather than as source text.
+ *
+ * WHY THIS EXISTS WHEN A HANG ALREADY CATCHES IT. Gating `exit` is measured to
+ * break the suite -- `lifecycle.test.ts`'s shutdown-then-exit test times out on
+ * both runtimes and a full run goes from twelve seconds to over two minutes --
+ * so the failure IS detected. But that detection can never be the FIRST thing
+ * to fail: it arrives as a suite that stopped finishing, with nothing naming
+ * the cause. This one fails immediately, by name.
+ *
+ * A VALUE and not a regex over the file: in a table-driven router the entry's
+ * `gate` IS the decision, declaratively, so asserting the value survives any
+ * reformatting that a source scan would not.
+ *
+ * THE PAIR, so `always` is not read off a table that could be empty or
+ * mis-keyed: every OTHER entry is asserted to be `lifecycle` in the same
+ * measurement, which a table returning one blanket value could not satisfy.
+ */
+test("exit's entry declares always, and every other entry declares lifecycle", () => {
+  const entries = notificationEntries(createDocumentStore(), createLifecycle());
+  const gates = entries.map((entry) => ({
+    method: (entry.type as { method?: string }).method ?? String(entry.type),
+    gate: entry.gate,
+  }));
+
+  expect(gates.filter((entry) => entry.gate === "always").map((entry) => entry.method)).toEqual([
+    "exit",
+  ]);
+  expect(gates.filter((entry) => entry.gate === "lifecycle")).toHaveLength(gates.length - 1);
 });

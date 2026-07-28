@@ -18,9 +18,9 @@ import {
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
-import { createLifecycle } from "./lifecycle.ts";
+import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
-import { registerNotifications } from "./notifications.ts";
+import { defineNotifications, registerNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
 
 /**
@@ -159,16 +159,59 @@ export function startServer(
   // whoever takes it adds an ENTRY HERE and edits the `let workspaceFolders`
   // above, and should say at the type that the value tracks changes once it
   // does.
-  registerNotifications(connection, lifecycle, [
+  registerNotifications(connection, lifecycle, notificationEntries(documents, lifecycle));
+
+  // What the config can answer lives in its own module: lifecycle and document
+  // sync are tsudoi's own business, whereas these hand control to code the
+  // config author wrote and have a failure path of their own.
+  registerMethods(
+    connection,
+    config,
+    tsudoi,
+    () => lifecycle.requestRejection(),
+    () => workspaceFolders,
+  );
+
+  // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
+  // wire for it, which is what the LSP specification requires.
+  connection.onRequest(ShutdownRequest.type, (): void => {
+    const rejection = lifecycle.requestRejection();
+    if (rejection !== undefined) {
+      throw rejection;
+    }
+    lifecycle.shutDown();
+  });
+
+  connection.listen();
+}
+
+/**
+ * Every notification tsudoi answers, as a VALUE.
+ *
+ * Built here rather than inline at the call site so the decisions are
+ * READABLE BY A TEST: `exit`'s carve-out is the one that turns a mistake into a
+ * hung process, and asserting the entry DECLARES `always` catches that
+ * immediately by name instead of as a suite that stopped finishing.
+ *
+ * IF THE SUITE HANGS, CHECK THIS TABLE'S GATES -- a `lifecycle` on `exit`
+ * leaves the server alive after the client asked it to die, and the only
+ * symptom is a run that used to take twelve seconds taking minutes.
+ */
+export function notificationEntries(documents: DocumentStoreHandle, lifecycle: Lifecycle) {
+  return defineNotifications([
     {
       type: InitializedNotification.type,
       // The client is ready. Registered rather than left unhandled so that
       // vscode-jsonrpc does not log it as unanswered on every session.
       handler: () => {},
-      // REASONED, not measured, and behaviourally invisible today: a conforming
-      // client sends this once, inside the window, so no test can tell the two
-      // gates apart here. `lifecycle` is what the message MEANS -- `the client
-      // is ready to serve` outside a serving session says nothing.
+      // NOT CONSTRUCTED, and the label is deliberate: writing `always` here is
+      // entirely REPRESENTABLE, so this is not foreclosed -- what is missing is
+      // any observable consequence, because the body is empty and a dropped
+      // delivery has nothing to fail to do. THE RESIDUAL: this gate choice is
+      // UNVERIFIED, and stays so until the handler has its first line of body.
+      //
+      // REASONED, not measured: `lifecycle` is what the message MEANS -- `the
+      // client is ready to serve` outside a serving session says nothing.
       gate: "lifecycle",
     },
     // The three sync notifications are pure delegation: what a full-sync buffer
@@ -201,27 +244,4 @@ export function startServer(
       gate: "always",
     },
   ]);
-
-  // What the config can answer lives in its own module: lifecycle and document
-  // sync are tsudoi's own business, whereas these hand control to code the
-  // config author wrote and have a failure path of their own.
-  registerMethods(
-    connection,
-    config,
-    tsudoi,
-    () => lifecycle.requestRejection(),
-    () => workspaceFolders,
-  );
-
-  // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
-  // wire for it, which is what the LSP specification requires.
-  connection.onRequest(ShutdownRequest.type, (): void => {
-    const rejection = lifecycle.requestRejection();
-    if (rejection !== undefined) {
-      throw rejection;
-    }
-    lifecycle.shutDown();
-  });
-
-  connection.listen();
 }

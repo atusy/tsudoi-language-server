@@ -39,6 +39,14 @@ export type NotificationGate = "lifecycle" | "always";
  *   author never thought about the lifecycle -- became a compile error instead
  *   of a handler that silently runs in every state.
  *
+ * HOW UNDEFENDED THE CONVENTION ACTUALLY WAS, measured on the shape this
+ * replaced and homed here because it is the reason this file exists: deleting
+ * didChange's check reddened NOTHING and deleting didClose's reddened NOTHING,
+ * while deleting didOpen's reddened four tests that never mention it. TWO OF
+ * THE THREE COPIES WERE PURE CONVENTION, and the third was defended only
+ * INCIDENTALLY. That control cannot be re-run -- there is no body check left to
+ * delete -- so this sentence is the evidence.
+ *
  * WHAT THIS DOES NOT FORECLOSE, so nobody reads it as wider than it is: a
  * future edit that calls `connection.onNotification` directly bypasses this
  * file entirely. Foreclosing THAT needs a lint rule of the shape .oxlintrc.json
@@ -64,6 +72,23 @@ export interface NotificationEntry<P> {
  */
 export interface NotificationRegistrar {
   onNotification<P>(type: NotificationType<P>, handler: (params: P) => void): Disposable;
+}
+
+/**
+ * The identity function that gives an entry LIST the same inference the router
+ * gives it, so a table can be built somewhere and registered elsewhere without
+ * losing what makes it safe.
+ *
+ * WITHOUT THIS, extracting the table costs the property this router exists
+ * beside: each handler's `params` is contextually typed BY THE `type` NEXT TO
+ * IT, and a plain `return [...]` from a helper drops that -- measured, three
+ * handlers fell to implicit `any` -- so a handler typed against the wrong
+ * notification's params would stop being a compile error.
+ */
+export function defineNotifications<P extends readonly unknown[]>(entries: {
+  readonly [K in keyof P]: NotificationEntry<P[K]>;
+}): { readonly [K in keyof P]: NotificationEntry<P[K]> } {
+  return entries;
 }
 
 /**
