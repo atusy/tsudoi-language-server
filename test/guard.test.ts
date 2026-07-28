@@ -25,7 +25,7 @@ interface PathShape {
 }
 
 /**
- * THE FIVE SHAPES, and ONE list drives all three rules.
+ * THE SIX SHAPES, and ONE list drives all three rules.
  *
  * They used to be three lists that had drifted apart: import/extensions was
  * pinned at three paths, the Bun global at four, bun:* at four again but not
@@ -39,6 +39,7 @@ interface PathShape {
  */
 const pathShapes: readonly PathShape[] = [
   { path: "src/server.ts", bunModulesExempt: false },
+  { path: "src/notifications.ts", bunModulesExempt: false },
   { path: "test/probe.test.ts", bunModulesExempt: true },
   { path: "test/helpers/probe.ts", bunModulesExempt: true },
   { path: "test/fixtures/probe.ts", bunModulesExempt: false },
