@@ -50,7 +50,13 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Absence is distinguishable from a workspace at /",
           verification:
-            "The client sends no folders; assert the config observes an EMPTY ARRAY. MEASURED: the protocol has TWO absent states, undefined and null, and no config author should have to know that -- nor should absence be able to look like a present value",
+            "The client sends no folders; assert the config observes an EMPTY ARRAY. MEASURED: the protocol has TWO absent states, undefined and null, and no config author should have to know that -- nor should absence be able to look like a present value. PROMOTED FROM HYGIENE TO LOAD-BEARING at Sprint 14 refinement: measurement made absence the LIKELY state for this stakeholder, whose only comparable server calls bare on_dir(), so this is the criterion carrying the PBI's honesty rather than a tidy edge case",
+        },
+        {
+          criterion:
+            "A config author is told once when no workspace is known, never left with silence",
+          verification:
+            "With no folders sent, assert the example REPORTS once -- and ONCE PER SESSION, not per request -- rather than silently producing nothing. NEGATIVE CONTROL: a source that yields no items when no root is known satisfies every content assertion while being indistinguishable from a working source in an empty project. This mirrors PBI-10's normalise-and-report exactly, and it is config-author code at ZERO LINES in src/",
         },
         {
           criterion: "The completion example gains its workspace-relative source",
@@ -58,13 +64,16 @@ const scrum: ScrumDashboard = {
             "With a workspace folder set and cwd elsewhere, a relative-prefix completion carries workspace-rooted items resolving against that folder",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
         "THIS IS A PUBLIC-API ADDITION, never a convenience: package.json maps @atusy/tsudoi/types at src/types.ts, and that file states every exported name is public API because renaming one breaks configs we cannot see. Additive, so not breaking -- but permanent. First addition to the type surface in twelve sprints.",
         "MEASURED: rootPath and rootUri are BOTH DEPRECATED in vscode-languageserver-protocol@3.18.2; workspaceFolders is the only current source, optional and nullable. A criterion written against rootUri would be written against a deprecated field on arrival.",
         "MEASURED: cwd is NOT a substitute. nvim spawns the server with cwd = root_dir when a root is found and its OWN cwd when not, so cwd-as-workspace-root is exactly right when tested and silently wrong when it matters, with no signal from inside the config.",
         "Smallest honest shape (REASONED): readonly workspaceFolders: readonly WorkspaceFolder[], reusing the protocol's own type so the surface grows by one name. Plural is not hypothetical -- the field is an array on the wire, so any singular shape lies about it.",
-        "STALENESS, which must not be silent: LSP has workspace/didChangeWorkspaceFolders and tsudoi does not implement it, so an array captured at initialize is correct only until the user adds a folder. Either an accepted documented limit or a separate PBI.",
+        "STALENESS IS NOT FORECLOSABLE, and measurement killed the comfortable option: vim.lsp.buf.add_workspace_folder() produces workspace/didChangeWorkspaceFolders AND IT ARRIVES EVEN WHEN THE SERVER ADVERTISES capabilities: {} -- measured both ways. We cannot decline to receive it by declining to advertise, so `accepted documented limit` would document tsudoi ignoring a notification it is actually RECEIVING. Not hypothetical for this stakeholder, who already binds list_workspace_folders(). Handling it is PBI-17, filed rather than left as a note that would evaporate when this PBI closes.",
+        "THE NAME IS NOT MORTGAGED: keep `workspaceFolders` and document the SNAPSHOT SEMANTICS at the type in src/types.ts -- it reflects initialize and does not track changes. `initialWorkspaceFolders` would be accurate today and WRONG the moment tracking lands, in a file whose own header says renaming an export breaks configs we cannot see. Documented-at-the-type is read by exactly the person who would be misled.",
+        "MEASURED AT SPRINT 14 REFINEMENT, and it is why this refines to ready rather than waiting on the stakeholder: their nvim tree has ZERO tsudoi configuration today, and their only comparable custom server calls bare on_dir(), which a probe confirmed yields root_dir=nil, workspace_folders=nil and a server cwd that is NVIM'S OWN -- neither the document's directory nor any project root. When root_dir IS set, nvim sends workspaceFolders populated and correct. INFERENCE BOUNDARY, the Developer's own: that tsudoi WOULD be configured that way is REASONED from it being the only analogue, not measured; their denols and ts_ls set real roots.",
+        "THE HARM CLASS IS SILENT ABSENCE, which is why the legibility criterion exists and why blocking was refused. Unlike the hoverProvider case this is not dead because WE failed to advertise -- the same code is live the moment root_dir is set. What is new versus PBI-8's registry route and PBI-14's typing-/ is that the config choice making it silent CAN BE NAMED IN ADVANCE. The surface is identical whichever way they configure, so their answer changes nothing about what gets built.",
         "SECOND DATA POINT for the same shape, from Sprint 13: src/server.ts's InitializeRequest handler takes NO params, so InsertReplaceEdit ships UNCONDITIONALLY -- LSP 3.16's completion.completionItem.insertReplaceSupport capability is unreadable from a config, exactly as workspaceFolders is. Two independent needs for the same discarded argument; whatever shape this PBI gives InitializeParams should be able to carry both, and the conformance gap is a KNOWN one, not an oversight.",
       ],
     },
@@ -88,6 +97,33 @@ const scrum: ScrumDashboard = {
         "FILED AT SPRINT 13 BY THE Q2 FILTER, on its first firing and for exactly what it was built to catch: a decision whose home was neither executable nor sited. It had lived as prose in Sprint 12's decisions since the sprint that found it, and the next compaction would have met it again.",
         "THE PO REVERSING THEIR OWN CLOSE-OUT REFUSAL, with the condition named: they declined a PBI then on the grounds that inventory nobody reaches is dishonest -- true of an EMPTY BACKLOG, false now that PBI-14 and PBI-15 are live. The means exists (installConsumer.typeCheck); the alternative to filing is evaporation.",
         "Ordered AFTER PBI-15: capability before verification-hardening, the same reasoning that put PBI-9 last.",
+      ],
+    },
+    {
+      id: "PBI-17",
+      story: {
+        role: "config author",
+        capability: "answer from the workspace as it is now, not as it was at startup",
+        benefit:
+          "adding a folder mid-session changes what they are offered, instead of leaving them with a root the editor no longer considers current",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A folder added after initialize is observable by a config handler",
+          verification:
+            "Drive initialize with one folder, send workspace/didChangeWorkspaceFolders adding a second, and assert a handler observes BOTH. NEGATIVE CONTROL: a snapshot captured at initialize observes only the first",
+        },
+        {
+          criterion: "A folder removed after initialize stops being observable",
+          verification:
+            "Remove one of two and assert the handler observes the survivor ALONE. Named separately because an implementation that only appends passes the added case and fails this one",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
+        "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
+        "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
       ],
     },
   ],
