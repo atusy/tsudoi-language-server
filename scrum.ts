@@ -45,7 +45,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
           verification:
-            "BYPASS MUST BE UNREPRESENTABLE, NOT MERELY TESTED: the REGISTRATION MECHANISM applies the gate, so a handler that skips it cannot be written -- foreclosing over detecting, which is the whole argument for doing this at all. Assert that a handler whose own body consults NOTHING is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes that assertion only because each handler remembers, so deleting the check from any one handler body reddens nothing",
+            "BYPASS MUST BE UNREPRESENTABLE, NOT MERELY TESTED: the REGISTRATION MECHANISM applies the gate, so a handler that skips it cannot be written -- foreclosing over detecting, which is the whole argument for doing this at all. Assert that a handler whose own body consults NOTHING is still refused outside the initialized window. THE BOUNDARY IT CLAIMS, narrowed to what it holds: this forecloses A HANDLER THAT FORGETS ITS GATE, by making the gate a REQUIRED field with no default -- so adding a notification without deciding fails tsc. It does NOT foreclose a future edit calling connection.onNotification directly; that would need a PBI-6-shaped lint guard and is out of scope. NEGATIVE CONTROL, RUN AT THE BASELINE AND FORECLOSED AFTERWARDS: today deleting the check from any one handler body reddens nothing, and after the change there is no body check left to delete -- so the baseline run IS the evidence, and anyone attempting it later should record FORECLOSED rather than NOT CONSTRUCTED",
         },
         {
           criterion: "exit survives the gate, in EVERY state rather than the one already tested",
@@ -55,7 +55,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "The three hand-written checks are GONE, not left alongside the structure",
           verification:
-            "assert no handler body calls acceptsNotification() -- by reading src/server.ts as the suite reads the README, so the claim cannot rot. THE REASON THIS IS A CRITERION AND NOT BOILERPLATE: if the convention survives, THE STRUCTURAL GATE CAN BE INERT AND EVERY TEST STILL PASSES -- the gate is added, the old checks do the work, and nothing proves which one is enforcing. NEGATIVE CONTROL: neutralise the structural gate; with the hand-written checks gone the lifecycle tests must redden",
+            "assert no handler body calls acceptsNotification() -- by reading src/server.ts as the suite reads the README, so the claim cannot rot. THE SURVIVING EVIDENCE IS NAMED, so it is not swept up as the old convention's tests: protocol.test.ts drives didOpen before initialize and after shutdown and asserts OBSERVABLE behaviour, so both survive the refactor untouched and become the proof that the router enforces. THE REASON THIS IS A CRITERION AND NOT BOILERPLATE: if the convention survives, THE STRUCTURAL GATE CAN BE INERT AND EVERY TEST STILL PASSES -- the gate is added, the old checks do the work, and nothing proves which one is enforcing. NEGATIVE CONTROL: neutralise the structural gate; with the hand-written checks gone the lifecycle tests must redden",
         },
       ],
       status: "ready",
@@ -99,15 +99,11 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client.",
-        "PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
+        "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
         "THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
-        "THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
-        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap.",
-        "THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
-        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
-        "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
-        "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
+        "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
+        "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
+        "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
       ],
     },
   ],
@@ -132,29 +128,12 @@ const scrum: ScrumDashboard = {
         },
       ],
       decisions: [
-        "Shipped in d59eb1e and e3f550d. 279 tests green, each DoD command run separately with its exit read directly. BORN GREEN throughout and stated as such: every artifact already compiled, measured twice before the sprint, so ALL the value is in the controls -- and every control the plan named was built and shown to fire.",
+        "SPRINT 14'S RECORD DROPPED AT SPRINT 16, every decision homed and CHECKED: the single-observer finding produced the re-run improvement and the handover rule, both active; the synthetic-verification honesty is in the README's `Where to look next` and in examples/completion-path.ts's own comment, which now states the silent no-workspace case as a choice with its cost; and the once-per-session NOT-CONSTRUCTED risk is MOOT -- the stakeholder removed that report, so there is no module-state flag left to double-report. Shipped in d59eb1e and e3f550d. 279 tests green, each DoD command run separately with its exit read directly. BORN GREEN throughout and stated as such: every artifact already compiled, measured twice before the sprint, so ALL the value is in the controls -- and every control the plan named was built and shown to fire.",
         "THE OBSERVER SPLIT WAS DECLARED AT PLANNING AND HELD -- the Developer built, the Scrum Master verified and RE-RAN the non-hoisting control themselves rather than reading the report. The Sprint 14 improvement doing what it was filed for, on the sprint after it was filed.",
         "A CONTROL THAT WOULD HAVE FIRED FOR THE WRONG CAUSE, caught before anything was built and before any result was recorded. The planned hoisting control removed vscode-languageserver-protocol outright -- which fails even a BARE config, because it also removes TSUDOI'S OWN DECLARED DEPENDENCY. The Developer disclosed their own broken first attempt BEFORE reporting the measurement, which is the ordering that kept the question from closing on a false proof. Corrected to the nested layout, which is what pnpm default and npm-strict produce.",
-        "THE LEVER CHANGED AT EXECUTION, measured: dropping the `types` export condition ALONE still resolves, because tsc follows `import` to dist/types.js and picks up the sibling .d.ts. BOTH published arms must go, leaving `default` pointing into src/, which files: [dist] does not ship -- so a consumer loses the types while this repo, which HAS src/, is unaffected. That asymmetry IS the pair the criterion asks for. FORECLOSED, not NOT CONSTRUCTED, for the source-level alternative: no perturbation of src/types.ts compiles, because src/ consumes it in full.",
-        "THE PO RECLASSIFIED THEIR OWN CHECKLIST ITEM rather than marking it unmet: the pair they specified -- redden the probe WHILE tsc --noEmit stays green, tied by ONE measurement -- is FORECLOSED BY THE STAGING DESIGN, since the perturbation lands on the copy that gets PACKED and the repo is untouched by construction. Same shape as Sprint 10's change-a-source-file-without-rebuilding, a mechanism the PO named that the better implementation forecloses.",
-        "THE REMEDY WAS RULED A -- the README instructs the install -- and THE DOCUMENTED ROUTE AND THE VERIFIED ROUTE CONVERGED rather than the finding being recorded for later: the probes perform the same install the README documents, so test/installed-runtime.test.ts's example-running assertions no longer rest on a hoisting assumption. Not a peerDependency, because measurement showed a BARE CONFIG EXITS 0 -- the artifact a reader meets first needs nothing from that package, and overstating a requirement is the same class of error as understating it. Not inlining the enum values, which contradicts the stakeholder's own closed-union request one sprint earlier. VERSION SKEW across a major boundary is recorded as the genuine peer-dependency argument and is UNMEASURED, so it reads as declined rather than unconsidered.",
-        "PLACEMENT DECIDED BY MEASUREMENT, applying the decline-C reasoning to a decision nobody had made: the install instruction went to `Where to look next` and NOT the quickstart, because the quickstart's snippet imports only @atusy/tsudoi/types and genuinely does not need the protocol package.",
+        "THE LEVER CHANGED AT EXECUTION, measured: dropping the `types` export condition ALONE still resolves, because tsc follows `import` to dist/types.js and picks up the sibling .d.ts. BOTH published arms must go, leaving `default` pointing into src/, which files: [dist] does not ship -- so a consumer loses the types while this repo, which HAS src/, is unaffected. That asymmetry IS the pair the criterion asks for. FORECLOSED, not NOT CONSTRUCTED, for the source-level alternative: no perturbation of src/types.ts compiles, because src/ consumes it in full. THE PO RECLASSIFIED THEIR OWN CHECKLIST ITEM rather than marking it unmet: the pair they specified -- redden the probe WHILE tsc --noEmit stays green, tied by ONE measurement -- is FORECLOSED BY THE STAGING DESIGN, since the perturbation lands on the copy that gets PACKED and the repo is untouched by construction. Same shape as Sprint 10's change-a-source-file-without-rebuilding, a mechanism the PO named that the better implementation forecloses.",
+        "THE REMEDY WAS RULED A -- the README instructs the install -- and THE DOCUMENTED ROUTE AND THE VERIFIED ROUTE CONVERGED rather than the finding being recorded for later: the probes perform the same install the README documents, so test/installed-runtime.test.ts's example-running assertions no longer rest on a hoisting assumption. Not a peerDependency, because measurement showed a BARE CONFIG EXITS 0 -- the artifact a reader meets first needs nothing from that package, and overstating a requirement is the same class of error as understating it. Not inlining the enum values, which contradicts the stakeholder's own closed-union request one sprint earlier. VERSION SKEW across a major boundary is recorded as the genuine peer-dependency argument and is UNMEASURED, so it reads as declined rather than unconsidered. PLACEMENT DECIDED BY MEASUREMENT, applying the decline-C reasoning to a decision nobody had made: the install instruction went to `Where to look next` and NOT the quickstart, because the quickstart's snippet imports only @atusy/tsudoi/types and genuinely does not need the protocol package.",
         "A SENTENCE MADE FALSE BY THE PO'S OWN RULING, caught IN THE COMMIT THAT CAUSED IT rather than at Review -- the earlier detection the standing prose item was meant to produce. The file header said every control there is a test and never a comment; deleting the inert test and writing its reasoning as a comment made that false. SECOND TIME a PO ruling has falsified prose, and the first one shipped for a sprint.",
-      ],
-    },
-    {
-      number: 14,
-      pbi_id: "PBI-15",
-      goal: "Let a config author answer from the workspace the editor actually opened -- and, when the editor opened none, say so once instead of going quiet.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in daff31a, 7a89e1d, ecdcd05, b72ba2c, f689b94, 905ef7c, 8a5bd06, 7ed3483, plus 587adfb after acceptance. 272 tests green under both runtimes; each DoD command run separately with its exit read directly.",
-        "SINGLE-OBSERVER SPRINT, disclosed by the Scrum Master before the verdict and weighed by the PO rather than smoothed over: the execution agent was stopped mid-subtask-4 and the facilitator continued the work themselves, so every perturbation from that point has one observer who is also its author -- weaker than fourteen sprints of standard. ACCEPTED because the perturbations are REPRODUCIBLE: auditable though unaudited. The remedy is an active improvement, not a note. THE PO VERIFIED THE STRUCTURAL CLAIMS THEMSELVES against the artifacts -- Tsudoi unchanged with documents alone, RequestContext carrying workspaceFolders -- and separated what they could confirm from what they could not. They then caught their OWN coverage-rule failure in the same read: they concluded from a grep they KNEW was truncated that the ordering constraint was missing from src/cli.ts, where it has been since e80b930. Asserting absence from a knowingly-limited search, named as a worse shape than misremembering.",
-        "COMPACTED AT SPRINT 15. SPRINT 13'S RECORD DROPPED, every decision of it sited and named there before it went -- criteria and tests for the rulings, examples/path-completion.ts:358 :269 :277 :118 :440 for the measurements, test/path-completion.test.ts:29 :204 for the unruled list, and the example's own prose at tsudoi.config.ts:56 for reachability. THIS SPRINT'S stale-textEdit-prose record is superseded by the fix and by the standing prose-reporting improvement it produced. TWO INCREMENT CANDIDATES survive because one is still open, and the second came FROM THE STAKEHOLDER'S OWN READING of the sprint's output. (a) A workspace folder whose URI names no local path is skipped SILENTLY -- the same silent-absence harm this sprint answers elsewhere, with the once-per-session machinery already there to use; recorded at the skip site. (b) Sweep for other free-`string` fields whose values the code branches on, after PathSource.name became a closed union: type-level foreclosure for a class that was held together by care.",
-        "NOT CONSTRUCTED, and what remains at risk: the once-per-session flag is module state, so a config importing the module twice would report twice. No route to a double import exists today and nothing asserts it.",
-        "REPORTED AT REVIEW AND NOT SOFTENED: criterion 1 is verified SYNTHETICALLY -- no real editor was driven. The config choice that makes it live is a real root_dir/root_markers; with the bare on_dir() this stakeholder's only comparable server uses, their client declares workspace-folder support and sends none, so the workspace source will be INACTIVE for them and the once-per-session report is what they will actually see.",
       ],
     },
   ],
@@ -168,7 +147,72 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 16,
+    pbi_id: "PBI-18",
+    goal: "Make the lifecycle gate impossible to forget -- a notification added without deciding when it may run should fail to compile, not ship ungated.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A handler whose body consults NOTHING is still refused outside the initialized window",
+        implementation:
+          "src/notifications.ts exporting registerNotifications(connection, lifecycle, entries), each entry `{ type, handler, gate }` with GATE REQUIRED AND NO DEFAULT -- `lifecycle` | `always`. Handler bodies never see `lifecycle`. Move initialized, the three sync notifications and exit onto it, AND DELETE THE THREE HAND-WRITTEN CHECKS IN THE SAME EDIT.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ONE IMPLEMENTATION MOMENT WITH SUBTASK 2, declared at planning: routing through the gate while LEAVING the checks in place is precisely the inert-gate state criterion 3 forbids, so they cannot honestly be separated.",
+          "THE PERTURBATION THAT PROVES THE GATE DOES THE WORK belongs here: neutralise the router's gate and, with the hand-written checks gone, protocol.test.ts's before-initialize and after-shutdown didOpen tests must BOTH redden. TODAY THAT SAME PERTURBATION REDDENS NOTHING, because each handler remembers on its own -- which is the whole argument for this PBI.",
+          "TYPE-LEVEL FORECLOSURE, the same shape the stakeholder asked for on PathSource.name: adding a notification without deciding its gate does not TYPE-CHECK. The realistic failure becomes a compile error rather than a convention.",
+        ],
+      },
+      {
+        test: "No handler body calls acceptsNotification()",
+        implementation:
+          "Read src/server.ts's own bytes, as the suite reads the README, so the claim cannot rot. Born green after subtask 1; same moment.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "exit before initialize still exits 1",
+        implementation:
+          "Born green -- PBI-10 covers this half -- but asserted HERE rather than inherited, because a blanket gate getting the carve-out wrong is this sprint's specific hazard.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          'EXIT SURVIVES AS `gate: "always"` AT EXACTLY ONE SITE: the entry itself, with the reason beside it. Not a branch in the router and not a name in a set elsewhere -- the router contains NO knowledge that exit is special, so there is no second place to get the carve-out wrong.',
+        ],
+      },
+      {
+        test: "exit after shutdown still exits 0",
+        implementation:
+          "Born green. PBI-10 does NOT cover this half -- separate test from subtask 3 because the two states are what the carve-out must survive, and one passing tells you nothing about the other.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "N/A (structural)",
+        implementation:
+          "Re-home the three deletions' defences onto the router's comment: what each hand-written check prevented, and why the entry's required `gate` field now prevents it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE FIRST APPLICATION of the subtraction rule filed one turn before this sprint. The three deletions are SOURCE CHECKS, not tests -- and protocol.test.ts's two didOpen tests are NOT among them: they assert observable behaviour, survive untouched, and become the evidence the router enforces.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THREE HANDBACKS TAKEN BEFORE THE SPRINT, all narrowing to what holds. (a) Criterion 1's negative control is RUNNABLE ONLY AT THE BASELINE: after the change there is no body check left to delete, so the baseline run IS the evidence and a later attempt should record FORECLOSED rather than NOT CONSTRUCTED. (b) `unrepresentable` now claims the boundary it actually holds -- a handler that FORGETS its gate cannot be written, but a direct connection.onNotification call is not foreclosed and would need a PBI-6-shaped lint guard. (c) The two surviving tests are NAMED as evidence so they are not swept up as the old convention's.",
+      "REORDERED AHEAD OF PBI-17 at refinement, against the PO's own earlier ordering: PBI-17's value needs TWO unmeasured conditions to both hold, this one's is unconditional, and going first deletes the fourth hand-written copy PBI-17 would have written.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 16,
