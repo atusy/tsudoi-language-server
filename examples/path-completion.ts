@@ -281,15 +281,25 @@ export async function* itemsFrom(
         // something the user can delete, where text of theirs we deleted is
         // gone.
         //
-        // THE UPGRADE PATH, named so it is not reinvented from scratch:
-        // `InsertReplaceEdit` carries BOTH ranges -- insert to the cursor,
-        // replace to the end of the fragment -- and lets the client's own
-        // setting decide between them, which is the only form that serves both
-        // users. It is NOT built here for one reason, stated as what it is:
-        // whether the target completion plugin honours that shape is
-        // UNMEASURED. Measure it before switching; a client that ignores it
-        // would fall back to its own word boundaries and lose the range
-        // entirely, which is the vanish the constraints above are about.
+        // THE UPGRADE PATH, and its support is MEASURED -- this comment said
+        // UNMEASURED for one commit and that was wrong. `InsertReplaceEdit`
+        // carries BOTH ranges, insert to the cursor and replace to the end of
+        // the fragment, and the target plugin keys straight into them by the
+        // name of its own insert-versus-replace setting. It is not a shape
+        // that might be ignored; it is the shape that setting exists for.
+        //
+        // WHICH MEANS THE CONSERVATISM ABOVE INVERTS, and this is the honest
+        // statement of the cost: a plain TextEdit does not merely default to
+        // insert, it makes the user's own setting INERT, so WE choose for
+        // them. An InsertReplaceEdit lets THEM choose -- and a user who has
+        // set `replace` has asked for the tail to go.
+        //
+        // NOT BUILT HERE because the choice is the PO's and was ruled the
+        // other way while this was unmeasured, not because anything blocks it.
+        // If it is taken, the vanish constraints bind on BOTH ranges: each
+        // must be single-line and on the cursor's own line, and each needs its
+        // own assertion, since an item malformed in either is discarded in the
+        // same silence.
         textEdit: {
           range: { start: { line: position.line, character: fragment.start }, end: position },
           newText: insertText,

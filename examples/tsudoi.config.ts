@@ -1,5 +1,4 @@
 import {
-  CompletionItemKind,
   type CompletionItem,
   type CompletionParams,
   type Hover,
@@ -41,16 +40,6 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
         }
 
         try {
-          // Example: Return a static completion item
-          yield [
-            {
-              label: "HelloWorld",
-              kind: CompletionItemKind.Text,
-              detail: "Example completion item",
-              documentation: "This is a sample completion item.",
-            },
-          ];
-
           // Paths from the roots that make sense where the cursor is: the
           // document's own directory, the working directory, and the
           // filesystem root when the fragment starts at one. Each yield here

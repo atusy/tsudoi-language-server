@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { fileURLToPath } from "node:url";
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
-  CompletionItemKind,
   type CompletionItem,
   type InitializeResult,
   type TextDocumentSyncOptions,
@@ -245,31 +247,52 @@ for (const runtime of runtimes) {
     });
 
     // The artifact a config author copies, in the shape a client that does not
-    // ask for partial results sees it: the example yields one item and returns
-    // null, and that item is the whole answer. Answering [] here would lose it.
-    test("the example config's yield-then-null aggregates to the item it yielded", async () => {
+    // ask for partial results sees it: the example yields and returns null, and
+    // what it yielded is the whole answer. Answering [] here would lose it.
+    //
+    // THE SUBJECT CHANGED IN SPRINT 13 AND THE PROPERTY DID NOT. This test used
+    // to drive the example's static HelloWorld item, which the stakeholder
+    // asked to remove; the property it defends is PBI-4's -- a null return
+    // after a partial result is not the same as having nothing to say -- and it
+    // is asserted here against a PATH item instead. Deleting the item without
+    // moving the property would have left the rule unasserted against the one
+    // artifact a config author actually copies.
+    //
+    // The document lives in a throwaway directory so the fixture is the test's
+    // own: the example answers from the document's parent, and the session's
+    // cwd is the repo, which holds nothing matching this fragment.
+    test("the example config's yield-then-null aggregates to the items it yielded", async () => {
+      const documents = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-aggregate-")));
+      writeFileSync(join(documents, "aggregated.txt"), "");
+      const documentUri = pathToFileURL(join(documents, "doc.txt")).href;
       const session = LspSession.start(runtime, demoConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
-        didOpen(session, "こんにちは");
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "aggreg" },
+        });
 
-        const result = await session.request<CompletionItem[] | null>(
-          "textDocument/completion",
-          completionParams(),
-        );
+        const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+          textDocument: { uri: documentUri },
+          position: { line: 0, character: "aggreg".length },
+        });
 
-        expect(result).toEqual([
-          {
-            label: "HelloWorld",
-            kind: CompletionItemKind.Text,
-            detail: "Example completion item",
-            documentation: "This is a sample completion item.",
-          },
-        ]);
+        expect(result?.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
         expect(session.progressCount).toBe(0);
+
+        // THE PAIR, and it is what keeps the assertion above from being
+        // satisfiable by a server that answers [] for everything: a request
+        // that yields NOTHING is answered null -- `nothing to say at all` --
+        // rather than the [] that means `nothing further to add`.
+        const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
+          textDocument: { uri: documentUri },
+          position: { line: 0, character: 0 },
+        });
+        expect(nothing).toBeNull();
       } finally {
         session.dispose();
+        rmSync(documents, { recursive: true, force: true });
       }
     });
 

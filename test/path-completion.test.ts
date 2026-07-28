@@ -717,14 +717,6 @@ const runtimes = [bunRuntime, denoRuntime];
 
 await Promise.all(runtimes.map(requireRuntime));
 
-/** What the example config yields before anything path-related. */
-const helloWorld = {
-  label: "HelloWorld",
-  kind: CompletionItemKind.Text,
-  detail: "Example completion item",
-  documentation: "This is a sample completion item.",
-};
-
 const partialResultToken = "path-completion-partial-1";
 
 for (const runtime of runtimes) {
@@ -774,13 +766,7 @@ for (const runtime of runtimes) {
         // Every entry exactly once across every batch: a count alone would be
         // satisfied by a module that streamed the same batch three times.
         const streamed = session.progress.flatMap((progress) => progress.value as CompletionItem[]);
-        expect(streamed[0]).toEqual(helloWorld);
-        expect(
-          streamed
-            .slice(1)
-            .map((item) => item.insertText)
-            .sort(),
-        ).toEqual([...names].sort());
+        expect(streamed.map((item) => item.insertText).sort()).toEqual([...names].sort());
 
         // SIZES, not membership: nothing sorts the listing -- sorting would
         // require collecting it, which is the property under test -- so which
@@ -788,7 +774,7 @@ for (const runtime of runtimes) {
         const batches = session.progress.map(
           (progress) => (progress.value as CompletionItem[]).length,
         );
-        expect(batches).toEqual([1, batchSize, batchSize, 1]);
+        expect(batches).toEqual([batchSize, batchSize, 1]);
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
