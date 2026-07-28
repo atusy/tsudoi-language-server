@@ -3,8 +3,7 @@ import { existsSync, mkdirSync, renameSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
-import { repoRoot } from "./helpers/spawn.ts";
-import { runTsc, typeCheckProbe } from "./helpers/typecheck.ts";
+import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
  * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT.
@@ -15,7 +14,12 @@ import { runTsc, typeCheckProbe } from "./helpers/typecheck.ts";
  * until this file. Everything here is therefore BORN GREEN by design: the
  * snippet and the example already compile, measured twice before the sprint
  * began. What was missing is the CHECK, not a fix, so all of this file's value
- * is in its controls -- each of which is a test below, never a comment.
+ * is in its controls.
+ *
+ * Every control that CAN fail is a test below. Exactly one is a comment
+ * instead, and only because the property it records is FORECLOSED by the
+ * staging design rather than assertable -- see the stays-green note further
+ * down, and the test that used to stand there and could not fail.
  */
 
 /** The config the README tells a reader to write, read out of the README. */
@@ -130,11 +134,27 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
   expect(viaRepoSources.code).toBe(0);
 });
 
-test("the repo's own type check is green, so the pair above has a stays-green half", async () => {
-  const repoCheck = await runTsc(repoRoot);
-
-  expect(repoCheck.code).toBe(0);
-});
+/*
+ * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and this
+ * comment is here because a test asserting it was DELETED at Sprint 15's
+ * Review rather than kept as a signpost.
+ *
+ * The pair the criterion asks for is `perturbing the published types reddens
+ * the probe WHILE tsc --noEmit stays green`. It cannot be tied by one
+ * measurement, and that is the STAGING DESIGN rather than a gap: the
+ * perturbation is applied to the copy that gets PACKED, so this repository is
+ * untouched, and running tsc under the perturbation would be trivially green
+ * rather than informative. FORECLOSED, and what would un-foreclose it is
+ * perturbing the repo itself -- which the two tests above exist to avoid.
+ *
+ * The evidence lives in those two: the probe reddens when the published arm
+ * breaks, and an in-repo check cannot observe that break at all.
+ *
+ * The deleted test called runTsc(repoRoot), which IS the `tsc --noEmit` the
+ * Definition of Done already runs -- so it could not fail unless the DoD had
+ * already failed. A control that cannot fail is not one, and an inert test is
+ * how a suite's green stops meaning what it says.
+ */
 
 /**
  * THE HOISTING PRECONDITION, asserted rather than assumed.
