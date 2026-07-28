@@ -133,14 +133,29 @@ export function registerNotifications<P extends readonly unknown[]>(
 }
 
 /**
- * A connection with neither `onNotification` NOR `onUnhandledNotification` ON
- * ITS TYPE: the two members that install a general notification observer --
- * one per method, one for everything nothing registered.
+ * A connection with NO MEMBER THAT OBSERVES INBOUND NOTIFICATION TRAFFIC on its
+ * type. Which members those are is stated ONCE, in the `Omit` below, and each is
+ * named rather than counted -- a count silently falsifies when the list grows,
+ * and this list has grown twice:
  *
- * DELIBERATELY NOT `THE TWO WAYS TO SEE NOTIFICATION TRAFFIC`, which is what
- * this sentence said when it was written and which is FALSE. The members left
- * are enumerated at `createGatedConnection`, and two of them observe inbound
- * traffic. What this type claims is bounded to what it removes.
+ * - `onNotification` installs a handler per method;
+ * - `onUnhandledNotification` fires for everything nothing registered;
+ * - `onProgress` installs a handler for `$/progress` under a token;
+ * - `trace` hands a caller-supplied `Tracer` every notification a handler runs
+ *   for, BEFORE that handler runs -- so before this module's gate, which lives
+ *   inside the handler, decides anything.
+ *
+ * WHAT MAKES THAT SENTENCE SAYABLE IS AN ENUMERATION AND NOT A RECOLLECTION, and
+ * the distinction is the whole point: `ProtocolConnection`'s member set is pinned
+ * in test/notifications.test.ts, checked by `tsc --noEmit` against the
+ * dependency's own connection.d.ts, so a member the dependency adds cannot arrive
+ * silently. IT WAS RECALL THAT MISSED `onProgress` AND `trace` WHEN THE FIRST OF
+ * THESE KEYS WENT IN; ENUMERATION IS WHAT FOUND THEM.
+ *
+ * AND THE PIN'S LIMIT, because the sentence above still outruns it: the pin
+ * asserts THE SET OF NAMES. It never asserts that no REMAINING member exposes
+ * traffic. That is still a judgement -- what changed is that it is now made
+ * against a list the compiler agrees is complete.
  *
  * `onUnhandledNotification` is an EVENT PROPERTY holding a callable rather than
  * a method, which changes nothing here: `Omit` removes a property whatever its
@@ -150,11 +165,27 @@ export function registerNotifications<P extends readonly unknown[]>(
  * `ProtocolConnection` grows, and only the members this narrowing is about are
  * named here.
  *
- * THE REMAINDER WAS MEASURED, not assumed, at each widening of this list --
- * `onRequest` with params and without, `sendProgress` and `listen` all compile
- * through it with no cast and no helper. `onRequest` has five overloads and
- * `Omit` is a mapped type; overload survival through one of those is exactly
- * the thing worth checking rather than reasoning about.
+ * THE REMAINDER WAS MEASURED, not assumed, at each widening of this list, AND
+ * THIS WIDENING IS NO EXCEPTION: EVERY surviving member was driven through the
+ * narrowed type in one project at exit 0 -- `sendRequest` and `onRequest` each
+ * in their with-params and without-params forms, `sendNotification`,
+ * `sendProgress`, `hasPendingResponse`, `onError`, `onClose`, `onDispose`,
+ * `listen`, `end` and `dispose`. `onRequest` has five overloads and `Omit` is a
+ * mapped type; overload survival through one of those is exactly the thing worth
+ * checking rather than reasoning about. THAT EXIT 0 WAS CHECKED FOR
+ * DISCRIMINATION rather than trusted: appending an `onProgress` call to the same
+ * project exits 1 on TS2551.
+ *
+ * WHAT BACKS THAT PARAGRAPH PERMANENTLY IS LESS THAN THE PARAGRAPH SAYS, and the
+ * three tiers are worth separating. `onRequest` has a STANDING ASSERTION -- it is
+ * the permitted half of every narrowed-connection probe in
+ * test/notifications.test.ts. `sendProgress` and `listen` are reached only
+ * because src/methods.ts and src/server.ts happen to call them, which is
+ * INCIDENTAL COVERAGE and therefore not coverage: were those callers to stop, a
+ * further key that broke them would pass unnoticed. AND `sendRequest`,
+ * `sendNotification`, `hasPendingResponse`, `onError`, `onClose`, `onDispose`,
+ * `end` and `dispose` ARE REACHED BY NOTHING EXECUTABLE AT ALL. The measurement
+ * above is a one-off, and this sentence is what says so.
  *
  * A MISSPELLED KEY HERE IS A SILENT NO-OP, and it is why no probe defending
  * this type may DISCRIMINATE on a tsc exit code: `Omit<T, K>` accepts a key that
@@ -166,13 +197,15 @@ export function registerNotifications<P extends readonly unknown[]>(
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
-  "onNotification" | "onUnhandledNotification"
+  "onNotification" | "onUnhandledNotification" | "onProgress" | "trace"
 >;
 
 /**
  * The connection tsudoi serves on, with its notification table ALREADY
- * REGISTERED and both notification-observing members -- `onNotification` and
- * `onUnhandledNotification` -- gone from what the caller holds.
+ * REGISTERED and every notification-observing member gone from what the caller
+ * holds. Which members those are is named at `RequestOnlyConnection` above and
+ * deliberately not repeated here, so this sentence cannot fall out of step with
+ * that list the way its predecessor did.
  *
  * THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED, and that is what
  * makes this the whole mechanism rather than a tidy-up: the caller cannot
@@ -237,13 +270,14 @@ export type RequestOnlyConnection = Omit<
  * reversible at the same one token it cost, so the diagnostic capability is
  * DEFERRED rather than surrendered.
  *
- * THE BOUNDARY THAT NARROWING CLAIMS, and it is EXACTLY TWO MEMBERS:
- * `onNotification` and `onUnhandledNotification` are foreclosed AND NOTHING
- * ELSE IS. MEASURED as a SET DIFFERENCE rather than sampled, and pinned by
- * test/notifications.test.ts so that adding a third key here reddens rather than
- * quietly widening this sentence's claim. `sendNotification` survives and is not
- * a gap at all -- that is SENDING a notification, not installing a handler for
- * one.
+ * THE BOUNDARY THAT NARROWING CLAIMS: the members named in the `Omit` above are
+ * foreclosed AND NOTHING ELSE IS. MEASURED as a SET DIFFERENCE rather than
+ * sampled, and pinned by test/notifications.test.ts so that adding a key here
+ * reddens rather than quietly widening this sentence's claim. `sendNotification`
+ * survives and is not a gap at all -- that is SENDING a notification, not
+ * installing a handler for one. NEITHER HALF OF THAT SENTENCE IS COUNTED, and
+ * that is deliberate: `EXACTLY TWO MEMBERS` stood here and was falsified by the
+ * very next widening.
  *
  * WHAT IT DOES NOT CLOSE, named so it is not read as closing more than it does.
  * The deliberate-evasion routes above are UNCHANGED -- `await import(...)`, and
@@ -254,28 +288,45 @@ export type RequestOnlyConnection = Omit<
  * returns being the sole connection-shaped value in startServer's scope, and a
  * wider `Omit` widens that narrowing rather than moving it.
  *
- * AND TWO ROUTES SEEN ONLY WHEN THE REMAINDER WAS ENUMERATED, which is why they
- * are recorded rather than quietly closed. `ProtocolConnection`'s members are
- * `sendRequest`, `onRequest`, `sendNotification`, `onNotification`,
- * `onProgress`, `sendProgress`, `trace`, `onError`, `onClose`,
- * `onUnhandledNotification`, `onDispose`, `end`, `dispose`,
- * `hasPendingResponse` and `listen` -- READ OFF
- * vscode-languageserver-protocol 3.18.2's connection.d.ts rather than recalled,
- * and the version is named because a dependency bump can add to it silently.
- * TWO OF THEM STILL OBSERVE INBOUND TRAFFIC: `onProgress` installs a handler for
- * `$/progress` under a token, and `trace(value, tracer)` hands every received
- * notification to a caller-supplied `Tracer` -- MEASURED at
- * vscode-jsonrpc/lib/common/connection.js, where `traceReceivedNotification`
- * runs on the receive path whether or not a handler exists.
+ * THE TWO ROUTES ENUMERATION FOUND ARE NOW CLOSED, AND THE ENUMERATION IS THE
+ * DURABLE PART. `ProtocolConnection`'s members are `sendRequest`, `onRequest`,
+ * `sendNotification`, `onNotification`, `onProgress`, `sendProgress`, `trace`,
+ * `onError`, `onClose`, `onUnhandledNotification`, `onDispose`, `end`,
+ * `dispose`, `hasPendingResponse` and `listen` -- READ OFF
+ * vscode-languageserver-protocol 3.18.2's connection.d.ts rather than recalled.
+ * THAT LIST IS NO LONGER PROSE ALONE: test/notifications.test.ts asserts it as a
+ * TYPE, so should it and the dependency ever disagree, `tsc --noEmit` fails at
+ * that file and line. IT DOES NOT SAY WHICH NAME MOVED -- the diagnostic is
+ * TS2344 on a boolean, and reading the two lists against each other is left to
+ * whoever it stops. The version is still named, because the pin is a claim about
+ * the INSTALLED version: package.json asks only for `^3.17.5`, and what `keyof`
+ * is read from is whatever the lockfile put in node_modules.
  *
- * THEY ARE AS REACHABLE AS THE ONE JUST CLOSED -- both sit on this handle and
- * need no deliberate act -- SO THE STANDING ARGUMENT DOES NOT COVER THEM
- * EITHER. They are NOT added to the `Omit` here: the accepted criterion names
- * two members, and widening it unreviewed is exactly what closing
- * `onUnhandledNotification` was made to avoid one sprint earlier. Their closure
- * is the same one token each, and unlike that one it is NOT obviously free --
- * `$/progress` is how work-done reporting arrives, and tracing is how a client
- * asks to see the wire.
+ * WHAT `trace` ACTUALLY SEES, CORRECTED AGAINST THE DEPENDENCY'S OWN SOURCE. The
+ * sentence that stood here said `every received notification` and carried the
+ * MEASURED label, and it is FALSE. At vscode-jsonrpc 9.0.1's
+ * lib/common/connection.js `traceReceivedNotification` runs at three sites, and
+ * the one on the ordinary notification path sits INSIDE
+ * `if (notificationHandler || starNotificationHandler)`; the `else` branch fires
+ * `unhandledNotificationEmitter` WITHOUT tracing. So a `Tracer` sees every
+ * notification that HAS a handler, plus `$/cancelRequest` at the two cancel
+ * sites -- COMPLEMENTARY to `onUnhandledNotification` rather than broader than
+ * it. WHAT PUTS IT IN THE `Omit` IS ORDER AND NOT BREADTH: the trace call
+ * precedes the handler, and this module's gate lives inside that handler, so a
+ * tracer observes a gated notification whatever the gate then decides.
+ *
+ * WHY BOTH WENT, in the terms the earlier closures were argued in. Each sat on
+ * the handle THIS FUNCTION HANDS OUT and needed NO DELIBERATE ACT, so
+ * `no longer reachable by accident` never covered them. Neither is free the way
+ * `onUnhandledNotification` was -- `$/progress` is how work-done reporting
+ * arrives, and tracing is how a client asks to see the wire -- but neither is
+ * REACHABLE BY THE PARTY WHO MIGHT WANT THEM: this type never leaves src/, and
+ * src/types.ts -- the one path package.json exports, and so the whole of what a
+ * config author is handed -- does not export it. The only party that could ask
+ * is src/ ITSELF, which receives no `$/progress` at all and which at Sprint 15
+ * measured `$/setTrace` inert and endorsed that silence deliberately -- recorded
+ * at the logger in src/server.ts. Each foreclosure is reversible at the one
+ * token it cost, so both capabilities are DEFERRED rather than surrendered.
  */
 export function createGatedConnection<P extends readonly unknown[]>(
   reader: MessageReader,

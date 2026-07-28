@@ -280,10 +280,17 @@ test("exit's entry declares always, and every other entry declares lifecycle", (
  * The binding is called `connection` because that is the IDENTIFIER the
  * rejected `no-restricted-properties` rule matched on; the renamed pair below
  * is what shows the type does not care.
+ *
+ * EVERY NAME A PROBE BODY COULD NEED IS IMPORTED HERE, and the ones any single
+ * body leaves unused cost nothing: this tsconfig sets no `noUnusedLocals`, and
+ * the pair above has always imported two request/notification types to use one.
+ * `Tracer` is type-only; `ProgressType` and `Trace` are a class and an enum, so
+ * they are values.
  */
 function narrowedSource(body: string[]): string {
   return [
-    'import { InitializedNotification, ShutdownRequest } from "vscode-languageserver-protocol/node";',
+    'import { InitializedNotification, ProgressType, ShutdownRequest, Trace } from "vscode-languageserver-protocol/node";',
+    'import type { Tracer } from "vscode-languageserver-protocol/node";',
     'import type { RequestOnlyConnection } from "./src/notifications.ts";',
     "",
     "const connection = null as unknown as RequestOnlyConnection;",
@@ -427,29 +434,92 @@ type Assert<T extends true> = T;
  * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY src/notifications.ts CLAIMS, and
  * the ONLY thing in this repo that carries it.
  *
- * The probes above name two removed members and one survivor, so ALL of them
- * stay green if a THIRD key is added to that `Omit` -- MEASURED, appending
- * `| "sendNotification"` runs at 343 tests green with nothing objecting, while
- * the boundary sentence beside the type silently becomes false. This fails first
- * and by name in that case, so it is not a control that could never fire.
+ * Every probe above names a member the `Omit` REMOVES or one it KEEPS, so all of
+ * them stay green when a FURTHER key is added to it -- MEASURED at Sprint 23 and
+ * RE-MEASURED at this widening: appending `| "sendNotification"` leaves the whole
+ * suite green with nothing objecting, while the boundary sentence beside the type
+ * silently becomes false. This fails first and by name in that case, so it is not
+ * a control that could never fire.
  *
  * A SET DIFFERENCE RATHER THAN A SAMPLE, which is what `and nothing else`
- * actually asserts, and both directions are load-bearing. MEASURED against three
- * controls: the pre-sprint one-key `Omit`, a key MISSPELLED as
+ * actually asserts, and both directions are load-bearing. MEASURED against four
+ * controls: an `Omit` short by one key -- run once per key -- a key MISSPELLED as
  * `onUnhandledNotifcation` (which `Omit` accepts and ignores, leaving the type
- * unchanged), and the third key above. Each reddens THIS line with TS2344 and
+ * unchanged), and the surplus key above. Each reddens THIS line with TS2344 and
  * leaves the rest of `tsc --noEmit` at zero diagnostics -- the type itself
- * compiles in all three, which is the whole reason an exit code proves nothing
+ * compiles in all of them, which is the whole reason an exit code proves nothing
  * here.
+ *
+ * WHAT IT DOES NOT SEE, and the reason the pin below exists beside it: this is a
+ * DIFFERENCE, so a member the DEPENDENCY adds lands on both sides of the
+ * `Exclude` and cancels out. It moves only when the `Omit` moves.
  *
  * CHECKED BY `tsc --noEmit`, NOT BY bun test, so it is deliberately not dressed
  * as a test: a runtime `expect(true).toBe(true)` beside it would observe the
  * same thing whether the type held or not.
  */
-export type BoundaryIsExactlyTwoMembers = Assert<
+export type BoundaryIsTheObservingMembers = Assert<
   Exact<
     Exclude<keyof ProtocolConnection, keyof RequestOnlyConnection>,
-    "onNotification" | "onUnhandledNotification"
+    "onNotification" | "onUnhandledNotification" | "onProgress" | "trace"
+  >
+>;
+
+/**
+ * THE ENUMERATION, AND THE REASON `THESE ARE ALL THE UNGATED VIEWS` IS NOW A
+ * JUDGEMENT AGAINST A LIST RATHER THAN AGAINST A MEMORY.
+ *
+ * THE COMPILER DOES THE ENUMERATING, WHICH IS THE ENTIRE POINT. The left side is
+ * read out of vscode-languageserver-protocol's own connection.d.ts by tsc; only
+ * the right side is written by hand. So the two can never quietly agree by
+ * accident, and if the dependency ADDS, REMOVES or RENAMES a member, this line
+ * reddens with TS2344 and names the file it lives in. What preceded it was a
+ * fifteen-item list in a comment, which is exactly the artefact that let
+ * `onProgress` and `trace` sit unnoticed on the handle for a sprint.
+ *
+ * IT IS THE OTHER DIRECTION FROM THE PIN ABOVE, and neither substitutes for the
+ * other: that one is a set DIFFERENCE, so a member the dependency adds appears on
+ * both sides and cancels; this one has no `RequestOnlyConnection` in it, so a key
+ * added to the `Omit` leaves it untouched. Between them, a member arriving from
+ * the dependency and a key arriving in the `Omit` both redden something.
+ *
+ * WHAT THIS DOES NOT ASSERT, stated because the sentence it supports at
+ * src/notifications.ts outruns it in two directions. It asserts THE SET OF
+ * NAMES: it says nothing about whether a member still on the list has grown to
+ * observe traffic -- a star-handler overload on `onRequest` would redden nothing
+ * here -- so `no remaining member exposes traffic` stays a JUDGEMENT, made now
+ * against a list the compiler agrees is complete. And it is a claim about the
+ * LOCKED dependency: bun.lock pins 3.18.2 while package.json asks for `^3.17.5`,
+ * so this reddens at the moment the lockfile moves and someone runs
+ * `tsc --noEmit`, which is later than the release.
+ *
+ * BORN-GREEN, DECLARED AS SUCH RATHER THAN DRESSED IN A MANUFACTURED RED: it
+ * states something about the dependency that already holds, so writing a wrong
+ * list first would have produced a red proving nothing about what shipped.
+ * DISCRIMINATION WAS MEASURED INSTEAD, in three directions, each reddening THIS
+ * line with TS2344 and nothing else in `tsc --noEmit`: dropping `listen` from the
+ * union, adding an `onNothing` that is not on the interface, and -- the direction
+ * the criterion actually names -- adding a member to
+ * node_modules/vscode-languageserver-protocol/lib/common/connection.d.ts itself.
+ */
+export type ProtocolConnectionHasTheseMembers = Assert<
+  Exact<
+    keyof ProtocolConnection,
+    | "sendRequest"
+    | "onRequest"
+    | "hasPendingResponse"
+    | "sendNotification"
+    | "onNotification"
+    | "onProgress"
+    | "sendProgress"
+    | "trace"
+    | "onError"
+    | "onClose"
+    | "onUnhandledNotification"
+    | "onDispose"
+    | "end"
+    | "dispose"
+    | "listen"
   >
 >;
 
@@ -461,6 +531,105 @@ test("the same two outcomes hold for onUnhandledNotification through an alias un
 
   expect(result.output).toMatch(
     /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'onUnhandledNotification' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+/** Installing a `$/progress` handler under a token, as a probe body. */
+const onProgressCall = 'onProgress(new ProgressType<number>(), "token", () => {});';
+
+/** Handing the connection a `Tracer`, as a probe body. */
+const traceCall = "trace(Trace.Off, null as unknown as Tracer);";
+
+/**
+ * `onProgress`, THE THIRD MEMBER THE NARROWING REMOVES, with its own test
+ * because a hazard must own a test whose FIRST assertion it is.
+ *
+ * WHAT IT REACHES, and it is a narrower thing than the members closed before it:
+ * `$/progress` arrives as a notification like any other, and `onProgress`
+ * installs a handler for it under a TOKEN, outside the table this module gates.
+ * Nothing in tsudoi receives `$/progress` today -- src/methods.ts SENDS it,
+ * through `sendProgress`, which this narrowing deliberately leaves alone.
+ *
+ * REACHABILITY IS WHY IT GOES, not breadth: it sits on the handle
+ * `createGatedConnection` hands out, so reaching it needs NO DELIBERATE ACT, and
+ * `no longer reachable by accident` -- the argument that makes the import ban in
+ * .oxlintrc.json adequate -- never covered it.
+ */
+test("the narrowed connection rejects onProgress and accepts onRequest, in one type-check", async () => {
+  const result = await typeCheckProbe({
+    "forbids.ts": narrowedSource([`connection.${onProgressCall}`]),
+    "permits.ts": forbidsAndPermits["permits.ts"] as string,
+  });
+
+  // BOUND TO THE FILE AND TO THE SYMBOL, for the two reasons recorded at the
+  // onUnhandledNotification probe: a bare non-zero exit goes green against a
+  // module with no narrowing at all, and a key MISSPELLED inside the `Omit` is a
+  // silent no-op that only a probe naming this symbol can tell from a real
+  // removal.
+  expect(result.output).toMatch(
+    /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'onProgress' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+test("the same two outcomes hold for onProgress through an alias under a different name", async () => {
+  const result = await typeCheckProbe({
+    "renamed.ts": aliasedSource(onProgressCall),
+    "permits.ts": aliasedSource("onRequest(ShutdownRequest.type, (): void => {});"),
+  });
+
+  expect(result.output).toMatch(
+    /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'onProgress' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+/**
+ * `trace`, THE FOURTH, and the one whose reach is easiest to overstate.
+ *
+ * WHAT IT ACTUALLY SEES, MEASURED at vscode-jsonrpc 9.0.1's
+ * lib/common/connection.js rather than recalled: `traceReceivedNotification`
+ * runs at THREE sites, and the third -- the one on the ordinary notification
+ * path -- is INSIDE `if (notificationHandler || starNotificationHandler)`,
+ * immediately before the handler is awaited. The `else` branch fires
+ * `unhandledNotificationEmitter` and does NOT trace. So a Tracer sees every
+ * notification tsudoi HANDLES, plus `$/cancelRequest` at the two cancel sites --
+ * NOT every notification received.
+ *
+ * IT IS COMPLEMENTARY TO `onUnhandledNotification`, THEN, RATHER THAN BROADER:
+ * one sees what is handled, the other exactly what is not.
+ *
+ * AND THE ORDERING IS WHY IT BELONGS WITH THE OTHERS: the tracer is handed the
+ * message BEFORE the registered handler runs, and this module's gate lives
+ * INSIDE that handler. So tracing observes a gated notification whatever the
+ * gate then decides -- watching around the gate, which is the property this
+ * narrowing exists to deny.
+ */
+test("the narrowed connection rejects trace and accepts onRequest, in one type-check", async () => {
+  const result = await typeCheckProbe({
+    "forbids.ts": narrowedSource([`connection.${traceCall}`]),
+    "permits.ts": forbidsAndPermits["permits.ts"] as string,
+  });
+
+  expect(result.output).toMatch(
+    /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'trace' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+test("the same two outcomes hold for trace through an alias under a different name", async () => {
+  const result = await typeCheckProbe({
+    "renamed.ts": aliasedSource(traceCall),
+    "permits.ts": aliasedSource("onRequest(ShutdownRequest.type, (): void => {});"),
+  });
+
+  expect(result.output).toMatch(
+    /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'trace' does not exist/,
   );
   expect(result.output).not.toContain("permits.ts");
   expect(result.code).toBe(1);
