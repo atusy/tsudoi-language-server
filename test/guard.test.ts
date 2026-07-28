@@ -173,14 +173,14 @@ function factoryBanAt(path: string): RegExp {
 }
 
 /**
- * No diagnostic is REPORTED AGAINST `path`, matched at the start of a line.
+ * A diagnostic REPORTED AGAINST `path`, matched at the start of a line.
  *
- * Not `not.toContain(path)`: the rule's own help text names src/notifications.ts
- * as the one module that may create a connection, so a bare substring check
- * reads that text out of ANOTHER file's diagnostic and fails while the file it
- * asks about is perfectly clean. Caught by running it.
+ * Not the bare path: the rule's own help text names src/notifications.ts as the
+ * one module that may create a connection, so a substring check reads that text
+ * out of ANOTHER file's diagnostic and reports the file as flagged while it is
+ * perfectly clean. Two outcomes, one observation -- caught by running it.
  */
-function unflagged(path: string): RegExp {
+function reportedAgainst(path: string): RegExp {
   return new RegExp(`^${path.replaceAll(".", "\\.")}:`, "m");
 }
 
@@ -216,17 +216,25 @@ test("the same import is exempt in src/notifications.ts, in a run where src/serv
     "src/server.ts": importsProtocolExport("createProtocolConnection"),
   });
 
-  expect(result.output).not.toMatch(unflagged("src/notifications.ts"));
+  expect(result.output).not.toMatch(reportedAgainst("src/notifications.ts"));
   expect(result.output).toMatch(factoryBanAt("src/server.ts"));
   expect(result.code).toBe(1);
 });
 
-// THE HALF THAT LOOKS REDUNDANT AND IS NOT: it is the only one a module-wide ban
-// fails. Such a ban satisfies "flagged in server.ts" and "exempt in the router"
-// perfectly, while breaking src/server.ts, src/methods.ts and src/lifecycle.ts,
-// which import OTHER names from this exact specifier -- and the two bare-specifier
-// tests above, which import createConnection from it. Kept permanent so that
-// distinction is not rediscovered by breaking the build.
+// THE HALF THAT LOOKS REDUNDANT, AND WHAT IT ACTUALLY BUYS -- corrected against
+// the perturbation rather than left as first written. Dropping `importNames`
+// reddens ALL THREE halves, MEASURED, so this is NOT the only one that catches a
+// module-wide ban. What it is, is the only one that NAMES THE CAUSE: the other
+// two fail because an expected diagnostic WORDING is absent, which is equally
+// what an oxlint message-format change looks like. This one fails with
+// src/reader.ts flagged -- an import nothing ever meant to ban. It is also the
+// only half asserting the PERMITTED direction, so it survives any later
+// loosening of those two regexes.
+//
+// The ban is on ONE NAME because three src modules import OTHER names from this
+// exact specifier: dropping it takes `oxlint` over the repo to exit 1 with
+// diagnostics in src/server.ts, src/methods.ts and src/lifecycle.ts, and reddens
+// the two bare-specifier tests above, which import createConnection from it.
 //
 // Same two-files-in-one-run design as above, for the same reason.
 test("a different export from the same module is unflagged, in a run where the factory is flagged", async () => {
@@ -235,7 +243,7 @@ test("a different export from the same module is unflagged, in a run where the f
     "src/server.ts": importsProtocolExport("createProtocolConnection"),
   });
 
-  expect(result.output).not.toMatch(unflagged("src/reader.ts"));
+  expect(result.output).not.toMatch(reportedAgainst("src/reader.ts"));
   expect(result.output).toMatch(factoryBanAt("src/server.ts"));
   expect(result.code).toBe(1);
 });
