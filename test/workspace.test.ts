@@ -14,11 +14,13 @@ import {
   LspSession,
   type Runtime,
 } from "./helpers/lsp.ts";
+import { gateOpen, itemsFor } from "./fixtures/completion-workspace-gate.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture, repoRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
 
 const echoConfig = fixture("workspace-folders.ts");
+const workspaceGate = fixture("completion-workspace-gate.ts");
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 
 const runtimes = [bunRuntime, denoRuntime];
@@ -330,6 +332,96 @@ for (const runtime of runtimes) {
         changeFolders(session, { added: [addedAgain] });
 
         expect(await observedFolders(session)).toEqual([addedFolder, addedAgain]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-17 CRITERION 4, AND IT IS BORN GREEN AND SAYS SO: per-request capture
+    // is ALREADY today's behaviour, because methods.ts calls the folders thunk
+    // ONCE while building the RequestContext. It is pinned so that nobody
+    // meeting this later mistakes correct code for a bug and `fixes` it into a
+    // lazy read.
+    //
+    // PROVEN BY ORDERING, NEVER BY A TIMING BOUND. The change is written to the
+    // same stdin as the release that follows it, and the server frames what it
+    // is sent in order -- so by the time the gate opens the change has already
+    // been applied. Nothing here says `within N milliseconds`.
+    //
+    // THE SECOND HALF IS LOAD-BEARING: without a NEW request seeing the change,
+    // every assertion above is satisfied by a server that applied NOTHING.
+    //
+    // THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and
+    // read lazily, and the in-flight assertion must redden.
+    test("a completion in flight keeps the folders it started with, while the next one sees the change", async () => {
+      const session = LspSession.start(runtime, workspaceGate);
+      const parkedToken = "workspace-parked";
+      const nextToken = "workspace-next";
+      const before = [sentFolders[0]];
+      const after = [sentFolders[0], addedFolder];
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: before,
+        });
+        session.notify("initialized", {});
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri, languageId: "plaintext", version: 1, text: "hold" },
+        });
+
+        let settled = false;
+        const parked = session
+          .request<CompletionItem[] | null>("textDocument/completion", {
+            textDocument: { uri },
+            position: { line: 0, character: 0 },
+            partialResultToken: parkedToken,
+          })
+          .then((result) => {
+            settled = true;
+            return result;
+          });
+        // Marks the rejection handled so that a failure before the await below
+        // is not reported against whichever test runs next.
+        parked.catch(() => undefined);
+
+        await session.waitForProgress(1);
+        expect(session.progress[0]).toEqual({ token: parkedToken, value: itemsFor(before) });
+
+        // The pause establishes that the request really is PARKED rather than
+        // merely not-yet-answered -- the same shape completion.test.ts uses. It
+        // is not what the claim rests on; the ordering below is.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(settled).toBe(false);
+
+        // THE CHANGE, WHILE THE REQUEST IS PARKED, and the RELEASE written
+        // after it. This ordering is the proof: the second yield cannot happen
+        // until the release is processed, and the release cannot be processed
+        // before the change that was framed ahead of it.
+        changeFolders(session, { added: [addedFolder] });
+        session.notify("textDocument/didChange", {
+          textDocument: { uri, version: 2 },
+          contentChanges: [{ text: gateOpen }],
+        });
+
+        await session.waitForProgress(2);
+        // ITS SECOND YIELD MATCHES ITS FIRST: the request finished on the list
+        // it began with, though the workspace had already changed under it.
+        expect(session.progress[1]).toEqual({ token: parkedToken, value: itemsFor(before) });
+        await parked;
+
+        // THE NEXT REQUEST SEES THE CHANGE. Its gate is already open, so both
+        // its yields arrive at once -- and both carry the folder the parked one
+        // never saw.
+        await session.request<CompletionItem[] | null>("textDocument/completion", {
+          textDocument: { uri },
+          position: { line: 0, character: 0 },
+          partialResultToken: nextToken,
+        });
+
+        expect(session.progress.slice(2)).toEqual([
+          { token: nextToken, value: itemsFor(after) },
+          { token: nextToken, value: itemsFor(after) },
+        ]);
       } finally {
         session.dispose();
       }
