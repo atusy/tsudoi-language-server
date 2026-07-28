@@ -43,13 +43,19 @@ const scrum: ScrumDashboard = {
       },
       acceptance_criteria: [
         {
-          criterion: "N `removed` entries for one URI remove N copies, no more",
+          criterion: "N `removed` entries for one URI remove N copies -- SEQUENTIALLY",
           verification:
-            "Add a URI twice, send ONE removed entry for it, assert ONE copy REMAINS; send a second and assert it is gone. NEGATIVE CONTROL: today's filter -- which matches every entry with that URI -- reddens the first assertion",
+            "Add a URI twice, send ONE removed entry for it, assert ONE copy REMAINS; send a second event and assert it is gone. NEGATIVE CONTROL: today's filter -- which matches every entry with that URI -- reddens the first assertion",
+        },
+        {
+          criterion: "N `removed` entries for one URI remove N copies -- IN ONE EVENT",
+          verification:
+            "Add a URI twice, send ONE event carrying TWO removed entries for it, assert BOTH are gone. A SEPARATE TEST BECAUSE THE HAZARDS AND THEIR CONTROLS DIFFER, which is the granularity rule's first real application: today's filter PASSES this case, so the sequential control cannot cover it, and the wrong implementation here is `new Set(removed.map(f => f.uri))` -- the identical shape to an `includes` guard, which passes the SEQUENTIAL test and fails this one. NEGATIVE CONTROL: deduping the removed array reddens it. LIKELY BORN GREEN, to be reported as such rather than as a pass",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
+        "THE BATCHED CASE WAS MISSING AND THE PO CAUGHT IT AT REFINEMENT: their ruling turned on `a client that removes two copies sends TWO removed entries` -- IN ONE EVENT -- and the criterion as first written tested only SEQUENTIAL events. Two hazards with different controls, so two tests.",
         "FILED AT SPRINT 17'S REVIEW, where the PO OVERTURNED an unpinned ruling. The Developer had recorded remove-all as `equally defensible` under the Sprint 7 one-outcome rule; the method was right and the input wrong. REMOVE-ALL DISCARDS WHAT THE EVENT CARRIED: a client removing two copies sends TWO `removed` entries and one removing a single copy sends ONE, so N entries should remove N copies -- an exact mirror. PBI-17's duplicate criterion honours multiplicity on ADD; symmetry honours it on REMOVE. One outcome IS required.",
         "NOT DONE AT REVIEW, and the line is the one held since Sprint 1: it arrived at Review, no observed client produces the case, and forcing src/ behaviour changes there is retroactive scope. The SITE COMMENT was corrected before the tag instead -- src/workspace.ts now says which behaviour is correct and that this is not it -- because wrong reasoning sitting where someone reads it is the thing that propagates.",
         "CONTRIVED, and saying so is what keeps the ordering honest: nothing observed produces a duplicate URI in a real client. ORDERING BASIS REPLACED AT SPRINT 18 rather than repeated: PBI-19 was ordered first for serving a real population, and measurement showed NO CLIENT PRODUCES ITS CASE EITHER -- both are speculative now. It still leads on two narrower grounds: the HARM IS LARGER (no root at all versus losing a duplicate), and its case is CONTEMPLATED BY THE SPECIFICATION where this one is an interaction of two of our OWN criteria that nothing anticipates.",
@@ -128,7 +134,48 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 19,
+    pbi_id: "PBI-20",
+    goal: "Remove a folder as many times as the client removed it -- so the list keeps saying exactly what the client said, on remove as it already does on add.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "One `removed` entry for a URI held twice leaves ONE copy",
+        implementation:
+          "Remove ONE COPY PER `removed` ENTRY instead of filtering every match. Expected RED: today's filter matches every entry with that URI.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "One event carrying TWO `removed` entries for a URI held twice removes BOTH",
+        implementation:
+          "LIKELY BORN GREEN -- today's filter already handles this case correctly. REPORT IT AS BORN GREEN rather than as a pass.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ITS OWN TEST BECAUSE THE HAZARDS DIFFER, the granularity rule's first real application: today's filter PASSES this case while failing the sequential one, and `new Set(removed.map(f => f.uri))` does the reverse. Neither control covers both.",
+        ],
+      },
+      {
+        test: "N/A (prose, same commit as the behaviour)",
+        implementation:
+          "src/workspace.ts's comment says one-per-entry is CORRECT and that this is NOT it. The moment the behaviour lands that sentence describes a deviation THAT NO LONGER EXISTS -- REVERSE STALENESS, the standing prose item's subject from the unfamiliar direction. It must also state which assertion backs it, per the clause filed last sprint. Both new rules' first applications in one item.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO'S CHECKLIST: (1) the site comment changes in the SAME commit and states which assertion backs it; (2) the two hazards own SEPARATE tests; (3) born-green reporting for the batched case.",
+      "AFTER THIS THE BACKLOG IS EMPTY, and the PO ruled what follows rather than letting it be filled to keep the loop running: FILE the replace-range whitespace defect (present-tense harm, in the feature the stakeholder uses, reachable with their own confirmBehavior: replace) and FILE a lint guard forbidding connection.onNotification outside the router -- which is a gap in work the PO ACCEPTED last sprint, since PBI-18 forecloses bypass WITHIN the router and not OF it. HOLD the free-string sweep, LEAVE the non-local workspace URI as a site comment. The npm decision is surfaced ALONGSIDE, not instead, as the only thing that generates new capability rather than cleanup.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 18,
