@@ -45,7 +45,7 @@ const scrum: ScrumDashboard = {
         {
           criterion: "A config author can read the workspace folders the client sent",
           verification:
-            "Drive initialize with workspaceFolders and assert a config handler observes them. NEGATIVE CONTROL: driving initialize WITHOUT them must leave the same handler observing an empty list, never a fabricated root",
+            "Drive initialize with workspaceFolders and assert a config handler observes them ON ITS RequestContext. NEGATIVE CONTROL: driving initialize WITHOUT them must leave the same handler observing an empty list, never a fabricated root",
         },
         {
           criterion: "Absence is distinguishable from a workspace at /",
@@ -71,6 +71,9 @@ const scrum: ScrumDashboard = {
         "MEASURED: cwd is NOT a substitute. nvim spawns the server with cwd = root_dir when a root is found and its OWN cwd when not, so cwd-as-workspace-root is exactly right when tested and silently wrong when it matters, with no signal from inside the config.",
         "Smallest honest shape (REASONED): readonly workspaceFolders: readonly WorkspaceFolder[], reusing the protocol's own type so the surface grows by one name. Plural is not hypothetical -- the field is an array on the wire, so any singular shape lies about it.",
         "STALENESS IS NOT FORECLOSABLE, and measurement killed the comfortable option: vim.lsp.buf.add_workspace_folder() produces workspace/didChangeWorkspaceFolders AND IT ARRIVES EVEN WHEN THE SERVER ADVERTISES capabilities: {} -- measured both ways. We cannot decline to receive it by declining to advertise, so `accepted documented limit` would document tsudoi ignoring a notification it is actually RECEIVING. Not hypothetical for this stakeholder, who already binds list_workspace_folders(). Handling it is PBI-17, filed rather than left as a note that would evaporate when this PBI closes.",
+        "THE CARRIER IS RequestContext, NOT Tsudoi -- ruled at Sprint 14 planning on a HANDBACK, before a line was written. MEASURED: src/cli.ts calls startServer(await loadConfig(...)), and src/config.ts:38 invokes the factory, so the config factory runs strictly BEFORE initialize. `const roots = tsudoi.workspaceFolders` at factory time -- the most natural line an author writes -- captures an empty array FOREVER even when the client sent folders. NEITHER EXISTING CRITERION CATCHES IT: criterion 1 asserts a HANDLER read and stays green; criterion 2 asserts empty-when-ABSENT while this is empty-when-PRESENT. Presence wearing absence's clothes, through the one door the load-bearing criterion does not cover.",
+        "FORECLOSED, in the Developer's own vocabulary: a factory-time read cannot be WRITTEN, because the value is not reachable from Tsudoi. WHAT WOULD UN-FORECLOSE IT: adding workspaceFolders to Tsudoi. The PO took the step neither of us had: the capability the Tsudoi shape appears to preserve OPENS ONTO A WALL, since a factory-time read is empty BECAUSE the factory runs first -- so the cost of foreclosing is not a capability lost but one that does not exist either way. And because a later addition would be ADDITIVE, the door is DEFERRED rather than welded. The timing criterion that would otherwise pin this is DROPPED: pinning an unrepresentable failure pins nothing.",
+        "THE THIRD SIGHTING OF THE DISCARDED InitializeParams IS DIFFERENT IN KIND, and its home is src/cli.ts rather than a PBI note because it constrains future EDITS, not future scheduling: exposing params to HANDLERS is a SURFACE question, exposing them to the FACTORY is an ORDERING one. A complete params surface would still be invisible to the factory.",
         "THE NAME IS NOT MORTGAGED: keep `workspaceFolders` and document the SNAPSHOT SEMANTICS at the type in src/types.ts -- it reflects initialize and does not track changes. `initialWorkspaceFolders` would be accurate today and WRONG the moment tracking lands, in a file whose own header says renaming an export breaks configs we cannot see. Documented-at-the-type is read by exactly the person who would be misled.",
         "MEASURED AT SPRINT 14 REFINEMENT, and it is why this refines to ready rather than waiting on the stakeholder: their nvim tree has ZERO tsudoi configuration today, and their only comparable custom server calls bare on_dir(), which a probe confirmed yields root_dir=nil, workspace_folders=nil and a server cwd that is NVIM'S OWN -- neither the document's directory nor any project root. When root_dir IS set, nvim sends workspaceFolders populated and correct. INFERENCE BOUNDARY, the Developer's own: that tsudoi WOULD be configured that way is REASONED from it being the only analogue, not measured; their denols and ts_ls set real roots.",
         "THE HARM CLASS IS SILENT ABSENCE, which is why the legibility criterion exists and why blocking was refused. Unlike the hoverProvider case this is not dead because WE failed to advertise -- the same code is live the moment root_dir is set. What is new versus PBI-8's registry route and PBI-14's typing-/ is that the config choice making it silent CAN BE NAMED IN ADVANCE. The surface is identical whichever way they configure, so their answer changes nothing about what gets built.",
@@ -138,26 +141,8 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in 3222fb0, 94e46c0, c0db79e, 771b319, 4a1bdfa, 258f726, 7c97fe7, f18159e, 43fca61, 8932b45, b78fd74, af48333, fbdf474, 55fa0d9, 1d214aa, plus structural 4fe716c. 258 tests green under both runtimes, ZERO LINES IN src/ across the whole sprint. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
-        "COMPACTED AT CLOSE under the PO's Q2 filter, which surfaces only drops whose home is NOT a permanent assertion, a comment at the site it constrains, or an active improvement. Fifteen decisions dropped, every one of them sited, and the four I was least sure of were CHECKED BY READING THE CODE rather than recalled: the opendir cross-runtime difference at examples/path-completion.ts:358, the detail-versus-label carrier at :269 with the enableMatchLabel tension at :277, per-segment foreclosure at :118, and the dedup attribution weakness at :440. The unruled-behaviour list is at test/path-completion.test.ts:29 and :204. PBI-14 leaves the backlog done, and each criterion's ruling lives in the test that verifies it. THE TWO NOTES I HAD KEPT FOR WANT OF A HOME BOTH HAD ONE, found by checking the two places the PO named rather than by my recalling that they did not: reachability is disclaimed in the example's own prose at examples/tsudoi.config.ts:56 -- `nothing here should be read as a promise that it does` -- and the narrow deno flag set is the README's historical claim pinned by readme.test.ts's permissionsFact, extended in the same commit to say the flags served a real path COMPLETION and not only the handshake, which is what Sprint 13 measured. A completed sprint's record is not a durable home; it is what the next compaction meets, which is how the type-check gap became PBI-16.",
-        "SCOPE, from the stakeholder directly: parity with ddc-source-file is NOT a criterion -- `置き換える予定だけど、いったん要求したものができてればいい`. The replacement intent is context, and it is why the document-relative and absolute sources are load-bearing rather than decorative; increments come later.",
+        "COMPACTED AT CLOSE under the PO's Q2 filter, which surfaces only drops whose home is NOT a permanent assertion, a comment at the site it constrains, or an active improvement. Fifteen decisions dropped, every one of them sited, and the four I was least sure of were CHECKED BY READING THE CODE rather than recalled: the opendir cross-runtime difference at examples/path-completion.ts:358, the detail-versus-label carrier at :269 with the enableMatchLabel tension at :277, per-segment foreclosure at :118, and the dedup attribution weakness at :440. The unruled-behaviour list is at test/path-completion.test.ts:29 and :204. PBI-14 leaves the backlog done, and each criterion's ruling lives in the test that verifies it. THREE MORE OF THIS SPRINT'S OWN DECISIONS DROPPED AT SPRINT 14, all sited: the stakeholder's scope ruling and the four acceptance rulings live in the criteria and the tests they produced, and the deliberately-not-built list is at test/path-completion.test.ts:29 and :204. SPRINT 12'S RECORD DROPPED by the same filter, every decision of it sited and CHECKED: the bareness reframe at test/helpers/readme.ts:187 and test/readme.test.ts:114, the omission-is-worse-than-staleness asymmetry at test/readme.test.ts:118, and the type-check gap now carried by PBI-16. THE TWO NOTES I HAD KEPT FOR WANT OF A HOME BOTH HAD ONE, found by checking the two places the PO named rather than by my recalling that they did not: reachability is disclaimed in the example's own prose at examples/tsudoi.config.ts:56 -- `nothing here should be read as a promise that it does` -- and the narrow deno flag set is the README's historical claim pinned by readme.test.ts's permissionsFact, extended in the same commit to say the flags served a real path COMPLETION and not only the handshake, which is what Sprint 13 measured. A completed sprint's record is not a durable home; it is what the next compaction meets, which is how the type-check gap became PBI-16.",
         "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\S/\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
-        'WHAT IS DELIBERATELY NOT BUILT, so nobody reads its absence as an oversight: no trailing `/` on a directory item (the user types it); `~` is not expanded; a quoted path such as `"./ba` does not complete, because a quote is not a fragment boundary; and hidden entries and ./ ../ are UNRULED and remain so -- the fixtures contain none, and no test pins either way.',
-        "ACCEPTED WITH FOUR RULINGS, two of which NARROWED criteria to what was verified rather than adding to delivered work -- the PO drew that line explicitly: narrowing to what holds is the criterion-verification rule, widening is goalpost-moving. Criterion 3(b) had described a state per-segment completion makes IMPOSSIBLE, which the PO called worse than a vacuous criterion since it cannot even be exercised. Criterion 11's replace-range shortfall is recorded as a DEFECT DEFERRED, never a limit, because a mangled insertion is the exact harm the range criterion prevents.",
-      ],
-    },
-    {
-      number: 12,
-      pbi_id: "PBI-8",
-      goal: "Make eleven sprints reachable by someone who was not here -- a README whose own bytes are what the suite runs, so the instructions cannot drift from the product.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "COMPACTED AT SPRINT 13, every dropped decision named with the durable home it went to, per the Sprint 9 rule. The three conjunction/zero-match vacuity records -- the planned removal control that cannot fail, statesFact is a conjunction, an extractor that finds nothing passes -- are generalised in the negative-control-at-refinement improvement (a criterion no change can redden is VACUOUS), and CHECKED AGAINST THE SUITE rather than recalled: test/readme.test.ts:252 asserts each fact has exactly one home section, and extractQuickstart THROWS on a zero or short match with its count asserted at :31, so the extractor cannot pass by finding nothing. An earlier draft of this record credited Sprint 11's NOT-CONSTRUCTED classification, which is about UNBUILDABLE PERTURBATIONS and does not cover conjunction vacuity. The -A flag hedge and the unnamed cold-cache prerequisite are README facts pinned by that same suite. The installConsumer deviation carries its reason at its site. The one-runtime sweep's licence is Sprint 10's measured route-identity, recorded there.",
-        "THE BARENESS REFRAME, kept because nothing else carries it: the sweep's function is not NECESSITY (no documented step is useless) but proving THE ENVIRONMENT IS BARE. Criterion 1 delivers sufficiency -- nothing undocumented is required -- ONLY if the staged environment supplies nothing the README asks the reader to do; otherwise it is a test of the harness.",
-        "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. Omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
-        "NOT CONSTRUCTED, not foreclosed, and still open: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
       ],
     },
     {
@@ -175,9 +160,7 @@ const scrum: ScrumDashboard = {
           request:
             "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
           status: "waiting_human",
-          notes: [
-            "Not raised as an impediment during the sprint because it blocked nothing: the remedy, the build and both runtimes were all verifiable without it. It is recorded now so the PO sees the one edge of the route the suite does not reach.",
-          ],
+          notes: [],
         },
       ],
       decisions: [],
@@ -193,7 +176,96 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 14,
+    pbi_id: "PBI-15",
+    goal: "Let a config author answer from the workspace the editor actually opened -- and, when the editor opened none, say so once instead of going quiet.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A handler observes the workspace folders the client sent at initialize",
+        implementation:
+          "Open the src/server.ts InitializeRequest seam NARROWLY: read params.workspaceFolders and NOTHING ELSE -- do not retain params wholesale and do not add a capabilities field, however convenient it looks with the object in hand. Store RAW, so subtask 2 is a real RED. The insertReplaceSupport gap is evidence that a second consumer exists, NOT a licence to build for it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TWO PLANNING DECLARATIONS AT ONE SITE. SHARED IMPLEMENTATION MOMENT, per the Sprint 5 rule: reading params and threading them onto the surface are ONE moment -- there is no observable difference between reading params and not storing them -- so this subtask carries both rather than splitting into a pair whose second half arrives born green. AND NO STANDALONE STRUCTURAL SUBTASK for the seam: a handler taking params and doing nothing with them is an unused binding that does not survive oxlint, so faking a tidy-first step here would be ceremony rather than tidying.",
+        ],
+      },
+      {
+        test: "A client sending undefined workspaceFolders leaves the handler observing an empty array",
+        implementation: "Normalise undefined to []. Expected RED, since subtask 1 stores raw.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A client sending null workspaceFolders leaves the handler observing an empty array",
+        implementation:
+          "Born green after subtask 2. SPLIT from it per prefer-splitting: the protocol has TWO absent states and one test masking the other is the shape that bit Sprint 13's subtask 5.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION, named by the assertion it flips: normalise with `?? []` only -- the null case must redden while the undefined case stays GREEN. A perturbation reddening both would mean the split bought nothing.",
+        ],
+      },
+      {
+        test: "Absence is never coerced into a root",
+        implementation:
+          "Born green. THREE SUBSTITUTIONS, all flipping the same assertion -- never a fabricated root.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PO STATED THE DISCRIMINATOR AS THE SUBSTITUTION, not as two inputs. (a) default absence to process.cwd() -- THE MOST IMPORTANT, because it is the silently plausible one: MEASURED, nvim's cwd is its own launch directory when no root is found, so this looks correct in every test that does not force cwd apart from the workspace. (b) default absence to /. (c) treat an empty list as a root. Each must redden.",
+        ],
+      },
+      {
+        test: "The example reports ONCE PER SESSION when no workspace is known",
+        implementation:
+          "Expected RED. Config-author code at ZERO LINES in src/, mirroring PBI-10's normalise-and-report.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PROPERTY, not the mechanism: the report count is one AND the same stderr reader is demonstrated, IN THE SAME SESSION, to grow when a second session-level line is genuinely emitted. A bare count of one passes when the implementation emits ZERO and something else wrote the line, and passes trivially when the source short-circuits before reaching the report. PRESENCE HALF IS MEASURED, not hoped: Sprint 14 planning measured `tsudoi: textDocument/hover handler failed` reaching this exact reader on both runtimes in a session where three other messages were silent. TWO REQUESTS are what make the claim mean anything -- a single-request test cannot tell once from per-request. REASON RECORDED AS MEASURED, NOT INHERITED: this stakeholder's autoCompleteEvents includes TextChangedI, so in their stack PER-REQUEST IS PER-KEYSTROKE, which is a stronger basis than PBI-10's precedent.",
+        ],
+      },
+      {
+        test: "The example gains its workspace-relative source",
+        implementation:
+          "Expected RED. With a workspace folder set and cwd elsewhere, a relative-prefix completion carries workspace-rooted items resolving against that folder.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SEQUENCED AFTER THE REPORT ON PURPOSE, and this is the second shared implementation moment declared at planning: both land in the same branch -- no root known, report; root known, yield items -- so WHICHEVER IS WRITTEN SECOND ARRIVES BORN GREEN. If this one is written first, the report subtask arrives green and its once-per-session claim is FICTION.",
+          "STATED SO NOBODY LATER READS IT AS AN OBSERVED EDITOR STATE: `a workspace folder set and cwd elsewhere` is a combination a real editor does not produce, since nvim spawns the server with cwd = root_dir when a root is found. It is still the RIGHT criterion -- forcing them apart is the only way to tell which source produced an item.",
+        ],
+      },
+      {
+        test: "N/A (structural)",
+        implementation:
+          "Snapshot semantics at the type in src/types.ts, stating what it does NOT do -- it reflects initialize and does not track workspace/didChangeWorkspaceFolders -- plus the PBI-17 boundary recorded at the site where someone would otherwise wire that notification.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NOT A DoD CHECK AND NO TEST IS BUILT FOR IT. The Scrum Master ruled it a REVIEW-TIME REPORTING ITEM: the PO's checklist item 4 said `verified by content and site, not by a test`, which does not distinguish done from not-done. Asserting a comment's text is ceremony; a checklist line that LOOKS testable and is not is worse.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PO'S ACCEPTANCE CHECKLIST, ISSUED AT PLANNING per the Sprint 1 improvement so the plan can target it. Standing list applies, plus six: (1) the once-per-session trace PINNED, perturbation being emit-per-request; (2) absence NOT COERCED, with the discriminator stated as the SUBSTITUTION rather than as two inputs -- defaulting to cwd, to /, or treating an empty list as a root must each redden; (3) a config using the new type type-checks in an installed consumer, carried by PBI-9's EXISTING check rather than a new one; (4) snapshot semantics documented at the type in src/types.ts; (5) the example's prose says the workspace source is live only when the client sends folders, and how a reader will know when it is not; (6) a REPORTING item -- the Review states plainly that criterion 1 is verified SYNTHETICALLY and names the config choice that makes it live.",
+      "CHECKLIST ITEM 4 RULED A REVIEW-TIME REPORTING ITEM BY THE SCRUM MASTER, not a check: `verified by content and site, not by a test` does not distinguish done from not-done. Asserting a comment's text is ceremony; a checklist line that LOOKS testable and is not is worse than one openly outside the DoD. The Scrum Master reads the file and quotes the comment at Review.",
+      "THE TWO UNMEASURED ITEMS FOLD INTO CHECKLIST ITEM 6 rather than becoming items of their own: nobody has measured a real editor sending MORE THAN ONE folder at initialize, and criterion 4's `a workspace folder set and cwd elsewhere` is a combination a real editor does not produce, since nvim spawns with cwd = root_dir when a root is found. Criterion 4 stays as written -- forcing the roots apart is the only way to attribute an item to a source -- and the point is that nobody should later read a SYNTHETIC ISOLATION STATE as an OBSERVED EDITOR STATE.",
+      "THE CARRIER RULING IS RECORDED ON PBI-15 AND FORECLOSED AT src/cli.ts. Third handback of thirteen sprints, second before acceptance, and the strongest: it found a defect BOTH existing criteria structurally could not catch, before a line was written. The PO noted that what keeps catching these is someone READING THE ACTUAL CODE rather than reasoning from the criteria.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 13,
@@ -208,25 +280,17 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "A PLAN INSTRUCTION STATES THE PROPERTY TO ESTABLISH, NOT THE MECHANISM TO USE. Where it must name a mechanism, it says whether the mechanism was MEASURED to produce the property.",
+            "A PLAN CARRIES PROPERTIES, NOT MECHANISMS. It states the PROPERTY to establish rather than the mechanism to use, and it may not substitute a PROXY for a criterion's property. Where a plan must name a mechanism, it says whether that mechanism was MEASURED to produce the property.",
           timing: "sprint",
           status: "active",
           outcome:
-            "Filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard -- it makes correctness depend on someone downstream remembering to look, and the piped-exit-code defect shows how slowly that works when they do not: nine sprints.",
+            "MERGED AT SPRINT 14 from two statements of one rule, nothing dropped. S12: the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test -- one layer below checklist-versus-criterion drift, where the reviewer's thinking runs ahead of the criterion. S13: filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard, since it makes correctness depend on someone downstream remembering to look -- and the piped-exit-code defect shows how slowly that works when they do: nine sprints.",
         },
       ],
     },
     {
       sprint: 12,
-      improvements: [
-        {
-          action: "A PLAN MAY NOT SUBSTITUTE A PROXY FOR A CRITERION'S PROPERTY.",
-          timing: "immediate",
-          status: "active",
-          outcome:
-            "One layer below the checklist-versus-criterion drift: there the reviewer's thinking runs ahead of the criterion; here the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test.",
-        },
-      ],
+      improvements: [],
     },
     {
       sprint: 11,
@@ -272,14 +336,6 @@ const scrum: ScrumDashboard = {
           status: "active",
           outcome:
             "Filed at the Developer's request after they named it at second occurrence. Its S13 STRENGTHENING lives separately: a claim about what the suite covers may not take the `reasoned` option this rule allows.",
-        },
-        {
-          action:
-            "PREFER SPLITTING OVER DOCUMENTING: when a perturbation would flip at an earlier assertion than the sub-claim it targets, that is a signal the test BUNDLES independent sub-claims.",
-          timing: "immediate",
-          status: "active",
-          outcome:
-            "Better than covered -- it DISSOLVES what the earlier-assertion clause only documents.",
         },
       ],
     },
@@ -348,11 +404,11 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "CONSOLIDATED, replacing the manufactured-RED rule and its three amendments: anything not perturbed is assumed unproven; every subtask declares expected-RED or born-green; every perturbation is named by the ASSERTION it flips, not by the subtask it belongs to -- and if it flips at an EARLIER assertion than the subtask's headline claim, that headline claim is still undefended and needs its own perturbation.",
+            "PERTURBATION DISCIPLINE, one rule: anything not perturbed is assumed UNPROVEN; every subtask declares expected-RED or born-green; every perturbation is named by the ASSERTION it flips, not by the subtask it belongs to. If it flips at an EARLIER assertion than the subtask's headline claim, PREFER SPLITTING OVER DOCUMENTING -- the earlier flip is a signal that the test BUNDLES independent sub-claims, and splitting DISSOLVES what a note would only describe.",
           timing: "immediate",
           status: "active",
           outcome:
-            "Amended three times already, which is its own signal: a rule list nobody can hold in their head stops being applied at exactly the moment it is needed.",
+            "MERGED AT SPRINT 14 from two statements of one rule, nothing dropped, and the second was always a corollary of the first's last clause. The base rule had ALREADY been amended three times, which is its own signal: a rule list nobody can hold in their head stops being applied at exactly the moment it is needed -- which is the argument for merging rather than against it.",
         },
         {
           action:
