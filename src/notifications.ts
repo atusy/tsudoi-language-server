@@ -152,10 +152,18 @@ export function registerNotifications<P extends readonly unknown[]>(
  * silently. IT WAS RECALL THAT MISSED `onProgress` AND `trace` WHEN THE FIRST OF
  * THESE KEYS WENT IN; ENUMERATION IS WHAT FOUND THEM.
  *
- * AND THE PIN'S LIMIT, because the sentence above still outruns it: the pin
- * asserts THE SET OF NAMES. It never asserts that no REMAINING member exposes
- * traffic. That is still a judgement -- what changed is that it is now made
- * against a list the compiler agrees is complete.
+ * AND THE PIN'S LIMITS, because the sentence above still outruns them, and they
+ * are set out in full beside the pin rather than summarised away. The pin asserts
+ * THE SET OF NAMES, never that no REMAINING member exposes traffic; it is a claim
+ * about the INSTALLED dependency and not about the next release; and it pins the
+ * TYPE, while the VALUE this module hands out is `createMessageConnection`'s
+ * result unchanged and carries `onUnhandledProgress`, which sees every inbound
+ * `$/progress` nothing claimed. THAT ONE IS REACHABLE ONLY BY A CAST, so it is
+ * the deliberate-evasion class this module already accepts elsewhere -- but it is
+ * why the opening sentence is bounded to what is ON THIS TYPE, and stops short of
+ * saying nothing can observe traffic at all. Completeness remains a JUDGEMENT.
+ * What changed is that it is now made against a list the compiler agrees is
+ * complete.
  *
  * `onUnhandledNotification` is an EVENT PROPERTY holding a callable rather than
  * a method, which changes nothing here: `Omit` removes a property whatever its

@@ -483,24 +483,49 @@ export type BoundaryIsTheObservingMembers = Assert<
  * added to the `Omit` leaves it untouched. Between them, a member arriving from
  * the dependency and a key arriving in the `Omit` both redden something.
  *
- * WHAT THIS DOES NOT ASSERT, stated because the sentence it supports at
- * src/notifications.ts outruns it in two directions. It asserts THE SET OF
- * NAMES: it says nothing about whether a member still on the list has grown to
- * observe traffic -- a star-handler overload on `onRequest` would redden nothing
- * here -- so `no remaining member exposes traffic` stays a JUDGEMENT, made now
- * against a list the compiler agrees is complete. And it is a claim about the
- * LOCKED dependency: bun.lock pins 3.18.2 while package.json asks for `^3.17.5`,
- * so this reddens at the moment the lockfile moves and someone runs
- * `tsc --noEmit`, which is later than the release.
+ * WHAT THIS DOES NOT ASSERT, IN THREE DIRECTIONS, stated in full because the
+ * sentence it supports at src/notifications.ts outruns it in every one of them.
+ *
+ * FIRST, IT ASSERTS THE SET OF NAMES AND NOT WHAT THEY DO. A member still on the
+ * list that GROWS a way to observe traffic reddens nothing -- MEASURED, not
+ * reasoned: adding `onRequest(handler: (method: string, ...params: any[]) => any)`
+ * to the interface, which is a star handler and sees every request, leaves
+ * `tsc --noEmit` AT EXIT 0. So `no remaining member exposes traffic` stays a
+ * JUDGEMENT. What changed is that it is now made against a list the compiler
+ * agrees is complete.
+ *
+ * SECOND, IT IS A CLAIM ABOUT THE INSTALLED DEPENDENCY. package.json asks only
+ * for `^3.17.5`; `keyof` is read from whatever the lockfile put in node_modules,
+ * today 3.18.2. This reddens when the lockfile moves and someone runs
+ * `tsc --noEmit`, which is later than the release that moved it.
+ *
+ * THIRD, AND IT IS THE ONE NEAREST THE CRITERION'S OWN WORDS: THIS PINS THE TYPE,
+ * AND THE VALUE IS WIDER THAN THE TYPE. MEASURED at
+ * vscode-languageserver-protocol 3.18.2's connection.js --
+ * `createProtocolConnection` returns `createMessageConnection`'s result
+ * UNCHANGED, and `MessageConnection` declares two members `ProtocolConnection`
+ * does not: `inspect`, and `onUnhandledProgress`. THE SECOND OBSERVES INBOUND
+ * TRAFFIC: at vscode-jsonrpc 9.0.1's connection.js the library's own
+ * `$/progress` handler fires `unhandledProgressEmitter` for every progress
+ * notification whose token has no handler registered -- and tsudoi registers
+ * none, so that is EVERY ONE. It is off the handle's TYPE and therefore off this
+ * pin, and reaching it needs a CAST. That puts it in the deliberate-evasion
+ * class this module already accepts for `await import(...)` and for a wrapper
+ * exported from src/notifications.ts -- a line whose author had to mean it --
+ * rather than in the by-accident class the `Omit` exists to close. Recorded so it
+ * is not rediscovered as news.
  *
  * BORN-GREEN, DECLARED AS SUCH RATHER THAN DRESSED IN A MANUFACTURED RED: it
  * states something about the dependency that already holds, so writing a wrong
  * list first would have produced a red proving nothing about what shipped.
- * DISCRIMINATION WAS MEASURED INSTEAD, in three directions, each reddening THIS
- * line with TS2344 and nothing else in `tsc --noEmit`: dropping `listen` from the
- * union, adding an `onNothing` that is not on the interface, and -- the direction
- * the criterion actually names -- adding a member to
- * node_modules/vscode-languageserver-protocol/lib/common/connection.d.ts itself.
+ * DISCRIMINATION WAS MEASURED INSTEAD, each of these reddening THIS line with
+ * TS2344: dropping `listen` from the union below, adding an `onNothing` that is
+ * not on the interface, and -- the two directions the criterion actually names --
+ * ADDING a member to
+ * node_modules/vscode-languageserver-protocol/lib/common/connection.d.ts and
+ * REMOVING one from it. The first three touch nothing else in `tsc --noEmit`; the
+ * removal also reddens src/server.ts, which really did lose a method it calls. A
+ * RENAME is those last two at once and is not run separately.
  */
 export type ProtocolConnectionHasTheseMembers = Assert<
   Exact<
