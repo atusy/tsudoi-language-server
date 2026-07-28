@@ -323,7 +323,7 @@ describe("an item resolves against its own source's root", () => {
   test("an absolute text under a named root, or a relative one under /, fails to resolve", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
-      const named = { name: "cwd", root: fixture.root };
+      const named: PathSource = { name: "cwd", root: fixture.root };
       const [item] = await fromSource(named, only("notes/"));
       const insertText = item?.insertText ?? "";
       expect(resolvesTo(named.root, insertText)).toBe(join(fixture.root, "notes/deep.txt"));

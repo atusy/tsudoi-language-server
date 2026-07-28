@@ -136,10 +136,21 @@ function fragmentAt(line: string, start: number, character: number, end: number)
  */
 export const batchSize = 100;
 
+/**
+ * What produced an item -- and a CLOSED set, because it is not a label.
+ *
+ * The name reaches the user in the item's own label, and it is what tells them
+ * `src/foo.ts` from cwd apart from `../src/foo.ts` from the document's parent.
+ * A free `string` lets a fifth kind of root be invented at one call site and
+ * spelled differently at the next, which is how four legible sources become
+ * four the reader cannot compare. Adding a source is a decision made HERE.
+ */
+export type PathSourceName = "document" | "cwd" | "workspace" | "absolute";
+
 /** Where one class of item comes from, and how the user is told which. */
 export interface PathSource {
-  /** `document`, `cwd`, `workspace` or `absolute` -- what produced the item. */
-  readonly name: string;
+  /** What produced the item, as the label spells it. */
+  readonly name: PathSourceName;
   /** The absolute directory the item's inserted text is read against. */
   readonly root: string;
 }
