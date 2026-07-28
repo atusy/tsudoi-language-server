@@ -87,7 +87,13 @@ const scrum: ScrumDashboard = {
         {
           criterion: "Applying the item yields the path it names",
           verification:
-            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. The PROPERTY, not a mechanism: whether an explicit textEdit is needed is for measurement to decide -- LSP clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path can get its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
+            "Apply the item to the document as a client would and compare the resulting line to the path the item names, for a MULTI-SEGMENT fragment. MEASUREMENT DECIDED the mechanism -- see the next criterion: clients compute the replace range from THEIR OWN word boundaries when an item carries only insertText, and neither / nor . is a word character in most, so a multi-segment path gets its last segment replaced and the rest left behind. DISCRIMINATOR: single-segment fragments cannot distinguish the cases, so the test must use multi-segment",
+        },
+        {
+          criterion:
+            "Completing MID-PATH leaves the client's own confirmBehavior in charge of the tail",
+          verification:
+            "Each item carries BOTH an insert range ending at the cursor AND a replace range covering the whole fragment, so the client's own preference selects between them -- the options were never leave-the-tail versus delete-the-tail, they were WE choose versus THE USER'S CLIENT chooses. NEGATIVE CONTROL: a plain TextEdit, which satisfies any assertion that `a range exists` while removing that choice",
         },
         {
           criterion: "A path containing a space or a parenthesis is emitted complete",
@@ -138,6 +144,7 @@ const scrum: ScrumDashboard = {
         "MEASURED: cwd is NOT a substitute. nvim spawns the server with cwd = root_dir when a root is found and its OWN cwd when not, so cwd-as-workspace-root is exactly right when tested and silently wrong when it matters, with no signal from inside the config.",
         "Smallest honest shape (REASONED): readonly workspaceFolders: readonly WorkspaceFolder[], reusing the protocol's own type so the surface grows by one name. Plural is not hypothetical -- the field is an array on the wire, so any singular shape lies about it.",
         "STALENESS, which must not be silent: LSP has workspace/didChangeWorkspaceFolders and tsudoi does not implement it, so an array captured at initialize is correct only until the user adds a folder. Either an accepted documented limit or a separate PBI.",
+        "SECOND DATA POINT for the same shape, from Sprint 13: src/server.ts's InitializeRequest handler takes NO params, so InsertReplaceEdit ships UNCONDITIONALLY -- LSP 3.16's completion.completionItem.insertReplaceSupport capability is unreadable from a config, exactly as workspaceFolders is. Two independent needs for the same discarded argument; whatever shape this PBI gives InitializeParams should be able to carry both, and the conformance gap is a KNOWN one, not an oversight.",
       ],
     },
   ],
@@ -151,19 +158,11 @@ const scrum: ScrumDashboard = {
       subtasks: [],
       impediments: [],
       decisions: [
-        "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 (post-review prose fix) across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
-        "A DEFECT INSIDE THE DEVELOPER'S OWN REMEDY, AGAIN, and caught by writing it: the planned permanent removal control for the contract criterion -- delete a token, assert the fact is gone -- CANNOT FAIL, because the assertion is a CONJUNCTION and therefore holds for every document including an empty one. Replaced with UNIQUENESS (each fact has exactly one home section), which can fail and DID: it exposed a real collision where a failure section restated the factory contract in the same tokens. Fixed in the prose, not by weakening the tokens.",
-        "A PROSE DEFECT FOUND AT REVIEW, and the fix is the standard applied to prose: the -A section HEDGED (`a narrower set may well be enough`) over an UNRUN measurement while quoting an error naming the missing flag. Measured: deno run --allow-read --allow-env COMPLETES the handshake under deno 2.9.2. Now stated as a historical claim pinned to that version -- UNTESTED means untested, not unmeasured.",
-        "AN UNNAMED PREREQUISITE, which the stipulated-reader rule exists to catch: the install fetches vscode-languageserver-protocol on a cold cache. install.ts had recorded it since Sprint 10 and the README had not inherited it. Now named and defended by its own fact.",
-        "DEVIATION from the plan's `reuse installConsumer()`: it PERFORMS the pack and the install -- two DOCUMENTED steps -- which the PO's bareness reframe forbids, since a harness supplying a documented step makes the intact run a test of the harness. The checkout staging is duplicated instead, with the reason at the site.",
-        "NOT CONSTRUCTED, not foreclosed: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
-        "THE DEVELOPER FOUND A VACUITY MODE INSIDE THE PO'S OWN REMEDY, before building it: AN EXTRACTOR THAT FINDS NOTHING PASSES. If the fence markers move, extraction yields zero commands, `every extracted command succeeds` is VACUOUSLY TRUE, and the README rots exactly as if the tests held their own copy. Mechanism satisfied, property false -- the mod-3 residue shape, in a fourth place. Every extraction therefore asserts an expected non-zero count FIRST, permanently.",
-        "THE PO REFRAMED THE COMPLETENESS AMENDMENT AND THE REFRAME IS THE POINT: the Developer proposed it as defending NECESSITY (no documented step is useless). SUFFICIENCY -- nothing undocumented is required -- is what criterion 1 delivers, but ONLY if the staged environment supplies nothing the README asks the reader to do. The sweep's real function is to PROVE THE ENVIRONMENT IS BARE; without it criterion 1 is a test of the harness.",
-        "The one-runtime sweep is licensed by Sprint 10's MEASURED route-identity, not by cost, and that is recorded so the basis can be revisited if the route ever diverges.",
-        "The PO applied the property-not-mechanism rule TO THEMSELVES one turn after handing it over: the property is `omitting any documented step makes the quickstart fail, from an environment supplying nothing documented`. N pack-and-install cycles is one mechanism, and a cheaper one is the Developer's to take unseen.",
-        "EXECUTION FOUND A SECOND VACUITY MODE, this time inside the Developer's own planned control: the removal half of criterion 3 as planned -- delete a discriminating token, assert the fact is gone -- CANNOT FAIL for any document, because statesFact is a conjunction. It was replaced by a control that can: each fact must have EXACTLY ONE home section. Same shape as the extractor's zero-match mode, in a fifth place, and it survived planning, refinement and one Review-grade rule about vacuous criteria.",
-        "WHAT THE SUITE STILL DOES NOT DEFEND, stated rather than left to be discovered: the README's config snippet is EXECUTED but never TYPE-CHECKED. A snippet with a type error runs fine under type stripping and would greet a reader running tsc with errors. NOT CONSTRUCTED rather than foreclosed -- installConsumer.typeCheck exists and would do it, and this was scope, not impossibility.",
-        "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. It is the most likely defect in a document written by people who have internalised every step, and omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
+        "Shipped in f6cb1aa, 7b8b15e, 95fd3dd, 3397dda, b62d295, 01963af, 6bc5229, plus d4cb846 across 7 subtasks. Per-subtask records and 10 perturbation notes compacted here; git retains them.",
+        "COMPACTED AT SPRINT 13, every dropped decision named with the durable home it went to, per the Sprint 9 rule. The three conjunction/zero-match vacuity records -- the planned removal control that cannot fail, statesFact is a conjunction, an extractor that finds nothing passes -- are generalised in Sprint 11's NOT-CONSTRUCTED classification and Sprint 10's discriminating-verification improvement, and each is now defended by a permanent uniqueness or non-zero-count assertion in readme.test.ts. The -A flag hedge and the unnamed cold-cache prerequisite are README facts pinned by that same suite. The installConsumer deviation carries its reason at its site. The one-runtime sweep's licence is Sprint 10's measured route-identity, recorded there.",
+        "THE BARENESS REFRAME, kept because nothing else carries it: the sweep's function is not NECESSITY (no documented step is useless) but proving THE ENVIRONMENT IS BARE. Criterion 1 delivers sufficiency -- nothing undocumented is required -- ONLY if the staged environment supplies nothing the README asks the reader to do; otherwise it is a test of the harness.",
+        "COST OBJECTION OVERRULED ON AN ASYMMETRY: a README that omits a required step is WORSE THAN NO README -- a reader follows it, fails, and concludes the product is broken. Omission arrives at birth where staleness needs time. Extraction catches stale; only the sweep catches incomplete.",
+        "NOT CONSTRUCTED, not foreclosed, and still open: the README's config snippet is EXECUTED but never TYPE-CHECKED -- a type error runs fine under type stripping and would greet a reader running tsc. installConsumer.typeCheck would do it; this was scope.",
       ],
     },
     {
@@ -233,8 +232,6 @@ const scrum: ScrumDashboard = {
       "SCOPE, from the stakeholder directly: `置き換える予定だけど、いったん要求したものができてればいい`. Parity with ddc-source-file is NOT a criterion. The replacement intent is context -- it is why sources 1 and 4 are load-bearing rather than decorative -- and increments come later.",
       "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\\\S/\\\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
       'WHAT IS DELIBERATELY NOT BUILT, so nobody reads its absence as an oversight: no trailing `/` on a directory item (the user types it); `~` is not expanded; a quoted path such as `"./ba` does not complete, because a quote is not a fragment boundary; and hidden entries and ./ ../ are UNRULED and remain so -- the fixtures contain none, and no test pins either way.',
-      "NOT CONSTRUCTED, and the property named: nothing asserts that a REAL editor reaches this handler by typing /. Reachability is not a criterion here and the example claims none. The suite's evidence stops at the protocol boundary, exactly as PBI-8's registry route did.",
-      "A DEFECT IN THE DELIVERABLE'S OWN PUBLIC SURFACE, found after every subtask was green and fixed as a separate structural commit: itemsFrom defaulted its `position` parameter, purely so one test helper need not construct one. The default could only assume line 0 -- dead for every call the module makes and silently wrong for a cursor anywhere else, since it would build a range on a line other than the cursor's, which is MEASURED to make the item VANISH from the target client with no error. Nothing defended it: no test drives a line above the first. A test convenience reached the artifact a config author reads.",
       "THE README NAMED ONE FILE and the example is now two. All three TEST helpers that copy it were repaired during subtask 9; the line a HUMAN follows was not, and readme.test.ts cannot catch it because it extracts fenced commands and this is prose. Fixed, after checking that no pinned fact has a home in that section.",
       "MEASURED ONCE, NOT PINNED, and the difference is stated rather than blurred: `deno run --allow-read --allow-env` -- the narrow flag set Sprint 12 pinned FOR THE HANDSHAKE -- serves a real path completion, with empty stderr, under deno 2.9.2. Making cwd lazy kept the handshake clean and left the COMPLETION path under those flags unverified; it is now measured, by hand, and no test asserts it. Nothing in the repo claims otherwise.",
       "SUPERSEDED BY THE STAKEHOLDER, and the claim it rested on was FALSIFIED IN THE DOING: this recorded the HelloWorld demo item as a cost reported rather than fixed, on the reasoning that the item was what the rest of the file existed to teach. 「remove helloworld」. The config still teaches both shapes without it -- an inline hover handler with its own position math, and a completion handler that delegates -- so removing it improved what the example teaches rather than costing it anything.",
@@ -249,11 +246,11 @@ const scrum: ScrumDashboard = {
       improvements: [
         {
           action:
-            "A claim about WHAT THE SUITE COVERS is checked against the suite before it is recorded. Recalled coverage is not coverage.",
-          timing: "sprint",
+            "A CLAIM RECORDED IN A NOTE is held to the assertion standard: say whether it was MEASURED or REASONED; check any claim about WHAT THE SUITE COVERS against the suite before recording it; and never state a consequence without checking it against the remedy it justifies.",
+          timing: "immediate",
           status: "active",
           outcome:
-            "The measured-or-reasoned label does not help here: the falsified note did not read as unlabelled, it read as CHECKED.",
+            "MERGED AT SPRINT 13, nothing dropped. Filed at the Developer's request after they named it at second occurrence (S8), and extended at S13 where the measured-or-reasoned label did NOT help: the falsified note did not read as unlabelled, it read as CHECKED. Recalled coverage is not coverage.",
         },
         {
           action:
@@ -291,69 +288,23 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      sprint: 10,
-      improvements: [
-        {
-          action:
-            "A criterion's NEGATIVE CONTROL belongs in its `verification` TEXT, not in the plan's perturbations.",
-          timing: "immediate",
-          status: "active",
-          outcome:
-            "The lifetime argument applied to criteria: the verification field travels with the criterion through every compaction, a plan evaporates at Review.",
-        },
-        {
-          action:
-            "When a decision must live in a MACHINE-FORMATTED FILE that cannot carry comments, its durable home is a TEST THAT ASSERTS IT. The file carries the decision; the test carries the reason.",
-          timing: "immediate",
-          status: "active",
-          outcome: "Closes the hole in the lifetime rule rather than patching it.",
-        },
-      ],
-    },
-    {
-      sprint: 10,
-      improvements: [
-        {
-          action:
-            "A criterion's VERIFICATION must be able to DISCRIMINATE the property it claims, and must not be contradicted by anything else in the record.",
-          timing: "sprint",
-          status: "active",
-          outcome:
-            "One rule, not two, because both instances share a root: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction.",
-        },
-      ],
-    },
-    {
       sprint: 9,
       improvements: [
         {
           action:
-            "SHARPENED ON LIFETIME, replacing the route-to-a-PBI rule: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; a decision that shapes WHAT TO BUILD NEXT belongs on the PBI.",
+            "THE LIFETIME RULE, three findings in one: a decision whose violation would be a CODE EDIT belongs in a comment at the site where that edit would be made; one that shapes WHAT TO BUILD NEXT belongs on the PBI; one whose only home is a MACHINE-FORMATTED FILE that cannot carry comments belongs in a TEST THAT ASSERTS IT -- the file carries the decision, the test carries the reason. COMPACTION may drop a recorded decision ONLY when it has such a home, and each compaction NAMES where every dropped decision went.",
           timing: "immediate",
           status: "active",
           outcome:
-            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction.",
+            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction. Filed after the Scrum Master raised the compaction half about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record. MERGED AT SPRINT 13, nothing dropped: absorbs the route-to-a-PBI sharpening (S9) and the machine-formatted-file corollary (S10), which were three statements of one rule.",
         },
         {
           action:
-            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME: name the change that would make it fail. If nothing would, the criterion is VACUOUS and must be rewritten before it binds.",
+            "EVERY CRITERION GETS A NEGATIVE CONTROL AT REFINEMENT TIME, written into its `verification` TEXT: name the change that would make it fail, check that the verification can DISCRIMINATE the property claimed, and check that nothing else in the record contradicts it. If no change would make it fail, the criterion is VACUOUS and must be rewritten before it binds.",
           timing: "immediate",
           status: "active",
           outcome:
-            "The absence-pairing rule moved from assertions to criteria and from execution to refinement.",
-        },
-      ],
-    },
-    {
-      sprint: 9,
-      improvements: [
-        {
-          action:
-            "COMPACTION may not drop a recorded decision unless it has a DURABLE HOME elsewhere -- a comment at the code site it constrains, an acceptance criterion, or a note on an OPEN PBI -- and each compaction NAMES where every dropped decision went.",
-          timing: "sprint",
-          status: "active",
-          outcome:
-            "Filed after the Scrum Master raised it about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record.",
+            "MERGED AT SPRINT 13 from three statements of one rule, nothing dropped. S9: the absence-pairing rule moved from assertions to criteria and from execution to refinement. S10: the verification field travels with the criterion through every compaction, where a plan evaporates at Review -- so the control lives there, not in the plan's perturbations. S10: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction.",
         },
       ],
     },
@@ -367,13 +318,6 @@ const scrum: ScrumDashboard = {
           status: "active",
           outcome:
             "Better than covered -- it DISSOLVES what the earlier-assertion clause only documents.",
-        },
-        {
-          action:
-            "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies.",
-          timing: "immediate",
-          status: "active",
-          outcome: "Filed at the Developer's request after they named it at second occurrence.",
         },
       ],
     },
@@ -429,11 +373,11 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "Standing-list amendment (item 6 above): the stakeholder-facing example is the artifact under test with no fixture copy in existence.",
+            "Standing item 6, AMENDED at Sprint 13 (no exception carved -- exceptions rot): the stakeholder-facing example is EXECUTED by the suite -- the config is loaded and driven, and a change that breaks it must redden a named assertion. It need NOT be the config that carries every property assertion; purpose-built configs may.",
           timing: "immediate",
           status: "active",
           outcome:
-            "Today it survives only because test/lifecycle.test.ts happens to load that file; nothing stops a duplicate fixture appearing.",
+            "TWO negative controls, named separately because they are different failures: breaking its IMPORT must redden (the Sprint 9 case), and breaking a HANDLER'S RETURN must redden. Supersedes the with-no-fixture-copy-in-existence wording, which forbade purpose-built fixtures rather than forbidding an unexecuted example.",
         },
       ],
     },
@@ -484,10 +428,11 @@ const scrum: ScrumDashboard = {
         },
         {
           action:
-            "An attached spike must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask.",
-          timing: "immediate",
+            "When a planning spike produces passing code, ATTACH it for the executor to start from -- the plan then says what to change about it instead of re-deriving it in prose -- and the attachment must be DURABLE: inlined verbatim in the subtask text, or committed into the repo by the first subtask.",
+          timing: "sprint",
           status: "active",
-          outcome: null,
+          outcome:
+            "MERGED AT SPRINT 13 from the S1 attach rule and the S2 durability rule, nothing dropped.",
         },
       ],
     },
@@ -497,13 +442,6 @@ const scrum: ScrumDashboard = {
         {
           action:
             "The PO's acceptance checklist is issued at Sprint PLANNING, not at Review, so the plan can target it.",
-          timing: "sprint",
-          status: "active",
-          outcome: null,
-        },
-        {
-          action:
-            "When a planning spike produces passing code, attach the code for the executor to start from; the plan then says what to change about it instead of re-deriving it in prose.",
           timing: "sprint",
           status: "active",
           outcome: null,
