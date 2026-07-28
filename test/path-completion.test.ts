@@ -3,10 +3,18 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSyn
 import { readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, normalize } from "node:path";
-import { pathToFileURL } from "node:url";
-import { CompletionItemKind, type CompletionItem } from "vscode-languageserver-protocol";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  CompletionItemKind,
+  type CompletionItem,
+  type InitializeResult,
+} from "vscode-languageserver-protocol";
+import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { requireRuntime } from "./helpers/preflight.ts";
+import { repoRoot } from "./helpers/spawn.ts";
 import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
 import {
+  batchSize,
   itemsFrom,
   pathCompletion,
   pathFragments,
@@ -516,3 +524,98 @@ describe("a document with no parent directory contributes nothing", () => {
     ]);
   });
 });
+
+// ============================================================================
+// Over the wire, under both runtimes: what a CLIENT receives, which is the
+// only place the streaming property is observable at all.
+// ============================================================================
+
+const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
+const runtimes = [bunRuntime, denoRuntime];
+
+await Promise.all(runtimes.map(requireRuntime));
+
+/** What the example config yields before anything path-related. */
+const helloWorld = {
+  label: "HelloWorld",
+  kind: CompletionItemKind.Text,
+  detail: "Example completion item",
+  documentation: "This is a sample completion item.",
+};
+
+const partialResultToken = "path-completion-partial-1";
+
+for (const runtime of runtimes) {
+  describe(runtime.name, () => {
+    // THE STREAMING PROPERTY, and nothing else can catch its loss: a module
+    // that collected the whole listing and returned it satisfies every content
+    // assertion in this file while discarding what four sprints were spent on.
+    //
+    // ONE directory with more entries than one batch holds. That is why
+    // batching survives the per-segment foreclosure -- no walk is needed for a
+    // directory to be too big to hand over in one message.
+    test("each batch of a large directory reaches the client as its own $/progress", async () => {
+      const count = batchSize * 2 + 1;
+      const names = Array.from({ length: count }, (_, index) => `entry-${String(index)}.txt`);
+      const fixture = tree(names);
+      // startCommand, not start: `start` runs the acceptance criterion's own
+      // command form, whose CLI path is relative to the repo -- and the whole
+      // point here is a cwd that is NOT the repo. The route is otherwise
+      // identical, spelled absolutely.
+      const session = LspSession.startCommand(
+        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${demoConfig}`,
+        fixture.root,
+      );
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        // The document sits IN cwd, so both relative sources list the same
+        // directory and the second one's items are all deduplicated away --
+        // which is why the batch count below is the listing's and not twice it.
+        const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri, languageId: "plaintext", version: 1, text: "entry-" },
+        });
+
+        const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+          textDocument: { uri },
+          position: { line: 0, character: "entry-".length },
+          partialResultToken,
+        });
+
+        // THE CONTENT FIRST, and the order is the point: a module that
+        // collected the whole listing and handed it over in one message passes
+        // everything in this block and fails the next one. Asserting the
+        // batching first would flip here and leave `and it is all there`
+        // undefended, so the two are in the order that separates them.
+        //
+        // Every entry exactly once across every batch: a count alone would be
+        // satisfied by a module that streamed the same batch three times.
+        const streamed = session.progress.flatMap((progress) => progress.value as CompletionItem[]);
+        expect(streamed[0]).toEqual(helloWorld);
+        expect(
+          streamed
+            .slice(1)
+            .map((item) => item.insertText)
+            .sort(),
+        ).toEqual([...names].sort());
+
+        // SIZES, not membership: nothing sorts the listing -- sorting would
+        // require collecting it, which is the property under test -- so which
+        // entry lands in which batch is the filesystem's business.
+        const batches = session.progress.map(
+          (progress) => (progress.value as CompletionItem[]).length,
+        );
+        expect(batches).toEqual([1, batchSize, batchSize, 1]);
+        expect(session.progress.map((progress) => progress.token)).toEqual(
+          batches.map(() => partialResultToken),
+        );
+        // The yields have already left; the response adds nothing to them.
+        expect(result).toEqual([]);
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+  });
+}

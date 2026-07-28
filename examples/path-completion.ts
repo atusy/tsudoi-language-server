@@ -88,6 +88,21 @@ function fragmentAt(line: string, start: number, character: number): PathFragmen
   return { text, start, directory: text.slice(0, cut), name: text.slice(cut) };
 }
 
+/**
+ * How many items leave in one message.
+ *
+ * WHY THIS SURVIVES THE PER-SEGMENT FORECLOSURE, which removed every reason to
+ * walk anything: no walk is needed for a listing to be too large to hand over
+ * in one piece. A single directory can hold a hundred thousand entries, and a
+ * client that has to wait for the last one before seeing the first has the
+ * latency this generator exists to avoid.
+ *
+ * The value itself is a judgement, not a measurement: small enough that the
+ * first batch arrives while the rest is still being read, large enough that an
+ * ordinary directory is one or two messages.
+ */
+export const batchSize = 100;
+
 /** Where one class of item comes from, and how the user is told which. */
 export interface PathSource {
   /** `document`, `cwd` or `absolute` -- what produced the item. */
@@ -181,12 +196,24 @@ export async function* itemsFrom(
   fragment: PathFragment,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
-  const items: CompletionItem[] = [];
+  let items: CompletionItem[] = [];
   try {
+    // opendir, never readdir: readdir BUILDS THE WHOLE ARRAY before returning,
+    // so a directory of a hundred thousand entries would be collected in full
+    // no matter how it was handed on afterwards. This iterates.
+    //
+    // A CONSEQUENCE, stated because it looks like an omission: nothing here
+    // sorts. Sorting is exactly the operation that requires the whole listing
+    // first, so it would undo this. Clients order a completion list by their
+    // own rules anyway.
     const listing = await opendir(directory);
     for await (const entry of listing) {
       if (!entry.name.startsWith(fragment.name)) {
         continue;
+      }
+      if (items.length === batchSize) {
+        yield items;
+        items = [];
       }
       const insertText = fragment.directory + entry.name;
       items.push({
