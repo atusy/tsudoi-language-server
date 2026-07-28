@@ -74,6 +74,11 @@ const addedFolder: WorkspaceFolder = { uri: "file:///home/me/added", name: "adde
  * one sends `removed` then `added`, so this arriving as an `added` alone says
  * the client now holds that folder twice, and tsudoi reconciles by neither URI
  * nor name.
+ *
+ * IT IS ALSO THE `removed` ENTRY IN BOTH PBI-20 TESTS, which is a second job
+ * rather than a coincidence: a removal is matched BY URI AND NOT BY NAME, so an
+ * entry whose name differs from the copies it takes is what stops those tests
+ * passing under an implementation that compared whole folders.
  */
 const addedAgain: WorkspaceFolder = { uri: addedFolder.uri, name: "added again" };
 
@@ -733,10 +738,14 @@ for (const runtime of runtimes) {
     // reddens the FIRST assertion here -- observed, not argued, as
     // `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`.
     //
-    // THE SECOND HALF IS LOAD-BEARING and is not a repetition of the first: a
-    // removal that took NOTHING would leave one copy standing too, and only a
-    // second event proves the first one removed something rather than being
-    // dropped.
+    // THE SECOND HALF PINS REPEATABILITY: N removals take N copies, so the
+    // SECOND one drives the count to zero. It is not there to catch a removal
+    // that took nothing -- the first assertion already does that, since a no-op
+    // leaves THREE entries against a whole-array expectation of two.
+    //
+    // ITS OWN CONTROL, MEASURED, because a second assertion nothing can flip
+    // alone is decoration: a guard that removes a copy only when the URI occurs
+    // MORE THAN ONCE leaves the first assertion GREEN and reddens the second.
     //
     // THE TWO COPIES ARE BYTE-IDENTICAL, which is what makes the outcome
     // SINGLE-VALUED and therefore pinnable as a whole array. Which copy a
@@ -748,8 +757,10 @@ for (const runtime of runtimes) {
     // this cannot pass by matching whole folders rather than URIs.
     //
     // sentFolders[0] IS THE PAIRED PRESENCE for the absence in the second
-    // assertion, in that same assertion: `the copies are gone` measured against
-    // an empty list is also what a session that applied nothing produces.
+    // assertion, and it sits INSIDE that assertion: the same reader that must
+    // no longer see `addedFolder` is seen observing a folder that is still
+    // there, so `they are gone` cannot be satisfied by a measurement that
+    // observes nothing at all.
     test("a URI held twice loses one copy per removal, not both to one", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -794,9 +805,16 @@ for (const runtime of runtimes) {
     // THE REMOVED ENTRIES CARRY A DIFFERENT NAME than the copies they take, so
     // nothing here can pass by matching whole folders rather than URIs.
     //
-    // sentFolders[0] IS THE PAIRED PRESENCE, in the same assertion rather than
-    // in another test: `both copies are gone` measured against an empty list
-    // would also be satisfied by a session that applied nothing at all.
+    // sentFolders[0] IS THE PAIRED PRESENCE, inside the assertion rather than
+    // in another test, so `both copies are gone` is not read off a measurement
+    // that observes nothing at all.
+    //
+    // WHAT IT DOES NOT RULE OUT, stated because the opposite is the tempting
+    // thing to write: a session that dropped EVERY notification also leaves
+    // exactly `[sentFolders[0]]`. Nothing here catches that, deliberately --
+    // the adds are pinned by `a URI added twice is held twice` above, and this
+    // test carries ONE claim so that the dedupe hazard is what its only
+    // assertion flips on.
     test("one event removing a URI twice takes both copies of it", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
