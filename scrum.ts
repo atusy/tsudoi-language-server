@@ -141,10 +141,26 @@ const scrum: ScrumDashboard = {
         implementation:
           "no-restricted-imports with paths[].importNames, plus PBI-6's override shape. ALL THREE HALVES PERMANENT rather than a one-off probe.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "green",
+        commits: [
+          {
+            hash: "cbd7dab",
+            message: "test: pin the router's own path against all three guard rules",
+            phase: "green",
+          },
+          {
+            hash: "39dc7c4",
+            message: "feat(guard): ban the connection factory outside the module that gates it",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE THIRD HALF IS THE ONE THAT WOULD BE DROPPED: it proves importNames scopes to a NAME rather than a SPECIFIER. A module-wide ban passes the first two halves while breaking server.ts, methods.ts and the fixtures -- making it permanent stops that distinction being rediscovered.",
+          "THAT NOTE'S OWN PREMISE IS FALSE ABOUT THE FIXTURES, MEASURED not argued, and it is flagged rather than edited because the criterion text is not mine: a module-wide ban is on the specifier `vscode-languageserver-protocol/node`, and NO fixture and NO example imports that specifier -- all 24 of their protocol imports are the bare `vscode-languageserver-protocol`. Only FOUR files import the /node subpath. So the ban would break src/server.ts, src/methods.ts and src/lifecycle.ts -- three src modules, not the fixtures -- plus guard.test.ts's own two bare-specifier tests, which import createConnection from it. The test's prose carries the measured version. A factual premise stated inside a criterion is a claim requiring measurement, and this is the sixth instance.",
+          "EACH ABSENCE HALF SHARES ITS RUN WITH A FIRING FILE, and that is not decoration: every lintProbe is its OWN temp dir and its OWN oxlint invocation, so half 1 firing in a DIFFERENT run says nothing about liveness in halves 2 and 3. `unflagged here` alone is equally true of a rule that does not exist, is misconfigured, or never matched -- the exit-code-only defect this project has now caught four times, prevented at authoring for the second time.",
+          "THE FIRST SPELLING OF THE EXEMPTION ASSERTION WAS DEGENERATE AND THE RUN SAID SO: the rule's help text names src/notifications.ts, so `not.toContain(\"src/notifications.ts\")` read that string out of SERVER.TS's diagnostic and failed against a file that was perfectly clean. Two outcomes, one observation. Now matched at a DIAGNOSTIC LINE START, which is the shape the bare-specifier tests already used.",
+          'A SIXTH PATH SHAPE, and the choice to add it bought the control on HOW the exemption is spelled: an override reading `"no-restricted-imports": "off"` would silence bun and bun:* in the router too, and rule 3 at src/notifications.ts reddens on it. The override REDECLARES the patterns instead. Its residual is named at the site: an override REPLACES the options, so a pattern added at the top level does not reach that file.',
+          "THE FACTORY BAN IS OFF IN test/**/*.test.ts AND test/helpers/, because that override switches the WHOLE rule off, and NOT ASSERTED -- no rule-4 loop across shapes, since the exempt branches would be bare exit-0 assertions with exactly the defect above. What remains at risk: a test file may import the factory. Named at the site rather than left to be discovered.",
         ],
       },
       {
