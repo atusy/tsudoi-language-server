@@ -132,17 +132,19 @@ describe("path fragments", () => {
   // pathCompletion, not of this function. Here only the LIST is asserted.
   test("the fragment under the cursor carries its directory part and its filter", () => {
     expect(pathFragments("foo/ba", 6)).toEqual([
-      { text: "foo/ba", start: 0, directory: "foo/", name: "ba" },
+      { text: "foo/ba", start: 0, end: 6, directory: "foo/", name: "ba" },
     ]);
     expect(pathFragments("/usr/lo", 7)).toEqual([
-      { text: "/usr/lo", start: 0, directory: "/usr/", name: "lo" },
+      { text: "/usr/lo", start: 0, end: 7, directory: "/usr/", name: "lo" },
     ]);
   });
 
   // A lone "/" is a fragment with an EMPTY filter, not an absent fragment:
   // typing it is what asks for the filesystem root's children.
   test("a trailing separator is a directory part with an empty filter", () => {
-    expect(pathFragments("/", 1)).toEqual([{ text: "/", start: 0, directory: "/", name: "" }]);
+    expect(pathFragments("/", 1)).toEqual([
+      { text: "/", start: 0, end: 1, directory: "/", name: "" },
+    ]);
   });
 
   // ABSENCE, with its permanent pair one test above and one below: the same
@@ -161,9 +163,9 @@ describe("path fragments", () => {
   // candidate wins is decided against the filesystem, not here.
   test("a word boundary to the left of a space is a candidate, so a spaced filename is reachable", () => {
     expect(pathFragments("see foo (1).png", 13)).toEqual([
-      { text: "(1).p", start: 8, directory: "", name: "(1).p" },
-      { text: "foo (1).p", start: 4, directory: "", name: "foo (1).p" },
-      { text: "see foo (1).p", start: 0, directory: "", name: "see foo (1).p" },
+      { text: "(1).p", start: 8, end: 15, directory: "", name: "(1).p" },
+      { text: "foo (1).p", start: 4, end: 15, directory: "", name: "foo (1).p" },
+      { text: "see foo (1).p", start: 0, end: 15, directory: "", name: "see foo (1).p" },
     ]);
   });
 });
@@ -585,17 +587,24 @@ describe("a filename containing a space is completed whole", () => {
       expect(item.insertText).toBe("foo (1).png");
       expect(item.label).toContain("foo (1).png");
       const edit = item.textEdit;
-      const range = edit !== undefined && "range" in edit ? edit.range : undefined;
-      // 4, where `foo` begins -- NOT 8, where `(1).p` does.
-      expect(range?.start.character).toBe(4);
-      // APPLIED against what the user has actually TYPED, which is the line
-      // above without its tail. The item's range ends at the CURSOR and never
-      // past it, so on the line above -- where `ng` sits to the right of the
-      // cursor already -- applying it yields `see foo (1).pngng`. That is
-      // insert semantics, and it is a CHOICE recorded at the module: the
-      // alternative deletes whatever the user has to the right of the cursor.
-      const typed = "see foo (1).p";
-      expect(applyAsClient(typed, cursor, item)).toBe("see foo (1).png");
+      const both = edit !== undefined && !("range" in edit) ? edit : undefined;
+      // 4, where `foo` begins -- NOT 8, where `(1).p` does. BOTH ranges start
+      // there: the criterion is about where the fragment BEGINS.
+      expect(both?.insert.start.character).toBe(4);
+      expect(both?.replace.start.character).toBe(4);
+
+      // AND THE TWO ENDS DIFFER, which is the only place in this file they do.
+      // The cursor sits mid-word, so `insert` stops at it and leaves the `ng`
+      // standing while `replace` takes the whole word. WHICH ONE APPLIES IS
+      // THE USER'S SETTING TO MAKE: carrying a single range would decide it
+      // for them, and this user has already decided it.
+      expect(both?.insert.end.character).toBe(cursor);
+      expect(both?.replace.end.character).toBe(line.length);
+      expect(applyAsClient(line, cursor, item, "replace")).toBe("see foo (1).png");
+      expect(applyAsClient(line, cursor, item, "insert")).toBe("see foo (1).pngng");
+      // The same item on the line as far as the user has TYPED it, where the
+      // two coincide because there is nothing to the right of the cursor.
+      expect(applyAsClient("see foo (1).p", cursor, item, "insert")).toBe("see foo (1).png");
     } finally {
       fixture.dispose();
     }
@@ -627,7 +636,12 @@ describe("a filename containing a space is completed whole", () => {
  * multi-segment path gets its last segment replaced and the rest left standing
  * in front of it.
  */
-function applyAsClient(line: string, character: number, item: CompletionItem): string {
+function applyAsClient(
+  line: string,
+  character: number,
+  item: CompletionItem,
+  prefers: "insert" | "replace" = "insert",
+): string {
   const edit = item.textEdit;
   if (edit !== undefined && "range" in edit) {
     return (
@@ -635,6 +649,13 @@ function applyAsClient(line: string, character: number, item: CompletionItem): s
       edit.newText +
       line.slice(edit.range.end.character)
     );
+  }
+  if (edit !== undefined) {
+    // The client indexes the edit BY ITS OWN SETTING, which is the whole point
+    // of carrying both: `insert` leaves what is right of the cursor, `replace`
+    // takes the rest of the word with it.
+    const range = edit[prefers];
+    return line.slice(0, range.start.character) + edit.newText + line.slice(range.end.character);
   }
   let start = character;
   while (start > 0 && /[\p{L}\p{N}_-]/u.test(line[start - 1] ?? "")) {
@@ -655,12 +676,15 @@ describe("applying the item yields the path it names", () => {
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      expect(applyAsClient(line, line.length, item)).toBe("see src/foo.ts");
+      // BOTH preferences: at the end of a line the two ranges coincide, and
+      // what this test claims is that each of them is WHOLE.
+      expect(applyAsClient(line, line.length, item, "insert")).toBe("see src/foo.ts");
+      expect(applyAsClient(line, line.length, item, "replace")).toBe("see src/foo.ts");
 
-      // The two client classes read DIFFERENT fields for the same text, so a
-      // drift between them breaks one of them silently.
+      // The client classes read DIFFERENT fields for the same text, so a drift
+      // between them breaks one of them silently.
       const edit = item.textEdit;
-      expect(edit !== undefined && "range" in edit ? edit.newText : undefined).toBe(
+      expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe(
         item.insertText,
       );
     } finally {
@@ -694,12 +718,17 @@ describe("applying the item yields the path it names", () => {
     try {
       const items = await complete({ ...elsewhere, line: "src/fo" }, fixture.root);
       const edit = items[0]?.textEdit;
-      const range = edit !== undefined && "range" in edit ? edit.range : undefined;
+      // BOTH ranges, never one: the client reads whichever its own setting
+      // names, so a malformed half is invisible until somebody flips it.
+      const ranges = edit !== undefined && !("range" in edit) ? [edit.insert, edit.replace] : [];
 
-      expect(range?.start.line).toBe(0);
-      expect(range?.end.line).toBe(0);
-      expect(range?.start.character).toBe(0);
-      expect(range?.end.character).toBe("src/fo".length);
+      expect(ranges).toHaveLength(2);
+      for (const range of ranges) {
+        expect(range.start.line).toBe(0);
+        expect(range.end.line).toBe(0);
+        expect(range.start.character).toBe(0);
+        expect(range.end.character).toBe("src/fo".length);
+      }
       expect(items[0]?.label).not.toBe("");
     } finally {
       fixture.dispose();

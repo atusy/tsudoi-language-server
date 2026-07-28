@@ -36,6 +36,16 @@ export interface PathFragment {
   readonly directory: string;
   /** What follows it -- e.g. `fo`. The filter, and possibly empty. */
   readonly name: string;
+  /**
+   * Where the word under the cursor ENDS, which is at or past the cursor.
+   *
+   * `text` stops at the cursor, because what the user has typed is what a
+   * completion filters on. This is the other edge, and it exists for one
+   * reason: an item has to offer a REPLACE range as well as an insert one, and
+   * replace means `as far as this word goes`. Whitespace bounds it on the
+   * right exactly as it bounds `start` on the left.
+   */
+  readonly end: number;
 }
 
 /**
@@ -66,6 +76,12 @@ export function pathFragments(line: string, character: number): PathFragment[] {
   if (isBoundary(character - 1)) {
     return [];
   }
+  // Scanned ONCE, before the candidates: every candidate ends at the same
+  // place, since they differ only in where they begin.
+  let end = character;
+  while (!isBoundary(end)) {
+    end += 1;
+  }
   const fragments: PathFragment[] = [];
   // Downwards from the cursor, so the list comes out shortest-first with no
   // reversal to keep in step with the caller's preference order.
@@ -75,18 +91,18 @@ export function pathFragments(line: string, character: number): PathFragment[] {
       continue;
     }
     if (start === 0 || isBoundary(start - 1)) {
-      fragments.push(fragmentAt(line, start, character));
+      fragments.push(fragmentAt(line, start, character, end));
     }
   }
   return fragments;
 }
 
-function fragmentAt(line: string, start: number, character: number): PathFragment {
+function fragmentAt(line: string, start: number, character: number, end: number): PathFragment {
   const text = line.slice(start, character);
   // Everything after the last separator is the FILTER for ONE directory
   // listing. That split is what makes this completion per segment.
   const cut = text.lastIndexOf("/") + 1;
-  return { text, start, directory: text.slice(0, cut), name: text.slice(cut) };
+  return { text, start, end, directory: text.slice(0, cut), name: text.slice(cut) };
 }
 
 /**
@@ -265,44 +281,44 @@ export async function* itemsFrom(
         // one, so without the range `src/foo.ts` is inserted AFTER the `src/`
         // already typed and the line doubles.
         insertText,
-        // A PLAIN TextEdit, never an InsertReplaceEdit, and the range is
-        // constrained rather than merely present. MEASURED: an item whose
-        // range spans more than one line, or begins on a line other than the
-        // cursor's, or whose label is empty, is DISCARDED by that client with
-        // no error and no fallback -- it does not arrive wrong, it vanishes.
-        // The plain form also leaves a user's insert-versus-replace setting
-        // inert, which the example's prose says out loud.
+        // AN InsertReplaceEdit, CARRYING BOTH RANGES, and the reason is whose
+        // choice it is rather than which behaviour is better. LSP models both,
+        // so neither is `correct` -- but a plain TextEdit does not merely
+        // default to inserting, it makes the user's own insert-versus-replace
+        // setting INERT, and then WE have chosen for them. MEASURED: the
+        // target completion plugin indexes this edit by the name of that
+        // setting, so both ranges are read directly, and a user who set
+        // `replace` gets the tail replaced because they asked for it.
         //
-        // THE RANGE ENDS AT THE CURSOR AND NEVER PAST IT -- insert semantics,
-        // and a RULED choice rather than an inherited one. Completing in the
-        // MIDDLE of an existing path then leaves the tail alone: on
-        // `foo (1).p|ng` the result is `foo (1).pngng`, which is ugly. It is
-        // the conservative half of the trade on purpose: a visible tail is
-        // something the user can delete, where text of theirs we deleted is
-        // gone.
+        //   insert  -- fragment start to the CURSOR: what is typed is replaced
+        //              and anything right of the cursor is left alone.
+        //   replace -- fragment start to the end of the WORD: the whole path
+        //              goes, which is what completing in the middle of one
+        //              usually means.
         //
-        // THE UPGRADE PATH, and its support is MEASURED -- this comment said
-        // UNMEASURED for one commit and that was wrong. `InsertReplaceEdit`
-        // carries BOTH ranges, insert to the cursor and replace to the end of
-        // the fragment, and the target plugin keys straight into them by the
-        // name of its own insert-versus-replace setting. It is not a shape
-        // that might be ignored; it is the shape that setting exists for.
+        // THE CONSTRAINTS BIND ON BOTH RANGES, not one. MEASURED: an item
+        // whose range spans more than one line, or begins on a line other than
+        // the cursor's, or whose label is empty, is DISCARDED with no error
+        // and no fallback -- it does not arrive wrong, it vanishes. The client
+        // reads whichever of the two its setting names, so a malformed half is
+        // invisible until someone flips a setting.
         //
-        // WHICH MEANS THE CONSERVATISM ABOVE INVERTS, and this is the honest
-        // statement of the cost: a plain TextEdit does not merely default to
-        // insert, it makes the user's own setting INERT, so WE choose for
-        // them. An InsertReplaceEdit lets THEM choose -- and a user who has
-        // set `replace` has asked for the tail to go.
-        //
-        // NOT BUILT HERE because the choice is the PO's and was ruled the
-        // other way while this was unmeasured, not because anything blocks it.
-        // If it is taken, the vanish constraints bind on BOTH ranges: each
-        // must be single-line and on the cursor's own line, and each needs its
-        // own assertion, since an item malformed in either is discarded in the
-        // same silence.
+        // A CONFORMANCE GAP, RECORDED BECAUSE IT IS OURS AND NOT THE READER'S:
+        // LSP 3.16 has the client advertise
+        // `textDocument.completion.completionItem.insertReplaceSupport`, and a
+        // server is meant to send this shape only when it is advertised. This
+        // one sends it unconditionally, because src/server.ts's initialize
+        // handler takes no params and a config author therefore CANNOT SEE
+        // CLIENT CAPABILITIES AT ALL. That is a gap in tsudoi's surface rather
+        // than a decision of this example's -- the second thing in two turns
+        // to need what `initialize` carries, after workspace folders.
         textEdit: {
-          range: { start: { line: position.line, character: fragment.start }, end: position },
           newText: insertText,
+          insert: { start: { line: position.line, character: fragment.start }, end: position },
+          replace: {
+            start: { line: position.line, character: fragment.start },
+            end: { line: position.line, character: fragment.end },
+          },
         },
       });
     }
