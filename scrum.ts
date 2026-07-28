@@ -158,12 +158,22 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/notifications.ts exporting registerNotifications(connection, lifecycle, entries), each entry `{ type, handler, gate }` with GATE REQUIRED AND NO DEFAULT -- `lifecycle` | `always`. Handler bodies never see `lifecycle`. Move initialized, the three sync notifications and exit onto it, AND DELETE THE THREE HAND-WRITTEN CHECKS IN THE SAME EDIT.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8c2a8c",
+            message: "feat: make a notification decide when it may run, or not compile",
+            phase: "green",
+          },
+        ],
         notes: [
           "ONE IMPLEMENTATION MOMENT WITH SUBTASK 2, declared at planning: routing through the gate while LEAVING the checks in place is precisely the inert-gate state criterion 3 forbids, so they cannot honestly be separated.",
           "THE PERTURBATION THAT PROVES THE GATE DOES THE WORK belongs here: neutralise the router's gate and, with the hand-written checks gone, protocol.test.ts's before-initialize and after-shutdown didOpen tests must BOTH redden. TODAY THAT SAME PERTURBATION REDDENS NOTHING, because each handler remembers on its own -- which is the whole argument for this PBI.",
           "TYPE-LEVEL FORECLOSURE, the same shape the stakeholder asked for on PathSource.name: adding a notification without deciding its gate does not TYPE-CHECK. The realistic failure becomes a compile error rather than a convention.",
+          "RUN, AND IT FIRED ON EXACTLY THE NAMED ASSERTION: the gate neutralised to `false && ...` reddened `expect(readSnapshot(session.stderr)).toEqual([])` in BOTH didOpen tests on BOTH runtimes (4 of 283) plus the new router test's `expect(seen).toEqual([])`, while the `always` test stayed green -- it must not be sensitive to this, and was not.",
+          "THE BASELINE CONTROL, RUN BEFORE ANY CHANGE AND NOW FORECLOSED, and it CORRECTS CRITERION 1'S WORDING: `deleting the check from ANY ONE handler body reddens nothing` is TRUE for didChange (277 pass, exit 0) and for didClose (277 pass, exit 0), and FALSE for didOpen, which reddens 4. So two of the three copies were pure convention and the third was defended by tests that never mention it -- a sharper argument for the change than the criterion made, and the same two tests are now the router's own evidence.",
+          "TYPE-LEVEL FORECLOSURE IS ASSERTED, NOT ASSUMED, and it is why the claim cannot rot: test/notifications.test.ts type-checks a throwaway project whose only entry omits `gate` and requires the DIAGNOSTIC to name it -- MEASURED as `error TS2741: Property 'gate' is missing ... but required in type 'NotificationEntry'`. Paired with the same entry plus a gate, which exits 0 with empty output. A non-zero exit alone would also be produced by an unresolved import, which is the wrong-cause failure this project has caught twice.",
+          "THE ONE ERASURE WAS MEASURED NOT TO COST PARAM TYPING: a heterogeneous entries array needs a cast inside the router's loop, so the control was to type didChange's handler against DidOpenTextDocumentParams -- tsc reddened TS2345, so each entry's params are still checked against the `type` beside it.",
         ],
       },
       {
@@ -171,19 +181,35 @@ const scrum: ScrumDashboard = {
         implementation:
           "Read src/server.ts's own bytes, as the suite reads the README, so the claim cannot rot. Born green after subtask 1; same moment.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8c2a8c",
+            message: "feat: make a notification decide when it may run, or not compile",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BORN GREEN as planned, and PERTURBED TWICE rather than assumed. Re-adding one hand-written check to the didClose entry reddened this test ALONE. And the PAIR is the real router rather than a synthetic string, so it catches the vacuity a rename would cause: blinding the scanner to return nothing reddened the pair while `src/server.ts calls it nowhere` stayed GREEN -- which is exactly the false pass the pair exists to make visible.",
+          "THE SCAN STRIPS COMMENTS, which is a decision and not an oversight: notifications.ts QUOTES the deleted check in the comment that re-homes its defence, and criterion 3 is about what a handler body CALLS. The stripper is itself defended by the pair above, which reads 0 if it ever removes too much.",
+        ],
       },
       {
         test: "exit before initialize still exits 1",
         implementation:
           "Born green -- PBI-10 covers this half -- but asserted HERE rather than inherited, because a blanket gate getting the carve-out wrong is this sprint's specific hazard.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8c2a8c",
+            message: "feat: make a notification decide when it may run, or not compile",
+            phase: "green",
+          },
+        ],
         notes: [
           'EXIT SURVIVES AS `gate: "always"` AT EXACTLY ONE SITE: the entry itself, with the reason beside it. Not a branch in the router and not a name in a set elsewhere -- the router contains NO knowledge that exit is special, so there is no second place to get the carve-out wrong.',
+          'BORN GREEN, AND ASSERTED AT THE LAYER THAT IS NEW rather than by a second spawned session. protocol.test.ts\'s "exit as the very first message, with no initialize, exits 1 rather than hanging" still pins the CODE end to end and passes untouched; a copy of it here could never be the first thing to fail, which is the test Sprint 15 deleted one for failing. What is new is the router carve-out those codes now depend on, so test/notifications.test.ts asserts that an entry gated `always` reaches its handler in the uninitialized phase.',
         ],
       },
       {
@@ -191,19 +217,37 @@ const scrum: ScrumDashboard = {
         implementation:
           "Born green. PBI-10 does NOT cover this half -- separate test from subtask 3 because the two states are what the carve-out must survive, and one passing tells you nothing about the other.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8c2a8c",
+            message: "feat: make a notification decide when it may run, or not compile",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'BORN GREEN, same shape as subtask 3 and kept SEPARATE: the router test delivers to the `always` entry in the SHUTDOWN phase as its own assertion, and the end-to-end code stays pinned by protocol.test.ts\'s "hover after shutdown is answered -32600, and exit still returns 0" and lifecycle.test.ts\'s "initialize, initialized, shutdown, exit yields a null shutdown result and exit code 0", both untouched by the refactor.',
+          "WHAT NO TEST HERE PROVES, said rather than implied: the two phases are asserted at the router with a stub connection, and end to end by tests that spawn a real server. Neither covers the other -- a wiring mistake in startServer is invisible to the first, and the second cannot reach a gate value no entry uses.",
+        ],
       },
       {
         test: "N/A (structural)",
         implementation:
           "Re-home the three deletions' defences onto the router's comment: what each hand-written check prevented, and why the entry's required `gate` field now prevents it.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8c2a8c",
+            message: "feat: make a notification decide when it may run, or not compile",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE FIRST APPLICATION of the subtraction rule filed one turn before this sprint. The three deletions are SOURCE CHECKS, not tests -- and protocol.test.ts's two didOpen tests are NOT among them: they assert observable behaviour, survive untouched, and become the evidence the router enforces.",
+          "LANDED IN THE SAME COMMIT AS THE DELETIONS, not as a follow-up tidy: splitting them would ship a commit that removes three defences with no record of what they defended. The comment on NotificationEntry states what each check prevented -- a document mutation applied before initialize or after shutdown -- and why a required `gate` prevents it now, and it QUOTES the deleted two lines so the archaeology survives.",
+          "THE PROSE THE CHANGE FALSIFIED WAS FIXED IN THE SAME COMMIT, the standing item doing its job at the moment rather than at Review: src/server.ts's lifecycle comment said the gate is `consulted by the handlers tsudoi REGISTERED`, which the router makes false for notifications. It now says notifications DECLARE and requests still ask, and why the two differ -- a refused request must be answered.",
+          "NOT FORECLOSED, and named at the site so nobody reads the guarantee as wider: a future edit calling connection.onNotification directly walks past this file entirely. That needs a PBI-6-shaped lint rule and is out of scope, which is the boundary handback (b) already narrowed the criterion to.",
         ],
       },
     ],
