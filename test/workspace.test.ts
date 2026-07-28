@@ -112,15 +112,21 @@ function inserted(items: readonly CompletionItem[]): string[] {
   return items.map((item) => item.insertText ?? "").sort();
 }
 
+/** An item's documentation as markdown text, or "" when it carries none. */
+function documentationOf(item: CompletionItem): string {
+  const documentation = item.documentation;
+  return typeof documentation === "string" ? documentation : (documentation?.value ?? "");
+}
+
 /**
- * The items attributed to a WORKSPACE root, read off `detail`.
+ * The items attributed to a WORKSPACE root, read off `documentation`.
  *
  * Used for the absence half AND the presence half, deliberately the same
  * function: a `nothing came from a workspace` assertion measured by a filter
  * that can never match anything is satisfied by a broken measurement.
  */
 function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
-  return items.filter((item) => (item.detail ?? "").includes("source: workspace"));
+  return items.filter((item) => documentationOf(item).includes("source: workspace"));
 }
 
 for (const runtime of runtimes) {
@@ -282,14 +288,10 @@ for (const runtime of runtimes) {
             .sort(),
         ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
         // EACH ITEM NAMES ITS OWN ROOT, which is what makes two workspace
-        // folders legible rather than one indistinguishable pile: the detail
-        // carries the absolute path the item resolves to, so the two folders
+        // folders legible rather than one indistinguishable pile: the
+        // documentation carries the absolute path it resolves to, so the two
         // are told apart by the item itself and not only by which file it is.
-        expect(
-          workspaceItems(items)
-            .map((item) => item.detail)
-            .sort(),
-        ).toEqual(
+        expect(workspaceItems(items).map(documentationOf).sort()).toEqual(
           [
             `${join(first.root, "notes/first-only.txt")}\n\n---\n\nsource: workspace`,
             `${join(second.root, "notes/second-only.txt")}\n\n---\n\nsource: workspace`,

@@ -12,6 +12,7 @@ import {
   type CompletionItem,
   CompletionItemKind,
   type CompletionParams,
+  type MarkupContent,
   type Position,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
@@ -244,7 +245,7 @@ export async function* itemsFrom(
       const insertText = fragment.directory + entry.name;
       items.push({
         label: insertText,
-        detail: detailFor(join(directory, entry.name), source),
+        documentation: documentationFor(join(directory, entry.name), source),
         kind: await entryKind(directory, entry),
         insertText,
         // BOTH RANGES, so the client's own insert-versus-replace preference
@@ -281,9 +282,16 @@ export async function* itemsFrom(
  * inserted text raises -- two roots can offer the same relative path, and only
  * this says which file is which. The source name is the shorter answer to the
  * same question and sits below the rule.
+ *
+ * `documentation` rather than `detail`: this is a MULTI-LINE block with a
+ * markdown rule in it, and `detail` is the protocol's one-line field. A client
+ * showing `detail` inline would run the three parts together.
  */
-function detailFor(absolutePath: string, source: PathSource): string {
-  return `${absolutePath}\n\n---\n\nsource: ${source.name}`;
+function documentationFor(absolutePath: string, source: PathSource): MarkupContent {
+  return {
+    kind: "markdown",
+    value: `${absolutePath}\n\n---\n\nsource: ${source.name}`,
+  };
 }
 
 /**

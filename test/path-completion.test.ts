@@ -74,6 +74,12 @@ async function complete(
   }
 }
 
+/** An item's documentation as markdown text, or "" when it carries none. */
+function documentationOf(item: CompletionItem | undefined): string {
+  const documentation = item?.documentation;
+  return typeof documentation === "string" ? documentation : (documentation?.value ?? "");
+}
+
 /** What an item puts in the buffer, which is also the key dedup collapses on. */
 function inserted(items: readonly CompletionItem[]): string[] {
   return items.map((item) => item.insertText ?? "").sort();
@@ -349,13 +355,13 @@ describe("an item names the root that produced it", () => {
   // output, so a merged assertion cannot tell a broken source from a working
   // one.
   //
-  // THE CARRIER IS `detail`, not the label: the label is the text being
-  // inserted and repeating the root there read as noise beside the path the
-  // user is already typing. What `detail` carries is BOTH answers to the
-  // question the inserted text raises -- the ABSOLUTE PATH, which says which
-  // file this actually is when two roots offer the same relative one, and the
-  // source name below the rule. A client that hides `detail` shows no
-  // attribution at all, which is the cost of the choice.
+  // THE CARRIER IS `documentation`, not the label and not `detail`: the label
+  // is the text being inserted, and repeating the root there read as noise
+  // beside the path the user is already typing. What it carries is BOTH
+  // answers to the question the inserted text raises -- the ABSOLUTE PATH,
+  // which says which file this actually is when two roots offer the same
+  // relative one, and the source name below the rule. A client that shows no
+  // documentation window shows no attribution at all, which is the cost.
   test("each item names the file it resolves to and the source that produced it", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
@@ -370,9 +376,10 @@ describe("an item names the root that produced it", () => {
           // The absolute path as THIS TEST computes it, never as the module
           // reported it -- an oracle taken from the subject cannot disagree
           // with it.
-          expect(item.detail).toBe(
-            `${join(source.root, item.insertText ?? "")}\n\n---\n\nsource: ${source.name}`,
-          );
+          expect(item.documentation).toEqual({
+            kind: "markdown",
+            value: `${join(source.root, item.insertText ?? "")}\n\n---\n\nsource: ${source.name}`,
+          });
           // LOAD-BEARING ORDER, not formatting: a client filters on the label
           // when the item carries no filterText, so a label that did not BEGIN
           // with the text being typed would filter our own items away.
@@ -400,7 +407,7 @@ describe("an item names the root that produced it", () => {
     // name is the only thing that tells a broken document source from a
     // working absolute one.
     expect(fallback.map((item) => item.label)).toEqual(legitimate.map((item) => item.label));
-    expect(fallback.map((item) => item.detail)).not.toEqual(legitimate.map((item) => item.detail));
+    expect(fallback.map(documentationOf)).not.toEqual(legitimate.map(documentationOf));
   });
 });
 
@@ -419,7 +426,7 @@ describe("items with identical inserted text collapse to one", () => {
       expect(inserted(items)).toEqual(["notes/deep.txt"]);
       // WHICH root the survivor names is decided by SOURCE ORDER, and it is
       // pinned so it cannot drift silently: the document is asked first.
-      expect(items[0]?.detail).toContain("source: document");
+      expect(documentationOf(items[0])).toContain("source: document");
     } finally {
       fixture.dispose();
     }
@@ -519,7 +526,7 @@ describe("a document with no parent directory contributes nothing", () => {
         // request survived, and `/usr` on this machine is what would arrive if
         // the document source had fallen back to the filesystem root.
         expect(inserted(items)).toEqual(["usable.txt"]);
-        expect(items[0]?.detail).toContain("source: cwd");
+        expect(documentationOf(items[0])).toContain("source: cwd");
       }
     } finally {
       fixture.dispose();
