@@ -66,6 +66,15 @@ const addedFolder: WorkspaceFolder = { uri: "file:///home/me/added", name: "adde
  * WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE
  * INTERPRET.
  */
+/**
+ * THE SAME URI AS `addedFolder` UNDER A DIFFERENT NAME, which is how a client
+ * would spell a rename if LSP had a rename event. It has none: a client wanting
+ * one sends `removed` then `added`, so this arriving as an `added` alone says
+ * the client now holds that folder twice, and tsudoi reconciles by neither URI
+ * nor name.
+ */
+const addedAgain: WorkspaceFolder = { uri: addedFolder.uri, name: "added again" };
+
 const plainFolder: WorkspaceFolder = { uri: "file:///home/me/plain", name: "plain" };
 const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name: "plain-slash" };
 
@@ -288,6 +297,39 @@ for (const runtime of runtimes) {
         changeFolders(session, { removed: [plainFolder] });
 
         expect(await observedFolders(session)).toEqual([plainSlashFolder]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-17 CRITERION 3, and it is a criterion rather than a note because AN
+    // `includes` GUARD PASSES EVERY OTHER ONE. Deduplicating here would leave
+    // the added, removed and gate criteria green while quietly disagreeing with
+    // the client about what it holds.
+    //
+    // DECIDED ON OBSERVABILITY, NOT ON PRINCIPLE -- mirroring a duplicate can
+    // be wrong too. The tiebreak is that a PHANTOM entry shows up as visibly
+    // wrong items a user can see and report, while a MISSING one is silent
+    // absence, which is the failure class this whole PBI exists against.
+    //
+    // TWO EVENTS, not one `added` array of two, because the guard this pins
+    // against is written against the list AS IT STANDS: a filter comparing the
+    // incoming array to the previous list admits both copies when they arrive
+    // together, and would leave this passing while doing the wrong thing.
+    //
+    // The second entry carries a DIFFERENT NAME, which is where the `name`
+    // question folds in: both survive, so nothing here reconciles by name
+    // either.
+    test("a URI added twice is held twice", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [addedFolder] });
+        changeFolders(session, { added: [addedAgain] });
+
+        expect(await observedFolders(session)).toEqual([addedFolder, addedAgain]);
       } finally {
         session.dispose();
       }
