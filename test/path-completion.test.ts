@@ -525,6 +525,96 @@ describe("a document with no parent directory contributes nothing", () => {
   });
 });
 
+/**
+ * The line after a client applies `item`, with the cursor at `character`.
+ *
+ * TWO CLIENT CLASSES, both modelled here because an item has to be right for
+ * both: one honours the item's own textEdit range; one has only `insertText`
+ * and computes the range it replaces from ITS OWN word boundaries. Neither `/`
+ * nor `.` is a word character in most, which is the entire hazard -- a
+ * multi-segment path gets its last segment replaced and the rest left standing
+ * in front of it.
+ */
+function applyAsClient(line: string, character: number, item: CompletionItem): string {
+  const edit = item.textEdit;
+  if (edit !== undefined && "range" in edit) {
+    return (
+      line.slice(0, edit.range.start.character) +
+      edit.newText +
+      line.slice(edit.range.end.character)
+    );
+  }
+  let start = character;
+  while (start > 0 && /[\p{L}\p{N}_-]/u.test(line[start - 1] ?? "")) {
+    start -= 1;
+  }
+  return line.slice(0, start) + (item.insertText ?? item.label) + line.slice(character);
+}
+
+describe("applying the item yields the path it names", () => {
+  // MULTI-SEGMENT, and the discriminator is that it must be: for a fragment
+  // with one segment the two client classes cannot be told apart, so a test
+  // written with one proves nothing at all. Its counterpart is below.
+  test("a multi-segment fragment is replaced whole", async () => {
+    const fixture = tree(["src/foo.ts"]);
+    try {
+      const line = "see src/fo";
+      const items = await complete({ ...elsewhere, line }, fixture.root);
+
+      expect(items).toHaveLength(1);
+      const item = items[0] as CompletionItem;
+      expect(applyAsClient(line, line.length, item)).toBe("see src/foo.ts");
+
+      // The two client classes read DIFFERENT fields for the same text, so a
+      // drift between them breaks one of them silently.
+      const edit = item.textEdit;
+      expect(edit !== undefined && "range" in edit ? edit.newText : undefined).toBe(
+        item.insertText,
+      );
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // THE PAIRED SINGLE-SEGMENT CASE, permanent: it is what makes the test above
+  // evidence rather than a coincidence. Both perturbations that redden the
+  // multi-segment case leave this one green.
+  test("a single-segment fragment is replaced whole too", async () => {
+    const fixture = tree(["src/foo.ts"]);
+    try {
+      const line = "see sr";
+      const items = await complete({ ...elsewhere, line }, fixture.root);
+
+      expect(items).toHaveLength(1);
+      expect(applyAsClient(line, line.length, items[0] as CompletionItem)).toBe("see src");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // MEASURED against the target client, and this is the whole reason the range
+  // is constrained rather than merely present: an item whose range spans more
+  // than one line, or starts on a line other than the cursor's, or whose label
+  // is empty, is DISCARDED with no error and no fallback. The item does not
+  // arrive wrong -- it vanishes.
+  test("the range is one line, the cursor's own, and the label is never empty", async () => {
+    const fixture = tree(["src/foo.ts"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "src/fo" }, fixture.root);
+      const edit = items[0]?.textEdit;
+      const range = edit !== undefined && "range" in edit ? edit.range : undefined;
+
+      expect(range?.start.line).toBe(0);
+      expect(range?.end.line).toBe(0);
+      expect(range?.start.character).toBe(0);
+      expect(range?.end.character).toBe("src/fo".length);
+      expect(items[0]?.label).not.toBe("");
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 // ============================================================================
 // Over the wire, under both runtimes: what a CLIENT receives, which is the
 // only place the streaming property is observable at all.

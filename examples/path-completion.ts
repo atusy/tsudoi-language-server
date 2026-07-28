@@ -22,6 +22,7 @@ import {
   CompletionItemKind,
   type CompletionItem,
   type CompletionParams,
+  type Position,
 } from "vscode-languageserver-protocol";
 import type { RequestContext } from "@atusy/tsudoi/types";
 
@@ -194,6 +195,7 @@ function documentParent(uri: string): string | undefined {
 export async function* itemsFrom(
   source: PathSource,
   fragment: PathFragment,
+  position: Position = { line: 0, character: fragment.start + fragment.text.length },
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];
@@ -234,7 +236,27 @@ export async function* itemsFrom(
         // with anything else would filter these items away as the user types.
         label: `${insertText} (${source.name}: ${source.root})`,
         kind: await entryKind(directory, entry),
+        // BOTH FIELDS, carrying the SAME text, because two client classes read
+        // different ones. A client that honours textEdit uses `newText`; the
+        // one measured for this stakeholder builds its word from `insertText`
+        // and consults the textEdit ONLY to move the offset -- which is the
+        // sole mechanism by which an item can replace characters to the LEFT
+        // of that client's own word boundary. For a path that is the whole
+        // problem: the text contains `/`, and the boundary sits after the last
+        // one, so without the range `src/foo.ts` is inserted AFTER the `src/`
+        // already typed and the line doubles.
         insertText,
+        // A PLAIN TextEdit, never an InsertReplaceEdit, and the range is
+        // constrained rather than merely present. MEASURED: an item whose
+        // range spans more than one line, or begins on a line other than the
+        // cursor's, or whose label is empty, is DISCARDED by that client with
+        // no error and no fallback -- it does not arrive wrong, it vanishes.
+        // The plain form also leaves a user's insert-versus-replace setting
+        // inert, which the example's prose says out loud.
+        textEdit: {
+          range: { start: { line: position.line, character: fragment.start }, end: position },
+          newText: insertText,
+        },
       });
     }
   } catch (error) {
@@ -343,7 +365,7 @@ export async function* pathCompletion(
   const seen = new Set<string>();
   for (const fragment of pathFragments(line, params.position.character)) {
     for (const source of sourcesFor(fragment, params.textDocument.uri, cwd)) {
-      for await (const batch of itemsFrom(source, fragment)) {
+      for await (const batch of itemsFrom(source, fragment, params.position)) {
         const fresh = batch.filter((item) => {
           const text = item.insertText ?? "";
           if (seen.has(text)) {
