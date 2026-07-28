@@ -15,13 +15,13 @@ import {
   StreamMessageReader,
   StreamMessageWriter,
   TextDocumentSyncKind,
-  type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { registerMethods } from "./methods.ts";
 import { defineNotifications, registerNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
+import { createWorkspaceFolders } from "./workspace.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -82,13 +82,10 @@ export function startServer(
   // handler's own signature can carry.
   const lifecycle = createLifecycle();
 
-  /**
-   * The workspace folders this session was opened with, for the handlers that
-   * run afterwards. Empty until `initialize` arrives, which is the only moment
-   * a client states them -- and the reason they are read here rather than
-   * handed to the config factory, which has already run by now.
-   */
-  let workspaceFolders: readonly WorkspaceFolder[] = [];
+  // The workspace folders this session answers from. A HANDLE rather than a
+  // local: what writes it and what reads it are different messages, and
+  // workspace.ts is where that split lives.
+  const workspaceFolders = createWorkspaceFolders();
 
   connection.onRequest(InitializeRequest.type, (params: InitializeParams): InitializeResult => {
     // initialize is the one request the gate may never refuse -- refusing it
@@ -114,7 +111,7 @@ export function startServer(
     // root is found and its own launch directory when not, so a cwd fallback
     // looks correct in every test and is silently wrong for the user who has
     // no root -- which is the state this normalisation exists to make visible.
-    workspaceFolders = params.workspaceFolders ?? [];
+    workspaceFolders.initialize(params.workspaceFolders ?? []);
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -156,9 +153,9 @@ export function startServer(
   // reaches stderr, the session stays functional and exits 0.
   //
   // Handling it means updating the captured list and is a separate story --
-  // whoever takes it adds an ENTRY HERE and edits the `let workspaceFolders`
-  // above, and should say at the type that the value tracks changes once it
-  // does.
+  // whoever takes it adds an ENTRY HERE and writes through the workspace
+  // folders handle above, and should say at the type that the value tracks
+  // changes once it does.
   registerNotifications(connection, lifecycle, notificationEntries(documents, lifecycle));
 
   // What the config can answer lives in its own module: lifecycle and document
@@ -169,7 +166,7 @@ export function startServer(
     config,
     tsudoi,
     () => lifecycle.requestRejection(),
-    () => workspaceFolders,
+    workspaceFolders.current,
   );
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
