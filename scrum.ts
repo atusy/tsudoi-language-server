@@ -196,9 +196,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Handle event.removed. Deliberately fake-it-then-evolve from subtask 2 so this is a REAL RED rather than falling out of one payload handler.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "4d3bc75",
+            message: "feat: a folder the user removes stops being answered from",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED OBSERVED, NOT ASSUMED, on both runtimes: with `added` alone handled, the removed folder was STILL IN THE LIST and the assertion failed on the extra entry. The fake-it-then-evolve sequencing did what it was designed to do; it did not arrive born green.",
+          "NORMALISATION PERTURBATION RUN, and it flips the assertion `observedFolders toEqual [plainSlashFolder]`: stripping a trailing slash on both sides of the removal filter reddens THIS TEST ON BOTH RUNTIMES and nothing else -- criterion 1's added test stays green, which is the point of naming the discriminating case.",
+          "UNSPECIFIED AND SURFACED RATHER THAN PINNED: a URI held TWICE and removed ONCE loses BOTH copies, since the filter matches every entry. Removing one copy per `removed` entry is equally defensible, no criterion rules it and no observed client produces it, so it is a comment at the site and NOT a test -- pinning it would fix an arbitrary choice under the S7 rule.",
           "THE DISCRIMINATING CASE, which an echoing oracle cannot pass: add BOTH `…/plain` and `…/plain/`, remove `…/plain`, assert `…/plain/` REMAINS. Measured against nvim, which accepts the two as different folders -- so normalising would delete a folder the client still holds. REPORT THE RED AS OBSERVED, NOT ASSUMED: the sequencing was DESIGNED to produce it, and a designed-for RED that turns out born green is a FINDING rather than a formality.",
         ],
       },
