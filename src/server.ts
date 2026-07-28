@@ -27,6 +27,19 @@ import type { Tsudoi, TsudoiConfig } from "./types.ts";
  *
  * Every level goes to stderr. stdout carries the protocol and nothing else, so
  * console.log here would corrupt the very stream the client is framing.
+ *
+ * WHAT THIS LOGGER DOES NOT COVER, recorded because the natural inference from
+ * the paragraph above is WRONG and would manufacture a defect that does not
+ * exist: a notification with NO REGISTERED HANDLER never reaches this logger at
+ * all. MEASURED on both runtimes -- `workspace/didChangeWorkspaceFolders`,
+ * `$/setTrace` and an invented `totally/madeUp` each produced ZERO BYTES here,
+ * with a throwing hover in the SAME session through the SAME reader writing its
+ * line, so the silence is real and not a reader that cannot see stderr. The
+ * session stayed functional and exited 0: inert, not merely quiet.
+ *
+ * So the reach is `a handler that threw`, never `anything the client sent that
+ * we do not answer`. Someone reasoning from the throwing case to the
+ * unregistered one would predict noise and size a defect against it.
  */
 const stderrLogger: Logger = {
   error: (message: string) => process.stderr.write(`tsudoi: ${message}\n`),
