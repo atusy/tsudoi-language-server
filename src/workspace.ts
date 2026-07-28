@@ -76,16 +76,29 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // one sends `removed` then `added`, and a name that differs is a
       // different statement about the same folder rather than a mismatch.
       //
-      // REMOVED FIRST, THEN ADDED, and LSP specifies no order for the two arms:
-      // this way a client that spells a rename as one event -- the same URI in
-      // both arms -- ends with the folder it named last, where the other order
-      // would leave it holding nothing.
+      // REMOVED FIRST, THEN ADDED, and LSP specifies no order for the two arms.
+      // DECIDED BY THE VISIBLE-OVER-SILENT PRINCIPLE, not by which order the
+      // code happened to take: a client spelling a rename as one event -- the
+      // same URI in both arms -- ends HOLDING the folder, which is a phantom if
+      // it is wrong and therefore visible. The other order ends holding
+      // NOTHING, which is a gap and therefore silent.
       //
-      // WHAT IS UNSPECIFIED AND WENT THIS WAY BY DEFAULT, recorded rather than
-      // pinned by a test, since nobody has chosen an outcome: a URI held TWICE
-      // and removed ONCE loses BOTH copies, because this filter matches every
-      // entry. The alternative -- removing one copy per `removed` entry -- is
-      // equally defensible and no client observed here produces the case.
+      // A KNOWN DEVIATION, not an open question: a URI held TWICE and removed
+      // ONCE loses BOTH copies here, because this filter matches every entry.
+      // ONE COPY PER `removed` ENTRY IS THE CORRECT BEHAVIOUR and this is not
+      // it.
+      //
+      // WHY IT IS CORRECT rather than merely defensible, which is how it was
+      // first recorded: REMOVING ALL COPIES DISCARDS WHAT THE EVENT CARRIED. A
+      // client removing two copies sends two `removed` entries and one removing
+      // a single copy sends one, so N entries should remove N copies -- an exact
+      // mirror. Remove-all wipes an unknown number whatever the client said.
+      // This list honours multiplicity on ADD, and symmetry honours it on
+      // REMOVE.
+      //
+      // NOT FIXED HERE because it arrived at Review, no observed client
+      // produces the case, and changing src/ behaviour at Review is retroactive
+      // scope. Filed as an increment.
       const removed = new Set(event.removed.map((folder) => folder.uri));
       folders = [...folders.filter((folder) => removed.has(folder.uri) === false), ...event.added];
     },
