@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { isAbsolute, join, normalize } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
@@ -12,6 +11,7 @@ import {
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
+import { tree } from "./helpers/tree.ts";
 import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
 import {
   batchSize,
@@ -22,42 +22,6 @@ import {
   type PathFragment,
   type PathSource,
 } from "../examples/path-completion.ts";
-
-/**
- * A throwaway directory tree, WITH NO DOTFILES IN IT.
- *
- * Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and a
- * fixture that happened to contain one would pin a decision nobody made. The
- * same rule is why nothing here is named `./x` or `../x`.
- *
- * realpathSync is not cosmetic: on macOS the system temp directory lives under
- * /var, which IS a symlink to /private/var, and a child process started with
- * cwd there reports the resolved path. Comparing the two spellings is a
- * failure that looks like a logic error and is not one.
- */
-interface Tree {
-  readonly root: string;
-  dispose(): void;
-}
-
-function tree(
-  entries: readonly string[],
-  links: readonly (readonly [string, string])[] = [],
-): Tree {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-paths-")));
-  for (const entry of entries) {
-    if (entry.endsWith("/")) {
-      mkdirSync(join(root, entry), { recursive: true });
-    } else {
-      mkdirSync(join(root, entry, ".."), { recursive: true });
-      writeFileSync(join(root, entry), "");
-    }
-  }
-  for (const [name, target] of links) {
-    symlinkSync(target, join(root, name));
-  }
-  return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
-}
 
 /** The document a completion is driven against: one line, and its uri. */
 interface Buffer {
