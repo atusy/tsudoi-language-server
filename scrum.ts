@@ -187,7 +187,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Open the src/server.ts InitializeRequest seam NARROWLY: read params.workspaceFolders and NOTHING ELSE -- do not retain params wholesale and do not add a capabilities field, however convenient it looks with the object in hand. Store RAW, so subtask 2 is a real RED. The insertReplaceSupport gap is evidence that a second consumer exists, NOT a licence to build for it.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "TWO PLANNING DECLARATIONS AT ONE SITE. SHARED IMPLEMENTATION MOMENT, per the Sprint 5 rule: reading params and threading them onto the surface are ONE moment -- there is no observable difference between reading params and not storing them -- so this subtask carries both rather than splitting into a pair whose second half arrives born green. AND NO STANDALONE STRUCTURAL SUBTASK for the seam: a handler taking params and doing nothing with them is an unused binding that does not survive oxlint, so faking a tidy-first step here would be ceremony rather than tidying.",
@@ -197,7 +197,7 @@ const scrum: ScrumDashboard = {
         test: "A client sending undefined workspaceFolders leaves the handler observing an empty array",
         implementation: "Normalise undefined to []. Expected RED, since subtask 1 stores raw.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [],
       },
@@ -206,7 +206,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Born green after subtask 2. SPLIT from it per prefer-splitting: the protocol has TWO absent states and one test masking the other is the shape that bit Sprint 13's subtask 5.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "PERTURBATION, named by the assertion it flips: normalise with `?? []` only -- the null case must redden while the undefined case stays GREEN. A perturbation reddening both would mean the split bought nothing.",
@@ -217,7 +217,7 @@ const scrum: ScrumDashboard = {
         implementation:
           "Born green. THREE SUBSTITUTIONS, all flipping the same assertion -- never a fabricated root.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "THE PO STATED THE DISCRIMINATOR AS THE SUBSTITUTION, not as two inputs. (a) default absence to process.cwd() -- THE MOST IMPORTANT, because it is the silently plausible one: MEASURED, nvim's cwd is its own launch directory when no root is found, so this looks correct in every test that does not force cwd apart from the workspace. (b) default absence to /. (c) treat an empty list as a root. Each must redden.",
