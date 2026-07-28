@@ -90,6 +90,7 @@ async function complete(
     tsudoi: {
       documents: { get: () => document, values: () => [document] },
     },
+    workspaceFolders: [],
   };
   const items: CompletionItem[] = [];
   const chunks = pathCompletion(

@@ -12,6 +12,7 @@ import {
   ProgressType,
   type ProtocolConnection,
   ResponseError,
+  type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
@@ -21,6 +22,15 @@ import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
  * lifecycle; consulted here, where the config author's handlers are called.
  */
 export type RequestRejection = () => ResponseError<void> | undefined;
+
+/**
+ * The workspace folders as of NOW. A function rather than a value because
+ * registration happens before `initialize` does: the folders do not exist yet
+ * when the handlers below are wired, and a value captured here would be the
+ * pre-initialize one forever -- the same ordering trap src/cli.ts records for
+ * the config factory, one layer in.
+ */
+export type WorkspaceFolders = () => readonly WorkspaceFolder[];
 
 /**
  * Types the `value` of the `$/progress` notifications completion streams. A
@@ -109,7 +119,11 @@ function requestCancelled(): never {
  * track it if it wanted to -- vscode-jsonrpc consumes that notification before
  * consulting any handler, and a request handler is never told its own id.
  */
-function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
+function requestContext(
+  tsudoi: Tsudoi,
+  cancellation: CancellationToken,
+  workspaceFolders: readonly WorkspaceFolder[],
+): RequestContext {
   const controller = new AbortController();
   // Read BEFORE subscribing, and not merely to save a turn: when the client
   // cancels before the request is dispatched, vscode-jsonrpc cancels the token
@@ -120,7 +134,7 @@ function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): Reques
     controller.abort();
   }
   cancellation.onCancellationRequested(() => controller.abort());
-  return { signal: controller.signal, tsudoi };
+  return { signal: controller.signal, tsudoi, workspaceFolders };
 }
 
 /**
@@ -212,6 +226,7 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
+  workspaceFolders: WorkspaceFolders,
 ): void {
   /**
    * Whether this SESSION has already been told about an invalid token. One
@@ -248,7 +263,7 @@ export function registerMethods(
         throw rejection;
       }
       const handler = config.methods?.["textDocument/hover"];
-      const context = requestContext(tsudoi, cancellation);
+      const context = requestContext(tsudoi, cancellation, workspaceFolders());
       return answerUnlessCancelled("textDocument/hover", context.signal, async () => {
         return (await handler?.(context, params)) ?? null;
       });
@@ -276,7 +291,7 @@ export function registerMethods(
       if (handler === undefined) {
         return null;
       }
-      const context = requestContext(tsudoi, cancellation);
+      const context = requestContext(tsudoi, cancellation, workspaceFolders());
       // Read through `unknown` on purpose: the declared ProgressToken type
       // describes what a CONFORMING client sends, and this path exists for the
       // one that does not.

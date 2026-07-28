@@ -13,6 +13,7 @@ import type {
   CompletionParams,
   Hover,
   HoverParams,
+  WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 
 export interface TextDocument {
@@ -53,6 +54,8 @@ export type Method = keyof MethodMap;
 export interface RequestContext {
   readonly signal: AbortSignal;
   readonly tsudoi: Tsudoi;
+  /** The workspace folders the client sent at `initialize`. */
+  readonly workspaceFolders: readonly WorkspaceFolder[];
 }
 
 export type MethodHandler<M extends Method> = (

@@ -6,6 +6,7 @@ import {
   DidOpenTextDocumentNotification,
   ExitNotification,
   InitializedNotification,
+  type InitializeParams,
   InitializeRequest,
   type InitializeResult,
   type Logger,
@@ -14,6 +15,7 @@ import {
   StreamMessageReader,
   StreamMessageWriter,
   TextDocumentSyncKind,
+  type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle } from "./lifecycle.ts";
@@ -73,10 +75,27 @@ export function startServer(
   // yet` and `no such method` are different diagnoses.
   const lifecycle = createLifecycle();
 
-  connection.onRequest(InitializeRequest.type, (): InitializeResult => {
+  /**
+   * The workspace folders this session was opened with, for the handlers that
+   * run afterwards. Empty until `initialize` arrives, which is the only moment
+   * a client states them -- and the reason they are read here rather than
+   * handed to the config factory, which has already run by now.
+   */
+  let workspaceFolders: readonly WorkspaceFolder[] = [];
+
+  connection.onRequest(InitializeRequest.type, (params: InitializeParams): InitializeResult => {
     // initialize is the one request the gate may never refuse -- refusing it
     // would make the state it guards unreachable.
     lifecycle.initialize();
+    // ONE FIELD, DELIBERATELY. `params` carries the client's capabilities too,
+    // and a config author cannot see them -- LSP 3.16's
+    // `completion.completionItem.insertReplaceSupport` is the known case, and
+    // examples/path-completion.ts sends that shape unconditionally because of
+    // it. That is a SECOND consumer of this argument, not a reason to widen
+    // this line: retaining `params` wholesale would put the whole of
+    // InitializeParams on tsudoi's surface as a side effect of needing one
+    // field of it. Whoever needs capabilities opens a seam for capabilities.
+    workspaceFolders = params.workspaceFolders as readonly WorkspaceFolder[];
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -132,7 +151,13 @@ export function startServer(
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
   // config author wrote and have a failure path of their own.
-  registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection());
+  registerMethods(
+    connection,
+    config,
+    tsudoi,
+    () => lifecycle.requestRejection(),
+    () => workspaceFolders,
+  );
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.
