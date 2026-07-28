@@ -32,7 +32,96 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-14",
+      story: {
+        role: "config author",
+        capability: "complete a path from the roots that make sense where their cursor is",
+        benefit: "they type a path fragment and get the file they meant, not a file listing",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "An item's inserted text, resolved against its source's root, yields the file the item names",
+          verification:
+            "For each source -- document-relative, cwd-relative, absolute -- resolve the item's inserted text against that source's root and compare to the real path. NEGATIVE CONTROL: an item carrying an absolute path where its source is a named root, or a relative path where the source IS the filesystem root, fails to resolve",
+        },
+        {
+          criterion: "The typed prefix selects the source class",
+          verification:
+            "A prefix beginning with / is answered by the ABSOLUTE source alone; everything else by the relative sources. With cwd set to a directory that HAS CHILDREN OF ITS OWN, typing / yields filesystem-root items AND NO cwd-relative items -- the negative half is the discriminator, since without it an implementation where every source answers every keystroke passes",
+        },
+        {
+          criterion: "Items with identical inserted text collapse to one",
+          verification:
+            "Drive a case where two sources resolve to the same directory -- MEASURED: nvim spawns the server with cwd = root_dir, so cwd and workspaceFolder coincide -- and assert one item, not two. Dedup is by INSERTED TEXT, not by resolved file, which would force an arbitrary choice of which root to label it with",
+        },
+        {
+          criterion: "Each item is attributable to the source that produced it",
+          verification:
+            "Assert per source rather than over the merged list. NEGATIVE CONTROL: source 4 MASKS source 1's degenerate case -- an unnamed document sends uri file://, which fileURLToPath turns into / without throwing, so a broken source 1 falling back to / is indistinguishable from source 4's legitimate output unless attribution is asserted",
+        },
+        {
+          criterion:
+            "A document with no parent directory contributes nothing from the document-relative source",
+          verification:
+            "Drive completion for uri file:// and for untitled:; assert no document-relative items and that the request still answers. The guard is `an unnamed document has no parent`, NEVER `reject / as a root` -- / is the LEGITIMATE root for the absolute source, and the two degenerate URIs fail in OPPOSITE directions: file:// silently resolves, untitled: throws",
+        },
+        {
+          criterion: "The walk yields rather than collecting",
+          verification:
+            "Assert one $/progress per yielded batch with a partialResultToken present. NEGATIVE CONTROL: a module that collects the whole tree then returns passes every content assertion while discarding the streaming property four sprints were spent on",
+        },
+        {
+          criterion: "Directories are distinguishable from files",
+          verification:
+            "Assert CompletionItemKind.Folder versus .File. NEGATIVE CONTROL: a wrong kind still completes and still displays, so nothing but the assertion catches it",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "ZERO LINES IN src/. The module reads the current line out of the document itself -- documents.get(uri).getText() split at params.position -- because MEASURED: CompletionParams carries textDocument, position and context only, NOT the typed prefix, and on an invoked completion triggerCharacter is null.",
+        "REACHABILITY IS NOT A CRITERION HERE and must not appear as one. Whether a real user TYPING / reaches the handler is unmeasured -- see the open impediment. Criteria are protocol-level, as all 232 existing tests are; the PBI-8 precedent is exact, where the tarball route was verified and the registry route shipped explicitly labelled unverified.",
+        "The stakeholder's example is the right SPECIFICATION and the wrong TARGET: it specifies precisely what the handler must do with a /-prefixed request, and specifies nothing tsudoi controls about whether that request is sent.",
+        "OPEN for refinement, not assumed: hidden entries, walk depth, symlink cycles (UNMEASURED -- if recursion ships, cycle behaviour needs measuring before a criterion is written), and whether ./ selects the document-relative source alone. The stakeholder did not ask and it is not invented here.",
+      ],
+    },
+    {
+      id: "PBI-15",
+      story: {
+        role: "config author",
+        capability: "answer from the workspace the editor actually opened",
+        benefit:
+          "paths they offer match the project the user is in, not wherever the editor happened to start",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A config author can read the workspace folders the client sent",
+          verification:
+            "Drive initialize with workspaceFolders and assert a config handler observes them. NEGATIVE CONTROL: driving initialize WITHOUT them must leave the same handler observing an empty list, never a fabricated root",
+        },
+        {
+          criterion: "Absence is distinguishable from a workspace at /",
+          verification:
+            "The client sends no folders; assert the config observes an EMPTY ARRAY. MEASURED: the protocol has TWO absent states, undefined and null, and no config author should have to know that -- nor should absence be able to look like a present value",
+        },
+        {
+          criterion: "The completion example gains its workspace-relative source",
+          verification:
+            "With a workspace folder set and cwd elsewhere, a relative-prefix completion carries workspace-rooted items resolving against that folder",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THIS IS A PUBLIC-API ADDITION, never a convenience: package.json maps @atusy/tsudoi/types at src/types.ts, and that file states every exported name is public API because renaming one breaks configs we cannot see. Additive, so not breaking -- but permanent. First addition to the type surface in twelve sprints.",
+        "MEASURED: rootPath and rootUri are BOTH DEPRECATED in vscode-languageserver-protocol@3.18.2; workspaceFolders is the only current source, optional and nullable. A criterion written against rootUri would be written against a deprecated field on arrival.",
+        "MEASURED: cwd is NOT a substitute. nvim spawns the server with cwd = root_dir when a root is found and its OWN cwd when not, so cwd-as-workspace-root is exactly right when tested and silently wrong when it matters, with no signal from inside the config.",
+        "Smallest honest shape (REASONED): readonly workspaceFolders: readonly WorkspaceFolder[], reusing the protocol's own type so the surface grows by one name. Plural is not hypothetical -- the field is an array on the wire, so any singular shape lies about it.",
+        "STALENESS, which must not be silent: LSP has workspace/didChangeWorkspaceFolders and tsudoi does not implement it, so an array captured at initialize is correct only until the user adds a folder. Either an accepted documented limit or a separate PBI.",
+      ],
+    },
+  ],
 
   completed: [
     {
@@ -89,89 +178,6 @@ const scrum: ScrumDashboard = {
       ],
       decisions: [],
     },
-    {
-      number: 9,
-      pbi_id: "PBI-7",
-      goal: "Make the stakeholder's own example importable -- @atusy/tsudoi/types rather than a relative path into our source -- from outside this repo and under both runtimes.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 8,
-      pbi_id: "PBI-11",
-      goal: "Keep a promise JavaScript already makes -- a config author's finally runs when their completion is abandoned -- so cleanup they can never watch succeed is not silently skipped on every keystroke, and the last gate on releasing this thing comes down.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 7,
-      pbi_id: "PBI-10",
-      goal: "Make tsudoi safe to hand to a stranger -- when a client sends what the specification forbids, it gets an error or a correct fallback with a trace, never silently fewer items than the handler produced.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 6,
-      pbi_id: "PBI-5",
-      goal: "Make slow sources safe as well as first-class -- when the client cancels, context.signal aborts and a config author's handler can stop -- so the streaming API built last sprint never leaves abandoned work running.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 5,
-      pbi_id: "PBI-4",
-      goal: "Make yield and return the whole of a config author's streaming API -- tsudoi decides whether that reaches the client as $/progress chunks or one aggregated response -- so the most precisely specified thing in the brief is the thing they never have to think about.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 4,
-      pbi_id: "PBI-3",
-      goal: "Complete the chain from a config author's file to a human's screen: the hover text they write is what an editor shows, with zero lines changed in tsudoi.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 3,
-      pbi_id: "PBI-2",
-      goal: "Turn documents.get(uri) from a stub into the editor's live buffer -- the first line of the stakeholder's own example config, and the substrate every method after this one answers from.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        'The Japanese test found a latent defect in the TEST helper, not the server: per-chunk chunk.toString("utf8") turns any multi-byte character the pipe splits into U+FFFD. Silent at small payloads, deterministic RED at 360KB under both runtimes.',
-      ],
-    },
-    {
-      number: 2,
-      pbi_id: "PBI-6",
-      goal: "Make Deno support stop depending on anyone remembering it -- the codebase itself rejects the changes that would quietly break the second runtime, before the sprints that write most of the source.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
-    {
-      number: 1,
-      pbi_id: "PBI-1",
-      goal: "One config file brings up a real language server process under whichever runtime the user already has, with nothing repo-specific making it work and no failure mode that leaves them guessing.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [],
-    },
   ],
 
   definition_of_done: {
@@ -194,7 +200,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "The measured-or-reasoned label does not help here: the falsified note did not read as unlabelled, it read as CHECKED. Coverage claims are cheap to verify and expensive when wrong, and this one was the premise for a scheduling decision.",
+            "The measured-or-reasoned label does not help here: the falsified note did not read as unlabelled, it read as CHECKED.",
         },
         {
           action:
@@ -202,7 +208,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "Filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard -- it makes correctness depend on someone downstream remembering to look, and the piped-exit-code defect shows how slowly that works when they do not: nine sprints. Honest limit stated by the PO: this covers the chunk-boundary case and NOT the piped exit code, which is measurement hygiene rather than mechanism-specification and is already fixed by capturing each check unpiped.",
+            "Filed by the Scrum Master against their own conduct, at the PO's ruling that `the Developer will catch it` fails the Sprint 2 standard -- it makes correctness depend on someone downstream remembering to look, and the piped-exit-code defect shows how slowly that works when they do not: nine sprints.",
         },
       ],
     },
@@ -215,7 +221,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "One layer below the checklist-versus-criterion drift: there the reviewer's thinking runs ahead of the criterion; here the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test. Sprint 11's criterion required a PROPERTY (reverting spawn.ts reddens the non-ASCII assertion); both the Scrum Master's instruction and the Developer's subtask replaced it with a PROXY (size the payload past the pipe buffer). The proxy was satisfied while the property was FALSE -- chunk boundaries at multiples of one size share one offset mod 3, so at 360KB deno's first run split nothing. Covers Scrum-Master-authored and Developer-authored plan text alike: the artifact is the plan, whoever wrote the sentence.",
+            "One layer below the checklist-versus-criterion drift: there the reviewer's thinking runs ahead of the criterion; here the plan converts a criterion into an implementation recipe and the recipe silently becomes the real acceptance test.",
         },
       ],
     },
@@ -228,7 +234,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Filed by the Developer against themselves: their vocabulary had three outcomes -- reddened, did not redden, could not build it -- and the third defaulted to the pessimistic reading, so they reported a DESIGN SUCCESS in the language of a coverage gap. Sprint 10's case was foreclosure: dist/ is gitignored and built by prepack, so a stale published build is not a failure the suite must catch, it is a state the design cannot enter.",
+            "Filed by the Developer against themselves: their vocabulary had three outcomes -- reddened, did not redden, could not build it -- and the third defaulted to the pessimistic reading, so they reported a DESIGN SUCCESS in the language of a coverage gap.",
         },
       ],
     },
@@ -241,15 +247,14 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "The lifetime argument applied to criteria: the verification field travels with the criterion through every compaction, a plan evaporates at Review. Diagnosed by the Developer as WHY the negative-control rule did not fire twice in Sprint 9 -- it did fire, and the answer landed in the plan rather than the criterion. It is also the Developer-side fix for the PO's checklist-versus-criteria drift: if the discriminating change is written into the verification, the checklist cannot drift ahead of the criterion.",
+            "The lifetime argument applied to criteria: the verification field travels with the criterion through every compaction, a plan evaporates at Review.",
         },
         {
           action:
             "When a decision must live in a MACHINE-FORMATTED FILE that cannot carry comments, its durable home is a TEST THAT ASSERTS IT. The file carries the decision; the test carries the reason.",
           timing: "immediate",
           status: "active",
-          outcome:
-            "Closes the hole in the lifetime rule rather than patching it. package.json has no comments and oxfmt sorts unknown keys to the tail; a pointer header decays. test/resolution.test.ts already proved the pattern -- PBI-7's criterion 3 compacted unamended precisely because a TEST, not a note, was holding it. A test is executable documentation that cannot silently drift and fails when someone violates it.",
+          outcome: "Closes the hole in the lifetime rule rather than patching it.",
         },
       ],
     },
@@ -262,7 +267,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "One rule, not two, because both instances share a root: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction. The PO named the pattern -- the checklist is where their current thinking lands and the criterion is where it was. Splitting the rule would invite exactly the drift it is filed against. An AUDIT of unlabelled old notes was rejected as self-defeating: it would be the author labelling their own notes from memory, an unmeasured assertion about which assertions were unmeasured.",
+            "One rule, not two, because both instances share a root: PBI-7's criterion 1 was a runtime test for a compile-time property contradicted by its own note, and criterion 3's verification was contradicted by the PO's own planning instruction.",
         },
       ],
     },
@@ -275,7 +280,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction. Evidence: the Sprint 7 shutdown ruling survives in src/methods.ts with its reasoning intact while the PBI carrying it compacted away.",
+            "Shuffling a note between PBIs postpones the orphan; a comment at the edit site outlives every compaction.",
         },
         {
           action:
@@ -283,7 +288,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "The absence-pairing rule moved from assertions to criteria and from execution to refinement. PBI-7's runtime criterion would have consumed a sprint and produced a green test proving nothing -- and the fact that made it vacuous was already written in its own PBI's notes. It was caught only because the probe was ordered first.",
+            "The absence-pairing rule moved from assertions to criteria and from execution to refinement.",
         },
       ],
     },
@@ -296,7 +301,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "Filed after the Scrum Master raised it about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record. Nobody greps commit messages before editing a line; a comment at the site is read by whoever changes it. Naming the destination makes the editorial judgement auditable rather than trusted. AUDIT RUN AT FILING: 15 active improvements present, and every earlier drop traced to a named successor (three consolidated into the Sprint 4 rule) or a route to PBI-9. No unexplained losses.",
+            "Filed after the Scrum Master raised it about their own conduct: five mid-Review compactions, each deciding which of the PO's recorded decisions survive, at speed and with no check, while the PO read the compacted result as the record.",
         },
       ],
     },
@@ -309,15 +314,14 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Better than covered -- it DISSOLVES what the earlier-assertion clause only documents. Sprint 7's subtask 5 needed exactly this and it was discovered during execution rather than declared at planning; as a planning-time rule the fix moves earlier and the retro carries less.",
+            "Better than covered -- it DISSOLVES what the earlier-assertion clause only documents.",
         },
         {
           action:
             "A JUSTIFICATION recorded in a note is held to the assertion standard: say whether it was MEASURED or REASONED, and never state a consequence without checking it against the remedy it justifies. DEFAULT for everything written before this rule: an UNLABELLED note is read as REASONED, not measured, until someone measures it.",
           timing: "immediate",
           status: "active",
-          outcome:
-            "Filed at the Developer's request after they named it at second occurrence. Sprint 2: a perturbation claimed to defend node: specifiers defended only the npm half. Sprint 7: rejecting an out-of-range token was said to lose the client's items when normalise-and-report delivers every one of them. Both times the DECISION was right and the stated REASON false -- the more dangerous failure, because a false premise is what someone acts on two sprints later. The consolidated rule disciplines assertions and perturbations; it said nothing about prose.",
+          outcome: "Filed at the Developer's request after they named it at second occurrence.",
         },
       ],
     },
@@ -330,7 +334,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "A bounding condition on seven sprints of pin-everything pressure, whose cost is already visible: PBI-9 carries three separate instances of hardcoded-response-id brittleness -- tests that resist legitimate change without defending a requirement. The name-the-alternative clause is what stops it becoming an escape hatch: `there is nothing to preserve` is easy to assert, `cancelling in-flight requests at shutdown would be equally acceptable` is falsifiable.",
+            "A bounding condition on seven sprints of pin-everything pressure, whose cost is already visible: PBI-9 carries three separate instances of hardcoded-response-id brittleness -- tests that resist legitimate change without defending a requirement.",
         },
       ],
     },
@@ -342,8 +346,7 @@ const scrum: ScrumDashboard = {
             "Every assertion that something is ABSENT -- zero stderr, zero $/progress, a label not on stdout -- ships with a PAIRED assertion, permanent in the suite, that the same measurement observes it when present. A perturbation proves the apparatus once, on the day it was run; the pair proves it on every run, including after someone refactors the accumulator two sprints later.",
           timing: "immediate",
           status: "active",
-          outcome:
-            "Generalises what the PO had been imposing by hand criterion by criterion. Absence assertions are the ones least often perturbed, because `nothing happened` feels self-evident.",
+          outcome: "Generalises what the PO had been imposing by hand criterion by criterion.",
         },
         {
           action:
@@ -351,7 +354,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "Filed separately from the perturbation-LABELLING rule on purpose: that one governs how the Scrum Master REPORTS (reproduction versus independent, expected versus observed), this one governs how the PO AUTHORS. Different owners, different phases; merging them would lose what makes each actionable.",
+            "Filed separately from the perturbation-LABELLING rule on purpose: that one governs how the Scrum Master REPORTS (reproduction versus independent, expected versus observed), this one governs how the PO AUTHORS.",
         },
       ],
     },
@@ -364,7 +367,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Sprint 5's subtasks 5-7 were planned expected-RED and came out born green: one async generator cannot be dispatched twice. `Do not split a single dispatch` is the WRONG lesson -- the split is what produced six independently perturbable criteria. The plan simply bought sequencing it could not have.",
+            "Sprint 5's subtasks 5-7 were planned expected-RED and came out born green: one async generator cannot be dispatched twice.",
         },
         {
           action:
@@ -380,7 +383,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Today it survives only because test/lifecycle.test.ts happens to load that file; nothing stops a duplicate fixture appearing. Sprint 5 covered it by the Developer's initiative, not by structure.",
+            "Today it survives only because test/lifecycle.test.ts happens to load that file; nothing stops a duplicate fixture appearing.",
         },
       ],
     },
@@ -393,7 +396,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Amended three times already, which is its own signal: a rule list nobody can hold in their head stops being applied at exactly the moment it is needed. Prompted by Sprint 4's subtask-4 perturbation, which flipped the test entirely but at 'hover is answered at all', never reaching the null-versus-Hover claim its name promised.",
+            "Amended three times already, which is its own signal: a rule list nobody can hold in their head stops being applied at exactly the moment it is needed.",
         },
         {
           action:
@@ -401,7 +404,7 @@ const scrum: ScrumDashboard = {
           timing: "immediate",
           status: "active",
           outcome:
-            "Nine items where three carried new information diluted the signal the item-by-item rule exists to protect. Counter-evidence weighed: Sprint 3's stdout-purity item LOOKED standing and found that sprint's largest defect, hence the still-reported clause.",
+            "Nine items where three carried new information diluted the signal the item-by-item rule exists to protect.",
         },
       ],
     },
@@ -414,7 +417,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "Prompted by a Review perturbation reddening 6 tests where the Developer's reddened 2. The divergence was information; not noticing it until write-up was the defect. Mandating sameness would have cost Sprint 2's ignorePackages finding, which came from an independent probe.",
+            "Prompted by a Review perturbation reddening 6 tests where the Developer's reddened 2.",
         },
       ],
     },
@@ -427,7 +430,7 @@ const scrum: ScrumDashboard = {
           timing: "sprint",
           status: "active",
           outcome:
-            "First application found a real orphan immediately: PBI-2 said 'PBI-3 and PBI-4 widen it again', PBI-3 carried its copy, PBI-4 carried nothing. Written onto PBI-4.",
+            "First application found a real orphan immediately: PBI-2 said 'PBI-3 and PBI-4 widen it again', PBI-3 carried its copy, PBI-4 carried nothing.",
         },
         {
           action:
