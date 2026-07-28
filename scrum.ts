@@ -145,19 +145,36 @@ const scrum: ScrumDashboard = {
         implementation:
           "Remove ONE COPY PER `removed` ENTRY instead of filtering every match. Expected RED: today's filter matches every entry with that URI.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "87db56c",
+            message: "feat: remove one copy per `removed` entry, not every match",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED OBSERVED, NOT ASSUMED, on BOTH runtimes and at the FIRST assertion: with two copies held and one `removed` entry sent, the hover observed `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`. Re-run as a perturbation after the fix -- restoring the remove-all filter reddens THIS TEST ONLY, 319 pass 2 fail, and leaves the batched test GREEN.",
+          "THE TWO COPIES ARE BYTE-IDENTICAL so the outcome is SINGLE-VALUED and pinnable as a whole array: which copy a one-per-entry removal takes -- first match or last -- has more than one defensible answer, so identical copies dissolve that question instead of pinning it, per the Sprint 7 one-outcome rule. The `removed` entry carries a DIFFERENT NAME, so nothing passes by matching whole folders. The second event is load-bearing: a removal that took NOTHING also leaves one copy standing.",
+        ],
       },
       {
         test: "One event carrying TWO `removed` entries for a URI held twice removes BOTH",
         implementation:
           "LIKELY BORN GREEN -- today's filter already handles this case correctly. REPORT IT AS BORN GREEN rather than as a pass.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9def17f",
+            message: "test: pin that one event removing a URI twice takes both copies",
+            phase: "green",
+          },
+        ],
         notes: [
           "ITS OWN TEST BECAUSE THE HAZARDS DIFFER, the granularity rule's first real application: today's filter PASSES this case while failing the sequential one, and `new Set(removed.map(f => f.uri))` does the reverse. Neither control covers both.",
+          "BORN GREEN AND OBSERVED AS SUCH, not inferred: it was WRITTEN AND RUN AGAINST UNCHANGED src/ and passed there, which is why it was committed FIRST -- the listed order is inverted deliberately, since the two tests share a file and a born-green claim made after the fix would be unmeasurable.",
+          "THE FOUR-CELL MATRIX WAS MEASURED, and the GREEN cells are the load-bearing half. Remove-all filter: sequential RED, this one GREEN. One-per-entry with `new Set(event.removed.map(f => f.uri))` around the loop: sequential GREEN, this one RED. Each perturbation reddened exactly 2 tests -- one test on each of two runtimes -- and nothing else in 321.",
         ],
       },
       {
@@ -165,9 +182,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/workspace.ts's comment says one-per-entry is CORRECT and that this is NOT it. The moment the behaviour lands that sentence describes a deviation THAT NO LONGER EXISTS -- REVERSE STALENESS, the standing prose item's subject from the unfamiliar direction. It must also state which assertion backs it, per the clause filed last sprint. Both new rules' first applications in one item.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "87db56c",
+            message: "feat: remove one copy per `removed` entry, not every match",
+            phase: "green",
+          },
+          {
+            hash: "2a90e78",
+            message: "docs: say what PBI-20 blinded, and what nothing was ever asserting",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "SHIPPED IN THE BEHAVIOUR'S OWN COMMIT. The deviation framing is gone; the REASON one-per-entry is correct STAYS, since its violation would be a code edit at that site. It now names which test reddens for which mistake, and the matrix above is what makes that clause an assertion rather than a claim.",
+          "THE PROSE SWEEP FOUND ONE MORE HOME, reported because silence is not an answer: src/types.ts's config-author-facing `MIRRORED, NOT INTERPRETED` carried only the ADD half of the mirror. The REMOVE half is now stated beside it, in the same commit. README.md, examples/ and every other src/ comment were checked and say nothing about removal multiplicity.",
+          "A SECOND COMMIT, DELIBERATELY SEPARATE, for two comment-only findings the perturbations turned up -- both MEASURED, neither repaired, both for the PO. (1) THIS SPRINT BLINDED A CONTROL OF PBI-17's: trailing-slash normalisation reddens `a folder removed stops being observable...` under the old filter and reddens NOTHING under the new one, because one-per-entry deletes exactly one folder and first-match lands on the intended target. Not NOT CONSTRUCTED and not FORECLOSED -- a control that no longer discriminates. Un-blinding it needs a removal naming the spelling that is NOT first in the list; the existing case names the first because that is the direction measured against nvim. (2) REMOVED-BEFORE-ADDED IS ASSERTED BY NOTHING, and NOT by this sprint's doing: applying `added` first reddens nothing in 321 tests now and reddened nothing in the 317 that predate the sprint.",
+        ],
       },
     ],
     impediments: [],
