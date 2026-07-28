@@ -159,7 +159,26 @@ export async function* itemsFrom(
         continue;
       }
       const insertText = fragment.directory + entry.name;
-      items.push({ label: insertText, kind: await entryKind(directory, entry), insertText });
+      items.push({
+        // THE LABEL NAMES THE SOURCE AND ITS ROOT, and both halves earn their
+        // place. Four roots make `src/foo.ts` and `../src/foo.ts` look
+        // unrelated, so the root is what makes the list comprehensible; and the
+        // NAME is what keeps a document-relative source that lost its parent --
+        // rooted at `/`, which file:// silently produces -- distinguishable
+        // from the absolute source's legitimate output.
+        //
+        // MEASURED against the target completion plugin, and it is why this is
+        // not in `detail`: that field is displayed only when an option which
+        // DEFAULTS OFF is set. A root named there is a criterion satisfied on
+        // the wire and a feature the user never sees.
+        //
+        // THE ORDER IS LOAD-BEARING. The inserted text comes FIRST because a
+        // client with no filterText filters on the label, and a label starting
+        // with anything else would filter these items away as the user types.
+        label: `${insertText} (${source.name}: ${source.root})`,
+        kind: await entryKind(directory, entry),
+        insertText,
+      });
     }
   } catch (error) {
     // BY CODE, never a bare catch: absorbing everything would answer the

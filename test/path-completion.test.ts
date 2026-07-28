@@ -363,3 +363,59 @@ describe("an item resolves against its own source's root", () => {
     }
   });
 });
+
+describe("an item names the root that produced it", () => {
+  // ASSERTED PER SOURCE, and the reason is the masking control below rather
+  // than tidiness: over a merged list, a document-relative source that fell
+  // back to `/` is indistinguishable from the absolute source's legitimate
+  // output, so a merged assertion cannot tell a broken source from a working
+  // one.
+  //
+  // The carrier is the LABEL. `detail` was measured against the target client
+  // and is displayed only when an option that DEFAULTS OFF is set -- a root
+  // named there would satisfy this criterion at the protocol level and show
+  // the user nothing.
+  test("each item's label carries its source and its root", async () => {
+    const documentTree = tree(["notes/deep.txt"]);
+    const cwdTree = tree(["notes/wide.txt"]);
+    try {
+      const uri = pathToFileURL(join(documentTree.root, "doc.txt")).href;
+      const fragment = only("notes/");
+      const roots: Record<string, string> = {
+        document: documentTree.root,
+        cwd: cwdTree.root,
+      };
+
+      for (const source of sourcesFor(fragment, uri, cwdTree.root)) {
+        const items = await fromSource(source, fragment);
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          // The root as this test knows it, not as the module reported it.
+          expect(item.label).toContain(roots[source.name] ?? "");
+          expect(item.label).toContain(source.name);
+          // LOAD-BEARING ORDER, not formatting: a client filters on the label
+          // when the item carries no filterText, so a label that did not BEGIN
+          // with the text being typed would filter our own items away.
+          expect(item.label.startsWith(item.insertText ?? "")).toBe(true);
+        }
+      }
+    } finally {
+      documentTree.dispose();
+      cwdTree.dispose();
+    }
+  });
+
+  // THE MASKING CONTROL, constructed rather than argued: `file://` resolves to
+  // `/` WITHOUT THROWING (measured), so a document-relative source that lost
+  // its parent produces items from exactly the directory the absolute source
+  // legitimately produces them from. Attribution is the only thing that tells
+  // the two apart.
+  test("a source rooted at / is still distinguishable from the absolute source", async () => {
+    const fragment = only("/us");
+    const fallback = await fromSource({ name: "document", root: "/" }, fragment);
+    const legitimate = await fromSource({ name: "absolute", root: "/" }, fragment);
+
+    expect(inserted(fallback)).toEqual(inserted(legitimate));
+    expect(fallback.map((item) => item.label)).not.toEqual(legitimate.map((item) => item.label));
+  });
+});
