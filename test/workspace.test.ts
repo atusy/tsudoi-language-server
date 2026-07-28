@@ -651,9 +651,24 @@ for (const runtime of runtimes) {
 
     // PBI-17 CRITERION 2, and it is THE DISCRIMINATING CASE for it: an
     // implementation that only appends passes the added criterion above and
-    // fails here, and one that NORMALISES URIs passes a naive removal test and
-    // fails here too, because it would treat these two folders as one and
-    // delete the survivor along with the target.
+    // fails here.
+    //
+    // ITS NORMALISATION HALF WAS BLINDED BY PBI-20 AND IS ANNOTATED RATHER THAN
+    // REPAIRED, because repairing it would rewrite a defence of an accepted
+    // criterion, which is a scope decision. It used to catch a normalising
+    // implementation because REMOVE-ALL deleted the survivor along with the
+    // target. One copy per `removed` entry deletes exactly ONE folder, and
+    // first-match lands on `…/plain` -- the intended target -- so the survivor
+    // stands and this test passes. MEASURED both ways: stripping a trailing
+    // slash before comparing reddens this test under the old filter and reddens
+    // NOTHING in 321 tests under the current one.
+    //
+    // WHAT WOULD UN-BLIND IT is a removal naming the spelling that is NOT first
+    // in the list; the case here names the first, because that is the direction
+    // MEASURED against nvim and a synthetic direction would not be. SO THE
+    // RESIDUAL IS REAL: a normalising implementation now ships undetected in
+    // the measured direction, and nobody should read this test as defending
+    // exact-string matching any more.
     //
     // AN ECHOING ORACLE CANNOT PASS THIS. A server that answered with whatever
     // the last event mentioned, or that compared paths rather than strings,

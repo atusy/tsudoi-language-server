@@ -210,6 +210,13 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // it is wrong and therefore visible. The other order ends holding
       // NOTHING, which is a gap and therefore silent.
       //
+      // NOTHING ASSERTS THIS ORDER. MEASURED, not assumed, and measured against
+      // BOTH implementations so it is not read as something PBI-20 broke:
+      // applying `added` before `removed` reddens NOTHING -- 321 tests here,
+      // 317 before this sprint's two arrived. No test sends the same URI in
+      // both arms of ONE event, which is the only shape that can tell the two
+      // orders apart. Swapping these two lines is therefore a silent change.
+      //
       // ONE COPY PER `removed` ENTRY, which is why this is a loop taking the
       // FIRST match each time rather than a filter over a Set of URIs. A URI
       // held TWICE and removed ONCE keeps one copy; removed twice in ONE event
