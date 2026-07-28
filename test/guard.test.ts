@@ -14,7 +14,10 @@ function importsBunModule(specifier: string): string {
 
 /** A shape a .ts file can take in this repo, and what the guard owes it. */
 interface PathShape {
-  /** A probe file at that shape; every rule below is exercised at this path. */
+  /**
+   * A probe file at that shape. RULES 1 TO 3 are exercised at every path here;
+   * RULE 4 IS NOT, and the reason is given at rule 4 rather than assumed.
+   */
   readonly path: string;
   /**
    * Whether `bun:*` imports are exempt there. TRUE only where `bun test` itself
@@ -25,7 +28,7 @@ interface PathShape {
 }
 
 /**
- * THE SIX SHAPES, and ONE list drives all three rules.
+ * THE SIX SHAPES, and ONE list drives rules 1 to 3.
  *
  * They used to be three lists that had drifted apart: import/extensions was
  * pinned at three paths, the Bun global at four, bun:* at four again but not
@@ -187,6 +190,14 @@ function reportedAgainst(path: string): RegExp {
 // RULE 4, the connection factory. THREE HALVES, and none of them is a one-off
 // probe: the first says the ban FIRES, the second that the router is EXEMPT, the
 // third that the exemption is scoped to a NAME rather than to the specifier.
+//
+// IT DOES NOT LOOP OVER pathShapes, and that is a decision rather than an
+// omission -- do not add the loop for symmetry. At the two shapes where the
+// whole rule is switched off, the assertion would be a bare `code === 0`, which
+// is equally true of a rule that does not exist, is misconfigured, or never
+// matched. That is the degeneracy this file caught twice while rule 4 was being
+// written, so the three paths are named here instead, each absence sharing its
+// run with a file the ban really flags.
 //
 // Why a lint at all, when PBI-22 already made src/server.ts unable to CALL
 // onNotification: it can still IMPORT the factory, build its own wide connection

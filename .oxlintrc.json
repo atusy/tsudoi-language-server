@@ -5,10 +5,15 @@
 // Default-deny, not src/-only: test/fixtures/*.ts are executed by deno in the
 // cross-runtime suite and examples/ holds the stakeholder's own config, which
 // deno runs too, so scoping the ban to src/ would leave the highest-risk files
-// unguarded. The six path shapes that follows from -- src/, src/notifications.ts,
-// **/*.test.ts, test/helpers/, test/fixtures/ and examples/ -- are pinned by
-// guard.test.ts from ONE list, so widening an override here reddens the shape it
-// widens.
+// unguarded. The five path shapes that follows from -- src/, **/*.test.ts,
+// test/helpers/, test/fixtures/ and examples/ -- are pinned by guard.test.ts
+// from ONE list, so widening an override here reddens the shape it widens.
+//
+// A SIXTH SHAPE IN THAT LIST, src/notifications.ts, follows from something else
+// entirely and is named so it is not read as part of the argument above: the
+// connection-factory ban below exempts it. It is carried as its own shape so the
+// exemption's SPELLING is pinned -- an `"off"` there would silence bun and bun:*
+// in the router too, and the bun assertion at that path reddens.
 //
 // A rot detector, not a barrier. (globalThis as { Bun: ... }).Bun and an
 // oxlint-disable comment both walk straight past it, and no static rule proves
