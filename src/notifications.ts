@@ -133,23 +133,40 @@ export function registerNotifications<P extends readonly unknown[]>(
 }
 
 /**
- * A connection with no `onNotification` ON ITS TYPE.
+ * A connection with neither `onNotification` NOR `onUnhandledNotification` ON
+ * ITS TYPE -- the two members through which a holder could see notification
+ * traffic without the gate. `onUnhandledNotification` is an EVENT PROPERTY
+ * holding a callable rather than a method, which changes nothing here: `Omit`
+ * removes a property whatever its type is, and calling it is what installs the
+ * listener.
  *
  * `Omit`, not a hand-written interface: the remainder then tracks whatever
- * `ProtocolConnection` grows, and only the ONE member this narrowing is about
- * is named here.
+ * `ProtocolConnection` grows, and only the members this narrowing is about are
+ * named here.
  *
- * THE REMAINDER WAS MEASURED, not assumed, before this type existed --
+ * THE REMAINDER WAS MEASURED, not assumed, at each widening of this list --
  * `onRequest` with params and without, `sendProgress` and `listen` all compile
  * through it with no cast and no helper. `onRequest` has five overloads and
  * `Omit` is a mapped type; overload survival through one of those is exactly
  * the thing worth checking rather than reasoning about.
+ *
+ * A MISSPELLED KEY HERE IS A SILENT NO-OP, and it is why no probe defending
+ * this type may DISCRIMINATE on a tsc exit code: `Omit<T, K>` accepts a key that
+ * is not in `keyof T` and hands back T unchanged, so the misspelling compiles at
+ * 0 with nothing objecting. MEASURED -- spelled `onUnhandledNotifcation`, the
+ * probe's own type-check exits 0 and only assertions naming the SYMBOL redden.
+ * test/notifications.test.ts matches each removed member BY NAME, and pins the
+ * removed SET exactly.
  */
-export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
+export type RequestOnlyConnection = Omit<
+  ProtocolConnection,
+  "onNotification" | "onUnhandledNotification"
+>;
 
 /**
  * The connection tsudoi serves on, with its notification table ALREADY
- * REGISTERED and `onNotification` gone from what the caller holds.
+ * REGISTERED and both notification-observing members -- `onNotification` and
+ * `onUnhandledNotification` -- gone from what the caller holds.
  *
  * THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED, and that is what
  * makes this the whole mechanism rather than a tidy-up: the caller cannot
@@ -202,20 +219,34 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  * from this module, which is why test/notifications.test.ts asserts this module
  * exports no factory. Both are the deliberate-evasion class, not slips.
  *
- * A THIRD GAP, weaker and still real, AND NO ASSERTION BACKS THIS SENTENCE --
- * it is read off the remainder above, so what is at risk if it rots is only its
- * own accuracy: `onUnhandledNotification` SURVIVES the `Omit` and is an ungated
- * way to see notification traffic. It is weaker because it fires only for
- * messages nothing registered and carries no per-method dispatch. Deliberately
- * NOT added to the `Omit`: the accepted criterion is scoped to
- * `onNotification`, and widening it here would swap a reviewed boundary for an
- * unreviewed one. `sendNotification` survives too and is not a gap at all --
- * that is SENDING a notification, not installing a handler for one.
+ * THE THIRD GAP IS NOW CLOSED, AND IT WAS THE STRONGEST OF THE RESIDUALS RATHER
+ * THAN THE SMALLEST: `onUnhandledNotification` used to survive the `Omit`, and
+ * reaching it needed NO DELIBERATE ACT -- it sat on the handle THIS FUNCTION
+ * HANDS OUT, so `no longer reachable by accident`, the argument that made the
+ * import ban adequate, never covered it. It was held open on ONE QUESTION,
+ * whether anything wants that hook for DIAGNOSTICS, and that question was
+ * already answered three sprints before it was asked: at Sprint 15 unregistered
+ * notifications were MEASURED to produce ZERO BYTES, and that silence was
+ * endorsed deliberately, so nothing wants it. The foreclosure is
+ * reversible at the same one token it cost, so the diagnostic capability is
+ * DEFERRED rather than surrendered.
  *
- * ITS CLOSURE IS ONE TOKEN -- `Omit<..., "onNotification" | "onUnhandledNotification">`
- * -- AND THE OPEN QUESTION IS WHY IT IS NOT TAKEN YET: whether anything wants
- * that hook for DIAGNOSTICS. Removal is not obviously free, which is what keeps
- * this a question rather than an oversight.
+ * THE BOUNDARY THAT NARROWING CLAIMS, and it is EXACTLY TWO MEMBERS:
+ * `onNotification` and `onUnhandledNotification` are foreclosed AND NOTHING
+ * ELSE IS. MEASURED as a SET DIFFERENCE rather than sampled, and pinned by
+ * test/notifications.test.ts so that adding a third key here reddens rather than
+ * quietly widening this sentence's claim. `sendNotification` survives and is not
+ * a gap at all -- that is SENDING a notification, not installing a handler for
+ * one.
+ *
+ * WHAT IT DOES NOT CLOSE, named so it is not read as closing more than it does:
+ * the deliberate-evasion routes above are UNCHANGED -- `await import(...)`, and
+ * a wrapper exported from this module -- as is the exemption in .oxlintrc.json
+ * that switches the factory ban off in test files and test/helpers/. Both remain
+ * accepted residuals. THE ADEQUACY ARGUMENT RECORDED AT THAT RULE IS
+ * LIKEWISE UNAFFECTED, checked rather than assumed: it rests on what this
+ * function returns being the sole connection-shaped value in startServer's
+ * scope, and a wider `Omit` widens that narrowing rather than moving it.
  */
 export function createGatedConnection<P extends readonly unknown[]>(
   reader: MessageReader,

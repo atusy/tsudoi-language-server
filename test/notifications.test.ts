@@ -4,12 +4,17 @@ import { fileURLToPath } from "node:url";
 import {
   type Disposable,
   NotificationType,
+  type ProtocolConnection,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import { createDocumentStore } from "../src/documents.ts";
 import { createLifecycle } from "../src/lifecycle.ts";
 import * as router from "../src/notifications.ts";
-import { type NotificationRegistrar, registerNotifications } from "../src/notifications.ts";
+import {
+  type NotificationRegistrar,
+  registerNotifications,
+  type RequestOnlyConnection,
+} from "../src/notifications.ts";
 import { notificationEntries } from "../src/server.ts";
 import { createWorkspaceFolders } from "../src/workspace.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
@@ -362,6 +367,100 @@ test("the same two outcomes hold through an alias under a different name", async
 
   expect(result.output).toMatch(
     /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'onNotification' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+/**
+ * The SECOND member the narrowing removes, and it owns its own test rather than
+ * a second call inside `forbids.ts`: a hazard must own a test whose FIRST
+ * assertion it is, and appended to the test above it could only ever be the
+ * second.
+ *
+ * `onUnhandledNotification` is an EVENT PROPERTY holding a callable, not a
+ * method -- which changes nothing about reachability, since `Omit` removes a
+ * property whatever its type is, and calling it is what installs the listener.
+ *
+ * WHY IT IS WORTH A TOKEN WHEN `onNotification` ALREADY WENT: reaching this one
+ * needs NO DELIBERATE ACT. It sits on the handle `createGatedConnection` hands
+ * out, so `no longer reachable by accident` -- the argument that made the import
+ * ban adequate -- never covered it.
+ *
+ * THE PERMITTED HALF IS NOT OPTIONAL, for the same reason as above:
+ * `Omit<ProtocolConnection, keyof ProtocolConnection>` satisfies the failing
+ * half perfectly and would leave src/methods.ts unable to register a request.
+ *
+ * `permits.ts` IS THE SAME STRING the pair above uses, not a copy that could
+ * drift -- so the presence pair for `no diagnostic names permits.ts` is the same
+ * harness, the same file name and the same binding, differing only in which file
+ * the other half puts its diagnostic in.
+ */
+const forbidsUnhandledAndPermits: Record<string, string> = {
+  "forbids.ts": narrowedSource(["connection.onUnhandledNotification(() => {});"]),
+  "permits.ts": forbidsAndPermits["permits.ts"] as string,
+};
+
+test("the narrowed connection rejects onUnhandledNotification and accepts onRequest, in one type-check", async () => {
+  const result = await typeCheckProbe(forbidsUnhandledAndPermits);
+
+  // BOUND TO THE FILE AND TO THE SYMBOL. A bare non-zero exit would go GREEN
+  // against a module with no narrowing whatsoever -- measured at Sprint 21,
+  // where an unresolved `RequestOnlyConnection` exited 1 on TS2305 alone. And a
+  // symbol MISSPELLED inside the `Omit` is a silent no-op: `Omit<T, K>` accepts
+  // a key that is not in `keyof T` and returns T unchanged, so nothing but a
+  // probe naming this symbol can tell the two apart.
+  expect(result.output).toMatch(
+    /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'onUnhandledNotification' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});
+
+/** `T` if the two unions have the same members, `false` otherwise. */
+type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+/** Fails to type-check unless `T` is `true`. */
+type Assert<T extends true> = T;
+
+/**
+ * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY src/notifications.ts CLAIMS, and
+ * the ONLY thing in this repo that carries it.
+ *
+ * The probes above name two removed members and one survivor, so ALL of them
+ * stay green if a THIRD key is added to that `Omit` -- MEASURED, appending
+ * `| "sendNotification"` runs at 343 tests green with nothing objecting, while
+ * the boundary sentence beside the type silently becomes false. This fails first
+ * and by name in that case, so it is not a control that could never fire.
+ *
+ * A SET DIFFERENCE RATHER THAN A SAMPLE, which is what `and nothing else`
+ * actually asserts, and both directions are load-bearing. MEASURED against three
+ * controls: the pre-sprint one-key `Omit`, a key MISSPELLED as
+ * `onUnhandledNotifcation` (which `Omit` accepts and ignores, leaving the type
+ * unchanged), and the third key above. Each reddens THIS line with TS2344 and
+ * leaves the rest of `tsc --noEmit` at zero diagnostics -- the type itself
+ * compiles in all three, which is the whole reason an exit code proves nothing
+ * here.
+ *
+ * CHECKED BY `tsc --noEmit`, NOT BY bun test, so it is deliberately not dressed
+ * as a test: a runtime `expect(true).toBe(true)` beside it would observe the
+ * same thing whether the type held or not.
+ */
+export type BoundaryIsExactlyTwoMembers = Assert<
+  Exact<
+    Exclude<keyof ProtocolConnection, keyof RequestOnlyConnection>,
+    "onNotification" | "onUnhandledNotification"
+  >
+>;
+
+test("the same two outcomes hold for onUnhandledNotification through an alias under a different name", async () => {
+  const result = await typeCheckProbe({
+    "renamed.ts": aliasedSource("onUnhandledNotification(() => {});"),
+    "permits.ts": aliasedSource("onRequest(ShutdownRequest.type, (): void => {});"),
+  });
+
+  expect(result.output).toMatch(
+    /renamed\.ts\(\d+,\d+\): error TS\d+: Property 'onUnhandledNotification' does not exist/,
   );
   expect(result.output).not.toContain("permits.ts");
   expect(result.code).toBe(1);
