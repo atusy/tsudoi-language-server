@@ -91,8 +91,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap.",
-        "THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite.",
-        "THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
+        "THE GATE IS OPT-IN PER HANDLER, which is why the lifecycle criterion exists: src/server.ts records that it is consulted by the handlers tsudoi REGISTERED, so a new mutating handler can simply not consult it and pass every test that sends the notification in the normal window. This is the FIRST notification with state to mutate, and the first place that opt-in can bite. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
         "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
@@ -120,10 +119,8 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention.",
-        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure.",
-        "DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
-        "WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
+        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention. WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
+        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure. DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
       ],
     },
   ],
@@ -138,46 +135,11 @@ const scrum: ScrumDashboard = {
       impediments: [],
       decisions: [
         "Shipped in daff31a, 7a89e1d, ecdcd05, b72ba2c, f689b94, 905ef7c, 8a5bd06, 7ed3483, plus 587adfb after acceptance. 272 tests green under both runtimes; each DoD command run separately with its exit read directly.",
-        "SINGLE-OBSERVER SPRINT, disclosed by the Scrum Master before the verdict and weighed by the PO rather than smoothed over: the execution agent was stopped mid-subtask-4 and the facilitator continued the work themselves, so every perturbation from that point has one observer who is also its author -- weaker than fourteen sprints of standard. ACCEPTED because the perturbations are REPRODUCIBLE: auditable though unaudited. The remedy is an active improvement, not a note.",
-        "THE PO VERIFIED THE STRUCTURAL CLAIMS THEMSELVES against the artifacts -- Tsudoi unchanged with documents alone, RequestContext carrying workspaceFolders -- and separated what they could confirm from what they could not. They then caught their OWN coverage-rule failure in the same read: they concluded from a grep they KNEW was truncated that the ordering constraint was missing from src/cli.ts, where it has been since e80b930. Asserting absence from a knowingly-limited search, named as a worse shape than misremembering.",
-        "A STALE CLAIM SHIPPED FOR A SPRINT, found here and fixed here: the example told the reader items carry a plain textEdit and that their insert-versus-replace setting therefore had NO EFFECT -- false since Sprint 13's mid-path ruling made that setting theirs, in the one document that argues for adoption. Sprint 13's own fix round updated the code and the dashboard and not the prose beside them.",
-        "TWO INCREMENT CANDIDATES, offered rather than scoped, and the second came FROM THE STAKEHOLDER'S OWN READING of the sprint's output. (a) A workspace folder whose URI names no local path is skipped SILENTLY -- the same silent-absence harm this sprint answers elsewhere, with the once-per-session machinery already there to use; recorded at the skip site. (b) Sweep for other free-`string` fields whose values the code branches on, after PathSource.name became a closed union: type-level foreclosure for a class that was held together by care.",
+        "SINGLE-OBSERVER SPRINT, disclosed by the Scrum Master before the verdict and weighed by the PO rather than smoothed over: the execution agent was stopped mid-subtask-4 and the facilitator continued the work themselves, so every perturbation from that point has one observer who is also its author -- weaker than fourteen sprints of standard. ACCEPTED because the perturbations are REPRODUCIBLE: auditable though unaudited. The remedy is an active improvement, not a note. THE PO VERIFIED THE STRUCTURAL CLAIMS THEMSELVES against the artifacts -- Tsudoi unchanged with documents alone, RequestContext carrying workspaceFolders -- and separated what they could confirm from what they could not. They then caught their OWN coverage-rule failure in the same read: they concluded from a grep they KNEW was truncated that the ordering constraint was missing from src/cli.ts, where it has been since e80b930. Asserting absence from a knowingly-limited search, named as a worse shape than misremembering.",
+        "COMPACTED AT SPRINT 15. SPRINT 13'S RECORD DROPPED, every decision of it sited and named there before it went -- criteria and tests for the rulings, examples/path-completion.ts:358 :269 :277 :118 :440 for the measurements, test/path-completion.test.ts:29 :204 for the unruled list, and the example's own prose at tsudoi.config.ts:56 for reachability. THIS SPRINT'S stale-textEdit-prose record is superseded by the fix and by the standing prose-reporting improvement it produced. TWO INCREMENT CANDIDATES survive because one is still open, and the second came FROM THE STAKEHOLDER'S OWN READING of the sprint's output. (a) A workspace folder whose URI names no local path is skipped SILENTLY -- the same silent-absence harm this sprint answers elsewhere, with the once-per-session machinery already there to use; recorded at the skip site. (b) Sweep for other free-`string` fields whose values the code branches on, after PathSource.name became a closed union: type-level foreclosure for a class that was held together by care.",
         "NOT CONSTRUCTED, and what remains at risk: the once-per-session flag is module state, so a config importing the module twice would report twice. No route to a double import exists today and nothing asserts it.",
         "REPORTED AT REVIEW AND NOT SOFTENED: criterion 1 is verified SYNTHETICALLY -- no real editor was driven. The config choice that makes it live is a real root_dir/root_markers; with the bare on_dir() this stakeholder's only comparable server uses, their client declares workspace-folder support and sends none, so the workspace source will be INACTIVE for them and the once-per-session report is what they will actually see.",
       ],
-    },
-    {
-      number: 13,
-      pbi_id: "PBI-14",
-      goal: "Give a config author a path completion that knows which root it is answering from -- so the item they pick inserts the path they meant, from the root they meant.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in 3222fb0, 94e46c0, c0db79e, 771b319, 4a1bdfa, 258f726, 7c97fe7, f18159e, 43fca61, 8932b45, b78fd74, af48333, fbdf474, 55fa0d9, 1d214aa, plus structural 4fe716c. 258 tests green under both runtimes, ZERO LINES IN src/ across the whole sprint. Per-subtask records and 14 perturbation notes compacted here; git retains them.",
-        "COMPACTED AT CLOSE under the PO's Q2 filter, which surfaces only drops whose home is NOT a permanent assertion, a comment at the site it constrains, or an active improvement. Fifteen decisions dropped, every one of them sited, and the four I was least sure of were CHECKED BY READING THE CODE rather than recalled: the opendir cross-runtime difference at examples/path-completion.ts:358, the detail-versus-label carrier at :269 with the enableMatchLabel tension at :277, per-segment foreclosure at :118, and the dedup attribution weakness at :440. The unruled-behaviour list is at test/path-completion.test.ts:29 and :204. PBI-14 leaves the backlog done, and each criterion's ruling lives in the test that verifies it. THREE MORE OF THIS SPRINT'S OWN DECISIONS DROPPED AT SPRINT 14, all sited: the stakeholder's scope ruling and the four acceptance rulings live in the criteria and the tests they produced, and the deliberately-not-built list is at test/path-completion.test.ts:29 and :204. SPRINT 12'S RECORD DROPPED by the same filter, every decision of it sited and CHECKED: the bareness reframe at test/helpers/readme.ts:187 and test/readme.test.ts:114, the omission-is-worse-than-staleness asymmetry at test/readme.test.ts:118, and the type-check gap now carried by PBI-16. THE TWO NOTES I HAD KEPT FOR WANT OF A HOME BOTH HAD ONE, found by checking the two places the PO named rather than by my recalling that they did not: reachability is disclaimed in the example's own prose at examples/tsudoi.config.ts:56 -- `nothing here should be read as a promise that it does` -- and the narrow deno flag set is the README's historical claim pinned by readme.test.ts's permissionsFact, extended in the same commit to say the flags served a real path COMPLETION and not only the handshake, which is what Sprint 13 measured. A completed sprint's record is not a durable home; it is what the next compaction meets, which is how the type-check gap became PBI-16.",
-        "FOR THE STAKEHOLDER, not work for us: their ddc file source carries forceCompletionPattern \\S/\\S* and their lsp source does not include /, so THE THING THAT FORCE-OPENS THE POPUP ON A PATH FRAGMENT TODAY IS THE SOURCE THEY PLAN TO REMOVE. A config change on their side, reported rather than planned around.",
-      ],
-    },
-    {
-      number: 10,
-      pbi_id: "PBI-13",
-      goal: "Make the cross-runtime promise survive distribution: a Deno user obtains tsudoi the stated way and it starts, without Bun losing the route it already has.",
-      status: "done",
-      subtasks: [],
-      impediments: [
-        {
-          description:
-            "The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
-          impact:
-            "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
-          request:
-            "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
-          status: "waiting_human",
-          notes: [],
-        },
-      ],
-      decisions: [],
     },
   ],
 
@@ -190,7 +152,94 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 15,
+    pbi_id: "PBI-16",
+    goal: "Make what this repository publishes type-check as a stranger receives it -- so an artifact that passes here cannot fail in their project.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The README's snippet, extracted from its own bytes, type-checks in an installed consumer",
+        implementation:
+          "One typeCheck(files) call through the PUBLISHED arm. Assert a NON-ZERO extraction count FIRST: an extractor that finds nothing passes everything after it, which is the vacuity mode Sprint 12 met twice.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN, declared rather than dressed with a fictional RED: every artifact already compiles, measured twice -- the snippet in-repo and the example in a real consumer -- so what is missing is the CHECK, not a fix, and ALL the value is in the controls below. A verification PBI like PBI-9. SHARED IMPLEMENTATION MOMENT with subtask 2, also declared at planning: two probe sources into one typeCheck(files) call is ONE change wearing two names.",
+        ],
+      },
+      {
+        test: "examples/tsudoi.config.ts and path-completion.ts type-check the same way",
+        implementation:
+          "The same call, two more probe sources. Born green, same moment as subtask 1.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Each artifact can redden ALONE",
+        implementation:
+          "A type error in the snippet must not be maskable by the example, or the reverse.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE HAZARD IS BAKED IN BY THE SHARED MOMENT: one call over several sources means a single failure may not identify its source. That is why this is a subtask rather than a hope.",
+        ],
+      },
+      {
+        test: "The PUBLISHED arm is what is exercised, not the in-repo one again",
+        implementation:
+          "THE CONTROL THAT PROVES THE PBI DID ITS JOB, and the PAIR is the whole point: perturbing the published types must REDDEN the probe WHILE `tsc --noEmit` STAYS GREEN. Also assert the converse -- pointing the check at in-repo sources satisfies nothing, since that is exactly what tsc --noEmit already does.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Without the stays-green half this is `checked again` wearing the words `checked through the published arm`.",
+        ],
+      },
+      {
+        test: "The hoisting precondition is ASSERTED, and its blast radius reported",
+        implementation:
+          "Remove vscode-languageserver-protocol from the consumer's reachable modules; the example probe must redden. REPORT WHAT ELSE REDDENS: the example imports it as a BARE SPECIFIER THE CONSUMER NEVER DECLARES, and it resolves today only because bun HOISTS it as a transitive dependency of @atusy/tsudoi. Under pnpm's default or npm with strict resolution it fails, LOOKING LIKE A TYPE ERROR.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IN SCOPE BECAUSE IT FALSIFIES THIS PBI'S OWN STORY: `type-check against what actually ships` is what a criterion passing only under a hoisting installer would be green about and wrong about. Second widening in two turns, and the PO named it as such -- the first found the real hole, this names the condition under which even that check lies.",
+          "CONFIRM WHETHER CompletionItemKind IS A VALUE IMPORT. If it is, the example needs that package AT RUNTIME, so PBI-13's installed-runtime verification rests on the same assumption -- which makes the blast radius the most valuable thing this sprint produces.",
+        ],
+      },
+      {
+        test: "N/A (prose, in the same commit as the criterion it belongs to)",
+        implementation:
+          "The README gains the install instruction a copying reader needs, and its drift sentence -- `The test suite runs those files themselves, so they cannot drift from what tsudoi does` -- gains its TYPE-CHECKING half. Literally true about running, and adjacent to the very claim this PBI exists to make true.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SAME TREATMENT AS PBI-17'S TYPE COMMENT: a claim that becomes true BECAUSE OF THIS WORK is part of this work, never a follow-up. Found by the Developer reading the file, one sentence past where the PO's note pointed -- the standing prose item working one sprint after it was filed.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "CARRIED FORWARD FROM SPRINT 10 rather than evaporating with its record, and LIVE FOR THIS SPRINT: PBI-16 type-checks against a PACKED TARBALL, which is `what ships` in every sense except the one a stranger uses. The stated route's FIRST line -- how a user obtains the package -- is verified from a local tarball, not from npm. `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` cannot be run against a package that has never been published, and publishing needs an account and is irreversible.",
+        impact:
+          "PBI-13's criteria are met for everything after the install: the same artifact, the same install command shape and the same entry point serve both runtimes. What is NOT verified is that the registry hands a user this tarball -- the metric says `from an installed package`, and installed-from-a-tarball is the closest a developer can get without a human decision.",
+        request:
+          "Decide whether to publish 0.0.x to npm so the obtain half can be verified, and provide the account if so. Until then nothing in this repo may claim the registry route works; test/installed-runtime.test.ts marks it NOT VERIFIED in the same comment that states it.",
+        status: "waiting_human",
+        notes: [],
+      },
+    ],
+    decisions: [
+      "THE RE-RUN IMPROVEMENT FIRED ON ITS FIRST OUTING AND CORRECTED THE FACILITATOR. The Developer independently reproduced Sprint 14's keep-only-the-first-folder perturbation -- baseline 14 pass, perturbed 12 pass 2 fail at test/workspace.test.ts:287 under both runtimes, restored clean -- and corrected `2 assertions` to 2 FAILING TESTS. Same magnitude in a unit that SOUNDS STRONGER, which is the direction least likely to be questioned. Flagged because inheriting the first observer's phrasing would defeat the point of a second observer. BORN GREEN IS A REPORTING EXPECTATION HERE, not an omission: the Review states it so the absence of expected-REDs reads as honesty.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 14,
