@@ -65,13 +65,51 @@ const scrum: ScrumDashboard = {
             'Send the notification outside the initialized window and assert the list is unchanged, then assert a normal change still applies. NEGATIVE CONTROL AMENDED AT SPRINT 16, and the change is the reorder paying off: the BYPASS this control used to name is now UNREPRESENTABLE, since a handler registered through the router cannot skip the gate. The representable failure is a WRONG GATE ASSIGNMENT -- registering this handler with `gate: "always"` must redden it. Thin but real, and the criterion reduces to one honest assertion',
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
+        "READY AT SPRINT 17 REFINEMENT: the stakeholder confirmed they WILL use add_workspace_folder(), so one of the two unmeasured conditions is ANSWERED. The other -- that they give tsudoi a real root at all -- is the same condition ANY workspace feature needs, so it no longer distinguishes this item from its alternatives.",
         "MIRROR, DO NOT NORMALISE -- the principle rather than the measurement, because someone will see the trailing slash, find it obviously wrong, and fix it. THE WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET. MEASURED against Neovim, adding four folders and removing three: `…/plain` and `…/plain/` are accepted as TWO DIFFERENT FOLDERS, and removing `…/plain` leaves `…/plain/` in place -- so a normalising implementation SILENTLY DELETES A FOLDER THE CLIENT STILL HOLDS. Also measured: percent-encoding is real with LOWERCASE hex (%e6…), and every `removed` URI is BYTE-IDENTICAL to its `added` one, so a plain string filter is correct for this client. PER-REQUEST CAPTURE IS THE RULING, not a coin flip: src/methods.ts reads the folders ONCE when building the RequestContext, so a new request sees the current list while an in-flight one keeps what it started with -- and that is not hypothetical, since the path-completion example streams over time. The alternative is INCOHERENT IN A NAMEABLE WAY: a response carrying items attributed to a root that no longer exists beside items from one that just appeared. It is also the shape RequestContext already has, alongside `signal`.",
         "THE src/types.ts COMMENT CHANGES IN THE SAME COMMIT, and its wording changes rather than merely gaining a clause: today it calls the value a snapshot of INITIALIZE, and under this PBI it becomes a snapshot of REQUEST START.",
         "THE CARRIER STAYS RequestContext, and the Sprint 14 foreclosure was NEVER ABOUT STALENESS -- recorded so nobody infers it was snapshot-specific and reopens it. It was that a FACTORY-TIME READ IS EMPTY because the factory runs before initialize, which tracking does not change. A live object on Tsudoi would buy only what RequestContext already gives per request, at the cost of reopening the trap. THE src/types.ts COMMENT IS PART OF THIS DELIVERABLE, not a follow-up: it currently PROMISES no tracking and names who must edit it. Landing tracking without updating it in the same commit puts a FALSE STATEMENT IN A DURABLE HOME -- the Sprint 13 prose defect, one sprint after the standing item against exactly that.",
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it. THE GATING HANDBACK IS ANSWERED BY THE REORDER rather than pending: with PBI-18 first, this PBI adds a handler to a STRUCTURAL gate instead of writing a fourth hand-written copy of the check.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore. MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
+      ],
+    },
+    {
+      id: "PBI-19",
+      story: {
+        role: "config author",
+        capability: "see the root the editor named, however that client spelled it",
+        benefit:
+          "a project that IS open stops looking like no project at all, because the client used the field its LSP version had",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A client that sends rootUri but no workspaceFolders still reaches a handler with a folder",
+          verification:
+            "Drive initialize with rootUri set and workspaceFolders ABSENT; assert the handler observes one folder resolving to that root. NEGATIVE CONTROL: absence must still be absence -- a client sending NEITHER leaves the list EMPTY, never a folder synthesised from cwd or from anything else this process could invent",
+        },
+        {
+          criterion: "The protocol's own precedence is what decides, not ours",
+          verification:
+            "workspaceFolders > rootUri > rootPath, each asserted against the pair below it: folders present WINS over a conflicting rootUri, and rootUri wins over a conflicting rootPath. MEASURED FROM THE INSTALLED TYPES, which state the second half outright -- `If both rootPath and rootUri are set rootUri wins`",
+        },
+        {
+          criterion:
+            "A synthesised entry is dropped once the client proves it can name folders itself",
+          verification:
+            "With a folder synthesised from rootUri, send workspace/didChangeWorkspaceFolders and assert the synthesised entry is GONE, leaving the client's own list alone. NEGATIVE CONTROL: keeping it leaves the list permanently part ours and part theirs, and a `removed` event naming the URI we invented a name for has no rule",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "MEASURED FROM THE INSTALLED PROTOCOL TYPES, and this is the whole argument: workspaceFolders `is only available IF THE CLIENT SUPPORTS WORKSPACE FOLDERS`, while rootPath is deprecated in favour of rootUri and rootUri in favour of workspaceFolders. So a client without that capability sends NO folders and may still send a root -- and today tsudoi hands such an author an empty list, from which they conclude the editor opened no project when it opened one and said so in the deprecated field. The silent-absence class, through a door PBI-15 did not cover.",
+        "A PREMISE THE PO FLAGGED AS UNCONFIRMED AND ASKED FOR BEFORE FILING, THEN FALSIFIED BY READING THE DECLARATIONS RATHER THAN THE PROSE: they reasoned that such a client could never send didChangeWorkspaceFolders, which would have made synthesis and tracking DISJOINT. It is not declared. CM<C, S> is { client, server }, and the notification declares CM<undefined, `workspace.workspaceFolders.changeNotifications`> -- NO CLIENT CAPABILITY AT ALL. Separateness therefore rests on DIFFERENT FAILURE MODES, which hold regardless: PBI-17 fixes a list going STALE, this fixes a list being EMPTY when the client did name a root.",
+        "THE INTERACTION IS OWNED BY WHICHEVER LANDS SECOND, which the ordering settles as this one. The rule, REASONED and offered for refinement to CONFIRM rather than inherit: if a change notification ever arrives, DROP the synthesised entry -- the fallback existed because we inferred the client could not tell us folders, and a change notification proves it can. That keeps mirror-don't-normalise intact, since the synthesised entry is the one thing in the list that never was client state.",
+        "A LIMIT RECORDED SO NOBODY READS THIS AS THE STAKEHOLDER'S FIX: with the bare on_dir() their kakehashi uses, nvim sends rootUri: null, rootPath: null AND workspaceFolders: null -- ALL THREE EMPTY. There is nothing to convert. This helps clients that name a root without naming folders, a real but small population containing no known user, which is why it is ordered after PBI-17.",
+        "THE NAME STAYS `workspaceFolders` -- a folder derived from rootUri genuinely IS a workspace folder expressed in an older field, and src/types.ts's own header says renaming an export breaks configs we cannot see. WHAT BECOMES FALSE IS THE COMMENT, which says the value is what the client SENT: it changes in the SAME COMMIT and must name the precedence chain, so an author meeting a synthesised `name` knows where it came from.",
+        "A PROBE WORTH RUNNING DURING THE SPRINT, NOT AS A GATE ON IT: whether a client can be made to send didChangeWorkspaceFolders while declaring workspace.workspaceFolders false or omitting it. Its best outcome leaves the case REPRESENTABLE in the protocol, so this PBI must define behaviour either way -- a measurement that cannot change the deliverable does not block refinement.",
       ],
     },
   ],
