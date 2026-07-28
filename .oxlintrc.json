@@ -5,9 +5,10 @@
 // Default-deny, not src/-only: test/fixtures/*.ts are executed by deno in the
 // cross-runtime suite and examples/ holds the stakeholder's own config, which
 // deno runs too, so scoping the ban to src/ would leave the highest-risk files
-// unguarded. The five path shapes that follows from -- src/, **/*.test.ts,
-// test/helpers/, test/fixtures/ and examples/ -- are pinned by guard.test.ts
-// from ONE list, so widening an override here reddens the shape it widens.
+// unguarded. The six path shapes that follows from -- src/, src/notifications.ts,
+// **/*.test.ts, test/helpers/, test/fixtures/ and examples/ -- are pinned by
+// guard.test.ts from ONE list, so widening an override here reddens the shape it
+// widens.
 //
 // A rot detector, not a barrier. (globalThis as { Bun: ... }).Bun and an
 // oxlint-disable comment both walk straight past it, and no static rule proves
@@ -26,14 +27,91 @@
     // src/ mid-test or standing up a temp project with node_modules that is
     // still not this config, so it is stated here instead of faked in a test.
     "no-restricted-globals": ["error", "Bun"],
-    "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }]
+
+    // TWO BANS IN ONE RULE, and the second is not about Deno at all.
+    //
+    // `paths` closes the last route around the notification gate. The router
+    // registers every notification with its gate and hands back a connection
+    // with no `onNotification` on its type, so no other module can register
+    // one -- unless it CREATES A CONNECTION OF ITS OWN.
+    // Measured before this entry existed: src/server.ts importing the factory,
+    // registering the table on the wide value and calling an ungated
+    // `onNotification` beside it ran at 331 tests green, `tsc --noEmit` 0 and
+    // `oxlint` 0, with nothing objecting.
+    //
+    // `importNames` AND NOT A MODULE-WIDE BAN: src/server.ts, src/methods.ts
+    // and src/lifecycle.ts all import other names from this exact specifier.
+    // The ban is on ONE NAME, and unlike the identifier a rule would have had
+    // to match inside a function body, an import specifier CANNOT BE RENAMED
+    // AWAY -- which is why the lint route works here after being declined for
+    // `connection.onNotification`.
+    //
+    // A ROT DETECTOR, NOT A BARRIER, exactly as the Bun guard above is, and
+    // THERE IS NO CHEAPER FORECLOSURE: a module cannot stop another module
+    // importing a third party's export. What it does is make a conspicuous act
+    // FAIL EARLY rather than silently.
+    //
+    // WHY A DETECTOR IS ENOUGH HERE, AND WHAT THAT DEPENDS ON: only because
+    // `createGatedConnection` is the sole connection-shaped value in
+    // startServer's scope, so importing a factory nothing there needs is
+    // deliberate rather than a slip. IF THAT NARROWING WERE UNDONE THIS
+    // ARGUMENT GOES WITH IT AND NOTHING HERE WOULD ANNOUNCE IT -- the
+    // load-bearing copy of this dependency is at `createGatedConnection` in
+    // src/notifications.ts, where that edit would be made.
+    //
+    // THE BOUNDARY IT CLAIMS, both members of the deliberate-evasion class this
+    // file already names for Bun rather than slips. MEASURED: `await
+    // import("vscode-languageserver-protocol/node")` is not seen at all -- in a
+    // run where a static import of the same name in a sibling file WAS flagged.
+    // And the exemption below is itself a hole: a re-export from
+    // src/notifications.ts would launder the factory to every other module, an
+    // edit made inside THE ONE FILE THIS RULE CANNOT SEE, which is why
+    // test/notifications.test.ts asserts the router does not export it. A
+    // WRAPPER -- `export const makeConnection = () => createProtocolConnection(...)`
+    // -- defeats that assertion too; REASONED and true by construction, since
+    // the assertion names one export.
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": ["bun", "bun:*"],
+        "paths": [
+          {
+            "name": "vscode-languageserver-protocol/node",
+            "importNames": ["createProtocolConnection"],
+            "message": "Only src/notifications.ts may create a connection: it registers the notification table and returns a handle with no onNotification. Take a connection from createGatedConnection instead."
+          }
+        ]
+      }
+    ]
   },
   "overrides": [
     {
       // The minimum surface `bun test` needs, and no wider. Extending this to
       // test/fixtures/** would silence the breakage the suite exists to catch.
+      //
+      // IT SWITCHES THE WHOLE RULE OFF, so the factory ban below is off here
+      // too. NOT ASSERTED, and named rather than left to be discovered: rule 3
+      // in guard.test.ts pins the bun half of this exemption at every path
+      // shape, and nothing pins the factory half. What is at risk is only that
+      // a test file may import the factory -- test files ship to nobody, and
+      // test/helpers/lsp.ts drives real servers.
       "files": ["**/*.test.ts", "test/helpers/**/*.ts"],
       "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      // The one module that may create a connection, because it is the one that
+      // owns the gate applied to it.
+      //
+      // REDECLARED RATHER THAN SWITCHED OFF, and the difference is the point: an
+      // `"off"` here would silence `bun` and `bun:*` in src/ too. guard.test.ts
+      // carries this path as its own shape with bunModulesExempt: false, so that
+      // spelling reddens.
+      //
+      // THE RESIDUAL OF WRITING IT THIS WAY: an override REPLACES the rule's
+      // options, so a pattern added at the top level does NOT reach this file,
+      // and only `bun` and `bun:*` are pinned here by test.
+      "files": ["src/notifications.ts"],
+      "rules": { "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] }
     }
   ]
 }

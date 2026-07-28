@@ -148,3 +148,94 @@ test('a bare "bun" import is flagged, not only the bun: namespace', async () => 
   expect(result.code).toBe(1);
   expect(result.output).toContain("no-restricted-imports");
 });
+
+/** A probe importing `name` from the module the connection factory lives in. */
+function importsProtocolExport(name: string): string {
+  return `import { ${name} } from "vscode-languageserver-protocol/node";\nexport const used = ${name};\n`;
+}
+
+/**
+ * The diagnostic the factory ban produces, BOUND TO ONE FILE AND NAMING THE
+ * IMPORT, on one line rather than as independent substrings: in a multi-file run
+ * `toContain("no-restricted-imports")` is satisfied by a diagnostic in the OTHER
+ * probe file and records nothing.
+ *
+ * The NAME form is what discriminates the rule this repo wants from a module-wide
+ * ban: banning the specifier reports `'vscode-languageserver-protocol/node'
+ * import is restricted` and never mentions createProtocolConnection, so this
+ * regex fails against it.
+ */
+function factoryBanAt(path: string): RegExp {
+  return new RegExp(
+    `${path.replaceAll(".", "\\.")}:\\d+:\\d+: error eslint\\(no-restricted-imports\\): ` +
+      `'createProtocolConnection' import from 'vscode-languageserver-protocol/node' is restricted`,
+  );
+}
+
+/**
+ * No diagnostic is REPORTED AGAINST `path`, matched at the start of a line.
+ *
+ * Not `not.toContain(path)`: the rule's own help text names src/notifications.ts
+ * as the one module that may create a connection, so a bare substring check
+ * reads that text out of ANOTHER file's diagnostic and fails while the file it
+ * asks about is perfectly clean. Caught by running it.
+ */
+function unflagged(path: string): RegExp {
+  return new RegExp(`^${path.replaceAll(".", "\\.")}:`, "m");
+}
+
+// RULE 4, the connection factory. THREE HALVES, and none of them is a one-off
+// probe: the first says the ban FIRES, the second that the router is EXEMPT, the
+// third that the exemption is scoped to a NAME rather than to the specifier.
+//
+// Why a lint at all, when PBI-22 already made src/server.ts unable to CALL
+// onNotification: it can still IMPORT the factory, build its own wide connection
+// and register beside the table. Measured before this rule existed -- 331 tests
+// green, tsc 0, oxlint 0, with nothing objecting.
+test("importing createProtocolConnection is flagged in src/server.ts", async () => {
+  const result = await lintProbe({
+    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.code).toBe(1);
+});
+
+// THE EXEMPTION, and the router's own import is what needs it: it is the one
+// place a connection may be created, because the module that owns the gate owns
+// the thing being gated.
+//
+// TWO FILES IN ONE RUN, deliberately. `src/notifications.ts is unflagged` is
+// equally true of a rule that does not exist, is misconfigured, or never
+// matched -- and each lintProbe is its own temp dir and its own oxlint, so half
+// 1 firing in a DIFFERENT run proves nothing about liveness here. The server.ts
+// diagnostic is the presence pair, read off the same measurement.
+test("the same import is exempt in src/notifications.ts, in a run where src/server.ts is flagged", async () => {
+  const result = await lintProbe({
+    "src/notifications.ts": importsProtocolExport("createProtocolConnection"),
+    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).not.toMatch(unflagged("src/notifications.ts"));
+  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.code).toBe(1);
+});
+
+// THE HALF THAT LOOKS REDUNDANT AND IS NOT: it is the only one a module-wide ban
+// fails. Such a ban satisfies "flagged in server.ts" and "exempt in the router"
+// perfectly, while breaking src/server.ts, src/methods.ts and src/lifecycle.ts,
+// which import OTHER names from this exact specifier -- and the two bare-specifier
+// tests above, which import createConnection from it. Kept permanent so that
+// distinction is not rediscovered by breaking the build.
+//
+// Same two-files-in-one-run design as above, for the same reason.
+test("a different export from the same module is unflagged, in a run where the factory is flagged", async () => {
+  const result = await lintProbe({
+    "src/reader.ts": importsProtocolExport("StreamMessageReader"),
+    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).not.toMatch(unflagged("src/reader.ts"));
+  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.code).toBe(1);
+});
