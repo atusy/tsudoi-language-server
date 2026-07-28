@@ -214,9 +214,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "examples/path-completion.ts reads the line from documents.get(uri).getText() split at params.position. MEASURED: CompletionParams carries no typed prefix and triggerCharacter is null on invoke, so the document is the ONLY source of it. Zero lines in src/.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3222fb0",
+            message: "feat(example): find the path fragment under the cursor, spaces included",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "RED as planned (the module did not exist), then green. PERTURBATION: stop at the nearest word boundary -- a whitespace split. The spaced-filename assertion reddened; the other three stayed green.",
+          "WIDENED BY THE PO'S SPACED-FILENAME RULING, which arrived mid-subtask: pathFragments returns CANDIDATES shortest-first rather than one fragment, because `see foo (1).png` cannot be split by any rule reading the line alone. Which candidate wins is decided against the filesystem in subtask 11.",
+          "A DECISION NOBODY ASKED FOR, so it is stated rather than left implicit: a candidate ending IN whitespace is not produced, so `foo ` does not offer `foo bar.txt` until the `b` is typed. The alternative is a completion popup on the space bar.",
+        ],
       },
       {
         test: "EXPECTED RED. A /-prefixed fragment is answered by the ABSOLUTE source alone; anything else by the relative sources. THE NEGATIVE HALF IS THE DISCRIMINATOR: with cwd set to a directory that has children of its own, typing / yields filesystem-root items AND NO cwd-relative items. PERTURBATION: make every source answer every request; the negative half MUST redden while the positive half stays green -- without it an implementation ignoring the prefix entirely passes.",
@@ -297,9 +307,21 @@ const scrum: ScrumDashboard = {
         commits: [],
         notes: [],
       },
+      {
+        test: "EXPECTED RED. ADDED MID-SPRINT by the PO's spaced-filename ruling. For a document line `see foo (1).png` with the cursor after `(1).p`, the item's inserted text, its label and its range all cover `foo (1).png` -- the range starts at the `f`, NOT after the space. PERTURBATION: split the fragment on whitespace; this reddens and every single-word fragment stays green.",
+        implementation:
+          "pathFragments returns candidates shortest-first and pathCompletion takes the first that NAMES SOMETHING, so the fragment widens across a space only when the narrower one matched nothing. The fixture must contain nothing matching the narrower candidate, or the test passes at the wrong candidate and the widening is never exercised.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
     ],
     impediments: [],
     decisions: [
+      "HANDED BACK, not folded in privately: criterion 9 was restated as the PROPERTY `applying the item yields the path it names`, with the mechanism left to measurement. MEASURED FROM ddc-source-lsp's SOURCE, via the Scrum Master: the word comes from `insertText` and `textEdit` is consulted ONLY to move the offset, which is the sole way an item can replace characters to the LEFT of the client's word boundary. So an explicit textEdit IS required, the withdrawn mechanism is the answer, and the criterion should keep saying the property while the module records the measurement. Constraints measured with it: a multi-line range, a range whose start is not the cursor's line, or an empty label make the item VANISH silently.",
+      "THE SPACED-FILENAME CRITERION IS NOT IN THIS FILE AND NEEDS THE PO'S HAND. It arrived as prose -- `for a filename containing a space or a parenthesis, tsudoi emits the complete path: label, inserted text and range all covering it` -- and is built and tested as subtask 11. Criterion 1 now carries five negative controls; per the PO's advance agreement they are SPLIT across tests rather than documented, since one perturbation flips whichever assertion runs first and leaves the rest undefended.",
+      "CARRIER MEASURED, and it changes criterion 8's shape: the target client displays `detail` only when an option that DEFAULTS OFF is set, and this user does not set it. A root named in `detail` would satisfy the criterion at the protocol level and show the user nothing -- the green-suite-dead-feature shape. The root goes in `label`, which is displayed unconditionally.",
       "THE SYMLINK HAZARD IS FORECLOSED BY DESIGN, not measured: path completion is PER SEGMENT -- resolve the prefix's directory part, list THAT ONE DIRECTORY, filter by the trailing fragment. No criterion requires recursion, so recursion depth, unbounded walks and symlink CYCLES are all unrepresentable: a cycle requires traversal and one readdir cannot traverse. The Developer had flagged cycles as needing measurement and instead removed the need.",
       "A CRITERION ERROR THE DEVELOPER HANDED BACK RATHER THAN WORKING AROUND: criterion 3's verification cited cwd-and-workspaceFolder coinciding, but workspaceFolders is PBI-15's deferred API and is NOT a source in this PBI. Replaced with document-parent-equals-cwd, which constructs the same collision from sources this PBI actually has.",
       "FIXTURES MUST CONTAIN NO DOTFILES. Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and an incidental fixture would pin it silently. Unruled behaviour pinned by accident is how a decision gets made by nobody.",
