@@ -349,12 +349,14 @@ describe("an item names the root that produced it", () => {
   // output, so a merged assertion cannot tell a broken source from a working
   // one.
   //
-  // THE CARRIER IS `detail`, and what it carries is the SOURCE KIND alone.
-  // The root path itself is no longer on the item: a label repeating it read
-  // as noise beside the path the user is already typing. A client that hides
-  // `detail` therefore shows no attribution at all -- the cost of that choice,
-  // stated here because this test is where someone would look for it.
-  test("each item names the source that produced it", async () => {
+  // THE CARRIER IS `detail`, not the label: the label is the text being
+  // inserted and repeating the root there read as noise beside the path the
+  // user is already typing. What `detail` carries is BOTH answers to the
+  // question the inserted text raises -- the ABSOLUTE PATH, which says which
+  // file this actually is when two roots offer the same relative one, and the
+  // source name below the rule. A client that hides `detail` shows no
+  // attribution at all, which is the cost of the choice.
+  test("each item names the file it resolves to and the source that produced it", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
     try {
@@ -365,7 +367,12 @@ describe("an item names the root that produced it", () => {
         const items = await fromSource(source, fragment);
         expect(items.length).toBeGreaterThan(0);
         for (const item of items) {
-          expect(item.detail).toBe(source.name);
+          // The absolute path as THIS TEST computes it, never as the module
+          // reported it -- an oracle taken from the subject cannot disagree
+          // with it.
+          expect(item.detail).toBe(
+            `${join(source.root, item.insertText ?? "")}\n\n---\n\nsource: ${source.name}`,
+          );
           // LOAD-BEARING ORDER, not formatting: a client filters on the label
           // when the item carries no filterText, so a label that did not BEGIN
           // with the text being typed would filter our own items away.
@@ -389,8 +396,9 @@ describe("an item names the root that produced it", () => {
     const legitimate = await fromSource({ name: "absolute", root: "/" }, fragment);
 
     expect(inserted(fallback)).toEqual(inserted(legitimate));
-    // Same text, same labels -- `detail` is the only thing left that tells a
-    // broken document source from a working absolute one.
+    // Same text, same labels, and even the same absolute path -- the source
+    // name is the only thing that tells a broken document source from a
+    // working absolute one.
     expect(fallback.map((item) => item.label)).toEqual(legitimate.map((item) => item.label));
     expect(fallback.map((item) => item.detail)).not.toEqual(legitimate.map((item) => item.detail));
   });
@@ -411,7 +419,7 @@ describe("items with identical inserted text collapse to one", () => {
       expect(inserted(items)).toEqual(["notes/deep.txt"]);
       // WHICH root the survivor names is decided by SOURCE ORDER, and it is
       // pinned so it cannot drift silently: the document is asked first.
-      expect(items[0]?.detail).toBe("document");
+      expect(items[0]?.detail).toContain("source: document");
     } finally {
       fixture.dispose();
     }
@@ -511,7 +519,7 @@ describe("a document with no parent directory contributes nothing", () => {
         // request survived, and `/usr` on this machine is what would arrive if
         // the document source had fallen back to the filesystem root.
         expect(inserted(items)).toEqual(["usable.txt"]);
-        expect(items[0]?.detail).toBe("cwd");
+        expect(items[0]?.detail).toContain("source: cwd");
       }
     } finally {
       fixture.dispose();

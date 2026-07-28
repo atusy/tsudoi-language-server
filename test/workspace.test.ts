@@ -120,7 +120,7 @@ function inserted(items: readonly CompletionItem[]): string[] {
  * that can never match anything is satisfied by a broken measurement.
  */
 function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
-  return items.filter((item) => item.detail === "workspace");
+  return items.filter((item) => (item.detail ?? "").includes("source: workspace"));
 }
 
 for (const runtime of runtimes) {
@@ -239,16 +239,16 @@ for (const runtime of runtimes) {
     });
 
     // THE FOURTH SOURCE, and the PERMANENT PRESENCE PAIR for the absence
-    // assertion above: the same `detail === "workspace"` filter over the same
-    // wire finds items here, so an empty result there is evidence rather than
-    // a filter that could never match.
+    // assertion above: the same `source: workspace` filter over the same wire
+    // finds items here, so an empty result there is evidence rather than a
+    // filter that could never match.
     //
     // cwd and the workspace are DIFFERENT DIRECTORIES holding DIFFERENT files,
     // which is the only way to tell which root produced an item. It is a
     // SYNTHETIC ISOLATION STATE and no editor produces it -- nvim spawns the
     // server with cwd = root_dir whenever it found a root -- and nobody should
     // later read it as an observed one.
-    test("every workspace folder is answered from, and its items say so", async () => {
+    test("every workspace folder is answered from, and its items name their root", async () => {
       const cwd = tree(["notes/cwd-only.txt"]);
       const first = tree(["notes/first-only.txt"]);
       const second = tree(["notes/second-only.txt"]);
@@ -281,14 +281,20 @@ for (const runtime of runtimes) {
             .map((item) => item.insertText)
             .sort(),
         ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
-        // The SOURCE KIND is carried; WHICH of the two folders answered is
-        // not, and that is a deliberate cost of dropping the decorated label.
-        // Both folders are still shown to answer -- by their files above, not
-        // by their names.
-        expect(workspaceItems(items).map((item) => item.detail)).toEqual([
-          "workspace",
-          "workspace",
-        ]);
+        // EACH ITEM NAMES ITS OWN ROOT, which is what makes two workspace
+        // folders legible rather than one indistinguishable pile: the detail
+        // carries the absolute path the item resolves to, so the two folders
+        // are told apart by the item itself and not only by which file it is.
+        expect(
+          workspaceItems(items)
+            .map((item) => item.detail)
+            .sort(),
+        ).toEqual(
+          [
+            `${join(first.root, "notes/first-only.txt")}\n\n---\n\nsource: workspace`,
+            `${join(second.root, "notes/second-only.txt")}\n\n---\n\nsource: workspace`,
+          ].sort(),
+        );
       } finally {
         session.dispose();
         cwd.dispose();

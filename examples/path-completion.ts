@@ -244,7 +244,7 @@ export async function* itemsFrom(
       const insertText = fragment.directory + entry.name;
       items.push({
         label: insertText,
-        detail: source.name,
+        detail: detailFor(join(directory, entry.name), source),
         kind: await entryKind(directory, entry),
         insertText,
         // BOTH RANGES, so the client's own insert-versus-replace preference
@@ -271,6 +271,19 @@ export async function* itemsFrom(
   if (items.length > 0) {
     yield items;
   }
+}
+
+/**
+ * What the user is told about an item beyond the text it inserts: where the
+ * file actually is, and which root offered it.
+ *
+ * The ABSOLUTE PATH first, because it is the answer to the question the
+ * inserted text raises -- two roots can offer the same relative path, and only
+ * this says which file is which. The source name is the shorter answer to the
+ * same question and sits below the rule.
+ */
+function detailFor(absolutePath: string, source: PathSource): string {
+  return `${absolutePath}\n\n---\n\nsource: ${source.name}`;
 }
 
 /**
