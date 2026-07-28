@@ -12,9 +12,14 @@ type Phase = "uninitialized" | "serving" | "shutdown";
 
 /**
  * What the lifecycle answers about a message arriving right now. The three
- * questions are asked at three different places -- a request handler, a
- * notification handler, and `exit` -- and each gets the answer for its own kind
+ * questions are asked at three different places -- a request handler, the
+ * NOTIFICATION ROUTER, and `exit` -- and each gets the answer for its own kind
  * of message rather than the raw state to interpret for itself.
+ *
+ * The middle arm used to read `a notification handler`, and that is now false:
+ * no notification body consults this at all. notifications.ts asks ONCE, on
+ * behalf of every entry that declared `gate: "lifecycle"`, which is what makes
+ * forgetting the question impossible rather than merely unlikely.
  */
 export interface Lifecycle {
   /** Records the client's initialize request. */
