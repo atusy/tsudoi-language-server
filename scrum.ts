@@ -134,14 +134,14 @@ const scrum: ScrumDashboard = {
     number: 22,
     pbi_id: "PBI-23",
     goal: "Close the one route left around the notification gate -- make obtaining an ungated connection fail early rather than silently.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "The rule fires in server.ts, is silent in the router, and is silent for a different export",
         implementation:
           "no-restricted-imports with paths[].importNames, plus PBI-6's override shape. ALL THREE HALVES PERMANENT rather than a one-off probe.",
         type: "behavioral",
-        status: "green",
+        status: "completed",
         commits: [
           {
             hash: "cbd7dab",
@@ -153,6 +153,11 @@ const scrum: ScrumDashboard = {
             message: "feat(guard): ban the connection factory outside the module that gates it",
             phase: "green",
           },
+          {
+            hash: "84309eb",
+            message: "refactor(test): correct a comment my own perturbation contradicted",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE THIRD HALF IS THE ONE THAT WOULD BE DROPPED: it proves importNames scopes to a NAME rather than a SPECIFIER. A module-wide ban passes the first two halves while breaking server.ts, methods.ts and the fixtures -- making it permanent stops that distinction being rediscovered.",
@@ -161,6 +166,7 @@ const scrum: ScrumDashboard = {
           "THE FIRST SPELLING OF THE EXEMPTION ASSERTION WAS DEGENERATE AND THE RUN SAID SO: the rule's help text names src/notifications.ts, so `not.toContain(\"src/notifications.ts\")` read that string out of SERVER.TS's diagnostic and failed against a file that was perfectly clean. Two outcomes, one observation. Now matched at a DIAGNOSTIC LINE START, which is the shape the bare-specifier tests already used.",
           'A SIXTH PATH SHAPE, and the choice to add it bought the control on HOW the exemption is spelled: an override reading `"no-restricted-imports": "off"` would silence bun and bun:* in the router too, and rule 3 at src/notifications.ts reddens on it. The override REDECLARES the patterns instead. Its residual is named at the site: an override REPLACES the options, so a pattern added at the top level does not reach that file.',
           "THE FACTORY BAN IS OFF IN test/**/*.test.ts AND test/helpers/, because that override switches the WHOLE rule off, and NOT ASSERTED -- no rule-4 loop across shapes, since the exempt branches would be bare exit-0 assertions with exactly the defect above. What remains at risk: a test file may import the factory. Named at the site rather than left to be discovered.",
+          "THE PLAN'S CLAIM FOR THE THIRD HALF IS FALSE AND THE PERTURBATION SAID SO: dropping importNames reddens ALL THREE halves, not the third alone, because the other two bind their diagnostic to the imported NAME. Written into the test as `the only one that catches it`, then corrected -- BACKED AND STILL WRONG, the Sprint 19 shape, caught by running the control instead of reasoning about it. WHAT THE HALF ACTUALLY BUYS, and it survives the correction: it is the only one that NAMES THE CAUSE, since the other two fail on an ABSENT WORDING which is indistinguishable from an oxlint message-format change, and the only one asserting the PERMITTED direction.",
         ],
       },
       {
@@ -168,10 +174,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "ASSERT THE NEGATIVE ONLY. Record the current export list in the test's prose as CONTEXT -- what the module legitimately provides -- never as the assertion: an exhaustive list is the `scripts` exact-equality over-pinning removed at PBI-9, and this module will grow.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1996c24",
+            message: "test: pin that the router does not launder the factory it may import",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE LAUNDERING HAZARD OWNS THIS TEST, and it is a PRECONDITION for the first rather than a separate claim: if the router re-exports the factory, every other module imports it from there and the guard is SILENT -- an edit made inside THE ONE FILE THE GUARD CANNOT SEE. Control: adding the re-export reddens this and nothing else.",
+          "THE CONTROL RAN AND HELD EXACTLY: `export { createProtocolConnection } from ...` added to src/notifications.ts reddens THIS TEST AT ITS FIRST ASSERTION and NOTHING ELSE across 341, and `oxlint` STAYS AT 0 under that perturbation -- which is the hazard measured rather than argued. The exemption really is a hole the ban cannot see.",
+          "BORN GREEN, MEASURED AT AUTHORING against unchanged src/: 13 pass from 12 in test/notifications.test.ts. No commit ordering was needed -- unlike Sprints 19 and 20, the born-green test shares its file with no red one -- so that is stated rather than engineered.",
+          "THE PAIR IS createGatedConnection AND THE CHOICE IS NOT ARBITRARY: it cannot be legitimately removed without src/server.ts failing to compile, so it costs nothing in over-pinning while refusing a namespace object this measurement never populated.",
         ],
       },
       {
@@ -179,15 +194,30 @@ const scrum: ScrumDashboard = {
         implementation:
           "Record at the site that this is A ROT DETECTOR, NOT A BARRIER, and that its adequacy is CONDITIONAL ON PBI-22's narrowing -- if that is undone, the sufficiency argument goes with it and nothing announces it. Also record the claimed boundary: dynamic import and a wrapper function are both missed, both deliberate-evasion rather than slips.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7409422",
+            message: "docs: say the last route is closed, and what the closure leans on",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THREE SITES WERE FALSE, NOT ONE, and the third was found only by grepping for the claim rather than for the subject: src/notifications.ts said NOTHING DETECTS IT, src/server.ts said the lint WOULD close it, and test/notifications.test.ts's factory probe said the import route is unreachable by any check. Prose drift caught in the same sprint that caused it.",
+          "THE CONDITIONAL DEPENDENCY IS HOMED AT createGatedConnection RATHER THAN AT THE RULE, by the lifetime rule: the edit that destroys the sufficiency argument -- widening the return annotation, or letting startServer bind a wide connection again -- is made THERE. The rule site carries a pointer to it, not the load-bearing copy.",
+          "AND THE PARAGRAPH SAYS SO ITSELF: the probes redden on the ANNOTATION, NOTHING REDDENS ON THE ARGUMENT. A detector justified by a foreclosure elsewhere cannot have that justification asserted, so the comment is the only carrier and says which half is which.",
+          "NOT SHIPPED IN THE SAME COMMIT AS THE RULE, contrary to this subtask's own `same commit` label: the rule's OWN prose went with the rule, where it is inseparable from what it explains, while the three CORRECTIONS in src/ and test/ are a behaviour-preserving change to files the rule commit does not touch. Tidy First reading, and it makes the drift-correction auditable on its own.",
+        ],
       },
     ],
     impediments: [],
     decisions: [
       "ONE CRITERION, TWO TESTS: the export assertion is not a separate claim, it is WHAT MAKES THE FIRST CLAIM TRUE, since the guard is silent if the router launders. The granularity entry requires each HAZARD to own a test, not each to own a criterion.",
       "THE INSTRUMENT WAS VERIFIED BEFORE ANYTHING ELSE, because PBI-22's criterion named a rule oxlint cannot even PARSE. The PO noted this was the previous sprint's lesson applied without a rule requiring it.",
+      "341 tests green from 332, each DoD command run separately and UNPIPED with its exit read directly: bun test 0, oxlint 0, oxfmt --check . 0, tsc --noEmit 0. Shipped in cbd7dab, 39dc7c4, 1996c24, 7409422 and 84309eb. The ban is `no-restricted-imports` with paths[].importNames on createProtocolConnection, exempt at src/notifications.ts by an override that REDECLARES the bun patterns rather than switching the rule off.",
+      'FIVE PERTURBATIONS, EACH NAMED BY THE ASSERTION IT FLIPS. (1) `export { createProtocolConnection }` in the router reddens the export test AT ITS FIRST ASSERTION and NOTHING ELSE in 341, with oxlint still 0 -- the laundering hazard measured, not argued. (2) Dropping importNames reddens all three halves and takes repo oxlint to 1 in three src modules. (3) Writing the exemption as `"off"` reddens ONE test, the bun:sqlite assertion at src/notifications.ts, and no other. (4) Removing the paths entry entirely reddens all three halves -- which is what proves the two ABSENCE halves cannot pass against a dead rule. (5) Widening the exemption to src/**/*.ts reddens the same three.',
+      "THE DEGENERACY CHECK FIRED TWICE IN ONE SPRINT, both times before anything false was recorded. The exemption assertion's first spelling, `not.toContain(\"src/notifications.ts\")`, read that path out of the RULE'S OWN HELP TEXT inside server.ts's diagnostic -- clean file and flagged file produce the same observation. And the third half's comment claimed a discrimination the perturbation denied. First caught by running the test, second by running the control.",
+      "WHAT NOBODY ASKED ABOUT, AND IT IS THE WEAKEST POINT SHIPPED: the DEPENDENCY ON PBI-22 IS CARRIED BY PROSE ALONE. The probes redden if the return annotation is widened, so the FACT is defended; the ARGUMENT that a mere detector suffices is not, and cannot be -- an adequacy claim about a lint has no assertion to make. If startServer ever binds a wide connection again the lint keeps passing and keeps reading like a guard. Homed at createGatedConnection, where that edit is made, and the comment says which half is asserted and which is not.",
     ],
   },
   retrospectives: [
