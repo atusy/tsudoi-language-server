@@ -8,6 +8,7 @@ import {
 } from "vscode-languageserver-protocol/node";
 import { createDocumentStore } from "../src/documents.ts";
 import { createLifecycle } from "../src/lifecycle.ts";
+import * as router from "../src/notifications.ts";
 import { type NotificationRegistrar, registerNotifications } from "../src/notifications.ts";
 import { notificationEntries } from "../src/server.ts";
 import { createWorkspaceFolders } from "../src/workspace.ts";
@@ -401,6 +402,45 @@ function factorySource(body: string[]): string {
     "",
   ].join("\n");
 }
+
+/**
+ * THE EXEMPTION IN .oxlintrc.json IS A HOLE, AND THIS IS WHAT CLOSES IT.
+ *
+ * The import ban has to exempt this module -- it is the one place a connection
+ * may be created. So the ban is blind to exactly one file, and a single line
+ * inside it, `export { createProtocolConnection } from ...`, hands the factory
+ * to every other module through a specifier the rule permits. THE GUARD WOULD
+ * STAY SILENT: src/server.ts would import from ./notifications.ts, which is not
+ * the banned path. Not a second claim about the ban, then, but the PRECONDITION
+ * that makes the ban's claim true at all, which is why it owns a test rather
+ * than a sentence.
+ *
+ * THE NEGATIVE ONLY, AND DELIBERATELY NOT AN EXPORT LIST. Today this module
+ * exports `defineNotifications`, `registerNotifications` and
+ * `createGatedConnection` at runtime -- recorded here as CONTEXT for what it
+ * legitimately provides, never as the assertion. Pinning the set exactly is the
+ * `scripts` over-pinning removed at PBI-9: this module will grow, and a test
+ * that fails when it does defends nothing.
+ *
+ * THE PAIR IS `createGatedConnection`, not an arbitrary export: without it,
+ * `no key named createProtocolConnection` would hold just as well for a
+ * namespace object this measurement never populated -- a renamed module, a
+ * failed import, a type-only module with nothing at runtime.
+ *
+ * WHAT IT DOES NOT REACH, REASONED and true by construction rather than
+ * measured, since the assertion names ONE key: a wrapper. `export const
+ * makeConnection = () => createProtocolConnection(reader, writer, logger)` hands
+ * out an ungated connection while this stays green. That is the same
+ * deliberate-evasion class .oxlintrc.json already names for the Bun guard -- a
+ * line whose author had to mean it -- not the careless edit both guards exist
+ * to catch.
+ */
+test("the router does not export createProtocolConnection, and does export the gated factory", () => {
+  const exported = Object.keys(router);
+
+  expect(exported).not.toContain("createProtocolConnection");
+  expect(exported).toContain("createGatedConnection");
+});
 
 test("what the factory hands back rejects onNotification and accepts onRequest", async () => {
   const result = await typeCheckProbe({
