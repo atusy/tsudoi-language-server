@@ -34,39 +34,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-21",
-      story: {
-        role: "editor user",
-        capability: "complete a spaced filename mid-path without the tail being mangled",
-        benefit:
-          "their own insert-versus-replace setting does what they set it to, instead of producing a line neither mode would have written",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A replace range covers the whole filename WHEN THE LINE ALREADY CARRIES IT VERBATIM",
-          verification:
-            "Complete `spaced (1).txt` from `spa` on a line that already reads `spaced (1).txt`, and apply the item as a client set to REPLACE would; assert the resulting line is the filename ALONE. NEGATIVE CONTROL: today's whitespace-delimited end produces `spaced (1).txt (1).txt` -- the tail left behind. THE BOUNDARY IS IN THE CRITERION, for the fourth time on this principle: a PARTIALLY-TYPED tail (`spa|ced (1).tx`) and a tail belonging to a DIFFERENT candidate stay at the whitespace end and are DECLINED rather than missed",
-        },
-        {
-          criterion: "The rule can never be WORSE than today",
-          verification:
-            "A line that does NOT carry the candidate verbatim from the fragment start produces exactly today's range. THE CASE IS `spa|ced (1).txt` COMPLETING TO `spaced (2).txt` -- what a prefix match would mangle into `spaced (2).txt1).txt`, worse than the bug. NEGATIVE CONTROL: relaxing the comparison to a PREFIX match reddens it, so the declined generalisation owns a test rather than being defended incidentally",
-        },
-        {
-          criterion: "The `insert` arm is unchanged",
-          verification:
-            "Its range still ends at the cursor, asserted rather than assumed. NEGATIVE CONTROL: extending `insert` too reddens it. THE REASON IS STRONGER THAN A REGRESSION: extending insert's end PAST THE CURSOR stops it being an insert at all, so the two arms CONVERGE -- which is precisely what Sprint 13's InsertReplaceEdit ruling exists to prevent. Extending both would UNDO that ruling, not merely inconvenience one setting",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "THE QUESTION THAT COULD HAVE KILLED THIS ANSWERED IN ITS FAVOUR, measured from ddc-source-lsp's source: createSelectText's stop characters truncate the WORD, which drives display and filtering, while CONFIRM takes before/after straight from textEdit[confirmBehavior] and linePatch deletes forward by exactly OUR replace end. TWO PATHS, and the harm is governed entirely by ours. The arithmetic reproduces the report: end at 6, before 3, after 3, [0,6) deleted, ` (1).txt` left behind -- a mechanism rather than a plausible explanation. THE REMEDY IS DECIDABLE AND DISK-FREE: extend the replace end only when `line.slice(fragmentStart, fragmentStart + candidate.length) === candidate`. Per candidate, which LSP permits since each item carries its own textEdit -- the structural point that makes the rule possible. CHECKING THE TEMPTING GENERALISATION IS WHAT MAKES IT SAFE: longest-common-prefix turns `spa|ced (1).txt` completing to `spaced (2).txt` into `spaced (2).txt1).txt`, ACTIVELY HARMFUL rather than merely unnecessary -- so exact match is not a choice among options, it is the only safe rule.",
-        "PROBING IS DECLINED, and the reason is recorded so it is not revisited by accident: one stat per extension step, on the same path where per-candidate listing already makes a huge directory the pathological case, and it cannot terminate honestly -- `a b c` requires probing three prefixes and the answer differs per machine. MEASURED SEPARATELY AND NOT TOGETHER, so nobody reads it as bounded: ddc's own createSelectText truncates the word at space, tab, brackets and quotes anyway, so a longer range would be cut back by THAT client regardless. The two measurements are of ddc's stop characters and of our heuristic; their INTERACTION is unmeasured.",
-        "PRESENT-TENSE HARM, in the feature the stakeholder actively uses, and REACHABLE WITH THEIR OWN SETTING: their confirmBehavior is `replace`. Recorded at examples/completion-path.ts since Sprint 13 as A DEFECT WE HAVE NOT FIXED rather than a chosen limit, because a mangled insertion is the exact harm the range criterion exists to prevent. WHY IT WAS DEFERRED AND WHAT THAT COSTS: a smarter word end needs FORWARD DISK PROBING and is undecidable in general -- the same fragment can be one filename on one machine and two words on another. Refinement decides whether the answer is probing, a narrower rule, or accepting the limit and saying so; the PBI does NOT presuppose one.",
-      ],
-    },
-    {
       id: "PBI-22",
       story: {
         role: "tsudoi maintainer",
@@ -82,13 +49,30 @@ const scrum: ScrumDashboard = {
       ],
       status: "draft",
       notes: [
-        "A GAP IN WORK THE PO ACCEPTED, found by asking what comes next rather than by anything reddening: PBI-18 forecloses bypass WITHIN the router -- an entry that decides no gate does not type-check -- but NOT bypass OF it. A future edit calling connection.onNotification directly answers to nothing. The foreclosure endorsed at Sprint 16 is partial, and src/notifications.ts says so at its own site. NO TYPE CAN DO THIS, which is why it is a lint rule rather than more of what PBI-18 built. It is PBI-6's shape, and PBI-6 is the precedent that the codebase itself rejects the changes that would quietly break a promise.",
-        "CONDITIONALLY ORDERED: after PBI-21 because that harm is present-tense while this needs future notification work that is not scheduled -- but BEFORE any new notification work, whenever that arrives.",
+        "A GAP IN WORK THE PO ACCEPTED, found by asking what comes next rather than by anything reddening: PBI-18 forecloses bypass WITHIN the router -- an entry that decides no gate does not type-check -- but NOT bypass OF it. A future edit calling connection.onNotification directly answers to nothing. The foreclosure endorsed at Sprint 16 is partial, and src/notifications.ts says so at its own site. NO TYPE CAN DO THIS, which is why it is a lint rule rather than more of what PBI-18 built. It is PBI-6's shape, and PBI-6 is the precedent that the codebase itself rejects the changes that would quietly break a promise. CONDITIONALLY ORDERED: after PBI-21 because that harm is present-tense while this needs future notification work that is not scheduled -- but BEFORE any new notification work, whenever that arrives.",
       ],
     },
   ],
 
   completed: [
+    {
+      number: 20,
+      pbi_id: "PBI-21",
+      goal: "Stop mangling a spaced filename when a user completes over one -- so their own replace setting does what they set it to.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "328 tests green from 323, each DoD command run separately with its exit read directly. The rule: extend the REPLACE end only when the line already carries this candidate verbatim from the fragment start, and only UPWARDS.",
+        "THE MEASUREMENT THE PO MADE EXECUTION'S FIRST STEP HELD, DRIVEN IN THE STAKEHOLDER'S OWN STACK -- their nvim, their config, their confirmBehavior: replace, with a throwaway server handing ddc ONE hand-built item so the question was asked with no remedy in existence. Extended end 14 turns `spaced (1).old` into `spaced (1).new`; today's end 6 turns it into `spaced (1).new (1).old`, reproducing the report END TO END, which is what makes the positive result evidence rather than a line that never moved. createSelectText's truncation was observed BESIDE it in the same run -- word `spaced`, abbr the full name -- so the two paths are confirmed by observation rather than by reading source.",
+        "THE PROBE'S FIRST DESIGN WAS REJECTED BEFORE IT RECORDED ANYTHING, and this is the degeneracy check applied to a MEASUREMENT'S DESIGN rather than to a test: with a candidate equal to the line's own text, `the extended range was honoured` and `ddc inserted its truncated word and did nothing else` produce THE SAME LINE. `(1).old` to `(1).new` gives three outcomes and three distinct lines.",
+        "A HAZARD THE PLAN DID NOT CARRY, and it FALSIFIES the can-never-be-worse criterion if unhandled: fragment.start + candidate.length can land BELOW fragment.end, so completing `fo` to `foo` on a line reading `foo.txt` pulls the end from 7 back to 3 and leaves `.txt` behind -- WORSE THAN TODAY, ON A LINE WITH NO SPACE AT ALL, which is the opposite of where anyone was looking. THE PO'S SPECIFIED CASE COULD NOT CATCH IT: `spaced (2).txt` exercises the DECLINE branch and the hazard lives in the EXTEND branch. They named it as their own rule pointing at its author -- a mechanism stated where the rule says state a property.",
+        "FORECLOSED, and the PO ruled why their own Sprint 16 precedent does NOT transfer: an end-to-end confirm of the real example's item cannot discriminate, because the rule fires only when the deleted span EQUALS newText, so honoured and not-honoured produce the same line. At Sprint 16 the gate choice was genuinely UNVERIFIED -- write it wrong and it would BE wrong, unseen. Here there is nothing to be wrong about, so NOT CONSTRUCTED would mislead in the opposite direction: the design forecloses the HARM, not merely the observation. NOT CONSTRUCTED separately: the truncation-plus-long-range INTERACTION, both halves seen in one run, residual named as a client whose truncation feeds its own confirm.",
+        "BORN GREEN MEASURED AT AUTHORING TIME FOR FOUR TESTS -- written, run against the UNCHANGED module where they passed, and committed FIRST because they share a file with the red one. Sprint 19's method generalising from one test to a practice.",
+        "A CLAIM OF THEIR OWN THAT WAS BACKED AND STILL UNCHECKED, the exact shape carried to the last Retrospective and acted on inside one sprint: the site comment named three lines the relaxed comparisons would write, while the tests behind it assert range ENDS. Strings dressed as record. Each relaxation was then driven and the line read; all three held.",
+        "PINNED THAT THE UNFIXED CASE IS UNFIXED: `spaced (2).txt` STILL MANGLES and a test says so. That is what makes the narrowed criterion honest rather than merely narrower -- it records the boundary instead of leaving it to whoever hits it.",
+      ],
+    },
     {
       number: 19,
       pbi_id: "PBI-20",
@@ -108,10 +92,9 @@ const scrum: ScrumDashboard = {
         },
       ],
       decisions: [
-        "SPRINT 16'S RECORD DROPPED AT SPRINT 19, homes checked: the baseline measurement that two of three gate copies were pure convention is at src/notifications.ts, the only place it survives; the exit carve-out is asserted as a value in test/notifications.test.ts; and the disarmed-control finding became the re-run improvement's second rationale. Sprint 10's npm impediment rides here, still open and still the only unverified step in the product goal. Shipped in 9def17f, 87db56c, 2a90e78, aba57c9, 0ef93a9 and 9cadcad. 323 tests green from 317, each DoD command run separately with its exit read directly.",
         "THE TWO-TEST RULING MEASURED, and the GREEN cells are the load-bearing half: the pre-sprint remove-all filter reddens the SEQUENTIAL test and leaves the BATCHED one green; a dedupe of the removed array does the exact reverse. NEITHER CONTROL COVERS BOTH. The granularity rule's first real application, arriving on its own terms one sprint after being filed. BORN-GREEN REPORTING DONE AS A MEASUREMENT RATHER THAN A LABEL, and it is the first time anyone here sequenced COMMITS to make a claim checkable: the batched test was written and run against UNCHANGED src/ where it passed, and committed FIRST -- both tests share a file, so a born-green claim made after the fix landed would have been unmeasurable.",
         "THIS SPRINT DISARMED A CONTROL OF PBI-17'S, and repairing it is the subtraction rule applying BY EFFECT: trailing-slash normalisation used to redden the exact-match test and afterwards reddened NOTHING across 321 tests -- behaviour unchanged, defence gone. Re-armed before the tag by naming the NON-FIRST spelling in the removal, since with the first named one-copy-per-entry lands on the intended target either way. A PRE-EXISTING GAP REVEALED AND CLOSED OPPORTUNISTICALLY, named that way so it does not read as scope creep: nothing has EVER defended removed-before-added -- applying `added` first reddened nothing across 321 tests, nor across the 317 predating this sprint. Pinned because the PO ruled it ONE REQUIRED OUTCOME at Sprint 17 and a one-test PBI is disproportionate. THE FIRST ATTEMPT AT THAT TEST DID NOT DISCRIMINATE: pre-adding the folder makes the two orders AGREE under one-copy-per-entry, so the test starts from an EMPTY list.",
-        "UNPINNED AND MEASURED RATHER THAN ASSUMED: findLastIndex instead of findIndex reddens NOTHING in 321, so WHICH copy an entry takes is not pinned. The client said remove one and did not say which; two defensible outcomes, recorded rather than fixed.",
+        "UNPINNED AND MEASURED RATHER THAN ASSUMED: findLastIndex instead of findIndex reddens NOTHING in 321, so WHICH copy an entry takes is not pinned. The client said remove one and did not say which; two defensible outcomes, recorded rather than fixed. SPRINT 17'S RECORD DROPPED AT SPRINT 20, homes checked: the mirror-don't-normalise principle and its nvim measurement are at src/workspace.ts, the per-request capture ruling is at src/types.ts, and the remove-all deviation became PBI-20 which is now done. SPRINT 16'S RECORD DROPPED AT SPRINT 19, homes checked: the baseline measurement that two of three gate copies were pure convention is at src/notifications.ts, the only place it survives; the exit carve-out is asserted as a value in test/notifications.test.ts; and the disarmed-control finding became the re-run improvement's second rationale. Sprint 10's npm impediment rides here, still open and still the only unverified step in the product goal. Shipped in 9def17f, 87db56c, 2a90e78, aba57c9, 0ef93a9 and 9cadcad. 323 tests green from 317, each DoD command run separately with its exit read directly.",
       ],
     },
     {
@@ -128,23 +111,6 @@ const scrum: ScrumDashboard = {
         "CRITERION 1 IS VERIFIED SYNTHETICALLY, restated at acceptance as the checklist required: MEASURED across all three capability declarations, nvim sends rootUri and workspaceFolders TOGETHER OR NEITHER, so no measured client produces this case. Nothing here shows the fix working for a client anyone has seen. THE READ-TIME TRAP IS THE SPRINT'S CENTRAL CONTROL, and it broke TWO WAYS from one perturbation: `folders.length > 0 ? folders : synthesise(rootUri)` passes criterion 1 PERFECTLY, then loses the root to the first `added` and makes it REAPPEAR when a later `removed` empties the list -- a folder the client explicitly removed coming back. The Scrum Master rebuilt it INDEPENDENTLY at a different site, reaching 4 tests per runtime where the executor reached 3, and labelled it an independent construction rather than a reproduction. A THIRD GENUINE RED THE PLAN DID NOT PREDICT, named by the executor as their own split rather than a surprise: the chain has two COMPARISONS but three SITES, and the rootPath-alone test is the only thing pinning the second synthesis site's convention. Without it that convention ships unasserted.",
       ],
     },
-    {
-      number: 17,
-      pbi_id: "PBI-17",
-      goal: "Answer from the workspace as it is now -- a folder the user adds mid-session changes what they are offered, and one they remove stops answering.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "Shipped in 5c3588d, 5bb6239, 4d3bc75, a4adbcd, 8fa78e3 and bd6e33a. 293 tests green (up from 284), each DoD command run separately with its exit read directly. src/workspace.ts is a HANDLE in the shape of DocumentStoreHandle -- the codebase's own answer to state that notifications write and requests read.",
-        "THE DESIGNED-FOR RED WAS OBSERVED, NOT ASSUMED, which the PO's checklist required precisely because a designed-for RED arriving green is a finding: with `added` handled and `removed` deliberately not, the removal test failed on BOTH runtimes with the folder still present.",
-        "THE PO'S OWN CRITERION MEASURED RATHER THAN REASONED, and re-run by the Scrum Master: a URI-comparing dedupe guard on `added` reddens `a URI added twice is held twice` on both runtimes and NOTHING ELSE. That is the exact hazard the Developer predicted -- the guard passes every OTHER criterion, which is why the rule was pinned rather than noted.",
-        "THE PO OVERTURNED AN UNPINNED RULING OF THE DEVELOPER'S, and the method was right while the input was wrong. A URI held twice and removed once loses BOTH copies; that was recorded as `equally defensible` under the Sprint 7 one-outcome rule. But REMOVE-ALL DISCARDS WHAT THE EVENT CARRIED -- N `removed` entries should remove N copies, an exact mirror, and this list honours multiplicity on ADD. One outcome IS required. The site comment was corrected BEFORE THE TAG; the behaviour change is an INCREMENT, because forcing src/ changes at Review is the retroactive-scope line held since Sprint 1.",
-        "REMOVED-BEFORE-ADDED STOPPED BEING DEFENSIBLE BY ACCIDENT: it is decided by the visible-over-silent principle, since a rename spelled as one event ends HOLDING the folder -- a phantom, visible if wrong -- where the other order ends holding nothing, which is silent.",
-        "NOT CONSTRUCTED, with the residual named: criterion 5's before-initialize and after-shutdown halves are NOT observable end to end -- initialize REPLACES the list so an ungated write leaves no trace, and after shutdown every request is refused so no handler remains to read it back. The test sits at the router with the stub registrar, so `the real stdio connection drops this outside the serving window` is proven THERE ONLY. Criteria 1-3 carry the inside-the-window wiring, which is what makes the gap narrow rather than open.",
-        "SINGLE-OBSERVER EXCEPT TWO, disclosed rather than presented as five: the executor wrote and ran all five perturbations. The Scrum Master re-ran the dedupe guard, and the wrong-params probe is a REPRODUCTION of Sprint 16's -- landing on the FIRST entry added since defineNotifications, which is the case most likely to have lost the contextual typing that extraction cost last sprint. That is also this Review's cross-sprint re-run.",
-      ],
-    },
   ],
 
   definition_of_done: {
@@ -156,85 +122,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 20,
-    pbi_id: "PBI-21",
-    goal: "Stop mangling a spaced filename when a user completes over one -- so their own replace setting does what they set it to.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "N/A (measurement, and it comes FIRST)",
-        implementation:
-          "Drive ONE end-to-end confirm in the stakeholder's own stack and observe that an EXTENDED replace range is honoured. This converts the analysis's only remaining inference -- ddc's confirm path DERIVED FROM SOURCE -- into OBSERVED. IT LANDS BEFORE ANY REMEDY IS BUILT ON IT: the remedy's entire value rests on it, so discovering otherwise at Review means the deliverable does not work, where discovering it first stops the sprint cheaply.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "MEASURED AND IT HOLDS. Driven end to end in the stakeholder's own nvim 0.13.0-nightly + ddc + ddc-source-lsp with THEIR confirmBehavior `replace`, under a real pty because pum.vim opens no popup without a UI. A throwaway stdio LSP server handed ddc ONE item -- newText `spaced (1).new`, insert [0,3), replace [0,14) -- so the question was asked WITHOUT the remedy existing to answer it. Typed `spa` in front of `ced (1).old`, selected the lsp item BY SOURCE NAME and confirmed: THE LINE BECAME `spaced (1).new`. The extended replace end is honoured at confirm.",
-          "PAIRED CONTROL IN THE SAME HARNESS, today's whitespace end 6: `spaced (1).new (1).old` -- the reported defect reproduced end to end, and what makes the positive result evidence rather than a line that never moved. THE THREE OUTCOMES WERE MADE DISTINGUISHABLE FIRST, and the first design was not: with a candidate equal to the line's own text, `the extended range was honoured` and `ddc inserted its truncated word and did nothing else` PRODUCE THE SAME LINE. createSelectText's truncation was OBSERVED beside it -- the item's word is `spaced` while its abbr is `spaced (1).new` -- so display-and-filtering versus confirm really are the two paths the analysis derived from source.",
-        ],
-      },
-      {
-        test: "Completing over a filename already on the line replaces the whole of it",
-        implementation:
-          "Extend the REPLACE end only when line.slice(fragmentStart, fragmentStart + candidate.length) === candidate. Expected RED: today's end is the first whitespace after the cursor.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "9c7f5e1",
-            message: "feat(example): replace the whole filename the line already carries",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED OBSERVED AT THE HEADLINE ASSERTION and at the reported string: `spaced (1).txt (1).txt`, the same line the editor measurement produced from today's end. The rule landed in itemsFrom rather than pathFragments, which HAS NO CANDIDATE to compare the line against -- carried as a new required `line` parameter, since a field on PathFragment would have reddened three toEqual assertions as pure noise. The site comment changed in the SAME commit, and it now says what is DECLINED rather than what is unfixed. PERTURBATION `return fragment.end`, the rule removed: reddens THIS TEST ALONE of the 29 in the file.",
-        ],
-      },
-      {
-        test: "The rule can never be worse than today",
-        implementation:
-          "Born green by construction -- the comparison fires only on an exact match. THE CASE IS THE ONE PREFIX MATCHING WOULD MANGLE.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "12775cf",
-            message: "test: pin what the replace end must NOT do, before it can do anything",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THREE HAZARDS, THREE TESTS, AND EACH PERTURBATION REDDENS EXACTLY ONE OF THEM. A PREFIX (longest-common-prefix) match reddens `a line carrying a DIFFERENT candidate keeps today's end` at end 8 and writes `spaced (2).txt1).txt`, the PBI's predicted mangling. Matching ANYWHERE reddens `a candidate the line carries ELSEWHERE keeps today's end` at end 17 and writes `spaced (1).txt`, the neighbouring filename gone -- and it needed its OWN line `sp| spaced (1).txt`, because on the first line the two comparisons agree and that test could never be the first thing a loosened START breaks. THE WRONG LINES ARE MEASURED AND NOT DERIVED: the tests stop at the END assertion, so each relaxation was also driven through the module and the line it leaves was read. The same standard was then applied to the site comment, which had stated those lines as if checked.",
-          "A THIRD HAZARD FOUND IN EXECUTION AND NOT IN THE PLAN, and it is criterion 2's own property rather than scope creep: THE RULE CAN SHRINK A RANGE. Completing `fo` to `foo` where the line reads `foo.txt` matches VERBATIM AT THE START, and an end taken from the candidate's length alone pulls it back from 7 to 3 -- leaving `.txt` standing, WORSE than today, on a line with no space in it at all. The `spaced (2).txt` case cannot catch it, since there the comparison fails and today's end is reached by the other branch. Guarded by returning today's end when the candidate stops at or before it, and ASSERTED: dropping that guard reddens `a candidate SHORTER than the word under the cursor keeps today's end` and nothing else.",
-          "BORN GREEN MEASURED RATHER THAN LABELLED, by Sprint 19's own method and for its reason: all four born-green tests were written, RUN AGAINST THE UNCHANGED MODULE where they passed, and COMMITTED FIRST in 12775cf. They share a file with the red test, so the claim would have been unmeasurable once the rule they bound existed.",
-          "THE DECLINED GENERALISATION OWNS THIS TEST rather than being defended incidentally -- the Sprint 18 entry applied AT AUTHORING TIME, which is where it was filed to apply. CONTROL: relax the comparison to a PREFIX match and it reddens. A SECOND CONTROL IF CHEAP: relax the comparison's START -- match anywhere on the line rather than at fragmentStart -- which is a DIFFERENT wrong implementation producing a different mangling, so by the granularity rule it is a second hazard.",
-        ],
-      },
-      {
-        test: "The insert arm still ends at the cursor",
-        implementation: "Born green. Asserted rather than assumed.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "12775cf",
-            message: "test: pin what the replace end must NOT do, before it can do anything",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "GREEN AS PREDICTED, and the control reddens TWO tests rather than one -- disclosed rather than reported as one. Extending `insert` to the same end reddens `the insert arm still ends at the cursor` AND Sprint 13's `the range starts at the filename, not after the space inside it`, which asserts the same property on a different line. Neither is redundant under the Sprint 15 sharpening: each is FIRST TO FAIL on its own line, and the new test is the one whose FIRST assertion is the insert end.",
-          "CONTROL: extending `insert` too reddens it. AND THE REASON IS STRUCTURAL rather than a regression: extending insert's end past the cursor stops it being an insert AT ALL, so the two arms CONVERGE -- undoing Sprint 13's InsertReplaceEdit ruling rather than inconveniencing one setting.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PO'S CHECKLIST: (1) the confirm-path measurement lands FIRST; (2) the can-never-be-worse property pinned with the harmful case owning the test; (3) a second control on the same property if cheap, relaxing the comparison's START; (4) the insert arm asserted unchanged.",
-      "FOURTH NARROWING ON ONE PRINCIPLE -- criterion 11, 3(b), criterion 1, and now this: A CRITERION CLAIMS THE BOUNDARY IT ACTUALLY HOLDS. The exact-match condition is in the criterion's own text and the undecidable cases are recorded as DECLINED rather than missed.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 19,
