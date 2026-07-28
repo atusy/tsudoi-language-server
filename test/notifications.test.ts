@@ -365,3 +365,54 @@ test("the same two outcomes hold through an alias under a different name", async
   expect(result.output).not.toContain("permits.ts");
   expect(result.code).toBe(1);
 });
+
+/**
+ * The same two halves reached through the FACTORY rather than through a bare
+ * binding of the type alias.
+ *
+ * A DIFFERENT SEAM, and the probes above cannot see it: they bind
+ * `RequestOnlyConnection` themselves, so they assert what the TYPE means and go
+ * green whatever `createGatedConnection` hands back. MEASURED -- changing that
+ * function's return annotation to `ProtocolConnection` while leaving the alias
+ * alone left all three of them green, `tsc --noEmit` at 0 and 331 tests
+ * passing, with an ungated `connection.onNotification` in src/server.ts
+ * compiling fine. The foreclosure was entirely gone and NOTHING said so.
+ *
+ * This is the probe with a perturbation of its own: that return annotation
+ * reddens THIS and only this. What it still does not reach is src/server.ts
+ * choosing to call `createProtocolConnection` instead, which no type can catch
+ * and which is named as the residual at `createGatedConnection`.
+ */
+function factorySource(body: string[]): string {
+  return [
+    'import { InitializedNotification, ShutdownRequest } from "vscode-languageserver-protocol/node";',
+    'import type { Logger, MessageReader, MessageWriter } from "vscode-languageserver-protocol/node";',
+    'import type { Lifecycle } from "./src/lifecycle.ts";',
+    'import { createGatedConnection } from "./src/notifications.ts";',
+    "",
+    "const connection = createGatedConnection(",
+    "  null as unknown as MessageReader,",
+    "  null as unknown as MessageWriter,",
+    "  null as unknown as Logger,",
+    "  null as unknown as Lifecycle,",
+    "  [],",
+    ");",
+    ...body,
+    "",
+  ].join("\n");
+}
+
+test("what the factory hands back rejects onNotification and accepts onRequest", async () => {
+  const result = await typeCheckProbe({
+    "forbids.ts": factorySource([
+      "connection.onNotification(InitializedNotification.type, () => {});",
+    ]),
+    "permits.ts": factorySource(["connection.onRequest(ShutdownRequest.type, (): void => {});"]),
+  });
+
+  expect(result.output).toMatch(
+    /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'onNotification' does not exist/,
+  );
+  expect(result.output).not.toContain("permits.ts");
+  expect(result.code).toBe(1);
+});

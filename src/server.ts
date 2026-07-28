@@ -79,10 +79,12 @@ export function startServer(
   // method` are different diagnoses.
   //
   // NOTIFICATIONS NO LONGER CONSULT IT ONE BY ONE, and the sentence above used
-  // to say they did: each entry below DECLARES when it may run and
-  // registerNotifications applies that. Requests still ask for themselves, in
-  // methods.ts, because a refused request must be ANSWERED with a code the
-  // handler's own signature can carry.
+  // to say they did: each entry below DECLARES when it may run, and the router
+  // in notifications.ts applies that. THIS FILE NO LONGER NAMES THE ROUTER at
+  // all -- it is reached through createGatedConnection, which is why `lifecycle`
+  // is handed to that call rather than to a registration of its own. Requests
+  // still ask for themselves, in methods.ts, because a refused request must be
+  // ANSWERED with a code the handler's own signature can carry.
   const lifecycle = createLifecycle();
 
   // The workspace folders this session answers from. A HANDLE rather than a

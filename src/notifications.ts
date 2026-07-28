@@ -176,10 +176,17 @@ export type RequestOnlyConnection = Omit<ProtocolConnection, "onNotification">;
  * That is a SECOND GAP rather than a second guard on this one, so the argument
  * against two guards on one gap does not forbid closing it.
  *
- * AND THAT SAME MEASUREMENT BOUNDS THE PROBES: they assert what the TYPE
- * permits and forbids, never that src/server.ts still holds it. `startServer`
- * never binding the wide type is carried by this function's existence and by
- * the comment at its call site, by nothing executable.
+ * THE RETURN ANNOTATION BELOW IS A SEPARATE SEAM, and it was briefly written
+ * off as part of the same residual before being measured: it is not. Widening
+ * it to `ProtocolConnection` while leaving `RequestOnlyConnection` alone once
+ * left EVERY probe green, tsc at 0 and 331 tests passing, with an ungated
+ * `connection.onNotification` in src/server.ts compiling fine -- the
+ * foreclosure entirely gone and nothing saying so. It is now asserted: a probe
+ * takes its connection FROM THIS FUNCTION rather than binding the alias, and
+ * that perturbation reddens it and it alone.
+ *
+ * SO WHAT REMAINS UNGUARDED IS THE IMPORT ALONE, not `startServer holds the
+ * narrowed type` in general. A type can carry that, and now does.
  *
  * A THIRD GAP, weaker and still real, AND NO ASSERTION BACKS THIS SENTENCE --
  * it is read off the remainder above, so what is at risk if it rots is only its
