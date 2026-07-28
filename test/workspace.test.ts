@@ -712,6 +712,49 @@ for (const runtime of runtimes) {
       }
     });
 
+    // PBI-20 CRITERION 2, AND IT IS BORN GREEN AND SAYS SO: it was written
+    // against UNCHANGED src/ and passed there, because the remove-all filter it
+    // was written to outlive already gets this case right.
+    //
+    // ITS OWN TEST BECAUSE THE HAZARDS DIFFER, which is the whole reason a
+    // born-green test is worth writing here. The remove-all filter PASSES this
+    // and FAILS the sequential test below; deduping the `removed` array --
+    // `new Set(event.removed.map(f => f.uri))` around a one-copy-per-entry
+    // removal -- does the exact reverse. Neither control covers both, so
+    // bundling the two claims into one test would leave whichever hazard is not
+    // the first assertion permanently unobservable.
+    //
+    // TWO EVENTS TO ADD AND ONE TO REMOVE: the multiplicity has to arrive on
+    // the REMOVED side within a SINGLE event, since that is the arm the dedupe
+    // hazard lives on. That both adds are held at all is not asserted here --
+    // `a URI added twice is held twice` above pins it, and repeating it would
+    // put a second hazard's assertion ahead of this one's.
+    //
+    // THE REMOVED ENTRIES CARRY A DIFFERENT NAME than the copies they take, so
+    // nothing here can pass by matching whole folders rather than URIs.
+    //
+    // sentFolders[0] IS THE PAIRED PRESENCE, in the same assertion rather than
+    // in another test: `both copies are gone` measured against an empty list
+    // would also be satisfied by a session that applied nothing at all.
+    test("one event removing a URI twice takes both copies of it", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: [sentFolders[0]],
+        });
+        session.notify("initialized", {});
+
+        changeFolders(session, { added: [addedFolder] });
+        changeFolders(session, { added: [addedFolder] });
+        changeFolders(session, { removed: [addedAgain, addedAgain] });
+
+        expect(await observedFolders(session)).toEqual([sentFolders[0]]);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // PBI-17 CRITERION 4, AND IT IS BORN GREEN AND SAYS SO: per-request capture
     // is ALREADY today's behaviour, because methods.ts calls the folders thunk
     // ONCE while building the RequestContext. It is pinned so that nobody
