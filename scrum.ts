@@ -37,19 +37,24 @@ const scrum: ScrumDashboard = {
       id: "PBI-16",
       story: {
         role: "config author",
-        capability: "copy the README's config snippet and have it type-check",
-        benefit:
-          "the first thing they copy does not greet them with an error, in a document whose selling point is that handlers are typed",
+        capability:
+          "copy an artifact this repository publishes and have it type-check against what actually ships",
+        benefit: "the first thing they copy does not fail in their project while passing in ours",
       },
       acceptance_criteria: [
         {
-          criterion: "The README's config snippet type-checks in an installed consumer",
+          criterion:
+            "The README's snippet AND examples/tsudoi.config.ts type-check in an installed consumer, resolving through the PUBLISHED arm",
           verification:
-            "THE SNIPPET IS EXTRACTED FROM README.md's OWN BYTES -- named in the criterion because test/helpers/install.ts:185 exposes typeCheck(files) for ARBITRARY probe sources, so a check pointed at the example would satisfy the machinery while satisfying nothing this PBI exists for. Same extraction discipline as PBI-8: the prose must BE the source, never a copy of it. NEGATIVE CONTROL: introducing a type error in the README reddens it, which EXECUTION ALONE DOES NOT, since type stripping runs it regardless",
+            "Extract the snippet from README.md's OWN BYTES and place it, and the example, in the installed-consumer project; run tsc there. TWO NEGATIVE CONTROLS: a type error in the README reddens it, which EXECUTION ALONE DOES NOT since type stripping runs it regardless; and pointing the check at IN-REPO sources satisfies nothing, because that is exactly what tsc --noEmit already does",
         },
       ],
       status: "ready",
       notes: [
+        "RESIZED AT SPRINT 15 REFINEMENT BY A MEASUREMENT NOBODY ASKED FOR, and the hole is not the one this was filed for: PBI-9's installed-consumer check calls typeCheckProbe from ONE test and passes SYNTHETIC probe sources only, so examples/ is checked solely by the repo's own tsc --noEmit -- which resolves @atusy/tsudoi/types through the IN-REPO `default` arm and NEVER through the published dist/types.d.ts. Sprint 9's failure class exactly: resolves in-repo, not through what ships, everything green. The snippet was the smaller half, and the example costs ONE more probe source in a mechanism that already exists.",
+        "MEASURED, so the compile half is not the gap: the README's snippet type-checks CLEAN against the current surface, with the checker shown capable of failing -- perturbing context.tsudoi.documents to notAThing yields TS2339. Sprint 14's additions were additive and landed where the snippet does not look.",
+        "THE RESEMBLANCE GAP IS DESIGN, NOT DEFECT, and gets no item: the snippet is a minimal starter, the example is the fuller one, and the README says so. What may be STALE is the README's own DESCRIPTION of the example -- `streaming completion, hover, and a finally that documents when it runs`, written before path completion existed and NOT VERIFIED. Check it as part of this PBI rather than asserting it is fine.",
+        "THE PO NAMING THEIR OWN INSTRUMENT'S WEAKNESS rather than glossing it: a note is exactly what let the Sprint 13 prose defect ship for a sprint. Chosen anyway, because documentation accuracy is not testable without the claim-extraction mechanism declined twice, and the standing prose-reporting item is the backstop. IF IT FAILS AGAIN the trigger has fired twice and the mechanism gets reconsidered rather than the note.",
         "FILED AT SPRINT 13 BY THE Q2 FILTER, on its first firing and for exactly what it was built to catch: a decision whose home was neither executable nor sited. It had lived as prose in Sprint 12's decisions since the sprint that found it, and the next compaction would have met it again.",
         "THE PO REVERSING THEIR OWN CLOSE-OUT REFUSAL, with the condition named: they declined a PBI then on the grounds that inventory nobody reaches is dishonest -- true of an EMPTY BACKLOG, false now that PBI-14 and PBI-15 are live. The means exists (installConsumer.typeCheck); the alternative to filing is evaporation.",
         "ORDER HELD AT SPRINT 15 REFINEMENT ON EVIDENCE RATHER THAN SIZE: PBI-17's value is CONTINGENT on a config choice Sprint 14 measured the stakeholder has not made -- with the bare on_dir() their only comparable server uses, no folders are sent and the workspace source is inactive for them. This one helps any reader unconditionally.",
@@ -91,6 +96,34 @@ const scrum: ScrumDashboard = {
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
         "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
+      ],
+    },
+    {
+      id: "PBI-18",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "add a notification handler without being able to forget the lifecycle gate",
+        benefit:
+          "a handler that mutates state after shutdown becomes unwritable rather than merely untested",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
+          verification:
+            "Gate notifications in ONE place and assert a handler that does NOT consult the gate itself is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes this only because each handler remembers -- delete the check from any one handler body and nothing reddens",
+        },
+        {
+          criterion: "exit survives the gate, in EVERY state rather than the one already tested",
+          verification:
+            "exit before initialize AND exit after shutdown both still exit, with the codes PBI-10 and Sprint 3 pinned. THE PO CORRECTING THEIR OWN REASONING: PBI-10 covers exit BEFORE initialize only, so a blanket gate could get the carve-out wrong in ways that test never reaches -- this criterion exists because inheriting someone else's coverage is what would hide it",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention.",
+        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure.",
+        "DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
+        "WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
       ],
     },
   ],
