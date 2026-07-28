@@ -141,11 +141,16 @@ const scrum: ScrumDashboard = {
             message: "feat: close the residual that needed no deliberate act to reach",
             phase: "green",
           },
+          {
+            hash: "1a6c2d5",
+            message: "docs: a sentence written this sprint was false about its own file",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "ASSERT ON THE DIAGNOSTIC, BOUND TO THE FILE AND THE SYMBOL, never on a bare non-zero exit: Sprint 21 measured that against a module lacking the export ENTIRELY, an exit-code-only assertion goes GREEN.",
           'RED FIRST, at the headline assertion, with `Received: ""` -- the pre-edit type compiles the call, so the probe\'s own tsc exits 0. THAT IS THE TRAP MADE CONCRETE: an exit-code-only assertion would have been GREEN here before the token existed.',
-          "A SECOND EXIT-CODE TRAP FOUND ON THE WAY, NOT ON THE PLAN AND WORSE THAN THE ONE THE PLAN NAMED: `Omit<T, K>` ACCEPTS A KEY THAT IS NOT IN `keyof T` and hands back T UNCHANGED. MEASURED -- spelled `onUnhandledNotifcation`, tsc is 0 and NOTHING objects, so a narrowing that narrows nothing is indistinguishable from one that works unless an assertion NAMES the symbol. Both probes name it; both redden on the misspelling.",
+          'A SECOND EXIT-CODE TRAP FOUND ON THE WAY, NOT ON THE PLAN AND WORSE THAN THE ONE THE PLAN NAMED: `Omit<T, K>` ACCEPTS A KEY THAT IS NOT IN `keyof T` and hands back T UNCHANGED. MEASURED, and stated as what was observed rather than as a claim about the repo -- spelled `onUnhandledNotifcation`, THE TYPE IN ISOLATION COMPILES AT 0 and both probes report `Received: ""`, so a narrowing that narrows nothing is indistinguishable from one that works unless an assertion NAMES the symbol. The repo\'s own tsc exits 1 in that state, but ONLY because the set-difference pin fires.',
           "A SEPARATE TEST RATHER THAN A SECOND CALL IN forbids.ts, on the Sprint 18 rule: appended there, this hazard could only ever be the SECOND assertion.",
           "onUnhandledNotification IS AN EVENT PROPERTY holding a callable, NOT A METHOD -- checked against the declaration at vscode-jsonrpc/lib/common/connection.d.ts:352, `Event<NotificationMessage>`. It changes nothing about the remedy, and it is FLAGGED RATHER THAN EDITED: PBI-24's criterion says `THESE TWO METHODS`, and acceptance_criteria are not the Developer's to edit. The site prose says MEMBERS.",
           "THE TWO KEYS ARE INDEPENDENTLY DEFENDED, not one passing off the other, and that took its own perturbation: keeping ONLY the new key reddens the three onNotification probes and leaves BOTH new tests GREEN, while dropping only the new key does the exact reverse. Neither direction was inferable from the other.",
@@ -165,6 +170,11 @@ const scrum: ScrumDashboard = {
             message: "feat: close the residual that needed no deliberate act to reach",
             phase: "green",
           },
+          {
+            hash: "1a6c2d5",
+            message: "docs: a sentence written this sprint was false about its own file",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE PLAN'S `BORN GREEN` IS TRUE IN THE SEQUENCING SENSE ONLY, and the boundary is carried rather than the word inherited: this needs NO IMPLEMENTATION OF ITS OWN, but it was RED before the token, exactly like subtask 1, because `conn.onUnhandledNotification(...)` compiled. Both went green on the SAME one token. Sprint 21's handling of the same distinction.",
@@ -182,10 +192,17 @@ const scrum: ScrumDashboard = {
             message: "feat: close the residual that needed no deliberate act to reach",
             phase: "green",
           },
+          {
+            hash: "1a6c2d5",
+            message: "docs: a sentence written this sprint was false about its own file",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "AND THE ADEQUACY DEPENDENCY RECORDED AT PBI-23'S SITE IS UNAFFECTED BY THIS: the lint's sufficiency still rests on the narrowing, which this widens rather than moves. CHECKED against .oxlintrc.json and against src/server.ts, not assumed -- `createGatedConnection`'s return is still the only connection-shaped value startServer binds. NO EDIT MADE THERE. Its message string `returns a handle with no onNotification` is now true-but-incomplete rather than false, so it was deliberately LEFT: it states a property that still holds, not a count or an exclusivity.",
-          "THE SECOND PASS FOUND THREE MORE CLAIMS THE FILE MAKES ABOUT ITSELF, and the retrospective rule filed last sprint is what found them -- all three survived writing the edit. (1) The header `only the ONE member this narrowing is about is named here` falsifies at the same token. (2) The function header `onNotification gone from what the caller holds` was true-but-half. (3) A sentence of MY OWN, written this sprint and wrong when written: `nothing in this file's defence rests on an exit code`, while both probes do assert `result.code`. Corrected to what is actually true -- no probe may DISCRIMINATE on the exit code.",
+          "THE SECOND PASS FOUND FOUR CLAIMS THE FILE MAKES ABOUT ITSELF, NAMED RATHER THAN COUNTED because the rule that found them says a count silently falsifies -- and this one did, at three, before the fourth arrived. `only the ONE member this narrowing is about is named here` (falsifies at the same token). `onNotification gone from what the caller holds` (true-but-half). `nothing in this file's defence rests on an exit code` -- MY OWN, written this sprint and wrong when written, since both probes assert `result.code`; corrected to no probe may DISCRIMINATE on it. And the fourth, below.",
+          "THE FOURTH IS THE RULE'S OWN SHAPE AT FULL STRENGTH, AND IT COST A SECOND COMMIT: `the two members through which a holder could see notification traffic without the gate` -- written by me in the commit that closed the sprint's work, and FALSE. Found by ENUMERATING ProtocolConnection 3.18.2's fifteen members instead of recalling them: `onProgress` installs a handler for `$/progress` under a token, and `trace(value, tracer)` hands every RECEIVED notification to a caller-supplied Tracer -- MEASURED at vscode-jsonrpc/lib/common/connection.js, where `traceReceivedNotification` runs on the receive path whether or not a handler exists. BOTH SIT ON THIS HANDLE AND NEED NO DELIBERATE ACT, so they are in the same reachability class as the one just closed. RECORDED, NOT CLOSED: the criterion names two members, and widening it unreviewed is precisely what deferring `onUnhandledNotification` one sprint earlier was for.",
+          "THAT FALSIFIES A NOTE ON PBI-24 THAT IS NOT MINE TO EDIT, FLAGGED: `AND IT IS THE LAST ITEM OF ITS KIND ANYONE CAN SEE`. Two more of exactly its kind are now visible. The criterion AS WRITTEN is met; the SPRINT GOAL as worded -- `notification traffic cannot be watched around the gate on the handle startServer holds` -- IS NOT, and saying so is the point of the note that predicted a stop.",
           "CHECKED AND LEFT STANDING, so the pass is auditable rather than only its catches: `onRequest has five overloads` (counted, 5), the Sprint 21 factory-seam sentence `that perturbation reddens it and it alone` (re-run this sprint: 342 pass, 1 fail), and `test/notifications.test.ts asserts this module exports no factory`.",
           'THE `AND NOTHING ELSE` HALF WOULD HAVE BEEN AN UNBACKED SENTENCE, so it was given an assertion rather than a label: `BoundaryIsExactlyTwoMembers` in test/notifications.test.ts pins `Exclude<keyof ProtocolConnection, keyof RequestOnlyConnection>` as EXACTLY those two names, both directions, checked by the DoD\'s own tsc. NOT REDUNDANT, MEASURED: appending `| "sendNotification"` to the Omit runs at 343 TESTS GREEN with every probe passing -- the boundary sentence turns false and NOTHING ELSE IN THE REPO SEES IT. Deliberately not dressed as a bun test: a runtime `expect(true).toBe(true)` beside it observes the same thing either way.',
         ],
