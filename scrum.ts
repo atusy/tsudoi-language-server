@@ -78,9 +78,17 @@ const scrum: ScrumDashboard = {
           verification:
             "Assert CompletionItemKind.Folder versus .File. NEGATIVE CONTROL: a wrong kind still completes and still displays, so nothing but the assertion catches it",
         },
+        {
+          criterion: "A user can tell which root produced an item without resolving it themselves",
+          verification:
+            "Assert the item names its source root. Dedup-by-inserted-text leaves distinct strings, but src/foo.ts from cwd and ../src/foo.ts from the document's parent look unrelated, so four-source completion is incomprehensible without it",
+        },
       ],
       status: "ready",
       notes: [
+        "MEASURED FROM THE STAKEHOLDER'S OWN ddc CONFIG -- branch 1: ddc drives queries off autoCompleteEvents (TextChangedI) and the lsp source's volatilePattern [\\p{P}\\p{S}], which / matches, NOT off advertised triggerCharacters. So the trigger-character config surface we were one measurement from building WOULD HAVE FIXED NOTHING. QUALIFICATION, unsoftened: measured for THIS user's editor; it does NOT establish reachability for built-in completion or another plugin, and no prose may claim general reachability. Their lsp forceCompletionPattern covers . :: -> but NOT /, so / REFRESHES an active completion rather than necessarily opening the popup from nothing -- a real difference from their literal example.",
+        "THE ddc file SOURCE ALREADY COVERS PART OF THIS, found by reading their config: forceCompletionPattern \\S/\\S* -- the same shape this feature targets. So sources 1 and 4 are TEACHING-ONLY for such a user, duplicating capability they have; sources 2 and 3 are STRUCTURALLY tsudoi-only, since ddc file is not LSP-aware and can know neither. NO SCOPE CUT: dropping 1 and 4 would design tsudoi's teaching example around one user's plugin, and 4 is what makes prefix-selects-source-class necessary at all.",
+        "The example must SAY that running alongside an existing filesystem source produces items from both, DEDUPLICATED BY NEITHER. tsudoi cannot fix it -- cross-source dedup is the completion plugin's job and tsudoi cannot know what other sources exist -- so saying so beats letting a user find doubles and blame us.",
         "ZERO LINES IN src/. The module reads the current line out of the document itself -- documents.get(uri).getText() split at params.position -- because MEASURED: CompletionParams carries textDocument, position and context only, NOT the typed prefix, and on an invoked completion triggerCharacter is null.",
         "REACHABILITY IS NOT A CRITERION HERE and must not appear as one. Whether a real user TYPING / reaches the handler is unmeasured -- see the open impediment. Criteria are protocol-level, as all 232 existing tests are; the PBI-8 precedent is exact, where the tarball route was verified and the registry route shipped explicitly labelled unverified.",
         "The stakeholder's example is the right SPECIFICATION and the wrong TARGET: it specifies precisely what the handler must do with a /-prefixed request, and specifies nothing tsudoi controls about whether that request is sent.",
