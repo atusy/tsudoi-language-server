@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { repoRoot } from "./spawn.ts";
@@ -28,8 +28,12 @@ export function isolatedCheckout(): IsolatedCheckout {
   const dir = mkdtempSync(join(tmpdir(), "tsudoi-checkout-"));
   cpSync(join(repoRoot, "package.json"), join(dir, "package.json"));
   cpSync(join(repoRoot, "src"), join(dir, "src"), { recursive: true });
-  mkdirSync(join(dir, "examples"));
-  cpSync(join(repoRoot, "examples", "tsudoi.config.ts"), join(dir, "examples", "tsudoi.config.ts"));
+  // The WHOLE examples directory, not the config alone: the config imports its
+  // path-completion module by relative specifier, so a checkout carrying one
+  // file fails at import with a message about a missing module -- which reads
+  // exactly like the dependency-resolution failure these tests exist to
+  // observe, and would be the wrong diagnosis.
+  cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
   const nodeModules = join(dir, "node_modules");
   return {
     dir,

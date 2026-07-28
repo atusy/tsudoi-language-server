@@ -1,18 +1,16 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
+import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 
 /**
  * The stakeholder-facing example's own bytes, read at test time. Not a fixture
- * copy: the artifact under test is examples/tsudoi.config.ts itself, and a
- * committed duplicate would drift away from the file a config author reads.
+ * copy: the artifact under test is examples/ itself, and a committed duplicate
+ * would drift away from the files a config author reads. Both of them, since
+ * the config imports its path-completion module by relative specifier and tsc
+ * follows that import whether or not the file is listed.
  */
-const exampleSource = readFileSync(
-  fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url)),
-  "utf8",
-);
+const example = exampleSources();
 
 /** What a config author outside this repo writes: no relative path into src/. */
 const consumerConfig = [
@@ -61,7 +59,7 @@ test("a deliberate type error in the installed consumer is reported", async () =
 // either resolves anything, measured). Only a consumer with no ../src above it
 // can tell the two spellings apart.
 test("the example itself, copied into an installed consumer, type-checks unchanged", async () => {
-  const result = await consumer.typeCheck({ "tsudoi.config.ts": exampleSource });
+  const result = await consumer.typeCheck(example);
 
   expect(result.output).toBe("");
   expect(result.code).toBe(0);
@@ -70,10 +68,11 @@ test("the example itself, copied into an installed consumer, type-checks unchang
 // The pair for the assertion above: proves it is really discriminating on the
 // specifier, and not passing for any consumer config at all.
 test("the same example spelled with a relative path into src fails in a consumer", async () => {
-  const relative = exampleSource.replace('"@atusy/tsudoi/types"', '"../src/types.ts"');
-  expect(relative).not.toBe(exampleSource);
+  const config = example["tsudoi.config.ts"] ?? "";
+  const relative = config.replace('"@atusy/tsudoi/types"', '"../src/types.ts"');
+  expect(relative).not.toBe(config);
 
-  const result = await consumer.typeCheck({ "tsudoi.config.ts": relative });
+  const result = await consumer.typeCheck({ ...example, "tsudoi.config.ts": relative });
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2307");

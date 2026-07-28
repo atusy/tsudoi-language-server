@@ -18,9 +18,17 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
 
 /**
  * The consumer's compiler options, deliberately NOT a copy of the repo's
- * tsconfig.json: that one sets `types: ["node", "bun"]`, which a project
- * outside this repo has no reason to carry, and its absence would fail the
- * probe for a reason unrelated to the specifier under test.
+ * tsconfig.json: that one also sets `bun`, which a project outside this repo
+ * has no reason to carry, and its absence would fail the probe for a reason
+ * unrelated to the specifier under test.
+ *
+ * `node` IS carried, and it was `[]` until sprint 13. MEASURED: a source that
+ * imports `node:fs/promises` or `node:process` is reported TS2591 without both
+ * @types/node installed AND `node` named here -- neither half alone is enough.
+ * The example config now completes paths, so it reads the filesystem, and a
+ * config author who does that installs @types/node exactly as this does. The
+ * probe would otherwise fail for a reason unrelated to the specifier, which is
+ * the same standard the `bun` exclusion above is held to.
  *
  * `files` is set to the probe sources alone. Left to its default `include`,
  * tsc would walk the symlinked src/ and report TS2591 for every `node:` import
@@ -35,7 +43,7 @@ export const consumerCompilerOptions = {
   noEmit: true,
   strict: true,
   skipLibCheck: true,
-  types: [],
+  types: ["node"],
 };
 
 export function runTsc(cwd: string): Promise<TypeCheckResult> {

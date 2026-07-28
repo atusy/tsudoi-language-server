@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
-import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
+import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { runCommand } from "./helpers/spawn.ts";
@@ -40,19 +40,20 @@ const route = {
 
 /**
  * The stakeholder-facing example's own bytes, read at test time -- the config
- * author's artifact, not a fixture copy of it.
+ * author's artifact, not a fixture copy of it. BOTH files: the config imports
+ * its path-completion module by relative specifier, so a consumer given only
+ * the config fails at import.
  */
-const exampleConfig = readFileSync(
-  fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url)),
-  "utf8",
-);
+const exampleConfig = exampleSources();
 
 /** One consumer for every assertion here: packing and installing is the slow part. */
 let consumer: InstalledConsumer;
 
 beforeAll(async () => {
   consumer = await installConsumer();
-  consumer.write("tsudoi.config.ts", exampleConfig);
+  for (const [path, source] of Object.entries(exampleConfig)) {
+    consumer.write(path, source);
+  }
 });
 
 afterAll(() => {
@@ -256,7 +257,9 @@ test("a change to src/ reaches the installed copy with no rebuild step", async (
     },
   });
   try {
-    perturbed.write("tsudoi.config.ts", exampleConfig);
+    for (const [path, source] of Object.entries(exampleConfig)) {
+      perturbed.write(path, source);
+    }
     const session = LspSession.startCommand(route.deno, perturbed.dir);
     try {
       const result = await session.request<InitializeResult>("initialize", initializeParams);

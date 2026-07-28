@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { repoRoot } from "./spawn.ts";
 import {
   consumerCompilerOptions,
@@ -34,6 +35,30 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
       resolve({ code, output });
     });
   });
+}
+
+/**
+ * The stakeholder-facing example's own bytes, keyed by the path each must be
+ * written to in a consumer project.
+ *
+ * TWO FILES, not one, and that is the point of it being a function rather than
+ * a constant at each call site: the example's completion handler imports its
+ * path-completion module by RELATIVE specifier, so a consumer given only the
+ * config fails at import with a missing-module error -- which looks exactly
+ * like the dependency-resolution failure these probes exist to observe. The
+ * artifact under test is both files, and no fixture copy of either exists.
+ */
+export function exampleSources(): Record<string, string> {
+  return {
+    "tsudoi.config.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/tsudoi.config.ts", import.meta.url)),
+      "utf8",
+    ),
+    "path-completion.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/path-completion.ts", import.meta.url)),
+      "utf8",
+    ),
+  };
 }
 
 /** A throwaway project with tsudoi installed from a tarball, as a stranger has it. */
@@ -140,6 +165,14 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     if (installed.code !== 0) {
       fail("bun install", installed);
     }
+    // @types/node BORROWED, for the same reason typecheck.ts borrows the whole
+    // of node_modules: the example config reads the filesystem, so it imports
+    // `node:` modules, and MEASURED, tsc reports TS2591 for those without the
+    // types present. A config author writing filesystem code installs them; a
+    // probe fetching them over the network to prove nothing about tsudoi's
+    // specifier would add a dependency and no information. It is a devDependency
+    // of this package and never ships, so nothing here can reach a user.
+    symlinkSync(join(repoRoot, "node_modules", "@types"), join(consumer, "node_modules", "@types"));
 
     return {
       dir: consumer,

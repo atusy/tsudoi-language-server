@@ -7,6 +7,7 @@ import {
 } from "vscode-languageserver-protocol";
 
 import type { RequestContext, Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";
+import { pathCompletion } from "./path-completion.ts";
 
 /**
  * The run of non-whitespace characters containing `character`, or "" if the
@@ -49,6 +50,38 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
               documentation: "This is a sample completion item.",
             },
           ];
+
+          // Paths from the roots that make sense where the cursor is: the
+          // document's own directory, the working directory, and the
+          // filesystem root when the fragment starts at one. Each yield here
+          // is another `$/progress` for a client that asked for partial
+          // results, which is why a directory of any size streams.
+          //
+          // WHAT A USER SHOULD KNOW BEFORE TURNING THIS ON, and none of it is
+          // something tsudoi can fix for them:
+          //
+          //  * KEEPING a filesystem completion source alongside this one shows
+          //    the same path TWICE, deduplicated by NEITHER. Cross-source
+          //    dedup is the completion plugin's job -- tsudoi cannot know what
+          //    other sources exist, or what they will insert.
+          //  * REPLACING one is a change to what OPENS the popup. Whether
+          //    typing `/` reaches this handler at all is a property of the
+          //    editor's completion plugin and its settings, not of tsudoi, and
+          //    nothing here should be read as a promise that it does. Check it
+          //    before removing the source you have.
+          //  * A completion plugin may TRANSFORM what it inserts. A filename
+          //    containing a space or shell punctuation can arrive truncated at
+          //    the first one. tsudoi emits the whole path; what the plugin
+          //    does with it afterwards is the plugin's.
+          //  * Items carry a plain `textEdit` with a range. A plugin option
+          //    that chooses between inserting and replacing consults an
+          //    `InsertReplaceEdit` only, so setting it has NO EFFECT on these
+          //    items -- a setting of yours quietly disabled by a choice of
+          //    ours, which is worth knowing rather than discovering.
+          //  * An option that resolves items lazily is equally inert: tsudoi
+          //    advertises `completionProvider` with no `resolveProvider`, so
+          //    `completionItem/resolve` is never sent.
+          yield* pathCompletion(context, params);
 
           // Deliberate divergence from the brief's example, which falls off the end here.
           // The declared AsyncGenerator return type requires an explicit return, and per the
