@@ -34,6 +34,32 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
+      id: "PBI-18",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "add a notification handler without being able to forget the lifecycle gate",
+        benefit:
+          "a handler that mutates state after shutdown becomes unwritable rather than merely untested",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
+          verification:
+            "Gate notifications in ONE place and assert a handler that does NOT consult the gate itself is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes this only because each handler remembers -- delete the check from any one handler body and nothing reddens",
+        },
+        {
+          criterion: "exit survives the gate, in EVERY state rather than the one already tested",
+          verification:
+            "exit before initialize AND exit after shutdown both still exit, with the codes PBI-10 and Sprint 3 pinned. THE PO CORRECTING THEIR OWN REASONING: PBI-10 covers exit BEFORE initialize only, so a blanket gate could get the carve-out wrong in ways that test never reaches -- this criterion exists because inheriting someone else's coverage is what would hide it",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention. WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
+        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure. DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
+      ],
+    },
+    {
       id: "PBI-17",
       story: {
         role: "config author",
@@ -66,32 +92,6 @@ const scrum: ScrumDashboard = {
         "FILED AT SPRINT 14 REFINEMENT rather than left as a note on PBI-15, which would evaporate when PBI-15 closes -- the orphan trap the lifetime rule exists to prevent. Ordered LAST: PBI-15 delivers the capability, this hardens it.",
         "MEASURED: the notification arrives whether or not the server advertises workspace.workspaceFolders.changeNotifications -- tested against capabilities: {} and against full advertisement, both received. So this is not a feature we opt into; it is one we currently ignore.",
         "MEASURED, and it bounds the urgency: an unhandled notification is SILENT and INERT -- zero stderr bytes on both runtimes, session functional afterwards, exit 0. Nobody is being harmed by noise today. Recorded at src/server.ts's logger, because the natural inference from Sprint 4 -- the logger surfaces notification problems -- is FALSE for a notification with no handler, which never reaches the logger at all.",
-      ],
-    },
-    {
-      id: "PBI-18",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "add a notification handler without being able to forget the lifecycle gate",
-        benefit:
-          "a handler that mutates state after shutdown becomes unwritable rather than merely untested",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "A notification refused by the lifecycle reaches no handler, whoever wrote it",
-          verification:
-            "Gate notifications in ONE place and assert a handler that does NOT consult the gate itself is still refused outside the initialized window. NEGATIVE CONTROL: today's shape passes this only because each handler remembers -- delete the check from any one handler body and nothing reddens",
-        },
-        {
-          criterion: "exit survives the gate, in EVERY state rather than the one already tested",
-          verification:
-            "exit before initialize AND exit after shutdown both still exit, with the codes PBI-10 and Sprint 3 pinned. THE PO CORRECTING THEIR OWN REASONING: PBI-10 covers exit BEFORE initialize only, so a blanket gate could get the carve-out wrong in ways that test never reaches -- this criterion exists because inheriting someone else's coverage is what would hide it",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "MEASURED, and it is the argument rather than a motivation: acceptsNotification() is called INSIDE each handler body -- three hand-written copies of the same two lines -- while requests are gated STRUCTURALLY in one place, at registerMethods. One side enforced, the other convention. WHAT MAKES IT URGENT RATHER THAN TIDY: PBI-17 introduces THE FIRST STATE WITH TWO WRITERS ON TWO GATING PATHS -- workspaceFolders is written by the initialize REQUEST handler and would be written again by a NOTIFICATION handler. Every notification today is inert or delegates to the document store, which no request handler writes.",
-        "WHY THREE IS THE NUMBER, and why this is NOT the framework class the PO twice refused: PBI-3's capability derivation and PBI-10's validation seam were frameworks justified by ONE call site. There are three here and PBI-17 makes a fourth. Three is where convention stops being cheaper than structure. DECLINED AS A BUNDLE, NOT ON MERIT: PBI-17 needs only its own handler to consult the gate, so this is strictly more than PBI-17 requires -- which is the definition of separate scope. Writing a fourth hand-written copy that this item then removes is a real if small waste, and two lines of waste beats a shared-surface change landing inside a PBI about workspace folders.",
       ],
     },
   ],
