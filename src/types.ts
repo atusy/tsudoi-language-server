@@ -54,7 +54,19 @@ export type Method = keyof MethodMap;
 export interface RequestContext {
   readonly signal: AbortSignal;
   readonly tsudoi: Tsudoi;
-  /** The workspace folders the client sent at `initialize`. */
+  /**
+   * The workspace folders the client sent at `initialize`, or an EMPTY LIST
+   * when it sent none.
+   *
+   * Absence is a state a config author must be able to SEE: it is never
+   * defaulted to the working directory, to `/`, or to anything else this
+   * process could invent. An empty list means the editor opened no workspace,
+   * and answering from a root nobody named is the failure this shape refuses.
+   *
+   * Both of the protocol's absent states -- the field omitted and the field
+   * sent as null -- arrive here as the same empty list, so a config author
+   * never has to know there were two.
+   */
   readonly workspaceFolders: readonly WorkspaceFolder[];
 }
 

@@ -62,5 +62,24 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    // CRITERION 1's NEGATIVE CONTROL and criterion 2's first absent state. The
+    // client omits the field entirely, which is what `initializeParams` -- the
+    // smallest conforming client this suite has -- already sends.
+    //
+    // toEqual([]) and never a truthiness check: `undefined` is what arrives
+    // unnormalised, and every `for` a config author writes over it throws
+    // rather than looping zero times.
+    test("a client sending no workspaceFolders leaves the handler observing an empty array", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        expect(await observedFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }

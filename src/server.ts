@@ -95,7 +95,19 @@ export function startServer(
     // this line: retaining `params` wholesale would put the whole of
     // InitializeParams on tsudoi's surface as a side effect of needing one
     // field of it. Whoever needs capabilities opens a seam for capabilities.
-    workspaceFolders = params.workspaceFolders as readonly WorkspaceFolder[];
+    //
+    // NORMALISED HERE AND NOWHERE ELSE. The protocol has TWO absent states --
+    // the field omitted, and the field sent as null -- and no config author
+    // should have to know that, nor should either be able to reach one of
+    // their handlers wearing the shape of a value. `??` is what covers both;
+    // an `=== undefined` check covers one and lets the other through.
+    //
+    // What absence must NEVER become is a ROOT. cwd is the tempting default
+    // and the dangerous one: nvim spawns the server with cwd = root_dir when a
+    // root is found and its own launch directory when not, so a cwd fallback
+    // looks correct in every test and is silently wrong for the user who has
+    // no root -- which is the state this normalisation exists to make visible.
+    workspaceFolders = params.workspaceFolders ?? [];
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
