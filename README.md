@@ -164,7 +164,18 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
 ## Where to look next
 
 - `examples/tsudoi.config.ts` in this repository is the fuller example: streaming completion,
-  hover, and a `finally` that documents when it runs. It imports `examples/path-completion.ts`,
-  which completes filesystem paths, so copy **both** files or the import fails. The test suite
-  runs those files themselves, so they cannot drift from what tsudoi does.
+  path completion, hover, and a `finally` that documents when it runs. It imports
+  `examples/path-completion.ts`, which completes filesystem paths, so copy **both** files or the
+  import fails. Those two also need the protocol package in your own project, because they use
+  `CompletionItemKind` as a value rather than only as a type:
+
+  ```sh
+  bun install vscode-languageserver-protocol
+  ```
+
+  Without it they fail to type-check and fail to load, naming the missing module either way. The
+  quickstart config above does not need it: it imports only `@atusy/tsudoi/types`. The test suite
+  runs those files themselves and type-checks them as an installed consumer receives them, so they
+  cannot drift from what tsudoi does or from what it publishes.
+
 - `src/types.ts` is the whole published type surface, reachable as `@atusy/tsudoi/types`.
