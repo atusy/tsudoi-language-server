@@ -318,7 +318,7 @@ const scrum: ScrumDashboard = {
     number: 25,
     pbi_id: "PBI-26",
     goal: "A config author installs ONE package: the examples get every protocol name they use from @atusy/tsudoi/types, and a consumer that never declares vscode-languageserver-protocol can both TYPE-CHECK and RUN them.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "none -- BORN GREEN and honestly so; a pure capability move with no assertion of its own. Suite must stay at 347 pass.",
