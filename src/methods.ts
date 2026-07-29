@@ -601,6 +601,25 @@ async function driveGenerator(run: {
 }): Promise<unknown> {
   const handler = run.handler;
   if (handler === undefined) {
+    // THE ONE PLACE THE TWO DRIVES DISAGREE ABOUT AN ANSWER, and it is written
+    // here because this return is what causes it. This sits AHEAD of the
+    // cancellation epilogue, so a CANCELLED request to a generator-driven
+    // method with no handler is answered NULL -- where the awaited-once drive
+    // builds its context either way, reaches `answerUnlessCancelled`, and
+    // answers -32800.
+    //
+    // MEASURED at this sprint, by deleting one handler at a time from
+    // test/fixtures/all-methods.ts: without the completion handler the
+    // by-construction -32800 test reddens on both runtimes, and without the
+    // formatting handler nothing reddens at all.
+    //
+    // NOT CHANGED, AND NOT AN OVERSIGHT. It is the behaviour completion has
+    // always had -- the early return predates the table -- and LSP 3.17 permits
+    // answering a cancelled request normally, so neither answer violates
+    // anything. What was missing was that ANYBODY KNEW, and putting the two
+    // drives side by side is what surfaced it. Making them agree is a
+    // behaviour change no criterion asked for; recording it is what stops the
+    // next reader assuming the epilogue reaches every request.
     return null;
   }
   const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
