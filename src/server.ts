@@ -176,6 +176,18 @@ export function startServer(
     if (config.methods?.["textDocument/completion"] !== undefined) {
       capabilities.completionProvider = {};
     }
+    // `true`, not `{}`, and the difference from the line above is not a style
+    // drift: DocumentFormattingOptions extends WorkDoneProgressOptions and
+    // declares NOTHING ELSE, so the only thing an options object could say here
+    // is `workDoneProgress`, which tsudoi does not implement for this method.
+    // `true` is the protocol's own way to say `provided, with nothing to
+    // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
+    // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits
+    // at the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which
+    // is why this line reads like hover's and not like resolve's will.
+    if (config.methods?.["textDocument/formatting"] !== undefined) {
+      capabilities.documentFormattingProvider = true;
+    }
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 

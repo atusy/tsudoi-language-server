@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { InitializeResult, TextEdit } from "vscode-languageserver-protocol";
+import {
+  type InitializeResult,
+  type TextDocumentSyncOptions,
+  TextDocumentSyncKind,
+  type TextEdit,
+} from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -15,6 +20,11 @@ const runtimes = [bunRuntime, denoRuntime];
 
 await Promise.all(runtimes.map(requireRuntime));
 
+const textDocumentSync: TextDocumentSyncOptions = {
+  openClose: true,
+  change: TextDocumentSyncKind.Incremental,
+};
+
 const uri = "file:///workspace/a.txt";
 
 /**
@@ -27,6 +37,38 @@ function formattingParams(): unknown {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
+    // Exact equality on both halves: `documentFormattingProvider is present`
+    // is satisfied by a server that advertises it always, and `absent` by one
+    // that advertises nothing. Only equality says the capability tracks what
+    // the config can answer.
+    test("a config supplying a formatting handler advertises documentFormattingProvider", async () => {
+      const session = LspSession.start(runtime, formattingFixed);
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.capabilities).toEqual({
+          textDocumentSync,
+          documentFormattingProvider: true,
+        });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE NEGATIVE CONTROL, and it is not optional: a client is entitled to
+    // send whatever it was told about, so a capability claimed where the config
+    // cannot answer it makes the server lie about itself.
+    test("a config supplying no formatting handler advertises exactly what it can answer", async () => {
+      const session = LspSession.start(runtime, formattingAbsent);
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.capabilities).toEqual({ textDocumentSync, hoverProvider: true });
+      } finally {
+        session.dispose();
+      }
+    });
+
     // Deep equality against the literal the fixture exports, every range
     // included: the config author's TextEdit[] is the answer, and anything
     // tsudoi rewrote on the way out -- a collapsed empty range, a re-encoded
