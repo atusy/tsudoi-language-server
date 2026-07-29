@@ -43,34 +43,83 @@ const scrum: ScrumDashboard = {
       story: {
         role: "config author",
         capability:
-          "read an example where the server reports a broken path and enriches the completion item I highlight",
+          "read an example where the server reports trailing whitespace and then removes it",
         benefit:
-          "the shape worth copying shows diagnostics and resolve, not only the two methods tsudoi answered first",
+          "I can run the demo, see the warnings, format, and watch them clear -- a complete loop in one server",
       },
       acceptance_criteria: [
         {
           criterion:
-            "The example is EXECUTED by the suite, with BOTH negative controls: breaking its import reddens a named assertion, and breaking a handler's return reddens a named assertion.",
+            "THE MATCHED PAIR: textDocument/diagnostic reports PER-LINE trailing whitespace, textDocument/formatting removes it. Trailing newlines are OUT OF SCOPE for this increment.",
           verification:
-            "MEASURED constructible. The filesystem diagnostic CARRIES ITS OWN PAIRED PRESENCE IN ONE DOCUMENT -- the missing path flagged, the existing one not -- which is structurally better than a separate pair.",
+            "the stakeholder said `trailing space とか trailing new lines とか` -- OR -- so choosing one is WITHIN their ruling rather than against it. PER-LINE and not the tail edit, for three reasons: only the per-line case demonstrates Diagnostic[] and TextEdit[] AS ARRAYS WITH DISTINCT RANGES; it exercises positionAt at MULTIPLE positions, which is where the example gets to SHOW the Sprint-28 investment rather than prove it; and a whole-document replacement is THE `FULL SYNC` OF FORMATTING -- the lazy implementation that returns a legal answer and teaches the wrong thing.",
         },
         {
           criterion:
-            "test/lifecycle.test.ts's pin moves: THE TITLE, THE toEqual AND THE COMMENT. One source edit, TWO runtime assertions.",
+            "THE DIAGNOSTIC'S RANGES AND THE FORMATTER'S EDIT RANGES CORRESPOND, AND IT IS ASSERTED.",
           verification:
-            "A DELIBERATE CHANGE TO A PINNED ARTIFACT. GREPPED, not recalled: it is THE ONLY exact-equality pin on the demo config; ten other capability toEqual sites were verified BY READING THE START ARGUMENT to drive fixtures instead.",
+            "RANGE-FOR-RANGE CORRESPONDENCE IS THE PAIRING'S ENTIRE PEDAGOGICAL CONTENT. If the diagnostic reported per-line while the formatter emitted one whole-document edit, BOTH EXAMPLES WOULD BE INDIVIDUALLY CORRECT AND THE PAIR WOULD TEACH NOTHING. Without this assertion, `matched pair` is a claim in a README that NO TEST CAN FAIL.",
+        },
+        {
+          criterion: "THREE NEGATIVE CONTROLS, all required, MEASURED ON BOTH RUNTIMES.",
+          verification:
+            "(a) two separated lines with trailing whitespace produce TWO findings -- a single whole-document finding FAILS it; (b) the same for TextEdit[] -- a single whole-document edit FAILS it; (c) the correspondence assertion FAILS if either side is aggregated while the other is not. Measured on both runtimes because `what the implementation emits` IS A SHAPE PREDICTION, and shape predictions are what the PO has been wrong about most often in this thread.",
         },
         {
           criterion:
-            "install.ts's exampleSources() gains the new module -- AND THE CRITERION NAMES THE FAILURE MODE.",
+            "THE FIXTURE DOCUMENT CARRIES A LINE WITH TRAILING WHITESPACE AND A LINE WITHOUT, AND THE ASSERTION CHECKS BOTH.",
           verification:
-            "omitting it fails the published-artifacts probes IN A WAY THAT LOOKS LIKE A RESOLUTION BUG and would be misdiagnosed. Named here so it is not.",
+            "MADE A REQUIREMENT RATHER THAN CONFIRMED AS A READING, so it is TRUE BY CONSTRUCTION rather than true by observation. The filesystem candidate gave this pair FREE; here it is free ONLY IF SOMEONE WRITES THE FIXTURE THAT WAY, and `someone will` is exactly the convention this project has MEASURED TO BE UNDEFENDED THREE TIMES.",
+        },
+        {
+          criterion:
+            "Both examples are EXECUTED, with BOTH negative controls each: breaking the import reddens a named assertion, breaking a handler's return reddens a named assertion.",
+          verification: "standing item 6.",
+        },
+        {
+          criterion:
+            "test/lifecycle.test.ts's pin moves ONCE for the pair: THE TITLE, THE toEqual AND THE COMMENT. One source edit, TWO runtime assertions.",
+          verification:
+            "GREPPED, not recalled: it is THE ONLY exact-equality pin on the demo config, and ten other capability toEqual sites were verified BY READING THE START ARGUMENT to drive fixtures instead. THAT THE PIN MOVES ONCE RATHER THAN TWICE IS WHY THESE TWO SHIP TOGETHER -- the mechanical half of the original bundle's rationale, transferred intact.",
+        },
+        {
+          criterion:
+            "install.ts's exampleSources() gains the new modules -- AND THE CRITERION NAMES THE FAILURE MODE.",
+          verification:
+            "omitting them fails the published-artifacts probes IN A WAY THAT LOOKS LIKE A RESOLUTION BUG and would be misdiagnosed.",
         },
         {
           criterion:
             "README's file table moves, and `Copy all four` -- A NUMBER IN PROSE -- is replaced by a form that does not count.",
           verification:
-            "prefer-naming-to-counting reaching the README, and THE CHEAPEST POSSIBLE INSTANCE of a clause that has caught four wrong counts.",
+            "prefer-naming-to-counting reaching the README, the cheapest instance of a clause that has caught four wrong counts.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE PAIR IS SELF-EVIDENCING, and that is why it OUTBID the filesystem candidate rather than refuting it. Path-completion and a path-diagnostic SHARE A DOMAIN; a diagnostic reporting what the formatter removes DEMONSTRATES THE OTHER. A reader runs the demo, sees the warnings, formats, and watches them clear -- a complete loop in one server. The filesystem version HAS NO LOOP: two features standing next to each other.",
+        "THE BINDING IS STRONGER THAN THE ORIGINAL BUNDLE'S EVER WAS: not a shared domain but VALUE COUPLING. EITHER HALF ALONE SHIPS HALF A DEMONSTRATION -- a problem the demo cannot fix, or a fix for a problem it never reports. SAME CONDITION AS THE ORIGINAL BUNDLE: if either half's negative control turns out unconstructible, they split.",
+        "THE PO'S OWN CRITERION FAILS LITERALLY HERE AND THEY RULED ON THE PROPERTY INSTEAD: `an example exists when there is something real to DELEGATE TO`, and a trailing-whitespace stripper DELEGATES TO NOTHING -- it is a regex in the handler. But that phrasing was A PROXY for `not a toy`, and THE PROXY FAILS WHILE THE PROPERTY HOLDS. Small and complete, versus wordnet-as-spellchecker's large and wrong. Only the second is disqualifying.",
+        "NO NEW DEPENDENCY, so nothing collides with install.ts's wordnet control and README's EXECUTED install command is untouched. THE DEPENDENCY SEAM THE ORIGINAL SPLIT WAS MADE ON IS DISSOLVED -- recorded so nobody later reads a seam that no longer exists.",
+        "prettier RECORDED AS THE RICHER ALTERNATIVE NOT TAKEN: a package, an executed install command, and A RETURN CONTROL FRAGILE TO A VERSION BUMP for a reason having nothing to do with tsudoi -- the same fragility class accepted at PBI-34 ONLY because there was no alternative, and ACCEPTING AN AVOIDABLE INSTANCE HAVING REFUSED AVOIDABLE ONES ELSEWHERE WOULD BE INCOHERENT. REVERSAL: evidence that a config author needs to see delegation to a real external tool.",
+        "oxlint's RECORD RESTATED, because it was written against a FILESYSTEM baseline that no longer exists and A COMPARISON TO SOMETHING ABSENT IS WORSE THAN NO COMPARISON, since it reads as current. The reason stands: A BINARY ON PATH, changing what a copying reader needs and teaching SUBPROCESS-SPAWNING as the delegation pattern. REVERSAL: someone wanting a real-linter example.",
+        "THE ZERO-DEPENDENCY PRINCIPLE IS NOT DECLARED YET -- it stands at TWO instances (oxlint on PATH, prettier as a package), and the filesystem-to-trailing-whitespace move is NOT a dependency decline so it does not count toward a third. The PO holds their own rule of three rather than reaching for a pattern that is one short.",
+      ],
+    },
+    {
+      id: "PBI-46",
+      story: {
+        role: "config author",
+        capability: "see the completion item I highlight enriched with real metadata",
+        benefit:
+          "the example shows the method's actual purpose -- expensive detail fetched only for the item the user looks at",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "The demo config supplies completionItem/resolve, enriching a path item with stat metadata.",
+          verification:
+            "MEASURED: stat yields size, mtime and dir-or-file for a real path, identically on bun 1.3.13 and deno 2.9.2. The demo config ALREADY PRODUCES PATH ITEMS to hang it on.",
         },
         {
           criterion:
@@ -80,57 +129,20 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
-            "The resolve second control half is REASONED, NOT MEASURED, and is treated as such.",
+            "The second negative control -- an item THE EXAMPLE DID NOT PRODUCE -- is REASONED, NOT MEASURED.",
           verification:
-            "whether an item THE EXAMPLE DID NOT PRODUCE can be driven to the handler through the demo config WAS NOT TESTED. If unconstructible, CLASSIFY IT rather than reporting a design outcome in the language of a coverage gap, and state what remains at risk.",
+            "whether such an item can be driven to the handler through the demo config WAS NOT TESTED. If unconstructible, CLASSIFY IT and state what remains at risk rather than reporting a design outcome in the language of a coverage gap. src/types.ts records that an unrecognised item MUST BE RETURNED UNCHANGED, because tsudoi keeps no record of what a completion handler produced -- so the handler must key off what IT PUT ON THE ITEM ITSELF.",
+        },
+        {
+          criterion: "test/lifecycle.test.ts's pin moves A SECOND TIME.",
+          verification:
+            "UNAVOIDABLE AND DELIBERATE, and the reason this is its own item rather than bundled.",
         },
       ],
       status: "ready",
       notes: [
-        "FILESYSTEM, NOT oxlint, AND THE REASON IS COHERENCE RATHER THAN COST. THE EXAMPLE SERVER ALREADY COMPLETES PATHS, so a diagnostic saying THIS PATH DOES NOT EXIST is the same server telling you your path is wrong -- it COMPOSES with what the example already is rather than being bolted on. It clears the bar by THIS REPOSITORY'S OWN PRECEDENT, since completion-path.ts already delegates to the filesystem and that was accepted.",
-        "oxlint RECORDED AS THE RICHER ALTERNATIVE NOT TAKEN: 62 rules, already in this project's Definition of Done, and its output maps onto LSP Diagnostic WITHOUT INVENTION -- but it is A BINARY ON PATH, which changes what a copying reader needs and teaches SUBPROCESS-SPAWNING as the delegation pattern. REVERSAL: someone wanting a real-linter example.",
-        "wordnet-as-spellchecker RULED OUT BY MEASUREMENT, and the framing IS the ruling: it does not hold `the`, `of`, `and`, `is`, `ran` or `files`, because WordNet carries content words and not function words, inflections or plurals. NOT A TOY THAT UNDER-DELIVERS; IT PRODUCES WRONG OUTPUT ON CORRECT INPUT. Under-delivery is acceptable in an example and WRONGNESS IS NOT -- a distinction worth keeping.",
-        "resolve delegates to `stat` on the items path completion ALREADY produces -- the canonical use of the method, expensive detail fetched only for the item the user highlights. Two constraints READ rather than assumed: resolve requires completion to be present (the demo config supplies it), and AN UNRECOGNISED ITEM MUST BE RETURNED UNCHANGED, so the handler must key off what it put on the item itself.",
-        "TWO METHODS IN ONE PBI because they share the same pin move, the same domain and NO RISK. The criteria stay separable, and IF EITHER NEGATIVE CONTROL TURNS OUT UNCONSTRUCTIBLE THEY SPLIT.",
-      ],
-    },
-    {
-      id: "PBI-45",
-      story: {
-        role: "config author",
-        capability: "read an example that formats a document by delegating to a real formatter",
-        benefit:
-          "the example demonstrates the method against something that actually formats, not a two-space toy",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "MEASURE BEFORE PLANNING, NOT DURING: does adding prettier collide with install.ts's wordnet control?",
-          verification:
-            "that doc block describes wordnet as THE ONLY GENUINELY-MISSING-PACKAGE CASE THE HARNESS STILL DETECTS. If prettier collides, THIS PBI'S SHAPE CHANGES RATHER THAN A DETAIL OF IT, and a plan whose spine is unmeasured is the S13 failure -- the same rule as PBI-30's spike and the request table's readiness gate. CHEAP: install prettier into a probe consumer, check the wordnet control STILL FIRES AND STILL NAMES wordnet.",
-        },
-        {
-          criterion:
-            "A PROSE OBLIGATION FOLLOWS EITHER WAY: that doc block's `only such case` claim goes false whether or not the controls collide.",
-          verification:
-            "the grep entry's class again -- a claim falsified by an edit in a file it does not name.",
-        },
-        {
-          criterion:
-            "The example is EXECUTED with BOTH negative controls, and the same pin, exampleSources and README obligations as PBI-44.",
-          verification:
-            "MEASURED discriminating output at prettier 3.9.6, identical on bun 1.3.13 and deno 2.9.2: `const x = { a: 1, b: 2 };` with the function body reflowed. A pass-through or an empty edit list fails on it.",
-        },
-        {
-          criterion:
-            "prettier SHIPS ITS OWN TYPE DECLARATIONS, so there is NO counterpart to examples/wordnet.d.ts -- recorded as WHY the new file set's shape differs.",
-          verification: "or a reader will assume an omission.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "THE STAKEHOLDER'S REVERSAL CONDITION IS MET VERBATIM: the PO wrote `a real formatter to delegate to` at Sprint 31, and prettier is one. REFUSING NOW WOULD BE RENEGING ON THEIR OWN RECORDED CONDITION.",
-        "THE SPLIT SEAM IS THE ONE THAT CHANGES WHAT A CONSUMER INSTALLS VERSUS THE TWO THAT DO NOT. That ISOLATES THE SINGLE UNMEASURED RISK INTO THIS PBI instead of letting two zero-dependency examples carry it. README's examples-install block is EXTRACTED AND EXECUTED, so this changes an executed command where PBI-44 does not.",
+        "SEPARATED FROM PBI-44 BECAUSE THE OLD BUNDLE'S RATIONALE IS GONE: diagnostic and resolve shared the FILESYSTEM, and the diagnostic has moved to trailing whitespace. `Both are examples` IS NOT A RATIONALE. resolve stays coherent with path completion; the diagnostic no longer sits beside it.",
+        "Two constraints READ rather than assumed: resolve REQUIRES textDocument/completion to be present, enforced at config load, and the demo config supplies it so the pairing holds.",
       ],
     },
     {
