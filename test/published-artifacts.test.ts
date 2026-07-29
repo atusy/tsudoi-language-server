@@ -211,6 +211,55 @@ test("all eight published protocol names type-check from the installed copy", as
   expect(result.code).toBe(0);
 });
 
+/**
+ * THE `AND NO MORE` HALF, and it is BORN GREEN -- flagged here rather than
+ * dressed up as a red.
+ *
+ * WHAT IS HONEST ABOUT THAT AND WHAT IS NOT: as written, this assertion is
+ * satisfied PERFECTLY by a module that exports nothing at all, which is exactly
+ * the state it was written against. Passing on the day it was written therefore
+ * proves nothing whatever about the published surface, and no argument makes it
+ * prove something.
+ *
+ * SO THE PERTURBATION WAS RUN RATHER THAN REASONED ABOUT, and this is its
+ * record. Adding `DefinitionParams` to the re-export list in src/types.ts
+ * REDDENS THIS TEST -- the probe type-checks, `code` comes back 0, and the
+ * expectation that it would not is what fails -- while the value probe and the
+ * eight-name probe above both stay green. That is the whole of this test's
+ * evidence: it can distinguish a ninth name from no ninth name, measured, on a
+ * tree where the difference was actually made.
+ *
+ * The paired test below is what stops the OTHER degeneracy: a probe naming a
+ * symbol that exists nowhere would fail identically, and this test would then
+ * be measuring a typo.
+ */
+test("a ninth protocol name is not reachable from the published subpath", async () => {
+  const result = await consumer.typeCheck({
+    "ninth-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/types"),
+  });
+
+  expect(result.code).not.toBe(0);
+  expect(result.output).toContain("DefinitionParams");
+});
+
+/**
+ * THE CONTROL FOR THE NAME ITSELF, and it can fail where the test above cannot:
+ * `DefinitionParams` has to be a real export of the dependency, or the absence
+ * asserted above is the absence of a name nobody ever had.
+ *
+ * Its own test rather than a second assertion, because it is a different
+ * hazard: a renamed-away protocol symbol and a widened tsudoi surface are not
+ * the same mistake and must not share a first failure.
+ */
+test("the ninth name the probe asks for is one the dependency really exports", async () => {
+  const result = await consumer.typeCheck({
+    "ninth-name-exists.ts": importsAndUses(["DefinitionParams"], "vscode-languageserver-protocol"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
 /*
  * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and this
  * comment is here because a test asserting it was DELETED at Sprint 15's
