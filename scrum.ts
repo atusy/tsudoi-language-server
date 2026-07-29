@@ -301,7 +301,95 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 30,
+    pbi_id: "PBI-30",
+    goal: "TWO PBIs, ONE READING. PBI-30: the exit that ALREADY works when an editor dies stops being held by nobody -- two rigs pointing in OPPOSITE directions, plus the record at the line an added handle would be written on. PBI-29: the exit code of a REFUSED shutdown is ruled against the specification and asserted. The LSP sentence both turn on is read ONCE and recorded at src/lifecycle.ts's exitCode(); every other site POINTS at that block rather than restating it, because two copies read months apart can disagree.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- structural. Nothing can assert that a reading was recorded; what defends the ruling is subtask 2's assertion.",
+        implementation:
+          "THE ONE HOME. src/lifecycle.ts's exitCode() block ALREADY carries a paraphrase of the sentence -- `LSP exit-code semantics: 0 only when shutdown came first, otherwise 1` -- found by grepping the CLAIM'S WORDS rather than the places comments live, so the home is that block EXTENDED and not a new comment beside it. It records: the sentence as the specification writes it, where it was read, the pre-initialize rule that decides tsudoi's case, the ruling, and THE BOUNDARY -- the sentence governs the `exit` NOTIFICATION and rules NO code for a session that ends WITHOUT one, which is the half PBI-30's C4 needs and would otherwise invent.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A shutdown sent BEFORE initialize is refused -32002 AND a following exit ends the process at 1 -- on both runtimes. The refusal is a NON-OPTIONAL presence assertion: without it `exited 1` is satisfied by a session whose shutdown was never delivered at all.",
+        implementation:
+          "BORN-GREEN AND DECLARED AS SUCH: measured today at 1 on both runtimes, so nothing in src/ changes. The same commit corrects src/notifications.ts's `shutdown-before-initialize-then-exit is 1 today and 0 through the framework, which no assertion in this suite catches`, which THIS SUBTASK FALSIFIES, to point at the ruling and the test that now catches it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION P3 IS THE DISCRIMINATING ONE, and it is named by the assertion it must flip: calling lifecycle.shutDown() BEFORE the rejection check in server.ts's shutdown handler leaves -32002 on the wire and moves the exit code to 0, so ONLY the exit-code assertion flips and the presence half stays green. P2 (exitCode() returns 0 always) flips it too but reddens the existing pins as well, so it discriminates nothing on its own.",
+        ],
+      },
+      {
+        test: "None -- structural. A helper gains no behaviour of its own.",
+        implementation:
+          "LspSession can reach stdin EOF. The property: a test can end the server's input WITHOUT killing it, which is the only way to observe the EOF path's exit code from the process that owns the pipe. test/helpers/lsp.ts is NOT otherwise touched -- in particular processId stays null across all 13 files that share that frozen const, because with EOF as the mechanism processId is never read.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "C4 -- stdin reaches EOF with NO exit notification and the session ends at code 0, on both runtimes.",
+        implementation:
+          "BORN-GREEN. THIS IS THE THIRD CELL OF A 2x2 AND THAT IS WHAT EARNS C2'S HEADLINE: C1 gives parent-dies-with-stdin-closing -> GONE, C2 gives parent-dies-with-stdin-OPEN -> SURVIVES, and this gives stdin-closes-with-the-parent-ALIVE -> exits. Without it `the mechanism is stdin EOF` is inferred from two cells rather than established.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION P6 IS THE CRITERION'S OWN STATED HAZARD MADE REAL: routing the EOF path through the lifecycle (a reader close handler calling process.exit(lifecycle.exitCode())) moves the code to 1 and must redden this assertion ALONE.",
+        ],
+      },
+      {
+        test: "C1 -- the server exits when the process that spawned it dies, observed on the SERVER'S OWN pid, on both runtimes. PRESENCE PAIR, NON-OPTIONAL: the server is asserted ALIVE BEFORE THE KILL, because `gone after the kill` is satisfied identically by `never started`.",
+        implementation:
+          "Three levels, because the property is about an ORPHANED process: bun test spawns a fake editor, the fake editor spawns the server holding the ONLY write end of its stdin, the test SIGKILLs the fake editor and polls the server pid. The intermediate is what makes the observation clean rather than a zombie the test could still see as alive.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION P1, THE ONE THIS RIG EXISTS FOR: an un-unref'd interval added in src/ must redden it. PREDICTED BEYOND ITS TARGET rather than discovered -- the same handle keeps every EOF-ending session alive, so P6's cell and much of the suite go with it; an unpredicted extra flip reads as bundling. PERTURBATION P4 defends the presence pair: make the server fail at startup and the ALIVE assertion must be the first thing to fail, with the GONE half satisfied.",
+        ],
+      },
+      {
+        test: "C2 -- a third party holds the write end of the server's stdin, the intermediate is killed, and the server MUST SURVIVE.",
+        implementation:
+          "THE SAME FIXTURE WITH ONE FLAG FLIPPED, so the only difference between the two experiments IS the variable under test: the fake editor passes its OWN inherited fd 0 to the server instead of a pipe it owns, which leaves the write end held by bun test. No FIFO -- the test process is already the third party, and mkfifo plus an O_RDWR open would bet on Darwin-specific behaviour for nothing.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION P5 IS THE PAIR THAT PROVES NEITHER RIG SUBSTITUTES FOR THE OTHER: a naive parent-pid poll added to src/ makes the server exit when the intermediate dies EVEN THOUGH ITS STDIN IS OPEN -- C1 stays GREEN and this reddens. P1 reddens C1 and leaves this green. Opposite directions, measured rather than asserted.",
+        ],
+      },
+      {
+        test: "None -- NOT CONSTRUCTED and declared so: nothing can assert that a comment exists. C1 defends the property; this tells the next author why their diff broke it.",
+        implementation:
+          "C3 + the uncovered case, at startServer in src/server.ts -- the function that owns the reader and connection.listen(), and the nearest true home because NO SINGLE SITE EXISTS at which the destroying edit would be made. It states that the process exits because NOTHING KEEPS THE LOOP ALIVE, so any timer, socket or watcher added anywhere in src/ MUST be unref()'d -- A CORRECTNESS REQUIREMENT, NOT AN OPTIMISATION -- with runtime versions per S8, and it POINTS at the one reading rather than restating it. The fork-without-exec case is RECORDED as a named uncovered case and NOT filed, in the form RequestOnlyConnection already uses, carrying the two facts that make it re-decidable: a pid poll would close it and an un-unref'd one would DESTROY the exit that works, and the portability trap whose errno signs are RE-MEASURED here rather than copied.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE SENTENCE, READ IN SESSION AND NOT FROM MEMORY, at microsoft/language-server-protocol gh-pages (its default branch; `main` 404s), _includes/messages/3.17/exit.md: `The server should exit with success code 0 if the shutdown request has been received before; otherwise with error code 1.` And the rule that decides tsudoi's case, _specifications/lsp/3.17/general/initialize.md:3-6: a request arriving before `initialize` SHOULD be answered -32002, notifications dropped EXCEPT exit. A THIRD sentence nobody named and PBI-30 needs, in the same file's processId doc: `If the parent process is not alive then the server should exit (see exit notification) its process.`",
+      "PBI-29 IS RULED 1, AND THE RULING IS NOT `TODAY'S BEHAVIOUR IS RIGHT BECAUSE IT IS TODAY'S`. tsudoi refuses the pre-initialize shutdown BECAUSE initialize.md tells it to, and a request answered -32002 has not shut anything down: phase stays uninitialized, shutDown() never runs. Reading `received` as bare wire arrival would oblige a conforming server to say two contradictory things in one session -- `I did not do this, I am not initialized`, then `success` -- and would require tsudoi to carry a second flag beside the phase, which is exactly the two-booleans-free-to-disagree design lifecycle.ts's own doc block refuses. MEASURED: -32002 then exit 1, bun 1.3.13 and deno 2.9.2.",
+      "THE REFERENCE IMPLEMENTATION EXITS 0 ON THAT SEQUENCE AND IT DOES NOT BEAR ON THE RULING, which is why it is recorded rather than followed. READ, NOT MEASURED, at vscode-languageserver 10.1.0 installed out of tree, lib/common/server.js:766-788: the shutdown handler's FIRST statement is `watchDog.shutdownReceived = true` and the exit handler branches on it. It reaches 0 by NEVER REFUSING -- `ServerNotInitialized` and `32002` appear NOWHERE in the package, grepped over the whole of it rather than over the one file, because a claim that something does not exist is a coverage claim. So the divergence is downstream of a rule the framework does not implement, and tsudoi's own record at src/notifications.ts already carried this measurement.",
+      "A FACTUAL PREMISE INSIDE C4 IS MEASURED FALSE AND RECORDING IT IS REQUIRED, NOT CUSTOMARY. The criterion says the EOF path `is 1 today BY ACCIDENT`; it is 0 -- bun 1.3.13 and deno 2.9.2, with EOF before any message AND after a full initialize, stderr empty in all four. 0 is what an emptying event loop produces, which is the same story the PBI tells about the mechanism. THE CRITERION'S PROPERTY IS UNTOUCHED (rule it against the specification and assert it) and its RATIONALE IS STRENGTHENED: at 0 the pin catches a tidy-up routing the path through lifecycle flipping it to 1, which is the hazard C4 names in its own text. Sprint 22 governs -- a premise stated inside a criterion is a claim requiring measurement, not framing.",
+      "AND THE SPECIFICATION RULES NO CODE FOR THAT PATH, which is the honest half. The 0/1 sentence is scoped to the `exit` NOTIFICATION, and on the EOF path no notification arrives; what the specification does require is the EXIT ITSELF, via the processId sentence. So the assertion pins 0 on a REASONED ground stated as such: 1 is this protocol's word for `error`, and a server terminating because the client it serves is gone -- the very thing the specification asks it to do -- has not failed.",
+      "TSUDOI DELIVERS THE SPECIFICATION'S PROPERTY BY A DIFFERENT MECHANISM THAN THE SPECIFICATION'S, and that is precisely where the uncovered case lives. The processId sentence describes a server that WATCHES its parent; tsudoi never reads processId at all -- test/helpers/lsp.ts sends null and the exit happens anyway -- and gets the same outcome from stdin EOF. Fork-without-exec is the one input on which the two mechanisms come apart, so C5's case is not an arbitrary gap but the exact residue of the substitution.",
+      "BASELINE RE-MEASURED RATHER THAN COPIED, each command run separately and unpiped at 695ef22: bun test 381 pass / 0 fail / 24 files, exit 0.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 29,
