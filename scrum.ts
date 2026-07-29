@@ -337,7 +337,87 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 28,
+    pbi_id: "PBI-31",
+    goal: "The document a config author receives IS upstream's TextDocument -- IDENTITY, not resemblance -- so getText(range), positionAt, offsetAt and lineCount come from a package other people maintain; and the published surface DEFENDS the new name rather than letting it ride on the eight names' coverage.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "A CONFIG AUTHOR'S OWN HANDLE ANSWERS THE NEW MEMBERS WITH THE RIGHT VALUES, over multi-byte multi-line text and on a document that has been CHANGED rather than only opened -- driven through a real session on both runtimes, so the property is `reachable from a config` and not `present on a type`.",
+        implementation:
+          "src/documents.ts builds its entries with upstream's constructor and updates them with upstream's updater; src/types.ts stops declaring a TextDocument of its own and takes upstream's; package.json declares the new dependency.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED. Today's TextDocument has none of the four members, so the fixture cannot even type-check.",
+          "ABSOLUTE VALUES, NOT A ROUND TRIP: positionAt(offsetAt(p)) === p is satisfied by a broken PAIR. lineCount, an offset, a position and a substring are each asserted against a value that is wrong if the member is wrong.",
+          "THE CHANGE IS PART OF THE PROPERTY: upstream's updater rebuilds the line index, and a member read only off a freshly-opened document would never observe that.",
+          "SHARED MOMENT, DECLARED IN ADVANCE (S13/S17): subtasks 1 and 2 go green on ONE edit. Both tests are written and observed RED BEFORE it, so neither is a born-green wearing a RED.",
+        ],
+      },
+      {
+        test: "THE TextDocument REACHABLE FROM THE PUBLISHED SUBPATH IS UPSTREAM'S OWN DECLARATION, and the instrument is shown to DISCRIMINATE that from a hand-written strict superset in the same run.",
+        implementation: "Same edit as subtask 1.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED: today the name resolves to tsudoi's own interface.",
+          "THE INSTRUMENT IS DECLARATION MERGING, and it is the answer to the criterion's trap. The probe AUGMENTS upstream's interface with a marker member and reads that member off the type `@atusy/tsudoi/types` exports. A member added to upstream's declaration is visible through tsudoi's name ONLY IF THEY ARE ONE DECLARATION -- so this observes IDENTITY, which no assignability check can.",
+          "THE CONTROL PAIR IS LOAD-BEARING AND SPIKED BEFORE THIS PLAN WAS WRITTEN, at typescript 7.0.2 / vscode-languageserver-textdocument 1.0.12 under moduleResolution bundler: against a hand-written strict superset the marker probe exits 1 naming the marker WHILE A MUTUAL-ASSIGNABILITY PROBE OVER THE SAME CLONE EXITS 0. That is the criterion's `a superset result cannot discriminate ADOPTED from SHADOWED`, measured on this tree rather than inherited.",
+          "DISCLOSED HAZARD, to be written at the probe: it would also redden if the consumer resolved TWO COPIES of the dependency, which is a different fault from a clone. The tree it runs in must be checked to hold one.",
+        ],
+      },
+      {
+        test: "TextDocument IS COVERED BY THE PUBLISHED-SURFACE TYPE ARM IN ITS OWN RIGHT, and the eight-name list stays eight.",
+        implementation:
+          "A probe through installConsumer that imports TextDocument from the published subpath and USES it, beside the existing eight-name probe rather than inside it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN, DECLARED (S4/S11): the name is reachable today too, because tsudoi declares one. What is missing is the CHECK, not the property -- the same honesty the file it joins already states about itself.",
+          "ITS EVIDENCE IS THE PERTURBATION, to be RUN: drop the export from src/types.ts and this must redden while the eight-name probe stays green.",
+          "WHY IT IS NEEDED AT ALL, and it is the consequence the criterion names: publicProtocolNames is `the protocol names the published subpath re-exports`, TextDocument comes from a DIFFERENT PACKAGE, so adding it there would make that doc block false -- and the two probes that defend the eight therefore defend nothing about this name.",
+        ],
+      },
+      {
+        test: "WHETHER THE NAME CARRIES A RUNTIME VALUE IS RULED WITH A REASON AT THE EXPORT, and the ruling is DEFENDED rather than asserted.",
+        implementation:
+          "The doc block states the ruling, why it was made, and NAMES the assertion that reddens if it is reversed. No new assertion: the published module's runtime surface is already pinned to an exact list, so a value re-export flips it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN, DECLARED: prose plus an assertion that already exists.",
+          "THE PERTURBATION IS THE WHOLE EVIDENCE and it is mandatory: re-export the name as a VALUE and the runtime-surface assertion must redden ALONE. Without that run, `type-only, reversible at one token` is a claim.",
+          "WHY TYPE-ONLY IS A FORECLOSURE AND NOT AN OVERSIGHT: upstream's TextDocument is a namespace carrying create/update/applyEdits, so a value re-export is AVAILABLE. tsudoi constructs documents and a config author only ever RECEIVES one, so the value buys a config nothing it needs and would publish two more entry points this project would then have to keep.",
+        ],
+      },
+      {
+        test: "A READER OF THE README LEARNS WHICH CONFIGS THIS BREAKS, and the prose contracts the new dependency falsifies are true again.",
+        implementation:
+          "README gains the document surface and states the break falls on IMPLEMENTORS -- a hand-written mock in an author's own tests -- and not on CONSUMERS, since upstream's type is a superset. Every sentence naming tsudoi's dependency in the singular is corrected.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN, DECLARED: prose. The suite's README facts are matched on TOKENS within ONE section, so the new section must not steal an existing fact's tokens -- the network/cache/protocol-package fact is the one at risk.",
+          "THREE SITES CARRY THE FALSIFIED CLAIM, named rather than counted at review time: README's `What you need first` bullet, the installed-consumer helper's failure message, and src/documents.ts's `Replaced, not mutated` comment, which upstream's updater makes false because it returns THE SAME INSTANCE.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "BASELINE RE-MEASURED AT a908f63 RATHER THAN COPIED FROM THE BRIEF (S27): 367 pass across 23 files, tsc --noEmit 0, oxlint 0 errors with the two known require-yield warnings in test/fixtures/, oxfmt --check 0. Each run unpiped with its exit read directly.",
+      "THE BLOCKING UNKNOWN WAS CLEARED FIRST: the dependency installs -- vscode-languageserver-textdocument 1.0.12, one package, no transitive dependencies. Had it not, PBI-31 would have been an impediment rather than a sprint.",
+      "TWO COMMENTS ARE DELIBERATELY LEFT FALSE-IN-WAITING FOR PBI-32, which claims both in its own criterion 3: src/server.ts's `Full, not Incremental ... no position/offset machinery is needed` and test/documents.test.ts's `under full sync` scoping. Both were READ this session. Touching them here would spend PBI-32's criterion and leave it asserting a correction already made.",
+      "Range IS NOT ADDED TO THE PUBLISHED SURFACE. getText takes a structural {start,end}, so a config author writes an object literal and imports nothing; adding it would be a genuine ninth PROTOCOL name and exactly the `an author might want it` argument src/types.ts forbids.",
+      "COMMIT ORDER IS FORCED BY THE HOOK, which refuses any commit staging scrum.ts beside another file AND READS THE WORKING TREE: this plan alone, then every code commit with scrum.ts untouched, then one closing scrum.ts commit. Not bypassed.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 27,
