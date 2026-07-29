@@ -341,16 +341,23 @@ const scrum: ScrumDashboard = {
     number: 28,
     pbi_id: "PBI-31",
     goal: "The document a config author receives IS upstream's TextDocument -- IDENTITY, not resemblance -- so getText(range), positionAt, offsetAt and lineCount come from a package other people maintain; and the published surface DEFENDS the new name rather than letting it ride on the eight names' coverage.",
-    status: "planning",
+    status: "review",
     subtasks: [
       {
         test: "A CONFIG AUTHOR'S OWN HANDLE ANSWERS THE NEW MEMBERS WITH THE RIGHT VALUES, over multi-byte multi-line text and on a document that has been CHANGED rather than only opened -- driven through a real session on both runtimes, so the property is `reachable from a config` and not `present on a type`.",
         implementation:
           "src/documents.ts builds its entries with upstream's constructor and updates them with upstream's updater; src/types.ts stops declaring a TextDocument of its own and takes upstream's; package.json declares the new dependency.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3e666ae",
+            message: "feat(types)!: hand the config author upstream's TextDocument",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED OBSERVED, AND IT NAMED ITSELF: `TypeError: document.offsetAt is not a function`, from the fixture, through src/notifications.ts. GREEN after the edit on both runtimes.",
           "EXPECTED RED. Today's TextDocument has none of the four members, so the fixture cannot even type-check.",
           "ABSOLUTE VALUES, NOT A ROUND TRIP: positionAt(offsetAt(p)) === p is satisfied by a broken PAIR. lineCount, an offset, a position and a substring are each asserted against a value that is wrong if the member is wrong.",
           "THE CHANGE IS PART OF THE PROPERTY: upstream's updater rebuilds the line index, and a member read only off a freshly-opened document would never observe that.",
@@ -361,9 +368,17 @@ const scrum: ScrumDashboard = {
         test: "THE TextDocument REACHABLE FROM THE PUBLISHED SUBPATH IS UPSTREAM'S OWN DECLARATION, and the instrument is shown to DISCRIMINATE that from a hand-written strict superset in the same run.",
         implementation: "Same edit as subtask 1.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3e666ae",
+            message: "feat(types)!: hand the config author upstream's TextDocument",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED OBSERVED as TS2339 on the marker -- the diagnostic the probe is designed to produce, not a resolution failure standing in for it. GREEN after the edit.",
+          "ITS CONTROL TEST WAS BORN GREEN AND IS DECLARED SO: it measures TypeScript and the two near-miss subjects, not tsudoi's surface, so it passed before the edit as well as after. Its worth is that it FAILS FIRST if the instrument is ever softened to a shape check.",
           "EXPECTED RED: today the name resolves to tsudoi's own interface.",
           "THE INSTRUMENT IS DECLARATION MERGING, and it is the answer to the criterion's trap. The probe AUGMENTS upstream's interface with a marker member and reads that member off the type `@atusy/tsudoi/types` exports. A member added to upstream's declaration is visible through tsudoi's name ONLY IF THEY ARE ONE DECLARATION -- so this observes IDENTITY, which no assignability check can.",
           "THE CONTROL PAIR IS LOAD-BEARING AND SPIKED BEFORE THIS PLAN WAS WRITTEN, at typescript 7.0.2 / vscode-languageserver-textdocument 1.0.12 under moduleResolution bundler: against a hand-written strict superset the marker probe exits 1 naming the marker WHILE A MUTUAL-ASSIGNABILITY PROBE OVER THE SAME CLONE EXITS 0. That is the criterion's `a superset result cannot discriminate ADOPTED from SHADOWED`, measured on this tree rather than inherited.",
@@ -375,9 +390,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "A probe through installConsumer that imports TextDocument from the published subpath and USES it, beside the existing eight-name probe rather than inside it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a6324f5",
+            message: "test(published): give TextDocument its own published-surface cover",
+            phase: "green",
+          },
+        ],
         notes: [
+          "PERTURBATION P2 RUN: dropping the export from src/types.ts reddens THIS and the identity test, and leaves the eight-name probe and the value probe green.",
           "BORN GREEN, DECLARED (S4/S11): the name is reachable today too, because tsudoi declares one. What is missing is the CHECK, not the property -- the same honesty the file it joins already states about itself.",
           "ITS EVIDENCE IS THE PERTURBATION, to be RUN: drop the export from src/types.ts and this must redden while the eight-name probe stays green.",
           "WHY IT IS NEEDED AT ALL, and it is the consequence the criterion names: publicProtocolNames is `the protocol names the published subpath re-exports`, TextDocument comes from a DIFFERENT PACKAGE, so adding it there would make that doc block false -- and the two probes that defend the eight therefore defend nothing about this name.",
@@ -388,9 +410,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "The doc block states the ruling, why it was made, and NAMES the assertion that reddens if it is reversed. No new assertion: the published module's runtime surface is already pinned to an exact list, so a value re-export flips it.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a6324f5",
+            message: "test(published): defend the type-only ruling",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "PERTURBATION P1 RUN: dropping `type` from the export line reddens `the published module re-exports CompletionItemKind as a runtime value` ALONE -- 15 pass, 1 fail in that file. The foreclosure is defended, not asserted.",
+          "THE RULING'S COST WAS FOUND BY EXECUTING IT AND IS RECORDED AT THE EXPORT: an author who unit-tests a handler must BUILD a document, `create` is the only supported way, so they name the package in one import. THIS REPOSITORY'S OWN TEST NOW DOES EXACTLY THAT. The PO's lean is kept, with the reversal condition written down: evidence that authors are writing that import, rather than the prediction that they might.",
           "BORN GREEN, DECLARED: prose plus an assertion that already exists.",
           "THE PERTURBATION IS THE WHOLE EVIDENCE and it is mandatory: re-export the name as a VALUE and the runtime-surface assertion must redden ALONE. Without that run, `type-only, reversible at one token` is a claim.",
           "WHY TYPE-ONLY IS A FORECLOSURE AND NOT AN OVERSIGHT: upstream's TextDocument is a namespace carrying create/update/applyEdits, so a value re-export is AVAILABLE. tsudoi constructs documents and a config author only ever RECEIVES one, so the value buys a config nothing it needs and would publish two more entry points this project would then have to keep.",
@@ -401,9 +431,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "README gains the document surface and states the break falls on IMPLEMENTORS -- a hand-written mock in an author's own tests -- and not on CONSUMERS, since upstream's type is a superset. Every sentence naming tsudoi's dependency in the singular is corrected.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ccb5403",
+            message:
+              "docs: tell a config author what a document is now, and which of their code it breaks",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE BREAK IS ASSERTED, NOT ONLY WRITTEN: a README fact whose tokens include the REMEDY, since a break with no named remedy is an announcement. Three tests, and the exactly-one-section half passes, so the new section does not steal the network/cache fact's tokens.",
+          "A THIRD FALSE SENTENCE WAS FOUND -- MY OWN, WRITTEN THIS SPRINT. Correcting the two known ones I wrote `and nothing they in turn depend on`, which is FALSE: vscode-languageserver-textdocument brings nothing, but vscode-languageserver-protocol brings vscode-jsonrpc and vscode-languageserver-types. Read out of the installed package.json rather than recalled. The self-referential-prose rule firing on prose written to satisfy the self-referential-prose rule.",
+          "ONE MORE, CAUGHT BEFORE COMMIT: `the same document implementation the reference LSP server uses` was REASONED. vscode-languageserver is not installed and was not read, so the sentence was replaced with what WAS read this session -- the deprecation notice in vscode-languageserver-types pointing at this package.",
           "BORN GREEN, DECLARED: prose. The suite's README facts are matched on TOKENS within ONE section, so the new section must not steal an existing fact's tokens -- the network/cache/protocol-package fact is the one at risk.",
           "THREE SITES CARRY THE FALSIFIED CLAIM, named rather than counted at review time: README's `What you need first` bullet, the installed-consumer helper's failure message, and src/documents.ts's `Replaced, not mutated` comment, which upstream's updater makes false because it returns THE SAME INSTANCE.",
         ],
@@ -416,6 +456,15 @@ const scrum: ScrumDashboard = {
       "TWO COMMENTS ARE DELIBERATELY LEFT FALSE-IN-WAITING FOR PBI-32, which claims both in its own criterion 3: src/server.ts's `Full, not Incremental ... no position/offset machinery is needed` and test/documents.test.ts's `under full sync` scoping. Both were READ this session. Touching them here would spend PBI-32's criterion and leave it asserting a correction already made.",
       "Range IS NOT ADDED TO THE PUBLISHED SURFACE. getText takes a structural {start,end}, so a config author writes an object literal and imports nothing; adding it would be a genuine ninth PROTOCOL name and exactly the `an author might want it` argument src/types.ts forbids.",
       "COMMIT ORDER IS FORCED BY THE HOOK, which refuses any commit staging scrum.ts beside another file AND READS THE WORKING TREE: this plan alone, then every code commit with scrum.ts untouched, then one closing scrum.ts commit. Not bypassed.",
+      "SHIPPED IN ea1f4a0..ccb5403. 375 tests green from 367 -- EIGHT ADDED, NONE REMOVED OR WEAKENED -- each DoD command run SEPARATELY and UNPIPED with its exit read directly: bun test 0, oxlint 0 (the two known require-yield warnings in test/fixtures/ untouched), oxfmt --check 0, tsc --noEmit 0.",
+      "THE PO'S CLAIM ABOUT documents.test.ts HELD LITERALLY, and the claim they DECLINED to make about sync.test.ts is now measured: BOTH FILES ARE BYTE-IDENTICAL TO a908f63. The object-identity assertion survives because the store returns what it stored; the shrinking-text tests survive because a full-text change through upstream's updater still shrinks. src/server.ts is untouched too, so PBI-32's criterion 3 still has both its corrections to make.",
+      'THE FINDING THAT RESHAPED CRITERION 2, and nobody had it: vscode-languageserver-protocol re-exports vscode-languageserver-types WHOLE, and that package STILL CARRIES A `TextDocument` -- same seven members, no `update`, its own doc comment reading `@deprecated Use the text document from the new vscode-languageserver-textdocument package`. So the SHADOWED case is not hypothetical: `export type { TextDocument } from "vscode-languageserver-protocol"` is ONE LINE, adds NO dependency, and is the edit a future tidy-up makes while believing it removed one.',
+      "P3, AND IT IS THE SPRINT'S STRONGEST RESULT: with src/types.ts pointed at that deprecated twin, `tsc --noEmit` exits 0, the reachability probe exits 0, the value probe is unchanged, the eight-name probe is green -- AND EXACTLY ONE OF 372 TESTS FAILS, the identity probe, naming its marker. The criterion's `a superset result cannot discriminate ADOPTED from SHADOWED` demonstrated on the real surface rather than on a hypothetical.",
+      "THE INSTRUMENT IS DECLARATION MERGING and it was SPIKED BEFORE THE PLAN WAS WRITTEN, over three subjects: upstream (identity 0, assignability 0), a hand-written strict superset (identity 1, assignability 0), the deprecated twin (identity 1, assignability 0). The first spike ALSO FOUND ITS OWN DEFECT -- against a subject that did not import the package, the augmentation failed with TS2664 `module cannot be found` INSTEAD OF the marker diagnostic, which reads as a missing dependency rather than a wrong type. Fixed by anchoring the module in the program with an explicit import, so TS2339 on the marker is the only way it can fail. Caught before anything was recorded.",
+      "THE BREAK LANDED INSIDE THIS REPOSITORY ON ITS OWN ONLY MOCK, test/completion-path.test.ts, which is the cheapest possible confirmation that criterion 5 described the right blast radius: one hand-written object literal in a TEST, remedied by one call to TextDocument.create. Nothing that RECEIVES a document moved anywhere.",
+      "AN OBSERVABLE CHANGE NOTHING ASSERTS, recorded at the site rather than left to be discovered: upstream's `update` returns THE SAME INSTANCE, so a config author holding a document from an earlier get() now holds a handle that moves under them where they used to hold a snapshot. No test covers it because every test re-reads from the store. The old comment said `Replaced, not mutated` and is now false; it was rewritten rather than deleted.",
+      "PBI-35'S THREE TRIGGERS CHECKED, NONE FIRED, and the check is recorded because a trigger nobody checks is a trigger that does not exist. (1) No SECOND artifact precondition: a declared dependency is resolved by the `bun install` the README already requires, and dist/ is the same single precondition it was. (2) The stale-dist detector is UNTOUCHED and was READ this session -- valueReExportsOf matches `^export {` only, so a TYPE-only re-export adds nothing to it and it still asserts CompletionItemKind. (3) No external contributor has hit it.",
+      "TIDY-FIRST IN ITS CORRECT ORDER, unprompted: the absent-report throw was extracted from readSnapshot in ea1f4a0 BEFORE the second fixture existed, so no duplicate was ever created and then removed. readSnapshot kept its signature, and sync.test.ts did not move.",
     ],
   },
   retrospectives: [
