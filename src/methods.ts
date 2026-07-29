@@ -359,10 +359,10 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     drive: "awaited-once",
     type: DocumentFormattingRequest.type,
     // `true`, NOT AN OPTIONS OBJECT, and the difference from completion's line
-    // is not a
-    // style drift: DocumentFormattingOptions extends WorkDoneProgressOptions and
-    // declares NOTHING ELSE, so the only thing an options object could say here
-    // is `workDoneProgress`, which tsudoi does not implement for this method.
+    // is not a style drift: DocumentFormattingOptions extends
+    // WorkDoneProgressOptions and declares NOTHING ELSE, so the only thing an
+    // options object could say here is `workDoneProgress`, which tsudoi does
+    // not implement for this method.
     // `true` is the protocol's own way to say `provided, with nothing to
     // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
     // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at
