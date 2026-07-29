@@ -27,6 +27,11 @@ import { repoRoot } from "./helpers/spawn.ts";
  * changing what is written, so no reviewer reading a diff can see it go. These
  * tests are what would go red instead.
  *
+ * WHAT FOLLOWS FROM THAT FOR ANYONE EDITING src/ -- that a long-lived handle must
+ * be unref()'d, and why that is correctness rather than tidiness -- is recorded
+ * at startServer in src/server.ts, WHERE SUCH AN EDIT WOULD BE MADE, and is not
+ * repeated here. This file is only what turns it red.
+ *
  * WHY THE EXIT CODE HERE IS 0 while `exit` without a prior `shutdown` is 1 is
  * ruled at exitCode() in src/lifecycle.ts, which is the ONE place this project's
  * reading of the specification's exit-code sentence lives. It is not restated
