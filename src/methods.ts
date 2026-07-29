@@ -2,22 +2,255 @@ import process from "node:process";
 import {
   type CancellationToken,
   type CompletionItem,
-  type CompletionParams,
   CompletionRequest,
-  type DocumentFormattingParams,
   DocumentFormattingRequest,
-  type Hover,
-  type HoverParams,
   HoverRequest,
   LSPErrorCodes,
+  type PartialResultParams,
   type ProgressToken,
   ProgressType,
+  type RequestType,
   ResponseError,
-  type TextEdit,
+  type ServerCapabilities,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { RequestOnlyConnection } from "./notifications.ts";
-import type { Method, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
+import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
+
+/**
+ * How a config author's handler is RUN to the answer the client receives.
+ *
+ * TWO KINDS, NAMED, AND THE CHOICE IS NOT FREE: it is DERIVED from what
+ * `MethodMap` says the handler returns, so a method declared with the wrong
+ * drive does not compile. MEASURED at vscode-languageserver-protocol 3.18.2 --
+ * writing `generator-driven` on hover's entry fails TS2322 naming the two
+ * strings.
+ *
+ * THIS IS WHERE THE RECORDED DECISION AGAINST A TABLE IS HONOURED RATHER THAN
+ * OVERTURNED, and the distinction matters enough to state at the type itself.
+ * What stood at `reportHandlerFailure` was `there is no shape both fit into
+ * that is not an invention`, and IT IS STILL TRUE AND STILL LOAD-BEARING. No
+ * single shape is invented here. A method picks ONE OF TWO, each with its own
+ * body below, and the router applies only the prologue and epilogue they
+ * genuinely share. What changed is that the difference now has a NAME and one
+ * home, instead of being open-coded once per method and legible only by
+ * reading two handlers side by side.
+ *
+ * MEASURED that two kinds cover all five of the stakeholder's methods:
+ * `textDocument/diagnostic` declares `partialResult`, so it is generator-shaped
+ * like completion, and `completionItem/resolve` is awaited once like hover.
+ */
+type DriveKind<M extends Method> =
+  MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
+    ? "generator-driven"
+    : "awaited-once";
+
+/**
+ * What one method adds to `ServerCapabilities` when the config can answer it.
+ *
+ * A FUNCTION, NOT A KEY AND A VALUE, and that is a requirement rather than a
+ * taste. No mechanical `methods[k] !== undefined -> capabilities[flag] = true`
+ * expresses what these five have to say: `completionProvider` is an OBJECT, and
+ * `completionItem/resolve` contributes `completionProvider.resolveProvider` --
+ * A KEY INSIDE ANOTHER METHOD'S. A function is immune to the next shape
+ * arriving; a key/value pair has to be widened for each one.
+ *
+ * IT MUTATES, AND SO IT IS ORDER-DEPENDENT. That is the price of reaching
+ * inside another method's key, and the property it costs is worth naming
+ * because nothing checks it: A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
+ * METHOD OWNS MUST RUN AFTER THAT METHOD'S. The table below is iterated in
+ * declaration order -- string keys on an object literal preserve it -- so
+ * `completionItem/resolve` must be DECLARED BELOW `textDocument/completion`
+ * when PBI-39 adds it. Today NO entry depends on another, so the constraint is
+ * dormant; it becomes real at the first nested contributor, which is why it is
+ * written here and not left to be discovered then.
+ */
+export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
+
+/**
+ * The chunk a generator-driven method streams, read off `MethodMap` rather than
+ * fixed here: the drive is shared, so the payload type may not be one method's.
+ */
+type GeneratorChunk<M extends Method> =
+  MethodMap[M]["result"] extends AsyncGenerator<infer C, unknown, unknown> ? C : never;
+
+/**
+ * A method whose handler is AWAITED ONCE.
+ *
+ * ITS `type` IS FULLY DISCRIMINATING, and this is measured rather than assumed
+ * because it is the property the whole table rests on: the result is pinned to
+ * `MethodMap`'s own, so `CompletionRequest.type` written into hover's slot
+ * fails TS2322. MEASURED at protocol 3.18.2, with the correct pairings
+ * compiling as the control.
+ */
+interface AwaitedOnceEntry<M extends Method> {
+  readonly drive: DriveKind<M>;
+  readonly type: RequestType<MethodMap[M]["params"], Awaited<MethodMap[M]["result"]>, void>;
+  readonly capability: CapabilityContributor;
+}
+
+/**
+ * A method whose handler is DRIVEN A CHUNK AT A TIME.
+ *
+ * ITS `type` LEAVES THE RESULT OPEN, AND THAT IS A MEASURED WEAKNESS RATHER
+ * THAN A SHRUG -- stated here because the natural reading of the entry above is
+ * that both are equally safe, and they are not. The protocol declares
+ * `CompletionRequest`'s result as `CompletionItem[] | CompletionList | null`,
+ * WIDER than the `CompletionItem[] | null` a tsudoi generator returns, so
+ * pinning the result to `MethodMap`'s own REFUSES THE REAL REQUEST TYPE
+ * (measured: TS2322). With the result open, a request type whose params are
+ * assignable to this one's is accepted -- and `HoverParams` IS assignable to
+ * `CompletionParams`, since they differ only in OPTIONAL members, so
+ * `HoverRequest.type` in completion's slot COMPILES. Both directions measured
+ * at protocol 3.18.2.
+ *
+ * WHAT CLOSES IT IS A TEST RATHER THAN THE COMPILER: every entry's key is
+ * asserted equal to its own `type.method` in test/methods-table.test.ts. One
+ * assertion, every entry, and it is the reason this paragraph is a disclosure
+ * and not a defect.
+ */
+interface GeneratorDrivenEntry<M extends Method> {
+  readonly drive: DriveKind<M>;
+  readonly type: RequestType<MethodMap[M]["params"], unknown, void>;
+  /**
+   * What the streamed chunks travel as. On the entry rather than in the drive
+   * so the drive names no single method's payload -- `ProgressType` carries no
+   * state, so one instance per method is the whole cost.
+   */
+  readonly progress: ProgressType<GeneratorChunk<M>>;
+  readonly capability: CapabilityContributor;
+}
+
+/**
+ * One method tsudoi serves: what it is on the wire, how its handler is driven,
+ * and what it entitles a client to ask for.
+ */
+export type RequestEntry<M extends Method> =
+  MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
+    ? GeneratorDrivenEntry<M>
+    : AwaitedOnceEntry<M>;
+
+/**
+ * EVERY REQUEST TSUDOI SERVES, AND THE SHAPE IS THE POINT: a mapped type over
+ * `Method`, so a method `MethodMap` declares and this table omits IS A COMPILE
+ * ERROR NAMING THE MISSING KEY (measured: TS2741). That is the whole of the
+ * user story -- a method that decides nothing does not compile, instead of
+ * joining a convention whoever writes it must remember.
+ *
+ * WHAT THE READINESS GATE MEASURED BEFORE THIS WAS BUILT, recorded here because
+ * it is the honest half and the PBI was argued from its opposite: the
+ * capability `if`s this replaces WERE DEFENDED, all three, each by a test whose
+ * title names per-method capability correctness. THE REJECTION CHECKS WERE NOT
+ * -- deleting formatting's and deleting completion's each left ALL 399 TESTS
+ * GREEN, and only hover's reddened anything. So this table's gain on the
+ * capability half is COLOCATION AND REQUIREDNESS, NOT the removal of an
+ * undefended convention, and ANYONE CITING IT AS A SMALLER src/server.ts IS
+ * CITING THE WRONG THING: it is about the same number of lines, in a place
+ * where forgetting them is a type error.
+ *
+ * THE KEY IS THE METHOD NAME AND NOTHING ELSE CARRIES IT. There is no `method`
+ * field to disagree with the key, because the router looks the config's handler
+ * up BY THE KEY and reports failures BY THE KEY.
+ */
+export const requestEntries: { [M in Method]: RequestEntry<M> } = {
+  "textDocument/hover": {
+    drive: "awaited-once",
+    type: HoverRequest.type,
+    capability: (capabilities) => {
+      capabilities.hoverProvider = true;
+    },
+  },
+  "textDocument/completion": {
+    drive: "generator-driven",
+    type: CompletionRequest.type,
+    progress: new ProgressType<CompletionItem[]>(),
+    // EMPTY OPTIONS, NOT triggerCharacters: TsudoiConfig has no surface for a
+    // config author to declare them, and claiming trigger characters nobody
+    // configured would have the client ask at moments the handler knows nothing
+    // about. Moved here from src/server.ts, where it sat above the `if`.
+    capability: (capabilities) => {
+      capabilities.completionProvider = {};
+    },
+  },
+  "textDocument/formatting": {
+    drive: "awaited-once",
+    type: DocumentFormattingRequest.type,
+    // `true`, NOT `{}`, and the difference from completion's line is not a
+    // style drift: DocumentFormattingOptions extends WorkDoneProgressOptions and
+    // declares NOTHING ELSE, so the only thing an options object could say here
+    // is `workDoneProgress`, which tsudoi does not implement for this method.
+    // `true` is the protocol's own way to say `provided, with nothing to
+    // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
+    // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at
+    // the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which is
+    // why this reads like hover's and not like resolve's will. Moved here from
+    // src/server.ts, where it sat above the `if`.
+    //
+    // READING THE THREE SIDE BY SIDE IS THE POINT, and it is what a table
+    // flattening them to booleans would have destroyed silently: `true`, `{}`
+    // and -- when PBI-39 lands -- a key nested inside another method's are three
+    // kinds of contribution, and this is the one place that difference is
+    // visible at a glance.
+    capability: (capabilities) => {
+      capabilities.documentFormattingProvider = true;
+    },
+  },
+};
+
+/**
+ * One entry with its per-method types gone.
+ *
+ * THE ONE ERASURE, and it is confined to the two places that ITERATE the table
+ * -- exactly as src/notifications.ts's router does, and for the same reason.
+ * Each entry's own params, result and chunk types are checked where the entry is
+ * WRITTEN, against the mapped type above; here the entries are a heterogeneous
+ * list and no single element type describes them without this. `drive` is
+ * deliberately outside it: it is a string on every entry, so the discrimination
+ * the router does survives the cast.
+ */
+interface ErasedEntry {
+  readonly drive: "awaited-once" | "generator-driven";
+  readonly type: RequestType<unknown, unknown, void>;
+  readonly progress: ProgressType<unknown[]>;
+  readonly capability: CapabilityContributor;
+}
+
+/** A handler awaited once, with the method's own params and result erased. */
+type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Promise<unknown>;
+
+/** A handler driven a chunk at a time, with the method's own types erased. */
+type ErasedGeneratorHandler = (
+  context: RequestContext,
+  params: unknown,
+) => AsyncGenerator<unknown[], unknown[] | null, void>;
+
+/**
+ * The table as a list, in DECLARATION ORDER -- which is what the ordering
+ * constraint at `CapabilityContributor` depends on, and it holds because these
+ * are ordinary string keys.
+ */
+function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
+  return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
+}
+
+/**
+ * Claims each capability the config can actually answer for.
+ *
+ * THE POLICY IS THE STAKEHOLDER'S AND IS UNCHANGED: a client is entitled to send
+ * whatever it was told about, so a capability is claimed ONLY where the config
+ * can answer it. What moved is where the per-method answer is written, not what
+ * it is.
+ */
+export function contributeCapabilities(
+  config: TsudoiConfig,
+  capabilities: ServerCapabilities,
+): void {
+  for (const [method, entry] of erasedEntries()) {
+    if (config.methods?.[method] !== undefined) {
+      entry.capability(capabilities);
+    }
+  }
+}
 
 /**
  * Asks the lifecycle what a request arriving NOW must be answered with, or
@@ -36,13 +269,6 @@ export type RequestRejection = () => ResponseError<void> | undefined;
 export type WorkspaceFolders = () => readonly WorkspaceFolder[];
 
 /**
- * Types the `value` of the `$/progress` notifications completion streams. A
- * single instance because ProgressType carries no state: it exists so that the
- * payload is a CompletionItem[] and nothing else.
- */
-const completionProgress = new ProgressType<CompletionItem[]>();
-
-/**
  * Reports a config handler's failure and rethrows it.
  *
  * vscode-jsonrpc answers the client -32603 for a throwing REQUEST handler, so
@@ -55,9 +281,15 @@ const completionProgress = new ProgressType<CompletionItem[]>();
  * handler behind a plausible answer -- and on the streaming path it would do so
  * after the client had already been sent partial results.
  *
- * Only the REPORTING is shared. The calls stay separate: a hover handler is
+ * Only the REPORTING is shared. THE CALLS STAY SEPARATE: a hover handler is
  * awaited once and a completion handler is driven a chunk at a time, and there
  * is no shape both fit into that is not an invention.
+ *
+ * THAT SENTENCE IS UNCHANGED AND IS NOT A LEFTOVER. A table now exists, and it
+ * did NOT overturn this: the two calls are still two, at `driveAwaitedOnce` and
+ * `driveGenerator`, and a method picks one of them BY NAME. What the table
+ * carries is what they genuinely share -- the rejection, the context and the
+ * cancelled answer -- and nothing was invented to make one shape out of two.
  */
 function reportHandlerFailure(method: Method, error: unknown): never {
   process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
@@ -152,7 +384,8 @@ function requestContext(
  *
  * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
  * awaited once and a completion handler is driven a chunk at a time, and
- * `produce` is where that difference lives.
+ * `produce` is where that difference lives -- supplied now by one of the two
+ * named drives rather than by a handler written out per method.
  */
 async function answerUnlessCancelled<T>(
   method: Method,
@@ -264,164 +497,197 @@ export function registerMethods(
     );
   }
 
-  connection.onRequest(
-    HoverRequest.type,
-    async (params: HoverParams, cancellation: CancellationToken): Promise<Hover | null> => {
-      const rejection = requestRejection();
-      if (rejection !== undefined) {
-        throw rejection;
-      }
-      const handler = config.methods?.["textDocument/hover"];
-      const context = requestContext(tsudoi, cancellation, workspaceFolders());
-      return answerUnlessCancelled("textDocument/hover", context.signal, async () => {
-        return (await handler?.(context, params)) ?? null;
-      });
-    },
-  );
+  for (const [method, entry] of erasedEntries()) {
+    connection.onRequest(
+      entry.type,
+      async (params: unknown, cancellation: CancellationToken): Promise<unknown> => {
+        // THE PROLOGUE, AND IT IS THE WHOLE REASON THE ROUTER EXISTS. A refused
+        // request is answered before anything else happens, because a server
+        // outside its serving window has no client state to answer FROM. It ran
+        // three times by hand before this loop; the readiness gate measured that
+        // TWO OF THOSE THREE COPIES WERE DEFENDED BY NOTHING AT ALL -- deleting
+        // formatting's and deleting completion's each left all 399 tests green.
+        // That is the finding this loop answers.
+        const rejection = requestRejection();
+        if (rejection !== undefined) {
+          throw rejection;
+        }
+        const handler = config.methods?.[method];
+        // THE DRIVE, AND THE NO-HANDLER CASE COMES WITH IT RATHER THAN BEING A
+        // SECOND AXIS. Sprint 31 named the two shapes separately -- hover and
+        // formatting call `handler?.(...) ?? null` and build a context whether
+        // or not a handler exists, while completion returns EARLY, ahead of the
+        // context, because driving a generator needs one. They are NOT
+        // independent: each drive has exactly one of them, so choosing the drive
+        // chooses it, and nothing third is invented.
+        if (entry.drive === "generator-driven") {
+          return driveGenerator({
+            method,
+            handler: handler as ErasedGeneratorHandler | undefined,
+            params,
+            cancellation,
+            entry,
+            connection,
+            tsudoi,
+            workspaceFolders,
+            reportInvalidToken,
+          });
+        }
+        return driveAwaitedOnce({
+          method,
+          handler: handler as ErasedAwaitedOnceHandler | undefined,
+          params,
+          cancellation,
+          tsudoi,
+          workspaceFolders,
+        });
+      },
+    );
+  }
+}
 
-  // THE THIRD COPY, AND IT IS HOVER'S RATHER THAN A NEW ONE: a formatter has
-  // one answer for the whole document and the protocol offers it no
-  // partialResultToken, so it is awaited once and nothing about the streaming
-  // path applies. Nothing new arrives with it -- no error data on the response,
-  // no nested capability, no state shared with another method -- which is why
-  // this method was taken first of the five.
-  //
-  // NOT DEDUPLICATED WITH HOVER HERE, and the restraint is deliberate: this is
-  // the third copy and therefore the first moment the rule of three has
-  // anything to generalise FROM. What differs between the two copies -- the
-  // request type, the method key, the params type and the result type -- is
-  // exactly what a table would have to carry, and it is legible side by side
-  // only while both are written out.
-  //
-  // THE HANDLER IS OPTIONAL-CALLED RATHER THAN EARLY-RETURNED, which is hover's
-  // shape and not completion's. Completion returns before building a context
-  // because driving a generator needs one; here `?? null` answers the
-  // no-handler case in the same expression that answers the handler's own null.
-  connection.onRequest(
-    DocumentFormattingRequest.type,
-    async (
-      params: DocumentFormattingParams,
-      cancellation: CancellationToken,
-    ): Promise<TextEdit[] | null> => {
-      const rejection = requestRejection();
-      if (rejection !== undefined) {
-        throw rejection;
-      }
-      const handler = config.methods?.["textDocument/formatting"];
-      const context = requestContext(tsudoi, cancellation, workspaceFolders());
-      return answerUnlessCancelled("textDocument/formatting", context.signal, async () => {
-        return (await handler?.(context, params)) ?? null;
-      });
-    },
-  );
+/**
+ * The AWAITED-ONCE drive: call the handler once, answer what it produced.
+ *
+ * `?? null` answers the NO-HANDLER case in the same expression that answers the
+ * handler's own null, so the context is built either way. That is hover's
+ * original shape, kept because it is the one this drive needs -- there is
+ * nothing to drive, so there is nothing that needs a context before the
+ * handler is known to exist.
+ */
+async function driveAwaitedOnce(run: {
+  method: Method;
+  handler: ErasedAwaitedOnceHandler | undefined;
+  params: unknown;
+  cancellation: CancellationToken;
+  tsudoi: Tsudoi;
+  workspaceFolders: WorkspaceFolders;
+}): Promise<unknown> {
+  const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
+  return answerUnlessCancelled(run.method, context.signal, async () => {
+    return (await run.handler?.(context, run.params)) ?? null;
+  });
+}
 
-  // This handler is the whole of the streaming API. A config author writes
-  // `yield` and `return`; whether that leaves as $/progress or as one
-  // aggregated response is decided here, from the one thing the protocol
-  // actually offers -- the presence of partialResultToken. There is no client
-  // capability declaring partial-result support, so a client that cannot take
-  // partial results simply omits the token, and the two triggers the brief
-  // describes are one trigger.
-  connection.onRequest(
-    CompletionRequest.type,
-    async (
-      params: CompletionParams,
-      cancellation: CancellationToken,
-    ): Promise<CompletionItem[] | null> => {
-      const rejection = requestRejection();
-      if (rejection !== undefined) {
-        throw rejection;
+/**
+ * The GENERATOR-DRIVEN drive, and it is the whole of the streaming API. A config
+ * author writes `yield` and `return`; whether that leaves as $/progress or as
+ * one aggregated response is decided here, from the one thing the protocol
+ * actually offers -- the presence of partialResultToken. There is no client
+ * capability declaring partial-result support, so a client that cannot take
+ * partial results simply omits the token, and the two triggers the brief
+ * describes are one trigger.
+ *
+ * THE EARLY RETURN IS THIS DRIVE'S NO-HANDLER SHAPE and not an oversight beside
+ * the one above: driving a generator needs a context, so with no generator to
+ * drive there is nothing to build one for.
+ *
+ * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT, stated because the second
+ * one arrives at PBI-38 and the requirement is invisible until then: its params
+ * must carry a `partialResultToken` -- `CompletionParams` declares
+ * `PartialResultParams` and so does `DocumentDiagnosticParams` -- and its chunks
+ * must be ARRAYS, since aggregation concatenates them.
+ */
+async function driveGenerator(run: {
+  method: Method;
+  handler: ErasedGeneratorHandler | undefined;
+  params: unknown;
+  cancellation: CancellationToken;
+  entry: ErasedEntry;
+  connection: RequestOnlyConnection;
+  tsudoi: Tsudoi;
+  workspaceFolders: WorkspaceFolders;
+  reportInvalidToken: (requested: unknown) => void;
+}): Promise<unknown> {
+  const handler = run.handler;
+  if (handler === undefined) {
+    return null;
+  }
+  const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
+  // Read through `unknown` on purpose: the declared ProgressToken type
+  // describes what a CONFORMING client sends, and this path exists for the
+  // one that does not.
+  const requestedToken: unknown = (run.params as PartialResultParams).partialResultToken;
+  const token = streamingToken(requestedToken, run.reportInvalidToken);
+  const progress = run.entry.progress;
+  return answerUnlessCancelled(run.method, context.signal, async () => {
+    // What the author yielded, kept only when there is no token to stream
+    // it under. In streaming mode this stays empty, which is what lets one
+    // expression below answer for both modes.
+    const collected: unknown[] = [];
+    let emitted = false;
+    const chunks = handler(context, run.params);
+    for (;;) {
+      const next = await chunks.next();
+      if (next.done === true) {
+        // The RETURNED array alone in streaming mode: the yields have
+        // already left as $/progress, so concatenating them here would
+        // make a client that appends the response see every item twice.
+        if (next.value !== null) {
+          return [...collected, ...next.value];
+        }
+        // [] versus null turns on whether THIS request produced a chunk.
+        // `nothing further to add` and `nothing to say at all` are
+        // different answers, and only request-local state tells them apart.
+        return emitted ? collected : null;
       }
-      const handler = config.methods?.["textDocument/completion"];
-      if (handler === undefined) {
+      // Checked HERE, between pulling a chunk and sending it: the abort
+      // typically lands while `next()` is parked, so a check at the top of
+      // the loop would already have passed and this chunk would go out to
+      // a client that has stopped listening. Returning also stops driving
+      // the generator, which is the point of cancelling at all. The value
+      // is discarded either way -- the answer is already -32800.
+      if (context.signal.aborted) {
+        // Returning stops DRIVING the generator; closing it is what runs
+        // the config author's `finally`. Without this the generator is left
+        // suspended at its yield forever, and cleanup nobody can watch
+        // succeed is silently skipped on every superseded keystroke.
+        //
+        // Above the mode split, where the abort check already is: whether
+        // this request streamed or aggregated says what the CLIENT can take
+        // and nothing about what the HANDLER holds open.
+        //
+        // FIRED, NEVER AWAITED, and the rejection handler is not optional.
+        // Measured on both runtimes: a `finally` that never settles leaves
+        // this promise pending forever, so awaiting it would mean the
+        // -32800 the client is waiting for is never sent at all -- and a
+        // `finally` that throws rejects it, which unhandled kills the
+        // process. That one handler does both jobs: it is how a throwing
+        // cleanup gets reported, and it is what stops the same rejection
+        // being fatal. Drop it and both halves fail together.
+        //
+        // What no arrangement of this can do: a generator parked inside its
+        // own `await` queues return() behind the pending next(), so its
+        // cleanup runs only when that settles. A limit of async generators,
+        // not a defect here.
+        //
+        // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
+        // record of why. MEASURED under bun 1.3.13 and deno 2.9.2: when the
+        // author's `finally` itself yields, `chunks.return(null)` resolves
+        // `{ value, done: false }` -- the return completion is suspended by
+        // that yield. CONSEQUENCE: the generator stays parked INSIDE its own
+        // finally and every statement after that yield -- the rest of their
+        // cleanup -- never runs, silently, on every superseded keystroke.
+        // `done === false` right here is the evidence tsudoi could report.
+        //
+        // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE
+        // SEMANTICS rather than tsudoi doing something wrong. Measured on
+        // both runtimes, `for await (...) { break }` over the same generator
+        // leaves it in exactly this state -- one chunk seen, the code after
+        // the yield unrun. tsudoi calls .return() correctly; the author's
+        // own cleanup defers itself. Reporting it would be reporting
+        // JavaScript, so PBI-12 was dropped on culpability, not on defect.
+        chunks.return(null).then(undefined, (error: unknown) => {
+          reportCleanupFailure(run.method, error);
+        });
         return null;
       }
-      const context = requestContext(tsudoi, cancellation, workspaceFolders());
-      // Read through `unknown` on purpose: the declared ProgressToken type
-      // describes what a CONFORMING client sends, and this path exists for the
-      // one that does not.
-      const requestedToken: unknown = params.partialResultToken;
-      const token = streamingToken(requestedToken, reportInvalidToken);
-      return answerUnlessCancelled("textDocument/completion", context.signal, async () => {
-        // What the author yielded, kept only when there is no token to stream
-        // it under. In streaming mode this stays empty, which is what lets one
-        // expression below answer for both modes.
-        const collected: CompletionItem[] = [];
-        let emitted = false;
-        const chunks = handler(context, params);
-        for (;;) {
-          const next = await chunks.next();
-          if (next.done === true) {
-            // The RETURNED array alone in streaming mode: the yields have
-            // already left as $/progress, so concatenating them here would
-            // make a client that appends the response see every item twice.
-            if (next.value !== null) {
-              return [...collected, ...next.value];
-            }
-            // [] versus null turns on whether THIS request produced a chunk.
-            // `nothing further to add` and `nothing to say at all` are
-            // different answers, and only request-local state tells them apart.
-            return emitted ? collected : null;
-          }
-          // Checked HERE, between pulling a chunk and sending it: the abort
-          // typically lands while `next()` is parked, so a check at the top of
-          // the loop would already have passed and this chunk would go out to
-          // a client that has stopped listening. Returning also stops driving
-          // the generator, which is the point of cancelling at all. The value
-          // is discarded either way -- the answer is already -32800.
-          if (context.signal.aborted) {
-            // Returning stops DRIVING the generator; closing it is what runs
-            // the config author's `finally`. Without this the generator is left
-            // suspended at its yield forever, and cleanup nobody can watch
-            // succeed is silently skipped on every superseded keystroke.
-            //
-            // Above the mode split, where the abort check already is: whether
-            // this request streamed or aggregated says what the CLIENT can take
-            // and nothing about what the HANDLER holds open.
-            //
-            // FIRED, NEVER AWAITED, and the rejection handler is not optional.
-            // Measured on both runtimes: a `finally` that never settles leaves
-            // this promise pending forever, so awaiting it would mean the
-            // -32800 the client is waiting for is never sent at all -- and a
-            // `finally` that throws rejects it, which unhandled kills the
-            // process. That one handler does both jobs: it is how a throwing
-            // cleanup gets reported, and it is what stops the same rejection
-            // being fatal. Drop it and both halves fail together.
-            //
-            // What no arrangement of this can do: a generator parked inside its
-            // own `await` queues return() behind the pending next(), so its
-            // cleanup runs only when that settles. A limit of async generators,
-            // not a defect here.
-            //
-            // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
-            // record of why. MEASURED under bun 1.3.13 and deno 2.9.2: when the
-            // author's `finally` itself yields, `chunks.return(null)` resolves
-            // `{ value, done: false }` -- the return completion is suspended by
-            // that yield. CONSEQUENCE: the generator stays parked INSIDE its own
-            // finally and every statement after that yield -- the rest of their
-            // cleanup -- never runs, silently, on every superseded keystroke.
-            // `done === false` right here is the evidence tsudoi could report.
-            //
-            // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE
-            // SEMANTICS rather than tsudoi doing something wrong. Measured on
-            // both runtimes, `for await (...) { break }` over the same generator
-            // leaves it in exactly this state -- one chunk seen, the code after
-            // the yield unrun. tsudoi calls .return() correctly; the author's
-            // own cleanup defers itself. Reporting it would be reporting
-            // JavaScript, so PBI-12 was dropped on culpability, not on defect.
-            chunks.return(null).then(undefined, (error: unknown) => {
-              reportCleanupFailure("textDocument/completion", error);
-            });
-            return null;
-          }
-          emitted = true;
-          if (token === undefined) {
-            collected.push(...next.value);
-          } else {
-            await connection.sendProgress(completionProgress, token, next.value);
-          }
-        }
-      });
-    },
-  );
+      emitted = true;
+      if (token === undefined) {
+        collected.push(...next.value);
+      } else {
+        await run.connection.sendProgress(progress, token, next.value);
+      }
+    }
+  });
 }

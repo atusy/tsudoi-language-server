@@ -18,7 +18,7 @@ import {
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
-import { registerMethods } from "./methods.ts";
+import { contributeCapabilities, registerMethods } from "./methods.ts";
 import { createGatedConnection, defineNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
 import {
@@ -163,31 +163,30 @@ export function startServer(
       // client edited, silently, on the client's first keystroke.
       textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
     };
-    // Per-method and spelled out, not derived from the shape of `methods`: a
+    // PER-METHOD, AND THE REASON IS THE STAKEHOLDER'S POLICY AND IS UNCHANGED: a
     // client is entitled to send whatever it was told about, so each capability
-    // is claimed only where the config can actually answer it.
-    if (config.methods?.["textDocument/hover"] !== undefined) {
-      capabilities.hoverProvider = true;
-    }
-    // Empty options, not triggerCharacters: TsudoiConfig has no surface for a
-    // config author to declare them, and claiming trigger characters nobody
-    // configured would have the client ask at moments the handler knows
-    // nothing about.
-    if (config.methods?.["textDocument/completion"] !== undefined) {
-      capabilities.completionProvider = {};
-    }
-    // `true`, not `{}`, and the difference from the line above is not a style
-    // drift: DocumentFormattingOptions extends WorkDoneProgressOptions and
-    // declares NOTHING ELSE, so the only thing an options object could say here
-    // is `workDoneProgress`, which tsudoi does not implement for this method.
-    // `true` is the protocol's own way to say `provided, with nothing to
-    // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
-    // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits
-    // at the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which
-    // is why this line reads like hover's and not like resolve's will.
-    if (config.methods?.["textDocument/formatting"] !== undefined) {
-      capabilities.documentFormattingProvider = true;
-    }
+    // is claimed ONLY where the config can actually answer it. Nothing about
+    // that has moved, and reading what follows as a reversal of it would be
+    // exactly wrong.
+    //
+    // WHAT IS SUPERSEDED IS A MECHANISM, AND IT WAS WRITTEN AS THOUGH IT
+    // FOLLOWED FROM THAT REASON. This block used to add `spelled out, NOT
+    // DERIVED FROM THE SHAPE OF methods` -- three `if`s written out here, one
+    // per method. THAT DOES NOT FOLLOW. The policy constrains WHICH
+    // capabilities are claimed; it says nothing about WHERE the per-method
+    // answer is written down. A table satisfies it exactly as three `if`s did,
+    // and satisfies it BETTER in the one way that matters: a method whose entry
+    // omits a capability contributor DOES NOT COMPILE, where a forgotten `if`
+    // here was silent.
+    //
+    // SO THE DERIVATION IS STILL NOT FROM `methods`' SHAPE. It is from the
+    // TABLE, whose entries are written by hand with their reasons beside them,
+    // and each contributes through a FUNCTION rather than a flag -- because
+    // `completionProvider` is an object and, at PBI-39, `resolveProvider` is a
+    // key inside it. The per-method reasons that used to sit on these lines are
+    // at their entries in src/methods.ts, which is the only place they are now
+    // written.
+    contributeCapabilities(config, capabilities);
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
