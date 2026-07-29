@@ -12,6 +12,7 @@ import { type CompletionParams } from "@atusy/tsudoi/deps/protocol";
 import {
   type CompletionItem,
   CompletionItemKind,
+  type CompletionList,
   type MarkupContent,
   type Position,
   type WorkspaceFolder,
@@ -450,13 +451,14 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
 /**
  * A `textDocument/completion` handler that completes paths.
  *
- * COMPLETENESS RULING: NOT COMPLETE, and this is the case the whole question
- * was raised from. It returns `null` rather than an array, so THIS function
- * makes no claim by itself -- but a caller that aggregates its yields answers a
- * bare `CompletionItem[]`, which the specification treats as identical to
- * `{ isIncomplete: false, items }`. So the claim is made ON THIS MODULE'S
- * BEHALF, one call up, and ruling it here is the only place a reader of this
- * file would find it.
+ * COMPLETENESS RULING: NOT COMPLETE, AND IT NOW SAYS SO ON THE WIRE. This is
+ * the case the whole question was raised from, and until Sprint 42 the claim
+ * ran the other way by default: this module returned `null` and made no claim
+ * by itself, while a caller that aggregated its yields answered a bare
+ * `CompletionItem[]` -- which the specification treats as identical to
+ * `{ isIncomplete: false, items }`. The claim was made ON THIS MODULE'S BEHALF,
+ * one call up, and nobody chose it. It is now made HERE, deliberately, as
+ * `isIncomplete: true` on the answer.
  *
  * WHY IT IS FALSE, measured against what this module actually does rather than
  * argued: `pathFragments` re-derives the fragment from the line AT THE CURSOR
@@ -472,20 +474,54 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
  * Batches are the same final set arriving in pieces; `isIncomplete` is about
  * the set CHANGING as the user types. A reader who conflates them would
  * conclude that draining the iterator makes the answer complete -- which is the
- * merge rule this PBI forbids, for exactly this reason.
+ * merge rule this PBI forbids, for exactly this reason. THE GENERATOR BELOW
+ * THEREFORE RETURNS NOTHING rather than `[]`: `return []` would withdraw the
+ * `isIncomplete: true` above it once the listing finished, which is precisely
+ * the conflation this paragraph refuses.
+ *
+ * THE FIRST BATCH IS PULLED EAGERLY AND THE SAME GENERATOR IS HANDED ON, which
+ * is what makes one answer out of a stream without collecting it: the pair's
+ * first slot needs a value NOW, and resuming the generator the drive was given
+ * preserves `seen`, the fragment loop, and every open directory handle. A
+ * second generator would restart the listing and deduplicate against nothing.
+ *
+ * NOTHING TO SAY IS `return;`, AND THAT IS NOT THE SAME AS AN EMPTY LIST. No
+ * document, no line, or a listing that produced no batch at all means this
+ * server has NO ANSWER for that position -- where `[]` would tell the user
+ * there are no candidates, which is a different and stronger statement.
  */
-export async function* pathCompletion(
+export async function pathCompletion(
   context: RequestContext,
   params: CompletionParams,
   options: PathCompletionOptions = {},
-): AsyncGenerator<CompletionItem[], null, void> {
+): Promise<void | [CompletionList, AsyncGenerator<CompletionItem[], undefined, null>?]> {
+  const batches = pathBatches(context, params, options);
+  const first = await batches.next(null);
+  if (first.done === true) {
+    return;
+  }
+  return [{ isIncomplete: true, items: first.value }, batches];
+}
+
+/**
+ * Every batch this module has for one request, first included.
+ *
+ * SEPARATE FROM `pathCompletion` ONLY BECAUSE THE PAIR NEEDS A VALUE FIRST.
+ * Nothing here knows about answers, tokens or `isIncomplete`; it lists
+ * directories and yields what it finds, which is the shape it always had.
+ */
+async function* pathBatches(
+  context: RequestContext,
+  params: CompletionParams,
+  options: PathCompletionOptions,
+): AsyncGenerator<CompletionItem[], undefined, null> {
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
-    return null;
+    return;
   }
   const line = document.getText().split(/\r?\n/)[params.position.line];
   if (line === undefined) {
-    return null;
+    return;
   }
   const cwd = options.cwd ?? process.cwd();
   // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
@@ -498,34 +534,53 @@ export async function* pathCompletion(
   // it as noise. THE COST STANDS: a config author whose editor opened no
   // workspace now gets no items from that source and no explanation of why.
   const seen = new Set<string>();
-  for (const fragment of pathFragments(line, params.position.character)) {
-    let named = false;
-    for (const source of sourcesFor(
-      fragment,
-      params.textDocument.uri,
-      cwd,
-      context.workspaceFolders,
-    )) {
-      for await (const batch of itemsFrom(source, fragment, params.position, line)) {
-        const fresh = batch.filter((item) => {
-          const text = item.insertText ?? "";
-          if (seen.has(text)) {
-            return false;
+  try {
+    for (const fragment of pathFragments(line, params.position.character)) {
+      let named = false;
+      for (const source of sourcesFor(
+        fragment,
+        params.textDocument.uri,
+        cwd,
+        context.workspaceFolders,
+      )) {
+        for await (const batch of itemsFrom(source, fragment, params.position, line)) {
+          const fresh = batch.filter((item) => {
+            const text = item.insertText ?? "";
+            if (seen.has(text)) {
+              return false;
+            }
+            seen.add(text);
+            return true;
+          });
+          // An emptied batch is not yielded: a `$/progress` carrying nothing is
+          // noise a client has to parse to learn there was nothing in it.
+          if (fresh.length > 0) {
+            named = true;
+            yield fresh;
           }
-          seen.add(text);
-          return true;
-        });
-        // An emptied batch is not yielded: a `$/progress` carrying nothing is
-        // noise a client has to parse to learn there was nothing in it.
-        if (fresh.length > 0) {
-          named = true;
-          yield fresh;
         }
       }
+      if (named) {
+        return;
+      }
     }
-    if (named) {
-      return null;
-    }
+    return;
+  } finally {
+    // WHERE A HANDLER RELEASES WHAT IT HELD: an index reader, a child process,
+    // a temporary file. There is nothing to release here, and the block is kept
+    // anyway because WHEN it runs is the part worth knowing -- and because THIS
+    // IS THE PLACE, which moved at Sprint 42 and would be wrong one call up.
+    //
+    // It runs on the ordinary path, and it also runs when the editor gives up
+    // on this request -- which it does on every keystroke that supersedes the
+    // last one. tsudoi closes THIS GENERATOR then, so cleanup written here
+    // happens even though the request is answered `RequestCancelled` and
+    // nothing here can be watched succeeding.
+    //
+    // A `finally` IN `pathCompletion` INSTEAD WOULD NOT DO THIS. That function
+    // is awaited once and has already returned by the time a keystroke
+    // supersedes the request, so its `finally` would run immediately and would
+    // release nothing that was still held. The generator is what stays open,
+    // and cleanup belongs where the work does.
   }
-  return null;
 }

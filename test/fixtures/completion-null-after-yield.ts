@@ -21,13 +21,8 @@ export default (): Promise<TsudoiConfig> => {
       // one the drive aggregates and answers `partialChunk` as a bare array,
       // which DOES assert a final set. It is true either way: the chunk is a
       // module constant and both parameters are unused.
-      "textDocument/completion": async function* (
-        _context: RequestContext,
-        _params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
-        yield partialChunk;
-        return null;
-      },
+      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) =>
+        Promise.resolve([partialChunk] as const),
     },
   });
 };

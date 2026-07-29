@@ -10,6 +10,17 @@ export const firstChunk: CompletionItem[] = [{ label: "一番目", detail: "yiel
 export const secondChunk: CompletionItem[] = [{ label: "二番目", detail: "yielded second" }];
 export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "returned" }];
 
+/**
+ * Everything after the answer. The three payloads reach the wire in the same
+ * order they always did -- the first as the answer, the other two as chunks --
+ * so what moved is WHICH MESSAGE carries the last of them, not the order.
+ */
+async function* rest(): AsyncGenerator<CompletionItem[], undefined, null> {
+  yield secondChunk;
+  yield returnedItems;
+  return undefined;
+}
+
 /** Supplies completion and NOT hover, so advertisement cannot cross over. */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
@@ -20,14 +31,8 @@ export default (): Promise<TsudoiConfig> => {
       // at every position in every document. The tests here assert ORDER and
       // IDENTITY of chunks, which is a claim about the transport rather than
       // about whether more items exist.
-      "textDocument/completion": async function* (
-        _context: RequestContext,
-        _params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
-        yield firstChunk;
-        yield secondChunk;
-        return returnedItems;
-      },
+      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) =>
+        Promise.resolve([firstChunk, rest()] as const),
     },
   });
 };

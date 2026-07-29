@@ -221,9 +221,13 @@ receive them. A mock in your own tests is the exception, and it is the only one.
 
 ## Cleanup in a handler
 
-A `finally` inside a completion handler runs when the editor abandons the request -- which it
-does on every keystroke that supersedes the last one. tsudoi **closes the generator** then, so
-the cleanup written there happens.
+A `finally` inside the **generator a completion handler streams from** runs when the editor
+abandons the request -- which it does on every keystroke that supersedes the last one. tsudoi
+**closes the generator** then, so the cleanup written there happens.
+
+**Put it in the generator, not in the handler.** The handler is awaited once and has already
+returned by the time a keystroke supersedes the request, so a `finally` written there would run
+immediately and release nothing that was still held.
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
 something which never settles never finishes, and no server can change that; the request is

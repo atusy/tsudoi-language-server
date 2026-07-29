@@ -15,8 +15,27 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "r
 /** Written from the signal's own abort event -- a standard Web API, so Deno-safe. */
 export const abortedMarker = "completion-cancel: aborted";
 
+/** Everything after the answer: parks, then streams the rest. */
+async function* rest(
+  context: RequestContext,
+  params: CompletionParams,
+): AsyncGenerator<CompletionItem[], undefined, null> {
+  // Awaited polling, not a busy loop: awaiting hands the event loop back
+  // so the server can process what opens this gate.
+  while (
+    context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
+    !context.signal.aborted
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+
+  yield afterGate;
+  yield returnedItems;
+  return undefined;
+}
+
 /**
- * Yields, parks, then yields again and returns -- and it yields that second
+ * Answers, parks, then streams again -- and it yields that second
  * chunk whether or not it was cancelled. Stopping AFTER an abort is tsudoi's
  * job here, not the handler's: a fixture that returned early on abort would
  * prove nothing about what tsudoi suppresses.
@@ -30,27 +49,11 @@ export default (): Promise<TsudoiConfig> => {
       // return the same list. THE CANCELLED PATH MAKES NO CLAIM EITHER WAY --
       // that request is answered -32800 and carries no result -- which is the
       // path this fixture actually exists for.
-      "textDocument/completion": async function* (
-        context: RequestContext,
-        params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
+      "textDocument/completion": (context: RequestContext, params: CompletionParams) => {
         context.signal.addEventListener("abort", () => {
           process.stderr.write(`${abortedMarker}\n`);
         });
-
-        yield beforeGate;
-
-        // Awaited polling, not a busy loop: awaiting hands the event loop back
-        // so the server can process what opens this gate.
-        while (
-          context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
-          !context.signal.aborted
-        ) {
-          await new Promise((resolve) => setTimeout(resolve, 5));
-        }
-
-        yield afterGate;
-        return returnedItems;
+        return Promise.resolve([beforeGate, rest(context, params)] as const);
       },
     },
   });

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
+import type { InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -231,11 +231,20 @@ for (const runtime of runtimes) {
           await session.waitForStderr(throwsCleanupMarker, 1000);
 
           openGate(session);
-          const next = await session.request<CompletionItem[]>(
+          const next = await session.request<null>(
             "textDocument/completion",
             completionParams(streamingToken),
           );
-          expect(next).toEqual(throwsReturnedItems);
+          // ANSWERED NORMALLY, AND THE PRESENCE IS ASSERTED FIRST. Under a
+          // token the items leave as $/progress and the response is `null`, so
+          // `next` alone cannot tell `answered normally` from `answered
+          // nothing` -- a session killed by the cleanup failure would produce
+          // no last literal at all.
+          expect(session.progress.at(-1)).toEqual({
+            token: streamingToken,
+            value: throwsReturnedItems,
+          });
+          expect(next).toBeNull();
 
           expect(await session.request<null>("shutdown", null)).toBeNull();
           session.notify("exit", null);
@@ -280,11 +289,18 @@ for (const runtime of runtimes) {
           openGate(session);
           await session.waitForStderr(cleanupFinished, 1000);
 
-          const next = await session.request<CompletionItem[]>(
+          const next = await session.request<null>(
             "textDocument/completion",
             completionParams(streamingToken),
           );
-          expect(next).toEqual(hangsReturnedItems);
+          // The same presence-first pairing as the test above, and for the same
+          // reason: `null` is what EVERY streaming response is, so the last
+          // literal is the only thing that says this request was answered.
+          expect(session.progress.at(-1)).toEqual({
+            token: streamingToken,
+            value: hangsReturnedItems,
+          });
+          expect(next).toBeNull();
 
           expect(await session.request<null>("shutdown", null)).toBeNull();
           session.notify("exit", null);

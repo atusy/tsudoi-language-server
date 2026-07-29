@@ -328,8 +328,24 @@ const facts: readonly ReadmeFact[] = [
     // cleanup COMPLETES: a `finally` that awaits something which never settles
     // never finishes, measured in Sprint 8 and recorded at src/methods.ts.
     // Promising completion would document something the language forbids.
+    //
+    // WHERE THE `finally` GOES IS A TOKEN SINCE SPRINT 42, and it is a
+    // STRENGTHENING of this fact rather than a second one. Until then the
+    // handler WAS the generator and the question could not be asked; now the
+    // handler is awaited once and the generator sits in the pair beside its
+    // answer, so a reader who writes the `finally` one level up gets a block
+    // that runs immediately and releases nothing. THIS FACT WENT FALSE THE
+    // MOMENT THE SHAPE MOVED and nothing pointed at it -- which is exactly the
+    // failure this file exists for, so it is closed here rather than only
+    // corrected in the README.
     name: "cleanup runs because tsudoi closes the generator, and completion is not promised",
-    tokens: [/closes the generator/i, /finally/, /does not promise/i, /completes/i],
+    tokens: [
+      /closes the generator/i,
+      /finally/,
+      /does not promise/i,
+      /completes/i,
+      /not in the handler/i,
+    ],
   },
 ];
 

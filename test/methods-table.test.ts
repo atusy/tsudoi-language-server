@@ -60,16 +60,30 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
 }
 
 /**
- * THE COMPILER CANNOT DO THIS ONE, WHICH IS WHY IT IS A TEST.
+ * THE COMPILER DOES MOST OF THIS ONE NOW, AND WHAT IS LEFT IS THE HALF IT
+ * CANNOT SEE. The paragraph this replaces said the compiler could do NONE of
+ * it, and it was true until Sprint 42: a stream-driven entry could not pin its
+ * result, because the protocol declares `CompletionItem[] | CompletionList |
+ * null` where a tsudoi generator returned `CompletionItem[] | null`, so the
+ * slot was left OPEN -- and `HoverParams` is assignable to `CompletionParams`,
+ * they differing only in OPTIONAL members, so `HoverRequest.type` written into
+ * completion's slot COMPILED. That is the defect this test was built for.
  *
- * MEASURED at vscode-languageserver-protocol 3.18.2: a stream-driven entry
- * cannot pin its result -- the protocol declares `CompletionItem[] |
- * CompletionList | null` where a tsudoi generator returns `CompletionItem[] |
- * null` -- so its `type` slot is left open, and `HoverParams` is assignable to
- * `CompletionParams` because they differ only in OPTIONAL members. The upshot
- * is that `HoverRequest.type` written into completion's slot COMPILES.
+ * IT NO LONGER COMPILES. MEASURED at typescript 7.0.2 / protocol 3.18.2 on this
+ * tree: the same edit fails TS2322 with `Type 'Hover' is not assignable to type
+ * 'CompletionResponse | null'`, because the handler's answer is now EXACTLY the
+ * protocol's declared result and the entry pins to it.
  *
- * WHY THAT WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
+ * WHAT THIS TEST STILL SAYS, AND IT IS WHY IT IS KEPT RATHER THAN RETIRED WITH
+ * THE HAZARD: `type.method` IS A RUNTIME STRING, and nothing in the type system
+ * reads it. A dependency that changed the method name a request constant
+ * carries while leaving its types alone would pass every compile check and
+ * register completion's entry under another method's name. NAMED AS A DIFFERENT
+ * CLAIM rather than left looking redundant, per Sprint 9: a control that could
+ * never be first to fail is not a control, and this one can -- it is the only
+ * thing here that reads the wire name at all.
+ *
+ * WHY EITHER WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
  * with the entry's `type` and looks the config author's handler up BY THE KEY.
  * Disagreeing means a client's completion request runs the hover handler, or
  * reaches nothing at all -- and every capability test would stay green, since

@@ -27,6 +27,37 @@ export const cleanupEntered = "completion-cleanup-hangs: entered cleanup";
 /** Cleanup has FINISHED, and cannot be written until the test releases it. */
 export const cleanupFinished = "completion-cleanup-hangs: finished cleanup";
 
+/** Everything after the answer, with a `finally` the test holds open. */
+async function* rest(
+  context: RequestContext,
+  params: CompletionParams,
+): AsyncGenerator<CompletionItem[], undefined, null> {
+  const gateClosed = (): boolean =>
+    context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen;
+
+  try {
+    process.stderr.write(`${parkedMarker}\n`);
+
+    // Awaited polling, not a busy loop: awaiting hands the event loop back
+    // so the server can process what opens this gate or cancels it.
+    while (gateClosed() && !context.signal.aborted) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+
+    yield afterGate;
+    yield returnedItems;
+    return undefined;
+  } finally {
+    if (context.signal.aborted) {
+      process.stderr.write(`${cleanupEntered}\n`);
+      while (gateClosed()) {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      process.stderr.write(`${cleanupFinished}\n`);
+    }
+  }
+}
+
 /**
  * Cleanup that never settles until the test says so. A config author can write
  * this by accident with one await on something that never resolves, and tsudoi
@@ -42,35 +73,8 @@ export default (): Promise<TsudoiConfig> => {
       // final. The cancelled path -- the one every test here drives -- is
       // answered -32800 with no result at all, so no completeness claim is
       // reachable there and none is being made.
-      "textDocument/completion": async function* (
-        context: RequestContext,
-        params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
-        const gateClosed = (): boolean =>
-          context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen;
-
-        try {
-          yield beforeGate;
-          process.stderr.write(`${parkedMarker}\n`);
-
-          // Awaited polling, not a busy loop: awaiting hands the event loop back
-          // so the server can process what opens this gate or cancels it.
-          while (gateClosed() && !context.signal.aborted) {
-            await new Promise((resolve) => setTimeout(resolve, 5));
-          }
-
-          yield afterGate;
-          return returnedItems;
-        } finally {
-          if (context.signal.aborted) {
-            process.stderr.write(`${cleanupEntered}\n`);
-            while (gateClosed()) {
-              await new Promise((resolve) => setTimeout(resolve, 5));
-            }
-            process.stderr.write(`${cleanupFinished}\n`);
-          }
-        }
-      },
+      "textDocument/completion": (context: RequestContext, params: CompletionParams) =>
+        Promise.resolve([beforeGate, rest(context, params)] as const),
     },
   });
 };

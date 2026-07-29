@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, renameSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
+import type { CompletionList, InitializeResult } from "vscode-languageserver-protocol";
 import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { initializeParams } from "./helpers/lsp.ts";
 import { importsAndUses, publicProtocolNames } from "./helpers/published-names.ts";
@@ -564,13 +564,17 @@ test("the example serves a completion from a consumer that declares no protocol 
         textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "./" },
       });
 
-      const items = await session.request<CompletionItem[]>("textDocument/completion", {
+      // A `CompletionList` RATHER THAN A BARE ARRAY since Sprint 42, and with
+      // no partialResultToken sent the whole merged list is in the response --
+      // so `items` is still every candidate this request produced.
+      const answer = await session.request<CompletionList>("textDocument/completion", {
         textDocument: { uri: documentUri },
         // Just past `./`, so the example completes the consumer's own directory
         // -- which exists and is not empty, since the install put node_modules
         // and the example's own files in it.
         position: { line: 0, character: 2 },
       });
+      const items = answer.items;
 
       expect(`${String(items.length)} items, stderr: ${session.stderr}`).toBe(
         `${String(items.length)} items, stderr: `,

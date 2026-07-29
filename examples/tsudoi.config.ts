@@ -1,6 +1,4 @@
-import type { RequestContext, TsudoiConfigFactory } from "@atusy/tsudoi/types";
-import type { CompletionParams } from "@atusy/tsudoi/deps/protocol";
-import type { CompletionItem } from "@atusy/tsudoi/deps/types";
+import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";
 import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
@@ -20,38 +18,36 @@ import { resolvePathStat } from "./resolve-path-stat.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NOT COMPLETE, AND THIS CONFIG HAS BEEN CLAIMING
-      // OTHERWISE SINCE THE DAY IT WAS WRITTEN. The specification says a
-      // supplied `CompletionItem[]` is identical to
-      // `{ isIncomplete: false, items }` -- so a bare array is a POSITIVE
-      // ASSERTION that the candidate set is final and the client need not ask
-      // again. Nobody chose that here; it arrived as the default shape.
+      // COMPLETENESS RULING: NOT COMPLETE, AND IT SAYS SO NOW RATHER THAN
+      // CLAIMING THE OPPOSITE BY DEFAULT. The specification says a supplied
+      // `CompletionItem[]` is identical to `{ isIncomplete: false, items }` --
+      // so a bare array is a POSITIVE ASSERTION that the candidate set is final
+      // and the client need not ask again. This config made that assertion from
+      // the day it was written and nobody chose it. The delegate below now
+      // answers a `CompletionList` carrying `isIncomplete: true`, and the
+      // reasoning for it lives at that function rather than being restated.
       //
-      // WHY IT IS FALSE: the delegate below lists ONE DIRECTORY filtered by the
+      // WHY IT IS FALSE: the delegate lists ONE DIRECTORY filtered by the
       // trailing name of the fragment under the cursor. The next keystroke
       // changes the filter, and often changes the DIRECTORY -- typing `/` moves
       // to a different listing entirely. A client told the set is final shows
       // the user candidates for a prefix they have already left behind, which
       // is the exact failure this PBI's user story names.
       //
-      // AND THE `return []` BELOW IS A SECOND, DIFFERENT WRONG CLAIM, worth
-      // separating because a re-type would have papered over both: it fires
-      // when the document is NOT IN THE STORE, which means `this server cannot
-      // see the buffer yet`, and it goes out as `the candidate set is complete
-      // and empty`. Those are different statements and the wire cannot tell
-      // them apart today.
-      //
-      // NOTHING CHANGES HERE IN THIS SUBTASK. This is a RULING, and it is the
-      // evidence-shaped trigger for the tuple work -- a re-type into
-      // `{ isIncomplete: false, items }` would satisfy every compiler and leave
-      // both wrong claims exactly where they are.
-      "textDocument/completion": async function* (context, params) {
+      // AND THE SECOND WRONG CLAIM IS THE ONE JUST BELOW, worth separating
+      // because a re-type would have papered over both: this arm fires when the
+      // document is NOT IN THE STORE, which means `this server cannot see the
+      // buffer yet`. It used to `return []`, which goes out as `the candidate
+      // set is complete and empty` -- a different statement, and the one thing
+      // this server is sure it cannot say. `return;` is `no answer`, which is
+      // what was true all along.
+      "textDocument/completion": (context, params) => {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {
-          return [];
+          return Promise.resolve();
         }
 
-        try {
+        {
           // Paths from the roots that make sense where the cursor is: the
           // document's own directory, the working directory, every workspace
           // folder the editor opened, and the filesystem root when the
@@ -102,25 +98,21 @@ const config: TsudoiConfigFactory = () => {
           //    worth more than the instance: a capability is advertised exactly
           //    where `methods` below can answer it, so ADDING A KEY IS THE
           //    WHOLE OF TURNING A FEATURE ON.
-          yield* pathCompletion(context, params);
-
-          // Deliberate divergence from the brief's example, which falls off the end here.
-          // The declared AsyncGenerator return type requires an explicit return, and per the
-          // brief's own MethodMap comment a null result after partial responses is delivered
-          // to the client as an empty CompletionItem[].
-          return null;
-        } finally {
-          // Where a handler releases what it held: an index reader, a child
-          // process, a temporary file. There is nothing to release here, and
-          // the block is kept anyway because WHEN it runs is the part worth
-          // knowing.
           //
-          // It runs on the ordinary path, and it also runs when the editor
-          // gives up on this request -- which it does on every keystroke that
-          // supersedes the last one. tsudoi closes this generator then, so
-          // cleanup written here happens even though the request is answered
-          // `RequestCancelled` and nothing here can be watched succeeding.
-          // Cleanup written AFTER the loop instead would simply never run.
+          // RETURNED WHOLE, PAIR AND ALL: the delegate hands back its answer
+          // and the generator that carries the rest of it, and tsudoi decides
+          // from the client's `partialResultToken` whether that generator
+          // becomes a stream of `$/progress` or is merged into one response.
+          // A handler that wanted to add items of its own would merge them into
+          // the answer's `items` here; this one has nothing to add.
+          //
+          // WHERE THE CLEANUP WENT, because it used to be visible in this file
+          // and a reader will look for it: a `finally` here would run the
+          // moment this function returned its pair, which is BEFORE any of the
+          // streaming happens, so it would release nothing that was still
+          // held. The block that outlives the answer is the generator inside
+          // `pathCompletion`, and the cleanup lives there with the reasons.
+          return pathCompletion(context, params);
         }
       },
 

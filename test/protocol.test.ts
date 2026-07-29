@@ -384,7 +384,12 @@ for (const runtime of runtimes) {
           "textDocument/completion",
           completionWithToken("valid-token-1"),
         );
-        expect(valid.progressCount).toBe(2);
+        // THREE, not two, since Sprint 42: the handler's ANSWER is the first
+        // `$/progress` literal and its two streamed chunks follow it. The
+        // claim is unchanged -- a valid token streams and an invalid one does
+        // not -- and only the number of literals the same fixture produces has
+        // moved.
+        expect(valid.progressCount).toBe(3);
 
         // Reported, not silent: an invalid token LOSES the user items unless
         // tsudoi intervenes, so the config author gets a line naming it.
@@ -467,14 +472,20 @@ for (const runtime of runtimes) {
             completionWithToken(token),
           );
 
-          // Addressed to the token the client actually sent, one per yield.
+          // Addressed to the token the client actually sent: the answer first,
+          // then one literal per streamed chunk. THIS IS ALSO THE PRESENCE
+          // PAIR for the response assertion below -- every item this handler
+          // produced is asserted HERE, which is what stops `the response is
+          // null` reading as `the server answered nothing at all`.
           expect(session.progress).toEqual([
             { token, value: firstChunk },
             { token, value: secondChunk },
+            { token, value: returnedItems },
           ]);
-          // The streaming response shape: the RETURNED array alone, the yields
-          // having already left as $/progress.
-          expect(result).toEqual(returnedItems);
+          // The streaming response shape: `null`, since everything left as
+          // $/progress and the specification requires the response to be empty
+          // in terms of result values.
+          expect(result).toBeNull();
           // Nothing was refused, so nothing was traced. The paired positive
           // control for this silence is the invalid-token tests above, which
           // use this same function and DO see the line.

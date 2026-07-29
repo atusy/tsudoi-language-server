@@ -26,13 +26,9 @@ export default (): Promise<TsudoiConfig> => {
       // exit code is -- and the ruling is recorded anyway rather than waved
       // through on that ground, because `nothing asserts it` is precisely the
       // condition under which an unchosen claim survives.
-      "textDocument/completion": async function* (
-        _context: RequestContext,
-        _params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
+      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) => {
         Promise.reject(new Error(rejectionMessage));
-        yield items;
-        return null;
+        return Promise.resolve([items] as const);
       },
     },
   });

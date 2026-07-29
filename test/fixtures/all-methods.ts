@@ -138,14 +138,7 @@ export default (): Promise<TsudoiConfig> => {
       // document can reach it. A re-query on the next keystroke would produce
       // the identical single item, which is exactly what `do not re-query`
       // means.
-      "textDocument/completion": async function* (): AsyncGenerator<
-        CompletionItem[],
-        CompletionItem[] | null,
-        void
-      > {
-        yield completionAnswer;
-        return null;
-      },
+      "textDocument/completion": () => Promise.resolve([completionAnswer]),
       "textDocument/formatting": (): Promise<TextEdit[]> => Promise.resolve(formattingAnswer),
       "textDocument/diagnostic": () => Promise.resolve(diagnosticAnswer),
       // Answers with what it was handed. The by-construction tests drive every

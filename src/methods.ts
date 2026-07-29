@@ -25,8 +25,16 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * TWO KINDS, NAMED, AND THE CHOICE IS NOT FREE: it is DERIVED from what
  * `MethodMap` says the handler returns, so a method declared with the wrong
  * drive does not compile. MEASURED at vscode-languageserver-protocol 3.18.2 --
- * writing `stream-driven` on hover's entry fails TS2322 naming the two
- * strings.
+ * writing `stream-driven` on hover's entry fails TS2322 naming the two strings.
+ *
+ * WHAT IT IS DERIVED FROM CHANGED AT SPRINT 42, AND THE OLD TEST WOULD HAVE
+ * FAILED SILENTLY RATHER THAN LOUDLY. It asked whether the declared result
+ * extends `AsyncGenerator`. A completion handler now returns a PROMISE OF A
+ * TUPLE, which does not -- so that test would have routed completion to the
+ * awaited-once entry, whose `type` pins `Awaited<result>` and would therefore
+ * have pinned THE TUPLE rather than the wire result, with nothing objecting.
+ * The question asked instead is the one the drive actually turns on: DOES THE
+ * DECLARED RESULT CARRY A STREAM SLOT.
  *
  * THIS IS WHERE THE RECORDED DECISION AGAINST A TABLE IS HONOURED RATHER THAN
  * OVERTURNED, and the distinction matters enough to state at the type itself.
@@ -53,10 +61,47 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * `never` in the progress position -- so it is awaited once, and it needs
  * nothing of the error position either.
  */
-type DriveKind<M extends Method> =
-  MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
-    ? "stream-driven"
-    : "awaited-once";
+type DriveKind<M extends Method> = [StreamSlot<M>] extends [never]
+  ? "awaited-once"
+  : "stream-driven";
+
+/**
+ * THE TWO DERIVATIONS EVERY ENTRY BELOW RESTS ON, AND THEY ARE WRITTEN OVER A
+ * NAKED TYPE PARAMETER SO THEY DISTRIBUTE. That is not style. A completion
+ * result is `void | [answer, stream?]`, and THAT UNION AS A WHOLE IS NOT A
+ * TUPLE -- so the same conditionals written inline over `Awaited<...>` collapse
+ * to `never`, MEASURED, and completion would route awaited-once with its `type`
+ * pinned to the entire union. The bug the drive discriminator was rewritten to
+ * avoid, arriving through the rewrite.
+ */
+type SlotOf<T> = T extends readonly [unknown, (infer S)?] ? S : never;
+
+/**
+ * `void` BECOMES `null`, AND IT IS A TRANSLATION RATHER THAN A COINCIDENCE: the
+ * handler says NOTHING and the wire says `null`. Without this arm the pinned
+ * result carries `void`, which the real `CompletionRequest.type` refuses.
+ */
+type WireOf<T> = T extends readonly [infer R, ...unknown[]] ? R : T extends void ? null : T;
+
+/**
+ * The stream a method's result pairs with its answer, or `never` for a method
+ * that declares no pair at all. This is what selects the drive.
+ */
+type StreamSlot<M extends Method> = SlotOf<Awaited<MethodMap[M]["result"]>>;
+
+/**
+ * WHAT THE CLIENT RECEIVES AS THE RESPONSE, derived rather than restated: the
+ * pair's FIRST ELEMENT for a method that declares a pair, the awaited result
+ * unchanged for every other, so nothing about hover, formatting, diagnostic or
+ * resolve moves.
+ *
+ * THIS IS WHAT MADE PINNING CONSTRUCTIBLE, measured rather than hoped:
+ * `WireResult<"textDocument/completion">` resolves to
+ * `CompletionItem[] | CompletionList | null`, EXACTLY the protocol's declared
+ * result. Until Sprint 42 a completion handler's result was NARROWER than the
+ * protocol's, which is why the stream-driven entry had to leave its result open.
+ */
+type WireResult<M extends Method> = WireOf<Awaited<MethodMap[M]["result"]>>;
 
 /**
  * What one method adds to `ServerCapabilities` when the config can answer it.
@@ -177,8 +222,7 @@ type EntryErrorPayload = unknown;
  * The chunk a stream-driven method streams, read off `MethodMap` rather than
  * fixed here: the drive is shared, so the payload type may not be one method's.
  */
-type StreamChunk<M extends Method> =
-  MethodMap[M]["result"] extends AsyncGenerator<infer C, unknown, unknown> ? C : never;
+type StreamChunk<M extends Method> = StreamSlot<M> extends AsyncIterable<infer C> ? C : never;
 
 /**
  * A method whose handler is AWAITED ONCE.
@@ -191,37 +235,42 @@ type StreamChunk<M extends Method> =
  */
 interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
-  readonly type: RequestType<
-    MethodMap[M]["params"],
-    Awaited<MethodMap[M]["result"]>,
-    EntryErrorPayload
-  >;
+  readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
   readonly capability: CapabilityContributor;
 }
 
 /**
  * A method whose handler is DRIVEN A CHUNK AT A TIME.
  *
- * ITS `type` LEAVES THE RESULT OPEN, AND THAT IS A MEASURED WEAKNESS RATHER
- * THAN A SHRUG -- stated here because the natural reading of the entry above is
- * that both are equally safe, and they are not. The protocol declares
- * `CompletionRequest`'s result as `CompletionItem[] | CompletionList | null`,
- * WIDER than the `CompletionItem[] | null` a tsudoi generator returns, so
- * pinning the result to `MethodMap`'s own REFUSES THE REAL REQUEST TYPE
- * (measured: TS2322). With the result open, a request type whose params are
- * assignable to this one's is accepted -- and `HoverParams` IS assignable to
- * `CompletionParams`, since they differ only in OPTIONAL members, so
- * `HoverRequest.type` in completion's slot COMPILES. Both directions measured
- * at protocol 3.18.2.
+ * ITS `type` IS PINNED, AND THE DISCLOSURE THAT STOOD HERE FOR SEVERAL SPRINTS
+ * IS ANSWERED RATHER THAN DELETED, because how it was true is the useful part.
+ * It said this entry's result had to be left OPEN, a MEASURED WEAKNESS rather
+ * than a shrug: the protocol declares `CompletionRequest`'s result as
+ * `CompletionItem[] | CompletionList | null`, WIDER than the
+ * `CompletionItem[] | null` a tsudoi generator returned, so pinning to
+ * `MethodMap`'s own refused the real request type. With the result open, any
+ * request type whose params were assignable was accepted -- and `HoverParams`
+ * IS assignable to `CompletionParams`, since they differ only in OPTIONAL
+ * members -- so `HoverRequest.type` in completion's slot COMPILED.
  *
- * WHAT CLOSES IT IS A TEST RATHER THAN THE COMPILER: every entry's key is
- * asserted equal to its own `type.method` in test/methods-table.test.ts. One
- * assertion, every entry, and it is the reason this paragraph is a disclosure
- * and not a defect.
+ * WHAT CHANGED IS THE HANDLER'S RESULT AND NOT THIS TYPE. Since Sprint 42 the
+ * pair's first element is EXACTLY the protocol's declared result, so
+ * `WireResult<M>` and the real `CompletionRequest.type` agree and the pin is
+ * CONSTRUCTIBLE. MEASURED at typescript 7.0.2 / protocol 3.18.2, on this tree
+ * rather than in a probe: `HoverRequest.type` written into completion's slot
+ * now fails TS2322, naming the assignment and reporting
+ * `Type 'Hover' is not assignable to type 'CompletionResponse | null'`.
+ *
+ * SO THE COMPILER CLOSES THE MIS-KEYING HAZARD AND THE TEST IS NO LONGER WHAT
+ * CLOSES IT. What test/methods-table.test.ts still says is a DIFFERENT claim
+ * and is why it stays: it compares the entry's KEY to `type.method`, a RUNTIME
+ * STRING. A dependency that changed the method name a request constant carries
+ * while leaving its types alone would satisfy every check here and reach the
+ * wrong handler, and only reading that string catches it.
  */
 interface StreamDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
-  readonly type: RequestType<MethodMap[M]["params"], unknown, EntryErrorPayload>;
+  readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
   /**
    * What the streamed chunks travel as. On the entry rather than in the drive
    * so the drive names no single method's payload -- `ProgressType` carries no
@@ -235,10 +284,9 @@ interface StreamDrivenEntry<M extends Method> {
  * One method tsudoi serves: what it is on the wire, how its handler is driven,
  * and what it entitles a client to ask for.
  */
-export type RequestEntry<M extends Method> =
-  MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
-    ? StreamDrivenEntry<M>
-    : AwaitedOnceEntry<M>;
+export type RequestEntry<M extends Method> = [StreamSlot<M>] extends [never]
+  ? AwaitedOnceEntry<M>
+  : StreamDrivenEntry<M>;
 
 /**
  * EVERY REQUEST TSUDOI SERVES, AND THE SHAPE IS THE POINT: a mapped type over
@@ -463,7 +511,16 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
 interface ErasedEntry {
   readonly drive: "awaited-once" | "stream-driven";
   readonly type: RequestType<unknown, unknown, EntryErrorPayload>;
-  readonly progress: ProgressType<unknown[]>;
+  /**
+   * WIDER THAN THE ENTRY'S OWN, AND THE WIDENING IS THE POSITIONAL RULE ARRIVING
+   * WHERE A TYPE CANNOT STATE IT. The first `$/progress` this drive sends is THE
+   * ANSWER, which may be an object; every later one is a chunk, which is an
+   * array. `ProgressType` has ONE payload parameter and cannot distinguish a
+   * first message from a later one -- the same expressive limit that makes the
+   * protocol's own `partialResult` declare only the chunk shape, and the reason
+   * the specification states the rule in prose instead.
+   */
+  readonly progress: ProgressType<unknown>;
   readonly capability: CapabilityContributor;
 }
 
@@ -474,7 +531,7 @@ type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Pr
 type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
-) => AsyncGenerator<unknown[], unknown[] | null, void>;
+) => Promise<void | [unknown, AsyncGenerator<unknown[], object | undefined, null>?]>;
 
 /**
  * The table as a list, in DECLARATION ORDER -- which holds because these are
@@ -865,23 +922,34 @@ async function driveAwaitedOnce(run: {
 
 /**
  * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
- * author writes `yield` and `return`; whether that leaves as $/progress or as
- * one aggregated response is decided here, from the one thing the protocol
- * actually offers -- the presence of partialResultToken. There is no client
- * capability declaring partial-result support, so a client that cannot take
- * partial results simply omits the token, and the two triggers the brief
- * describes are one trigger.
+ * author hands back AN ANSWER AND OPTIONALLY A GENERATOR OF MORE OF IT; whether
+ * that leaves as $/progress or as one merged response is decided here, from the
+ * one thing the protocol actually offers -- the presence of partialResultToken.
+ * There is no client capability declaring partial-result support, so a client
+ * that cannot take partial results simply omits the token, and the two triggers
+ * the brief describes are one trigger.
+ *
+ * THE AUTHOR NO LONGER WRITES `yield` AND `return` AT THE HANDLER ITSELF, and
+ * that sentence stood here until Sprint 42 describing a shape that has stopped
+ * existing. The handler is now AWAITED for its pair, and the yields belong to
+ * the generator in the pair's second slot. WHAT DID NOT CHANGE is everything
+ * this block goes on to say: one message per chunk, the token as the only
+ * trigger, and the requirements below.
  *
  * A RETURN OF ITS OWN IS THIS DRIVE'S NO-HANDLER SHAPE and not an oversight
- * beside the `?? null` above: nothing here both drives a generator and answers
+ * beside the `?? null` above: nothing here both drives a stream and answers
  * for a missing one, so the two cases are two statements. WHAT THEY ARE NOT is
  * two answers about cancellation -- that return goes through
  * `answerUnlessCancelled` like every other answer this file produces, and it
  * sat ahead of it until Sprint 35.
  *
  * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT: its params must carry a
- * `partialResultToken`, and its chunks must be ARRAYS, since aggregation
- * concatenates them.
+ * `partialResultToken`, and its CHUNKS must be ARRAYS, since merging
+ * concatenates them. THE ANSWER IS EXEMPT FROM THAT REQUIREMENT AND THAT IS THE
+ * POINT OF THE POSITION -- it may be an array OR an object carrying an `items`
+ * array, which is what lets completion say `isIncomplete` at all. `mergeChunk`
+ * below phrases the difference STRUCTURALLY rather than by method name, so this
+ * drive still names no method's payload.
  *
  * IT WAS WRITTEN EXPECTING TO BE MET AT PBI-38 AND IT EXCLUDED THAT METHOD
  * INSTEAD, which is the strongest evidence it was worth writing down and is why
@@ -947,25 +1015,72 @@ async function driveStream(run: {
   const token = streamingToken(requestedToken, run.reportInvalidToken);
   const progress = run.entry.progress;
   return answerUnlessCancelled(run.method, context.signal, async () => {
-    // What the author yielded, kept only when there is no token to stream
-    // it under. In streaming mode this stays empty, which is what lets one
-    // expression below answer for both modes.
-    const collected: unknown[] = [];
-    let emitted = false;
-    const chunks = handler(context, run.params);
+    const answered = await handler(context, run.params);
+    // `return;` IS `nothing to say`, and it is the ONLY route to it. There is
+    // no items-bearing spelling of the same thing, which is what stops the
+    // Sprint-13 three-mode confusion being re-created in a new shape.
+    if (answered === undefined) {
+      return null;
+    }
+    const [answer, chunks] = answered;
+    // CHECKED BEFORE THE ANSWER LEAVES, FOR THE SAME REASON THE LOOP BELOW
+    // CHECKS BEFORE EACH CHUNK, and it is not symmetry for its own sake:
+    // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
+    // dispatch, so `await handler(...)` above can settle with the signal
+    // already aborted -- and a $/progress written then is addressed to a
+    // request the client has stopped listening for. MEASURED at Sprint 42: an
+    // earlier draft of this drive sent the answer unguarded and made
+    // `a completion cancelled before it is dispatched ... streams nothing`
+    // observe ONE message. The stream is closed here rather than left
+    // suspended, exactly as the loop does, so the author's `finally` still
+    // runs; the answer itself is discarded, since the response is -32800.
+    //
+    // THE `?.` HERE IS NOT THE NARROWING THE LOOP BELOW REFUSES. That ruling is
+    // about widening `AsyncGenerator` to `AsyncIterator` and then guarding the
+    // absence that widening manufactured. This slot is GENUINELY OPTIONAL --
+    // `[answer]` is a legal pair -- so the guard defends a case an author can
+    // write, and the reasoning for firing rather than awaiting the close is at
+    // the loop's own abort branch rather than repeated here.
+    if (context.signal.aborted) {
+      chunks?.return(undefined).then(undefined, (error: unknown) => {
+        reportCleanupFailure(run.method, error);
+      });
+      return null;
+    }
+    // THE ANSWER GOES FIRST, WHICH IS THE SPECIFICATION'S POSITION: the first
+    // provided partial result may be a CompletionList and subsequent ones add
+    // to its items. So under a token it leaves as the FIRST $/progress literal
+    // and `merged` stays untouched below; with no token it is what the chunks
+    // are merged INTO. One value, two roles, decided by the token alone.
+    let merged = answer;
+    if (token === undefined) {
+      // Nothing streams, so nothing is sent here.
+    } else {
+      await run.connection.sendProgress(progress, token, answer);
+    }
+    if (chunks === undefined) {
+      return token === undefined ? merged : null;
+    }
     for (;;) {
-      const next = await chunks.next();
+      const next = await chunks.next(null);
       if (next.done === true) {
-        // The RETURNED array alone in streaming mode: the yields have
-        // already left as $/progress, so concatenating them here would
-        // make a client that appends the response see every item twice.
-        if (next.value !== null) {
-          return [...collected, ...next.value];
+        // THE AUTHOR'S LAST WORD, AND THE ONLY THING THEY MAY SAY HERE. Under
+        // a token the response must be empty IN TERMS OF RESULT VALUES, so it
+        // carries the verdict over an EMPTY items list -- repeating the items
+        // would double them for a client that appends. With no token the whole
+        // list is in the response, so the verdict is applied OVER it.
+        //
+        // `undefined` means the author added nothing, which is not the same as
+        // saying the set is complete: the answer's own claim stands.
+        if (next.value === undefined) {
+          return token === undefined ? merged : null;
         }
-        // [] versus null turns on whether THIS request produced a chunk.
-        // `nothing further to add` and `nothing to say at all` are
-        // different answers, and only request-local state tells them apart.
-        return emitted ? collected : null;
+        // UNDER A TOKEN IT GOES STRAIGHT OUT, UNTOUCHED. Its type already
+        // guarantees it carries no result values, so there is nothing for this
+        // drive to strip and nothing to interpret -- it sends what it was
+        // given. With no token the items never left, so the same value is
+        // applied OVER the merged list instead.
+        return token === undefined ? applyFinal(merged, next.value) : next.value;
       }
       // Checked HERE, between pulling a chunk and sending it: the abort
       // typically lands while `next()` is parked, so a check at the top of
@@ -1016,24 +1131,79 @@ async function driveStream(run: {
         //
         // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN
         // OVERSIGHT. A local narrowed to `AsyncIterator` stood here for exactly
-        // one sprint, on the reasoning that the iterator contract is what this
-        // drive actually needs and that `AsyncIterable` -- the shape the stream
-        // was about to be published as -- makes `return` OPTIONAL. THAT SHAPE
-        // WAS THEN RULED OUT, so the guard would have widened a guarantee away
-        // by hand and then defended against the absence it had just
-        // manufactured. This repository prefers FORECLOSING a failure to
-        // DETECTING one, and an `AsyncGenerator` forecloses this one.
-        chunks.return(null).then(undefined, (error: unknown) => {
+        // one sprint, because the stream was published as an `AsyncIterable`
+        // whose `return` is OPTIONAL and a guard there defended a reachable
+        // hazard. THE PUBLISHED TYPE IS AN `AsyncGenerator` NOW, which REQUIRES
+        // `return`, so narrowing would widen a guarantee away by hand and then
+        // guard against the absence it had just manufactured. This repository
+        // prefers FORECLOSING a failure to DETECTING one, and the type
+        // forecloses this one.
+        chunks.return(undefined).then(undefined, (error: unknown) => {
           reportCleanupFailure(run.method, error);
         });
         return null;
       }
-      emitted = true;
       if (token === undefined) {
-        collected.push(...next.value);
+        merged = mergeChunk(merged, next.value);
       } else {
         await run.connection.sendProgress(progress, token, next.value);
       }
     }
   });
+}
+
+/**
+ * One streamed chunk added to what is already there, PHRASED STRUCTURALLY --
+ * array, or object carrying an `items` array -- so this drive still names no
+ * method's payload. A `merge` field on the entry would be a shape invented for
+ * a set of size one, which this project has refused by name.
+ *
+ * `isIncomplete` IS NEVER TOUCHED HERE, and that is CONFORMANCE rather than a
+ * tsudoi ruling: subsequent partial results ADD TO THE `items` PROPERTY, and
+ * nothing else. The reason is worth keeping for whoever later wonders whether
+ * to `fix` it -- draining the iterator proves THE STREAM ended, not that THE
+ * CANDIDATE SET is complete.
+ */
+function mergeChunk(into: unknown, chunk: unknown[]): unknown {
+  if (Array.isArray(into)) {
+    return [...into, ...chunk];
+  }
+  const carrier = into as { items?: unknown };
+  return { ...carrier, items: [...(carrier.items as unknown[]), ...chunk] };
+}
+
+/**
+ * The author's post-stream word applied over the list this request merged, for
+ * the NO-TOKEN case alone -- under a token that word IS the response and goes
+ * out untouched.
+ *
+ * AN UPDATE AND NOT A CONTRADICTION: the answer's claim was made BEFORE the
+ * stream and this one AFTER it, so a later value replacing an earlier one is
+ * the whole point. THE ITEMS ARE ALWAYS THE MERGED ONES: the final value is
+ * empty by construction, so taking its `items` would throw the answer away.
+ *
+ * A RETURNED `[]` SAYS `COMPLETE`, AND AN EARLIER DRAFT OF THIS FUNCTION SAID
+ * THE OPPOSITE. It read `[]` as `I have nothing to add` and returned the merged
+ * list untouched -- which contradicts the very line this sprint cites: a
+ * supplied `CompletionItem[]` IS `{ isIncomplete: false, items }`, for a
+ * returned array exactly as for an answered one. THE COST OF THE OLD READING
+ * WAS NOT A STYLE POINT: under a TOKEN the same `[]` goes out AS the response,
+ * where every client reads it as complete, so one handler produced OPPOSITE
+ * completeness claims depending on whether the client happened to send a token.
+ * Normalising here is what makes the two modes agree, and it collapses two arms
+ * into one rather than adding a case. `return;` -- NOT `return []` -- is how an
+ * author leaves the answer's own claim standing.
+ *
+ * WHAT NOTHING ASSERTS, said plainly per the Sprint-8 rule rather than left to
+ * be discovered: the `[]` SPELLING has no test of its own. The object spelling
+ * is what the fixture returns, and the two reach the same line below. What the
+ * suite would catch is a change to the shared line; what it would not catch is
+ * someone re-introducing an `Array.isArray(final)` early return above it.
+ */
+function applyFinal(merged: unknown, final: object): unknown {
+  const verdict = Array.isArray(final) ? { isIncomplete: false } : final;
+  const carrier = Array.isArray(merged)
+    ? { items: merged as unknown[] }
+    : (merged as { items: unknown[] });
+  return { ...carrier, ...verdict, items: carrier.items };
 }

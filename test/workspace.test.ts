@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type {
   CompletionItem,
+  CompletionList,
   Hover,
   InitializeResult,
   WorkspaceFolder,
@@ -211,13 +212,17 @@ async function openWith(
   });
 }
 
-/** One completion at the end of `line`, aggregated as a client without a token sees it. */
+/**
+ * One completion at the end of `line`, merged as a client without a token sees
+ * it. The example answers a `CompletionList` since Sprint 42, so the items come
+ * off `.items`; `null` is `no answer at all` and reads as an empty list here.
+ */
 async function completeAt(session: LspSession, line: string): Promise<CompletionItem[]> {
-  const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+  const result = await session.request<CompletionList | null>("textDocument/completion", {
     textDocument: { uri },
     position: { line: 0, character: line.length },
   });
-  return result ?? [];
+  return result?.items ?? [];
 }
 
 /** What each item puts in the buffer. */

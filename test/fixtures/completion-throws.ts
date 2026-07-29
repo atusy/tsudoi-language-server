@@ -19,6 +19,12 @@ export const recoveredItems: CompletionItem[] = [
   { label: "二度目", detail: "returned on the second call" },
 ];
 
+/** Fails after the answer has already left. */
+async function* failing(): AsyncGenerator<CompletionItem[], undefined, null> {
+  await Promise.resolve();
+  throw new Error(throwMessage);
+}
+
 export default (): Promise<TsudoiConfig> => {
   let calls = 0;
   return Promise.resolve({
@@ -29,16 +35,15 @@ export default (): Promise<TsudoiConfig> => {
       // on, `recoveredItems` is a module constant and both parameters are
       // unused, so the recovered answer is final -- which is what
       // `recovery is positive` above is asserting.
-      "textDocument/completion": async function* (
-        _context: RequestContext,
-        _params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
+      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) => {
         calls += 1;
-        if (calls === 1) {
-          yield sentBeforeThrow;
-          throw new Error(throwMessage);
-        }
-        return recoveredItems;
+        // THE ANSWER LEAVES BEFORE THE FAILURE, WHICH IS THE POINT: the throw is
+        // in the STREAM, so the first chunk is provably on the wire when the
+        // request fails. A handler that threw before answering would exercise
+        // `the request failed` and say nothing about `the chunk stayed`.
+        return Promise.resolve(
+          calls === 1 ? ([sentBeforeThrow, failing()] as const) : ([recoveredItems] as const),
+        );
       },
     },
   });

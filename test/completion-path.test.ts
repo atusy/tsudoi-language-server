@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CompletionItemKind,
   type CompletionItem,
+  type CompletionList,
   type InitializeResult,
 } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
@@ -70,8 +71,12 @@ async function complete(
     },
     workspaceFolders: [],
   };
-  const items: CompletionItem[] = [];
-  const chunks = pathCompletion(
+  // EVERY ITEM THIS MODULE HAS FOR ONE REQUEST, in the order it produces them,
+  // read the way tsudoi's own no-token drive reads it: the answer's `items`
+  // first, then every chunk the paired generator yields. `undefined` is `no
+  // answer at all`, which is an empty list here rather than a failure -- the
+  // tests below assert emptiness by name.
+  const answered = await pathCompletion(
     context,
     {
       textDocument: { uri: buffer.uri },
@@ -79,8 +84,16 @@ async function complete(
     },
     { cwd },
   );
+  if (answered === undefined) {
+    return [];
+  }
+  const [answer, chunks] = answered;
+  const items: CompletionItem[] = [...answer.items];
+  if (chunks === undefined) {
+    return items;
+  }
   for (;;) {
-    const next = await chunks.next();
+    const next = await chunks.next(null);
     if (next.done === true) {
       return items;
     }
@@ -918,7 +931,7 @@ for (const runtime of runtimes) {
           textDocument: { uri, languageId: "plaintext", version: 1, text: "entry-" },
         });
 
-        const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+        const result = await session.request<null>("textDocument/completion", {
           textDocument: { uri },
           position: { line: 0, character: "entry-".length },
           partialResultToken,
@@ -932,21 +945,28 @@ for (const runtime of runtimes) {
         //
         // Every entry exactly once across every batch: a count alone would be
         // satisfied by a module that streamed the same batch three times.
-        const streamed = session.progress.flatMap((progress) => progress.value as CompletionItem[]);
+        //
+        // THE FIRST LITERAL IS THE ANSWER AND CARRIES ITS ITEMS INSIDE A
+        // `CompletionList`, which is the specification's own positional rule --
+        // subsequent literals are bare arrays that ADD TO its `items`. So
+        // reading a batch off a literal means reading either shape, and the
+        // BATCHING claim below is unchanged by which position it arrived in.
+        const batchOf = (value: unknown): CompletionItem[] =>
+          Array.isArray(value) ? (value as CompletionItem[]) : (value as CompletionList).items;
+        const streamed = session.progress.flatMap((progress) => batchOf(progress.value));
         expect(streamed.map((item) => item.insertText).sort()).toEqual([...names].sort());
 
         // SIZES, not membership: nothing sorts the listing -- sorting would
         // require collecting it, which is the property under test -- so which
         // entry lands in which batch is the filesystem's business.
-        const batches = session.progress.map(
-          (progress) => (progress.value as CompletionItem[]).length,
-        );
+        const batches = session.progress.map((progress) => batchOf(progress.value).length);
         expect(batches).toEqual([batchSize, batchSize, 1]);
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
-        // The yields have already left; the response adds nothing to them.
-        expect(result).toEqual([]);
+        // The batches have already left; the response adds nothing to them, and
+        // `null` is what `empty in terms of result values` is spelled as here.
+        expect(result).toBeNull();
       } finally {
         session.dispose();
         fixture.dispose();

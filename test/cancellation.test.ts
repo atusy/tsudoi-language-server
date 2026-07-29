@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
+import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -159,9 +159,12 @@ for (const runtime of runtimes) {
       }
     });
 
-    // The same pre-dispatch path on the streaming side, where a chunk is at
-    // stake rather than just a return value: the generator is pulled once and
-    // does yield, and that chunk must be discarded before it reaches the wire.
+    // The same pre-dispatch path on the streaming side, where a MESSAGE is at
+    // stake rather than just a return value: the handler is called anyway and
+    // does produce an answer, and that answer must be discarded before it
+    // reaches the wire. It is the ANSWER and no longer a yielded chunk since
+    // Sprint 42 -- the pair's first element leaves as the first `$/progress`
+    // literal, so it is now the EARLIEST thing this drive could misdeliver.
     test("a completion cancelled before it is dispatched answers -32800 and streams nothing", async () => {
       const session = LspSession.start(runtime, completionCancel);
       try {
@@ -300,11 +303,16 @@ for (const runtime of runtimes) {
           expect(answered.result).toBeUndefined();
 
           openGate(session);
-          const next = await session.request<CompletionItem[]>(
-            "textDocument/completion",
-            completionParams(),
-          );
-          expect(next).toEqual(returnedItems);
+          const next = await session.request<null>("textDocument/completion", completionParams());
+          // ANSWERED NORMALLY, PRESENCE FIRST. `completionParams()` here always
+          // carries a partialResultToken, so the items leave as $/progress and
+          // the response is `null` -- and a `null` on its own would also be
+          // what a server that had died with the cancelled request produced.
+          expect(session.progress.at(-1)).toEqual({
+            token: partialResultToken,
+            value: returnedItems,
+          });
+          expect(next).toBeNull();
 
           expect(await session.request<null>("shutdown", null)).toBeNull();
           session.notify("exit", null);

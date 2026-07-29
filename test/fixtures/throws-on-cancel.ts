@@ -1,11 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
-import type {
-  CompletionItem,
-  CompletionParams,
-  Hover,
-  HoverParams,
-} from "vscode-languageserver-protocol";
+import type { CompletionParams, Hover, HoverParams } from "vscode-languageserver-protocol";
 import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 export const hoverEntered = "throws-on-cancel: hover entered";
@@ -47,10 +42,7 @@ export default (): Promise<TsudoiConfig> => {
       // and the specification's array equivalence has nothing to apply to. The
       // ruling is recorded so the enumeration covers every completion handler
       // rather than only the ones that answer.
-      "textDocument/completion": async function* (
-        context: RequestContext,
-        _params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
+      "textDocument/completion": async (context: RequestContext, _params: CompletionParams) => {
         process.stderr.write(`${completionEntered}\n`);
         await aborted(context);
         throw new Error(throwMessage);

@@ -10,6 +10,7 @@
 // libraries are cut up, and src/lsp.ts is where that is absorbed.
 import type {
   CompletionItem,
+  CompletionList,
   CompletionParams,
   DocumentDiagnosticParams,
   DocumentDiagnosticReport,
@@ -50,13 +51,106 @@ export interface Tsudoi {
   readonly documents: DocumentStore;
 }
 
+/**
+ * What a completion handler answers with. `null` IS NOT IN IT, deliberately: a
+ * handler with nothing to say returns NOTHING -- see `MethodMap` below -- so
+ * `no answer` is never a value that could be paired with a stream.
+ *
+ * NAMED FOR THE RESPONSE THOUGH IT IS NOT ALWAYS THE RESPONSE, which is worth a
+ * sentence because it looks like a misnomer for one of the four modes. Under a
+ * token this value leaves as the FIRST `$/progress` literal and the response is
+ * `null`; with no token it IS the response. It is the same claim either way --
+ * the answer this handler gives to this request -- and the position it travels
+ * in is the client's choice rather than the author's. `EmptyCompletionResponse`
+ * below is the OTHER thing that can occupy the response slot, and the two names
+ * pair deliberately.
+ */
+export type CompletionResponse = CompletionItem[] | CompletionList;
+
+/**
+ * A COMPLETION RESPONSE WITH NO RESULT VALUES IN IT -- which is what the
+ * specification requires of a response once partial results have been streamed,
+ * TURNED FROM PROSE A READER MUST OBEY INTO A PROPERTY THE COMPILER ENFORCES.
+ *
+ * BOTH SHAPES THE SPECIFICATION PERMITS, AND NOTHING IT FORBIDS. Measured: `[]`,
+ * `{ isIncomplete: true, items: [] }` and `{ isIncomplete: false, items: [] }`
+ * all compile; `[item]` and `{ isIncomplete: true, items: [item] }` are both
+ * REFUSED. EVERY OTHER `CompletionList` MEMBER SURVIVES -- `itemDefaults`
+ * included, which is not academic: nvim advertises
+ * `completionList.itemDefaults`, so a narrower shape would have silently
+ * removed a capability the client asked for.
+ *
+ * WHY A HANDLER WOULD USE IT: after draining its own source it may know
+ * something it did not know when it answered -- above all whether the candidate
+ * set is really complete. That is an UPDATE and not a contradiction of the
+ * answer's own `isIncomplete`, because the two are claims about different
+ * moments: the answer speaks BEFORE the stream, this speaks AFTER it.
+ *
+ * A ROT MODE WORTH THE SENTENCE, flagged rather than measured: `Omit` is
+ * computed over the DEPENDENCY'S declaration, so a member upstream ADDS arrives
+ * here automatically, which is right. But if upstream ever RENAMES `items`, the
+ * `Omit` stops omitting anything and the intersection becomes unsatisfiable --
+ * a shape nothing can be assigned to, failing at every call site rather than
+ * here.
+ */
+export type EmptyCompletionResponse = [] | (Omit<CompletionList, "items"> & { items: [] });
+
 export interface MethodMap {
-  // yield結果はpartial responseとしてクライアントに返す
-  // returnしたらpartial response終了とみなす。partial responseが存在していてかつ、resultがnullの場合は、空のCompletionItem[]をクライアントに返す
-  // クライアントがparital responseをサポートしない場合やpartialResultTokenがない場合は、yieldやreturnを1つのCompletionItem[]にまとめて返す
+  /**
+   * AN ANSWER, AND OPTIONALLY A STREAM OF MORE OF IT. The pair is one value
+   * because the two questions are one question: a handler with nothing to say
+   * has nothing to stream. `return;` IS `nothing to say` -- `void` sits OUTSIDE
+   * the tuple, so `no answer plus a stream` is not merely discouraged but
+   * UNWRITEABLE, measured: `[null, stream]` and `[null]` both fail TS2322
+   * naming `null`, while `[items]`, `[list]`, `[items, stream]` and
+   * `[list, stream]` all compile.
+   *
+   * A `CompletionList` IS THE POINT AND NOT A CONVENIENCE. The specification
+   * treats a supplied `CompletionItem[]` as IDENTICAL TO
+   * `{ isIncomplete: false, items }` -- so a bare array is a POSITIVE CLAIM that
+   * the candidate set is final and the client need not ask again. That claim was
+   * made by every completion handler tsudoi has ever run and nobody chose it.
+   *
+   * WHAT THE DRIVE DOES WITH THE PAIR, which is the whole of the streaming API:
+   *
+   *   return;                        -> `null` on the wire, nothing streams
+   *   [answer]         no token      -> `answer`
+   *   [answer]         token         -> `answer` as one `$/progress`, then null
+   *   [answer, chunks] no token      -> `answer` MERGED with every chunk, and
+   *                                     the generator's return applied over it
+   *   [answer, chunks] token         -> `answer` as the FIRST `$/progress`
+   *                                     literal, each chunk as a subsequent one,
+   *                                     and the generator's return AS the
+   *                                     response, unchanged and already empty
+   *
+   * THE POSITION IS THE SPECIFICATION'S, not a tsudoi invention: the first
+   * provided partial result may be a `CompletionList` and subsequent ones ADD TO
+   * ITS `items`. THE MERGE NEVER REWRITES `isIncomplete` -- draining the
+   * iterator proves THE STREAM ended, not that THE CANDIDATE SET is complete.
+   * Only the generator's own RETURN may update it, because only that is the
+   * author speaking.
+   *
+   * AND A RETURNED `[]` IS THE AUTHOR SAYING `COMPLETE`, NOT `NOTHING TO ADD`.
+   * The specification's equivalence applies to the returned array exactly as it
+   * applies to the answer, so `return []` after answering `isIncomplete: true`
+   * WITHDRAWS that claim. `return;` -- returning nothing from the generator --
+   * is what leaves the answer's own claim standing. The two are one keystroke
+   * apart and they say opposite things, which is why it is stated here and at
+   * the drive rather than left to be derived.
+   *
+   * AN `AsyncGenerator` RATHER THAN AN `AsyncIterable`, which is NARROWER than
+   * an earlier ruling here and is a deliberate reversal: the return value is
+   * what buys it, and a bare iterable has nowhere to put one.
+   */
   "textDocument/completion": {
     params: CompletionParams;
-    result: AsyncGenerator<CompletionItem[], CompletionItem[] | null, void>;
+    result: Promise<
+      | void
+      | [
+          CompletionResponse,
+          AsyncGenerator<CompletionItem[], EmptyCompletionResponse | undefined, null>?,
+        ]
+    >;
   };
 
   "textDocument/hover": {
