@@ -39,98 +39,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-44",
-      story: {
-        role: "config author",
-        capability:
-          "read an example where the server reports trailing whitespace and then removes it",
-        benefit:
-          "I can run the demo, see the warnings, format, and watch them clear -- a complete loop in one server",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "THE MATCHED PAIR: textDocument/diagnostic reports PER-LINE trailing whitespace, textDocument/formatting removes it. Trailing newlines are OUT OF SCOPE for this increment.",
-          verification:
-            "the stakeholder said `trailing space とか trailing new lines とか` -- OR -- so choosing one is WITHIN their ruling rather than against it. PER-LINE and not the tail edit, for three reasons: only the per-line case demonstrates Diagnostic[] and TextEdit[] AS ARRAYS WITH DISTINCT RANGES; it exercises positionAt at MULTIPLE positions, which is where the example gets to SHOW the Sprint-28 investment rather than prove it; and a whole-document replacement is THE `FULL SYNC` OF FORMATTING -- the lazy implementation that returns a legal answer and teaches the wrong thing.",
-        },
-        {
-          criterion:
-            "THE DIAGNOSTIC'S RANGES AND THE FORMATTER'S EDIT RANGES CORRESPOND, AND IT IS ASSERTED.",
-          verification:
-            "RANGE-FOR-RANGE CORRESPONDENCE IS THE PAIRING'S ENTIRE PEDAGOGICAL CONTENT. If the diagnostic reported per-line while the formatter emitted one whole-document edit, BOTH EXAMPLES WOULD BE INDIVIDUALLY CORRECT AND THE PAIR WOULD TEACH NOTHING. Without this assertion, `matched pair` is a claim in a README that NO TEST CAN FAIL.",
-        },
-        {
-          criterion: "THREE NEGATIVE CONTROLS, all required, MEASURED ON BOTH RUNTIMES.",
-          verification:
-            "(a) two separated lines with trailing whitespace produce TWO findings -- a single whole-document finding FAILS it; (b) the same for TextEdit[] -- a single whole-document edit FAILS it; (c) the correspondence assertion FAILS if either side is aggregated while the other is not. Measured on both runtimes because `what the implementation emits` IS A SHAPE PREDICTION, and shape predictions are what the PO has been wrong about most often in this thread.",
-        },
-        {
-          criterion:
-            "THE FIXTURE DOCUMENT CARRIES A LINE WITH TRAILING WHITESPACE AND A LINE WITHOUT, AND THE ASSERTION CHECKS BOTH.",
-          verification:
-            "MADE A REQUIREMENT RATHER THAN CONFIRMED AS A READING, so it is TRUE BY CONSTRUCTION rather than true by observation. The filesystem candidate gave this pair FREE; here it is free ONLY IF SOMEONE WRITES THE FIXTURE THAT WAY, and `someone will` is exactly the convention this project has MEASURED TO BE UNDEFENDED THREE TIMES.",
-        },
-        {
-          criterion:
-            "Both examples are EXECUTED, with BOTH negative controls each: breaking the import reddens a named assertion, breaking a handler's return reddens a named assertion.",
-          verification: "standing item 6.",
-        },
-        {
-          criterion:
-            "test/lifecycle.test.ts's pin moves ONCE for the pair: THE TITLE, THE toEqual AND THE COMMENT. One source edit, TWO runtime assertions.",
-          verification:
-            "GREPPED, not recalled: it is THE ONLY exact-equality pin on the demo config, and ten other capability toEqual sites were verified BY READING THE START ARGUMENT to drive fixtures instead. THAT THE PIN MOVES ONCE RATHER THAN TWICE IS WHY THESE TWO SHIP TOGETHER -- the mechanical half of the original bundle's rationale, transferred intact.",
-        },
-        {
-          criterion:
-            "PUBLISH THE PROTOCOL NAMES THE MODULES ACTUALLY NAME -- MEASURED ONCE THE HANDLERS ARE WRITTEN, NOT A PREDICTED SET. Candidates: Diagnostic, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, TextEdit. Publish the ones the modules name AND NO MORE, each with its own reason beside it.",
-          verification:
-            "src/types.ts's OWN criterion for the eight is `the protocol names the examples ACTUALLY USE`, measured against examples/. THE EIGHT EXIST PRECISELY TO MAKE EXAMPLE MODULES WRITABLE -- completion-path.ts and hover-wordnet.ts are extractable ONLY BECAUSE CompletionItem, CompletionParams, Hover and HoverParams were published. ADDING EXAMPLES ADDS NAMES: THE RULE OPERATING, NOT A WIDENING OF IT. The alternative is worse than three type names -- THE README WOULD TEACH A PATTERN TSUDOI'S OWN PUBLISHED SURFACE CANNOT SUPPORT. And the Sprint-33 refusal of TextEdit and DocumentFormattingParams is NOT OVERTURNED: its reversal condition was `an author found declaring an intermediate TextEdit[] and importing the package for it`, and THE EXAMPLE MODULE IS THAT AUTHOR -- the first evidence-shaped reversal condition in this thread to fire.",
-        },
-        {
-          criterion:
-            "THE FIXTURE STAYS UNANNOTATED, and src/types.ts's `imported and not re-exported` sentence goes FALSE and is corrected in the same commit.",
-          verification:
-            "publishing does NOT force annotation, so test/fixtures/diagnostic-offsets.ts keeps its contextual-typing evidence intact -- its own comment warns `Add an annotation here and that half of the evidence is gone`. THE NEED FOR ANNOTATION LIVES IN THE EXAMPLE, NOT THE FIXTURE.",
-        },
-        {
-          criterion:
-            "install.ts's exampleSources() doc block says `TWO FILES, not one` and `the artifact under test is both files` while THE FUNCTION RETURNS FOUR. Replace with a NON-COUNTING form.",
-          verification:
-            "ALREADY FALSE AT HEAD, found while holding, sitting in the exact function this PBI edits. COUNTS IN PROSE ARE NOW THE MOST RELIABLE DEFECT CLASS IN THIS REPOSITORY -- two in published prose, four in criteria, ALL found by grep or re-measurement and NONE by reading.",
-        },
-        {
-          criterion:
-            "README's framing is CORRECTED, not preserved: the example set now teaches TWO SHAPES -- a handler that GOES SOMEWHERE ELSE for its answer, and a handler that COMPUTES ITS ANSWER FROM THE DOCUMENT IT WAS GIVEN.",
-          verification:
-            "the current framing stays TRUE OF TWO MODULES and stops being TRUE AS A FRAMING, and THE FRAMING IS WHAT IS PUBLISHED -- saying only the first is a coverage claim that is no longer true. THE CORRECTED FRAMING IS ALSO THE BETTER ONE: computing from the document is THE COMMONER CASE FOR A REAL LANGUAGE SERVER -- a parser does not go anywhere else -- so the README currently TEACHES THE RARER SHAPE AS THOUGH IT WERE THE SHAPE.",
-        },
-        {
-          criterion:
-            "install.ts's exampleSources() gains the new modules -- AND THE CRITERION NAMES THE FAILURE MODE.",
-          verification:
-            "omitting them fails the published-artifacts probes IN A WAY THAT LOOKS LIKE A RESOLUTION BUG and would be misdiagnosed.",
-        },
-        {
-          criterion:
-            "README's file table moves, and `Copy all four` -- A NUMBER IN PROSE -- is replaced by a form that does not count.",
-          verification:
-            "prefer-naming-to-counting reaching the README, the cheapest instance of a clause that has caught four wrong counts.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "THE PAIR IS SELF-EVIDENCING, and that is why it OUTBID the filesystem candidate rather than refuting it. Path-completion and a path-diagnostic SHARE A DOMAIN; a diagnostic reporting what the formatter removes DEMONSTRATES THE OTHER. A reader runs the demo, sees the warnings, formats, and watches them clear -- a complete loop in one server. The filesystem version HAS NO LOOP: two features standing next to each other.",
-        "THE BINDING IS STRONGER THAN THE ORIGINAL BUNDLE'S EVER WAS: not a shared domain but VALUE COUPLING. EITHER HALF ALONE SHIPS HALF A DEMONSTRATION -- a problem the demo cannot fix, or a fix for a problem it never reports. SAME CONDITION AS THE ORIGINAL BUNDLE: if either half's negative control turns out unconstructible, they split.",
-        "THE PO'S OWN CRITERION FAILS LITERALLY HERE AND THEY RULED ON THE PROPERTY INSTEAD: `an example exists when there is something real to DELEGATE TO`, and a trailing-whitespace stripper DELEGATES TO NOTHING -- it is a regex in the handler. But that phrasing was A PROXY for `not a toy`, and THE PROXY FAILS WHILE THE PROPERTY HOLDS. Small and complete, versus wordnet-as-spellchecker's large and wrong. Only the second is disqualifying.",
-        "NO NEW DEPENDENCY, so nothing collides with install.ts's wordnet control and README's EXECUTED install command is untouched. THE DEPENDENCY SEAM THE ORIGINAL SPLIT WAS MADE ON IS DISSOLVED -- recorded so nobody later reads a seam that no longer exists.",
-        "prettier RECORDED AS THE RICHER ALTERNATIVE NOT TAKEN: a package, an executed install command, and A RETURN CONTROL FRAGILE TO A VERSION BUMP for a reason having nothing to do with tsudoi -- the same fragility class accepted at PBI-34 ONLY because there was no alternative, and ACCEPTING AN AVOIDABLE INSTANCE HAVING REFUSED AVOIDABLE ONES ELSEWHERE WOULD BE INCOHERENT. REVERSAL: evidence that a config author needs to see delegation to a real external tool.",
-        "oxlint's RECORD RESTATED, because it was written against a FILESYSTEM baseline that no longer exists and A COMPARISON TO SOMETHING ABSENT IS WORSE THAN NO COMPARISON, since it reads as current. The reason stands: A BINARY ON PATH, changing what a copying reader needs and teaching SUBPROCESS-SPAWNING as the delegation pattern. REVERSAL: someone wanting a real-linter example.",
-        "THE ZERO-DEPENDENCY PRINCIPLE IS NOT DECLARED YET -- it stands at TWO instances (oxlint on PATH, prettier as a package), and the filesystem-to-trailing-whitespace move is NOT a dependency decline so it does not count toward a third. The PO holds their own rule of three rather than reaching for a pattern that is one short.",
-      ],
-    },
-    {
       id: "PBI-46",
       story: {
         role: "config author",
@@ -255,6 +163,26 @@ const scrum: ScrumDashboard = {
 
   completed: [
     {
+      number: 36,
+      pbi_id: "PBI-44",
+      goal: "THE MATCHED PAIR SHIPS AS ONE LOOP: the demo config reports per-line trailing whitespace and removes it, and the property that makes it a pair rather than two features is RANGE-FOR-RANGE CORRESPONDENCE, asserted over the wire. The sprint also pays a debt the hold exposed -- src/types.ts's published surface cannot express an EXTRACTED handler for either method, so the README's `module per method` is a pattern tsudoi's own surface does not support. The names are published MEASURED FROM WRITTEN HANDLERS rather than from the candidate list, and the two `IMPORTED AND NOT RE-EXPORTED` paragraphs that go false are corrected beside the export they describe.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "436 green from a RE-MEASURED 428, 30 files from 29 -- EIGHT ADDED. examples/ gains diagnostic-trailing-whitespace.ts and formatting-trailing-whitespace.ts, and THE FORMATTER IMPORTS THE DIAGNOSTIC MODULE'S SCANNER, so the pair CANNOT DRIFT -- one scanner, not two implementations asserted to agree. A structural guarantee the PO did not ask for and says they would not have thought to.",
+        "THE EXECUTOR OVERRODE ITS OWN COMMITTED PLAN, AND PUT IT FIRST IN THE REPORT. The plan declared two commits; criterion 6 says the pin moves ONCE FOR THE PAIR, and two commits would have left an intermediate tree ADVERTISING HALF AN EXAMPLE -- the exact state the value coupling was cut to rule out. WHEN A PLAN AND AN ACCEPTED CRITERION CONFLICT, THE CRITERION GOVERNS. NO NEW ENTRY: what this project would file about is a plan overridden SILENTLY, and this was disclosed in the commit body AND the sprint record with the reason.",
+        "THE NAMES MEASUREMENT CAME OUT BETWEEN THE CANDIDATES, WHICH IS WHY A PREDICTED SET WAS REFUSED: FOUR OF FIVE published, and `Diagnostic` WAS NEVER DEMANDED because the array literal is contextually typed by the declared result. A PREDICTED SET WOULD HAVE PUBLISHED ALL FIVE AND BEEN WRONG IN THE DIRECTION NOBODY CHECKS -- an unused published name is PERMANENT, UNAUDITED AND INVISIBLE. The PO records that as a better argument for measuring-not-predicting than the one they made.",
+        "AND THE SHARPER RULE, WHICH IS NOT WHAT THE CRITERION SAID, BELONGS AT src/types.ts: PUBLICATION IS ABOUT EXTRACTION, NOT ABOUT THE METHOD. An inline handler needs NONE of these names, which is why both offset fixtures stay unannotated and are now the ONLY evidence behind it.",
+        "SECOND EVIDENCE-SHAPED REVERSAL CONDITION TO FIRE, AND BOTH WERE THE PO'S. Sprint 33's `an example that must NAME one of them` is met by the example that names them. TWO CLEAN FIRINGS IS ENOUGH TO SAY THE FORM WORKS: a reversal stated as EVIDENCE rather than PREDICTION can be recognised when it arrives, and neither required re-litigating the original ruling.",
+        "THE CORRESPONDENCE ASSERTION'S ISOLATING PERTURBATION IS LOGICALLY IMPOSSIBLE, not merely unbuilt: both handlers are pinned by exact equality to the SAME hand-written ranges, so the two shape assertions ENTAIL correspondence. A DESIGN OUTCOME, NOT MEANS LACKING -- and the precision matters, because it is entailed BY THE TEST STRUCTURE rather than by logic, so it CAN fail if that structure changes. THIRD ASSERTION OF ITS KIND, with C1's presence check and the capability control: kept because it is the ONLY ONE THAT NAMES THE PROPERTY, unable to be first to fail, and saying so at the site. THREE INSTANCES IS NOW A SETTLED DISPOSITION rather than three judgements. RESIDUAL: nothing about today's code; A FUTURE THIRD METHOD'S PAIRING is what it would not reach.",
+        "NINE PERTURBATIONS, FULL SUITE EACH, 436 RAN IN ALL NINE. P1/P2 (broken import) redden 56 tests including all four named assertions BY NAME -- DEFENDED, EXPLICITLY NOT ISOLATED. P5/P6 (one side aggregated) redden the correspondence criterion ITSELF on both runtimes. P10 (every line flagged) reddens the clean-line test WHILE CORRESPONDENCE STAYS GREEN -- the fixture requirement doing exactly what it was made a criterion for.",
+        "CRITERION 10'S FAILURE MODE WAS OBSERVED IN ITS NATURAL HABITAT rather than perturbed after the fact: with the modules wired but exampleSources() not yet updated, TEN PROBES FAILED AND EVERY MESSAGE READ `Module not found` / TS2307. The criterion existed because that failure LOOKS LIKE A RESOLUTION BUG; seeing it look exactly like one validates the REASON and not merely the requirement.",
+        "A COUNT CAN LIVE IN A FILENAME. Seven sites across four files said `the eight` against a NINE-name list -- ONE IN A TEST NAME, TWO IN PROBE FILENAMES, one in a variable. A CONTENT GREP FOR THE CLAIM'S WORDS DOES NOT SEE A FILENAME. And the executor's OWN false README sentence, written earlier in the same sprint, was caught BY THE GREP RATHER THAN BY RE-READING -- which is exactly the gap that entry exists to fill, since re-reading had already failed to catch it.",
+        "DECLINED WITH THE COST NAMED, and it forces a distinction the PO wanted stated so their own clause is not over-applied: A COUNT THAT IS A MEASUREMENT RESULT CARRIES PROVENANCE AND MUST NOT BE EDITED WITHOUT RE-MEASURING; A COUNT THAT IS A DESCRIPTION SHOULD BE REPLACED BY NAMING. Those are DIFFERENT OBJECTS THAT LOOK IDENTICAL IN PROSE. Editing `twenty assertions across five files` without re-running the Sprint-34 perturbation would have SWAPPED A MEASUREMENT FOR A GUESS.",
+      ],
+    },
+    {
       number: 35,
       pbi_id: "PBI-40",
       goal: "DESIGN COHERENCE, NOT A DEFECT, and the ground is that THE CLAIM IS THE ASSET: answerUnlessCancelled exists precisely so cancellation is decided in ONE PLACE, and a cancelled request to a generator-driven method with NO handler is answered `null` because that drive's no-handler early return sits AHEAD of it. LSP permits either answer, so no requirement is breached -- what is at stake is a stated principle being weakened to accommodate AN ORDERING NOBODY CHOSE. The divergence closes at -32800 FOR BOTH DRIVES, and CRITERION 2 IS THE POINT RATHER THAN A SIDE EFFECT: the qualifier `THAT REACHES THIS FUNCTION` stops being true, so it comes out, and it comes out EVERYWHERE THE CLAIM LIVES rather than only where this sprint edits -- found by grepping the claim's words (`REACHES THIS FUNCTION`, `no-handler`, `early return`, `AHEAD OF`, `epilogue`, `nowhere else`, `one place`, `-32800`, `qualifier`, `divergence`) rather than the places comments live, because a git diff answers `did this change?` and never `is this list complete?`.",
@@ -368,120 +296,34 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 36,
-    pbi_id: "PBI-44",
-    goal: "THE MATCHED PAIR SHIPS AS ONE LOOP: the demo config reports per-line trailing whitespace and removes it, and the property that makes it a pair rather than two features is RANGE-FOR-RANGE CORRESPONDENCE, asserted over the wire. The sprint also pays a debt the hold exposed -- src/types.ts's published surface cannot express an EXTRACTED handler for either method, so the README's `module per method` is a pattern tsudoi's own surface does not support. The names are published MEASURED FROM WRITTEN HANDLERS rather than from the candidate list, and the two `IMPORTED AND NOT RE-EXPORTED` paragraphs that go false are corrected beside the export they describe.",
-    status: "review",
-    subtasks: [
-      {
-        test: "test/trailing-whitespace.test.ts drives THE DEMO CONFIG over both runtimes against a document whose line 0 and line 2 END IN TRAILING WHITESPACE and whose line 1 DOES NOT: TWO findings, DISTINCT ranges, and NOTHING on line 1.",
-        implementation:
-          "examples/diagnostic-trailing-whitespace.ts, wired into examples/tsudoi.config.ts. The protocol names tsc DEMANDS are published -- measured by writing the module first and reading the errors, not by adopting the candidate list -- with publicProtocolNames and src/types.ts's diagnostic `IMPORTED AND NOT RE-EXPORTED` paragraph corrected in the SAME commit.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "82b82fc",
-            message:
-              "feat(examples): ship the trailing-whitespace pair, and publish the names an extracted handler cannot do without",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED-RED, and THE PIN MOVE IS PART OF THIS ONE EDIT rather than a later subtask -- declared in advance under the shared-moment rule, because test/lifecycle.test.ts's toEqual reddens THE MOMENT the handler lands. Its TITLE, its toEqual and its COMMENT all move; NO MATCHER IS LOOSENED and the only change is an expected value gaining a key.",
-          "THE PIN CLAIM WAS RE-MEASURED BY THE EXECUTOR, not carried: eleven capability sites exist, ten drive FIXTURES (diagnostic-offsets, hover-fixed x4, completion-chunks x2, formatting-fixed, hover-absent, resolve-detail) and one -- test/lifecycle.test.ts:37 -- drives demoConfig. test/workspace.test.ts:498 is toBeDefined, not exact equality. Read at the start argument of each, as the criterion prescribes.",
-          "CAPABILITY SHAPES READ FROM src/methods.ts THIS SESSION rather than from the sprint records that state them: diagnosticProvider is `{ interFileDependencies: true, workspaceDiagnostics: false }` and documentFormattingProvider is `true`.",
-        ],
-      },
-      {
-        test: "The same document, same file: TWO TextEdits with DISTINCT ranges, each deleting a run, and the clean line untouched.",
-        implementation:
-          "examples/formatting-trailing-whitespace.ts, IMPORTING THE SCAN FROM THE DIAGNOSTIC MODULE so the formatter removes exactly what the diagnostic reports, wired into the config. Names published and src/types.ts's formatting paragraph corrected in the same commit; the pin gains documentFormattingProvider.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "EXPECTED-RED. THE IMPORT DIRECTION IS THE VALUE COUPLING MADE MECHANICAL, and the alternative is named with its cost rather than declined silently: a THIRD module holding the scan alone would keep the two handler modules independent, at the price of a file exporting AN ALGORITHM AND NO HANDLER -- which is the shape the PO refused in the plain-data seam, arriving by another door. Each handler still does its OWN positionAt conversion, so the LSP-shaped work stays in the handler modules.",
-          "THE FIXTURE STAYS UNANNOTATED: test/fixtures/formatting-offsets.ts and test/fixtures/diagnostic-offsets.ts are NOT touched, so the contextual-typing evidence their own comments protect survives publication intact. The need for annotation lives in the EXAMPLE, which is an exported standalone function and gets no contextual typing at all.",
-        ],
-      },
-      {
-        test: "In ONE session on ONE document: the diagnostic's ranges and the formatter's edit ranges are equal, RANGE FOR RANGE AND IN ORDER.",
-        implementation: "No implementation -- the assertion is the deliverable.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "BORN GREEN IF SUBTASKS 1 AND 2 ARE CORRECT, and declared so rather than discovered. Its value is not detection today: it is that `matched pair` stops being a claim in a README that NO TEST CAN FAIL. Non-vacuity is established by P7 rather than by the assertion's own colour.",
-        ],
-      },
-      {
-        test: "The published-artifacts and installed-* probes type-check and RUN the new modules.",
-        implementation:
-          "test/helpers/install.ts's exampleSources() gains both modules, and its doc block's `TWO FILES, not one` / `the artifact under test is both files` -- ALREADY FALSE AT HEAD against four returned entries -- is replaced by a NON-COUNTING form.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE FAILURE MODE IS NAMED SO IT IS NOT MISDIAGNOSED: omitting a module leaves the consumer with a config importing a file that is not there, which surfaces as a MISSING-MODULE RESOLUTION FAILURE -- indistinguishable at a glance from the dependency-resolution defect these probes exist to observe.",
-        ],
-      },
-      {
-        test: "No executable defence -- README's file table and its two framings are PROSE, and the discharge is a grep of THE CLAIM'S WORDS with every survivor read.",
-        implementation:
-          "README's table gains the two modules; `Copy all four` becomes a form that does not count; and the delegation framing is CORRECTED rather than preserved -- the example set now teaches TWO SHAPES, a handler that goes somewhere else for its answer and a handler that computes its answer from the document it was given.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "1210a76",
-            message: "docs(examples): correct a fixture comment that two published names falsified",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "GREPPED FOR THE CLAIM'S WORDS, NOT FOR THE PLACES COMMENTS LIVE, and across src, test, examples and README rather than over this sprint's diff -- a diff answers `did this change?` and never `is this list complete?`, AND A COMMENT CAN BE FALSIFIED BY AN EDIT IN A FILE IT DOES NOT NAME. Terms include `a ninth`, `no example formats anything`, `supplies both handlers`, `go somewhere else`, `Copy all four`, `TWO FILES`, `two of the five`, `not re-exported`, `eight`.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "The agentic-scrum command and its three skills are NOT INSTALLED: /Users/atusy/.claude/plugins/data/agentic-scrum-inline is an EMPTY DIRECTORY, and no scrum-event-sprint-execution, scrum-team-developer or scrum-dashboard skill exists under ~/.claude/skills. Verified by listing both paths.",
-        impact:
-          "Sprint 36 is being executed from scrum.ts and the house conventions alone. Nothing is blocked, and that is the point worth recording rather than the outage: A PROCESS HELD UP BY CONVENTION ALONE LEAVES NO TRACE AND CANNOT BE AUDITED -- the same shape as a property held by an empty event loop, and the reason this is an impediment rather than a note.",
-        request:
-          "Install or repair the agentic-scrum plugin. NOT to be routed around by the executor: reinstalling a plugin is outside what an execution agent should decide.",
-        status: "waiting_human",
-        notes: [
-          "RECORDED RATHER THAN ABSORBED, on the practice the PO named as the single one they would keep if they could keep only one.",
-        ],
-      },
-    ],
-    decisions: [
-      "THE HOOK FORBIDS A CADENCE, SO THE PROPERTY IS SATISFIED ANOTHER WAY -- stated here at PLANNING rather than explained at Review. The pre-commit hook (read this session at ~/.config/git/hooks/pre-commit) refuses any commit staging scrum.ts beside another file, and it reads `git status --porcelain`, so scrum.ts cannot even be DIRTY while code is committed. Subtask statuses therefore CANNOT be updated as they complete. The property the mechanism protects -- NO WINDOW IN WHICH A DECISION IS OUT OF CUSTODY -- is satisfied by this plan naming every subtask, every perturbation and their predictions IN ADVANCE, and by one closing scrum.ts-alone commit.",
-      "BASELINE RE-MEASURED BY THE EXECUTOR rather than copied from the brief: 428 pass, 0 fail, 29 files, 1234 expect() calls, bun 1.3.13. The handed number was right; it is now ours.",
-      "PERTURBATIONS DECLARED WITH THEIR PREDICTIONS BEFORE ANY RUN, because a prediction written after the result is not a prediction. P1/P2: breaking the config's import of each module reddens a named assertion in test/trailing-whitespace.test.ts. P3: the diagnostic handler returning an EMPTY full report reddens the two-findings assertion. P4: the formatting handler returning null reddens the two-edits assertion. P5: the diagnostic AGGREGATING into one document-spanning finding reddens the two-findings assertion. P6: the formatter emitting ONE whole-document edit reddens the two-edits assertion. P7: aggregating ONE SIDE ONLY reddens the CORRESPONDENCE assertion -- the control that establishes subtask 3 is not vacuous. P8: dropping a module from exampleSources() fails the published-artifacts probes. P9 is the standing re-run of a PREVIOUS sprint's perturbation, Sprint 35's P1: deleting test/fixtures/all-methods.ts's completion handler alone reddens four tests because resolve without completion stops the config LOADING. Any of these going green is CLASSIFIED -- gone quiet, disarmed, edit-grew-a-second-half, or target-deliberately-removed -- and only the first two are defects.",
-      "SHIPPED IN 82b82fc AND 1210a76. 436 green from a RE-MEASURED 428, 30 files from 29 -- EIGHT ADDED, NONE REMOVED, NONE WEAKENED. Each DoD command run SEPARATELY AND UNPIPED with the exit read directly: `bun test` 0, `oxlint` 0 (the same TWO pre-existing require-yield warnings, in the same two fixtures), `oxfmt --check .` 0, `tsc --noEmit` 0.",
-      "THE PLAN'S OWN SUBTASK SPLIT WAS OVERRIDDEN BY A CRITERION, DISCLOSED RATHER THAN QUIETLY MERGED: subtasks 1 and 2 planned a commit each, and criterion 6 says the pin moves ONCE FOR THE PAIR. Two commits would have moved it TWICE and left an intermediate tree advertising half an example, which is the state the value coupling exists to rule out. The plan was wrong and the criterion was right.",
-      "FOUR NAMES PUBLISHED OF FIVE CANDIDATES, AND THE FIFTH'S REFUSAL IS THE MEASUREMENT WORKING. Each module was written FIRST and `tsc --noEmit` READ: it demanded DocumentDiagnosticParams and DocumentDiagnosticReport, then DocumentFormattingParams and TextEdit, and NEVER `Diagnostic` -- the items are an array literal inside a return the declared result type contextually types. The line fell BETWEEN the candidates rather than around them, which a predicted set would have got wrong in the safe direction.",
-      "AN EVIDENCE-SHAPED REVERSAL CONDITION FIRED ON ITS OWN TERMS, WHICH IS WORTH MORE THAN THE TWO NAMES IT BOUGHT. src/types.ts's formatting block read `what would reverse it is an example that must NAME one of them`, written at Sprint 33 by someone with no such example in view. examples/formatting-trailing-whitespace.ts is that example. A condition written to be CHECKABLE was checked rather than re-argued.",
-      "AND THE RULING'S REAL CONTENT IS A DISTINCTION NOBODY HAD DRAWN: publication is about EXTRACTION, NOT ABOUT THE METHOD. A handler written INLINE in a config still needs none of these names. That is why test/fixtures/diagnostic-offsets.ts and formatting-offsets.ts were left UNANNOTATED -- they are now the ONLY standing evidence for the half of the rule that decided which candidates were refused.",
-      "A COUNT CLUSTER FOUND BY GREP AND NONE OF IT BY READING: SEVEN SITES ACROSS FOUR FILES said `the eight` while publicProtocolNames had held NINE since DiagnosticSeverity landed -- ALREADY FALSE AT HEAD, deepened to thirteen by this sprint. ONE OF THEM WAS A TEST NAME, which is the Sprint-29 entry's exact case: a home nobody thinks to check and invisible to any search for comment syntax. Two probe FILENAMES and a VARIABLE carried the same stale number. All replaced by naming. NO MATCHER LOOSENED AND NO EXPECTED VALUE MOVED in any of them -- said explicitly because `edited` and `weakened` read identically at Review.",
-      "THE ONE EXPECTED VALUE THAT MOVED IS THE PIN, AND IT GAINED RATHER THAN LOST: test/lifecycle.test.ts's toEqual took two keys, its title stopped naming two providers and now names the PROPERTY (`a provider for every method the example supplies`), and its comment moved with them. The `only exact-equality pin` claim was RE-MEASURED BY THE EXECUTOR rather than carried: eleven capability sites, TEN driving fixtures, read at the start argument of each.",
-      "CRITERION 10'S FAILURE MODE WAS OBSERVED BEFORE THE FIX RATHER THAN PERTURBED AFTER IT, which is stronger and was free: with the modules wired but exampleSources() not yet updated, TEN probes failed and EVERY message read `Module not found` or `TS2307: Cannot find module`. That is the misdiagnosis the criterion names, seen in its natural habitat. P8 reproduced it deliberately: the SAME ten.",
-      "NINE PERTURBATIONS RUN, FULL SUITE EACH TIME AND REVERTED BETWEEN, so every `alone` claim is checkable against how many RAN -- 436 in all nine. P1/P2 (import broken): 56 tests, including all four named assertions BY NAME -- a broken import stops the config loading, so DEFENDED AND EXPLICITLY NOT ISOLATED. P3 (diagnostic returns empty): the two-findings assertion by name. P4 (formatter returns null): the two-edits assertion by name. P10 (every line flagged): reddens THE CLEAN-LINE TEST, which is the S6 pairing for criterion 4 and the one perturbation where correspondence stays GREEN -- so that assertion is measured NON-SUBSUMED.",
-      "P5 AND P6 ARE CRITERION 3(c) ITSELF, one for each side: aggregating the diagnostic alone, then the formatter alone, each reddens FOUR tests -- that side's shape assertion AND the correspondence assertion, on both runtimes. So correspondence is DEFENDED and EXPLICITLY NOT ISOLATED, the wording standard ruled at Sprint 33.",
-      "AND THE ISOLATING PERTURBATION IS NOT MERELY UNBUILT, IT IS LOGICALLY IMPOSSIBLE -- CLASSIFIED, NOT REPORTED AS A GAP. Both handlers are pinned by exact equality to THE SAME hand-written `expectedRanges`, so `diagnostic == expected` and `formatter == expected` ENTAIL `diagnostic == formatter`: no edit can redden correspondence while leaving both shape tests green. That is a DESIGN OUTCOME, not means lacking, and the S11 entry exists precisely so it is not written in the language of a coverage gap. THE ASSERTION IS KEPT ON THE SPRINT-31 GROUND: it is the ONLY assertion that NAMES the property, two exact-equality diffs are detection that ARRIVES WITHOUT NAMING ITS CAUSE, and A LEGITIMATE FUTURE EDIT ACTIVATES IT -- loosen either shape test and correspondence becomes the first and only thing to fail. WHAT REMAINS AT RISK: nothing about today's code, and the pairing of a FUTURE third method, which this assertion would not reach.",
-      "THE STANDING RE-RUN REPRODUCES SPRINT 35 EXACTLY: deleting all-methods.ts's completion handler alone reddens the same FOUR tests, same two titles on both runtimes. A REPRODUCTION AND NOT INDEPENDENT, run against a tree whose denominator moved from 428 to 436 while the four did not. Neither gone quiet nor disarmed -- it did not go green at all, so the four-outcome vocabulary was not needed this sprint.",
-      "ONE COUNT IN PROSE DECLINED, WITH THE COST NAMED SO IT IS DISCIPLINE RATHER THAN TIMIDITY: test/resolve.test.ts says a Sprint-34 perturbation reddens `TWENTY ASSERTIONS ACROSS FIVE FILES`. This sprint added no capability equality site, so nothing here falsifies it -- and correcting the number without RE-RUNNING that perturbation would replace a measurement carrying its provenance with a guess, which is worse than a number that may be stale and says who took it.",
-      "NOTHING WAS SPLIT: both negative controls are constructible for BOTH halves, so the PBI's standing condition -- `if either half's negative control turns out unconstructible, they split` -- did not fire.",
-      "`NONE WEAKENED` IS A COVERAGE CLAIM AND WAS MEASURED RATHER THAN RECALLED, because S13 forbids this one the `reasoned` option the justification standard otherwise allows. Diffed 8c69225..HEAD over test/ and src/ for every line containing `expect(`: SEVEN ADDED, ZERO REMOVED, ZERO CHANGED -- all seven in the new file. The matcher inventory moved in one direction only (toBe 314->315, toEqual 145->148, toContain 128->130, toBeGreaterThan 6->7, the rest identical), so no assertion was traded down. The pin's own `expect(...).toEqual({` line is UNCHANGED and only the object literal grew.",
-      "AND THE SWEEP CAUGHT ONE OF THE EXECUTOR'S OWN, WHICH IS THE ENTRY EARNING ITS KEEP RATHER THAN BEING OBEYED: README's `each file imports the ones beside it`, WRITTEN THIS SPRINT AND FALSE WHEN WRITTEN -- only the config imports the handler modules, only the formatter imports a sibling, and wordnet.d.ts is imported by nobody. A coverage claim about a file set, in published prose, by someone who had the set open. Fixed in 53cfd3d by reading every import in examples/. Third instance this sprint of a claim that READS AS CHECKED, and the second one the author made.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 36,
+      improvements: [
+        {
+          action:
+            "A COUNT CAN LIVE IN A FILENAME, AND A CONTENT GREP DOES NOT SEE ONE. Extension of the grep-the-claim's-words entry: search FILENAMES and TEST NAMES as well as file contents. Measured this sprint -- seven sites said `the eight` against a nine-name list, one in a test name and TWO IN PROBE FILENAMES.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "`NONE WEAKENED` IS DIFFED, NOT ASSERTED. It is a COVERAGE CLAIM and S13 forbids recalling one; diffing every `expect(` line across test/ and src/ is cheap and gives a direction, not an impression. MEASURED this sprint: seven added, zero removed, zero changed, and the pin's toEqual unchanged with only the object literal grown. The PO records having accepted that claim ON ASSERTION FOR A DOZEN SPRINTS.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A COUNT THAT IS A MEASUREMENT RESULT CARRIES PROVENANCE AND IS NOT EDITED WITHOUT RE-MEASURING; A COUNT THAT IS A DESCRIPTION IS REPLACED BY NAMING. DIFFERENT OBJECTS THAT LOOK IDENTICAL IN PROSE, and the distinction bounds prefer-naming-to-counting so it is not over-applied to numbers that are evidence.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 35,
       improvements: [
