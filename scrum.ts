@@ -202,9 +202,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "Narrow the cleanup local in `driveGenerator` to the ITERATOR CONTRACT and guard the call, which is the shape the tuple's `AsyncIterable` requires. THE REAL CONTENT IS THE NARROWING, NOT THE `?.`: measured, a naive optional call on an `AsyncGenerator` compiles because `?.` does not widen the result to `| undefined`, so the guard is unreachable and unverifiable. Behaviour is identical; no published type moves.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "d37f746",
+            message:
+              "refactor(methods): close the abort cleanup over the iterator contract, not the generator one",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE SHAPE THAT LANDED: a local `cleanup: AsyncIterator<unknown[], unknown[] | null, void>` at the abort site, assigned from `chunks`, and the call guarded -- `cleanup.return?.(null).then(undefined, ...)`. All three type arguments spelled, matching `ErasedGeneratorHandler`. `chunks` itself is untouched, so the iteration path carries no part of this.",
+          "THE SUBTASK'S OWN PREMISE WAS MEASURED RATHER THAN INHERITED, per Sprint 41: `under AsyncGenerator a naive ?. compiles and the guard is unreachable`. BOTH FORMS give `tsc --noEmit` EXIT 0 on the un-narrowed tree -- `chunks.return(null)` (the baseline) and `chunks.return?.(null)` (edited, measured, reverted). SO P1 GENUINELY CANNOT EXIST WITHOUT THE NARROWING, and the `?.` before it defended nothing.",
+          "P1, remove the `?.`: FIRES, `tsc --noEmit` EXIT 1. EXPECTED TS18048, OBSERVED TS2722 `Cannot invoke an object which is possibly 'undefined'` at src/methods.ts(1029,9). NAMED RATHER THAN SMOOTHED: the recorded code is wrong for this compiler -- typescript 7.0.2 reports the INVOCATION of a possibly-undefined member, not the member read -- and the perturbation flips the intended obligation either way. INDEPENDENT: no recorded perturbation existed for it.",
+          "P2, delete the `.then` rejection handler: EXPECTED to flip BOTH `cleanup that throws is named on stderr with tsudoi's own prefix` AND `cleanup that threw or is still parked leaves the session exiting 0, where an unhandled rejection exits 1`. OBSERVED 5 red, not 4 -- both named tests on BOTH runtimes, PLUS `a session whose cleanup threw answers a later completion normally` ON deno ONLY. THE EXTRA IS DOWNSTREAM AND ASYMMETRIC BY RUNTIME: deno kills the process on the unhandled rejection before the later completion can be answered, bun does not. The site comment's claim that dropping the handler makes both halves fail together is CONFIRMED and is if anything understated. INDEPENDENT.",
+          "P3, `await` the cleanup instead of firing it: EXPECTED to flip `cleanup that never settles does not delay the -32800`. OBSERVED 4 red -- that test on both runtimes, PLUS `cleanup that threw or is still parked leaves the session exiting 0...` on both. COLLATERAL AND EXPLAINED: the parked session's drive never returns, so shutdown never completes and that test times out at 18s. It is not a second property; it is the same park observed at exit. INDEPENDENT.",
+          "STANDING RE-RUN, classified per Sprint 35: WENT AS RECORDED / TARGET UNCHANGED. Deleting the close entirely reddens `a cancelled STREAMING completion is closed, so the handler's finally runs` and `a cancelled AGGREGATING completion is closed too, though nothing streamed` on both runtimes -- 12 red in total, the whole of test/cleanup.test.ts's six cases, since with no close nothing runs the author's finally at all. REPRODUCES the recorded Sprint-35 perturbation.",
+          "expect( DIFF AGAINST THE COMMITTED PREDICTION OF +0/0/0: OBSERVED +0/0/0. 699 source `expect(` lines, 1279 runtime expect(), 452 tests, all unchanged. THE COUNTERFACTUAL THE PLAN NAMED did not fire -- no changed or removed line in test/cleanup.test.ts or test/cancellation.test.ts -- which is what makes the zero a confirmation rather than an absence of work.",
+        ],
       },
       {
         test: "BORN-GREEN. SHARED-MOMENT: NONE -- independent of subtask 1, either may land first. THREE NEW SOURCE-SCAN ASSERTIONS in this repository's readme.test.ts idiom, and the ORDER MATTERS: a COUNT GUARD first, so the enumeration is not vacuous; then every completion config carries an explicit completeness ruling; then the NEGATIVE CONTROL, a config with its ruling removed must be detected. That converts `was it ruled` from a Review recollection into a RED, and a new completion fixture added without a ruling fails.",
