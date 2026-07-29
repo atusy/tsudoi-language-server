@@ -276,6 +276,20 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/network/i, /cache/i, /vscode-languageserver-protocol/],
   },
   {
+    // Named because it is the ONLY breaking change this package has shipped to
+    // its published type surface, and because its blast radius is the part a
+    // reader will otherwise guess wrong. Upstream's TextDocument is a SUPERSET
+    // of the four-member shape it replaced, so receiving code is untouched and
+    // only an IMPLEMENTOR -- someone's own hand-written mock -- has anything to
+    // do. A reader who assumes the opposite rewrites handlers for nothing.
+    //
+    // `TextDocument\.create` is in the tokens because the remedy is the half a
+    // reader needs: a break with no named remedy is an announcement, not a
+    // migration note.
+    name: "the document type change breaks implementors, not the code that receives a document",
+    tokens: [/TextDocument/, /implement/i, /receive/i, /TextDocument\.create/],
+  },
+  {
     name: "the package is not published",
     tokens: [/not published/i, /registry/i],
   },

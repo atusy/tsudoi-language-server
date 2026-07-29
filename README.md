@@ -30,7 +30,9 @@ longer works fails the suite.
 - **a checkout of this repository**, with `bun install` already run in it. The tarball is built
   from that checkout, and building it compiles the sources.
 - **a network connection**, the first time: installing the tarball fetches tsudoi's own
-  dependency `vscode-languageserver-protocol` unless bun's cache already holds it.
+  dependencies -- `vscode-languageserver-protocol`, which brings `vscode-jsonrpc` and
+  `vscode-languageserver-types` with it, and `vscode-languageserver-textdocument`, which brings
+  nothing -- unless bun's cache already holds them.
 
 Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **deno must be on
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
@@ -158,6 +160,51 @@ and stops:
 
 The last row is the one that matters to an editor: a server that printed a diagnostic to stdout
 would desynchronise its client instead of failing.
+
+## The documents your handlers receive
+
+`context.tsudoi.documents.get(uri)` gives you a `TextDocument` from
+`vscode-languageserver-textdocument` -- Microsoft's own package, out of the same repository as
+the protocol types, and the one those types' own deprecation notice points at. tsudoi keeps the
+store in step with the editor and hands you the real thing:
+
+| member                         | what it answers                              |
+| ------------------------------ | -------------------------------------------- |
+| `uri`, `languageId`, `version` | what the editor said about the buffer        |
+| `getText()`                    | the whole buffer                             |
+| `getText(range)`               | only the text between two positions          |
+| `positionAt(offset)`           | the `{ line, character }` at a string offset |
+| `offsetAt(position)`           | the string offset of a `{ line, character }` |
+| `lineCount`                    | how many lines it has                        |
+
+The last four are the reason this type is not tsudoi's own. Anything that answers about the word
+under the cursor needs offset arithmetic, and while tsudoi handed out a four-member shape every
+config had to write that arithmetic again -- in code this project cannot see and could never fix.
+Now it comes from a package other people maintain.
+
+**Adopting it broke one thing, and it is worth knowing which.** Nothing that RECEIVES a document:
+`uri`, `languageId`, `version` and `getText()` mean exactly what they meant before, and the new
+type has strictly more members than the one it replaced, so every handler that compiled still
+compiles. What breaks is code that IMPLEMENTS the type -- in practice a hand-written mock in your
+own tests, which used to be an object literal with four members and no longer satisfies anything:
+
+```ts
+// no longer a TextDocument: positionAt, offsetAt and lineCount are missing
+const document = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
+```
+
+Build one instead. `TextDocument.create` is the remedy and the only supported way to make a
+document at all:
+
+```ts
+import { TextDocument } from "vscode-languageserver-textdocument";
+
+const document = TextDocument.create(uri, "plaintext", 1, "hello");
+```
+
+That import is the one place you name the package yourself. `@atusy/tsudoi/types` exports the
+TYPE and deliberately not the value, because tsudoi builds the documents and your handlers only
+receive them -- a mock in your own tests is the exception, and it is the only one.
 
 ## Cleanup in a handler
 

@@ -152,8 +152,9 @@ function fail(step: string, result: TypeCheckResult): never {
       "so this fails the suite instead of falling back to the checkout -- everything passes from",
       "inside the repo while a stranger still cannot resolve, or run, what they were sent.",
       "`bun pm pack` runs prepack, so a build failure in tsconfig.build.json surfaces here too.",
-      "A cold bun cache needs network for vscode-languageserver-protocol; that is the one",
-      "environmental dependency this probe adds.",
+      "A cold bun cache needs network for tsudoi's declared dependencies --",
+      "vscode-languageserver-protocol and vscode-languageserver-textdocument, plus what the",
+      "first of those pulls in; that is the one environmental dependency this probe adds.",
       result.output,
     ].join("\n"),
   );
