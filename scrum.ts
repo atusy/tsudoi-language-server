@@ -207,9 +207,30 @@ const scrum: ScrumDashboard = {
         implementation:
           "Rule completeness for every completion config in the repository. THE RULING LIVES AT EACH FILE as a comment, per the Lifetime Rule, because the violating edit -- changing what that config returns -- is made there. THE TRAP, named because it satisfies every compiler and changes nothing: converting each bare array into `{ isIncomplete: false, items }` is A RE-TYPE AND NOT A RE-READ. `examples/completion-path.ts` is where to look first: it streams filesystem paths, so `this list is final, do not re-query` is probably false. This subtask RULES; the tuple subtasks ACT -- a config ruled NOT complete is an evidence-shaped trigger for the work below rather than a loose end.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3345a7d",
+            message:
+              "docs(configs): rule on completeness at every completion handler, rather than re-typing them",
+            phase: "green",
+          },
+          {
+            hash: "d989c6b",
+            message:
+              "test(completeness): turn `was it ruled` from a Review recollection into a red",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE 17-VERSUS-16 DISCREPANCY IS RESOLVED, AND THE RESOLUTION IS BETTER THAN A CORRECTED NUMBER: THE TWO COUNTS WERE COUNTING DIFFERENT OBJECTS. 17 is what `git grep -l -F 'textDocument/completion' -- 'examples/*.ts' 'test/fixtures/*.ts'` returns -- FILES THAT NAME THE METHOD -- and its seventeenth is test/fixtures/resolve-without-completion.ts, which names it ONLY IN PROSE to say it deliberately supplies none. 16 is the number of completion HANDLERS: 15 in-config declaration sites plus `pathCompletion` in examples/completion-path.ts, which is a handler module the demo config delegates to. NEITHER NUMBER IS ADOPTED. The list is ENUMERATED in test/completeness-ruling.test.ts and the exclusion is named with its reason, per Sprint 36: a count that is a DESCRIPTION is replaced by naming, and two numbers that disagree about the QUESTION cannot be reconciled by re-counting.",
+          "THE RULINGS, AND THEY ARE NOT ALL `COMPLETE` -- which the Review checklist warns is the answer most likely to mean nobody looked. TWO ARE `NOT COMPLETE`: examples/completion-path.ts, because `pathFragments`, `sourcesFor` and `itemsFrom` are ALL re-derived from the character under the cursor, so typing `/` REPLACES the directory being listed rather than narrowing the previous answer; and examples/tsudoi.config.ts, which delegates to it. THREE ARE `NO CLAIM`, a distinct answer rather than an omission: completion-null-only.ts answers `null` and the specification's equivalence is stated for a SUPPLIED array; throws-on-cancel.ts never produces a result at all; and completion-throws.ts's first call is answered as an ERROR. The remaining eleven are COMPLETE, each because its payload is a MODULE CONSTANT no parameter reaches -- checked per file, not asserted as a class.",
+          "AN UNPLANNED FINDING AT examples/tsudoi.config.ts, AND IT IS THE ONE A RE-TYPE WOULD HAVE ERASED. That handler carries a SECOND bare array: `return []` when the document is not in the store. It means `this server cannot see the buffer yet` and goes out as `the candidate set is complete and empty`. Converting it to `{ isIncomplete: false, items: [] }` would have made the wrong claim EXPLICIT and called it progress. Recorded at the site as a second evidence-shaped trigger.",
+          "A DISTINCTION THAT HAD TO BE DRAWN AT SEVERAL SITES AND IS RECORDED ONCE HERE: STREAMING IS NOT INCOMPLETENESS. A parked or batched handler is SLOW, not partial -- `isIncomplete` says the set MAY GROW AS THE USER TYPES, streaming says the set ARRIVES IN PIECES, and the two are independent. Named at completion-gate.ts and at `batchSize` in completion-path.ts because a reader who conflates them concludes that DRAINING THE ITERATOR MAKES THE ANSWER COMPLETE -- which is exactly the merge rule this PBI forbids.",
+          "S2-P1, drop one file from the enumeration: reddens EXACTLY 1, `the enumerated completion handlers are exactly the files that name the method`, and the diff NAMES the dropped path. INDEPENDENT -- the plan named no perturbation for this subtask beyond requiring the count guard to come first. S2-P2, reword the marker in test/fixtures/completion-gate.ts from `COMPLETENESS RULING:` to `COMPLETENESS:` -- the REALISTIC degradation, the ruling still present and still correct, only the marker gone: reddens EXACTLY 1, `every completion handler carries a completeness ruling at its own site`, naming the file. INDEPENDENT. THE THIRD TEST IS THE PERMANENT PAIRED CONTROL rather than a perturbation, per Sprint 6: `no file is missing a ruling` and `this scan cannot see a missing ruling` produce the SAME EMPTY LIST.",
+          "WHAT STAYS AT RISK, classified per Sprint 11 BEFORE the work as criterion 5's verification requires: NO PERTURBATION CAN FLIP A DoD CHECK ON WHETHER A RULING IS CORRECT, because a bare array and a deliberate `isIncomplete: false` are the same value on the wire and a marker with a wrong sentence after it passes the scan. FOUR GREEN IS NOT EVIDENCE HERE. What the scan closes is narrower and is how the unchosen default arrived in the first place: A NEW COMPLETION HANDLER WITH NO RULING AT ALL. That limit is stated in the test file itself rather than only here.",
+          "expect( DIFF AGAINST THE COMMITTED PREDICTION OF +3/0/0: OBSERVED +3 ADDED, 0 REMOVED, 0 CHANGED. 699 -> 702 source `expect(` lines, runtime 1279 -> 1282, tests 452 -> 455, files 31 -> 32. NO DEVIATION. The three are one `expect(` per test by construction -- the enumeration guard, the headline and the control -- and they run ONCE rather than per runtime, which is what makes the runtime arithmetic +3 rather than +6.",
+        ],
       },
       {
         test: "EXPECTED-RED. The tuple's own subtasks are planned by the executor against the criteria, not enumerated here -- what IS fixed is the boundary below.",
