@@ -228,44 +228,6 @@ const scrum: ScrumDashboard = {
         "THREE TRIGGERS MAKE IT URGENT: (1) a SECOND artifact precondition appears -- one is self-service, two compound and the argument stops holding; (2) the stale-dist detector is weakened or removed -- it is the single thing converting a red clone into a self-service one; (3) an external contributor hits it and the README does not resolve them.",
       ],
     },
-    {
-      id: "PBI-27",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "WITHDRAWN -- declare vscode-languageserver as the single dependency",
-        benefit: "WITHDRAWN",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "WITHDRAWN. Kept ONLY as custody until PBI-33 re-homes what it carries; deleted in that same commit.",
-          verification:
-            "the stakeholder declined the package. Its surviving content is enumerated in PBI-33's criteria.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WITHDRAWN. A withdrawn PBI is NOT a home -- this entry exists to be deleted by PBI-33, not to store anything.",
-      ],
-    },
-    {
-      id: "PBI-28",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "WITHDRAWN -- serve on createConnection and take onInitialize",
-        benefit: "WITHDRAWN",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "WITHDRAWN. Kept ONLY as custody until PBI-33 re-homes what it carries; deleted in that same commit.",
-          verification:
-            "the stakeholder declined the package. Its surviving content is enumerated in PBI-33's criteria.",
-        },
-      ],
-      status: "draft",
-      notes: ["WITHDRAWN. Reversal condition (b) never needs measuring."],
-    },
   ],
 
   completed: [
@@ -360,8 +322,15 @@ const scrum: ScrumDashboard = {
         implementation:
           "the why-not record itself, written into that block: the case AGAINST (58 members, `onUnhandledNotification` and `trace` absent so two of the four `Omit` keys silently no-op, the surviving ungated notification registrars, the lifecycle hooks an `InitializeRequest` override skips, no logger argument) and the case FOR (`fillServerCapabilities` adds nothing, `onShutdown` coexists with -32600).",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7cfed16",
+            message:
+              "docs: record why the framework's connection is not taken, at the call that would take it",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE TOKENS ARE NOT DECORATION -- each defends one clause of criterion 1. The version-with-package pair is S8 AS AMENDED AT SPRINT 24: a path WITHOUT a version misleads, so the two are asserted ADJACENT rather than as two independent substrings. `vscode-languageserver` alone would be satisfied by the `vscode-languageserver-protocol 3.18.2` sentence ALREADY IN THIS FILE, which is why the token is the pair and not the name.",
           "`fillServerCapabilities` AND `onShutdown` ARE THE FOR-DIRECTION, and they are what makes this test defend the PO's headline ruling rather than only re-runnability: A RECORD THAT ONLY CARRIES THE CASE AGAINST IS AN ADVOCACY DOCUMENT. Delete either sentence and this reddens by name.",
@@ -374,11 +343,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "test/notifications.test.ts's block above `exit's entry declares always, and every other entry declares lifecycle` gains the sentence that removing the last `always` entry is a SCOPE DECISION and not a cleanup: that entry is the only inhabitant of the `always` arm, so deleting it collapses `NotificationGate` to one representable value and makes this test a tautology.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "681c59a",
+            message: "docs: re-home the last two decisions PBI-27 and PBI-28 were still holding",
+            phase: "green",
+          },
+        ],
         notes: [
           "WHY IT BELONGS AT THIS TEST rather than at the type: the S16 improvement is about a defence being REMOVED, and the thing that would be removed is what this test asserts. It is the site of the edit, which is the Lifetime Rule's first clause.",
-          "SHIPS IN THE SAME COMMIT AS S3 AND S4 -- criterion 2 binds the two other homes to the deletion commit.",
+          "PLANNED TO SHIP IN THE SAME COMMIT AS S3 AND S4, and it could not: the pre-commit hook forbids scrum.ts sharing a commit. Shipped with S3 in 681c59a, one commit BEFORE the deletion, which is the order that keeps the homes in place first. Recorded in this sprint's decisions.",
         ],
       },
       {
@@ -386,8 +361,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "RequestOnlyConnection's doc block gains the Pick-not-Omit instrument preference, written CONTINUOUS WITH the `A MISSPELLED KEY HERE IS A SILENT NO-OP` paragraph already there rather than as a fresh essay, plus its reversal condition.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "681c59a",
+            message: "docs: re-home the last two decisions PBI-27 and PBI-28 were still holding",
+            phase: "green",
+          },
+        ],
         notes: [
           "EXPLICITLY NOT A MANDATE TO CONVERT TODAY'S `Omit`, and the reason is on the PBI: a change with no defect to fix is churn.",
           "THE REVERSAL CONDITION NAMES BOTH PINS, because `the enumeration pin` is under-specified against two that defend different things -- read this session in test/notifications.test.ts: ProtocolConnectionHasTheseMembers moves when the DEPENDENCY's member set moves, BoundaryIsTheObservingMembers moves when the `Omit`'s key set moves. Losing the first is what would let a silent no-op arrive from upstream, which is exactly the failure `Pick` forecloses by construction.",
@@ -396,9 +377,9 @@ const scrum: ScrumDashboard = {
       {
         test: "none -- BORN GREEN, and the assertion that WOULD have covered it is recorded as unconstructible in this sprint's decisions rather than replaced by a weaker one.",
         implementation:
-          "PBI-27 and PBI-28 are deleted from product_backlog, in the same commit as S2 and S3, whose message names where each surviving decision went by file and symbol.",
+          "PBI-27 and PBI-28 are deleted from product_backlog by a commit whose message names where each surviving decision went by file and symbol. NOT the same commit as S2 and S3 -- the hook forbids it, and the reason is a decision below rather than a silent departure.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "PBI-30 WAS CHECKED, NOT ASSUMED: grep over the repo finds PBI-27/PBI-28 only at PBI-33's own criterion and note and at the two entries themselves. PBI-30's notes name neither, so there is nothing to fix there -- recorded as a CHECKED NEGATIVE, since silence would read as not having looked.",
@@ -413,6 +394,11 @@ const scrum: ScrumDashboard = {
       "NOT CONSTRUCTED, and this is the S11 classification rather than an unremarked absence: the assertion that WOULD have defended the deletion is the ORPHAN RULE made machine-checkable -- no live backlog item names a PBI id that is not in the backlog. It cannot be built THIS SPRINT because PBI-33's own criterion and note name PBI-27 and PBI-28, and they must: they ARE the record of the deletion. Removing the ids from PBI-33 to satisfy a test would falsify the audit trail the criterion requires. A test excepting one id is an exception, and this project has already ruled that exceptions rot. WHAT REMAINS AT RISK: a future note citing a deleted PBI is caught by nothing but a reader. Verified by hand this sprint instead.",
       "AND THE PIN THAT WAS DECLINED, so it is not read as an oversight: `product_backlog contains no PBI-27 and no PBI-28` was considered and refused. Nothing realistic would ever make it fail, which is S9's own definition of a vacuous criterion, and S7 bounds exactly this pressure -- a test that resists no legitimate change while defending no requirement.",
       "ORDERING: B1 is the only subtask with a real RED and goes first, alone, so its perturbation is observed against a suite nothing else moved. S2, S3 and S4 ship together in the second commit because criterion 2 binds them to each other.",
+      "CRITERION 2'S SINGLE-COMMIT CLAUSE COULD NOT BE MET, AND IT IS RECORDED AS UNCONSTRUCTIBLE RATHER THAN QUIETLY DROPPED -- FOR THE PO TO RULE ON AT REVIEW. The criterion asks that the two other homes and the deletion land IN THE SAME COMMIT. This repository's pre-commit hook (~/.config/git/hooks/pre-commit) REFUSES any commit whose staged set includes scrum.ts alongside another file, and it reads the WORKING TREE, so scrum.ts cannot even be dirty while another file is committed. Not a preference and not bypassable without disabling a repository rule. DELIVERED AS TWO COMMITS IN THE ORDER THAT PRESERVES THE POINT: 681c59a writes both homes, then the scrum.ts commit deletes the entries and names where every decision went. S9'S ACTUAL CLAUSE IS INTACT -- the audit trail is a COMMIT MESSAGE and never itself a home, and it is in the deletion commit. What is lost is atomicity: between the two commits the homes exist and the custody entries still do too, which is the harmless direction.",
+      "PBI-33'S OWN NOTE IS LEFT VERBATIM, DELIBERATELY, and flagged rather than tidied: it reads `until it ships, PBI-27 and PBI-28 are kept solely as custody`, which now points at entries that are gone. It was TRUE WHEN WRITTEN, it is the deletion's own record alongside the criterion, and rewriting a PO-authored note during execution is not the executor's call. It leaves the backlog with PBI-33 at Review.",
+      "THREE PERTURBATIONS RUN, EACH FIRING ON ITS OWN ASSERTION AND NOTHING ELSE. (1) Strip `10.1.0` from the record: the token test reddens NAMING `the package WITH the version it was measured at` and the other 362 pass. (2) Delete the immediacy check from the extractor: the SITE control reddens ALONE -- so `at the line that would change it` is defended by something that can actually fail. (3) Make the extractor RETURN instead of throwing when the anchor is missing: the VACUITY control reddens ALONE. The tree was restored from a byte-verified copy after each.",
+      "NOTHING FAILED TO REDDEN THAT WAS EXPECTED TO. The three born-green subtasks were declared born-green AT PLANNING and stayed that way; no red was manufactured for any of them.",
+      "DoD, each command run separately and unpiped with its exit read directly: `bun test` 363 pass / 0 fail / 22 files, exit 0 (from 360 -- three tests added, no test removed or weakened); `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/ untouched; `oxfmt --check .` exit 0; `tsc --noEmit` exit 0.",
     ],
   },
   retrospectives: [
