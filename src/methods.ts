@@ -999,7 +999,7 @@ async function driveGenerator(run: {
         //
         // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
         // record of why. MEASURED under bun 1.3.13 and deno 2.9.2: when the
-        // author's `finally` itself yields, `chunks.return(null)` resolves
+        // author's `finally` itself yields, the `return(null)` below resolves
         // `{ value, done: false }` -- the return completion is suspended by
         // that yield. CONSEQUENCE: the generator stays parked INSIDE its own
         // finally and every statement after that yield -- the rest of their
@@ -1013,7 +1013,20 @@ async function driveGenerator(run: {
         // the yield unrun. tsudoi calls .return() correctly; the author's
         // own cleanup defers itself. Reporting it would be reporting
         // JavaScript, so PBI-12 was dropped on culpability, not on defect.
-        chunks.return(null).then(undefined, (error: unknown) => {
+        //
+        // THE ITERATOR CONTRACT AND NOT THE GENERATOR ONE, which is what makes
+        // the `?.` below a GUARD rather than decoration. `AsyncGenerator`
+        // REQUIRES `return`, so under it the optional call is unreachable and
+        // deleting the `?.` still compiles -- MEASURED, tsc --noEmit exit 0 in
+        // both forms, which means nothing here would have told us if the thing
+        // being closed stopped having a `return` at all. `AsyncIterator`
+        // declares `return` OPTIONAL, so this local is the narrower and
+        // therefore the honest type: what this drive actually needs of the
+        // thing it closes is the iterator contract, and every async generator
+        // satisfies it. Deleting the `?.` is now a compile error naming this
+        // expression.
+        const cleanup: AsyncIterator<unknown[], unknown[] | null, void> = chunks;
+        cleanup.return?.(null).then(undefined, (error: unknown) => {
           reportCleanupFailure(run.method, error);
         });
         return null;
