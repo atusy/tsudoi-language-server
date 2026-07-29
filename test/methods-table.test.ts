@@ -202,11 +202,13 @@ for (const runtime of runtimes) {
         }
 
         // EVERY METHOD IS COMPARED AT ONCE, NOT ONE ASSERTION PER ITERATION,
-        // and the reason is the Sprint-16 half of S9: a per-iteration `toBe`
-        // stops at the first divergence and prints -32800 against undefined
-        // WITHOUT NAMING WHICH METHOD DIVERGED, which is a real detection that
-        // arrives without naming its cause. The expected side is built from
-        // the table, so this stays one assertion covering every entry.
+        // AND THAT IS THIS TEST'S NEED RATHER THAN A RULE FOR THE FILE -- the
+        // test above keeps the per-iteration form and is right to. WHICH METHOD
+        // DIVERGES IS THE WHOLE SUBJECT HERE: the two drives disagreed about
+        // exactly this answer, so a failure that printed -32800 against
+        // undefined without naming the method would report the divergence
+        // without saying where it is. The expected side is built from the
+        // table, so this stays one assertion covering every entry.
         expect(answered).toEqual(codeForEveryMethod(requestCancelled));
 
         expect(session.unframedStdoutBytes).toBe(0);

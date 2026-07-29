@@ -45,9 +45,12 @@ import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * SO THE HONEST STATEMENT OF WHAT THIS FIXTURE ENFORCES IS NOW SHORTER THAN IT
  * WAS: a method added to the table and not added here fails NOTHING, whichever
  * drive it uses. A reader assuming otherwise would credit these tests with a
- * completeness they do not have. THAT IS FIVE UNDEFENDED HANDLERS OUT OF FIVE,
- * where Sprint 34 measured three out of four, and it is a residual with a PBI --
- * PBI-42 -- rather than a comment nobody acts on.
+ * completeness they do not have. THE PROPERTY RATHER THAN A FRACTION, because
+ * the paragraph above says why: EVERY handler in this file is undefended -- the
+ * ones standing here today are hover, completion, formatting, diagnostic and
+ * resolve -- where at Sprint 34 that could be said of the awaited-once ones
+ * only. It is a residual with a PBI -- PBI-42 -- rather than a comment nobody
+ * acts on.
  *
  * WHAT DOES NOT DEPEND ON THIS FILE AT ALL: the no-handler half of those tests,
  * which drives test/fixtures/no-methods.ts. A method joining the table joins
