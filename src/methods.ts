@@ -346,7 +346,10 @@ function failureDetail(error: unknown): string {
 }
 
 /**
- * How a cancelled request is answered, whatever its handler produced.
+ * How a cancelled request is answered ONCE IT REACHES answerUnlessCancelled,
+ * whatever its handler produced. The qualifier is the same one that block
+ * carries: a generator-driven method with NO handler returns before this, and
+ * answers `null`.
  *
  * LSP 3.17 permits answering normally instead, so this is a CHOICE: the client
  * has already discarded the request's context, and a stale result invites the
@@ -391,11 +394,28 @@ function requestContext(
  * Runs one config handler to the answer the client receives, under that
  * request's cancellation.
  *
- * Everything cancellation changes about a request is here and nowhere else: a
- * cancelled request answers -32800 whatever its handler produced, and a
- * cancelled handler's failure is not reported, because being aborted is why it
- * failed. The abort is re-read AFTER the handler settles, so a handler that
- * never looks at its signal is suppressed exactly like one that does.
+ * Everything cancellation changes about a request THAT REACHES THIS FUNCTION is
+ * here and nowhere else: a cancelled request answers -32800 whatever its handler
+ * produced, and a cancelled handler's failure is not reported, because being
+ * aborted is why it failed. The abort is re-read AFTER the handler settles, so a
+ * handler that never looks at its signal is suppressed exactly like one that
+ * does.
+ *
+ * THE QUALIFIER IS LOAD-BEARING AND WAS ADDED BECAUSE THE SENTENCE WITHOUT IT
+ * WAS FALSE. The generator drive returns early when the config supplies no
+ * handler, and that return sits AHEAD of this function -- so a cancelled request
+ * to a generator-driven method with NO handler is answered `null`, not -32800.
+ * MEASURED at Sprint 32 by P-D: deleting the fixture's awaited-once handler
+ * reddened nothing while deleting its generator-driven handler reddened the
+ * -32800 test.
+ *
+ * PRE-EXISTING AND REVEALED RATHER THAN INTRODUCED, and invisible until the two
+ * drives sat side by side -- three hand-written copies had hidden it. LSP
+ * permits either answer, so no requirement is breached. The PO has RULED THE
+ * DIVERGENCE SHOULD CLOSE AT -32800 FOR BOTH, on the ground that the claim above
+ * is the asset and preserving the divergence means weakening a stated principle
+ * to accommodate an ordering nobody chose; that is its own PBI rather than a
+ * change smuggled into the sprint that found it.
  *
  * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
  * awaited once and a completion handler is driven a chunk at a time, and
