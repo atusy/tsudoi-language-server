@@ -296,7 +296,79 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 37,
+    pbi_id: "PBI-46",
+    goal: "THE METHOD'S CANONICAL USE, SHOWN RATHER THAN LISTED: the demo config answers completionItem/resolve for a path item IT PRODUCED, with the detail that would have cost a stat per entry to fetch during completion -- size, mtime, dir-or-file. THE PAIRING THE HANDLER RESTS ON IS READ, NOT ASSUMED: src/types.ts rules that tsudoi keeps NO record of what a completion handler produced, so an unrecognised item MUST BE RETURNED UNCHANGED and the handler can only key off WHAT THE EXAMPLE ITSELF PUT ON THE ITEM -- which makes the marker a shared decision between the completion module and the resolve one, carried the way the trailing-whitespace pair carries its scanner: ONE definition imported, not two agreed by assertion. The pin in test/lifecycle.test.ts moves A SECOND TIME, deliberately and by criterion.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "Over the wire, on both runtimes: an item the demo config's own completion produced, sent back to completionItem/resolve, comes back carrying the file's SIZE, its MTIME and whether it is a directory or a file. Expected values are HAND-WRITTEN -- a fixture file of known byte length whose mtime is SET to a whole second by the test -- never computed by a second stat, because both sides running one syscall makes a correct reading and a consistently broken one produce the same observation.",
+        implementation:
+          "examples/ gains an EXTRACTED resolve handler, and examples/tsudoi.config.ts names it. The completion module marks the items it produces with the absolute path it already computed for their documentation, and EXPORTS that marker's shape and its reader so the resolve module imports rather than restates it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED, and the first failure should be the ABSENCE of the enrichment rather than a transport error: with no handler the router answers null, which is asserted elsewhere and is what this test must not be satisfied by.",
+          "PUBLICATION IS MEASURED, NOT PREDICTED: the module is written, `tsc --noEmit` is read, and whatever it demands of src/types.ts is published then -- Sprint 36 recorded that a predicted set would have been wrong in the direction nobody audits.",
+        ],
+      },
+      {
+        test: "AN ITEM THE EXAMPLE DID NOT PRODUCE COMES BACK UNTOUCHED, observed IN THE SAME SESSION as an enriched one and after it.",
+        implementation:
+          "The handler returns an item carrying no marker of its own verbatim, and says at the site that the ruling is src/types.ts's rather than this example's invention.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "CRITERION 3 SAYS THIS CONTROL IS REASONED, NOT MEASURED, AND THE REASONING IS THE SUBTASK: it is CONSTRUCTIBLE -- the demo config takes a raw completionItem/resolve request like any other config -- but it is VACUOUS ALONE. `unchanged` is satisfied by a handler doing the right thing, by tsudoi echoing the params, and by no handler being called at all, which is the discriminator test/resolve.test.ts already records for its own fixture. Pairing it with an enrichment in the SAME session is what makes it record anything; two sessions would leave open that the second server never loaded the handler.",
+          "SO THE CRITERION IS EXCEEDED AND THAT IS DISCLOSED HERE, IN THE COMMIT BODY AND IN THE SPRINT RECORD rather than silently: the criterion anticipated `unconstructible -> classify`, and the answer came out as neither branch. Reporting a closable residual as a coverage gap is the S11 failure this project has already made once.",
+        ],
+      },
+      {
+        test: "test/lifecycle.test.ts's exact-equality pin on the demo config's advertised capabilities moves for the second time, in the file that loops over both runtimes -- so one source edit moves two assertions.",
+        implementation:
+          "The pinned value, the test's title and the comment above it all move together. THE COMMENT IS PART OF THE EDIT AND NOT DECORATION: it claims the config advertises ONE PROVIDER FOR EACH METHOD IT SUPPLIES, and resolveProvider is a key INSIDE completionProvider rather than a sixth top-level one, so that sentence stops being literally true at the moment the value moves.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "UNAVOIDABLE AND PRICED IN: it is why PBI-46 is its own item rather than bundled into PBI-44.",
+        ],
+      },
+      {
+        test: "Every claim this sprint falsifies is corrected in the sprint that falsifies it, and the sweep is a GREP FOR THE CLAIM'S WORDS OVER CONTENTS, FILENAMES AND TEST NAMES rather than a walk of the files this sprint edits.",
+        implementation:
+          "Known already, from reading the artifacts in this session: examples/tsudoi.config.ts's paragraph saying THIS CONFIG SUPPLIES NO RESOLVE HANDLER (criterion 2); README's example table and the POSITIONAL claim `the last two are a matched pair`, which falsifies on APPEND rather than on edit; src/types.ts's per-example inventory of which names each example needs; test/helpers/install.ts's exampleSources(), whose omission produces TS2307 across the installed-consumer probes and LOOKS EXACTLY LIKE A RESOLUTION BUG.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A LIST FOUND BY READING IS NOT A COMPLETE LIST, which is what the grep is for: a diff answers `did this change?` and never `is this list complete?`.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "The agentic-scrum command and its three skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
+        impact:
+          "None so far. Every sprint since it was filed has proceeded from scrum.ts itself and from the standing conventions, this one included.",
+        request:
+          "Install the agentic-scrum command and skills, or rule that scrum.ts plus the standing list IS the process and close this.",
+        status: "waiting_human",
+        notes: [
+          "CARRIED FORWARD RATHER THAN RE-DISCOVERED: verified absent again at the start of this sprint by listing the installed skills.",
+        ],
+      },
+    ],
+    decisions: [
+      "BASELINE RE-MEASURED BY THE EXECUTOR AT 63dde38 RATHER THAN CARRIED FROM THE BRIEF, per the handoff rule: 436 pass across 30 files. The brief's other three DoD numbers are re-measured at the end unpiped, exits read directly.",
+      "PLANNED PERTURBATIONS, DECLARED BEFORE ANY OF THEM RUNS so none is a rule fitted to its own result: (P1) break the new module's IMPORT in the demo config; (P2) break the handler's RETURN; (P3) REMOVE THE MARKER the completion module puts on its items, which is the drift control and the only one that can observe the two modules disagreeing; (P4) ENRICH UNCONDITIONALLY, which is what makes the unrecognised-item half non-vacuous; plus one re-run of a Sprint-36 perturbation, classified per the four-outcome vocabulary if it goes green.",
+      "THE NEW TEST FILE MOVES THE TOTAL, so no perturbation this sprint claims `ALONE` without stating how many tests RAN.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 36,
