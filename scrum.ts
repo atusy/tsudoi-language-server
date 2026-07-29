@@ -39,34 +39,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-42",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "know at compile time that the all-methods fixture still covers every method",
-        benefit:
-          "tests that believe they exercise five methods cannot silently exercise four and stay green",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The fixture declares its methods over `Method` so that a method added to MethodMap WITHOUT a handler is A COMPILE ERROR (TS2741, exactly as requestEntries already produces).",
-          verification:
-            "COMPILE-TIME EXHAUSTIVENESS, NO ASSERTIONS, AND IT GROWS WITH THE TABLE BY CONSTRUCTION. ONE LINE RATHER THAN FIVE TESTS.",
-        },
-        {
-          criterion:
-            "THE ANSWERS STAY UNDEFENDED DELIBERATELY, and THE REASON IS RECORDED AT THE FIXTURE.",
-          verification:
-            "`defend every handler` IS FIVE NEAR-IDENTICAL TESTS AND DIES ON S7 -- they would resist legitimate fixture changes without defending a requirement. THE FIXTURE'S JOB IS TO EXIST AND ROUTE, NOT TO ANSWER. Recorded at the site BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "THE TITLE WAS NOT THE CRITERION. The real risk is not a wrong answer -- it is that THE FIXTURE SILENTLY STOPS COVERING A METHOD. Same vacuity shape Sprint 35 met with its presence assertion over the awaited-once loop.",
-        "MEASURED ACROSS TWO SPRINTS: Sprint 34 found three of four handlers undefended; SPRINT 35 RECORDED IT AS A PROPERTY RATHER THAN A FRACTION -- EVERY handler, and the set grows with the table.",
-      ],
-    },
-    {
       id: "PBI-35",
       story: {
         role: "tsudoi maintainer",
@@ -101,6 +73,25 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 39,
+      pbi_id: "PBI-42",
+      goal: "THE FIXTURE'S COVERAGE BECOMES A COMPILE-TIME PROPERTY, AND THE ANSWERS STAY UNDEFENDED ON PURPOSE. test/fixtures/all-methods.ts annotates its handler literal over `Method` so a method `MethodMap` declares and this fixture omits IS TS2741 -- the same error `requestEntries` already produces, no assertions, growing with the table by construction. THE TITLE IS NOT THE CRITERION: `defend every handler` would be FIVE NEAR-IDENTICAL TESTS that resist legitimate fixture changes without defending a requirement, and the PO ruled it out; the risk is not a wrong answer but THE FIXTURE SILENTLY STOPPING SHORT OF A METHOD while tests that believe they exercise five exercise four and stay green. So criterion 2 is A RULING TO RECORD RATHER THAN WORK TO DO, and it goes at the fixture BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE WHOLE INCREMENT IS ONE CLAUSE -- `satisfies { [M in Method]: MethodHandler<M> }` -- plus two names on an existing import and prose. 444 green and 1266 expect() calls UNCHANGED, which is what this criterion's correct answer looks like: the property is one THE COMPILER checks.",
+        "THE ROOT CAUSE IS THE MOST DURABLE THING HERE: src/types.ts declares `methods?: Partial<...>`, WHICH IS CORRECT FOR A CONFIG AUTHOR -- and that is exactly why THE ONE CONFIG THAT MUST SERVE EVERY METHOD WAS ENFORCING NOTHING. A DEFECT THAT FOLLOWS FROM A CORRECT DECISION ELSEWHERE IS THE HARDEST KIND TO FIND BY READING, and recording it is what stops someone `fixing` the published type later.",
+        "BOTH HALVES RE-RUN AGAINST THE SHIPPED FORM, PLUS A PRE-EDIT CONTROL: a probe method in MethodMap AND requestEntries with no fixture handler gives TS2741 REPORTED AT THE FIXTURE AND NAMING THE METHOD; adding the handler gives exit 0; and the same probe against the UN-ANNOTATED fixture left tsc at 0 WITH NO ERRORS ANYWHERE -- THE PROPERTY GENUINELY DID NOT EXIST. The control is what makes half 1 mean something.",
+        "A FIFTH DEGENERACY LOCATION, FOUND UNPROMPTED: THE TYPE ANNOTATION ITSELF. Record<Method, MethodHandler<Method>> would deliver exhaustiveness WHILE ACCEPTING HOVER'S HANDLER IN COMPLETION'S SLOT -- presence without per-method typing, which is Sprint 32's mis-keyed-entry hazard RE-INTRODUCED THROUGH THE BACK DOOR. Caught by applying the Sprint-38 serialiser standard TO A TYPE RATHER THAN TO DATA. The locations are now assertion, control, probe, serialiser, ANNOTATION.",
+        "NOT A FIFTH OUTCOME, and the executor's reading is confirmed: the annotation makes Sprint 35's recorded perturbations FAIL TO COMPILE, but those re-runs went AS RECORDED because neither runtime type-checks. THE FOUR-OUTCOME VOCABULARY ANSWERS ONE QUESTION -- why did a standing re-run go GREEN -- and that question is never triggered here. ONLY THE PRICE MOVED: an edit that cost nothing now costs a DoD check. THE PRINCIPLE, worth stating because it will be needed again: A VOCABULARY ANSWERS ONE QUESTION, AND AN OBSERVATION THAT DOES NOT ANSWER THAT QUESTION DOES NOT JOIN IT, HOWEVER ADJACENT. RE-MEASURING BEFORE WRITING IT DOWN is what made the ruling available at all.",
+        "THE FORM WAS CHOSEN BY MEASUREMENT WITH THE CRITERION AS TIEBREAK: a hoisted const and the inline satisfies produce THE IDENTICAL TS2741 AT THE IDENTICAL SITE, so `one line` decided it. THE CORRECT USE OF A CRITERION -- to break a tie that measurement declared even, NOT to substitute for measuring.",
+        "TWO LAPSES, BOTH SELF-CAUGHT. The edit removed the PBI-42 mention and left a paragraph saying `the shape this PBI exists to retire` WITH NO ANTECEDENT; their own grep returned zero hits and they READ ZERO AS CLEAN rather than as THE REFERENT WAS JUST DELETED. And a staleness note first GENERALISED FOUR BULLETS FROM ONE RUN -- the tsc half follows from the mapped type, but `unchanged` is a RUNTIME claim, so the only bullet whose recorded result is not green was RE-RUN rather than reasoned.",
+        "DECLINED WITH THE COST NAMED: no five-keys test, because A COUNT-AS-DESCRIPTION WOULD PASS ON A TABLE SHRUNK TO FIVE WRONG METHODS -- the Sprint-36 distinction applied BY SOMEONE ELSE to reject a test the PO might have accepted. Four exported answer constants that nothing imports were REPORTED RATHER THAN TIDIED: tidying while reporting is how scope quietly grows.",
+        "THE PBI WAS SMALLER THAN ITS TITLE AND IS REPORTED THAT WAY RATHER THAN PADDED. A one-clause increment that establishes a COMPILE-TIME property is a good outcome, not a thin one.",
+      ],
+    },
     {
       number: 38,
       pbi_id: "PBI-43",
@@ -276,77 +267,34 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 39,
-    pbi_id: "PBI-42",
-    goal: "THE FIXTURE'S COVERAGE BECOMES A COMPILE-TIME PROPERTY, AND THE ANSWERS STAY UNDEFENDED ON PURPOSE. test/fixtures/all-methods.ts annotates its handler literal over `Method` so a method `MethodMap` declares and this fixture omits IS TS2741 -- the same error `requestEntries` already produces, no assertions, growing with the table by construction. THE TITLE IS NOT THE CRITERION: `defend every handler` would be FIVE NEAR-IDENTICAL TESTS that resist legitimate fixture changes without defending a requirement, and the PO ruled it out; the risk is not a wrong answer but THE FIXTURE SILENTLY STOPPING SHORT OF A METHOD while tests that believe they exercise five exercise four and stay green. So criterion 2 is A RULING TO RECORD RATHER THAN WORK TO DO, and it goes at the fixture BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
-    status: "review",
-    subtasks: [
-      {
-        test: "COMPILE-TIME, NOT A TEST FILE: the perturbation IS the check. Add a method to `MethodMap` AND to `requestEntries` (so the table is not itself the error) and leave the fixture alone -- `tsc --noEmit` must fail TS2741 AT test/fixtures/all-methods.ts NAMING THE METHOD. Paired with its other half, because Sprint 33 measured that exit 0 proves nothing unless the site is reached: with the handler present, `tsc` is 0.",
-        implementation:
-          'One line at the fixture\'s handler literal: `satisfies { [M in Method]: MethodHandler<M> }`, with `Method` and `MethodHandler` added to the existing type-only import from ../../src/types.ts. `TsudoiConfig["methods"]` is `Partial<...>`, which is why presence is unenforced today and why the annotation adds PRESENCE ONLY -- per-method typing is already contextual and must survive.',
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "a25a7bd",
-            message: "test(fixtures): make the all-methods fixture complete by construction",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BOTH HALVES RE-RUN AGAINST THE SHIPPED FORM RATHER THAN CARRIED FROM THE SKETCH, because a measurement taken on the const candidate is not a measurement of the `satisfies` one. P1: probe method in `MethodMap` AND `requestEntries`, no handler here -- `tsc --noEmit` EXIT 1, ONE ERROR, `test/fixtures/all-methods.ts(139,7): error TS2741: Property '\"textDocument/probe\"' is missing`. P1-PAIR: the same tree with the handler added -- EXIT 0. THE ERROR NAMES THE FILE AND THE METHOD, which is what discharges Sprint 33: an exit code alone would not say the site was reached.",
-          "PREMISE MEASURED BEFORE THE PLAN WAS WRITTEN, not after, and it is the control that makes the perturbation mean anything: with the probe method added to `MethodMap` and `requestEntries` and the fixture UNTOUCHED, `tsc --noEmit` is EXIT 0 WITH NO ERRORS ANYWHERE. THE PROPERTY DOES NOT EXIST TODAY -- measured rather than inferred from `methods?` being optional.",
-          "THE FORM WAS MEASURED RATHER THAN CHOSEN BY HABIT, and both candidates were run under the same probe: a hoisted `const methods: { [M in Method]: MethodHandler<M> }` -- the `requestEntries` shape -- and an inline `satisfies` of the same mapped type produce THE IDENTICAL TS2741 at the identical site naming the identical method. The criterion's second axis breaks the tie: `ONE LINE`. The const form costs a hoist and an 18-line reindent for the same error.",
-          "S20 APPLIED TO THE ANNOTATION ITSELF, because a mapped type CAN be degenerate: `Record<Method, MethodHandler<Method>>` would give exhaustiveness while accepting hover's handler in completion's slot. CONTROL RUN ON THE FORM ACTUALLY CHOSEN rather than transferred from the other one -- a `Promise<Hover>` handler written into `textDocument/completion` fails TS2739/TS2322 naming the missing AsyncGenerator members. The annotation adds presence WITHOUT losing per-method typing.",
-        ],
-      },
-      {
-        test: "NO EXECUTABLE DEFENCE EXISTS FOR A PROSE CRITERION, so it is discharged by grepping THE CLAIM'S WORDS across src, test, examples and README -- filenames and test names too -- and reading every survivor.",
-        implementation:
-          "The fixture's block comment records the ruling: the answers stay undefended DELIBERATELY (five near-identical tests die on S7), what the file now DOES enforce, and why the reason is written here rather than left as a residual. THE SENTENCE THAT GOES FALSE IS THE ONE THIS SPRINT FALSIFIES -- `a method added to the table and not added here fails NOTHING, whichever drive it uses` -- and `a residual with a PBI -- PBI-42` goes stale by being acted on.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "dbef3d8",
-            message: "docs(fixtures): say that Sprint 35's deletions now cost a DoD check",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "SPRINT 34 AND 35'S DECISION ENTRIES ARE LEFT ALONE: past-tense measurements carrying provenance, which Sprint 38 ruled untouchable. Only claims stated in the PRESENT TENSE about today's tree are corrected.",
-          "ELEVEN SEARCH TERMS OVER src, test, examples AND README -- `fails NOTHING`, `not added here`, `defended by nothing`, `undefended`, `residual`, `PBI-42`, `three of four`, `all-methods`, `TS2741`, `compile error`, `Partial` -- plus filenames. EVERY SURVIVOR READ AND EVERY ONE LEFT ALONE, with the reason: `undefended` in src/methods.ts is Sprint 32's capability measurement in the past tense; the `Partial` claims at src/types.ts:428 and test/fixtures/resolve-without-completion.ts:12 are about A CONFIG AUTHOR'S surface and are STILL TRUE -- the annotation is on this ONE fixture, not on the type. NOTHING OUTSIDE THE FIXTURE WAS FALSIFIED, which is reported as a result rather than as an absence of work.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "The agentic-scrum command and its skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
-        impact:
-          "NOTHING WAS BLOCKED. The sprint proceeds from scrum.ts itself and the standing house conventions, which are the artifacts those skills would have read anyway. Carried on the record so it is a KNOWN CONDITION rather than a silent one -- the cost is that no skill-supplied checklist is cross-checking this executor.",
-        request:
-          "Install the agentic-scrum command and its skills, or rule that this project runs its Scrum from scrum.ts and the retrospective log alone.",
-        status: "waiting_human",
-        notes: [],
-      },
-    ],
-    decisions: [
-      "PREDICTED IN THE PLAN SO THE REPORT CANNOT BE FITTED AFTERWARDS: this is a SMALL PBI and the increment is ONE LINE OF TYPE PLUS A COMMENT. No test file changes, so the `expect(` diff is predicted 0 added / 0 removed / 0 changed and the count predicted to stay at 1266. If it turns out smaller than it looks, that is the finding rather than a shortfall.",
-      "BASELINE RE-MEASURED AT ef3e889 RATHER THAN COPIED FROM THE BRIEF, per the provenance rule: `bun test` 444 pass / 0 fail / 31 files / 1266 expect() calls (exit 0), `tsc --noEmit` exit 0, `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/, `oxfmt --check .` exit 0 over 100 files. Each run separately and unpiped.",
-      "EXECUTION DOES NOT ACCEPT ITS OWN WORK. This sprint ends at `review` with PBI-42 still `ready` on the backlog. Sprint 38 closed itself and had to revert it.",
-      "444 GREEN / 31 FILES / 1266 expect() CALLS, IDENTICAL TO THE BASELINE, and that is the shape of the increment rather than a disappointment: the criterion asked for a property THE COMPILER CHECKS, so a green suite that did not move is exactly what a correct answer looks like. Each DoD command run separately and unpiped, exit read directly: `bun test` 0, `oxlint` 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), `oxfmt --check .` 0 over 100 files, `tsc --noEmit` 0.",
-      "THE PREDICTION HELD, WHICH IS THE ONLY REASON IT WAS WORTH WRITING DOWN FIRST: `expect(` DIFF 0 ADDED, 0 REMOVED, 0 CHANGED across test/ and src/, static count 693 lines in BOTH trees, runtime count 1266 in both. Diffed against ef3e889 rather than recalled -- S13 forbids recalling a coverage claim even when the diff is obviously empty.",
-      "THE SPRINT WAS SMALLER THAN ITS TITLE AND IS REPORTED THAT WAY RATHER THAN PADDED. THE SHIPPED INCREMENT IS ONE `satisfies` CLAUSE, `Method` AND `MethodHandler` ADDED TO AN EXISTING TYPE-ONLY IMPORT, and prose -- named rather than counted, because `five names on an import` was written first and reads as the delta when only two are. No test was written, no helper invented, no second criterion manufactured to fill the box -- the same standard by which Sprint 38 refused a shared helper on measurement.",
-      "AND THE ONE THING NOBODY ASKED FOR, FOUND BY RE-RUNNING RATHER THAN BY READING: THE ANNOTATION MAKES SPRINT 35'S OWN RECORDED PERTURBATIONS FAIL TO COMPILE. Deleting hover's handler is now TS2741. RE-MEASURED BEFORE BEING WRITTEN DOWN -- and then re-measured a SECOND time, because the first draft generalised four bullets from ONE run: the tsc half follows from the mapped type, but `the measurement is unchanged` is a claim about RUNTIME. THE ONLY BULLET WHOSE RECORDED RESULT IS NOT `GREEN` IS THE ONE WORTH SPENDING A RUN ON, so completion's-deleted-ALONE was re-run: STILL FOUR RED, 440 pass, exactly as Sprint 35 recorded. WHAT CHANGED IS THE PRICE, NOT THE RESULT: an edit that cost nothing now costs a DoD check. AND IT IS NOT A FIFTH OUTCOME -- the four answer WHY A STANDING RE-RUN GOES GREEN, and these went exactly as recorded. Recorded BESIDE THOSE BULLETS, because a reader meeting TS2741 with no note would reasonably conclude the recorded green had rotted.",
-      "THE EXECUTOR'S OWN EDIT CREATED THE STALENESS IT WAS CORRECTING, AND ITS OWN GREP CAUGHT IT: removing the `PBI-42` mention left the block's last paragraph saying `the shape this PBI exists to retire` with NO ANTECEDENT ANYWHERE -- the `=== PBI-42 ===` search returned ZERO hits across src, test, examples and README and was read as `nothing to correct` rather than as `the referent is gone`. Fixed by NAMING it. Fifth time in this thread a lapse was surfaced by its own author rather than absorbed, and the sharper half is that THE GREP THAT FOUND IT WAS RUN FOR A DIFFERENT PURPOSE: a search for stale claims found a claim the search's own sprint had just broken.",
-      "WHAT WAS DECLINED, WITH THE COST NAMED. (1) NO TEST ASSERTING THE LITERAL HAS FIVE KEYS: that is a count-as-description, retired by naming, and it would go green on a table that shrank to five wrong methods. (2) NO POINTER ADDED IN test/methods-table.test.ts: nothing there became false, and criterion 2 places the reason AT THE FIXTURE. (3) `hoverAnswer`, `completionAnswer`, `formattingAnswer` AND `diagnosticAnswer` ARE EXPORTED AND NOTHING IMPORTS THEM -- observed while grepping, LEFT ALONE, and reported rather than tidied, because no criterion asked and an executor exceeding its criteria is scope creep even when the code is better.",
-      "NOTHING FAILED TO REDDEN THAT WAS EXPECTED TO. Every perturbation planned was constructible and every one produced the predicted result, which is unusual enough in this thread to be worth stating plainly rather than leaving as silence.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 39,
+      improvements: [
+        {
+          action:
+            "A ZERO-RESULT GREP IS AMBIGUOUS, AND THIS BOUNDS THE GREP ENTRY RATHER THAN EXTENDING IT. Zero means EITHER clean OR THE REFERENT WAS JUST DELETED AND LEFT A DANGLER. Measured this sprint: zero was read as clean and it was the second, and the grep run for SOMEONE ELSE'S staleness caught what this sprint had just broken. Filed beside the entry it qualifies, because `grep returned nothing` currently reads as reassurance.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "PREDICT THE expect( DIFF IN THE COMMITTED PLAN. 0/0/0 with the counts unchanged reads as CONFIRMATION rather than as a fitted report ONLY BECAUSE IT WAS WRITTEN DOWN FIRST. A one-line upgrade to the diff-not-assert standard.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A VOCABULARY ANSWERS ONE QUESTION, AND AN OBSERVATION THAT DOES NOT ANSWER THAT QUESTION DOES NOT JOIN IT, HOWEVER ADJACENT. The four standing-re-run outcomes answer WHY A RE-RUN WENT GREEN; a re-run that went as recorded but now costs a type check answers a different question and gets A NOTE AT THE SITE instead -- the S19 pattern, a comment stating what it does NOT rule out.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 38,
       improvements: [
