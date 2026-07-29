@@ -358,8 +358,15 @@ const scrum: ScrumDashboard = {
         implementation:
           "InstalledConsumer.typeCheck takes an optional second argument of compiler options MERGED OVER consumerCompilerOptions rather than REPLACING it, so a probe whose entire subject IS a compiler option can move skipLibCheck and types without the other six silently drifting from what every other consumer probe uses. MERGED-NOT-REPLACED is recorded at the site because this project has already been bitten by the other semantics: S22 measured an oxlint override REPLACING options and thereby disabling a different guard, in the file whose whole purpose was guarding.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5e5e088",
+            message:
+              "test: let a consumer probe move a compiler option without moving the other six",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "ITS DOC MAY NOT NAME THE PROBE FILE. That file does not exist at this commit, so a comment naming it would be FALSE WHEN WRITTEN -- the birth defect S8's Sprint-18 addition targets. The cross-reference is written in subtask 4, in the commit where its subject exists.",
           "NO NEW CONTROL IS OWED FOR THE PLUMBING. If a future edit makes the override inert, the probe reverts to skipLibCheck:true and subtask 3's control 1 GOES GREEN AND FAILS. The parameter is defended by the perturbation that needs it, not by an assertion about itself.",
