@@ -347,7 +347,67 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 27,
+    pbi_id: "PBI-34",
+    goal: "The bare-specifier choice at src/types.ts stops being defended by a paragraph saying nothing defends it: a probe stands up its OWN skipLibCheck:false / types:[] tsconfig against the INSTALLED package, and the probe's own ability to go blind is itself defended.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "NONE OF ITS OWN, and that is what makes it structural: every existing consumer.typeCheck caller passes no override and must stay exactly as green as today. That is the whole of its verification.",
+        implementation:
+          "InstalledConsumer.typeCheck takes an optional second argument of compiler options MERGED OVER consumerCompilerOptions rather than REPLACING it, so a probe whose entire subject IS a compiler option can move skipLibCheck and types without the other six silently drifting from what every other consumer probe uses. MERGED-NOT-REPLACED is recorded at the site because this project has already been bitten by the other semantics: S22 measured an oxlint override REPLACING options and thereby disabling a different guard, in the file whose whole purpose was guarding.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ITS DOC MAY NOT NAME THE PROBE FILE. That file does not exist at this commit, so a comment naming it would be FALSE WHEN WRITTEN -- the birth defect S8's Sprint-18 addition targets. The cross-reference is written in subtask 4, in the commit where its subject exists.",
+          "NO NEW CONTROL IS OWED FOR THE PLUMBING. If a future edit makes the override inert, the probe reverts to skipLibCheck:true and subtask 3's control 1 GOES GREEN AND FAILS. The parameter is defended by the perturbation that needs it, not by an assertion about itself.",
+        ],
+      },
+      {
+        test: "test/installed-without-node-types.test.ts: the eight published protocol names type-check from an INSTALLED consumer whose OWN tsconfig sets skipLibCheck:false AND types:[] -- exit 0 with empty output. Beside it the harness control this file cannot do without: a deliberate type error in the same probe IS reported, since a tsc that resolved nothing and a tsc that resolved everything both exit 0.",
+        implementation:
+          "NONE. The property already holds; what is missing is the CHECK, not a fix. Through installConsumer and not typeCheckProbe -- the in-repo arm resolves `default` straight at src/types.ts and cannot observe what ships, which published-artifacts.test.ts already measures directly.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN, DECLARED IN ADVANCE. Writing it wrong first would produce a red proving something about a typo rather than about what ships.",
+        ],
+      },
+      {
+        test: "THE TWO CONTROLS, against ONE consumer packed with src/types.ts's specifier moved to `/node` through editSource. (1) DISCRIMINATION: under skipLibCheck:false it reddens, and the assertion NAMES the diagnostic -- child_process and NodeJS -- rather than merely reading a non-zero exit. (2) THAT THE PROBE RAN WITH skipLibCheck OFF: the SAME perturbed consumer under skipLibCheck:true exits 0, so the blindness is reproduced on demand rather than argued about.",
+        implementation:
+          "NONE. ORDER IS LOAD-BEARING AND THE TWO CONTROLS SHARE ONE CONSUMER FOR THAT REASON: control 2's green is satisfied PERFECTLY by a perturbation that never happened, so control 1's red on the same consumer is what proves the edit landed. The replacement asserts it changed the file, and matches the QUOTED specifier so the doc block's backticked mentions of `/node` are not rewritten into the perturbation.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN in the sense the DoD sees -- it passes on first run -- but it is the only subtask whose passing carries information, because both halves observe a tree where the difference was actually made.",
+          'MECHANISM VERIFIED AT PLANNING, not assumed: tsconfig.build.json sets skipLibCheck:true and types:["node"], so prepack still builds with the specifier at `/node` and installConsumer does not throw through its own pack failure before the probe can record anything.',
+        ],
+      },
+      {
+        test: "NONE, and it is NOT CONSTRUCTED rather than skipped: nothing can assert that a comment is true. Two prose contracts this sprint falsifies. src/types.ts: `NOTHING IN THE SUITE ASSERTS ANY OF THIS ... No existing probe could redden if this line were changed to /node ... this paragraph is the whole of the defence.` And test/helpers/typecheck.ts, cited by criterion 1 as the reason the harness itself is blind, whose silence about skipLibCheck:true becomes half-true once one caller overrides it.",
+        implementation:
+          "Replace the first, add one cross-reference sentence to the second. src/types.ts's replacement carries what the probe does NOT cover and the version it was measured clean at; the probe's own fragility and triage live in the probe's doc block, where the maintainer who sees it fire is already looking.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "LANDS IN THE SAME COMMIT AS SUBTASKS 2 AND 3, declared here rather than discovered: the paragraph goes FALSE the moment the FIRST of those tests exists, and no commit in this history may carry a file claiming something false about its own suite. The git hook is not the constraint here -- neither file is scrum.ts.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE FOUR-CELL TABLE WAS RE-MEASURED AT PLANNING RATHER THAN COPIED FROM THE HANDBACK, and the handback's count was WRONG. MEASURED at vscode-languageserver-protocol 3.18.2 (vscode-jsonrpc 9.0.1, vscode-languageserver-types 3.18.0, all three read out of node_modules rather than recalled): all four rows confirmed -- ONLY skipLibCheck:false WITH types:[] discriminates, and `/node` there exits 1. But the handback said SIX diagnostics all inside vscode-jsonrpc/lib/node/main.d.ts; it is ELEVEN across TWO files -- TS2591 for child_process, net and worker_threads plus TS2503 for NodeJS six times in vscode-jsonrpc/lib/node/main.d.ts, and TS2503 for NodeJS twice more in vscode-languageserver-protocol/lib/node/main.d.ts. That matches what src/types.ts has said all along. PBI-34's criteria carry NO count -- criterion 2 says `naming NodeJS or child_process` -- so NOTHING IN THIS DASHBOARD NEEDED AMENDING; the wrong number lived only in prose in flight. Second consecutive sprint where re-measuring instead of copying caught a count.",
+      "EVERY SUBTASK IS BORN GREEN, declared at planning rather than found at Review. This increment adds no behaviour: the bare specifier already type-checks with no Node typings reachable, and what is missing is that NOTHING OBSERVES IT. The evidence is therefore entirely in the controls, which is the same shape published-artifacts.test.ts declares about itself.",
+      "PROBE-SCOPED ONLY: skipLibCheck stays TRUE in tsconfig.json and in consumerCompilerOptions. Setting it false repo-wide surfaces the eleven diagnostics through src/'s own `/node` imports and breaks the DoD, so the scope is a requirement rather than a preference.",
+      "PLANNING IS A TDD BREAKDOWN, NOT A RE-DERIVATION: PBI-34's three criteria were complete and are not restated here. What this plan adds is the sequencing, which subtasks share a commit, and which are born green.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 26,
