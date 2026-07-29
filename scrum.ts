@@ -24,8 +24,10 @@ const scrum: ScrumDashboard = {
         target: "0 lines changed in tsudoi itself",
       },
       {
-        metric: "PoC-scope LSP methods respond per the specification",
-        target: "10 of 10 methods",
+        metric:
+          "The five methods the stakeholder named respond per the specification: textDocument/completion, textDocument/hover, textDocument/diagnostic (pull), textDocument/formatting, completionItem/resolve",
+        target:
+          "5 of 5. ENUMERATED IN THE METRIC ITSELF because `10 of 10` stood for thirty sprints with NOTHING ANYWHERE ENUMERATING THE TEN -- grepped, the only match was the metric. A fraction whose denominator nobody can name cannot be met, and the PO twice reported `2 of 10` as fact. The five were set by the stakeholder, not invented to make the metric satisfiable.",
       },
       {
         metric: "The CLI starts under both Bun and Deno",
@@ -37,80 +39,146 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-30",
+      id: "PBI-36",
       story: {
-        role: "tsudoi maintainer",
-        capability:
-          "add a timer or any other long-lived handle to src/ without silently making the server outlive the editor that spawned it",
-        benefit:
-          "the exit that works today is held by a test and a recorded decision, instead of by the event loop happening to empty",
+        role: "config author",
+        capability: "format a document by writing a textDocument/formatting handler",
+        benefit: "my editor's format command reaches my own language, from the same config file",
       },
       acceptance_criteria: [
         {
           criterion:
-            "C1 -- the server exits when the process that spawned it dies, on both runtimes, observed on the SERVER'S OWN pid.",
+            "A config supplying textDocument/formatting is served: the handler's TextEdit[] reaches the client over the wire, on both runtimes.",
           verification:
-            "the three-level rig already run in the spike: bun test spawns a fake editor, the fake editor spawns the server, the test SIGKILLs the fake editor and polls the server pid. S6 PRESENCE PAIR, NON-OPTIONAL -- the server is asserted ALIVE BEFORE THE KILL, because the spike's own first deno run failed to launch and logged nothing, which is the live demonstration that `gone after the kill` is satisfied by `never started`. C1 IS ALSO THE RIG AN UN-UNREF'D TIMER REDDENS.",
+            "MEASURED SHAPE, not recalled: ProtocolRequestType<DocumentFormattingParams, TextEdit[] | null, never, void, ...>, capability documentFormattingProvider, TOP LEVEL. Awaited-once like hover -- NO new drive kind, NO error type, NO coupling.",
         },
         {
           criterion:
-            "C2 -- the mechanism is stdin EOF, and it is ASSERTED rather than assumed. REQUIRED, not nice-to-have.",
+            "documentFormattingProvider is advertised ONLY when the config supplies a handler.",
           verification:
-            "FIFO rig: a third party holds the write end of the server's stdin, the intermediate is killed, the server MUST SURVIVE -- measured, alive at +4s on both runtimes. Without it C1 claims `exits when the parent dies` and observes `is not running`, different propositions that C1 alone cannot discriminate; a server that crashed at startup satisfies it identically. THE TWO RIGS CATCH OPPOSITE DIRECTIONS: C1 catches `does not exit when it should`, the FIFO rig catches `exits for the wrong reason`. Neither substitutes for the other.",
+            "the existing per-method rule -- a client is entitled to send whatever it was told about -- with its negative control: a config without the handler must not advertise it.",
         },
         {
-          criterion:
-            "C3 -- the property is recorded where the edit that destroys it would be made.",
+          criterion: "The affordability claim is TESTED here rather than asserted for the rest.",
           verification:
-            "NO SINGLE SUCH SITE EXISTS TODAY, WHICH IS EXACTLY THE PROBLEM; the nearest true home is startServer in src/server.ts, which owns the reader and connection.listen(). It states that the process exits because NOTHING KEEPS THE LOOP ALIVE, so any timer, socket or watcher added anywhere in src/ MUST BE unref()'d -- a CORRECTNESS REQUIREMENT, NOT AN OPTIMISATION. Held to S8 with runtime versions. NOT CONSTRUCTED as an assertion: nothing can test that a comment exists. C1 defends the property; the comment tells the next author why their diff broke it.",
-        },
-        {
-          criterion:
-            "C4 -- the exit code on the stdin-EOF path is ruled against the specification and asserted.",
-          verification:
-            "it is 1 today BY ACCIDENT -- src/lifecycle.ts's exitCode() is never consulted on that path, and stderr is empty. A value correct by coincidence is undefended, and a future tidy-up routing this path through lifecycle could change it silently.",
-        },
-        {
-          criterion:
-            "The fork-without-exec case is RECORDED as a named uncovered case in the C3 comment, and NOT filed as a PBI.",
-          verification:
-            "filing implies intent, and the only remedy -- a pid poll -- is KNOWN TODAY TO BE NET-NEGATIVE. The record takes the form RequestOnlyConnection already uses for this, labelled REASONED, and carries the two facts that make it re-decidable: a pid poll would close it and an un-unref'd poll would DESTROY the exit that works; and THE PORTABILITY TRAP, preserved even though no poll is being written -- process.kill(pid, 0) throws on both runtimes with OPPOSITE ERRNO SIGNS (bun SystemError errno 3, deno Error errno -3), so code === ESRCH is the only portable discriminator and an implementation testing errno === 3 or matching the message SILENTLY NEVER FIRES ON DENO.",
+            "MEASURED at vscode-languageserver-types 3.18.0: TextEdit { range: Range; newText: string }, so a handler emits Positions from whatever offsets its analysis produced -- positionAt, which did not exist before Sprint 28. WHAT IS NOT CLAIMED: DocumentFormattingParams was NOT read (it lives in the protocol package), so NOTHING is claimed about incoming positions, and offsetAt is exercised by none of the three new methods. THE `both directions in one method` ARGUMENT WAS BUILT ON textDocument/definition AND LAPSED WITH IT.",
         },
       ],
       status: "ready",
       notes: [
-        "THE ORIGINAL PREMISE WAS FALSE AND THE SPIKE REFUTED IT: tsudoi ALREADY exits when its editor dies -- measured with the real server, gone within 1000ms on both runtimes. `A crashed editor leaks the server forever` does not reproduce. What is true is that the behaviour is IMPLICIT, UNDOCUMENTED, UNTESTED AND SILENT: nothing in src/ handles stdin closing, and the server exits because the event loop empties. AN EMERGENT PROPERTY, NOT A DECISION.",
-        "WHY IT IS WORTH A PBI THOUGH NOTHING IS BROKEN: THE PROPERTY IS HELD BY NOBODY -- not a line of code, not a comment, not a test, only the ABSENCE of handles in the event loop. That is the most fragile way a property can be held, because IT BREAKS BY ADDING SOMETHING RATHER THAN BY CHANGING SOMETHING, so no reviewer reading a diff can see it go. PBI-30's own naive implementation would have caused it -- not a speculative regression path, the one this team just walked down.",
-        "NO LINT BANNING setInterval IN src/. Considered and ruled against: C1 already detects the regression, and a ban forecloses legitimate future work (debouncing, heartbeats, cache TTLs) that would then be argued with.",
-        "SHARES A SPRINT WITH PBI-29, TWO PBIs, ONE SHARED SPEC READING. Both turn on the same LSP sentence -- `if the shutdown request has been RECEIVED before` -- and read months apart by different executors THEY CAN REACH DIFFERENT CONCLUSIONS FROM THE SAME TEXT, leaving tsudoi with two exit-code rulings that disagree. The reading is recorded ONCE and both PBIs point at it; two copies is the duplication the Lifetime Rule exists to prevent.",
+        "FIRST OF THE FIVE-METHOD WORK, and the order is measured rather than preferred: it is THE ONLY ONE OF THE THREE NEW METHODS THAT ADDS NO NEW KIND OF ANYTHING. It is the clean test of whether this work is as cheap as claimed, BEFORE anything is asked to absorb streaming-plus-error-data or a nested capability key.",
+        "IT ALSO MAKES THE THIRD HAND-WRITTEN COPY in registerMethods -- the rule of three, and the exact number at which src/notifications.ts's finding was made. PBI-37's table is then built against THREE MEASURED SHAPES with the remaining two known from declarations already read, rather than predicted.",
       ],
     },
     {
-      id: "PBI-29",
+      id: "PBI-37",
       story: {
         role: "tsudoi maintainer",
         capability:
-          "know what exit code a shutdown-before-initialize session ends with, and why that is the right one",
+          "add a method without re-writing the rejection check, the cancellation bridge and the capability contribution by hand",
         benefit:
-          "a lifecycle path that ships today is defended by an assertion rather than by nobody having sent it",
+          "a method that decides nothing does not compile, instead of joining a convention whoever writes it must remember",
       },
       acceptance_criteria: [
         {
           criterion:
-            "The specification text is READ, the correct exit code is RULED, and the test pins WHICHEVER IT IS -- with the reason recorded.",
+            "READINESS GATE, AND THE FIRST SUBTASK: delete ONE method's capability `if` and ONE method's rejection check, and RECORD WHAT REDDENS. IF EVERYTHING REDDENS, THE CONVENTION IS DEFENDED AND THIS PBI IS WITHDRAWN.",
           verification:
-            "MEASURED today: tsudoi exits 1 -- the shutdown is refused -32002, lifecycle.shutDown() never runs, phase stays uninitialized -- and NO assertion says so. protocol.test.ts's `exit as the very first message exits 1` is a DIFFERENT case that agrees, which is how this one hid behind it.",
+            "the same probe src/notifications.ts ran, where deleting didChange's and didClose's checks reddened NOTHING and two of three copies proved to be pure convention. THE PO HAS NOW TWICE ARGUED THIS TABLE FROM THAT PRECEDENT WITHOUT CHECKING THAT THE PRECEDENT TRANSFERS. It is measurable in one subtask and must be measured before the table is built rather than cited again.",
         },
         {
-          criterion: "The criterion does NOT presuppose exit 1.",
+          criterion:
+            "Each entry carries a REQUIRED capability CONTRIBUTOR -- a function, not a key/value pair.",
           verification:
-            "S7: a behaviour is pinned where ONE outcome is REQUIRED, and that entry exists to bound pin-everything pressure. LSP's wording is `if the shutdown request has been RECEIVED before`, and tsudoi refuses the pre-initialize shutdown with -32002 and treats it as NOT RECEIVED -- received-versus-accepted is a real reading gap, flagged by the PO and labelled RECALLED, NOT MEASURED. Pinning today's behaviour AS IF IT WERE A REQUIREMENT is STRICTLY WORSE THAN NO TEST: a future maintainer who reads the spec correctly then has to argue with a green assertion.",
+            "MEASURED: the five contribute four different shapes -- hoverProvider: true, completionProvider: {} (an object, and its own comment explains why it is empty), documentFormattingProvider at top level, and completionProvider.resolveProvider NESTED INSIDE A KEY ANOTHER METHOD OWNS. A mechanical `methods[k] !== undefined -> capabilities[flag] = true` CANNOT EXPRESS THE FIVE. THE GAIN IS COLOCATION AND REQUIREDNESS, NOT BREVITY -- roughly the same lines, in a place where forgetting them is a type error. ANYONE SELLING THIS AS A SMALLER src/server.ts IS SELLING THE WRONG THING.",
+        },
+        {
+          criterion:
+            "Every per-method REASON moves to its entry, and the PBI NAMES EACH PARAGRAPH MOVED AND WHERE IT WENT.",
+          verification:
+            "S9's audit-trail clause applied to PROSE. The precedent is exact and load-bearing: exit's carve-out reason lives AT ITS ENTRY, `so there is no second place to get it wrong`. Hand-writing also made the VALUE-SHAPE DIFFERENCES visible -- true, {}, and a nested key are three kinds of contribution, and reading them side by side is how anyone notices; a table flattening them to booleans would destroy that SILENTLY.",
+        },
+        {
+          criterion:
+            "src/server.ts's `spelled out, NOT DERIVED FROM THE SHAPE OF methods` clause is REWRITTEN, not deleted, recording WHY it goes.",
+          verification:
+            "its REASON -- a client is entitled to send whatever it was told about, so each capability is claimed only where the config can answer it -- IS THE STAKEHOLDER'S POLICY VERBATIM AND SURVIVES UNCHANGED. What is superseded is a MECHANISM stated as though it FOLLOWED from that reason. It does not follow. The rewrite says so, so the next reader does not reconstruct it as a policy reversal.",
         },
       ],
       status: "ready",
       notes: [
-        "IF THE ANSWER IS 0 this stops being a test-only item and becomes a one-line behaviour fix in lifecycle.exitCode() plus the test. Same file, same size, so THE SHAPE OF THE WORK DOES NOT CHANGE -- which is why this is settled inside the PBI rather than ahead of it, unlike PBI-30 whose MECHANISM was unmeasured and needed a spike.",
-        "SHARES A SPRINT WITH PBI-30 on one shared reading of the LSP sentence both depend on. Two PBIs, independently shippable, defending different paths: a REFUSED shutdown versus an editor that NEVER SENT one.",
+        "MethodHandler accommodates a third promise-shaped entry with NO structural change; the seams are DOWNSTREAM, in registerMethods and in capability advertisement.",
+        "THE RECORDED DECISION OPPOSING A TABLE SURVIVES INTACT: src/methods.ts's `there is no shape both fit into that is not an invention` is about THE DRIVE, and is correct. A table carries the type (giving params contextual typing exactly as defineNotifications does), a DRIVE KIND -- awaited-once or generator-driven, TWO, NAMED -- and the router applies the prologue and epilogue. No single shape is invented; a method picks one of two. MEASURED that two kinds cover all five: diagnostic declares partialResult, so it is generator-shaped like completion.",
+      ],
+    },
+    {
+      id: "PBI-38",
+      story: {
+        role: "editor user",
+        capability: "see diagnostics for my language when my editor asks for them",
+        benefit: "problems in my file surface without the config author wiring a notification path",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PULL ONLY. textDocument/diagnostic is served; push (textDocument/publishDiagnostics) is OUT OF SCOPE.",
+          verification:
+            "MEASURED: DocumentDiagnosticRequest declares ProtocolRequestType with HandlerSignature = RequestHandler, so IT IS A REQUEST -- RequestOnlyConnection is untouched and registerMethods already takes the narrowed handle. Push is deferred by the stakeholder, NOT filed, and the reason not to lose lives at src/notifications.ts.",
+        },
+        {
+          criterion: "NO method-specific error type. MethodMap gains nothing.",
+          verification:
+            "diagnostic declares DiagnosticServerCancellationData where hover and completion have void. FORECLOSED, reversible at one token, with the reason: retriggerRequest is a server telling a client its analysis is TRANSIENTLY unavailable, and that needs a config author who can know that -- none has asked to be.",
+        },
+        {
+          criterion: "Three simplifications are MEASURED BEFORE THEY BECOME CRITERIA, not assumed.",
+          verification:
+            "REASONED, all three, and the PO flagged them as such BEFORE rather than after: full reports only, no resultId / unchanged-report caching, and workspace/diagnostic excluded as a SEPARATE REQUEST rather than a variant. DocumentDiagnosticReport's declaration has NOT been read.",
+        },
+        {
+          criterion: "The weakness is stated in the PBI rather than discovered.",
+          verification:
+            "a client that does not support pull gets NOTHING, where push would reach it. LSP 3.17+. `nvim and VS Code both support it` is REASONED -- A DECISION NOT TO MEASURE, NOT AN INABILITY: this repo has measured a real client before (the workspace-folder trailing-slash finding, MEASURED against nvim) and that harness still exists. Ruling for the first increment: tsudoi does NOTHING when a client that cannot pull connects -- it advertises correctly, the client's capability is legitimate, and a line per session is the noise that makes the one stderr channel useless.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "Second use of the generator drive. Ordered after PBI-37 so the table is built against three measured shapes first.",
+      ],
+    },
+    {
+      id: "PBI-39",
+      story: {
+        role: "config author",
+        capability:
+          "fill in a completion item's detail and documentation only when the editor asks for it",
+        benefit:
+          "a completion list stays cheap to produce, and the expensive part runs once for the item the user actually looks at",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "completionItem/resolve is served, and resolveProvider is advertised ONLY when a resolve handler exists.",
+          verification:
+            "MEASURED: ProtocolRequestType<CompletionItem, CompletionItem, never, void, void>, capability completionProvider.resolveProvider -- NESTED INSIDE A KEY ANOTHER METHOD OWNS. The first time the per-method-correctness rule has had to reach INSIDE another capability. It is also the only one of the five whose params are not a textDocument-plus-position shape: it takes an item and returns one, and NEVER TOUCHES THE DOCUMENT STORE.",
+        },
+        {
+          criterion:
+            "A config supplying completionItem/resolve WITHOUT textDocument/completion is REJECTED AT CONFIG LOAD, with a message naming the requirement.",
+          verification:
+            "the incoherent state -- resolveProvider on a completionProvider that does not exist, or worse bringing one into being and advertising completion tsudoi cannot answer -- is reachable FOR THE FIRST TIME by this method, and is exactly what src/server.ts's rule exists to prevent. RUNTIME REJECTION, NOT A COMPILE ERROR: expressing it in types would change TsudoiConfigFactory's signature ON THE PUBLISHED SURFACE, and conditional-type diagnostics read as noise to a stranger with one file and no context. gate is a compile error because it sits on TSUDOI'S INTERNAL table authored by maintainers; TsudoiConfig is authored by people this project cannot see, and PUBLISHED-SURFACE LEGIBILITY OUTRANKS CATCHING IT ONE STAGE EARLIER. Second reason: a type-level guard's negative control is a type-level probe, and this repo has measured THAT CLASS DEFEATED TWICE -- skipLibCheck, and Omit's silent no-op on an absent key.",
+        },
+        {
+          criterion:
+            "What resolve does with an item it does not recognise is RULED, not left as an implementation detail.",
+          verification: "a client may send ANY item, not only one tsudoi's completion produced.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "SHIPS AS ITS OWN PBI, argued on independent shipping: completion is already shipped and is UNCHANGED by resolve -- a config supplies a resolve handler or not, and completion behaves identically either way. THE COUPLING IS OF MEANING, NOT OF SHIPPING, and this project's test is what ships independently.",
+        "PBI-31/32 BOUGHT THIS ONE NOTHING -- it never touches the document store. The affordability claim holds for TWO of the three new methods, IN ONE DIRECTION ONLY.",
+        "NO GENERAL DEPENDENCY MECHANISM for the config-load check: there is exactly ONE instance. Write the one check with its reason beside it; generalise when a second arrives.",
       ],
     },
     {
@@ -137,6 +205,29 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 30,
+      pbi_id: "PBI-30",
+      goal: "TWO PBIs, ONE READING. PBI-30: the exit that ALREADY works when an editor dies stops being held by nobody -- two rigs pointing in OPPOSITE directions, plus the record at the line an added handle would be written on. PBI-29: the exit code of a REFUSED shutdown is ruled against the specification and asserted. The LSP sentence both turn on is read ONCE and recorded at src/lifecycle.ts's exitCode(); every other site POINTS at that block rather than restating it, because two copies read months apart can disagree.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "TWO PBIs SHIPPED UNDER THIS RECORD -- PBI-30 AND PBI-29. sprint.pbi_id names one because the SCHEMA CARRIES ONE, a type the team does not own; the arrangement was the PO's. Recorded here rather than fudging the field, and the schema is NOT changed for it.",
+        "389 green from 381, 25 files from 24 -- EIGHT ADDED, NONE REMOVED OR WEAKENED -- each DoD command run separately and unpiped, re-run independently by the Scrum Master.",
+        "THE SPECIFICATION ARGUMENT IS BETTER THAN THE BEHAVIOUR IT CONFIRMS, and PBI-29's exit 1 was RULED rather than read off what runs: A REQUEST ANSWERED -32002 HAS SHUT NOTHING DOWN. Reading `received` as bare wire arrival makes a conforming server say `I am not initialized, I did not do this` and then `success` about the same request. Read at microsoft/language-server-protocol, branch gh-pages (the main path 404s), and recorded in EXACTLY ONE PLACE -- lifecycle.ts's exitCode() block, which already carried a paraphrase, FOUND BY GREPPING THE CLAIM'S WORDS.",
+        "THE REFERENCE IMPLEMENTATION CONFIRMS THE MECHANISM RATHER THAN THE ANSWER: vscode-languageserver 10.1.0 exits 0 there and reaches it BY NEVER REFUSING -- ServerNotInitialized and 32002 appear NOWHERE in that package, grepped whole. So its 0 is not a competing reading of the specification; it is a server that never refuses. That dissolves BY MEASUREMENT a concern the PO had raised from recollection.",
+        "C4'S PREMISE WAS FALSE AND THE PO OWNS IT: `it is 1 today by accident` -- IT IS 0, both runtimes, and not a harness difference. THE SEVENTH INSTANCE IN THIS THREAD of a premise the PO stated without checking. AND IT EXPOSED A GAP IN THEIR OWN SPRINT-25 ENTRY: `a premise about an artifact is not stated until that artifact has been read` works when the artifact is a file, and DOES NOT REACH A MEASUREMENT SOMEONE HANDED YOU -- `~11 registrars` and `exit 1 by accident` were both inherited, and `read it` has no referent.",
+        "THE EXIT-0 ASSERTION IS A CHANGE DETECTOR, NOT A REQUIREMENT PIN, and must say so at the site: the specification's 0/1 sentence governs the exit NOTIFICATION and rules NO CODE for the EOF path. 0 is UNRULED, not required. What the assertion buys is that the value changes only DELIBERATELY -- and the rationale is STRONGER at 0, because routing this path through lifecycle.exitCode() would flip 0 to 1 VISIBLY where at 1 the same edit would have been invisible. Leaving the behaviour untouched was right: there is no requirement to satisfy, so changing it would have pinned an arbitrary preference.",
+        "THE C1 PRESENCE ASSERTION'S RATIONALE DID NOT SURVIVE MEASUREMENT, and the PO ruled the correction matters more than the disposition: they wrote it was non-optional BECAUSE a deno run had failed to launch and logged nothing, and THAT FAILURE IS CAUGHT EARLIER, AT THE HANDSHAKE. KEPT BUT RELABELLED -- under S9 it is NOT A CONTROL, since it cannot be first to fail on either constructible failure and S15 deleted a test for exactly that. It is a GUARD AGAINST ONE FUTURE SIMPLIFICATION: a rig reporting a pid without waiting for the handshake. The comment must say PLAINLY that it cannot currently fire and when it would -- the S19 pattern, and the reason two of four boundary probes were found measuring nothing at Sprint 28.",
+        "TEN PERTURBATIONS. P1 (un-unref'd setInterval) reddens C1 AND the EOF cells with the FIFO rig GREEN; P5 (unref'd parent-pid poll) reddens the FIFO rig ALONE with C1 green. THE PO'S TWO-RIGS-OPPOSITE-DIRECTIONS RULING WAS REASONED WHEN MADE AND IS MEASURED NOW.",
+        "P6 (reader.onClose) IS INERT ON DENO -- fires on bun only. It would have recorded `defended` for a cell it could not flip on half the runtimes: A CROSS-RUNTIME BLINDNESS IN A PERTURBATION, which is a place nobody thinks to look.",
+        "A NEAR-MISS THAT WOULD HAVE BEEN A FALSE REPORT OF A DISARMED CONTROL: the first Sprint 29 re-run reddened NOTHING because TextDocument.update MUTATES ITS ARGUMENT, so the obvious perturbation perturbs nothing. Caught before recording. The Sprint 14 standing re-run producing its value and nearly producing its own false negative in the same act.",
+        "THE PLAN'S `DROP THE FIFO` WAS REFUTED BY MEASUREMENT: handing the server the editor's own fd 0 shares the socket endpoint, but child_process DESTROYS a dead child's stdin stream, so the test's own runtime closes the write end and the rig SILENTLY DUPLICATES C1 -- two tests measuring one thing, both green.",
+        "THE STAKEHOLDER ASKED WHETHER AN UNUSED sendNotification SHOULD BE DELETED. THE PREMISE WAS CORRECTED RATHER THAN ACTED ON, and the distinction recurs for every unused member of a borrowed type: THIS IS NOT DEAD CODE, IT IS AN UNUSED CAPABILITY ON A TYPE TSUDOI DOES NOT OWN. Nothing to delete. NO PBI: a coherent principle exists -- an outbound message must be part of answering a request, which includes sendNotification and correctly excludes sendProgress -- but it has ONE INSTANCE to generalise from and would foreclose a capability the stakeholder DEFERRED RATHER THAN CANCELLED. Applying the rule-of-three inconsistently BECAUSE A STAKEHOLDER ASKED would be the worst available outcome.",
+        "AND THE GREP FOUND THE THING WORTH RECORDING: src/ contains EXACTLY ONE outbound call, sendProgress at methods.ts:382, and IT IS BOUNDED ONLY BY PLACEMENT -- it sits inside a completion handler already behind the request rejection, so it cannot run outside the serving window, but NOTHING SAYS SO. Not `there is no outbound gate` but `THERE IS AN UNGATED OUTBOUND PATH ALREADY, HELD BY WHERE A CALL HAPPENS TO SIT`. THIRD INSTANCE OF THE SHAPE, after PBI-30's exit held by an empty event loop and the empty-contentChanges guard held by a comment nothing backed.",
+      ],
+    },
     {
       number: 29,
       pbi_id: "PBI-32",
@@ -301,164 +392,20 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 30,
-    pbi_id: "PBI-30",
-    goal: "TWO PBIs, ONE READING. PBI-30: the exit that ALREADY works when an editor dies stops being held by nobody -- two rigs pointing in OPPOSITE directions, plus the record at the line an added handle would be written on. PBI-29: the exit code of a REFUSED shutdown is ruled against the specification and asserted. The LSP sentence both turn on is read ONCE and recorded at src/lifecycle.ts's exitCode(); every other site POINTS at that block rather than restating it, because two copies read months apart can disagree.",
-    status: "review",
-    subtasks: [
-      {
-        test: "None -- structural. Nothing can assert that a reading was recorded; what defends the ruling is subtask 2's assertion.",
-        implementation:
-          "THE ONE HOME. src/lifecycle.ts's exitCode() block ALREADY carries a paraphrase of the sentence -- `LSP exit-code semantics: 0 only when shutdown came first, otherwise 1` -- found by grepping the CLAIM'S WORDS rather than the places comments live, so the home is that block EXTENDED and not a new comment beside it. It records: the sentence as the specification writes it, where it was read, the pre-initialize rule that decides tsudoi's case, the ruling, and THE BOUNDARY -- the sentence governs the `exit` NOTIFICATION and rules NO code for a session that ends WITHOUT one, which is the half PBI-30's C4 needs and would otherwise invent.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "0fec549",
-            message: "refactor(lifecycle): give the exit-code sentence one home, not two readings",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE BLOCK WAS FOUND BY GREPPING THE CLAIM'S WORDS AND IT WAS ALREADY THERE -- `0 only when shutdown came first, otherwise 1` at exitCode(). Extending it rather than writing a second comment IS the Lifetime Rule's site clause working; a new block beside it would have created the very second copy this sprint exists to prevent.",
-        ],
-      },
-      {
-        test: "A shutdown sent BEFORE initialize is refused -32002 AND a following exit ends the process at 1 -- on both runtimes. The refusal is a NON-OPTIONAL presence assertion: without it `exited 1` is satisfied by a session whose shutdown was never delivered at all.",
-        implementation:
-          "BORN-GREEN AND DECLARED AS SUCH: measured today at 1 on both runtimes, so nothing in src/ changes. The same commit corrects src/notifications.ts's `shutdown-before-initialize-then-exit is 1 today and 0 through the framework, which no assertion in this suite catches`, which THIS SUBTASK FALSIFIES, to point at the ruling and the test that now catches it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "59a8f36",
-            message: "test(lifecycle): a shutdown tsudoi refused is not a shutdown, so exit is 1",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "P3 AS PLANNED WAS A BAD PERTURBATION AND IS RECORDED AS ONE: calling shutDown() before the rejection check moves the phase, so the REFUSAL CODE MOVES WITH IT -- the test flipped at -32002-versus-32600, EARLIER than its headline, and measured nothing about the exit code. The earlier flip was the perturbation bundling two changes, not the test bundling two claims.",
-          "P3a IS THE REPLACEMENT AND IT IS THE STRONGEST FORM: it makes the change A MAINTAINER WHO READS `received` AS BARE WIRE ARRIVAL WOULD MAKE -- remember that a shutdown arrived even though it was refused, exit 0 for it -- and it reddens THIS TEST ALONE out of 383, at the exit-code assertion, with the -32002 presence half green. That is the future argument the assertion exists to force.",
-          "P2 RUN AS NAMED AND IT DISCRIMINATES NOTHING, which is why it is not the control: exitCode() returning 0 always reddens EIGHT tests, three of them pre-existing pins in two other files.",
-        ],
-      },
-      {
-        test: "None -- structural. A helper gains no behaviour of its own.",
-        implementation:
-          "LspSession can reach stdin EOF. The property: a test can end the server's input WITHOUT killing it, which is the only way to observe the EOF path's exit code from the process that owns the pipe. test/helpers/lsp.ts is NOT otherwise touched -- in particular processId stays null across all 13 files that share that frozen const, because with EOF as the mechanism processId is never read.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "35d5964",
-            message: "refactor(test): let a session end the server's input without killing it",
-            phase: "refactoring",
-          },
-        ],
-        notes: [],
-      },
-      {
-        test: "C4 -- stdin reaches EOF with NO exit notification and the session ends at code 0, on both runtimes.",
-        implementation:
-          "BORN-GREEN. THIS IS THE THIRD CELL OF A 2x2 AND THAT IS WHAT EARNS C2'S HEADLINE: C1 gives parent-dies-with-stdin-closing -> GONE, C2 gives parent-dies-with-stdin-OPEN -> SURVIVES, and this gives stdin-closes-with-the-parent-ALIVE -> exits. Without it `the mechanism is stdin EOF` is inferred from two cells rather than established.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4b90c5",
-            message: "test(editor-death): pin the code on the stdin-EOF path, which is 0 and not 1",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "P6 AS PLANNED IS INERT ON HALF THE SUPPORTED RUNTIMES, and finding that out is the subtask's most transferable result. `reader.onClose` FIRES ON BUN AND NEVER ON DENO (bun 1.3.13, deno 2.9.2, measured by making the handler write to stderr instead of exiting): as an exit hook it reddened one runtime and left the other green, which would have recorded `defended` for a cell nothing could flip.",
-          "P6c IS THE REPLACEMENT AND IT FIRES ON BOTH: the same tidy-up written on `process.stdin`'s `end` event moves the code to 1 and reddens THESE TWO CELLS ALONE out of 385. The bun-only behaviour of the reader hook is now recorded at startServer, because it is a trap whose whole cost is paid by whoever rediscovers it.",
-        ],
-      },
-      {
-        test: "C1 -- the server exits when the process that spawned it dies, observed on the SERVER'S OWN pid, on both runtimes. PRESENCE PAIR, NON-OPTIONAL: the server is asserted ALIVE BEFORE THE KILL, because `gone after the kill` is satisfied identically by `never started`.",
-        implementation:
-          "Three levels, because the property is about an ORPHANED process: bun test spawns a fake editor, the fake editor spawns the server holding the ONLY write end of its stdin, the test SIGKILLs the fake editor and polls the server pid. The intermediate is what makes the observation clean rather than a zombie the test could still see as alive.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "397931b",
-            message:
-              "test(editor-death): two rigs, opposite directions, neither standing in for the other",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "P1 FIRED EXACTLY AS PREDICTED AND NARROWER THAN PREDICTED: an un-unref'd setInterval in startServer reddens FOUR of 389 -- this rig and the EOF cell, on both runtimes -- and leaves the FIFO rig GREEN. The prediction that `much of the suite` would go with it was WRONG and is recorded as wrong: sessions that end by `exit` call process.exit and do not care, so only the two tests that wait for a natural death notice.",
-          "P4a, THE PRESENCE PAIR, DID NOT COME OUT AS THE CRITERION EXPECTED AND THE COMMENT AT THE SITE NOW SAYS SO. With the launch broken, THE RIG FAILS FIRST at the handshake -- `the server never answered initialize within 8000ms` -- because the pid is reported only after the server ANSWERED, so the ALIVE assertion is never reached. P4b (the server answers, then dies of its own accord) does not reach it either. THE ASSERTION CAUGHT NEITHER FAILURE THAT COULD BE BUILT; it is kept for a stated reason -- it becomes the whole of the presence pair the moment anyone simplifies the rig to report a pid without waiting -- rather than credited with a catch it does not make.",
-        ],
-      },
-      {
-        test: "C2 -- a third party holds the write end of the server's stdin, the intermediate is killed, and the server MUST SURVIVE.",
-        implementation:
-          "THE SAME FIXTURE WITH ONE FLAG FLIPPED, so the only difference between the two experiments IS the variable under test: the fake editor passes its OWN inherited fd 0 to the server instead of a pipe it owns, which leaves the write end held by bun test. No FIFO -- the test process is already the third party, and mkfifo plus an O_RDWR open would bet on Darwin-specific behaviour for nothing.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "397931b",
-            message:
-              "test(editor-death): two rigs, opposite directions, neither standing in for the other",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE PLAN'S `NO FIFO` WAS REFUTED BY MEASUREMENT BEFORE IT COULD RECORD ANYTHING, and this is the sprint's clearest S20 catch. Handing the server the fake editor's own fd 0 LOOKS like leaving the write end with the test -- lsof shows both processes holding THE SAME socket endpoint -- and it silently does not: node:child_process DESTROYS a dead child's stdin stream, so the test's own runtime closes the write end when the editor is killed. Measured outcome: the server died 33ms (bun) and 43ms (deno) after the kill, i.e. THE RIG SILENTLY MEASURED THE OTHER RIG. The criterion's FIFO was right and the simplification was wrong.",
-          "P5 IS THE MIRROR AND IT LANDED EXACTLY: an unref'd parent-pid poll reddens THIS TEST ALONE, 2 of 389, leaving the other rig and the EOF cell green. With P1 reddening those and leaving this one green, NEITHER RIG SUBSTITUTES FOR THE OTHER as a measurement rather than an argument.",
-          "P4b IS A THIRD, UNPLANNED, AND IT IS THIS RIG'S OWN JUSTIFICATION MADE REAL: a server that answers and then exits of its own accord leaves the SIGKILL rig GREEN -- `gone after the kill` is satisfied by a death that had nothing to do with the kill -- and reddens this one alone. That is precisely the proposition C2 says C1 cannot discriminate.",
-        ],
-      },
-      {
-        test: "None -- NOT CONSTRUCTED and declared so: nothing can assert that a comment exists. C1 defends the property; this tells the next author why their diff broke it.",
-        implementation:
-          "C3 + the uncovered case, at startServer in src/server.ts -- the function that owns the reader and connection.listen(), and the nearest true home because NO SINGLE SITE EXISTS at which the destroying edit would be made. It states that the process exits because NOTHING KEEPS THE LOOP ALIVE, so any timer, socket or watcher added anywhere in src/ MUST be unref()'d -- A CORRECTNESS REQUIREMENT, NOT AN OPTIMISATION -- with runtime versions per S8, and it POINTS at the one reading rather than restating it. The fork-without-exec case is RECORDED as a named uncovered case and NOT filed, in the form RequestOnlyConnection already uses, carrying the two facts that make it re-decidable: a pid poll would close it and an un-unref'd one would DESTROY the exit that works, and the portability trap whose errno signs are RE-MEASURED here rather than copied.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "6624dd8",
-            message:
-              "docs(server): say why this process dies with its editor, where a diff would kill it",
-            phase: "refactoring",
-          },
-          {
-            hash: "293632d",
-            message: "docs(editor-death): point at the requirement's home instead of restating it",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          'THE ERRNO SIGNS WERE RE-MEASURED AND THE HANDED-DOWN VALUES HOLD, which is worth saying because the two numbers before them did not. bun 1.3.13: name `SystemError`, errno 3, message `kill() failed: ESRCH: No such process`. deno 2.9.2: name `Error`, errno -3, message `kill ESRCH`. `code === "ESRCH"` is the only portable discriminator -- the NAMES and MESSAGES differ too, so neither is a fallback.',
-          "THE SECOND COMMIT IS A DUPLICATION CAUGHT IN SELF-REVIEW: the test file's header had begun stating the unref requirement as well as measuring it. Pointed at the site instead. The same rule this sprint spent its budget on, applied to prose the sprint itself wrote.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE SENTENCE, READ IN SESSION AND NOT FROM MEMORY, at microsoft/language-server-protocol gh-pages (its default branch; `main` 404s), _includes/messages/3.17/exit.md: `The server should exit with success code 0 if the shutdown request has been received before; otherwise with error code 1.` And the rule that decides tsudoi's case, _specifications/lsp/3.17/general/initialize.md:3-6: a request arriving before `initialize` SHOULD be answered -32002, notifications dropped EXCEPT exit. A THIRD sentence nobody named and PBI-30 needs, in the same file's processId doc: `If the parent process is not alive then the server should exit (see exit notification) its process.`",
-      "PBI-29 IS RULED 1, AND THE RULING IS NOT `TODAY'S BEHAVIOUR IS RIGHT BECAUSE IT IS TODAY'S`. tsudoi refuses the pre-initialize shutdown BECAUSE initialize.md tells it to, and a request answered -32002 has not shut anything down: phase stays uninitialized, shutDown() never runs. Reading `received` as bare wire arrival would oblige a conforming server to say two contradictory things in one session -- `I did not do this, I am not initialized`, then `success` -- and would require tsudoi to carry a second flag beside the phase, which is exactly the two-booleans-free-to-disagree design lifecycle.ts's own doc block refuses. MEASURED: -32002 then exit 1, bun 1.3.13 and deno 2.9.2.",
-      "THE REFERENCE IMPLEMENTATION EXITS 0 ON THAT SEQUENCE AND IT DOES NOT BEAR ON THE RULING, which is why it is recorded rather than followed. READ, NOT MEASURED, at vscode-languageserver 10.1.0 installed out of tree, lib/common/server.js:766-788: the shutdown handler's FIRST statement is `watchDog.shutdownReceived = true` and the exit handler branches on it. It reaches 0 by NEVER REFUSING -- `ServerNotInitialized` and `32002` appear NOWHERE in the package, grepped over the whole of it rather than over the one file, because a claim that something does not exist is a coverage claim. So the divergence is downstream of a rule the framework does not implement, and tsudoi's own record at src/notifications.ts already carried this measurement.",
-      "A FACTUAL PREMISE INSIDE C4 IS MEASURED FALSE AND RECORDING IT IS REQUIRED, NOT CUSTOMARY. The criterion says the EOF path `is 1 today BY ACCIDENT`; it is 0 -- bun 1.3.13 and deno 2.9.2, with EOF before any message AND after a full initialize, stderr empty in all four. 0 is what an emptying event loop produces, which is the same story the PBI tells about the mechanism. THE CRITERION'S PROPERTY IS UNTOUCHED (rule it against the specification and assert it) and its RATIONALE IS STRENGTHENED: at 0 the pin catches a tidy-up routing the path through lifecycle flipping it to 1, which is the hazard C4 names in its own text. Sprint 22 governs -- a premise stated inside a criterion is a claim requiring measurement, not framing.",
-      "AND THE SPECIFICATION RULES NO CODE FOR THAT PATH, which is the honest half. The 0/1 sentence is scoped to the `exit` NOTIFICATION, and on the EOF path no notification arrives; what the specification does require is the EXIT ITSELF, via the processId sentence. So the assertion pins 0 on a REASONED ground stated as such: 1 is this protocol's word for `error`, and a server terminating because the client it serves is gone -- the very thing the specification asks it to do -- has not failed.",
-      "TSUDOI DELIVERS THE SPECIFICATION'S PROPERTY BY A DIFFERENT MECHANISM THAN THE SPECIFICATION'S, and that is precisely where the uncovered case lives. The processId sentence describes a server that WATCHES its parent; tsudoi never reads processId at all -- test/helpers/lsp.ts sends null and the exit happens anyway -- and gets the same outcome from stdin EOF. Fork-without-exec is the one input on which the two mechanisms come apart, so C5's case is not an arbitrary gap but the exact residue of the substitution.",
-      "BASELINE RE-MEASURED RATHER THAN COPIED, each command run separately and unpiped at 695ef22: bun test 381 pass / 0 fail / 24 files, exit 0.",
-      "THREE OVERSTATEMENTS IN THIS SPRINT'S OWN PROSE, FOUND IN SELF-REVIEW AND FIXED IN 4911ba9, ALL THREE THE COVERAGE CLASS S13 NAMES. (1) `an un-unref'd handle reddens` was written beside a requirement about ANYWHERE IN src/, and the rig sends ONE `initialize` -- so it reaches handles on the STARTUP AND INITIALIZE PATH and no others, and nothing else in the suite reaches them either, because every other session ends by process.exit or by SIGKILL. Now stated with its measurement and ACCEPTED rather than closed. (2) ``main` does not exist` was never measured -- one 404 on one path was, and the API returned default_branch, not a branch list -- INSIDE THE ONE BLOCK THIS SPRINT IS ORGANISED AROUND. (3) Two JUDGEMENTS sat unlabelled in a paragraph of measurements and are now labelled REASONED, which is also how C5's `labelled REASONED` clause is satisfied: everything factual in that record turned out MEASURABLE, so the tiering falls on the two claims that are not.",
-      "DELIVERED IN 0fec549..4911ba9. 389 green from 381 -- EIGHT ADDED, NONE REMOVED OR WEAKENED, 25 files from 24 -- each DoD command run SEPARATELY AND UNPIPED with its exit read directly, AT FINAL HEAD with a clean tree: bun test 0, oxlint 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), oxfmt --check . 0, tsc --noEmit 0. scrum.ts was committed ALONE three times and the hook was never bypassed. NO src/ BEHAVIOUR CHANGED: every assertion this sprint added was born-green and declared so, which is the whole shape of `held by nobody` as a problem.",
-      "THE STANDING PROSE ITEM, ANSWERED PLAINLY: this sprint changed NO observable behaviour, so no prose describing behaviour went stale by drift. What DID go stale is prose about COVERAGE -- src/notifications.ts's `which no assertion in this suite catches` -- and it was corrected in the commit that falsified it rather than left to be found.",
-      "THE SPRINT-14 RE-RUN FOUND ITS OWN DEFECT BEFORE IT FOUND ANYTHING ELSE. Sprint 29's P1 (rebuild the entry instead of aliasing it) re-run against the tree this sprint edited: the FIRST attempt reddened NOTHING IN 389 and would have been reported as a disarmed control. It was the PERTURBATION that was wrong -- `TextDocument.update` MUTATES ITS ARGUMENT, so calling it before replacing the map entry mutates the very reference the gate holds. Written faithfully (apply the changes to a COPY) it reddens THE ALIASING GATE ALONE out of 389. THE CONTROL IS STILL ARMED, and the failed attempt independently confirms Sprint 29's ruling that identity is deliberately not asserted: in that variant the mechanism changed and the PROPERTY still held, so a green gate was the correct answer.",
-      "TWO PLANNED PERTURBATIONS WERE MEASURED USELESS AND BOTH ARE RECORDED AS SUCH RATHER THAN QUIETLY REPLACED -- P3 (moves the phase, so it moves the refusal code with it and flips an assertion earlier than the headline) and P6 (a reader close hook, which FIRES ON BUN AND NEVER ON DENO, so it would have recorded `defended` for a cell it could not flip on half the runtimes). A perturbation that cannot flip what it names is the same defect as a test that cannot fail, one level up.",
-      "THE 2x2 IS WHAT MAKES `THE MECHANISM IS STDIN EOF` A MEASUREMENT RATHER THAN AN INFERENCE, and the third cell was added for that reason: stdin closes with the parent ALIVE (exits 0), stdin closes BECAUSE the parent died (exits, 11ms), parent dies with stdin OPEN (lives, still alive at 6s). Two cells would have left `exits when its parent dies` and `exits when its input ends` indistinguishable.",
-      "ONE THING THE PBI ASSUMED IS NOT TRUE OF THE RIG AS BUILT, and the site comment says so instead of the criterion's version: the presence pair is NOT what catches `never started` here -- the handshake is, and it names itself. Kept anyway, with the reason it earns its place stated as a CONDITIONAL one. That is the honest form of a criterion-mandated assertion whose stated rationale did not survive measurement.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 30,
+      improvements: [
+        {
+          action:
+            "A HANDOFF CARRIES ITS PROVENANCE, AT BOTH ENDS. ONE RULE, THREE PAYLOADS -- wants, inherited measurements, counts. The bringer labels a want ASKED FOR or MENTIONED and a handed measurement with WHO TOOK IT, the same way a fact carries MEASURED or REASONED; the receiver DOES NOT RULE ON AN UNLABELLED ONE. Filed at both ends deliberately: the Scrum Master's first draft was a private habit, and S15 already records that A HABIT THAT LEAVES NO TRACE CANNOT BE AUDITED. The PO's half is symmetric -- they spent this whole thread demanding provenance for FACTS and never once for WANTS, and ruled on `10 of 10` and on a push fork without asking where either came from. The Sprint-25 entry does not reach this: `read the artifact` has NO REFERENT for a measurement someone else took.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 29,
       improvements: [
