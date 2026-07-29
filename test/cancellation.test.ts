@@ -188,12 +188,24 @@ for (const runtime of runtimes) {
     // answering a cancelled request normally; tsudoi does not, because the
     // client has already discarded the request's context.
     //
-    // `both` WAS AN ENUMERATION OF TSUDOI'S METHODS WHEN IT WAS WRITTEN AND IS
-    // NOT ONE NOW: textDocument/formatting arrived at Sprint 31 and goes
-    // through the same `answerUnlessCancelled`, so its cancelled response is
-    // -32800 too -- AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT. Stated
-    // rather than quietly rescoped, because a reader counting methods against
-    // this comment is the way the gap would otherwise be missed.
+    // `both` NAMES THE METHODS THIS FILE DRIVES AND HAS NOT BEEN AN ENUMERATION
+    // OF TSUDOI'S SINCE SPRINT 31. Formatting arrived then, diagnostic and
+    // resolve after it, and every one of them goes through the same
+    // `answerUnlessCancelled`.
+    //
+    // WHAT THIS COMMENT WENT ON TO SAY WAS `AND NOTHING HERE OR ANYWHERE ELSE
+    // ASSERTS THAT`, AND IT HAD BEEN FALSE SINCE SPRINT 32 -- falsified by a
+    // test rather than by this file, which is why nothing pointed at it:
+    // test/methods-table.test.ts asserts that EVERY method in the request table
+    // is answered -32800 when cancelled, by construction, so a sixth is covered
+    // the moment it is declared.
+    //
+    // WHAT IS STILL PER-METHOD HERE AND NOT THERE, said precisely so the
+    // correction does not overshoot: those table tests cancel BEFORE DISPATCH,
+    // so the handler is entered with an already-cancelled token. The two tests
+    // in this file cancel a handler that is PARKED AND RUNNING, which is what
+    // measures that a result produced after the cancellation is discarded. That
+    // is asserted for hover and completion and for no other method.
     test(
       "a cancelled hover is answered -32800 and the next hover is answered normally",
       async () => {
