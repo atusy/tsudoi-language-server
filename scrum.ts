@@ -126,35 +126,6 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-40",
-      story: {
-        role: "config author",
-        capability: "get -32800 for a cancelled request whichever drive its method uses",
-        benefit:
-          "the one place cancellation is decided actually decides it, so the claim at that place is true",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A cancelled request to a GENERATOR-DRIVEN method with NO handler is answered -32800, as an awaited-once one already is.",
-          verification:
-            "MEASURED at Sprint 32 by P-D, run expecting the opposite: deleting the fixture's awaited-once handler reddened NOTHING while deleting its generator-driven handler reddened the -32800 test. The generator drive's no-handler early return sits AHEAD of answerUnlessCancelled, so such a request is answered `null`.",
-        },
-        {
-          criterion:
-            "The qualifier added to answerUnlessCancelled's doc block at Sprint 32 is REMOVED, because it stops being true.",
-          verification:
-            "THE CLAIM IS THE ASSET, and that is the PO's whole ground for ruling the direction rather than leaving it open: answerUnlessCancelled exists PRECISELY so cancellation is decided in one place, and preserving the divergence means WEAKENING A STATED PRINCIPLE TO ACCOMMODATE AN ORDERING NOBODY CHOSE. A prose qualifier that no longer describes the code is the point of this PBI, not a side effect.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "REVEALED, NOT INTRODUCED. Invisible while three hand-written copies stood in for the table, and visible the moment the two drives sat side by side. LSP permits either answer, so NO REQUIREMENT IS BREACHED and this is a design-coherence item rather than a defect.",
-        "THE FINDING RECORDED IN THE PO'S OWN TERMS: criterion 3 of PBI-37 warned that a table might DESTROY a difference hand-writing made visible. THIS TABLE MADE VISIBLE ONE THAT THREE HAND-WRITTEN COPIES HAD HIDDEN.",
-        "OVERTURN CONDITION, evidence-shaped rather than predictive: a client shown to depend on `null` from a cancelled completion.",
-      ],
-    },
-    {
       id: "PBI-35",
       story: {
         role: "tsudoi maintainer",
@@ -178,6 +149,24 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 35,
+      pbi_id: "PBI-40",
+      goal: "DESIGN COHERENCE, NOT A DEFECT, and the ground is that THE CLAIM IS THE ASSET: answerUnlessCancelled exists precisely so cancellation is decided in ONE PLACE, and a cancelled request to a generator-driven method with NO handler is answered `null` because that drive's no-handler early return sits AHEAD of it. LSP permits either answer, so no requirement is breached -- what is at stake is a stated principle being weakened to accommodate AN ORDERING NOBODY CHOSE. The divergence closes at -32800 FOR BOTH DRIVES, and CRITERION 2 IS THE POINT RATHER THAN A SIDE EFFECT: the qualifier `THAT REACHES THIS FUNCTION` stops being true, so it comes out, and it comes out EVERYWHERE THE CLAIM LIVES rather than only where this sprint edits -- found by grepping the claim's words (`REACHES THIS FUNCTION`, `no-handler`, `early return`, `AHEAD OF`, `epilogue`, `nowhere else`, `one place`, `-32800`, `qualifier`, `divergence`) rather than the places comments live, because a git diff answers `did this change?` and never `is this list complete?`.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "428 green from a RE-MEASURED 423 -- FIVE ADDED, NONE REMOVED, NONE WEAKENED, NO EXPECTED VALUE MOVED. The no-handler return moved INSIDE answerUnlessCancelled, so -32800 is now the answer for both drives and the claim in that block is TRUE rather than qualified.",
+        "CRITERION 2 WAS PROSE AND WAS TREATED AS THE POINT. There is no executable defence for a prose criterion, so the discharge was TEN SEARCH TERMS OVER src, test, examples AND README, with EVERY SURVIVOR READ -- past-tense history or still true. The Scrum Master verified independently that `REACHES THIS FUNCTION` appears ZERO times in src/methods.ts.",
+        "AND THE GREP EXTENDED ITSELF BY ITS OWN CATCH: a pre-existing false comment in test/cancellation.test.ts claimed a cancelled formatting request is -32800 `AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT` -- FALSE SINCE SPRINT 32'S TABLE TEST, and FALSIFIED BY A TEST IN ANOTHER FILE, so NO DIFF ON ITS OWN FILE COULD EVER HAVE POINTED AT IT. That generalises the Sprint-29 entry into: A COMMENT CAN BE FALSIFIED BY AN EDIT IN A FILE IT DOES NOT NAME, AND NOTHING LOCAL WILL SHOW IT. The correction is BOUNDED rather than deleted -- table tests cancel BEFORE DISPATCH; a PARKED handler is still asserted for hover and completion only.",
+        "THREE PRESERVATIONS RULED SCOPE DISCIPLINE RATHER THAN TIMIDITY, and the PO stated the distinguishing test for next time: TIMIDITY DECLINES WITHOUT NAMING WHAT THE CHANGE WOULD COST; DISCIPLINE DECLINES WITH THE COST NAMED. All three name it -- moving the partialResultToken read into the epilogue turns a bare -32603 into a TypeError MISLABELLED AS A HANDLER FAILURE, corrupting the one diagnostic a config author has; moving it above the handler check loses the report for a config that cannot answer completion; and hoisting the no-handler case into registerMethods makes it A THIRD AXIS no criterion asks for. AN EXECUTOR EXCEEDING THE CRITERIA IS SCOPE CREEP EVEN WHEN THE CODE IS BETTER.",
+        "A FOURTH KIND OF STANDING-RE-RUN OUTCOME, CLASSIFIED AND CONFIRMED: S14-b' now leaves all 428 green because AN ACCEPTED CRITERION DELIBERATELY REMOVED ITS TARGET BEHAVIOUR. The three exclusions are what make the classification right -- NOT a control gone quiet, NOT a disarmed control, NOT Sprint 34's edit-that-grew-a-second-half. A CONTROL GONE QUIET AND A DISARMED CONTROL ARE DEFECTS; THE OTHER TWO ARE NOT. All four produce the same observation and ARE INDISTINGUISHABLE FROM THAT OBSERVATION ALONE, which is why the vocabulary must exist.",
+        "THE RESIDUAL MOVED AND IS RECORDED AS A PROPERTY, NOT A FRACTION: EVERY handler in all-methods.ts is now defended by nothing about what it answers, where Sprint 34 measured three of four. Prefer-naming-to-counting reaching A RESIDUAL, a surface it had not been applied to.",
+        "P1 CLAIMS `ALONE` LEGITIMATELY under the Sprint-33 wording standard, because 428 RAN. P2 declared BORN GREEN AND MEASURED NON-VACUOUS. And a PRESENCE ASSERTION was added so the loop cannot go green across five awaited-once methods while measuring nothing -- the S6 pairing rule applied to A LOOP, where a uniformly-passing iteration is exactly where a vacuous test hides.",
+        "THE SCRUM MASTER DISCLOSED A MISS RATHER THAN QUIETLY REORDERING: the PO had asked for PBI-41 to be refined DURING this sprint and it was not. THE PO'S RULING: A DISCLOSED MISS COSTS ONE SPRINT OF ORDERING; A QUIET REORDER COSTS THE BACKLOG ITS MEANING, and the second is unrecoverable because nobody knows it happened. Fourth time in this thread someone surfaced their own lapse rather than absorbing it, and the PO records it as THE SINGLE PRACTICE THEY WOULD KEEP IF THEY COULD KEEP ONLY ONE.",
+      ],
+    },
     {
       number: 34,
       pbi_id: "PBI-39",
@@ -274,102 +263,20 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 35,
-    pbi_id: "PBI-40",
-    goal: "DESIGN COHERENCE, NOT A DEFECT, and the ground is that THE CLAIM IS THE ASSET: answerUnlessCancelled exists precisely so cancellation is decided in ONE PLACE, and a cancelled request to a generator-driven method with NO handler is answered `null` because that drive's no-handler early return sits AHEAD of it. LSP permits either answer, so no requirement is breached -- what is at stake is a stated principle being weakened to accommodate AN ORDERING NOBODY CHOSE. The divergence closes at -32800 FOR BOTH DRIVES, and CRITERION 2 IS THE POINT RATHER THAN A SIDE EFFECT: the qualifier `THAT REACHES THIS FUNCTION` stops being true, so it comes out, and it comes out EVERYWHERE THE CLAIM LIVES rather than only where this sprint edits -- found by grepping the claim's words (`REACHES THIS FUNCTION`, `no-handler`, `early return`, `AHEAD OF`, `epilogue`, `nowhere else`, `one place`, `-32800`, `qualifier`, `divergence`) rather than the places comments live, because a git diff answers `did this change?` and never `is this list complete?`.",
-    status: "review",
-    subtasks: [
-      {
-        test: "A BY-CONSTRUCTION TEST, in test/methods-table.test.ts, over a config supplying NO handler for anything: every method the table declares is cancelled and required to answer -32800. It states criterion 1's PROPERTY -- whichever drive a method uses, a cancelled request with no handler is answered -32800 -- rather than the mechanism, and one assertion covers every entry, which is the convention that table exists to keep. PAIRED WITH A PRESENCE ASSERTION on the file's own precedent (`the table is not empty, so the loop above is iterating something`): the table declares AT LEAST ONE generator-driven entry, WITHOUT WHICH the loop could go green on five awaited-once methods and measure nothing about the drive this PBI is about. PLUS THE CONTROL that makes the -32800 attributable to cancellation rather than to a broken fixture: the same handler-less config answers every method `null` when NOT cancelled.",
-        implementation:
-          "The generator drive's no-handler answer is produced INSIDE answerUnlessCancelled instead of ahead of it, so every request reaching a drive is answered under the cancellation epilogue. TWO ORDERING CHOICES ARE DELIBERATE AND BOTH PRESERVE BEHAVIOUR NO CRITERION ASKS TO CHANGE: the handler check moves AFTER the context is built but the partialResultToken read stays OUTSIDE the produce callback, so a `params: null` TypeError keeps its current attribution (-32603 with no `tsudoi:` line) rather than being mislabelled `handler failed`; and the handler check precedes the token read, so a no-handler request carrying an invalid token still emits no stderr line. NOT HOISTED INTO registerMethods: src/methods.ts records the no-handler case as coming WITH the drive rather than being a second axis, and making it a shared third thing is a scope decision no criterion asks for.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "9fb8d8c",
-            message:
-              "feat(methods): decide cancellation in one place by answering the no-handler generator case there too",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPECTED RED, and at a named method: the loop reddens at textDocument/completion, the table's only generator-driven entry, and stays green through the four awaited-once ones.",
-          "THE CONTROL IS BORN GREEN AND IS DECLARED SO. It is not vacuous -- answering `[]` rather than `null` for a handler-less generator-driven method reddens it -- but nothing about it can fail before the implementation lands.",
-          "THE RED ARRIVED NAMING ITS OWN CAUSE, and the assertion was written that way on purpose: a per-iteration `toBe` stops at the first divergence and prints -32800 against undefined without saying WHICH method diverged. Comparing one object for the whole run prints `textDocument/completion: undefined` beside four methods at -32800, which is the brief's handed measurement RE-MEASURED rather than copied.",
-        ],
-      },
-      {
-        test: "NO EXECUTABLE DEFENCE, AND THAT IS DECLARED RATHER THAN DRESSED UP: criterion 2 is about PROSE, and what defends it is the grep whose terms are named in the goal above. The measurement is that no term returns a surviving statement of the qualifier.",
-        implementation:
-          "The qualifier and every restatement of it are removed: answerUnlessCancelled's doc block loses `THAT REACHES THIS FUNCTION` and the paragraph explaining why it was load-bearing, requestCancelled's block loses the same qualifier it forwards, the router's drive comment stops saying completion returns EARLY ahead of the context, driveGenerator's block stops calling the early return this drive's no-handler shape, and test/fixtures/all-methods.ts's block is RE-MEASURED rather than edited -- its measurements are about exactly the behaviour this sprint changes.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "8c840be",
-            message:
-              "docs(methods): delete a qualifier that stopped being true, at every site that carried it",
-            phase: "refactoring",
-          },
-          {
-            hash: "796ad1a",
-            message:
-              "docs(test): re-measure what the all-methods fixture enforces, now that this sprint removed it",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "WHAT REPLACES IT MUST NOT BE A SECOND FALSE CLAIM. The sentence becomes unqualified only if every request reaching either drive reaches this function -- which is what subtask 1 measures.",
-        ],
-      },
-      {
-        test: "None. A PRE-EXISTING FALSE COMMENT found by grepping the claim's words, falsified by SPRINT 32's own test rather than by this sprint: test/cancellation.test.ts says a cancelled formatting request is -32800 `AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT`, while test/methods-table.test.ts:127 has asserted exactly that for every method in the table since Sprint 32.",
-        implementation:
-          "The comment names the assertion that covers it -- the Sprint-31 P7 precedent, where prose rather than code was falsified and the fix was NAMING the test. Its second staleness is fixed in the same edit: it names formatting as the newcomer, and diagnostic and resolve have arrived since. ITS OWN COMMIT, separate from criterion 2's, because it is not this PBI's claim.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "d2f3023",
-            message:
-              "docs(test): name the test that covers a gap this comment still reported as open",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "NO TEST IS WITHDRAWN OR WEAKENED, so S16 is not engaged. Reported as pre-existing.",
-        ],
-      },
-      {
-        test: "PERTURBATIONS, NAMED BY THE ASSERTION EACH IS REQUIRED TO FLIP. P1: restore the early return ahead of the epilogue -- the new -32800 test must redden, and `alone` is claimed only after confirming no test file stopped loading. P2: answer `[]` rather than `null` for the handler-less generator-driven case -- the born-green control must redden.",
-        implementation:
-          "THE STANDING RE-RUN, WITH A KNOWN COMPLICATION AND AN EXPECTED MOVE. S14-b (delete all-methods' completion handler) and S14-b' (delete completion AND resolve) probe the very behaviour this sprint removes, so their results are RE-MEASURED and reported precisely rather than carried. All five handlers in that fixture are deleted one at a time, reverted between, because the residual PBI-42 carries -- three of four awaited-once handlers defended by nothing -- may move, and a sprint that changed whether a residual is still true says so.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "A PERTURBATION WHOSE TARGET BEHAVIOUR AN ACCEPTED CRITERION DELIBERATELY REMOVED IS ITS OWN KIND, distinct from a control going quiet (S16) and from Sprint 34's perturbation-whose-edit-grew-a-second-half. Naming it is what keeps `a defence went missing` from being the reading.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "SHIPPED IN 9fb8d8c..d2f3023. 428 green from a RE-MEASURED 423, 29 files from 29 -- FIVE TESTS ADDED, NONE REMOVED, NONE WEAKENED, NO EXPECTED VALUE MOVED. Each DoD command run separately and unpiped with its exit read directly: bun test 0, oxlint 0 (the two pre-existing require-yield warnings unchanged), oxfmt --check . 0, tsc --noEmit 0.",
-      "CRITERION 1 IS DEFENDED AND THE DEFENCE NAMES ITS OWN CAUSE. The new test compares ONE OBJECT for the whole run rather than asserting per iteration, because a per-iteration `toBe` stops at the first divergence and prints -32800 against undefined WITHOUT SAYING WHICH METHOD DIVERGED -- the Sprint-16 half of S9, that a real detection arriving without naming its cause is worth replacing. Its red printed `textDocument/completion: undefined` beside four methods at -32800, on both runtimes, which RE-MEASURES the handed Sprint-32 result instead of copying it.",
-      "P1 REDDENS ALONE AND `ALONE` WAS CHECKED RATHER THAN ASSUMED: restoring the early return ahead of the epilogue leaves 428 tests RAN across 29 FILES, so nothing stopped loading, and exactly the named test fails on both runtimes. P2 (the handler-less generator answer changed from `null` to `[]`) reddens the born-green control alone on the same terms -- so that control is declared born green AND measured non-vacuous.",
-      "TWO ORDERING CHOICES INSIDE THE DRIVE ARE DELIBERATE AND NEITHER IS A TIDY. The partialResultToken read stays OUTSIDE answerUnlessCancelled, so a client sending `params: null` keeps its bare -32603 instead of having a TypeError reported as a `tsudoi:` handler failure for a handler never called; and it stays BELOW the no-handler return, so a config that cannot answer completion still reports no token. Both preserve behaviour no criterion asked to change, and both are written at the line rather than only here.",
-      "CRITERION 2 HAS NO EXECUTABLE DEFENCE AND THAT IS DECLARED RATHER THAN DRESSED UP. What defends it is a grep for THE CLAIM'S WORDS -- REACHES THIS FUNCTION, qualifier, early return, ahead of, epilogue, no-handler, nowhere else, one place, divergence, -32800 -- run across src, test, examples and README, not a diff of the file that was edited. It found the claim in FIVE places in src/methods.ts, in test/fixtures/all-methods.ts, and in a test comment; every survivor is past-tense history and was read to confirm it.",
-      "THE STANDING RE-RUN MOVED, AND THIS IS A FOURTH KIND OF PERTURBATION OUTCOME: A CONTROL WHOSE TARGET BEHAVIOUR AN ACCEPTED CRITERION DELIBERATELY REMOVED. S14-b (delete all-methods' completion handler) still reddens four tests and still for the config-load reason Sprint 34 found. S14-b', the variant that reproduced the original, now leaves ALL 428 GREEN -- it detected the divergence, and the divergence is what this sprint closed. Not a control gone quiet, not a disarmed one, not Sprint 34's edit-that-grew-a-second-half.",
-      "THE RESIDUAL MOVED FROM SPRINT 34'S THREE-OF-FOUR TO EVERY HANDLER IN THE FIXTURE, measured this sprint by deleting each handler in test/fixtures/all-methods.ts one at a time and reverting between: hover, formatting, diagnostic and resolve each leave 428 green, and completion's leaves 428 green as soon as the resolve handler that made its absence a LOAD failure goes with it. NO handler in that fixture is defended by any assertion about what it answers. Written onto PBI-42, whose own note predicted this sprint would change it, rather than left in a sprint record that compacts.",
-      "A PRE-EXISTING FALSE COMMENT WAS FOUND BY THE SAME GREP AND FIXED IN ITS OWN COMMIT. test/cancellation.test.ts claimed a cancelled formatting request is -32800 `AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT`; Sprint 32's by-construction table test had asserted it for three sprints. FALSIFIED BY A TEST RATHER THAN BY THE FILE, which is why no diff pointed at it. Its second staleness -- naming formatting as the newcomer when diagnostic and resolve arrived after -- went in the same edit, because a half-corrected count is worse than a stale one, and the correction is BOUNDED: the table tests cancel before dispatch, and cancelling a PARKED handler is still asserted for hover and completion only.",
-      "ONE PERTURBATION EXPECTED TO REDDEN DID NOT, AND IT IS S14-b' -- THE FOURTH-KIND OUTCOME ABOVE, not a defence that went missing. Every other one behaved: P1 and P2 each reddened their named assertion alone, and the four awaited-once methods stayed at -32800 through the expected red, which is what makes the divergence attributable to the DRIVE rather than to the fixture or the harness.",
-      "A NEW FIXTURE RATHER THAN A REUSED ONE, on naming: test/fixtures/hover-absent.ts is already `{ methods: {} }`, and driving every entry in the table through a file called `hover-absent` would make both its name and its hover-specific block lie, while renaming it would edit a test no criterion here reaches. test/fixtures/no-methods.ts states the property it carries instead of counting the methods it omits -- and it is the half of these tests a method joins BY CONSTRUCTION, which all-methods.ts no longer is.",
-      "NOT DONE, AND NAMED SO IT IS NOT MISTAKEN FOR AN OVERSIGHT: the no-handler case was NOT hoisted out of the two drives into the router. src/methods.ts records it as coming WITH the drive rather than being a second axis; making it a shared third thing is a scope decision no criterion asks for, and criterion 1 says the request is ANSWERED -32800, not that the return is deleted.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 35,
+      improvements: [
+        {
+          action:
+            "A STANDING RE-RUN THAT GOES GREEN MUST BE CLASSIFIED, NOT MERELY NOTED -- gone quiet, disarmed, edit-grew-a-second-half, or target-deliberately-removed. FOUR OUTCOMES, and the first two are DEFECTS while the other two are NOT. All four produce THE SAME OBSERVATION and are indistinguishable from it alone, which is the whole reason the vocabulary exists. FILED AS AN EXTENSION OF THE SPRINT-14 STANDING-RE-RUN ENTRY rather than as its own: that entry creates the practice and already carries its second rationale, and FOUR OUTCOMES ANSWERING ONE QUESTION ARE A VOCABULARY -- scattering a vocabulary defeats its purpose. Deliberately NOT filed under the cannot-be-constructed entry, which has a different trigger, actor and moment.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 30,
       improvements: [
