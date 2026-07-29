@@ -39,64 +39,64 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-42",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "learn from the suite, rather than from a comment, that a method joined the request table and its by-construction fixture did not",
-        benefit:
-          "the tests that iterate the table keep covering every method in it, instead of silently covering fewer of them each sprint",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "DECIDE AT REFINEMENT whether this is worth a check at all.",
-          verification:
-            "the cost is real and is not zero: test/fixtures/all-methods.ts's doc block currently states what it enforces AND what it does not, honestly and by measurement, and a check would make half of that block describe something that can no longer happen.",
-        },
-        {
-          criterion:
-            "IF a check lands, it is BY CONSTRUCTION -- one assertion covering every method the table declares -- and never a per-method copy.",
-          verification:
-            "a per-method assertion is the convention Sprint 32's table exists to retire, and adding one here would reintroduce it in the very tests that prove it is gone.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "MEASURED AT SPRINT 34, AND IT IS THE THIRD RATHER THAN A NEW ONE: deleting test/fixtures/all-methods.ts's resolve handler leaves ALL 423 TESTS GREEN, exactly as deleting its formatting handler (Sprint 32) and its diagnostic handler (Sprint 33) do. THREE OF THE FOUR AWAITED-ONCE HANDLERS IN THAT FIXTURE ARE DEFENDED BY NOTHING.",
-        "FILED BECAUSE THE TRIGGER THE PO SET HAS FIRED. Sprint 33 recorded the pair with `A THIRD MAKES IT A PATTERN worth addressing rather than two one-offs`, which is the rule of three this project already applies to the table, the resolve check and the notify fork. THE THIRD ARRIVED; addressing it is a decision, and this PBI is where that decision has a home rather than in a sprint record that compacts.",
-        "NOT FIXED IN THE SPRINT THAT FOUND IT, on the Sprint-33 precedent the PO recorded as correct: NO PBI-39 CRITERION ASKS FOR IT, and a check smuggled in beside a method would be the executor deciding scope.",
-        "THE ASYMMETRY IS GONE AND THE RESIDUAL IS NOW EVERY HANDLER IN THE FIXTURE, stated as a property because a fraction of a set that grows with the table falsifies itself in silence. This note said the generator-driven handler was out of scope BECAUSE deleting completion's DID redden; PBI-40 removed the reason it did. RE-MEASURED AT SPRINT 35 by the executor, one deletion at a time and reverted between: deleting completion's ALONE reddens four tests because `completionItem/resolve` without `textDocument/completion` stops the config LOADING, and deleting completion's TOGETHER WITH resolve's -- the edit that removes that load failure -- leaves ALL 428 GREEN, where it reddened the -32800 test from Sprint 32 until Sprint 35. So NO handler in that fixture is defended by any assertion about what it answers, and this PBI's story now covers BOTH drives rather than four awaited-once handlers.",
-      ],
-    },
-    {
       id: "PBI-43",
       story: {
         role: "tsudoi maintainer",
-        capability: "have a capability contributor be order-independent instead of order-dependent",
+        capability: "have capability contributors be order-independent instead of order-dependent",
         benefit:
-          "the ordering hazard stops existing rather than staying observable, and two undefended defensive behaviours dissolve into one",
+          "the ordering hazard stops existing rather than staying observable, and two recorded debits retire at once",
       },
       acceptance_criteria: [
         {
           criterion:
-            "completion's contributor MERGES rather than assigns, and the same capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
+            "completion's contributor MERGES rather than assigns, and the SAME capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
           verification:
-            "THE PO'S OWN HEDGE, stated because they did not have the code in front of them and have been wrong on shapes repeatedly. This measurement is the PBI's premise, not its epilogue.",
+            "THE PO'S OWN HEDGE, kept as criterion 1 because they did not have the code in front of them and have been wrong on shapes repeatedly. THIS MEASUREMENT IS THE PBI'S PREMISE, NOT ITS EPILOGUE.",
         },
         {
-          criterion: "P1 becoming unconstructible is the DELIVERABLE, not a loss.",
+          criterion:
+            "P1 BECOMING UNCONSTRUCTIBLE IS THE DELIVERABLE, AND ITS CLASSIFICATION IS RULED IN ADVANCE SO A SUCCESS CANNOT BE REPORTED AS A GAP: TARGET DELIBERATELY REMOVED.",
           verification:
-            "S11: a vocabulary with three outcomes defaulted to the pessimistic reading and reported A DESIGN SUCCESS IN THE LANGUAGE OF A COVERAGE GAP. MAKING A HAZARD IMPOSSIBLE OUTRANKS KEEPING IT OBSERVABLE. The executor declined this tidy on the ground that it would dissolve the constraint rather than check it; THE PO RULED THE REASONING INVERTED.",
+            "the fourth outcome in the Sprint-35 vocabulary -- A DESIGN OUTCOME, NOT MEANS LACKING. A MERGE REMOVES THE HAZARD; AN ASSERTION ABOUT ORDERING RESTATES IT. That is the line the PO drew when declining the Sprint-37 residual, and this falls on THE OTHER SIDE of it.",
         },
         {
-          criterion: "The P2 debit closes as a consequence rather than being addressed separately.",
+          criterion: "The P2 debit closes as a CONSEQUENCE rather than being addressed separately.",
           verification:
-            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. That two-for-one is a stronger argument than either half alone.",
+            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. Two-for-one is a stronger argument than either half alone.",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "FILED AS ITS OWN DRAFT RATHER THAN BOLTED ONTO PBI-40, which is ready and has its own criteria.",
+        "RESOLVE HAVING SHIPPED SETTLES THE REMAINING DOUBT: the ordering dependency is LIVE CODE TODAY rather than a future hazard, so this is FIXING SOMETHING rather than pre-empting it.",
+        "FIRST OF THE THREE because it is smallest, its hazard is live, and it retires two recorded debits.",
+      ],
+    },
+    {
+      id: "PBI-42",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "know at compile time that the all-methods fixture still covers every method",
+        benefit:
+          "tests that believe they exercise five methods cannot silently exercise four and stay green",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "The fixture declares its methods over `Method` so that a method added to MethodMap WITHOUT a handler is A COMPILE ERROR (TS2741, exactly as requestEntries already produces).",
+          verification:
+            "COMPILE-TIME EXHAUSTIVENESS, NO ASSERTIONS, AND IT GROWS WITH THE TABLE BY CONSTRUCTION. ONE LINE RATHER THAN FIVE TESTS.",
+        },
+        {
+          criterion:
+            "THE ANSWERS STAY UNDEFENDED DELIBERATELY, and THE REASON IS RECORDED AT THE FIXTURE.",
+          verification:
+            "`defend every handler` IS FIVE NEAR-IDENTICAL TESTS AND DIES ON S7 -- they would resist legitimate fixture changes without defending a requirement. THE FIXTURE'S JOB IS TO EXIST AND ROUTE, NOT TO ANSWER. Recorded at the site BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE TITLE WAS NOT THE CRITERION. The real risk is not a wrong answer -- it is that THE FIXTURE SILENTLY STOPS COVERING A METHOD. Same vacuity shape Sprint 35 met with its presence assertion over the awaited-once loop.",
+        "MEASURED ACROSS TWO SPRINTS: Sprint 34 found three of four handlers undefended; SPRINT 35 RECORDED IT AS A PROPERTY RATHER THAN A FRACTION -- EVERY handler, and the set grows with the table.",
       ],
     },
     {
@@ -109,15 +109,26 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "@atusy/tsudoi/types resolves in-repo without a manual build, AND the fate of the stale-dist detector is decided IN THIS PBI.",
+            "STALENESS MUST BE IMPOSSIBLE, NOT MERELY HANDLED: edit src/, run the suite with NO EXPLICIT BUILD, and assert the tests SEE THE NEW SOURCE.",
           verification:
-            "package-shape.test.ts:230 becomes UNABLE TO FAIL under an automatic build, and S15 already deleted a test for exactly that -- so whoever picks this up is deciding to delete it. That decision belongs in the criteria, which is the part a minor fix would have got silently wrong.",
+            "THE REAL GATE, AND IT CAN WITHDRAW THE AUTHORISATION BELOW. If the build is SKIPPABLE -- a pretest hook a single-file run bypasses -- staleness is STILL REACHABLE and THE DETECTOR WAS LOAD-BEARING, in which case the deletion is withdrawn and the PBI RETURNS TO THE PO. That is the discriminating check that makes the authorisation SAFE RATHER THAN OPTIMISTIC.",
+        },
+        {
+          criterion:
+            "AUTHORISED IN ADVANCE BY THE PO: DELETE THE STALE-DIST DETECTOR, classified TARGET DELIBERATELY REMOVED.",
+          verification:
+            "under an automatic build the staleness it watches CANNOT ARISE, so this is not lost coverage. NO READINESS GATE IS NEEDED because NO MEASUREMENT WOULD CHANGE THE PBI'S SHAPE -- the table's gate existed because its JUSTIFICATION was unmeasured, whereas here the justification was MEASURED at Sprint 25 (30 fail on a fresh clone) and the fourth way was REFUTED by measurement. What was unsettled is A SCOPE DECISION, which S16 routes to the PO -- so it is RULED rather than deferred into the PBI, which is exactly what Sprint 25 refused to let a fix do.",
+        },
+        {
+          criterion: "@atusy/tsudoi/types resolves in-repo without a manual build.",
+          verification:
+            "MEASURED at Sprint 25: with dist/ absent, bun test gives 30 fail / 299 pass, the first failure naming dist/types.js imported from examples/completion-path.ts.",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "ACCEPTED AS A STEADY STATE, NOT PARKED. Its entire benefit is turning a red-with-a-named-remedy first run into a green one, and there is NO FREE FOURTH WAY -- array fallback does not fall through on either runtime, and a development condition spreads a flag across the documented surface. Not worth doing before TextDocument.",
-        "THREE TRIGGERS MAKE IT URGENT: (1) a SECOND artifact precondition appears -- one is self-service, two compound and the argument stops holding; (2) the stale-dist detector is weakened or removed -- it is the single thing converting a red clone into a self-service one; (3) an external contributor hits it and the README does not resolve them.",
+        "ELIGIBLE BECAUSE NOTHING BETTER EXISTS, per the Sprint-29 ruling that its three triggers govern URGENCY, NOT PERMISSION. None has fired.",
+        "LAST OF THE THREE: largest surface (build, detector, README), and THE ONLY ONE CARRYING AN AUTHORISATION THAT CAN BE WITHDRAWN BY ITS OWN GATE.",
       ],
     },
   ],
