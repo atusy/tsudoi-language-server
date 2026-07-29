@@ -95,6 +95,39 @@ test("open registers a document whose uri, languageId, version and text all matc
   expect(all[0]).toBe(document);
 });
 
+// THE NEGATIVE CONTROL FOR THE TEST ABOVE, PERMANENT RATHER THAN A
+// PERTURBATION, because what it holds is that the byte-identity MEASUREMENT can
+// observe divergence at all: `agree byte for byte` reports sameness, and a
+// harness that reported sameness whatever it was fed would satisfy it exactly as
+// well. One range moved by one character, the rest of the sequence untouched, is
+// what tells `applied AT THE RIGHT OFFSET` from `applied`.
+//
+// THE SHIFT IS IN BOUNDS ON PURPOSE. Upstream clamps a character beyond the end
+// of its line SILENTLY, so a shift that ran off the end could be clamped back
+// onto the correct effective range and observe nothing. After `[0,5) -> hi` the
+// first line is `hi there`, eight characters, and [2,7) sits inside it.
+//
+// THE RESULT IS NAMED RATHER THAN ASSERTED MERELY UNEQUAL. `not.toBe(finalText)`
+// passes just as well when the store threw and left the buffer alone, or emptied
+// it -- states that are not `applied at the wrong offset` at all. It also
+// differs from `finalText` by construction, which is the divergence; asserting
+// that two different literals differ could never be the first thing to fail.
+//
+// WHAT IT DOES NOT CLAIM: it is not the first detector of a store that ignores
+// ranges wholesale. The byte-identity test reddens on that too, and sooner.
+const wrongOffset: TextDocumentContentChangeEvent[][] = [
+  [{ range: on(0, 6, 11), text: "there" }],
+  [
+    { range: on(0, 0, 5), text: "hi" },
+    { range: on(0, 2, 7), text: "world" },
+  ],
+  [{ range: on(1, 0, 6), text: "2nd" }],
+];
+
+test("one range of that sequence moved by a single character produces different text", () => {
+  expect(replayed(wrongOffset)).toBe("hiworlde\n2nd line");
+});
+
 test("successive changes leave getText() and version matching the last one sent", () => {
   const store = createDocumentStore();
   store.open(opened(uri, "hello"));
