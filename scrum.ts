@@ -276,7 +276,55 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 39,
+    pbi_id: "PBI-42",
+    goal: "THE FIXTURE'S COVERAGE BECOMES A COMPILE-TIME PROPERTY, AND THE ANSWERS STAY UNDEFENDED ON PURPOSE. test/fixtures/all-methods.ts annotates its handler literal over `Method` so a method `MethodMap` declares and this fixture omits IS TS2741 -- the same error `requestEntries` already produces, no assertions, growing with the table by construction. THE TITLE IS NOT THE CRITERION: `defend every handler` would be FIVE NEAR-IDENTICAL TESTS that resist legitimate fixture changes without defending a requirement, and the PO ruled it out; the risk is not a wrong answer but THE FIXTURE SILENTLY STOPPING SHORT OF A METHOD while tests that believe they exercise five exercise four and stay green. So criterion 2 is A RULING TO RECORD RATHER THAN WORK TO DO, and it goes at the fixture BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "COMPILE-TIME, NOT A TEST FILE: the perturbation IS the check. Add a method to `MethodMap` AND to `requestEntries` (so the table is not itself the error) and leave the fixture alone -- `tsc --noEmit` must fail TS2741 AT test/fixtures/all-methods.ts NAMING THE METHOD. Paired with its other half, because Sprint 33 measured that exit 0 proves nothing unless the site is reached: with the handler present, `tsc` is 0.",
+        implementation:
+          'One line at the fixture\'s handler literal: `satisfies { [M in Method]: MethodHandler<M> }`, with `Method` and `MethodHandler` added to the existing type-only import from ../../src/types.ts. `TsudoiConfig["methods"]` is `Partial<...>`, which is why presence is unenforced today and why the annotation adds PRESENCE ONLY -- per-method typing is already contextual and must survive.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PREMISE MEASURED BEFORE THE PLAN WAS WRITTEN, not after, and it is the control that makes the perturbation mean anything: with the probe method added to `MethodMap` and `requestEntries` and the fixture UNTOUCHED, `tsc --noEmit` is EXIT 0 WITH NO ERRORS ANYWHERE. THE PROPERTY DOES NOT EXIST TODAY -- measured rather than inferred from `methods?` being optional.",
+          "THE FORM WAS MEASURED RATHER THAN CHOSEN BY HABIT, and both candidates were run under the same probe: a hoisted `const methods: { [M in Method]: MethodHandler<M> }` -- the `requestEntries` shape -- and an inline `satisfies` of the same mapped type produce THE IDENTICAL TS2741 at the identical site naming the identical method. The criterion's second axis breaks the tie: `ONE LINE`. The const form costs a hoist and an 18-line reindent for the same error.",
+          "S20 APPLIED TO THE ANNOTATION ITSELF, because a mapped type CAN be degenerate: `Record<Method, MethodHandler<Method>>` would give exhaustiveness while accepting hover's handler in completion's slot. CONTROL RUN ON THE FORM ACTUALLY CHOSEN rather than transferred from the other one -- a `Promise<Hover>` handler written into `textDocument/completion` fails TS2739/TS2322 naming the missing AsyncGenerator members. The annotation adds presence WITHOUT losing per-method typing.",
+        ],
+      },
+      {
+        test: "NO EXECUTABLE DEFENCE EXISTS FOR A PROSE CRITERION, so it is discharged by grepping THE CLAIM'S WORDS across src, test, examples and README -- filenames and test names too -- and reading every survivor.",
+        implementation:
+          "The fixture's block comment records the ruling: the answers stay undefended DELIBERATELY (five near-identical tests die on S7), what the file now DOES enforce, and why the reason is written here rather than left as a residual. THE SENTENCE THAT GOES FALSE IS THE ONE THIS SPRINT FALSIFIES -- `a method added to the table and not added here fails NOTHING, whichever drive it uses` -- and `a residual with a PBI -- PBI-42` goes stale by being acted on.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SPRINT 34 AND 35'S DECISION ENTRIES ARE LEFT ALONE: past-tense measurements carrying provenance, which Sprint 38 ruled untouchable. Only claims stated in the PRESENT TENSE about today's tree are corrected.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "The agentic-scrum command and its skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
+        impact:
+          "NOTHING WAS BLOCKED. The sprint proceeds from scrum.ts itself and the standing house conventions, which are the artifacts those skills would have read anyway. Carried on the record so it is a KNOWN CONDITION rather than a silent one -- the cost is that no skill-supplied checklist is cross-checking this executor.",
+        request:
+          "Install the agentic-scrum command and its skills, or rule that this project runs its Scrum from scrum.ts and the retrospective log alone.",
+        status: "waiting_human",
+        notes: [],
+      },
+    ],
+    decisions: [
+      "PREDICTED IN THE PLAN SO THE REPORT CANNOT BE FITTED AFTERWARDS: this is a SMALL PBI and the increment is ONE LINE OF TYPE PLUS A COMMENT. No test file changes, so the `expect(` diff is predicted 0 added / 0 removed / 0 changed and the count predicted to stay at 1266. If it turns out smaller than it looks, that is the finding rather than a shortfall.",
+      "BASELINE RE-MEASURED AT ef3e889 RATHER THAN COPIED FROM THE BRIEF, per the provenance rule: `bun test` 444 pass / 0 fail / 31 files / 1266 expect() calls (exit 0), `tsc --noEmit` exit 0, `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/, `oxfmt --check .` exit 0 over 100 files. Each run separately and unpiped.",
+      "EXECUTION DOES NOT ACCEPT ITS OWN WORK. This sprint ends at `review` with PBI-42 still `ready` on the backlog. Sprint 38 closed itself and had to revert it.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 38,
