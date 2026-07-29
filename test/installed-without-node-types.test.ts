@@ -99,39 +99,62 @@ const noNodeTypings = { skipLibCheck: false, types: [] };
 const eightNames = { "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types") };
 
 let consumer: InstalledConsumer;
-let movedToNode: InstalledConsumer;
+let perturbed: InstalledConsumer | undefined;
 
 beforeAll(async () => {
   consumer = await installConsumer();
-  movedToNode = await installConsumer({
-    // The perturbation reaches the published artifact with no rebuild step of
-    // anyone's: `bun pm pack` runs prepack over this staged copy, so
-    // dist/types.d.ts is compiled from the line edited here. tsconfig.build.json
-    // sets skipLibCheck true and types ["node"], so the BUILD is unaffected by
-    // the move -- if it were not, this would fail inside installConsumer and
-    // there would be no diagnostic to read.
-    editSource: (srcDir) => {
-      const types = join(srcDir, "types.ts");
-      const source = readFileSync(types, "utf8");
-      // The QUOTED specifier, because that doc block discusses `/node` in prose
-      // too and a looser match would rewrite the comment as well as the code --
-      // leaving it unclear which of the two the diagnostic came from.
-      const moved = source.replaceAll(
-        '"vscode-languageserver-protocol"',
-        '"vscode-languageserver-protocol/node"',
-      );
-      // A replace that silently matched nothing would leave both controls below
-      // measuring the unperturbed package.
-      expect(moved).not.toBe(source);
-      writeFileSync(types, moved);
-    },
-  });
 });
 
 afterAll(() => {
   consumer.dispose();
-  movedToNode.dispose();
+  perturbed?.dispose();
 });
+
+/**
+ * A consumer holding a package packed with the specifier MOVED to `/node`,
+ * built ON FIRST USE and MEMOISED so both controls below observe ONE tree.
+ *
+ * DELIBERATELY NOT IN beforeAll, and the reason was MEASURED rather than
+ * guessed. With src/types.ts already at `/node` -- the very regression this file
+ * exists to catch -- the replacement finds nothing to move and throws. Raised
+ * from beforeAll that takes the WHOLE FILE down before any test runs, so the
+ * headline test never reports and the suite blames a helper instead of naming
+ * the specifier. Raised from here, the headline test reddens FIRST and with the
+ * node-typing diagnostics, and the two controls fail beside it under their own
+ * names. MEASURED both ways.
+ *
+ * The perturbation reaches the published artifact with no rebuild step of
+ * anyone's: `bun pm pack` runs prepack over this staged copy, so dist/types.d.ts
+ * is compiled from the line edited here. tsconfig.build.json sets
+ * `skipLibCheck: true` and `types: ["node"]`, so the BUILD is unaffected by the
+ * move -- were it not, installConsumer would fail on its own pack and there
+ * would be no diagnostic to read at all.
+ */
+async function specifierMovedToNode(): Promise<InstalledConsumer> {
+  perturbed ??= await installConsumer({
+    editSource: (srcDir) => {
+      const types = join(srcDir, "types.ts");
+      const source = readFileSync(types, "utf8");
+      // The QUOTED specifier, because that file's doc block discusses `/node` in
+      // prose too and a looser match would rewrite the comment as well as the
+      // code -- leaving it unclear which of the two a diagnostic came from.
+      const moved = source.replaceAll(
+        '"vscode-languageserver-protocol"',
+        '"vscode-languageserver-protocol/node"',
+      );
+      if (moved === source) {
+        // NAMED rather than asserted: a replace that matched nothing would leave
+        // both controls measuring the UNPERTURBED package, and a reader needs to
+        // know which of those two things went wrong.
+        throw new Error(
+          'src/types.ts holds no `"vscode-languageserver-protocol"` to move: either the specifier is ALREADY at /node, or the import was respelled. Both controls below would otherwise measure an unperturbed package.',
+        );
+      }
+      writeFileSync(types, moved);
+    },
+  });
+  return perturbed;
+}
 
 /** THE STORY: a config author with no Node typings reachable type-checks. */
 test("the eight published names type-check for a consumer with no Node typings", async () => {
@@ -165,7 +188,7 @@ test("a deliberate type error is reported under the same tsconfig", async () => 
  * both exit 1 -- and only one of them is what this file is about.
  */
 test("moving the published specifier to /node reddens the probe, naming the Node typings", async () => {
-  const result = await movedToNode.typeCheck(eightNames, noNodeTypings);
+  const result = await (await specifierMovedToNode()).typeCheck(eightNames, noNodeTypings);
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2591");
@@ -196,7 +219,9 @@ test("moving the published specifier to /node reddens the probe, naming the Node
  * stays green and THIS one fails.
  */
 test("the same perturbation is invisible once skipLibCheck is back on", async () => {
-  const result = await movedToNode.typeCheck(eightNames, {
+  const result = await (
+    await specifierMovedToNode()
+  ).typeCheck(eightNames, {
     ...noNodeTypings,
     skipLibCheck: true,
   });
