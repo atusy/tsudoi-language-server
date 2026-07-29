@@ -1,8 +1,11 @@
 // ============================================================
 // Dashboard Data (AI edits this section)
 //
-// Compaction target for this project: 500 lines (overrides the
-// scrum-dashboard skill's default of 300).
+// Compaction target for this project: 1000 lines (overrides the
+// scrum-dashboard skill's default of 300). Raised from 500 by the
+// stakeholder: this dashboard carries measured rulings and the reasons
+// they were overturned, which is content git history cannot substitute
+// for while the decision is still live.
 // ============================================================
 
 const userStoryRoles = [
@@ -63,8 +66,7 @@ const scrum: ScrumDashboard = {
       ],
       status: "ready",
       notes: [
-        "RULED BY THE PO, not left to the executor: published-artifacts.test.ts's hoisting precondition defends an accepted criterion, so it is REPLACED, not deleted. The premise it rests on -- the example imports a bare specifier the consumer never declares -- is withdrawn DELIBERATELY by this PBI. What survives is the harness's ability to detect a genuinely missing package.",
-        "Ordering vs PBI-27 is LOW-STAKES and the PO declined to manufacture a discriminator. Measured: nothing consumer-visible breaks if 27 lands first, because vscode-languageserver-protocol stays a real published package. 26 goes first only because it is the smallest independently-valuable increment; Planning may reorder.",
+        "RULED BY THE PO, not left to the executor: published-artifacts.test.ts's hoisting precondition defends an accepted criterion, so it is REPLACED, not deleted. Its premise -- the example imports a bare specifier the consumer never declares -- is withdrawn DELIBERATELY here. What survives is the harness's ability to detect a genuinely missing package. Ordering vs PBI-27 is LOW-STAKES: measured, nothing consumer-visible breaks if 27 lands first, so Planning may reorder.",
       ],
     },
     {
@@ -110,33 +112,74 @@ const scrum: ScrumDashboard = {
       ],
       status: "ready",
       notes: [
-        "THE FRAMEWORK'S SERVER LAYER IS NOT TAKEN. THE FRAMEWORK'S PACKAGE IS. Ruled by the PO on three measurements composing into one finding: tsudoi MUST override InitializeRequest and ShutdownRequest, and every benefit of createConnection sits downstream of the handlers it overrides. Overriding initialize skips fillServerCapabilities, so issue #1's capability argument holds only on the onInitialize path; overriding shutdown leaves watchDog.shutdownReceived false, so exit-0 is unreachable and lifecycle.exitCode() is NOT redundant (control pair, one variable: exit 0 vs exit 1); and createConnection takes no logger, so a throwing notification handler leaves as a framed window/logMessage instead of stderr. Measurements and mechanism: GitHub issue #1.",
-        "THE ~40 TYPED REGISTRATIONS WERE NEVER A BENEFIT, and this is not recorded as a loss. tsudoi's registration surface is MethodMap -- two methods, config-driven, already typed. The 40 include the 11 that BYPASS THE GATE and onCompletion, whose attachPartialResult deletes partialResultToken and destroys src/methods.ts's validation. Negative value, not foregone value. Issue #1 framed it as a trade because it never checked the registrars against the gate.",
-        "INSTRUMENT RULING, moot here and binding later: a boundary on Connection must be a Pick, never an Omit. Omit FAILS OPEN -- a key not in keyof T is accepted and no-ops. MEASURED on Connection: 58 members, onUnhandledNotification and trace ABSENT, so the four-name Omit would silently reduce the boundary to nothing while two of its four defending tests went green asserting that a member never there is not there. Moot for THIS PBI because the base type does not move.",
-        "PROSE ROT THIS PBI MUST PAY, with nothing reddening for it: src/notifications.ts records its enumeration as read off vscode-languageserver-protocol 3.18.2 and names the version BECAUSE package.json asks only for ^3.17.5. After this PBI package.json asks for neither. Alongside README.md:33.",
-        "THE PO'S OWN WITHDRAWN PREMISE, filed rather than dropped: they nearly made `swap-first makes the hoisting comment go false while the test stays green` decisive. FALSE -- bun hoists protocol 3.18.2 transitively, so it stays top-level and a bare specifier still resolves. Caught before anything rested on it, one turn after citing S22 at someone else for the same shape.",
+        "THE FRAMEWORK'S SERVER LAYER IS NOT TAKEN. THE FRAMEWORK'S PACKAGE IS. tsudoi MUST override InitializeRequest and ShutdownRequest -- the -32600 rejection lives in the latter -- and the framework's benefits sit downstream of them. Measurements, mechanism, and the two objections later refuted: GitHub issue #1.",
+        "THE ~40 TYPED REGISTRATIONS WERE NEVER A BENEFIT. tsudoi's surface is MethodMap -- two methods, config-driven, already typed. The 40 include the 11 that BYPASS THE GATE and onCompletion, whose attachPartialResult deletes partialResultToken and destroys src/methods.ts's validation. Negative value, not foregone value.",
+        "INSTRUMENT RULING, moot here and binding at PBI-28: a boundary on Connection must be a Pick, never an Omit -- Omit FAILS OPEN. MEASURED: Connection has 58 members and lacks onUnhandledNotification and trace, so the four-name Omit would silently reduce the boundary to nothing while two of its four defending probes went green measuring nothing. ALSO PAID HERE: src/notifications.ts names protocol 3.18.2 BECAUSE package.json asks ^3.17.5; after this PBI it asks for neither, and nothing reddens. Alongside README.md:33.",
       ],
     },
     {
       id: "PBI-28",
       story: {
         role: "tsudoi maintainer",
-        capability: "serve on createConnection and take the framework's lifecycle hooks",
-        benefit: "the framework's own machinery is reachable rather than overridden into inertness",
+        capability:
+          "serve on createConnection and take onInitialize, so the framework's remotes are live",
+        benefit:
+          "dynamic registration and editor-facing messages become reachable rather than overridden into inertness",
       },
       acceptance_criteria: [
         {
           criterion:
-            "OPEN. Two measurements settle whether this PBI exists at all, and the PO's refusal of it is REASONED, NOT MEASURED.",
+            "PARKED ON ABSENCE OF DEMAND, NOT ABSENCE OF INFORMATION. Three conditions reverse it, none requiring anyone to trust the PO's judgement.",
           verification:
-            "(1) On the onInitialize path with NO features registered, does fillServerCapabilities add ANY capability to tsudoi's {textDocumentSync, hoverProvider?, completionProvider?}? If it adds none, the PO's objection -- that it widens what tsudoi advertises, violating the accepted per-method design -- is WRONG and this arm reopens. (2) Does throwing a -32600 ResponseError from connection.onShutdown leave watchDog.shutdownReceived correct, or is the flag set before the handler runs? If set first, tsudoi keeps its rejection AND the framework's exit-0 path.",
+            "(a) A NAMED WANT -- window/showMessage to the editor user, or client.register for dynamic registration. Either makes this arm the cheapest route and this PBI ready almost immediately. THE STAKEHOLDER SAYING THEY MEANT `let's ride on it` AS AN INSTRUCTION RATHER THAN A PROPOSAL SATISFIES (a) BY ITSELF; the PO has undertaken to re-rule to refining on that alone. (b) UNMEASURED, and the PO would rather it were measured than argued: can client/workspace be taken while their REGISTERING members are narrowed away at the namespace type -- is a per-namespace Pick cheap? If yes the refusal weakens a lot. (c) The un-unref'd 3s interval, with a REAL pid, on both runtimes.",
         },
       ],
       status: "draft",
       notes: [
-        "RECORDED ON IT BEFORE IT IS REFINED: the boundary must be a Pick (see PBI-27); Features.console is REQUIRED to keep stderr and brings the ProposedFeatures door with it into a file that previously could not reach it; cancellation and cleanup need a confirmation run; the 48 messagesReceived assertion sites are safe ONLY IF Features.console is taken -- window/logMessage is framed, so unframedStdoutBytes===0 survives everywhere and it is the message COUNT that moves.",
-        "WHY Features.console IS NOT THE DISQUALIFYING SHAPE, ruled explicitly because the SM pressed for consistency: the disqualifying shape is not `safe behaviour depends on remembering`, it is `depends on remembering AND NOTHING FAILS WHEN YOU FORGET`. The ungated registrars measured 331 tests green, tsc 0, oxlint 0, with nothing objecting -- that silence disqualified them. Omitting features reddens sync.test.ts:165 on the stderr string AND :168 on messagesReceived independently, from assertions that exist today.",
-        "MEASURED GREEN ALREADY, so not a blocker here: RequestCancelled -32800 travels the wire through a framework connection with tsudoi's exact shape. Issue #1's `result:[]` was the harness's own handler returning [], not the framework normalising. Pre-dispatch isCancellationRequested, generator-close-on-cancel, cleanup reporting, [] vs null, streaming and sendProgress are all unchanged -- onRequest and sendProgress are straight delegations, and the two stderr reports go through process.stderr.write directly.",
+        "PARKED ON PRICE, NOT PRINCIPLE, and NOT on the PO's original objections -- both were REFUTED by measurement (fillServerCapabilities adds nothing at empty and rich client capabilities; onShutdown preserves -32600 AND reaches exit-0, because the flag is set before the handler). Full evidence: GitHub issue #1.",
+        "D1 RULED, not a close call: KEEP tsudoi's exit entry; do NOT take the framework's exit path. The always arm is the sole carve-out whose violation is A HUNG PROCESS; collapsing NotificationGate to one value turns a REQUIRED DECISION into REQUIRED BOILERPLATE; and notifications.test.ts:260 would become a third probe measuring nothing, in the same change that found the first two. CONSEQUENCE: onShutdown then buys nothing, so the arm reduces to createConnection + onInitialize. D2 is moot under D1.",
+        "THE CHAIN THAT STILL REFUSES IT: after D1 the whole prize is that remote.initialize makes the remotes live -> the ones worth having (client, workspace, notebooks, languages) REGISTER NOTIFICATION HANDLERS, reopening the hole three sprints closed -> foreclosing them leaves console/window/telemetry, send-only -> NOTHING IN TSUDOI WANTS THAT TODAY. Price: a Pick over 58 members, two boundary probes rebuilt, Features.console as a mixin to restore a logger argument that already exists, an un-unref'd 3s interval the suite is blind to, and a new capability test.",
+        "D3 RULED YES and WANTED EVEN IF THIS ARM NEVER PROCEEDS: the wire InitializeResult gets an assertion of the exact capability object for the hover-only and neither cases. It pins a design decision currently defended by nothing, and its violation is a DEPENDENCY BUMP that no comment in any tsudoi file could catch.",
+      ],
+    },
+    {
+      id: "PBI-29",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "know what exit code a shutdown-before-initialize session ends with",
+        benefit:
+          "a lifecycle path that ships today is defended by an assertion rather than by nobody having sent it",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "shutdown BEFORE initialize, then exit, has a test.",
+          verification:
+            "MEASURED today: tsudoi exits 1 -- the shutdown is refused -32002, lifecycle.shutDown() never runs, phase stays uninitialized -- and NO assertion says so. protocol.test.ts's `exit as the very first message exits 1` is a DIFFERENT case that agrees, which is how this one hid behind it.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "A coverage hole in tsudoi's OWN lifecycle, found by an investigation into something else. Independent of the framework question.",
+      ],
+    },
+    {
+      id: "PBI-30",
+      story: {
+        role: "editor user",
+        capability: "have the server exit when the editor that spawned it dies",
+        benefit: "a crashed editor does not leave a language server running forever",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "When the client named a numeric processId at initialize and that process is gone, the server exits.",
+          verification:
+            "NOT YET DESIGNED. test/helpers/lsp.ts:575 sends processId: null, so the suite is STRUCTURALLY BLIND today -- a test that does not send a real pid can observe neither the defect nor its fix.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE ONLY EDITOR-USER-FACING DEFECT THIS WHOLE EXERCISE SURFACED, and the PO judges it may be worth more to the stakeholder than the framework question. The framework fixes it free via watchDog, but it is obtainable in a few lines WITHOUT the framework -- an argument for a PBI, not for adoption.",
       ],
     },
   ],
