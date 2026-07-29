@@ -3,12 +3,20 @@
 // ONE PROTOCOL NAME, AND IT COMES FROM TSUDOI'S OWN SURFACE, which is the
 // second thing this file measures. `DiagnosticSeverity` is imported from
 // ../../src/types.ts rather than from vscode-languageserver-protocol, so this
-// fixture is the standing evidence that the ninth published name is REACHABLE
-// AND USABLE AS A VALUE by a config that installed one package. There is no
-// `DocumentDiagnosticParams`, no `Diagnostic` and no annotation on the handler:
-// `MethodHandler` supplies those by contextual typing, which is the standing
-// evidence for the ruling that they do NOT join the surface. Add an annotation
-// here and that half of the evidence is gone.
+// fixture is the standing evidence that THAT NAME is REACHABLE AND USABLE AS A
+// VALUE by a config that installed one package. (It read `the ninth published
+// name` until the surface grew past nine, which is why it now names it.)
+//
+// THERE IS NO ANNOTATION ON THE HANDLER, AND THAT IS WHAT THIS FILE IS FOR --
+// no `DocumentDiagnosticParams`, no `DocumentDiagnosticReport`, no
+// `Diagnostic`. It used to be evidence that those names DO NOT JOIN THE
+// SURFACE; two of them since have, for examples/diagnostic-trailing-whitespace.ts,
+// which is an EXTRACTED handler and gets no contextual typing. So what this
+// file now proves is the half that decided which side of that line each name
+// fell on: A HANDLER WRITTEN INLINE IN A CONFIG NEEDS NONE OF THEM, because
+// `MethodHandler` supplies them. Add an annotation here and that evidence is
+// gone, and with it the argument that publication is about EXTRACTION rather
+// than about the method.
 import { DiagnosticSeverity, type Tsudoi, type TsudoiConfig } from "../../src/types.ts";
 
 /** What this analysis complains about, and what it says about it. */
