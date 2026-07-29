@@ -385,7 +385,33 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 32,
+    pbi_id: "PBI-37",
+    goal: "THE READINESS GATE RAN FIRST AND IT COULD HAVE WITHDRAWN THIS PBI. It did not, and it did not vindicate the PO either: THE PRECEDENT TRANSFERS TO EXACTLY ONE OF THE TWO HALVES. Six deletions, one at a time, reverted between. The capability `if`s are DEFENDED, three of three, each by a test whose TITLE names per-method capability correctness. The rejection checks are DEFENDED ONE OF THREE -- hover's reddens four tests by name, and formatting's and completion's redden NOTHING AT ALL, which is the notifications.ts precedent arriving with the SAME ARITHMETIC (two of three copies pure convention). So the table is built where it was measured to be needed, and the capability half is carried on COLOCATION AND REQUIREDNESS rather than on a defencelessness that is not there.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "THE GATE ITSELF, AND IT IS A MEASUREMENT RATHER THAN AN ASSERTION: delete ONE method's capability `if` and ONE method's rejection check and record what reddens. Taken for ALL THREE of each, because the precedent it is being checked against measured all three notification copies and a one-of-three sample cannot see the split that is actually there.",
+        implementation:
+          "Six perturbations against HEAD b0e1b75 (399 pass / 26 files), each applied ALONE and reverted with `git checkout --` before the next. All three rejection checks deleted together would leave `requestRejection` unused and put a tsc/oxlint signal on top of the test signal, which is a different measurement.",
+        type: "structural",
+        status: "completed",
+        commits: [],
+        notes: [
+          "THE VERDICT RULE WAS FIXED IN WRITING BEFORE THE FIRST PERTURBATION RAN, because a rule chosen after seeing twelve reds is chosen under exactly the pressure the gate exists to remove. THREE BUCKETS, NOT TWO, taken from the precedent's own shape: UNDEFENDED (nothing reddens), INCIDENTAL (something reddens but no failing assertion NAMES the property -- didOpen's `four tests that never mention it`, and Sprint 31's twelve exact-equality diffs that `ARRIVE WITHOUT NAMING THEIR CAUSE`), DEFENDED (a failing assertion names the property). `EVERYTHING REDDENS` was read as EVERY deletion landing in DEFENDED.",
+          "CAPABILITY HALF, THREE OF THREE DEFENDED, and this is the half the PO's argument does NOT survive. hover's `if` deleted: SIX fail, including `a config supplying no hover handler advertises exactly textDocumentSync` on both runtimes. completion's: TEN, including `a config supplying no completion handler advertises exactly what it can answer`. formatting's: TWELVE, including `a config supplying no formatting handler advertises exactly what it can answer` -- and TWELVE RE-MEASURES SPRINT 31'S HANDED NUMBER AND CONFIRMS IT. In each case the failing set CONTAINS a test whose title names the property, so none of the three is the incidental bucket the twelve alone would have suggested.",
+          "REJECTION HALF, ONE OF THREE DEFENDED, and this is where the precedent transfers. hover's check deleted: FOUR fail, `hover before initialize is answered -32002, and initialize then still succeeds` and `hover after shutdown is answered -32600, and exit still returns 0`, both runtimes -- DEFENDED, by name. formatting's check deleted: 399 pass, 0 fail, `tsc --noEmit` 0, `oxlint` 0 errors. completion's check deleted: 399 pass, 0 fail, `tsc --noEmit` 0. TWO OF THREE ARE PURE CONVENTION.",
+          "BOTH ZEROS ARE INTERPRETABLE BECAUSE THE FIXTURE INVENTORY WAS TAKEN BEFORE THE PERTURBATIONS, WHICH IS S20 APPLIED TO A NULL RESULT: `reddened nothing` has two causes -- the convention is convention, or NO FIXTURE CAN OBSERVE IT -- and they are not the same finding. MEASURED: test/fixtures/formatting-fixed.ts and formatting-offsets.ts supply formatting and are driven by test/formatting.test.ts, ELEVEN fixtures supply completion, and test/protocol.test.ts already sends a pre-initialize request through `session.requestError` for HOVER. The means to observe exist and nothing uses them. So both zeros are PURE CONVENTION and neither is an unobservability artefact.",
+          "WHAT THE GATE COSTS THE PBI, RECORDED BECAUSE A GATE THAT ONLY EVER CONFIRMS ITS AUTHOR IS NOT A GATE: criterion 2's capability contributor may NO LONGER be argued from `the convention is undefended`. It is defended, three times, by name. What survives is the criterion's OWN stated ground -- COLOCATION AND REQUIREDNESS -- plus the one thing the perturbation cannot reach, stated as REASONED and not measured: every one of those six tests is about a method THAT EXISTS, and no test can redden for a FOURTH method whose capability contribution was never written. The gate measures the copies that are there; the story is about the copy nobody wrote yet.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE GATE PASSED WITHOUT VINDICATING THE PO, AND THE SPLIT IS THE RESULT RATHER THAN A DETAIL OF IT. The withdrawal condition -- EVERYTHING REDDENS -- is NOT met, so the PBI stands. But four of the six deletions redden a test that names the property, and the PO's precedent reaches only the rejection half. Reported as a split rather than narrowed to the surviving half, which would be a PO call and not an executor's.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 30,
