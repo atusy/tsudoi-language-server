@@ -533,10 +533,11 @@ function failureDetail(error: unknown): string {
 }
 
 /**
- * How a cancelled request is answered ONCE IT REACHES answerUnlessCancelled,
- * whatever its handler produced. The qualifier is the same one that block
- * carries: a generator-driven method with NO handler returns before this, and
- * answers `null`.
+ * How a cancelled request is answered, whatever its handler produced and
+ * whatever drive its method uses. UNQUALIFIED SINCE SPRINT 35, and it forwards
+ * the qualifier `answerUnlessCancelled` no longer carries either: every request
+ * that reaches a drive reaches that function, so there is no path to a cancelled
+ * answer that goes around this one.
  *
  * LSP 3.17 permits answering normally instead, so this is a CHOICE: the client
  * has already discarded the request's context, and a stale result invites the
@@ -581,28 +582,33 @@ function requestContext(
  * Runs one config handler to the answer the client receives, under that
  * request's cancellation.
  *
- * Everything cancellation changes about a request THAT REACHES THIS FUNCTION is
- * here and nowhere else: a cancelled request answers -32800 whatever its handler
- * produced, and a cancelled handler's failure is not reported, because being
- * aborted is why it failed. The abort is re-read AFTER the handler settles, so a
- * handler that never looks at its signal is suppressed exactly like one that
- * does.
+ * Everything cancellation changes about a request is here and nowhere else: a
+ * cancelled request answers -32800 whatever its handler produced, and a
+ * cancelled handler's failure is not reported, because being aborted is why it
+ * failed. The abort is re-read AFTER the handler settles, so a handler that
+ * never looks at its signal is suppressed exactly like one that does.
  *
- * THE QUALIFIER IS LOAD-BEARING AND WAS ADDED BECAUSE THE SENTENCE WITHOUT IT
- * WAS FALSE. The generator drive returns early when the config supplies no
- * handler, and that return sits AHEAD of this function -- so a cancelled request
- * to a generator-driven method with NO handler is answered `null`, not -32800.
- * MEASURED at Sprint 32 by P-D: deleting the fixture's awaited-once handler
- * reddened nothing while deleting its generator-driven handler reddened the
- * -32800 test.
+ * THAT SENTENCE CARRIED A QUALIFIER FOR THREE SPRINTS AND IT IS GONE RATHER THAN
+ * FORGOTTEN. The generator drive used to return early when the config supplied
+ * no handler, AHEAD of this function, so a cancelled request to a
+ * generator-driven method with NO handler was answered `null` and an
+ * awaited-once one -32800 -- pre-existing, revealed rather than introduced, and
+ * invisible until the two drives sat side by side. MEASURED at Sprint 32 by P-D
+ * and RE-MEASURED at Sprint 35 by restoring that return, which reddens the
+ * table-wide no-handler test naming `textDocument/completion` and no other
+ * method.
  *
- * PRE-EXISTING AND REVEALED RATHER THAN INTRODUCED, and invisible until the two
- * drives sat side by side -- three hand-written copies had hidden it. LSP
- * permits either answer, so no requirement is breached. The PO has RULED THE
- * DIVERGENCE SHOULD CLOSE AT -32800 FOR BOTH, on the ground that the claim above
- * is the asset and preserving the divergence means weakening a stated principle
- * to accommodate an ordering nobody chose; that is its own PBI rather than a
- * change smuggled into the sprint that found it.
+ * THE DIVERGENCE WAS CLOSED AT -32800 FOR BOTH, and the ground was the sentence
+ * above rather than the behaviour: LSP permits either answer, so no requirement
+ * was breached, and what was at stake was that THIS CLAIM IS THE ASSET.
+ * Preserving the divergence would have meant qualifying a stated principle to
+ * accommodate an ordering nobody chose.
+ *
+ * WHAT WOULD FALSIFY IT AGAIN, written here because that is the edit: any drive
+ * answering a request before it reaches this function. Both build the request
+ * context whether or not a handler exists, and both answer through here, which
+ * is the property test/methods-table.test.ts pins for EVERY entry in the table
+ * with no handler configured.
  *
  * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
  * awaited once and a completion handler is driven a chunk at a time, and
@@ -737,11 +743,17 @@ export function registerMethods(
         const handler = config.methods?.[method];
         // THE DRIVE, AND THE NO-HANDLER CASE COMES WITH IT RATHER THAN BEING A
         // SECOND AXIS. Sprint 31 named the two shapes separately -- hover and
-        // formatting call `handler?.(...) ?? null` and build a context whether
-        // or not a handler exists, while completion returns EARLY, ahead of the
-        // context, because driving a generator needs one. They are NOT
-        // independent: each drive has exactly one of them, so choosing the drive
-        // chooses it, and nothing third is invented.
+        // formatting call `handler?.(...) ?? null`, while completion answers
+        // with a return of its own, because no single expression both drives a
+        // generator and answers for a missing one. They are NOT independent:
+        // each drive has exactly one of them, so choosing the drive chooses it,
+        // and nothing third is invented.
+        //
+        // WHAT IS NO LONGER A DIFFERENCE BETWEEN THEM is WHERE that answer is
+        // produced. Both drives build the request context whether or not a
+        // handler exists and answer through `answerUnlessCancelled`, so a
+        // cancelled request is -32800 either way; until Sprint 35 completion's
+        // return sat ahead of that function and answered `null`.
         if (entry.drive === "generator-driven") {
           return driveGenerator({
             method,
@@ -772,10 +784,14 @@ export function registerMethods(
  * The AWAITED-ONCE drive: call the handler once, answer what it produced.
  *
  * `?? null` answers the NO-HANDLER case in the same expression that answers the
- * handler's own null, so the context is built either way. That is hover's
- * original shape, kept because it is the one this drive needs -- there is
- * nothing to drive, so there is nothing that needs a context before the
- * handler is known to exist.
+ * handler's own null. That is hover's original shape, kept because it is the one
+ * this drive needs: there is nothing to drive, so nothing has to know whether a
+ * handler exists before the call is written.
+ *
+ * THE CONTEXT IS BUILT EITHER WAY, WHICH IS NO LONGER A DIFFERENCE FROM THE
+ * OTHER DRIVE and was one until Sprint 35: the epilogue reads the abort off the
+ * context, so a drive that skipped building one for a request it answers `null`
+ * would be deciding that request's cancellation itself.
  */
 async function driveAwaitedOnce(run: {
   method: Method;
@@ -800,9 +816,12 @@ async function driveAwaitedOnce(run: {
  * partial results simply omits the token, and the two triggers the brief
  * describes are one trigger.
  *
- * THE EARLY RETURN IS THIS DRIVE'S NO-HANDLER SHAPE and not an oversight beside
- * the one above: driving a generator needs a context, so with no generator to
- * drive there is nothing to build one for.
+ * A RETURN OF ITS OWN IS THIS DRIVE'S NO-HANDLER SHAPE and not an oversight
+ * beside the `?? null` above: nothing here both drives a generator and answers
+ * for a missing one, so the two cases are two statements. WHAT THEY ARE NOT is
+ * two answers about cancellation -- that return goes through
+ * `answerUnlessCancelled` like every other answer this file produces, and it
+ * sat ahead of it until Sprint 35.
  *
  * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT: its params must carry a
  * `partialResultToken`, and its chunks must be ARRAYS, since aggregation
