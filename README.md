@@ -246,8 +246,10 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   the commoner shape in a real language server — a parser does not go anywhere else either — so
   do not read the first as the one to copy.
 
-  **Copy the whole set**, or the imports fail — each file imports the ones beside it, and the
-  set is what the test suite type-checks and runs. They also need `wordnet` in your own project:
+  **Copy the whole set**, or the imports fail. The config imports every handler module, the
+  formatter imports the diagnostic module, and `wordnet.d.ts` is imported by nobody and needed
+  all the same — it is what makes `hover-wordnet.ts`'s `wordnet` import type-check. The set is
+  what the test suite type-checks and runs. They also need `wordnet` in your own project:
 
   <!-- examples-install -->
 
