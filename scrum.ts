@@ -32,7 +32,114 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-26",
+      story: {
+        role: "config author",
+        capability:
+          "get the protocol names my config uses from @atusy/tsudoi/types rather than from tsudoi's own dependency",
+        benefit:
+          "standing up a server needs one package, and my config never names a package I did not install",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "Under the non-hoisting layout the four example files type-check AND the example server answers a completion.",
+          verification:
+            "published-artifacts.test.ts's useNonHoistingLayout probe, inverted -- it is MEASURED today to FAIL naming vscode-languageserver-protocol, so the criterion has a live opposite. NEGATIVE CONTROL, load-bearing: in the same run a probe importing vscode-languageserver-protocol by bare specifier must STILL fail. Without the pair, code===0 is equally produced by a harness that stopped applying the layout -- the S20 degeneracy, a real risk because the layout is built by renameSync.",
+        },
+        {
+          criterion:
+            "Exactly eight names are re-exported from src/types.ts -- CompletionItem, CompletionItemKind (as a VALUE), CompletionParams, MarkupContent, Position, WorkspaceFolder, Hover, HoverParams -- and no more.",
+          verification:
+            "src/types.ts states every exported name is public API, so the set is the minimum the examples need rather than a convenience dump. A ninth name is a deliberate act with a reason, not a default.",
+        },
+        {
+          criterion: "The README's install command names no protocol package.",
+          verification:
+            "the existing extraction harness executes it, then type-checks the examples in that project. ASYMMETRY STATED RATHER THAN HIDDEN: the harness catches UNDER-installation and cannot catch OVER-installation.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "RULED BY THE PO, not left to the executor: published-artifacts.test.ts's hoisting precondition defends an accepted criterion, so it is REPLACED, not deleted. The premise it rests on -- the example imports a bare specifier the consumer never declares -- is withdrawn DELIBERATELY by this PBI. What survives is the harness's ability to detect a genuinely missing package.",
+        "Ordering vs PBI-27 is LOW-STAKES and the PO declined to manufacture a discriminator. Measured: nothing consumer-visible breaks if 27 lands first, because vscode-languageserver-protocol stays a real published package. 26 goes first only because it is the smallest independently-valuable increment; Planning may reorder.",
+      ],
+    },
+    {
+      id: "PBI-27",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "declare vscode-languageserver as the single dependency and take every protocol name from it, while keeping createProtocolConnection as the factory",
+        benefit:
+          "one package pins the protocol version so the two cannot drift, and what tsudoi deliberately does NOT take from the framework is written down instead of merely absent",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "No file but src/notifications.ts can import a connection factory, AT EVERY SPECIFIER THAT EXPORTS ONE. The specifier list is DERIVED BY MEASUREMENT in the sprint, not written from memory -- createProtocolConnection will be reachable from vscode-languageserver, vscode-languageserver/node AND the still-hoisted vscode-languageserver-protocol/node.",
+          verification:
+            "a guard.test.ts probe per exporting specifier, each in a run where a sibling's import of a DIFFERENT export from the SAME specifier is unflagged. The diagnostic must NAME THE IMPORT, not the module -- the existing factoryBanAt regex already discriminates that. createConnection and TextDocuments get the same treatment: they become importable for the first time, a hazard THIS PBI CREATES and must pay for.",
+        },
+        {
+          criterion:
+            "package.json declares no vscode-languageserver-protocol, and nothing imports it: not src/, not **/*.test.ts, not test/helpers/, not test/fixtures/, not examples/, not the deno import map in resolution.test.ts.",
+          verification:
+            "the specifier becomes a banned MODULE in the deno-compat guard, with a probe per path shape, each in a run where a framework import at the same shape is unflagged. `tsc --noEmit` IS NOT VERIFICATION -- a stale import that still resolves compiles fine; the lint is what discriminates.",
+        },
+        {
+          criterion:
+            "Startup cost is MEASURED on both runtimes, not assumed. src/ imports CompletionItemKind, ResponseError, ProgressType, StreamMessageReader, StreamMessageWriter and createProtocolConnection as VALUES; re-pointing them loads the framework's server module into a process that uses none of it.",
+          verification:
+            "if the delta is material, THIS PBI RETURNS TO REFINEMENT rather than being resolved in-sprint. Importing from the transitive vscode-languageserver-protocol/node while declaring only the framework is NOT an acceptable escape -- that is an undeclared-dependency import, which is exactly what published-artifacts.test.ts exists to catch.",
+        },
+        {
+          criterion:
+            "The eight names PBI-26 re-exports are unchanged in spelling and in type; only their source specifier moves.",
+          verification:
+            "the installed-consumer type-check; a renamed or dropped name reddens it. THIS IS WHAT MAKES EITHER ORDERING SAFE.",
+        },
+        {
+          criterion:
+            "The deno import map names the framework package; deno start still succeeds from a checkout and from an installed package.",
+          verification:
+            "the existing `deno says where it looked` assertion is retargeted -- it is the presence pair for the map actually being consulted. MEASURE rather than predict which specifier deno names: a DECLARED missing dep says `but found it in a package.json` (contains node_modules), a PHANTOM one says `not a dependency` (does not), and resolution.test.ts:78 asserts the former.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE FRAMEWORK'S SERVER LAYER IS NOT TAKEN. THE FRAMEWORK'S PACKAGE IS. Ruled by the PO on three measurements composing into one finding: tsudoi MUST override InitializeRequest and ShutdownRequest, and every benefit of createConnection sits downstream of the handlers it overrides. Overriding initialize skips fillServerCapabilities, so issue #1's capability argument holds only on the onInitialize path; overriding shutdown leaves watchDog.shutdownReceived false, so exit-0 is unreachable and lifecycle.exitCode() is NOT redundant (control pair, one variable: exit 0 vs exit 1); and createConnection takes no logger, so a throwing notification handler leaves as a framed window/logMessage instead of stderr. Measurements and mechanism: GitHub issue #1.",
+        "THE ~40 TYPED REGISTRATIONS WERE NEVER A BENEFIT, and this is not recorded as a loss. tsudoi's registration surface is MethodMap -- two methods, config-driven, already typed. The 40 include the 11 that BYPASS THE GATE and onCompletion, whose attachPartialResult deletes partialResultToken and destroys src/methods.ts's validation. Negative value, not foregone value. Issue #1 framed it as a trade because it never checked the registrars against the gate.",
+        "INSTRUMENT RULING, moot here and binding later: a boundary on Connection must be a Pick, never an Omit. Omit FAILS OPEN -- a key not in keyof T is accepted and no-ops. MEASURED on Connection: 58 members, onUnhandledNotification and trace ABSENT, so the four-name Omit would silently reduce the boundary to nothing while two of its four defending tests went green asserting that a member never there is not there. Moot for THIS PBI because the base type does not move.",
+        "PROSE ROT THIS PBI MUST PAY, with nothing reddening for it: src/notifications.ts records its enumeration as read off vscode-languageserver-protocol 3.18.2 and names the version BECAUSE package.json asks only for ^3.17.5. After this PBI package.json asks for neither. Alongside README.md:33.",
+        "THE PO'S OWN WITHDRAWN PREMISE, filed rather than dropped: they nearly made `swap-first makes the hoisting comment go false while the test stays green` decisive. FALSE -- bun hoists protocol 3.18.2 transitively, so it stays top-level and a bare specifier still resolves. Caught before anything rested on it, one turn after citing S22 at someone else for the same shape.",
+      ],
+    },
+    {
+      id: "PBI-28",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "serve on createConnection and take the framework's lifecycle hooks",
+        benefit: "the framework's own machinery is reachable rather than overridden into inertness",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "OPEN. Two measurements settle whether this PBI exists at all, and the PO's refusal of it is REASONED, NOT MEASURED.",
+          verification:
+            "(1) On the onInitialize path with NO features registered, does fillServerCapabilities add ANY capability to tsudoi's {textDocumentSync, hoverProvider?, completionProvider?}? If it adds none, the PO's objection -- that it widens what tsudoi advertises, violating the accepted per-method design -- is WRONG and this arm reopens. (2) Does throwing a -32600 ResponseError from connection.onShutdown leave watchDog.shutdownReceived correct, or is the flag set before the handler runs? If set first, tsudoi keeps its rejection AND the framework's exit-0 path.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "RECORDED ON IT BEFORE IT IS REFINED: the boundary must be a Pick (see PBI-27); Features.console is REQUIRED to keep stderr and brings the ProposedFeatures door with it into a file that previously could not reach it; cancellation and cleanup need a confirmation run; the 48 messagesReceived assertion sites are safe ONLY IF Features.console is taken -- window/logMessage is framed, so unframedStdoutBytes===0 survives everywhere and it is the message COUNT that moves.",
+        "WHY Features.console IS NOT THE DISQUALIFYING SHAPE, ruled explicitly because the SM pressed for consistency: the disqualifying shape is not `safe behaviour depends on remembering`, it is `depends on remembering AND NOTHING FAILS WHEN YOU FORGET`. The ungated registrars measured 331 tests green, tsc 0, oxlint 0, with nothing objecting -- that silence disqualified them. Omitting features reddens sync.test.ts:165 on the stderr string AND :168 on messagesReceived independently, from assertions that exist today.",
+        "MEASURED GREEN ALREADY, so not a blocker here: RequestCancelled -32800 travels the wire through a framework connection with tsudoi's exact shape. Issue #1's `result:[]` was the harness's own handler returning [], not the framework normalising. Pre-dispatch isCancellationRequested, generator-close-on-cancel, cleanup reporting, [] vs null, streaming and sendProgress are all unchanged -- onRequest and sendProgress are straight delegations, and the two stderr reports go through process.stderr.write directly.",
+      ],
+    },
+  ],
 
   completed: [
     {
@@ -214,10 +321,6 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      sprint: 12,
-      improvements: [],
-    },
-    {
       sprint: 11,
       improvements: [
         {
@@ -363,10 +466,6 @@ const scrum: ScrumDashboard = {
             "MERGED AT SPRINT 13 from the S1 attach rule and the S2 durability rule, nothing dropped.",
         },
       ],
-    },
-    {
-      sprint: 1,
-      improvements: [],
     },
   ],
 };
