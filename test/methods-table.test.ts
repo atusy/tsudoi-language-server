@@ -6,6 +6,7 @@ import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 
 const allMethods = fixture("all-methods.ts");
+const noMethods = fixture("no-methods.ts");
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -50,6 +51,15 @@ function tableMethods(): Method[] {
 }
 
 /**
+ * What EVERY method in the table is expected to answer, as one object to
+ * compare a whole run against. Built from the table for the same reason the
+ * loops are: a method joining it joins this the moment it is declared.
+ */
+function codeForEveryMethod(answer: unknown): Record<string, unknown> {
+  return Object.fromEntries(tableMethods().map((method) => [method, answer]));
+}
+
+/**
  * THE COMPILER CANNOT DO THIS ONE, WHICH IS WHY IT IS A TEST.
  *
  * MEASURED at vscode-languageserver-protocol 3.18.2: a generator-driven entry
@@ -80,6 +90,23 @@ describe("the request table", () => {
   // for, applied to an iteration rather than to an absence.
   test("the table is not empty, so the loop above is iterating something", () => {
     expect(tableMethods().length).toBeGreaterThan(0);
+  });
+
+  /**
+   * THE SAME PRESENCE ASSERTION, FOR THE OTHER LOOP THAT COULD GO GREEN ON
+   * NOTHING. The no-handler tests below iterate the table and say what a
+   * cancelled request is answered WHICHEVER DRIVE the method uses -- and every
+   * one of them would pass on a table with no generator-driven entry in it,
+   * while measuring nothing at all about the drive whose answer this is about.
+   *
+   * NOT A COUNT AND NOT AN INDEX: it says the kind is REPRESENTED, so a sixth
+   * method joining or `textDocument/completion` moving does not touch it.
+   */
+  test("the table declares a generator-driven entry, so the drives below are both exercised", () => {
+    const drives = Object.values(requestEntries).map((entry) => entry.drive);
+
+    expect(drives).toContain("generator-driven");
+    expect(drives).toContain("awaited-once");
   });
 });
 
@@ -136,6 +163,87 @@ for (const runtime of runtimes) {
 
           expect(message.error?.code).toBe(requestCancelled);
         }
+
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE SAME STEP FOR A CONFIG THAT SUPPLIES NOTHING, and it is the whole of
+     * PBI-40: a cancelled request is answered -32800 WHICHEVER DRIVE its method
+     * uses, whether or not the config can answer it.
+     *
+     * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one drives handlers and
+     * measures the epilogue's post-settle abort check; this one drives NO
+     * handler at all, which is the case the two drives used to disagree about
+     * -- the generator drive returned `null` ahead of the epilogue where the
+     * awaited-once drive built its context either way and answered -32800.
+     * MEASURED at Sprint 32 by P-D, RE-MEASURED at Sprint 35 by restoring that
+     * early return: this test reddens at `textDocument/completion` and at no
+     * other method.
+     *
+     * LSP 3.17 PERMITS EITHER ANSWER, so this pins a CHOICE rather than a
+     * requirement -- the same choice `requestCancelled` in src/methods.ts is
+     * written for, made once and now made for every entry.
+     */
+    test("every method in the table is answered -32800 when cancelled with no handler", async () => {
+      const session = LspSession.start(runtime, noMethods);
+      try {
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const answered: Record<string, unknown> = {};
+        for (const method of tableMethods()) {
+          const inFlight = session.issueThenCancel(method, paramsForAnyMethod());
+          const message = await inFlight.response;
+          answered[method] = message.error?.code;
+        }
+
+        // EVERY METHOD IS COMPARED AT ONCE, NOT ONE ASSERTION PER ITERATION,
+        // and the reason is the Sprint-16 half of S9: a per-iteration `toBe`
+        // stops at the first divergence and prints -32800 against undefined
+        // WITHOUT NAMING WHICH METHOD DIVERGED, which is a real detection that
+        // arrives without naming its cause. The expected side is built from
+        // the table, so this stays one assertion covering every entry.
+        expect(answered).toEqual(codeForEveryMethod(requestCancelled));
+
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE CONTROL FOR THE TEST ABOVE, and without it that -32800 is a claim
+     * about a config nobody checked was loading: the same handler-less config,
+     * the same params, NOT cancelled, answers `null` for every entry. So the
+     * error code up there is attributable to CANCELLATION rather than to a
+     * fixture that failed to load or a method that refused.
+     *
+     * IT IS ALSO WHAT SAYS PBI-40 CHANGED ONE ANSWER AND NOT TWO. Making the
+     * cancelled answer agree across the drives must leave the UNCANCELLED
+     * no-handler answer exactly where it was -- `null`, on both drives -- and
+     * answering `[]` for the generator-driven one instead reddens here.
+     *
+     * BORN GREEN, DECLARED. Nothing about it could fail before the change that
+     * made the test above pass, and it is kept because it is the only assertion
+     * that names this property for every entry at once; the per-method twins in
+     * hover, formatting, diagnostic and resolve's files each name one.
+     */
+    test("every method in the table is answered null with no handler and no cancellation", async () => {
+      const session = LspSession.start(runtime, noMethods);
+      try {
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const answered: Record<string, unknown> = {};
+        for (const method of tableMethods()) {
+          answered[method] = await session.request<unknown>(method, paramsForAnyMethod());
+        }
+
+        expect(answered).toEqual(codeForEveryMethod(null));
 
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {

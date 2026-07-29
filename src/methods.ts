@@ -834,29 +834,37 @@ async function driveGenerator(run: {
   reportInvalidToken: (requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
-  if (handler === undefined) {
-    // THE ONE PLACE THE TWO DRIVES DISAGREE ABOUT AN ANSWER, and it is written
-    // here because this return is what causes it. This sits AHEAD of the
-    // cancellation epilogue, so a CANCELLED request to a generator-driven
-    // method with no handler is answered NULL -- where the awaited-once drive
-    // builds its context either way, reaches `answerUnlessCancelled`, and
-    // answers -32800.
-    //
-    // MEASURED at this sprint, by deleting one handler at a time from
-    // test/fixtures/all-methods.ts: without the completion handler the
-    // by-construction -32800 test reddens on both runtimes, and without the
-    // formatting handler nothing reddens at all.
-    //
-    // NOT CHANGED, AND NOT AN OVERSIGHT. It is the behaviour completion has
-    // always had -- the early return predates the table -- and LSP 3.17 permits
-    // answering a cancelled request normally, so neither answer violates
-    // anything. What was missing was that ANYBODY KNEW, and putting the two
-    // drives side by side is what surfaced it. Making them agree is a
-    // behaviour change no criterion asked for; recording it is what stops the
-    // next reader assuming the epilogue reaches every request.
-    return null;
-  }
   const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
+  if (handler === undefined) {
+    // THIS DRIVE'S NO-HANDLER ANSWER, AND IT GOES THROUGH THE EPILOGUE LIKE
+    // EVERY OTHER ANSWER THIS FILE PRODUCES. There is still nothing to drive,
+    // so nothing pulls a generator or reads a token -- what changed at Sprint
+    // 35 is that the `null` is produced INSIDE `answerUnlessCancelled` instead
+    // of ahead of it, so a CANCELLED request with no handler is answered -32800
+    // here exactly as it is on the awaited-once drive.
+    //
+    // WHY THE CONTEXT IS BUILT FOR A REQUEST NOTHING WILL ANSWER: the epilogue
+    // reads the abort off it. That is the same trade the awaited-once drive has
+    // always made -- one AbortController and one subscription for a request
+    // that answers `null` -- and it is what makes the cancellation decision one
+    // decision rather than one per drive.
+    //
+    // NOT AN ORDERING THIS DRIVE PREFERRED. LSP 3.17 permits answering a
+    // cancelled request normally, so the `null` violated nothing; what it did
+    // was falsify `answerUnlessCancelled`'s own statement that everything
+    // cancellation changes is decided there, and THAT CLAIM IS THE ASSET.
+    return answerUnlessCancelled(run.method, context.signal, () => Promise.resolve(null));
+  }
+  // BELOW THE NO-HANDLER RETURN, AND BOTH SIDES OF THAT POSITION ARE
+  // DELIBERATE. Below it, because a config that cannot answer completion at all
+  // has no business reporting the client's token on stderr -- that line exists
+  // to tell a config author their items were aggregated rather than streamed,
+  // and here there are no items. Above `answerUnlessCancelled` rather than
+  // inside it, because a client sending `params: null` makes the read below
+  // throw a TypeError that is NOT a handler failure: inside the epilogue it
+  // would be reported as one, under a `tsudoi:` prefix naming a handler that
+  // was never called.
+  //
   // Read through `unknown` on purpose: the declared ProgressToken type
   // describes what a CONFORMING client sends, and this path exists for the
   // one that does not.
