@@ -52,41 +52,22 @@ export function createDocumentStore(): DocumentStoreHandle {
         return;
       }
       if (params.contentChanges.length === 0) {
-        // An empty contentChanges says nothing changed, and the early return is
-        // deliberate rather than left over. MEASURED at
-        // vscode-languageserver-textdocument 1.0.12, whose `update` is declared
-        // in lib/umd/main.d.ts: called with an EMPTY change array it RAISES THE
-        // VERSION and leaves the text alone, and a version that moved without an
-        // edit describes a buffer state no client ever sent. ASSERTED, so this
-        // is not prose alone -- `an empty contentChanges moves neither the text
-        // nor the version` in test/documents.test.ts.
+        // An empty contentChanges says nothing changed, and returning early is
+        // deliberate: upstream's `update` called with an empty change array
+        // RAISES THE VERSION and leaves the text alone, which describes a buffer
+        // state no client ever sent.
         return;
       }
-      // HANDED STRAIGHT THROUGH, WHICH IS THE POINT OF THE STORE BEING
-      // UPSTREAM'S. Every entry is applied to the document as the entries
-      // BEFORE IT left it, so the ranges within one notification compose --
-      // arithmetic this file would otherwise have to write, and the wheel that
-      // adopting TextDocument exists to retire.
+      // HANDED STRAIGHT THROUGH: every entry is applied to the document as the
+      // entries BEFORE IT left it, so ranges within one notification compose.
+      // Reading only the last entry silently DROPS EDITS under Incremental sync,
+      // since an earlier entry moves the text a later one addresses.
       //
-      // READING ONLY THE LAST ENTRY IS WITHDRAWN, NOT OUTGROWN, and it is
-      // recorded because it was a deliberate decision rather than an accident:
-      // while tsudoi advertised Full, a conforming client sent exactly one
-      // change carrying the whole buffer, and taking the last was the defensive
-      // read of that contract. Under Incremental the same line SILENTLY DROPS
-      // EDITS, since an earlier entry moves the text a later one addresses.
-      //
-      // MUTATED IN PLACE: upstream's `update` documents its return as `the same
-      // document instance passed in as first parameter`, so the entry already in
-      // the map is the one that changes. `set` is kept because the return value
-      // is what the CONTRACT promises -- a future upstream that replaced instead
-      // of mutating would leave a stale entry here otherwise.
-      //
-      // WHAT THAT COSTS, and it is now ASSERTED rather than merely disclosed: a
-      // config author who held a document from an earlier `get()` used to hold a
-      // snapshot and now holds a handle that moves under them. That is pinned by
-      // `a reference taken before a change reflects that change afterwards` in
-      // test/documents.test.ts, and stated for authors at `DocumentStore` in
-      // src/types.ts.
+      // MUTATED IN PLACE -- upstream's `update` returns the same instance -- so a
+      // config author holding a document from an earlier `get()` holds a handle
+      // that moves under them. `set` is kept anyway, because the return value is
+      // what the contract promises and an upstream that replaced instead of
+      // mutating would otherwise leave a stale entry here.
       byUri.set(uri, TextDocument.update(current, params.contentChanges, version));
     },
 

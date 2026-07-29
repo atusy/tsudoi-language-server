@@ -11,15 +11,9 @@ import { ErrorCodes, ResponseError } from "vscode-languageserver-protocol/node";
 type Phase = "uninitialized" | "serving" | "shutdown";
 
 /**
- * What the lifecycle answers about a message arriving right now. The three
- * questions are asked at three different places -- a request handler, the
- * NOTIFICATION ROUTER, and `exit` -- and each gets the answer for its own kind
- * of message rather than the raw state to interpret for itself.
- *
- * The middle arm used to read `a notification handler`, and that is now false:
- * no notification body consults this at all. notifications.ts asks ONCE, on
- * behalf of every entry that declared `gate: "lifecycle"`, which is what makes
- * forgetting the question impossible rather than merely unlikely.
+ * What the lifecycle answers about a message arriving right now. Each caller --
+ * a request handler, the notification router, `exit` -- gets the answer for its
+ * own kind of message rather than the raw state to interpret for itself.
  */
 export interface Lifecycle {
   /** Records the client's initialize request. */
@@ -78,74 +72,32 @@ export function createLifecycle(): Lifecycle {
     },
 
     // LSP exit-code semantics: 0 only when shutdown came first, otherwise 1.
-    // Compared against the phase by name -- there is no boolean here to read
-    // for truth rather than for value.
+    // The spec says the server should exit 0 "if the shutdown request has been
+    // received before", and `received` is a real reading gap that this project
+    // closes one way for all callers -- restating it elsewhere is how two sites
+    // end up disagreeing.
     //
-    // THIS BLOCK IS THE ONE PLACE THIS PROJECT'S READING OF THAT SENTENCE
-    // LIVES. Two lifecycle questions turn on it -- the code after a REFUSED
-    // shutdown, and the code when the editor simply dies -- and read months
-    // apart by different people they can reach DIFFERENT CONCLUSIONS FROM THE
-    // SAME TEXT, which would leave tsudoi with two rulings that disagree. Every
-    // other site POINTS HERE instead of restating it; a second copy is the
-    // duplication that makes the disagreement possible.
+    // A PRE-INITIALIZE `shutdown` IS REFUSED, so shutDown() never runs and that
+    // session exits 1. Reading `received` as bare arrival on the wire would have
+    // a conforming server say two contradictory things about one request -- "I am
+    // not initialized, I did not do this", then "success" -- and would need a
+    // second flag beside the phase. vscode-languageserver 10.1.0 exits 0 for the
+    // same sequence, but only because it never refuses: it has no
+    // ServerNotInitialized at all, so its 0 answers a different question.
     //
-    // THE SENTENCE, as the specification writes it, read at
-    // microsoft/language-server-protocol, whose DEFAULT BRANCH IS gh-pages --
-    // said because the obvious path 404s: the same file under `main` was
-    // requested first and was not there. _includes/messages/3.17/exit.md:
-    //
-    //   The server should exit with `success` code 0 if the shutdown request
-    //   has been received before; otherwise with `error` code 1.
-    //
-    // WHAT `RECEIVED` MEANS IS A REAL READING GAP, not a pedantry, and what
-    // closes it is a rule in a DIFFERENT file:
-    // _specifications/lsp/3.17/general/initialize.md says a REQUEST arriving
-    // before `initialize` should be answered `code: -32002`, and that
-    // notifications are dropped EXCEPT `exit` -- which exists so a server can
-    // be shut down without ever being initialized. tsudoi does exactly that, so
-    // a pre-initialize `shutdown` is REFUSED: shutDown() never runs and the
-    // phase stays uninitialized. RULED: that session exits 1. Reading
-    // `received` as bare arrival on the wire would make a conforming server say
-    // two contradictory things about one request -- `I am not initialized, I
-    // did not do this`, and then `success` -- and would need a second flag
-    // beside the phase, which is the two-booleans-free-to-disagree design the
-    // block at the top of this file exists to refuse. MEASURED end to end at
-    // bun 1.3.13 and deno 2.9.2: -32002 on the wire, then exit code 1.
-    //
-    // THE REFERENCE IMPLEMENTATION DISAGREES, AND IT DOES NOT DECIDE THIS.
-    // READ, NOT MEASURED, at vscode-languageserver 10.1.0 installed out of
-    // tree, lib/common/server.js:766-788: `watchDog.shutdownReceived = true` is
-    // the FIRST statement of its shutdown handler and its exit handler branches
-    // on that flag, so the same sequence exits 0 there. But `ServerNotInitial-
-    // ized` and `32002` appear NOWHERE in that package -- grepped over the
-    // whole of it, because a claim that something is absent is a coverage claim
-    // -- so it reaches 0 by NEVER REFUSING. Its 0 is the answer for a server
-    // that SERVED the shutdown, and says nothing about one that refused it.
-    //
-    // AND THE BOUNDARY, which is the half a reader would otherwise invent: THE
-    // SENTENCE GOVERNS THE `exit` NOTIFICATION. A session that ends WITHOUT one
-    // -- stdin reaching EOF because the editor that spawned tsudoi died -- is
-    // ruled by NOTHING above, and exits 0 because nothing calls this function
-    // on that path at all. That 0 is correct rather than merely current, on a
-    // ground worth stating because it is REASONED and not quoted: 1 is this
-    // protocol's own word for `error`, and a server terminating because the
-    // client it serves is gone has not failed -- it is doing what the same
-    // initialize.md asks of it, in the `processId` doc: `If the parent process
-    // is not alive then the server should exit (see exit notification) its
-    // process.` WHY A NEW HANDLE IN src/ WOULD DESTROY THAT EXIT is recorded at
-    // startServer in src/server.ts, which is where such an edit would be made.
+    // THE BOUNDARY: this governs the `exit` NOTIFICATION. A session ending
+    // without one -- stdin at EOF because the editor died -- never reaches here
+    // and exits 0, which is correct: 1 is this protocol's word for `error`, and a
+    // server terminating because its client is gone has not failed. Why a new
+    // handle in src/ would destroy that exit is recorded at startServer.
     //
     // WHY NOT, so that nobody `fixes` it: the PIPELINED shutdown-then-exit is
-    // DELIBERATELY UNDEFENDED. A client that writes `shutdown` and `exit` in ONE
-    // write lets `exit` be dispatched before the shutdown RESPONSE has been
-    // written, so server.ts calls process.exit(this) and the response the client
-    // is waiting for is never flushed -- an editor hanging on shutdown. That is
-    // spec-defensible: LSP tells the client to await the shutdown response
-    // before sending exit, and a server is not obliged to serve a client that
-    // does not. Ruled at Sprint 3 and never revisited; no test sends that
-    // sequence, so it is unproven in either direction rather than known-good.
-    // Pacing the exit behind the in-flight response would ALSO be acceptable,
-    // which is why this is recorded here instead of pinned by a test.
+    // DELIBERATELY UNDEFENDED. A client writing both in ONE write lets `exit` be
+    // dispatched before the shutdown response is written, so the response is
+    // never flushed and the editor hangs. LSP tells the client to await that
+    // response first, and a server is not obliged to serve one that does not.
+    // Unproven in either direction rather than known-good; pacing the exit behind
+    // the in-flight response would also be acceptable.
     exitCode(): number {
       return phase === "shutdown" ? 0 : 1;
     },
