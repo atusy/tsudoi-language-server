@@ -297,7 +297,7 @@ const scrum: ScrumDashboard = {
         notes: [
           "EXPECTED RED, and at a named method: the loop reddens at textDocument/completion, the table's only generator-driven entry, and stays green through the four awaited-once ones.",
           "THE CONTROL IS BORN GREEN AND IS DECLARED SO. It is not vacuous -- answering `[]` rather than `null` for a handler-less generator-driven method reddens it -- but nothing about it can fail before the implementation lands.",
-          "THE RED ARRIVED NAMING ITS OWN CAUSE, and the assertion was written that way on purpose: a per-iteration `toBe` stops at the first divergence and prints -32800 against undefined without saying WHICH method diverged. Comparing one object for the whole run prints `textDocument/completion: undefined` beside four methods at -32800, which is the brief\'s handed measurement RE-MEASURED rather than copied.",
+          "THE RED ARRIVED NAMING ITS OWN CAUSE, and the assertion was written that way on purpose: a per-iteration `toBe` stops at the first divergence and prints -32800 against undefined without saying WHICH method diverged. Comparing one object for the whole run prints `textDocument/completion: undefined` beside four methods at -32800, which is the brief's handed measurement RE-MEASURED rather than copied.",
         ],
       },
       {
