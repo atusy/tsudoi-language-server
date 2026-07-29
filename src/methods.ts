@@ -55,6 +55,21 @@ type DriveKind<M extends Method> =
  * A KEY INSIDE ANOTHER METHOD'S. A function is immune to the next shape
  * arriving; a key/value pair has to be widened for each one.
  *
+ * AND `immune to the next shape arriving` STOPPED BEING A PREDICTION THIS
+ * SPRINT. `diagnosticProvider`'s value shape had been flagged UNMEASURED twice
+ * on PBI-37, with the PO noting that even a corrected count might not survive
+ * contact with it. IT DOES NOT. MEASURED at vscode-languageserver-protocol
+ * 3.18.2, ServerCapabilities line 1106: `diagnosticProvider?: DiagnosticOptions
+ * | DiagnosticRegistrationOptions`, and `DiagnosticOptions` (protocol.diagnostic
+ * .d.ts:50-67) carries TWO REQUIRED MEMBERS -- `interFileDependencies: boolean`
+ * and `workspaceDiagnostics: boolean` -- beside an optional `identifier`.
+ *
+ * SO IT IS A FOURTH VALUE SHAPE, and the sharpest one: `true` would not
+ * type-check and neither would `{}`. A flag mechanism could not express it, and
+ * NEITHER COULD COPYING COMPLETION'S. That is measurement arriving where the
+ * criterion predicted it would, which is why the PO ruled the count REMOVED
+ * rather than corrected -- an enumeration would have been wrong again here.
+ *
  * IT MUTATES, AND SO IT IS ORDER-DEPENDENT. That is the price of reaching
  * inside another method's key, and the property it costs is worth naming
  * because nothing checks it: A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
