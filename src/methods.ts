@@ -83,29 +83,55 @@ type DriveKind<M extends Method> =
  * criterion predicted it would, which is why the PO ruled the count REMOVED
  * rather than corrected -- an enumeration would have been wrong again here.
  *
- * IT MUTATES, AND SO IT IS ORDER-DEPENDENT. That is the price of reaching
- * inside another method's key: A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
- * METHOD OWNS MUST RUN AFTER THAT METHOD'S. The table below is iterated in
- * declaration order -- string keys on an object literal preserve it -- so
- * `completionItem/resolve` is DECLARED BELOW `textDocument/completion`.
+ * IT MUTATES, AND IT IS NO LONGER ORDER-DEPENDENT. That WAS the price of
+ * reaching inside another method's key -- A CONTRIBUTOR THAT WRITES INTO A KEY
+ * ANOTHER METHOD OWNS MUST RUN AFTER THAT METHOD'S -- and for two methods it
+ * was held by nothing but the order two entries happened to be declared in.
+ * SINCE SPRINT 38 THE ONE KEY TWO METHODS SHARE IS MERGED INTO RATHER THAN
+ * ASSIGNED OVER, so what another contributor already wrote survives and the
+ * order they run in decides nothing.
  *
- * THE CONSTRAINT IS NO LONGER DORMANT, AND THIS PARAGRAPH SAID IT WAS FOR TWO
- * SPRINTS. It was written when no entry depended on another and `becomes real at
- * the first nested contributor` was a prediction; `completionItem/resolve` is
- * that contributor and the prediction has been paid out.
+ * THE TABLE IS STILL ITERATED IN DECLARATION ORDER -- string keys on an object
+ * literal preserve it -- AND NOTHING DEPENDS ON THAT ANY MORE.
+ * `completionItem/resolve` is still declared below `textDocument/completion`,
+ * which is now a reading convenience and not a requirement.
  *
- * IT ALSO SAID NOTHING CHECKS IT, AND SOMETHING DOES NOW -- not the ordering,
- * WHICH IS A MECHANISM, but the property the ordering exists for: a config
- * supplying BOTH handlers is asserted in test/resolve.test.ts to advertise
- * `completionProvider: { resolveProvider: true }` by exact equality. Declare
- * the two entries the other way round and completion's contributor assigns `{}`
- * over what resolve wrote, and that assertion reddens -- MEASURED this sprint,
- * on both runtimes, and it reddens ALONE.
+ * MEASURED AT SPRINT 38 RATHER THAN ARGUED, over ALL 32 configs the five
+ * methods can form and ALL 120 ORDERS their contributors can run in: the
+ * capabilities emitted are IDENTICAL to what the assignment emitted, for every
+ * config, and no config's result differs across orders. NEGATIVE CONTROL, taken
+ * before the merge existed: 8 of those 32 -- exactly the ones supplying BOTH
+ * handlers -- disagreed across orders.
  *
- * SO THERE IS NO INDEX COMPARISON ANYWHERE, and that is deliberate rather than
- * an omission: a test asserting resolve's key sits after completion's would
- * restate the mechanism, would pass a table whose iteration stopped being
- * ordered, and would be a SECOND check of one property.
+ * WHAT WAS REMOVED IS A HAZARD AND NOT A CHECK, which is why no assertion
+ * replaced it. The property is still watched where it was: a config supplying
+ * BOTH handlers is asserted in test/resolve.test.ts to advertise
+ * `completionProvider: { resolveProvider: true }` by exact equality, and that
+ * assertion is UNCHANGED. What changed is that declaring the two entries the
+ * other way round now reddens NOTHING -- measured at Sprint 38, whole suite
+ * green, the same number of tests running -- because there is nothing left for
+ * that edit to break.
+ *
+ * AND THE MEASUREMENT THIS BLOCK CARRIED HAD GONE STALE BEFORE IT WAS REMOVED,
+ * written down because the stale number is the part that would have been
+ * quietly inherited: it said the swap reddens ALONE, which was true when Sprint
+ * 34 measured it and FALSE ONCE SPRINT 37 GAVE THE DEMO CONFIG A RESOLVE
+ * HANDLER. Re-measured on the way past with the assignment restored: FOUR tests
+ * on both runtimes -- the resolve capability assertion AND the demo config's
+ * pinned capabilities in test/lifecycle.test.ts.
+ *
+ * SO THERE IS STILL NO INDEX COMPARISON ANYWHERE, and the ground is stronger
+ * than when it was a refusal: a test asserting resolve's entry sits after
+ * completion's would restate a mechanism that now protects nothing.
+ *
+ * WHAT IS NOT DEFENDED, NAMED RATHER THAN LEFT TO BE FOUND: nothing stops a
+ * FUTURE contributor from assigning over a key another method owns. The merge
+ * is a property of the two lines that write `completionProvider` and not of
+ * this type, and no test can see the difference while `textDocument/completion`
+ * contributes no key of its own -- MEASURED at Sprint 38, restoring the
+ * assignment with the entries in their declared order leaves the whole suite
+ * green. THE COST OF CLOSING IT is the check refused above, and it is refused
+ * on the same ground twice over.
  */
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 
@@ -252,24 +278,38 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // config author to declare them, and claiming trigger characters nobody
     // configured would have the client ask at moments the handler knows nothing
     // about. Moved here from src/server.ts, where it sat above the `if`.
+    //
+    // IT MERGES RATHER THAN ASSIGNS, AND THAT IS WHAT MAKES THIS TABLE
+    // ORDER-INDEPENDENT. This line used to read `= {}`, which meant a
+    // contributor writing into a key THIS method owns had to run after this
+    // one -- `completionItem/resolve` is that contributor, and until Sprint 38
+    // nothing but declaration order held it. The spread is the whole fix: what
+    // is already there survives, so the two entries produce the same
+    // `completionProvider` in either order.
+    //
+    // `{ ...undefined }` IS `{}`, which is why the no-resolve case is
+    // unchanged: for a config supplying completion alone this key is absent
+    // when this runs and the spread contributes nothing. MEASURED at Sprint 38
+    // over ALL 32 configs the five methods can form -- the capabilities emitted
+    // are identical to what the assignment emitted, for every one of them.
     capability: (capabilities) => {
-      capabilities.completionProvider = {};
+      capabilities.completionProvider = { ...capabilities.completionProvider };
     },
   },
-  // DECLARED HERE, AND THE POSITION IS LOAD-BEARING RATHER THAN TIDY. This is
-  // the first entry whose capability writes into a key ANOTHER METHOD OWNS, so
-  // the constraint recorded at `CapabilityContributor` -- a contributor that
-  // writes into another method's key must RUN AFTER that method's -- applies to
-  // this line and to nothing else in the table. Move this entry above
-  // `textDocument/completion` and the line below is overwritten by completion's
-  // `{}` before the client ever sees it.
+  // DECLARED HERE, AND THE POSITION STOPPED BEING LOAD-BEARING AT SPRINT 38.
+  // This is still the only entry whose capability writes into a key ANOTHER
+  // METHOD OWNS, and it used to be true that moving it above
+  // `textDocument/completion` would have the line below overwritten by
+  // completion's `{}` before the client ever saw it. COMPLETION NOW MERGES, so
+  // both orders produce the same `completionProvider` and this entry sits here
+  // because that is the order the pair reads in.
   //
-  // NOTHING IN THE LANGUAGE ENFORCES IT, AND A TEST DOES: a config supplying
-  // BOTH handlers is asserted in test/resolve.test.ts to advertise
-  // `completionProvider: { resolveProvider: true }` by exact equality, which is
-  // the PROPERTY the ordering exists for rather than the ordering itself.
-  // MEASURED at this sprint: swapping this entry above completion's reddens
-  // that assertion.
+  // MEASURED AT SPRINT 38 rather than inherited: with this entry moved above
+  // completion's, the whole suite is green and the same number of tests run.
+  // The exact-equality capability assertion in test/resolve.test.ts still
+  // watches WHAT A CLIENT IS TOLD -- it is what a merge that dropped
+  // `resolveProvider` would redden -- and it no longer watches the ordering,
+  // because the ordering no longer decides anything.
   "completionItem/resolve": {
     drive: "awaited-once",
     type: CompletionResolveRequest.type,
@@ -277,15 +317,23 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // ITS OWN: `resolveProvider` lives inside `CompletionOptions` (protocol
     // 3.18.2, protocol.d.ts:2265), which is `completionProvider`'s value -- so
     // this is the line that makes `CapabilityContributor` a FUNCTION rather
-    // than a flag, and reading it beside hover's `true`, completion's `{}` and
-    // diagnostic's two required booleans is what the table is for.
+    // than a flag, and reading it beside hover's `true`, completion's empty
+    // options and diagnostic's two required booleans is what the table is for.
     //
-    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, and the spread is
-    // DEFENSIVE rather than measured -- said plainly because it reads as though
-    // something depended on it. Completion contributes `{}`, so writing
-    // `{ resolveProvider: true }` outright would produce an identical result
-    // today; what the spread buys is that a future `triggerCharacters` on
-    // completion's line is not deleted by this one, silently, at a distance.
+    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, AND SINCE SPRINT 38
+    // THAT IS THE MECHANISM RATHER THAN A HEDGE AT THIS ONE SITE: both lines
+    // that write `completionProvider` merge into it, which is exactly what
+    // makes the pair order-independent, so this spread is no longer a defensive
+    // gesture one contributor makes about another's key.
+    //
+    // IT IS STILL NOT DEFENDED, AND THAT HALF IS UNCHANGED AND RE-MEASURED
+    // RATHER THAN CARRIED: `textDocument/completion` contributes no key of its
+    // own, so writing `{ resolveProvider: true }` outright still produces an
+    // identical result for every config -- MEASURED at Sprint 38, the whole
+    // suite green with this spread deleted, exactly as Sprint 34 measured it
+    // before the merge. What the spread buys remains a FUTURE
+    // `triggerCharacters` on completion's line not being deleted by this one,
+    // silently, at a distance.
     //
     // THIS LINE WOULD BRING A `completionProvider` INTO BEING FOR A CONFIG THAT
     // CANNOT ANSWER COMPLETION, and what stops it is NOT here. That state --
@@ -310,7 +358,8 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/formatting": {
     drive: "awaited-once",
     type: DocumentFormattingRequest.type,
-    // `true`, NOT `{}`, and the difference from completion's line is not a
+    // `true`, NOT AN OPTIONS OBJECT, and the difference from completion's line
+    // is not a
     // style drift: DocumentFormattingOptions extends WorkDoneProgressOptions and
     // declares NOTHING ELSE, so the only thing an options object could say here
     // is `workDoneProgress`, which tsudoi does not implement for this method.
@@ -323,8 +372,9 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     //
     // READING THEM SIDE BY SIDE IS THE POINT, and it is what a table flattening
     // them to booleans would have destroyed silently: `true` here, completion's
-    // `{}`, diagnostic's object with two REQUIRED booleans, and resolve's key
-    // NESTED INSIDE COMPLETION'S are each a different kind of contribution, and
+    // EMPTY OPTIONS MERGED INTO WHATEVER IS ALREADY THERE, diagnostic's object
+    // with two REQUIRED booleans, and resolve's key NESTED INSIDE COMPLETION'S
+    // are each a different kind of contribution, and
     // this is the one place the difference is visible at a glance. NAMED AND
     // DELIBERATELY NOT COUNTED: the PO ruled a count out of this comparison at
     // Sprint 31 because any enumeration invites the same staleness again, and
@@ -427,9 +477,15 @@ type ErasedGeneratorHandler = (
 ) => AsyncGenerator<unknown[], unknown[] | null, void>;
 
 /**
- * The table as a list, in DECLARATION ORDER -- which is what the ordering
- * constraint at `CapabilityContributor` depends on, and it holds because these
- * are ordinary string keys.
+ * The table as a list, in DECLARATION ORDER -- which holds because these are
+ * ordinary string keys.
+ *
+ * NOTHING DEPENDS ON THAT ORDER SINCE SPRINT 38, and this sentence said the
+ * opposite until then: it named the contributor-ordering constraint at
+ * `CapabilityContributor` as what declaration order was FOR. That constraint no
+ * longer exists -- the one shared capability key is merged into rather than
+ * assigned over -- so the order is a fact about `Object.entries` and not a
+ * requirement anything here rests on.
  */
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
