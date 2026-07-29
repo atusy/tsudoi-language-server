@@ -329,9 +329,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE EXPECTED -- BORN GREEN AT HEAD, declared in advance. Sprint 28 already mutates in place, so this cycle installs the gate BEFORE the call it guards is rewritten, which is the whole reason it is first. Its meaning comes from the perturbation, not from its green: rebuild the entry with TextDocument.create from the updated text and the earlier reference must go stale. Travelling in the same commit: src/types.ts states on the PUBLISHED SURFACE that workspace folders are a snapshot of REQUEST START while documents are LIVE, and names the assertion that backs the live half.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c2d8d5f",
+            message:
+              "test(documents): pin the live reference before rewriting the call it depends on",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN AS DECLARED, AND THE PERTURBATION IS WHAT MAKES IT A GATE: rebuilding the entry with TextDocument.create from the updated text reddens THIS TEST'S FIRST ASSERTION AND NOTHING ELSE IN THE SUITE -- so the property really was undefended, and the reversal Sprint 28 warned about would have been silent. Reverted from a byte-verified copy; src/documents.ts confirmed identical to HEAD before anything was committed.",
           "IDENTITY IS DELIBERATELY NOT ASSERTED. `before === documents.get(uri)` is the MECHANISM upstream happens to use; the criterion is the PROPERTY, and the property assertion already reddens on every way the mechanism could change -- a new instance leaves the old reference stale whether or not the map is updated. S13 and S7 together: pinning the spelling as well would bind a future upstream that reached the same property differently.",
         ],
       },
