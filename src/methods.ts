@@ -283,6 +283,17 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // THE TWO VALUES ARE DECIDED DIFFERENTLY AND THAT DISTINCTION IS THE POINT
     // OF WRITING THEM OUT RATHER THAN INLINING A LITERAL.
     //
+    // NO `identifier`, AND ITS ABSENCE IS A DECISION RATHER THAN AN OMISSION,
+    // written here because this is the line that would gain one. `DiagnosticOptions`
+    // declares it optional, and `DocumentDiagnosticParams` carries the matching
+    // optional `identifier` a client echoes back -- so registering one would
+    // create a value tsudoi must then MATCH incoming params against, and
+    // `TsudoiConfig` has no surface for an author to name it. Exactly the
+    // reasoning that leaves completion's options empty rather than claiming
+    // triggerCharacters nobody configured. A client sending `identifier` today
+    // is answered from the same handler regardless, which is correct while
+    // tsudoi registers exactly one diagnostic source.
+    //
     // `workspaceDiagnostics: false` IS FORCED, NOT CHOSEN. tsudoi does not serve
     // `workspace/diagnostic` -- a SEPARATE request with its own params and
     // result, not a variant of this one -- and the protocol makes this field the
