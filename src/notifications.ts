@@ -202,6 +202,33 @@ export function registerNotifications<P extends readonly unknown[]>(
  * probe's own type-check exits 0 and only assertions naming the SYMBOL redden.
  * test/notifications.test.ts matches each removed member BY NAME, and pins the
  * removed SET exactly.
+ *
+ * AND THAT IS WHY `Pick` IS THE BETTER INSTRUMENT FOR THIS BOUNDARY -- stated as
+ * a PREFERENCE AND NOT A MANDATE, and continuous with the paragraph above rather
+ * than a second account of the same hazard. `Omit` names what must GO and trusts
+ * the base type to contain it; `Pick` names what may STAY, so a name the base
+ * type does not have is a compile error rather than a no-op. The failure becomes
+ * UNREPRESENTABLE instead of merely detected. And it is not hypothetical: the
+ * one base type anyone has proposed moving to is measured at
+ * `createGatedConnection` below, and two of these four keys are not its members
+ * at all.
+ *
+ * NOT A MANDATE TO CONVERT WHAT IS WRITTEN HERE, because today's `Omit` IS
+ * DEFENDED and a change with no defect to fix is churn. TWO pins in
+ * test/notifications.test.ts carry it and they carry DIFFERENT halves:
+ * `ProtocolConnectionHasTheseMembers` reddens when the DEPENDENCY's member set
+ * moves, `BoundaryIsTheObservingMembers` when the key set below moves.
+ *
+ * THE REVERSAL CONDITION, so this is a decision and not an opinion: IF EITHER
+ * PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES REQUIRED. They do not overlap
+ * on the cases that matter here. A key naming something the base type does not
+ * have -- the silent no-op, whether by typo or by rebasing onto a wider
+ * connection -- moves only `BoundaryIsTheObservingMembers`, because the other
+ * never mentions this type at all. A member the DEPENDENCY ADDS moves only
+ * `ProtocolConnectionHasTheseMembers`, because the set difference the first
+ * computes puts it on both sides and cancels it out. Between them the `Omit` has
+ * a defence; with one of them gone it has half of one; and `Pick` needs neither,
+ * which is the whole of its advantage.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,

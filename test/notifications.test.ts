@@ -359,6 +359,18 @@ test("the same entry with a gate type-checks", async () => {
  * THE PAIR, so `always` is not read off a table that could be empty or
  * mis-keyed: every OTHER entry is asserted to be `lifecycle` in the same
  * measurement, which a table returning one blanket value could not satisfy.
+ *
+ * REMOVING THE LAST `always` ENTRY IS A SCOPE DECISION AND NOT A CLEANUP, and
+ * this block is the site of that edit. Both assertions below redden if `exit`'s
+ * entry goes, which is the loud half; the quiet half is what comes after --
+ * with nothing left declaring `always`, the union in src/notifications.ts
+ * collapses to a single member, and whatever is written in this test's place can
+ * then only restate what the type already guarantees. THE KNOWN REASON ANYONE
+ * WOULD WANT TO is recorded at `createGatedConnection` in src/notifications.ts:
+ * the framework's exit-0 path fires only if tsudoi stops registering `exit`
+ * itself, so that path and this carve-out cannot both be had. S16 governs what
+ * happens next -- a defence deliberately removed goes to the Product Owner
+ * before it is re-homed, rather than being tidied away by whoever hit it.
  */
 test("exit's entry declares always, and every other entry declares lifecycle", () => {
   const entries = notificationEntries(
