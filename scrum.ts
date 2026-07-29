@@ -274,7 +274,61 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 35,
+    pbi_id: "PBI-40",
+    goal: "DESIGN COHERENCE, NOT A DEFECT, and the ground is that THE CLAIM IS THE ASSET: answerUnlessCancelled exists precisely so cancellation is decided in ONE PLACE, and a cancelled request to a generator-driven method with NO handler is answered `null` because that drive's no-handler early return sits AHEAD of it. LSP permits either answer, so no requirement is breached -- what is at stake is a stated principle being weakened to accommodate AN ORDERING NOBODY CHOSE. The divergence closes at -32800 FOR BOTH DRIVES, and CRITERION 2 IS THE POINT RATHER THAN A SIDE EFFECT: the qualifier `THAT REACHES THIS FUNCTION` stops being true, so it comes out, and it comes out EVERYWHERE THE CLAIM LIVES rather than only where this sprint edits -- found by grepping the claim's words (`REACHES THIS FUNCTION`, `no-handler`, `early return`, `AHEAD OF`, `epilogue`, `nowhere else`, `one place`, `-32800`, `qualifier`, `divergence`) rather than the places comments live, because a git diff answers `did this change?` and never `is this list complete?`.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A BY-CONSTRUCTION TEST, in test/methods-table.test.ts, over a config supplying NO handler for anything: every method the table declares is cancelled and required to answer -32800. It states criterion 1's PROPERTY -- whichever drive a method uses, a cancelled request with no handler is answered -32800 -- rather than the mechanism, and one assertion covers every entry, which is the convention that table exists to keep. PAIRED WITH A PRESENCE ASSERTION on the file's own precedent (`the table is not empty, so the loop above is iterating something`): the table declares AT LEAST ONE generator-driven entry, WITHOUT WHICH the loop could go green on five awaited-once methods and measure nothing about the drive this PBI is about. PLUS THE CONTROL that makes the -32800 attributable to cancellation rather than to a broken fixture: the same handler-less config answers every method `null` when NOT cancelled.",
+        implementation:
+          "The generator drive's no-handler answer is produced INSIDE answerUnlessCancelled instead of ahead of it, so every request reaching a drive is answered under the cancellation epilogue. TWO ORDERING CHOICES ARE DELIBERATE AND BOTH PRESERVE BEHAVIOUR NO CRITERION ASKS TO CHANGE: the handler check moves AFTER the context is built but the partialResultToken read stays OUTSIDE the produce callback, so a `params: null` TypeError keeps its current attribution (-32603 with no `tsudoi:` line) rather than being mislabelled `handler failed`; and the handler check precedes the token read, so a no-handler request carrying an invalid token still emits no stderr line. NOT HOISTED INTO registerMethods: src/methods.ts records the no-handler case as coming WITH the drive rather than being a second axis, and making it a shared third thing is a scope decision no criterion asks for.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED, and at a named method: the loop reddens at textDocument/completion, the table's only generator-driven entry, and stays green through the four awaited-once ones.",
+          "THE CONTROL IS BORN GREEN AND IS DECLARED SO. It is not vacuous -- answering `[]` rather than `null` for a handler-less generator-driven method reddens it -- but nothing about it can fail before the implementation lands.",
+        ],
+      },
+      {
+        test: "NO EXECUTABLE DEFENCE, AND THAT IS DECLARED RATHER THAN DRESSED UP: criterion 2 is about PROSE, and what defends it is the grep whose terms are named in the goal above. The measurement is that no term returns a surviving statement of the qualifier.",
+        implementation:
+          "The qualifier and every restatement of it are removed: answerUnlessCancelled's doc block loses `THAT REACHES THIS FUNCTION` and the paragraph explaining why it was load-bearing, requestCancelled's block loses the same qualifier it forwards, the router's drive comment stops saying completion returns EARLY ahead of the context, driveGenerator's block stops calling the early return this drive's no-handler shape, and test/fixtures/all-methods.ts's block is RE-MEASURED rather than edited -- its measurements are about exactly the behaviour this sprint changes.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHAT REPLACES IT MUST NOT BE A SECOND FALSE CLAIM. The sentence becomes unqualified only if every request reaching either drive reaches this function -- which is what subtask 1 measures.",
+        ],
+      },
+      {
+        test: "None. A PRE-EXISTING FALSE COMMENT found by grepping the claim's words, falsified by SPRINT 32's own test rather than by this sprint: test/cancellation.test.ts says a cancelled formatting request is -32800 `AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT`, while test/methods-table.test.ts:127 has asserted exactly that for every method in the table since Sprint 32.",
+        implementation:
+          "The comment names the assertion that covers it -- the Sprint-31 P7 precedent, where prose rather than code was falsified and the fix was NAMING the test. Its second staleness is fixed in the same edit: it names formatting as the newcomer, and diagnostic and resolve have arrived since. ITS OWN COMMIT, separate from criterion 2's, because it is not this PBI's claim.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NO TEST IS WITHDRAWN OR WEAKENED, so S16 is not engaged. Reported as pre-existing.",
+        ],
+      },
+      {
+        test: "PERTURBATIONS, NAMED BY THE ASSERTION EACH IS REQUIRED TO FLIP. P1: restore the early return ahead of the epilogue -- the new -32800 test must redden, and `alone` is claimed only after confirming no test file stopped loading. P2: answer `[]` rather than `null` for the handler-less generator-driven case -- the born-green control must redden.",
+        implementation:
+          "THE STANDING RE-RUN, WITH A KNOWN COMPLICATION AND AN EXPECTED MOVE. S14-b (delete all-methods' completion handler) and S14-b' (delete completion AND resolve) probe the very behaviour this sprint removes, so their results are RE-MEASURED and reported precisely rather than carried. All five handlers in that fixture are deleted one at a time, reverted between, because the residual PBI-42 carries -- three of four awaited-once handlers defended by nothing -- may move, and a sprint that changed whether a residual is still true says so.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A PERTURBATION WHOSE TARGET BEHAVIOUR AN ACCEPTED CRITERION DELIBERATELY REMOVED IS ITS OWN KIND, distinct from a control going quiet (S16) and from Sprint 34's perturbation-whose-edit-grew-a-second-half. Naming it is what keeps `a defence went missing` from being the reading.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [],
+  },
   retrospectives: [
     {
       sprint: 30,
