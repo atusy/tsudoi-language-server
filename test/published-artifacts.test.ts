@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, renameSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
+import { runCommand } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
@@ -132,6 +133,82 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
   const viaRepoSources = await typeCheckProbe({ "probe.ts": readmeSnippet() });
 
   expect(viaRepoSources.code).toBe(0);
+});
+
+/**
+ * THE PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS, spelled here so a probe
+ * that imports them cannot quietly agree with a src/types.ts that dropped one.
+ *
+ * WHY THESE AND NOT OTHERS is stated at src/types.ts, where a ninth would be
+ * added. What this list is for is the two probes below.
+ */
+const publicProtocolNames = [
+  "CompletionItem",
+  "CompletionItemKind",
+  "CompletionParams",
+  "Hover",
+  "HoverParams",
+  "MarkupContent",
+  "Position",
+  "WorkspaceFolder",
+] as const;
+
+/**
+ * THE VALUE ARM, and no type check can stand in for it.
+ *
+ * `CompletionItemKind` is an enum -- a VALUE -- so a config that reaches for it
+ * needs the published dist/types.js to really re-export it at runtime.
+ * dist/types.d.ts and dist/types.js are separate files emitted from one source,
+ * and a `export type` re-export produces a perfect declaration beside a module
+ * that exports nothing: every type-check assertion in this file would stay
+ * green while a config author got `undefined` at their first completion.
+ *
+ * Object.keys of the namespace object is therefore the assertion, and it names
+ * the value rather than counting them: an ES module namespace carries exactly
+ * the runtime exports, so a type-only re-export is invisible here BY
+ * CONSTRUCTION rather than by our filtering it out.
+ */
+test("the published module re-exports CompletionItemKind as a runtime value", async () => {
+  consumer.write(
+    "value-surface.js",
+    'import * as types from "@atusy/tsudoi/types";\nconsole.log(JSON.stringify(Object.keys(types)));\n',
+  );
+
+  const result = await runCommand("bun run ./value-surface.js", consumer.dir);
+
+  // The whole failure on the assertion line: a module that throws at load
+  // otherwise reports only that stdout did not parse.
+  expect(`${String(result.code)} ${result.stderr}`).toBe("0 ");
+  expect(JSON.parse(result.stdout.trim())).toEqual(["CompletionItemKind"]);
+});
+
+/**
+ * THE TYPE ARM, which the value arm above cannot give: seven of the eight names
+ * are types and leave no runtime trace at all.
+ *
+ * THROUGH THE INSTALLED CONSUMER, NOT typeCheckProbe, and that is not
+ * interchangeable: the in-repo arm resolves this subpath against sources a
+ * stranger never receives, which the test above at
+ * `the in-repo arm cannot observe what the published arm checks` measures
+ * directly.
+ *
+ * Each name is USED in a type position rather than merely imported, and
+ * `declare const` is the one form that fits all eight: seven are interfaces or
+ * aliases, so `typeof` -- which needs a VALUE -- would fail on them for a
+ * reason that has nothing to do with what ships.
+ */
+function importsAndUses(names: readonly string[], from: string): string {
+  const uses = names.map((name, index) => `declare const __use${String(index)}: ${name};\n`);
+  return `import { ${names.join(", ")} } from "${from}";\n${uses.join("")}`;
+}
+
+test("all eight published protocol names type-check from the installed copy", async () => {
+  const result = await consumer.typeCheck({
+    "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
 });
 
 /*

@@ -16,6 +16,73 @@ import type {
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 
+/**
+ * THE PROTOCOL NAMES A CONFIG AUTHOR GETS FROM HERE, so that standing up a
+ * server needs ONE package and a config never names one its author did not
+ * install.
+ *
+ * WHY EXACTLY THESE, measured against examples/ rather than chosen for
+ * convenience: they are the protocol names the examples actually use.
+ * completion-path.ts uses CompletionItem, CompletionItemKind, CompletionParams,
+ * MarkupContent, Position and WorkspaceFolder; hover-wordnet.ts adds Hover and
+ * HoverParams; tsudoi.config.ts adds none of its own. This is the minimum that
+ * lets the examples import no protocol package, not a convenience dump.
+ *
+ * THE RULE FOR A NINTH: adding one is a deliberate act with a reason, because
+ * every name exported from this file is public API and renaming or dropping one
+ * breaks configs we cannot see. The reason belongs here, beside the name. What
+ * a ninth name must NOT be is `a config author might want it` -- that argument
+ * has no end, and the set it produces is the dependency's whole surface
+ * re-published under names this project would then have to keep.
+ *
+ * CompletionItemKind IS RE-EXPORTED AS A VALUE, and the distinction is not
+ * stylistic: it is an enum, so a handler reads CompletionItemKind.File at RUN
+ * TIME. `export type` here would emit a perfect dist/types.d.ts beside a
+ * dist/types.js that exports nothing, and every type-check in this repo would
+ * stay green while a config author got `undefined` at their first completion.
+ * test/published-artifacts.test.ts asserts the runtime namespace of the
+ * PUBLISHED module, which is the only arm that can see that difference --
+ * measured: making this line `export type` reddens that one assertion and
+ * leaves every other test in that file green.
+ *
+ * WHY THE BARE SPECIFIER AND NOT `/node`, recorded here because this is where
+ * the edit that undoes it would be made, and because an unrecorded specifier
+ * decision is the defect that produced this work in the first place.
+ *
+ * MEASURED at vscode-languageserver-protocol 3.18.2, which pins vscode-jsonrpc
+ * 9.0.1 and vscode-languageserver-types 3.18.0 exactly. In a project with
+ * `types: []` and no @types/node reachable at all, importing CompletionItemKind
+ * from the BARE specifier exits 0, while importing it from
+ * `vscode-languageserver-protocol/node` exits 1 with eleven diagnostics: TS2591
+ * for `child_process`, `net` and `worker_threads` out of
+ * vscode-jsonrpc/lib/node/main.d.ts, and TS2503 for namespace `NodeJS` out of
+ * that file AND vscode-languageserver-protocol/lib/node/main.d.ts. So the bare
+ * specifier is what keeps this subpath usable by a config author who never
+ * installed node's types.
+ *
+ * THE CONDITION THAT MEASUREMENT DEPENDS ON, and it is the half that is easy to
+ * drop: `skipLibCheck` must be OFF. It is tsc's default, so a config author who
+ * writes no tsconfig of their own is protected by this line -- but with
+ * skipLibCheck ON, both specifiers exit 0 and the difference vanishes entirely.
+ *
+ * NOTHING IN THE SUITE ASSERTS ANY OF THIS, stated plainly rather than left to
+ * be assumed from the paragraphs above: the consumer probes in
+ * test/helpers/typecheck.ts set skipLibCheck: true, which is exactly the
+ * condition under which the two specifiers are indistinguishable. No existing
+ * probe could redden if this line were changed to `/node`. Until one with
+ * skipLibCheck OFF exists, this paragraph is the whole of the defence.
+ */
+export { CompletionItemKind } from "vscode-languageserver-protocol";
+export type {
+  CompletionItem,
+  CompletionParams,
+  Hover,
+  HoverParams,
+  MarkupContent,
+  Position,
+  WorkspaceFolder,
+} from "vscode-languageserver-protocol";
+
 export interface TextDocument {
   readonly uri: string;
   readonly languageId: string;
