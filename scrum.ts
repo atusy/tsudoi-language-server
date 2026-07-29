@@ -39,6 +39,37 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
+      id: "PBI-43",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "have a capability contributor be order-independent instead of order-dependent",
+        benefit:
+          "the ordering hazard stops existing rather than staying observable, and two undefended defensive behaviours dissolve into one",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "completion's contributor MERGES rather than assigns, and the same capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
+          verification:
+            "THE PO'S OWN HEDGE, stated because they did not have the code in front of them and have been wrong on shapes repeatedly. This measurement is the PBI's premise, not its epilogue.",
+        },
+        {
+          criterion: "P1 becoming unconstructible is the DELIVERABLE, not a loss.",
+          verification:
+            "S11: a vocabulary with three outcomes defaulted to the pessimistic reading and reported A DESIGN SUCCESS IN THE LANGUAGE OF A COVERAGE GAP. MAKING A HAZARD IMPOSSIBLE OUTRANKS KEEPING IT OBSERVABLE. The executor declined this tidy on the ground that it would dissolve the constraint rather than check it; THE PO RULED THE REASONING INVERTED.",
+        },
+        {
+          criterion: "The P2 debit closes as a consequence rather than being addressed separately.",
+          verification:
+            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. That two-for-one is a stronger argument than either half alone.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AS ITS OWN DRAFT RATHER THAN BOLTED ONTO PBI-40, which is ready and has its own criteria.",
+      ],
+    },
+    {
       id: "PBI-42",
       story: {
         role: "tsudoi maintainer",
@@ -124,42 +155,6 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-39",
-      story: {
-        role: "config author",
-        capability:
-          "fill in a completion item's detail and documentation only when the editor asks for it",
-        benefit:
-          "a completion list stays cheap to produce, and the expensive part runs once for the item the user actually looks at",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "completionItem/resolve is served, and resolveProvider is advertised ONLY when a resolve handler exists.",
-          verification:
-            "MEASURED: ProtocolRequestType<CompletionItem, CompletionItem, never, void, void>, capability completionProvider.resolveProvider -- NESTED INSIDE A KEY ANOTHER METHOD OWNS. The first time the per-method-correctness rule has had to reach INSIDE another capability. It is also the only one of the five whose params are not a textDocument-plus-position shape: it takes an item and returns one, and NEVER TOUCHES THE DOCUMENT STORE.",
-        },
-        {
-          criterion:
-            "A config supplying completionItem/resolve WITHOUT textDocument/completion is REJECTED AT CONFIG LOAD, with a message naming the requirement.",
-          verification:
-            "the incoherent state -- resolveProvider on a completionProvider that does not exist, or worse bringing one into being and advertising completion tsudoi cannot answer -- is reachable FOR THE FIRST TIME by this method, and is exactly what src/server.ts's rule exists to prevent. RUNTIME REJECTION, NOT A COMPILE ERROR: expressing it in types would change TsudoiConfigFactory's signature ON THE PUBLISHED SURFACE, and conditional-type diagnostics read as noise to a stranger with one file and no context. gate is a compile error because it sits on TSUDOI'S INTERNAL table authored by maintainers; TsudoiConfig is authored by people this project cannot see, and PUBLISHED-SURFACE LEGIBILITY OUTRANKS CATCHING IT ONE STAGE EARLIER. Second reason: a type-level guard's negative control is a type-level probe, and this repo has measured THAT CLASS DEFEATED TWICE -- skipLibCheck, and Omit's silent no-op on an absent key.",
-        },
-        {
-          criterion:
-            "What resolve does with an item it does not recognise is RULED, not left as an implementation detail.",
-          verification: "a client may send ANY item, not only one tsudoi's completion produced.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "SHIPS AS ITS OWN PBI, argued on independent shipping: completion is already shipped and is UNCHANGED by resolve -- a config supplies a resolve handler or not, and completion behaves identically either way. THE COUPLING IS OF MEANING, NOT OF SHIPPING, and this project's test is what ships independently.",
-        "PBI-31/32 BOUGHT THIS ONE NOTHING -- it never touches the document store. The affordability claim holds for TWO of the three new methods, IN ONE DIRECTION ONLY.",
-        "NO GENERAL DEPENDENCY MECHANISM for the config-load check: there is exactly ONE instance. Write the one check with its reason beside it; generalise when a second arrives.",
-        "THIS IS THE METHOD THAT ACTIVATES A DORMANT CONSTRAINT IN SPRINT 32'S TABLE, written here so it is a known step rather than a bug: capability contributors MUTATE, so one that writes into a key ANOTHER method owns must RUN AFTER that method's, and the table is iterated in DECLARATION ORDER. `completionItem/resolve` contributes `completionProvider.resolveProvider`, so ITS ENTRY MUST BE DECLARED BELOW `textDocument/completion`'s. Nothing checks this -- it is recorded at `CapabilityContributor` in src/methods.ts and here, and whether it deserves a check is a question for this PBI's refinement rather than an answer.",
-      ],
-    },
-    {
       id: "PBI-35",
       story: {
         role: "tsudoi maintainer",
@@ -183,6 +178,27 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 34,
+      pbi_id: "PBI-39",
+      goal: "THE LAST OF THE STAKEHOLDER'S FIVE METHODS, AND THE ONE THAT MAKES THREE DORMANT THINGS REAL. completionItem/resolve is served awaited-once -- RE-MEASURED, not carried: protocol.d.ts:2301 declares ProtocolRequestType<CompletionItem, CompletionItem, never, void, void> with NO partialResult member. Its capability is contributed into completionProvider.resolveProvider, A KEY textDocument/completion OWNS, which is the first time the per-method-correctness rule reaches inside another method's capability and the first time Sprint 32's contributor-ordering constraint is anything but dormant. THE ORDERING IS CHECKED BY THE PROPERTY IT PROTECTS RATHER THAN BY AN INDEX COMPARISON: an exact-equality capability test on a config supplying BOTH handlers reddens if resolve's entry is declared above completion's, because completion's contributor ASSIGNS rather than merges. A config supplying resolve WITHOUT completion is REJECTED AT CONFIG LOAD on the PO's ruling, landing on machinery that already exists -- config failure precedes startServer, so stdout purity is preserved and the reason goes to stderr under the tsudoi: prefix. And what resolve does with an item it does not recognise is RULED: tsudoi keeps NO record of what its completion handler produced, so it cannot recognise one at all -- the item reaches the handler verbatim and the handler's answer is sent verbatim.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "FIFTH OF FIVE. 423 green from a RE-MEASURED 413, 29 files from 28 -- TEN ADDED, NONE REMOVED, NONE WEAKENED. Each DoD command run separately and unpiped, re-run independently by the Scrum Master.",
+        "THE PRODUCT-GOAL METRIC IS RULED MET, WITH THE READING RECORDED BESIDE IT: `per the specification` means CONFORMANT, NOT COMPLETE, and that distinction is load-bearing because the diagnostic simplifications would otherwise read as gaps. Each was MEASURED conformant rather than assumed -- unchanged reports are unreachable without resultId BY THE PROTOCOL'S OWN CONSTRUCTION, workspaceDiagnostics: false IS the exclusion switch, and ignoring previousResultId conforms. CONFORMANT PARTIALITY, NOT DEVIATION.",
+        "A BOUNDARY NAMED AT THE SAME MOMENT, BECAUSE A MET METRIC INVITES BEING FORGOTTEN: metric 1 (`0 lines changed in tsudoi itself`) holds WITHIN THE SUPPORTED METHOD SET, and that set is now five. A config author wanting a SIXTH still needs tsudoi changed. The two metrics are COUPLED, and stating it now is honest where discovering it later would not be.",
+        "THE ORDERING CONSTRAINT IS CHECKED BY THE PROPERTY, NOT BY AN INDEX COMPARISON -- and the PO endorsed the refusal on the sharper of the two grounds: an index check would RESTATE THE MECHANISM, and it WOULD PASS A TABLE WHOSE ITERATION STOPPED BEING ORDERED. What checks it is the exact-equality capability assertion for a config supplying BOTH handlers: declare the entries the other way round and completion's contributor assigns {} over what resolve wrote, and that assertion reddens ALONE.",
+        "THE PO DISAGREED ON ONE POINT AND RULED AGAINST THE EXECUTOR: declining to tidy completion's clobbering assignment into a MERGE was justified as `it would dissolve the constraint rather than check it`, but A MERGE MAKES ORDERING IRRELEVANT, SO P1 BECOMES UNCONSTRUCTIBLE BECAUSE THE HAZARD IS GONE -- and MAKING A HAZARD IMPOSSIBLE OUTRANKS KEEPING IT OBSERVABLE. It also closes the P2 debit: preservation is defensive-and-undefended only because completion contributes {}, and under a merge it stops being defensive and becomes intrinsic. TWO UNDEFENDED DEFENSIVE BEHAVIOURS DISSOLVE INTO ONE ORDER-INDEPENDENT MERGE. HEDGED by the PO, who did not have the code in front of them: conditional on measuring that a merge yields the same capability object for EVERY config, including one supplying only one of the pair. Filed as its own draft rather than bolted onto PBI-40.",
+        "A DEBIT BOOKED RATHER THAN HIDDEN: P2 -- writing resolve's contributor WITHOUT preserving completionProvider -- leaves ALL 423 GREEN. Predicted in the plan as probably unprovable and confirmed.",
+        "S14-b IS A VARIANT WORTH NAMING: not a control going quiet and not a disarmed control, but A PERTURBATION WHOSE EDIT GREW A SECOND HALF. Sprint 33's named perturbation still reddens, but no longer for its own reason -- with resolve present, deleting completion STOPS THE CONFIG LOADING, so four tests fail instead of one. Confirmed by S14-b' reproducing Sprint 33's result exactly. SUBTLER THAN THE FAILURE THE STANDING RE-RUN WAS FILED TO CATCH, AND IT CAUGHT IT ANYWAY.",
+        "P-CAP CAUGHT BEFORE REPORTING RATHER THAN AT REVIEW: criterion 1's `advertised ONLY when a handler exists` half was ASSERTED, NOT MEASURED. Closed by a perturbation reddening 20 assertions across 5 files -- DEFENDED, EXPLICITLY NOT ISOLATED, which is the wording standard ruled at Sprint 33 keeping `defended` meaningful.",
+        "THE RESIDUAL BECAME A THIRD, and the rule of three has fired: P5 measures that THREE OF FOUR awaited-once handlers in all-methods.ts are defended by nothing -- formatting, diagnostic, resolve. Given custody as draft PBI-42 rather than fixed inside a sprint no criterion of which asked for it.",
+        "ONE EDIT TO A SHARED INPUT, DECLARED IN THE VOCABULARY BECAUSE `EDITED` AND `WEAKENED` READ THE SAME AT REVIEW: paramsForAnyMethod gained `label`, since resolve takes a CompletionItem and the comment above claims every table method accepts that object. NO expected value moved, NO matcher loosened. That distinction only exists because someone states it WHILE THEY STILL KNOW WHICH IT WAS.",
+        "A MID-SPRINT HOLD BY THE SCRUM MASTER, RETRACTED, AND NO NEW RULE NEEDED -- S16 ALREADY COVERS IT, since a hold on an accepted criterion IS a scope decision and those route to the PO. The Scrum Master misread the stakeholder's `statically` as compile-time when they meant INSPECTING THE FACTORY'S RETURN VALUE, which is what the ruling already did. The hold and its retraction LEFT NO TRACE in any commit or in scrum.ts; the four comments that had picked up `unruled` language were restored before the final commit. Reported because it happened rather than because it left damage.",
+      ],
+    },
     {
       number: 33,
       pbi_id: "PBI-38",
@@ -258,130 +274,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 34,
-    pbi_id: "PBI-39",
-    goal: "THE LAST OF THE STAKEHOLDER'S FIVE METHODS, AND THE ONE THAT MAKES THREE DORMANT THINGS REAL. completionItem/resolve is served awaited-once -- RE-MEASURED, not carried: protocol.d.ts:2301 declares ProtocolRequestType<CompletionItem, CompletionItem, never, void, void> with NO partialResult member. Its capability is contributed into completionProvider.resolveProvider, A KEY textDocument/completion OWNS, which is the first time the per-method-correctness rule reaches inside another method's capability and the first time Sprint 32's contributor-ordering constraint is anything but dormant. THE ORDERING IS CHECKED BY THE PROPERTY IT PROTECTS RATHER THAN BY AN INDEX COMPARISON: an exact-equality capability test on a config supplying BOTH handlers reddens if resolve's entry is declared above completion's, because completion's contributor ASSIGNS rather than merges. A config supplying resolve WITHOUT completion is REJECTED AT CONFIG LOAD on the PO's ruling, landing on machinery that already exists -- config failure precedes startServer, so stdout purity is preserved and the reason goes to stderr under the tsudoi: prefix. And what resolve does with an item it does not recognise is RULED: tsudoi keeps NO record of what its completion handler produced, so it cannot recognise one at all -- the item reaches the handler verbatim and the handler's answer is sent verbatim.",
-    status: "review",
-    subtasks: [
-      {
-        test: "test/resolve.test.ts: a config supplying BOTH a completion and a resolve handler advertises `completionProvider: { resolveProvider: true }`, asserted by EXACT EQUALITY on the whole capabilities object; and a config supplying completion ALONE advertises `completionProvider: {}`. The negative control is a COMPLETION-ONLY fixture rather than the hover-only one the other four methods use, because only that one can show resolveProvider tracking THE RESOLVE HANDLER rather than tracking `completion exists`.",
-        implementation:
-          "MethodMap gains completionItem/resolve -- params CompletionItem, result Promise<CompletionItem> with NO null arm, which is the protocol's own shape and the same reading diagnostic already carries. requestEntries gains its entry DECLARED BELOW textDocument/completion's, contributing resolveProvider into the completionProvider key.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1656f66",
-            message:
-              "feat(methods): serve completionItem/resolve, and make the ordering constraint real",
-            phase: "green",
-          },
-        ],
-        notes: [
-          'EXPECTED RED, AND ONE OF THEM IS A COMPILE ERROR RUN ON PURPOSE: adding the MethodMap key WITHOUT the table entry must fail TS2741 naming AwaitedOnceEntry<"completionItem/resolve">, which is the exhaustiveness property the table was built for and the same instrument Sprint 33 recorded.',
-          "P1, THE ORDERING PERTURBATION AND THE POINT OF THE SUBTASK: declare resolve's entry ABOVE completion's and the both-handlers capability test must redden, because completion's contributor assigns `{}` over what resolve wrote. Report whether it reddens ALONE -- and per S6, whether the number of tests that RAN moved.",
-          "THE TIDY THAT WOULD DISSOLVE THE CONSTRAINT INSTEAD OF CHECKING IT, named in advance so it is refused rather than discovered: making completion's contributor merge into whatever is already there would make order stop mattering, silently change a shipped contributor that carries its own ruling, and make P1 UNCONSTRUCTIBLE. Completion's assignment stays.",
-          "P2 IS EXPECTED TO BE NOT CONSTRUCTED AND IS NAMED ANYWAY: resolve's contributor written without preserving the existing completionProvider produces an IDENTICAL result in correct order, since completion contributes `{}`. So the preservation is defensively correct and NOT DEFENDED, which is said plainly rather than left to read as measured.",
-          "NO NINTH PUBLISHED NAME, stated because Sprint 33's ninth-name exercise makes a reader expect the sentence: CompletionItem is ALREADY re-exported from src/types.ts, and nothing else this method needs is a value.",
-        ],
-      },
-      {
-        test: "test/resolve.test.ts: an item tsudoi's own completion NEVER produced -- carrying a `data` member with a nested object and a member the protocol does not declare -- reaches the handler and comes back with what the handler DERIVED from it, `data` and the unknown member intact. Plus the no-handler answer, twice over, with zero unframed stdout bytes.",
-        implementation:
-          "NO ROUTER CHANGE IS EXPECTED. The awaited-once drive already passes params through untouched and answers `?? null` with no handler; this subtask writes the fixture and the assertions that make that a RULING rather than an implementation detail, and records the ruling at MethodMap where a config author reads it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1656f66",
-            message:
-              "feat(methods): serve completionItem/resolve, and make the ordering constraint real",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE RULING, split because only one half is tsudoi's. TSUDOI'S HALF IS MEASURABLE: it holds no record of items its completion handler produced -- the generator drive keeps nothing -- so recognition is not something tsudoi CAN do, and the item is neither inspected nor validated on the way in or out. THE AUTHOR'S HALF IS GUIDANCE at MethodMap: return the item unchanged, which `Promise<CompletionItem>` with no null arm makes the cheapest correct thing to write.",
-          "THE NO-HANDLER ANSWER IS `null` DESPITE NO NULL ARM, which is PRECEDENT-FOLLOWING RATHER THAN A NEW RULING: textDocument/diagnostic is in exactly this position and its block at MethodMap already says so. A conforming client never reaches it, because with no handler resolveProvider is never advertised.",
-          "THE FIXTURE MUST DERIVE RATHER THAN ECHO OR THE TEST MEASURES NOTHING: a handler returning its argument unchanged is indistinguishable from a tsudoi that echoed params without calling the handler at all. Two controls: change the derived value (must redden -- the assertion reads HANDLER OUTPUT), and drop `data` from what the handler returns (must redden -- unknown members survive).",
-          "THE HANDLER MUST BE TOTAL. test/methods-table.test.ts sends one shared params object to every method in the table, so this handler is entered with something that is not a CompletionItem at all; a property access that throws would turn a by-construction test into a failure about this fixture.",
-        ],
-      },
-      {
-        test: "test/cli.test.ts gains the case: a config supplying completionItem/resolve and NOT textDocument/completion exits 1 under the shared failure contract -- stderr starting `tsudoi: `, zero bytes on stdout -- with a message naming BOTH method names, so the requirement is legible without reading tsudoi's source.",
-        implementation:
-          "One check in src/config.ts, after the factory returns and before loadConfig hands the config back, with its reason beside it. NO GENERAL DEPENDENCY MECHANISM: there is exactly one instance, and it generalises when a second arrives.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1656f66",
-            message:
-              "feat(methods): serve completionItem/resolve, and make the ordering constraint real",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE PROPERTY, NOT THE MECHANISM: what is protected is that tsudoi never advertises resolveProvider on a completionProvider it cannot answer -- and never brings one INTO BEING and invites completion requests it has no handler for. Rejecting at config load is where the PO ruled it, and the ruling's ground is on the PBI: gate is a compile error because it sits on tsudoi's INTERNAL table authored by maintainers, while TsudoiConfig is authored by people this project cannot see and published-surface legibility outranks catching it one stage earlier.",
-          "IT COSTS NOTHING NEW ON THE STDOUT-PURITY SIDE and that is checked rather than assumed: src/cli.ts runs loadConfig BEFORE startServer, so no protocol byte has been written when this fires. The shared failure-contract helper asserts zero stdout for this case exactly as it does for the other eight.",
-          "PERTURBATION: delete the check and the new case must redden. Also report whether it reddens ANYTHING ELSE -- a zero elsewhere is the answer to `is this defended in one place`.",
-        ],
-      },
-      {
-        test: "No new assertion. Every prose claim this method makes true or false is corrected, and each is found by GREPPING FOR THE CLAIM'S WORDS rather than for the places comments live.",
-        implementation:
-          "src/methods.ts CapabilityContributor: the constraint stops being dormant and gains the name of what checks it. src/methods.ts formatting and diagnostic contributors: `when PBI-39 lands` and `resolve's will` become present tense. src/server.ts: `at PBI-39, resolveProvider is a key inside it` likewise. test/fixtures/all-methods.ts: its measured claim names ONE awaited-once handler and COUNTS SIX TESTS, and there are now three awaited-once handlers -- named, not counted. test/cli.test.ts: `all seven cases` and `the eighth case` silently falsify -- named, not counted. test/methods-table.test.ts: paramsForAnyMethod claims every table method accepts it, and a CompletionItem needs a `label`. examples/tsudoi.config.ts: its note that tsudoi advertises completionProvider with no resolveProvider is true OF THAT CONFIG and would now read as a claim about tsudoi.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "1656f66",
-            message:
-              "feat(methods): serve completionItem/resolve, and make the ordering constraint real",
-            phase: "green",
-          },
-          {
-            hash: "5d62113",
-            message: "docs: two claims this method turned from true into misleading",
-            phase: "refactoring",
-          },
-          {
-            hash: "6131d96",
-            message:
-              "docs: name the two methods the README had gone quiet about, and two disclosures",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "BORN GREEN, DECLARED HONESTLY. Prose carries no assertion, so no perturbation reddens for it; what defends it is that each claim was checked against the artifact it describes IN THIS SESSION.",
-          "NO examples/ HANDLER IS ADDED AND NO CAPABILITY MOVES. lifecycle.test.ts pins the demo config's capabilities BY EXACT EQUALITY AND BY NAME IN A TEST TITLE, and PBI-41 defers the example question to refinement AFTER the last method lands -- which this sprint is. The trigger is reported, not acted on. Only a COMMENT changes there.",
-          "S14 STANDING ITEM, planned rather than remembered: re-run one Sprint 33 perturbation -- their P6, deleting all-methods' awaited-once diagnostic handler (expect all green) beside its generator-driven completion handler (expect the -32800 test).",
-          "THE RESIDUAL BECOMES A THIRD AND IT IS REPORTED, NOT FIXED. Deleting all-methods' resolve handler is expected to redden nothing, exactly as formatting's and diagnostic's do not. The measurement IS the third instance; writing the by-construction check that would close all three is a decision no PBI-39 criterion asks for, so it gets CUSTODY as a draft PBI rather than a fix smuggled into the sprint that found it.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "Shipped in 24c7e8c..5d62113. 423 green from 413, 29 files from 28 -- TEN ADDED, NONE REMOVED, NONE WEAKENED -- each DoD command run separately and unpiped with its exit read directly. FIFTH AND LAST OF THE STAKEHOLDER'S FIVE METHODS, and the success metric's enumerated denominator is now met by name rather than by a fraction nobody could expand.",
-      "THE ORDERING CONSTRAINT IS CHECKABLE AND IT IS CHECKED -- BY THE PROPERTY, NEVER BY THE MECHANISM. P1, declaring resolve's entry above completion's, reddens the both-handlers capability assertion ALONE on both runtimes, and 423 tests RAN in the perturbed run exactly as in the green one, so `alone` is claimable under Sprint 33's own rule. NO INDEX COMPARISON EXISTS ANYWHERE: one would restate the mechanism, would pass a table whose iteration stopped being ordered, and would be a second check of one property.",
-      "P2 IS A DEBIT AND IS BOOKED AS ONE RATHER THAN LEFT TO READ AS MEASURED: resolve's contributor PRESERVES the existing completionProvider instead of replacing it, and removing that preservation leaves ALL 423 GREEN, because completion contributes `{}` and the two are indistinguishable today. It is DEFENSIVE AND UNDEFENDED, and what it buys is that a future `triggerCharacters` on completion's line is not deleted at a distance.",
-      "THE TIDY THAT WOULD HAVE DISSOLVED THE CONSTRAINT WAS NAMED IN THE PLAN AND REFUSED: making completion's contributor merge would have made declaration order stop mattering, silently changed a shipped contributor carrying its own ruling, and made P1 UNCONSTRUCTIBLE. A constraint deleted is not a constraint checked.",
-      'THE EXPECTED RED WAS RUN AS A COMPILE ERROR AND IT NAMED THE MISSING KEY: adding the MethodMap entry without the table entry fails TS2741, `Property \'"completionItem/resolve"\' is missing`, against `AwaitedOnceEntry<"completionItem/resolve">`. Same instrument as Sprint 33, and it also confirms the drive was DERIVED rather than declared -- nothing in the entry chooses awaited-once.',
-      "THE UNRECOGNISED-ITEM CRITERION IS RULED AND SPLIT, because only one half is tsudoi's. TSUDOI CANNOT RECOGNISE AN ITEM AT ALL -- it keeps no record of what a completion handler produced -- so the item reaches the handler verbatim and the handler's answer goes back verbatim, `data` and undeclared members included. The AUTHOR'S half is guidance at MethodMap: return the item unchanged. THE NO-HANDLER `null` DESPITE NO NULL ARM IS PRECEDENT-FOLLOWING, not a new ruling: textDocument/diagnostic already stands there.",
-      "THE ROUND-TRIP TEST WAS BUILT TO DISCRIMINATE AND BOTH CONTROLS WERE RUN, because a fixture answering with its argument would be indistinguishable from a tsudoi that echoed params and never called a handler. P3 (the derived detail made constant) and P4 (`data` dropped from the return) each redden that assertion on both runtimes, 423 RAN. The first says the assertion reads HANDLER OUTPUT; the second says unknown members survive.",
-      "THE CONFIG-LOAD CHECK IS DEFENDED IN ONE PLACE AND NOWHERE ELSE: deleting the call reddens the new cli case ALONE on both runtimes, 423 RAN. The zero elsewhere is the answer to `is this defended twice`. Its stdout-purity claim is CHECKED rather than assumed -- the shared failure-contract helper asserts zero bytes on stdout for this case exactly as for every other.",
-      "THE S14 STANDING RE-RUN EARNED ITS KEEP, AND IT CAUGHT A PERTURBATION THAT GREW A SECOND HALF WHILE KEEPING ITS NAME. Sprint 33's P6 -- delete all-methods' completion handler, expect the -32800 test -- now reddens FOUR tests instead of one, because with resolve present the config no longer LOADS. Deleting completion AND resolve reproduces Sprint 33's result exactly: the -32800 test alone, both runtimes, 423 RAN. THE FINDING STANDS; THE EDIT THAT PRODUCES IT DOES NOT, and the fixture's own doc block now says so. Its other half re-ran unchanged: deleting the diagnostic handler leaves all 423 green.",
-      "THE RESIDUAL BECAME A THIRD, BY MEASUREMENT RATHER THAN BY EXPECTATION: deleting all-methods' resolve handler leaves ALL 423 GREEN, exactly as formatting's and diagnostic's do. THREE OF FOUR AWAITED-ONCE HANDLERS DEFENDED BY NOTHING. Filed as PBI-42 rather than fixed here -- the Sprint-33 precedent the PO recorded as correct -- and given a HOME rather than a sprint record that compacts, which is the orphan PBI-41 was filed to prevent.",
-      "CRITERION 1'S `ONLY WHEN` HALF WAS ASSERTED AND IS NOW MEASURED, caught before the report went out because neither the ordering nor the round-trip perturbation reaches it. Sprint 33's instrument transfers: naming this method INSIDE contributeCapabilities' shared condition reddens TWENTY assertions across FIVE files -- resolve's own negative control, hover's, completion's, formatting's, diagnostic's, and lifecycle.test.ts's pinned demo capabilities -- on both runtimes, with 423 tests RUN. DEFENDED AND NOT ISOLATED, which is the Sprint-31 subsumption shape rather than a defect, and every other capability `if` in this project already carried this measurement.",
-      "TWO DISCLOSURES WRITTEN INTO THE TEST FILE RATHER THAN LEFT FOR REVIEW TO GUESS. The capability negative control is BYTE-IDENTICAL to one in test/completion.test.ts, same fixture included, and is kept on the Sprint-31 ground: the TITLES name different properties -- completionProvider's PRESENCE there, resolveProvider's ABSENCE here. And `answered null, twice over` is BORN GREEN, riding the awaited-once drive's shared `?? null`, so nothing resolve-specific defends it and no perturbation reddens it without reddening hover's, formatting's and diagnostic's together.",
-      "THE README'S OPENING SENTENCE NAMED THREE OF THE FIVE METHODS AND IS FIXED HERE RATHER THAN DEFERRED. IT WENT STALE AT SPRINT 33, NOT AT THIS ONE, and leaving it would have failed the S14 standing item in the one document that argues for adoption -- three named methods beside a product goal that counts five. Prose only: the extraction harness reads MARKED FENCED BLOCKS, so no executed instruction moved.",
-      "NO NINTH PUBLISHED NAME, stated because Sprint 33's ninth-name exercise makes a reader expect the sentence: `CompletionItem` was already re-exported, and this method needs no value. The rule for a ninth is not engaged at all.",
-      "TWO COUNTS CORRECTED IN FILES THIS SPRINT TOUCHED, both found by grepping for the claims' words: test/cli.test.ts said `all seven cases` and `the eighth case` and gained a ninth; test/fixtures/all-methods.ts said `ALL SIX TESTS STAY GREEN` and named formatting as though it were the only awaited-once handler, when there are now four. NAMED, NOT RECOUNTED.",
-      "`NONE WEAKENED` IS A COVERAGE CLAIM AND ONE SHARED INPUT WAS EDITED: paramsForAnyMethod gained a `label`, because `completionItem/resolve` takes a CompletionItem and the comment above it claims every table method accepts that object. NO expected value moved and NO matcher was loosened -- it is an addition to an INPUT, not to an assertion. Said explicitly because EDITED and WEAKENED read identically at Review.",
-      "PBI-41's TRIGGER HAS FIRED AND WAS NOT ACTED ON: its criterion 1 says DECIDE AT REFINEMENT, AFTER THE LAST METHOD LANDS, and this is that sprint. examples/ gained NO handler and lifecycle.test.ts's pinned capabilities are untouched; only a COMMENT changed there, because it had become a claim about tsudoi rather than about that file.",
-      "WHAT PBI-31/32 BOUGHT THIS METHOD IS NOTHING, AND THAT WAS CONFIRMED RATHER THAN ASSUMED: not one line of this sprint's fixtures or handlers opens a document. It is the only one of the five whose params are not a document and a position.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 30,
