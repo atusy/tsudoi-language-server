@@ -108,6 +108,7 @@ const scrum: ScrumDashboard = {
       status: "ready",
       notes: [
         "MethodHandler accommodates a third promise-shaped entry with NO structural change; the seams are DOWNSTREAM, in registerMethods and in capability advertisement.",
+        "THE THREE SHAPES ARE NOW MEASURED, TAKEN BY SPRINT 31'S EXECUTOR OFF THE SHIPPED TREE (provenance stated because this is a handed measurement): the readiness gate and the table are built against these rather than against predictions. Capability contribution: `hoverProvider = true`, `completionProvider = {}`, `documentFormattingProvider = true`. AND A SECOND AXIS NOBODY HAD NAMED, which any table must also carry or silently flatten: THE NO-HANDLER CASE HAS TWO SHAPES -- hover and formatting call `handler?.(...) ?? null` and build a RequestContext whether or not a handler exists, while completion returns EARLY, ahead of the context, because driving a generator needs one. The drive is awaited-once twice and generator-driven once, as predicted.",
         "THE RECORDED DECISION OPPOSING A TABLE SURVIVES INTACT: src/methods.ts's `there is no shape both fit into that is not an invention` is about THE DRIVE, and is correct. A table carries the type (giving params contextual typing exactly as defineNotifications does), a DRIVE KIND -- awaited-once or generator-driven, TWO, NAMED -- and the router applies the prologue and epilogue. No single shape is invented; a method picks one of two. MEASURED that two kinds cover all five: diagnostic declares partialResult, so it is generator-shaped like completion.",
       ],
     },
@@ -396,17 +397,23 @@ const scrum: ScrumDashboard = {
     number: 31,
     pbi_id: "PBI-36",
     goal: "THE FIRST OF THE FIVE NAMED METHODS SHIPS, AND IT ADDS NO NEW KIND OF ANYTHING: textDocument/formatting is served awaited-once like hover, documentFormattingProvider is advertised ONLY where the config can answer it, and the affordability claim -- a handler emits Positions from whatever offsets its analysis produced, because positionAt exists -- is MEASURED OVER THE WIRE rather than asserted for the remaining four. It also makes the THIRD HAND-WRITTEN COPY in registerMethods, so PBI-37's table is built against three measured shapes rather than predictions.",
-    status: "planning",
+    status: "review",
     subtasks: [
       {
         test: "test/formatting.test.ts drives a config whose formatting handler returns a FIXED TextEdit[]: the array reaches the client unchanged on BOTH runtimes -- deep equality against the literal the fixture exports, so anything tsudoi rewrote on the way out (a dropped range, a re-encoded newText) is an inequality rather than a plausible response. PAIRED with the no-handler case, which is the hover pattern: a formatting request against a config supplying no formatting handler is answered null TWICE, then shutdown/exit at 0 with zero unframed stdout bytes -- null must be an answer the session SURVIVES, not an error the connection absorbed once. Registration is independent of advertisement, so this half is reachable without any capability work.",
         implementation:
           "MethodMap gains `textDocument/formatting: { params: DocumentFormattingParams; result: Promise<TextEdit[] | null> }`, both names imported TYPE-ONLY from the BARE specifier and NOT re-exported -- src/types.ts's own rule for a ninth answers this: the eight are the protocol names the EXAMPLES use, no example uses these, and README already records that handlers are typed by their method key so a config author annotates nothing. registerMethods gains the THIRD hand-written copy, hover's shape verbatim (awaited-once, `?? null`). TWO PROSE CORRECTIONS RIDE IN THIS COMMIT because they are FALSE BEFORE IT AND STALE AFTER IT: README's `methods -- hover, completion --` enumeration, found by grepping the claim's words rather than the places comments live; and test/cancellation.test.ts's `for both methods`, re-scoped to the two that file drives, with the residual stated -- formatting's cancellation path is exercised by NOTHING.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1a4c5a7",
+            message: "feat(methods): serve textDocument/formatting, awaited once like hover",
+            phase: "green",
+          },
+        ],
         notes: [
-          "EXPECTED RED. The fixture's config key is an excess property until MethodMap carries it, so `tsc --noEmit` is red in this phase too; that is the red phase, not a defect.",
+          "EXPECTED RED, AND RED FOR THE RIGHT REASON RATHER THAN MERELY RED: all four assertions failed with -32601 `Unhandled method textDocument/formatting`, which is the dispatch not knowing the method, not a fixture that failed to load.",
         ],
       },
       {
@@ -414,10 +421,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/server.ts gains a THIRD per-method `if`, TOP LEVEL, value `true`, with its reason at the site as the other two have: DocumentFormattingOptions extends WorkDoneProgressOptions and declares nothing else, so there is no option a config author could set and `{}` would claim work-done progress support tsudoi does not implement. The `spelled out, NOT DERIVED FROM THE SHAPE OF methods` clause is left UNTOUCHED -- restructuring it into a table is PBI-37 and carries a readiness gate that could withdraw it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9c74565",
+            message:
+              "feat(server): advertise documentFormattingProvider only where the config can answer it",
+            phase: "green",
+          },
+        ],
         notes: [
-          "EXPECTED RED. ORDERED AFTER THE SUBTASK ABOVE ON A CORRECTNESS ARGUMENT, not for convenience: advertising first would commit a state in which a client is entitled to send a request the server answers -32601, which is the exact thing src/server.ts's per-method rule exists to prevent.",
+          "ORDERED AFTER THE SUBTASK ABOVE ON A CORRECTNESS ARGUMENT, not for convenience: advertising first would commit a state in which a client is entitled to send a request the server answers -32601, which is the exact thing src/server.ts's per-method rule exists to prevent.",
+          "HALF EXPECTED-RED AND HALF BORN-GREEN, AND THE SPLIT WAS OBSERVED RATHER THAN PREDICTED: the two positive assertions reddened, and THE NEGATIVE CONTROL PASSED BEFORE THE CAPABILITY EXISTED -- necessarily, since nothing advertised it. Its job is a FUTURE over-advertisement, which is what the perturbations had to demonstrate.",
         ],
       },
       {
@@ -425,10 +440,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE IN src/. DECLARED BORN-GREEN with respect to src/ IN ADVANCE, which is the honest label: this subtask exists to TEST an affordability claim the PBI would otherwise assert for the remaining four methods, and nothing in tsudoi has to change for it to hold. It is defended by perturbation instead: repointing src/types.ts's TextDocument at the DEPRECATED TWIN in vscode-languageserver-types (Sprint 28's P3 -- it has no positionAt) must stop the fixture compiling, and replacing the fixture's positionAt call with a hardcoded Position must redden THIS test. If the second does not redden, the test is not measuring the offset-to-Position conversion at all.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "17575c3",
+            message:
+              "test(formatting): measure the affordability claim instead of asserting it for the rest",
+            phase: "green",
+          },
+        ],
         notes: [
-          "BORN-GREEN, DECLARED BEFORE IT IS RUN. What it buys is that the claim is CHECKED HERE rather than inherited by PBI-37, PBI-38 and PBI-39.",
+          "BORN-GREEN, DECLARED BEFORE IT WAS RUN AND BORN-GREEN WHEN RUN. What it buys is that the claim is CHECKED HERE rather than inherited by PBI-37, PBI-38 and PBI-39.",
+          "ONE OF ITS TWO PLANNED PERTURBATIONS RESTED ON A FALSE PREMISE -- see the decisions below. The premise was corrected and the perturbation replaced rather than dropped.",
+          "IT CARRIES A SECOND, UNPLANNED PAYLOAD, and it is the durable half: test/fixtures/formatting-offsets.ts imports NO protocol name and annotates its handler with nothing, so `tsc --noEmit` over that file is now the standing evidence for keeping DocumentFormattingParams and TextEdit OFF the published surface. A ruling that was going to rest on a probe deleted the same hour instead rests on a file the DoD type-checks every run.",
         ],
       },
     ],
@@ -437,6 +461,15 @@ const scrum: ScrumDashboard = {
       'MEASURED SHAPES RE-VERIFIED RATHER THAN TRUSTED, at protocol 3.18.2 / types 3.18.0 in this tree: DocumentFormattingRequest.type is `ProtocolRequestType<DocumentFormattingParams, TextEdit[] | null, never, void, DocumentFormattingRegistrationOptions>`, its declared capability is `CM<"textDocument.formatting", "documentFormattingProvider">`, and `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at the TOP LEVEL of ServerCapabilities. `TextEdit { range: Range; newText: string }` confirmed. ALL AS HANDED OVER.',
       "AND ONE THING THE BRIEF SAID WAS NOT READ, NOW READ, recorded rather than left to contradict criterion 3 silently: DocumentFormattingParams is `{ textDocument: TextDocumentIdentifier; options: FormattingOptions }` extending WorkDoneProgressParams. IT CARRIES NO POSITION AT ALL, so `nothing is claimed about incoming positions` is not merely unmeasured -- there is nothing to claim, and offsetAt stays unexercised for the reason the criterion gives.",
       "NO EXAMPLE UNDER examples/, DECIDED AND NOT OMITTED. Standing item 6 makes an example EXECUTED BY THE SUITE with TWO negative controls, and examples/tsudoi.config.ts's capability set is pinned by exact equality AND BY NAME in lifecycle.test.ts's test title -- so `costs little` is false. The deeper reason: the other two examples each bring a DOMAIN (a dictionary, a filesystem), and a formatter with nothing to format would demonstrate the wiring the fixture already demonstrates. REVERSAL CONDITION: a real formatter to delegate to, as hover-wordnet delegates to WordNet.",
+      "Shipped in 3866dc3..8c899e7. 399 green from 389, 26 files from 25 -- TEN ADDED, NONE REMOVED OR WEAKENED -- each DoD command run SEPARATELY AND UNPIPED with its exit read directly: bun test 0, oxlint 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), oxfmt --check . 0, tsc --noEmit 0. scrum.ts was committed ALONE twice and the hook was never bypassed.",
+      "THE PLAN'S OWN PERTURBATION CARRIED A FALSE PREMISE, AND IT WAS THE EXECUTOR'S OWN SENTENCE: `the deprecated twin in vscode-languageserver-types has no positionAt`. MEASURED at 3.18.0, by reading the declaration: the twin declares uri, languageId, version, getText, positionAt, offsetAt and lineCount -- SEVEN MEMBERS, AND THE ONE MISSING IS `update`, which is what Sprint 28's own record said all along and what was not re-read before the plan was written. Repointing src/types.ts at it leaves `tsc --noEmit` at 0 and FALSIFIES NOTHING. The Sprint-25 rule caught by its own subject: the artifact was right there with the answer in it.",
+      "REPLACED BY THE PERTURBATION THAT ACTUALLY CONSTRUCTS THE COUNTERFACTUAL, read out of the tree rather than imagined: src/types.ts at a3e81ae -- the commit before Sprint 28 -- declared `TextDocument { uri; languageId; version; getText() }`, FOUR MEMBERS AND NO positionAt. Restoring that exact shape fails at test/fixtures/formatting-offsets.ts lines 44 and 45, TS2339 NAMING positionAt. So `positionAt did not exist before Sprint 28` is true OF TSUDOI'S OWN SURFACE, which is what the criterion meant, and false of the twin -- two different claims that the plan's wording ran together.",
+      "P1 IS WHAT MAKES CRITERION 3 A MEASUREMENT RATHER THAN A RESTATEMENT: replacing the fixture's `document.positionAt(offset)` with `{ line: 0, character: offset }` reddens the offsets test ALONE out of 399, on both runtimes. The expected ranges are hand-written literals, so the test and the fixture do not run one function between them.",
+      "P3, deleting src/server.ts's formatting `if`, reddens the two positive capability assertions ALONE. P6, making tsudoi `.slice(0, 1)` the handler's answer on the way out, reddens the two wire tests ALONE -- which is what an `unchanged` claim needs, since perturbing the FIXTURE would move the test's expectation with it and observe nothing.",
+      "THE NEGATIVE CONTROL FIRES AND NEVER FIRES ALONE, and that is recorded as measured rather than smoothed over. P4 (advertise unconditionally) and P5 (`config.methods !== undefined` -- the derive-from-the-shape-of-methods mistake src/server.ts's comment names) EACH redden the SAME TWELVE assertions, including this one; the other ten are hover's, completion's and lifecycle's exact-equality assertions, which already name the extra key in their diff. Under S9's `a control that can never be the first thing to fail`: it is never first, it is never LAST either -- it reddens simultaneously, in its own file, as the only assertion in the tree that is ABOUT formatting's advertisement. The others defend it INCIDENTALLY, because their fixtures happen to supply no formatting handler; a future sprint changing what those fixtures supply would silently withdraw that.",
+      "THE STANDING RE-RUN PAID OUT AGAINST PROSE, NOT AGAINST CODE. Sprint 30's P1 -- an un-unref'd setInterval in src/server.ts, the file this sprint edited -- still reddens the EOF-exit and SIGKILLed-editor tests on both runtimes and nothing else, so the capability added above did not disarm the control. What it DID falsify is that block's own sentence, `FOUR tests out of 389`: the suite is 399 now, moved by work with no relation to what the paragraph is about. Fixed by NAMING THE TWO TESTS, which is the naming-over-counting clause applied to the exact shape it was filed for.",
+      "THE THREE MEASURED SHAPES PBI-37 WAS PROMISED, TAKEN BY THIS SPRINT'S EXECUTOR AND LABELLED AS SUCH. (1) CAPABILITY CONTRIBUTION differs three ways in three copies: `hoverProvider = true`, `completionProvider = {}` (an object, with its own comment for why it is empty), `documentFormattingProvider = true` (a boolean because DocumentFormattingOptions declares nothing but workDoneProgress). (2) THE NO-HANDLER CASE differs TWO ways, which nobody had named before: hover and formatting call `handler?.(...) ?? null` and build a context regardless, while completion returns EARLY, before the context exists, because driving a generator needs one. (3) THE DRIVE is awaited-once twice and generator-driven once. A mechanical `methods[k] !== undefined -> capabilities[flag] = true` expresses NEITHER (1) NOR (2).",
+      "AND A RESIDUAL STATED RATHER THAN DISCOVERED: formatting goes through the same `answerUnlessCancelled` as hover, so a cancelled formatting request IS answered -32800 -- AND NOTHING ASSERTS IT. Cancellation is no criterion of PBI-36, so no test was written for it; the claim is written at test/cancellation.test.ts, beside the `both methods` sentence that was an enumeration of tsudoi's methods when it was written and is not one now.",
     ],
   },
   retrospectives: [
