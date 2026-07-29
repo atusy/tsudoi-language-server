@@ -1,100 +1,17 @@
-// The LSP data VALUES -- the kind and severity namespaces a handler reads, and
-// the `.create` helpers it builds results with.
+// Every LSP data name the types package declares -- types AND the values a
+// handler reads or builds: the kind and severity namespaces, and the `.create`
+// helpers for Position, Range, Diagnostic, CompletionItem and the rest.
 //
-// WHY A LIST AND NOT A STAR: `export * from "vscode-languageserver-types"`
-// beside deps/protocol.ts's type star is TS2308, ambiguous re-export, under
-// declaration emit -- which `--noEmit` does not reproduce, so it is the build
-// that catches it. The list is DERIVED rather than chosen: it is exactly what
-// that package exports at run time, and
-// test/published-artifacts.test.ts computes the same set and compares, so a
-// name upstream adds is missing here until someone adds it.
+// A STAR RATHER THAN A LIST, so the set is upstream's and cannot fall behind it.
+// An explicit list stood here first, to keep the DEPRECATED `TextDocument` this
+// package also ships from shadowing the good one -- and that bought nothing,
+// measured: deps/protocol.ts re-exports the same deprecated declaration through
+// its own star, so the name was reachable either way. What makes the right one
+// win is importing it from deps/textdocument.ts, not withholding the wrong one
+// here.
 //
-// `TextDocument` IS THE ONE SUBTRACTION: this package publishes the one from
-// vscode-languageserver-textdocument, type-only, and the types package ships a
-// deprecated namespace under the same name that would shadow it.
-export {
-  AnnotatedTextEdit,
-  ApplyKind,
-  ChangeAnnotation,
-  ChangeAnnotationIdentifier,
-  CodeAction,
-  CodeActionContext,
-  CodeActionKind,
-  CodeActionTag,
-  CodeActionTriggerKind,
-  CodeDescription,
-  CodeLens,
-  Color,
-  ColorInformation,
-  ColorPresentation,
-  Command,
-  CompletionItem,
-  CompletionItemKind,
-  CompletionItemLabelDetails,
-  CompletionItemTag,
-  CompletionList,
-  CreateFile,
-  DeleteFile,
-  Diagnostic,
-  DiagnosticRelatedInformation,
-  DiagnosticSeverity,
-  DiagnosticTag,
-  DocumentHighlight,
-  DocumentHighlightKind,
-  DocumentLink,
-  DocumentSymbol,
-  DocumentUri,
-  EOL,
-  FoldingRange,
-  FoldingRangeKind,
-  FormattingOptions,
-  Hover,
-  InlayHint,
-  InlayHintKind,
-  InlayHintLabelPart,
-  InlineCompletionContext,
-  InlineCompletionItem,
-  InlineCompletionList,
-  InlineCompletionTriggerKind,
-  InlineValueContext,
-  InlineValueEvaluatableExpression,
-  InlineValueText,
-  InlineValueVariableLookup,
-  InsertReplaceEdit,
-  InsertTextFormat,
-  InsertTextMode,
-  LanguageKind,
-  Location,
-  LocationLink,
-  MarkedString,
-  MarkupContent,
-  MarkupKind,
-  OptionalVersionedTextDocumentIdentifier,
-  ParameterInformation,
-  Position,
-  Range,
-  RenameFile,
-  SelectedCompletionInfo,
-  SelectionRange,
-  SemanticTokenModifiers,
-  SemanticTokenTypes,
-  SemanticTokens,
-  SignatureInformation,
-  SnippetTextEdit,
-  StringValue,
-  SymbolInformation,
-  SymbolKind,
-  SymbolTag,
-  TextDocumentEdit,
-  TextDocumentIdentifier,
-  TextDocumentItem,
-  TextEdit,
-  URI,
-  VersionedTextDocumentIdentifier,
-  WorkspaceChange,
-  WorkspaceEdit,
-  WorkspaceFolder,
-  WorkspaceSymbol,
-  integer,
-  uinteger,
-} from "vscode-languageserver-types";
+// A STAR IS ONLY POSSIBLE BECAUSE NOTHING RE-EXPORTS TWO OF THESE MODULES. Put
+// this beside deps/protocol.ts's type star in one module and it is TS2308,
+// ambiguous re-export, under declaration emit -- which `--noEmit` does not
+// reproduce.
+export * from "vscode-languageserver-types";

@@ -155,18 +155,11 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * re-export is invisible here BY CONSTRUCTION rather than by our filtering it
  * out.
  *
- * THE SET IS DERIVED, NOT LISTED, which is the whole point of this test after
- * the surface stopped being curated. It must be EXACTLY what
- * vscode-languageserver-types exports at run time, minus `TextDocument`. So a
- * name upstream adds is MISSING here until someone re-exports it -- the failure
- * a hand-picked list could never produce, because a hand-picked list is complete
- * by definition.
- *
- * `TextDocument` IS THE ONE SUBTRACTION, and it is a ruling rather than an
- * oversight: this package publishes the one from
- * vscode-languageserver-textdocument, TYPE-ONLY, and the types package ships a
- * deprecated namespace under the same name. Re-exporting that one as a value
- * would shadow the good type with the wrong thing.
+ * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE, and it must be
+ * EXACTLY what vscode-languageserver-types exports at run time. src/deps/types.ts
+ * satisfies that with a star, so incompleteness is structural rather than
+ * checked -- what this test now defends is the star itself: replace it with an
+ * explicit list and this reddens the day upstream adds a name.
  */
 test("the published module re-exports every LSP data value, and nothing else", async () => {
   consumer.write(
@@ -180,9 +173,7 @@ test("the published module re-exports every LSP data value, and nothing else", a
   // otherwise reports only that stdout did not parse.
   expect(`${String(result.code)} ${result.stderr}`).toBe("0 ");
 
-  const upstream = Object.keys(await import("vscode-languageserver-types"))
-    .filter((name) => name !== "TextDocument" && name !== "default")
-    .sort();
+  const upstream = Object.keys(await import("vscode-languageserver-types")).sort();
   expect((JSON.parse(result.stdout.trim()) as string[]).sort()).toEqual(upstream);
 });
 

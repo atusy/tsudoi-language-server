@@ -196,18 +196,6 @@ test("packing builds, so a stale dist cannot be published", () => {
  * an empty expectation is satisfied by an empty dist/, which is the exact state
  * this is here to catch.
  */
-function valueReExportsOf(source: string): string[] {
-  const names = [...source.matchAll(/^export \{([^}]*)\} from/gm)].flatMap((match) =>
-    (match[1] ?? "")
-      .split(",")
-      .map((name) => name.trim())
-      .filter((name) => name !== ""),
-  );
-  if (names.length === 0) {
-    throw new Error("src/deps/types.ts re-exports no value; this check would assert nothing");
-  }
-  return names.sort();
-}
 
 /**
  * THIS TEST WAS AUTHORISED FOR DELETION AND ITS OWN GATE WITHDREW THE
@@ -250,25 +238,28 @@ function valueReExportsOf(source: string): string[] {
  * ruling. What keeps the build OUT of this test is that a test which repaired
  * the condition it asserts could never fail.
  */
-test("the repo's own dist/ is built, and carries what src/deps/types.ts re-exports", async () => {
-  const declared = valueReExportsOf(
-    readFileSync(join(repoRoot, "src", "deps", "types.ts"), "utf8"),
-  );
+test("the repo's own dist/ is built, and carries every LSP data value", async () => {
+  // THE SOURCE SIDE IS THE DEPENDENCY ITSELF, because src/deps/types.ts is a
+  // star and there is no list here to read.
+  //
+  // WHAT IT CANNOT SEE, so its green is not read as more than it is: a STALE
+  // dist/ is unreachable here, because bunfig.toml's preload rebuilds before any
+  // test loads -- sabotaging dist/deps/types.js and re-running leaves this GREEN,
+  // measured. What it DOES catch is the star being narrowed at the source:
+  // replacing it with `export { Position }` reddens this, measured, naming the
+  // 84 names that went.
+  const declared = Object.keys(await import("vscode-languageserver-types")).sort();
   const built = await import(pathToFileURL(join(repoRoot, "dist", "deps", "types.js")).href).then(
     (module) => Object.keys(module as Record<string, unknown>).sort(),
     (cause: unknown) => [`dist/deps/types.js could not be loaded: ${String(cause)}`],
   );
 
   // The remedy rides on BOTH sides so it shows up in the diff: bun:test has no
-  // message argument, and a reader seeing only `[] !== ["CompletionItemKind"]`
-  // has to already know what this file is about. It names the CWD and not
-  // `bun run prepack`, because anyone reading this failure is by construction
-  // standing somewhere the build did not run -- the manual build is no longer
-  // the thing they are missing.
+  // message argument, and anyone reading this failure is by construction
+  // standing somewhere the build did not run.
   const remedy = "run `bun test` from the repository root --";
   expect(`${remedy} ${JSON.stringify(built)}`).toBe(`${remedy} ${JSON.stringify(declared)}`);
 });
-
 /**
  * THE COMPILER THAT BUILDS THE PUBLISHED ARTIFACT IS THE REPO'S, NOT THE
  * MACHINE'S -- the property, in four steps, each of which can fail alone.
