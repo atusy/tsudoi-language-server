@@ -11,8 +11,10 @@
 import type {
   CompletionItem,
   CompletionParams,
+  DocumentFormattingParams,
   Hover,
   HoverParams,
+  TextEdit,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 // IMPORTED AS WELL AS RE-EXPORTED, and the duplication is the language's rather
@@ -221,6 +223,37 @@ export interface MethodMap {
   "textDocument/hover": {
     params: HoverParams;
     result: Promise<Hover | null>;
+  };
+
+  /**
+   * Awaited once, exactly as hover is: a formatter has one answer for the whole
+   * document, and the protocol gives it no partialResultToken to stream under.
+   *
+   * `DocumentFormattingParams` AND `TextEdit` ARE IMPORTED AND DELIBERATELY NOT
+   * RE-EXPORTED, which is the rule-for-a-ninth above applied rather than
+   * forgotten. That list is the protocol names the EXAMPLES use, and no example
+   * formats anything; a handler written in a config needs neither name, because
+   * `MethodHandler` supplies both by contextual typing -- which is what README
+   * already tells a config author. What would reverse it is an example that
+   * must NAME one of them.
+   *
+   * MEASURED RATHER THAN ASSUMED, and stated so it can be re-run: a config
+   * importing only `Tsudoi` and `TsudoiConfig`, whose handler annotates
+   * nothing, reads `params.options.tabSize`, calls `document.positionAt` and
+   * returns an object literal `{ range: { start, end }, newText }`, type-checks
+   * at `tsc --noEmit` 0 -- and renaming that `newText` to `newTxt` fails
+   * TS2322 naming the missing property. So the contextual typing is real
+   * rather than a hole that would accept anything.
+   *
+   * MEASURED at vscode-languageserver-protocol 3.18.2, which pins
+   * vscode-languageserver-types 3.18.0: `DocumentFormattingRequest.type` is
+   * `ProtocolRequestType<DocumentFormattingParams, TextEdit[] | null, never,
+   * void, DocumentFormattingRegistrationOptions>`, so the result type below is
+   * the protocol's own and not a shape this project chose.
+   */
+  "textDocument/formatting": {
+    params: DocumentFormattingParams;
+    result: Promise<TextEdit[] | null>;
   };
 }
 

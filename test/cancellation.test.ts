@@ -183,10 +183,17 @@ for (const runtime of runtimes) {
       }
     });
 
-    // The response shape is PINNED, for both methods, rather than left to
-    // whatever the handler happened to produce. LSP 3.17 permits answering a
-    // cancelled request normally; tsudoi does not, because the client has
-    // already discarded the request's context.
+    // The response shape is PINNED, for both methods THIS FILE DRIVES, rather
+    // than left to whatever the handler happened to produce. LSP 3.17 permits
+    // answering a cancelled request normally; tsudoi does not, because the
+    // client has already discarded the request's context.
+    //
+    // `both` WAS AN ENUMERATION OF TSUDOI'S METHODS WHEN IT WAS WRITTEN AND IS
+    // NOT ONE NOW: textDocument/formatting arrived at Sprint 31 and goes
+    // through the same `answerUnlessCancelled`, so its cancelled response is
+    // -32800 too -- AND NOTHING HERE OR ANYWHERE ELSE ASSERTS THAT. Stated
+    // rather than quietly rescoped, because a reader counting methods against
+    // this comment is the way the gap would otherwise be missed.
     test(
       "a cancelled hover is answered -32800 and the next hover is answered normally",
       async () => {

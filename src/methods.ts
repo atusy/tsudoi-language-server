@@ -4,6 +4,8 @@ import {
   type CompletionItem,
   type CompletionParams,
   CompletionRequest,
+  type DocumentFormattingParams,
+  DocumentFormattingRequest,
   type Hover,
   type HoverParams,
   HoverRequest,
@@ -11,6 +13,7 @@ import {
   type ProgressToken,
   ProgressType,
   ResponseError,
+  type TextEdit,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { RequestOnlyConnection } from "./notifications.ts";
@@ -271,6 +274,42 @@ export function registerMethods(
       const handler = config.methods?.["textDocument/hover"];
       const context = requestContext(tsudoi, cancellation, workspaceFolders());
       return answerUnlessCancelled("textDocument/hover", context.signal, async () => {
+        return (await handler?.(context, params)) ?? null;
+      });
+    },
+  );
+
+  // THE THIRD COPY, AND IT IS HOVER'S RATHER THAN A NEW ONE: a formatter has
+  // one answer for the whole document and the protocol offers it no
+  // partialResultToken, so it is awaited once and nothing about the streaming
+  // path applies. Nothing new arrives with it -- no error data on the response,
+  // no nested capability, no state shared with another method -- which is why
+  // this method was taken first of the five.
+  //
+  // NOT DEDUPLICATED WITH HOVER HERE, and the restraint is deliberate: this is
+  // the third copy and therefore the first moment the rule of three has
+  // anything to generalise FROM. What differs between the two copies -- the
+  // request type, the method key, the params type and the result type -- is
+  // exactly what a table would have to carry, and it is legible side by side
+  // only while both are written out.
+  //
+  // THE HANDLER IS OPTIONAL-CALLED RATHER THAN EARLY-RETURNED, which is hover's
+  // shape and not completion's. Completion returns before building a context
+  // because driving a generator needs one; here `?? null` answers the
+  // no-handler case in the same expression that answers the handler's own null.
+  connection.onRequest(
+    DocumentFormattingRequest.type,
+    async (
+      params: DocumentFormattingParams,
+      cancellation: CancellationToken,
+    ): Promise<TextEdit[] | null> => {
+      const rejection = requestRejection();
+      if (rejection !== undefined) {
+        throw rejection;
+      }
+      const handler = config.methods?.["textDocument/formatting"];
+      const context = requestContext(tsudoi, cancellation, workspaceFolders());
+      return answerUnlessCancelled("textDocument/formatting", context.signal, async () => {
         return (await handler?.(context, params)) ?? null;
       });
     },
