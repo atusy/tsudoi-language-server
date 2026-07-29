@@ -143,25 +143,27 @@ test("the published surface is the types subpath, compiled, and nothing else", (
 /** The scripts the manifest declares, read at test time like everything else. */
 const scripts = packageJson.scripts as Record<string, string> | undefined;
 
-// A PUBLISH-TIME STEP, AND SINCE SPRINT 25 A DEVELOP-TIME ONE TOO. The first
-// half of this note was true when it was written and is no longer the whole
-// truth, so it is corrected here rather than left to read as a promise.
+// A PUBLISH-TIME STEP. THE DEVELOP-TIME HALF THIS NOTE ONCE CARRIED HAS MOVED
+// OUT, to bunfig.toml, which is where the develop-time build now lives.
 //
-// UNCHANGED, and it is the half this test asserts: prepack runs inside `bun pm
+// WHAT THIS TEST ASSERTS, and it never changed: prepack runs inside `bun pm
 // pack` and `npm pack` alike (measured), so the dist/ that is PUBLISHED is
 // compiled from whatever src/ is present at that moment and can never be
 // stale. A `build` script a human is trusted to remember would be exactly the
-// staleness that avoids.
+// staleness that avoids -- the same argument that put the develop-time build
+// in a preload rather than in a script.
 //
-// WHAT CHANGED, and it is about the REPO's own dist/ rather than the tarball's:
-// examples/completion-path.ts now takes CompletionItemKind -- a VALUE -- from
+// THE REPO'S OWN dist/, which is a different artifact from the tarball's:
+// examples/completion-path.ts takes CompletionItemKind -- a VALUE -- from
 // `@atusy/tsudoi/types`, and from inside this repository package
 // self-reference resolves that subpath through the exports map's `import` arm
 // to ./dist/types.js (MEASURED under bun 1.3.13 and deno 2.9.2, discriminated
 // against the `default` arm by writing a marker export into dist/types.js and
-// seeing it appear). So this repo's dist/ is now load-bearing for `bun test`,
-// while remaining gitignored and built by nothing the suite runs. The test
-// below is what says so out loud.
+// seeing it appear). So this repo's dist/ is load-bearing for `bun test` --
+// and SINCE SPRINT 40 IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than by
+// nothing, which is the clause this block used to carry and which a diff of
+// that sprint's changed lines would never have reached, since the sprint
+// edited no line in this file's neighbourhood for any other reason.
 //
 // REQUIRED PRESENT WITH THIS VALUE, not `scripts equals exactly this`. The
 // equality also forbade every OTHER script, which is not a promise this project
@@ -199,33 +201,45 @@ function valueReExportsOf(source: string): string[] {
 }
 
 /**
- * THE REPO'S OWN dist/ IS NOW A PRECONDITION FOR `bun test`, and this test
- * exists so that fact arrives as a sentence rather than as a puzzle.
+ * THIS TEST WAS AUTHORISED FOR DELETION AND ITS OWN GATE WITHDREW THE
+ * AUTHORISATION. PBI-35 pre-authorised removing it, on the ground that under an
+ * automatic build the staleness it watches CANNOT ARISE -- target deliberately
+ * removed rather than coverage lost. The gate attached to that authorisation
+ * was `is the build SKIPPABLE`, and Sprint 40 measured that it is, so the
+ * comparison stayed and the PBI went back to the Product Owner.
  *
- * Without it, a checkout that has never run `bun run prepack` -- or one whose
- * src/types.ts has moved since it last did -- fails in TWO SHAPES, measured,
- * and neither names the remedy.
+ * WHAT IT GUARDS NOW IS ONE ROUTE, AND SAYING SO NARROWLY IS THE POINT: bun
+ * discovers bunfig.toml relative to the CURRENT WORKING DIRECTORY and never
+ * searches upward, so `bun test` run from anywhere but the repository root
+ * executes the whole suite with no build. Every form run FROM the root --
+ * bare, a file path, a name filter, `-t` -- preloads the build exactly once,
+ * measured; the single-file bypass the PBI feared does not exist here.
  *
- * test/completion-path.test.ts STATICALLY IMPORTS the example, so the whole
- * file dies at module load and reports 0 pass: with a stale dist/ that is
- * `SyntaxError: Export named 'CompletionItemKind' not found in module
- * .../dist/types.js`. It arrives before the file body runs, so no preflight
- * inside THAT file could have spoken first.
+ * MEASURED ON THE ROUTE IT GUARDS, Sprint 40, with a value re-export added to
+ * src/types.ts and no build: from a non-root cwd the suite gives 442 pass /
+ * 2 fail, and THIS IS THE ONLY STALENESS-SPECIFIC FAILURE OF THE TWO. The
+ * other -- published-artifacts.test.ts's exact runtime-key list -- was
+ * attributed away by a control: it reddens identically when the same edit is
+ * made and the build DOES run, so it detects a new published name rather than
+ * a stale dist/. Without that control this test would have been reported as
+ * one of a redundant pair.
  *
- * The files that SPAWN a server instead load the config in a SUBPROCESS, so the
- * same cause surfaces as `initialize failed: server exited with code 1`
- * carrying tsudoi's own `failed to load config` on the child's stderr -- not at
- * a static import at all, and only the assertions that needed a server fail
- * (test/hover.test.ts: 12 pass, 2 fail). A preflight is reachable there; it is
- * this ONE test instead, because a condition with one cause is better said once
- * than asserted in every file that would trip over it.
+ * HISTORICAL, TO SPRINT 25, AND KEPT BECAUSE THEY DESCRIBE THE FAILURE A
+ * READER ON THAT ROUTE STILL MEETS -- not present-tense claims about `bun
+ * test` from the root, where dist/ can no longer be missing at all.
+ * test/completion-path.test.ts STATICALLY IMPORTS the example, so with a stale
+ * dist/ the whole file died at module load reporting 0 pass, as `SyntaxError:
+ * Export named 'CompletionItemKind' not found in module .../dist/types.js`;
+ * and the files that SPAWN a server surfaced the same cause as `initialize
+ * failed: server exited with code 1` carrying tsudoi's own `failed to load
+ * config` on the child's stderr, with only the server-needing assertions
+ * failing (test/hover.test.ts: 12 pass, 2 fail at that tree).
  *
- * IT DETECTS AND DOES NOT BUILD, deliberately and not as a shortcut. Whether
- * this suite should acquire a develop-time build step is a decision with a
- * standing prose contract on the other side of it -- the note above -- and a
- * helper that quietly ran tsc would settle that by default rather than by
- * ruling. What this buys is one failure a reader can act
- * on, standing beside the ones they cannot diagnose.
+ * IT DETECTS AND DOES NOT BUILD, and the reason is now the opposite of the one
+ * it used to give. It used to say a helper that quietly ran tsc would settle an
+ * open question by default; that question is settled, in bunfig.toml, by
+ * ruling. What keeps the build OUT of this test is that a test which repaired
+ * the condition it asserts could never fail.
  */
 test("the repo's own dist/ is built, and carries what src/types.ts re-exports", async () => {
   const declared = valueReExportsOf(readFileSync(join(repoRoot, "src", "types.ts"), "utf8"));
@@ -236,8 +250,11 @@ test("the repo's own dist/ is built, and carries what src/types.ts re-exports", 
 
   // The remedy rides on BOTH sides so it shows up in the diff: bun:test has no
   // message argument, and a reader seeing only `[] !== ["CompletionItemKind"]`
-  // has to already know what this file is about.
-  const remedy = "run `bun run prepack` --";
+  // has to already know what this file is about. It names the CWD and not
+  // `bun run prepack`, because anyone reading this failure is by construction
+  // standing somewhere the build did not run -- the manual build is no longer
+  // the thing they are missing.
+  const remedy = "run `bun test` from the repository root --";
   expect(`${remedy} ${JSON.stringify(built)}`).toBe(`${remedy} ${JSON.stringify(declared)}`);
 });
 

@@ -39,13 +39,17 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
-A fresh checkout also needs **`bun run prepack` once before `bun test`**. `examples/` import
-`@atusy/tsudoi/types`, which from inside this repository resolves to `dist/types.js`, and
-`dist/` is not committed -- so a clone that has only run `bun install` fails roughly thirty
-tests until it is built. This is an **artifact** precondition rather than an environment one:
-the source tree is not self-consistent until the build runs. The dangerous form of it -- a
-stale `dist/` producing a silent green -- cannot happen, because a test compares `dist/`
-against what `src/types.ts` re-exports and names `bun run prepack` when they disagree.
+A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi/types`,
+which from inside this repository resolves to `dist/types.js`, and `dist/` is not committed
+-- so `bun test` builds it **automatically**, through a `bunfig.toml` that compiles `src/`
+before any test file is loaded. An edit to `src/` cannot be tested against a `dist/` that
+has moved on without it, because there is no build to forget.
+
+Run it **from the repository root**. bun looks for `bunfig.toml` in the directory you are
+standing in and never searches upward, so a `bun test` started anywhere else runs the whole
+suite with no build -- the one route on which a stale `dist/` is still reachable, and the
+reason `test/package-shape.test.ts` still compares `dist/` against what `src/types.ts`
+re-exports.
 
 ## Quickstart
 

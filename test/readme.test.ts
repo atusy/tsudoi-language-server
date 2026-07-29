@@ -252,21 +252,34 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
   },
   {
-    // Named because it is an ARTIFACT precondition, not an environment one, and
-    // that is the distinction Sprint 25's Review turned on. deno-on-PATH and
-    // `bun install` are things a reader's MACHINE must have; this is the source
-    // tree not being self-consistent until `bun run prepack` runs. MEASURED at
-    // 9501c68: with dist/ absent, `bun test` gives 30 fail / 299 pass, and the
-    // first failure names dist/types.js imported from examples/completion-path.ts.
+    // RETARGETED AT SPRINT 40 RATHER THAN REMOVED, and the reason it survived
+    // is that only ONE of its three tokens went false. `dist/` is still
+    // gitignored and still generated; what stopped being true is that a reader
+    // must run `bun run prepack` themselves, because bunfig.toml now builds it
+    // before any test file loads. Sprint 25 called this an ARTIFACT
+    // precondition rather than an environment one -- deno-on-PATH and `bun
+    // install` are things a reader's MACHINE must have -- and that distinction
+    // is what this entry now records the END of.
     //
-    // WHY DOCUMENTING IT WAS ACCEPTED AS THE FIX rather than removing it: the
-    // repo already documents a loud precondition for `bun test` one paragraph
-    // above, so a precondition that FAILS LOUDLY AND NAMES ITS REMEDY is a
-    // settled shape here. What is NOT acceptable is the silent form -- a stale
-    // dist/ producing a green suite -- and package-shape.test.ts closes that.
-    // Remove that detector and this documentation stops being sufficient.
-    name: "a fresh checkout must run `bun run prepack` before `bun test`",
-    tokens: [/bun run prepack/, /dist\//, /not committed/i],
+    // THE SECOND TOKEN PAIR IS THE ONE THAT MATTERS NOW, and it is here because
+    // the fix is NOT total: bun discovers bunfig.toml relative to the CURRENT
+    // WORKING DIRECTORY and does not search upward, so `bun test` started
+    // anywhere but the repository root runs the whole suite with no build.
+    // MEASURED at Sprint 40 on that route, with dist/ deliberately stale: 442
+    // pass / 2 fail, and the ONLY staleness-specific failure is the comparison
+    // in package-shape.test.ts. That is why PBI-35's pre-authorised deletion of
+    // that comparison was WITHDRAWN BY ITS OWN GATE, and why the README must
+    // keep saying where to stand.
+    //
+    // THE NUMBER SPRINT 25 RECORDED HERE IS GONE RATHER THAN CORRECTED IN
+    // PLACE, because it was a measurement with provenance and re-running it
+    // gave a different answer for a reason that has nothing to do with this
+    // sprint: at 9501c68 a dist/-less `bun test` gave 30 fail / 299 pass, and
+    // at Sprint 40 the same shape gives 47 fail / 362 pass with 35 tests not
+    // running at all. The suite grew; the sentence did not. It lives in
+    // bunfig.toml now, beside the mechanism that makes it historical.
+    name: "`bun test` builds dist/ itself, and only from the repository root",
+    tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },
   {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
