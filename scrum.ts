@@ -322,7 +322,7 @@ const scrum: ScrumDashboard = {
     number: 29,
     pbi_id: "PBI-32",
     goal: "An editor sends only the part of the buffer that changed: tsudoi advertises Incremental and applies ranged changes AT THE RIGHT OFFSET -- and the two properties that could rot silently underneath that change, correct offset application and the live-reference semantics Sprint 28 introduced, are each held by a test rather than by a paragraph.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "A reference obtained from documents.get() BEFORE a change reflects that change afterwards. First and only assertion on the reference's own getText(); the property, not the mechanism.",
@@ -348,9 +348,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/documents.ts hands params.contentChanges to TextDocument.update UNCHANGED instead of rebuilding [{ text }] from the last entry. MEASURED at planning, not reasoned: the protocol's TextDocumentContentChangeEvent[] is assignable to upstream's at tsc --noEmit exit 0, spiked at HEAD and reverted. The empty-contentChanges early return is KEPT -- measured, TextDocument.update([]) BUMPS THE VERSION with no text change, so removing the guard would be an unrequested behaviour change. Same commit: every full-sync-scoped comment this makes false in src/documents.ts, test/documents.test.ts and test/sync.test.ts, including the S16-withdrawn last-not-first sentence.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "cdff3c5",
+            message: "feat(documents): apply the changes the client sent, all of them, in order",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED AS PLANNED AND FOR THE PLANNED REASON: the ranged arm returned `2nd` -- the last entry's replacement text, standing alone as if it were the buffer. THE PERTURBATION THE CLAUSE BELOW EXISTS FOR WAS RUN AFTER GREEN: `params.contentChanges.slice(-1)` returns `helworldere` where the full arm returns `hi world`, so the two-changes-in-one-array clause is what makes this test see the difference.",
           "THE TWO-CHANGES-IN-ONE-ARRAY CLAUSE IS LOAD-BEARING AND IS WHY THE S16 WITHDRAWAL IS A BUG FIX RATHER THAN A TIDY-UP: LSP makes each range relative to the state after the PREVIOUS entry in the same array, so `take the last entry` is not merely unjustified under Incremental, it DROPS EDITS. With one change per notification the perturbation `[params.contentChanges.at(-1)]` passes and the test records nothing -- S20 exactly. MEASURED at planning on upstream directly: `abcdef` under [0,3)->`X` then [1,2)->`Y` is `XYef`, where last-only is `aYcdef`.",
         ],
       },
@@ -359,9 +366,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE EXPECTED -- BORN GREEN once the subtask above is green, declared in advance. Pins the named wrong text rather than `not.toBe(correct)`, because `not.toBe` also passes when the store THREW and left the text unchanged, and because upstream CLAMPS out-of-range positions silently -- so the shift is chosen in-bounds.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "6e980ed",
+            message: "test(documents): show that byte-identity can see a wrong offset at all",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN AS DECLARED, and the derived text matched on the FIRST run -- the literal was computed from the range arithmetic before it was ever executed, not read back off a failure. Its boundary was then MEASURED rather than asserted: stripping ranges (applying each change as whole text) reddens this control AND the byte-identity test, which is exactly what its own comment says it does not claim to catch first.",
           "WHAT IT BUYS, and its boundary stated so nobody later reads it as stronger: it is the S6 presence pair for the byte-identical claim -- that assertion observes NO DIVERGENCE, and this one shows the SAME comparison DOES observe divergence when the offset is wrong. It is NOT claimed to be first-to-fail for a store that ignores ranges wholesale; the byte-identical test reddens on that too.",
         ],
       },
@@ -370,9 +384,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/server.ts's capability, plus every full-sync-scoped comment in that file and the lifecycle test NAME that says `full-sync`, in the same commit.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "350c1d6",
+            message: "feat(server): tell the editor it may send only what changed",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE RED WAS ALREADY WRITTEN AND NOBODY HAD LOOKED: three test files assert this capability EXACTLY, and ten assertions across both runtimes reddened on the expected value alone before src/server.ts moved. NOTHING WAS LOOSENED -- every toEqual is still an equality over the whole capabilities object; only the value moved, which is what keeps S16 out of this.",
           "ORDERING STATED AS A PROPERTY RATHER THAN A SEQUENCE: NO COMMIT EXISTS IN WHICH INCREMENTAL IS ADVERTISED WHILE RANGED CHANGES ARE NOT APPLIED. That is what puts the store cycle ahead of this one; the reverse order is a real defect window, not a preference.",
           "THIS IS THE EDITOR-USER-FACING HALF: what tsudoi says at initialize is what makes an editor stop resending the whole buffer.",
         ],
@@ -382,9 +403,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE EXPECTED -- BORN GREEN, declared in advance: the no-range half is an existing test in test/sync.test.ts that BECOMES the criterion's test once Incremental is advertised, renamed so it says which property it holds rather than leaving a reader to infer it. The ranged half is new and green after the store cycle. Perturbation for the ranged half: revert the store to last-entry-only.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "0dd2307",
+            message: "test(sync): both shapes a client may send once Incremental is advertised",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN AS DECLARED, AND NOT RIDING ON THE UNIT TEST: the wire test carries TWO ranged changes in one notification with the second addressing text the first moved, so last-entry-only reddens it ON BOTH RUNTIMES independently of test/documents.test.ts. Measured, not inferred.",
           "THE RANGE STARTS AFTER A MULTI-BYTE CHARACTER, following this file's own precedent: Position.character is a UTF-16 unit count while Content-Length is a byte count, and a range placed only in ASCII cannot see a layer that confuses them.",
         ],
       },
@@ -395,6 +423,11 @@ const scrum: ScrumDashboard = {
       "GREP FOUND MORE FALSIFIED PROSE THAN THE READING DID, which is the Sprint 28 lesson applied at planning instead of as a catch. Sprint 28 verified test/sync.test.ts byte-identical and concluded PBI-32 `still owns both of its prose corrections`; grep says the category is wider than both -- src/server.ts carries a SECOND full-sync claim away from the capability line, test/sync.test.ts carries the same under-full-sync premise as test/documents.test.ts, and test/lifecycle.test.ts says `full-sync` IN A TEST NAME. Named as a category in the criterion; the commits name the sites they touch.",
       "THE SAME-COMMIT CLAUSE IS CONSTRUCTIBLE HERE AND IS STILL RESTATED AS A PROPERTY. Every prose home is a non-scrum.ts file, so unlike Sprint 26 the git hook does not forbid it -- but S26's ruling is about what the clause MEANS, and each correction travelling with the change that falsifies it satisfies the no-window property MORE VISIBLY than one lump commit would.",
       "PBI-35'S TRIGGERS CHECKED AT PLANNING, NONE FIRED -- a trigger nobody checks is a trigger that does not exist. No second artifact precondition is being added; the stale-dist detector is untouched and READ rather than recalled -- it compares dist/types.js's value re-exports against `^export \\{...\\} from` matches in src/types.ts, so the prose this sprint adds to that file cannot reach it.",
+      "Shipped in c2d8d5f..0dd2307. 380 green from 375 across the same 24 files -- FIVE ADDED, NONE REMOVED OR WEAKENED -- with each DoD command run separately and unpiped and its exit read directly, all four at 0. scrum.ts was committed ALONE every time and the hook was never bypassed.",
+      "EVERY PERTURBATION NAMED IN THE PLAN WAS RUN, AND ONE MORE THAN THE PLAN ASKED FOR. (1) NEW-INSTANCE, against the aliasing gate: reddens the gate's FIRST assertion and NOTHING ELSE IN 376 -- the measurement that turns `we disclosed it` into `we defend it`. (2) LAST-ENTRY-ONLY, against the byte-identity test: `helworldere` for `hi world`. (3) STRIP RANGES, against the wrong-offset control: reddens the control AND the byte-identity test, which is what the control's own comment predicts of itself. (4) LAST-ENTRY-ONLY ON THE WIRE, both runtimes. Every one reverted from a byte-verified copy, with git confirming src/documents.ts identical to HEAD before anything was committed.",
+      "NOTHING WE EXPECTED TO REDDEN STAYED GREEN, and the one place that could have hidden a surprise did not: 24 test files before and after, so no file was silently emptied by a rename.",
+      "THE STANDING RE-RUN OF A PREVIOUS SPRINT'S PERTURBATION WAS DONE ON THE FILE THIS SPRINT EDITED, which is the strongest version of that item rather than the cheapest. Sprint 28's P3 -- pointing src/types.ts at vscode-languageserver-types' deprecated TextDocument twin -- REPRODUCES EXACTLY at this HEAD: tsc --noEmit stays 0 and the identity probe is the ONLY failing test of 380. The doc-block prose this sprint added to that same file did not disarm it.",
+      "THE EDITOR-USER-FACING CHECK WAS ANSWERED BEFORE IT COULD SURPRISE ANYONE: THREE test files already asserted textDocumentSync exactly -- test/lifecycle.test.ts inline, test/hover.test.ts and test/completion.test.ts through a shared const -- and test/lifecycle.test.ts said `full-sync` IN ITS TEST NAME. Ten assertions across two runtimes reddened on the expected value alone, which is a stronger RED than a new test would have been.",
       "README GREPPED AND CARRIES NO SYNC-KIND CLAIM, stated as a checked negative rather than by silence, per the S14 standing item on prose beside changed behaviour. What it does document -- the TextDocument members and the mock that adoption broke -- is unaffected by which sync kind is advertised.",
     ],
   },
