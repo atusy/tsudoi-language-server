@@ -9,6 +9,7 @@ import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 import { hoverWordnet } from "./hover-wordnet.ts";
+import { resolvePathStat } from "./resolve-path-stat.ts";
 
 export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
   return Promise.resolve({
@@ -60,16 +61,19 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           //    once on stderr per session, because a source that silently
           //    contributes nothing is indistinguishable from one that works in
           //    a project holding no matches.
-          //  * An option that resolves items lazily is equally inert: THIS
-          //    CONFIG supplies no `completionItem/resolve` handler, so tsudoi
-          //    advertises `completionProvider` with no `resolveProvider` and
-          //    that request is never sent. It is a fact about this file rather
-          //    than about tsudoi -- a config that adds the handler is
-          //    advertised the flag and does receive the request. The same is
-          //    true of every method this config does not name, and the shape of
-          //    the rule is worth more than the instance: a capability is
-          //    advertised exactly where `methods` below can answer it, so
-          //    ADDING A KEY IS THE WHOLE OF TURNING A FEATURE ON.
+          //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE, and this paragraph
+          //    said the opposite until the handler below was added -- which is
+          //    the rule it exists to state, arriving. THIS CONFIG supplies a
+          //    `completionItem/resolve` handler, so tsudoi advertises
+          //    `resolveProvider` inside `completionProvider` and a client that
+          //    resolves lazily gets the file's size and date when the user
+          //    highlights an item. It is a fact about this file rather than
+          //    about tsudoi -- a config that DROPS that key is advertised no
+          //    flag and receives no such request. The same is true of every
+          //    method this config does not name, and the shape of the rule is
+          //    worth more than the instance: a capability is advertised exactly
+          //    where `methods` below can answer it, so ADDING A KEY IS THE
+          //    WHOLE OF TURNING A FEATURE ON.
           yield* pathCompletion(context, params);
 
           // Deliberate divergence from the brief's example, which falls off the end here.
@@ -112,6 +116,19 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
       // half on its own is half a demonstration: a problem this server cannot
       // fix, or a fix for a problem it never reports.
       "textDocument/formatting": removeTrailingWhitespace,
+
+      // WHAT THE COMPLETION ABOVE DELIBERATELY DID NOT DO, and the pairing is
+      // the reason it is here: listing a directory offers what is in it, and
+      // asking the disk about every entry is what a large directory cannot
+      // afford. This answers that question for the ONE ITEM THE USER
+      // HIGHLIGHTS. It is also the only method here whose params are neither a
+      // document nor a position -- it takes the item back and hands it back.
+      //
+      // IT MAY NOT BE HERE ALONE: a config supplying this key without
+      // `textDocument/completion` is refused when it LOADS, since resolving
+      // items nothing can produce is incoherent and would advertise a completion
+      // provider tsudoi cannot answer.
+      "completionItem/resolve": resolvePathStat,
     },
   });
 };

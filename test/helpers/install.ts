@@ -90,6 +90,14 @@ export function exampleSources(): Record<string, string> {
       fileURLToPath(new URL("../../examples/formatting-trailing-whitespace.ts", import.meta.url)),
       "utf8",
     ),
+    // A SECOND PAIRING, AND IT RUNS THE OTHER WAY: this module imports the MARK
+    // and its reader from completion-path.ts, because tsudoi keeps no record of
+    // what a completion handler produced and a resolve handler can only key off
+    // what the completion module wrote onto the item.
+    "resolve-path-stat.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/resolve-path-stat.ts", import.meta.url)),
+      "utf8",
+    ),
   };
 }
 

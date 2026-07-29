@@ -99,6 +99,55 @@ function fragmentAt(line: string, start: number, character: number, end: number)
 }
 
 /**
+ * WHAT THIS MODULE PUTS ON EVERY ITEM IT PRODUCES, AND THE ONLY THING A RESOLVE
+ * HANDLER CAN KEY OFF.
+ *
+ * `completionItem/resolve` asks about an item THE CLIENT HOLDS, and tsudoi keeps
+ * no record of what a completion handler produced -- the ruling is at
+ * `MethodMap` in src/types.ts. So a handler cannot ask tsudoi whether an item is
+ * one of its own; it can only read what it wrote onto the item itself. `data` is
+ * the protocol's field for exactly that: it is preserved across the round trip
+ * and means nothing to anyone but the server that set it.
+ *
+ * A NAMED KEY RATHER THAN A BARE STRING, because `data` is one field and every
+ * source in a client's list writes to its own copy of it. A handler that treated
+ * any string it found there as a path would stat whatever another server put on
+ * its items.
+ *
+ * THE ABSOLUTE PATH AND NOT THE INSERTED TEXT: two roots can offer the same
+ * relative path, and by resolve time the fragment that produced it is gone. It
+ * is the same value the documentation shows, computed once at the item.
+ *
+ * EXPORTED, WITH ITS READER, SO THE RESOLVE HANDLER IMPORTS RATHER THAN RESTATES
+ * IT -- the pairing examples/formatting-trailing-whitespace.ts has with its
+ * scanner. Two modules agreeing about a key by convention drift the first time
+ * either is edited, and nothing in an editor would say so: the details would
+ * simply stop appearing.
+ */
+export interface PathItemData {
+  /** The absolute path the item completes to. */
+  readonly pathCompletion: string;
+}
+
+/**
+ * The absolute path THIS MODULE recorded on an item, or undefined for an item it
+ * did not produce.
+ *
+ * EVERY ARM RETURNS undefined RATHER THAN THROWING, because what arrives is
+ * whatever the client sent -- `data` may be absent, may be a number, may be an
+ * object from another server -- and a resolve handler that throws answers -32603
+ * and takes away the popup the user is reading.
+ */
+export function completedPath(item: CompletionItem): string | undefined {
+  const data: unknown = item.data;
+  if (typeof data !== "object" || data === null) {
+    return undefined;
+  }
+  const path: unknown = (data as { pathCompletion?: unknown }).pathCompletion;
+  return typeof path === "string" ? path : undefined;
+}
+
+/**
  * How many items leave in one message. Batching survives the per-segment rule
  * because no walk is needed for one directory to be too large to hand over at
  * once. The value is a judgement: small enough that the first batch arrives
@@ -308,11 +357,20 @@ export async function* itemsFrom(
         items = [];
       }
       const insertText = fragment.directory + entry.name;
+      // COMPUTED ONCE AND USED TWICE: what the documentation shows the user is
+      // what the resolve handler goes back to disk for, so the two cannot name
+      // different files.
+      const absolutePath = join(directory, entry.name);
       items.push({
         label: insertText,
-        documentation: documentationFor(join(directory, entry.name), source),
+        documentation: documentationFor(absolutePath, source),
         kind: await entryKind(directory, entry),
         insertText,
+        // WHAT MAKES THIS ITEM RESOLVABLE. Nothing is stat'd here -- one stat per
+        // entry is exactly what a directory of any size cannot afford -- so the
+        // item carries the path and the detail is fetched for the ONE item the
+        // user highlights. See `PathItemData` above.
+        data: { pathCompletion: absolutePath } satisfies PathItemData,
         // BOTH RANGES, so the client's own insert-versus-replace preference
         // decides what happens to the tail when the cursor sits mid-path. A
         // plain `TextEdit` would make that setting inert and choose for them.

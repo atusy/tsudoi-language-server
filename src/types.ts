@@ -36,18 +36,29 @@ import type { TextDocument } from "vscode-languageserver-textdocument";
  * HoverParams; diagnostic-trailing-whitespace.ts adds DiagnosticSeverity,
  * DocumentDiagnosticParams and DocumentDiagnosticReport;
  * formatting-trailing-whitespace.ts adds DocumentFormattingParams and TextEdit;
- * tsudoi.config.ts adds none of its own. This is the minimum that lets the
- * examples import no protocol package, not a convenience dump.
+ * resolve-path-stat.ts adds NONE; tsudoi.config.ts adds none of its own. This is
+ * the minimum that lets the examples import no protocol package, not a
+ * convenience dump.
  *
- * ADDING AN EXAMPLE ADDS NAMES, AND THAT IS THIS RULE OPERATING RATHER THAN A
- * WIDENING OF IT: this list exists PRECISELY TO MAKE EXAMPLE MODULES WRITABLE.
- * An EXTRACTED handler -- a standalone exported function, which is the shape
- * README calls worth copying -- gets no contextual typing at all and must name
- * its own params and result. Every name here was published because some example
- * could not be written without it, and the alternative is worse than a few type
- * names: THE README WOULD TEACH A PATTERN TSUDOI'S OWN PUBLISHED SURFACE CANNOT
- * SUPPORT. Note the asymmetry that keeps this bounded -- a handler written
- * INLINE in a config needs none of these, because MethodHandler supplies them.
+ * ADDING AN EXAMPLE ADDS NAMES WHERE IT NAMES SOMETHING NEW, AND NOT OTHERWISE
+ * -- the qualifier is this sprint's, and it is here because the sentence without
+ * it was falsified by the example added in the same sprint, which added none.
+ * This list exists PRECISELY TO MAKE EXAMPLE MODULES WRITABLE. An EXTRACTED
+ * handler -- a standalone exported function, which is the shape README calls
+ * worth copying -- gets no contextual typing at all and must name its own params
+ * and result. Every name here was published because some example could not be
+ * written without it, and the alternative is worse than a few type names: THE
+ * README WOULD TEACH A PATTERN TSUDOI'S OWN PUBLISHED SURFACE CANNOT SUPPORT.
+ * Note the asymmetry that keeps this bounded -- a handler written INLINE in a
+ * config needs none of these, because MethodHandler supplies them.
+ *
+ * AND THE FIFTH EXAMPLE MEASURED ZERO, WHICH IS THE RULE DISCRIMINATING RATHER
+ * THAN THE RULE LAPSING. examples/resolve-path-stat.ts is an EXTRACTED handler
+ * and does name its own params and result -- they are `CompletionItem` and
+ * `CompletionItem`, published for the completion example before this method
+ * existed. MEASURED, not predicted: the module was written and `tsc --noEmit`
+ * was read, and the ONLY name it demanded that was not already here was `Stats`,
+ * out of node:fs, which is not this project's to publish.
  *
  * THE RULE FOR A NEW NAME: adding one is a deliberate act with a reason, because
  * every name exported from this file is public API and renaming or dropping one
@@ -422,6 +433,12 @@ export interface MethodMap {
    * `CompletionItem` IS ALREADY RE-EXPORTED, so this method adds NO name to the
    * published surface. The rule for a new name is not engaged: the examples named
    * `CompletionItem` before this method existed.
+   *
+   * THAT SENTENCE WAS REASONED WHEN WRITTEN AND IS NOW MEASURED, which is worth
+   * the two lines because the two are indistinguishable in prose:
+   * examples/resolve-path-stat.ts is an EXTRACTED handler for this method, so it
+   * gets no contextual typing and must name its params and result -- and
+   * `tsc --noEmit` demanded nothing this surface did not already carry.
    */
   "completionItem/resolve": {
     params: CompletionItem;

@@ -233,13 +233,18 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | `examples/wordnet.d.ts`                      | types for `wordnet`, which ships none                                         |
   | `examples/diagnostic-trailing-whitespace.ts` | warns about trailing whitespace, one warning per line                         |
   | `examples/formatting-trailing-whitespace.ts` | removes exactly what that diagnostic reports                                  |
+  | `examples/resolve-path-stat.ts`              | fills in a path item's size and date when the user highlights it              |
 
-  The last two are a **matched pair**: run the demo, see the warnings, format, and watch them
-  clear. The formatter imports its analysis from the diagnostic module, so the two can never
-  disagree about what a problem is.
+  The **trailing-whitespace two are a matched pair**: run the demo, see the warnings, format,
+  and watch them clear. The formatter imports its analysis from the diagnostic module, so the
+  two can never disagree about what a problem is. **The path two are the other pair**, and it
+  runs the other way round: completion offers a directory's entries without asking the disk
+  about any of them, and resolve fetches the detail for the one item you highlight — so the
+  resolve module imports from the completion module the mark it recognises its own items by.
+  Neither pairing is namable by row position, which is why both are named by file.
 
   **The set teaches two shapes of handler, and both are worth reading.** One **goes somewhere
-  else** for its answer — completion to the filesystem, hover to a dictionary — and shows what a
+  else** for its answer — completion and resolve to the filesystem, hover to a dictionary — and shows what a
   handler that waits on something outside itself has to look like. The other **computes its
   answer from the document it was given** and goes nowhere at all: the trailing-whitespace pair
   reads the buffer, turns offsets into `Position`s with `positionAt`, and is done. The second is
@@ -247,7 +252,8 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   do not read the first as the one to copy.
 
   **Copy the whole set**, or the imports fail. The config imports every handler module, the
-  formatter imports the diagnostic module, and `wordnet.d.ts` is imported by nobody and needed
+  formatter imports the diagnostic module, the resolve module imports the completion module,
+  and `wordnet.d.ts` is imported by nobody and needed
   all the same — it is what makes `hover-wordnet.ts`'s `wordnet` import type-check. The set is
   what the test suite type-checks and runs. They also need `wordnet` in your own project:
 
