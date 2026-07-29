@@ -42,8 +42,14 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * `textDocument/diagnostic` declares `partialResult`, SO it is generator-shaped
  * like completion. DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT --
  * see `driveGenerator`, which states both of that drive's requirements and which
- * this method fails on the second. `textDocument/diagnostic` is AWAITED ONCE,
- * measured at Sprint 33, and so is `completionItem/resolve`.
+ * this method fails on the second. `textDocument/diagnostic` is AWAITED ONCE.
+ *
+ * BOTH REMAINING METHODS MEASURED AT SPRINT 33 rather than one measured and one
+ * carried over, protocol 3.18.2: `CompletionResolveRequest` (protocol.d.ts:2301)
+ * declares NO `partialResult` member at all and its `type` is
+ * `ProtocolRequestType<CompletionItem, CompletionItem, never, void, void>` --
+ * `never` in the progress position -- so it is awaited once, and it needs
+ * nothing of the error position either.
  */
 type DriveKind<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
