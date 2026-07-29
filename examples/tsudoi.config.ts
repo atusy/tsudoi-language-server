@@ -81,10 +81,12 @@ const config: TsudoiConfigFactory = () => {
           //    behaviour: a language server started without a project root has
           //    no workspace to answer from, and its working directory is then
           //    wherever the editor itself was launched -- which is a root, but
-          //    not the one you meant. HOW YOU WILL KNOW: this handler says so
-          //    once on stderr per session, because a source that silently
-          //    contributes nothing is indistinguishable from one that works in
-          //    a project holding no matches.
+          //    not the one you meant. AND NOTHING WILL TELL YOU: the workspace
+          //    source contributes nothing, which looks exactly like a working
+          //    source in a project that holds no matches. An earlier version
+          //    wrote one line to stderr per session and it was removed as
+          //    noise; see examples/completion-path.ts, where that decision and
+          //    its cost are recorded.
           //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE, and this paragraph
           //    said the opposite until the handler below was added -- which is
           //    the rule it exists to state, arriving. THIS CONFIG supplies a
