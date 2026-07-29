@@ -11,6 +11,14 @@ import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: NO CLAIM IS MADE, AND THIS IS THE ONLY CONFIG IN
+      // THE REPOSITORY OF WHICH THAT IS TRUE. It yields nothing and returns
+      // null, so the drive answers `null` on the wire -- and the specification's
+      // equivalence is stated for a SUPPLIED `CompletionItem[]`, which `null` is
+      // not. RULED RATHER THAN SKIPPED: `no claim` is the answer here, not an
+      // omission, and recording it is what stops the next reader converting this
+      // to `{ isIncomplete: false, items: [] }` and thereby asserting something
+      // this fixture spent a whole doc comment refusing to say.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

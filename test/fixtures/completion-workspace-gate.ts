@@ -36,6 +36,13 @@ export function itemsFor(folders: readonly WorkspaceFolder[]): CompletionItem[] 
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE, and it is the ONE fixture where the
+      // question needed thinking about rather than reading off a constant. The
+      // candidate set is the CLIENT'S OWN workspace folder list, which is
+      // mutable -- but it is snapshotted at request start, it is NOT filtered by
+      // anything the user typed, and no further keystroke can add a folder to
+      // it. Ruling it INCOMPLETE would contradict what this fixture exists to
+      // assert: that the list a handler sees does not move mid-request.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

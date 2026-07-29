@@ -20,6 +20,31 @@ import { resolvePathStat } from "./resolve-path-stat.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: NOT COMPLETE, AND THIS CONFIG HAS BEEN CLAIMING
+      // OTHERWISE SINCE THE DAY IT WAS WRITTEN. The specification says a
+      // supplied `CompletionItem[]` is identical to
+      // `{ isIncomplete: false, items }` -- so a bare array is a POSITIVE
+      // ASSERTION that the candidate set is final and the client need not ask
+      // again. Nobody chose that here; it arrived as the default shape.
+      //
+      // WHY IT IS FALSE: the delegate below lists ONE DIRECTORY filtered by the
+      // trailing name of the fragment under the cursor. The next keystroke
+      // changes the filter, and often changes the DIRECTORY -- typing `/` moves
+      // to a different listing entirely. A client told the set is final shows
+      // the user candidates for a prefix they have already left behind, which
+      // is the exact failure this PBI's user story names.
+      //
+      // AND THE `return []` BELOW IS A SECOND, DIFFERENT WRONG CLAIM, worth
+      // separating because a re-type would have papered over both: it fires
+      // when the document is NOT IN THE STORE, which means `this server cannot
+      // see the buffer yet`, and it goes out as `the candidate set is complete
+      // and empty`. Those are different statements and the wire cannot tell
+      // them apart today.
+      //
+      // NOTHING CHANGES HERE IN THIS SUBTASK. This is a RULING, and it is the
+      // evidence-shaped trigger for the tuple work -- a re-type into
+      // `{ isIncomplete: false, items }` would satisfy every compiler and leave
+      // both wrong claims exactly where they are.
       "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {

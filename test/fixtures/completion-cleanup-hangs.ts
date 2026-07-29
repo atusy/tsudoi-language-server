@@ -36,6 +36,12 @@ export const cleanupFinished = "completion-cleanup-hangs: finished cleanup";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE on the path that answers, and NO CLAIM ON
+      // THE PATH THIS FIXTURE IS FOR. `returnedItems` is a module constant and
+      // the params are read only to poll the gate, so an answer that arrives is
+      // final. The cancelled path -- the one every test here drives -- is
+      // answered -32800 with no result at all, so no completeness claim is
+      // reachable there and none is being made.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

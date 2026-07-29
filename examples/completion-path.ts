@@ -449,6 +449,30 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
 
 /**
  * A `textDocument/completion` handler that completes paths.
+ *
+ * COMPLETENESS RULING: NOT COMPLETE, and this is the case the whole question
+ * was raised from. It returns `null` rather than an array, so THIS function
+ * makes no claim by itself -- but a caller that aggregates its yields answers a
+ * bare `CompletionItem[]`, which the specification treats as identical to
+ * `{ isIncomplete: false, items }`. So the claim is made ON THIS MODULE'S
+ * BEHALF, one call up, and ruling it here is the only place a reader of this
+ * file would find it.
+ *
+ * WHY IT IS FALSE, measured against what this module actually does rather than
+ * argued: `pathFragments` re-derives the fragment from the line AT THE CURSOR
+ * on every request, `sourcesFor` picks the roots FROM THAT FRAGMENT -- a
+ * fragment beginning `/` is answered by the filesystem root alone -- and
+ * `itemsFrom` filters ONE directory listing by the fragment's trailing name.
+ * Every one of those three depends on the character the user is about to type.
+ * Typing `/` does not narrow the previous answer; it replaces the directory
+ * being listed. There is no keystroke after which the previous set is still the
+ * right set, which is the strongest form of `re-query`.
+ *
+ * AND ONE THING IT IS NOT: the BATCHING at `batchSize` is not incompleteness.
+ * Batches are the same final set arriving in pieces; `isIncomplete` is about
+ * the set CHANGING as the user types. A reader who conflates them would
+ * conclude that draining the iterator makes the answer complete -- which is the
+ * merge rule this PBI forbids, for exactly this reason.
  */
 export async function* pathCompletion(
   context: RequestContext,

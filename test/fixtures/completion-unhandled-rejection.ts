@@ -21,6 +21,11 @@ export const items: CompletionItem[] = [{ label: "届かない", detail: "never 
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE. `items` is a module constant and both
+      // parameters are unused. THE PAYLOAD IS NOT THIS FIXTURE'S SUBJECT -- the
+      // exit code is -- and the ruling is recorded anyway rather than waved
+      // through on that ground, because `nothing asserts it` is precisely the
+      // condition under which an unchosen claim survives.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

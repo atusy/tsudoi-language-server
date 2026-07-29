@@ -41,6 +41,12 @@ export default (): Promise<TsudoiConfig> => {
         await aborted(context);
         throw new Error(throwMessage);
       },
+      // COMPLETENESS RULING: NO CLAIM IS MADE, BY CONSTRUCTION RATHER THAN BY
+      // CHOICE. This handler yields nothing and never returns -- it parks until
+      // the abort and then throws -- so no result of any shape reaches the wire
+      // and the specification's array equivalence has nothing to apply to. The
+      // ruling is recorded so the enumeration covers every completion handler
+      // rather than only the ones that answer.
       "textDocument/completion": async function* (
         context: RequestContext,
         _params: CompletionParams,

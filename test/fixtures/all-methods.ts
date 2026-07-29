@@ -129,6 +129,15 @@ export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": (): Promise<Hover> => Promise.resolve(hoverAnswer),
+      // COMPLETENESS RULING: COMPLETE, and now said deliberately. The
+      // specification treats a supplied `CompletionItem[]` as identical to
+      // `{ isIncomplete: false, items }`, so aggregating this handler has
+      // always asserted that the candidate set is final -- nobody chose that
+      // until now. IT IS TRUE HERE: `completionAnswer` is a module constant and
+      // THIS HANDLER TAKES NO PARAMETERS AT ALL, so no prefix, position or
+      // document can reach it. A re-query on the next keystroke would produce
+      // the identical single item, which is exactly what `do not re-query`
+      // means.
       "textDocument/completion": async function* (): AsyncGenerator<
         CompletionItem[],
         CompletionItem[] | null,

@@ -26,6 +26,14 @@ export default (): Promise<TsudoiConfig> => {
       // config load. It is also the honest shape of the story -- the list stays
       // cheap, and the expensive half arrives only for the item the user looks
       // at.
+      //
+      // COMPLETENESS RULING: COMPLETE. `bareItem` is a module constant and both
+      // parameters are unused, so the one-item list is the whole candidate set
+      // at every position. `bare` here means WITHOUT A DETAIL -- the item is
+      // incomplete in its FIELDS, which `completionItem/resolve` fills in -- and
+      // that is a different axis from `isIncomplete`, which is about the SET
+      // growing as the user types. Confusing the two would be easy in this file
+      // of all files, so the distinction is named.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

@@ -23,6 +23,12 @@ export default (): Promise<TsudoiConfig> => {
   let calls = 0;
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE on the second call, NO CLAIM on the first.
+      // The first call throws, so that request is answered as an ERROR and
+      // carries no result for the equivalence to apply to. From the second call
+      // on, `recoveredItems` is a module constant and both parameters are
+      // unused, so the recovered answer is final -- which is what
+      // `recovery is positive` above is asserting.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

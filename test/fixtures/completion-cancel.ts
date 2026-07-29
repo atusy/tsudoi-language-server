@@ -24,6 +24,12 @@ export const abortedMarker = "completion-cancel: aborted";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE. The three payloads are module constants;
+      // `params` is read ONLY to find the gate document, never to filter, so the
+      // answer does not depend on what the user typed and a re-query would
+      // return the same list. THE CANCELLED PATH MAKES NO CLAIM EITHER WAY --
+      // that request is answered -32800 and carries no result -- which is the
+      // path this fixture actually exists for.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

@@ -36,6 +36,12 @@ export const cleanupMarker = "completion-cleanup: released";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
+      // cancelled one. `returnedItems` is a module constant and the params are
+      // read only to poll the gate. The subject of this fixture is the
+      // `finally` -- whether a config author's cleanup RUNS -- and that is
+      // orthogonal to whether the set it was building was final, which is why
+      // the ruling can be made here without weakening anything the tests say.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

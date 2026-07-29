@@ -17,6 +17,14 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "r
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
+      // COMPLETENESS RULING: COMPLETE. `beforeGate`, `afterGate` and
+      // `returnedItems` are module constants; the document is read to find the
+      // gate text and never to filter candidates. THE PARK IS NOT INCOMPLETENESS
+      // AND THE DISTINCTION IS THE INTERESTING PART: this handler is slow, not
+      // partial. `isIncomplete` says THE SET MAY GROW AS THE USER TYPES, where
+      // streaming says THE SET ARRIVES IN PIECES -- the two are independent, and
+      // this fixture exercises the second while claiming nothing about the
+      // first.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,
