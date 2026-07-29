@@ -3,6 +3,7 @@ import {
   type CancellationToken,
   type CompletionItem,
   CompletionRequest,
+  CompletionResolveRequest,
   DocumentDiagnosticRequest,
   DocumentFormattingRequest,
   HoverRequest,
@@ -83,14 +84,28 @@ type DriveKind<M extends Method> =
  * rather than corrected -- an enumeration would have been wrong again here.
  *
  * IT MUTATES, AND SO IT IS ORDER-DEPENDENT. That is the price of reaching
- * inside another method's key, and the property it costs is worth naming
- * because nothing checks it: A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
+ * inside another method's key: A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
  * METHOD OWNS MUST RUN AFTER THAT METHOD'S. The table below is iterated in
  * declaration order -- string keys on an object literal preserve it -- so
- * `completionItem/resolve` must be DECLARED BELOW `textDocument/completion`
- * when PBI-39 adds it. Today NO entry depends on another, so the constraint is
- * dormant; it becomes real at the first nested contributor, which is why it is
- * written here and not left to be discovered then.
+ * `completionItem/resolve` is DECLARED BELOW `textDocument/completion`.
+ *
+ * THE CONSTRAINT IS NO LONGER DORMANT, AND THIS PARAGRAPH SAID IT WAS FOR TWO
+ * SPRINTS. It was written when no entry depended on another and `becomes real at
+ * the first nested contributor` was a prediction; `completionItem/resolve` is
+ * that contributor and the prediction has been paid out.
+ *
+ * IT ALSO SAID NOTHING CHECKS IT, AND SOMETHING DOES NOW -- not the ordering,
+ * WHICH IS A MECHANISM, but the property the ordering exists for: a config
+ * supplying BOTH handlers is asserted in test/resolve.test.ts to advertise
+ * `completionProvider: { resolveProvider: true }` by exact equality. Declare
+ * the two entries the other way round and completion's contributor assigns `{}`
+ * over what resolve wrote, and that assertion reddens -- MEASURED this sprint,
+ * on both runtimes, and it reddens ALONE.
+ *
+ * SO THERE IS NO INDEX COMPARISON ANYWHERE, and that is deliberate rather than
+ * an omission: a test asserting resolve's key sits after completion's would
+ * restate the mechanism, would pass a table whose iteration stopped being
+ * ordered, and would be a SECOND check of one property.
  */
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 
@@ -241,6 +256,57 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
       capabilities.completionProvider = {};
     },
   },
+  // DECLARED HERE, AND THE POSITION IS LOAD-BEARING RATHER THAN TIDY. This is
+  // the first entry whose capability writes into a key ANOTHER METHOD OWNS, so
+  // the constraint recorded at `CapabilityContributor` -- a contributor that
+  // writes into another method's key must RUN AFTER that method's -- applies to
+  // this line and to nothing else in the table. Move this entry above
+  // `textDocument/completion` and the line below is overwritten by completion's
+  // `{}` before the client ever sees it.
+  //
+  // NOTHING IN THE LANGUAGE ENFORCES IT, AND A TEST DOES: a config supplying
+  // BOTH handlers is asserted in test/resolve.test.ts to advertise
+  // `completionProvider: { resolveProvider: true }` by exact equality, which is
+  // the PROPERTY the ordering exists for rather than the ordering itself.
+  // MEASURED at this sprint: swapping this entry above completion's reddens
+  // that assertion.
+  "completionItem/resolve": {
+    drive: "awaited-once",
+    type: CompletionResolveRequest.type,
+    // THE FOURTH SHAPE THIS TABLE HOLDS AND THE ONLY ONE THAT IS NOT A KEY OF
+    // ITS OWN: `resolveProvider` lives inside `CompletionOptions` (protocol
+    // 3.18.2, protocol.d.ts:2265), which is `completionProvider`'s value -- so
+    // this is the line that makes `CapabilityContributor` a FUNCTION rather
+    // than a flag, and reading it beside hover's `true`, completion's `{}` and
+    // diagnostic's two required booleans is what the table is for.
+    //
+    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, and the spread is
+    // DEFENSIVE rather than measured -- said plainly because it reads as though
+    // something depended on it. Completion contributes `{}`, so writing
+    // `{ resolveProvider: true }` outright would produce an identical result
+    // today; what the spread buys is that a future `triggerCharacters` on
+    // completion's line is not deleted by this one, silently, at a distance.
+    //
+    // THIS LINE WOULD BRING A `completionProvider` INTO BEING FOR A CONFIG THAT
+    // CANNOT ANSWER COMPLETION, and what stops it is NOT here. That state --
+    // resolveProvider on a completion provider whose handler does not exist,
+    // inviting completion requests tsudoi can only answer `null` -- is reachable
+    // for the first time through this contributor, because it is the first that
+    // writes into a key it does not own.
+    //
+    // IT IS FORECLOSED ONE STAGE EARLIER: a config supplying
+    // `completionItem/resolve` without `textDocument/completion` is REJECTED AT
+    // CONFIG LOAD, in src/config.ts, where the reason for rejecting there rather
+    // than here is written out. So by the time any contributor runs, the pair is
+    // known to hold, and this line is not defending itself against a state that
+    // has already been refused.
+    capability: (capabilities) => {
+      capabilities.completionProvider = {
+        ...capabilities.completionProvider,
+        resolveProvider: true,
+      };
+    },
+  },
   "textDocument/formatting": {
     drive: "awaited-once",
     type: DocumentFormattingRequest.type,
@@ -252,14 +318,17 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
     // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at
     // the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which is
-    // why this reads like hover's and not like resolve's will. Moved here from
-    // src/server.ts, where it sat above the `if`.
+    // why this reads like hover's and not like resolve's, which reaches inside
+    // completion's. Moved here from src/server.ts, where it sat above the `if`.
     //
-    // READING THE THREE SIDE BY SIDE IS THE POINT, and it is what a table
-    // flattening them to booleans would have destroyed silently: `true`, `{}`
-    // and -- when PBI-39 lands -- a key nested inside another method's are three
-    // kinds of contribution, and this is the one place that difference is
-    // visible at a glance.
+    // READING THEM SIDE BY SIDE IS THE POINT, and it is what a table flattening
+    // them to booleans would have destroyed silently: `true` here, completion's
+    // `{}`, diagnostic's object with two REQUIRED booleans, and resolve's key
+    // NESTED INSIDE COMPLETION'S are each a different kind of contribution, and
+    // this is the one place the difference is visible at a glance. NAMED AND
+    // DELIBERATELY NOT COUNTED: the PO ruled a count out of this comparison at
+    // Sprint 31 because any enumeration invites the same staleness again, and
+    // the entry named last here is the one that was still a prediction then.
     capability: (capabilities) => {
       capabilities.documentFormattingProvider = true;
     },

@@ -23,16 +23,25 @@ const uri = "file:///workspace/a.txt";
 
 /**
  * One params object every method in the table accepts on the wire: the
- * position the two positional methods read and the `options` formatting
- * requires. Shared BECAUSE THE TESTS BELOW ARE ABOUT THE PROLOGUE, which runs
- * before any handler looks at params -- a params shape per method would be a
- * per-method copy in the tests that exist to prove per-method copies are gone.
+ * position the two positional methods read, the `options` formatting requires,
+ * and the `label` a CompletionItem requires. Shared BECAUSE THE TESTS BELOW ARE
+ * ABOUT THE PROLOGUE, which runs before any handler looks at params -- a params
+ * shape per method would be a per-method copy in the tests that exist to prove
+ * per-method copies are gone.
+ *
+ * `label` JOINED IT AT SPRINT 34 AND NOT BECAUSE ANYTHING FAILED WITHOUT IT.
+ * `completionItem/resolve` takes a CompletionItem rather than a document and a
+ * position, and `label` is its one required member -- nothing on the wire
+ * validates that, so omitting it would have left the sentence above FALSE while
+ * every test here stayed green. It is here to keep the claim true, which is the
+ * only reason it needs.
  */
 function paramsForAnyMethod(): unknown {
   return {
     textDocument: { uri },
     position: { line: 0, character: 0 },
     options: { tabSize: 2, insertSpaces: true },
+    label: "表",
   };
 }
 

@@ -326,6 +326,65 @@ export interface MethodMap {
     params: DocumentDiagnosticParams;
     result: Promise<DocumentDiagnosticReport>;
   };
+
+  /**
+   * Awaited once, and this one needed no inference at all. MEASURED at
+   * vscode-languageserver-protocol 3.18.2, `CompletionResolveRequest` at
+   * protocol.d.ts:2301: its `type` is `ProtocolRequestType<CompletionItem,
+   * CompletionItem, never, void, void>`, the namespace declares NO
+   * `partialResult` member, and `never` sits in the progress position. There is
+   * nothing to stream and nothing that could be.
+   *
+   * THE ONLY ONE OF THE FIVE WHOSE PARAMS ARE NOT A DOCUMENT AND A POSITION. It
+   * takes an ITEM and returns one, and it NEVER TOUCHES THE DOCUMENT STORE --
+   * so the work that put upstream's TextDocument behind `DocumentStore` bought
+   * this method nothing, which is recorded rather than left to look like an
+   * oversight when a reader notices no fixture here opens a document.
+   *
+   * NO `| null`, FOR THE REASON THAT SHAPED `textDocument/diagnostic` RATHER
+   * THAN A SECOND RULING: the protocol declares the result as `CompletionItem`
+   * with no null arm, unlike `Hover | null` and `TextEdit[] | null`. A config
+   * author MUST answer with an item.
+   *
+   * WHAT TO DO WITH AN ITEM YOU DO NOT RECOGNISE: RETURN IT UNCHANGED. A client
+   * may send ANY item -- resolve is a request about an item the client holds,
+   * not about one tsudoi remembers -- and the response REPLACES that item in the
+   * client's list, so answering with anything else drops the entry the user is
+   * looking at.
+   *
+   * AND TSUDOI CANNOT DO THAT RECOGNISING FOR YOU, which is why the sentence
+   * above is addressed to the handler. tsudoi keeps NO record of what a
+   * completion handler produced: the generator drive streams chunks and retains
+   * nothing past the response. So the item arrives at the handler EXACTLY as the
+   * client sent it -- `data` and every member the protocol does not declare
+   * included, since nothing here inspects, validates or rewrites it -- and what
+   * the handler returns goes back the same way. That is a ruling and not an
+   * accident of the router: matching incoming items against remembered ones
+   * would mean holding per-request state whose lifetime nothing on this surface
+   * could describe.
+   *
+   * WHAT STILL ANSWERS `null` ON THE WIRE, said here because the missing null
+   * arm above makes it surprising: a config supplying NO resolve handler. That
+   * is the router's shared no-handler answer, exactly as it is for
+   * `textDocument/diagnostic`, and a conforming client never reaches it --
+   * without a handler `resolveProvider` is never advertised, and without
+   * `textDocument/completion` the config does not load at all.
+   *
+   * THAT PAIRING IS A REQUIREMENT AND IT IS NOT EXPRESSED HERE, which is the one
+   * thing about this method a reader of this file could otherwise get wrong.
+   * `methods` stays a `Partial`, so supplying this method alone TYPE-CHECKS; it
+   * is refused when the config LOADS, by inspecting what the factory returned.
+   * The reason for enforcing it there rather than in this type is at the check
+   * itself, in src/config.ts.
+   *
+   * `CompletionItem` IS ALREADY RE-EXPORTED, so this method adds NO name to the
+   * published surface. The rule for a ninth is not engaged: the examples named
+   * `CompletionItem` before this method existed.
+   */
+  "completionItem/resolve": {
+    params: CompletionItem;
+    result: Promise<CompletionItem>;
+  };
 }
 
 export type Method = keyof MethodMap;

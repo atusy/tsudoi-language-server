@@ -24,9 +24,14 @@ await Promise.all(runtimes.map(requireRuntime));
  * line tsudoi writes carries it, and a message without it is indistinguishable
  * from whatever the runtime printed.
  *
- * STARTS WITH rather than contains, measured across all seven cases under both
- * runtimes: the reason is the FIRST thing on stderr, so nothing the config
+ * STARTS WITH rather than contains, measured under both runtimes on EVERY case
+ * in this file: the reason is the FIRST thing on stderr, so nothing the config
  * author did not ask for precedes it.
+ *
+ * `EVERY CASE IN THIS FILE` RATHER THAN A NUMBER, corrected at Sprint 34 when a
+ * case was added and `all seven` silently became false. A count of a growing
+ * file falsifies itself with nothing to show for it; every case calls this
+ * helper, so the scope is legible from the helper's call sites.
  */
 function expectFailureContract(result: CliResult): void {
   expect(result.code).toBe(1);
@@ -110,9 +115,39 @@ for (const runtime of runtimes) {
       expect(result.stderr).toContain("the factory rejects");
     });
 
-    // The eighth case, and the one the other seven cannot make: every message
-    // above is ASCII, so a reader that decodes each pipe chunk on its own gets
-    // them all right. EXACT EQUALITY over the whole stream, not toContain: a
+    /**
+     * THE ONE CASE THAT IS NOT ABOUT REACHING THE CONFIG AT ALL: this file
+     * loads, exports a factory, and the factory returns -- and what it returned
+     * is REFUSED. Every case above fails on the way to the config author's
+     * object; this one inspects the object itself.
+     *
+     * IT BELONGS HERE RATHER THAN IN test/resolve.test.ts because what it
+     * asserts is the FAILURE CONTRACT -- exit 1, `tsudoi: ` first on stderr,
+     * ZERO BYTES ON STDOUT -- and stdout purity is what makes rejecting at
+     * config load cost nothing: this runs before startServer, so no protocol
+     * byte has been written when it fires.
+     *
+     * BOTH METHOD NAMES ARE ASSERTED, because a message naming only the one the
+     * author wrote would tell them they are wrong without telling them what to
+     * add.
+     */
+    test("a config resolving completion items it cannot produce exits 1 naming both methods, with no stdout", async () => {
+      const path = fixture("resolve-without-completion.ts");
+
+      const result = await runCli(runtime, ["--config", path]);
+
+      expectFailureContract(result);
+      expect(result.stderr).toContain(path);
+      expect(result.stderr).toContain("completionItem/resolve");
+      expect(result.stderr).toContain("textDocument/completion");
+    });
+
+    // THE CASE NO OTHER ONE HERE CAN MAKE: every message above is ASCII, so a
+    // reader that decodes each pipe chunk on its own gets them all right.
+    // (It read `the eighth case, and the one the other seven cannot make` until
+    // Sprint 34 added one above it -- the count was load-bearing for nothing and
+    // false the moment the file grew.)
+    // EXACT EQUALITY over the whole stream, not toContain: a
     // decode that mangles a split character produces U+FFFD in the middle of a
     // message that still contains every substring one might think to look for.
     test("a config failure message in Japanese survives the pipe byte-exact", async () => {
