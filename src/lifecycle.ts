@@ -90,9 +90,9 @@ export function createLifecycle(): Lifecycle {
     // duplication that makes the disagreement possible.
     //
     // THE SENTENCE, as the specification writes it, read at
-    // microsoft/language-server-protocol on gh-pages (its DEFAULT branch --
-    // `main` does not exist, which is worth knowing before re-reading it),
-    // _includes/messages/3.17/exit.md:
+    // microsoft/language-server-protocol, whose DEFAULT BRANCH IS gh-pages --
+    // said because the obvious path 404s: the same file under `main` was
+    // requested first and was not there. _includes/messages/3.17/exit.md:
     //
     //   The server should exit with `success` code 0 if the shutdown request
     //   has been received before; otherwise with `error` code 1.

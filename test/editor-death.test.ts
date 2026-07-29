@@ -120,17 +120,22 @@ async function startRig(runtime: Runtime, stdin: "own" | "third-party"): Promise
   let holder: ChildProcess | undefined;
   if (stdin === "third-party") {
     spawnSync("mkfifo", [fifo]);
-    // Holds the write end open FOREVER, and sends the initialize the fake editor
-    // cannot -- it has no writable handle on this FIFO, which is the point.
-    // `exec 3>` blocks until a reader opens, so this and the editor unblock each
-    // other; that is why the holder is a process rather than an fd in this one.
+    // Holds the write end open, and sends the initialize the fake editor cannot
+    // -- it has no writable handle on this FIFO, which is the point. `exec 3>`
+    // blocks until a reader opens, so this and the editor unblock each other;
+    // that is why the holder is a process rather than an fd in this one.
+    //
+    // THE 30s IS A BOUND ON THE LEAK, for the same reason the fake editor carries
+    // one: if the test dies between here and `dispose`, nothing else ever kills
+    // this. It outlasts the 1.5s hold below by twenty times, so no assertion can
+    // race it.
     holder = spawn(
       "sh",
       [
         "-c",
         `exec 3>"${fifo}"; ` +
           `printf 'Content-Length: ${initializeFrame.length}\\r\\n\\r\\n%s' '${initializeFrame.json}' >&3; ` +
-          `while :; do sleep 1; done`,
+          `sleep 30`,
       ],
       { stdio: ["ignore", "ignore", "ignore"] },
     );

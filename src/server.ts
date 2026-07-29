@@ -211,9 +211,11 @@ export function startServer(
   // SO ANY TIMER, SOCKET, WATCHER OR SUBSCRIPTION ADDED ANYWHERE IN src/ MUST BE
   // unref()'d. THAT IS A CORRECTNESS REQUIREMENT AND NOT AN OPTIMISATION: an
   // un-unref'd handle does not slow anything down, it makes tsudoi OUTLIVE THE
-  // EDITOR FOREVER, one orphaned server per crash, and the symptom reaches the
-  // user as a machine that gets slower over a week. A `setInterval` here for a
-  // debounce or a cache sweep is the natural way to cause it.
+  // EDITOR FOREVER, one orphaned server per crash. A `setInterval` here for a
+  // debounce or a cache sweep is the natural way to cause it. REASONED, and
+  // labelled because it is the half nobody has watched happen: the symptom
+  // reaching a user as a machine that gets slower over a week is an inference
+  // from the leak, not an observation of one.
   //
   // WHAT MAKES THAT SURVIVABLE IS THAT IT REDDENS: test/editor-death.test.ts
   // kills a fake editor and watches this process's pid, and an un-unref'd
@@ -221,6 +223,20 @@ export function startServer(
   // ABSENCE -- of handles -- WHICH IS THE ONLY KIND THAT BREAKS BY ADDING
   // SOMETHING RATHER THAN BY CHANGING SOMETHING, so nothing in a diff shows it
   // going. That file is what shows it.
+  //
+  // AND HERE IS WHAT IT DOES NOT REACH, because the requirement above is wider
+  // than the check below and reading them as equal is the natural mistake: THOSE
+  // SESSIONS SEND ONE `initialize` AND NOTHING ELSE. So the handles they can
+  // observe are the ones created on the STARTUP AND INITIALIZE PATH -- a timer
+  // opened inside a hover handler, inside a document change, or on the shutdown
+  // path is never constructed there and reddens NOTHING. Nor does anything else
+  // in the suite cover it: every other session ends by `exit`, which calls
+  // process.exit, or by being killed, and neither notices a lingering handle.
+  // MEASURED: an un-unref'd interval on this line reddens FOUR tests out of 389,
+  // all four in that one file. ACCEPTED RATHER THAN CLOSED -- covering the rest
+  // means driving a session per handler and waiting for a natural death in each,
+  // and the requirement is stated at the top of this block so it reaches the
+  // author who is about to write one anywhere in src/.
   //
   // THE EXIT CODE ON THAT PATH IS NOT DECIDED HERE and is deliberately not
   // repeated here: the reading is at exitCode() in src/lifecycle.ts, which is the
@@ -253,8 +269,12 @@ export function startServer(
   // one would DESTROY the exit that already works -- MEASURED both ways: an
   // unref'd parent-pid poll reddens the survives-its-editor test ALONE out of 389
   // (it makes the server exit for the WRONG REASON), and an un-unref'd handle
-  // reddens the other two and leaves that one green. The remedy trades a case
-  // nobody has reported for the case everybody hits. SECOND, THE PORTABILITY
+  // reddens the other two and leaves that one green. REASONED, and labelled so
+  // that the tiers in this paragraph are not read as one: that the remedy trades
+  // a case nobody has reported for the case everybody hits is a JUDGEMENT about
+  // which is likelier, and the measurements above do not establish it -- what
+  // they establish is that the remedy CAN break the working exit. SECOND, THE
+  // PORTABILITY
   // TRAP, preserved even though no poll is being written, because it is invisible
   // until it has already shipped: `process.kill(pid, 0)` throws on both runtimes
   // with OPPOSITE ERRNO SIGNS -- bun 1.3.13 gives name `SystemError`, errno 3,
