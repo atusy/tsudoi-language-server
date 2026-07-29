@@ -39,32 +39,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-41",
-      story: {
-        role: "config author",
-        capability: "read an example that demonstrates more than two of the five methods",
-        benefit:
-          "the shape worth copying covers what tsudoi actually answers, not the two it answered first",
-      },
-      acceptance_criteria: [
-        {
-          criterion: "DECIDE AT REFINEMENT, AFTER THE LAST METHOD LANDS -- not before.",
-          verification:
-            "answering `what should the stakeholder-facing example demonstrate` before the set is complete DECIDES ABOUT AN INCOMPLETE SET.",
-        },
-        {
-          criterion:
-            "THE CRITERION IS UNCHANGED FROM SPRINT 31: an example exists for a method WHEN THERE IS SOMETHING REAL TO DELEGATE TO.",
-          verification:
-            "that was the reversal condition and NOTHING HAS MET IT YET. Whether `diagnostic` does is EXACTLY WHAT THE REFINEMENT SHOULD MEASURE rather than assume. Standing item 6 requires an EXECUTED example with two negative controls, and lifecycle.test.ts pins the demo config's capabilities BY EXACT EQUALITY AND BY NAME IN A TEST TITLE, so adding to it is a deliberate change to a pinned artifact.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FILED AS A PBI BECAUSE THE PO'S NOTE LIVED ONLY IN A REVIEW VERDICT AND SPRINT DECISIONS, BOTH OF WHICH COMPACT. The Lifetime Rule says it needs a home, and a draft PBI is one. Four methods with no example is a drift worth deciding about rather than discovering.",
-      ],
-    },
-    {
       id: "PBI-42",
       story: {
         role: "tsudoi maintainer",
@@ -92,6 +66,32 @@ const scrum: ScrumDashboard = {
         "FILED BECAUSE THE TRIGGER THE PO SET HAS FIRED. Sprint 33 recorded the pair with `A THIRD MAKES IT A PATTERN worth addressing rather than two one-offs`, which is the rule of three this project already applies to the table, the resolve check and the notify fork. THE THIRD ARRIVED; addressing it is a decision, and this PBI is where that decision has a home rather than in a sprint record that compacts.",
         "NOT FIXED IN THE SPRINT THAT FOUND IT, on the Sprint-33 precedent the PO recorded as correct: NO PBI-39 CRITERION ASKS FOR IT, and a check smuggled in beside a method would be the executor deciding scope.",
         "THE GENERATOR-DRIVEN HANDLER IS NOT IN SCOPE AND THAT IS THE POINT OF THE ASYMMETRY: deleting completion's DOES redden, because that drive's no-handler early return sits ahead of the cancellation epilogue. Only the awaited-once ones are undefended, and PBI-40 is about to change what that early return does.",
+      ],
+    },
+    {
+      id: "PBI-41",
+      story: {
+        role: "config author",
+        capability: "read an example that demonstrates more than two of the five methods",
+        benefit:
+          "the shape worth copying covers what tsudoi actually answers, not the two it answered first",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "DECIDE AT REFINEMENT, AFTER THE LAST METHOD LANDS -- not before.",
+          verification:
+            "answering `what should the stakeholder-facing example demonstrate` before the set is complete DECIDES ABOUT AN INCOMPLETE SET.",
+        },
+        {
+          criterion:
+            "THE CRITERION IS UNCHANGED FROM SPRINT 31: an example exists for a method WHEN THERE IS SOMETHING REAL TO DELEGATE TO.",
+          verification:
+            "that was the reversal condition and NOTHING HAS MET IT YET. Whether `diagnostic` does is EXACTLY WHAT THE REFINEMENT SHOULD MEASURE rather than assume. Standing item 6 requires an EXECUTED example with two negative controls, and lifecycle.test.ts pins the demo config's capabilities BY EXACT EQUALITY AND BY NAME IN A TEST TITLE, so adding to it is a deliberate change to a pinned artifact.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AS A PBI BECAUSE THE PO'S NOTE LIVED ONLY IN A REVIEW VERDICT AND SPRINT DECISIONS, BOTH OF WHICH COMPACT. The Lifetime Rule says it needs a home, and a draft PBI is one. Four methods with no example is a drift worth deciding about rather than discovering.",
       ],
     },
     {
@@ -345,6 +345,12 @@ const scrum: ScrumDashboard = {
             message: "docs: two claims this method turned from true into misleading",
             phase: "refactoring",
           },
+          {
+            hash: "6131d96",
+            message:
+              "docs: name the two methods the README had gone quiet about, and two disclosures",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "BORN GREEN, DECLARED HONESTLY. Prose carries no assertion, so no perturbation reddens for it; what defends it is that each claim was checked against the artifact it describes IN THIS SESSION.",
@@ -366,6 +372,9 @@ const scrum: ScrumDashboard = {
       "THE CONFIG-LOAD CHECK IS DEFENDED IN ONE PLACE AND NOWHERE ELSE: deleting the call reddens the new cli case ALONE on both runtimes, 423 RAN. The zero elsewhere is the answer to `is this defended twice`. Its stdout-purity claim is CHECKED rather than assumed -- the shared failure-contract helper asserts zero bytes on stdout for this case exactly as for every other.",
       "THE S14 STANDING RE-RUN EARNED ITS KEEP, AND IT CAUGHT A PERTURBATION THAT GREW A SECOND HALF WHILE KEEPING ITS NAME. Sprint 33's P6 -- delete all-methods' completion handler, expect the -32800 test -- now reddens FOUR tests instead of one, because with resolve present the config no longer LOADS. Deleting completion AND resolve reproduces Sprint 33's result exactly: the -32800 test alone, both runtimes, 423 RAN. THE FINDING STANDS; THE EDIT THAT PRODUCES IT DOES NOT, and the fixture's own doc block now says so. Its other half re-ran unchanged: deleting the diagnostic handler leaves all 423 green.",
       "THE RESIDUAL BECAME A THIRD, BY MEASUREMENT RATHER THAN BY EXPECTATION: deleting all-methods' resolve handler leaves ALL 423 GREEN, exactly as formatting's and diagnostic's do. THREE OF FOUR AWAITED-ONCE HANDLERS DEFENDED BY NOTHING. Filed as PBI-42 rather than fixed here -- the Sprint-33 precedent the PO recorded as correct -- and given a HOME rather than a sprint record that compacts, which is the orphan PBI-41 was filed to prevent.",
+      "CRITERION 1'S `ONLY WHEN` HALF WAS ASSERTED AND IS NOW MEASURED, caught before the report went out because neither the ordering nor the round-trip perturbation reaches it. Sprint 33's instrument transfers: naming this method INSIDE contributeCapabilities' shared condition reddens TWENTY assertions across FIVE files -- resolve's own negative control, hover's, completion's, formatting's, diagnostic's, and lifecycle.test.ts's pinned demo capabilities -- on both runtimes, with 423 tests RUN. DEFENDED AND NOT ISOLATED, which is the Sprint-31 subsumption shape rather than a defect, and every other capability `if` in this project already carried this measurement.",
+      "TWO DISCLOSURES WRITTEN INTO THE TEST FILE RATHER THAN LEFT FOR REVIEW TO GUESS. The capability negative control is BYTE-IDENTICAL to one in test/completion.test.ts, same fixture included, and is kept on the Sprint-31 ground: the TITLES name different properties -- completionProvider's PRESENCE there, resolveProvider's ABSENCE here. And `answered null, twice over` is BORN GREEN, riding the awaited-once drive's shared `?? null`, so nothing resolve-specific defends it and no perturbation reddens it without reddening hover's, formatting's and diagnostic's together.",
+      "THE README'S OPENING SENTENCE NAMED THREE OF THE FIVE METHODS AND IS FIXED HERE RATHER THAN DEFERRED. IT WENT STALE AT SPRINT 33, NOT AT THIS ONE, and leaving it would have failed the S14 standing item in the one document that argues for adoption -- three named methods beside a product goal that counts five. Prose only: the extraction harness reads MARKED FENCED BLOCKS, so no executed instruction moved.",
       "NO NINTH PUBLISHED NAME, stated because Sprint 33's ninth-name exercise makes a reader expect the sentence: `CompletionItem` was already re-exported, and this method needs no value. The rule for a ninth is not engaged at all.",
       "TWO COUNTS CORRECTED IN FILES THIS SPRINT TOUCHED, both found by grepping for the claims' words: test/cli.test.ts said `all seven cases` and `the eighth case` and gained a ninth; test/fixtures/all-methods.ts said `ALL SIX TESTS STAY GREEN` and named formatting as though it were the only awaited-once handler, when there are now four. NAMED, NOT RECOUNTED.",
       "`NONE WEAKENED` IS A COVERAGE CLAIM AND ONE SHARED INPUT WAS EDITED: paramsForAnyMethod gained a `label`, because `completionItem/resolve` takes a CompletionItem and the comment above it claims every table method accepts that object. NO expected value moved and NO matcher was loosened -- it is an addition to an INPUT, not to an assertion. Said explicitly because EDITED and WEAKENED read identically at Review.",
