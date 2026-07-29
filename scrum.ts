@@ -394,7 +394,88 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 33,
+    pbi_id: "PBI-38",
+    goal: "MEASURE THE THREE SIMPLIFICATIONS BEFORE THEY BECOME CRITERIA -- PBI-38's own criterion 3 -- and only then serve textDocument/diagnostic as ONE ENTRY in Sprint 32's request table rather than a fourth hand-written registration. THE MEASUREMENT RAN FIRST AND IT STOPPED THE INCREMENT, which is what ordering it first was for: the two unmeasured simplifications SURVIVE, a FOURTH reading falsified the DRIVE this PBI was planned around, and the capability contributor CANNOT BE WRITTEN AT ALL until the Product Owner rules interFileDependencies. No src/ behaviour shipped; one false `MEASURED` label was corrected where it stood.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "BORN GREEN, and declared so: the widening is checked by `tsc --noEmit` accepting `DocumentDiagnosticRequest.type` in a table slot while the three existing entries still compile. Its negative control is that the ENTRY-KEY test in test/methods-table.test.ts stays the thing that closes what the compiler cannot.",
+        implementation:
+          "THE PROPERTY: an entry may name a request type whose ERROR payload is the protocol's own, without tsudoi naming that payload anywhere. Today the three entry interfaces pin RequestType's error position to `void`, and diagnostic is the FIRST of the five whose protocol type does not. MethodMap gains nothing, so criterion 2 is met; what widens is TSUDOI'S OWN TABLE, and the widening removes a constraint NO ENTRY HAS EVER EXERCISED.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "UNPROBED AND OWED BEFORE THIS IS CALLED DONE: whether `connection.onRequest` still accepts the erased type once the error position is `unknown`. The router registers with `ErasedEntry.type`, so the widening reaches the registration call and not only the table literal.",
+        ],
+      },
+      {
+        test: "EXPECTED RED, and it is a compile error rather than an assertion: adding the method to MethodMap without a table entry fails TS2741 naming the missing key, which is the mapped type doing what PBI-37 built it to do.",
+        implementation:
+          "THE PROPERTY: a config author's diagnostic handler is reached, and its answer is the protocol's own report shape. Awaited-once -- MEASURED, not inherited -- with the result pinned to `DocumentDiagnosticReport` exactly, so an author MUST return a report and cannot return the `null` the protocol does not declare.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BLOCKED. This subtask cannot compile until the impediment below is answered: the mapped type forces a `capability` contributor, and `diagnosticProvider` cannot be written without BOTH booleans.",
+        ],
+      },
+      {
+        test: "EXPECTED RED over the wire, both runtimes: a client that asks textDocument/diagnostic of a config supplying the handler receives the handler's full report, and a config supplying none is not advertised diagnosticProvider at all.",
+        implementation:
+          "THE PROPERTY: advertisement and answering agree per method, which is the rule the table exists to make unforgettable. The affordability claim gets its second wire measurement -- a handler emits Diagnostic ranges from OFFSETS via document.positionAt, which did not exist before Sprint 28.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "test/fixtures/all-methods.ts gains a diagnostic handler. THE OBLIGATION PBI-38 RECORDED DOES NOT APPLY: that note warned a GENERATOR-DRIVEN method added without a handler there reddens the -32800 assertion, and the drive is measured awaited-once -- so the fixture's own doc block says all six stay green. A NOTE THAT WOULD HAVE SENT THE NEXT EXECUTOR HUNTING A RED THAT NEVER COMES.",
+        ],
+      },
+      {
+        test: "EXPECTED RED: the published surface names DiagnosticSeverity as a RUNTIME VALUE, defended the way CompletionItemKind's is -- delete the value re-export and the runtime-value assertion reddens alone.",
+        implementation:
+          "THE PROPERTY, and it is Sprint 31's standard rather than a fresh judgement: VALUES must be re-exported because a handler reads them at run time; TYPES only when an author must NAME one. MEASURED at vscode-languageserver-types 3.18.0 -- `DiagnosticSeverity` is a namespace of const members plus a type alias, the SAME construct as `CompletionItemKind`, so it is a value. `Diagnostic` itself is structurally constructible from a literal and stays off the surface until an example must name it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "`interFileDependencies` has NO CONFIG-AUTHOR SURFACE, and tsudoi must supply a value for a REQUIRED field the config cannot express an opinion about. None of PBI-38's four criteria says what value or on whose authority. The PBI's own note says so in its own words -- `a refinement question this PBI now owns rather than meets at implementation time` -- so this is refinement returning unfinished rather than execution meeting a surprise.",
+        impact:
+          'IT BLOCKS THE WHOLE INCREMENT, AND STRUCTURALLY RATHER THAN PROCEDURALLY. `requestEntries` is a mapped type over `Method`, so adding the method to MethodMap FORCES a table entry (TS2741, measured at Sprint 32 and recorded at the table), which forces a `capability` contributor, which forces `diagnosticProvider`, which forces BOTH booleans. THERE IS NO COMPILING PARTIAL INCREMENT. `workspaceDiagnostics` IS answered -- criterion 3\'s exclusion of workspace/diagnostic forces `false`, and the protocol confirms the switch is exactly this one: `WorkspaceDiagnosticRequest.capabilities` is `CM<"workspace.diagnostics", "diagnosticProvider.workspaceDiagnostics">`. Only `interFileDependencies` is unowned.',
+        request:
+          "Rule the value AND the authority. Three shapes are visible and the choice is the PO's: (a) tsudoi fixes it, with the reason at the contributor; (b) TsudoiConfig grows a surface so the config author answers it, which is a published-surface change; (c) the field is derived from something a config already states. WHAT MUST NOT HAPPEN IS (d): reading the protocol's own comment -- `common for most programming languages and typically uncommon for linters` -- as permission to pick `false`. That is deciding alone with extra steps, and the comment describes LANGUAGES, which is precisely the thing only a config author knows.",
+        status: "waiting_human",
+        notes: [
+          "CONSIDERED AND REFUSED, named so Review sees it was seen: `capability: () => {}` COMPILES and would have unblocked every other subtask. It silently withdraws criterion 4's `it advertises correctly` -- a served method advertised to nobody -- and criterion 4 is an ACCEPTED criterion, so weakening it is a scope decision and not a workaround.",
+          "NO WORKAROUND WAS ATTEMPTED IN THE TREE. The measurement subtasks that do not touch the entry were completed instead, which is why criterion 3 is met while the increment is not.",
+        ],
+      },
+    ],
+    decisions: [
+      "CRITERION 3 IS MET AND IT IS THE ONLY CRITERION THIS SPRINT COULD MEET. All three simplifications measured at vscode-languageserver-protocol 3.18.2 / vscode-languageserver-types 3.18.0, by this sprint's executor, against node_modules/vscode-languageserver-protocol/lib/common/protocol.diagnostic.d.ts read WHOLE in this session.",
+      "SIMPLIFICATION 1 SURVIVES -- full reports only, no resultId / unchanged-report caching. `FullDocumentDiagnosticReport` declares `resultId?: string` OPTIONAL, so omitting it type-checks; `UnchangedDocumentDiagnosticReport` declares `resultId: string` REQUIRED and its own comment says a server `can only return unchanged if result ids are provided`. So the two halves are ONE decision rather than two: no resultId means unchanged is unreachable BY THE PROTOCOL'S OWN CONSTRUCTION, not by tsudoi declining it. `previousResultId` arrives in the params and is simply ignored, which is conforming.",
+      'SIMPLIFICATION 2 SURVIVES -- workspace/diagnostic is a SEPARATE REQUEST, not a variant. `WorkspaceDiagnosticRequest` is its own `ProtocolRequestType` with its own method string, its own params carrying `previousResultIds`, and its own result. Excluding it costs exactly one thing: not adding a second table entry. AND THE EXCLUSION HAS A DECLARED SWITCH, which is the part that was reasoned and is now measured: its `capabilities` is `CM<"workspace.diagnostics", "diagnosticProvider.workspaceDiagnostics">`, so `workspaceDiagnostics: false` IS the exclusion rather than merely accompanying it.',
+      "SIMPLIFICATION 3 RE-VERIFIED RATHER THAN TRUSTED, per the standing re-measure rule, and Sprint 32's handed numbers HOLD: ServerCapabilities line 1106 is `diagnosticProvider?: DiagnosticOptions | DiagnosticRegistrationOptions`; DiagnosticOptions opens at protocol.diagnostic.d.ts:50 with `interFileDependencies: boolean` at :62 and `workspaceDiagnostics: boolean` at :66. NEITHER `true` NOR `{}` TYPE-CHECKS. FIRST HANDED COUNT IN THIS THREAD TO SURVIVE RE-MEASUREMENT, which is worth recording precisely because the rule has caught four wrong ones.",
+      "A FOURTH READING NOBODY ASKED FOR FALSIFIED THE DRIVE THIS SPRINT WAS PLANNED AROUND, AND THE PBI PREDICTED EXACTLY WHERE. The handed premise was `it declares partialResult, so it is generator-driven like completion -- the second use of that drive`. HALF OF IT IS TRUE: `DocumentDiagnosticParams` does declare `PartialResultParams`, so the drive's FIRST requirement holds. THE SECOND FAILS. MEASURED with a type-level probe: `DocumentDiagnosticRequest.partialResult` is `ProgressType<DocumentDiagnosticReportProgress>`, and `DocumentDiagnosticReportProgress` is `DocumentDiagnosticReport | DocumentDiagnosticReportPartialResult` -- A UNION OF TWO OBJECT TYPES, NOT AN ARRAY -- so `Chunk extends readonly unknown[]` resolves `false`. The generator drive concatenates chunks and therefore CANNOT DRIVE THIS METHOD. The PBI's own note flagged `DocumentDiagnosticReportProgress HAS NOT BEEN READ against that second requirement`; reading it is what produced this.",
+      "AND THE SEMANTIC HALF IS STRONGER THAN THE TYPE HALF: the protocol's own comment at `DocumentDiagnosticReportProgress` says the stream carries the FIRST report followed by n partial literals FOR RELATED DOCUMENTS -- not more diagnostics for the requested document, as completion's chunks are more items of one list. With `relatedDocuments` out of scope (nobody has asked for it and no criterion names it), THE PARTIAL CHANNEL WOULD CARRY NOTHING AT ALL. So awaited-once is not a fallback; it is the only shape that describes this method.",
+      "THE DRIVE REQUIREMENT PAID OUT BY EXCLUDING THE METHOD IT WAS WRITTEN FOR. It was written at Sprint 32 as `invisible until PBI-38 arrives`, expecting to be MET. It was not met, and it caught that before an entry existed to be wrong. A requirement whose first exercise is a refusal is the strongest evidence it was worth writing down.",
+      "PROBE C'S NEGATIVE CONTROL WAS RUN, not merely named: `const c: IsArray = true` fails TS2322 `Type 'true' is not assignable to type 'false'`, so the probe discriminates rather than compiling whatever it is handed.",
+      "A SECOND MEASUREMENT THE CRITERIA DID NOT PREDICT, AND IT IS THE TABLE'S FIRST STRUCTURAL DEBIT SINCE IT LANDED: `DocumentDiagnosticRequest.type` DOES NOT FIT ANY OF THE THREE ENTRY INTERFACES AS THEY STAND. All three pin RequestType's ERROR position to `void`, all three shipped methods declare `void` there, and diagnostic declares `DiagnosticServerCancellationData`. MEASURED: TS2322, `Type 'DiagnosticServerCancellationData' is not assignable to type 'void'` at position 2 of the phantom tuple. `unknown` in that position accepts it, MEASURED at 0 errors. CRITERION 2 STILL HOLDS -- MethodMap gains nothing and `unknown` names no method's payload -- but the criterion's `reversible at one token` described MethodMap and NOT the table, and the table is where the token has to move.",
+      "THE NO-HANDLER ANSWER IS A CONSEQUENCE OF SHIPPED POLICY, NOT A NEW SCOPE QUESTION, and it is recorded because diagnostic is the FIRST of the five where it is visible: the protocol declares this result NON-NULLABLE, unlike hover's `Hover | null` and formatting's `TextEdit[] | null` (MEASURED: `null` is not assignable to `DocumentDiagnosticReport`, TS2322). tsudoi registers every method whether or not a config answers it, so an unadvertised diagnostic request is answered `null`. Resolution: pin MethodMap's result to `DocumentDiagnosticReport` EXACTLY, so a config author must return a report; the only `null` on the wire is the no-handler case, which a conforming client never reaches because tsudoi never advertised the capability.",
+      "THE BY-CONSTRUCTION CANCELLATION EXPECTATION IS ANSWERED ANALYTICALLY AND NOT EMPIRICALLY, SAID PLAINLY RATHER THAN CLAIMED: the entry does not exist, so nothing was run. Sprint 32's expectation was that the router's prologue covers a new method's cancellation by construction, and test/methods-table.test.ts iterates `Object.keys(requestEntries)` -- so it would. THE DIVERGENCE PBI-40 OWNS DOES NOT REACH THIS METHOD ONCE THE DRIVE IS MEASURED AWAITED-ONCE: the -32800 answer comes from the epilogue the awaited-once drive always reaches, with or without a handler.",
+      "ONE PROSE CORRECTION SHIPPED, AND THE DISCRIMINATOR FOR SHIPPING IT ACROSS A STOP IS THAT IT DOES NOT DEPEND ON THE PO'S ANSWER: `DriveKind`'s doc block carried `MEASURED that two kinds cover all five ... textDocument/diagnostic declares partialResult, so it is generator-shaped like completion`. The headline stays TRUE -- two kinds still cover all five -- and the INFERENCE is false: declaring partialResult is necessary and not sufficient. A MEASURED-labelled false claim left in the tree across an escalation is exactly the Sprint-22 standing item, so it was corrected where it stood. `driveGenerator`'s forward-looking sentence was NOT rewritten to a prediction; it records the measurement instead.",
+      "GREPPED FOR THE CLAIM'S WORDS RATHER THAN FOR THE PLACES COMMENTS LIVE, per the Sprint-29 item, across src/, test/, examples/, README.md and scrum.ts: the falsified inference has TWO homes in code -- `DriveKind` and `driveGenerator` in src/methods.ts -- and NO test name, NO fixture doc block and NO example carries it. test/fixtures/all-methods.ts speaks of DRIVES generically and never of diagnostic, so it goes stale in NO respect.",
+      "PBI-38'S OWN TEXT NOW CONTAINS TWO STATEMENTS THIS SPRINT ANSWERED -- criterion 3's `DocumentDiagnosticReport's declaration has NOT been read` and the note's `DocumentDiagnosticReportProgress HAS NOT BEEN READ`. FLAGGED, NOT EDITED, on the Sprint-26 precedent: rewriting a PO-authored criterion mid-execution is not the executor's, and the PBI is going back for refinement anyway. Whoever refines it owns both sentences and the generator-drive note the measurement retired.",
+      "BASELINE RE-MEASURED RATHER THAN COPIED, per the standing re-measure rule, and the handed numbers HOLD at 2bfa2bf: `bun test` exit 0, 405 pass / 0 fail / 27 files; `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/ and no errors; `oxfmt --check .` exit 0 over 89 files; `tsc --noEmit` exit 0. Each run separately and UNPIPED with its exit read directly -- the first `bun test` was piped into `tail`, caught in the same turn and re-run before anything was recorded, which is the FIFTH occurrence of that class and is said out loud because the Sprint-15 entry rules this remedy DETECTION, NOT PREVENTION.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 30,
