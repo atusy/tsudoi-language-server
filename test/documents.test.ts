@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import type { DidOpenTextDocumentParams } from "vscode-languageserver-protocol";
+import type {
+  DidOpenTextDocumentParams,
+  Range,
+  TextDocumentContentChangeEvent,
+} from "vscode-languageserver-protocol";
 import { createDocumentStore } from "../src/documents.ts";
 
 const uri = "file:///workspace/a.txt";
@@ -8,6 +12,68 @@ const otherUri = "file:///workspace/b.txt";
 function opened(documentUri: string, text: string): DidOpenTextDocumentParams {
   return { textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text } };
 }
+
+/** One line's worth of range, `to` exclusive, as an editor sends it. */
+function on(line: number, from: number, to: number): Range {
+  return { start: { line, character: from }, end: { line, character: to } };
+}
+
+const startText = "hello world\nsecond line";
+
+/**
+ * Opens `startText` and sends one `didChange` per entry, so a SEQUENCE is
+ * measured rather than a single edit. The version rises with the index for the
+ * same reason a client's does -- it is the client's number, not a counter.
+ */
+function replayed(sequence: readonly TextDocumentContentChangeEvent[][]): string {
+  const store = createDocumentStore();
+  store.open(opened(uri, startText));
+  sequence.forEach((contentChanges, index) => {
+    store.change({ textDocument: { uri, version: index + 2 }, contentChanges });
+  });
+  const text = store.documents.get(uri)?.getText();
+  if (text === undefined) {
+    throw new Error("the replayed sequence left no document under the uri");
+  }
+  return text;
+}
+
+// THE SECOND NOTIFICATION CARRIES TWO CHANGES IN ONE ARRAY, ON ONE LINE, AND
+// THAT IS THE WHOLE DISCRIMINATION: LSP applies each entry to the document as
+// the entries before it left it, so `[0,5) -> hi` moves the text that `[3,8) ->
+// world` then addresses. A store keeping only the last entry -- which is what
+// full sync entitled it to do -- computes `[3,8)` against `hello world` and
+// gets something else entirely. With one change per notification that store
+// passes, and this test would record nothing.
+const ranged: TextDocumentContentChangeEvent[][] = [
+  [{ range: on(0, 6, 11), text: "there" }],
+  [
+    { range: on(0, 0, 5), text: "hi" },
+    { range: on(0, 3, 8), text: "world" },
+  ],
+  [{ range: on(1, 0, 6), text: "2nd" }],
+];
+
+// The same sequence as a client without incremental sync sends it: one whole
+// buffer per notification, each the state the ranged notification above leaves.
+const full: TextDocumentContentChangeEvent[][] = [
+  [{ text: "hello there\nsecond line" }],
+  [{ text: "hi world\nsecond line" }],
+  [{ text: "hi world\n2nd line" }],
+];
+
+const finalText = "hi world\n2nd line";
+
+test("a ranged edit sequence and the same sequence as full replacements agree byte for byte", () => {
+  const rangedText = replayed(ranged);
+
+  // Byte-identity is the claim, and it is asserted FIRST because it is the one
+  // this test is named for. The literal on the line after is what stops two
+  // arms that are equally wrong from satisfying it -- both empty, both
+  // truncated, both the opening text -- which byte-identity alone cannot see.
+  expect(rangedText).toBe(replayed(full));
+  expect(rangedText).toBe(finalText);
+});
 
 test("open registers a document whose uri, languageId, version and text all match", () => {
   const store = createDocumentStore();
@@ -42,9 +108,12 @@ test("successive changes leave getText() and version matching the last one sent"
     contentChanges: [{ text: "bye" }],
   });
 
-  // Exact equality, and the last text is SHORTER than the one before it: under
-  // full sync a store that concatenated instead of replacing would still
-  // contain "bye", so only shrinking distinguishes replace from append.
+  // Exact equality, and the last text is SHORTER than the one before it: a
+  // store that concatenated instead of replacing would still contain "bye", so
+  // only shrinking distinguishes replace from append. THESE CHANGES CARRY NO
+  // RANGE, which the protocol permits under either sync kind and which is what
+  // this test is about -- the ranged case is measured by the byte-identity test
+  // above.
   expect(store.documents.get(uri)?.getText()).toBe("bye");
   // The version is the client's, not a counter: two changes, but version 7.
   expect(store.documents.get(uri)?.version).toBe(7);

@@ -19,10 +19,10 @@ const otherUri = "file:///workspace/b.txt";
 // a UTF-16 unit count, so any layer that confuses the two truncates here and
 // nowhere in an ASCII test.
 const openedText = "こんにちは、世界。\n二行目も日本語です。";
-// SHORTER than the text it replaces -- under full sync the client resends the
-// whole buffer, so a store that appended instead of replacing would still hold
-// the opening text and pass any `toContain` assertion. Shrinking is what
-// distinguishes replace from append.
+// SHORTER than the text it replaces -- it is sent as a change with NO RANGE,
+// which the protocol permits whatever sync kind is advertised, so a store that
+// appended instead of replacing would still hold the opening text and pass any
+// `toContain` assertion. Shrinking is what distinguishes replace from append.
 const changedText = "さようなら。";
 
 function didOpen(documentUri: string, text: string): unknown {

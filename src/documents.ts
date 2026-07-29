@@ -51,26 +51,39 @@ export function createDocumentStore(): DocumentStoreHandle {
       if (current === undefined) {
         return;
       }
-      // Full sync: a conforming client sends exactly one change carrying the
-      // whole buffer, so the last one IS the document. Taking the last rather
-      // than the first is the defensive read of the same contract.
-      const text = params.contentChanges.at(-1)?.text;
-      if (text === undefined) {
-        return; // An empty contentChanges says nothing changed.
+      if (params.contentChanges.length === 0) {
+        // An empty contentChanges says nothing changed, and the early return is
+        // deliberate: MEASURED, `TextDocument.update(document, [], version)`
+        // RAISES THE VERSION with the text untouched, and a version that moved
+        // without an edit describes a buffer state no client ever sent.
+        return;
       }
-      // MUTATED IN PLACE, and this replaces a note that said the opposite:
-      // upstream's `update` documents its return as `the same document instance
-      // passed in as first parameter`, so the entry already in the map is the
-      // one that changes. `set` is kept because the return value is what the
-      // CONTRACT promises -- a future upstream that replaced instead of mutating
-      // would leave a stale entry here otherwise.
+      // HANDED STRAIGHT THROUGH, WHICH IS THE POINT OF THE STORE BEING
+      // UPSTREAM'S. Every entry is applied to the document as the entries
+      // BEFORE IT left it, so the ranges within one notification compose --
+      // arithmetic this file would otherwise have to write, and the wheel that
+      // adopting TextDocument exists to retire.
       //
-      // WHAT THAT COSTS, said out loud because nothing asserts it: a config
-      // author who held a document from an earlier `get()` used to hold a
-      // snapshot and now holds a handle that moves under them. Re-reading from
-      // the store at the top of a handler is the only thing that was ever safe,
-      // and it is now the only thing that works.
-      byUri.set(uri, TextDocument.update(current, [{ text }], version));
+      // READING ONLY THE LAST ENTRY IS WITHDRAWN, NOT OUTGROWN, and it is
+      // recorded because it was a deliberate decision rather than an accident:
+      // while tsudoi advertised Full, a conforming client sent exactly one
+      // change carrying the whole buffer, and taking the last was the defensive
+      // read of that contract. Under Incremental the same line SILENTLY DROPS
+      // EDITS, since an earlier entry moves the text a later one addresses.
+      //
+      // MUTATED IN PLACE: upstream's `update` documents its return as `the same
+      // document instance passed in as first parameter`, so the entry already in
+      // the map is the one that changes. `set` is kept because the return value
+      // is what the CONTRACT promises -- a future upstream that replaced instead
+      // of mutating would leave a stale entry here otherwise.
+      //
+      // WHAT THAT COSTS, and it is now ASSERTED rather than merely disclosed: a
+      // config author who held a document from an earlier `get()` used to hold a
+      // snapshot and now holds a handle that moves under them. That is pinned by
+      // `a reference taken before a change reflects that change afterwards` in
+      // test/documents.test.ts, and stated for authors at `DocumentStore` in
+      // src/types.ts.
+      byUri.set(uri, TextDocument.update(current, params.contentChanges, version));
     },
 
     close(params: DidCloseTextDocumentParams): void {
