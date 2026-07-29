@@ -118,28 +118,90 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-28",
+      id: "PBI-31",
       story: {
-        role: "tsudoi maintainer",
-        capability:
-          "serve on createConnection and take onInitialize, so the framework's remotes are live",
+        role: "config author",
+        capability: "call positionAt, offsetAt and getText(range) on the documents tsudoi hands me",
         benefit:
-          "dynamic registration and editor-facing messages become reachable rather than overridden into inertness",
+          "the offset arithmetic my handlers need comes from a package other people maintain, instead of being rewritten in every config",
       },
       acceptance_criteria: [
         {
           criterion:
-            "PARKED ON ABSENCE OF DEMAND, NOT ABSENCE OF INFORMATION. Three conditions reverse it, none requiring anyone to trust the PO's judgement.",
+            "getText(range?), positionAt, offsetAt and lineCount are reachable from a config, and uri/languageId/version/getText() behave as today.",
           verification:
-            "(a) A NAMED WANT -- window/showMessage to the editor user, or client.register for dynamic registration. Either makes this arm the cheapest route and this PBI ready almost immediately. THE STAKEHOLDER SAYING THEY MEANT `let's ride on it` AS AN INSTRUCTION RATHER THAN A PROPOSAL SATISFIES (a) BY ITSELF; the PO has undertaken to re-rule to refining on that alone. (b) UNMEASURED, and the PO would rather it were measured than argued: can client/workspace be taken while their REGISTERING members are narrowed away at the namespace type -- is a per-namespace Pick cheap? If yes the refusal weakens a lot. (c) The un-unref'd 3s interval, with a REAL pid, on both runtimes.",
+            "a fixture config that CALLS the new members and is DRIVEN by the suite (S5 standing item), with the existing documents.test.ts and sync.test.ts assertions unchanged and still green.",
+        },
+        {
+          criterion:
+            "Exactly ONE TextDocument is reachable from @atusy/tsudoi/types, and it is the upstream one.",
+          verification:
+            "THE TRAP, and the one thing the superset measurement CANNOT COVER: a strict-superset or assignability result cannot discriminate ADOPTED from SHADOWED -- tsudoi's own interface kept ALONGSIDE a re-export is structurally satisfied by the same value and compiles identically. The criterion is on IDENTITY, not assignability. S20: if two outcomes produce the same observation, the measurement records nothing.",
+        },
+        {
+          criterion:
+            "The breaking change to @atusy/tsudoi/types is stated, and README's document prose is updated.",
+          verification: "the installed-consumer type-check plus the README extraction harness.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE MAINTENANCE HEADLINE, and the PO concedes they MISFILED IT as `a capability PBI with its own value story` -- a misfiling that happened because they were sorting by capability without knowing it. This is the one place upstream can take over code tsudoi actually wrote.",
+        "WHY THE WIN IS LARGER THAN THE ~15 LINES IT RETIRES: getText() with NO ARGUMENTS pushes offset arithmetic downstream into configs tsudoi cannot see. That is wheel reinvention happening RIGHT NOW, uncontrolled, in code this project will never be able to fix. On the stakeholder's own reasoning -- others fix the bugs -- this is the strongest item on the table.",
+        "NEEDS vscode-languageserver-textdocument AND NO FRAMEWORK CONNECTION AT ALL, which is why it is not part of PBI-28: coupling the largest maintenance win to the riskiest change would make it hostage to a question it has nothing to do with. The second declared dependency does not contradict PBI-27 -- it is upstream's own package split, and vscode-languageserver does not re-export it, so single-source-of-truth for the PROTOCOL is untouched.",
+      ],
+    },
+    {
+      id: "PBI-32",
+      story: {
+        role: "editor user",
+        capability: "have my editor send only the part of the buffer that changed",
+        benefit: "typing in a large file does not put the whole buffer on stdio at every keystroke",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "The same edit sequence sent as RANGED changes and as FULL replacements produces byte-identical getText().",
+          verification:
+            "NEGATIVE CONTROL, load-bearing: a range applied at the WRONG OFFSET diverges. That is what discriminates `applied correctly` from merely `applied`, which a single-edit test cannot.",
+        },
+        {
+          criterion:
+            "src/server.ts:151 no longer claims full sync is chosen so that no position/offset machinery is needed.",
+          verification:
+            "a MEASURED prose contract this PBI falsifies, corrected in the same commit. It reads today: `Full, not Incremental: the client resends the whole buffer, so no position/offset machinery is needed` -- wheel-avoidance BY SCOPE REDUCTION, and adoption removes the reason for the reduction.",
+        },
+        {
+          criterion:
+            "A full-buffer change arriving under Incremental -- which the protocol permits -- is still handled.",
+          verification: "a test sending a change with no range while Incremental is advertised.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "S16 ITEM RULED HERE RATHER THAN LEFT TO THE EXECUTOR: src/documents.ts:49's deliberate `taking the last rather than the first is the defensive read of the same contract` decision DIES with full sync. Withdrawn deliberately by this PBI, not dropped in passing.",
+        "An editor-user cost paid TODAY for a maintenance reason, on a server whose flagship example is completion.",
+      ],
+    },
+    {
+      id: "PBI-30",
+      story: {
+        role: "editor user",
+        capability: "have the server exit when the editor that spawned it dies",
+        benefit: "a crashed editor does not leave a language server running forever",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "When the client named a numeric processId at initialize and that process is gone, the server exits.",
+          verification:
+            "test/helpers/lsp.ts:575 sends processId: null, so the suite is STRUCTURALLY BLIND today -- a test that does not send a real pid can observe neither the defect nor its fix. Forcing the suite off processId: null IS part of the deliverable.",
         },
       ],
       status: "draft",
       notes: [
-        "PARKED ON PRICE, NOT PRINCIPLE, and NOT on the PO's original objections -- both were REFUTED by measurement (fillServerCapabilities adds nothing at empty and rich client capabilities; onShutdown preserves -32600 AND reaches exit-0, because the flag is set before the handler). Full evidence: GitHub issue #1.",
-        "D1 RULED, not a close call: KEEP tsudoi's exit entry; do NOT take the framework's exit path. The always arm is the sole carve-out whose violation is A HUNG PROCESS; collapsing NotificationGate to one value turns a REQUIRED DECISION into REQUIRED BOILERPLATE; and notifications.test.ts:260 would become a third probe measuring nothing, in the same change that found the first two. CONSEQUENCE: onShutdown then buys nothing, so the arm reduces to createConnection + onInitialize. D2 is moot under D1.",
-        "THE CHAIN THAT STILL REFUSES IT: after D1 the whole prize is that remote.initialize makes the remotes live -> the ones worth having (client, workspace, notebooks, languages) REGISTER NOTIFICATION HANDLERS, reopening the hole three sprints closed -> foreclosing them leaves console/window/telemetry, send-only -> NOTHING IN TSUDOI WANTS THAT TODAY. Price: a Pick over 58 members, two boundary probes rebuilt, Features.console as a mixin to restore a logger argument that already exists, an un-unref'd 3s interval the suite is blind to, and a new capability test.",
-        "D3 RULED YES and WANTED EVEN IF THIS ARM NEVER PROCEEDS: the wire InitializeResult gets an assertion of the exact capability object for the hover-only and neither cases. It pins a design decision currently defended by nothing, and its violation is a DEPENDENCY BUMP that no comment in any tsudoi file could catch.",
+        "STAYS INDEPENDENT AND GOES BEFORE PBI-28, argued on maintenance and NOT surviving as a reason to adopt: the maintenance axis asks who maintains the code that is ALREADY THERE, and here THERE IS NO CODE -- it is ~10 lines not yet written. The choice is ten lines tsudoi owns and tests, versus ten lines arriving bundled with a 58-member Pick, a mixin, and an un-unref'd 3s interval the suite cannot see. Taking a wheel you have not built as a rider on your largest change is not the same as retiring one you maintain.",
+        "THE CONSTRUCTIVE HALF: building it first RETIRES PBI-28's blocker (c). It forces the suite off processId: null and gives it assertions about a real pid, so the framework's watchDog can later be measured AGAINST A KNOWN BASELINE instead of arriving invisible -- and if PBI-28 proceeds, tsudoi's version is deleted in favour of upstream's, which is the maintenance axis working exactly as the stakeholder describes it.",
       ],
     },
     {
@@ -163,23 +225,29 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-30",
+      id: "PBI-28",
       story: {
-        role: "editor user",
-        capability: "have the server exit when the editor that spawned it dies",
-        benefit: "a crashed editor does not leave a language server running forever",
+        role: "tsudoi maintainer",
+        capability:
+          "serve on createConnection and take onInitialize, so the framework's remotes are live",
+        benefit:
+          "dynamic registration and editor-facing messages become reachable rather than overridden into inertness",
       },
       acceptance_criteria: [
         {
           criterion:
-            "When the client named a numeric processId at initialize and that process is gone, the server exits.",
+            "PARKED ON ABSENCE OF DEMAND, NOT ABSENCE OF INFORMATION. Three conditions reverse it, none requiring anyone to trust the PO's judgement.",
           verification:
-            "NOT YET DESIGNED. test/helpers/lsp.ts:575 sends processId: null, so the suite is STRUCTURALLY BLIND today -- a test that does not send a real pid can observe neither the defect nor its fix.",
+            "(a) A NAMED WANT -- window/showMessage to the editor user, or client.register for dynamic registration. Either makes this arm the cheapest route and this PBI ready almost immediately. THE STAKEHOLDER SAYING THEY MEANT `let's ride on it` AS AN INSTRUCTION RATHER THAN A PROPOSAL SATISFIES (a) BY ITSELF; the PO has undertaken to re-rule to refining on that alone. (b) UNMEASURED, and the PO would rather it were measured than argued: can client/workspace be taken while their REGISTERING members are narrowed away at the namespace type -- is a per-namespace Pick cheap? If yes the refusal weakens a lot. (c) The un-unref'd 3s interval, with a REAL pid, on both runtimes.",
         },
       ],
-      status: "draft",
+      status: "refining",
       notes: [
-        "THE ONLY EDITOR-USER-FACING DEFECT THIS WHOLE EXERCISE SURFACED, and the PO judges it may be worth more to the stakeholder than the framework question. The framework fixes it free via watchDog, but it is obtainable in a few lines WITHOUT the framework -- an argument for a PBI, not for adoption.",
+        "MOVED TO refining BECAUSE THE PO KEPT THEIR WORD, not because the maintenance case carried it. They undertook to re-rule on reversal condition (a) -- the stakeholder reading `let's ride on it` as an instruction -- and the stakeholder did, naming MAINTAINABILITY: a popular framework has fewer bugs and others fix them, and it reduces wheel reinvention.",
+        "RE-EVALUATED ON THE MAINTENANCE AXIS, AND createConnection SPECIFICALLY IS WEAK. stderrLogger (6 lines) is not retired -- it is REPLACED BY MORE MACHINERY, a Features.console mixin over a third-party base, to reach identical behaviour. lifecycle.exitCode() is kept under D1, so nothing is retired. Capability assembly was MEASURED TO SURVIVE INTACT, and surviving is the opposite of being retired -- the measurement that refuted the PO's objection also removed this from the maintenance ledger.",
+        "THE ~40 TYPED REGISTRATIONS ARE REFUTED ON THE STAKEHOLDER'S OWN AXIS, not the PO's: onHover(h) replaces onRequest(HoverRequest.type, h), which is ONE TOKEN PER METHOD. What tsudoi actually hand-writes per method is the rejection check, the requestContext cancellation bridge, answerUnlessCancelled, the failure reporting and the streaming loop -- and the onX sugar touches NONE of it. tsudoi's per-method cost is not registration; it is the contract around it. There is no wheel here for upstream to take over.",
+        "ONE QUESTION DECIDES ready VERSUS WITHDRAWN: reversal condition (b) -- does a per-namespace Pick keep the gate AND the namespaces? MEASURED BEFORE PLANNING, not in-sprint, on the S13 rule: a plan carries properties, and where it must name a mechanism it says whether that mechanism was measured to produce the property. Measuring (b) inside the sprint makes the sprint's shape unknown at Planning. Once PBI-27 lands the dependency it is an afternoon. If (b) fails, the PO brings this back as a PRICED REFUSAL rather than letting it ship as an unargued yes.",
+        "PROVISIONAL AC, firming once (b) is measured. AC1: the handle createGatedConnection returns has NO member, AT ANY DEPTH INCLUDING NAMESPACE MEMBERS, through which a notification handler can be installed; the boundary is a Pick derived from keyof Connection read off the installed .d.ts. The two probes that currently go green measuring nothing are REBUILT FIRST, demonstrated by reddening them against Connection before anything else lands. Negative control: connection.workspace.onDidChangeWorkspaceFolders reachable from the handle reddens a named assertion. AC2: every invariant keeps a named assertion that still reddens, none deleted or weakened (S16). AC3: D1 holds -- the exit entry stays and NotificationGate keeps two representable values. AC4: the wire InitializeResult is asserted for the hover-only and neither cases (D3). AC5: the interval is measured WITH A REAL PID on both runtimes, which is free if PBI-30 ships first.",
       ],
     },
   ],
