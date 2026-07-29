@@ -335,6 +335,140 @@ export type RequestOnlyConnection = Omit<
  * measured `$/setTrace` inert and endorsed that silence deliberately -- recorded
  * at the logger in src/server.ts. Each foreclosure is reversible at the one
  * token it cost, so both capabilities are DEFERRED rather than surrendered.
+ *
+ * ============================================================================
+ *
+ * WHY TSUDOI DOES NOT SERVE ON `vscode-languageserver`'s `Connection`, AND IT IS
+ * RECORDED HERE BECAUSE THIS IS THE LINE THE VIOLATING EDIT WOULD CHANGE: the
+ * framework's `createConnection` would replace the `createProtocolConnection`
+ * call below, and that one substitution is the whole of the adoption. GitHub
+ * issue #1 holds the investigation; what follows is the DECISION, IN BOTH
+ * COLUMNS, because a record that only carries the case against is an advocacy
+ * document and not a decision record.
+ *
+ * HOW TO RE-RUN IT, and the first clause is what a reader would otherwise trip
+ * over: `vscode-languageserver` IS NOT A DEPENDENCY OF THIS REPOSITORY, so
+ * grepping node_modules for `Connection` finds nothing and proves nothing.
+ * Install it OUT OF TREE and enumerate against that. MEASURED AT
+ * vscode-languageserver 10.1.0, which pins vscode-languageserver-protocol
+ * 3.18.2, with the TypeScript 5.9.3 compiler API's `getPropertiesOfType` rather
+ * than by reading a list. ONE THROUGH FOUR BELOW WERE RE-RUN THAT WAY WHEN THIS
+ * RECORD WAS WRITTEN. FIVE AND SIX WERE NOT -- they need a spawned server and a
+ * live wire where these need only a type-check -- and they carry issue #1's
+ * measurement, with the paths that make them re-runnable rather than repeated.
+ *
+ * ONE. `Connection` HAS 58 MEMBERS AND `onUnhandledNotification` AND `trace` ARE
+ * NOT AMONG THEM (`Connection extends _Connection` at
+ * lib/common/server.d.ts:767, the body at :359-766). Rebasing the `Omit` above
+ * onto it would therefore hand back a type UNCHANGED IN TWO OF ITS FOUR KEYS --
+ * the silent no-op this file already documents as a misspelling hazard, arriving
+ * STRUCTURALLY rather than by typo. And it would arrive unseen: the two probes
+ * in test/notifications.test.ts that name those members assert
+ * `Property 'X' does not exist`, and that diagnostic STILL APPEARS under
+ * `Connection` -- not because the `Omit` removed anything but because the member
+ * was never there. TWO OF THE FOUR PROBES DEFENDING THIS BOUNDARY WOULD GO GREEN
+ * WHILE MEASURING NOTHING. TypeScript even offers `Did you mean 'tracer'?`, and
+ * `tracer` IS on the handle.
+ *
+ * TWO. NINE UNGATED NOTIFICATION REGISTRARS WOULD SURVIVE THAT `Omit` AT TOP
+ * LEVEL, named rather than counted: `onInitialized`, `onDidOpenTextDocument`,
+ * `onDidChangeTextDocument`, `onDidCloseTextDocument`, `onDidSaveTextDocument`,
+ * `onWillSaveTextDocument`, `onDidChangeConfiguration`, `onDidChangeWatchedFiles`
+ * and `onExit` -- each taking a `NotificationHandler` at
+ * lib/common/server.d.ts:470-572, none consulting this module's gate. AND THE
+ * NAMESPACES CARRY MORE: `workspace` has `onDidCreateFiles`, `onDidRenameFiles`
+ * and `onDidDeleteFiles` (lib/common/fileOperations.d.ts:9-11) plus the
+ * `onDidChangeWorkspaceFolders` event (lib/common/workspaceFolder.d.ts:5), and
+ * `notebooks.synchronization` has four more (lib/common/notebook.d.ts:10).
+ * `languages` carries registrars too but they are REQUESTS; `client`, `window`,
+ * `console`, `telemetry` and `tracer` carry none. REACHING ANY OF THEM TAKES NO
+ * DELIBERATE ACT, which is the very criterion this module uses to decide what to
+ * foreclose.
+ *
+ * ISSUE #1'S ELEVEN IS CORRECTED HERE RATHER THAN REPEATED, since this is the
+ * durable copy: that list named `onNotification`, which the `Omit` DOES remove
+ * (lib/common/server.d.ts:411), and `onShutdown`, which takes a `RequestHandler0`
+ * (:476) and registers a REQUEST. `onProgress` (:451) is likewise removed by the
+ * `Omit`. Nine survive, and each of the nine is named above so that the sentence
+ * cannot be falsified by the list growing.
+ *
+ * THREE. KEEPING THE GATE MEANS NOT USING THE FRAMEWORK'S LIFECYCLE HOOKS, AND
+ * THAT TURNS OFF MOST OF WHAT THE FRAMEWORK IS FOR. src/server.ts must override
+ * `InitializeRequest` -- the -32002 refusal lives there -- and vscode-jsonrpc's
+ * `onRequest` REPLACES rather than chains. Overriding it skips
+ * `watchDog.initialize(params)`, the `remote.initialize(capabilities)` loop and
+ * the `fillServerCapabilities` loop (lib/common/server.js:724-775), so `console`,
+ * `window`, `client` and `workspace` never receive the client's capabilities at
+ * all. THE TRADE IS NOT PARTIAL: keep the gate and the framework goes largely
+ * inert; take its forty-odd typed registrations and the ungated registrars come
+ * with them.
+ *
+ * FOUR. `createConnection` TAKES NO LOGGER ARGUMENT. Every overload's trailing
+ * parameter is `options?: ConnectionStrategy | ConnectionOptions`
+ * (lib/node/main.d.ts:19, 28, 36, 43, 52, 60); the framework constructs a
+ * `RemoteConsoleImpl` and passes THAT as the connection's logger
+ * (lib/common/server.js:554), and its `error`/`warn`/`info`/`log` send
+ * `window/logMessage` (lib/common/server.js:136-149). A notification handler's
+ * failure would leave as a FRAMED PROTOCOL MESSAGE rather than on stderr, which
+ * falsifies the first sentence of the logger block in src/server.ts.
+ * `Features.console` restores it -- measured in issue #1, no cast, strict
+ * type-check at 0 -- BUT IT MAKES STDOUT PURITY OPT-IN: omit the `features`
+ * argument and the failure goes quiet AND onto the wire. THAT IS THE SAME SHAPE
+ * AS AN UNGATED REGISTRAR, safe behaviour resting on memory rather than on
+ * structure, which is why the remedy counts against rather than cancelling out.
+ *
+ * AND NOW THE OTHER COLUMN, WHICH IS NOT OPTIONAL: two rulings that stood
+ * AGAINST adoption were measured FALSE, and they are recorded at the same weight
+ * as the four above.
+ *
+ * FIVE. `fillServerCapabilities` ADDS NOTHING. On a bare
+ * `createConnection(reader, writer)` -- no `Features`, no `ProposedFeatures` --
+ * the `InitializeResult` on the wire was byte-identical to what the handler
+ * returned, measured at EMPTY client capabilities AND at rich ones
+ * (workspace/fileOperations, notebooks, semanticTokens, diagnostic, inlayHint,
+ * callHierarchy, foldingRange, workspaceFolders); the rich arm is load-bearing
+ * because `remote.initialize(capabilities)` runs BEFORE the fill loop. STRUCTURAL
+ * RATHER THAN SAMPLED: every base remote's `fillServerCapabilities` is empty, the
+ * single override in lib/common (workspaceFolder.js:28-31) only READS client
+ * capabilities to set an internal flag and writes nothing, and `textDocumentSync`
+ * is filled only when it is undefined/null or its `.change` is not numeric --
+ * tsudoi clears both guards. SO src/server.ts's PER-METHOD CAPABILITY DERIVATION
+ * WOULD SURVIVE ADOPTION INTACT. RESERVATION, self-reported at the measurement:
+ * that is a property of 10.1.0's default remote set and NOT an invariant, so a
+ * later release adding a remote that WRITES would pass unnoticed.
+ *
+ * SIX. `onShutdown` COEXISTS WITH THE -32600 REFUSAL. `watchDog.shutdownReceived
+ * = true` is the FIRST STATEMENT of the framework's shutdown handler and runs
+ * before the handler does (lib/common/server.js:767-775), so a handler that
+ * throws cannot break the flag. Measured with tsudoi's own refusal logic on that
+ * hook and no `exit` registered: initialize/shutdown/exit exits 0; a SECOND
+ * shutdown is answered -32600 and exit is still 0; a hover after shutdown is
+ * answered -32600 and exit is still 0. The earlier ruling that the framework's
+ * exit path is unreachable behind tsudoi's refusal is FALSE.
+ *
+ * WHAT THE OTHER COLUMN COSTS, so it is not read as an unpriced win. Taking that
+ * exit path requires DELETING the `exit` entry from the gated table, and that
+ * entry is the only inhabitant of the `always` arm -- what follows from that is
+ * written at the test which asserts it, in test/notifications.test.ts, rather
+ * than here. Two further findings arrived with the same measurement and are
+ * FILED RATHER THAN SETTLED: shutdown-before-initialize-then-exit is 1 today and
+ * 0 through the framework, which no assertion in this suite catches; and
+ * `watchDog.initialize(params)` starts an un-`unref`ed three-second interval when
+ * `processId` is numeric, which the suite cannot observe because
+ * test/helpers/lsp.ts sends `processId: null`.
+ *
+ * THE RULING, AND IT IS A CHOICE RATHER THAN A DEDUCTION: the gate is kept, so
+ * the framework's server layer is not taken. Five and six say the price is real
+ * -- capability derivation and the exit path would both have worked, and neither
+ * is the blocker it was recorded as. What decides it is one and two: adoption
+ * puts registrars nobody had to reach for back onto the handle THIS FUNCTION
+ * HANDS OUT, and converts two of the four probes defending that handle into
+ * assertions that pass while measuring nothing. REVERSE IT ON A MEASUREMENT AND
+ * NOT ON A PREFERENCE -- if the framework grows a hook the gate can sit in, or if
+ * the boundary here becomes a `Pick`, which forecloses by what is LISTED rather
+ * than by what the base type happens to contain and so answers one and two
+ * together. THREE AND FOUR WOULD SURVIVE A `Pick` UNCHANGED, so a `Pick` alone
+ * does not reopen this.
  */
 export function createGatedConnection<P extends readonly unknown[]>(
   reader: MessageReader,

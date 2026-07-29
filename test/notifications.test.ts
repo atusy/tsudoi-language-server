@@ -194,6 +194,109 @@ test("the same scan finds the one call the router makes", () => {
   expect(gateCalls(readSource("notifications.ts"))).toHaveLength(1);
 });
 
+/** The anchor the why-not record is required to sit against. */
+const RECORD_ANCHOR = "export function createGatedConnection";
+
+/**
+ * The doc block IMMEDIATELY PRECEDING `createGatedConnection`, or a throw.
+ *
+ * THE OPPOSITE OF `withoutComments` ABOVE, and the two are not in tension: that
+ * one exists because a gate call QUOTED in prose is not a call, this one because
+ * a decision recorded ANYWHERE ELSE IN THE FILE is not recorded at the site the
+ * violating edit would be made. Each reads the half the other discards.
+ *
+ * `IMMEDIATELY` IS ENFORCED RATHER THAN ASSUMED: only whitespace may sit between
+ * the block's closing delimiter and the anchor. Without that check, a record that drifted
+ * above some later-inserted declaration would still be found, and the assertion
+ * below would keep passing for a file where the reader who needs it no longer
+ * sees it.
+ */
+function recordBlockOf(source: string): string {
+  const at = source.indexOf(RECORD_ANCHOR);
+  if (at === -1) {
+    throw new Error(`src/notifications.ts: no \`${RECORD_ANCHOR}\` to read a record from`);
+  }
+  const before = source.slice(0, at);
+  const closed = before.lastIndexOf("*/");
+  const opened = before.lastIndexOf("/**");
+  if (opened === -1 || closed < opened) {
+    throw new Error(`src/notifications.ts: no doc block precedes \`${RECORD_ANCHOR}\``);
+  }
+  if (before.slice(closed + 2).trim() !== "") {
+    throw new Error(`src/notifications.ts: the doc block does not immediately precede the anchor`);
+  }
+  return before.slice(opened, closed + 2);
+}
+
+/**
+ * What the record must NAME, each token paired with the clause it defends.
+ *
+ * THE VERSION IS ASSERTED ADJACENT TO ITS PACKAGE, not as a second independent
+ * substring, and that is S8 as amended at Sprint 24 taken literally: a path
+ * WITHOUT a version misleads, because it reads as re-checkable and points at the
+ * wrong lines after a bump. `vscode-languageserver` alone would also be matched
+ * by the `vscode-languageserver-protocol 3.18.2` sentences ALREADY in that file,
+ * so the bare name would assert nothing this file does not already satisfy.
+ *
+ * THE LAST TWO ARE THE FOR-DIRECTION and they are why this test defends the
+ * criterion rather than only its re-runnability: A RECORD THAT ONLY CARRIES THE
+ * CASE AGAINST IS AN ADVOCACY DOCUMENT, NOT A DECISION RECORD. Delete either
+ * finding and this reddens naming it.
+ */
+const RECORD_TOKENS: readonly { readonly defends: string; readonly token: RegExp }[] = [
+  {
+    defends: "the package WITH the version it was measured at",
+    token: /vscode-languageserver 10\.1\.0/,
+  },
+  { defends: "a path inside that package", token: /lib\/common\/server\.d\.ts/ },
+  {
+    defends: "the FOR direction: capability filling adds nothing",
+    token: /fillServerCapabilities/,
+  },
+  { defends: "the FOR direction: the shutdown hook coexists with -32600", token: /onShutdown/ },
+];
+
+// CRITERION 1. The assertion is a LIST OF WHAT IS MISSING rather than four
+// independent `toContain`s, so the failure NAMES THE CLAUSE that went rather
+// than only saying a substring was absent -- this project has twice caught a
+// control firing for a cause it could not name.
+test("the record at createGatedConnection names what would let it be re-run, in both directions", () => {
+  const block = recordBlockOf(readSource("notifications.ts"));
+
+  expect(
+    RECORD_TOKENS.filter(({ token }) => token.test(block) === false).map(({ defends }) => defends),
+  ).toEqual([]);
+});
+
+// THE VACUITY CONTROL, permanent rather than a one-time perturbation: an
+// extractor that returned "" for a file it could not parse would make every
+// token assertion above VACUOUSLY FALSE -- or, had it returned the whole source,
+// vacuously true against tokens sitting anywhere at all. The probe is THIS
+// source with the anchor renamed, not a hand-written string, because that is how
+// the mechanism actually breaks: someone renames the function.
+test("the same extractor throws when the anchor is gone, rather than reporting nothing found", () => {
+  const renamed = readSource("notifications.ts").replace(
+    RECORD_ANCHOR,
+    "export function createGated",
+  );
+
+  expect(() => recordBlockOf(renamed)).toThrow(`no \`${RECORD_ANCHOR}\``);
+});
+
+// THE SITE CONTROL, and it owns its own test because it is a DIFFERENT hazard
+// from the one above: the anchor is present, a doc block is present, and the two
+// have come apart. That is the failure the criterion's own words are about --
+// `at the line that would change it` -- and the test above cannot observe it,
+// since renaming the anchor flips at the first check and stops there.
+test("the same extractor throws when the record no longer sits against the anchor", () => {
+  const detached = readSource("notifications.ts").replace(
+    RECORD_ANCHOR,
+    `type Detached = never;\n${RECORD_ANCHOR}`,
+  );
+
+  expect(() => recordBlockOf(detached)).toThrow("does not immediately precede");
+});
+
 /** A probe project's source, with `entry` spliced in as the only entry. */
 function entryProbe(entry: string): Record<string, string> {
   return {
