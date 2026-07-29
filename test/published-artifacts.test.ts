@@ -240,6 +240,141 @@ test("the ninth name the probe asks for is one the dependency really exports", a
   expect(result.code).toBe(0);
 });
 
+/**
+ * A PROBE THAT OBSERVES DECLARATION IDENTITY RATHER THAN SHAPE, which is the
+ * one thing an assignability check cannot do.
+ *
+ * It AUGMENTS upstream's own `TextDocument` interface with a marker member and
+ * then reads that member off whatever `from` calls `TextDocument`. Declaration
+ * merging reaches ONE declaration, so the member is visible through the subject
+ * only if the subject IS that declaration. A structural twin -- however exact --
+ * never sees it.
+ *
+ * THE FIRST IMPORT IS LOAD-BEARING AND IS NOT DECORATION. A module augmentation
+ * whose target is not already in the program fails with TS2664 `module cannot be
+ * found` INSTEAD OF the marker diagnostic -- measured, on a subject that did not
+ * import the package -- and that failure looks like a missing dependency rather
+ * than like a wrong type. Anchoring the module in the program leaves TS2339 on
+ * the marker as the only way this can fail.
+ *
+ * WHAT IT WOULD ALSO REDDEN FOR, disclosed because it is a different fault: a
+ * tree holding TWO copies of vscode-languageserver-textdocument, where the
+ * augmentation lands on one and the subject resolves the other. The consumers
+ * here install a single tarball into an empty project, so there is one copy.
+ */
+function identityProbe(from: string): string {
+  return [
+    'import type { TextDocument as Anchored } from "vscode-languageserver-textdocument";',
+    `import type { TextDocument } from "${from}";`,
+    'declare module "vscode-languageserver-textdocument" {',
+    "  interface TextDocument {",
+    '    readonly __tsudoiUpstreamMarker: "upstream";',
+    "  }",
+    "}",
+    "export type Anchor = Anchored;",
+    "declare const document: TextDocument;",
+    'export const marker: "upstream" = document.__tsudoiUpstreamMarker;',
+  ].join("\n");
+}
+
+/** The weaker instrument, for showing what it fails to see. */
+function assignabilityProbe(from: string): string {
+  return [
+    `import type { TextDocument as Subject } from "${from}";`,
+    'import type { TextDocument as Upstream } from "vscode-languageserver-textdocument";',
+    "declare const subject: Subject;",
+    "declare const upstream: Upstream;",
+    "export const asUpstream: Upstream = subject;",
+    "export const asSubject: Subject = upstream;",
+  ].join("\n");
+}
+
+/**
+ * TSUDOI'S OWN INTERFACE, WIDENED BY HAND to everything PBI-31 promises -- the
+ * increment someone would ship if they read criterion 1 and stopped there.
+ */
+const handWrittenSuperset = [
+  'import type { Position, Range } from "vscode-languageserver-textdocument";',
+  "export interface TextDocument {",
+  "  readonly uri: string;",
+  "  readonly languageId: string;",
+  "  readonly version: number;",
+  "  getText(range?: Range): string;",
+  "  positionAt(offset: number): Position;",
+  "  offsetAt(position: Position): number;",
+  "  readonly lineCount: number;",
+  "}",
+].join("\n");
+
+/**
+ * THE OTHER WRONG ANSWER, AND THE ONE NOBODY WOULD SUSPECT: it is REAL, it is
+ * one line, it adds NO dependency, and it is deprecated.
+ * `vscode-languageserver-protocol` re-exports `vscode-languageserver-types`
+ * WHOLE, and that package still carries a `TextDocument` whose own doc comment
+ * reads `@deprecated Use the text document from the new
+ * vscode-languageserver-textdocument package` -- with the same seven members and
+ * no `update`. src/types.ts already imports from that specifier, so this is the
+ * edit a future tidy-up would make while believing it removed a dependency.
+ */
+const deprecatedProtocolTwin =
+  'export type { TextDocument } from "vscode-languageserver-protocol";';
+
+/**
+ * CRITERION 2, and it is IDENTITY rather than assignability for a reason the
+ * test below MEASURES rather than states.
+ */
+test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
+  const result = await consumer.typeCheck({ "identity.ts": identityProbe("@atusy/tsudoi/types") });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * WHAT MAKES THE TEST ABOVE WORTH RUNNING, and it FAILS FIRST if the instrument
+ * is ever weakened to a shape check -- which is the whole hazard, since a shape
+ * check reads exactly like coverage and sees none of this.
+ *
+ * Both subjects satisfy every structural promise PBI-31 makes. Both would pass
+ * a `getText(range) is callable` test, an `assignable to upstream` test, and a
+ * strict-superset comparison. Neither delivers the maintenance the PBI exists
+ * for: one is code this project would then own forever, the other is a type its
+ * own authors deprecated in favour of the package tsudoi now depends on.
+ *
+ * Its own test rather than assertions appended to the one above, because
+ * `tsudoi adopted upstream` and `this probe can tell adoption from resemblance`
+ * are different hazards and must not share a first failure.
+ */
+test("the identity probe reddens on both near-misses where mutual assignability sees nothing", async () => {
+  const clonedIdentity = await consumer.typeCheck({
+    "clone.ts": handWrittenSuperset,
+    "clone-identity.ts": identityProbe("./clone.ts"),
+  });
+  expect(clonedIdentity.code).not.toBe(0);
+  expect(clonedIdentity.output).toContain("__tsudoiUpstreamMarker");
+
+  const clonedAssignability = await consumer.typeCheck({
+    "clone.ts": handWrittenSuperset,
+    "clone-assignability.ts": assignabilityProbe("./clone.ts"),
+  });
+  expect(clonedAssignability.output).toBe("");
+  expect(clonedAssignability.code).toBe(0);
+
+  const deprecatedIdentity = await consumer.typeCheck({
+    "deprecated.ts": deprecatedProtocolTwin,
+    "deprecated-identity.ts": identityProbe("./deprecated.ts"),
+  });
+  expect(deprecatedIdentity.code).not.toBe(0);
+  expect(deprecatedIdentity.output).toContain("__tsudoiUpstreamMarker");
+
+  const deprecatedAssignability = await consumer.typeCheck({
+    "deprecated.ts": deprecatedProtocolTwin,
+    "deprecated-assignability.ts": assignabilityProbe("./deprecated.ts"),
+  });
+  expect(deprecatedAssignability.output).toBe("");
+  expect(deprecatedAssignability.code).toBe(0);
+});
+
 /*
  * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and this
  * comment is here because a test asserting it was DELETED at Sprint 15's

@@ -15,6 +15,10 @@ import type {
   HoverParams,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
+// IMPORTED AS WELL AS RE-EXPORTED, and the duplication is the language's rather
+// than a choice: `export ... from` publishes a name without binding it here, and
+// DocumentStore below needs to NAME it.
+import type { TextDocument } from "vscode-languageserver-textdocument";
 
 /**
  * THE PROTOCOL NAMES A CONFIG AUTHOR GETS FROM HERE, so that standing up a
@@ -95,13 +99,74 @@ export type {
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 
-export interface TextDocument {
-  readonly uri: string;
-  readonly languageId: string;
-  readonly version: number;
-
-  getText(): string;
-}
+/**
+ * THE DOCUMENT A CONFIG AUTHOR RECEIVES, and it is UPSTREAM'S, not a shape of
+ * this project's own. `getText(range)`, `positionAt`, `offsetAt` and `lineCount`
+ * come with it, so the offset arithmetic a positional handler needs is written
+ * and fixed by other people.
+ *
+ * NOT ONE OF THE EIGHT ABOVE, AND DELIBERATELY NOT IN `publicProtocolNames`.
+ * That list's own doc block in test/helpers/published-names.ts says it holds THE
+ * PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS; this name comes from a
+ * DIFFERENT PACKAGE, so adding it there would make that sentence false. The
+ * consequence is that the two probes defending the eight defend NOTHING about
+ * this name -- so it has its OWN probe in test/published-artifacts.test.ts,
+ * rather than riding on theirs.
+ *
+ * THE SPECIFIER IS THE POINT, AND THE OBVIOUS SIMPLIFICATION IS THE BUG.
+ * `vscode-languageserver-protocol` re-exports `vscode-languageserver-types`
+ * whole, and that package STILL CARRIES A `TextDocument` -- same seven members,
+ * no `update`, and its own doc comment reads `@deprecated Use the text document
+ * from the new vscode-languageserver-textdocument package`. Re-exporting it from
+ * the specifier this file already imports would be ONE LINE, would add no
+ * dependency, would compile, and would satisfy every structural check. It is the
+ * wrong type. What stops it is not this paragraph but the identity probe, which
+ * reddens on that exact substitution -- MEASURED, naming its marker.
+ *
+ * TYPE-ONLY IS A RULING, NOT AN OVERSIGHT, and it is the `rule for a ninth`
+ * applied to a name from somewhere else. Upstream's `TextDocument` is a
+ * NAMESPACE CARRYING FUNCTIONS -- `create`, `update`, `applyEdits` -- so it has a
+ * runtime value exactly as `CompletionItemKind` does, and `export {` would work.
+ * It is withheld because TSUDOI CONSTRUCTS DOCUMENTS AND A CONFIG AUTHOR ONLY
+ * EVER RECEIVES ONE: src/documents.ts calls `create` and `update`, and a handler
+ * that built its own document would be building something tsudoi's store never
+ * hands back. Publishing the namespace would publish three more entry points
+ * this project would then have to keep, on the `an author might want it`
+ * argument the block above forbids.
+ *
+ * WHAT THE RULING COSTS, and it is the strongest case against it, so it is
+ * recorded rather than left for someone to rediscover: an author who wants to
+ * unit-test a handler must BUILD a document, and `create` is the only supported
+ * way to build one -- upstream's `update` accepts nothing else. So that author
+ * installs `vscode-languageserver-textdocument` themselves and names it in one
+ * import, which is a package this project otherwise keeps them from having to
+ * know about. THIS REPOSITORY'S OWN TEST DOES EXACTLY THAT, at
+ * test/completion-path.test.ts, which is where to look before reversing this.
+ * THE CONDITION FOR REVERSAL, so the next reader is not re-deciding from
+ * scratch: evidence that authors are writing that import, rather than the
+ * prediction that they might.
+ *
+ * IT IS REVERSIBLE AT ONE TOKEN AND THE REVERSAL IS DEFENDED. Dropping `type`
+ * below is the whole edit, and test/published-artifacts.test.ts's
+ * `the published module re-exports CompletionItemKind as a runtime value`
+ * asserts the published module's runtime surface EXACTLY -- so the reversal
+ * reddens there and cannot happen quietly. MEASURED, not reasoned: making this
+ * line `export {` reddens that one assertion and leaves every other test in that
+ * file green.
+ *
+ * `Range` IS NOT EXPORTED BESIDE IT, considered and declined: `getText` takes a
+ * structural `{ start, end }`, so an author writes an object literal and imports
+ * nothing. Adding `Range` would be a genuine NINTH PROTOCOL NAME under the rule
+ * above, bought with nothing.
+ *
+ * THE BREAK THIS IS, stated where the edit that caused it lives: upstream's type
+ * is a SUPERSET of what stood here, so every config that RECEIVES a document
+ * keeps compiling -- `uri`, `languageId`, `version` and `getText()` are
+ * unchanged. What breaks is a config that IMPLEMENTS the interface, which in
+ * practice means a hand-written mock in an author's own tests. README says so
+ * for the reader who is not looking at this file.
+ */
+export type { TextDocument } from "vscode-languageserver-textdocument";
 
 // will expose a function to subscribe/unsubscribe events such as receiving notifications, requests, and responses from the client or submitting them to the client
 export interface DocumentStore {

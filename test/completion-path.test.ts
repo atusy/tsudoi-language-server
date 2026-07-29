@@ -13,6 +13,13 @@ import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
 import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
+// THE VALUE COMES FROM THE PACKAGE AND THE TYPE FROM TSUDOI, and the pair is
+// deliberate rather than clumsy. `@atusy/tsudoi/types` publishes this name
+// TYPE-ONLY -- ruled at src/types.ts -- so the constructor is reached where it
+// lives, while the annotation still checks that what `create` returns is what
+// the published surface promises. It is also the exact shape a config author
+// ends up writing, which is why it is worth seeing here.
+import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
 import {
   batchSize,
   itemsFrom,
@@ -43,12 +50,18 @@ async function complete(
   cwd: string,
   character?: number,
 ): Promise<CompletionItem[]> {
-  const document: TextDocument = {
-    uri: buffer.uri,
-    languageId: "plaintext",
-    version: 1,
-    getText: () => buffer.line,
-  };
+  // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is the whole of
+  // PBI-31's break demonstrated on the only mock in this repository. The object
+  // literal that stood here satisfied tsudoi's former four-member interface and
+  // does not satisfy the real one -- which is the break falling exactly where
+  // README says it falls: on an IMPLEMENTOR, in their own tests, and not on a
+  // handler that merely receives a document. `create` is the one-line remedy.
+  const document: TextDocument = UpstreamTextDocument.create(
+    buffer.uri,
+    "plaintext",
+    1,
+    buffer.line,
+  );
   const context: RequestContext = {
     signal: new AbortController().signal,
     tsudoi: {
