@@ -37,35 +37,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-33",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read why tsudoi does not serve on vscode-languageserver, at the line that would change it",
-        benefit:
-          "the next person to ask is answered by the repository instead of re-running the whole investigation",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "createGatedConnection in src/notifications.ts records why the framework's connection is not taken, with version and path so it can be RE-RUN.",
-          verification:
-            "S8 as amended at Sprint 24. It must carry BOTH directions: 58 members with onUnhandledNotification and trace absent so Omit silently no-ops on two of four keys; ~11 ungated top-level registrars plus three registering namespaces; overriding InitializeRequest skips remote.initialize; no logger argument exists. AND what was measured FOR adoption -- fillServerCapabilities adds nothing, onShutdown coexists with -32600 -- because A RECORD THAT ONLY CARRIES THE CASE AGAINST IS AN ADVOCACY DOCUMENT, NOT A DECISION RECORD.",
-        },
-        {
-          criterion:
-            "The two other homes ruled at Refinement are written, and PBI-27 and PBI-28 are DELETED in the same commit, which names where each decision went.",
-          verification:
-            "test/notifications.test.ts:260 gains one sentence -- removing the last `always` entry is a SCOPE DECISION, not a cleanup. RequestOnlyConnection gains the Pick-not-Omit instrument preference, with its reversal condition: if the enumeration pin is ever removed or weakened, Omit loses its only defence and conversion becomes REQUIRED. S9's audit-trail clause governs the deletion commit.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "CLOSES GitHub issue #1. A WITHDRAWN PBI IS NOT A HOME -- the Lifetime Rule names three (a permanent assertion, a comment at the site it constrains, an active improvement) and a withdrawn PBI's criteria are none of them. THIS PBI IS THE RE-HOMING; until it ships, PBI-27 and PBI-28 are kept solely as custody.",
-        "NOT A MANDATE TO CONVERT the existing Omit: ProtocolConnectionHasTheseMembers and BoundaryIsTheObservingMembers both redden if the base type's member set moves, so today's Omit is defended, and a change with no defect to fix is churn.",
-      ],
-    },
-    {
       id: "PBI-34",
       story: {
         role: "config author",
@@ -109,25 +80,38 @@ const scrum: ScrumDashboard = {
           criterion:
             "getText(range?), positionAt, offsetAt and lineCount are reachable from a config, and uri/languageId/version/getText() behave as today.",
           verification:
-            "a fixture config that CALLS the new members and is DRIVEN by the suite (S5), with existing documents.test.ts and sync.test.ts assertions unchanged and green.",
+            "a fixture config that CALLS the new members and is DRIVEN by the suite (S5). MEASURED BY THE PO, who read all five: NO TEST IN documents.test.ts MOVES -- including the object-identity assertion (preserved by a store returning what it stored) and the shrinking-text test, whose `only shrinking distinguishes replace from append` property holds under TextDocument.update with a full-text change. So `unchanged and green` is achievable LITERALLY, not aspirationally. test/sync.test.ts was NOT read in full and the PO makes no claim about it -- the executor confirms.",
         },
         {
           criterion:
             "Exactly ONE TextDocument is reachable from @atusy/tsudoi/types, and it is the upstream one.",
           verification:
-            "THE TRAP THE SUPERSET MEASUREMENT CANNOT COVER: a strict-superset or assignability result CANNOT DISCRIMINATE ADOPTED FROM SHADOWED -- tsudoi's own interface kept ALONGSIDE a re-export is structurally satisfied by the same value and compiles identically. The criterion is on IDENTITY, not assignability. S20 in its purest form.",
+            "THE TRAP THE SUPERSET MEASUREMENT CANNOT COVER: a strict-superset result CANNOT DISCRIMINATE ADOPTED FROM SHADOWED -- tsudoi's own interface kept ALONGSIDE a re-export is structurally satisfied by the same value and compiles identically. IDENTITY, not assignability. S20 in its purest form.",
         },
         {
           criterion:
-            "The breaking change to @atusy/tsudoi/types is stated, and README's document prose updated.",
-          verification: "the installed-consumer type-check plus the README extraction harness.",
+            "TextDocument stays an export of src/types.ts and is NOT added to publicProtocolNames -- and the type arm is EXTENDED to cover it through installConsumer.",
+          verification:
+            "published-artifacts.test.ts's own doc block says that list is THE PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS; TextDocument comes from a DIFFERENT PACKAGE, so adding it would make that block false -- the Sprint-22 self-referential defect committed deliberately. CONSEQUENCE NOBODY HAD WRITTEN DOWN: the two probes defending the eight will NOT defend TextDocument, so without this it ships with NO published-surface coverage at all.",
+        },
+        {
+          criterion:
+            "Whether TextDocument is re-exported as a TYPE or as a VALUE is RULED WITH A REASON in the doc block, under that file's own `rule for a ninth` standard.",
+          verification:
+            "upstream's TextDocument is a NAMESPACE CARRYING FUNCTIONS -- TextDocument.create, TextDocument.update -- so it has a runtime value, like CompletionItemKind. Get it wrong toward `export type` and a config author calling TextDocument.create(...) receives UNDEFINED: THE PRECISE DEFECT THE CompletionItemKind PERTURBATION WAS BUILT TO CATCH, ON THE VERY NEXT NAME ADDED. The PO leans TYPE-ONLY -- tsudoi constructs documents, a config author only ever RECEIVES one -- but that is a CLAIM and must be written as a foreclosure reversible at one token, confirmed by the value-arm probe rather than assumed.",
+        },
+        {
+          criterion:
+            "The breaking change is stated precisely: it falls on IMPLEMENTORS, not on CONSUMERS.",
+          verification:
+            "upstream's type is a SUPERSET -- same uri/languageId/version, and getText() with no arguments still compiles -- so every config that RECEIVES a document keeps working unchanged. Only a config that IMPLEMENTS the interface, i.e. a hand-written mock in an author's own tests, breaks. Small, precise, checkable, and it is what the README prose should say.",
         },
       ],
-      status: "refining",
+      status: "ready",
       notes: [
-        "THE MAINTENANCE HEADLINE. MEASURED on tsudoi's actual shape -- createProtocolConnection, tsudoi's own gate and lifecycle, TextDocument added, NO vscode-languageserver import: gate holds (-32002 / -32600), incremental sync works, positionAt/offsetAt/lineCount work, exit 0 from tsudoi's OWN lifecycle.exitCode(). bun and deno identical.",
-        "WHY THE WIN EXCEEDS THE ~15 LINES IT RETIRES: getText() with NO ARGUMENTS pushes offset arithmetic downstream into configs tsudoi CANNOT SEE. Wheel reinvention happening RIGHT NOW, uncontrolled, in code this project will never be able to fix.",
-        "Adds vscode-languageserver-textdocument (zero dependencies). Does NOT contradict single-source-of-truth for the PROTOCOL: it is upstream's own package split and vscode-languageserver does not re-export it.",
+        "THE MAINTENANCE HEADLINE, named by the stakeholder. MEASURED on tsudoi's actual shape -- createProtocolConnection, tsudoi's own gate and lifecycle, TextDocument added, NO vscode-languageserver import: gate holds (-32002 / -32600), incremental sync works, positionAt/offsetAt/lineCount work, exit 0 from tsudoi's OWN lifecycle.exitCode(). bun 1.3.13 and deno 2.9.2 identical.",
+        "WHY THE WIN EXCEEDS THE ~15 LINES IT RETIRES: getText() with NO ARGUMENTS pushes offset arithmetic downstream into configs tsudoi CANNOT SEE -- wheel reinvention happening RIGHT NOW, uncontrolled, in code this project will never be able to fix.",
+        "Adds vscode-languageserver-textdocument (zero dependencies). Does NOT contradict single-source-of-truth for the PROTOCOL: upstream's own package split, and vscode-languageserver does not re-export it.",
       ],
     },
     {
@@ -146,65 +130,98 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
-            "src/server.ts:151 no longer claims full sync is chosen so that no position/offset machinery is needed.",
-          verification:
-            "a MEASURED prose contract this PBI falsifies, corrected in the same commit. Today it reads `Full, not Incremental: the client resends the whole buffer, so no position/offset machinery is needed` -- WHEEL-AVOIDANCE BY SCOPE REDUCTION, and adoption removes the reason for the reduction.",
-        },
-        {
-          criterion:
             "A full-buffer change arriving under Incremental -- which the protocol permits -- is still handled.",
           verification: "a test sending a change with no range while Incremental is advertised.",
         },
+        {
+          criterion:
+            "Two MEASURED prose contracts this PBI falsifies are corrected in the same commit.",
+          verification:
+            "src/server.ts:151 reads `Full, not Incremental: the client resends the whole buffer, so no position/offset machinery is needed` -- WHEEL-AVOIDANCE BY SCOPE REDUCTION, and adoption removes the reason for the reduction. AND test/documents.test.ts's comment scoped `under full sync`, a premise this PBI falsifies.",
+        },
       ],
-      status: "refining",
+      status: "ready",
       notes: [
-        "S16 RULED HERE, not left to the executor: src/documents.ts:49's deliberate `taking the last rather than the first is the defensive read of the same contract` DIES with full sync. Withdrawn deliberately, not dropped in passing.",
+        "ORDERED STRICTLY AFTER PBI-31, and the dependency is STRUCTURAL rather than preferential: src/documents.ts has NO range machinery, so applying a ranged change needs either upstream's TextDocument.update or hand-rolled offset arithmetic -- and hand-rolling it is precisely the wheel PBI-31 exists to retire. Criterion 1 CANNOT EVEN BE WRITTEN before the store applies ranges.",
+        "THE CONVERSE DOES NOT HOLD -- PBI-31 ships alone fine: keep advertising Full, and TextDocument.update handles a full-text change with no range. That is what makes the split honest rather than cosmetic.",
+        "S16 RULED BY THE PO, not left to the executor: src/documents.ts:49's deliberate `taking the last rather than the first is the defensive read of the same contract` DIES with full sync. Withdrawn deliberately, not dropped in passing.",
       ],
     },
     {
       id: "PBI-30",
       story: {
-        role: "editor user",
-        capability: "have the server exit when the editor that spawned it dies",
-        benefit: "a crashed editor does not leave a language server running forever",
+        role: "tsudoi maintainer",
+        capability:
+          "add a timer or any other long-lived handle to src/ without silently making the server outlive the editor that spawned it",
+        benefit:
+          "the exit that works today is held by a test and a recorded decision, instead of by the event loop happening to empty",
       },
       acceptance_criteria: [
         {
           criterion:
-            "When the client named a numeric processId at initialize and that process is gone, the server exits.",
+            "C1 -- the server exits when the process that spawned it dies, on both runtimes, observed on the SERVER'S OWN pid.",
           verification:
-            "test/helpers/lsp.ts:575 sends processId: null, so the suite is STRUCTURALLY BLIND today -- a test that does not send a real pid can observe neither the defect nor its fix. FORCING THE SUITE OFF processId: null IS PART OF THE DELIVERABLE.",
+            "the three-level rig already run in the spike: bun test spawns a fake editor, the fake editor spawns the server, the test SIGKILLs the fake editor and polls the server pid. S6 PRESENCE PAIR, NON-OPTIONAL -- the server is asserted ALIVE BEFORE THE KILL, because the spike's own first deno run failed to launch and logged nothing, which is the live demonstration that `gone after the kill` is satisfied by `never started`. C1 IS ALSO THE RIG AN UN-UNREF'D TIMER REDDENS.",
         },
         {
-          criterion: "The mechanism is measured on BOTH runtimes.",
+          criterion:
+            "C2 -- the mechanism is stdin EOF, and it is ASSERTED rather than assumed. REQUIRED, not nice-to-have.",
           verification:
-            "process.kill(pid, 0) and an interval under deno's node compatibility are unverified.",
+            "FIFO rig: a third party holds the write end of the server's stdin, the intermediate is killed, the server MUST SURVIVE -- measured, alive at +4s on both runtimes. Without it C1 claims `exits when the parent dies` and observes `is not running`, different propositions that C1 alone cannot discriminate; a server that crashed at startup satisfies it identically. THE TWO RIGS CATCH OPPOSITE DIRECTIONS: C1 catches `does not exit when it should`, the FIFO rig catches `exits for the wrong reason`. Neither substitutes for the other.",
+        },
+        {
+          criterion:
+            "C3 -- the property is recorded where the edit that destroys it would be made.",
+          verification:
+            "NO SINGLE SUCH SITE EXISTS TODAY, WHICH IS EXACTLY THE PROBLEM; the nearest true home is startServer in src/server.ts, which owns the reader and connection.listen(). It states that the process exits because NOTHING KEEPS THE LOOP ALIVE, so any timer, socket or watcher added anywhere in src/ MUST BE unref()'d -- a CORRECTNESS REQUIREMENT, NOT AN OPTIMISATION. Held to S8 with runtime versions. NOT CONSTRUCTED as an assertion: nothing can test that a comment exists. C1 defends the property; the comment tells the next author why their diff broke it.",
+        },
+        {
+          criterion:
+            "C4 -- the exit code on the stdin-EOF path is ruled against the specification and asserted.",
+          verification:
+            "it is 1 today BY ACCIDENT -- src/lifecycle.ts's exitCode() is never consulted on that path, and stderr is empty. A value correct by coincidence is undefended, and a future tidy-up routing this path through lifecycle could change it silently.",
+        },
+        {
+          criterion:
+            "The fork-without-exec case is RECORDED as a named uncovered case in the C3 comment, and NOT filed as a PBI.",
+          verification:
+            "filing implies intent, and the only remedy -- a pid poll -- is KNOWN TODAY TO BE NET-NEGATIVE. The record takes the form RequestOnlyConnection already uses for this, labelled REASONED, and carries the two facts that make it re-decidable: a pid poll would close it and an un-unref'd poll would DESTROY the exit that works; and THE PORTABILITY TRAP, preserved even though no poll is being written -- process.kill(pid, 0) throws on both runtimes with OPPOSITE ERRNO SIGNS (bun SystemError errno 3, deno Error errno -3), so code === ESRCH is the only portable discriminator and an implementation testing errno === 3 or matching the message SILENTLY NEVER FIRES ON DENO.",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "LSP's processId exists for exactly this and says the server SHOULD exit when the parent dies, so tsudoi is currently NON-CONFORMANT WITH A SHOULD, and a crashed editor leaks the server forever.",
-        "NOBODY BUT TSUDOI BUILDS THIS. With the framework declined there is no watchDog to inherit, which puts it squarely inside `keep the core implementation in-house`.",
+        "THE ORIGINAL PREMISE WAS FALSE AND THE SPIKE REFUTED IT: tsudoi ALREADY exits when its editor dies -- measured with the real server, gone within 1000ms on both runtimes. `A crashed editor leaks the server forever` does not reproduce. What is true is that the behaviour is IMPLICIT, UNDOCUMENTED, UNTESTED AND SILENT: nothing in src/ handles stdin closing, and the server exits because the event loop empties. AN EMERGENT PROPERTY, NOT A DECISION.",
+        "WHY IT IS WORTH A PBI THOUGH NOTHING IS BROKEN: THE PROPERTY IS HELD BY NOBODY -- not a line of code, not a comment, not a test, only the ABSENCE of handles in the event loop. That is the most fragile way a property can be held, because IT BREAKS BY ADDING SOMETHING RATHER THAN BY CHANGING SOMETHING, so no reviewer reading a diff can see it go. PBI-30's own naive implementation would have caused it -- not a speculative regression path, the one this team just walked down.",
+        "NO LINT BANNING setInterval IN src/. Considered and ruled against: C1 already detects the regression, and a ban forecloses legitimate future work (debouncing, heartbeats, cache TTLs) that would then be argued with.",
+        "SHARES A SPRINT WITH PBI-29, TWO PBIs, ONE SHARED SPEC READING. Both turn on the same LSP sentence -- `if the shutdown request has been RECEIVED before` -- and read months apart by different executors THEY CAN REACH DIFFERENT CONCLUSIONS FROM THE SAME TEXT, leaving tsudoi with two exit-code rulings that disagree. The reading is recorded ONCE and both PBIs point at it; two copies is the duplication the Lifetime Rule exists to prevent.",
       ],
     },
     {
       id: "PBI-29",
       story: {
         role: "tsudoi maintainer",
-        capability: "know what exit code a shutdown-before-initialize session ends with",
+        capability:
+          "know what exit code a shutdown-before-initialize session ends with, and why that is the right one",
         benefit:
           "a lifecycle path that ships today is defended by an assertion rather than by nobody having sent it",
       },
       acceptance_criteria: [
         {
-          criterion: "shutdown BEFORE initialize, then exit, has a test.",
+          criterion:
+            "The specification text is READ, the correct exit code is RULED, and the test pins WHICHEVER IT IS -- with the reason recorded.",
           verification:
-            "MEASURED: tsudoi exits 1 -- the shutdown is refused -32002, lifecycle.shutDown() never runs, phase stays uninitialized -- and NO assertion says so. protocol.test.ts's `exit as the very first message exits 1` is a DIFFERENT case that agrees, which is how this one hid behind it.",
+            "MEASURED today: tsudoi exits 1 -- the shutdown is refused -32002, lifecycle.shutDown() never runs, phase stays uninitialized -- and NO assertion says so. protocol.test.ts's `exit as the very first message exits 1` is a DIFFERENT case that agrees, which is how this one hid behind it.",
+        },
+        {
+          criterion: "The criterion does NOT presuppose exit 1.",
+          verification:
+            "S7: a behaviour is pinned where ONE outcome is REQUIRED, and that entry exists to bound pin-everything pressure. LSP's wording is `if the shutdown request has been RECEIVED before`, and tsudoi refuses the pre-initialize shutdown with -32002 and treats it as NOT RECEIVED -- received-versus-accepted is a real reading gap, flagged by the PO and labelled RECALLED, NOT MEASURED. Pinning today's behaviour AS IF IT WERE A REQUIREMENT is STRICTLY WORSE THAN NO TEST: a future maintainer who reads the spec correctly then has to argue with a green assertion.",
         },
       ],
-      status: "draft",
+      status: "ready",
       notes: [
-        "A coverage hole in tsudoi's OWN lifecycle, found by an investigation into something else.",
+        "IF THE ANSWER IS 0 this stops being a test-only item and becomes a one-line behaviour fix in lifecycle.exitCode() plus the test. Same file, same size, so THE SHAPE OF THE WORK DOES NOT CHANGE -- which is why this is settled inside the PBI rather than ahead of it, unlike PBI-30 whose MECHANISM was unmeasured and needed a spike.",
+        "SHARES A SPRINT WITH PBI-30 on one shared reading of the LSP sentence both depend on. Two PBIs, independently shippable, defending different paths: a REFUSED shutdown versus an editor that NEVER SENT one.",
       ],
     },
     {
@@ -231,6 +248,25 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 26,
+      pbi_id: "PBI-33",
+      goal: "Why tsudoi does not serve on vscode-languageserver's Connection is readable AT THE LINE THAT WOULD CHANGE IT, in BOTH directions and re-runnable; the two smaller homes are written; and the two withdrawn PBIs stop being custody.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in bc408ca..88fe17f. 363 tests green from 360 -- THREE ADDED, NONE REMOVED OR WEAKENED -- each DoD command run separately with its exit read directly, and re-run independently by the Scrum Master. ACCEPTED at Review; the PO made the contrast with Sprint 25 explicit: there the DoD's first check was FALSE OF MAIN AS CLONED, a defect in the shipped state, whereas here the tree is clean and both open items are about THE PO'S OWN AUTHORING rather than the increment.",
+        "THE EXECUTOR RE-RAN THE MEASUREMENT RATHER THAN COPYING IT, and it caught an error in the criterion. vscode-languageserver is not a dependency, so they installed 10.1.0 OUT OF TREE and enumerated Connection with the compiler API. Confirmed 58 members, onUnhandledNotification and trace absent, tracer present. CORRECTED: the criterion's `~11 ungated top-level notification registrars` IS NINE -- the eleven counted onNotification (which the Omit DOES remove) and onShutdown (a REQUEST registrar). The record names all nine. THE PO'S OWN SPRINT-22 CLAUSE, PREFER NAMING TO COUNTING, violated in the criterion that carried it and caught by the executor rather than by its author. FOURTH INSTANCE of a premise inherited from a handback and stated flat.",
+        "THE TWO WIRE MEASUREMENTS WERE DELIBERATELY NOT RE-RUN -- fillServerCapabilities adds nothing, onShutdown coexists with -32600 -- because they need a spawned server. The record carries issue #1's attribution and paths rather than claiming a fresh measurement, and SAYS SO IN ITS OWN TEXT. S8 exactly: a measured claim records what would let it be re-run, and a RE-USED measurement says whose it is.",
+        "A WITHDRAWN PBI IS NOT A HOME, and this is the durable principle the sprint delivered. The Lifetime Rule names three homes -- a permanent assertion, a comment at the site it constrains, an active improvement -- and a withdrawn PBI's criteria are NONE of them. PBI-27 and PBI-28 were kept as CUSTODY ONLY and deleted here, in a commit naming where each decision went: the why-not record at createGatedConnection, the always-arm scope-decision sentence at notifications.test.ts, and the Pick-not-Omit instrument preference with its reversal condition at RequestOnlyConnection.",
+        "CRITERION 2'S `SAME COMMIT` CLAUSE IS UNCONSTRUCTIBLE, and the PO ruled the fault their own: a git hook refuses any commit whose staged set includes scrum.ts beside another file, and it reads the WORKING TREE, so scrum.ts cannot even be dirty while something else is committed. Delivered as two commits, homes FIRST then deletion, and NOT BYPASSED -- declining to evade a hook is correct in a project that names deliberate evasion as its own class. THE DEEPER POINT, S13 fired against a clause the PO wrote: THE CLAUSE NAMED A MECHANISM WHERE A PROPERTY WAS MEANT. What it protected is that no window exists in which a decision is deleted from custody but not yet written to its home -- and the delivered order preserves that AND MAKES IT VISIBLE IN HISTORY, which one commit would have hidden.",
+        "A MACHINE-CHECKABLE ORPHAN RULE WAS DECLINED, NOT OMITTED, and accepted as NOT CONSTRUCTED in both halves: the general rule cannot be written without an exception, because PBI-33's own criterion names PBI-27 and PBI-28 AND MUST -- and AN EXCEPTION ROTS, which this repository has already said about its own lint exemptions. The weaker pin (`backlog contains no PBI-27/28`) was refused as vacuous under S9 and S7. RESIDUAL ACCEPTED AS STATED: a future note citing a deleted PBI is caught by NOTHING BUT A READER.",
+        "THE TOKEN ASSERTION'S BOUNDARY, stated so nobody later reads it as stronger: it defends that the FOR-ADOPTION FACTS ARE PRESENT -- delete the paragraph and the tokens vanish and it reddens -- but NOT their FRAMING. Nothing asserts they are presented as the case for adoption rather than buried. That is the right boundary: pinning placement over-fits under S7, and the immediacy control already binds the block to the anchor. The advocacy-document requirement is defended IN SUBSTANCE AND NOT IN FORM.",
+        "THE SPRINT-25 RETROSPECTIVE ENTRY FIRED ON ITS FIRST SPRINT IN FORCE, AND BY SELF-REVIEW. The record grouped workspace.onDidChangeWorkspaceFolders with three NotificationHandler-taking members; it is an Event property. THE EXECUTOR'S OWN MEASUREMENT DISTINGUISHED THEM AND THEIR PROSE DID NOT -- caught on a second pass by its author, fixed in 88fe17f. The same pass upgraded the languages claim from ASSERTED to MEASURED across all nine nested namespaces, which is the same discipline in its constructive direction.",
+        "RESTRAINT RECORDED TWICE AS CORRECT: the executor flagged PBI-33's own note (which had gone stale the moment the deletion landed) rather than rewriting a PO-authored note mid-execution, and declined to bypass the git hook. Both are `not mine to decide, so I surfaced it` -- which is what makes this record trustworthy rather than tidy.",
+      ],
+    },
     {
       number: 25,
       pbi_id: "PBI-26",
@@ -311,97 +347,27 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 26,
-    pbi_id: "PBI-33",
-    goal: "Why tsudoi does not serve on vscode-languageserver's Connection is readable AT THE LINE THAT WOULD CHANGE IT, in BOTH directions and re-runnable; the two smaller homes are written; and the two withdrawn PBIs stop being custody.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "B1: an extractor takes the doc block IMMEDIATELY PRECEDING `export function createGatedConnection` out of src/notifications.ts and asserts it names four tokens -- `vscode-languageserver 10.1.0`, a `.d.ts` path inside that package, `fillServerCapabilities` and `onShutdown`. THE ONE HONEST RED IN THIS SPRINT: measured before writing anything, `10.1.0`, `fillServerCapabilities` and `onShutdown` appear NOWHERE in src/ or test/, so all four fail today.",
-        implementation:
-          "the why-not record itself, written into that block: the case AGAINST (58 members, `onUnhandledNotification` and `trace` absent so two of the four `Omit` keys silently no-op, the surviving ungated notification registrars, the lifecycle hooks an `InitializeRequest` override skips, no logger argument) and the case FOR (`fillServerCapabilities` adds nothing, `onShutdown` coexists with -32600).",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7cfed16",
-            message:
-              "docs: record why the framework's connection is not taken, at the call that would take it",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE TOKENS ARE NOT DECORATION -- each defends one clause of criterion 1. The version-with-package pair is S8 AS AMENDED AT SPRINT 24: a path WITHOUT a version misleads, so the two are asserted ADJACENT rather than as two independent substrings. `vscode-languageserver` alone would be satisfied by the `vscode-languageserver-protocol 3.18.2` sentence ALREADY IN THIS FILE, which is why the token is the pair and not the name.",
-          "`fillServerCapabilities` AND `onShutdown` ARE THE FOR-DIRECTION, and they are what makes this test defend the PO's headline ruling rather than only re-runnability: A RECORD THAT ONLY CARRIES THE CASE AGAINST IS AN ADVOCACY DOCUMENT. Delete either sentence and this reddens by name.",
-          "THE PAIRED CONTROL IS PERMANENT, NOT A ONE-OFF PERTURBATION, and it is the S20 failure this project has already recorded twice: an extractor that finds nothing makes every token assertion VACUOUSLY TRUE. Modelled on readme.test.ts's markers-gone test, which is in this repo and was read before this was planned -- the extractor THROWS when its anchor is absent, and a permanent test asserts that throw against THIS source with the anchor renamed.",
-          "PERTURBATION: strip `10.1.0` from the record. Expect THIS test to redden naming that token and nothing else in the suite to move.",
-        ],
-      },
-      {
-        test: "none -- BORN GREEN and honestly so. It is one sentence added to a doc block; no assertion can distinguish the file with it from the file without it, and a manufactured RED here would be fiction.",
-        implementation:
-          "test/notifications.test.ts's block above `exit's entry declares always, and every other entry declares lifecycle` gains the sentence that removing the last `always` entry is a SCOPE DECISION and not a cleanup: that entry is the only inhabitant of the `always` arm, so deleting it collapses `NotificationGate` to one representable value and makes this test a tautology.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "681c59a",
-            message: "docs: re-home the last two decisions PBI-27 and PBI-28 were still holding",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "WHY IT BELONGS AT THIS TEST rather than at the type: the S16 improvement is about a defence being REMOVED, and the thing that would be removed is what this test asserts. It is the site of the edit, which is the Lifetime Rule's first clause.",
-          "PLANNED TO SHIP IN THE SAME COMMIT AS S3 AND S4, and it could not: the pre-commit hook forbids scrum.ts sharing a commit. Shipped with S3 in 681c59a, one commit BEFORE the deletion, which is the order that keeps the homes in place first. Recorded in this sprint's decisions.",
-        ],
-      },
-      {
-        test: "none -- BORN GREEN, same reason as S2.",
-        implementation:
-          "RequestOnlyConnection's doc block gains the Pick-not-Omit instrument preference, written CONTINUOUS WITH the `A MISSPELLED KEY HERE IS A SILENT NO-OP` paragraph already there rather than as a fresh essay, plus its reversal condition.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "681c59a",
-            message: "docs: re-home the last two decisions PBI-27 and PBI-28 were still holding",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EXPLICITLY NOT A MANDATE TO CONVERT TODAY'S `Omit`, and the reason is on the PBI: a change with no defect to fix is churn.",
-          "THE REVERSAL CONDITION NAMES BOTH PINS, because `the enumeration pin` is under-specified against two that defend different things -- read this session in test/notifications.test.ts: ProtocolConnectionHasTheseMembers moves when the DEPENDENCY's member set moves, BoundaryIsTheObservingMembers moves when the `Omit`'s key set moves. Losing the first is what would let a silent no-op arrive from upstream, which is exactly the failure `Pick` forecloses by construction.",
-        ],
-      },
-      {
-        test: "none -- BORN GREEN, and the assertion that WOULD have covered it is recorded as unconstructible in this sprint's decisions rather than replaced by a weaker one.",
-        implementation:
-          "PBI-27 and PBI-28 are deleted from product_backlog by a commit whose message names where each surviving decision went by file and symbol. NOT the same commit as S2 and S3 -- the hook forbids it, and the reason is a decision below rather than a silent departure.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "PBI-30 WAS CHECKED, NOT ASSUMED: grep over the repo finds PBI-27/PBI-28 only at PBI-33's own criterion and note and at the two entries themselves. PBI-30's notes name neither, so there is nothing to fix there -- recorded as a CHECKED NEGATIVE, since silence would read as not having looked.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE MEASUREMENT WAS RE-RUN BEFORE THE RECORD WAS WRITTEN, which is the only way the S25 retrospective entry is satisfied -- a premise about an artifact is not stated until that artifact has been read in the same session, and vscode-languageserver IS NOT A DEPENDENCY OF THIS REPO, so it is not readable here at all. Installed OUT OF TREE at 10.1.0 (which pins vscode-languageserver-protocol 3.18.2) and enumerated with the TypeScript 5.9.3 compiler API's getPropertiesOfType.",
-      "THREE OF THE CRITERION'S OWN NUMBERS WERE MEASURED AND ONE IS CORRECTED IN PLACE. CONFIRMED EXACTLY: `Connection` has 58 members, `onUnhandledNotification` and `trace` are absent, and `tracer` IS present, which is where TypeScript's `Did you mean 'tracer'?` comes from. CORRECTED: `~11 ungated top-level notification registrars` is the count of NotificationHandler-typed members on `Connection` ITSELF, and the `Omit` removes two of them -- `onNotification` and `onProgress` -- so NINE survive on the handle. The recorded list of eleven named `onNotification` (which the `Omit` does remove) and `onShutdown` (a `RequestHandler0`, not a notification registrar) and omitted `onProgress`. The record names the nine rather than counting to eleven.",
-      "`THREE REGISTERING NAMESPACES` IS TRUE AS MEASURED and issue #1's earlier five-namespace list is the looser statement: exactly `workspace`, `languages` and `notebooks` carry handler registrars; `client`, `window`, `console`, `telemetry` and `tracer` carry none. TWO of the three install NOTIFICATION handlers -- `workspace` directly and `notebooks` through its nested `synchronization` -- and `languages` is requests only. That refinement is measured and goes in the record, because the gate is about notifications.",
-      "NOT CONSTRUCTED, and this is the S11 classification rather than an unremarked absence: the assertion that WOULD have defended the deletion is the ORPHAN RULE made machine-checkable -- no live backlog item names a PBI id that is not in the backlog. It cannot be built THIS SPRINT because PBI-33's own criterion and note name PBI-27 and PBI-28, and they must: they ARE the record of the deletion. Removing the ids from PBI-33 to satisfy a test would falsify the audit trail the criterion requires. A test excepting one id is an exception, and this project has already ruled that exceptions rot. WHAT REMAINS AT RISK: a future note citing a deleted PBI is caught by nothing but a reader. Verified by hand this sprint instead.",
-      "AND THE PIN THAT WAS DECLINED, so it is not read as an oversight: `product_backlog contains no PBI-27 and no PBI-28` was considered and refused. Nothing realistic would ever make it fail, which is S9's own definition of a vacuous criterion, and S7 bounds exactly this pressure -- a test that resists no legitimate change while defending no requirement.",
-      "ORDERING: B1 is the only subtask with a real RED and goes first, alone, so its perturbation is observed against a suite nothing else moved. S2, S3 and S4 ship together in the second commit because criterion 2 binds them to each other.",
-      "CRITERION 2'S SINGLE-COMMIT CLAUSE COULD NOT BE MET, AND IT IS RECORDED AS UNCONSTRUCTIBLE RATHER THAN QUIETLY DROPPED -- FOR THE PO TO RULE ON AT REVIEW. The criterion asks that the two other homes and the deletion land IN THE SAME COMMIT. This repository's pre-commit hook (~/.config/git/hooks/pre-commit) REFUSES any commit whose staged set includes scrum.ts alongside another file, and it reads the WORKING TREE, so scrum.ts cannot even be dirty while another file is committed. Not a preference and not bypassable without disabling a repository rule. DELIVERED AS TWO COMMITS IN THE ORDER THAT PRESERVES THE POINT: 681c59a writes both homes, then the scrum.ts commit deletes the entries and names where every decision went. S9'S ACTUAL CLAUSE IS INTACT -- the audit trail is a COMMIT MESSAGE and never itself a home, and it is in the deletion commit. What is lost is atomicity: between the two commits the homes exist and the custody entries still do too, which is the harmless direction.",
-      "PBI-33'S OWN NOTE IS LEFT VERBATIM, DELIBERATELY, and flagged rather than tidied: it reads `until it ships, PBI-27 and PBI-28 are kept solely as custody`, which now points at entries that are gone. It was TRUE WHEN WRITTEN, it is the deletion's own record alongside the criterion, and rewriting a PO-authored note during execution is not the executor's call. It leaves the backlog with PBI-33 at Review.",
-      "THREE PERTURBATIONS RUN, EACH FIRING ON ITS OWN ASSERTION AND NOTHING ELSE. (1) Strip `10.1.0` from the record: the token test reddens NAMING `the package WITH the version it was measured at` and the other 362 pass. (2) Delete the immediacy check from the extractor: the SITE control reddens ALONE -- so `at the line that would change it` is defended by something that can actually fail. (3) Make the extractor RETURN instead of throwing when the anchor is missing: the VACUITY control reddens ALONE. The tree was restored from a byte-verified copy after each.",
-      "NOTHING FAILED TO REDDEN THAT WAS EXPECTED TO. The three born-green subtasks were declared born-green AT PLANNING and stayed that way; no red was manufactured for any of them.",
-      "DoD, each command run separately and unpiped with its exit read directly: `bun test` 363 pass / 0 fail / 22 files, exit 0 (from 360 -- three tests added, no test removed or weakened); `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/ untouched; `oxfmt --check .` exit 0; `tsc --noEmit` exit 0.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 26,
+      improvements: [
+        {
+          action:
+            "ASK, AT EACH RETROSPECTIVE, WHETHER THE RATE OF `NOT CONSTRUCTED` IS HONESTY OR OVER-AUTHORING. Two more this sprint -- the same-commit clause and the machine-checkable orphan rule -- and BOTH TRACE TO CLAUSES THE PO WROTE. Two readings compete: the team is being honest about what cannot be defended, or CRITERIA ARE BEING AUTHORED BEYOND WHAT CAN BE DEFENDED. The PO raised this against their own authoring and asked for it out loud rather than ruled.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A CRITERION THAT NAMES A COMMIT SHAPE, A FILE LAYOUT OR ANY OTHER MECHANISM IS RESTATED AS THE PROPERTY IT PROTECTS. S13 applied to ACCEPTANCE CRITERIA rather than to plans: `same commit` was unconstructible against a git hook, while the property it meant -- no window in which a decision is deleted from custody but not yet written to its home -- was satisfiable, and was satisfied MORE VISIBLY by two commits than one would have been.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 25,
       improvements: [
