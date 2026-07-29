@@ -39,48 +39,32 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-37",
+      id: "PBI-40",
       story: {
-        role: "tsudoi maintainer",
-        capability:
-          "add a method without re-writing the rejection check, the cancellation bridge and the capability contribution by hand",
+        role: "config author",
+        capability: "get -32800 for a cancelled request whichever drive its method uses",
         benefit:
-          "a method that decides nothing does not compile, instead of joining a convention whoever writes it must remember",
+          "the one place cancellation is decided actually decides it, so the claim at that place is true",
       },
       acceptance_criteria: [
         {
           criterion:
-            "READINESS GATE, AND THE FIRST SUBTASK: delete ONE method's capability `if` and ONE method's rejection check, and RECORD WHAT REDDENS. IF EVERYTHING REDDENS, THE CONVENTION IS DEFENDED AND THIS PBI IS WITHDRAWN.",
+            "A cancelled request to a GENERATOR-DRIVEN method with NO handler is answered -32800, as an awaited-once one already is.",
           verification:
-            "the same probe src/notifications.ts ran, where deleting didChange's and didClose's checks reddened NOTHING and two of three copies proved to be pure convention. THE PO HAS NOW TWICE ARGUED THIS TABLE FROM THAT PRECEDENT WITHOUT CHECKING THAT THE PRECEDENT TRANSFERS. It is measurable in one subtask and must be measured before the table is built rather than cited again.",
+            "MEASURED at Sprint 32 by P-D, run expecting the opposite: deleting the fixture's awaited-once handler reddened NOTHING while deleting its generator-driven handler reddened the -32800 test. The generator drive's no-handler early return sits AHEAD of answerUnlessCancelled, so such a request is answered `null`.",
         },
         {
           criterion:
-            "Each entry carries a REQUIRED capability CONTRIBUTOR -- a function, not a key/value pair.",
+            "The qualifier added to answerUnlessCancelled's doc block at Sprint 32 is REMOVED, because it stops being true.",
           verification:
-            "THE PROPERTY, NOT AN ENUMERATION, and the PO ruled the count REMOVED rather than corrected: no mechanical `methods[k] !== undefined -> capabilities[flag] = true` can express the five, because AT LEAST ONE contributes an OBJECT (completionProvider: {}) and AT LEAST ONE is NESTED INSIDE A KEY ANOTHER METHOD OWNS (completionProvider.resolveProvider). Immune to a fifth shape arriving -- and diagnosticProvider's value shape is STILL UNMEASURED, so even a corrected count may not survive contact with it. The criterion once read `four different shapes`; MEASURED at Sprint 31, documentFormattingProvider is `true` at top level, IDENTICAL to hoverProvider -- three value shapes, two placements. FOURTH WRONG COUNT IN THIS THREAD, and prefer-naming-to-counting applied to THE CRITERION CARRYING THE COUNT rather than to the count. THE GAIN IS COLOCATION AND REQUIREDNESS, NOT BREVITY -- roughly the same lines, in a place where forgetting them is a type error. ANYONE SELLING THIS AS A SMALLER src/server.ts IS SELLING THE WRONG THING.",
-        },
-        {
-          criterion:
-            "Every per-method REASON moves to its entry, and the PBI NAMES EACH PARAGRAPH MOVED AND WHERE IT WENT.",
-          verification:
-            "S9's audit-trail clause applied to PROSE. The precedent is exact and load-bearing: exit's carve-out reason lives AT ITS ENTRY, `so there is no second place to get it wrong`. Hand-writing also made the VALUE-SHAPE DIFFERENCES visible -- true, {}, and a nested key are three kinds of contribution, and reading them side by side is how anyone notices; a table flattening them to booleans would destroy that SILENTLY.",
-        },
-        {
-          criterion:
-            "src/server.ts's `spelled out, NOT DERIVED FROM THE SHAPE OF methods` clause is REWRITTEN, not deleted, recording WHY it goes.",
-          verification:
-            "its REASON -- a client is entitled to send whatever it was told about, so each capability is claimed only where the config can answer it -- IS THE STAKEHOLDER'S POLICY VERBATIM AND SURVIVES UNCHANGED. What is superseded is a MECHANISM stated as though it FOLLOWED from that reason. It does not follow. The rewrite says so, so the next reader does not reconstruct it as a policy reversal.",
+            "THE CLAIM IS THE ASSET, and that is the PO's whole ground for ruling the direction rather than leaving it open: answerUnlessCancelled exists PRECISELY so cancellation is decided in one place, and preserving the divergence means WEAKENING A STATED PRINCIPLE TO ACCOMMODATE AN ORDERING NOBODY CHOSE. A prose qualifier that no longer describes the code is the point of this PBI, not a side effect.",
         },
       ],
       status: "ready",
       notes: [
-        "EXPECTED CONSEQUENCE, WRITTEN SO ITS ABSENCE IS A SIGNAL: once the rejection -> requestContext -> answerUnlessCancelled prologue is table-driven, ONE cancellation assertion covers EVERY method BY CONSTRUCTION rather than by copy -- which dissolves Sprint 31's recorded residual, a cancelled formatting request answered -32800 with nothing asserting it. IF IT DOES NOT DISSOLVE, THAT IS A SIGNAL ABOUT THE TABLE rather than a surprise.",
-        "RE-CHECK WHETHER SPRINT 31'S CAPABILITY NEGATIVE CONTROL FIRES ALONE once the table lands. It cannot today, and the subsumption is STRUCTURAL rather than incidental -- it can never be first to fail while ANY exact-equality assertion exists on a config lacking formatting, and those cannot be weakened. If the table changes that, the note at its site goes; if not, it carries forward WITH A MEASUREMENT BEHIND IT rather than an assumption.",
-        "MethodHandler accommodates a third promise-shaped entry with NO structural change; the seams are DOWNSTREAM, in registerMethods and in capability advertisement.",
-        "THE THREE SHAPES ARE NOW MEASURED, TAKEN BY SPRINT 31'S EXECUTOR OFF THE SHIPPED TREE (provenance stated because this is a handed measurement): the readiness gate and the table are built against these rather than against predictions. Capability contribution: `hoverProvider = true`, `completionProvider = {}`, `documentFormattingProvider = true`. AND A SECOND AXIS NOBODY HAD NAMED, which any table must also carry or silently flatten: THE NO-HANDLER CASE HAS TWO SHAPES -- hover and formatting call `handler?.(...) ?? null` and build a RequestContext whether or not a handler exists, while completion returns EARLY, ahead of the context, because driving a generator needs one. The drive is awaited-once twice and generator-driven once, as predicted.",
-        "AND CRITERION 2'S ENUMERATION IS IMPRECISE, SURFACED RATHER THAN EDITED because the criterion is the PO's and carries a readiness gate: `four different shapes` counts `documentFormattingProvider at top level` as distinct, but its VALUE SHAPE IS `true`, IDENTICAL TO hoverProvider'S -- and hover is top-level too, so placement separates them from nothing. What is measured is THREE value shapes across the five (`true`, `{}`, and a key nested inside another method's) and TWO placements. THE CRITERION'S CONCLUSION IS UNTOUCHED and if anything cleaner: a mechanical `flag = true` still cannot express `{}` or a nested key. Raised because a factual premise inside a criterion is a claim requiring measurement, not framing.",
-        "THE RECORDED DECISION OPPOSING A TABLE SURVIVES INTACT: src/methods.ts's `there is no shape both fit into that is not an invention` is about THE DRIVE, and is correct. A table carries the type (giving params contextual typing exactly as defineNotifications does), a DRIVE KIND -- awaited-once or generator-driven, TWO, NAMED -- and the router applies the prologue and epilogue. No single shape is invented; a method picks one of two. MEASURED that two kinds cover all five: diagnostic declares partialResult, so it is generator-shaped like completion.",
+        "REVEALED, NOT INTRODUCED. Invisible while three hand-written copies stood in for the table, and visible the moment the two drives sat side by side. LSP permits either answer, so NO REQUIREMENT IS BREACHED and this is a design-coherence item rather than a defect.",
+        "THE FINDING RECORDED IN THE PO'S OWN TERMS: criterion 3 of PBI-37 warned that a table might DESTROY a difference hand-writing made visible. THIS TABLE MADE VISIBLE ONE THAT THREE HAND-WRITTEN COPIES HAD HIDDEN.",
+        "OVERTURN CONDITION, evidence-shaped rather than predictive: a client shown to depend on `null` from a cancelled completion.",
       ],
     },
     {
@@ -181,6 +165,27 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 32,
+      pbi_id: "PBI-37",
+      goal: "THE READINESS GATE RAN FIRST AND IT COULD HAVE WITHDRAWN THIS PBI. It did not, and it did not vindicate the PO either: THE PRECEDENT TRANSFERS TO EXACTLY ONE OF THE TWO HALVES. Six deletions, one at a time, reverted between. The capability `if`s are DEFENDED, three of three, each by a test whose TITLE names per-method capability correctness. The rejection checks are DEFENDED ONE OF THREE -- hover's reddens four tests by name, and formatting's and completion's redden NOTHING AT ALL, which is the notifications.ts precedent arriving with the SAME ARITHMETIC (two of three copies pure convention). So the table is built where it was measured to be needed, and the capability half is carried on COLOCATION AND REQUIREDNESS rather than on a defencelessness that is not there.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "Shipped in b0e1b75..01813c4 plus the Review-owed prose correction 1a380e4. 405 green from 399, 27 files from 26 -- SIX ADDED, NONE REMOVED OR WEAKENED -- each DoD command run separately and unpiped, re-run independently by the Scrum Master.",
+        "THE READINESS GATE DID NOT WITHDRAW THE PBI; IT CORRECTED THE REASON FOR IT, and that is the outcome worth recording. Six deletions, one at a time, reverted between, WITH THE VERDICT RULE FIXED IN WRITING BEFORE THE FIRST PERTURBATION RAN -- a rule written after the numbers is a rule fitted to them -- and the fixture inventory taken first so a zero would be INTERPRETABLE.",
+        "CAPABILITY ifs: 3 OF 3 DEFENDED. Each deletion reddens a test whose TITLE names per-method capability correctness (hover 6, completion 10, formatting 12, the last re-measuring and confirming Sprint 31's handed number). THE NOTIFICATION PRECEDENT DOES NOT TRANSFER THERE, AND THE PO CITED IT TWICE AS THOUGH IT DID. That half now stands on REQUIREDNESS FOR FUTURE METHODS -- three more are coming and none can be added without deciding its capability -- and NOT on undefendedness, and never on brevity.",
+        "REJECTION CHECKS: 2 OF 3 PURE CONVENTION -- the same arithmetic as src/notifications.ts. formatting and completion each left 399 pass / 0 fail. The zeros are correctly attributed to cause (a) rather than to unobservability: the fixtures exist and are driven, and protocol.test.ts already sends a pre-initialize request through the same helper.",
+        "src/methods.ts SAYS SO AT THE TABLE rather than citing a defencelessness that is not there.",
+        "P-D FALSIFIED A CLAIM THE EXECUTOR HAD WRITTEN THEMSELVES AND EXPOSED A PRE-EXISTING DIVERGENCE: the generator drive's no-handler early return sits AHEAD of the cancellation epilogue, so a cancelled request to a generator-driven method with no handler is answered `null` while awaited-once answers -32800. THE PO'S CRITERION 3 WARNED A TABLE MIGHT DESTROY A DIFFERENCE HAND-WRITING MADE VISIBLE; THIS TABLE MADE VISIBLE ONE THAT THREE HAND-WRITTEN COPIES HAD HIDDEN. Prose corrected in this sprint per the standing rule; the behaviour is PBI-40, ruled at -32800 for both because THE CLAIM IS THE ASSET.",
+        "P-A IS A DEBIT AGAINST THE TABLE AND IS BOOKED AS ONE: an entry keyed to the wrong request type leaves tsc at 0 -- the params differ only in optional members and a generator entry cannot pin its result. NOT closable at compile time; closed by a runtime assertion naming the cause. A TABLE PBI RECORDING ONLY WHAT IT REMOVED IS THE ADVOCACY DOCUMENT REFUSED AT PBI-33.",
+        "CONSEQUENCE 1 DISSOLVED AS PREDICTED, premises HELD rather than assumed: exhaustiveness compile-checked at TS2741, prologue-reaches-every-entry held by P-B and P-C, and the bound stated honestly. Sprint 31's residual closes WITHOUT ONE LINE MENTIONING FORMATTING -- which is what `covered by construction rather than by copy` was supposed to mean.",
+        "CONSEQUENCE 2 DID NOT DISSOLVE AND BECAME MORE STRUCTURAL: the isolating perturbation is NO LONGER CONSTRUCTIBLE, since one condition now serves every method. Correctly classified, with NO exact-equality assertion weakened to manufacture a firing.",
+        "diagnosticProvider IS A FOURTH VALUE SHAPE -- DiagnosticOptions carries TWO REQUIRED BOOLEANS, so neither `true` nor `{}` type-checks. IT BROKE THE ENUMERATION PRECISELY WHERE THE PO PREDICTED, which is why the count came OUT rather than being corrected to three. Filed on PBI-38 with provenance, with the interFileDependencies-has-no-config-surface question; PBI-39 carries the dormant contributor-ordering constraint, since resolveProvider cannot land before completionProvider exists.",
+        "A SELF-CATCH BEFORE REVIEW: `the increment changes no observable behaviour at all` was refuted by THIS SPRINT'S OWN GATE, since the suite could not observe two of the three rejection paths. A claim refuted by the measurement sitting in the same report is the easiest kind to ship and one of the harder kinds to notice.",
+      ],
+    },
     {
       number: 31,
       pbi_id: "PBI-36",
@@ -389,84 +394,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 32,
-    pbi_id: "PBI-37",
-    goal: "THE READINESS GATE RAN FIRST AND IT COULD HAVE WITHDRAWN THIS PBI. It did not, and it did not vindicate the PO either: THE PRECEDENT TRANSFERS TO EXACTLY ONE OF THE TWO HALVES. Six deletions, one at a time, reverted between. The capability `if`s are DEFENDED, three of three, each by a test whose TITLE names per-method capability correctness. The rejection checks are DEFENDED ONE OF THREE -- hover's reddens four tests by name, and formatting's and completion's redden NOTHING AT ALL, which is the notifications.ts precedent arriving with the SAME ARITHMETIC (two of three copies pure convention). So the table is built where it was measured to be needed, and the capability half is carried on COLOCATION AND REQUIREDNESS rather than on a defencelessness that is not there.",
-    status: "review",
-    subtasks: [
-      {
-        test: "THE GATE ITSELF, AND IT IS A MEASUREMENT RATHER THAN AN ASSERTION: delete ONE method's capability `if` and ONE method's rejection check and record what reddens. Taken for ALL THREE of each, because the precedent it is being checked against measured all three notification copies and a one-of-three sample cannot see the split that is actually there.",
-        implementation:
-          "Six perturbations against HEAD b0e1b75 (399 pass / 26 files), each applied ALONE and reverted with `git checkout --` before the next. All three rejection checks deleted together would leave `requestRejection` unused and put a tsc/oxlint signal on top of the test signal, which is a different measurement.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE VERDICT RULE WAS FIXED IN WRITING BEFORE THE FIRST PERTURBATION RAN, because a rule chosen after seeing twelve reds is chosen under exactly the pressure the gate exists to remove. THREE BUCKETS, NOT TWO, taken from the precedent's own shape: UNDEFENDED (nothing reddens), INCIDENTAL (something reddens but no failing assertion NAMES the property -- didOpen's `four tests that never mention it`, and Sprint 31's twelve exact-equality diffs that `ARRIVE WITHOUT NAMING THEIR CAUSE`), DEFENDED (a failing assertion names the property). `EVERYTHING REDDENS` was read as EVERY deletion landing in DEFENDED.",
-          "CAPABILITY HALF, THREE OF THREE DEFENDED, and this is the half the PO's argument does NOT survive. hover's `if` deleted: SIX fail, including `a config supplying no hover handler advertises exactly textDocumentSync` on both runtimes. completion's: TEN, including `a config supplying no completion handler advertises exactly what it can answer`. formatting's: TWELVE, including `a config supplying no formatting handler advertises exactly what it can answer` -- and TWELVE RE-MEASURES SPRINT 31'S HANDED NUMBER AND CONFIRMS IT. In each case the failing set CONTAINS a test whose title names the property, so none of the three is the incidental bucket the twelve alone would have suggested.",
-          "REJECTION HALF, ONE OF THREE DEFENDED, and this is where the precedent transfers. hover's check deleted: FOUR fail, `hover before initialize is answered -32002, and initialize then still succeeds` and `hover after shutdown is answered -32600, and exit still returns 0`, both runtimes -- DEFENDED, by name. formatting's check deleted: 399 pass, 0 fail, `tsc --noEmit` 0, `oxlint` 0 errors. completion's check deleted: 399 pass, 0 fail, `tsc --noEmit` 0. TWO OF THREE ARE PURE CONVENTION.",
-          "BOTH ZEROS ARE INTERPRETABLE BECAUSE THE FIXTURE INVENTORY WAS TAKEN BEFORE THE PERTURBATIONS, WHICH IS S20 APPLIED TO A NULL RESULT: `reddened nothing` has two causes -- the convention is convention, or NO FIXTURE CAN OBSERVE IT -- and they are not the same finding. MEASURED: test/fixtures/formatting-fixed.ts and formatting-offsets.ts supply formatting and are driven by test/formatting.test.ts, ELEVEN fixtures supply completion, and test/protocol.test.ts already sends a pre-initialize request through `session.requestError` for HOVER. The means to observe exist and nothing uses them. So both zeros are PURE CONVENTION and neither is an unobservability artefact.",
-          "WHAT THE GATE COSTS THE PBI, RECORDED BECAUSE A GATE THAT ONLY EVER CONFIRMS ITS AUTHOR IS NOT A GATE: criterion 2's capability contributor may NO LONGER be argued from `the convention is undefended`. It is defended, three times, by name. What survives is the criterion's OWN stated ground -- COLOCATION AND REQUIREDNESS -- plus the one thing the perturbation cannot reach, stated as REASONED and not measured: every one of those six tests is about a method THAT EXISTS, and no test can redden for a FOURTH method whose capability contribution was never written. The gate measures the copies that are there; the story is about the copy nobody wrote yet.",
-        ],
-      },
-      {
-        test: "BORN GREEN AND DECLARED SO: the 399 tests already in the suite ARE the test for this subtask, because it changes no observable behaviour. What it must not do is change any answer tsudoi gives, and the whole suite passing unchanged is what says it did not.",
-        implementation:
-          "The request table in src/methods.ts as a MAPPED TYPE over `Method`; the drive kind DERIVED from `MethodMap`'s declared result; a required capability CONTRIBUTOR per entry; a router applying the rejection -> requestContext -> answerUnlessCancelled prologue and epilogue; src/server.ts's three `if`s replaced by `contributeCapabilities` and its superseded clause rewritten.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "0b0beb6",
-            message:
-              "refactor(methods): the request table, built where the gate measured it was needed",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE MAPPED TYPE IS WHAT MAKES THE USER STORY TRUE, and it is the part no amount of prose could have delivered: `{ [M in Method]: RequestEntry<M> }` means a method `MethodMap` declares and the table omits is a COMPILE ERROR NAMING THE MISSING KEY (measured TS2741). `A method that decides nothing does not compile` is now a fact about the compiler rather than an aspiration.",
-          "THE DRIVE KIND IS DERIVED RATHER THAN DECLARED FREEHAND, which was not asked for and is strictly stronger: `DriveKind<M>` reads `MethodMap[M][\"result\"] extends AsyncGenerator<...>`, so writing `generator-driven` on hover's entry fails TS2322. The two kinds are still NAMED at each entry -- legibility was the point -- but they can no longer disagree with the handler's actual shape.",
-          "THE SECOND AXIS SPRINT 31 NAMED TURNED OUT NOT TO BE AN AXIS. It recorded the no-handler case as having TWO SHAPES that any table `must also carry or silently flatten` -- optional-call versus early-return. They are NOT independent of the drive: each drive has exactly one of them, so choosing the drive chooses it. Nothing third was invented, and nothing was flattened.",
-          "THE RECORDED DECISION OPPOSING A TABLE WAS HONOURED AT ITS OWN SITE RATHER THAN DELETED. `there is no shape both fit into that is not an invention` still stands at reportHandlerFailure, with a paragraph saying WHY IT SURVIVED: the calls are still two, at driveAwaitedOnce and driveGenerator, and a method picks one BY NAME.",
-        ],
-      },
-      {
-        test: "test/methods-table.test.ts: every entry's key equals its own `type.method`; every method in the table is refused -32002 before initialize; every method in the table is answered -32800 when cancelled. SIX tests, all BORN GREEN, and every one of them perturbed rather than trusted.",
-        implementation:
-          "Assertions that ITERATE `requestEntries` instead of naming methods, plus test/fixtures/all-methods.ts -- one config supplying every method in the table.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "890bbd6",
-            message: "test(methods): the prologue asserted over the table, not once per method",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE GATE'S FINDING IS WHAT THESE ANSWER, AND THE REMEDY DELIBERATELY IS NOT TWO MORE HAND-WRITTEN ASSERTIONS: the gate measured formatting's and completion's rejection checks defended by nothing, and writing an assertion per method would have reproduced -- inside the test suite -- exactly the convention this PBI exists to retire. The tests iterate the table, so a fourth method is covered THE MOMENT IT IS DECLARED.",
-          "P-A, THE ONE THAT PROVES THE DISCLOSURE IS REAL: `HoverRequest.type` written into completion's slot leaves `tsc --noEmit` AT 0. Their params differ only in OPTIONAL members so each is assignable to the other, and a generator entry cannot pin its result because the protocol declares one WIDER than a tsudoi generator returns (measured TS2322 when tried). The key-equals-type.method assertion reddens AND NAMES THE CAUSE; the two wire tests redden after it. So the compile-time claim is bounded honestly at the type, and a test carries the rest.",
-          "P-B: the router's rejection throw deleted reddens SIX -- the four hover ones that already existed AND the two new by-construction ones, both runtimes. P-C: the epilogue's post-settle abort check deleted reddens TWENTY-FOUR including the new -32800 test on both runtimes.",
-          "A CLAIM THE EXECUTOR WROTE INTO THE NEW FIXTURE WAS MEASURED FALSE IN THE SAME SESSION AND CORRECTED IN PLACE WITH THE CORRECTION RECORDED, which is the standard the PO imposed on themselves at Sprint 28. The doc block said a method added to the table and not added to the fixture makes these tests fail. P-D: delete the AWAITED-ONCE handler (formatting) and ALL SIX STAY GREEN. P-E: delete the GENERATOR-DRIVEN handler (completion) and the -32800 test REDDENS on both runtimes.",
-          "AND THAT FALSE CLAIM PAID FOR ITSELF, because the cause is a REAL DIVERGENCE NOBODY HAD NAMED: the generator drive's no-handler EARLY RETURN sits AHEAD of the cancellation epilogue, so a cancelled request to a generator-driven method with no handler is answered NULL, while the awaited-once drive reaches the epilogue either way and answers -32800. PRE-EXISTING -- completion has always returned early -- and INVISIBLE UNTIL THE TWO DRIVES SAT SIDE BY SIDE. NOT CHANGED: LSP 3.17 permits answering a cancelled request normally, so neither answer violates anything, and making them agree is a behaviour change no criterion asked for. Recorded at the line that causes it. THE IRONY IS WORTH THE LINE: criterion 3 warned that a table might destroy a difference hand-writing had made visible, and the table MADE ONE VISIBLE that three hand-written copies had hidden.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE GATE PASSED WITHOUT VINDICATING THE PO, AND THE SPLIT IS THE RESULT RATHER THAN A DETAIL OF IT. The withdrawal condition -- EVERYTHING REDDENS -- is NOT met, so the PBI stands. But four of the six deletions redden a test that names the property, and the PO's precedent reaches only the rejection half. Reported as a split rather than narrowed to the surviving half, which would be a PO call and not an executor's.",
-      "SHIPPED IN 59158fe..6595871. 405 green from 399, 27 files from 26 -- SIX ADDED, NONE REMOVED OR WEAKENED -- each DoD command run separately and unpiped with its exit read directly. scrum.ts committed ALONE twice; the hook was never bypassed.",
-      "THE INCREMENT CHANGES NO BEHAVIOUR THE SUITE CAN OBSERVE, AND THE WEAKER SENTENCE IS THE MEASURED ONE. Every one of the 399 pre-existing tests passed unchanged at every step. What that does NOT establish is `no observable behaviour at all`, AND THIS SPRINT HOLDS ITS OWN EVIDENCE FOR WHY: the gate measured formatting's and completion's rejection paths covered by NOTHING, so the suite could not have detected a change on them however loud. A pre-existing suite staying green is a claim about COVERAGE, and S13 is explicit that recalled coverage is not coverage. The first draft of this line said `no observable behaviour at all` and was corrected before Review rather than by it. What changed is WHERE a decision is written and WHETHER omitting it compiles.",
-      "EXPECTED CONSEQUENCE 1 DISSOLVED, AND IT DISSOLVED FOR THE REASON PREDICTED. Sprint 31's residual -- a cancelled formatting request answered -32800 with nothing asserting it -- is closed WITHOUT ONE LINE MENTIONING FORMATTING: the assertion iterates the table, and formatting is in the table. THE ARGUMENT HAS TWO PREMISES AND BOTH ARE HELD RATHER THAN ASSUMED -- exhaustiveness is compile-checked (TS2741), and `the router applies the prologue to every entry` is held by P-B and P-C, which redden the new assertions when the prologue and the epilogue are removed. WITH ONE BOUND, MEASURED AND NOT GUESSED: it reaches a generator-driven method only if a handler exists for it, per P-D/P-E above.",
-      "EXPECTED CONSEQUENCE 2 DID NOT DISSOLVE, AND THE TABLE MADE IT MORE STRUCTURAL RATHER THAN LESS. Sprint 31's capability negative control still cannot fire alone. MEASURED: with the loop's per-method guard removed, FOURTEEN tests redden and the control is among them, never first. AND THE PERTURBATION THAT WOULD HAVE ISOLATED IT IS NO LONGER CONSTRUCTIBLE AT ALL -- there is no per-method capability `if` left to delete, because ONE condition in the router now serves every method. So the note at its site CARRIES FORWARD WITH A MEASUREMENT BEHIND IT, which is exactly what the PBI asked for in the branch where it does not dissolve.",
-      "diagnosticProvider's VALUE SHAPE IS NO LONGER UNMEASURED, and it is a FOURTH shape that breaks the enumeration exactly where the PO predicted it might. MEASURED at protocol 3.18.2: ServerCapabilities:1106 declares `diagnosticProvider?: DiagnosticOptions | DiagnosticRegistrationOptions`, and DiagnosticOptions (protocol.diagnostic.d.ts:50-67) carries TWO REQUIRED BOOLEANS, interFileDependencies and workspaceDiagnostics. `true` would not type-check and NEITHER WOULD `{}`. The contributor-as-a-function criterion is now measured against the method that was expected to break it rather than argued from the three already written, and the PO's ruling to REMOVE the count rather than correct it is vindicated by measurement.",
-      "CRITERION 3 DISCHARGED BY GREPPING THE CLAIM'S WORDS RATHER THAN BY READING THE DIFF, per S29. THREE PARAGRAPHS MOVED AND EACH IS NAMED WITH ITS DESTINATION: completion's EMPTY-OPTIONS-NOT-triggerCharacters paragraph went from src/server.ts to the completion entry's contributor; formatting's `true`-NOT-`{}`/DocumentFormattingOptions paragraph went from src/server.ts to the formatting entry's contributor; and completionProgress's `a single instance because ProgressType carries no state` went from a module-level constant to the generator entry's `progress` field. GREPPED: `triggerCharacters` and `DocumentFormattingOptions` now appear in src/methods.ts AND NOWHERE ELSE in the tree. Sprint 31's `THE THIRD COPY ... NOT DEDUPLICATED` block is gone from src/ -- correctly, since it argued for a restraint this sprint was authorised to end -- and survives only in Sprint 31's own completed record, which is history rather than a live claim.",
-      "CRITERION 4 IS PROSE SURGERY AND WAS DONE AS SURGERY. The REASON -- a client is entitled to send whatever it was told about, so each capability is claimed only where the config can answer it -- IS VERBATIM AND UNCHANGED, and the block now says out loud that reading what follows as a reversal of it would be exactly wrong. What the rewrite records is that the MECHANISM was stated AS THOUGH IT FOLLOWED from that reason and DOES NOT: the policy constrains WHICH capabilities are claimed and says nothing about WHERE the per-method answer is written. GREPPED for the clause's own words across every .ts, .md and .json in the tree: it survives in exactly two places, the PBI criterion that commissioned the rewrite and the rewrite itself, which quotes it as superseded.",
-      "THE STANDING S14 RE-RUN, AGAINST THE FILE THIS SPRINT REWROTE: Sprint 31's P1 -- formatting-offsets.ts's positionAt replaced by a hardcoded Position -- still reddens `a handler that knows only offsets emits the Positions the client receives` ALONE, both runtimes, out of 405. That discharges the item's SECOND rationale, detecting disarmed controls, against a sprint that rewrote the entire request path underneath it.",
-      "THE ORDERING CONSTRAINT THE CONTRIBUTOR DESIGN INTRODUCES IS WRITTEN AT THE TYPE AND NOTHING CHECKS IT, disclosed rather than discovered at PBI-39: a contributor writing into a key ANOTHER method owns must run AFTER that method's, and the table is iterated in declaration order. Dormant today because no entry depends on another; real the moment completionItem/resolve arrives.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 30,
