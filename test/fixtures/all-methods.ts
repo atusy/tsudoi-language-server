@@ -43,7 +43,7 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  *
  * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS. That last
  * line reddened the `answered -32800 when cancelled` test from Sprint 32 until
- * Sprint 35, and PBI-40 is why it does not any more: the generator drive's
+ * Sprint 35, and PBI-40 is why it does not any more: the stream drive's
  * no-handler return used to sit AHEAD of the cancellation epilogue and answer
  * `null`, so removing this file's completion handler changed a cancelled
  * request's answer. That drive now answers through the epilogue like the other

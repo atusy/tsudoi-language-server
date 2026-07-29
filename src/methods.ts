@@ -25,7 +25,7 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * TWO KINDS, NAMED, AND THE CHOICE IS NOT FREE: it is DERIVED from what
  * `MethodMap` says the handler returns, so a method declared with the wrong
  * drive does not compile. MEASURED at vscode-languageserver-protocol 3.18.2 --
- * writing `generator-driven` on hover's entry fails TS2322 naming the two
+ * writing `stream-driven` on hover's entry fails TS2322 naming the two
  * strings.
  *
  * THIS IS WHERE THE RECORDED DECISION AGAINST A TABLE IS HONOURED RATHER THAN
@@ -43,7 +43,7 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * because it was labelled MEASURED and was an inference: this block said
  * `textDocument/diagnostic` declares `partialResult`, SO it is generator-shaped
  * like completion. DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT --
- * see `driveGenerator`, which states both of that drive's requirements and which
+ * see `driveStream`, which states both of that drive's requirements and which
  * this method fails on the second. `textDocument/diagnostic` is AWAITED ONCE.
  *
  * BOTH REMAINING METHODS MEASURED AT SPRINT 33 rather than one measured and one
@@ -55,7 +55,7 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  */
 type DriveKind<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
-    ? "generator-driven"
+    ? "stream-driven"
     : "awaited-once";
 
 /**
@@ -174,10 +174,10 @@ export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 type EntryErrorPayload = unknown;
 
 /**
- * The chunk a generator-driven method streams, read off `MethodMap` rather than
+ * The chunk a stream-driven method streams, read off `MethodMap` rather than
  * fixed here: the drive is shared, so the payload type may not be one method's.
  */
-type GeneratorChunk<M extends Method> =
+type StreamChunk<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<infer C, unknown, unknown> ? C : never;
 
 /**
@@ -219,7 +219,7 @@ interface AwaitedOnceEntry<M extends Method> {
  * assertion, every entry, and it is the reason this paragraph is a disclosure
  * and not a defect.
  */
-interface GeneratorDrivenEntry<M extends Method> {
+interface StreamDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
   readonly type: RequestType<MethodMap[M]["params"], unknown, EntryErrorPayload>;
   /**
@@ -227,7 +227,7 @@ interface GeneratorDrivenEntry<M extends Method> {
    * so the drive names no single method's payload -- `ProgressType` carries no
    * state, so one instance per method is the whole cost.
    */
-  readonly progress: ProgressType<GeneratorChunk<M>>;
+  readonly progress: ProgressType<StreamChunk<M>>;
   readonly capability: CapabilityContributor;
 }
 
@@ -237,7 +237,7 @@ interface GeneratorDrivenEntry<M extends Method> {
  */
 export type RequestEntry<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
-    ? GeneratorDrivenEntry<M>
+    ? StreamDrivenEntry<M>
     : AwaitedOnceEntry<M>;
 
 /**
@@ -271,7 +271,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     },
   },
   "textDocument/completion": {
-    drive: "generator-driven",
+    drive: "stream-driven",
     type: CompletionRequest.type,
     progress: new ProgressType<CompletionItem[]>(),
     // EMPTY OPTIONS, NOT triggerCharacters: TsudoiConfig has no surface for a
@@ -384,13 +384,13 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     },
   },
   "textDocument/diagnostic": {
-    // AWAITED ONCE, AND IT WAS PLANNED AS GENERATOR-DRIVEN UNTIL IT WAS
+    // AWAITED ONCE, AND IT WAS PLANNED AS STREAM-DRIVEN UNTIL IT WAS
     // MEASURED. `DocumentDiagnosticRequest` declares `partialResult`, which is
-    // where the expectation came from -- and see `driveGenerator`: declaring it
+    // where the expectation came from -- and see `driveStream`: declaring it
     // is NECESSARY AND NOT SUFFICIENT, because that drive concatenates chunks
     // and this method's chunks are objects. Nothing here chooses the drive
     // anyway; `DriveKind` DERIVES it from `MethodMap`, so writing
-    // `generator-driven` on this line would not compile.
+    // `stream-driven` on this line would not compile.
     drive: "awaited-once",
     type: DocumentDiagnosticRequest.type,
     // AN OBJECT WITH TWO REQUIRED BOOLEANS, WHICH IS WHY NEITHER `true` NOR `{}`
@@ -461,7 +461,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
  * the router does survives the cast.
  */
 interface ErasedEntry {
-  readonly drive: "awaited-once" | "generator-driven";
+  readonly drive: "awaited-once" | "stream-driven";
   readonly type: RequestType<unknown, unknown, EntryErrorPayload>;
   readonly progress: ProgressType<unknown[]>;
   readonly capability: CapabilityContributor;
@@ -471,7 +471,7 @@ interface ErasedEntry {
 type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Promise<unknown>;
 
 /** A handler driven a chunk at a time, with the method's own types erased. */
-type ErasedGeneratorHandler = (
+type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
 ) => AsyncGenerator<unknown[], unknown[] | null, void>;
@@ -545,7 +545,7 @@ export type WorkspaceFolders = () => readonly WorkspaceFolder[];
  *
  * THAT SENTENCE IS UNCHANGED AND IS NOT A LEFTOVER. A table now exists, and it
  * did NOT overturn this: the two calls are still two, at `driveAwaitedOnce` and
- * `driveGenerator`, and a method picks one of them BY NAME. What the table
+ * `driveStream`, and a method picks one of them BY NAME. What the table
  * carries is what they genuinely share -- the rejection, the context and the
  * cancelled answer -- and nothing was invented to make one shape out of two.
  */
@@ -645,9 +645,9 @@ function requestContext(
  * never looks at its signal is suppressed exactly like one that does.
  *
  * THAT SENTENCE CARRIED A QUALIFIER FOR THREE SPRINTS AND IT IS GONE RATHER THAN
- * FORGOTTEN. The generator drive used to return early when the config supplied
+ * FORGOTTEN. The stream drive used to return early when the config supplied
  * no handler, AHEAD of this function, so a cancelled request to a
- * generator-driven method with NO handler was answered `null` and an
+ * stream-driven method with NO handler was answered `null` and an
  * awaited-once one -32800 -- pre-existing, revealed rather than introduced, and
  * invisible until the two drives sat side by side. MEASURED at Sprint 32 by P-D
  * and RE-MEASURED at Sprint 35 by restoring that return, which reddens the
@@ -810,10 +810,10 @@ export function registerMethods(
         // handler exists and answer through `answerUnlessCancelled`, so a
         // cancelled request is -32800 either way; until Sprint 35 completion's
         // return sat ahead of that function and answered `null`.
-        if (entry.drive === "generator-driven") {
-          return driveGenerator({
+        if (entry.drive === "stream-driven") {
+          return driveStream({
             method,
-            handler: handler as ErasedGeneratorHandler | undefined,
+            handler: handler as ErasedStreamHandler | undefined,
             params,
             cancellation,
             entry,
@@ -864,7 +864,7 @@ async function driveAwaitedOnce(run: {
 }
 
 /**
- * The GENERATOR-DRIVEN drive, and it is the whole of the streaming API. A config
+ * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
  * author writes `yield` and `return`; whether that leaves as $/progress or as
  * one aggregated response is decided here, from the one thing the protocol
  * actually offers -- the presence of partialResultToken. There is no client
@@ -897,9 +897,9 @@ async function driveAwaitedOnce(run: {
  * the requested one, where completion's chunks are more items of a single list.
  * `textDocument/diagnostic` is served awaited-once.
  */
-async function driveGenerator(run: {
+async function driveStream(run: {
   method: Method;
-  handler: ErasedGeneratorHandler | undefined;
+  handler: ErasedStreamHandler | undefined;
   params: unknown;
   cancellation: CancellationToken;
   entry: ErasedEntry;

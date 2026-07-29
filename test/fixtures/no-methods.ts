@@ -19,7 +19,7 @@ import type { TsudoiConfig } from "../../src/types.ts";
  * WHAT IT IS FOR: the by-construction assertions in test/methods-table.test.ts
  * that a request with no handler is answered `null` normally and -32800 when
  * cancelled, WHICHEVER DRIVE its method uses. Before Sprint 35 those two
- * answers disagreed across the drives -- the generator drive returned ahead of
+ * answers disagreed across the drives -- the stream drive returned ahead of
  * the cancellation epilogue and answered `null` to a cancelled request, where
  * the awaited-once drive reached the epilogue and answered -32800.
  */

@@ -74,7 +74,7 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once. Not generator-driven despite `DocumentDiagnosticRequest`
+   * Awaited once. Not stream-driven despite `DocumentDiagnosticRequest`
    * declaring `partialResult`: that drive concatenates chunks and requires
    * arrays, while `DocumentDiagnosticReportProgress` is a union of two object
    * types -- and the stream carries RELATED DOCUMENTS, which are out of scope,

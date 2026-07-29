@@ -62,7 +62,7 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
 /**
  * THE COMPILER CANNOT DO THIS ONE, WHICH IS WHY IT IS A TEST.
  *
- * MEASURED at vscode-languageserver-protocol 3.18.2: a generator-driven entry
+ * MEASURED at vscode-languageserver-protocol 3.18.2: a stream-driven entry
  * cannot pin its result -- the protocol declares `CompletionItem[] |
  * CompletionList | null` where a tsudoi generator returns `CompletionItem[] |
  * null` -- so its `type` slot is left open, and `HoverParams` is assignable to
@@ -96,16 +96,16 @@ describe("the request table", () => {
    * THE SAME PRESENCE ASSERTION, FOR THE OTHER LOOP THAT COULD GO GREEN ON
    * NOTHING. The no-handler tests below iterate the table and say what a
    * cancelled request is answered WHICHEVER DRIVE the method uses -- and every
-   * one of them would pass on a table with no generator-driven entry in it,
+   * one of them would pass on a table with no stream-driven entry in it,
    * while measuring nothing at all about the drive whose answer this is about.
    *
    * NOT A COUNT AND NOT AN INDEX: it says the kind is REPRESENTED, so a sixth
    * method joining or `textDocument/completion` moving does not touch it.
    */
-  test("the table declares a generator-driven entry, so the drives below are both exercised", () => {
+  test("the table declares a stream-driven entry, so the drives below are both exercised", () => {
     const drives = Object.values(requestEntries).map((entry) => entry.drive);
 
-    expect(drives).toContain("generator-driven");
+    expect(drives).toContain("stream-driven");
     expect(drives).toContain("awaited-once");
   });
 });
@@ -178,7 +178,7 @@ for (const runtime of runtimes) {
      * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one drives handlers and
      * measures the epilogue's post-settle abort check; this one drives NO
      * handler at all, which is the case the two drives used to disagree about
-     * -- the generator drive returned `null` ahead of the epilogue where the
+     * -- the stream drive returned `null` ahead of the epilogue where the
      * awaited-once drive built its context either way and answered -32800.
      * MEASURED at Sprint 32 by P-D, RE-MEASURED at Sprint 35 by restoring that
      * early return: this test reddens at `textDocument/completion` and at no
@@ -227,7 +227,7 @@ for (const runtime of runtimes) {
      * IT IS ALSO WHAT SAYS PBI-40 CHANGED ONE ANSWER AND NOT TWO. Making the
      * cancelled answer agree across the drives must leave the UNCANCELLED
      * no-handler answer exactly where it was -- `null`, on both drives -- and
-     * answering `[]` for the generator-driven one instead reddens here.
+     * answering `[]` for the stream-driven one instead reddens here.
      *
      * BORN GREEN, DECLARED. Nothing about it could fail before the change that
      * made the test above pass, and it is kept because it is the only assertion
