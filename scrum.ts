@@ -84,6 +84,30 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
+            "PUBLISH THE PROTOCOL NAMES THE MODULES ACTUALLY NAME -- MEASURED ONCE THE HANDLERS ARE WRITTEN, NOT A PREDICTED SET. Candidates: Diagnostic, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, TextEdit. Publish the ones the modules name AND NO MORE, each with its own reason beside it.",
+          verification:
+            "src/types.ts's OWN criterion for the eight is `the protocol names the examples ACTUALLY USE`, measured against examples/. THE EIGHT EXIST PRECISELY TO MAKE EXAMPLE MODULES WRITABLE -- completion-path.ts and hover-wordnet.ts are extractable ONLY BECAUSE CompletionItem, CompletionParams, Hover and HoverParams were published. ADDING EXAMPLES ADDS NAMES: THE RULE OPERATING, NOT A WIDENING OF IT. The alternative is worse than three type names -- THE README WOULD TEACH A PATTERN TSUDOI'S OWN PUBLISHED SURFACE CANNOT SUPPORT. And the Sprint-33 refusal of TextEdit and DocumentFormattingParams is NOT OVERTURNED: its reversal condition was `an author found declaring an intermediate TextEdit[] and importing the package for it`, and THE EXAMPLE MODULE IS THAT AUTHOR -- the first evidence-shaped reversal condition in this thread to fire.",
+        },
+        {
+          criterion:
+            "THE FIXTURE STAYS UNANNOTATED, and src/types.ts's `imported and not re-exported` sentence goes FALSE and is corrected in the same commit.",
+          verification:
+            "publishing does NOT force annotation, so test/fixtures/diagnostic-offsets.ts keeps its contextual-typing evidence intact -- its own comment warns `Add an annotation here and that half of the evidence is gone`. THE NEED FOR ANNOTATION LIVES IN THE EXAMPLE, NOT THE FIXTURE.",
+        },
+        {
+          criterion:
+            "install.ts's exampleSources() doc block says `TWO FILES, not one` and `the artifact under test is both files` while THE FUNCTION RETURNS FOUR. Replace with a NON-COUNTING form.",
+          verification:
+            "ALREADY FALSE AT HEAD, found while holding, sitting in the exact function this PBI edits. COUNTS IN PROSE ARE NOW THE MOST RELIABLE DEFECT CLASS IN THIS REPOSITORY -- two in published prose, four in criteria, ALL found by grep or re-measurement and NONE by reading.",
+        },
+        {
+          criterion:
+            "README's framing is CORRECTED, not preserved: the example set now teaches TWO SHAPES -- a handler that GOES SOMEWHERE ELSE for its answer, and a handler that COMPUTES ITS ANSWER FROM THE DOCUMENT IT WAS GIVEN.",
+          verification:
+            "the current framing stays TRUE OF TWO MODULES and stops being TRUE AS A FRAMING, and THE FRAMING IS WHAT IS PUBLISHED -- saying only the first is a coverage claim that is no longer true. THE CORRECTED FRAMING IS ALSO THE BETTER ONE: computing from the document is THE COMMONER CASE FOR A REAL LANGUAGE SERVER -- a parser does not go anywhere else -- so the README currently TEACHES THE RARER SHAPE AS THOUGH IT WERE THE SHAPE.",
+        },
+        {
+          criterion:
             "install.ts's exampleSources() gains the new modules -- AND THE CRITERION NAMES THE FAILURE MODE.",
           verification:
             "omitting them fails the published-artifacts probes IN A WAY THAT LOOKS LIKE A RESOLUTION BUG and would be misdiagnosed.",
