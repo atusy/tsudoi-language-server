@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { initializeParams } from "./helpers/lsp.ts";
+import { importsAndUses, publicProtocolNames } from "./helpers/published-names.ts";
 import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
 import { runCommand } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
@@ -139,24 +140,6 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
 });
 
 /**
- * THE PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS, spelled here so a probe
- * that imports them cannot quietly agree with a src/types.ts that dropped one.
- *
- * WHY THESE AND NOT OTHERS is stated at src/types.ts, where a ninth would be
- * added. What this list is for is the two probes below.
- */
-const publicProtocolNames = [
-  "CompletionItem",
-  "CompletionItemKind",
-  "CompletionParams",
-  "Hover",
-  "HoverParams",
-  "MarkupContent",
-  "Position",
-  "WorkspaceFolder",
-] as const;
-
-/**
  * THE VALUE ARM, and no type check can stand in for it.
  *
  * `CompletionItemKind` is an enum -- a VALUE -- so a config that reaches for it
@@ -195,16 +178,10 @@ test("the published module re-exports CompletionItemKind as a runtime value", as
  * `the in-repo arm cannot observe what the published arm checks` measures
  * directly.
  *
- * Each name is USED in a type position rather than merely imported, and
- * `declare const` is the one form that fits all eight: seven are interfaces or
- * aliases, so `typeof` -- which needs a VALUE -- would fail on them for a
- * reason that has nothing to do with what ships.
+ * The list and the source it builds live in test/helpers/published-names.ts,
+ * which carries the reason for each -- including why every name is USED rather
+ * than merely imported.
  */
-function importsAndUses(names: readonly string[], from: string): string {
-  const uses = names.map((name, index) => `declare const __use${String(index)}: ${name};\n`);
-  return `import { ${names.join(", ")} } from "${from}";\n${uses.join("")}`;
-}
-
 test("all eight published protocol names type-check from the installed copy", async () => {
   const result = await consumer.typeCheck({
     "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
