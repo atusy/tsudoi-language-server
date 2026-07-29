@@ -2,7 +2,7 @@ import type {
   CompletionItem,
   CompletionParams,
   RequestContext,
-  TsudoiConfig,
+  TsudoiConfigFactory,
 } from "@atusy/tsudoi/types";
 import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
@@ -10,7 +10,17 @@ import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 import { hoverWordnet } from "./hover-wordnet.ts";
 import { resolvePathStat } from "./resolve-path-stat.ts";
 
-export default (): Promise<TsudoiConfig> => {
+// ANNOTATED, AND THE ANNOTATION IS THE POINT RATHER THAN THE STYLE: it binds
+// this file to the factory type tsudoi declares, so the day that type changes
+// shape THIS FILE is a compile error rather than a config that quietly receives
+// something it does not expect. A config written without the annotation is not
+// wrong -- nothing type-checks an author's own file against it -- but it is
+// undefended, which is why the documented route carries it.
+//
+// It also PAYS FOR ITSELF twice over: the return type and every handler's
+// `context` and `params` are supplied by it, so annotating here is what lets
+// them be annotated nowhere.
+const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (
@@ -131,3 +141,5 @@ export default (): Promise<TsudoiConfig> => {
     },
   });
 };
+
+export default config;

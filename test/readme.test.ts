@@ -248,6 +248,19 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/default export/i, /factory/i],
   },
   {
+    // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one.
+    // PBI-44 removed a parameter authors had to name and then ignore, and an
+    // unexplained token put in its place would have been a lateral move -- so
+    // the README owes the REASON, and this is what holds it to that.
+    //
+    // Nothing type-checks an author's own config against `TsudoiConfigFactory`
+    // -- src/config.ts reaches the type through a cast from `unknown` -- so the
+    // annotation is the whole of the defence on the documented route, and the
+    // sentence explaining it is load-bearing rather than decorative.
+    name: "annotating the factory const is what reports a config shape change",
+    tokens: [/TsudoiConfigFactory/, /annotat/i, /shape changes/i],
+  },
+  {
     name: "deno must be on PATH or `bun test` fails",
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
   },

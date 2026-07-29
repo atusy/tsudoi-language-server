@@ -90,9 +90,9 @@ This works in an empty directory -- bun writes the `package.json` for you.
 <!-- quickstart in=my-language-server write=tsudoi.config.ts -->
 
 ```ts
-import type { Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";
+import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> =>
+const config: TsudoiConfigFactory = () =>
   Promise.resolve({
     methods: {
       "textDocument/hover": async (context, params) => {
@@ -102,14 +102,20 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> =>
       },
     },
   });
+
+export default config;
 ```
 
-Two things you cannot guess from the outside:
+Three things you cannot guess from the outside:
 
-- The config's **default export is a factory** -- a function tsudoi calls with a `Tsudoi`,
+- The config's **default export is a factory** -- a function tsudoi calls with no arguments,
   returning the config. A file that exports the config object itself is rejected, by name.
-- Handlers are typed by the method key. `context` and `params` above need no annotations because
-  `TsudoiConfig` supplies them; `@atusy/tsudoi/types` is the only import a config needs.
+- **Annotating the const `TsudoiConfigFactory`** is what makes tsudoi tell you, in your own file,
+  when the config shape changes -- without it nothing type-checks your config against tsudoi at
+  all, and a factory written to an older shape fails silently instead.
+- Handlers are typed by the method key. `context` and `params` above need no annotations, and
+  neither does the return type, because that one annotation supplies them all;
+  `@atusy/tsudoi/types` is the only import a config needs.
 
 ### 4. In `my-language-server/`, start the server
 
