@@ -1014,19 +1014,16 @@ async function driveGenerator(run: {
         // own cleanup defers itself. Reporting it would be reporting
         // JavaScript, so PBI-12 was dropped on culpability, not on defect.
         //
-        // THE ITERATOR CONTRACT AND NOT THE GENERATOR ONE, which is what makes
-        // the `?.` below a GUARD rather than decoration. `AsyncGenerator`
-        // REQUIRES `return`, so under it the optional call is unreachable and
-        // deleting the `?.` still compiles -- MEASURED, tsc --noEmit exit 0 in
-        // both forms, which means nothing here would have told us if the thing
-        // being closed stopped having a `return` at all. `AsyncIterator`
-        // declares `return` OPTIONAL, so this local is the narrower and
-        // therefore the honest type: what this drive actually needs of the
-        // thing it closes is the iterator contract, and every async generator
-        // satisfies it. Deleting the `?.` is now a compile error naming this
-        // expression.
-        const cleanup: AsyncIterator<unknown[], unknown[] | null, void> = chunks;
-        cleanup.return?.(null).then(undefined, (error: unknown) => {
+        // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN
+        // OVERSIGHT. A local narrowed to `AsyncIterator` stood here for exactly
+        // one sprint, on the reasoning that the iterator contract is what this
+        // drive actually needs and that `AsyncIterable` -- the shape the stream
+        // was about to be published as -- makes `return` OPTIONAL. THAT SHAPE
+        // WAS THEN RULED OUT, so the guard would have widened a guarantee away
+        // by hand and then defended against the absence it had just
+        // manufactured. This repository prefers FORECLOSING a failure to
+        // DETECTING one, and an `AsyncGenerator` forecloses this one.
+        chunks.return(null).then(undefined, (error: unknown) => {
           reportCleanupFailure(run.method, error);
         });
         return null;
