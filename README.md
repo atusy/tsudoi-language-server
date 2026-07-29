@@ -1,8 +1,9 @@
 # tsudoi
 
 tsudoi assembles a Language Server out of one TypeScript file. You write handlers for LSP
-methods -- hover, completion, formatting -- and tsudoi speaks the protocol, manages the document store and
-answers the lifecycle requests an editor expects.
+methods -- hover, completion, formatting, pull diagnostics and completion-item resolution -- and
+tsudoi speaks the protocol, manages the document store and answers the lifecycle requests an
+editor expects.
 
 The server runs under [bun](https://bun.sh/docs/installation) and under
 [deno](https://docs.deno.com/runtime/getting_started/installation/), from the same installed

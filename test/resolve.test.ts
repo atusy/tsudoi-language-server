@@ -83,11 +83,30 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE NEGATIVE CONTROL, and it is not optional: a client is entitled to
-    // send whatever it was told about, so a capability claimed where the config
-    // cannot answer it makes the server lie about itself. The completion
-    // provider is still advertised here -- this config can answer completion --
-    // and it carries nothing inside it.
+    /**
+     * THE NEGATIVE CONTROL, and it is not optional: a client is entitled to
+     * send whatever it was told about, so a capability claimed where the config
+     * cannot answer it makes the server lie about itself. The completion
+     * provider is still advertised here -- this config can answer completion --
+     * and it carries nothing inside it.
+     *
+     * IT IS BYTE-IDENTICAL TO AN ASSERTION IN test/completion.test.ts, SAME
+     * FIXTURE AND ALL, AND IT IS KEPT ON THE SPRINT-31 GROUND RATHER THAN BY
+     * OVERSIGHT. That one's TITLE names completionProvider's PRESENCE; this
+     * one's names resolveProvider's ABSENCE, and they are the two different
+     * properties one object happens to carry. A duplicate detection that
+     * arrives without naming its cause is the half of S9 this project has
+     * already been caught by.
+     *
+     * WHAT IT IS MEASURED TO CATCH: naming this method inside
+     * contributeCapabilities' shared condition -- so resolveProvider is
+     * contributed whether or not a handler exists -- reddens this assertion by
+     * name, together with every other capability negative control in the suite
+     * and the demo config's pinned capabilities. TWENTY ASSERTIONS ACROSS FIVE
+     * FILES, both runtimes, with the number of tests RUN unchanged. So the
+     * `ONLY when a handler exists` half is MEASURED and is NOT isolated, which
+     * is the same shape Sprint 31 recorded and is not a defect.
+     */
     test("a config supplying completion and no resolve handler advertises a completion provider with nothing inside it", async () => {
       const session = LspSession.start(runtime, resolveAbsent);
       try {
@@ -148,6 +167,13 @@ for (const runtime of runtimes) {
      * QUIETLY TRUE: it is the router's shared no-handler answer and not this
      * method's, and giving one method its own would be the per-method convention
      * the request table exists to retire.
+     *
+     * BORN GREEN, DECLARED RATHER THAN LEFT TO BE INFERRED. It rides the
+     * awaited-once drive's `?? null`, which hover, formatting and diagnostic
+     * already ride, so NOTHING RESOLVE-SPECIFIC DEFENDS IT and no perturbation
+     * reddens it without reddening those three together. It is here on the same
+     * footing formatting's and diagnostic's twins are: it says what the wire
+     * answer IS for a method whose result type declares no null arm.
      */
     test("a resolve request with no handler configured is answered null, twice over", async () => {
       const session = LspSession.start(runtime, resolveAbsent);
