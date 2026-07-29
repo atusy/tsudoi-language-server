@@ -392,7 +392,53 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 31,
+    pbi_id: "PBI-36",
+    goal: "THE FIRST OF THE FIVE NAMED METHODS SHIPS, AND IT ADDS NO NEW KIND OF ANYTHING: textDocument/formatting is served awaited-once like hover, documentFormattingProvider is advertised ONLY where the config can answer it, and the affordability claim -- a handler emits Positions from whatever offsets its analysis produced, because positionAt exists -- is MEASURED OVER THE WIRE rather than asserted for the remaining four. It also makes the THIRD HAND-WRITTEN COPY in registerMethods, so PBI-37's table is built against three measured shapes rather than predictions.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "test/formatting.test.ts drives a config whose formatting handler returns a FIXED TextEdit[]: the array reaches the client unchanged on BOTH runtimes -- deep equality against the literal the fixture exports, so anything tsudoi rewrote on the way out (a dropped range, a re-encoded newText) is an inequality rather than a plausible response. PAIRED with the no-handler case, which is the hover pattern: a formatting request against a config supplying no formatting handler is answered null TWICE, then shutdown/exit at 0 with zero unframed stdout bytes -- null must be an answer the session SURVIVES, not an error the connection absorbed once. Registration is independent of advertisement, so this half is reachable without any capability work.",
+        implementation:
+          "MethodMap gains `textDocument/formatting: { params: DocumentFormattingParams; result: Promise<TextEdit[] | null> }`, both names imported TYPE-ONLY from the BARE specifier and NOT re-exported -- src/types.ts's own rule for a ninth answers this: the eight are the protocol names the EXAMPLES use, no example uses these, and README already records that handlers are typed by their method key so a config author annotates nothing. registerMethods gains the THIRD hand-written copy, hover's shape verbatim (awaited-once, `?? null`). TWO PROSE CORRECTIONS RIDE IN THIS COMMIT because they are FALSE BEFORE IT AND STALE AFTER IT: README's `methods -- hover, completion --` enumeration, found by grepping the claim's words rather than the places comments live; and test/cancellation.test.ts's `for both methods`, re-scoped to the two that file drives, with the residual stated -- formatting's cancellation path is exercised by NOTHING.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED. The fixture's config key is an excess property until MethodMap carries it, so `tsc --noEmit` is red in this phase too; that is the red phase, not a defect.",
+        ],
+      },
+      {
+        test: "A config supplying a formatting handler advertises EXACTLY `{ textDocumentSync, documentFormattingProvider: true }`. THE NEGATIVE CONTROL IS NOT OPTIONAL and is the same shape completion's is: a config supplying HOVER AND NOT FORMATTING advertises EXACTLY `{ textDocumentSync, hoverProvider: true }` -- a stronger negative than an empty `methods`, because a server advertising from `methods` being non-empty passes an empty fixture and fails this one. Exact equality on both halves: `documentFormattingProvider is present` is satisfied by advertising it always, and `absent` by advertising nothing.",
+        implementation:
+          "src/server.ts gains a THIRD per-method `if`, TOP LEVEL, value `true`, with its reason at the site as the other two have: DocumentFormattingOptions extends WorkDoneProgressOptions and declares nothing else, so there is no option a config author could set and `{}` would claim work-done progress support tsudoi does not implement. The `spelled out, NOT DERIVED FROM THE SHAPE OF methods` clause is left UNTOUCHED -- restructuring it into a table is PBI-37 and carries a readiness gate that could withdraw it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED. ORDERED AFTER THE SUBTASK ABOVE ON A CORRECTNESS ARGUMENT, not for convenience: advertising first would commit a state in which a client is entitled to send a request the server answers -32601, which is the exact thing src/server.ts's per-method rule exists to prevent.",
+        ],
+      },
+      {
+        test: "THE AFFORDABILITY CLAIM, MEASURED: a fixture handler that knows only OFFSETS into the buffer -- the shape any real analysis produces -- converts them with `document.positionAt` and returns the TextEdits, and the test asserts LITERAL ranges written out by hand against a didOpen'd JAPANESE two-line document. THE EXPECTED VALUES ARE NOT COMPUTED BY CALLING positionAt IN THE TEST: both sides would then run one function and two outcomes would produce ONE observation. Japanese because every ASCII buffer satisfies a byte reading and a UTF-16 reading at once, so nothing tells a byte-offset implementation apart unless the text is multibyte.",
+        implementation:
+          "NONE IN src/. DECLARED BORN-GREEN with respect to src/ IN ADVANCE, which is the honest label: this subtask exists to TEST an affordability claim the PBI would otherwise assert for the remaining four methods, and nothing in tsudoi has to change for it to hold. It is defended by perturbation instead: repointing src/types.ts's TextDocument at the DEPRECATED TWIN in vscode-languageserver-types (Sprint 28's P3 -- it has no positionAt) must stop the fixture compiling, and replacing the fixture's positionAt call with a hardcoded Position must redden THIS test. If the second does not redden, the test is not measuring the offset-to-Position conversion at all.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN-GREEN, DECLARED BEFORE IT IS RUN. What it buys is that the claim is CHECKED HERE rather than inherited by PBI-37, PBI-38 and PBI-39.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      'MEASURED SHAPES RE-VERIFIED RATHER THAN TRUSTED, at protocol 3.18.2 / types 3.18.0 in this tree: DocumentFormattingRequest.type is `ProtocolRequestType<DocumentFormattingParams, TextEdit[] | null, never, void, DocumentFormattingRegistrationOptions>`, its declared capability is `CM<"textDocument.formatting", "documentFormattingProvider">`, and `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at the TOP LEVEL of ServerCapabilities. `TextEdit { range: Range; newText: string }` confirmed. ALL AS HANDED OVER.',
+      "AND ONE THING THE BRIEF SAID WAS NOT READ, NOW READ, recorded rather than left to contradict criterion 3 silently: DocumentFormattingParams is `{ textDocument: TextDocumentIdentifier; options: FormattingOptions }` extending WorkDoneProgressParams. IT CARRIES NO POSITION AT ALL, so `nothing is claimed about incoming positions` is not merely unmeasured -- there is nothing to claim, and offsetAt stays unexercised for the reason the criterion gives.",
+      "NO EXAMPLE UNDER examples/, DECIDED AND NOT OMITTED. Standing item 6 makes an example EXECUTED BY THE SUITE with TWO negative controls, and examples/tsudoi.config.ts's capability set is pinned by exact equality AND BY NAME in lifecycle.test.ts's test title -- so `costs little` is false. The deeper reason: the other two examples each bring a DOMAIN (a dictionary, a filesystem), and a formatter with nothing to format would demonstrate the wiring the fixture already demonstrates. REVERSAL CONDITION: a real formatter to delegate to, as hover-wordnet delegates to WordNet.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 30,
