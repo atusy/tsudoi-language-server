@@ -68,6 +68,7 @@ const scrum: ScrumDashboard = {
       notes: [
         "ELIGIBLE BECAUSE NOTHING BETTER EXISTS, per the Sprint-29 ruling that its three triggers govern URGENCY, NOT PERMISSION. None has fired.",
         "LAST OF THE THREE: largest surface (build, detector, README), and THE ONLY ONE CARRYING AN AUTHORISATION THAT CAN BE WITHDRAWN BY ITS OWN GATE.",
+        "THE GATE FIRED AND WITHDREW THE AUTHORISATION AT SPRINT 40, AND THIS NOTE IS THE HANDBACK RATHER THAN AN ACCEPTANCE. MEASURED: every `bun test` form run FROM THE REPOSITORY ROOT preloads the build exactly once, so the single-file bypass the criterion named does not exist -- but bun resolves bunfig.toml against the CURRENT WORKING DIRECTORY and never searches upward, so `cd test && bun test` runs all 444 tests with no build. CRITERION 3 IS MET AND SHIPPED (a dist/-less tree goes from 47 fail / 362 pass to 444 pass with no build command anywhere); CRITERION 2'S DELETION IS NOT DONE, because criterion 1 says a skippable build means the detector was load-bearing. WHAT THE PO OWNS NOW: whether the cwd route is acceptable, whether the detector is permanent, or whether this wants a mechanism that does not exist here -- a second bunfig.toml under test/ covers one directory out of an unbounded set, so more of the same does not close it.",
       ],
     },
   ],
@@ -271,15 +272,21 @@ const scrum: ScrumDashboard = {
     number: 40,
     pbi_id: "PBI-35",
     goal: "THE GATE RAN FIRST AND IT WITHDREW THE AUTHORISATION. `bun test` acquires an automatic develop-time build -- bunfig.toml's `[test] preload` runs tsc -p tsconfig.build.json before any test file is loaded -- so criterion 3 is met and a fresh clone is green with no build step. BUT THE BUILD IS SKIPPABLE, MEASURED: bun discovers bunfig.toml relative to the CURRENT WORKING DIRECTORY and does not search upward, so `cd test && bun test` runs all 444 tests with no build at all. Criterion 1's discriminator is `is the build skippable`, not `is the documented route safe`, so STALENESS REMAINS REACHABLE, THE DETECTOR WAS LOAD-BEARING, THE DELETION IN CRITERION 2 IS WITHDRAWN BY ITS OWN TERMS, AND PBI-35 RETURNS TO THE PRODUCT OWNER. What still ships is the build, because criterion 3 stands alone and NOT DELETING SOMETHING REQUIRES NO RULING. The prose that goes false is corrected wherever the claim's words live -- including a clause in the test being KEPT, which no diff on the deleted-line side would reach.",
-    status: "planning",
+    status: "review",
     subtasks: [
       {
         test: "THE GATE, RUN BEFORE ANY LINE OF THE INCREMENT WAS PLANNED, with its own control taken first. Edit src/types.ts to add a value re-export, run NO build, and ask a probe importing `@atusy/tsudoi/types` whether it sees the new name. CONTROL FIRST, because this tree ships with dist/ ALREADY BUILT and a positive alone would be satisfied by a dist/ that happened to be current: with bunfig.toml moved aside the probe FAILS, printing the stale key list. Then the mechanism, then every invocation form, RE-STALING BETWEEN EACH so no run inherits the previous one's build.",
         implementation:
           "bunfig.toml `[test] preload` -> test/helpers/build.ts, which runs the repo's own node_modules/.bin/tsc SYNCHRONOUSLY via execFileSync. Synchronous is not a style choice: test/completion-path.test.ts STATICALLY imports an example that resolves the subpath to dist/types.js, so a build unfinished at module-graph resolution is no build. `[test]` and not the top-level `preload` because several tests spawn `bun` to run the CLI, and a top-level preload would put the compiler in every one of those processes.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e8b849a",
+            message: "feat(build): `bun test` builds dist/ itself, so a first clone is green",
+            phase: "green",
+          },
+        ],
         notes: [
           "PREDICTED BEFORE THE DIFF, per the Sprint-39 standing item, AND THE PREDICTION IS 0/0/0 BECAUSE THE GATE WITHDREW THE ONLY DELETION: `expect(` source lines 0 ADDED, 0 REMOVED, 0 CHANGED; 444 tests, 1266 expect() calls and 31 files ALL UNCHANGED. The prediction I would have made had the authorisation held is recorded so the difference is legible rather than lucky: -1 source line and -1 test for the detector, plus -3 tests and -3 runtime calls but ZERO source lines for the README fact, since that file's assertions live in a LOOP BODY over a facts array. WHAT WOULD FALSIFY THE PREDICTION WITHOUT MOVING A COUNT: retargeting the README fact changes its NAME, and that name is interpolated into three test titles -- three titles move while every number stands still.",
           "AND THE COUNTS THEMSELVES ARE RE-MEASURED RATHER THAN CARRIED: 444/1266/31 was re-run on this tree with the preload present before anything was predicted about it.",
@@ -290,10 +297,11 @@ const scrum: ScrumDashboard = {
         implementation:
           "No code. The measurement is the deliverable, and it replaces `30 fail / 299 pass` with what this tree actually does.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "EXPECTED RED on the first half and EXPECTED GREEN on the second. The first half is the fresh-clone shape a `bun install` produces; the second is the same tree with the preload in it.",
+          "OBSERVED: 47 fail / 362 pass / 2 errors with 409 of 444 tests even RUNNING, then 444 pass. The PBI's `30 fail / 299 pass` was NOT reproduced and is not a defect in it -- it was taken at 9501c68 and the suite has grown by more than a hundred tests since. The DIAGNOSIS held exactly: the first failure still names dist/types.js imported from examples/completion-path.ts. Written into bunfig.toml with both provenances rather than corrected in place.",
         ],
       },
       {
@@ -301,8 +309,15 @@ const scrum: ScrumDashboard = {
         implementation:
           "README's artifact-precondition paragraph rewritten to say the build is automatic AND to name the one route that skips it. test/readme.test.ts's fact RETARGETED IN PLACE rather than removed -- `dist/` and `not committed` are both STILL TRUE, only `bun run prepack` stops being the remedy -- which is why no test disappears. test/package-shape.test.ts: the KEPT prepack test's note says dist/ is `built by nothing the suite runs`, FALSE the moment bunfig.toml lands, and the detector's own block claims a precondition, a two-shape failure and an OPEN QUESTION about acquiring a build step that this sprint closes. The detector is kept and its guarded route RESTATED NARROWLY: a `bun test` whose cwd is not the repository root.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "419b1a3",
+            message:
+              "docs(build): correct the prose the build falsified, including in the test it spared",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE SPRINT-38 SHAPE, AND IT IS WHY THE GREP IS NOT OPTIONAL: the falsified clause lives in a test this sprint KEEPS AND DOES NOT OTHERWISE TOUCH, falsified by a file that does not name it. No diff on the changed lines could point at it.",
           "CONVENTION 8 APPLIED TO THE DETECTOR'S OWN BLOCK: the `SyntaxError: Export named CompletionItemKind` shape and `test/hover.test.ts: 12 pass, 2 fail` are MEASUREMENTS WITH PROVENANCE from a tree that no longer behaves that way from the root. They are marked historical to Sprint 25 rather than silently kept present-tense or silently deleted.",
@@ -323,7 +338,21 @@ const scrum: ScrumDashboard = {
         ],
       },
     ],
-    decisions: [],
+    decisions: [
+      "THE GATE'S RESULT, AND IT IS THE HEADLINE RATHER THAN A FOOTNOTE. The build is NOT bypassed by the route the PBI feared: `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>` from the repository root each preload the build EXACTLY ONCE -- measured with a marker-appending preload, counting firings, one run per form. But bun discovers bunfig.toml relative to the CURRENT WORKING DIRECTORY and does not search upward, so `cd test && bun test` runs ALL 444 TESTS with no build. THE DISCRIMINATOR CRITERION 1 WROTE IS `IS THE BUILD SKIPPABLE`, NOT `IS THE DOCUMENTED ROUTE SAFE`, so the answer is yes: staleness is still reachable, the detector was load-bearing, and the pre-authorised deletion is WITHDRAWN BY THE GATE ITS OWN AUTHOR ATTACHED. PBI-35 returns to the Product Owner.",
+      "THE GATE PROPER, AND ITS CONTROL WAS TAKEN FIRST BECAUSE THE POSITIVE ALONE WOULD HAVE BEEN NEARLY VACUOUS: this tree ships with dist/ ALREADY BUILT, so `the tests saw the new source` is satisfied by a dist/ that happened to be current. With bunfig.toml moved aside, a value re-export added to src/types.ts and no build, the probe FAILED and printed the stale key list. With bunfig.toml present and the same edit, it PASSED. Re-staled between every subsequent form so no run inherited the previous one's build.",
+      "444 green, 1266 expect() calls, 31 files -- ALL UNCHANGED, and the `expect(` diff is 0 ADDED / 0 REMOVED / 0 CHANGED with the source-line total standing at 693. PREDICTED IN THE COMMITTED PLAN and confirmed, WITH THE COUNTERFACTUAL PREDICTION RECORDED BESIDE IT so the clean reading is legible rather than lucky: had the authorisation held it would have been -1 source line and -4 tests. THE NAMED FALSIFIER FIRED EXACTLY AS PREDICTED -- retargeting the README fact moved THREE TEST TITLES while every number stood still, which is what a loop-bodied assertion does and why the prediction had to say so in advance.",
+      "TWO EDITS DISCLOSED THAT `NONE WEAKENED` WOULD OTHERWISE HIDE, because EDITED and WEAKENED read identically at Review. The detector's `remedy` string changed from `run bun run prepack` to `run bun test from the repository root` -- it is interpolated into BOTH sides of the equality, so it cannot change what the assertion discriminates, and the change is because anyone reading that failure is BY CONSTRUCTION standing where the build did not run. And the README fact's TOKEN LIST went from three to four: `bun run prepack` out, `automatic` and `repository root` in, with `dist/` and `not committed` untouched because both are STILL TRUE. The fourth token is not decoration -- it pins the boundary, so the README cannot quietly drop the one instruction that now matters.",
+      "AN ATTRIBUTION CONTROL IS WHAT STOPPED A FALSE `THE DETECTOR IS REDUNDANT`. On the bypass route with a stale dist/, TWO tests fail, and the second -- published-artifacts.test.ts's exact runtime-key list -- looked like a second staleness detector. It is not: re-running the same src/ edit with the build DOING its work reddens it identically, so it detects A NEW PUBLISHED NAME, not staleness. Had the pair been reported without the control, the detector would have been argued redundant on evidence that says nothing about staleness at all.",
+      "TWO PERTURBATIONS ON THE MECHANISM ITSELF, because a build that fails OPEN is worse than no build. Preload pointed at a nonexistent path: `bun test` dies with `preload not found` and runs NOTHING -- no silent skip. src/ made not to compile with a good dist/ present: the run aborts, tsc's own TS2322 prints by name, and the suite does NOT proceed on the previous dist/. That second one is why the helper throws rather than warns.",
+      "CRITERION 3'S NUMBER WAS RE-MEASURED AND DID NOT REPRODUCE, WHICH IS THE S27 ENTRY PAYING OUT ON A NUMBER THE PBI ITSELF CARRIED. `30 fail / 299 pass` at 9501c68 is now 47 fail / 362 pass with 35 tests not running at all -- NOT AN ERROR IN THE RECORD but a measurement whose world grew by a hundred tests underneath it. THE DIAGNOSIS SURVIVED WHERE THE COUNT DID NOT: the first failure still names dist/types.js imported from examples/completion-path.ts. Moved to bunfig.toml carrying BOTH provenances rather than corrected in place, per the count-as-measurement rule.",
+      "THE FALSIFIED CLAUSE NO DIFF WOULD HAVE FOUND: test/package-shape.test.ts's note above the prepack test said this repo's dist/ is `built by nothing the suite runs`. That test is not about the develop-time build, was not otherwise changed, and was falsified by a FILE THAT DOES NOT MENTION IT. Third occurrence of the Sprint-35/38 shape and the first where the falsifying file is new rather than edited.",
+      "A ZERO WAS READ AS AMBIGUOUS AND CHECKED, PER SPRINT 39: `the note above` and `one paragraph above` both return zero now, and in both cases that is BECAUSE THIS SPRINT DELETED THE REFERENT -- confirmed by reading the rewritten blocks, not by trusting the zero. test/installed-runtime.test.ts's `a stale build is unrepresentable` survived the same sweep and was READ rather than assumed: it is about the TARBALL's dist/, produced by prepack during pack, and is untouched by anything here.",
+      "THE STANDING RE-RUN REPRODUCES SPRINT 39 EXACTLY: hover's handler deleted from test/fixtures/all-methods.ts gives TS2741 AT THE FIXTURE NAMING `textDocument/hover`, and the suite stays at 444 green because neither runtime type-checks. NOT A FOUR-OUTCOME EVENT and deliberately not classified as one -- that vocabulary answers why a re-run went GREEN, and this one went as recorded.",
+      "THE INCREMENT SHIPPED THOUGH A CRITERION'S GATE FAILED, AND THE REASON IS THAT THE CRITERIA ARE SEPARABLE: criterion 3 is met by measurement and stands alone, and criterion 2's deliverable is a DELETION, which needs no ruling to decline. What returns to the PO is the scope question the gate exposed -- whether the cwd hole is acceptable, whether the detector should stay permanently, or whether the PBI wants a mechanism this project does not have. THE HOLE IS NOT CLOSABLE BY MORE OF THE SAME: a second bunfig.toml under test/ would cover one directory out of an unbounded set.",
+      "NOT REVISITED, AND SAID SO RATHER THAN LEFT SILENT: committing dist/ (Sprint 25 measured it makes a stale build REPRESENTABLE where it currently is not) and exports-map surgery (measured to risk a product-goal metric). Both were ruled against and nothing this sprint measured disturbs either ruling.",
+      "DECLINED WITH THE COST NAMED, per the timidity-versus-discipline test: no test asserts that bunfig.toml declares the preload. It would RESTATE THE MECHANISM -- the refusal Sprint 34 and Sprint 38 both made -- and the property it would proxy for is exactly what the gate measured directly. THE COST: someone deleting the preload line loses the automatic build and the suite says nothing until they land on a fresh clone. That is paid for by TOML CARRYING ITS OWN COMMENTS, so the Lifetime Rule's first clause is satisfied at the site the violating edit would be made, which package.json could not have offered.",
+    ],
   },
   retrospectives: [
     {
