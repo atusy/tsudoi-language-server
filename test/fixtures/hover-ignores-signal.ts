@@ -1,7 +1,7 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** Written at entry, so a test can cancel a handler that is provably running. */
 export const enteredMarker = "hover-ignores-signal: entered";
@@ -23,7 +23,7 @@ const workMs = 300;
  * Never mentions context.signal, and runs to completion regardless. Suppressing
  * this answer cannot be done by asking the handler, which is the point.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": async (

@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** Non-ASCII, so a diagnostic carrying it is recognisably this fixture's. */
 export const rejectionMessage = "誰も受け取らない拒否";
@@ -18,7 +18,7 @@ export const items: CompletionItem[] = [{ label: "届かない", detail: "never 
  *
  * Deliberately unhandled. This is the defect, written on purpose.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

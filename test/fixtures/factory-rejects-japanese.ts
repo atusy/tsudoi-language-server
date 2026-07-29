@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../src/types.ts";
 
 /**
  * One block of Japanese, LONGER THAN ONE PIPE CHUNK so a chunk boundary is
@@ -29,5 +29,4 @@ const block = "あ".repeat(100_000);
  */
 export const japaneseFailure = `設定の読み込みに失敗しました：${block}-${block}--${block}：以上です。`;
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> =>
-  Promise.reject(new Error(japaneseFailure));
+export default (): Promise<TsudoiConfig> => Promise.reject(new Error(japaneseFailure));

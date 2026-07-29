@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 // Three distinguishable payloads, so a response that repeated a yield, dropped
 // one, or reordered them cannot be mistaken for the right answer. Japanese
@@ -11,7 +11,7 @@ export const secondChunk: CompletionItem[] = [{ label: "二番目", detail: "yie
 export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "returned" }];
 
 /** Supplies completion and NOT hover, so advertisement cannot cross over. */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

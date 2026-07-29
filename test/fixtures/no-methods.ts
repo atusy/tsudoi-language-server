@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../src/types.ts";
 
 /**
  * A config supplying NO handler for any method the request table declares, so
@@ -23,6 +23,6 @@ import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * the cancellation epilogue and answered `null` to a cancelled request, where
  * the awaited-once drive reached the epilogue and answered -32800.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({ methods: {} });
 };

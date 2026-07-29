@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /**
  * THE INCOHERENT CONFIG, and it is a fixture rather than something that cannot
@@ -15,7 +15,7 @@ import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * src/config.ts. A fixture that failed `tsc --noEmit` would break the DoD rather
  * than demonstrate anything.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "completionItem/resolve": (_context: RequestContext, item: CompletionItem) => {

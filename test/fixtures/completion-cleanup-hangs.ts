@@ -1,7 +1,7 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /**
  * The buffer text that releases BOTH gates: the handler's own park, and the
@@ -33,7 +33,7 @@ export const cleanupFinished = "completion-cleanup-hangs: finished cleanup";
  * must still answer the client: awaiting `return()` here would mean the -32800
  * is never sent at all.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

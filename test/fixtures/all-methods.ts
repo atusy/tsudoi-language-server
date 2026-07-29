@@ -1,12 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, Hover, TextEdit } from "vscode-languageserver-protocol";
-import type {
-  Method,
-  MethodHandler,
-  RequestContext,
-  Tsudoi,
-  TsudoiConfig,
-} from "../../src/types.ts";
+import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /**
  * A config supplying EVERY method the request table declares, with the
@@ -131,7 +125,7 @@ export const formattingAnswer: TextEdit[] = [];
  */
 export const diagnosticAnswer = { kind: "full" as const, items: [] };
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": (): Promise<Hover> => Promise.resolve(hoverAnswer),

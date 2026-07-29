@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
 
 /** Distinctive enough that finding it on stderr cannot be a coincidence. */
@@ -14,7 +14,7 @@ export const recoveredHover: Hover = {
   contents: { kind: "markdown", value: "二度目は答えます。" },
 };
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   let calls = 0;
   return Promise.resolve({
     methods: {

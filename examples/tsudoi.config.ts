@@ -2,7 +2,6 @@ import type {
   CompletionItem,
   CompletionParams,
   RequestContext,
-  Tsudoi,
   TsudoiConfig,
 } from "@atusy/tsudoi/types";
 import { pathCompletion } from "./completion-path.ts";
@@ -11,7 +10,7 @@ import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 import { hoverWordnet } from "./hover-wordnet.ts";
 import { resolvePathStat } from "./resolve-path-stat.ts";
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

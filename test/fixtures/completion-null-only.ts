@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /**
  * Returns null having yielded nothing at all. A generator with no `yield` is
@@ -8,7 +8,7 @@ import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * distinguishable from `nothing further to add`, and only the absence of any
  * emitted chunk tells them apart.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

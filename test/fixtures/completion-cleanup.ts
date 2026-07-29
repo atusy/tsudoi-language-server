@@ -1,7 +1,7 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
@@ -33,7 +33,7 @@ export const cleanupMarker = "completion-cleanup: released";
  * the request is answered -32800 either way -- so nothing but this record says
  * whether the resources the request held were released or leaked.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

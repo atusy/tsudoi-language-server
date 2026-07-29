@@ -6,7 +6,7 @@
 // `tsc --noEmit` type-checking this file is the standing evidence for the
 // ruling at src/types.ts that neither name joins the published surface. Add an
 // annotation here and that evidence is gone.
-import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../src/types.ts";
 
 /** What this formatter rewrites, and what it rewrites it to. */
 export const target = "、";
@@ -30,7 +30,7 @@ function scan(text: string): number[] {
   return offsets;
 }
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/formatting": (context, params) => {

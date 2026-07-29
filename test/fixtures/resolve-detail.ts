@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /**
  * The expensive half a config author fills in ONLY when the editor asks: the
@@ -18,7 +18,7 @@ export const detailPrefix = "解決済み: ";
 /** What the completion half offers, deliberately WITHOUT a detail. */
 export const bareItem: CompletionItem = { label: "第一候補" };
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // Present because resolve REQUIRES it: a config supplying

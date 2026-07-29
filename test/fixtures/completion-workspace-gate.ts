@@ -4,7 +4,7 @@ import type {
   CompletionParams,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
@@ -33,7 +33,7 @@ export function itemsFor(folders: readonly WorkspaceFolder[]): CompletionItem[] 
  * change, which is a test that proves nothing about where the snapshot is
  * taken.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (

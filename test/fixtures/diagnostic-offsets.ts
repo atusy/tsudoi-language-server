@@ -17,7 +17,7 @@
 // `MethodHandler` supplies them. Add an annotation here and that evidence is
 // gone, and with it the argument that publication is about EXTRACTION rather
 // than about the method.
-import { DiagnosticSeverity, type Tsudoi, type TsudoiConfig } from "../../src/types.ts";
+import { DiagnosticSeverity, type TsudoiConfig } from "../../src/types.ts";
 
 /** What this analysis complains about, and what it says about it. */
 export const target = "、";
@@ -43,7 +43,7 @@ function scan(text: string): number[] {
   return offsets;
 }
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/diagnostic": (context, params) => {

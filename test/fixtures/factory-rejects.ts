@@ -1,4 +1,4 @@
-import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../src/types.ts";
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> =>
+export default (): Promise<TsudoiConfig> =>
   Promise.reject(new Error("tsudoi fixture: the factory rejects"));

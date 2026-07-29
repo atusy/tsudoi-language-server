@@ -1,7 +1,7 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** The buffer text the test writes to let a handler past its gate. */
 export const gateOpen = "release";
@@ -33,7 +33,7 @@ export function hoverFor(tag: string): Hover {
  * Parks until the test opens the gate OR the signal aborts. Stopping on abort
  * is the whole user story: work nobody will read is abandoned.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": async (

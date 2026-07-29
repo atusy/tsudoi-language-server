@@ -6,7 +6,7 @@ import type {
   Hover,
   HoverParams,
 } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 export const hoverEntered = "throws-on-cancel: hover entered";
 export const completionEntered = "throws-on-cancel: completion entered";
@@ -30,7 +30,7 @@ function aborted(context: RequestContext): Promise<void> {
  * were cancelled. Reporting that as a handler failure is what this fixture
  * exists to forbid.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": async (

@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** Distinctive enough that finding it on stderr cannot be a coincidence. */
 export const throwMessage = "completion-throws fixture: 意図的な失敗";
@@ -19,7 +19,7 @@ export const recoveredItems: CompletionItem[] = [
   { label: "二度目", detail: "returned on the second call" },
 ];
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   let calls = 0;
   return Promise.resolve({
     methods: {

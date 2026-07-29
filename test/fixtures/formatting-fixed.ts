@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 import type { DocumentFormattingParams, TextEdit } from "vscode-languageserver-protocol";
 
 /**
@@ -28,7 +28,7 @@ export const fixedEdits: TextEdit[] = [
   },
 ];
 
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/formatting": (

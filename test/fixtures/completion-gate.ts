@@ -1,6 +1,6 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 
 /** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
@@ -14,7 +14,7 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "r
  * The park is what makes incrementality observable: the first chunk has to
  * reach the client while this handler is provably still running.
  */
-export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/completion": async function* (
