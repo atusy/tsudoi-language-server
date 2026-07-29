@@ -110,8 +110,10 @@ const scrum: ScrumDashboard = {
             "the existing `deno says where it looked` assertion is retargeted -- it is the presence pair for the map actually being consulted. MEASURE rather than predict which specifier deno names: a DECLARED missing dep says `but found it in a package.json` (contains node_modules), a PHANTOM one says `not a dependency` (does not), and resolution.test.ts:78 asserts the former.",
         },
       ],
-      status: "ready",
+      status: "draft",
       notes: [
+        "WITHDRAWN BY THE PO AT SPRINT 25, relayed mid-execution: the stakeholder declined `vscode-languageserver` entirely. tsudoi KEEPS vscode-languageserver-protocol, which pins vscode-jsonrpc 9.0.1 and vscode-languageserver-types 3.18.0 exactly, and will later add vscode-languageserver-textdocument. Kept here rather than deleted because its criteria and notes are the HOME of rulings nothing else carries -- the Omit-fails-open instrument ruling among them -- and dropping a record with no home is the one thing the lifetime rule forbids. RE-HOMING THEM IS A REFINEMENT JOB THIS SPRINT DID NOT DO.",
+        "ONE OF ITS CARRIED ITEMS WAS RE-HOMED HERE AND NOW, on the PO's ruling: the bare-versus-/node specifier measurement is a comment at the re-export line in src/types.ts, since that is where the undoing edit would be made. Shipping a specifier choice whose reason lived only in a withdrawn PBI would have repeated the founding defect this work came out of.",
         "THE FRAMEWORK'S SERVER LAYER IS NOT TAKEN. THE FRAMEWORK'S PACKAGE IS. tsudoi MUST override InitializeRequest and ShutdownRequest -- the -32600 rejection lives in the latter -- and the framework's benefits sit downstream of them. Measurements, mechanism, and the two objections later refuted: GitHub issue #1.",
         "THE ~40 TYPED REGISTRATIONS WERE NEVER A BENEFIT. tsudoi's surface is MethodMap -- two methods, config-driven, already typed. The 40 include the 11 that BYPASS THE GATE and onCompletion, whose attachPartialResult deletes partialResultToken and destroys src/methods.ts's validation. Negative value, not foregone value.",
         "INSTRUMENT RULING, moot here and binding at PBI-28: a boundary on Connection must be a Pick, never an Omit -- Omit FAILS OPEN. MEASURED: Connection has 58 members and lacks onUnhandledNotification and trace, so the four-name Omit would silently reduce the boundary to nothing while two of its four defending probes went green measuring nothing. ALSO PAID HERE: src/notifications.ts names protocol 3.18.2 BECAUSE package.json asks ^3.17.5; after this PBI it asks for neither, and nothing reddens. Alongside README.md:33.",
@@ -241,8 +243,9 @@ const scrum: ScrumDashboard = {
             "(a) A NAMED WANT -- window/showMessage to the editor user, or client.register for dynamic registration. Either makes this arm the cheapest route and this PBI ready almost immediately. THE STAKEHOLDER SAYING THEY MEANT `let's ride on it` AS AN INSTRUCTION RATHER THAN A PROPOSAL SATISFIES (a) BY ITSELF; the PO has undertaken to re-rule to refining on that alone. (b) UNMEASURED, and the PO would rather it were measured than argued: can client/workspace be taken while their REGISTERING members are narrowed away at the namespace type -- is a per-namespace Pick cheap? If yes the refusal weakens a lot. (c) The un-unref'd 3s interval, with a REAL pid, on both runtimes.",
         },
       ],
-      status: "refining",
+      status: "draft",
       notes: [
+        "WITHDRAWN BY THE PO AT SPRINT 25, together with PBI-27 and for the same reason: the stakeholder declined the framework. Kept rather than deleted on the lifetime rule -- its provisional AC is the only home of the Pick-not-Omit instrument ruling and of the measurement that Connection has 58 members lacking onUnhandledNotification and trace. PBI-30's notes still argue against it by name and are now prose about a withdrawn item; correcting them is Refinement's, not this sprint's.",
         "MOVED TO refining BECAUSE THE PO KEPT THEIR WORD, not because the maintenance case carried it. They undertook to re-rule on reversal condition (a) -- the stakeholder reading `let's ride on it` as an instruction -- and the stakeholder did, naming MAINTAINABILITY: a popular framework has fewer bugs and others fix them, and it reduces wheel reinvention.",
         "RE-EVALUATED ON THE MAINTENANCE AXIS, AND createConnection SPECIFICALLY IS WEAK. stderrLogger (6 lines) is not retired -- it is REPLACED BY MORE MACHINERY, a Features.console mixin over a third-party base, to reach identical behaviour. lifecycle.exitCode() is kept under D1, so nothing is retired. Capability assembly was MEASURED TO SURVIVE INTACT, and surviving is the opposite of being retired -- the measurement that refuted the PO's objection also removed this from the maintenance ledger.",
         "THE ~40 TYPED REGISTRATIONS ARE REFUTED ON THE STAKEHOLDER'S OWN AXIS, not the PO's: onHover(h) replaces onRequest(HoverRequest.type, h), which is ONE TOKEN PER METHOD. What tsudoi actually hand-writes per method is the rejection check, the requestContext cancellation bridge, answerUnlessCancelled, the failure reporting and the streaming loop -- and the onX sugar touches NONE of it. tsudoi's per-method cost is not registration; it is the contract around it. There is no wheel here for upstream to take over.",
@@ -325,10 +328,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "installConsumer() returns a fourth capability: start an LspSession in the consumer's own directory. test/helpers/lsp.ts:217 already has the command-plus-cwd form; this exposes it through InstalledConsumer rather than inventing a second spawner.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "039d4bc",
+            message: "test: let an installed consumer start a server, not only type-check one",
+            phase: "green",
+          },
+        ],
         notes: [
           "NO PERTURBATION AVAILABLE, and that is why it is structural. It earns its place by being USED IN B5 -- if B5 is dropped, this must be REVERTED rather than left.",
+          "KEPT, because B5 SHIPPED and uses it. Deliberately NOT used by B1, whose Object.keys probe takes runCommand instead: had B1 leaned on this too, `revert it if B5 is dropped` would have stopped being an executable instruction.",
         ],
       },
       {
@@ -336,10 +346,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "src/types.ts re-exports eight names. Only CompletionItemKind, MarkupContent and Position are new imports; CompletionItem, CompletionParams, Hover, HoverParams and WorkspaceFolder are already imported for MethodMap/RequestContext and merely gain an export.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ab12568",
+            message: "feat: publish the protocol names the examples use, and record why bare",
+            phase: "green",
+          },
+        ],
         notes: [
           "PERTURBATION, both halves: dropping the re-export reddens naming the symbol, AND re-exporting it `as type` ALSO reddens -- that half is the one that matters, because a type-only re-export compiles and emits nothing.",
+          "BOTH RAN. `export type` reddens the value probe ALONE, with the eight-name type probe still green -- the half that matters, measured. Dropping the re-export entirely reddens BOTH, the type probe naming the symbol. RED observed as predicted: an empty array from a dist/types.js of `export {}`.",
+          "THE SPECIFIER MEASUREMENT DID NOT REPRODUCE AS HANDED OVER, and the correction ships in the comment: `/node produces 6+ errors out of vscode-jsonrpc\'s node main.d.ts` holds ONLY with skipLibCheck OFF, and the errors come out of TWO files -- vscode-jsonrpc/lib/node/main.d.ts AND vscode-languageserver-protocol/lib/node/main.d.ts. With skipLibCheck ON, which is what test/helpers/typecheck.ts sets, BOTH specifiers exit 0 and the difference vanishes. So NO PROBE IN THIS SUITE COULD REDDEN if the line moved to /node, and the comment says so rather than implying cover it does not have.",
           "SOURCE SPECIFIER IS BARE vscode-languageserver-protocol, MEASURED not assumed: at `types: []` with no @types/node at all, bare exits 0 while /node produces 6+ errors (TS2591 child_process, net, worker_threads; TS2503 NodeJS) out of vscode-jsonrpc's node main.d.ts.",
           "DOC OBLIGATION: src/types.ts states every exported name is public API, so the block must say WHY THESE EIGHT -- measured, they are exactly what the examples use: six in completion-path.ts, two in hover-wordnet.ts, none added by tsudoi.config.ts -- and what the rule is for a ninth.",
         ],
@@ -349,9 +367,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "no new implementation; B1 satisfies it. This is the type-arm control B1's value-arm cannot give.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ab12568",
+            message: "feat: publish the protocol names the examples use, and record why bare",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED OBSERVED, and the plan\'s `seven TS2305` is wrong in both code and count: EIGHT names are named, as FIVE TS2459 (`declares it locally, but it is not exported` -- src/types.ts already imported those five for MethodMap) and THREE TS2305. The diagnostic is better than planned, not worse: TS2459 says the name is present and unexported, which points at the fix.",
+          "PERTURBATION RAN: dropping MarkupContent from the re-export reddens this probe naming MarkupContent, with the value probe still green.",
           "MUST GO THROUGH installConsumer, NOT typeCheckProbe: the in-repo arm resolves the exports map's `default` straight at src/types.ts and, as published-artifacts.test.ts:131 already records, CANNOT OBSERVE WHAT SHIPS.",
           "Perturbation: remove any one name from src/types.ts and the probe names that symbol.",
         ],
@@ -360,9 +386,18 @@ const scrum: ScrumDashboard = {
         test: "B3: a probe importing a NINTH name (DefinitionParams) from @atusy/tsudoi/types must FAIL. BORN GREEN and flagged -- it fails today because NOTHING is exported, and must still fail afterwards.",
         implementation: "none. This is the `and no more` half of criterion 2.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "28f0809",
+            message:
+              "test: hold the published surface to eight names, and prove the probe can see a ninth",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE MANDATORY PERTURBATION RAN AND IS RECORDED IN THE TEST\'S DOC BLOCK: with DefinitionParams added to the re-export list the probe type-checks, the exit comes back 0, and THIS assertion is what fails -- alone, with the value and eight-name probes green. Born green and now non-vacuous, measured rather than argued.",
+          "A SECOND DEGENERACY WAS FOUND AT AUTHORING TIME and given its OWN test rather than an extra assertion: a probe naming a symbol the DEPENDENCY does not export fails identically to one naming a symbol tsudoi declines to re-export. Two outcomes, one observation. The paired test asserts DefinitionParams really is exported by vscode-languageserver-protocol.",
           "THE ONE FLAGGED SUBTASK WHERE BORN-GREEN IS A JUDGEMENT RATHER THAN A DEFINITION, and the Developer pushed hardest on it: AS WRITTEN THIS ASSERTION IS SATISFIED PERFECTLY BY A MODULE THAT EXPORTS NOTHING AT ALL -- which is exactly the state it is written in. RUN THE PERTURBATION ONCE AND RECORD IT: adding DefinitionParams to the re-export list makes the probe go green and this test redden. Recorded in the test's doc block, as BoundaryIsTheObservingMembers records its four controls.",
         ],
       },
@@ -371,9 +406,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "rewrite the protocol imports in examples/completion-path.ts, examples/hover-wordnet.ts and examples/tsudoi.config.ts to @atusy/tsudoi/types. examples/wordnet.d.ts has no protocol import.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ae3437b",
+            message:
+              "feat: the examples name one package, and the withdrawn premise is recorded where it stood",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RED OBSERVED AT THE TRANSITION: with the examples repointed and nothing else changed, exactly three tests failed -- the withdrawn hoisting test, and TWO in resolution.test.ts. The latter pair is the blast radius the plan did not name; see the sprint decision on dist/.",
+          "MANDATED PERTURBATION RAN: disabling the renameSync inside useNonHoistingLayout reddens THE NEGATIVE CONTROL AND ONLY IT -- the bare protocol import type-checks, the assertion that it would not is what fails, and the examples\' own exit-0 half stays green. That is the S20 degeneracy the PO named, caught by the pair rather than by argument.",
+          'THE SECOND SURVIVING CONTROL WAS MEASURED FALSE AT THE ARM THE PLAN NAMED, and rebuilt at the arm that works. `withhold wordnet and the examples must still fail` does NOT hold for the TYPE CHECK: measured, exit 0 with EMPTY OUTPUT, because examples/wordnet.d.ts carries `declare module "wordnet"` and that file is part of what a reader copies. tsc needs nothing on disk once a module is declared. The detection survives at the RUNTIME arm -- exit 1, stderr naming the package -- and the test asserts BOTH halves so the non-discriminating one cannot quietly become folklore. Taken on trust, the last genuinely-missing-package case would have been asserted at the one arm that cannot see it.',
           "NEGATIVE CONTROL IN THE SAME RUN, LOAD-BEARING: a probe importing vscode-languageserver-protocol by bare specifier must STILL fail. PERTURBATION: comment out the renameSync in useNonHoistingLayout and the negative control goes green, AND ONLY IT -- which is the failure the PO named, a harness that stopped applying the layout producing code === 0 for the wrong reason.",
           "SECOND SURVIVING CONTROL: withhold `wordnet` and the examples must still fail. That is the PO's `what survives is the harness's ability to detect a genuinely missing package`, and it becomes the ONLY remaining genuinely-missing-package case.",
         ],
@@ -383,9 +428,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "none beyond S1 and B1; this is the runtime half type-checking cannot cover.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ae3437b",
+            message:
+              "feat: the examples name one package, and the withdrawn premise is recorded where it stood",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE PLANNED PERTURBATION DOES NOT DISCRIMINATE THIS TEST, measured: `export type` reddens SIX tests, and the example\'s own TYPE CHECK is among them -- because the example imports CompletionItemKind as a VALUE, so tsc rejects it before anything runs. The plan predicted `B1 and B2 stay green and this reddens at runtime`; B1 reddens too, and this is NOT the first thing to fail. On the S9 rule a control that can never be first to fail is not one, so a second was run.",
+          "INDEPENDENT PERTURBATION THAT DOES DISCRIMINATE IT: dropping the exports map\'s `import` arm from the PACKED copy this test installs reddens this test, and it is a RUNTIME-ONLY fault -- tsc resolves through the untouched `types` arm, so no type check in the file could have seen it. That is what earns this test its place, and it is the same shape installed-runtime.test.ts already uses for the same arm.",
           "WHY IT EXISTS, and this belongs in its doc block: CompletionItemKind is a VALUE, so a resolution failure is a RUNTIME failure. A type-check-only criterion would go GREEN against a dist/types.d.ts whose dist/types.js re-exports nothing. PERTURBATION: change the re-export to `export type` -- B1 and B2 stay green and this reddens at runtime.",
         ],
       },
@@ -394,9 +448,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "README.md:180 `bun install vscode-languageserver-protocol wordnet` becomes `bun install wordnet`.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ae3437b",
+            message:
+              "feat: the examples name one package, and the withdrawn premise is recorded where it stood",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE PLAN\'S MECHANISM IS MEASURED FALSE AND ITS PROPERTY IS NOT. There is no `extracted quickstart install step` carrying this command: extractQuickstart finds FIVE marked blocks and README.md:180 is none of them, so NOTHING extracts or executes it -- which also falsifies criterion 3\'s `the existing extraction harness executes it`. Delivered by adding an `examples-install` marker and its own extractor, throw-on-count, DELIBERATELY SEPARATE from `quickstart` so QUICKSTART_STEPS stays 5: folding it in would have made the omission sweep assert that dropping this step leaves no server, which is false -- the quickstart config imports only @atusy/tsudoi/types.",
+          "RED OBSERVED on the command\'s own bytes, then green on the edit. TWO TESTS, NOT ONE, because two different hazards: naming a package the examples do not need, and naming NONE of the ones they do. Either could hide the other behind a first failure.",
+          "RESEQUENCED TO LAST, against the plan\'s `could ship first for an early green`: measured, it is NOT independent. README.md:177-190 makes claims about what examples/ import, so changing the install line before B4 lands would ship a commit whose README is FALSE. The prose around the command was corrected in the same commit for the same reason.",
           "THE ASYMMETRY GOES IN THE TEST RATHER THAN BEING HIDDEN: the extraction harness EXECUTES the command then type-checks, so it catches UNDER-installation and CANNOT catch OVER-installation -- leaving the old command in place would keep every existing assertion green. This text assertion is the ONLY cover for the over-installation direction.",
           "EXPLICITLY NOT IN SCOPE: test/readme.test.ts:217's tokens [/network/i, /cache/i, /vscode-languageserver-protocol/] is a prose claim about TSUDOI'S OWN cold-cache dependency, not about the consumer's install. It stays TRUE and GREEN here and moves at PBI-27. Do not sweep it into this sprint.",
         ],
@@ -406,10 +470,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "the replacement test from B4 carries, in its own doc block, the record that published-artifacts.test.ts:195's premise was WITHDRAWN DELIBERATELY at PBI-26, that `without the documented install the example reddens` is therefore UNCONSTRUCTIBLE rather than broken (no undeclared specifier is left to withhold), and that what survives is the wordnet case.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ae3437b",
+            message:
+              "feat: the examples name one package, and the withdrawn premise is recorded where it stood",
+            phase: "green",
+          },
+        ],
         notes: [
           "SHIPS IN THE SAME COMMIT AS B4 so the record and the withdrawal are never separated.",
+          "DONE, and it says UNCONSTRUCTIBLE rather than removed: no undeclared specifier is left in the examples to withhold, which is a different thing from a control that could be built and was not. It also carries what survives -- the wordnet case -- and points at the test that asserts it.",
         ],
       },
     ],
@@ -418,7 +490,12 @@ const scrum: ScrumDashboard = {
       "ORDERING CONSTRAINTS: B1 -> B2 -> B4 is HARD, since the examples cannot import names that do not exist yet. S1 must precede B5. B3 may sit anywhere after B1. B6 is independent and could ship first for an early green.",
       "A RISK OUTSIDE THE CRITERIA, recorded because descoping would hide it: dist/types.d.ts now re-exports from vscode-languageserver-protocol, so a consumer's tsc must follow into node_modules/@atusy/tsudoi/node_modules/ under the non-hoisting layout. B4 measures exactly that -- but if B4 is descoped, B1 and B2 alone would ship a published surface nobody checked through the nested layout.",
       "CARRIED ONTO PBI-27 AS A LIVE REGRESSION RISK, not left in this sprint: issue #1's E1 says unify on vscode-languageserver/node. If src/types.ts moves there, criterion 2 silently regresses for every consumer without @types/node. MEASURED LOOKAHEAD: bare vscode-languageserver ALSO type-checks at types: [], exit 0. So PBI-27 must aim src/types.ts at BARE vscode-languageserver while src/server.ts and src/notifications.ts use /node. That split is written down nowhere else.",
-      "ALSO FOR PBI-27: useNonHoistingLayout renames node_modules/vscode-languageserver-protocol. PBI-26 KEEPS the dependency so the rename still finds its target; at PBI-27 it ENOENTs, measured. Criterion 1's harness is re-based at PBI-27, not here.",
+      "ALSO FOR PBI-27: useNonHoistingLayout renames node_modules/vscode-languageserver-protocol. PBI-26 KEEPS the dependency so the rename still finds its target; at PBI-27 it ENOENTs, measured. MOOT AS OF THE SPRINT-25 RULING: PBI-27 is withdrawn and the dependency is permanent, so the rename always finds its target and criterion 1's harness is never re-based.",
+      "THE PLAN'S LARGEST GAP, MEASURED BEFORE ANY SUBTASK RAN: it reaches the examples' runtime resolution and never names which arm it lands on. From INSIDE this repo, package self-reference resolves `@atusy/tsudoi/types` to the exports map's `import` arm -- ./dist/types.js -- under BOTH bun 1.3.13 and deno 2.9.2. DISCRIMINATED rather than inferred: a marker export written into dist/types.js appears in Object.keys under both, so the observation is not equally explained by the `default` arm landing on src/types.ts, which exports no value either. So the moment an example takes a VALUE from the subpath, THE REPO'S OWN dist/ becomes load-bearing for `bun test` -- and it is gitignored, built only by prepack, and built by nothing the suite runs.",
+      "THE SCOPE QUESTION THAT FOLLOWS, RAISED RATHER THAN DECIDED, and it is one sentence: after this sprint, `bun test` requires `bun run prepack` to have been run since the last change to src/types.ts, and NOTHING ENFORCES IT. Measured both ways -- dist/ ABSENT gives ERR_MODULE_NOT_FOUND at config load; dist/ STALE gives `SyntaxError: Export named 'CompletionItemKind' not found`, at a STATIC import, before any preflight in the affected file could run. `tsc --noEmit` is unaffected either way: it falls through to src/types.ts when dist/ is missing. Three candidate resolutions, none picked: a develop-time build step, committing dist/, or changing the exports map. EACH falsifies test/package-shape.test.ts's `the build is a PUBLISH-TIME step, not a develop-time one`, which is why the executor would not pick one.",
+      "WHAT WAS DONE INSTEAD, and it is the minimum that does not decide the question: a test DETECTS the stale and absent cases and names `bun run prepack` on its own assertion line. It does not build -- a helper quietly running tsc would settle the ruling by default. Perturbed both ways and it fires both ways. The publish-time prose was corrected in the same commit rather than left reading as a promise. isolatedCheckout now carries dist/ on the same reasoning its own comment already gave: it is part of what a runtime needs to START, and it is NOT the dependency those tests hold away -- leaving it out made two resolution tests fail for a staging reason inside tests whose whole subject is where a DEPENDENCY resolved from, which is two causes producing one observation.",
+      "THREE PO-AUTHORED FACTUAL PREMISES MEASURED FALSE IN ONE SPRINT, all inside criteria or subtask notes, none fatal and all corrected in place: criterion 3's `the existing extraction harness executes it` (nothing extracts README.md:180 at all); B4's `withhold wordnet and the examples must still fail` (true at the RUNTIME arm, false at the type arm, because the example ships its own ambient `declare module`); and B1's specifier measurement, which holds only with skipLibCheck OFF. THE SHAPE IS THE ONE SPRINT 13 ALREADY NAMED -- a factual premise stated inside a criterion is a claim requiring measurement, not framing -- and it fired three times here because this sprint's criteria lean unusually hard on how a resolver behaves, which is exactly the class nobody can recall correctly.",
+      "B6 IS NOT INDEPENDENT, contrary to the ordering note, and it was resequenced to LAST rather than shipped first for an early green: README.md:177-190 makes claims about what examples/ import, so changing the install command before B4 lands ships a commit whose README is false. An early green bought at the price of a false document is not a green this project accepts.",
     ],
   },
   retrospectives: [
