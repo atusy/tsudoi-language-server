@@ -51,6 +51,39 @@ test("successive changes leave getText() and version matching the last one sent"
   expect(store.documents.get(uri)?.languageId).toBe("plaintext");
 });
 
+// THE DOCUMENT A CONFIG AUTHOR HOLDS IS LIVE, NOT A SNAPSHOT, and until this
+// test the property was held by a paragraph alone. It is the SEMANTICS the store
+// acquired when it moved onto upstream's TextDocument -- `update` returns the
+// same instance it was passed -- so a handler that reads a document, awaits, and
+// reads it again sees the buffer the user has NOW.
+//
+// WHY IT IS PINNED HERE AND NOT LEFT TO THE COMMENT AT THE SITE: the sprint that
+// added this test also REWRITES the `update` call, and a rewrite that rebuilt
+// the entry instead would revert the semantics with nothing to say so.
+// MEASURED: rebuilding it with `TextDocument.create` from the updated text
+// reddens the first assertion below and NOTHING ELSE IN THE SUITE.
+//
+// THE MECHANISM IS DELIBERATELY NOT ASSERTED. `held === store.documents.get(uri)`
+// is the spelling upstream happens to use; what a config author is owed is that
+// their reference is current, and every way that could stop being true --
+// including one this project does not control -- flips the assertion below.
+test("a reference taken before a change reflects that change afterwards", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "hello"));
+  const held = store.documents.get(uri);
+  if (held === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "hello world" }],
+  });
+
+  expect(held.getText()).toBe("hello world");
+  expect(held.version).toBe(2);
+});
+
 test("close removes the document, leaving get() undefined and values() empty", () => {
   const store = createDocumentStore();
   store.open(opened(uri, "hello"));

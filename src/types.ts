@@ -179,6 +179,27 @@ export type {
 export type { TextDocument } from "vscode-languageserver-textdocument";
 
 // will expose a function to subscribe/unsubscribe events such as receiving notifications, requests, and responses from the client or submitting them to the client
+/**
+ * THE STORE A CONFIG AUTHOR READS, AND WHAT IT HANDS BACK IS LIVE.
+ *
+ * `get` answers with the document as it stands now, and THE DOCUMENT IT ANSWERS
+ * WITH GOES ON MOVING: upstream's `TextDocument.update` mutates the instance it
+ * was handed, so a reference kept across an `await` reflects every change that
+ * arrived meanwhile rather than the text that was there when it was taken.
+ *
+ * THE ASYMMETRY WITH `RequestContext.workspaceFolders` IS WHY THIS IS WRITTEN
+ * DOWN AT ALL. That list IS a snapshot -- of request start -- and an author who
+ * read it first would reasonably generalise from one to the other. They are
+ * opposite ON PURPOSE: a folder list that shifted mid-request would let one
+ * response carry items attributed to a root that no longer exists, while a
+ * document that did NOT shift would let a handler answer about text the user
+ * has already replaced. So a handler that needs the text it STARTED with must
+ * take a copy -- `getText()` returns a string, and a string does not move --
+ * while a handler that needs the current text simply keeps its reference.
+ *
+ * ASSERTED RATHER THAN MERELY STATED: test/documents.test.ts pins that a
+ * reference taken before a change reflects that change afterwards.
+ */
 export interface DocumentStore {
   get(uri: string): TextDocument | undefined;
   values(): Iterable<TextDocument>;
@@ -231,6 +252,11 @@ export interface RequestContext {
    * items attributed to a root that no longer exists beside items from one that
    * just appeared, and it matters because a completion handler may stream over
    * time rather than answer at once.
+   *
+   * AND IT IS THE ONLY SNAPSHOT ON THIS SURFACE. The documents reached through
+   * `tsudoi` are LIVE, and generalising from this paragraph to those is the
+   * mistake that is easy to make -- so the opposite half is stated at
+   * `DocumentStore`, where an author reading about documents will meet it.
    *
    * MIRRORED, NOT INTERPRETED. What arrives is what the client said, and
    * nothing here normalises it: two spellings of one directory are TWO folders,
