@@ -568,11 +568,7 @@ export type TsudoiConfig = {
  *
  * THE DOOR IS DEFERRED RATHER THAN WELDED: adding a parameter to a callback
  * type is non-breaking, so this can be reversed the day something concrete needs
- * reversing it -- but whoever opens it owns the paragraph above. NO CANDIDATE IS
- * NAMED HERE ON PURPOSE. A previous draft cited an API this file had promised
- * for several sprints and never built, which made a speculation read as a plan;
- * the stakeholder removed it rather than let it keep standing in for a decision
- * nobody had taken.
+ * it -- but whoever opens it owns the paragraph above.
  *
  * NOTHING TYPE-CHECKS AN AUTHOR'S OWN CONFIG AGAINST THIS TYPE. src/config.ts
  * reaches it only through a cast from `unknown`, so an author who writes the
