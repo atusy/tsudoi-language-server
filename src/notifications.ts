@@ -403,14 +403,27 @@ export type RequestOnlyConnection = Omit<
  * `onWillSaveTextDocument`, `onDidChangeConfiguration`, `onDidChangeWatchedFiles`
  * and `onExit` -- each taking a `NotificationHandler` at
  * lib/common/server.d.ts:470-572, none consulting this module's gate. AND THE
- * NAMESPACES CARRY MORE: `workspace` has `onDidCreateFiles`, `onDidRenameFiles`
- * and `onDidDeleteFiles` (lib/common/fileOperations.d.ts:9-11) plus the
- * `onDidChangeWorkspaceFolders` event (lib/common/workspaceFolder.d.ts:5), and
- * `notebooks.synchronization` has four more (lib/common/notebook.d.ts:10).
- * `languages` carries registrars too but they are REQUESTS; `client`, `window`,
- * `console`, `telemetry` and `tracer` carry none. REACHING ANY OF THEM TAKES NO
- * DELIBERATE ACT, which is the very criterion this module uses to decide what to
- * foreclose.
+ * NAMESPACES CARRY MORE: `workspace` takes a `NotificationHandler` at
+ * `onDidCreateFiles`, `onDidRenameFiles` and `onDidDeleteFiles`
+ * (lib/common/fileOperations.d.ts:9-11), and `notebooks.synchronization` at four
+ * more (lib/common/notebook.d.ts:10).
+ *
+ * `workspace.onDidChangeWorkspaceFolders` IS COUNTED APART FROM THOSE, and the
+ * distinction is the one this file already draws for `onUnhandledNotification`
+ * further up: it is an `Event<WorkspaceFoldersChangeEvent>` PROPERTY, not a
+ * method taking a handler (lib/common/workspaceFolder.d.ts:5). Subscribing to it
+ * still installs a listener this module's gate never sees, so it belongs in the
+ * tally -- but calling it a registrar of the same kind as the three above would
+ * be false of the declaration.
+ *
+ * `languages` CARRIES REGISTRARS TOO AND EVERY ONE OF THEM IS A REQUEST, measured
+ * across its nested `semanticTokens`, `diagnostics`, `inlayHint`, `foldingRange`,
+ * `inlineValue`, `inlineCompletion`, `moniker`, `callHierarchy` and
+ * `typeHierarchy` as well as its top level, rather than inferred from the top
+ * level alone: not one takes a `NotificationHandler`. `client`, `window`,
+ * `console`, `telemetry` and `tracer` carry no registrars at all. REACHING ANY OF
+ * THE NOTIFICATION ONES TAKES NO DELIBERATE ACT, which is the very criterion this
+ * module uses to decide what to foreclose.
  *
  * ISSUE #1'S ELEVEN IS CORRECTED HERE RATHER THAN REPEATED, since this is the
  * durable copy: that list named `onNotification`, which the `Omit` DOES remove
