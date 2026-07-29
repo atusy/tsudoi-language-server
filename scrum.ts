@@ -349,7 +349,72 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 26,
+    pbi_id: "PBI-33",
+    goal: "Why tsudoi does not serve on vscode-languageserver's Connection is readable AT THE LINE THAT WOULD CHANGE IT, in BOTH directions and re-runnable; the two smaller homes are written; and the two withdrawn PBIs stop being custody.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "B1: an extractor takes the doc block IMMEDIATELY PRECEDING `export function createGatedConnection` out of src/notifications.ts and asserts it names four tokens -- `vscode-languageserver 10.1.0`, a `.d.ts` path inside that package, `fillServerCapabilities` and `onShutdown`. THE ONE HONEST RED IN THIS SPRINT: measured before writing anything, `10.1.0`, `fillServerCapabilities` and `onShutdown` appear NOWHERE in src/ or test/, so all four fail today.",
+        implementation:
+          "the why-not record itself, written into that block: the case AGAINST (58 members, `onUnhandledNotification` and `trace` absent so two of the four `Omit` keys silently no-op, the surviving ungated notification registrars, the lifecycle hooks an `InitializeRequest` override skips, no logger argument) and the case FOR (`fillServerCapabilities` adds nothing, `onShutdown` coexists with -32600).",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE TOKENS ARE NOT DECORATION -- each defends one clause of criterion 1. The version-with-package pair is S8 AS AMENDED AT SPRINT 24: a path WITHOUT a version misleads, so the two are asserted ADJACENT rather than as two independent substrings. `vscode-languageserver` alone would be satisfied by the `vscode-languageserver-protocol 3.18.2` sentence ALREADY IN THIS FILE, which is why the token is the pair and not the name.",
+          "`fillServerCapabilities` AND `onShutdown` ARE THE FOR-DIRECTION, and they are what makes this test defend the PO's headline ruling rather than only re-runnability: A RECORD THAT ONLY CARRIES THE CASE AGAINST IS AN ADVOCACY DOCUMENT. Delete either sentence and this reddens by name.",
+          "THE PAIRED CONTROL IS PERMANENT, NOT A ONE-OFF PERTURBATION, and it is the S20 failure this project has already recorded twice: an extractor that finds nothing makes every token assertion VACUOUSLY TRUE. Modelled on readme.test.ts's markers-gone test, which is in this repo and was read before this was planned -- the extractor THROWS when its anchor is absent, and a permanent test asserts that throw against THIS source with the anchor renamed.",
+          "PERTURBATION: strip `10.1.0` from the record. Expect THIS test to redden naming that token and nothing else in the suite to move.",
+        ],
+      },
+      {
+        test: "none -- BORN GREEN and honestly so. It is one sentence added to a doc block; no assertion can distinguish the file with it from the file without it, and a manufactured RED here would be fiction.",
+        implementation:
+          "test/notifications.test.ts's block above `exit's entry declares always, and every other entry declares lifecycle` gains the sentence that removing the last `always` entry is a SCOPE DECISION and not a cleanup: that entry is the only inhabitant of the `always` arm, so deleting it collapses `NotificationGate` to one representable value and makes this test a tautology.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHY IT BELONGS AT THIS TEST rather than at the type: the S16 improvement is about a defence being REMOVED, and the thing that would be removed is what this test asserts. It is the site of the edit, which is the Lifetime Rule's first clause.",
+          "SHIPS IN THE SAME COMMIT AS S3 AND S4 -- criterion 2 binds the two other homes to the deletion commit.",
+        ],
+      },
+      {
+        test: "none -- BORN GREEN, same reason as S2.",
+        implementation:
+          "RequestOnlyConnection's doc block gains the Pick-not-Omit instrument preference, written CONTINUOUS WITH the `A MISSPELLED KEY HERE IS A SILENT NO-OP` paragraph already there rather than as a fresh essay, plus its reversal condition.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPLICITLY NOT A MANDATE TO CONVERT TODAY'S `Omit`, and the reason is on the PBI: a change with no defect to fix is churn.",
+          "THE REVERSAL CONDITION NAMES BOTH PINS, because `the enumeration pin` is under-specified against two that defend different things -- read this session in test/notifications.test.ts: ProtocolConnectionHasTheseMembers moves when the DEPENDENCY's member set moves, BoundaryIsTheObservingMembers moves when the `Omit`'s key set moves. Losing the first is what would let a silent no-op arrive from upstream, which is exactly the failure `Pick` forecloses by construction.",
+        ],
+      },
+      {
+        test: "none -- BORN GREEN, and the assertion that WOULD have covered it is recorded as unconstructible in this sprint's decisions rather than replaced by a weaker one.",
+        implementation:
+          "PBI-27 and PBI-28 are deleted from product_backlog, in the same commit as S2 and S3, whose message names where each surviving decision went by file and symbol.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PBI-30 WAS CHECKED, NOT ASSUMED: grep over the repo finds PBI-27/PBI-28 only at PBI-33's own criterion and note and at the two entries themselves. PBI-30's notes name neither, so there is nothing to fix there -- recorded as a CHECKED NEGATIVE, since silence would read as not having looked.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE MEASUREMENT WAS RE-RUN BEFORE THE RECORD WAS WRITTEN, which is the only way the S25 retrospective entry is satisfied -- a premise about an artifact is not stated until that artifact has been read in the same session, and vscode-languageserver IS NOT A DEPENDENCY OF THIS REPO, so it is not readable here at all. Installed OUT OF TREE at 10.1.0 (which pins vscode-languageserver-protocol 3.18.2) and enumerated with the TypeScript 5.9.3 compiler API's getPropertiesOfType.",
+      "THREE OF THE CRITERION'S OWN NUMBERS WERE MEASURED AND ONE IS CORRECTED IN PLACE. CONFIRMED EXACTLY: `Connection` has 58 members, `onUnhandledNotification` and `trace` are absent, and `tracer` IS present, which is where TypeScript's `Did you mean 'tracer'?` comes from. CORRECTED: `~11 ungated top-level notification registrars` is the count of NotificationHandler-typed members on `Connection` ITSELF, and the `Omit` removes two of them -- `onNotification` and `onProgress` -- so NINE survive on the handle. The recorded list of eleven named `onNotification` (which the `Omit` does remove) and `onShutdown` (a `RequestHandler0`, not a notification registrar) and omitted `onProgress`. The record names the nine rather than counting to eleven.",
+      "`THREE REGISTERING NAMESPACES` IS TRUE AS MEASURED and issue #1's earlier five-namespace list is the looser statement: exactly `workspace`, `languages` and `notebooks` carry handler registrars; `client`, `window`, `console`, `telemetry` and `tracer` carry none. TWO of the three install NOTIFICATION handlers -- `workspace` directly and `notebooks` through its nested `synchronization` -- and `languages` is requests only. That refinement is measured and goes in the record, because the gate is about notifications.",
+      "NOT CONSTRUCTED, and this is the S11 classification rather than an unremarked absence: the assertion that WOULD have defended the deletion is the ORPHAN RULE made machine-checkable -- no live backlog item names a PBI id that is not in the backlog. It cannot be built THIS SPRINT because PBI-33's own criterion and note name PBI-27 and PBI-28, and they must: they ARE the record of the deletion. Removing the ids from PBI-33 to satisfy a test would falsify the audit trail the criterion requires. A test excepting one id is an exception, and this project has already ruled that exceptions rot. WHAT REMAINS AT RISK: a future note citing a deleted PBI is caught by nothing but a reader. Verified by hand this sprint instead.",
+      "AND THE PIN THAT WAS DECLINED, so it is not read as an oversight: `product_backlog contains no PBI-27 and no PBI-28` was considered and refused. Nothing realistic would ever make it fail, which is S9's own definition of a vacuous criterion, and S7 bounds exactly this pressure -- a test that resists no legitimate change while defending no requirement.",
+      "ORDERING: B1 is the only subtask with a real RED and goes first, alone, so its perturbation is observed against a suite nothing else moved. S2, S3 and S4 ship together in the second commit because criterion 2 binds them to each other.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 25,
