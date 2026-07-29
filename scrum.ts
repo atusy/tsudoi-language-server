@@ -312,19 +312,35 @@ const scrum: ScrumDashboard = {
         implementation:
           "THE ONE HOME. src/lifecycle.ts's exitCode() block ALREADY carries a paraphrase of the sentence -- `LSP exit-code semantics: 0 only when shutdown came first, otherwise 1` -- found by grepping the CLAIM'S WORDS rather than the places comments live, so the home is that block EXTENDED and not a new comment beside it. It records: the sentence as the specification writes it, where it was read, the pre-initialize rule that decides tsudoi's case, the ruling, and THE BOUNDARY -- the sentence governs the `exit` NOTIFICATION and rules NO code for a session that ends WITHOUT one, which is the half PBI-30's C4 needs and would otherwise invent.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "0fec549",
+            message: "refactor(lifecycle): give the exit-code sentence one home, not two readings",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE BLOCK WAS FOUND BY GREPPING THE CLAIM'S WORDS AND IT WAS ALREADY THERE -- `0 only when shutdown came first, otherwise 1` at exitCode(). Extending it rather than writing a second comment IS the Lifetime Rule's site clause working; a new block beside it would have created the very second copy this sprint exists to prevent.",
+        ],
       },
       {
         test: "A shutdown sent BEFORE initialize is refused -32002 AND a following exit ends the process at 1 -- on both runtimes. The refusal is a NON-OPTIONAL presence assertion: without it `exited 1` is satisfied by a session whose shutdown was never delivered at all.",
         implementation:
           "BORN-GREEN AND DECLARED AS SUCH: measured today at 1 on both runtimes, so nothing in src/ changes. The same commit corrects src/notifications.ts's `shutdown-before-initialize-then-exit is 1 today and 0 through the framework, which no assertion in this suite catches`, which THIS SUBTASK FALSIFIES, to point at the ruling and the test that now catches it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "59a8f36",
+            message: "test(lifecycle): a shutdown tsudoi refused is not a shutdown, so exit is 1",
+            phase: "green",
+          },
+        ],
         notes: [
-          "PERTURBATION P3 IS THE DISCRIMINATING ONE, and it is named by the assertion it must flip: calling lifecycle.shutDown() BEFORE the rejection check in server.ts's shutdown handler leaves -32002 on the wire and moves the exit code to 0, so ONLY the exit-code assertion flips and the presence half stays green. P2 (exitCode() returns 0 always) flips it too but reddens the existing pins as well, so it discriminates nothing on its own.",
+          "P3 AS PLANNED WAS A BAD PERTURBATION AND IS RECORDED AS ONE: calling shutDown() before the rejection check moves the phase, so the REFUSAL CODE MOVES WITH IT -- the test flipped at -32002-versus-32600, EARLIER than its headline, and measured nothing about the exit code. The earlier flip was the perturbation bundling two changes, not the test bundling two claims.",
+          "P3a IS THE REPLACEMENT AND IT IS THE STRONGEST FORM: it makes the change A MAINTAINER WHO READS `received` AS BARE WIRE ARRIVAL WOULD MAKE -- remember that a shutdown arrived even though it was refused, exit 0 for it -- and it reddens THIS TEST ALONE out of 383, at the exit-code assertion, with the -32002 presence half green. That is the future argument the assertion exists to force.",
+          "P2 RUN AS NAMED AND IT DISCRIMINATES NOTHING, which is why it is not the control: exitCode() returning 0 always reddens EIGHT tests, three of them pre-existing pins in two other files.",
         ],
       },
       {
