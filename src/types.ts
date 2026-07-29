@@ -78,7 +78,11 @@ export type CompletionResponse = CompletionItem[] | CompletionList;
  * REFUSED. EVERY OTHER `CompletionList` MEMBER SURVIVES -- `itemDefaults`
  * included, which is not academic: nvim advertises
  * `completionList.itemDefaults`, so a narrower shape would have silently
- * removed a capability the client asked for.
+ * removed a capability the client asked for. MEASURED WITH ITS PROVENANCE
+ * rather than recalled, nvim 0.13.0-nightly+6ecf226: protocol.lua's default
+ * client capabilities declare `completionList.itemDefaults` as
+ * `commitCharacters`, `editRange`, `insertTextFormat`, `insertTextMode` and
+ * `data`, and completion.lua applies them to every item it receives.
  *
  * WHY A HANDLER WOULD USE IT: after draining its own source it may know
  * something it did not know when it answered -- above all whether the candidate
