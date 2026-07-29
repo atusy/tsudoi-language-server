@@ -53,8 +53,9 @@ import type {
  * 9.0.1 and vscode-languageserver-types 3.18.0 exactly. In a project with
  * `types: []` and no @types/node reachable at all, importing CompletionItemKind
  * from the BARE specifier exits 0, while importing it from
- * `vscode-languageserver-protocol/node` exits 1 with eleven diagnostics: TS2591
- * for `child_process`, `net` and `worker_threads` out of
+ * `vscode-languageserver-protocol/node` exits 1. The diagnostics are NAMED
+ * rather than counted, since a count falsifies at the next release that adds a
+ * line: TS2591 for `child_process`, `net` and `worker_threads` out of
  * vscode-jsonrpc/lib/node/main.d.ts, and TS2503 for namespace `NodeJS` out of
  * that file AND vscode-languageserver-protocol/lib/node/main.d.ts. So the bare
  * specifier is what keeps this subpath usable by a config author who never
@@ -65,12 +66,23 @@ import type {
  * writes no tsconfig of their own is protected by this line -- but with
  * skipLibCheck ON, both specifiers exit 0 and the difference vanishes entirely.
  *
- * NOTHING IN THE SUITE ASSERTS ANY OF THIS, stated plainly rather than left to
- * be assumed from the paragraphs above: the consumer probes in
- * test/helpers/typecheck.ts set skipLibCheck: true, which is exactly the
- * condition under which the two specifiers are indistinguishable. No existing
- * probe could redden if this line were changed to `/node`. Until one with
- * skipLibCheck OFF exists, this paragraph is the whole of the defence.
+ * WHAT ASSERTS IT, replacing the paragraph that stood here saying NOTHING did:
+ * test/installed-without-node-types.test.ts installs the packed package into a
+ * consumer whose OWN tsconfig sets skipLibCheck OFF and `types: []`, and moving
+ * the specifier below to `/node` reddens it BY NAME -- `child_process` and
+ * `NodeJS`, out of the two files this comment lists.
+ *
+ * ITS SECOND CONTROL IS WHAT KEEPS THE FIRST MEANINGFUL, and it is the half to
+ * check before trusting any of this again: the SAME perturbation with
+ * skipLibCheck back ON exits 0. So a probe that quietly reverted to blind FAILS
+ * rather than passing, which is the failure this paragraph used to describe as
+ * the standing state.
+ *
+ * WHAT IS STILL NOT COVERED: that is the TYPE arm alone, and it reads the
+ * INSTALLED dependency rather than the `^3.17.5` package.json asks for. And the
+ * probe carries a fragility of its own -- skipLibCheck OFF type-checks the
+ * dependency's whole declaration graph -- disclosed in its doc block together
+ * with the triage for the day it fires for a reason that is not this line.
  */
 export { CompletionItemKind } from "vscode-languageserver-protocol";
 export type {

@@ -34,6 +34,23 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * tsc would walk the symlinked src/ and report TS2591 for every `node:` import
  * in cli.ts and config.ts -- a red that looks like a resolution failure and is
  * not one.
+ *
+ * `skipLibCheck` IS ON, AND EVERY PROBE THAT TAKES THESE OPTIONS IS THEREFORE
+ * BLIND TO ONE THING: whether src/types.ts re-exports from the BARE
+ * `vscode-languageserver-protocol` or from `/node`. With it on, both exit 0.
+ * The property that needs it OFF -- that the published subpath type-checks for
+ * a consumer with no Node typings reachable -- is measured by
+ * test/installed-without-node-types.test.ts, which passes its own value through
+ * installConsumer's `typeCheck` rather than moving this line.
+ *
+ * WHY IT IS NOT SIMPLY TURNED OFF HERE, MEASURED at sprint 27 rather than
+ * argued: setting it `false` reddens NOTHING -- the whole of `bun test` stayed
+ * green -- and it would also SEE nothing, because `types: ["node"]` above is
+ * the other half of the pair and cancels it. Only skipLibCheck OFF TOGETHER
+ * WITH `types: []` discriminates, and `types: []` is what these options must
+ * not have: the
+ * example config reads the filesystem, so the paragraph above would stop
+ * holding. That is why the probe carries its own tsconfig instead.
  */
 export const consumerCompilerOptions = {
   target: "esnext",
