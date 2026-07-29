@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import { type InitializeResult, TextDocumentSyncKind } from "vscode-languageserver-protocol";
+import {
+  ErrorCodes,
+  type InitializeResult,
+  TextDocumentSyncKind,
+} from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 
@@ -75,6 +79,32 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, demoConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(1);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // A shutdown tsudoi REFUSED is not a shutdown, and this is where that reading
+    // is defended. WHY IT IS NOT THE TEST ABOVE: there the client never asked to
+    // shut down; here it asked and was told no, which is a different session and
+    // the one LSP's wording leaves open -- `if the shutdown request has been
+    // RECEIVED before` reads as bare arrival on the wire until the pre-initialize
+    // rule is read beside it. THE READING AND ITS GROUNDS ARE AT exitCode() IN
+    // src/lifecycle.ts and are deliberately not repeated here: two copies of one
+    // reading is how a project ends up with two rulings that disagree.
+    //
+    // THE -32002 ASSERTION IS NOT DECORATION AND MAY NOT BE DROPPED: without it
+    // `exited 1` is satisfied by a session whose shutdown never arrived at all --
+    // a write that failed, a frame that was never read -- which is precisely the
+    // case the refusal is supposed to distinguish this test from.
+    test("shutdown REFUSED before initialize, then exit, exits 1 -- a refused shutdown is not a shutdown", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const refusal = await session.requestError("shutdown", null);
+        expect(refusal.code).toBe(ErrorCodes.ServerNotInitialized);
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(1);

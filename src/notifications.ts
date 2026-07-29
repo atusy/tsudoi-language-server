@@ -490,9 +490,14 @@ export type RequestOnlyConnection = Omit<
  * exit path requires DELETING the `exit` entry from the gated table, and that
  * entry is the only inhabitant of the `always` arm -- what follows from that is
  * written at the test which asserts it, in test/notifications.test.ts, rather
- * than here. Two further findings arrived with the same measurement and are
- * FILED RATHER THAN SETTLED: shutdown-before-initialize-then-exit is 1 today and
- * 0 through the framework, which no assertion in this suite catches; and
+ * than here. Two further findings arrived with the same measurement, and ONE OF
+ * THEM IS NO LONGER FILED. SETTLED: shutdown-before-initialize-then-exit is 1
+ * here and 0 through the framework, and `which no assertion in this suite
+ * catches` was true when written and is now false -- it is asserted on both
+ * runtimes in test/lifecycle.test.ts, and RULED at exitCode() in
+ * src/lifecycle.ts, which is where the reading lives and why the divergence does
+ * not count against tsudoi: a shutdown answered -32002 was refused, and the
+ * framework reaches 0 by never refusing at all. STILL FILED:
  * `watchDog.initialize(params)` starts an un-`unref`ed three-second interval when
  * `processId` is numeric, which the suite cannot observe because
  * test/helpers/lsp.ts sends `processId: null`.
