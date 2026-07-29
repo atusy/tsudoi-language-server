@@ -53,21 +53,23 @@ const unrecognisedItem = {
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     /**
-     * EXACT EQUALITY ON THE WHOLE OBJECT, AND IT IS WHAT MAKES THE ORDERING
-     * CONSTRAINT CHECKABLE FOR THE FIRST TIME.
+     * EXACT EQUALITY ON THE WHOLE OBJECT: two capability contributors write
+     * into ONE key, and this is what the client is told after both have run.
      *
-     * Capability contributors MUTATE, and this is the first one that writes
-     * into a key another method owns -- so `textDocument/completion`'s entry
-     * must be declared ABOVE `completionItem/resolve`'s in src/methods.ts, since
-     * completion's contributor ASSIGNS a fresh object over whatever is there.
-     * Declared the other way round, resolveProvider is written and then thrown
-     * away, and the client is told about a completion provider that resolves
-     * nothing.
+     * THE ASSERTION IS UNCHANGED AND ITS REASON IS NOT, WHICH IS WHY THIS
+     * PARAGRAPH WAS REWRITTEN BY AN EDIT IN src/methods.ts THAT TOUCHED NO LINE
+     * IN THIS FILE. It used to say that `textDocument/completion`'s entry must
+     * be declared ABOVE `completionItem/resolve`'s, since completion's
+     * contributor ASSIGNED a fresh object over whatever was there, and that
+     * swapping the two entries reddens this. SINCE SPRINT 38 COMPLETION MERGES:
+     * both orders produce the same object, and the swap reddens NOTHING --
+     * measured there, whole suite green with the same number of tests running.
      *
-     * NOTHING IN THE LANGUAGE CHECKS THE DECLARATION ORDER, AND THIS ASSERTION
-     * CHECKS WHAT THE ORDER IS FOR: not that resolve's entry sits below
-     * completion's, but that what the client is told survives both contributors
-     * running. MEASURED: swapping the two entries reddens this.
+     * WHAT THIS STILL CHECKS is the property, not the mechanism: that
+     * `resolveProvider` reaches the client at all, and that it arrives INSIDE
+     * `completionProvider` rather than beside it. A merge that dropped what the
+     * other contributor wrote would redden here; the declaration order can no
+     * longer make it fail, because it no longer decides anything.
      */
     test("a config supplying a resolve handler advertises resolveProvider inside the completion provider", async () => {
       const session = LspSession.start(runtime, resolveDetail);

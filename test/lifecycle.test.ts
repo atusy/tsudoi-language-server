@@ -33,9 +33,19 @@ for (const runtime of runtimes) {
     // arrived with the fifth: `completionItem/resolve` contributes
     // `resolveProvider` INSIDE the object `textDocument/completion` owns, which
     // is why the value below has five methods behind four keys. That nesting is
-    // the protocol's, and what it costs tsudoi -- an ordering constraint between
-    // two contributors -- is asserted where it belongs, in test/resolve.test.ts,
-    // rather than restated here.
+    // the protocol's, and what it cost tsudoi -- AN ORDERING CONSTRAINT BETWEEN
+    // TWO CONTRIBUTORS -- IT NO LONGER COSTS: since Sprint 38 both contributors
+    // MERGE into that key, so neither has to run after the other. What is
+    // asserted in test/resolve.test.ts rather than restated here is the
+    // property both of them serve -- that a config supplying both handlers is
+    // told about resolve INSIDE the completion provider.
+    //
+    // THIS PIN IS THE SECOND HALF OF THAT HISTORY AND IS WHY IT IS MENTIONED:
+    // with the old assignment, swapping the two entries reddened this test as
+    // well as resolve's, MEASURED at Sprint 38 -- so the note at Sprint 34 that
+    // the swap reddened resolve's assertion ALONE had stopped being true here,
+    // one file away from where it was written, the moment the demo config
+    // gained a resolve handler.
     //
     // THE SYNC KIND IS WHAT AN EDITOR READS TO DECIDE WHAT TO SEND, so this
     // value is the whole of the editor-user-facing half of incremental sync:
