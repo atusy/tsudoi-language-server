@@ -314,7 +314,113 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 25,
+    pbi_id: "PBI-26",
+    goal: "A config author installs ONE package: the examples get every protocol name they use from @atusy/tsudoi/types, and a consumer that never declares vscode-languageserver-protocol can both TYPE-CHECK and RUN them.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "none -- BORN GREEN and honestly so; a pure capability move with no assertion of its own. Suite must stay at 347 pass.",
+        implementation:
+          "installConsumer() returns a fourth capability: start an LspSession in the consumer's own directory. test/helpers/lsp.ts:217 already has the command-plus-cwd form; this exposes it through InstalledConsumer rather than inventing a second spawner.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NO PERTURBATION AVAILABLE, and that is why it is structural. It earns its place by being USED IN B5 -- if B5 is dropped, this must be REVERTED rather than left.",
+        ],
+      },
+      {
+        test: 'B1: the runtime VALUE surface of the PUBLISHED module -- Object.keys of @atusy/tsudoi/types through the consumer harness, toEqual(["CompletionItemKind"]). Reddens today on an empty array: dist/types.js is `export {}` at 11 bytes.',
+        implementation:
+          "src/types.ts re-exports eight names. Only CompletionItemKind, MarkupContent and Position are new imports; CompletionItem, CompletionParams, Hover, HoverParams and WorkspaceFolder are already imported for MethodMap/RequestContext and merely gain an export.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PERTURBATION, both halves: dropping the re-export reddens naming the symbol, AND re-exporting it `as type` ALSO reddens -- that half is the one that matters, because a type-only re-export compiles and emits nothing.",
+          "SOURCE SPECIFIER IS BARE vscode-languageserver-protocol, MEASURED not assumed: at `types: []` with no @types/node at all, bare exits 0 while /node produces 6+ errors (TS2591 child_process, net, worker_threads; TS2503 NodeJS) out of vscode-jsonrpc's node main.d.ts.",
+          "DOC OBLIGATION: src/types.ts states every exported name is public API, so the block must say WHY THESE EIGHT -- measured, they are exactly what the examples use: six in completion-path.ts, two in hover-wordnet.ts, none added by tsudoi.config.ts -- and what the rule is for a ninth.",
+        ],
+      },
+      {
+        test: "B2: a consumer.typeCheck() probe importing all eight from @atusy/tsudoi/types and USING each. Fails today with seven TS2305.",
+        implementation:
+          "no new implementation; B1 satisfies it. This is the type-arm control B1's value-arm cannot give.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "MUST GO THROUGH installConsumer, NOT typeCheckProbe: the in-repo arm resolves the exports map's `default` straight at src/types.ts and, as published-artifacts.test.ts:131 already records, CANNOT OBSERVE WHAT SHIPS.",
+          "Perturbation: remove any one name from src/types.ts and the probe names that symbol.",
+        ],
+      },
+      {
+        test: "B3: a probe importing a NINTH name (DefinitionParams) from @atusy/tsudoi/types must FAIL. BORN GREEN and flagged -- it fails today because NOTHING is exported, and must still fail afterwards.",
+        implementation: "none. This is the `and no more` half of criterion 2.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE ONE FLAGGED SUBTASK WHERE BORN-GREEN IS A JUDGEMENT RATHER THAN A DEFINITION, and the Developer pushed hardest on it: AS WRITTEN THIS ASSERTION IS SATISFIED PERFECTLY BY A MODULE THAT EXPORTS NOTHING AT ALL -- which is exactly the state it is written in. RUN THE PERTURBATION ONCE AND RECORD IT: adding DefinitionParams to the re-export list makes the probe go green and this test redden. Recorded in the test's doc block, as BoundaryIsTheObservingMembers records its four controls.",
+        ],
+      },
+      {
+        test: "B4: published-artifacts.test.ts:195 REPLACED BY ITS INVERSE -- under useNonHoistingLayout, consumer.typeCheck(exampleSources()) must be code === 0. Measured to FAIL today naming vscode-languageserver-protocol, so the criterion has a live opposite.",
+        implementation:
+          "rewrite the protocol imports in examples/completion-path.ts, examples/hover-wordnet.ts and examples/tsudoi.config.ts to @atusy/tsudoi/types. examples/wordnet.d.ts has no protocol import.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NEGATIVE CONTROL IN THE SAME RUN, LOAD-BEARING: a probe importing vscode-languageserver-protocol by bare specifier must STILL fail. PERTURBATION: comment out the renameSync in useNonHoistingLayout and the negative control goes green, AND ONLY IT -- which is the failure the PO named, a harness that stopped applying the layout producing code === 0 for the wrong reason.",
+          "SECOND SURVIVING CONTROL: withhold `wordnet` and the examples must still fail. That is the PO's `what survives is the harness's ability to detect a genuinely missing package`, and it becomes the ONLY remaining genuinely-missing-package case.",
+        ],
+      },
+      {
+        test: "B5: start a session in the non-hoisting consumer via S1; initialize, didOpen, completion; assert a NON-EMPTY CompletionItem[]. Fails today -- the example cannot even load.",
+        implementation:
+          "none beyond S1 and B1; this is the runtime half type-checking cannot cover.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHY IT EXISTS, and this belongs in its doc block: CompletionItemKind is a VALUE, so a resolution failure is a RUNTIME failure. A type-check-only criterion would go GREEN against a dist/types.d.ts whose dist/types.js re-exports nothing. PERTURBATION: change the re-export to `export type` -- B1 and B2 stay green and this reddens at runtime.",
+        ],
+      },
+      {
+        test: "B6: a source-text assertion over the extracted quickstart install step -- the command matches no /vscode-languageserver-protocol/. Reddens today on README.md:180.",
+        implementation:
+          "README.md:180 `bun install vscode-languageserver-protocol wordnet` becomes `bun install wordnet`.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE ASYMMETRY GOES IN THE TEST RATHER THAN BEING HIDDEN: the extraction harness EXECUTES the command then type-checks, so it catches UNDER-installation and CANNOT catch OVER-installation -- leaving the old command in place would keep every existing assertion green. This text assertion is the ONLY cover for the over-installation direction.",
+          "EXPLICITLY NOT IN SCOPE: test/readme.test.ts:217's tokens [/network/i, /cache/i, /vscode-languageserver-protocol/] is a prose claim about TSUDOI'S OWN cold-cache dependency, not about the consumer's install. It stays TRUE and GREEN here and moves at PBI-27. Do not sweep it into this sprint.",
+        ],
+      },
+      {
+        test: "none -- structural and BORN GREEN, and it must be: it is prose about a test that no longer exists.",
+        implementation:
+          "the replacement test from B4 carries, in its own doc block, the record that published-artifacts.test.ts:195's premise was WITHDRAWN DELIBERATELY at PBI-26, that `without the documented install the example reddens` is therefore UNCONSTRUCTIBLE rather than broken (no undeclared specifier is left to withhold), and that what survives is the wordnet case.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SHIPS IN THE SAME COMMIT AS B4 so the record and the withdrawal are never separated.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "ORDERING CONSTRAINTS: B1 -> B2 -> B4 is HARD, since the examples cannot import names that do not exist yet. S1 must precede B5. B3 may sit anywhere after B1. B6 is independent and could ship first for an early green.",
+      "A RISK OUTSIDE THE CRITERIA, recorded because descoping would hide it: dist/types.d.ts now re-exports from vscode-languageserver-protocol, so a consumer's tsc must follow into node_modules/@atusy/tsudoi/node_modules/ under the non-hoisting layout. B4 measures exactly that -- but if B4 is descoped, B1 and B2 alone would ship a published surface nobody checked through the nested layout.",
+      "CARRIED ONTO PBI-27 AS A LIVE REGRESSION RISK, not left in this sprint: issue #1's E1 says unify on vscode-languageserver/node. If src/types.ts moves there, criterion 2 silently regresses for every consumer without @types/node. MEASURED LOOKAHEAD: bare vscode-languageserver ALSO type-checks at types: [], exit 0. So PBI-27 must aim src/types.ts at BARE vscode-languageserver while src/server.ts and src/notifications.ts use /node. That split is written down nowhere else.",
+      "ALSO FOR PBI-27: useNonHoistingLayout renames node_modules/vscode-languageserver-protocol. PBI-26 KEEPS the dependency so the rename still finds its target; at PBI-27 it ENOENTs, measured. Criterion 1's harness is re-based at PBI-27, not here.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 22,
