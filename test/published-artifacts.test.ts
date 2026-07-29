@@ -142,8 +142,9 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
 /**
  * THE VALUE ARM, and no type check can stand in for it.
  *
- * `CompletionItemKind` is an enum -- a VALUE -- so a config that reaches for it
- * needs the published dist/types.js to really re-export it at runtime.
+ * `CompletionItemKind` and `DiagnosticSeverity` are namespaces of const members
+ * -- VALUES -- so a config that reaches for either needs the published
+ * dist/types.js to really re-export it at runtime.
  * dist/types.d.ts and dist/types.js are separate files emitted from one source,
  * and a `export type` re-export produces a perfect declaration beside a module
  * that exports nothing: every type-check assertion in this file would stay
@@ -161,11 +162,17 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * applyEdits, so a value re-export is available and is one token away. Dropping
  * `type` from that line adds `TextDocument` here and reddens this assertion,
  * which is what makes the foreclosure DEFENDED rather than merely written down.
- * MEASURED, both directions: `export type` on CompletionItemKind reddens this
- * and nothing else, and `export {` on TextDocument reddens this and nothing
- * else.
+ * MEASURED, both directions: `export type` on the value line reddens this and
+ * nothing else, and `export {` on TextDocument reddens this and nothing else.
+ *
+ * THE EXACT LIST IS WHY A NINTH NAME COULD NOT ARRIVE QUIETLY: adding
+ * DiagnosticSeverity at Sprint 33 reddened this assertion BEFORE the name was
+ * written here, which is the assertion doing its job rather than being updated
+ * to match. The test NAME carries both names deliberately -- prose lives in test
+ * names too, and one that said `CompletionItemKind` alone would have gone stale
+ * invisibly to any search for comment syntax.
  */
-test("the published module re-exports CompletionItemKind as a runtime value", async () => {
+test("the published module re-exports CompletionItemKind and DiagnosticSeverity as runtime values", async () => {
   consumer.write(
     "value-surface.js",
     'import * as types from "@atusy/tsudoi/types";\nconsole.log(JSON.stringify(Object.keys(types)));\n',
@@ -176,7 +183,7 @@ test("the published module re-exports CompletionItemKind as a runtime value", as
   // The whole failure on the assertion line: a module that throws at load
   // otherwise reports only that stdout did not parse.
   expect(`${String(result.code)} ${result.stderr}`).toBe("0 ");
-  expect(JSON.parse(result.stdout.trim())).toEqual(["CompletionItemKind"]);
+  expect(JSON.parse(result.stdout.trim())).toEqual(["CompletionItemKind", "DiagnosticSeverity"]);
 });
 
 /**

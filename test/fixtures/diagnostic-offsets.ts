@@ -1,0 +1,64 @@
+// Relative with .ts, and Bun-free: deno executes this file too.
+//
+// ONE PROTOCOL NAME, AND IT COMES FROM TSUDOI'S OWN SURFACE, which is the
+// second thing this file measures. `DiagnosticSeverity` is imported from
+// ../../src/types.ts rather than from vscode-languageserver-protocol, so this
+// fixture is the standing evidence that the ninth published name is REACHABLE
+// AND USABLE AS A VALUE by a config that installed one package. There is no
+// `DocumentDiagnosticParams`, no `Diagnostic` and no annotation on the handler:
+// `MethodHandler` supplies those by contextual typing, which is the standing
+// evidence for the ruling that they do NOT join the surface. Add an annotation
+// here and that half of the evidence is gone.
+import { DiagnosticSeverity, type Tsudoi, type TsudoiConfig } from "../../src/types.ts";
+
+/** What this analysis complains about, and what it says about it. */
+export const target = "、";
+export const message = "読点が使われています";
+
+/**
+ * THE AFFORDABILITY CLAIM, SECOND MEASUREMENT, WRITTEN AS A CONFIG AUTHOR WOULD
+ * HIT IT.
+ *
+ * A real analysis -- a parser, a linter's own lexer -- knows OFFSETS into a
+ * buffer. `Diagnostic.range` wants Positions (MEASURED at
+ * vscode-languageserver-types 3.18.0: `range: Range` is REQUIRED). So the
+ * conversion is the visible step here exactly as it is in the formatting
+ * fixture: `scan` returns numbers and nothing else, and the handler turns each
+ * into a Position with `document.positionAt`, which arrived with upstream's
+ * TextDocument at Sprint 28 and did not exist before it.
+ */
+function scan(text: string): number[] {
+  const offsets: number[] = [];
+  for (let at = text.indexOf(target); at !== -1; at = text.indexOf(target, at + 1)) {
+    offsets.push(at);
+  }
+  return offsets;
+}
+
+export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+  return Promise.resolve({
+    methods: {
+      "textDocument/diagnostic": (context, params) => {
+        const document = context.tsudoi.documents.get(params.textDocument.uri);
+        // A FULL REPORT WITH NO ITEMS, NOT `null`, AND THAT IS THE PROTOCOL'S
+        // SHAPE RATHER THAN A HOUSE STYLE: this result declares no null arm, and
+        // an empty full report is a REPORT SAYING THE FILE IS CLEAN -- which is
+        // what makes a client clear the diagnostics it is already showing.
+        if (document === undefined) {
+          return Promise.resolve({ kind: "full" as const, items: [] });
+        }
+        return Promise.resolve({
+          kind: "full" as const,
+          items: scan(document.getText()).map((offset) => ({
+            range: {
+              start: document.positionAt(offset),
+              end: document.positionAt(offset + target.length),
+            },
+            severity: DiagnosticSeverity.Warning,
+            message,
+          })),
+        });
+      },
+    },
+  });
+};

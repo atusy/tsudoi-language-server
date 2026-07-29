@@ -15,6 +15,7 @@ export const publicProtocolNames = [
   "CompletionItem",
   "CompletionItemKind",
   "CompletionParams",
+  "DiagnosticSeverity",
   "Hover",
   "HoverParams",
   "MarkupContent",
@@ -26,9 +27,11 @@ export const publicProtocolNames = [
  * A probe source that IMPORTS each name and then USES it in a type position,
  * because an unused import is erased and proves nothing about the surface.
  *
- * `declare const` is the one form that fits all eight: seven are interfaces or
- * aliases, so `typeof` -- which needs a VALUE -- would fail on them for a reason
- * that has nothing to do with what ships.
+ * `declare const` is the one form that fits EVERY name here, which is why it
+ * survived a ninth arriving: most are interfaces or aliases, so `typeof` --
+ * which needs a VALUE -- would fail on them for a reason that has nothing to do
+ * with what ships. The two that ARE values also declare a type alias beside the
+ * namespace, so they fit the same form rather than needing a second one.
  */
 export function importsAndUses(names: readonly string[], from: string): string {
   const uses = names.map((name, index) => `declare const __use${String(index)}: ${name};\n`);

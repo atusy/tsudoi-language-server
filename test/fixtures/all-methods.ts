@@ -45,6 +45,13 @@ export const completionAnswer: CompletionItem[] = [{ label: "表", detail: "from
 
 export const formattingAnswer: TextEdit[] = [];
 
+/**
+ * AN EMPTY FULL REPORT, NOT `null`, and the difference is the protocol's:
+ * `textDocument/diagnostic` declares no null arm, so `nothing to say` is a
+ * report saying the file is clean.
+ */
+export const diagnosticAnswer = { kind: "full" as const, items: [] };
+
 export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
@@ -58,6 +65,7 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
         return null;
       },
       "textDocument/formatting": (): Promise<TextEdit[]> => Promise.resolve(formattingAnswer),
+      "textDocument/diagnostic": () => Promise.resolve(diagnosticAnswer),
     },
   });
 };

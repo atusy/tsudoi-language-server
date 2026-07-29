@@ -3,6 +3,7 @@ import {
   type CancellationToken,
   type CompletionItem,
   CompletionRequest,
+  DocumentDiagnosticRequest,
   DocumentFormattingRequest,
   HoverRequest,
   LSPErrorCodes,
@@ -261,6 +262,59 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // visible at a glance.
     capability: (capabilities) => {
       capabilities.documentFormattingProvider = true;
+    },
+  },
+  "textDocument/diagnostic": {
+    // AWAITED ONCE, AND IT WAS PLANNED AS GENERATOR-DRIVEN UNTIL IT WAS
+    // MEASURED. `DocumentDiagnosticRequest` declares `partialResult`, which is
+    // where the expectation came from -- and see `driveGenerator`: declaring it
+    // is NECESSARY AND NOT SUFFICIENT, because that drive concatenates chunks
+    // and this method's chunks are objects. Nothing here chooses the drive
+    // anyway; `DriveKind` DERIVES it from `MethodMap`, so writing
+    // `generator-driven` on this line would not compile.
+    drive: "awaited-once",
+    type: DocumentDiagnosticRequest.type,
+    // AN OBJECT WITH TWO REQUIRED BOOLEANS, WHICH IS WHY NEITHER `true` NOR `{}`
+    // WOULD DO: `DiagnosticOptions` (protocol.diagnostic.d.ts:50-67, protocol
+    // 3.18.2) requires BOTH, so this is a fourth kind of contribution beside
+    // hover's `true`, completion's `{}` and resolve's nested key -- and reading
+    // the four side by side is what this table is for.
+    //
+    // THE TWO VALUES ARE DECIDED DIFFERENTLY AND THAT DISTINCTION IS THE POINT
+    // OF WRITING THEM OUT RATHER THAN INLINING A LITERAL.
+    //
+    // `workspaceDiagnostics: false` IS FORCED, NOT CHOSEN. tsudoi does not serve
+    // `workspace/diagnostic` -- a SEPARATE request with its own params and
+    // result, not a variant of this one -- and the protocol makes this field the
+    // switch for exactly that: `WorkspaceDiagnosticRequest.capabilities` is
+    // `CM<"workspace.diagnostics", "diagnosticProvider.workspaceDiagnostics">`.
+    // It becomes `true` in the same change that adds that entry, never before.
+    //
+    // `interFileDependencies: true` IS CHOSEN BY TSUDOI, ON HARM ASYMMETRY AND
+    // EXPLICITLY NOT ON WHAT IS TYPICAL. The config author has NO SURFACE to
+    // answer this on, so tsudoi must answer it for them, and the two errors are
+    // not symmetric: `true` for a language with no inter-file dependencies costs
+    // REDUNDANT PULLS -- visible, a performance cost, borne by the client --
+    // while `false` for a language that has them leaves A STALE DIAGNOSTIC IN
+    // ANOTHER FILE THAT NEVER CLEARS, which is SILENT AND WRONG. The same
+    // preference refuses to synthesise a workspace root from cwd.
+    //
+    // THE PROTOCOL'S OWN COMMENT SAYS `typically uncommon for linters` AND THAT
+    // IS DELIBERATELY NOT THE REASON, written here because it is the obvious
+    // wrong path back to this line: it describes LANGUAGES, which is the one
+    // thing only a config author knows and the exact thing they cannot tell us.
+    //
+    // THE COST IS NAMED RATHER THAN HIDDEN: tsudoi's likely audience is
+    // linter-shaped, so MOST CONFIGS WILL PAY PULLS THEY DO NOT NEED. NOT A
+    // PUBLISHED SURFACE, on one-way reversibility -- tsudoi picking now makes a
+    // later surface ADDITIVE, where a surface now would make removal BREAKING.
+    // REVERSAL IS EVIDENCE-SHAPED rather than predictive: a config author who
+    // reports redundant pulls, or asks for `false`.
+    capability: (capabilities) => {
+      capabilities.diagnosticProvider = {
+        interFileDependencies: true,
+        workspaceDiagnostics: false,
+      };
     },
   },
 };

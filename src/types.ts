@@ -11,6 +11,8 @@
 import type {
   CompletionItem,
   CompletionParams,
+  DocumentDiagnosticParams,
+  DocumentDiagnosticReport,
   DocumentFormattingParams,
   Hover,
   HoverParams,
@@ -41,15 +43,29 @@ import type { TextDocument } from "vscode-languageserver-textdocument";
  * has no end, and the set it produces is the dependency's whole surface
  * re-published under names this project would then have to keep.
  *
- * CompletionItemKind IS RE-EXPORTED AS A VALUE, and the distinction is not
- * stylistic: it is an enum, so a handler reads CompletionItemKind.File at RUN
- * TIME. `export type` here would emit a perfect dist/types.d.ts beside a
- * dist/types.js that exports nothing, and every type-check in this repo would
- * stay green while a config author got `undefined` at their first completion.
- * test/published-artifacts.test.ts asserts the runtime namespace of the
- * PUBLISHED module, which is the only arm that can see that difference --
- * measured: making this line `export type` reddens that one assertion and
- * leaves every other test in that file green.
+ * CompletionItemKind AND DiagnosticSeverity ARE RE-EXPORTED AS VALUES, and the
+ * distinction is not stylistic: each is a NAMESPACE OF CONST MEMBERS beside a
+ * type alias, so a handler reads CompletionItemKind.File and
+ * DiagnosticSeverity.Error at RUN TIME. `export type` here would emit a perfect
+ * dist/types.d.ts beside a dist/types.js that exports nothing, and every
+ * type-check in this repo would stay green while a config author got
+ * `undefined` at their first completion. test/published-artifacts.test.ts
+ * asserts the runtime namespace of the PUBLISHED module, which is the only arm
+ * that can see that difference -- measured: making either line `export type`
+ * reddens that one assertion and leaves every other test in that file green.
+ *
+ * DiagnosticSeverity IS THE NINTH NAME AND THE RULE ABOVE APPLIES TO IT, so the
+ * reason sits here beside it rather than in a sprint record. IT IS NOT `an
+ * author might want it`: a `Diagnostic` is constructible from an object literal
+ * in every member EXCEPT this one, whose values are 1 through 4 and mean nothing
+ * written as numbers. Without this name a config author either installs the
+ * protocol package -- which is the whole thing this surface exists to prevent --
+ * or writes `severity: 1` and hopes. MEASURED at vscode-languageserver-types
+ * 3.18.0: DiagnosticSeverity declares Error/Warning/Information/Hint as consts,
+ * the SAME construct as CompletionItemKind rather than a similar one.
+ * `Diagnostic` and `DocumentDiagnosticReport` themselves are NOT added, for the
+ * reason that kept Range and TextEdit off: MethodHandler supplies them by
+ * contextual typing and both are structurally constructible.
  *
  * WHY THE BARE SPECIFIER AND NOT `/node`, recorded here because this is where
  * the edit that undoes it would be made, and because an unrecorded specifier
@@ -90,7 +106,7 @@ import type { TextDocument } from "vscode-languageserver-textdocument";
  * dependency's whole declaration graph -- disclosed in its doc block together
  * with the triage for the day it fires for a reason that is not this line.
  */
-export { CompletionItemKind } from "vscode-languageserver-protocol";
+export { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver-protocol";
 export type {
   CompletionItem,
   CompletionParams,
@@ -261,6 +277,54 @@ export interface MethodMap {
   "textDocument/formatting": {
     params: DocumentFormattingParams;
     result: Promise<TextEdit[] | null>;
+  };
+
+  /**
+   * Awaited once, like hover and formatting -- AND IT WAS PLANNED AS THE SECOND
+   * GENERATOR-DRIVEN METHOD UNTIL IT WAS MEASURED, which is why the reason is
+   * written here rather than left to be re-derived. `DocumentDiagnosticRequest`
+   * DOES declare `partialResult`, so the expectation was not careless; the
+   * inference from it was. That drive concatenates chunks and requires ARRAYS,
+   * and `DocumentDiagnosticReportProgress` is a union of two OBJECT types.
+   *
+   * THE SEMANTIC HALF IS STRONGER THAN THE TYPE HALF: the protocol's own comment
+   * says the stream carries RELATED DOCUMENTS after the first report, where
+   * completion's chunks are more items of one list. `relatedDocuments` is out of
+   * scope, SO THE PARTIAL CHANNEL WOULD CARRY NOTHING AT ALL -- which makes that
+   * exclusion and this drive ONE decision rather than two.
+   *
+   * NO `| null`, AND THAT IS THE PROTOCOL'S SHAPE RATHER THAN A STRICTNESS THIS
+   * PROJECT CHOSE. MEASURED at vscode-languageserver-protocol 3.18.2:
+   * `DocumentDiagnosticRequest.type` declares its result as
+   * `DocumentDiagnosticReport` with NO null arm, unlike `Hover | null` and
+   * `TextEdit[] | null`. So a config author MUST return a report; `nothing to
+   * say` is `{ kind: "full", items: [] }`, which is a REPORT SAYING THE FILE IS
+   * CLEAN -- and that distinction matters to an editor, because a client that
+   * receives no report leaves the previous one on screen.
+   *
+   * WHAT STILL ANSWERS `null` ON THE WIRE, said plainly so this block is not
+   * read as stronger than it is: a config supplying NO diagnostic handler. That
+   * is the router's shared no-handler answer and not this method's, and a
+   * conforming client never reaches it, because with no handler tsudoi never
+   * advertises `diagnosticProvider` at all.
+   *
+   * FULL REPORTS ONLY, and the two halves collapse into one: `resultId` is
+   * OPTIONAL on a full report so omitting it type-checks, and
+   * `UnchangedDocumentDiagnosticReport` REQUIRES a `resultId` -- its own comment
+   * says a server can only return `unchanged` if result ids are provided. So
+   * declining result ids makes unchanged UNREACHABLE BY CONSTRUCTION rather than
+   * by tsudoi declining it separately. `previousResultId` arrives in the params
+   * and is ignored, which is conforming.
+   *
+   * `DocumentDiagnosticParams` AND `DocumentDiagnosticReport` ARE IMPORTED AND
+   * NOT RE-EXPORTED, which is the rule for a ninth applied rather than
+   * forgotten: `MethodHandler` supplies both by contextual typing, and a report
+   * is constructible from an object literal. `DiagnosticSeverity` IS
+   * re-exported, because it is a VALUE a handler reads at run time.
+   */
+  "textDocument/diagnostic": {
+    params: DocumentDiagnosticParams;
+    result: Promise<DocumentDiagnosticReport>;
   };
 }
 
