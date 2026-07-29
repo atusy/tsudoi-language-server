@@ -368,7 +368,90 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 36,
+    pbi_id: "PBI-44",
+    goal: "THE MATCHED PAIR SHIPS AS ONE LOOP: the demo config reports per-line trailing whitespace and removes it, and the property that makes it a pair rather than two features is RANGE-FOR-RANGE CORRESPONDENCE, asserted over the wire. The sprint also pays a debt the hold exposed -- src/types.ts's published surface cannot express an EXTRACTED handler for either method, so the README's `module per method` is a pattern tsudoi's own surface does not support. The names are published MEASURED FROM WRITTEN HANDLERS rather than from the candidate list, and the two `IMPORTED AND NOT RE-EXPORTED` paragraphs that go false are corrected beside the export they describe.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "test/trailing-whitespace.test.ts drives THE DEMO CONFIG over both runtimes against a document whose line 0 and line 2 END IN TRAILING WHITESPACE and whose line 1 DOES NOT: TWO findings, DISTINCT ranges, and NOTHING on line 1.",
+        implementation:
+          "examples/diagnostic-trailing-whitespace.ts, wired into examples/tsudoi.config.ts. The protocol names tsc DEMANDS are published -- measured by writing the module first and reading the errors, not by adopting the candidate list -- with publicProtocolNames and src/types.ts's diagnostic `IMPORTED AND NOT RE-EXPORTED` paragraph corrected in the SAME commit.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED-RED, and THE PIN MOVE IS PART OF THIS ONE EDIT rather than a later subtask -- declared in advance under the shared-moment rule, because test/lifecycle.test.ts's toEqual reddens THE MOMENT the handler lands. Its TITLE, its toEqual and its COMMENT all move; NO MATCHER IS LOOSENED and the only change is an expected value gaining a key.",
+          "THE PIN CLAIM WAS RE-MEASURED BY THE EXECUTOR, not carried: eleven capability sites exist, ten drive FIXTURES (diagnostic-offsets, hover-fixed x4, completion-chunks x2, formatting-fixed, hover-absent, resolve-detail) and one -- test/lifecycle.test.ts:37 -- drives demoConfig. test/workspace.test.ts:498 is toBeDefined, not exact equality. Read at the start argument of each, as the criterion prescribes.",
+          "CAPABILITY SHAPES READ FROM src/methods.ts THIS SESSION rather than from the sprint records that state them: diagnosticProvider is `{ interFileDependencies: true, workspaceDiagnostics: false }` and documentFormattingProvider is `true`.",
+        ],
+      },
+      {
+        test: "The same document, same file: TWO TextEdits with DISTINCT ranges, each deleting a run, and the clean line untouched.",
+        implementation:
+          "examples/formatting-trailing-whitespace.ts, IMPORTING THE SCAN FROM THE DIAGNOSTIC MODULE so the formatter removes exactly what the diagnostic reports, wired into the config. Names published and src/types.ts's formatting paragraph corrected in the same commit; the pin gains documentFormattingProvider.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED-RED. THE IMPORT DIRECTION IS THE VALUE COUPLING MADE MECHANICAL, and the alternative is named with its cost rather than declined silently: a THIRD module holding the scan alone would keep the two handler modules independent, at the price of a file exporting AN ALGORITHM AND NO HANDLER -- which is the shape the PO refused in the plain-data seam, arriving by another door. Each handler still does its OWN positionAt conversion, so the LSP-shaped work stays in the handler modules.",
+          "THE FIXTURE STAYS UNANNOTATED: test/fixtures/formatting-offsets.ts and test/fixtures/diagnostic-offsets.ts are NOT touched, so the contextual-typing evidence their own comments protect survives publication intact. The need for annotation lives in the EXAMPLE, which is an exported standalone function and gets no contextual typing at all.",
+        ],
+      },
+      {
+        test: "In ONE session on ONE document: the diagnostic's ranges and the formatter's edit ranges are equal, RANGE FOR RANGE AND IN ORDER.",
+        implementation: "No implementation -- the assertion is the deliverable.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BORN GREEN IF SUBTASKS 1 AND 2 ARE CORRECT, and declared so rather than discovered. Its value is not detection today: it is that `matched pair` stops being a claim in a README that NO TEST CAN FAIL. Non-vacuity is established by P7 rather than by the assertion's own colour.",
+        ],
+      },
+      {
+        test: "The published-artifacts and installed-* probes type-check and RUN the new modules.",
+        implementation:
+          "test/helpers/install.ts's exampleSources() gains both modules, and its doc block's `TWO FILES, not one` / `the artifact under test is both files` -- ALREADY FALSE AT HEAD against four returned entries -- is replaced by a NON-COUNTING form.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE FAILURE MODE IS NAMED SO IT IS NOT MISDIAGNOSED: omitting a module leaves the consumer with a config importing a file that is not there, which surfaces as a MISSING-MODULE RESOLUTION FAILURE -- indistinguishable at a glance from the dependency-resolution defect these probes exist to observe.",
+        ],
+      },
+      {
+        test: "No executable defence -- README's file table and its two framings are PROSE, and the discharge is a grep of THE CLAIM'S WORDS with every survivor read.",
+        implementation:
+          "README's table gains the two modules; `Copy all four` becomes a form that does not count; and the delegation framing is CORRECTED rather than preserved -- the example set now teaches TWO SHAPES, a handler that goes somewhere else for its answer and a handler that computes its answer from the document it was given.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "GREPPED FOR THE CLAIM'S WORDS, NOT FOR THE PLACES COMMENTS LIVE, and across src, test, examples and README rather than over this sprint's diff -- a diff answers `did this change?` and never `is this list complete?`, AND A COMMENT CAN BE FALSIFIED BY AN EDIT IN A FILE IT DOES NOT NAME. Terms include `a ninth`, `no example formats anything`, `supplies both handlers`, `go somewhere else`, `Copy all four`, `TWO FILES`, `two of the five`, `not re-exported`, `eight`.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "The agentic-scrum command and its three skills are NOT INSTALLED: /Users/atusy/.claude/plugins/data/agentic-scrum-inline is an EMPTY DIRECTORY, and no scrum-event-sprint-execution, scrum-team-developer or scrum-dashboard skill exists under ~/.claude/skills. Verified by listing both paths.",
+        impact:
+          "Sprint 36 is being executed from scrum.ts and the house conventions alone. Nothing is blocked, and that is the point worth recording rather than the outage: A PROCESS HELD UP BY CONVENTION ALONE LEAVES NO TRACE AND CANNOT BE AUDITED -- the same shape as a property held by an empty event loop, and the reason this is an impediment rather than a note.",
+        request:
+          "Install or repair the agentic-scrum plugin. NOT to be routed around by the executor: reinstalling a plugin is outside what an execution agent should decide.",
+        status: "waiting_human",
+        notes: [
+          "RECORDED RATHER THAN ABSORBED, on the practice the PO named as the single one they would keep if they could keep only one.",
+        ],
+      },
+    ],
+    decisions: [
+      "THE HOOK FORBIDS A CADENCE, SO THE PROPERTY IS SATISFIED ANOTHER WAY -- stated here at PLANNING rather than explained at Review. The pre-commit hook (read this session at ~/.config/git/hooks/pre-commit) refuses any commit staging scrum.ts beside another file, and it reads `git status --porcelain`, so scrum.ts cannot even be DIRTY while code is committed. Subtask statuses therefore CANNOT be updated as they complete. The property the mechanism protects -- NO WINDOW IN WHICH A DECISION IS OUT OF CUSTODY -- is satisfied by this plan naming every subtask, every perturbation and their predictions IN ADVANCE, and by one closing scrum.ts-alone commit.",
+      "BASELINE RE-MEASURED BY THE EXECUTOR rather than copied from the brief: 428 pass, 0 fail, 29 files, 1234 expect() calls, bun 1.3.13. The handed number was right; it is now ours.",
+      "PERTURBATIONS DECLARED WITH THEIR PREDICTIONS BEFORE ANY RUN, because a prediction written after the result is not a prediction. P1/P2: breaking the config's import of each module reddens a named assertion in test/trailing-whitespace.test.ts. P3: the diagnostic handler returning an EMPTY full report reddens the two-findings assertion. P4: the formatting handler returning null reddens the two-edits assertion. P5: the diagnostic AGGREGATING into one document-spanning finding reddens the two-findings assertion. P6: the formatter emitting ONE whole-document edit reddens the two-edits assertion. P7: aggregating ONE SIDE ONLY reddens the CORRESPONDENCE assertion -- the control that establishes subtask 3 is not vacuous. P8: dropping a module from exampleSources() fails the published-artifacts probes. P9 is the standing re-run of a PREVIOUS sprint's perturbation, Sprint 35's P1: deleting test/fixtures/all-methods.ts's completion handler alone reddens four tests because resolve without completion stops the config LOADING. Any of these going green is CLASSIFIED -- gone quiet, disarmed, edit-grew-a-second-half, or target-deliberately-removed -- and only the first two are defects.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 35,
