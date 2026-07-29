@@ -31,13 +31,21 @@ import type {
  *
  * THOSE DELETIONS NO LONGER TYPE-CHECK, AND THE MEASUREMENT ABOVE IS UNCHANGED
  * ANYWAY -- said here rather than left for whoever tries to repeat it, because
- * the two are easy to confuse. RE-RUN AT SPRINT 39 with hover's handler deleted:
- * the whole suite is STILL 444 GREEN, exactly as recorded, because neither
- * runtime type-checks. What is new is that `tsc --noEmit` now fails TS2741 on
- * that tree, so the edit costs a DoD check it used to cost nothing. THE
- * PERTURBATION IS STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS; it has
- * simply stopped being free, which is the point of the line at the bottom of
- * this file.
+ * the two are easy to confuse. RE-RUN AT SPRINT 39, on the two bullets that
+ * carry information rather than on all four: hover's handler deleted leaves the
+ * suite at 444 GREEN, and completion's deleted ALONE still reddens FOUR on both
+ * runtimes -- the second is the one worth spending a run on, being the only
+ * bullet whose recorded result is not `green`. The other two follow from the
+ * first, which establishes the mechanism: NEITHER RUNTIME TYPE-CHECKS, so a
+ * compile error changes nothing a test can see.
+ *
+ * WHAT IS NEW IS THE PRICE, NOT THE RESULT. `tsc --noEmit` now fails TS2741 on
+ * each of those trees, so an edit that cost nothing costs a DoD check. THE
+ * PERTURBATION IS STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS -- this
+ * is neither a measurement gone stale nor a perturbation gone unconstructible,
+ * and it is not one of the four outcomes either, since those answer why a
+ * standing re-run goes GREEN and these went exactly as recorded. It is the
+ * point of the line at the bottom of this file arriving as a side effect.
  *
  * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS. That last
  * line reddened the `answered -32800 when cancelled` test from Sprint 32 until
@@ -104,8 +112,9 @@ import type {
  * `issueThenCancel`, which frames the request and its `$/cancelRequest`
  * together, so the token is already cancelled when the handler is entered and
  * the epilogue's post-settle abort check is what answers. A parking handler per
- * method would measure the same thing and would be one more copy per method,
- * which is the shape this PBI exists to retire.
+ * method would measure the same thing and would be one more copy per method --
+ * THE PER-METHOD COPY, which is the shape PBI-42 was filed against and the same
+ * one the five-tests paragraph above refuses.
  */
 export const hoverAnswer: Hover = {
   contents: { kind: "markdown", value: "表からの応答" },
