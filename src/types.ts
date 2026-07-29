@@ -1,6 +1,13 @@
-// The published type surface: package.json maps `@atusy/tsudoi/types` here, so
-// every exported name below is public API and renaming one breaks configs we
-// cannot see. What ships is the compiled dist/types.d.ts, not this file.
+// TSUDOI'S OWN TYPES. package.json maps `@atusy/tsudoi/types` here, so every
+// exported name is public API and renaming one breaks configs we cannot see.
+// What ships is the compiled dist/types.d.ts, not this file.
+//
+// WHAT IS NOT HERE IS DELIBERATE: every LSP name a config author might want --
+// the protocol's types and the data values a handler reads or builds -- is
+// published from `@atusy/tsudoi/lsp` instead. The line between the two modules
+// is OURS versus THEIRS, which is the one distinction an author benefits from;
+// which upstream package declares a given LSP name is an accident of how those
+// libraries are cut up, and src/lsp.ts is where that is absorbed.
 import type {
   CompletionItem,
   CompletionParams,
@@ -12,63 +19,7 @@ import type {
   TextEdit,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
-// Imported as well as re-exported because `export ... from` publishes a name
-// without binding it here, and DocumentStore below needs to NAME it.
-import type { TextDocument } from "vscode-languageserver-textdocument";
-
-/**
- * EVERY LSP TYPE, so a config author never has to install the protocol package
- * to name something tsudoi's own surface did not think to publish. The set is
- * upstream's rather than curated here, so it grows with the dependency and no
- * name has to be argued for one at a time.
- *
- * TYPES ONLY, AND THAT IS THE WHOLE OF THE RESTRAINT. `export *` would publish
- * 287 runtime names, among them `createProtocolConnection` -- which would let a
- * config build its own connection and bypass tsudoi entirely -- and 93 Request
- * and Notification constants for methods tsudoi does not implement, so the
- * surface would advertise capabilities the server does not have. `export type *`
- * publishes none of them: naming one as a value is TS1362.
- *
- * VALUES STAY EXPLICIT for the same reason, and these two are values rather than
- * types because each is a namespace of const members read at run time. Writing
- * them as types would emit a perfect dist/types.d.ts beside a dist/types.js
- * exporting nothing, every type-check would stay green, and a config author would
- * get `undefined` at their first completion. test/published-artifacts.test.ts is
- * the only thing that sees the difference.
- *
- * THE BARE SPECIFIER, NOT `/node`: with `/node`, vscode-jsonrpc's node entry
- * needs @types/node (TS2591 for child_process, net, worker_threads; TS2503 for
- * namespace NodeJS), which a config author may never have installed. Measured to
- * survive the star: `export type *` from the bare specifier type-checks with
- * `types: []` and `skipLibCheck` OFF, which is what
- * test/installed-without-node-types.test.ts sets.
- */
-export type * from "vscode-languageserver-protocol";
-export { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver-protocol";
-
-/**
- * The document a config author receives, and it is upstream's: `getText(range)`,
- * `positionAt`, `offsetAt` and `lineCount` come with it.
- *
- * THE SPECIFIER IS THE POINT, AND THE OBVIOUS SIMPLIFICATION IS THE BUG.
- * `vscode-languageserver-protocol` re-exports a `TextDocument` of its own --
- * same seven members, no `update`, marked `@deprecated` upstream. Re-exporting
- * that one instead would be one line, would add no dependency, and would
- * compile. It is the wrong type; the identity probe in
- * test/published-artifacts.test.ts is what catches the substitution.
- *
- * TYPE-ONLY IS A RULING. Upstream's `TextDocument` is a namespace carrying
- * `create`, `update` and `applyEdits`, so `export {` would work -- but tsudoi
- * constructs documents and an author only ever receives one. Publishing the
- * namespace would publish three entry points this project must then keep.
- * The cost: an author unit-testing a handler must build a document, so they
- * install vscode-languageserver-textdocument themselves. Reverse this on
- * evidence that authors are doing so, not on the prediction that they might.
- *
- * `Range` is deliberately not exported beside it: `getText` takes a structural
- * `{ start, end }`, so an author writes an object literal and imports nothing.
- */
-export type { TextDocument } from "vscode-languageserver-textdocument";
+import type { TextDocument } from "./deps/textdocument.ts";
 
 /**
  * The store a config author reads, and WHAT IT HANDS BACK IS LIVE: upstream's

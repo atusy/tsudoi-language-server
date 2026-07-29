@@ -127,13 +127,22 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  * account. Compiled .js on npm serves both runtimes from one artifact, which
  * is what criterion 2 asks for.
  */
-test("the published surface is the types subpath, compiled, and nothing else", () => {
+test("the published surface is tsudoi's types beside the dependency subpaths, and nothing else", () => {
+  const arm = (name: string): Record<string, string> => ({
+    types: `./dist/${name}.d.ts`,
+    import: `./dist/${name}.js`,
+    default: `./src/${name}.ts`,
+  });
+
+  // FOUR ARMS, AND THE SPLIT IS OURS-VERSUS-THEIRS. `./types` carries tsudoi's
+  // own names; the three under `./deps/` carry upstream's, one per dependency,
+  // because a single module re-exporting all three is TS2308 under declaration
+  // emit -- ambiguous re-export, which `--noEmit` does not reproduce.
   expect(packageJson.exports).toEqual({
-    "./types": {
-      types: "./dist/types.d.ts",
-      import: "./dist/types.js",
-      default: "./src/types.ts",
-    },
+    "./deps/protocol": arm("deps/protocol"),
+    "./deps/textdocument": arm("deps/textdocument"),
+    "./deps/types": arm("deps/types"),
+    "./types": arm("types"),
   });
   expect(packageJson.files).toEqual(["dist"]);
   expect(packageJson.main).toBeUndefined();
@@ -195,7 +204,7 @@ function valueReExportsOf(source: string): string[] {
       .filter((name) => name !== ""),
   );
   if (names.length === 0) {
-    throw new Error("src/types.ts re-exports no value; this check would assert nothing");
+    throw new Error("src/deps/types.ts re-exports no value; this check would assert nothing");
   }
   return names.sort();
 }
@@ -241,11 +250,13 @@ function valueReExportsOf(source: string): string[] {
  * ruling. What keeps the build OUT of this test is that a test which repaired
  * the condition it asserts could never fail.
  */
-test("the repo's own dist/ is built, and carries what src/types.ts re-exports", async () => {
-  const declared = valueReExportsOf(readFileSync(join(repoRoot, "src", "types.ts"), "utf8"));
-  const built = await import(pathToFileURL(join(repoRoot, "dist", "types.js")).href).then(
+test("the repo's own dist/ is built, and carries what src/deps/types.ts re-exports", async () => {
+  const declared = valueReExportsOf(
+    readFileSync(join(repoRoot, "src", "deps", "types.ts"), "utf8"),
+  );
+  const built = await import(pathToFileURL(join(repoRoot, "dist", "deps", "types.js")).href).then(
     (module) => Object.keys(module as Record<string, unknown>).sort(),
-    (cause: unknown) => [`dist/types.js could not be loaded: ${String(cause)}`],
+    (cause: unknown) => [`dist/deps/types.js could not be loaded: ${String(cause)}`],
   );
 
   // The remedy rides on BOTH sides so it shows up in the diff: bun:test has no

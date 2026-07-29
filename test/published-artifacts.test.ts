@@ -150,32 +150,28 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * that exports nothing: every type-check assertion in this file would stay
  * green while a config author got `undefined` at their first completion.
  *
- * Object.keys of the namespace object is therefore the assertion, and it names
- * the value rather than counting them: an ES module namespace carries exactly
- * the runtime exports, so a type-only re-export is invisible here BY
- * CONSTRUCTION rather than by our filtering it out.
+ * Object.keys of the namespace object is therefore the assertion, and an ES
+ * module namespace carries exactly the runtime exports, so a type-only
+ * re-export is invisible here BY CONSTRUCTION rather than by our filtering it
+ * out.
  *
- * IT NOW HOLDS A SECOND DECISION, IN THE OPPOSITE DIRECTION, and that is why
- * the list is EXACT rather than a `toContain`. `TextDocument` is published
- * TYPE-ONLY on purpose -- ruled at src/types.ts, where the reason lives -- even
- * though upstream ships it as a namespace carrying create, update and
- * applyEdits, so a value re-export is available and is one token away. Dropping
- * `type` from that line adds `TextDocument` here and reddens this assertion,
- * which is what makes the foreclosure DEFENDED rather than merely written down.
- * MEASURED, both directions: `export type` on the value line reddens this and
- * nothing else, and `export {` on TextDocument reddens this and nothing else.
+ * THE SET IS DERIVED, NOT LISTED, which is the whole point of this test after
+ * the surface stopped being curated. It must be EXACTLY what
+ * vscode-languageserver-types exports at run time, minus `TextDocument`. So a
+ * name upstream adds is MISSING here until someone re-exports it -- the failure
+ * a hand-picked list could never produce, because a hand-picked list is complete
+ * by definition.
  *
- * THE EXACT LIST IS WHY A NINTH NAME COULD NOT ARRIVE QUIETLY: adding
- * DiagnosticSeverity at Sprint 33 reddened this assertion BEFORE the name was
- * written here, which is the assertion doing its job rather than being updated
- * to match. The test NAME carries both names deliberately -- prose lives in test
- * names too, and one that said `CompletionItemKind` alone would have gone stale
- * invisibly to any search for comment syntax.
+ * `TextDocument` IS THE ONE SUBTRACTION, and it is a ruling rather than an
+ * oversight: this package publishes the one from
+ * vscode-languageserver-textdocument, TYPE-ONLY, and the types package ships a
+ * deprecated namespace under the same name. Re-exporting that one as a value
+ * would shadow the good type with the wrong thing.
  */
-test("the published module re-exports CompletionItemKind and DiagnosticSeverity as runtime values", async () => {
+test("the published module re-exports every LSP data value, and nothing else", async () => {
   consumer.write(
     "value-surface.js",
-    'import * as types from "@atusy/tsudoi/types";\nconsole.log(JSON.stringify(Object.keys(types)));\n',
+    'import * as values from "@atusy/tsudoi/deps/types";\nconsole.log(JSON.stringify(Object.keys(values)));\n',
   );
 
   const result = await runCommand("bun run ./value-surface.js", consumer.dir);
@@ -183,7 +179,11 @@ test("the published module re-exports CompletionItemKind and DiagnosticSeverity 
   // The whole failure on the assertion line: a module that throws at load
   // otherwise reports only that stdout did not parse.
   expect(`${String(result.code)} ${result.stderr}`).toBe("0 ");
-  expect(JSON.parse(result.stdout.trim())).toEqual(["CompletionItemKind", "DiagnosticSeverity"]);
+
+  const upstream = Object.keys(await import("vscode-languageserver-types"))
+    .filter((name) => name !== "TextDocument" && name !== "default")
+    .sort();
+  expect((JSON.parse(result.stdout.trim()) as string[]).sort()).toEqual(upstream);
 });
 
 /**
@@ -202,7 +202,7 @@ test("the published module re-exports CompletionItemKind and DiagnosticSeverity 
  */
 test("every published protocol name type-checks from the installed copy", async () => {
   const result = await consumer.typeCheck({
-    "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+    "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/deps/protocol"),
   });
 
   expect(result.output).toBe("");
@@ -233,7 +233,7 @@ test("every published protocol name type-checks from the installed copy", async 
  */
 test("TextDocument type-checks from the installed copy, though it is not one of the protocol names", async () => {
   const result = await consumer.typeCheck({
-    "text-document.ts": importsAndUses(["TextDocument"], "@atusy/tsudoi/types"),
+    "text-document.ts": importsAndUses(["TextDocument"], "@atusy/tsudoi/deps/textdocument"),
   });
 
   expect(result.output).toBe("");
@@ -252,7 +252,7 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
  */
 test("a protocol type no example names is reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
-    "unpublished-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/types"),
+    "unpublished-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/deps/protocol"),
   });
 
   expect(result.output).toBe("");
@@ -274,7 +274,7 @@ test("a protocol type no example names is reachable from the subpath", async () 
 test("a protocol request constant is not reachable as a value from the subpath", async () => {
   const result = await consumer.typeCheck({
     "request-constant.ts":
-      'import { CodeActionRequest } from "@atusy/tsudoi/types";\nconsole.log(CodeActionRequest);\n',
+      'import { CodeActionRequest } from "@atusy/tsudoi/deps/protocol";\nconsole.log(CodeActionRequest);\n',
   });
 
   expect(result.code).not.toBe(0);
@@ -394,7 +394,9 @@ const deprecatedProtocolTwin =
  * false three tests later, in this same sprint.
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
-  const result = await consumer.typeCheck({ "identity.ts": identityProbe("@atusy/tsudoi/types") });
+  const result = await consumer.typeCheck({
+    "identity.ts": identityProbe("@atusy/tsudoi/deps/textdocument"),
+  });
 
   expect(result.output).toBe("");
   expect(result.code).toBe(0);

@@ -98,7 +98,7 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
 const noNodeTypings = { skipLibCheck: false, types: [] };
 
 const publishedNames = {
-  "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+  "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/deps/protocol"),
 };
 
 let consumer: InstalledConsumer;
@@ -136,7 +136,7 @@ afterAll(() => {
 async function specifierMovedToNode(): Promise<InstalledConsumer> {
   perturbed ??= await installConsumer({
     editSource: (srcDir) => {
-      const types = join(srcDir, "types.ts");
+      const types = join(srcDir, "deps", "protocol.ts");
       const source = readFileSync(types, "utf8");
       // The QUOTED specifier, because that file's doc block discusses `/node` in
       // prose too and a looser match would rewrite the comment as well as the

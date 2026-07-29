@@ -12,7 +12,8 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
-import type { RequestContext, TextDocument } from "@atusy/tsudoi/types";
+import type { TextDocument } from "@atusy/tsudoi/deps/textdocument";
+import type { RequestContext } from "@atusy/tsudoi/types";
 // THE VALUE COMES FROM THE PACKAGE AND THE TYPE FROM TSUDOI, and the pair is
 // deliberate rather than clumsy. `@atusy/tsudoi/types` publishes this name
 // TYPE-ONLY -- ruled at src/types.ts -- so the constructor is reached where it

@@ -7,15 +7,15 @@ import { opendir, stat } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { type RequestContext } from "@atusy/tsudoi/types";
+import { type CompletionParams } from "@atusy/tsudoi/deps/protocol";
 import {
   type CompletionItem,
   CompletionItemKind,
-  type CompletionParams,
   type MarkupContent,
   type Position,
-  type RequestContext,
   type WorkspaceFolder,
-} from "@atusy/tsudoi/types";
+} from "@atusy/tsudoi/deps/types";
 
 /** One candidate for the path the user is typing. */
 export interface PathFragment {

@@ -1,9 +1,6 @@
-import type {
-  CompletionItem,
-  CompletionParams,
-  RequestContext,
-  TsudoiConfigFactory,
-} from "@atusy/tsudoi/types";
+import type { RequestContext, TsudoiConfigFactory } from "@atusy/tsudoi/types";
+import type { CompletionParams } from "@atusy/tsudoi/deps/protocol";
+import type { CompletionItem } from "@atusy/tsudoi/deps/types";
 import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
