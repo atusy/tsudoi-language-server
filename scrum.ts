@@ -39,45 +39,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-46",
-      story: {
-        role: "config author",
-        capability: "see the completion item I highlight enriched with real metadata",
-        benefit:
-          "the example shows the method's actual purpose -- expensive detail fetched only for the item the user looks at",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The demo config supplies completionItem/resolve, enriching a path item with stat metadata.",
-          verification:
-            "MEASURED: stat yields size, mtime and dir-or-file for a real path, identically on bun 1.3.13 and deno 2.9.2. The demo config ALREADY PRODUCES PATH ITEMS to hang it on.",
-        },
-        {
-          criterion:
-            "examples/tsudoi.config.ts's paragraph stating this config supplies no resolve handler becomes FALSE, and is corrected in the same commit.",
-          verification:
-            "the standing rule that a claim falsified by a sprint is corrected in the sprint that falsifies it.",
-        },
-        {
-          criterion:
-            "The second negative control -- an item THE EXAMPLE DID NOT PRODUCE -- is REASONED, NOT MEASURED.",
-          verification:
-            "whether such an item can be driven to the handler through the demo config WAS NOT TESTED. If unconstructible, CLASSIFY IT and state what remains at risk rather than reporting a design outcome in the language of a coverage gap. src/types.ts records that an unrecognised item MUST BE RETURNED UNCHANGED, because tsudoi keeps no record of what a completion handler produced -- so the handler must key off what IT PUT ON THE ITEM ITSELF.",
-        },
-        {
-          criterion: "test/lifecycle.test.ts's pin moves A SECOND TIME.",
-          verification:
-            "UNAVOIDABLE AND DELIBERATE, and the reason this is its own item rather than bundled.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "SEPARATED FROM PBI-44 BECAUSE THE OLD BUNDLE'S RATIONALE IS GONE: diagnostic and resolve shared the FILESYSTEM, and the diagnostic has moved to trailing whitespace. `Both are examples` IS NOT A RATIONALE. resolve stays coherent with path completion; the diagnostic no longer sits beside it.",
-        "Two constraints READ rather than assumed: resolve REQUIRES textDocument/completion to be present, enforced at config load, and the demo config supplies it so the pairing holds.",
-      ],
-    },
-    {
       id: "PBI-42",
       story: {
         role: "tsudoi maintainer",
@@ -162,6 +123,26 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 37,
+      pbi_id: "PBI-46",
+      goal: "THE METHOD'S CANONICAL USE, SHOWN RATHER THAN LISTED: the demo config answers completionItem/resolve for a path item IT PRODUCED, with the detail that would have cost a stat per entry to fetch during completion -- size, mtime, dir-or-file. THE PAIRING THE HANDLER RESTS ON IS READ, NOT ASSUMED: src/types.ts rules that tsudoi keeps NO record of what a completion handler produced, so an unrecognised item MUST BE RETURNED UNCHANGED and the handler can only key off WHAT THE EXAMPLE ITSELF PUT ON THE ITEM -- which makes the marker a shared decision between the completion module and the resolve one, carried the way the trailing-whitespace pair carries its scanner: ONE definition imported, not two agreed by assertion. The pin in test/lifecycle.test.ts moves A SECOND TIME, deliberately and by criterion.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "444 green from 436, 31 files from 30. The resolve example enriches a path item with stat metadata, and THE SHIPPED TEST ASSERTS THE DEFERRAL DIRECTLY: detail is UNDEFINED on the completion answer and enriched after resolve.",
+        "A STAKEHOLDER PROPOSAL WAS RULED AGAINST -- THE FIRST OF THREE -- and the ruling rests on a distinction the Scrum Master identified before the PO did: THE FIRST TWO MOVES CHANGED WHAT THE HANDLER COMPUTED (a trailing-whitespace formatter still formats), THIS ONE CHANGES WHETHER THE METHOD IS DOING ANY WORK AT ALL. MEASURED, not reasoned: itemsFrom builds its item literal with NO SYSCALL, so `detail: String(insertText.length)` is ONE EXPRESSION IN A LOOP THAT ALREADY RUNS -- while stat is A REAL SYSCALL PER ENTRY the completion module CANNOT pre-compute.",
+        "AND THERE WAS NO SIMPLICITY TO GAIN, which is what made it easy rather than close: stat is ONE CALL, NO NEW DEPENDENCY, already measured on both runtimes. A character count is not smaller in lines, in dependencies, or in what a reader must install or understand. THE PREVIOUS TWO MOVES TRADED A PACKAGE AND A VERSION-FRAGILE CONTROL FOR GENUINE SIMPLICITY; THIS ONE TRADED MOTIVATION FOR NOTHING.",
+        "THE FINDING THAT OUTRANKED THE PO'S OWN ARGUMENT: they said the second control would become UNCONSTRUCTIBLE, and measured it is worse -- THE PROPERTY DOES NOT EXIST. A count derives from `label`, which returns by protocol, so the module would import NOTHING from the completion module and criterion 3's `key off what IT PUT ON THE ITEM` would have NO REFERENT. Every item, foreign or not, gets a count. `Returned unchanged` IS NOT A PROPERTY THAT VERSION HAS. P3 is the evidence: removing the mark reddens the resolve assertions on both runtimes, and under a count THERE WOULD BE NOTHING FOR A P3 TO REMOVE.",
+        "THE VACUITY FINDING, which the PO calls the most valuable thing in the report: `came back unchanged` is equally satisfied by the handler DECLINING it, by tsudoi ECHOING PARAMS, and by NO HANDLER BEING CALLED AT ALL -- so it measures nothing alone, only as the second half of a paired observation with enrichment first in the same session. S20 caught BEFORE it recorded anything, and P4 reddening ONLY the unrecognised-item test confirms the pairing is non-vacuous AND isolated.",
+        "P2 AND P3 ARE INDISTINGUISHABLE -- RECORDED AS A RESIDUAL, NOT FIXED. The suite detects both and NAMES NEITHER: detection arriving without naming its cause. THE OBVIOUS REMEDY IS DECLINED, and consistently: an assertion naming the mark WOULD RESTATE THE MECHANISM, the same check refused for contributor ordering at Sprint 34. Accepted with the cost stated.",
+        "THE NAMES RULE REFINED BY MEASUREMENT RATHER THAN BY THE PO: an extracted resolve handler demanded ZERO new published names, because params AND result are both CompletionItem. So `extraction demands names` is A PROPERTY OF THE SIGNATURE, not of extraction as such -- and `Stats` from node:fs is NODE'S TO PUBLISH, NOT TSUDOI'S. A better statement of the rule than the one written.",
+        "A NEW PROSE-STALENESS CLASS: `the last two are a matched pair` is POSITIONAL, so it FALSIFIES ON APPEND with no edit to its own file. Distinct from Sprint 35's falsified-by-an-edit-elsewhere, and NEITHER IS REACHABLE BY READING THE FILE THAT CONTAINS THE CLAIM.",
+        "THE HOLD ARRIVED AFTER THE INCREMENT WAS COMMITTED, reported plainly rather than softened. WHY IT WAS SURVIVABLE: THE INCREMENT WAS REVERTIBLE AS ONE UNIT -- plan and work in two commits that revert together -- which turned a missed hold into A DECISION RATHER THAN A MESS. AND THE ASYMMETRY IS RECORDED SO NOBODY CONCLUDES LATE HOLDS ARE CHEAP: the ruling cost nothing BECAUSE IT HAPPENED TO AGREE WITH WHAT SHIPPED. Had it gone the other way the cost would have been real, and paid for a preference the measurements then contradicted.",
+        "FOUR PERTURBATIONS, 444 RAN IN ALL FOUR: P1 (import broken) 64 fail, DEFENDED EXPLICITLY NOT ISOLATED; P2 (unenriched return) 8 fail, exactly the four new assertions across two runtimes; P3 (mark removed) THE IDENTICAL SET; P4 (unmarked item enriched anyway) 2 FAIL, ONLY the unrecognised-item test.",
+      ],
+    },
     {
       number: 36,
       pbi_id: "PBI-44",
@@ -296,79 +277,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 37,
-    pbi_id: "PBI-46",
-    goal: "THE METHOD'S CANONICAL USE, SHOWN RATHER THAN LISTED: the demo config answers completionItem/resolve for a path item IT PRODUCED, with the detail that would have cost a stat per entry to fetch during completion -- size, mtime, dir-or-file. THE PAIRING THE HANDLER RESTS ON IS READ, NOT ASSUMED: src/types.ts rules that tsudoi keeps NO record of what a completion handler produced, so an unrecognised item MUST BE RETURNED UNCHANGED and the handler can only key off WHAT THE EXAMPLE ITSELF PUT ON THE ITEM -- which makes the marker a shared decision between the completion module and the resolve one, carried the way the trailing-whitespace pair carries its scanner: ONE definition imported, not two agreed by assertion. The pin in test/lifecycle.test.ts moves A SECOND TIME, deliberately and by criterion.",
-    status: "planning",
-    subtasks: [
-      {
-        test: "Over the wire, on both runtimes: an item the demo config's own completion produced, sent back to completionItem/resolve, comes back carrying the file's SIZE, its MTIME and whether it is a directory or a file. Expected values are HAND-WRITTEN -- a fixture file of known byte length whose mtime is SET to a whole second by the test -- never computed by a second stat, because both sides running one syscall makes a correct reading and a consistently broken one produce the same observation.",
-        implementation:
-          "examples/ gains an EXTRACTED resolve handler, and examples/tsudoi.config.ts names it. The completion module marks the items it produces with the absolute path it already computed for their documentation, and EXPORTS that marker's shape and its reader so the resolve module imports rather than restates it.",
-        type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [
-          "EXPECTED RED, and the first failure should be the ABSENCE of the enrichment rather than a transport error: with no handler the router answers null, which is asserted elsewhere and is what this test must not be satisfied by.",
-          "PUBLICATION IS MEASURED, NOT PREDICTED: the module is written, `tsc --noEmit` is read, and whatever it demands of src/types.ts is published then -- Sprint 36 recorded that a predicted set would have been wrong in the direction nobody audits.",
-        ],
-      },
-      {
-        test: "AN ITEM THE EXAMPLE DID NOT PRODUCE COMES BACK UNTOUCHED, observed IN THE SAME SESSION as an enriched one and after it.",
-        implementation:
-          "The handler returns an item carrying no marker of its own verbatim, and says at the site that the ruling is src/types.ts's rather than this example's invention.",
-        type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [
-          "CRITERION 3 SAYS THIS CONTROL IS REASONED, NOT MEASURED, AND THE REASONING IS THE SUBTASK: it is CONSTRUCTIBLE -- the demo config takes a raw completionItem/resolve request like any other config -- but it is VACUOUS ALONE. `unchanged` is satisfied by a handler doing the right thing, by tsudoi echoing the params, and by no handler being called at all, which is the discriminator test/resolve.test.ts already records for its own fixture. Pairing it with an enrichment in the SAME session is what makes it record anything; two sessions would leave open that the second server never loaded the handler.",
-          "SO THE CRITERION IS EXCEEDED AND THAT IS DISCLOSED HERE, IN THE COMMIT BODY AND IN THE SPRINT RECORD rather than silently: the criterion anticipated `unconstructible -> classify`, and the answer came out as neither branch. Reporting a closable residual as a coverage gap is the S11 failure this project has already made once.",
-        ],
-      },
-      {
-        test: "test/lifecycle.test.ts's exact-equality pin on the demo config's advertised capabilities moves for the second time, in the file that loops over both runtimes -- so one source edit moves two assertions.",
-        implementation:
-          "The pinned value, the test's title and the comment above it all move together. THE COMMENT IS PART OF THE EDIT AND NOT DECORATION: it claims the config advertises ONE PROVIDER FOR EACH METHOD IT SUPPLIES, and resolveProvider is a key INSIDE completionProvider rather than a sixth top-level one, so that sentence stops being literally true at the moment the value moves.",
-        type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [
-          "UNAVOIDABLE AND PRICED IN: it is why PBI-46 is its own item rather than bundled into PBI-44.",
-        ],
-      },
-      {
-        test: "Every claim this sprint falsifies is corrected in the sprint that falsifies it, and the sweep is a GREP FOR THE CLAIM'S WORDS OVER CONTENTS, FILENAMES AND TEST NAMES rather than a walk of the files this sprint edits.",
-        implementation:
-          "Known already, from reading the artifacts in this session: examples/tsudoi.config.ts's paragraph saying THIS CONFIG SUPPLIES NO RESOLVE HANDLER (criterion 2); README's example table and the POSITIONAL claim `the last two are a matched pair`, which falsifies on APPEND rather than on edit; src/types.ts's per-example inventory of which names each example needs; test/helpers/install.ts's exampleSources(), whose omission produces TS2307 across the installed-consumer probes and LOOKS EXACTLY LIKE A RESOLUTION BUG.",
-        type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [
-          "A LIST FOUND BY READING IS NOT A COMPLETE LIST, which is what the grep is for: a diff answers `did this change?` and never `is this list complete?`.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "The agentic-scrum command and its three skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
-        impact:
-          "None so far. Every sprint since it was filed has proceeded from scrum.ts itself and from the standing conventions, this one included.",
-        request:
-          "Install the agentic-scrum command and skills, or rule that scrum.ts plus the standing list IS the process and close this.",
-        status: "waiting_human",
-        notes: [
-          "CARRIED FORWARD RATHER THAN RE-DISCOVERED: verified absent again at the start of this sprint by listing the installed skills.",
-        ],
-      },
-    ],
-    decisions: [
-      "BASELINE RE-MEASURED BY THE EXECUTOR AT 63dde38 RATHER THAN CARRIED FROM THE BRIEF, per the handoff rule: 436 pass across 30 files. The brief's other three DoD numbers are re-measured at the end unpiped, exits read directly.",
-      "PLANNED PERTURBATIONS, DECLARED BEFORE ANY OF THEM RUNS so none is a rule fitted to its own result: (P1) break the new module's IMPORT in the demo config; (P2) break the handler's RETURN; (P3) REMOVE THE MARKER the completion module puts on its items, which is the drift control and the only one that can observe the two modules disagreeing; (P4) ENRICH UNCONDITIONALLY, which is what makes the unrecognised-item half non-vacuous; plus one re-run of a Sprint-36 perturbation, classified per the four-outcome vocabulary if it goes green.",
-      "THE NEW TEST FILE MOVES THE TOTAL, so no perturbation this sprint claims `ALONE` without stating how many tests RAN.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 36,
