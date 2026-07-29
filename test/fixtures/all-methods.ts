@@ -29,6 +29,16 @@ import type {
  * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
  *   that load failure, and EVERY TEST IN THE SUITE STAYS GREEN TOO.
  *
+ * THOSE DELETIONS NO LONGER TYPE-CHECK, AND THE MEASUREMENT ABOVE IS UNCHANGED
+ * ANYWAY -- said here rather than left for whoever tries to repeat it, because
+ * the two are easy to confuse. RE-RUN AT SPRINT 39 with hover's handler deleted:
+ * the whole suite is STILL 444 GREEN, exactly as recorded, because neither
+ * runtime type-checks. What is new is that `tsc --noEmit` now fails TS2741 on
+ * that tree, so the edit costs a DoD check it used to cost nothing. THE
+ * PERTURBATION IS STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS; it has
+ * simply stopped being free, which is the point of the line at the bottom of
+ * this file.
+ *
  * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS. That last
  * line reddened the `answered -32800 when cancelled` test from Sprint 32 until
  * Sprint 35, and PBI-40 is why it does not any more: the generator drive's
