@@ -10,24 +10,31 @@ import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * iterate `requestEntries` rather than naming methods.
  *
  * WHAT OBLIGATION THAT PUTS ON THIS FILE WAS MEASURED RATHER THAN ASSUMED, AND
- * THE FIRST ANSWER WRITTEN HERE WAS WRONG. It said a method added to the table
- * and not added here makes those tests fail. THAT IS TRUE OF ONE DRIVE ONLY.
- * Measured, by deleting one handler at a time and running the file:
+ * IT HAS NOW BEEN WRONG TWICE -- once by being written from expectation, and
+ * once by being TRUE AND THEN OVERTAKEN. RE-MEASURED AT SPRINT 35, deleting one
+ * handler at a time and reverting between, whole suite on both runtimes:
  *
- * - delete the GENERATOR-DRIVEN handler -- completion, the only one -- TOGETHER
- *   WITH the resolve handler, and the `answered -32800 when cancelled` test
- *   REDDENS on both runtimes;
- * - delete ANY of the AWAITED-ONCE handlers -- hover, formatting, diagnostic or
- *   resolve -- and EVERY TEST IN THAT FILE STAYS GREEN.
+ * - delete hover's, formatting's, diagnostic's or resolve's, and EVERY TEST IN
+ *   THE SUITE STAYS GREEN;
+ * - delete completion's ALONE and four tests redden -- for a reason that is not
+ *   about the handler at all. `completionItem/resolve` without
+ *   `textDocument/completion` is refused at CONFIG LOAD, so this config stops
+ *   loading and the session tests fail at `initialize`;
+ * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
+ *   that load failure, and EVERY TEST IN THE SUITE STAYS GREEN TOO.
  *
- * THE SECOND DELETION IN THE FIRST LINE IS NOT DECORATION, and it is the
- * correction Sprint 34 had to make by RE-RUNNING the perturbation rather than
- * copying it: `completionItem/resolve` without `textDocument/completion` is now
- * refused at CONFIG LOAD, so deleting completion alone stops this config loading
- * at all and reddens every session test in that file. The measurement is still
- * available and it is no longer the same edit -- a perturbation that grew a
- * second half while its name stayed the same is exactly what the standing
- * re-run item exists to catch.
+ * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS. That last
+ * line reddened the `answered -32800 when cancelled` test from Sprint 32 until
+ * Sprint 35, and PBI-40 is why it does not any more: the generator drive's
+ * no-handler return used to sit AHEAD of the cancellation epilogue and answer
+ * `null`, so removing this file's completion handler changed a cancelled
+ * request's answer. That drive now answers through the epilogue like the other
+ * one, both answer -32800, and the perturbation has nothing left to observe.
+ *
+ * A CONTROL WHOSE TARGET BEHAVIOUR AN ACCEPTED CRITERION DELIBERATELY REMOVED IS
+ * NOT A DEFENCE THAT WENT MISSING, and the distinction is worth the sentence:
+ * this is not a control gone quiet, and not Sprint 34's perturbation whose edit
+ * grew a second half. The thing it detected was ruled a divergence and closed.
  *
  * THE HANDLERS ARE NAMED AND THE TESTS ARE NOT COUNTED, which is a correction
  * rather than a style: this block said `ALL SIX TESTS STAY GREEN` and named
@@ -35,19 +42,16 @@ import type { RequestContext, Tsudoi, TsudoiConfig } from "../../src/types.ts";
  * have joined the table since, and a count of a growing file falsifies itself
  * silently -- the exact failure the standing prose rule is about.
  *
- * THE CAUSE IS A REAL DIVERGENCE BETWEEN THE TWO DRIVES, and it is recorded at
- * `driveGenerator` in src/methods.ts rather than only here: the generator
- * drive's no-handler early return sits AHEAD of the cancellation epilogue, so a
- * cancelled request to a generator-driven method with no handler is answered
- * NULL, while the awaited-once drive reaches the epilogue either way and
- * answers -32800.
+ * SO THE HONEST STATEMENT OF WHAT THIS FIXTURE ENFORCES IS NOW SHORTER THAN IT
+ * WAS: a method added to the table and not added here fails NOTHING, whichever
+ * drive it uses. A reader assuming otherwise would credit these tests with a
+ * completeness they do not have. THAT IS FIVE UNDEFENDED HANDLERS OUT OF FIVE,
+ * where Sprint 34 measured three out of four, and it is a residual with a PBI --
+ * PBI-42 -- rather than a comment nobody acts on.
  *
- * SO THE HONEST STATEMENT OF WHAT THIS FIXTURE ENFORCES: a GENERATOR-DRIVEN
- * method added to the table and not added here fails the suite loudly. An
- * awaited-once one does not, and a reader assuming otherwise would credit these
- * tests with a completeness they do not have. THAT IS NOW THREE UNDEFENDED
- * HANDLERS OUT OF FOUR AWAITED-ONCE ONES -- formatting, diagnostic and resolve
- * -- and it is a residual with a PBI rather than a comment nobody acts on.
+ * WHAT DOES NOT DEPEND ON THIS FILE AT ALL: the no-handler half of those tests,
+ * which drives test/fixtures/no-methods.ts. A method joining the table joins
+ * that one by construction, because it supplies no handler for anything.
  *
  * THE HANDLERS DO NO WORK ON PURPOSE. Cancellation is observed through
  * `issueThenCancel`, which frames the request and its `$/cancelRequest`
