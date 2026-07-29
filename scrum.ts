@@ -305,7 +305,7 @@ const scrum: ScrumDashboard = {
     number: 30,
     pbi_id: "PBI-30",
     goal: "TWO PBIs, ONE READING. PBI-30: the exit that ALREADY works when an editor dies stops being held by nobody -- two rigs pointing in OPPOSITE directions, plus the record at the line an added handle would be written on. PBI-29: the exit code of a REFUSED shutdown is ruled against the specification and asserted. The LSP sentence both turn on is read ONCE and recorded at src/lifecycle.ts's exitCode(); every other site POINTS at that block rather than restating it, because two copies read months apart can disagree.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "None -- structural. Nothing can assert that a reading was recorded; what defends the ruling is subtask 2's assertion.",
@@ -348,8 +348,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "LspSession can reach stdin EOF. The property: a test can end the server's input WITHOUT killing it, which is the only way to observe the EOF path's exit code from the process that owns the pipe. test/helpers/lsp.ts is NOT otherwise touched -- in particular processId stays null across all 13 files that share that frozen const, because with EOF as the mechanism processId is never read.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "35d5964",
+            message: "refactor(test): let a session end the server's input without killing it",
+            phase: "refactoring",
+          },
+        ],
         notes: [],
       },
       {
@@ -357,10 +363,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "BORN-GREEN. THIS IS THE THIRD CELL OF A 2x2 AND THAT IS WHAT EARNS C2'S HEADLINE: C1 gives parent-dies-with-stdin-closing -> GONE, C2 gives parent-dies-with-stdin-OPEN -> SURVIVES, and this gives stdin-closes-with-the-parent-ALIVE -> exits. Without it `the mechanism is stdin EOF` is inferred from two cells rather than established.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c4b90c5",
+            message: "test(editor-death): pin the code on the stdin-EOF path, which is 0 and not 1",
+            phase: "green",
+          },
+        ],
         notes: [
-          "PERTURBATION P6 IS THE CRITERION'S OWN STATED HAZARD MADE REAL: routing the EOF path through the lifecycle (a reader close handler calling process.exit(lifecycle.exitCode())) moves the code to 1 and must redden this assertion ALONE.",
+          "P6 AS PLANNED IS INERT ON HALF THE SUPPORTED RUNTIMES, and finding that out is the subtask's most transferable result. `reader.onClose` FIRES ON BUN AND NEVER ON DENO (bun 1.3.13, deno 2.9.2, measured by making the handler write to stderr instead of exiting): as an exit hook it reddened one runtime and left the other green, which would have recorded `defended` for a cell nothing could flip.",
+          "P6c IS THE REPLACEMENT AND IT FIRES ON BOTH: the same tidy-up written on `process.stdin`'s `end` event moves the code to 1 and reddens THESE TWO CELLS ALONE out of 385. The bun-only behaviour of the reader hook is now recorded at startServer, because it is a trap whose whole cost is paid by whoever rediscovers it.",
         ],
       },
       {
@@ -368,10 +381,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Three levels, because the property is about an ORPHANED process: bun test spawns a fake editor, the fake editor spawns the server holding the ONLY write end of its stdin, the test SIGKILLs the fake editor and polls the server pid. The intermediate is what makes the observation clean rather than a zombie the test could still see as alive.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "397931b",
+            message:
+              "test(editor-death): two rigs, opposite directions, neither standing in for the other",
+            phase: "green",
+          },
+        ],
         notes: [
-          "PERTURBATION P1, THE ONE THIS RIG EXISTS FOR: an un-unref'd interval added in src/ must redden it. PREDICTED BEYOND ITS TARGET rather than discovered -- the same handle keeps every EOF-ending session alive, so P6's cell and much of the suite go with it; an unpredicted extra flip reads as bundling. PERTURBATION P4 defends the presence pair: make the server fail at startup and the ALIVE assertion must be the first thing to fail, with the GONE half satisfied.",
+          "P1 FIRED EXACTLY AS PREDICTED AND NARROWER THAN PREDICTED: an un-unref'd setInterval in startServer reddens FOUR of 389 -- this rig and the EOF cell, on both runtimes -- and leaves the FIFO rig GREEN. The prediction that `much of the suite` would go with it was WRONG and is recorded as wrong: sessions that end by `exit` call process.exit and do not care, so only the two tests that wait for a natural death notice.",
+          "P4a, THE PRESENCE PAIR, DID NOT COME OUT AS THE CRITERION EXPECTED AND THE COMMENT AT THE SITE NOW SAYS SO. With the launch broken, THE RIG FAILS FIRST at the handshake -- `the server never answered initialize within 8000ms` -- because the pid is reported only after the server ANSWERED, so the ALIVE assertion is never reached. P4b (the server answers, then dies of its own accord) does not reach it either. THE ASSERTION CAUGHT NEITHER FAILURE THAT COULD BE BUILT; it is kept for a stated reason -- it becomes the whole of the presence pair the moment anyone simplifies the rig to report a pid without waiting -- rather than credited with a catch it does not make.",
         ],
       },
       {
@@ -379,10 +400,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "THE SAME FIXTURE WITH ONE FLAG FLIPPED, so the only difference between the two experiments IS the variable under test: the fake editor passes its OWN inherited fd 0 to the server instead of a pipe it owns, which leaves the write end held by bun test. No FIFO -- the test process is already the third party, and mkfifo plus an O_RDWR open would bet on Darwin-specific behaviour for nothing.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "397931b",
+            message:
+              "test(editor-death): two rigs, opposite directions, neither standing in for the other",
+            phase: "green",
+          },
+        ],
         notes: [
-          "PERTURBATION P5 IS THE PAIR THAT PROVES NEITHER RIG SUBSTITUTES FOR THE OTHER: a naive parent-pid poll added to src/ makes the server exit when the intermediate dies EVEN THOUGH ITS STDIN IS OPEN -- C1 stays GREEN and this reddens. P1 reddens C1 and leaves this green. Opposite directions, measured rather than asserted.",
+          "THE PLAN'S `NO FIFO` WAS REFUTED BY MEASUREMENT BEFORE IT COULD RECORD ANYTHING, and this is the sprint's clearest S20 catch. Handing the server the fake editor's own fd 0 LOOKS like leaving the write end with the test -- lsof shows both processes holding THE SAME socket endpoint -- and it silently does not: node:child_process DESTROYS a dead child's stdin stream, so the test's own runtime closes the write end when the editor is killed. Measured outcome: the server died 33ms (bun) and 43ms (deno) after the kill, i.e. THE RIG SILENTLY MEASURED THE OTHER RIG. The criterion's FIFO was right and the simplification was wrong.",
+          "P5 IS THE MIRROR AND IT LANDED EXACTLY: an unref'd parent-pid poll reddens THIS TEST ALONE, 2 of 389, leaving the other rig and the EOF cell green. With P1 reddening those and leaving this one green, NEITHER RIG SUBSTITUTES FOR THE OTHER as a measurement rather than an argument.",
+          "P4b IS A THIRD, UNPLANNED, AND IT IS THIS RIG'S OWN JUSTIFICATION MADE REAL: a server that answers and then exits of its own accord leaves the SIGKILL rig GREEN -- `gone after the kill` is satisfied by a death that had nothing to do with the kill -- and reddens this one alone. That is precisely the proposition C2 says C1 cannot discriminate.",
         ],
       },
       {
@@ -390,9 +420,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "C3 + the uncovered case, at startServer in src/server.ts -- the function that owns the reader and connection.listen(), and the nearest true home because NO SINGLE SITE EXISTS at which the destroying edit would be made. It states that the process exits because NOTHING KEEPS THE LOOP ALIVE, so any timer, socket or watcher added anywhere in src/ MUST be unref()'d -- A CORRECTNESS REQUIREMENT, NOT AN OPTIMISATION -- with runtime versions per S8, and it POINTS at the one reading rather than restating it. The fork-without-exec case is RECORDED as a named uncovered case and NOT filed, in the form RequestOnlyConnection already uses, carrying the two facts that make it re-decidable: a pid poll would close it and an un-unref'd one would DESTROY the exit that works, and the portability trap whose errno signs are RE-MEASURED here rather than copied.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "6624dd8",
+            message:
+              "docs(server): say why this process dies with its editor, where a diff would kill it",
+            phase: "refactoring",
+          },
+          {
+            hash: "293632d",
+            message: "docs(editor-death): point at the requirement's home instead of restating it",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          'THE ERRNO SIGNS WERE RE-MEASURED AND THE HANDED-DOWN VALUES HOLD, which is worth saying because the two numbers before them did not. bun 1.3.13: name `SystemError`, errno 3, message `kill() failed: ESRCH: No such process`. deno 2.9.2: name `Error`, errno -3, message `kill ESRCH`. `code === "ESRCH"` is the only portable discriminator -- the NAMES and MESSAGES differ too, so neither is a fallback.',
+          "THE SECOND COMMIT IS A DUPLICATION CAUGHT IN SELF-REVIEW: the test file's header had begun stating the unref requirement as well as measuring it. Pointed at the site instead. The same rule this sprint spent its budget on, applied to prose the sprint itself wrote.",
+        ],
       },
     ],
     impediments: [],
@@ -404,6 +449,12 @@ const scrum: ScrumDashboard = {
       "AND THE SPECIFICATION RULES NO CODE FOR THAT PATH, which is the honest half. The 0/1 sentence is scoped to the `exit` NOTIFICATION, and on the EOF path no notification arrives; what the specification does require is the EXIT ITSELF, via the processId sentence. So the assertion pins 0 on a REASONED ground stated as such: 1 is this protocol's word for `error`, and a server terminating because the client it serves is gone -- the very thing the specification asks it to do -- has not failed.",
       "TSUDOI DELIVERS THE SPECIFICATION'S PROPERTY BY A DIFFERENT MECHANISM THAN THE SPECIFICATION'S, and that is precisely where the uncovered case lives. The processId sentence describes a server that WATCHES its parent; tsudoi never reads processId at all -- test/helpers/lsp.ts sends null and the exit happens anyway -- and gets the same outcome from stdin EOF. Fork-without-exec is the one input on which the two mechanisms come apart, so C5's case is not an arbitrary gap but the exact residue of the substitution.",
       "BASELINE RE-MEASURED RATHER THAN COPIED, each command run separately and unpiped at 695ef22: bun test 381 pass / 0 fail / 24 files, exit 0.",
+      "DELIVERED IN 0fec549..293632d. 389 green from 381 -- EIGHT ADDED, NONE REMOVED OR WEAKENED, 25 files from 24 -- each DoD command run SEPARATELY AND UNPIPED with its exit read directly, AT FINAL HEAD with a clean tree: bun test 0, oxlint 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), oxfmt --check . 0, tsc --noEmit 0. scrum.ts was committed ALONE three times and the hook was never bypassed. NO src/ BEHAVIOUR CHANGED: every assertion this sprint added was born-green and declared so, which is the whole shape of `held by nobody` as a problem.",
+      "THE STANDING PROSE ITEM, ANSWERED PLAINLY: this sprint changed NO observable behaviour, so no prose describing behaviour went stale by drift. What DID go stale is prose about COVERAGE -- src/notifications.ts's `which no assertion in this suite catches` -- and it was corrected in the commit that falsified it rather than left to be found.",
+      "THE SPRINT-14 RE-RUN FOUND ITS OWN DEFECT BEFORE IT FOUND ANYTHING ELSE. Sprint 29's P1 (rebuild the entry instead of aliasing it) re-run against the tree this sprint edited: the FIRST attempt reddened NOTHING IN 389 and would have been reported as a disarmed control. It was the PERTURBATION that was wrong -- `TextDocument.update` MUTATES ITS ARGUMENT, so calling it before replacing the map entry mutates the very reference the gate holds. Written faithfully (apply the changes to a COPY) it reddens THE ALIASING GATE ALONE out of 389. THE CONTROL IS STILL ARMED, and the failed attempt independently confirms Sprint 29's ruling that identity is deliberately not asserted: in that variant the mechanism changed and the PROPERTY still held, so a green gate was the correct answer.",
+      "TWO PLANNED PERTURBATIONS WERE MEASURED USELESS AND BOTH ARE RECORDED AS SUCH RATHER THAN QUIETLY REPLACED -- P3 (moves the phase, so it moves the refusal code with it and flips an assertion earlier than the headline) and P6 (a reader close hook, which FIRES ON BUN AND NEVER ON DENO, so it would have recorded `defended` for a cell it could not flip on half the runtimes). A perturbation that cannot flip what it names is the same defect as a test that cannot fail, one level up.",
+      "THE 2x2 IS WHAT MAKES `THE MECHANISM IS STDIN EOF` A MEASUREMENT RATHER THAN AN INFERENCE, and the third cell was added for that reason: stdin closes with the parent ALIVE (exits 0), stdin closes BECAUSE the parent died (exits, 11ms), parent dies with stdin OPEN (lives, still alive at 6s). Two cells would have left `exits when its parent dies` and `exits when its input ends` indistinguishable.",
+      "ONE THING THE PBI ASSUMED IS NOT TRUE OF THE RIG AS BUILT, and the site comment says so instead of the criterion's version: the presence pair is NOT what catches `never started` here -- the handshake is, and it names itself. Kept anyway, with the reason it earns its place stated as a CONDITIONAL one. That is the honest form of a criterion-mandated assertion whose stated rationale did not survive measurement.",
     ],
   },
   retrospectives: [
