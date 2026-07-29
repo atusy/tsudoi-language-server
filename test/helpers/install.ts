@@ -42,12 +42,19 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
  * The stakeholder-facing example's own bytes, keyed by the path each must be
  * written to in a consumer project.
  *
- * TWO FILES, not one, and that is the point of it being a function rather than
- * a constant at each call site: the example's completion handler imports its
- * path-completion module by RELATIVE specifier, so a consumer given only the
- * config fails at import with a missing-module error -- which looks exactly
- * like the dependency-resolution failure these probes exist to observe. The
- * artifact under test is both files, and no fixture copy of either exists.
+ * THE WHOLE SET, NEVER THE CONFIG ALONE, and that is the point of it being a
+ * function rather than a constant at each call site. The config imports a
+ * module per method by RELATIVE specifier, so a consumer given only the config
+ * fails at import with a MISSING-MODULE ERROR -- which looks exactly like the
+ * dependency-resolution failure these probes exist to observe, and would be
+ * misdiagnosed as one. The artifact under test is the SET, and no fixture copy
+ * of any member exists.
+ *
+ * STATED AS A SET RATHER THAN A NUMBER, and the correction is the reason: this
+ * block read `TWO FILES, not one` and `the artifact under test is both files`
+ * while the function returned FOUR. A count in prose falsifies itself the next
+ * time the thing it counts grows, and nothing about editing the returned object
+ * draws the editor's eye up here. The set grows; the sentence must not have to.
  */
 export function exampleSources(): Record<string, string> {
   return {
@@ -61,7 +68,7 @@ export function exampleSources(): Record<string, string> {
     ),
     // THE DECLARATION IS PART OF THE EXAMPLE, not of this harness: `wordnet`
     // ships no types and has no DefinitelyTyped entry, so a reader who copies
-    // the two .ts files and not this one gets TS7016 in their own project.
+    // the handler modules and not this one gets TS7016 in their own project.
     // Including it here is what makes the published-artifacts check answer the
     // question a reader actually has.
     "hover-wordnet.ts": readFileSync(
@@ -70,6 +77,17 @@ export function exampleSources(): Record<string, string> {
     ),
     "wordnet.d.ts": readFileSync(
       fileURLToPath(new URL("../../examples/wordnet.d.ts", import.meta.url)),
+      "utf8",
+    ),
+    // THE PAIR, AND NEITHER TRAVELS WITHOUT THE OTHER: the formatting module
+    // imports its scan from the diagnostic one, so a consumer given only the
+    // formatter fails exactly as a consumer given only the config does.
+    "diagnostic-trailing-whitespace.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/diagnostic-trailing-whitespace.ts", import.meta.url)),
+      "utf8",
+    ),
+    "formatting-trailing-whitespace.ts": readFileSync(
+      fileURLToPath(new URL("../../examples/formatting-trailing-whitespace.ts", import.meta.url)),
       "utf8",
     ),
   };

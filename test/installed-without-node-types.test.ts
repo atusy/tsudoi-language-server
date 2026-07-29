@@ -9,7 +9,7 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
  * that choice was held by a paragraph which honestly said nothing held it.
  *
  * THE PROPERTY: a config author who has never installed @types/node can
- * type-check against `@atusy/tsudoi/types`. src/types.ts re-exports the eight
+ * type-check against `@atusy/tsudoi/types`. src/types.ts re-exports its
  * protocol names from the BARE `vscode-languageserver-protocol` rather than from
  * `/node`, and `/node` drags Node stream typings into a consumer that has none.
  *
@@ -97,7 +97,9 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
  */
 const noNodeTypings = { skipLibCheck: false, types: [] };
 
-const eightNames = { "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types") };
+const publishedNames = {
+  "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+};
 
 let consumer: InstalledConsumer;
 let perturbed: InstalledConsumer | undefined;
@@ -158,8 +160,8 @@ async function specifierMovedToNode(): Promise<InstalledConsumer> {
 }
 
 /** THE STORY: a config author with no Node typings reachable type-checks. */
-test("the eight published names type-check for a consumer with no Node typings", async () => {
-  const result = await consumer.typeCheck(eightNames, noNodeTypings);
+test("every published protocol name type-checks for a consumer with no Node typings", async () => {
+  const result = await consumer.typeCheck(publishedNames, noNodeTypings);
 
   expect(result.output).toBe("");
   expect(result.code).toBe(0);
@@ -189,7 +191,7 @@ test("a deliberate type error is reported under the same tsconfig", async () => 
  * both exit 1 -- and only one of them is what this file is about.
  */
 test("moving the published specifier to /node reddens the probe, naming the Node typings", async () => {
-  const result = await (await specifierMovedToNode()).typeCheck(eightNames, noNodeTypings);
+  const result = await (await specifierMovedToNode()).typeCheck(publishedNames, noNodeTypings);
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2591");
@@ -222,7 +224,7 @@ test("moving the published specifier to /node reddens the probe, naming the Node
 test("the same perturbation is invisible once skipLibCheck is back on", async () => {
   const result = await (
     await specifierMovedToNode()
-  ).typeCheck(eightNames, {
+  ).typeCheck(publishedNames, {
     ...noNodeTypings,
     skipLibCheck: true,
   });

@@ -33,15 +33,30 @@ import type { TextDocument } from "vscode-languageserver-textdocument";
  * convenience: they are the protocol names the examples actually use.
  * completion-path.ts uses CompletionItem, CompletionItemKind, CompletionParams,
  * MarkupContent, Position and WorkspaceFolder; hover-wordnet.ts adds Hover and
- * HoverParams; tsudoi.config.ts adds none of its own. This is the minimum that
- * lets the examples import no protocol package, not a convenience dump.
+ * HoverParams; diagnostic-trailing-whitespace.ts adds DiagnosticSeverity,
+ * DocumentDiagnosticParams and DocumentDiagnosticReport;
+ * formatting-trailing-whitespace.ts adds DocumentFormattingParams and TextEdit;
+ * tsudoi.config.ts adds none of its own. This is the minimum that lets the
+ * examples import no protocol package, not a convenience dump.
  *
- * THE RULE FOR A NINTH: adding one is a deliberate act with a reason, because
+ * ADDING AN EXAMPLE ADDS NAMES, AND THAT IS THIS RULE OPERATING RATHER THAN A
+ * WIDENING OF IT: this list exists PRECISELY TO MAKE EXAMPLE MODULES WRITABLE.
+ * An EXTRACTED handler -- a standalone exported function, which is the shape
+ * README calls worth copying -- gets no contextual typing at all and must name
+ * its own params and result. Every name here was published because some example
+ * could not be written without it, and the alternative is worse than a few type
+ * names: THE README WOULD TEACH A PATTERN TSUDOI'S OWN PUBLISHED SURFACE CANNOT
+ * SUPPORT. Note the asymmetry that keeps this bounded -- a handler written
+ * INLINE in a config needs none of these, because MethodHandler supplies them.
+ *
+ * THE RULE FOR A NEW NAME: adding one is a deliberate act with a reason, because
  * every name exported from this file is public API and renaming or dropping one
  * breaks configs we cannot see. The reason belongs here, beside the name. What
- * a ninth name must NOT be is `a config author might want it` -- that argument
+ * a new name must NOT be is `a config author might want it` -- that argument
  * has no end, and the set it produces is the dependency's whole surface
- * re-published under names this project would then have to keep.
+ * re-published under names this project would then have to keep. STATED WITHOUT
+ * A COUNT ON PURPOSE: it read `the rule for a ninth` while the list held nine
+ * already, which is how a rule about names ended up carrying a stale number.
  *
  * CompletionItemKind AND DiagnosticSeverity ARE RE-EXPORTED AS VALUES, and the
  * distinction is not stylistic: each is a NAMESPACE OF CONST MEMBERS beside a
@@ -54,18 +69,27 @@ import type { TextDocument } from "vscode-languageserver-textdocument";
  * that can see that difference -- measured: making either line `export type`
  * reddens that one assertion and leaves every other test in that file green.
  *
- * DiagnosticSeverity IS THE NINTH NAME AND THE RULE ABOVE APPLIES TO IT, so the
- * reason sits here beside it rather than in a sprint record. IT IS NOT `an
- * author might want it`: a `Diagnostic` is constructible from an object literal
- * in every member EXCEPT this one, whose values are 1 through 4 and mean nothing
- * written as numbers. Without this name a config author either installs the
- * protocol package -- which is the whole thing this surface exists to prevent --
- * or writes `severity: 1` and hopes. MEASURED at vscode-languageserver-types
- * 3.18.0: DiagnosticSeverity declares Error/Warning/Information/Hint as consts,
- * the SAME construct as CompletionItemKind rather than a similar one.
- * `Diagnostic` and `DocumentDiagnosticReport` themselves are NOT added, for the
- * reason that kept Range and TextEdit off: MethodHandler supplies them by
- * contextual typing and both are structurally constructible.
+ * DiagnosticSeverity WAS ADDED FOR test/fixtures/diagnostic-offsets.ts AND THE
+ * RULE ABOVE APPLIES TO IT, so the reason sits here beside it rather than in a
+ * sprint record. IT IS NOT `an author might want it`: a `Diagnostic` is
+ * constructible from an object literal in every member EXCEPT this one, whose
+ * values are 1 through 4 and mean nothing written as numbers. Without this name
+ * a config author either installs the protocol package -- which is the whole
+ * thing this surface exists to prevent -- or writes `severity: 1` and hopes.
+ * MEASURED at vscode-languageserver-types 3.18.0: DiagnosticSeverity declares
+ * Error/Warning/Information/Hint as consts, the SAME construct as
+ * CompletionItemKind rather than a similar one.
+ *
+ * `Diagnostic` ITSELF IS STILL NOT ADDED, AND ITS ABSENCE BESIDE ITS TWO
+ * NEIGHBOURS IS THE RULE DISCRIMINATING RATHER THAN AN OVERSIGHT. MEASURED, not
+ * predicted: examples/diagnostic-trailing-whitespace.ts was written first and
+ * `tsc --noEmit` was read, and it demanded EXACTLY `DocumentDiagnosticParams`
+ * and `DocumentDiagnosticReport` -- the params and result of an extracted
+ * handler, which nothing can supply for it -- and did NOT demand `Diagnostic`,
+ * because the items are an array literal inside a return the declared result
+ * type contextually types. So the line between published and withheld is
+ * `could the example be written without it`, and it fell BETWEEN three
+ * candidates rather than around them.
  *
  * WHY THE BARE SPECIFIER AND NOT `/node`, recorded here because this is where
  * the edit that undoes it would be made, and because an unrecorded specifier
@@ -110,10 +134,14 @@ export { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver-pr
 export type {
   CompletionItem,
   CompletionParams,
+  DocumentDiagnosticParams,
+  DocumentDiagnosticReport,
+  DocumentFormattingParams,
   Hover,
   HoverParams,
   MarkupContent,
   Position,
+  TextEdit,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 
@@ -123,13 +151,13 @@ export type {
  * come with it, so the offset arithmetic a positional handler needs is written
  * and fixed by other people.
  *
- * NOT ONE OF THE EIGHT ABOVE, AND DELIBERATELY NOT IN `publicProtocolNames`.
- * That list's own doc block in test/helpers/published-names.ts says it holds THE
- * PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS; this name comes from a
- * DIFFERENT PACKAGE, so adding it there would make that sentence false. The
- * consequence is that the two probes defending the eight defend NOTHING about
- * this name -- so it has its OWN probe in test/published-artifacts.test.ts,
- * rather than riding on theirs.
+ * NOT ONE OF THE PROTOCOL NAMES ABOVE, AND DELIBERATELY NOT IN
+ * `publicProtocolNames`. That list's own doc block in
+ * test/helpers/published-names.ts says it holds THE PROTOCOL NAMES THE PUBLISHED
+ * SUBPATH RE-EXPORTS; this name comes from a DIFFERENT PACKAGE, so adding it
+ * there would make that sentence false. The consequence is that the two probes
+ * defending that list defend NOTHING about this name -- so it has its OWN probe
+ * in test/published-artifacts.test.ts, rather than riding on theirs.
  *
  * THE SPECIFIER IS THE POINT, AND THE OBVIOUS SIMPLIFICATION IS THE BUG.
  * `vscode-languageserver-protocol` re-exports `vscode-languageserver-types`
@@ -141,7 +169,7 @@ export type {
  * wrong type. What stops it is not this paragraph but the identity probe, which
  * reddens on that exact substitution -- MEASURED, naming its marker.
  *
- * TYPE-ONLY IS A RULING, NOT AN OVERSIGHT, and it is the `rule for a ninth`
+ * TYPE-ONLY IS A RULING, NOT AN OVERSIGHT, and it is the `rule for a new name`
  * applied to a name from somewhere else. Upstream's `TextDocument` is a
  * NAMESPACE CARRYING FUNCTIONS -- `create`, `update`, `applyEdits` -- so it has a
  * runtime value exactly as `CompletionItemKind` does, and `export {` would work.
@@ -245,21 +273,29 @@ export interface MethodMap {
    * Awaited once, exactly as hover is: a formatter has one answer for the whole
    * document, and the protocol gives it no partialResultToken to stream under.
    *
-   * `DocumentFormattingParams` AND `TextEdit` ARE IMPORTED AND DELIBERATELY NOT
-   * RE-EXPORTED, which is the rule-for-a-ninth above applied rather than
-   * forgotten. That list is the protocol names the EXAMPLES use, and no example
-   * formats anything; a handler written in a config needs neither name, because
-   * `MethodHandler` supplies both by contextual typing -- which is what README
-   * already tells a config author. What would reverse it is an example that
-   * must NAME one of them.
+   * `DocumentFormattingParams` AND `TextEdit` ARE NOW RE-EXPORTED, ON THE
+   * REVERSAL CONDITION THIS PARAGRAPH ITSELF SET. It read `no example formats
+   * anything ... what would reverse it is an example that must NAME one of
+   * them`, and examples/formatting-trailing-whitespace.ts is that example: an
+   * EXTRACTED handler gets no contextual typing, so it names both or it cannot
+   * be written. THE FIRST EVIDENCE-SHAPED REVERSAL CONDITION IN THIS PROJECT TO
+   * FIRE ON ITS OWN TERMS, which is worth more than the two names -- a condition
+   * written to be checkable was checked, rather than being re-argued.
+   *
+   * THE WITHHOLDING'S OTHER HALF STANDS UNCHANGED AND IS NOW THE INTERESTING
+   * ONE: a handler written INLINE IN A CONFIG still needs neither name, because
+   * `MethodHandler` supplies both by contextual typing. So publication is about
+   * EXTRACTION, not about the method.
    *
    * MEASURED RATHER THAN ASSUMED, AND THE MEASUREMENT IS A FILE RATHER THAN A
    * RECOLLECTION: test/fixtures/formatting-offsets.ts imports only `Tsudoi` and
    * `TsudoiConfig`, annotates its handler with nothing, calls
    * `document.positionAt` and returns object literals `{ range: { start, end },
-   * newText }` -- and the DoD's `tsc --noEmit` type-checks it on every run. So
-   * this paragraph goes stale LOUDLY: add an annotation to that file, or a
-   * protocol import, and the evidence for this ruling is gone with it.
+   * newText }` -- and the DoD's `tsc --noEmit` type-checks it on every run. That
+   * fixture was DELIBERATELY LEFT UNANNOTATED when these names were published,
+   * because it is the standing evidence for the inline half above and an
+   * annotation would destroy it. So this paragraph still goes stale LOUDLY: add
+   * an annotation to that file, or a protocol import, and the evidence is gone.
    *
    * THAT THE TYPING DISCRIMINATES rather than accepting anything was measured
    * on a THROWAWAY probe run in the same session and NOT KEPT, which is said
@@ -316,11 +352,17 @@ export interface MethodMap {
    * by tsudoi declining it separately. `previousResultId` arrives in the params
    * and is ignored, which is conforming.
    *
-   * `DocumentDiagnosticParams` AND `DocumentDiagnosticReport` ARE IMPORTED AND
-   * NOT RE-EXPORTED, which is the rule for a ninth applied rather than
-   * forgotten: `MethodHandler` supplies both by contextual typing, and a report
-   * is constructible from an object literal. `DiagnosticSeverity` IS
-   * re-exported, because it is a VALUE a handler reads at run time.
+   * `DocumentDiagnosticParams` AND `DocumentDiagnosticReport` ARE NOW
+   * RE-EXPORTED, AND THE REASON THEY WERE NOT IS WHY THEY NOW ARE. This block
+   * used to say they were withheld because `MethodHandler` supplies both by
+   * contextual typing -- true, AND TRUE ONLY OF A HANDLER WRITTEN INLINE IN A
+   * CONFIG. examples/diagnostic-trailing-whitespace.ts is an EXTRACTED handler,
+   * a standalone exported function, and contextual typing reaches it not at all;
+   * it must name its own params and result or it cannot be written. That is the
+   * reversal condition the withholding carried, arriving. `Diagnostic` is STILL
+   * withheld, measured rather than assumed: that same module does not name it.
+   * `DiagnosticSeverity` was always re-exported, because it is a VALUE a handler
+   * reads at run time.
    */
   "textDocument/diagnostic": {
     params: DocumentDiagnosticParams;
@@ -378,7 +420,7 @@ export interface MethodMap {
    * itself, in src/config.ts.
    *
    * `CompletionItem` IS ALREADY RE-EXPORTED, so this method adds NO name to the
-   * published surface. The rule for a ninth is not engaged: the examples named
+   * published surface. The rule for a new name is not engaged: the examples named
    * `CompletionItem` before this method existed.
    */
   "completionItem/resolve": {

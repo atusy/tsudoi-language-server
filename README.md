@@ -225,14 +225,29 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   the config answers and delegates the work to a module per method, which is the shape worth
   copying:
 
-  | file                          | what it does                                                                  |
-  | ----------------------------- | ----------------------------------------------------------------------------- |
-  | `examples/tsudoi.config.ts`   | the config itself: which methods, and a `finally` that documents when it runs |
-  | `examples/completion-path.ts` | streaming completion of filesystem paths                                      |
-  | `examples/hover-wordnet.ts`   | hover that looks a word up in a dictionary                                    |
-  | `examples/wordnet.d.ts`       | types for `wordnet`, which ships none                                         |
+  | file                                         | what it does                                                                  |
+  | -------------------------------------------- | ----------------------------------------------------------------------------- |
+  | `examples/tsudoi.config.ts`                  | the config itself: which methods, and a `finally` that documents when it runs |
+  | `examples/completion-path.ts`                | streaming completion of filesystem paths                                      |
+  | `examples/hover-wordnet.ts`                  | hover that looks a word up in a dictionary                                    |
+  | `examples/wordnet.d.ts`                      | types for `wordnet`, which ships none                                         |
+  | `examples/diagnostic-trailing-whitespace.ts` | warns about trailing whitespace, one warning per line                         |
+  | `examples/formatting-trailing-whitespace.ts` | removes exactly what that diagnostic reports                                  |
 
-  **Copy all four**, or the imports fail. They also need `wordnet` in your own project:
+  The last two are a **matched pair**: run the demo, see the warnings, format, and watch them
+  clear. The formatter imports its analysis from the diagnostic module, so the two can never
+  disagree about what a problem is.
+
+  **The set teaches two shapes of handler, and both are worth reading.** One **goes somewhere
+  else** for its answer — completion to the filesystem, hover to a dictionary — and shows what a
+  handler that waits on something outside itself has to look like. The other **computes its
+  answer from the document it was given** and goes nowhere at all: the trailing-whitespace pair
+  reads the buffer, turns offsets into `Position`s with `positionAt`, and is done. The second is
+  the commoner shape in a real language server — a parser does not go anywhere else either — so
+  do not read the first as the one to copy.
+
+  **Copy the whole set**, or the imports fail — each file imports the ones beside it, and the
+  set is what the test suite type-checks and runs. They also need `wordnet` in your own project:
 
   <!-- examples-install -->
 

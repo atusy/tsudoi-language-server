@@ -21,14 +21,24 @@ for (const runtime of runtimes) {
     // Widened from `toEqual({})` by PBI-2, PBI-3 and PBI-4, deliberately still
     // exact: openClose is what entitles a conforming client to send
     // didOpen/didClose at all, so an equality assertion is the only kind that
-    // catches its loss. hoverProvider and completionProvider are here because
-    // this file drives examples/tsudoi.config.ts, which supplies both handlers.
+    // catches its loss. The providers are here because this file drives
+    // examples/tsudoi.config.ts, and it advertises ONE FOR EACH METHOD THAT
+    // CONFIG SUPPLIES -- so this value moves whenever the example gains or
+    // loses a method, which is a DELIBERATE CHANGE TO A PINNED ARTIFACT rather
+    // than maintenance. It is THE ONLY EXACT-EQUALITY PIN ON THE DEMO CONFIG:
+    // the other capability equality sites in this suite drive purpose-built
+    // fixtures, verified by reading the start argument at each.
     //
     // THE SYNC KIND IS WHAT AN EDITOR READS TO DECIDE WHAT TO SEND, so this
     // value is the whole of the editor-user-facing half of incremental sync:
     // announce Full and a conforming client keeps putting the whole buffer on
     // stdio at every keystroke however well the store applies ranges.
-    test("initialize returns a result naming tsudoi, advertising incremental textDocumentSync, hoverProvider and completionProvider", async () => {
+    //
+    // diagnosticProvider's TWO BOOLEANS are asserted here as values rather than
+    // as presence, and their reasons live at the contributor in src/methods.ts:
+    // workspaceDiagnostics is FORCED by tsudoi not serving workspace/diagnostic,
+    // while interFileDependencies is CHOSEN on harm asymmetry.
+    test("initialize returns a result naming tsudoi, advertising incremental textDocumentSync and a provider for every method the example supplies", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
@@ -38,6 +48,8 @@ for (const runtime of runtimes) {
           textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
           hoverProvider: true,
           completionProvider: {},
+          diagnosticProvider: { interFileDependencies: true, workspaceDiagnostics: false },
+          documentFormattingProvider: true,
         });
       } finally {
         session.dispose();

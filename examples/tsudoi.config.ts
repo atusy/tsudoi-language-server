@@ -6,6 +6,8 @@ import type {
   TsudoiConfig,
 } from "@atusy/tsudoi/types";
 import { pathCompletion } from "./completion-path.ts";
+import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
+import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 import { hoverWordnet } from "./hover-wordnet.ts";
 
 export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
@@ -63,7 +65,11 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           //    advertises `completionProvider` with no `resolveProvider` and
           //    that request is never sent. It is a fact about this file rather
           //    than about tsudoi -- a config that adds the handler is
-          //    advertised the flag and does receive the request.
+          //    advertised the flag and does receive the request. The same is
+          //    true of every method this config does not name, and the shape of
+          //    the rule is worth more than the instance: a capability is
+          //    advertised exactly where `methods` below can answer it, so
+          //    ADDING A KEY IS THE WHOLE OF TURNING A FEATURE ON.
           yield* pathCompletion(context, params);
 
           // Deliberate divergence from the brief's example, which falls off the end here.
@@ -90,6 +96,22 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
       // writes can be one line when the work has a home of its own. What stays
       // here is the CHOICE of which method this config answers.
       "textDocument/hover": hoverWordnet,
+
+      // THE OTHER SHAPE A HANDLER CAN HAVE, and it is here to be read beside
+      // the two above rather than merely to add a method. Completion goes to
+      // the FILESYSTEM for its answer and hover goes to a DICTIONARY; this one
+      // goes NOWHERE -- it computes its answer from the document it was handed.
+      // That is the commoner shape in a real language server, because a parser
+      // does not go anywhere else either.
+      "textDocument/diagnostic": trailingWhitespaceDiagnostics,
+
+      // A MATCHED PAIR WITH THE LINE ABOVE, and the pairing is the reason both
+      // are here rather than either alone. This removes exactly what that
+      // reports -- same analysis, same ranges -- so running the demo is a
+      // closed loop: the warnings appear, you format, and they clear. Either
+      // half on its own is half a demonstration: a problem this server cannot
+      // fix, or a fix for a problem it never reports.
+      "textDocument/formatting": removeTrailingWhitespace,
     },
   });
 };

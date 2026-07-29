@@ -187,8 +187,8 @@ test("the published module re-exports CompletionItemKind and DiagnosticSeverity 
 });
 
 /**
- * THE TYPE ARM, which the value arm above cannot give: seven of the eight names
- * are types and leave no runtime trace at all.
+ * THE TYPE ARM, which the value arm above cannot give: all but CompletionItemKind
+ * and DiagnosticSeverity are types and leave no runtime trace at all.
  *
  * THROUGH THE INSTALLED CONSUMER, NOT typeCheckProbe, and that is not
  * interchangeable: the in-repo arm resolves this subpath against sources a
@@ -200,9 +200,9 @@ test("the published module re-exports CompletionItemKind and DiagnosticSeverity 
  * which carries the reason for each -- including why every name is USED rather
  * than merely imported.
  */
-test("all eight published protocol names type-check from the installed copy", async () => {
+test("every published protocol name type-checks from the installed copy", async () => {
   const result = await consumer.typeCheck({
-    "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+    "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
   });
 
   expect(result.output).toBe("");
@@ -210,12 +210,12 @@ test("all eight published protocol names type-check from the installed copy", as
 });
 
 /**
- * THE NINTH NAME ON THE SUBPATH, WHICH IS NOT A NINTH PROTOCOL NAME -- and this
+ * A NAME ON THE SUBPATH THAT IS NOT A PROTOCOL NAME AT ALL -- and this
  * test exists because that distinction leaves it otherwise UNDEFENDED.
  *
  * `TextDocument` is not in `publicProtocolNames` and must not be: that list's
  * doc block says it holds the PROTOCOL names the subpath re-exports, and this
- * one comes from vscode-languageserver-textdocument. So the eight-name probe
+ * one comes from vscode-languageserver-textdocument. So the published-names probe
  * above and the value probe below both skip it, and without this it would ship
  * with no published-surface coverage at all.
  *
@@ -224,14 +224,14 @@ test("all eight published protocol names type-check from the installed copy", as
  * CHECK, not the property -- the same honesty this file states about itself at
  * the top. Its evidence is the perturbation, RUN: removing the export from
  * src/types.ts reddens THIS and the identity test below, and leaves the
- * eight-name probe and the value probe green.
+ * published-names probe and the value probe green.
  *
  * WHAT IT DOES NOT SEE is WHICH TextDocument arrived -- MEASURED, and it is the
  * reason the identity test exists: pointing src/types.ts at
  * vscode-languageserver-protocol's DEPRECATED twin leaves this test green,
  * `tsc --noEmit` at 0, and every test in the suite passing except that one.
  */
-test("TextDocument type-checks from the installed copy, though it is not one of the eight", async () => {
+test("TextDocument type-checks from the installed copy, though it is not one of the protocol names", async () => {
   const result = await consumer.typeCheck({
     "text-document.ts": importsAndUses(["TextDocument"], "@atusy/tsudoi/types"),
   });
@@ -254,17 +254,17 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
  * record. Adding `DefinitionParams` to the re-export list in src/types.ts
  * REDDENS THIS TEST -- the probe type-checks, `code` comes back 0, and the
  * expectation that it would not is what fails -- while the value probe and the
- * eight-name probe above both stay green. That is the whole of this test's
- * evidence: it can distinguish a ninth name from no ninth name, measured, on a
+ * published-names probe above both stay green. That is the whole of this test's
+ * evidence: it can distinguish an added name from no added name, measured, on a
  * tree where the difference was actually made.
  *
  * The paired test below is what stops the OTHER degeneracy: a probe naming a
  * symbol that exists nowhere would fail identically, and this test would then
  * be measuring a typo.
  */
-test("a ninth protocol name is not reachable from the published subpath", async () => {
+test("a protocol name this surface does not publish is not reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
-    "ninth-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/types"),
+    "unpublished-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/types"),
   });
 
   expect(result.code).not.toBe(0);
@@ -280,9 +280,12 @@ test("a ninth protocol name is not reachable from the published subpath", async 
  * hazard: a renamed-away protocol symbol and a widened tsudoi surface are not
  * the same mistake and must not share a first failure.
  */
-test("the ninth name the probe asks for is one the dependency really exports", async () => {
+test("the unpublished name the probe asks for is one the dependency really exports", async () => {
   const result = await consumer.typeCheck({
-    "ninth-name-exists.ts": importsAndUses(["DefinitionParams"], "vscode-languageserver-protocol"),
+    "unpublished-name-exists.ts": importsAndUses(
+      ["DefinitionParams"],
+      "vscode-languageserver-protocol",
+    ),
   });
 
   expect(result.output).toBe("");
@@ -528,7 +531,7 @@ test("under the non-hoisting layout the examples type-check, and a bare protocol
  *
  * `CompletionItemKind` is an enum, so the example needs `@atusy/tsudoi/types`
  * to resolve TO A VALUE at run time. A criterion checked only by tsc would go
- * green against a dist/types.d.ts that declares all eight names beside a
+ * green against a dist/types.d.ts that declares every published name beside a
  * dist/types.js that re-exports none -- the two are separate files emitted from
  * one source, and only one of them can be observed by running.
  *
