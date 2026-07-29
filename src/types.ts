@@ -45,11 +45,6 @@ export { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver-pr
 export type {
   CompletionItem,
   CompletionParams,
-  DocumentDiagnosticParams,
-  DocumentDiagnosticReport,
-  DocumentFormattingParams,
-  Hover,
-  HoverParams,
   MarkupContent,
   Position,
   TextEdit,

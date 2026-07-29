@@ -18,7 +18,7 @@
  * other, which is why `exampleSources()` carries every module and the README
  * tells a reader to take the set.
  */
-import type { DocumentFormattingParams, RequestContext, TextEdit } from "@atusy/tsudoi/types";
+import type { MethodHandler } from "@atusy/tsudoi/types";
 import { trailingRuns } from "./diagnostic-trailing-whitespace.ts";
 
 /**
@@ -43,10 +43,10 @@ import { trailingRuns } from "./diagnostic-trailing-whitespace.ts";
  * and the diagnostic one does not. An empty array would be a different claim --
  * `this file is already formatted` -- about a file that was never read.
  */
-export function removeTrailingWhitespace(
-  context: RequestContext,
-  params: DocumentFormattingParams,
-): Promise<TextEdit[] | null> {
+export const removeTrailingWhitespace: MethodHandler<"textDocument/formatting"> = (
+  context,
+  params,
+) => {
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
     return Promise.resolve(null);
@@ -60,4 +60,4 @@ export function removeTrailingWhitespace(
       newText: "",
     })),
   );
-}
+};

@@ -38,7 +38,7 @@
 // preference -- measured, TS2724 names it.
 import type { Stats } from "node:fs";
 import { stat } from "node:fs/promises";
-import type { CompletionItem, RequestContext } from "@atusy/tsudoi/types";
+import type { MethodHandler } from "@atusy/tsudoi/types";
 import { completedPath } from "./completion-path.ts";
 
 /**
@@ -88,10 +88,7 @@ function detailFor(stats: Stats): string {
  * A COPY RATHER THAN A MUTATION, because the item is the request's params and a
  * handler that edits them in place is writing into somebody else's object.
  */
-export async function resolvePathStat(
-  _context: RequestContext,
-  item: CompletionItem,
-): Promise<CompletionItem> {
+export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (_context, item) => {
   const path = completedPath(item);
   if (path === undefined) {
     return item;
@@ -101,4 +98,4 @@ export async function resolvePathStat(
   } catch {
     return item;
   }
-}
+};

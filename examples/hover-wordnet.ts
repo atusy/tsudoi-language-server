@@ -10,7 +10,7 @@
  * needs is examples/wordnet.d.ts, and a reader copying this must copy that too.
  */
 import { init, lookup } from "wordnet";
-import type { Hover, HoverParams, RequestContext } from "@atusy/tsudoi/types";
+import type { MethodHandler } from "@atusy/tsudoi/types";
 
 /**
  * The WordNet database, loaded ON FIRST USE and never twice.
@@ -81,10 +81,7 @@ export async function define(word: string): Promise<string | null> {
  * and the cursor, and what counts as a `word` in this language is exactly what
  * only this file knows.
  */
-export async function hoverWordnet(
-  context: RequestContext,
-  params: HoverParams,
-): Promise<Hover | null> {
+export const hoverWordnet: MethodHandler<"textDocument/hover"> = async (context, params) => {
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
     return null;
@@ -105,4 +102,4 @@ export async function hoverWordnet(
     contents: { kind: "markdown", value: `**${word}**\n\n---\n\n${definitions}` },
     range: undefined,
   };
-}
+};

@@ -23,10 +23,7 @@ import { resolvePathStat } from "./resolve-path-stat.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
-      "textDocument/completion": async function* (
-        context: RequestContext,
-        params: CompletionParams,
-      ): AsyncGenerator<CompletionItem[], CompletionItem[] | null, void> {
+      "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {
           return [];
