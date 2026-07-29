@@ -203,12 +203,22 @@ function valueReExportsOf(source: string): string[] {
  * exists so that fact arrives as a sentence rather than as a puzzle.
  *
  * Without it, a checkout that has never run `bun run prepack` -- or one whose
- * src/types.ts has moved since it last did -- fails in every example-driven
- * file with `SyntaxError: Export named 'CompletionItemKind' not found in module
- * .../dist/types.js`, or with ERR_MODULE_NOT_FOUND when dist/ is absent
- * altogether. Both read like a broken example. Neither names the remedy, and
- * one of them (the SyntaxError) arrives at a static import, before any preflight
- * in the affected file could run.
+ * src/types.ts has moved since it last did -- fails in TWO SHAPES, measured,
+ * and neither names the remedy.
+ *
+ * test/completion-path.test.ts STATICALLY IMPORTS the example, so the whole
+ * file dies at module load and reports 0 pass: with a stale dist/ that is
+ * `SyntaxError: Export named 'CompletionItemKind' not found in module
+ * .../dist/types.js`. It arrives before the file body runs, so no preflight
+ * inside THAT file could have spoken first.
+ *
+ * The files that SPAWN a server instead load the config in a SUBPROCESS, so the
+ * same cause surfaces as `initialize failed: server exited with code 1`
+ * carrying tsudoi's own `failed to load config` on the child's stderr -- not at
+ * a static import at all, and only the assertions that needed a server fail
+ * (test/hover.test.ts: 12 pass, 2 fail). A preflight is reachable there; it is
+ * this ONE test instead, because a condition with one cause is better said once
+ * than asserted in every file that would trip over it.
  *
  * IT DETECTS AND DOES NOT BUILD, deliberately and not as a shortcut. Whether
  * this suite should acquire a develop-time build step is a decision with a
