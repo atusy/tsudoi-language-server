@@ -159,6 +159,16 @@ export type {
  * nothing. Adding `Range` would be a genuine NINTH PROTOCOL NAME under the rule
  * above, bought with nothing.
  *
+ * SO THIS SURFACE NOW CARRIES TWO `Position` DECLARATIONS, and it is said here
+ * because this sprint spent itself proving that kind of thing is INVISIBLE to
+ * every check but one. `positionAt` returns the `Position` declared in
+ * vscode-languageserver-textdocument, while the `Position` exported above is the
+ * protocol's. They are structurally identical, and NOTHING HERE IS NOMINAL --
+ * no `instanceof`, no branded type, no augmentation -- so the two are
+ * interchangeable in every direction a config author can reach. It is harmless
+ * TODAY, and the condition that would end that is either package giving
+ * `Position` a nominal member.
+ *
  * THE BREAK THIS IS, stated where the edit that caused it lives: upstream's type
  * is a SUPERSET of what stood here, so every config that RECEIVES a document
  * keeps compiling -- `uri`, `languageId`, `version` and `getText()` are

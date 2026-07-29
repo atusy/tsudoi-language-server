@@ -202,9 +202,11 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 const document = TextDocument.create(uri, "plaintext", 1, "hello");
 ```
 
-That import is the one place you name the package yourself. `@atusy/tsudoi/types` exports the
-TYPE and deliberately not the value, because tsudoi builds the documents and your handlers only
-receive them -- a mock in your own tests is the exception, and it is the only one.
+That import is the one place you name the package yourself, and it is in your TESTS rather than
+in your config -- the quickstart's "`@atusy/tsudoi/types` is the only import a config needs"
+still holds, because a config never builds a document. `@atusy/tsudoi/types` exports the TYPE and
+deliberately not the value for that reason: tsudoi builds the documents and your handlers only
+receive them. A mock in your own tests is the exception, and it is the only one.
 
 ## Cleanup in a handler
 

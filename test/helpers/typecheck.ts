@@ -92,9 +92,11 @@ export function runTsc(cwd: string): Promise<TypeCheckResult> {
  *
  * package.json is COPIED from the repo and src/ is SYMLINKED to it, so these
  * tests track the identity and the module that actually ship. Only
- * node_modules is borrowed for convenience -- src/types.ts imports
- * vscode-languageserver-protocol, and installing it per probe would cost a
- * network fetch to prove nothing.
+ * node_modules is borrowed for convenience -- src/types.ts imports tsudoi's own
+ * declared dependencies, and installing them per probe would cost a network
+ * fetch to prove nothing. Named that way rather than listed: the list was ONE
+ * package until PBI-31 made it two, and a comment that spells it out goes stale
+ * at the next one.
  */
 export async function typeCheckProbe(
   files: Record<string, string>,

@@ -177,8 +177,8 @@ function fail(step: string, result: TypeCheckResult): never {
  * and both include what it emitted). So dist/ inside the tarball is compiled
  * from the src/ copied one line above, at test time, and a stale artifact
  * cannot be what a test observed. node_modules is symlinked in only because
- * the build needs to resolve vscode-languageserver-protocol's types; `files`
- * keeps it out of the tarball, which
+ * the build needs to resolve the types of tsudoi's own declared dependencies;
+ * `files` keeps it out of the tarball, which
  * test/installed-runtime.test.ts asserts rather than assumes.
  */
 export async function installConsumer(options: InstallOptions = {}): Promise<InstalledConsumer> {

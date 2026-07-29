@@ -94,9 +94,9 @@ test("the tarball ships the compiled module the exports entry points at, and not
   expect(existsSync(join(consumer.packageDir, "dist", "cli.js"))).toBe(true);
   expect(existsSync(join(consumer.packageDir, "src"))).toBe(false);
   expect(existsSync(join(consumer.packageDir, "test"))).toBe(false);
-  // The build needs node_modules in the staging directory to resolve
-  // vscode-languageserver-protocol's types; `files` is what keeps it out of
-  // the tarball, and only this says so.
+  // The build needs node_modules in the staging directory to resolve the types
+  // of tsudoi's own declared dependencies; `files` is what keeps it out of the
+  // tarball, and only this says so.
   expect(existsSync(join(consumer.packageDir, "node_modules"))).toBe(false);
 });
 

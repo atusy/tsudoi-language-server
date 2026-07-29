@@ -222,7 +222,7 @@ test("all eight published protocol names type-check from the installed copy", as
  * WHAT IT DOES NOT SEE is WHICH TextDocument arrived -- MEASURED, and it is the
  * reason the identity test exists: pointing src/types.ts at
  * vscode-languageserver-protocol's DEPRECATED twin leaves this test green,
- * `tsc --noEmit` at 0, and all 372 tests passing except that one.
+ * `tsc --noEmit` at 0, and every test in the suite passing except that one.
  */
 test("TextDocument type-checks from the installed copy, though it is not one of the eight", async () => {
   const result = await consumer.typeCheck({
@@ -369,7 +369,9 @@ const deprecatedProtocolTwin =
  * argued: with src/types.ts re-exporting `vscode-languageserver-protocol`'s
  * DEPRECATED TextDocument instead -- a one-line edit that adds no dependency --
  * `tsc --noEmit` exits 0, the type arm above exits 0, the value arm is
- * unchanged, and THIS IS THE ONLY ONE OF 372 TESTS THAT FAILS.
+ * unchanged, and THIS IS THE ONLY TEST IN THE WHOLE SUITE THAT FAILS. Named
+ * rather than counted on purpose: the count was true when first written and
+ * false three tests later, in this same sprint.
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
   const result = await consumer.typeCheck({ "identity.ts": identityProbe("@atusy/tsudoi/types") });
