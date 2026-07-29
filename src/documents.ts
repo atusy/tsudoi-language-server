@@ -53,9 +53,13 @@ export function createDocumentStore(): DocumentStoreHandle {
       }
       if (params.contentChanges.length === 0) {
         // An empty contentChanges says nothing changed, and the early return is
-        // deliberate: MEASURED, `TextDocument.update(document, [], version)`
-        // RAISES THE VERSION with the text untouched, and a version that moved
-        // without an edit describes a buffer state no client ever sent.
+        // deliberate rather than left over. MEASURED at
+        // vscode-languageserver-textdocument 1.0.12, whose `update` is declared
+        // in lib/umd/main.d.ts: called with an EMPTY change array it RAISES THE
+        // VERSION and leaves the text alone, and a version that moved without an
+        // edit describes a buffer state no client ever sent. ASSERTED, so this
+        // is not prose alone -- `an empty contentChanges moves neither the text
+        // nor the version` in test/documents.test.ts.
         return;
       }
       // HANDED STRAIGHT THROUGH, WHICH IS THE POINT OF THE STORE BEING
