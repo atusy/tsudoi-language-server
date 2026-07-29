@@ -39,39 +39,6 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-43",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "have capability contributors be order-independent instead of order-dependent",
-        benefit:
-          "the ordering hazard stops existing rather than staying observable, and two recorded debits retire at once",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "completion's contributor MERGES rather than assigns, and the SAME capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
-          verification:
-            "THE PO'S OWN HEDGE, kept as criterion 1 because they did not have the code in front of them and have been wrong on shapes repeatedly. THIS MEASUREMENT IS THE PBI'S PREMISE, NOT ITS EPILOGUE.",
-        },
-        {
-          criterion:
-            "P1 BECOMING UNCONSTRUCTIBLE IS THE DELIVERABLE, AND ITS CLASSIFICATION IS RULED IN ADVANCE SO A SUCCESS CANNOT BE REPORTED AS A GAP: TARGET DELIBERATELY REMOVED.",
-          verification:
-            "the fourth outcome in the Sprint-35 vocabulary -- A DESIGN OUTCOME, NOT MEANS LACKING. A MERGE REMOVES THE HAZARD; AN ASSERTION ABOUT ORDERING RESTATES IT. That is the line the PO drew when declining the Sprint-37 residual, and this falls on THE OTHER SIDE of it.",
-        },
-        {
-          criterion: "The P2 debit closes as a CONSEQUENCE rather than being addressed separately.",
-          verification:
-            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. Two-for-one is a stronger argument than either half alone.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "RESOLVE HAVING SHIPPED SETTLES THE REMAINING DOUBT: the ordering dependency is LIVE CODE TODAY rather than a future hazard, so this is FIXING SOMETHING rather than pre-empting it.",
-        "FIRST OF THE THREE because it is smallest, its hazard is live, and it retires two recorded debits.",
-      ],
-    },
-    {
       id: "PBI-42",
       story: {
         role: "tsudoi maintainer",
@@ -134,6 +101,42 @@ const scrum: ScrumDashboard = {
   ],
 
   completed: [
+    {
+      number: 38,
+      pbi_id: "PBI-43",
+      goal: "THE HAZARD STOPS EXISTING RATHER THAN STAYING OBSERVABLE: `textDocument/completion`'s contributor MERGES into `completionProvider` instead of ASSIGNING a fresh object over it, so a contributor writing into a key another method owns no longer depends on being declared below that method's entry. CRITERION 1 IS THE PREMISE AND WAS MEASURED BEFORE ANY LINE WAS WRITTEN, with its own negative control. THE DELIVERABLE IS THAT SPRINT 34'S P1 GOES GREEN, classified in advance as TARGET DELIBERATELY REMOVED. NO NEW TEST SHIPS AND NO EXPECTED VALUE MOVES, so the increment is defended by perturbation rather than by an added assertion, and the prose that goes false is corrected WHEREVER THE CLAIM'S WORDS LIVE.",
+      status: "done",
+      subtasks: [],
+      impediments: [
+        {
+          description:
+            "The agentic-scrum command and its skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
+          impact:
+            "NOTHING WAS BLOCKED. The sprint ran from scrum.ts and the standing conventions, which are the durable homes those skills would have read from anyway.",
+          request:
+            "Install the agentic-scrum plugin if the roles are to be run as commands rather than reconstructed from this file.",
+          status: "waiting_human",
+          notes: [
+            "Carried, not worked around further, on instruction. Recorded because an unrecorded workaround is indistinguishable from the tool having worked.",
+          ],
+        },
+      ],
+      decisions: [
+        "CRITERION 1 MEASURED FIRST AND IT PASSED, WITH PROVENANCE AND A NEGATIVE CONTROL. Throwaway probes, bun 1.3.13, driving `contributeCapabilities` and the contributors directly over ALL 32 configs the five methods can form: the emitted capabilities are IDENTICAL to the assignment's for all 32, INCLUDING each config supplying only ONE of the pair -- completion alone still `completionProvider: {}`, resolve alone still `{ resolveProvider: true }`. Over ALL 120 ORDERS the contributors can run in, 0 of 32 configs disagree; NEGATIVE CONTROL taken before the merge existed, 8 of 32 disagree, exactly the configs supplying BOTH. THE PROBES ARE THROWAWAY AND ARE NOT KEPT, so they cannot be re-run from the tree.",
+        "AND THE FIRST PERMUTATION PROBE WAS VACUOUS, CAUGHT BEFORE IT RECORDED ANYTHING: JSON.stringify with a key ARRAY filters NESTED keys, so `{ resolveProvider: true }` and `{}` serialised identically and every config trivially agreed. Replaced by a deep canonical serialiser with a control counting that `resolveProvider` appears in the output at all. S20 applied to a probe designed before the code existed.",
+        "444 GREEN FROM A RE-MEASURED 444, 31 FILES FROM 31, 1266 expect() CALLS FROM 1266 -- NOTHING ADDED, NOTHING REMOVED, NOTHING WEAKENED, AND THE CLAIM IS DIFFED RATHER THAN ASSERTED: every `expect(` line across src/ and test/ over the sprint's whole range gives 0 added, 0 removed, 0 changed. The direction is NONE, which is the honest answer for an increment that changes no observable behaviour.",
+        "P1 WAS PERFORMED AND CLASSIFIED, NOT DECLARED UNCONSTRUCTIBLE, and the brief's word is refused deliberately: moving resolve's entry above completion's is still a perfectly WRITABLE edit that compiles. It goes GREEN -- 444 ran, 444 pass, on the shipped tree -- so what was removed is the HAZARD and not the means. TARGET DELIBERATELY REMOVED, the fourth outcome, with tests-RAN reported because convention 7 makes the green meaningless without it.",
+        "THE PAIRED OBSERVATION THAT KEEPS THAT GREEN NON-VACUOUS was taken in the same session on the same instrument: with the ASSIGNMENT restored and the entries swapped, the same suite reddens FOUR tests on both runtimes. So the reordering is observable when the hazard is present and silent when it is gone, rather than silent because nothing was ever watching.",
+        "AND THAT CONTROL FALSIFIED A MEASURED NUMBER ON ITS WAY PAST. src/methods.ts said the swap reddens ALONE -- MEASURED and true at Sprint 34, FALSE ONCE SPRINT 37 GAVE THE DEMO CONFIG A RESOLVE HANDLER, which grew the perturbation a second half in a file the claim does not name. Re-measured at four: the resolve capability assertion and the demo config's pinned capabilities in test/lifecycle.test.ts. Found because convention 1 says re-measure a handed number rather than copy it, and the number was about to be deleted anyway.",
+        "CRITERION 3 CLOSES IN ONE HALF AND NOT THE OTHER, PREDICTED IN THE COMMITTED PLAN SO THE REPORT COULD NOT BE FITTED AFTERWARDS. DEFENSIVE closes: both lines that write `completionProvider` now merge, so preservation is the mechanism rather than a hedge one contributor makes about another's key. UNDEFENDED DOES NOT: Sprint 34's P2 re-run as a FULL SUITE RUN -- the unit the debit was booked in -- leaves 444 GREEN with resolve's spread deleted, exactly as it left 423 green then, because completion contributes no key of its own today.",
+        "THE DESIGN THAT WOULD HAVE REPORTED CRITERION 3 AS FULLY CLOSED WAS REFUSED, WITH THE COST NAMED. A shared merge helper called by both entries would make `resolve's contributor without the preservation` unwritable without replacing the mechanism. It was refused because criterion 3's own words forbid addressing the debit SEPARATELY, and because measured it buys a PHRASING RATHER THAN A PROPERTY: with the helper's own spread dropped, the suite is green just the same. The cost of refusing is that the debit stays open at its new address, which is why it is stated at the site instead.",
+        "A THIRD PERTURBATION, RUN BECAUSE THE SPRINT'S OWN DELIVERABLE HAD TO BE HELD TO THE SAME STANDARD: reverting the merge to an assignment with the entries in their DECLARED order leaves 444 GREEN. So the merge is UNDEFENDED, and by construction -- it changes nothing observable for any config, which is the same measurement criterion 1 is built on. RESIDUAL NAMED AT THE TYPE: nothing stops a FUTURE contributor from assigning over a key it does not own. The index comparison stays refused, now on stronger ground than when it was a refusal, since it would restate a mechanism that protects nothing.",
+        "THE STANDING RE-RUN IS STILL ARMED: Sprint 37's P3 (the completion example's mark removed) reproduces its recorded result exactly -- 8 fail, 444 ran, the identical four tests on both runtimes. REPRODUCTION, NOT INDEPENDENT, and labelled so.",
+        "PROSE CORRECTED WHEREVER THE CLAIM'S WORDS LIVE RATHER THAN WHERE THE EDIT WAS: `CapabilityContributor`, resolve's position comment, resolve's DEFENSIVE paragraph, `erasedEntries`' claim that declaration order is what the ordering constraint DEPENDS ON, and -- falsified by a src edit that touched no line in their files -- test/resolve.test.ts's rationale and test/lifecycle.test.ts's `an ordering constraint between two contributors`. Every survivor of the grep was read: src/config.ts, src/server.ts, src/types.ts and examples/tsudoi.config.ts each say something the merge leaves TRUE, and are unedited. Test titles and filenames searched too; neither carries the claim.",
+        "THE HISTORICAL RECORDS WERE NOT EDITED. Sprint 34's and Sprint 37's decisions are PAST-TENSE MEASUREMENTS WITH PROVENANCE, and correcting them to today's code would swap evidence for a guess -- the S36 distinction between a count that is a MEASUREMENT and a count that is a DESCRIPTION, applied to a whole record.",
+        "Each DoD command run SEPARATELY AND UNPIPED with the exit read directly: `bun test` 0 (444 pass, 0 fail, 31 files), `oxlint` 0 (the two pre-existing require-yield warnings in test/fixtures/, untouched), `oxfmt --check .` 0, `npx tsc --noEmit` 0.",
+      ],
+    },
     {
       number: 37,
       pbi_id: "PBI-46",
@@ -288,55 +291,7 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: {
-    number: 38,
-    pbi_id: "PBI-43",
-    goal: "THE HAZARD STOPS EXISTING RATHER THAN STAYING OBSERVABLE: `textDocument/completion`'s contributor MERGES into `completionProvider` instead of ASSIGNING a fresh object over it, so a contributor writing into a key another method owns no longer depends on being declared below that method's entry. CRITERION 1 IS THE PREMISE AND WAS MEASURED BEFORE ANY LINE WAS WRITTEN, with its own negative control -- and it PASSED, so the sprint proceeds. THE DELIVERABLE IS THAT SPRINT 34'S P1 GOES GREEN, classified in advance as TARGET DELIBERATELY REMOVED and not as lost coverage; an assertion about ordering would RESTATE THE MECHANISM, which is the check this project has now declined twice on the same ground. NO NEW TEST SHIPS AND NO EXPECTED VALUE MOVES -- the capability object is measured IDENTICAL for all 32 configs -- so the increment is defended by perturbation rather than by an added assertion. The prose that goes false is corrected WHEREVER THE CLAIM'S WORDS LIVE, not only in the block being edited: src/methods.ts says the contributor is order-dependent, that resolve is DECLARED BELOW completion, and that the spread at resolve is DEFENSIVE; test/resolve.test.ts's rationale is falsified by a src edit its own diff cannot show.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "BORN GREEN, AND THE REASON IS THE PREMISE MEASUREMENT RATHER THAN AN ABSENCE OF EFFORT: the capability object is unchanged for EVERY config, so no assertion CAN move and one that did would mean the merge changed what a client is told. What defends it is P1 and the probe below, not a new expect().",
-        implementation:
-          "completion's contributor becomes `capabilities.completionProvider = { ...capabilities.completionProvider }`. THE LITERAL READING OF CRITERION 1 AND NOTHING MORE -- a shared merge helper for both entries was considered and REFUSED as addressing criterion 3 SEPARATELY, which that criterion forbids in its own words, and measured it would buy a phrasing rather than a property.",
-        type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [
-          "CRITERION 1 MEASURED FIRST, WITH PROVENANCE. Throwaway probe, bun 1.3.13, driving `contributeCapabilities` over ALL 32 subsets of the five methods: the emitted capabilities are BYTE-IDENTICAL to HEAD's for all 32, INCLUDING completion-without-resolve (`completionProvider: {}`) and resolve-without-completion (`completionProvider: { resolveProvider: true }`). A second probe drives every one of the 120 PERMUTATIONS of contributor order: under the merge, 0 of 32 configs disagree across permutations. NEGATIVE CONTROL AT HEAD: 8 of 32 disagree -- exactly the configs supplying BOTH. Probes are THROWAWAY and are NOT KEPT, so they cannot be re-run from the tree.",
-          "AND THE FIRST PERMUTATION PROBE WAS VACUOUS AND WAS CAUGHT BEFORE IT RECORDED ANYTHING: JSON.stringify with a key ARRAY filters NESTED keys too, so `{ resolveProvider: true }` and `{}` serialised the same and every config trivially agreed. Replaced by a deep canonical serialiser, with a control counting that `resolveProvider` appears in the output at all.",
-        ],
-      },
-      {
-        test: "NO EXECUTABLE DEFENCE -- prose. Discharged by GREPPING THE CLAIM'S WORDS across src, test, examples and README, including TEST TITLES AND FILENAMES, with every survivor read and judged still-true or past-tense.",
-        implementation:
-          "Correct what the merge falsifies: `CapabilityContributor`'s order-dependence block and its `DECLARED BELOW` claim, the position comment at resolve's entry, the DEFENSIVE spread paragraph, `erasedEntries`' claim that declaration order is what the ordering constraint DEPENDS ON, and test/resolve.test.ts's rationale -- WHICH IS FALSIFIED BY A src EDIT AND IS INVISIBLE IN ITS OWN FILE'S DIFF. The assertions there do not move; only the reason for them does.",
-        type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [
-          "THE HISTORICAL RECORDS ARE NOT EDITED: Sprint 34's and Sprint 37's `decisions` are PAST-TENSE MEASUREMENTS WITH PROVENANCE, and rewriting them would swap evidence for a guess.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "The agentic-scrum command and its skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
-        impact:
-          "NOTHING HAS BEEN BLOCKED. The sprint proceeds from scrum.ts and the standing conventions, which are the durable homes those skills would have read from anyway.",
-        request:
-          "Install the agentic-scrum plugin if the roles are to be run as commands rather than reconstructed from this file. CARRIED FORWARD, NOT WORKED AROUND FURTHER.",
-        status: "waiting_human",
-        notes: [
-          "Carried on the sprint record rather than fixed, on instruction. Recorded because an unrecorded workaround is indistinguishable from the tool having worked.",
-        ],
-      },
-    ],
-    decisions: [
-      "P1 IS PERFORMED AND CLASSIFIED, NOT DECLARED UNCONSTRUCTIBLE. Moving resolve's entry above completion's is still a perfectly WRITABLE edit; what the merge removes is the HAZARD it detected. The green must be reported with the number of tests that RAN, or convention 7 makes it meaningless.",
-      "CRITERION 3 IS EXPECTED TO CLOSE IN ONE HALF AND NOT THE OTHER, PREDICTED HERE SO THE REPORT CANNOT BE FITTED AFTERWARDS: preservation stops being DEFENSIVE, because both contributors now merge symmetrically; it does not become DEFENDED, because completion contributes no key of its own today. Measured by re-running Sprint 34's P2 as a FULL SUITE RUN, since that is the unit the debit was booked in.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 36,
