@@ -58,9 +58,12 @@ export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => {
           //    once on stderr per session, because a source that silently
           //    contributes nothing is indistinguishable from one that works in
           //    a project holding no matches.
-          //  * An option that resolves items lazily is equally inert: tsudoi
-          //    advertises `completionProvider` with no `resolveProvider`, so
-          //    `completionItem/resolve` is never sent.
+          //  * An option that resolves items lazily is equally inert: THIS
+          //    CONFIG supplies no `completionItem/resolve` handler, so tsudoi
+          //    advertises `completionProvider` with no `resolveProvider` and
+          //    that request is never sent. It is a fact about this file rather
+          //    than about tsudoi -- a config that adds the handler is
+          //    advertised the flag and does receive the request.
           yield* pathCompletion(context, params);
 
           // Deliberate divergence from the brief's example, which falls off the end here.

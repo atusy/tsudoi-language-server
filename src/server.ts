@@ -182,8 +182,10 @@ export function startServer(
     // SO THE DERIVATION IS STILL NOT FROM `methods`' SHAPE. It is from the
     // TABLE, whose entries are written by hand with their reasons beside them,
     // and each contributes through a FUNCTION rather than a flag -- because
-    // `completionProvider` is an object and, at PBI-39, `resolveProvider` is a
-    // key inside it. The per-method reasons that used to sit on these lines are
+    // `completionProvider` is an object and `resolveProvider` is a key INSIDE
+    // it, contributed by a different method than the one that owns it -- which
+    // stopped being a plan at PBI-39 and is now the fifth entry in that table.
+    // The per-method reasons that used to sit on these lines are
     // at their entries in src/methods.ts, which is the only place they are now
     // written.
     contributeCapabilities(config, capabilities);
