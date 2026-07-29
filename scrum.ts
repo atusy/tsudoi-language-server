@@ -280,16 +280,23 @@ const scrum: ScrumDashboard = {
     number: 39,
     pbi_id: "PBI-42",
     goal: "THE FIXTURE'S COVERAGE BECOMES A COMPILE-TIME PROPERTY, AND THE ANSWERS STAY UNDEFENDED ON PURPOSE. test/fixtures/all-methods.ts annotates its handler literal over `Method` so a method `MethodMap` declares and this fixture omits IS TS2741 -- the same error `requestEntries` already produces, no assertions, growing with the table by construction. THE TITLE IS NOT THE CRITERION: `defend every handler` would be FIVE NEAR-IDENTICAL TESTS that resist legitimate fixture changes without defending a requirement, and the PO ruled it out; the risk is not a wrong answer but THE FIXTURE SILENTLY STOPPING SHORT OF A METHOD while tests that believe they exercise five exercise four and stay green. So criterion 2 is A RULING TO RECORD RATHER THAN WORK TO DO, and it goes at the fixture BECAUSE OTHERWISE THE NEXT PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "COMPILE-TIME, NOT A TEST FILE: the perturbation IS the check. Add a method to `MethodMap` AND to `requestEntries` (so the table is not itself the error) and leave the fixture alone -- `tsc --noEmit` must fail TS2741 AT test/fixtures/all-methods.ts NAMING THE METHOD. Paired with its other half, because Sprint 33 measured that exit 0 proves nothing unless the site is reached: with the handler present, `tsc` is 0.",
         implementation:
           'One line at the fixture\'s handler literal: `satisfies { [M in Method]: MethodHandler<M> }`, with `Method` and `MethodHandler` added to the existing type-only import from ../../src/types.ts. `TsudoiConfig["methods"]` is `Partial<...>`, which is why presence is unenforced today and why the annotation adds PRESENCE ONLY -- per-method typing is already contextual and must survive.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a25a7bd",
+            message: "test(fixtures): make the all-methods fixture complete by construction",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BOTH HALVES RE-RUN AGAINST THE SHIPPED FORM RATHER THAN CARRIED FROM THE SKETCH, because a measurement taken on the const candidate is not a measurement of the `satisfies` one. P1: probe method in `MethodMap` AND `requestEntries`, no handler here -- `tsc --noEmit` EXIT 1, ONE ERROR, `test/fixtures/all-methods.ts(139,7): error TS2741: Property '\"textDocument/probe\"' is missing`. P1-PAIR: the same tree with the handler added -- EXIT 0. THE ERROR NAMES THE FILE AND THE METHOD, which is what discharges Sprint 33: an exit code alone would not say the site was reached.",
           "PREMISE MEASURED BEFORE THE PLAN WAS WRITTEN, not after, and it is the control that makes the perturbation mean anything: with the probe method added to `MethodMap` and `requestEntries` and the fixture UNTOUCHED, `tsc --noEmit` is EXIT 0 WITH NO ERRORS ANYWHERE. THE PROPERTY DOES NOT EXIST TODAY -- measured rather than inferred from `methods?` being optional.",
           "THE FORM WAS MEASURED RATHER THAN CHOSEN BY HABIT, and both candidates were run under the same probe: a hoisted `const methods: { [M in Method]: MethodHandler<M> }` -- the `requestEntries` shape -- and an inline `satisfies` of the same mapped type produce THE IDENTICAL TS2741 at the identical site naming the identical method. The criterion's second axis breaks the tie: `ONE LINE`. The const form costs a hoist and an 18-line reindent for the same error.",
           "S20 APPLIED TO THE ANNOTATION ITSELF, because a mapped type CAN be degenerate: `Record<Method, MethodHandler<Method>>` would give exhaustiveness while accepting hover's handler in completion's slot. CONTROL RUN ON THE FORM ACTUALLY CHOSEN rather than transferred from the other one -- a `Promise<Hover>` handler written into `textDocument/completion` fails TS2739/TS2322 naming the missing AsyncGenerator members. The annotation adds presence WITHOUT losing per-method typing.",
@@ -300,10 +307,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "The fixture's block comment records the ruling: the answers stay undefended DELIBERATELY (five near-identical tests die on S7), what the file now DOES enforce, and why the reason is written here rather than left as a residual. THE SENTENCE THAT GOES FALSE IS THE ONE THIS SPRINT FALSIFIES -- `a method added to the table and not added here fails NOTHING, whichever drive it uses` -- and `a residual with a PBI -- PBI-42` goes stale by being acted on.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "dbef3d8",
+            message: "docs(fixtures): say that Sprint 35's deletions now cost a DoD check",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "SPRINT 34 AND 35'S DECISION ENTRIES ARE LEFT ALONE: past-tense measurements carrying provenance, which Sprint 38 ruled untouchable. Only claims stated in the PRESENT TENSE about today's tree are corrected.",
+          "ELEVEN SEARCH TERMS OVER src, test, examples AND README -- `fails NOTHING`, `not added here`, `defended by nothing`, `undefended`, `residual`, `PBI-42`, `three of four`, `all-methods`, `TS2741`, `compile error`, `Partial` -- plus filenames. EVERY SURVIVOR READ AND EVERY ONE LEFT ALONE, with the reason: `undefended` in src/methods.ts is Sprint 32's capability measurement in the past tense; the `Partial` claims at src/types.ts:428 and test/fixtures/resolve-without-completion.ts:12 are about A CONFIG AUTHOR'S surface and are STILL TRUE -- the annotation is on this ONE fixture, not on the type. NOTHING OUTSIDE THE FIXTURE WAS FALSIFIED, which is reported as a result rather than as an absence of work.",
         ],
       },
     ],
@@ -323,6 +337,12 @@ const scrum: ScrumDashboard = {
       "PREDICTED IN THE PLAN SO THE REPORT CANNOT BE FITTED AFTERWARDS: this is a SMALL PBI and the increment is ONE LINE OF TYPE PLUS A COMMENT. No test file changes, so the `expect(` diff is predicted 0 added / 0 removed / 0 changed and the count predicted to stay at 1266. If it turns out smaller than it looks, that is the finding rather than a shortfall.",
       "BASELINE RE-MEASURED AT ef3e889 RATHER THAN COPIED FROM THE BRIEF, per the provenance rule: `bun test` 444 pass / 0 fail / 31 files / 1266 expect() calls (exit 0), `tsc --noEmit` exit 0, `oxlint` exit 0 with the two pre-existing require-yield warnings in test/fixtures/, `oxfmt --check .` exit 0 over 100 files. Each run separately and unpiped.",
       "EXECUTION DOES NOT ACCEPT ITS OWN WORK. This sprint ends at `review` with PBI-42 still `ready` on the backlog. Sprint 38 closed itself and had to revert it.",
+      "444 GREEN / 31 FILES / 1266 expect() CALLS, IDENTICAL TO THE BASELINE, and that is the shape of the increment rather than a disappointment: the criterion asked for a property THE COMPILER CHECKS, so a green suite that did not move is exactly what a correct answer looks like. Each DoD command run separately and unpiped, exit read directly: `bun test` 0, `oxlint` 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), `oxfmt --check .` 0 over 100 files, `tsc --noEmit` 0.",
+      "THE PREDICTION HELD, WHICH IS THE ONLY REASON IT WAS WORTH WRITING DOWN FIRST: `expect(` DIFF 0 ADDED, 0 REMOVED, 0 CHANGED across test/ and src/, static count 693 lines in BOTH trees, runtime count 1266 in both. Diffed against ef3e889 rather than recalled -- S13 forbids recalling a coverage claim even when the diff is obviously empty.",
+      "THE SPRINT WAS SMALLER THAN ITS TITLE AND IS REPORTED THAT WAY RATHER THAN PADDED. THE SHIPPED INCREMENT IS ONE `satisfies` CLAUSE, five names on an import, and prose. No test was written, no helper invented, no second criterion manufactured to fill the box -- the same standard by which Sprint 38 refused a shared helper on measurement.",
+      "AND THE ONE THING NOBODY ASKED FOR, FOUND BY RE-RUNNING RATHER THAN BY READING: THE ANNOTATION MAKES SPRINT 35'S OWN RECORDED PERTURBATIONS FAIL TO COMPILE. Deleting hover's handler is now TS2741. RE-MEASURED BEFORE BEING WRITTEN DOWN, and the recorded result is UNCHANGED -- 444 still green, because neither runtime type-checks -- so this is NOT a measurement gone stale and NOT a perturbation gone unconstructible. WHAT CHANGED IS ITS PRICE: an edit that used to cost nothing now costs a DoD check. Recorded BESIDE THOSE BULLETS, because the reader who needs it is the one following them, and a reader meeting TS2741 with no note would reasonably conclude the recorded green had rotted.",
+      "WHAT WAS DECLINED, WITH THE COST NAMED. (1) NO TEST ASSERTING THE LITERAL HAS FIVE KEYS: that is a count-as-description, retired by naming, and it would go green on a table that shrank to five wrong methods. (2) NO POINTER ADDED IN test/methods-table.test.ts: nothing there became false, and criterion 2 places the reason AT THE FIXTURE. (3) `hoverAnswer`, `completionAnswer`, `formattingAnswer` AND `diagnosticAnswer` ARE EXPORTED AND NOTHING IMPORTS THEM -- observed while grepping, LEFT ALONE, and reported rather than tidied, because no criterion asked and an executor exceeding its criteria is scope creep even when the code is better.",
+      "NOTHING FAILED TO REDDEN THAT WAS EXPECTED TO. Every perturbation planned was constructible and every one produced the predicted result, which is unusual enough in this thread to be worth stating plainly rather than leaving as silence.",
     ],
   },
   retrospectives: [
