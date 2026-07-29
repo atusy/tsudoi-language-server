@@ -9,19 +9,25 @@ try {
   // startServer runs only on success; that ordering is what keeps stdout clean
   // for every config failure.
   //
-  // THE SAME ORDERING CONSTRAINS WHAT `Tsudoi` CAN EVER CARRY, and it is an
-  // ORDERING fact rather than a surface one, which is why it lives here. The
+  // THE SAME ORDERING CONSTRAINS WHAT A CONFIG CAN EVER READ AT LOAD, and it is
+  // an ORDERING fact rather than a surface one, which is why it lives here. The
   // config factory is invoked by loadConfig -- so it runs BEFORE the connection
   // exists, therefore strictly before `initialize`. Anything the client sends at
-  // initialize is invisible to the factory NO MATTER HOW COMPLETE `Tsudoi`
-  // becomes: a factory-time read would capture the pre-initialize value forever,
+  // initialize is invisible at that moment NO MATTER WHAT the factory is handed:
+  // a factory-time read would capture the pre-initialize value forever,
   // silently, which is presence wearing absence's clothes.
   //
-  // Hence workspaceFolders is carried on `RequestContext`, where the stale
-  // capture is unrepresentable rather than merely documented. FORECLOSED, and
-  // what would UN-foreclose it: adding workspaceFolders to `Tsudoi`. Additive,
-  // so the door is deferred rather than welded -- but a comment would be the
-  // only guard, and this project prefers foreclosing a failure to detecting it.
+  // THE FACTORY IS NOW HANDED NOTHING AT ALL, which strengthens this rather than
+  // retiring it: since PBI-44 `TsudoiConfigFactory` takes no parameter, so the
+  // stale capture has no channel to arrive through and the failure is
+  // FORECLOSED rather than deferred -- this file's own long-stated preference,
+  // arriving. workspaceFolders is carried on `RequestContext` for the same
+  // reason and by the same argument.
+  //
+  // WHAT WOULD UN-FORECLOSE IT is now a TYPE edit rather than a field addition:
+  // giving that factory type a parameter again. Additive and therefore
+  // non-breaking, so the door is deferred rather than welded -- and the guard is
+  // a comment AT THAT TYPE, where the edit would be made, rather than here.
   startServer(await loadConfig(process.argv.slice(2)), documents, tsudoi);
 } catch (error) {
   if (!(error instanceof ConfigError)) {

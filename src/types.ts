@@ -262,6 +262,27 @@ export interface DocumentStore {
   values(): Iterable<TextDocument>;
 }
 
+/**
+ * WHAT A CONFIG AUTHOR CAN REACH THAT IS NOT PER-REQUEST, reached THROUGH
+ * `RequestContext.tsudoi` and no longer handed to anything else.
+ *
+ * ITS JUSTIFICATION UNDER THE `rule for a new name` HAD TO BE REWRITTEN, and
+ * recording why is the point: this name used to be published because THE
+ * EXAMPLE COULD NOT BE WRITTEN WITHOUT IT -- every config named it to declare
+ * the factory parameter. That parameter is gone, so NO example and NO README
+ * snippet names `Tsudoi` any more, and the old argument would now argue for
+ * UNPUBLISHING it.
+ *
+ * IT STAYS FOR A DIFFERENT AND STRONGER REASON: it is STRUCTURALLY REQUIRED BY
+ * `RequestContext`, which declares `readonly tsudoi: Tsudoi` and IS named by
+ * every extracted handler. A name a published type refers to cannot be withheld
+ * -- withholding it would leave a member no author could write the type of.
+ *
+ * THE DISTINCTION IS WORTH THE PARAGRAPH: `could the example be written without
+ * it` is a question about CONVENIENCE and can go false when an example changes,
+ * as it just did; `is it reachable from a published type` is a question about
+ * COHERENCE and cannot.
+ */
 export interface Tsudoi {
   readonly documents: DocumentStore;
 }
@@ -527,4 +548,39 @@ export type TsudoiConfig = {
   }>;
 };
 
+/**
+ * THE CONFIG'S DEFAULT EXPORT, AND IT TAKES NOTHING.
+ *
+ * IT TOOK A `Tsudoi` UNTIL PBI-44, and what removed it was not tidiness: 30 of
+ * the 32 function configs in this repository wrote that parameter
+ * underscore-prefixed and never used it, which is the repository's own
+ * admission that tsudoi was handing an author a handle with nowhere to send
+ * anything from. The store is reached through `RequestContext.tsudoi` instead,
+ * where it is per-request and live.
+ *
+ * A PARAMETER ADDED BACK HERE RE-CREATES A FORECLOSED FAILURE, and this is the
+ * site where that edit would be made, which is why the hazard is stated here
+ * rather than only at src/cli.ts. loadConfig calls this factory BEFORE the
+ * connection exists, therefore strictly before `initialize` -- so anything read
+ * from a parameter here would capture the PRE-INITIALIZE value forever,
+ * silently, however complete the thing handed in became. That is presence
+ * wearing absence's clothes, and with no parameter it is UNREPRESENTABLE rather
+ * than merely documented.
+ *
+ * WHAT WOULD LEGITIMATELY REVERSE IT, evidence-shaped so it is checked rather
+ * than re-argued: the subscribe/unsubscribe API this file says `will expose`.
+ * A config subscribes ONCE AT LOAD rather than per request, so the factory is
+ * exactly where that handle would belong. Adding a parameter to a callback type
+ * is non-breaking, so the door is deferred rather than welded -- but whoever
+ * opens it owns the paragraph above.
+ *
+ * NOTHING TYPE-CHECKS AN AUTHOR'S OWN CONFIG AGAINST THIS TYPE. src/config.ts
+ * reaches it only through a cast from `unknown`, so an author who writes the
+ * old shape gets `undefined` and no diagnostic at all. The documented route --
+ * the README quickstart and examples/tsudoi.config.ts -- ANNOTATES A CONST WITH
+ * THIS TYPE, which is what makes a shape change a compile error in their file.
+ * DEFENDED ON THE DOCUMENTED ROUTE, UNDEFENDED ON THE REST: an author who omits
+ * the annotation is not caught and cannot be, and unlike the bypass route at
+ * Sprint 40 there is no rot detector behind this one.
+ */
 export type TsudoiConfigFactory = () => Promise<TsudoiConfig>;

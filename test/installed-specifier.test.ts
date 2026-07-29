@@ -12,10 +12,17 @@ import { exampleSources, type InstalledConsumer, installConsumer } from "./helpe
  */
 const example = exampleSources();
 
-/** What a config author outside this repo writes: no relative path into src/. */
+/**
+ * What a config author outside this repo writes: no relative path into src/.
+ *
+ * THE DOCUMENTED SHAPE, letter for letter -- the annotated const the README
+ * quickstart teaches, type-checked here against the INSTALLED package rather
+ * than against this repository's own sources.
+ */
 const consumerConfig = [
-  'import type { Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";',
-  "export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => Promise.resolve({});",
+  'import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";',
+  "const config: TsudoiConfigFactory = () => Promise.resolve({});",
+  "export default config;",
   "",
 ].join("\n");
 

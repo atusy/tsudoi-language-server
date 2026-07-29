@@ -1,10 +1,18 @@
 import { expect, test } from "bun:test";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
-/** What a config author outside this repo writes: no relative path into src/. */
+/**
+ * What a config author outside this repo writes: no relative path into src/.
+ *
+ * THE DOCUMENTED SHAPE, letter for letter -- the annotated const the README
+ * quickstart teaches. This string is TYPE-CHECKED against the shipped package,
+ * so writing it any other way would leave the route authors are actually told
+ * to take unchecked here.
+ */
 const consumerConfig = [
-  'import type { Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";',
-  "export default (_tsudoi: Tsudoi): Promise<TsudoiConfig> => Promise.resolve({});",
+  'import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";',
+  "const config: TsudoiConfigFactory = () => Promise.resolve({});",
+  "export default config;",
   "",
 ].join("\n");
 

@@ -18,8 +18,9 @@ import type {
  *
  * The folders this session was opened with are EMPTY until `initialize`
  * arrives, which is the only moment a client states them -- and the reason they
- * are read there rather than handed to the config factory, which has already
- * run by then.
+ * are read there rather than at config load, which has already happened by
+ * then. The config factory is handed nothing at all since PBI-44, so this is
+ * now a statement about WHEN rather than about what the factory receives.
  */
 export interface WorkspaceFoldersHandle {
   /**
