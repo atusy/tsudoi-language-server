@@ -86,8 +86,32 @@ export interface InstalledConsumer {
   readonly packageDir: string;
   /** Writes a file into the consumer project, e.g. the config a route names. */
   write(path: string, contents: string): void;
-  /** Type-checks probe sources, keyed by path relative to the consumer root. */
-  typeCheck(files: Record<string, string>): Promise<TypeCheckResult>;
+  /**
+   * Type-checks probe sources, keyed by path relative to the consumer root.
+   *
+   * `overrides` are MERGED OVER `consumerCompilerOptions`, NOT SUBSTITUTED FOR
+   * IT, and the distinction is written here because this project has already
+   * paid for the other semantics: at sprint 22 an oxlint override REPLACED a
+   * rule's options instead of merging them and silently disabled a different
+   * guard, in the file whose whole purpose was guarding. Merging means a probe
+   * that moves ONE option keeps the other six identical to every consumer probe
+   * in the suite, so a red it produces is about the option it moved.
+   *
+   * WHY THE PARAMETER EXISTS AT ALL: a probe whose SUBJECT is a compiler option
+   * cannot take that option from a shared constant. `skipLibCheck` is the case
+   * -- with it on, two specifiers that behave differently for a config author
+   * are indistinguishable here, so a probe about the specifier has to set it
+   * itself.
+   *
+   * A key spelled wrong, or a merge that stopped applying, leaves the probe
+   * running under the shared defaults AND STILL GREEN. Nothing in this helper
+   * can detect that; it is detected by a probe whose perturbation only reddens
+   * when its override is in force.
+   */
+  typeCheck(
+    files: Record<string, string>,
+    overrides?: Record<string, unknown>,
+  ): Promise<TypeCheckResult>;
   /**
    * Starts a server by running a documented command line VERBATIM in the
    * consumer's own directory.
@@ -222,11 +246,14 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
         mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, contents);
       },
-      typeCheck: async (files: Record<string, string>): Promise<TypeCheckResult> => {
+      typeCheck: async (
+        files: Record<string, string>,
+        overrides: Record<string, unknown> = {},
+      ): Promise<TypeCheckResult> => {
         writeFileSync(
           join(consumer, "tsconfig.json"),
           JSON.stringify({
-            compilerOptions: consumerCompilerOptions,
+            compilerOptions: { ...consumerCompilerOptions, ...overrides },
             files: Object.keys(files),
           }),
         );
