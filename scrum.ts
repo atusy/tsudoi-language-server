@@ -77,32 +77,46 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "PULL ONLY. textDocument/diagnostic is served; push (textDocument/publishDiagnostics) is OUT OF SCOPE.",
+            "FIRST SUBTASK, THE WAY THE READINESS GATE WAS: probe whether connection.onRequest STILL ACCEPTS the erased type. If it does not, THE APPROACH NEEDS RETHINKING RATHER THAN PATCHING, and the PO would rather know before subtasks run than after.",
           verification:
-            "MEASURED: DocumentDiagnosticRequest declares ProtocolRequestType with HandlerSignature = RequestHandler, so IT IS A REQUEST -- RequestOnlyConnection is untouched and registerMethods already takes the narrowed handle. Push is deferred by the stakeholder, NOT filed, and the reason not to lose lives at src/notifications.ts.",
+            "MEASURED at Sprint 33: DocumentDiagnosticRequest.type fits NONE of the three entry interfaces -- all pin RequestType's error position to `void`, all three shipped methods declare `void`, and diagnostic declares DiagnosticServerCancellationData. TS2322 at position 2 of the phantom tuple; `unknown` accepts it. RULED: widen to unknown, CONDITIONAL ON THIS PROBE. Booked as THE TABLE'S SECOND STRUCTURAL DEBIT beside P-A, so the ledger keeps carrying costs and not only gains.",
         },
         {
-          criterion: "NO method-specific error type. MethodMap gains nothing.",
+          criterion:
+            "PULL ONLY, AWAITED-ONCE. Push is out of scope; the drive is NOT generator-driven.",
           verification:
-            "diagnostic declares DiagnosticServerCancellationData where hover and completion have void. FORECLOSED, reversible at one token, with the reason: retriggerRequest is a server telling a client its analysis is TRANSIENTLY unavailable, and that needs a config author who can know that -- none has asked to be.",
+            "MEASURED at Sprint 33, falsifying a premise the PO had labelled MEASURED: `DocumentDiagnosticRequest.partialResult` is ProgressType<DocumentDiagnosticReportProgress>, and that is a union of TWO OBJECT TYPES, so `Chunk extends readonly unknown[]` resolves FALSE and the concatenating drive cannot carry it. What WAS measured is that partialResult EXISTS; generator-shaped was INFERRED from it -- THE PROJECT'S SECOND FALSE `MEASURED` LABEL, AND THE PO'S OWN. The semantic half is stronger: the partial channel carries RELATED DOCUMENTS, not more diagnostics for the requested one.",
         },
         {
-          criterion: "Three simplifications are MEASURED BEFORE THEY BECOME CRITERIA, not assumed.",
+          criterion:
+            "FOUR SIMPLIFICATIONS, ALL NOW MEASURED -- and TWO OF THEM TURNED OUT FORCED BY THE PROTOCOL RATHER THAN CHOSEN.",
           verification:
-            "REASONED, all three, and the PO flagged them as such BEFORE rather than after: full reports only, no resultId / unchanged-report caching, and workspace/diagnostic excluded as a SEPARATE REQUEST rather than a variant. DocumentDiagnosticReport's declaration has NOT been read.",
+            '(1) FULL REPORTS ONLY: UnchangedDocumentDiagnosticReport.resultId is REQUIRED and its own comment says a server can only return `unchanged` if result ids are provided -- so no-resultId makes unchanged UNREACHABLE BY CONSTRUCTION, not by tsudoi declining it, and the two halves are ONE decision. Ignoring previousResultId is conforming. (2) workspace/diagnostic EXCLUDED: its capability is CM<"workspace.diagnostics", "diagnosticProvider.workspaceDiagnostics">, so `workspaceDiagnostics: false` IS the switch, costing exactly one un-added entry. (3) relatedDocuments OUT OF SCOPE -- and that is WHY the partial channel would carry nothing, so (3) and the awaited-once drive are ONE decision too. (4) NO method-specific error type; MethodMap gains nothing, DiagnosticServerCancellationData foreclosed with its reason.',
         },
         {
-          criterion: "The weakness is stated in the PBI rather than discovered.",
+          criterion:
+            "interFileDependencies: true, CHOSEN BY TSUDOI -- not a config surface, not a config-supplied contribution.",
           verification:
-            "a client that does not support pull gets NOTHING, where push would reach it. LSP 3.17+. `nvim and VS Code both support it` is REASONED -- A DECISION NOT TO MEASURE, NOT AN INABILITY: this repo has measured a real client before (the workspace-folder trailing-slash finding, MEASURED against nvim) and that harness still exists. Ruling for the first increment: tsudoi does NOTHING when a client that cannot pull connects -- it advertises correctly, the client's capability is legitimate, and a line per session is the noise that makes the one stderr channel useless.",
+            "CHOSEN ON HARM ASYMMETRY, A PROPERTY OF THE TWO ERRORS RATHER THAN OF THE AUDIENCE, and explicitly NOT because it is typical: `true` on a language with no inter-file dependencies costs REDUNDANT PULLS -- visible, a performance cost, borne by the client. `false` on a language that has them leaves A STALE DIAGNOSTIC IN ANOTHER FILE THAT NEVER CLEARS -- SILENT, AND WRONG. Same preference that refuses to synthesise a workspace root from cwd. NOT A PUBLISHED SURFACE: the rule for a ninth needs EVIDENCE not prediction, and the reversibility runs one way -- tsudoi picks now and adding a surface later is ADDITIVE, a surface now and removing it is BREAKING. NOT a config-supplied contribution: that generalises a mechanism for ONE case and would turn methods entries from functions into objects, breaking every existing config. COST NAMED RATHER THAN HIDDEN: tsudoi's likely audience is linter-shaped, so most configs will pay redundant pulls they do not need. REVERSAL, evidence-shaped: a config author who reports redundant pulls, or asks for false.",
+        },
+        {
+          criterion: "diagnosticProvider is advertised ONLY when the config supplies a handler.",
+          verification:
+            "the per-method rule, with its negative control. diagnosticProvider is A FOURTH VALUE SHAPE -- DiagnosticOptions carries two REQUIRED booleans, so neither `true` nor `{}` type-checks, and NEITHER WOULD COPYING COMPLETION'S.",
+        },
+        {
+          criterion:
+            "The weakness is stated rather than discovered: a client that does not support pull gets NOTHING.",
+          verification:
+            "LSP 3.17+. For the first increment tsudoi does NOTHING when such a client connects -- it advertises correctly, the client's capability is legitimate, and a line per session is the noise that makes the one stderr channel useless. `nvim and VS Code both support it` is REASONED -- A DECISION NOT TO MEASURE, NOT AN INABILITY.",
         },
       ],
       status: "ready",
       notes: [
-        "Second use of the generator drive. Ordered after PBI-37 so the table is built against three measured shapes first, and the table LANDED at Sprint 32 -- so this method adds an ENTRY rather than a fourth hand-written registration.",
-        "ITS CAPABILITY SHAPE IS MEASURED NOW AND IT IS THE HARDEST OF THE FIVE, taken at Sprint 32 by that sprint's executor off protocol 3.18.2 (provenance stated because this is a handed measurement): ServerCapabilities:1106 declares `diagnosticProvider?: DiagnosticOptions | DiagnosticRegistrationOptions`, and DiagnosticOptions at protocol.diagnostic.d.ts:50-67 has TWO REQUIRED MEMBERS -- `interFileDependencies: boolean` and `workspaceDiagnostics: boolean` -- plus an optional `identifier`. SO NEITHER `true` NOR `{}` TYPE-CHECKS, and this entry's contributor must DECIDE BOTH BOOLEANS. `workspaceDiagnostics` is forced false by criterion 3's own exclusion of workspace/diagnostic; `interFileDependencies` IS A REAL QUESTION FOR A CONFIG AUTHOR and has no surface to answer it on, which is a refinement question this PBI now owns rather than meets at implementation time.",
-        "THE GENERATOR DRIVE REQUIRES TWO THINGS OF A METHOD THAT PICKS IT, written at driveGenerator in src/methods.ts and repeated here because this is the method that will meet them: its params must carry a partialResultToken (DocumentDiagnosticParams declares PartialResultParams, so this holds) and its chunks must be ARRAYS, since aggregation concatenates them. DocumentDiagnosticReportProgress HAS NOT BEEN READ against that second requirement.",
-        "AND IT INHERITS AN OBLIGATION TO test/fixtures/all-methods.ts: the by-construction prologue tests iterate the table, and a GENERATOR-DRIVEN method added without a handler there reddens the -32800 assertion. That is deliberate and is the fixture's whole point; it is written here so it arrives as a known step rather than as a surprise red.",
+        "THE ESCAPE THE EXECUTOR FOUND AND REFUSED, recorded because they had every incentive not to: `capability: () => {}` compiles and would have unblocked everything BY SILENTLY WITHDRAWING AN ACCEPTED CRITERION (criterion 4's `it advertises correctly`). They also declined to read the protocol's own `uncommon for linters` comment as permission to pick false -- THAT IS DECIDING ALONE WITH EXTRA STEPS, and the comment describes LANGUAGES, the one thing only a config author knows.",
+        "THE BLOCKER WAS STRUCTURAL, NOT PROCEDURAL: requestEntries is a mapped type over Method, so adding the method forces an entry (TS2741) -> a capability contributor -> diagnosticProvider -> BOTH required booleans. THERE IS NO COMPILING PARTIAL INCREMENT.",
+        "THE GENERATOR-DRIVE NOTE IS DELETED, NOT FLAGGED. It told the next executor to expect a red that CANNOT COME, which is worse than an absent note.",
+        "TWICE THIS SPRINT A SIMPLIFICATION THE PO WROTE AS A CHOICE TURNED OUT TO BE FORCED BY THE PROTOCOL'S OWN CONSTRUCTION -- resultId/unchanged, and relatedDocuments/awaited-once. The PO records that pairing as the sprint's cleanest finding.",
       ],
     },
     {
