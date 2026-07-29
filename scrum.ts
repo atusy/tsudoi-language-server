@@ -351,7 +351,7 @@ const scrum: ScrumDashboard = {
     number: 27,
     pbi_id: "PBI-34",
     goal: "The bare-specifier choice at src/types.ts stops being defended by a paragraph saying nothing defends it: a probe stands up its OWN skipLibCheck:false / types:[] tsconfig against the INSTALLED package, and the probe's own ability to go blind is itself defended.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "NONE OF ITS OWN, and that is what makes it structural: every existing consumer.typeCheck caller passes no override and must stay exactly as green as today. That is the whole of its verification.",
@@ -377,10 +377,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE. The property already holds; what is missing is the CHECK, not a fix. Through installConsumer and not typeCheckProbe -- the in-repo arm resolves `default` straight at src/types.ts and cannot observe what ships, which published-artifacts.test.ts already measures directly.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f77b2f2",
+            message:
+              "test: something now backs the bare specifier, and the probe cannot go blind quietly",
+            phase: "green",
+          },
+        ],
         notes: [
           "BORN GREEN, DECLARED IN ADVANCE. Writing it wrong first would produce a red proving something about a typo rather than about what ships.",
+          "IT IS NOT INERT DESPITE BEING BORN GREEN: perturbation P1 -- the repo's own specifier moved to `/node` -- reddens THIS test first, with the node-typing diagnostics. That is the regression it exists for, and it was run.",
         ],
       },
       {
@@ -388,11 +396,26 @@ const scrum: ScrumDashboard = {
         implementation:
           "NONE. ORDER IS LOAD-BEARING AND THE TWO CONTROLS SHARE ONE CONSUMER FOR THAT REASON: control 2's green is satisfied PERFECTLY by a perturbation that never happened, so control 1's red on the same consumer is what proves the edit landed. The replacement asserts it changed the file, and matches the QUOTED specifier so the doc block's backticked mentions of `/node` are not rewritten into the perturbation.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f77b2f2",
+            message:
+              "test: something now backs the bare specifier, and the probe cannot go blind quietly",
+            phase: "green",
+          },
+          {
+            hash: "14fbaeb",
+            message:
+              "test: raise the /node perturbation where it fails, not where it hides the failure",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "BORN GREEN in the sense the DoD sees -- it passes on first run -- but it is the only subtask whose passing carries information, because both halves observe a tree where the difference was actually made.",
           'MECHANISM VERIFIED AT PLANNING, not assumed: tsconfig.build.json sets skipLibCheck:true and types:["node"], so prepack still builds with the specifier at `/node` and installConsumer does not throw through its own pack failure before the probe can record anything.',
+          "THE PLAN'S `ONE CONSUMER` HELD; ITS `IN beforeAll` DID NOT. Perturbation P1 showed the shared consumer must be built ON FIRST USE instead, or the file dies before the headline test reports. The PROPERTY the plan named -- both controls observe ONE tree -- is preserved by memoisation; only the mechanism moved. S13 in its constructive direction.",
+          "THE PLAN'S `asserts it changed the file` BECAME A NAMED Error rather than an expect: the expect printed the entire text of src/types.ts to report that two strings matched, which is a detection that tells a reader nothing about which of the two failure modes occurred.",
         ],
       },
       {
@@ -400,10 +423,36 @@ const scrum: ScrumDashboard = {
         implementation:
           "Replace the first, add one cross-reference sentence to the second. src/types.ts's replacement carries what the probe does NOT cover and the version it was measured clean at; the probe's own fragility and triage live in the probe's doc block, where the maintainer who sees it fire is already looking.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f77b2f2",
+            message:
+              "test: something now backs the bare specifier, and the probe cannot go blind quietly",
+            phase: "green",
+          },
+        ],
         notes: [
           "LANDS IN THE SAME COMMIT AS SUBTASKS 2 AND 3, declared here rather than discovered: the paragraph goes FALSE the moment the FIRST of those tests exists, and no commit in this history may carry a file claiming something false about its own suite. The git hook is not the constraint here -- neither file is scrum.ts.",
+          "A THIRD PROSE CONTRACT WAS TOUCHED THAT THE PLAN DID NOT NAME: src/types.ts said the `/node` arm `exits 1 with ELEVEN diagnostics`. True when written and true when re-measured -- but it sits in the paragraph being rewritten, and the standing rule PREFERS NAMING TO COUNTING because a count falsifies at the next release that adds a line. The count is gone; every diagnostic it counted is still named, with the two files each comes out of.",
+        ],
+      },
+      {
+        test: "NONE -- structural, and inserted rather than planned. The thirteen tests in published-artifacts.test.ts must stay green, which is the whole of its verification.",
+        implementation:
+          "The eight-name list and the source-building helper move from test/published-artifacts.test.ts to test/helpers/published-names.ts, BEFORE the second probe that needs them is written, so no copy ever exists to drift. published-artifacts.test.ts keeps a pointer where the doc block used to introduce them.",
+        type: "structural",
+        status: "completed",
+        commits: [
+          {
+            hash: "1fdab63",
+            message:
+              "test: give the eight published names one home before a second probe needs them",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "ITS DOC BLOCK COULD NOT SAY `more than one file imports this` AT THE COMMIT THAT MOVED IT, because at that commit only one did. Written as the reason it was moved rather than as a claim about the present, which is the same standard subtask 1 was held to.",
         ],
       },
     ],
@@ -411,8 +460,14 @@ const scrum: ScrumDashboard = {
     decisions: [
       "THE FOUR-CELL TABLE WAS RE-MEASURED AT PLANNING RATHER THAN COPIED FROM THE HANDBACK, and the handback's count was WRONG. MEASURED at vscode-languageserver-protocol 3.18.2 (vscode-jsonrpc 9.0.1, vscode-languageserver-types 3.18.0, all three read out of node_modules rather than recalled): all four rows confirmed -- ONLY skipLibCheck:false WITH types:[] discriminates, and `/node` there exits 1. But the handback said SIX diagnostics all inside vscode-jsonrpc/lib/node/main.d.ts; it is ELEVEN across TWO files -- TS2591 for child_process, net and worker_threads plus TS2503 for NodeJS six times in vscode-jsonrpc/lib/node/main.d.ts, and TS2503 for NodeJS twice more in vscode-languageserver-protocol/lib/node/main.d.ts. That matches what src/types.ts has said all along. PBI-34's criteria carry NO count -- criterion 2 says `naming NodeJS or child_process` -- so NOTHING IN THIS DASHBOARD NEEDED AMENDING; the wrong number lived only in prose in flight. Second consecutive sprint where re-measuring instead of copying caught a count.",
       "EVERY SUBTASK IS BORN GREEN, declared at planning rather than found at Review. This increment adds no behaviour: the bare specifier already type-checks with no Node typings reachable, and what is missing is that NOTHING OBSERVES IT. The evidence is therefore entirely in the controls, which is the same shape published-artifacts.test.ts declares about itself.",
-      "PROBE-SCOPED ONLY: skipLibCheck stays TRUE in tsconfig.json and in consumerCompilerOptions. Setting it false repo-wide surfaces the eleven diagnostics through src/'s own `/node` imports and breaks the DoD, so the scope is a requirement rather than a preference.",
+      "PROBE-SCOPED ONLY: skipLibCheck stays TRUE in tsconfig.json and in consumerCompilerOptions. THIS DECISION'S OWN PLANNING TEXT WAS WRONG IN ITS REASON AND IS CORRECTED HERE RATHER THAN QUIETLY REPHRASED. It said setting skipLibCheck false repo-wide `surfaces the eleven diagnostics through src/'s own /node imports`; src/ really does import `/node` in four files, but tsconfig.json carries `types: [\"node\", \"bun\"]`, so those resolve fine. MEASURED: tsc --noEmit exits 1 with FOUR diagnostics, ALL IN @types/bun's OWN DECLARATIONS -- TS2694 in bun-types/globals.d.ts for TextEncoderEncodeIntoResult, and TS2552, TS2552 and TS2304 in bun-types/overrides.d.ts for ConnectionOptions, KeyObject and TLSSocket. The conclusion holds and its ground is BETTER: repo-wide skipLibCheck OFF breaks the DoD on a DEV DEPENDENCY'S declaration quality, which is precisely the fragility the new probe discloses about itself -- demonstrated on this repository before the sprint was closed rather than left as a warning about somebody else's future release.",
       "PLANNING IS A TDD BREAKDOWN, NOT A RE-DERIVATION: PBI-34's three criteria were complete and are not restated here. What this plan adds is the sequencing, which subtasks share a commit, and which are born green.",
+      "SHIPPED in 5e5e088, 1fdab63, f77b2f2 and 14fbaeb. 367 tests green from 363 -- FOUR ADDED, NONE REMOVED OR WEAKENED -- each DoD command run SEPARATELY AND UNPIPED with its exit read directly: bun test 0, oxlint 0 (the two pre-existing require-yield warnings in test/fixtures/ untouched), oxfmt --check . 0, tsc --noEmit 0.",
+      "THE S15 ENTRY FIRED ON THE MEASUREMENT ABOVE AND WAS CAUGHT IN THE SAME TURN: the first repo-wide skipLibCheck run was piped to head and its exit read from ${PIPESTATUS[0]}, WHICH IS EMPTY IN ZSH -- the exact defect that entry records. Re-run unpiped before anything was written down, so nothing false was recorded. Fourth occurrence of that class.",
+      "THREE PERTURBATIONS RUN, each named by the assertion it flips, and ALL THREE FIRED. (P1) src/types.ts moved to `/node` in the repo: the HEADLINE test reddens with TS2591 for child_process and TS2503 for NodeJS, and both controls fail beside it -- the deliberate-error control stays green, correctly, since it is a harness control. (P2) the compiler-option override made INERT: control 1 fails ALONE while the other three pass, which is exactly what install.ts's doc block claims the plumbing is defended by. (P3) the perturbation made a NO-OP -- read the source, compute the replacement, never write it: control 1 fails ALONE and CONTROL 2 PASSES, which is the measured demonstration that control 2's green is satisfied by a perturbation that never happened and is why the two share one consumer.",
+      "P1 EXPOSED A REAL DEFECT IN THIS SPRINT'S OWN FIRST DESIGN, and it is the most useful thing the sprint found. Building the perturbed consumer in beforeAll meant that with src/types.ts ALREADY at `/node` -- the regression the file exists to catch -- the replacement found nothing to move and threw, taking the WHOLE FILE DOWN BEFORE ANY TEST RAN. The suite went red naming a HELPER; the test that owns the hazard never reported and the diagnostic that names the cause was never printed. S4's clause exactly: it flipped at an EARLIER assertion than the headline claim. Rebuilt as a memoised build-on-first-use, measured both ways, and the guard became a NAMED Error rather than an expect that printed src/types.ts in full to say two strings were equal.",
+      "THE EIGHT-NAME LIST WAS MOVED TO test/helpers/published-names.ts BEFORE THE SECOND PROBE WAS WRITTEN, so no copy ever existed. Unplanned and structural, committed on its own: a list whose entire job is to DISAGREE with a src/types.ts that dropped a name is the last thing to keep in two places by hand. Lifetime Rule, applied at the moment the duplication would have been born rather than at the compaction that would have found it.",
+      'WHY consumerCompilerOptions WAS NOT SIMPLY TURNED OFF, MEASURED rather than argued, and recorded at the site because it is the obvious question a reader has: setting skipLibCheck false THERE reddens NOTHING -- the whole of bun test stayed green -- and would also SEE nothing, because `types: ["node"]` is the other half of the pair and cancels it. And `types: []` is what that constant must not have, since the example config reads the filesystem. That is the whole argument for the probe carrying its own tsconfig, and it is now written where the constant lives.',
     ],
   },
   retrospectives: [
