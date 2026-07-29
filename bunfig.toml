@@ -28,12 +28,15 @@
 # `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>`
 # all preload this ONCE, so the single-file bypass the PBI named does not
 # exist. But bun discovers bunfig.toml relative to the CURRENT WORKING
-# DIRECTORY and does NOT search upward, so `cd test && bun test` runs all 444
-# tests with no build at all. PBI-35 required staleness to be IMPOSSIBLE rather
-# than handled; on that one route it is merely handled, by the dist/-versus-
-# src/types.ts comparison in test/package-shape.test.ts -- which is why that
-# test is still there and was NOT deleted under the authorisation the PBI
-# carried. Adding a second bunfig.toml under test/ would not close this: the
-# set of directories someone can stand in has no end.
+# DIRECTORY and does NOT search upward, so `cd test && bun test` RUNS all 444
+# tests with no build at all -- and, measured on a deliberately stale tree, 442
+# of them PASS. PBI-35 required staleness to be IMPOSSIBLE rather than handled;
+# on that one route it is merely handled, by the dist/-versus-src/types.ts
+# comparison in test/package-shape.test.ts, which is the ONLY staleness-
+# specific failure of the two -- the other is that same edit adding a real
+# published name, and reddens identically when the build DOES run. That is why
+# the comparison is still there and was NOT deleted under the authorisation the
+# PBI carried. Adding a second bunfig.toml under test/ would not close this:
+# the set of directories someone can stand in has no end.
 [test]
 preload = ["./test/helpers/build.ts"]
