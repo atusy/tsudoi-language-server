@@ -424,6 +424,21 @@ export class LspSession {
     });
   }
 
+  /**
+   * Ends the server's input, leaving the process itself alone.
+   *
+   * This is the EOF a dying editor produces, reached from the one process that
+   * can produce it deliberately -- the holder of the write end. `dispose` is not
+   * a substitute and measures something else entirely: it SIGKILLs the child, so
+   * the exit code it produces is the signal's, not the server's own.
+   *
+   * Nothing else in this helper closes stdin, which is why every other session
+   * in the suite ends by `exit` or by being killed.
+   */
+  endInput(): void {
+    this.#child.stdin.end();
+  }
+
   waitForExit(): Promise<number | null> {
     return this.#exited;
   }
