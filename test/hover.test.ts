@@ -40,7 +40,7 @@ await Promise.all(runtimes.map(requireRuntime));
 
 const textDocumentSync: TextDocumentSyncOptions = {
   openClose: true,
-  change: TextDocumentSyncKind.Full,
+  change: TextDocumentSyncKind.Incremental,
 };
 
 const uri = "file:///workspace/a.txt";

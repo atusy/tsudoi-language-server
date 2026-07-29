@@ -147,9 +147,21 @@ export function startServer(
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
       // never sees a document however correct its own code is.
-      // Full, not Incremental: the client resends the whole buffer, so no
-      // position/offset machinery is needed to answer getText().
-      textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
+      //
+      // INCREMENTAL, AND THIS LINE IS THE WHOLE OF WHAT AN EDITOR READS: a
+      // client sends what it was told the server accepts, so announcing Full
+      // keeps the whole buffer going onto stdio at every keystroke however
+      // well the store applies ranges. It used to say Full because the offset
+      // arithmetic was tsudoi's to write and was deliberately not written --
+      // WHEEL-AVOIDANCE BY SCOPE REDUCTION -- and the store now sits on
+      // upstream's TextDocument, which removes the reason for the reduction.
+      //
+      // THE ORDER MATTERS AND IT IS A CORRECTNESS REQUIREMENT, NOT A
+      // PREFERENCE: this value may never move ahead of the store's ability to
+      // apply what it invites. A commit advertising Incremental over a store
+      // that read one change per notification would corrupt every buffer a
+      // client edited, silently, on the client's first keystroke.
+      textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
     };
     // Per-method and spelled out, not derived from the shape of `methods`: a
     // client is entitled to send whatever it was told about, so each capability
@@ -224,8 +236,9 @@ export function notificationEntries(
       // client is ready to serve` outside a serving session says nothing.
       gate: "lifecycle",
     },
-    // The three sync notifications are pure delegation: what a full-sync buffer
-    // means is documents.ts's business, and none of them answers the client.
+    // The three sync notifications are pure delegation: what a change event
+    // means -- a range to splice in or a whole buffer to replace -- is
+    // documents.ts's business, and none of them answers the client.
     {
       type: DidOpenTextDocumentNotification.type,
       handler: (params) => documents.open(params),

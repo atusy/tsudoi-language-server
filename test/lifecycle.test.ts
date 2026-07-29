@@ -19,14 +19,19 @@ for (const runtime of runtimes) {
     // didOpen/didClose at all, so an equality assertion is the only kind that
     // catches its loss. hoverProvider and completionProvider are here because
     // this file drives examples/tsudoi.config.ts, which supplies both handlers.
-    test("initialize returns a result naming tsudoi, advertising full-sync textDocumentSync, hoverProvider and completionProvider", async () => {
+    //
+    // THE SYNC KIND IS WHAT AN EDITOR READS TO DECIDE WHAT TO SEND, so this
+    // value is the whole of the editor-user-facing half of incremental sync:
+    // announce Full and a conforming client keeps putting the whole buffer on
+    // stdio at every keystroke however well the store applies ranges.
+    test("initialize returns a result naming tsudoi, advertising incremental textDocumentSync, hoverProvider and completionProvider", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
         expect(result.serverInfo?.name).toBe("tsudoi");
         expect(result.capabilities).toEqual({
-          textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Full },
+          textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
           hoverProvider: true,
           completionProvider: {},
         });
