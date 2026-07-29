@@ -37,9 +37,10 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
  * test/published-artifacts.test.ts measures that difference directly.
  *
  * EVERYTHING HERE IS BORN GREEN, stated plainly rather than dressed up: the
- * specifier already behaves this way, and what was missing is the CHECK. All of
- * this file's evidence is therefore in the two controls at the bottom, which
- * observe a tree where the difference was actually made.
+ * specifier already behaves this way, and what was missing is the CHECK. So the
+ * headline test proves nothing on the day it was written, and the evidence is in
+ * the three tests that follow it: one shows tsc really read the probe, and the
+ * two at the bottom observe a tree where the difference was actually made.
  *
  * WHAT IT DOES NOT COVER. It is the TYPE arm only -- nothing here runs. And it
  * is a claim about the INSTALLED dependency: package.json asks for `^3.17.5`,
