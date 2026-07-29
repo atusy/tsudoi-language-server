@@ -9,8 +9,10 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { fixedEdits } from "./fixtures/formatting-fixed.ts";
+import { replacement } from "./fixtures/formatting-offsets.ts";
 
 const formattingFixed = fixture("formatting-fixed.ts");
+const formattingOffsets = fixture("formatting-offsets.ts");
 // Supplies hover and NOT formatting: a stronger negative than an empty
 // `methods`, because a server advertising from `methods` being non-empty
 // passes the empty fixture and fails this one.
@@ -26,6 +28,15 @@ const textDocumentSync: TextDocumentSyncOptions = {
 };
 
 const uri = "file:///workspace/a.txt";
+
+/**
+ * The buffer the offset fixture formats. Counted here once, in UTF-16 units,
+ * because the expected ranges below are read off these numbers by hand:
+ * `第一行` occupies 0-2, the first `、` sits at 3, the newline at 10, and line 1
+ * opens at 11 -- so the second `、` is at whole-buffer offset 14 and at line 1,
+ * character 3. Those two answers differ, which is the point of the second line.
+ */
+const formattableText = "第一行、こんにちは。\n第二行、さようなら。";
 
 /**
  * What a client sends. `options` is REQUIRED by DocumentFormattingParams and is
@@ -86,6 +97,55 @@ for (const runtime of runtimes) {
         );
 
         expect(result).toEqual(fixedEdits);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE AFFORDABILITY CLAIM, MEASURED HERE RATHER THAN ASSERTED FOR THE
+     * REMAINING FOUR METHODS. A handler emits Positions from whatever OFFSETS
+     * its analysis produced, which is `positionAt` -- a member that did not
+     * exist on this project's document before Sprint 28 put upstream's
+     * TextDocument behind it.
+     *
+     * THE EXPECTED RANGES ARE WRITTEN OUT BY HAND AND ARE NEVER COMPUTED BY
+     * CALLING positionAt. Both sides would otherwise run one function, and two
+     * outcomes -- a correct conversion and a consistently broken one -- would
+     * produce the SAME observation.
+     *
+     * JAPANESE, AND TWO LINES, for two different reasons. Every ASCII buffer
+     * satisfies a byte reading and a UTF-16 reading at once, so a handler
+     * counting bytes is invisible unless the text is multibyte: `第一行` is
+     * three UTF-16 units and nine UTF-8 bytes, so the first edit alone
+     * separates them. And the SECOND edit is on the second line, which is what
+     * a whole-buffer offset that never learned where the lines are gets wrong
+     * -- it would report character 14 rather than line 1, character 3.
+     */
+    test("a handler that knows only offsets emits the Positions the client receives", async () => {
+      const session = LspSession.start(runtime, formattingOffsets);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri, languageId: "plaintext", version: 1, text: formattableText },
+        });
+
+        const result = await session.request<TextEdit[] | null>(
+          "textDocument/formatting",
+          formattingParams(),
+        );
+
+        expect(result).toEqual([
+          {
+            range: { start: { line: 0, character: 3 }, end: { line: 0, character: 4 } },
+            newText: replacement,
+          },
+          {
+            range: { start: { line: 1, character: 3 }, end: { line: 1, character: 4 } },
+            newText: replacement,
+          },
+        ]);
       } finally {
         session.dispose();
       }
