@@ -244,8 +244,14 @@ export function startServer(
   // path is never constructed there and reddens NOTHING. Nor does anything else
   // in the suite cover it: every other session ends by `exit`, which calls
   // process.exit, or by being killed, and neither notices a lingering handle.
-  // MEASURED: an un-unref'd interval on this line reddens FOUR tests out of 389,
-  // all four in that one file. ACCEPTED RATHER THAN CLOSED -- covering the rest
+  // MEASURED: an un-unref'd interval on this line reddens the EOF-exit test and
+  // the SIGKILLed-editor test, ON BOTH RUNTIMES and nothing else in the suite --
+  // every one of them in that one file. THE TESTS ARE NAMED RATHER THAN COUNTED
+  // BECAUSE THE COUNT ALREADY WENT STALE: this block used to read `FOUR tests
+  // out of 389`, and Sprint 31 added tests without touching anything this
+  // paragraph is about, which falsifies a denominator silently. RE-RUN AT SPRINT
+  // 31, after this file was edited, which is the check that an edit here did not
+  // disarm the control. ACCEPTED RATHER THAN CLOSED -- covering the rest
   // means driving a session per handler and waiting for a natural death in each,
   // and the requirement is stated at the top of this block so it reaches the
   // author who is about to write one anywhere in src/.
