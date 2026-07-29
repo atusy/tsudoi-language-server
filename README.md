@@ -36,6 +36,14 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
+A fresh checkout also needs **`bun run prepack` once before `bun test`**. `examples/` import
+`@atusy/tsudoi/types`, which from inside this repository resolves to `dist/types.js`, and
+`dist/` is not committed -- so a clone that has only run `bun install` fails roughly thirty
+tests until it is built. This is an **artifact** precondition rather than an environment one:
+the source tree is not self-consistent until the build runs. The dangerous form of it -- a
+stale `dist/` producing a silent green -- cannot happen, because a test compares `dist/`
+against what `src/types.ts` re-exports and names `bun run prepack` when they disagree.
+
 ## Quickstart
 
 Two directories, side by side:

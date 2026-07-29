@@ -252,6 +252,23 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
   },
   {
+    // Named because it is an ARTIFACT precondition, not an environment one, and
+    // that is the distinction Sprint 25's Review turned on. deno-on-PATH and
+    // `bun install` are things a reader's MACHINE must have; this is the source
+    // tree not being self-consistent until `bun run prepack` runs. MEASURED at
+    // 9501c68: with dist/ absent, `bun test` gives 30 fail / 299 pass, and the
+    // first failure names dist/types.js imported from examples/completion-path.ts.
+    //
+    // WHY DOCUMENTING IT WAS ACCEPTED AS THE FIX rather than removing it: the
+    // repo already documents a loud precondition for `bun test` one paragraph
+    // above, so a precondition that FAILS LOUDLY AND NAMES ITS REMEDY is a
+    // settled shape here. What is NOT acceptable is the silent form -- a stale
+    // dist/ producing a green suite -- and package-shape.test.ts closes that.
+    // Remove that detector and this documentation stops being sufficient.
+    name: "a fresh checkout must run `bun run prepack` before `bun test`",
+    tokens: [/bun run prepack/, /dist\//, /not committed/i],
+  },
+  {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
     // dependency on a cold cache, and a reader without a network gets a failure
     // the README would otherwise have told them nothing about.
