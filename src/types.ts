@@ -235,7 +235,6 @@ export type {
  */
 export type { TextDocument } from "vscode-languageserver-textdocument";
 
-// will expose a function to subscribe/unsubscribe events such as receiving notifications, requests, and responses from the client or submitting them to the client
 /**
  * THE STORE A CONFIG AUTHOR READS, AND WHAT IT HANDS BACK IS LIVE.
  *
@@ -567,12 +566,13 @@ export type TsudoiConfig = {
  * wearing absence's clothes, and with no parameter it is UNREPRESENTABLE rather
  * than merely documented.
  *
- * WHAT WOULD LEGITIMATELY REVERSE IT, evidence-shaped so it is checked rather
- * than re-argued: the subscribe/unsubscribe API this file says `will expose`.
- * A config subscribes ONCE AT LOAD rather than per request, so the factory is
- * exactly where that handle would belong. Adding a parameter to a callback type
- * is non-breaking, so the door is deferred rather than welded -- but whoever
- * opens it owns the paragraph above.
+ * THE DOOR IS DEFERRED RATHER THAN WELDED: adding a parameter to a callback
+ * type is non-breaking, so this can be reversed the day something concrete needs
+ * reversing it -- but whoever opens it owns the paragraph above. NO CANDIDATE IS
+ * NAMED HERE ON PURPOSE. A previous draft cited an API this file had promised
+ * for several sprints and never built, which made a speculation read as a plan;
+ * the stakeholder removed it rather than let it keep standing in for a decision
+ * nobody had taken.
  *
  * NOTHING TYPE-CHECKS AN AUTHOR'S OWN CONFIG AGAINST THIS TYPE. src/config.ts
  * reaches it only through a cast from `unknown`, so an author who writes the
