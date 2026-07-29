@@ -353,7 +353,7 @@ const scrum: ScrumDashboard = {
     number: 26,
     pbi_id: "PBI-33",
     goal: "Why tsudoi does not serve on vscode-languageserver's Connection is readable AT THE LINE THAT WOULD CHANGE IT, in BOTH directions and re-runnable; the two smaller homes are written; and the two withdrawn PBIs stop being custody.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "B1: an extractor takes the doc block IMMEDIATELY PRECEDING `export function createGatedConnection` out of src/notifications.ts and asserts it names four tokens -- `vscode-languageserver 10.1.0`, a `.d.ts` path inside that package, `fillServerCapabilities` and `onShutdown`. THE ONE HONEST RED IN THIS SPRINT: measured before writing anything, `10.1.0`, `fillServerCapabilities` and `onShutdown` appear NOWHERE in src/ or test/, so all four fail today.",
