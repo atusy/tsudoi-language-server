@@ -267,7 +267,64 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 40,
+    pbi_id: "PBI-35",
+    goal: "THE GATE RAN FIRST AND IT WITHDREW THE AUTHORISATION. `bun test` acquires an automatic develop-time build -- bunfig.toml's `[test] preload` runs tsc -p tsconfig.build.json before any test file is loaded -- so criterion 3 is met and a fresh clone is green with no build step. BUT THE BUILD IS SKIPPABLE, MEASURED: bun discovers bunfig.toml relative to the CURRENT WORKING DIRECTORY and does not search upward, so `cd test && bun test` runs all 444 tests with no build at all. Criterion 1's discriminator is `is the build skippable`, not `is the documented route safe`, so STALENESS REMAINS REACHABLE, THE DETECTOR WAS LOAD-BEARING, THE DELETION IN CRITERION 2 IS WITHDRAWN BY ITS OWN TERMS, AND PBI-35 RETURNS TO THE PRODUCT OWNER. What still ships is the build, because criterion 3 stands alone and NOT DELETING SOMETHING REQUIRES NO RULING. The prose that goes false is corrected wherever the claim's words live -- including a clause in the test being KEPT, which no diff on the deleted-line side would reach.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "THE GATE, RUN BEFORE ANY LINE OF THE INCREMENT WAS PLANNED, with its own control taken first. Edit src/types.ts to add a value re-export, run NO build, and ask a probe importing `@atusy/tsudoi/types` whether it sees the new name. CONTROL FIRST, because this tree ships with dist/ ALREADY BUILT and a positive alone would be satisfied by a dist/ that happened to be current: with bunfig.toml moved aside the probe FAILS, printing the stale key list. Then the mechanism, then every invocation form, RE-STALING BETWEEN EACH so no run inherits the previous one's build.",
+        implementation:
+          "bunfig.toml `[test] preload` -> test/helpers/build.ts, which runs the repo's own node_modules/.bin/tsc SYNCHRONOUSLY via execFileSync. Synchronous is not a style choice: test/completion-path.test.ts STATICALLY imports an example that resolves the subpath to dist/types.js, so a build unfinished at module-graph resolution is no build. `[test]` and not the top-level `preload` because several tests spawn `bun` to run the CLI, and a top-level preload would put the compiler in every one of those processes.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PREDICTED BEFORE THE DIFF, per the Sprint-39 standing item, AND THE PREDICTION IS 0/0/0 BECAUSE THE GATE WITHDREW THE ONLY DELETION: `expect(` source lines 0 ADDED, 0 REMOVED, 0 CHANGED; 444 tests, 1266 expect() calls and 31 files ALL UNCHANGED. The prediction I would have made had the authorisation held is recorded so the difference is legible rather than lucky: -1 source line and -1 test for the detector, plus -3 tests and -3 runtime calls but ZERO source lines for the README fact, since that file's assertions live in a LOOP BODY over a facts array. WHAT WOULD FALSIFY THE PREDICTION WITHOUT MOVING A COUNT: retargeting the README fact changes its NAME, and that name is interpolated into three test titles -- three titles move while every number stands still.",
+          "AND THE COUNTS THEMSELVES ARE RE-MEASURED RATHER THAN CARRIED: 444/1266/31 was re-run on this tree with the preload present before anything was predicted about it.",
+        ],
+      },
+      {
+        test: "CRITERION 3, RE-MEASURED RATHER THAN COPIED, because the number the PBI carries was taken at 9501c68 and the suite has grown by a hundred tests since. rm -rf dist, no mechanism, full suite; then rm -rf dist, mechanism, full suite.",
+        implementation:
+          "No code. The measurement is the deliverable, and it replaces `30 fail / 299 pass` with what this tree actually does.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EXPECTED RED on the first half and EXPECTED GREEN on the second. The first half is the fresh-clone shape a `bun install` produces; the second is the same tree with the preload in it.",
+        ],
+      },
+      {
+        test: "THE PROSE THAT GOES FALSE, GREPPED FOR THE CLAIM'S WORDS AND NOT FOR THE PLACES COMMENTS LIVE -- `prepack`, `precondition`, `not committed`, `stale`, `load-bearing`, `built by nothing`, `DETECTS AND DOES NOT BUILD`, `thirty`, `299`, `self-consistent` -- across README.md, src/, test/, examples/, plus FILENAMES and TEST NAMES. A ZERO IS READ AS AMBIGUOUS: clean, or a referent just deleted.",
+        implementation:
+          "README's artifact-precondition paragraph rewritten to say the build is automatic AND to name the one route that skips it. test/readme.test.ts's fact RETARGETED IN PLACE rather than removed -- `dist/` and `not committed` are both STILL TRUE, only `bun run prepack` stops being the remedy -- which is why no test disappears. test/package-shape.test.ts: the KEPT prepack test's note says dist/ is `built by nothing the suite runs`, FALSE the moment bunfig.toml lands, and the detector's own block claims a precondition, a two-shape failure and an OPEN QUESTION about acquiring a build step that this sprint closes. The detector is kept and its guarded route RESTATED NARROWLY: a `bun test` whose cwd is not the repository root.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE SPRINT-38 SHAPE, AND IT IS WHY THE GREP IS NOT OPTIONAL: the falsified clause lives in a test this sprint KEEPS AND DOES NOT OTHERWISE TOUCH, falsified by a file that does not name it. No diff on the changed lines could point at it.",
+          "CONVENTION 8 APPLIED TO THE DETECTOR'S OWN BLOCK: the `SyntaxError: Export named CompletionItemKind` shape and `test/hover.test.ts: 12 pass, 2 fail` are MEASUREMENTS WITH PROVENANCE from a tree that no longer behaves that way from the root. They are marked historical to Sprint 25 rather than silently kept present-tense or silently deleted.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "The agentic-scrum command and its skills (scrum-event-sprint-execution, scrum-team-developer, scrum-dashboard) are not installed in this environment.",
+        impact:
+          "None on the increment. The events are conducted from this dashboard's own record and the standing improvements instead, which is what has happened for every sprint in this thread.",
+        request:
+          "Install the agentic-scrum plugin, or confirm that running these events from scrum.ts alone is the intended arrangement.",
+        status: "waiting_human",
+        notes: [
+          "Carried forward unchanged. No workaround attempted -- there is nothing to work around.",
+        ],
+      },
+    ],
+    decisions: [],
+  },
   retrospectives: [
     {
       sprint: 39,
