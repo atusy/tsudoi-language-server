@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { LspSession } from "./lsp.ts";
 import { repoRoot } from "./spawn.ts";
 import {
   consumerCompilerOptions,
@@ -87,6 +88,22 @@ export interface InstalledConsumer {
   write(path: string, contents: string): void;
   /** Type-checks probe sources, keyed by path relative to the consumer root. */
   typeCheck(files: Record<string, string>): Promise<TypeCheckResult>;
+  /**
+   * Starts a server by running a documented command line VERBATIM in the
+   * consumer's own directory.
+   *
+   * WHY IT IS HERE AT ALL, since a caller could reach LspSession.startCommand
+   * directly: the cwd is the whole point. Module resolution is a property of
+   * the directory a process starts in, and a consumer's directory is the only
+   * place where a config's imports resolve the way a stranger's do. Binding the
+   * two together here is what stops a probe from starting a session in the repo
+   * and believing it measured an install.
+   *
+   * The COMMAND is the caller's, unsplit and unassembled by this helper, for
+   * the reason LspSession.startCommand takes one: a route stated in prose beside
+   * independently built spawn arguments is two things kept equal by hand.
+   */
+  start(command: string): LspSession;
   dispose(): void;
 }
 
@@ -220,6 +237,7 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
         }
         return await runTsc(consumer);
       },
+      start: (command: string): LspSession => LspSession.startCommand(command, consumer),
       dispose,
     };
   } catch (cause) {
