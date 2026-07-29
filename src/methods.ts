@@ -94,6 +94,44 @@ type DriveKind<M extends Method> =
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 
 /**
+ * What a table entry accepts in a request type's ERROR position: ANYTHING,
+ * because that payload is THE PROTOCOL'S AND NOT TSUDOI'S.
+ *
+ * ONE HOME FOR THE REASON, and the alias exists for that rather than for
+ * brevity: three entry interfaces sit at this position and a reader narrowing
+ * one back to `void` would find nothing at the other two.
+ *
+ * IT WAS `void` UNTIL SPRINT 33 AND THAT WAS NOT A CHOICE, it was three methods
+ * that happened to agree. MEASURED at vscode-languageserver-protocol 3.18.2:
+ * hover, completion and formatting each declare `void` there, and
+ * `DocumentDiagnosticRequest` declares `DiagnosticServerCancellationData` -- so
+ * pinning `void` REFUSED THE REAL REQUEST TYPE with TS2322, `Type
+ * 'DiagnosticServerCancellationData' is not assignable to type 'void'`, at
+ * position 2 of `RequestType`'s phantom tuple.
+ *
+ * TSUDOI STILL NAMES NO METHOD-SPECIFIC ERROR TYPE, which is the criterion this
+ * has to be read against: `MethodMap` gains nothing, no handler's return type
+ * mixes an error shape in, and `retriggerRequest` remains foreclosed -- it is a
+ * server telling a client its analysis is TRANSIENTLY unavailable, and that
+ * needs a config author who can know that. None has asked to be.
+ *
+ * BOOKED AS A DEBIT, THE TABLE'S SECOND, so the ledger carries costs and not
+ * only gains: after this an entry may name a request type whose error payload
+ * disagrees with every other entry's and NOTHING OBJECTS. Nothing exercises that
+ * today and nothing checks it.
+ *
+ * WHAT MADE THE WIDENING SAFE TO MAKE WAS A PROBE RUN BEFORE THE METHOD LANDED,
+ * because a widening found unworkable after the rest is a rethink wearing a
+ * patch: `connection.onRequest` still accepts the erased type, `tsc --noEmit`
+ * exit 0. THE PROBE AND ITS CONTROL WERE THROWAWAY AND ARE NOT KEPT, said
+ * plainly because that means they cannot be re-run from the tree -- the control
+ * substituted `ProgressType<unknown>` for `ErasedEntry`'s `type` and failed
+ * TS2769 `No overload matches this call` AT THE `connection.onRequest(` LINE,
+ * which is what shows the call site is checked at all.
+ */
+type EntryErrorPayload = unknown;
+
+/**
  * The chunk a generator-driven method streams, read off `MethodMap` rather than
  * fixed here: the drive is shared, so the payload type may not be one method's.
  */
@@ -111,7 +149,11 @@ type GeneratorChunk<M extends Method> =
  */
 interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
-  readonly type: RequestType<MethodMap[M]["params"], Awaited<MethodMap[M]["result"]>, void>;
+  readonly type: RequestType<
+    MethodMap[M]["params"],
+    Awaited<MethodMap[M]["result"]>,
+    EntryErrorPayload
+  >;
   readonly capability: CapabilityContributor;
 }
 
@@ -137,7 +179,7 @@ interface AwaitedOnceEntry<M extends Method> {
  */
 interface GeneratorDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
-  readonly type: RequestType<MethodMap[M]["params"], unknown, void>;
+  readonly type: RequestType<MethodMap[M]["params"], unknown, EntryErrorPayload>;
   /**
    * What the streamed chunks travel as. On the entry rather than in the drive
    * so the drive names no single method's payload -- `ProgressType` carries no
@@ -236,7 +278,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
  */
 interface ErasedEntry {
   readonly drive: "awaited-once" | "generator-driven";
-  readonly type: RequestType<unknown, unknown, void>;
+  readonly type: RequestType<unknown, unknown, EntryErrorPayload>;
   readonly progress: ProgressType<unknown[]>;
   readonly capability: CapabilityContributor;
 }
