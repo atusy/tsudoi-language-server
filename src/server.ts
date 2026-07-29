@@ -200,6 +200,69 @@ export function startServer(
     lifecycle.shutDown();
   });
 
+  // THIS PROCESS EXITS WHEN ITS EDITOR DIES BECAUSE NOTHING KEEPS THE EVENT LOOP
+  // ALIVE. Not one line here handles stdin closing: the reader above is the only
+  // thing waiting on anything, and when the editor that spawned tsudoi dies its
+  // end of the pipe closes, the reader has nothing left to wait for, the loop
+  // empties and the process ends. MEASURED at bun 1.3.13 and deno 2.9.2: gone
+  // 11ms after the editor is SIGKILLed, with the server's own pid watched by a
+  // process that is no longer its parent.
+  //
+  // SO ANY TIMER, SOCKET, WATCHER OR SUBSCRIPTION ADDED ANYWHERE IN src/ MUST BE
+  // unref()'d. THAT IS A CORRECTNESS REQUIREMENT AND NOT AN OPTIMISATION: an
+  // un-unref'd handle does not slow anything down, it makes tsudoi OUTLIVE THE
+  // EDITOR FOREVER, one orphaned server per crash, and the symptom reaches the
+  // user as a machine that gets slower over a week. A `setInterval` here for a
+  // debounce or a cache sweep is the natural way to cause it.
+  //
+  // WHAT MAKES THAT SURVIVABLE IS THAT IT REDDENS: test/editor-death.test.ts
+  // kills a fake editor and watches this process's pid, and an un-unref'd
+  // interval on this line reddens it on both runtimes. THE PROPERTY IS HELD BY AN
+  // ABSENCE -- of handles -- WHICH IS THE ONLY KIND THAT BREAKS BY ADDING
+  // SOMETHING RATHER THAN BY CHANGING SOMETHING, so nothing in a diff shows it
+  // going. That file is what shows it.
+  //
+  // THE EXIT CODE ON THAT PATH IS NOT DECIDED HERE and is deliberately not
+  // repeated here: the reading is at exitCode() in src/lifecycle.ts, which is the
+  // one place this project's reading of the specification's exit-code sentence
+  // lives.
+  //
+  // AND IF YOU EVER DO WANT A HOOK ON THAT CLOSE, MEASURED SO IT IS NOT
+  // REDISCOVERED THE HARD WAY: `reader.onClose` FIRES ON BUN AND NEVER ON DENO
+  // (bun 1.3.13, deno 2.9.2), so a handler installed there is silently inert on
+  // half the supported runtimes. `process.stdin.on("end", ...)` fires on both.
+  //
+  // THE ONE CASE THIS DOES NOT COVER, RECORDED RATHER THAN FILED, because filing
+  // implies an intent to fix and the only remedy is known TODAY to be
+  // net-negative: FORK WITHOUT EXEC. If the editor forks a child that inherits
+  // the write end of tsudoi's stdin and outlives it, the pipe never closes, no
+  // EOF ever arrives, and tsudoi survives the editor it serves. It is not
+  // hypothetical -- test/editor-death.test.ts builds exactly that situation on
+  // purpose, to prove the mechanism is EOF and not bereavement.
+  //
+  // IT IS UNCOVERED BECAUSE TSUDOI DELIVERS THE SPECIFICATION'S PROPERTY BY A
+  // DIFFERENT MECHANISM THAN THE SPECIFICATION'S. LSP asks a server to exit when
+  // the parent named by `processId` is not alive; tsudoi NEVER READS processId at
+  // all and gets the same outcome from EOF, which is why every session in the
+  // suite can send `processId: null` and still exit. Fork-without-exec is the one
+  // input on which the two mechanisms disagree -- the exact residue of the
+  // substitution, not an arbitrary gap.
+  //
+  // THE TWO FACTS THAT MAKE IT RE-DECIDABLE, so a future reader can reopen it
+  // without re-deriving them. FIRST, a pid poll WOULD close it, and an un-unref'd
+  // one would DESTROY the exit that already works -- MEASURED both ways: an
+  // unref'd parent-pid poll reddens the survives-its-editor test ALONE out of 389
+  // (it makes the server exit for the WRONG REASON), and an un-unref'd handle
+  // reddens the other two and leaves that one green. The remedy trades a case
+  // nobody has reported for the case everybody hits. SECOND, THE PORTABILITY
+  // TRAP, preserved even though no poll is being written, because it is invisible
+  // until it has already shipped: `process.kill(pid, 0)` throws on both runtimes
+  // with OPPOSITE ERRNO SIGNS -- bun 1.3.13 gives name `SystemError`, errno 3,
+  // message `kill() failed: ESRCH: No such process`; deno 2.9.2 gives name
+  // `Error`, errno -3, message `kill ESRCH`. `code === "ESRCH"` is the ONLY
+  // portable discriminator; an implementation testing `errno === 3`, or matching
+  // the message, SILENTLY NEVER FIRES ON DENO and the poll it guards then reports
+  // every parent as alive forever.
   connection.listen();
 }
 
