@@ -59,6 +59,15 @@ for (const runtime of runtimes) {
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
 
+        // THE PRECONDITION, not setup: this config reaches the document store
+        // only through a `RequestContext`, so it must serve one request before
+        // exit or it has nothing to report from. The handle is LIVE, so taking
+        // it before the document exists still sees the document.
+        await session.request<null>("textDocument/hover", {
+          textDocument: { uri },
+          position: { line: 0, character: 0 },
+        });
+
         session.notify("textDocument/didOpen", {
           textDocument: { uri, languageId: "plaintext", version: 1, text: openedText },
         });
@@ -84,7 +93,9 @@ for (const runtime of runtimes) {
           rangeText: "第二",
           wholeText: changedText,
         });
-        expect(session.messagesReceived).toBe(2);
+        // initialize, the priming hover, and shutdown. Notifications produce
+        // no response.
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();

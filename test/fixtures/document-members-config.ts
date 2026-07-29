@@ -27,9 +27,37 @@ const probePosition = { line: 2, character: 0 };
 /** Two characters inside the middle line, so a ranged read cannot be a whole one. */
 const probeRange = { start: { line: 1, character: 0 }, end: { line: 1, character: 2 } };
 
-export default (tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+/**
+ * The store, reached through `RequestContext.tsudoi` during a request and read
+ * at exit. Capture and read are DIFFERENT MOMENTS, which is what keeps this
+ * observation available in sessions the request itself could not survive.
+ */
+let captured: Tsudoi | undefined;
+
+/**
+ * WHAT THIS FIXTURE SAYS WHEN IT WAS NEVER HANDED A CONTEXT, for the reason
+ * given in full at test/fixtures/snapshot-config.ts: an unprimed instrument
+ * printing its ordinary absence report -- here `null` -- would be
+ * indistinguishable from one that ran and found the store empty.
+ *
+ * NOTHING ASSERTS THIS STRING, stated plainly rather than left to be
+ * discovered. The vacuity the sentinel guards is an ABSENCE assertion going
+ * quietly true, and this fixture's one test asserts a NON-EMPTY report -- which
+ * an unprimed run cannot satisfy under any spelling, since readMarkedLine finds
+ * no marked line and throws. So the discrimination is PERMANENT IN THE SUITE
+ * for snapshot-config.ts, where the `toEqual([])` assertions live, and here it
+ * is diagnostic only: it turns a future absence assertion's silent vacuity into
+ * a word in the failure message BEFORE anyone writes one.
+ */
+const unprimedMarker = "TSUDOI_MEMBERS_UNPRIMED";
+
+export default (): Promise<TsudoiConfig> => {
   process.on("exit", () => {
-    const [document] = [...tsudoi.documents.values()];
+    if (captured === undefined) {
+      process.stderr.write(`${unprimedMarker}\n`);
+      return;
+    }
+    const [document] = [...captured.documents.values()];
     // `null` rather than an empty object: a store that held nothing must not be
     // reported as a document whose every member came back falsy.
     const report =
@@ -46,5 +74,15 @@ export default (tsudoi: Tsudoi): Promise<TsudoiConfig> => {
     process.stderr.write(`TSUDOI_MEMBERS ${JSON.stringify(report)}\n`);
   });
 
-  return Promise.resolve({});
+  return Promise.resolve({
+    // THE PRIMING ROUTE. It answers null and writes nothing: this fixture's
+    // one test reads the marked line off stderr and nothing else may land
+    // there.
+    methods: {
+      "textDocument/hover": (context) => {
+        captured = context.tsudoi;
+        return Promise.resolve(null);
+      },
+    },
+  });
 };

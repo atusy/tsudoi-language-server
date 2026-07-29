@@ -24,6 +24,29 @@ export const snapshotMarker = "TSUDOI_SNAPSHOT ";
 export const membersMarker = "TSUDOI_MEMBERS ";
 
 /**
+ * What EITHER fixture writes instead of a report when no request ever handed it
+ * a `RequestContext`, and therefore no store.
+ *
+ * A PRECONDITION THAT DID NOT EXIST BEFORE PBI-44: both fixtures used to be
+ * handed the store by the factory itself, unconditionally, so being unprimed
+ * was unrepresentable. Now the store arrives on a request, and a session that
+ * makes none must not be reportable as one that looked and found nothing --
+ * most of what these fixtures serve is an ABSENCE assertion, and two outcomes
+ * that serialise alike record nothing.
+ *
+ * ONLY THE SNAPSHOT FIXTURE'S SPELLING IS EXPORTED, and the asymmetry is a
+ * ruling rather than an omission. The vacuity this guards is a `toEqual([])`
+ * that stops discriminating, and EVERY SUCH ASSERTION BELONGS TO
+ * snapshot-config.ts; document-members-config.ts is asserted against a
+ * NON-EMPTY report, which an unprimed fixture cannot produce however it
+ * serialises. That fixture carries the same sentinel anyway -- naming its own
+ * string, with a comment saying nothing asserts it -- because the honest
+ * instrument is the same in both, but exporting a constant no test can use
+ * would be a name this suite does not need.
+ */
+export const unprimedSnapshotMarker = `${snapshotMarker.trim()}_UNPRIMED`;
+
+/**
  * The JSON a fixture wrote to stderr under `marker`, parsed.
  *
  * Throws quoting the whole of stderr when the line is absent: a report that

@@ -527,4 +527,4 @@ export type TsudoiConfig = {
   }>;
 };
 
-export type TsudoiConfigFactory = (tsudoi: Tsudoi) => Promise<TsudoiConfig>;
+export type TsudoiConfigFactory = () => Promise<TsudoiConfig>;

@@ -22,7 +22,7 @@ try {
   // what would UN-foreclose it: adding workspaceFolders to `Tsudoi`. Additive,
   // so the door is deferred rather than welded -- but a comment would be the
   // only guard, and this project prefers foreclosing a failure to detecting it.
-  startServer(await loadConfig(process.argv.slice(2), tsudoi), documents, tsudoi);
+  startServer(await loadConfig(process.argv.slice(2)), documents, tsudoi);
 } catch (error) {
   if (!(error instanceof ConfigError)) {
     throw error;

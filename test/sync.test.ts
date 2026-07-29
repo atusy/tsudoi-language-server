@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { readSnapshot, snapshotMarker } from "./helpers/snapshot.ts";
+import { readSnapshot, snapshotMarker, unprimedSnapshotMarker } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
 
 const snapshotConfig = fixture("snapshot-config.ts");
@@ -29,6 +29,27 @@ function didOpen(documentUri: string, text: string): unknown {
   return { textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text } };
 }
 
+/**
+ * Hands the config a `RequestContext`, which is the ONLY route by which it can
+ * reach the document store at all: the factory is now passed nothing.
+ *
+ * SENT EARLY, right after `initialize`, for two reasons. The store handed over
+ * is LIVE, so a handle taken before any didOpen still reports everything that
+ * arrives afterwards -- and taking it early leaves each test's `shutdown` as
+ * the sole ordering barrier its comments describe, rather than quietly adding a
+ * second one between the notifications and the read.
+ *
+ * IT IS A PRECONDITION, NOT SETUP. Delete it from any test below and that
+ * test's snapshot assertion does not merely fail -- see the pair at the bottom
+ * of this file for what stops it passing vacuously instead.
+ */
+async function prime(session: LspSession): Promise<void> {
+  await session.request<null>("textDocument/hover", {
+    textDocument: { uri },
+    position: { line: 0, character: 0 },
+  });
+}
+
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // A CHANGE WITH NO RANGE IS THE WHOLE BUFFER, AND INCREMENTAL SYNC STILL
@@ -42,6 +63,7 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
+        await prime(session);
 
         session.notify("textDocument/didOpen", didOpen(uri, openedText));
         session.notify("textDocument/didChange", {
@@ -61,9 +83,13 @@ for (const runtime of runtimes) {
           { uri, languageId: "plaintext", version: 4, text: changedText },
         ]);
 
-        // Notifications produce no response, so exactly two messages should
-        // ever have crossed stdout: the initialize and shutdown responses.
-        expect(session.messagesReceived).toBe(2);
+        // Notifications produce no response, so exactly three messages should
+        // ever have crossed stdout: the initialize, priming-hover and shutdown
+        // responses. The hover is here because the config reaches its store
+        // only through a `RequestContext`; the count is stated as what the
+        // session ASKED FOR, so a server answering a notification would still
+        // be caught.
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
@@ -90,6 +116,7 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
+        await prime(session);
 
         session.notify("textDocument/didOpen", didOpen(uri, openedText));
         session.notify("textDocument/didChange", {
@@ -118,7 +145,7 @@ for (const runtime of runtimes) {
             text: "やあ、宇宙。\n二行目も日本語です。",
           },
         ]);
-        expect(session.messagesReceived).toBe(2);
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
@@ -134,6 +161,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
         session.notify("textDocument/didOpen", didOpen(uri, largeText));
 
         await session.request<null>("shutdown", null);
@@ -152,6 +180,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
         session.notify("textDocument/didOpen", didOpen(uri, openedText));
         session.notify("textDocument/didClose", { textDocument: { uri } });
 
@@ -160,7 +189,7 @@ for (const runtime of runtimes) {
         expect(await session.waitForExit()).toBe(0);
 
         expect(readSnapshot(session.stderr)).toEqual([]);
-        expect(session.messagesReceived).toBe(2);
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
@@ -171,6 +200,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
 
         // The change and the close name DIFFERENT unopened documents on
         // purpose: closing the one that was changed would hide a change that
@@ -195,7 +225,7 @@ for (const runtime of runtimes) {
           return line !== "" && !line.startsWith(snapshotMarker);
         });
         expect(noise).toEqual([]);
-        expect(session.messagesReceived).toBe(2);
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
@@ -214,6 +244,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
         session.notify("textDocument/didOpen", {});
 
         await session.request<null>("shutdown", null);
@@ -226,7 +257,7 @@ for (const runtime of runtimes) {
         expect(session.stderr).toContain("Notification handler 'textDocument/didOpen' failed");
         // Nothing was stored, so the throw happened rather than being tolerated.
         expect(readSnapshot(session.stderr)).toEqual([]);
-        expect(session.messagesReceived).toBe(2);
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
@@ -237,6 +268,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
         session.notify("textDocument/didOpen", didOpen(uri, "first"));
         session.notify("textDocument/didOpen", didOpen(otherUri, "second"));
         session.notify("textDocument/didClose", { textDocument: { uri } });
@@ -250,8 +282,59 @@ for (const runtime of runtimes) {
         expect(readSnapshot(session.stderr)).toEqual([
           { uri: otherUri, languageId: "plaintext", version: 1, text: "second" },
         ]);
-        expect(session.messagesReceived).toBe(2);
+        expect(session.messagesReceived).toBe(3);
         expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE PAIR THAT KEEPS EVERY `toEqual([])` ABOVE FROM GOING VACUOUS, and it
+     * measures a DIFFERENT AXIS from the empty-versus-non-empty pairing those
+     * assertions already have: this one is UNPRIMED INSTRUMENT against
+     * PRIMED-AND-FOUND-NOTHING. A test elsewhere reporting a non-empty store
+     * says nothing about whether the fixture was primed in the tests asserting
+     * absence.
+     *
+     * THE HAZARD IS NEW, AND IT IS THIS SPRINT'S OWN: the factory used to be
+     * handed the store unconditionally, so an unprimed instrument was
+     * unrepresentable and this pair would have had nothing to discriminate.
+     * Now `prime` is a precondition, and deleting it from any test above must
+     * not be able to turn that test's absence assertion into a pass.
+     *
+     * TWO TESTS RATHER THAN ONE: each arm is the FIRST assertion of its own
+     * test, so neither can be masked by the other stopping the run early.
+     */
+    test("a session that primes nothing reports the unprimed state, not an empty store", async () => {
+      const session = LspSession.start(runtime, snapshotConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        // NO prime(session) HERE -- that absence IS the test.
+        await session.request<null>("shutdown", null);
+        session.notify("exit", null);
+        await session.waitForExit();
+
+        // Not reportable as a store at all: readSnapshot finds no marked line
+        // and throws quoting stderr, which puts the word below in the message.
+        expect(() => readSnapshot(session.stderr)).toThrow();
+        expect(session.stderr).toContain(unprimedSnapshotMarker);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    test("a primed session that stored nothing reports an empty store, not the unprimed state", async () => {
+      const session = LspSession.start(runtime, snapshotConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        await prime(session);
+        await session.request<null>("shutdown", null);
+        session.notify("exit", null);
+        await session.waitForExit();
+
+        expect(readSnapshot(session.stderr)).toEqual([]);
+        expect(session.stderr).not.toContain(unprimedSnapshotMarker);
       } finally {
         session.dispose();
       }

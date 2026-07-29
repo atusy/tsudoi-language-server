@@ -5,15 +5,44 @@ import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
 /**
  * Reports, at process exit, what the CONFIG AUTHOR's `tsudoi.documents` holds.
  *
- * The factory captures `tsudoi` exactly as a real config would, then prints the
- * store from an exit handler -- the only moment a test outside the process can
- * observe a store that has no wire representation of its own. Reading it here,
- * rather than from a server-side hook, is what makes the assertion about the
- * store the config sees rather than one the server happens to keep.
+ * The store is reached through `RequestContext.tsudoi`, captured by a handler
+ * and read from an exit handler -- the only moment a test outside the process
+ * can observe a store that has no wire representation of its own. Reading it
+ * here, rather than from a server-side hook, is what makes the assertion about
+ * the store the config sees rather than one the server happens to keep.
+ *
+ * CAPTURE AND READ ARE DIFFERENT MOMENTS, and that is what lets this fixture
+ * still report for the two sessions no request can reach: the capture happens
+ * during a PRE-shutdown request, while the read happens at exit. A
+ * post-shutdown or pre-initialize notification is refused long after the
+ * handle was taken, so lifecycle refusal never enters the observation.
  */
-export default (tsudoi: Tsudoi): Promise<TsudoiConfig> => {
+let captured: Tsudoi | undefined;
+
+/**
+ * WHAT THIS FIXTURE SAYS WHEN IT WAS NEVER HANDED A CONTEXT AT ALL.
+ *
+ * A PRECONDITION THAT DID NOT EXIST BEFORE: the factory used to be handed the
+ * store unconditionally, so it could not fail to be primed. Now it can, and an
+ * unprimed session left to print `[]` would be INDISTINGUISHABLE from a
+ * session that was primed and found the store empty -- which is most of the
+ * assertions this fixture serves. Two outcomes producing one observation
+ * record nothing, so the unprimed state is named instead.
+ *
+ * DELIBERATELY NOT PREFIX-COMPATIBLE with the snapshot line: the marker the
+ * tests read ends in a SPACE, so no reader mistakes this for a store that was
+ * read, and `readMarkedLine` throws quoting the whole of stderr -- which puts
+ * this word in the failure message.
+ */
+const unprimedMarker = "TSUDOI_SNAPSHOT_UNPRIMED";
+
+export default (): Promise<TsudoiConfig> => {
   process.on("exit", () => {
-    const documents = [...tsudoi.documents.values()].map((document) => ({
+    if (captured === undefined) {
+      process.stderr.write(`${unprimedMarker}\n`);
+      return;
+    }
+    const documents = [...captured.documents.values()].map((document) => ({
       uri: document.uri,
       languageId: document.languageId,
       version: document.version,
@@ -22,5 +51,17 @@ export default (tsudoi: Tsudoi): Promise<TsudoiConfig> => {
     process.stderr.write(`TSUDOI_SNAPSHOT ${JSON.stringify(documents)}\n`);
   });
 
-  return Promise.resolve({});
+  return Promise.resolve({
+    // THE PRIMING ROUTE, and hover rather than `completionItem/resolve`
+    // because a config supplying resolve without completion is refused at
+    // load. It answers null and writes nothing: every session using this
+    // fixture asserts on stderr, and protocol.test.ts asserts that tsudoi
+    // itself said nothing there.
+    methods: {
+      "textDocument/hover": (context) => {
+        captured = context.tsudoi;
+        return Promise.resolve(null);
+      },
+    },
+  });
 };

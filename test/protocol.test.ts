@@ -257,6 +257,14 @@ for (const runtime of runtimes) {
         try {
           await session.request("initialize", initializeParams);
           session.notify("initialized", {});
+          // CAPTURE AND READ ARE DIFFERENT MOMENTS, and that is what keeps
+          // this observation available at all: the config takes its store
+          // handle here, BEFORE shutdown, while the report is written from the
+          // exit handler afterwards. The post-shutdown refusal below therefore
+          // never touches the instrument -- and without this request the
+          // fixture reports UNPRIMED rather than an empty store, which is what
+          // stops the assertion below passing for the wrong reason.
+          await session.request<null>("textDocument/hover", hoverParams(0, 0));
           await session.request<null>("shutdown", null);
           // WELL-FORMED, and after shutdown: the handler would succeed if it
           // ran, so an empty store means the notification was dropped rather
@@ -280,6 +288,13 @@ for (const runtime of runtimes) {
         // The PAIR, permanent: the same tsudoiLines measurement in a session
         // where a notification handler really does fail. Without it, `zero
         // tsudoi: lines` would also pass against a stderr nobody ever reads.
+        //
+        // NEITHER SESSION IS PRIMED, deliberately, and it is the one place in
+        // this file where that is true. This test reads no store: both
+        // assertions are about what TSUDOI said, and the fixture's own line --
+        // its unprimed report, here -- is excluded by tsudoiLines either way.
+        // Priming them would add a request to a measurement about stderr and
+        // buy nothing.
         const noisy = LspSession.start(runtime, snapshotConfig);
         const quiet = LspSession.start(runtime, snapshotConfig);
         try {
@@ -321,6 +336,11 @@ for (const runtime of runtimes) {
 
           await session.request("initialize", initializeParams);
           session.notify("initialized", {});
+          // The store handle, taken after initialize because a request sent
+          // before it is refused -32002. The didOpen above was dropped long
+          // before this ran, so an empty store here is the drop rather than a
+          // fixture that was never handed anything.
+          await session.request<null>("textDocument/hover", hoverParams(0, 0));
           await session.request<null>("shutdown", null);
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
