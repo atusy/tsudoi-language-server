@@ -39,34 +39,98 @@ const scrum: ScrumDashboard = {
 
   product_backlog: [
     {
-      id: "PBI-43",
+      id: "PBI-44",
       story: {
-        role: "tsudoi maintainer",
-        capability: "have a capability contributor be order-independent instead of order-dependent",
+        role: "config author",
+        capability:
+          "read an example where the server reports a broken path and enriches the completion item I highlight",
         benefit:
-          "the ordering hazard stops existing rather than staying observable, and two undefended defensive behaviours dissolve into one",
+          "the shape worth copying shows diagnostics and resolve, not only the two methods tsudoi answered first",
       },
       acceptance_criteria: [
         {
           criterion:
-            "completion's contributor MERGES rather than assigns, and the same capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
+            "The example is EXECUTED by the suite, with BOTH negative controls: breaking its import reddens a named assertion, and breaking a handler's return reddens a named assertion.",
           verification:
-            "THE PO'S OWN HEDGE, stated because they did not have the code in front of them and have been wrong on shapes repeatedly. This measurement is the PBI's premise, not its epilogue.",
+            "MEASURED constructible. The filesystem diagnostic CARRIES ITS OWN PAIRED PRESENCE IN ONE DOCUMENT -- the missing path flagged, the existing one not -- which is structurally better than a separate pair.",
         },
         {
-          criterion: "P1 becoming unconstructible is the DELIVERABLE, not a loss.",
+          criterion:
+            "test/lifecycle.test.ts's pin moves: THE TITLE, THE toEqual AND THE COMMENT. One source edit, TWO runtime assertions.",
           verification:
-            "S11: a vocabulary with three outcomes defaulted to the pessimistic reading and reported A DESIGN SUCCESS IN THE LANGUAGE OF A COVERAGE GAP. MAKING A HAZARD IMPOSSIBLE OUTRANKS KEEPING IT OBSERVABLE. The executor declined this tidy on the ground that it would dissolve the constraint rather than check it; THE PO RULED THE REASONING INVERTED.",
+            "A DELIBERATE CHANGE TO A PINNED ARTIFACT. GREPPED, not recalled: it is THE ONLY exact-equality pin on the demo config; ten other capability toEqual sites were verified BY READING THE START ARGUMENT to drive fixtures instead.",
         },
         {
-          criterion: "The P2 debit closes as a consequence rather than being addressed separately.",
+          criterion:
+            "install.ts's exampleSources() gains the new module -- AND THE CRITERION NAMES THE FAILURE MODE.",
           verification:
-            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. That two-for-one is a stronger argument than either half alone.",
+            "omitting it fails the published-artifacts probes IN A WAY THAT LOOKS LIKE A RESOLUTION BUG and would be misdiagnosed. Named here so it is not.",
+        },
+        {
+          criterion:
+            "README's file table moves, and `Copy all four` -- A NUMBER IN PROSE -- is replaced by a form that does not count.",
+          verification:
+            "prefer-naming-to-counting reaching the README, and THE CHEAPEST POSSIBLE INSTANCE of a clause that has caught four wrong counts.",
+        },
+        {
+          criterion:
+            "examples/tsudoi.config.ts's paragraph stating this config supplies no resolve handler becomes FALSE, and is corrected in the same commit.",
+          verification:
+            "the standing rule that a claim falsified by a sprint is corrected in the sprint that falsifies it.",
+        },
+        {
+          criterion:
+            "The resolve second control half is REASONED, NOT MEASURED, and is treated as such.",
+          verification:
+            "whether an item THE EXAMPLE DID NOT PRODUCE can be driven to the handler through the demo config WAS NOT TESTED. If unconstructible, CLASSIFY IT rather than reporting a design outcome in the language of a coverage gap, and state what remains at risk.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "FILESYSTEM, NOT oxlint, AND THE REASON IS COHERENCE RATHER THAN COST. THE EXAMPLE SERVER ALREADY COMPLETES PATHS, so a diagnostic saying THIS PATH DOES NOT EXIST is the same server telling you your path is wrong -- it COMPOSES with what the example already is rather than being bolted on. It clears the bar by THIS REPOSITORY'S OWN PRECEDENT, since completion-path.ts already delegates to the filesystem and that was accepted.",
+        "oxlint RECORDED AS THE RICHER ALTERNATIVE NOT TAKEN: 62 rules, already in this project's Definition of Done, and its output maps onto LSP Diagnostic WITHOUT INVENTION -- but it is A BINARY ON PATH, which changes what a copying reader needs and teaches SUBPROCESS-SPAWNING as the delegation pattern. REVERSAL: someone wanting a real-linter example.",
+        "wordnet-as-spellchecker RULED OUT BY MEASUREMENT, and the framing IS the ruling: it does not hold `the`, `of`, `and`, `is`, `ran` or `files`, because WordNet carries content words and not function words, inflections or plurals. NOT A TOY THAT UNDER-DELIVERS; IT PRODUCES WRONG OUTPUT ON CORRECT INPUT. Under-delivery is acceptable in an example and WRONGNESS IS NOT -- a distinction worth keeping.",
+        "resolve delegates to `stat` on the items path completion ALREADY produces -- the canonical use of the method, expensive detail fetched only for the item the user highlights. Two constraints READ rather than assumed: resolve requires completion to be present (the demo config supplies it), and AN UNRECOGNISED ITEM MUST BE RETURNED UNCHANGED, so the handler must key off what it put on the item itself.",
+        "TWO METHODS IN ONE PBI because they share the same pin move, the same domain and NO RISK. The criteria stay separable, and IF EITHER NEGATIVE CONTROL TURNS OUT UNCONSTRUCTIBLE THEY SPLIT.",
+      ],
+    },
+    {
+      id: "PBI-45",
+      story: {
+        role: "config author",
+        capability: "read an example that formats a document by delegating to a real formatter",
+        benefit:
+          "the example demonstrates the method against something that actually formats, not a two-space toy",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "MEASURE BEFORE PLANNING, NOT DURING: does adding prettier collide with install.ts's wordnet control?",
+          verification:
+            "that doc block describes wordnet as THE ONLY GENUINELY-MISSING-PACKAGE CASE THE HARNESS STILL DETECTS. If prettier collides, THIS PBI'S SHAPE CHANGES RATHER THAN A DETAIL OF IT, and a plan whose spine is unmeasured is the S13 failure -- the same rule as PBI-30's spike and the request table's readiness gate. CHEAP: install prettier into a probe consumer, check the wordnet control STILL FIRES AND STILL NAMES wordnet.",
+        },
+        {
+          criterion:
+            "A PROSE OBLIGATION FOLLOWS EITHER WAY: that doc block's `only such case` claim goes false whether or not the controls collide.",
+          verification:
+            "the grep entry's class again -- a claim falsified by an edit in a file it does not name.",
+        },
+        {
+          criterion:
+            "The example is EXECUTED with BOTH negative controls, and the same pin, exampleSources and README obligations as PBI-44.",
+          verification:
+            "MEASURED discriminating output at prettier 3.9.6, identical on bun 1.3.13 and deno 2.9.2: `const x = { a: 1, b: 2 };` with the function body reflowed. A pass-through or an empty edit list fails on it.",
+        },
+        {
+          criterion:
+            "prettier SHIPS ITS OWN TYPE DECLARATIONS, so there is NO counterpart to examples/wordnet.d.ts -- recorded as WHY the new file set's shape differs.",
+          verification: "or a reader will assume an omission.",
         },
       ],
       status: "draft",
       notes: [
-        "FILED AS ITS OWN DRAFT RATHER THAN BOLTED ONTO PBI-40, which is ready and has its own criteria.",
+        "THE STAKEHOLDER'S REVERSAL CONDITION IS MET VERBATIM: the PO wrote `a real formatter to delegate to` at Sprint 31, and prettier is one. REFUSING NOW WOULD BE RENEGING ON THEIR OWN RECORDED CONDITION.",
+        "THE SPLIT SEAM IS THE ONE THAT CHANGES WHAT A CONSUMER INSTALLS VERSUS THE TWO THAT DO NOT. That ISOLATES THE SINGLE UNMEASURED RISK INTO THIS PBI instead of letting two zero-dependency examples carry it. README's examples-install block is EXTRACTED AND EXECUTED, so this changes an executed command where PBI-44 does not.",
       ],
     },
     {
@@ -100,29 +164,34 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-41",
+      id: "PBI-43",
       story: {
-        role: "config author",
-        capability: "read an example that demonstrates more than two of the five methods",
+        role: "tsudoi maintainer",
+        capability: "have a capability contributor be order-independent instead of order-dependent",
         benefit:
-          "the shape worth copying covers what tsudoi actually answers, not the two it answered first",
+          "the ordering hazard stops existing rather than staying observable, and two undefended defensive behaviours dissolve into one",
       },
       acceptance_criteria: [
         {
-          criterion: "DECIDE AT REFINEMENT, AFTER THE LAST METHOD LANDS -- not before.",
+          criterion:
+            "completion's contributor MERGES rather than assigns, and the same capability object results for EVERY config -- INCLUDING one supplying only ONE of the pair.",
           verification:
-            "answering `what should the stakeholder-facing example demonstrate` before the set is complete DECIDES ABOUT AN INCOMPLETE SET.",
+            "THE PO'S OWN HEDGE, stated because they did not have the code in front of them and have been wrong on shapes repeatedly. This measurement is the PBI's premise, not its epilogue.",
         },
         {
-          criterion:
-            "THE CRITERION IS UNCHANGED FROM SPRINT 31: an example exists for a method WHEN THERE IS SOMETHING REAL TO DELEGATE TO.",
+          criterion: "P1 becoming unconstructible is the DELIVERABLE, not a loss.",
           verification:
-            "that was the reversal condition and NOTHING HAS MET IT YET. Whether `diagnostic` does is EXACTLY WHAT THE REFINEMENT SHOULD MEASURE rather than assume. Standing item 6 requires an EXECUTED example with two negative controls, and lifecycle.test.ts pins the demo config's capabilities BY EXACT EQUALITY AND BY NAME IN A TEST TITLE, so adding to it is a deliberate change to a pinned artifact.",
+            "S11: a vocabulary with three outcomes defaulted to the pessimistic reading and reported A DESIGN SUCCESS IN THE LANGUAGE OF A COVERAGE GAP. MAKING A HAZARD IMPOSSIBLE OUTRANKS KEEPING IT OBSERVABLE. The executor declined this tidy on the ground that it would dissolve the constraint rather than check it; THE PO RULED THE REASONING INVERTED.",
+        },
+        {
+          criterion: "The P2 debit closes as a consequence rather than being addressed separately.",
+          verification:
+            "preservation is defensive-and-undefended ONLY BECAUSE completion contributes {}; under a merge it stops being defensive and becomes INTRINSIC. That two-for-one is a stronger argument than either half alone.",
         },
       ],
       status: "draft",
       notes: [
-        "FILED AS A PBI BECAUSE THE PO'S NOTE LIVED ONLY IN A REVIEW VERDICT AND SPRINT DECISIONS, BOTH OF WHICH COMPACT. The Lifetime Rule says it needs a home, and a draft PBI is one. Four methods with no example is a drift worth deciding about rather than discovering.",
+        "FILED AS ITS OWN DRAFT RATHER THAN BOLTED ONTO PBI-40, which is ready and has its own criteria.",
       ],
     },
     {
