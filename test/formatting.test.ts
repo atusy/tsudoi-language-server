@@ -39,8 +39,15 @@ const uri = "file:///workspace/a.txt";
 const formattableText = "第一行、こんにちは。\n第二行、さようなら。";
 
 /**
- * What a client sends. `options` is REQUIRED by DocumentFormattingParams and is
- * passed through to the config author untouched -- tsudoi reads no field of it.
+ * What a client sends. `options` is REQUIRED by DocumentFormattingParams, so it
+ * is here because the params are not well-formed without it.
+ *
+ * WHAT NOTHING HERE ASSERTS, said rather than left to be inferred from the
+ * presence of the field: that `options` REACHES the handler, or reaches it
+ * unchanged. No fixture in this file reads it, so every assertion below passes
+ * against a tsudoi that dropped it on the floor. Asserting it needs a fixture
+ * that echoes the value back -- through stderr, as the document-members fixture
+ * does -- and that was not written, because no criterion of PBI-36 asks for it.
  */
 function formattingParams(): unknown {
   return { textDocument: { uri }, options: { tabSize: 2, insertSpaces: true } };

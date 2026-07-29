@@ -237,13 +237,20 @@ export interface MethodMap {
    * already tells a config author. What would reverse it is an example that
    * must NAME one of them.
    *
-   * MEASURED RATHER THAN ASSUMED, and stated so it can be re-run: a config
-   * importing only `Tsudoi` and `TsudoiConfig`, whose handler annotates
-   * nothing, reads `params.options.tabSize`, calls `document.positionAt` and
-   * returns an object literal `{ range: { start, end }, newText }`, type-checks
-   * at `tsc --noEmit` 0 -- and renaming that `newText` to `newTxt` fails
-   * TS2322 naming the missing property. So the contextual typing is real
-   * rather than a hole that would accept anything.
+   * MEASURED RATHER THAN ASSUMED, AND THE MEASUREMENT IS A FILE RATHER THAN A
+   * RECOLLECTION: test/fixtures/formatting-offsets.ts imports only `Tsudoi` and
+   * `TsudoiConfig`, annotates its handler with nothing, calls
+   * `document.positionAt` and returns object literals `{ range: { start, end },
+   * newText }` -- and the DoD's `tsc --noEmit` type-checks it on every run. So
+   * this paragraph goes stale LOUDLY: add an annotation to that file, or a
+   * protocol import, and the evidence for this ruling is gone with it.
+   *
+   * THAT THE TYPING DISCRIMINATES rather than accepting anything was measured
+   * on a THROWAWAY probe run in the same session and NOT KEPT, which is said
+   * plainly because it cannot be re-run from the tree: renaming a handler's
+   * `newText` to `newTxt` failed TS2322 naming the missing property, and a
+   * handler reading `params.options.tabSize` -- a field NO fixture here touches
+   * -- type-checked without an annotation.
    *
    * MEASURED at vscode-languageserver-protocol 3.18.2, which pins
    * vscode-languageserver-types 3.18.0: `DocumentFormattingRequest.type` is
