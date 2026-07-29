@@ -351,7 +351,7 @@ const scrum: ScrumDashboard = {
     number: 27,
     pbi_id: "PBI-34",
     goal: "The bare-specifier choice at src/types.ts stops being defended by a paragraph saying nothing defends it: a probe stands up its OWN skipLibCheck:false / types:[] tsconfig against the INSTALLED package, and the probe's own ability to go blind is itself defended.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "NONE OF ITS OWN, and that is what makes it structural: every existing consumer.typeCheck caller passes no override and must stay exactly as green as today. That is the whole of its verification.",
