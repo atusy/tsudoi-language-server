@@ -57,9 +57,15 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
-            "Two MEASURED prose contracts this PBI falsifies are corrected in the same commit.",
+            "EVERY PROSE CONTRACT THIS PBI FALSIFIES is corrected by the change that falsifies it, leaving NO WINDOW in which shipped code makes a comment false while the comment still reads as true.",
           verification:
-            "src/server.ts:151 reads `Full, not Incremental: the client resends the whole buffer, so no position/offset machinery is needed` -- WHEEL-AVOIDANCE BY SCOPE REDUCTION, and adoption removes the reason for the reduction. AND test/documents.test.ts's comment scoped `under full sync`, a premise this PBI falsifies. AND the snapshot-versus-live asymmetry on the published surface.",
+            "THE CATEGORY, NOT A LIST, and the count is gone because it went stale INSIDE THIS CRITERION: it read `Two` while its own verification named THREE. Corrected at Sprint 29 planning by grep rather than recall -- the category is EVERY SITE WHOSE PROSE SCOPES BEHAVIOUR TO FULL SYNC OR TO A WHOLE-BUFFER RESEND, and grep found sites in src/ and test/ that a reading had not. The headline is src/server.ts's `Full, not Incremental: the client resends the whole buffer, so no position/offset machinery is needed` -- WHEEL-AVOIDANCE BY SCOPE REDUCTION, and adoption removes the reason for the reduction. THE SAME-COMMIT CLAUSE IS RESTATED AS THE PROPERTY IT PROTECTS per S26, because a mechanism clause was already found unconstructible against this repo's git hook once. PLUS the snapshot-versus-live asymmetry on the published surface, which is ADDITIVE rather than corrective: nothing there is false today, and what is missing is that an author reading RequestContext's snapshot paragraph would reasonably generalise it to documents, which are LIVE.",
+        },
+        {
+          criterion:
+            "A REFERENCE OBTAINED BEFORE A CHANGE REFLECTS THAT CHANGE AFTERWARDS, held by a test rather than by the paragraph that discloses it.",
+          verification:
+            "OWED BY SPRINT 28 AND RULED INTO THIS PBI BY THE PO. Sprint 28 shipped the aliasing correctly and disclosed it at src/documents.ts, but left it UNDEFENDED -- and THIS PBI CHANGES HOW `TextDocument.update` IS CALLED, so a rewrite of that call could flip it back to new-instance semantics with every other test in the suite green. ONE OUTCOME IS REQUIRED, so S7 permits the pin. NEGATIVE CONTROL: rebuilding the map entry with `TextDocument.create` from the updated text leaves the earlier reference stale, and must redden.",
         },
       ],
       status: "ready",
@@ -312,7 +318,78 @@ const scrum: ScrumDashboard = {
     ],
   },
 
-  sprint: null,
+  sprint: {
+    number: 29,
+    pbi_id: "PBI-32",
+    goal: "An editor sends only the part of the buffer that changed: tsudoi advertises Incremental and applies ranged changes AT THE RIGHT OFFSET -- and the two properties that could rot silently underneath that change, correct offset application and the live-reference semantics Sprint 28 introduced, are each held by a test rather than by a paragraph.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A reference obtained from documents.get() BEFORE a change reflects that change afterwards. First and only assertion on the reference's own getText(); the property, not the mechanism.",
+        implementation:
+          "NONE EXPECTED -- BORN GREEN AT HEAD, declared in advance. Sprint 28 already mutates in place, so this cycle installs the gate BEFORE the call it guards is rewritten, which is the whole reason it is first. Its meaning comes from the perturbation, not from its green: rebuild the entry with TextDocument.create from the updated text and the earlier reference must go stale. Travelling in the same commit: src/types.ts states on the PUBLISHED SURFACE that workspace folders are a snapshot of REQUEST START while documents are LIVE, and names the assertion that backs the live half.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IDENTITY IS DELIBERATELY NOT ASSERTED. `before === documents.get(uri)` is the MECHANISM upstream happens to use; the criterion is the PROPERTY, and the property assertion already reddens on every way the mechanism could change -- a new instance leaves the old reference stale whether or not the map is updated. S13 and S7 together: pinning the spelling as well would bind a future upstream that reached the same property differently.",
+        ],
+      },
+      {
+        test: "The same edit sequence sent as RANGED changes and as FULL replacements leaves getText() byte-identical -- and ONE notification in that sequence carries TWO ranged changes IN ONE ARRAY.",
+        implementation:
+          "src/documents.ts hands params.contentChanges to TextDocument.update UNCHANGED instead of rebuilding [{ text }] from the last entry. MEASURED at planning, not reasoned: the protocol's TextDocumentContentChangeEvent[] is assignable to upstream's at tsc --noEmit exit 0, spiked at HEAD and reverted. The empty-contentChanges early return is KEPT -- measured, TextDocument.update([]) BUMPS THE VERSION with no text change, so removing the guard would be an unrequested behaviour change. Same commit: every full-sync-scoped comment this makes false in src/documents.ts, test/documents.test.ts and test/sync.test.ts, including the S16-withdrawn last-not-first sentence.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE TWO-CHANGES-IN-ONE-ARRAY CLAUSE IS LOAD-BEARING AND IS WHY THE S16 WITHDRAWAL IS A BUG FIX RATHER THAN A TIDY-UP: LSP makes each range relative to the state after the PREVIOUS entry in the same array, so `take the last entry` is not merely unjustified under Incremental, it DROPS EDITS. With one change per notification the perturbation `[params.contentChanges.at(-1)]` passes and the test records nothing -- S20 exactly. MEASURED at planning on upstream directly: `abcdef` under [0,3)->`X` then [1,2)->`Y` is `XYef`, where last-only is `aYcdef`.",
+        ],
+      },
+      {
+        test: "PERMANENT NEGATIVE CONTROL: the same sequence with one range SHIFTED to a wrong-but-in-bounds offset produces an EXACT NAMED text, and that text is not the correct one.",
+        implementation:
+          "NONE EXPECTED -- BORN GREEN once the subtask above is green, declared in advance. Pins the named wrong text rather than `not.toBe(correct)`, because `not.toBe` also passes when the store THREW and left the text unchanged, and because upstream CLAMPS out-of-range positions silently -- so the shift is chosen in-bounds.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHAT IT BUYS, and its boundary stated so nobody later reads it as stronger: it is the S6 presence pair for the byte-identical claim -- that assertion observes NO DIVERGENCE, and this one shows the SAME comparison DOES observe divergence when the offset is wrong. It is NOT claimed to be first-to-fail for a store that ignores ranges wholesale; the byte-identical test reddens on that too.",
+        ],
+      },
+      {
+        test: "initialize advertises TextDocumentSyncKind.Incremental. THREE test files already assert textDocumentSync EXACTLY -- test/lifecycle.test.ts inline, test/hover.test.ts and test/completion.test.ts through a shared const -- so this cycle's RED is theirs, and only the EXPECTED VALUE moves: no toEqual is loosened.",
+        implementation:
+          "src/server.ts's capability, plus every full-sync-scoped comment in that file and the lifecycle test NAME that says `full-sync`, in the same commit.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ORDERING STATED AS A PROPERTY RATHER THAN A SEQUENCE: NO COMMIT EXISTS IN WHICH INCREMENTAL IS ADVERTISED WHILE RANGED CHANGES ARE NOT APPLIED. That is what puts the store cycle ahead of this one; the reverse order is a real defect window, not a preference.",
+          "THIS IS THE EDITOR-USER-FACING HALF: what tsudoi says at initialize is what makes an editor stop resending the whole buffer.",
+        ],
+      },
+      {
+        test: "ON THE WIRE, both shapes the protocol permits under Incremental: a change carrying a RANGE reaches the config's store, and a change carrying NO RANGE -- which the protocol still permits -- is still handled.",
+        implementation:
+          "NONE EXPECTED -- BORN GREEN, declared in advance: the no-range half is an existing test in test/sync.test.ts that BECOMES the criterion's test once Incremental is advertised, renamed so it says which property it holds rather than leaving a reader to infer it. The ranged half is new and green after the store cycle. Perturbation for the ranged half: revert the store to last-entry-only.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE RANGE STARTS AFTER A MULTI-BYTE CHARACTER, following this file's own precedent: Position.character is a UTF-16 unit count while Content-Length is a byte count, and a range placed only in ASCII cannot see a layer that confuses them.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "TWO EDITS TO PBI-32 ITSELF, BOTH RECORDED RATHER THAN MADE SILENTLY, and neither is a scope decision. (1) The aliasing gate is written in AS A CRITERION, executing Sprint 28's own `GOES TO PBI-32 AS A CRITERION, NOT AS A GOOD INTENTION` and the Lifetime Rule's second clause. (2) Criterion 3 said `Two MEASURED prose contracts` while ITS OWN VERIFICATION NAMED THREE -- the S27 re-measure-what-you-were-handed entry firing for the third consecutive sprint, and the first time it has caught a criterion contradicting itself in the same field. Replaced by the CATEGORY, since a count is what went stale.",
+      "GREP FOUND MORE FALSIFIED PROSE THAN THE READING DID, which is the Sprint 28 lesson applied at planning instead of as a catch. Sprint 28 verified test/sync.test.ts byte-identical and concluded PBI-32 `still owns both of its prose corrections`; grep says the category is wider than both -- src/server.ts carries a SECOND full-sync claim away from the capability line, test/sync.test.ts carries the same under-full-sync premise as test/documents.test.ts, and test/lifecycle.test.ts says `full-sync` IN A TEST NAME. Named as a category in the criterion; the commits name the sites they touch.",
+      "THE SAME-COMMIT CLAUSE IS CONSTRUCTIBLE HERE AND IS STILL RESTATED AS A PROPERTY. Every prose home is a non-scrum.ts file, so unlike Sprint 26 the git hook does not forbid it -- but S26's ruling is about what the clause MEANS, and each correction travelling with the change that falsifies it satisfies the no-window property MORE VISIBLY than one lump commit would.",
+      "PBI-35'S TRIGGERS CHECKED AT PLANNING, NONE FIRED -- a trigger nobody checks is a trigger that does not exist. No second artifact precondition is being added; the stale-dist detector is untouched and READ rather than recalled -- it compares dist/types.js's value re-exports against `^export \\{...\\} from` matches in src/types.ts, so the prose this sprint adds to that file cannot reach it.",
+      "README GREPPED AND CARRIES NO SYNC-KIND CLAIM, stated as a checked negative rather than by silence, per the S14 standing item on prose beside changed behaviour. What it does document -- the TextDocument members and the mock that adoption broke -- is unaffected by which sync kind is advertised.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 27,
