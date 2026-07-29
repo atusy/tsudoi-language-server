@@ -10,8 +10,7 @@
  * needs is examples/wordnet.d.ts, and a reader copying this must copy that too.
  */
 import { init, lookup } from "wordnet";
-import type { Hover, HoverParams } from "vscode-languageserver-protocol";
-import type { RequestContext } from "@atusy/tsudoi/types";
+import type { Hover, HoverParams, RequestContext } from "@atusy/tsudoi/types";
 
 /**
  * The WordNet database, loaded ON FIRST USE and never twice.

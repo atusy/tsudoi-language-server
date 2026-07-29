@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 
@@ -142,11 +143,25 @@ test("the published surface is the types subpath, compiled, and nothing else", (
 /** The scripts the manifest declares, read at test time like everything else. */
 const scripts = packageJson.scripts as Record<string, string> | undefined;
 
-// The build is a PUBLISH-TIME step, not a develop-time one: prepack runs
-// inside `bun pm pack` and `npm pack` alike (measured), so dist/ is compiled
-// from whatever src/ is present at that moment and can never be stale. A
-// `build` script that a human is trusted to remember would be exactly the
-// staleness this avoids.
+// A PUBLISH-TIME STEP, AND SINCE SPRINT 25 A DEVELOP-TIME ONE TOO. The first
+// half of this note was true when it was written and is no longer the whole
+// truth, so it is corrected here rather than left to read as a promise.
+//
+// UNCHANGED, and it is the half this test asserts: prepack runs inside `bun pm
+// pack` and `npm pack` alike (measured), so the dist/ that is PUBLISHED is
+// compiled from whatever src/ is present at that moment and can never be
+// stale. A `build` script a human is trusted to remember would be exactly the
+// staleness that avoids.
+//
+// WHAT CHANGED, and it is about the REPO's own dist/ rather than the tarball's:
+// examples/completion-path.ts now takes CompletionItemKind -- a VALUE -- from
+// `@atusy/tsudoi/types`, and from inside this repository package
+// self-reference resolves that subpath through the exports map's `import` arm
+// to ./dist/types.js (MEASURED under bun 1.3.13 and deno 2.9.2, discriminated
+// against the `default` arm by writing a marker export into dist/types.js and
+// seeing it appear). So this repo's dist/ is now load-bearing for `bun test`,
+// while remaining gitignored and built by nothing the suite runs. The test
+// below is what says so out loud.
 //
 // REQUIRED PRESENT WITH THIS VALUE, not `scripts equals exactly this`. The
 // equality also forbade every OTHER script, which is not a promise this project
@@ -156,6 +171,64 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // second script takes nothing away from this one.
 test("packing builds, so a stale dist cannot be published", () => {
   expect(scripts?.prepack).toBe("tsc -p tsconfig.build.json");
+});
+
+/**
+ * The VALUE names src/types.ts re-exports, read out of that file rather than
+ * copied: a list held here would agree with a src/types.ts that had dropped one.
+ *
+ * `export type { ... }` is deliberately not matched. Type re-exports leave no
+ * runtime trace, so a declaration-only name has nothing to compare against in
+ * the emitted .js and including it would make the assertion below fail forever.
+ *
+ * THROWS on finding none, for the reason every extractor in this project does:
+ * an empty expectation is satisfied by an empty dist/, which is the exact state
+ * this is here to catch.
+ */
+function valueReExportsOf(source: string): string[] {
+  const names = [...source.matchAll(/^export \{([^}]*)\} from/gm)].flatMap((match) =>
+    (match[1] ?? "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter((name) => name !== ""),
+  );
+  if (names.length === 0) {
+    throw new Error("src/types.ts re-exports no value; this check would assert nothing");
+  }
+  return names.sort();
+}
+
+/**
+ * THE REPO'S OWN dist/ IS NOW A PRECONDITION FOR `bun test`, and this test
+ * exists so that fact arrives as a sentence rather than as a puzzle.
+ *
+ * Without it, a checkout that has never run `bun run prepack` -- or one whose
+ * src/types.ts has moved since it last did -- fails in every example-driven
+ * file with `SyntaxError: Export named 'CompletionItemKind' not found in module
+ * .../dist/types.js`, or with ERR_MODULE_NOT_FOUND when dist/ is absent
+ * altogether. Both read like a broken example. Neither names the remedy, and
+ * one of them (the SyntaxError) arrives at a static import, before any preflight
+ * in the affected file could run.
+ *
+ * IT DETECTS AND DOES NOT BUILD, deliberately and not as a shortcut. Whether
+ * this suite should acquire a develop-time build step is a decision with a
+ * standing prose contract on the other side of it -- the note above -- and a
+ * helper that quietly ran tsc would settle that by default rather than by
+ * ruling. What this buys is one failure a reader can act
+ * on, standing beside the ones they cannot diagnose.
+ */
+test("the repo's own dist/ is built, and carries what src/types.ts re-exports", async () => {
+  const declared = valueReExportsOf(readFileSync(join(repoRoot, "src", "types.ts"), "utf8"));
+  const built = await import(pathToFileURL(join(repoRoot, "dist", "types.js")).href).then(
+    (module) => Object.keys(module as Record<string, unknown>).sort(),
+    (cause: unknown) => [`dist/types.js could not be loaded: ${String(cause)}`],
+  );
+
+  // The remedy rides on BOTH sides so it shows up in the diff: bun:test has no
+  // message argument, and a reader seeing only `[] !== ["CompletionItemKind"]`
+  // has to already know what this file is about.
+  const remedy = "run `bun run prepack` --";
+  expect(`${remedy} ${JSON.stringify(built)}`).toBe(`${remedy} ${JSON.stringify(declared)}`);
 });
 
 /**

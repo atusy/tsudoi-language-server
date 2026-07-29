@@ -1,6 +1,10 @@
-import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-
-import type { RequestContext, Tsudoi, TsudoiConfig } from "@atusy/tsudoi/types";
+import type {
+  CompletionItem,
+  CompletionParams,
+  RequestContext,
+  Tsudoi,
+  TsudoiConfig,
+} from "@atusy/tsudoi/types";
 import { pathCompletion } from "./completion-path.ts";
 import { hoverWordnet } from "./hover-wordnet.ts";
 

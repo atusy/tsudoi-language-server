@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import {
+  extractExamplesInstall,
   extractFailureContract,
   extractQuickstart,
   invocationOf,
@@ -76,6 +77,47 @@ test("a directory named only in a marker is refused", () => {
   const hidden = readme.replaceAll("in=tsudoi-language-server", "in=elsewhere");
 
   expect(() => extractQuickstart(hidden, QUICKSTART_STEPS)).toThrow("elsewhere");
+});
+
+/**
+ * THE OVER-INSTALLATION DIRECTION, and a SOURCE-TEXT assertion because nothing
+ * anywhere runs this command.
+ *
+ * The asymmetry, stated rather than hidden. Every other README command in this
+ * file is EXECUTED, so a stale one fails by running. This one is not: MEASURED
+ * at Sprint 25, the extraction harness executes the five `quickstart` blocks
+ * and this is not one of them, so no run reaches it. What stands in for it is
+ * test/helpers/install.ts, which SYMLINKS `wordnet` into every consumer instead
+ * of running any install line -- so that harness observes whether the examples
+ * work when their dependency is PRESENT, and never whether this line names the
+ * right set. Telling a reader to install a package they do not need would leave
+ * every other assertion in this suite green.
+ *
+ * ITS OWN TEST, not a second assertion on the one below, because the two
+ * hazards are different and either can hide the other: naming a package the
+ * examples do not need, and naming none of the ones they do.
+ */
+test("the README's examples install names no protocol package", () => {
+  expect(extractExamplesInstall(readme)).not.toMatch(/vscode-languageserver-protocol/);
+});
+
+/**
+ * THE PAIR for the absence above, and it is what stops the absence being
+ * satisfied by deleting the command's arguments altogether. `wordnet` is the
+ * one package examples/hover-wordnet.ts imports that a reader's project does
+ * not already have from tsudoi.
+ */
+test("the README's examples install names the package the examples do need", () => {
+  expect(extractExamplesInstall(readme)).toMatch(/\bwordnet\b/);
+});
+
+// The extractor's own vacuity guard, permanent: both assertions above are
+// satisfied by a command nobody found -- one of them trivially -- so the throw
+// is what makes them mean anything at all.
+test("a README with no examples-install marker states no install command, and says so", () => {
+  const unmarked = readme.replace("<!-- examples-install -->", "");
+
+  expect(() => extractExamplesInstall(unmarked)).toThrow("expected 1 marked block, found 0");
 });
 
 /**

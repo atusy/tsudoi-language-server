@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdirSync, renameSync, symlinkSync } from "node:fs";
+import { mkdirSync, renameSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
+import { initializeParams } from "./helpers/lsp.ts";
 import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
 import { runCommand } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
@@ -283,18 +286,15 @@ test("the ninth name the probe asks for is one the dependency really exports", a
  */
 
 /**
- * THE HOISTING PRECONDITION, asserted rather than assumed.
+ * THE NON-HOISTING LAYOUT: a consumer's tree with tsudoi's own dependency moved
+ * out of the top level and under node_modules/@atusy/tsudoi/node_modules/,
+ * which is where a package manager that does not hoist puts it.
  *
- * The example imports `vscode-languageserver-protocol` as a bare specifier the
- * consumer never declares, and `CompletionItemKind` is a VALUE import -- so the
- * example needs that package AT RUNTIME, not merely to type-check. It resolves
- * today only because bun HOISTS it as a transitive dependency of @atusy/tsudoi.
- *
- * MEASURED: under a non-hoisting layout tsudoi's own dist/ still resolves it
- * (it is a DECLARED dependency), so a config importing nothing runs fine; only
- * the consumer's own copy of the example fails. That is why the README tells a
- * reader to install the package, and why these probes install it too: the
- * documented route and the verified route are the same route.
+ * It is the only arrangement that DISCRIMINATES `the consumer declared this
+ * package` from `it happened to be lying around at the top level`. Under the
+ * hoisted default a bare specifier in a consumer's own file resolves whether or
+ * not they ever asked for the package, so nothing measured there can tell the
+ * two apart.
  */
 function useNonHoistingLayout(dir: string): void {
   const hoisted = join(dir, "node_modules", "vscode-languageserver-protocol");
@@ -303,41 +303,150 @@ function useNonHoistingLayout(dir: string): void {
   renameSync(hoisted, join(nested, "vscode-languageserver-protocol"));
 }
 
-function installProtocolPackage(dir: string): void {
-  const nested = join(
-    dir,
-    "node_modules",
-    "@atusy",
-    "tsudoi",
-    "node_modules",
-    "vscode-languageserver-protocol",
-  );
-  const target = join(dir, "node_modules", "vscode-languageserver-protocol");
-  if (!existsSync(target)) {
-    symlinkSync(nested, target, "dir");
-  }
-}
-
-test("without the documented install the example reddens, and tsudoi itself does not", async () => {
+/**
+ * WHAT STOOD HERE BEFORE, AND WHY IT IS GONE. This is the record of a
+ * withdrawal, kept beside the test that replaced it so the two are never read
+ * apart.
+ *
+ * Until PBI-26 this file asserted `without the documented install the example
+ * reddens, and tsudoi itself does not`. Its premise was that the example
+ * imports `vscode-languageserver-protocol` by BARE SPECIFIER -- a package the
+ * consumer never declares -- so the non-hoisting layout made the example fail,
+ * and the README's install step is what repaired it.
+ *
+ * THAT PREMISE WAS WITHDRAWN DELIBERATELY, not broken by accident: PBI-26 moved
+ * the examples onto `@atusy/tsudoi/types` for every protocol name, so there is
+ * no undeclared specifier left in them to withhold. The old assertion is
+ * therefore UNCONSTRUCTIBLE rather than failing -- there is nothing to build it
+ * out of -- and that is a different thing from a control that could be built and
+ * was not. It was not deleted as a convenience either: deleting a test that
+ * defends an accepted criterion is a scope decision, and the Product Owner
+ * ruled it REPLACED BY ITS INVERSE, which is the test immediately below.
+ *
+ * WHAT SURVIVES of its job is the harness's ability to notice a package that is
+ * GENUINELY MISSING, and `wordnet` is now the only case of it. That is asserted
+ * further down rather than assumed -- and measuring it turned up something the
+ * plan for this sprint had wrong, recorded there.
+ */
+test("under the non-hoisting layout the examples type-check, and a bare protocol import does not", async () => {
   const strict = await installConsumer();
   try {
     useNonHoistingLayout(strict.dir);
 
     const example = await strict.typeCheck(exampleSources());
-    expect(example.code).not.toBe(0);
-    expect(example.output).toContain("vscode-languageserver-protocol");
+    expect(example.output).toBe("");
+    expect(example.code).toBe(0);
 
-    // The negative case is bounded: a config importing nothing still checks,
-    // because tsudoi DECLARES the dependency its own dist/ needs.
+    // THE NEGATIVE CONTROL, in the same run and LOAD-BEARING rather than
+    // decorative. `code === 0` above is produced just as well by a harness that
+    // stopped applying the layout at all -- and the layout is applied by a
+    // renameSync, which is exactly the kind of step that goes quietly wrong
+    // when a path moves. If the layout is in force, a bare protocol import from
+    // a consumer's own file must STILL fail; if it is not, this goes green and
+    // the assertion above was measuring the hoisted default.
     const bare = await strict.typeCheck({
-      "bare.config.ts": "export default () => Promise.resolve({ methods: {} });\n",
+      "bare-protocol.ts": importsAndUses(["CompletionItem"], "vscode-languageserver-protocol"),
     });
-    expect(bare.code).toBe(0);
+    expect(bare.code).not.toBe(0);
+    expect(bare.output).toContain("vscode-languageserver-protocol");
+  } finally {
+    strict.dispose();
+  }
+});
 
-    // And the documented step is what repairs it.
-    installProtocolPackage(strict.dir);
-    const repaired = await strict.typeCheck(exampleSources());
-    expect(repaired.code).toBe(0);
+/**
+ * THE RUNTIME HALF, and no type check can stand in for it.
+ *
+ * `CompletionItemKind` is an enum, so the example needs `@atusy/tsudoi/types`
+ * to resolve TO A VALUE at run time. A criterion checked only by tsc would go
+ * green against a dist/types.d.ts that declares all eight names beside a
+ * dist/types.js that re-exports none -- the two are separate files emitted from
+ * one source, and only one of them can be observed by running.
+ *
+ * IN THE NON-HOISTING LAYOUT, so this is not merely `the example runs`: it is
+ * the example running in a tree where the protocol package is NOT reachable
+ * from the consumer's own files, which is the tree criterion 1 is about.
+ *
+ * A NON-EMPTY result is the assertion. An empty list is what a handler returns
+ * when it silently fails to find anything, so `it answered` would be satisfied
+ * by a completion handler that had given up.
+ */
+test("the example serves a completion from a consumer that declares no protocol package", async () => {
+  const strict = await installConsumer();
+  try {
+    for (const [path, source] of Object.entries(exampleSources())) {
+      strict.write(path, source);
+    }
+    useNonHoistingLayout(strict.dir);
+
+    const session = strict.start(
+      "bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
+    );
+    try {
+      await session.request<InitializeResult>("initialize", initializeParams);
+      const documentUri = pathToFileURL(join(strict.dir, "probe.txt")).href;
+      session.notify("textDocument/didOpen", {
+        textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "./" },
+      });
+
+      const items = await session.request<CompletionItem[]>("textDocument/completion", {
+        textDocument: { uri: documentUri },
+        // Just past `./`, so the example completes the consumer's own directory
+        // -- which exists and is not empty, since the install put node_modules
+        // and the example's own files in it.
+        position: { line: 0, character: 2 },
+      });
+
+      expect(`${String(items.length)} items, stderr: ${session.stderr}`).toBe(
+        `${String(items.length)} items, stderr: `,
+      );
+      expect(items.length).toBeGreaterThan(0);
+    } finally {
+      session.dispose();
+    }
+  } finally {
+    strict.dispose();
+  }
+});
+
+/**
+ * THE LAST GENUINELY-MISSING-PACKAGE CASE, and the plan for this sprint had its
+ * ARM WRONG -- recorded here rather than quietly built the other way.
+ *
+ * The plan said `withhold wordnet and the examples must still fail`, meaning the
+ * type check. MEASURED: they do NOT. Removing `wordnet` from a consumer entirely
+ * leaves `consumer.typeCheck(exampleSources())` at exit 0 with empty output,
+ * because examples/wordnet.d.ts carries `declare module "wordnet"` -- an AMBIENT
+ * declaration -- and that file is deliberately part of the example a reader
+ * copies. tsc needs nothing on disk once a module is declared.
+ *
+ * SO THE CONTROL MOVED ARM RATHER THAN BEING LOST: what still detects the
+ * missing package is RUNNING, where the config's import of `wordnet` is a real
+ * resolution. Exit 1, and stderr names the package. Had this been taken on
+ * trust, the surviving detection would have been asserted at the one arm that
+ * cannot see it -- a test that passes because it measures nothing.
+ */
+test("withholding wordnet is still detected, at the runtime arm rather than the type arm", async () => {
+  const strict = await installConsumer();
+  try {
+    for (const [path, source] of Object.entries(exampleSources())) {
+      strict.write(path, source);
+    }
+    unlinkSync(join(strict.dir, "node_modules", "wordnet"));
+
+    const typeChecked = await strict.typeCheck(exampleSources());
+    // The half that does NOT discriminate, asserted so the claim above stays
+    // measured rather than becoming folklore: if a future tsc starts reporting
+    // this, the comment is wrong and this is where it says so.
+    expect(typeChecked.code).toBe(0);
+
+    const started = await runCommand(
+      "bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
+      strict.dir,
+    );
+
+    expect(started.code).toBe(1);
+    expect(started.stderr).toContain("wordnet");
   } finally {
     strict.dispose();
   }

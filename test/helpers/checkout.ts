@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { repoRoot } from "./spawn.ts";
@@ -34,6 +34,27 @@ export function isolatedCheckout(): IsolatedCheckout {
   // exactly like the dependency-resolution failure these tests exist to
   // observe, and would be the wrong diagnosis.
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
+  // dist/ IS PART OF `what a runtime needs to start`, and it became so at
+  // Sprint 25 rather than always having been: examples/completion-path.ts now
+  // takes CompletionItemKind -- a VALUE -- from `@atusy/tsudoi/types`, and
+  // package self-reference resolves that subpath through the exports map's
+  // `import` arm to ./dist/types.js under both runtimes (measured, bun 1.3.13
+  // and deno 2.9.2). A checkout without it fails at ERR_MODULE_NOT_FOUND on
+  // dist/types.js while loading the config.
+  //
+  // IT IS NOT THE THING BEING HELD AWAY, which is what keeps these probes
+  // honest: node_modules is, and it still is. Carrying dist/ here removes a
+  // failure whose cause is this helper's staging from tests whose whole subject
+  // is where a DEPENDENCY was resolved from -- two causes producing one
+  // observation is the degeneracy that would make them measure nothing.
+  //
+  // Copied only when it exists, so a checkout that has never run a build is
+  // staged as a checkout that has never run a build. The test that names that
+  // condition and what to do about it is in test/package-shape.test.ts.
+  const builtTypes = join(repoRoot, "dist");
+  if (existsSync(builtTypes)) {
+    cpSync(builtTypes, join(dir, "dist"), { recursive: true });
+  }
   const nodeModules = join(dir, "node_modules");
   return {
     dir,

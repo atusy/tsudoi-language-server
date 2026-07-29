@@ -157,6 +157,52 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
   return steps;
 }
 
+/**
+ * The install command the README gives a reader who copies examples/, read out
+ * of the document's own bytes.
+ *
+ * A MARKER OF ITS OWN rather than a sixth `quickstart` step, and the reason is
+ * the omission sweep: that sweep asserts that dropping any quickstart step
+ * leaves a reader with no server, and dropping this one leaves the quickstart
+ * config working perfectly -- it imports `@atusy/tsudoi/types` and nothing
+ * else. Folding this in would have made the sweep assert something false about
+ * it.
+ *
+ * NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all
+ * are and a reader would otherwise assume it. What consumes this is a
+ * SOURCE-TEXT assertion in test/readme.test.ts; the property that the examples
+ * work once their dependency is present is carried by
+ * test/published-artifacts.test.ts, which stands in for this install by
+ * borrowing `wordnet`.
+ *
+ * THROWS unless it finds exactly one block, and this guard is load-bearing in a
+ * way the quickstart's is not: the assertion downstream is NEGATIVE -- the
+ * command names no protocol package -- and a negative assertion over a command
+ * nobody found is satisfied by every document ever written, including one that
+ * still tells a reader to install it.
+ */
+export function extractExamplesInstall(markdown: string): string {
+  const blocks = [
+    ...markdown.matchAll(/<!--\s*examples-install\s*-->\s*\n\s*```[a-z]*\n([\s\S]*?)\n\s*```/g),
+  ];
+  if (blocks.length !== 1) {
+    throw new Error(
+      `README examples install: expected 1 marked block, found ${String(blocks.length)}`,
+    );
+  }
+  const lines = (blocks[0]?.[1] ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  const [command] = lines;
+  if (lines.length !== 1 || command === undefined) {
+    throw new Error(
+      `README examples install: expected ONE command a reader can run verbatim; got ${String(lines.length)} lines`,
+    );
+  }
+  return command;
+}
+
 /** The steps ONE runtime's reader follows: the shared ones, plus its own start. */
 export function sequenceFor(
   steps: readonly QuickstartStep[],
