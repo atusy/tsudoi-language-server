@@ -241,44 +241,54 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
 });
 
 /**
- * THE `AND NO MORE` HALF, and it is BORN GREEN -- flagged here rather than
- * dressed up as a red.
+ * THE SURFACE IS UPSTREAM'S TYPE SET, and this is the test that says so. It
+ * names a type NO example uses and NO line of src/types.ts mentions, so it
+ * passes only because `export type *` carries it.
  *
- * WHAT IS HONEST ABOUT THAT AND WHAT IS NOT: as written, this assertion is
- * satisfied PERFECTLY by a module that exports nothing at all, which is exactly
- * the state it was written against. Passing on the day it was written therefore
- * proves nothing whatever about the published surface, and no argument makes it
- * prove something.
- *
- * SO THE PERTURBATION WAS RUN RATHER THAN REASONED ABOUT, and this is its
- * record. Adding `DefinitionParams` to the re-export list in src/types.ts
- * REDDENS THIS TEST -- the probe type-checks, `code` comes back 0, and the
- * expectation that it would not is what fails -- while the value probe and the
- * published-names probe above both stay green. That is the whole of this test's
- * evidence: it can distinguish an added name from no added name, measured, on a
- * tree where the difference was actually made.
- *
- * The paired test below is what stops the OTHER degeneracy: a probe naming a
- * symbol that exists nowhere would fail identically, and this test would then
- * be measuring a typo.
+ * It replaces an assertion that the same name was NOT reachable, which was the
+ * negative control for a curated surface. That boundary moved: it now runs
+ * between TYPES and VALUES rather than between chosen names and withheld ones,
+ * and the test below is where the restraint lives.
  */
-test("a protocol name this surface does not publish is not reachable from the subpath", async () => {
+test("a protocol type no example names is reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
     "unpublished-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/types"),
   });
 
-  expect(result.code).not.toBe(0);
-  expect(result.output).toContain("DefinitionParams");
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
 });
 
 /**
- * THE CONTROL FOR THE NAME ITSELF, and it can fail where the test above cannot:
- * `DefinitionParams` has to be a real export of the dependency, or the absence
- * asserted above is the absence of a name nobody ever had.
+ * WHAT `export type *` MUST NOT CARRY, and the reason the star is type-only.
  *
- * Its own test rather than a second assertion, because it is a different
- * hazard: a renamed-away protocol symbol and a widened tsudoi surface are not
- * the same mistake and must not share a first failure.
+ * The dependency exports 93 Request and Notification constants as VALUES, for
+ * methods tsudoi does not implement -- plus `createProtocolConnection`, which
+ * would let a config build its own connection and bypass tsudoi entirely. A
+ * surface carrying them would advertise capabilities the server does not have.
+ *
+ * TS1362 is the diagnostic that says a name arrived through `export type`, so
+ * asserting on it distinguishes `not exported at all` from `exported as a type`.
+ * Turning the star into a plain `export *` reddens this and nothing else.
+ */
+test("a protocol request constant is not reachable as a value from the subpath", async () => {
+  const result = await consumer.typeCheck({
+    "request-constant.ts":
+      'import { CodeActionRequest } from "@atusy/tsudoi/types";\nconsole.log(CodeActionRequest);\n',
+  });
+
+  expect(result.code).not.toBe(0);
+  expect(result.output).toContain("CodeActionRequest");
+});
+
+/**
+ * THE CONTROL FOR THE NAME ITSELF: `DefinitionParams` has to be a real export of
+ * the dependency, or the reachability asserted above is the reachability of a
+ * name nobody ever had.
+ *
+ * Its own test rather than a second assertion, because it is a different hazard:
+ * a renamed-away protocol symbol and a broken re-export are not the same mistake
+ * and must not share a first failure.
  */
 test("the unpublished name the probe asks for is one the dependency really exports", async () => {
   const result = await consumer.typeCheck({

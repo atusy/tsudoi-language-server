@@ -17,39 +17,34 @@ import type {
 import type { TextDocument } from "vscode-languageserver-textdocument";
 
 /**
- * The protocol names a config author gets from here, so that standing up a
- * server needs one package.
+ * EVERY LSP TYPE, so a config author never has to install the protocol package
+ * to name something tsudoi's own surface did not think to publish. The set is
+ * upstream's rather than curated here, so it grows with the dependency and no
+ * name has to be argued for one at a time.
  *
- * THE RULE FOR A NEW NAME: publish one only when an example cannot be written
- * without it. Not `an author might want it` -- that argument has no end, and
- * the set it produces is the dependency's whole surface re-published under
- * names this project would then have to keep. A handler written INLINE in a
- * config needs none of these; `MethodHandler` supplies them. An EXTRACTED
- * handler gets no contextual typing and must name its own params and result,
- * which is what puts a name here.
+ * TYPES ONLY, AND THAT IS THE WHOLE OF THE RESTRAINT. `export *` would publish
+ * 287 runtime names, among them `createProtocolConnection` -- which would let a
+ * config build its own connection and bypass tsudoi entirely -- and 93 Request
+ * and Notification constants for methods tsudoi does not implement, so the
+ * surface would advertise capabilities the server does not have. `export type *`
+ * publishes none of them: naming one as a value is TS1362.
  *
- * CompletionItemKind and DiagnosticSeverity are VALUES, not types: each is a
- * namespace of const members read at run time. `export type` here would emit a
- * perfect dist/types.d.ts beside a dist/types.js exporting nothing, every
- * type-check would stay green, and a config author would get `undefined` at
- * their first completion. test/published-artifacts.test.ts is the only thing
- * that sees the difference.
+ * VALUES STAY EXPLICIT for the same reason, and these two are values rather than
+ * types because each is a namespace of const members read at run time. Writing
+ * them as types would emit a perfect dist/types.d.ts beside a dist/types.js
+ * exporting nothing, every type-check would stay green, and a config author would
+ * get `undefined` at their first completion. test/published-artifacts.test.ts is
+ * the only thing that sees the difference.
  *
  * THE BARE SPECIFIER, NOT `/node`: with `/node`, vscode-jsonrpc's node entry
  * needs @types/node (TS2591 for child_process, net, worker_threads; TS2503 for
- * namespace NodeJS), which a config author may never have installed. The
- * difference is only visible with `skipLibCheck` OFF -- tsc's default, and what
+ * namespace NodeJS), which a config author may never have installed. Measured to
+ * survive the star: `export type *` from the bare specifier type-checks with
+ * `types: []` and `skipLibCheck` OFF, which is what
  * test/installed-without-node-types.test.ts sets.
  */
+export type * from "vscode-languageserver-protocol";
 export { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver-protocol";
-export type {
-  CompletionItem,
-  CompletionParams,
-  MarkupContent,
-  Position,
-  TextEdit,
-  WorkspaceFolder,
-} from "vscode-languageserver-protocol";
 
 /**
  * The document a config author receives, and it is upstream's: `getText(range)`,
