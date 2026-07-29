@@ -36,9 +36,14 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  * home, instead of being open-coded once per method and legible only by
  * reading two handlers side by side.
  *
- * MEASURED that two kinds cover all five of the stakeholder's methods:
- * `textDocument/diagnostic` declares `partialResult`, so it is generator-shaped
- * like completion, and `completionItem/resolve` is awaited once like hover.
+ * MEASURED that two kinds cover all five of the stakeholder's methods. THE
+ * HEADLINE HELD AND THE REASON GIVEN FOR ONE METHOD DID NOT, corrected here
+ * because it was labelled MEASURED and was an inference: this block said
+ * `textDocument/diagnostic` declares `partialResult`, SO it is generator-shaped
+ * like completion. DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT --
+ * see `driveGenerator`, which states both of that drive's requirements and which
+ * this method fails on the second. `textDocument/diagnostic` is AWAITED ONCE,
+ * measured at Sprint 33, and so is `completionItem/resolve`.
  */
 type DriveKind<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<unknown, unknown, unknown>
@@ -617,11 +622,23 @@ async function driveAwaitedOnce(run: {
  * the one above: driving a generator needs a context, so with no generator to
  * drive there is nothing to build one for.
  *
- * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT, stated because the second
- * one arrives at PBI-38 and the requirement is invisible until then: its params
- * must carry a `partialResultToken` -- `CompletionParams` declares
- * `PartialResultParams` and so does `DocumentDiagnosticParams` -- and its chunks
- * must be ARRAYS, since aggregation concatenates them.
+ * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT: its params must carry a
+ * `partialResultToken`, and its chunks must be ARRAYS, since aggregation
+ * concatenates them.
+ *
+ * IT WAS WRITTEN EXPECTING TO BE MET AT PBI-38 AND IT EXCLUDED THAT METHOD
+ * INSTEAD, which is the strongest evidence it was worth writing down and is why
+ * the outcome is recorded rather than the prediction. MEASURED at Sprint 33,
+ * vscode-languageserver-protocol 3.18.2: `DocumentDiagnosticParams` DOES declare
+ * `PartialResultParams`, so the first requirement holds -- and
+ * `DocumentDiagnosticRequest.partialResult` is
+ * `ProgressType<DocumentDiagnosticReportProgress>`, a union of two OBJECT types
+ * and not an array, so the second fails and this drive cannot carry that method.
+ *
+ * THE PROTOCOL'S OWN COMMENT SAYS WHY, and it is the half a type check would
+ * miss: those chunks carry RELATED DOCUMENTS rather than more diagnostics for
+ * the requested one, where completion's chunks are more items of a single list.
+ * `textDocument/diagnostic` is served awaited-once.
  */
 async function driveGenerator(run: {
   method: Method;
