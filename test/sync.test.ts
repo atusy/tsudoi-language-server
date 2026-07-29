@@ -31,7 +31,13 @@ function didOpen(documentUri: string, text: string): unknown {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    test("didOpen then didChange leaves the config's store holding the latest text", async () => {
+    // A CHANGE WITH NO RANGE IS THE WHOLE BUFFER, AND INCREMENTAL SYNC STILL
+    // PERMITS IT -- the protocol makes the range optional per change rather than
+    // per session, so a client that advertised nothing and a client mid-undo may
+    // both send this shape at any moment. Advertising Incremental is an
+    // invitation to send ranges, never a promise that nothing else arrives, and
+    // a store that read the advertisement as a guarantee would drop this.
+    test("didOpen then a change carrying no range leaves the store holding the latest text", async () => {
       const session = LspSession.start(runtime, snapshotConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
@@ -57,6 +63,61 @@ for (const runtime of runtimes) {
 
         // Notifications produce no response, so exactly two messages should
         // ever have crossed stdout: the initialize and shutdown responses.
+        expect(session.messagesReceived).toBe(2);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // WHAT AN EDITOR ACTUALLY SENDS NOW THAT TSUDOI ADVERTISES INCREMENTAL, end
+    // to end: the ranges cross the wire as JSON, reach the store through the
+    // same handler a keystroke uses, and the config reads the result.
+    //
+    // TWO CHANGES IN ONE NOTIFICATION, THE SECOND ADDRESSING TEXT THE FIRST
+    // MOVED. `[0,5) -> やあ` shortens the line, and only then does `[3,5)` name
+    // 世界; against the opening text those same offsets name ちは. So a server
+    // that applied one change per notification, or applied both against the
+    // state it started from, produces something else here rather than the same
+    // thing more slowly.
+    //
+    // THE OFFSETS ARE UTF-16 UNITS AND EVERY CHARACTER BEFORE THEM IS
+    // MULTI-BYTE, which is the case an ASCII range cannot see: Content-Length
+    // frames BYTES, Position.character counts UTF-16 units, and a layer that
+    // confused the two would splice at character 3 of a nine-byte prefix.
+    test("a change carrying ranges is applied at those ranges, over the wire", async () => {
+      const session = LspSession.start(runtime, snapshotConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        session.notify("textDocument/didOpen", didOpen(uri, openedText));
+        session.notify("textDocument/didChange", {
+          textDocument: { uri, version: 4 },
+          contentChanges: [
+            {
+              range: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } },
+              text: "やあ",
+            },
+            {
+              range: { start: { line: 0, character: 3 }, end: { line: 0, character: 5 } },
+              text: "宇宙",
+            },
+          ],
+        });
+
+        await session.request<null>("shutdown", null);
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+
+        expect(readSnapshot(session.stderr)).toEqual([
+          {
+            uri,
+            languageId: "plaintext",
+            version: 4,
+            text: "やあ、宇宙。\n二行目も日本語です。",
+          },
+        ]);
         expect(session.messagesReceived).toBe(2);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
