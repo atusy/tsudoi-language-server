@@ -153,6 +153,17 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * the value rather than counting them: an ES module namespace carries exactly
  * the runtime exports, so a type-only re-export is invisible here BY
  * CONSTRUCTION rather than by our filtering it out.
+ *
+ * IT NOW HOLDS A SECOND DECISION, IN THE OPPOSITE DIRECTION, and that is why
+ * the list is EXACT rather than a `toContain`. `TextDocument` is published
+ * TYPE-ONLY on purpose -- ruled at src/types.ts, where the reason lives -- even
+ * though upstream ships it as a namespace carrying create, update and
+ * applyEdits, so a value re-export is available and is one token away. Dropping
+ * `type` from that line adds `TextDocument` here and reddens this assertion,
+ * which is what makes the foreclosure DEFENDED rather than merely written down.
+ * MEASURED, both directions: `export type` on CompletionItemKind reddens this
+ * and nothing else, and `export {` on TextDocument reddens this and nothing
+ * else.
  */
 test("the published module re-exports CompletionItemKind as a runtime value", async () => {
   consumer.write(
@@ -185,6 +196,37 @@ test("the published module re-exports CompletionItemKind as a runtime value", as
 test("all eight published protocol names type-check from the installed copy", async () => {
   const result = await consumer.typeCheck({
     "eight-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/types"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * THE NINTH NAME ON THE SUBPATH, WHICH IS NOT A NINTH PROTOCOL NAME -- and this
+ * test exists because that distinction leaves it otherwise UNDEFENDED.
+ *
+ * `TextDocument` is not in `publicProtocolNames` and must not be: that list's
+ * doc block says it holds the PROTOCOL names the subpath re-exports, and this
+ * one comes from vscode-languageserver-textdocument. So the eight-name probe
+ * above and the value probe below both skip it, and without this it would ship
+ * with no published-surface coverage at all.
+ *
+ * BORN GREEN, DECLARED: the name was reachable from this subpath before PBI-31
+ * too, because tsudoi declared a TextDocument of its own. What is new is the
+ * CHECK, not the property -- the same honesty this file states about itself at
+ * the top. Its evidence is the perturbation, RUN: removing the export from
+ * src/types.ts reddens THIS and the identity test below, and leaves the
+ * eight-name probe and the value probe green.
+ *
+ * WHAT IT DOES NOT SEE is WHICH TextDocument arrived -- MEASURED, and it is the
+ * reason the identity test exists: pointing src/types.ts at
+ * vscode-languageserver-protocol's DEPRECATED twin leaves this test green,
+ * `tsc --noEmit` at 0, and all 372 tests passing except that one.
+ */
+test("TextDocument type-checks from the installed copy, though it is not one of the eight", async () => {
+  const result = await consumer.typeCheck({
+    "text-document.ts": importsAndUses(["TextDocument"], "@atusy/tsudoi/types"),
   });
 
   expect(result.output).toBe("");
@@ -322,6 +364,12 @@ const deprecatedProtocolTwin =
 /**
  * CRITERION 2, and it is IDENTITY rather than assignability for a reason the
  * test below MEASURES rather than states.
+ *
+ * WHAT IT CATCHES THAT NOTHING ELSE DOES, measured on this tree rather than
+ * argued: with src/types.ts re-exporting `vscode-languageserver-protocol`'s
+ * DEPRECATED TextDocument instead -- a one-line edit that adds no dependency --
+ * `tsc --noEmit` exits 0, the type arm above exits 0, the value arm is
+ * unchanged, and THIS IS THE ONLY ONE OF 372 TESTS THAT FAILS.
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
   const result = await consumer.typeCheck({ "identity.ts": identityProbe("@atusy/tsudoi/types") });
