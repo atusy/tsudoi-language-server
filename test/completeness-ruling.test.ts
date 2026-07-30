@@ -48,6 +48,8 @@ const ruled = [
   "test/fixtures/completion-cleanup-yields.ts",
   "test/fixtures/completion-cleanup.ts",
   "test/fixtures/completion-gate.ts",
+  "test/fixtures/completion-ignores-signal-rejects.ts",
+  "test/fixtures/completion-ignores-signal.ts",
   // completion-list.ts and completion-list-final.ts STOOD HERE UNTIL SPRINT 43
   // and are gone with the capability they demonstrated, which is worth a line
   // because a shrinking enumeration reads exactly like a ruling that was

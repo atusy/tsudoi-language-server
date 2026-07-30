@@ -343,9 +343,17 @@ for (const runtime of runtimes) {
           // The response arrives while cleanup is still parked...
           expect((await inFlight.response).error?.code).toBe(requestCancelled);
           expect(session.stderr).not.toContain(cleanupFinished);
-          // ...and it had provably STARTED, so the absence above says the
+          // ...and cleanup provably STARTS, so the absence above says the
           // response overtook cleanup rather than that nothing was closed.
-          expect(session.stderr).toContain(cleanupEntered);
+          //
+          // AWAITED RATHER THAN READ, because the response no longer waits on
+          // this handler at all: the abort is raced against the pending pull, so
+          // the -32800 is sent while the generator is still inside it, and the
+          // close cannot reach the author's `finally` until that pull settles --
+          // `.return()` is queued behind it by the language. A synchronous read
+          // here would be asserting that cleanup starts BEFORE the answer, which
+          // is the very coupling cancellation was freed from.
+          await session.waitForStderr(cleanupEntered, 1000);
 
           // Release it, and the same measurement observes the record: the
           // permanent pair for the absence asserted above.

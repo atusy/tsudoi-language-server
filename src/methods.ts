@@ -831,6 +831,16 @@ async function driveAwaitedOnce(run: {
 const maxCleanupYields = 1000;
 
 /**
+ * What the abort resolves as when it beats a pending pull.
+ *
+ * A SYMBOL SO IT CANNOT BE A BATCH. The race settles with either an
+ * `IteratorResult` or this, and the two are told apart by identity -- a sentinel
+ * a config author could yield, `null` or a string among them, would make a
+ * handler able to fake its own cancellation.
+ */
+const abortWon = Symbol("tsudoi.abortWon");
+
+/**
  * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
  * author yields BATCHES OF ITEMS and says nothing at all about how they travel;
  * whether they leave as `$/progress` or as one aggregated response is decided
@@ -1047,9 +1057,59 @@ async function driveStream(run: {
     // exception, which belongs to answerUnlessCancelled's own reporting one
     // level up. Catching here would either swallow a handler failure or oblige
     // this code to rethrow it in the right shape.
+    // THE ABORT AS SOMETHING A PULL CAN BE RACED AGAINST, and BUILT ONCE rather
+    // than per pull: a subscription taken inside the loop would leave one
+    // listener per batch on a signal that outlives them all.
+    //
+    // WHY A RACE IS NEEDED AT ALL. A handler that ignores its `AbortSignal` and
+    // awaits slow work is suspended INSIDE `next()`, not at a yield -- so a
+    // drive that awaits the pull and asks about cancellation only afterwards has
+    // no moment to ask in. The request and the generator both stay parked
+    // indefinitely, and the client that cancelled is answered NOTHING, which is
+    // worse than any answer.
+    //
+    // THE FLAG IS READ FIRST for the reason `requestContext` gives: a request
+    // cancelled before dispatch gets `CancellationToken.Cancelled`, whose event
+    // never fires, so a subscribe-only bridge would wait here forever.
+    const abortedRace = new Promise<typeof abortWon>((resolve) => {
+      if (context.signal.aborted) {
+        resolve(abortWon);
+        return;
+      }
+      context.signal.addEventListener("abort", () => resolve(abortWon), { once: true });
+    });
     try {
       for (;;) {
-        const next = await batches.next();
+        const pull = batches.next();
+        const settled = await Promise.race([pull, abortedRace]);
+        if (settled === abortWon) {
+          // THE LOSING PULL IS LEFT PENDING, AND `Promise.race` IS WHAT MAKES
+          // THAT SAFE -- a load-bearing property of that call and the reason it
+          // is not hand-rolled here. The loser is still the generator's, and a
+          // handler whose ignored wait later FAILS rejects exactly it; unhandled,
+          // that kills the process, which would trade a parked request for a
+          // dead session. `Promise.race` subscribes to EVERY element, so the
+          // rejection is already handled however late it lands. MEASURED, both
+          // ways: a hand-rolled race that forwards only fulfilments dies with
+          // `Uncaught (in promise)`, and `the abandoned pull's later rejection
+          // is handled ...` in test/cancel-parked-pull.test.ts is what stands
+          // over this, by the session's own exit code.
+          //
+          // NOTHING IS REPORTED ABOUT IT, which is this file's existing ruling
+          // and not a new one: a cancelled handler is EXPECTED to fail, an
+          // aborted wait rejects by design, and a stack per cancellation would
+          // train the config author to ignore the one stderr channel that means
+          // something.
+          //
+          // NOTHING IS CLOSED HERE. The `finally` below owns that, for the same
+          // reason the abort check further down does not close either: a close
+          // fired on both paths would report one throwing cleanup twice. What
+          // that close CANNOT do is run the author's `finally` while this pull is
+          // still pending -- `.return()` is queued behind it by the language --
+          // so the generator stays parked even though the client is answered.
+          return null;
+        }
+        const next = settled;
         if (next.done === true) {
           // THE RETURN CARRIES NOTHING AND IS NOT READ. `next.value` is `void`
           // here by the published type, so a handler has no second entrance for
@@ -1057,12 +1117,13 @@ async function driveStream(run: {
           completed = true;
           return yielded && token === undefined ? collected : null;
         }
-        // Checked HERE, between pulling a batch and sending it: the abort
-        // typically lands while `next()` is parked, so a check at the top of
-        // the loop would already have passed and this batch would go out to
-        // a client that has stopped listening. Returning also stops driving
-        // the generator, which is the point of cancelling at all. The value
-        // is discarded either way -- the answer is already -32800.
+        // Checked HERE, between pulling a batch and sending it, and NOT made
+        // redundant by the race above: that one covers an abort landing while
+        // the pull is parked, and this one covers an abort landing after the
+        // pull has WON -- a batch that is already in hand and must not go out to
+        // a client that has stopped listening. Returning also stops driving the
+        // generator, which is the point of cancelling at all. The value is
+        // discarded either way -- the answer is already -32800.
         //
         // AND IT COVERS THE FIRST BATCH TOO, which is not incidental:
         // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
