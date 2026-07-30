@@ -814,6 +814,23 @@ async function driveAwaitedOnce(run: {
 }
 
 /**
+ * How many batches a config author's `finally` may yield before tsudoi stops
+ * draining it and says so.
+ *
+ * NOT A GUESS AT HOW BIG A REAL CLEANUP IS, and that is why the number is
+ * generous rather than tight. Its whole job is to make an UNBOUNDED loop finite;
+ * the two errors around it are wildly asymmetric, so it is set far above any
+ * cleanup that flushes buffered records a batch at a time. Too low truncates one
+ * request's cleanup AND REPORTS IT, where too high merely drains a runaway a
+ * moment longer -- and no bound at all is the only outcome that is fatal.
+ *
+ * WHY A COUNT AND NOT A DEADLINE: a timer would measure the machine rather than
+ * the generator, so the same config would be truncated on a loaded laptop and
+ * drained on a fast one. A count is a property of what the author wrote.
+ */
+const maxCleanupYields = 1000;
+
+/**
  * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
  * author yields BATCHES OF ITEMS and says nothing at all about how they travel;
  * whether they leave as `$/progress` or as one aggregated response is decided
@@ -942,24 +959,41 @@ async function driveStream(run: {
     // jobs: it is how a throwing cleanup gets reported, and it is what stops
     // the same rejection being fatal. Drop it and both halves fail together.
     //
+    // IT COVERS EVERY PULL THE DRAIN MAKES, not just the `return()`. A `finally`
+    // that fails AFTER yielding rejects a `next()` that did not exist until the
+    // drain created it -- a promise reachable no other way -- so a handler
+    // attached to the `return()` alone would leave exactly that rejection
+    // unhandled.
+    //
     // What no arrangement of this can do: a generator parked inside its own
     // `await` queues return() behind the pending next(), so its cleanup runs
     // only when that settles. A limit of async generators, not a defect here.
     //
-    // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one record
-    // of why. When the author's `finally` itself yields, the `return()` below
-    // resolves `{ value, done: false }` on both runtimes -- the return
-    // completion is suspended by that yield. CONSEQUENCE: the generator stays
-    // parked INSIDE its own finally and every statement after that yield -- the
-    // rest of their cleanup -- never runs, silently, on every superseded
-    // keystroke. `done === false` right here is the evidence tsudoi could
-    // report.
+    // A CLEANUP THAT YIELDS IS DRAINED RATHER THAN ABANDONED, and `done: false`
+    // is what makes that possible. When the author's `finally` itself yields,
+    // `return()` resolves `{ value, done: false }` on both runtimes, because the
+    // RETURN COMPLETION is suspended by that yield -- so a drive that stopped
+    // there would leave the generator parked INSIDE its own finally with every
+    // statement after that yield never running, silently, on every superseded
+    // keystroke. That result is not an obstacle but the SIGNAL that the cleanup
+    // has more to do, and `next()` is how it is let do it. `for await (...) {
+    // break }` leaves the same generator in the same state, and is not the same
+    // situation: that consumer CHOSE to stop, where this one is holding the
+    // evidence that it should not.
     //
-    // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE SEMANTICS
-    // rather than tsudoi doing something wrong. `for await (...) { break }` over
-    // the same generator leaves it in exactly this state. tsudoi calls
-    // .return() correctly; the author's own cleanup defers itself, so reporting
-    // it would be reporting JavaScript.
+    // THE DRAINED BATCHES ARE DISCARDED, and that is the one thing the drain
+    // must not get wrong. They belong to a request the client already holds a
+    // -32800 for, so forwarding them would trade a silent leak for a louder
+    // protocol violation -- `$/progress` for a request that is over.
+    //
+    // BOUNDED, AND THE BOUND IS NOT TIMIDITY. Nothing awaits this drain and
+    // nothing cancels it, so a `finally` that yields forever is answered by
+    // pulls that settle as MICROTASKS: the loop never hands the event loop back,
+    // and the session stops answering anything at all -- the orphaned server
+    // this file's own editor-death reasoning treats as a correctness
+    // requirement. The two errors are not symmetric. A bound reached truncates
+    // one cleanup AND SAYS SO on stderr; no bound at all takes the session down
+    // in silence.
     //
     // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN OVERSIGHT.
     // THE PUBLISHED TYPE IS AN `AsyncGenerator`, which REQUIRES `return`, so
@@ -967,8 +1001,22 @@ async function driveStream(run: {
     // a guarantee away by hand and then guard against the absence it had just
     // manufactured. This repository prefers FORECLOSING a failure to DETECTING
     // one, and the type forecloses this one.
+    const drainCleanup = async (): Promise<void> => {
+      let result = await batches.return();
+      for (let pulled = 0; result.done !== true; pulled += 1) {
+        if (pulled >= maxCleanupYields) {
+          reportCleanupFailure(
+            run.method,
+            `cleanup yielded more than ${maxCleanupYields} batches without finishing, ` +
+              `so the rest of it was abandoned`,
+          );
+          return;
+        }
+        result = await batches.next();
+      }
+    };
     const close = (): void => {
-      batches.return().then(undefined, (error: unknown) => {
+      drainCleanup().then(undefined, (error: unknown) => {
         reportCleanupFailure(run.method, error);
       });
     };

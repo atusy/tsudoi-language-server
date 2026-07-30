@@ -43,6 +43,9 @@ const ruled = [
   "test/fixtures/completion-chunks.ts",
   "test/fixtures/completion-cleanup-hangs.ts",
   "test/fixtures/completion-cleanup-throws.ts",
+  "test/fixtures/completion-cleanup-yields-forever.ts",
+  "test/fixtures/completion-cleanup-yields-then-throws.ts",
+  "test/fixtures/completion-cleanup-yields.ts",
   "test/fixtures/completion-cleanup.ts",
   "test/fixtures/completion-gate.ts",
   // completion-list.ts and completion-list-final.ts STOOD HERE UNTIL SPRINT 43
