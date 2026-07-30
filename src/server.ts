@@ -113,25 +113,27 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     if (rejection !== undefined) {
       throw rejection;
     }
-    // AHEAD OF THE PREPARATION BELOW, AND MOVING IT AFTER WOULD DEFEND NOTHING
-    // REACHABLE -- written here because the argument FOR moving it is a good one
-    // and will be made again. It runs: a handshake answered -32603 from below
-    // this line leaves the phase saying `serving`, and since a second
-    // `initialize` is refused there, that session cannot retry the handshake
-    // either. What removes it is that NOTHING BELOW CAN FAIL. src/config.ts reads
-    // `methods` AND EVERY KNOWN HANDLER at load, so an accessor that throws is
-    // already a ConfigError; contributeCapabilities re-reads plain properties;
-    // `handshake` guards its own throws where they were measured, and mirrors
-    // the capabilities with a `??` that cannot throw on anything; and `params`
-    // came off JSON.parse, so it carries no accessors at all. The only config
-    // left is one whose getter answers a function once and throws on a later
-    // read.
+    // AHEAD OF THE PREPARATION BELOW, AND WHAT KEEPS THAT SAFE IS A PROPERTY OF
+    // ANOTHER FILE -- which is exactly why it is written down at this one. A
+    // handshake answered -32603 from below this line leaves the phase saying
+    // `serving`, and since a second `initialize` is refused there, that session
+    // cannot retry the handshake either: the client holds a failed handshake it
+    // may not repeat, and every later request is treated as initialized.
     //
-    // WHAT RE-MOTIVATES THE MOVE, so it is not rediscovered from scratch: ANY
-    // FALLIBLE WORK ADDED BELOW THIS LINE. It is a one-line change needing no new
+    // NOTHING BELOW CAN FAIL, member by member rather than as an assurance.
+    // src/config.ts hands over a MATERIALISED method table -- plain own data
+    // properties, filled once at load -- so contributeCapabilities reads DATA,
+    // and an accessor or a `Proxy` trap of the author's is never asked a second
+    // question however it would answer one. `handshake` guards its own throws
+    // where they were measured, and mirrors the capabilities with a `??` that
+    // cannot throw on anything. `params` came off JSON.parse, so it carries no
+    // accessors at all.
+    //
+    // WHAT WOULD RE-OPEN IT: ANY FALLIBLE WORK ADDED BELOW THIS LINE. Moving the
+    // transition under the preparation is a one-line change needing no new
     // state, and it is NOT the same change as refusing the request -- the gate
-    // above decides whether the handshake is allowed, this decides when it counts
-    // as having happened.
+    // above decides whether the handshake is ALLOWED, this decides when it counts
+    // as having HAPPENED.
     lifecycle.initialize();
     // FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE: the three the protocol lets a
     // client name a ROOT in, and the CAPABILITIES the client declared. Nothing

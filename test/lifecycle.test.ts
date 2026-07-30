@@ -7,6 +7,7 @@ import {
   TextDocumentSyncKind,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
+import { hoverText } from "./fixtures/handler-proxy-throws-on-second-read.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -279,6 +280,43 @@ for (const runtime of runtimes) {
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(1);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE HANDSHAKE IS ANSWERED OUT OF WHAT CONFIG LOAD KEPT, AND NEVER OUT OF A
+     * SECOND READ OF THE AUTHOR'S OBJECT -- which is the whole of why this drives
+     * a `Proxy` rather than a plain config.
+     *
+     * WHAT A SECOND READ COSTS, and why it lands on the handshake specifically:
+     * capability assembly runs INSIDE the `initialize` handler, so a `methods`
+     * that answers a function once and throws afterwards fails there -- the
+     * handshake is answered -32603 with the author's own words nowhere on the
+     * wire, and a second `initialize` is refused, so the session cannot even be
+     * retried. A defect one dispatch later is answerable as THAT request; this
+     * one takes the session.
+     *
+     * THE ASSERTION IS THE SERVED HOVER AND NOT MERELY THE RESULT, because a
+     * capability claimed from a stale snapshot would satisfy the first half
+     * alone. The text is the author's, so it can only have come from the handler
+     * the load-time read kept.
+     */
+    test("a methods object that answers a handler once serves the handshake and the request", async () => {
+      const session = LspSession.start(runtime, fixture("handler-proxy-throws-on-second-read.ts"));
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.capabilities.hoverProvider).toBe(true);
+
+        session.notify("initialized", {});
+        const hover = await session.request<Hover>("textDocument/hover", {
+          textDocument: { uri: openedUri },
+          position: { line: 0, character: 0 },
+        });
+
+        expect(hover.contents).toBe(hoverText);
       } finally {
         session.dispose();
       }

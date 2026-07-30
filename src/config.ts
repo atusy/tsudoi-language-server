@@ -83,31 +83,40 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
         `function written \`() => { ... }\` returns nothing at all`,
     );
   }
-  // BEFORE THE CAST AND BEFORE THE RULE BELOW, and the ORDER IS LOAD-BEARING:
-  // requireCompletionBesideResolve dereferences `methods` and then a method name
-  // off it, so an accessor reached THERE raises a bare TypeError -- which is not
-  // a ConfigError, so src/cli.ts rethrows it and the author gets a raw stack with
-  // no `tsudoi: ` prefix and no config path. That is the exact defect the
-  // returned-shape guard above exists to close, one level in.
-  requireCallableMethods(returned, absolutePath);
-  const config = returned as TsudoiConfig;
+  // WHAT THE SERVER IS HANDED IS THIS SNAPSHOT AND NEVER THE AUTHOR'S OBJECT,
+  // which is the whole of why the value is BUILT rather than cast. Everything
+  // downstream -- the rule below, capability assembly, every dispatch for the
+  // life of the session -- reads plain own data properties off a table this
+  // function filled, so no accessor of the author's is ever asked twice.
+  //
+  // AND NOTHING ELSE OF THE AUTHOR'S OBJECT SURVIVES, deliberately: `methods` is
+  // the whole of `TsudoiConfig`, so a config carrying anything beside it is
+  // carrying something nothing reads.
+  const config: TsudoiConfig = { methods: validatedMethods(returned, absolutePath) };
   requireCompletionBesideResolve(config, absolutePath);
   return config;
 }
 
 /**
- * Refuses a `methods` tsudoi cannot serve, BY READING EVERY HANDLER IT WILL
- * LATER READ.
+ * EVERY HANDLER TSUDOI WILL SERVE, READ ONCE AND MATERIALISED AS PLAIN DATA --
+ * or a ConfigError naming what the author must fix.
  *
- * THE READING IS THE POINT AND NOT A SIDE EFFECT. A method key may be an
- * ACCESSOR -- a legal spelling, and the natural one for a handler built lazily
- * from a file, a dictionary or a compiled grammar -- and nothing here validated
- * it, so the first dereference was `contributeCapabilities` INSIDE the
- * `initialize` handler, which runs once the lifecycle is already `serving`. A
- * throwing getter therefore answered the HANDSHAKE -32603 with ZERO BYTES on
- * stderr, and left the session treating every later request as initialized out
- * of a handshake that had failed. Read here, it is a ConfigError before
- * startServer, so the author gets the sentence and no protocol byte is written.
+ * THE MATERIALISATION IS THE POINT AND NOT A SIDE EFFECT OF VALIDATING. A method
+ * key may be an ACCESSOR or a `Proxy` trap -- both legal spellings, and the
+ * natural ones for a handler built lazily from a file, a dictionary or a
+ * compiled grammar, or for one wrapped to log or to memoise -- and such a key
+ * answers PER ACCESS. So checking a value and then reading the PROPERTY again
+ * asks a different question the second time, and the second question is asked
+ * where the answer costs the most: capability assembly runs INSIDE the
+ * `initialize` handler, after the lifecycle has gone to `serving`. A key that
+ * answers a function once and throws afterwards would answer the HANDSHAKE
+ * -32603 with ZERO BYTES on stderr, leave the session treating every later
+ * request as initialized out of a handshake that failed, and refuse the retry,
+ * since a second `initialize` is InvalidRequest. Handing the SNAPSHOT downstream
+ * makes that second read impossible rather than guarded.
+ *
+ * A READ THAT THROWS HERE IS A ConfigError BEFORE startServer, so the author
+ * gets the sentence and no protocol byte is written.
  *
  * REJECTED RATHER THAN DIAGNOSED, on what a warning would leave behind: this
  * runs before startServer, so refusing costs nothing, while a warning hands the
@@ -121,22 +130,17 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
  * silence.
  *
  * DRIVEN BY THE TABLE'S KEYS AND NOT THE AUTHOR'S, which is what makes the set
- * read here EXACTLY the set read later. A key tsudoi does not serve is neither
- * read nor refused: nothing dereferences it, so it cannot fail, and refusing it
- * would forbid an author keeping a handler for a method tsudoi has yet to gain.
- *
- * WHAT ONE READ CANNOT PROVE, named rather than glossed: registerMethods
- * re-reads `config.methods?.[method]` on EVERY request for the life of the
- * session. An accessor that answers a function now and throws later is NOT
- * defended, and would fail as that method's own request rather than as the
- * handshake.
+ * carried here EXACTLY the set read later. A key tsudoi does not serve is
+ * neither read, nor refused, nor kept: nothing would ever dereference it, and
+ * refusing it would forbid an author keeping a handler for a method tsudoi has
+ * yet to gain.
  */
-function requireCallableMethods(returned: object, absolutePath: string): void {
+function validatedMethods(returned: object, absolutePath: string): TsudoiConfig["methods"] {
   const methods = readOrRefuse(absolutePath, "methods", () => {
     return (returned as { methods?: unknown }).methods;
   });
   if (methods === undefined) {
-    return;
+    return undefined;
   }
   // The neighbouring shape, spelled the same way ON PURPOSE: two reads of `is
   // this an object` in one file that disagreed about `null` would be a bug
@@ -148,6 +152,12 @@ function requireCallableMethods(returned: object, absolutePath: string): void {
         `come up answering nothing. A config that answers nothing omits methods entirely`,
     );
   }
+  // A `Record<string, unknown>` FILLED AND CAST ONCE, for the reason the delayed
+  // cast above is written out: every value here has come off `unknown` and
+  // passed `typeof === "function"`, which is the whole of what is knowable about
+  // it. That a handler's SIGNATURE matches its method is checked where an author
+  // annotates their own config with `TsudoiConfig`, and cannot be checked here.
+  const validated: Record<string, unknown> = {};
   for (const method of Object.keys(requestEntries)) {
     const handler = readOrRefuse(absolutePath, method, () => {
       return (methods as Record<string, unknown>)[method];
@@ -168,7 +178,9 @@ function requireCallableMethods(returned: object, absolutePath: string): void {
           `config declares, so this would invite requests nothing can answer`,
       );
     }
+    validated[method] = handler;
   }
+  return validated as TsudoiConfig["methods"];
 }
 
 /**
