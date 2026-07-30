@@ -4,12 +4,14 @@ import {
   DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  ErrorCodes,
   ExitNotification,
   InitializedNotification,
   type InitializeParams,
   InitializeRequest,
   type InitializeResult,
   type Logger,
+  ResponseError,
   type ServerCapabilities,
   ShutdownRequest,
   StreamMessageReader,
@@ -99,7 +101,14 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     notificationEntries(documents, lifecycle, workspaceFolders),
   );
 
-  connection.onRequest(InitializeRequest.type, (params: InitializeParams): InitializeResult => {
+  // `unknown` AND NOT `InitializeParams`, AND THE CAST IS DELAYED past the check
+  // below for the reason src/config.ts records at its own delayed cast: declaring
+  // the wire's bytes to be the shape a CONFORMING client sends makes every check
+  // on them dead code to the type checker, so the annotation would assert exactly
+  // what this handler exists to establish. A wider parameter is assignable where
+  // a narrower one is expected, so the registration still type-checks against the
+  // request's declared params.
+  connection.onRequest(InitializeRequest.type, (params: unknown): InitializeResult => {
     // THE GATE THIS REQUEST CONSULTS IS ITS OWN, and it is not the one every
     // other request asks: requestRejection() would answer ServerNotInitialized
     // to the very message that clears that phase, making the state it guards
@@ -113,6 +122,16 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     if (rejection !== undefined) {
       throw rejection;
     }
+    // BEFORE THE PHASE MOVES, AND THAT ORDER IS THE WHOLE VALUE OF THE CHECK. A
+    // refusal answered from AFTER the transition would be a session the client
+    // cannot repair: its corrected `initialize` meets the serving phase and is
+    // answered InvalidRequest, so a malformed handshake would cost the session
+    // rather than the message.
+    const malformed = malformedInitializeParams(params);
+    if (malformed !== undefined) {
+      throw new ResponseError(ErrorCodes.InvalidParams, malformed);
+    }
+    const initializeParams = params as InitializeParams;
     // AHEAD OF THE PREPARATION BELOW, AND WHAT KEEPS THAT SAFE IS A PROPERTY OF
     // ANOTHER FILE -- which is exactly why it is written down at this one. A
     // handshake answered -32603 from below this line leaves the phase saying
@@ -164,7 +183,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // root is found and its own launch directory when not, so a cwd fallback
     // looks correct in every test and is silently wrong for the user who has
     // no root.
-    handshake(params);
+    handshake(initializeParams);
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -308,6 +327,85 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // or matching the message, SILENTLY NEVER FIRES ON DENO and the poll it guards
   // then reports every parent as alive forever.
   connection.listen();
+}
+
+/**
+ * The sentence a malformed `initialize` must be refused with, or undefined where
+ * the handshake may proceed.
+ *
+ * WHAT IS CHECKED IS WHAT TSUDOI PUBLISHES, AND NOT `InitializeParams` AS A
+ * WHOLE. Four fields are read off this message; a field nothing reads is a field
+ * nothing here can be wrong about, and checking it would put tsudoi in the
+ * position of ruling on a client's message for no reader's benefit. Of the four,
+ * these are the ones whose PUBLISHED TYPE is the promise being kept: `Tsudoi`
+ * declares `rootUri` as `string | null` and `clientCapabilities` as an object,
+ * and nothing downstream inspects either -- the mirror stores `rootUri` as the
+ * client's own bytes and the capabilities are mirrored whole, both on purpose. So
+ * a value refused here is one a config author would otherwise meet inside their
+ * own handler, holding a type its declaration says cannot arrive.
+ *
+ * `rootPath` AND `workspaceFolders` ARE DECIDED IN src/workspace.ts AND ARE NOT
+ * RESTATED HERE. That module REDUCES both -- a `rootPath` that is not an
+ * absolute string arrives as `null`, a `workspaceFolders` that is not an array
+ * arrives as an empty list -- and those are states the fields already have and
+ * already mean `the client named none`. Refusing them here would give one field
+ * two contradictory answers in one handshake, and the mirror's is the one the
+ * published surface documents.
+ *
+ * WHICH IS ALSO THE LINE `rootUri` FALLS ON THE OTHER SIDE OF: `null` is a state
+ * it has, but a client that sent a NUMBER did not name no root -- it sent
+ * something no reading of this protocol makes sense of, and reducing that to
+ * `the client named none` would answer a question the client never asked.
+ *
+ * AN ABSENT OR `null` `capabilities` IS NOT MALFORMED: src/tsudoi.ts reads both
+ * as `{}`, which is what a client declaring nothing means and is the value a
+ * handler is promised. A primitive or an ARRAY is not that -- it is a
+ * declaration nothing can read -- so it is refused.
+ *
+ * -32602 IS THE CODE THE LIBRARY ITSELF ANSWERS on this very route for the two
+ * malformed shapes it catches -- params OMITTED and params BY POSITION, measured
+ * on both runtimes -- so this extends one answer to the shapes it lets through
+ * rather than inventing a second. It is also why no array reaches the top-level
+ * check: by-position params never arrive here at all.
+ *
+ * AND IT IS THE CODE THE SPECIFICATION EARNS: JSON-RPC 2.0 makes `params` `A
+ * Structured value` that `MAY be omitted`, and requires that `If present,
+ * parameters for the rpc call MUST be provided as a Structured value. Either
+ * by-position through an Array or by-name through an Object`. `null` is neither,
+ * and LSP requires an `InitializeParams` object besides.
+ *
+ * NOT REPORTED ON STDERR: the client is told, in the response it is waiting on,
+ * and the one stderr channel a config author has means THEIR handler failed.
+ */
+function malformedInitializeParams(params: unknown): string | undefined {
+  if (typeof params !== "object" || params === null) {
+    return `initialize params must be an object; received ${JSON.stringify(params)}`;
+  }
+  // Read once into locals: every check below is about the value that reaches a
+  // handler, and a second read is a second chance to answer differently. Safe to
+  // read at all because this object came off JSON.parse, which builds no
+  // accessors.
+  const { capabilities, rootUri } = params as {
+    readonly capabilities?: unknown;
+    readonly rootUri?: unknown;
+  };
+  if (
+    capabilities !== undefined &&
+    capabilities !== null &&
+    (typeof capabilities !== "object" || Array.isArray(capabilities))
+  ) {
+    return (
+      `initialize capabilities must be an object; received ` +
+      `${JSON.stringify(capabilities)}. A client that declares nothing omits the field`
+    );
+  }
+  if (rootUri !== undefined && rootUri !== null && typeof rootUri !== "string") {
+    return (
+      `initialize rootUri must be a string or null; received ` +
+      `${JSON.stringify(rootUri)}. A client that opened no project sends null`
+    );
+  }
+  return undefined;
 }
 
 /**

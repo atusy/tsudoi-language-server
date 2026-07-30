@@ -286,6 +286,79 @@ for (const runtime of runtimes) {
     });
 
     /**
+     * THE HANDSHAKE IS THE ONE REQUEST WHOSE REFUSAL MUST LEAVE THE SESSION
+     * USABLE, which is why this asserts the retry and not merely the code.
+     *
+     * `"params": null` IS WHAT ARRIVES, and it is not conforming: JSON-RPC 2.0
+     * says params is `A Structured value` that `MAY be omitted`, and its
+     * Parameter Structures section says `If present, parameters for the rpc call
+     * MUST be provided as a Structured value. Either by-position through an Array
+     * or by-name through an Object`. `null` is neither, and LSP requires an
+     * `InitializeParams` object besides. MEASURED, both runtimes: the library
+     * answers -32602 ITSELF for params OMITTED and for params BY POSITION, so
+     * `null` and the primitives are the whole of what reaches the handler.
+     *
+     * WHAT ACCEPTING IT COSTS IS NOT THE MALFORMED SESSION, which mirrors
+     * nothing and would be survivable, but THE NEXT ONE: the phase moves on the
+     * accepted handshake, so the client's corrected `initialize` is refused
+     * InvalidRequest and the session it was owed is unreachable.
+     */
+    test("initialize with null params is REFUSED with InvalidParams, and the handshake that follows completes", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const refusal = await session.requestError("initialize", null);
+        expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.serverInfo?.name).toBe("tsudoi");
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE FIELDS TSUDOI PUBLISHES, CHECKED WHERE THEY ENTER. `Tsudoi.rootUri`
+     * promises `string | null` and `Tsudoi.clientCapabilities` promises an
+     * object, and neither promise is kept by anything downstream: the mirror
+     * stores `rootUri` as the client's own bytes and the capabilities are
+     * mirrored whole, both deliberately. So a config author reading either one
+     * gets a value its published type says cannot arrive, and finds out inside
+     * their own handler.
+     *
+     * REFUSED RATHER THAN COERCED, and the asymmetry with `rootPath` beside it is
+     * the reason: that field is REDUCED to `null` when it is not an absolute
+     * path, because `null` is a state it already has and already means `the
+     * client named none`. `rootUri` has that state too -- but a client that sent
+     * a NUMBER did not name none, it sent something no reading of this protocol
+     * makes sense of, and -32602 is the answer that tells it so.
+     *
+     * NOT A GATE ON EVERY FIELD OF `InitializeParams`: tsudoi reads four and
+     * publishes what it reads. A field nothing reads is a field nothing can be
+     * wrong about here.
+     */
+    for (const [name, params] of [
+      ["a non-string rootUri", { ...initializeParams, rootUri: 5 }],
+      ["a primitive capabilities", { ...initializeParams, capabilities: 5 }],
+      ["an array capabilities", { ...initializeParams, capabilities: [] }],
+    ] as const) {
+      test(`initialize with ${name} is REFUSED with InvalidParams, naming the field`, async () => {
+        const session = LspSession.start(runtime, demoConfig);
+        try {
+          const refusal = await session.requestError("initialize", params);
+
+          expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+          // THE FIELD, not merely the code: a message naming only `params` sends
+          // the author back to a message they cannot see, and this suite has
+          // caught a refusal firing for the wrong field before.
+          expect(refusal.message).toContain(name.endsWith("rootUri") ? "rootUri" : "capabilities");
+        } finally {
+          session.dispose();
+        }
+      });
+    }
+
+    /**
      * THE HANDSHAKE IS ANSWERED OUT OF WHAT CONFIG LOAD KEPT, AND NEVER OUT OF A
      * SECOND READ OF THE AUTHOR'S OBJECT -- which is the whole of why this drives
      * a `Proxy` rather than a plain config.
