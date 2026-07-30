@@ -222,11 +222,17 @@ export interface RequestContext {
    * WHICH MEANS AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and
    * it is the one to think about: a client without the workspace-folders
    * capability names its project in `rootUri` or `rootPath` and sends no folders
-   * at all. `foldersWithRootFallback` is the reduction that answers it, exported
-   * from this module -- see it for the precedence order and for the two hazards
-   * it holds off. Reading this field alone in that session is not wrong, it is a
+   * at all. Reading this field alone in that session is not wrong, it is a
    * choice to answer from no root, and the absence is VISIBLE beside the field
-   * the client did fill.
+   * the client did fill -- which is the whole trade, since the failure it
+   * replaced was an author reading an empty list with no way to know the editor
+   * had opened anything.
+   *
+   * TSUDOI SHIPS NO REDUCTION OVER THE THREE, and that is a decision rather than
+   * an omission: a folder carries a `name`, and any reduction has to put
+   * something there that no client said. An author who wants one writes it, and
+   * the two fields below record what such a reduction must refuse -- both are
+   * failures that look correct in every test run from the project directory.
    *
    * The name is deliberately not `initialWorkspaceFolders`: every exported name
    * here is public API, so a name that became false would have had to stay.
@@ -243,34 +249,45 @@ export interface RequestContext {
    * project the editor opened. An omitted field and an explicit `null` arrive
    * alike; nothing else is normalised, so a URI naming no local path reaches you
    * as the client spelled it rather than being dropped for being unusable.
+   *
+   * WHICH IS THE HAZARD IF YOU TURN IT INTO A PATH: `fileURLToPath` THROWS on a
+   * URI with no local path -- `vscode-remote://` and `ssh://` are the ones an
+   * editor really sends -- and the throw lands in YOUR handler, so a completion
+   * handler that converts this field fails once per keystroke for a user
+   * connected over SSH. A reduction that wants a folder here should catch that
+   * and yield none rather than let it out, and it should carry the client's own
+   * bytes into `uri` rather than a round trip through the URL parser, since
+   * `workspace/didChangeWorkspaceFolders` matches URIs as exact strings.
    */
   readonly rootUri: string | null;
   /**
    * The project root a client named in `initialize`'s DEPRECATED `rootPath`, or
    * `null` where it named none -- a PATH rather than a URI, mirrored verbatim.
    *
-   * `rootUri` WINS WHERE BOTH ARE SET, which is the protocol's own rule and is
-   * applied by `foldersWithRootFallback` rather than here: this field is what the
-   * client said, and precedence is a reading of it.
+   * `rootUri` WINS WHERE BOTH ARE SET. That is the protocol's own rule and
+   * NOTHING HERE APPLIES IT: this field is what the client said, precedence is a
+   * reading of it, and both fields reach you unread. An empty `workspaceFolders`
+   * beside a filled `rootUri` beside a filled `rootPath` is three statements,
+   * and which one answers your question is yours to decide.
    *
-   * WHAT A MIRROR HANDS YOU ALONG WITH THE BYTES: `""` and `"."` are values a
-   * client can send, and they are NOT absence -- `??` does not cover them.
-   * Turning either into a URI with `pathToFileURL` resolves it against YOUR
-   * SERVER'S working directory and yields a root made of wherever the editor
-   * happened to be launched, which looks correct in every test run from the
-   * project directory. `foldersWithRootFallback` refuses a non-absolute path for
-   * that reason; a hand-rolled reduction has to refuse it too.
+   * THE cwd HAZARD, WHICH IS THIS FIELD'S AND NOT A GENERAL WARNING TO BE
+   * CAREFUL. `""` and `"."` are values a client can send, and they are NOT
+   * absence -- `??` does not cover them, since neither is null nor undefined.
+   * `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so passing either one
+   * through it yields `file://` plus WHATEVER DIRECTORY YOUR SERVER WAS LAUNCHED
+   * IN -- a root no client named, spelled exactly like one that was. It is
+   * invisible in testing because an editor launches the server FROM the project:
+   * nvim spawns it with cwd = root_dir whenever it found a root, so cwd and the
+   * project coincide in every session that has one and diverge only for the user
+   * who has no project at all.
+   *
+   * SO A REDUCTION OVER THIS FIELD TAKES IT ONLY WHEN IT IS ABSOLUTE. `isAbsolute`
+   * is the check; a null check is not, and neither is truthiness -- `"."` passes
+   * both. tsudoi held that guard while it synthesised a folder from this field
+   * and it holds it no longer, because it no longer reads the field at all.
    */
   readonly rootPath: string | null;
 }
-
-/**
- * THE REDUCTION OVER THE THREE FIELDS, re-exported here because THIS is the
- * published subpath and the surface a config author imports from. It lives in
- * src/workspace.ts, beside the mirror it reads and the list it prefers, so that
- * the folder list and its fallback cannot drift apart in two files.
- */
-export { foldersWithRootFallback } from "./workspace.ts";
 
 export type MethodHandler<M extends Method> = (
   context: RequestContext,

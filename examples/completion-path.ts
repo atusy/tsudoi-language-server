@@ -7,7 +7,7 @@ import { opendir, stat } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { foldersWithRootFallback, type RequestContext } from "@atusy/tsudoi/types";
+import type { RequestContext } from "@atusy/tsudoi/types";
 import { type CompletionParams } from "@atusy/tsudoi/deps/protocol";
 import {
   type CompletionItem,
@@ -193,11 +193,13 @@ export interface PathCompletionOptions {
  * editor started without a project root leaves cwd as its own launch
  * directory, so the guess looks right in every test and wrong in real use.
  *
- * THIS FUNCTION NO LONGER HOLDS THAT SECOND HALF UP BY ITSELF, and saying so is
- * the point: `folders` now arrives from `foldersWithRootFallback`, which is
- * where a relative `rootPath` is refused. The line above describes what THIS
- * function does -- take URIs as given -- and the cwd guarantee is the caller's,
- * one frame up.
+ * THAT SECOND HALF IS HELD UP HERE ALONE AGAIN, and it is worth naming because
+ * it moved twice. `folders` arrives from `context.workspaceFolders` -- the
+ * client's own list, which no cwd can enter -- so this function taking URIs as
+ * given IS the whole guarantee. For one sprint it arrived through a published
+ * reduction over `rootUri` and `rootPath`, which had to refuse a relative
+ * `rootPath` because `pathToFileURL` resolves one against cwd; that reduction is
+ * gone, and a config that writes its own inherits that refusal along with it.
  *
  * Order is most-local-first, which decides attribution rather than content:
  * items dedup by inserted text, so the survivor names the root asked first.
@@ -523,7 +525,7 @@ export async function* pathCompletion(
     return;
   }
   const cwd = options.cwd ?? process.cwd();
-  // WHEN THE CLIENT NAMED NO ROOT AT ALL THIS SAYS NOTHING, and that is a CHOICE
+  // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
   // rather than an oversight -- recorded here because someone would otherwise
   // re-add the report believing it was required.
   //
@@ -533,13 +535,11 @@ export async function* pathCompletion(
   // it as noise. THE COST STANDS: a config author whose editor opened no
   // workspace now gets no items from that source and no explanation of why.
   //
-  // WHAT `NO ROOT AT ALL` MEANS IS NARROWER THAN `NO FOLDERS`, and the
-  // difference is the reduction below: a client that sends no `workspaceFolders`
-  // but names the project in `rootUri` or `rootPath` -- which is every client
-  // without the workspace-folders capability -- still answers from that root
-  // here. tsudoi hands over what the client sent and reduces nothing behind
-  // this handler's back, so the fallback is THIS FILE'S DECISION, taken once,
-  // on the line below.
+  // AND `NO FOLDERS` IS THE WHOLE OF IT, WHICH IS WIDER THAN IT LOOKS: a client
+  // without the workspace-folders capability names its project in `rootUri` or
+  // `rootPath` and sends no folders, so it lands here too, silently, however
+  // clearly it named a project. The line below says what this file does about
+  // that and why -- nothing.
   const seen = new Set<string>();
   try {
     for (const fragment of pathFragments(line, params.position.character)) {
@@ -548,13 +548,16 @@ export async function* pathCompletion(
         fragment,
         params.textDocument.uri,
         cwd,
-        // NOT `context.workspaceFolders`, DELIBERATELY: that field carries only
-        // what the client sent, so reading it alone would leave a rootUri-only
-        // client -- one without the workspace-folders capability -- with no
-        // workspace source at all, silently. `foldersWithRootFallback` applies
-        // the protocol's own precedence and refuses a relative `rootPath`, which
-        // would otherwise resolve against this process's working directory.
-        foldersWithRootFallback(context),
+        // WHAT THE CLIENT SENT, AND NOTHING ELSE. A client without the
+        // workspace-folders capability names its project in `rootUri` or
+        // `rootPath` instead, and THIS SOURCE THEN CONTRIBUTES NOTHING -- the
+        // document's own directory, the working directory and an absolute
+        // fragment still answer, so the handler is narrower rather than empty.
+        // Reducing over the deprecated fields is a decision this file DOES NOT
+        // TAKE: `context.rootUri` and `context.rootPath` are there for a config
+        // that wants it, and a reduction that resolved a relative `rootPath`
+        // would manufacture a root out of this process's working directory.
+        context.workspaceFolders,
       )) {
         for await (const batch of itemsFrom(source, fragment, params.position, line)) {
           const fresh = batch.filter((item) => {

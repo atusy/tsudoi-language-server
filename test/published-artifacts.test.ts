@@ -25,6 +25,15 @@ import { typeCheckProbe } from "./helpers/typecheck.ts";
  * instead, and only because the property it records is FORECLOSED by the
  * staging design rather than assertable -- see the stays-green note further
  * down, and the test that used to stand there and could not fail.
+ *
+ * A DIVERGENCE THIS FILE USED TO RECORD IS GONE WITH ITS SUBJECT, noted so the
+ * next reader does not go looking for it: src/types.ts re-exported a runtime
+ * function from ./workspace.ts for one sprint, and declaration emit did not
+ * rewrite that specifier -- dist/types.js carried `./workspace.js` while
+ * dist/types.d.ts carried `./workspace.ts`, a file the tarball does not ship.
+ * The stakeholder withdrew the function, so src/types.ts re-exports nothing at
+ * all and neither file carries the specifier. MEASURED on the built artifact
+ * rather than reasoned from the source edit.
  */
 
 /** The config the README tells a reader to write, read out of the README. */
@@ -140,6 +149,72 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
 });
 
 /**
+ * WHAT A SUBPATH EXPORTS AT RUN TIME, READ OFF THE INSTALLED PACKAGE.
+ *
+ * An ES module namespace object carries EXACTLY the runtime exports, so a
+ * type-only export is invisible here BY CONSTRUCTION rather than by our
+ * filtering it out -- which is what makes this the one instrument that can tell
+ * a declaration file from the module beside it. The two subpath tests below
+ * SHARE this reader rather than each carrying their own: a second mechanism over
+ * the same subject is how a suite grows two instruments that can disagree.
+ *
+ * THE LOAD CHECK IS IN HERE AND NOT IN A CALLER, and it is what makes an EMPTY
+ * result mean something: a module that throws at load also produces no keys, and
+ * without this the caller would report only that stdout did not parse. The whole
+ * failure goes on the assertion line for the same reason.
+ */
+async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]> {
+  consumer.write(
+    probe,
+    `import * as values from "${specifier}";\nconsole.log(JSON.stringify(Object.keys(values)));\n`,
+  );
+
+  const result = await runCommand(`bun run ./${probe}`, consumer.dir);
+
+  expect(`${specifier}: ${String(result.code)} ${result.stderr}`).toBe(`${specifier}: 0 `);
+
+  return JSON.parse(result.stdout.trim()) as string[];
+}
+
+/**
+ * TSUDOI'S OWN SUBPATH CARRIES NO RUNTIME VALUE, AND THIS IS THE GUARANTEE
+ * RATHER THAN A CONFIRMATION TAKEN ONCE.
+ *
+ * `@atusy/tsudoi/types` IS TYPES. It exported one function for a single sprint
+ * -- a reduction over the deprecated root fields -- and the stakeholder ruled
+ * that a types module exporting a runtime function is incoherent. Nothing
+ * enforced the property before that; the sentences claiming it lived in comments
+ * in three files and went false without anything reddening.
+ *
+ * MEASURED ON THE ARTIFACT A STRANGER RECEIVES, not grepped over src/. A name
+ * grep is what missed this class before: it cannot see interface MEMBERS and it
+ * cannot see a RE-EXPORT line, so it reports an empty diff over a surface that
+ * grew both.
+ *
+ * ITS PAIR IS IN THE SAME MEASUREMENT, per Sprint 6, because this asserts an
+ * ABSENCE: `[]` alone cannot tell `type-only` from `the module failed to load`
+ * from `I read the wrong module`. The sibling subpath goes through the SAME
+ * reader in the same test and must show keys.
+ *
+ * PER SUBPATH AND NEVER PER PACKAGE: `@atusy/tsudoi/deps/types` re-exports the
+ * dependency's data values ON PURPOSE, so `this package exports no values` would
+ * be false. Only tsudoi's OWN subpath makes this claim, and the pair below is
+ * also what stops the claim being quietly widened.
+ *
+ * THE SIBLING IS ASSERTED NON-EMPTY AND NOT BY SET, which is the test above's
+ * job: the same set pinned twice is two instruments that can disagree, where
+ * `this reader sees keys when there are keys` is the only thing this test needs
+ * from it.
+ */
+test("tsudoi's own subpath exports nothing at run time, where its dependency subpath exports values", async () => {
+  const ours = await runtimeKeysOf("@atusy/tsudoi/types", "own-surface.js");
+  const dependency = await runtimeKeysOf("@atusy/tsudoi/deps/types", "sibling-surface.js");
+
+  expect(ours).toEqual([]);
+  expect(dependency.length).toBeGreaterThan(0);
+});
+
+/**
  * THE VALUE ARM, and no type check can stand in for it.
  *
  * `CompletionItemKind` and `DiagnosticSeverity` are namespaces of const members
@@ -150,10 +225,10 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * that exports nothing: every type-check assertion in this file would stay
  * green while a config author got `undefined` at their first completion.
  *
- * Object.keys of the namespace object is therefore the assertion, and an ES
- * module namespace carries exactly the runtime exports, so a type-only
- * re-export is invisible here BY CONSTRUCTION rather than by our filtering it
- * out.
+ * Object.keys of the namespace object is therefore the assertion, and the reader
+ * that takes it is shared with the type-only test above -- including the load
+ * check that used to be written out here, which is the same claim in the same
+ * words and had no business existing twice.
  *
  * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE, and it must be
  * EXACTLY what vscode-languageserver-types exports at run time. src/deps/types.ts
@@ -162,19 +237,10 @@ test("the in-repo arm cannot observe what the published arm checks", async () =>
  * explicit list and this reddens the day upstream adds a name.
  */
 test("the published module re-exports every LSP data value, and nothing else", async () => {
-  consumer.write(
-    "value-surface.js",
-    'import * as values from "@atusy/tsudoi/deps/types";\nconsole.log(JSON.stringify(Object.keys(values)));\n',
-  );
-
-  const result = await runCommand("bun run ./value-surface.js", consumer.dir);
-
-  // The whole failure on the assertion line: a module that throws at load
-  // otherwise reports only that stdout did not parse.
-  expect(`${String(result.code)} ${result.stderr}`).toBe("0 ");
+  const published = await runtimeKeysOf("@atusy/tsudoi/deps/types", "value-surface.js");
 
   const upstream = Object.keys(await import("vscode-languageserver-types")).sort();
-  expect((JSON.parse(result.stdout.trim()) as string[]).sort()).toEqual(upstream);
+  expect(published.sort()).toEqual(upstream);
 });
 
 /**

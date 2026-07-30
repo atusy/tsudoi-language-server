@@ -1,9 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import {
-  foldersWithRootFallback,
-  type RequestContext,
-  type TsudoiConfig,
-} from "../../src/types.ts";
+import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
 
 /**
@@ -18,18 +14,17 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  * missing key, `null` as null and `[]` as [], which is exactly the three-way
  * distinction the criteria turn on.
  *
- * `fallback` IS THE PUBLISHED REDUCTION RUN ON THIS VERY CONTEXT, and it is here
- * so that one probe can report both what tsudoi handed the author and what the
- * author gets by asking for the root -- the two states criterion 2 has to tell
- * apart in ONE session. It is read by its own tests and never by the folder
- * ones, so a break in the reduction cannot flip an assertion about the mirror.
+ * THE THREE MIRRORED FIELDS AND NOTHING DERIVED FROM THEM. A fourth key held
+ * the published reduction run on this very context, and it went when the
+ * stakeholder ruled that tsudoi's TYPES module may not export a runtime
+ * function: there is no reduction left to run, so a probe that computed one HERE
+ * would be asserting against a helper this fixture had written for itself.
  */
 export function observationOf(context: RequestContext): string {
   return JSON.stringify({
     workspaceFolders: context.workspaceFolders,
     rootUri: context.rootUri,
     rootPath: context.rootPath,
-    fallback: foldersWithRootFallback(context),
   });
 }
 

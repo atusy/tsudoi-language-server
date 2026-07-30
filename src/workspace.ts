@@ -1,10 +1,9 @@
-import { isAbsolute } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import type {
   InitializeParams,
   WorkspaceFolder,
   WorkspaceFoldersChangeEvent,
 } from "vscode-languageserver-protocol";
+import type { RequestContext } from "./types.ts";
 
 /**
  * The workspace folder list, plus the handle that writes it. The same shape
@@ -22,8 +21,12 @@ export interface WorkspaceFoldersHandle {
    */
   readonly current: () => readonly WorkspaceFolder[];
   /**
-   * The two deprecated root fields as the client spelled them, or `null` each
-   * where it named none.
+   * The two deprecated root fields as the client spelled them.
+   *
+   * `null` IS `THE CLIENT NAMED NONE`, and it is what an OMITTED field arrives
+   * as too -- the one collapse this mirror makes, because the protocol offers no
+   * third state a reader could act on differently. Nothing else is normalised:
+   * `""` and `"."` are values a client can send and they travel as sent.
    *
    * A SECOND READER RATHER THAN A WIDER `current`, and that is a decision about
    * what a change to this file may cost: `current` answers the question
@@ -31,8 +34,12 @@ export interface WorkspaceFoldersHandle {
    * type would move every assertion that reads the folder list back -- turning
    * a sprint that adds two fields into a diff that looks like a change to the
    * removal predicate. These two never move after `initialize` anyway.
+   *
+   * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added
+   * here and forgotten at the context, or the reverse, does not compile. It is
+   * the only reason this module names a type from src/types.ts at all.
    */
-  readonly roots: () => ClientRoots;
+  readonly roots: () => Pick<RequestContext, "rootUri" | "rootPath">;
   /**
    * What the client sent at `initialize`, MIRRORED AND NOT INTERPRETED.
    *
@@ -47,96 +54,14 @@ export interface WorkspaceFoldersHandle {
   change(event: WorkspaceFoldersChangeEvent): void;
 }
 
-/**
- * The two deprecated fields a client may still name a project root in, as the
- * client spelled them. `null` is `the client named none`, and it is what an
- * OMITTED field arrives as too -- the one collapse this mirror makes, because
- * the protocol offers no third state a reader could act on differently.
- */
-export interface ClientRoots {
-  readonly rootUri: string | null;
-  readonly rootPath: string | null;
-}
-
-/**
- * THE FOLDERS THE CLIENT SENT, OR FAILING THAT THE ROOT IT NAMED IN A DEPRECATED
- * FIELD. The reduction tsudoi itself no longer performs, offered to the config
- * author who wants it and never applied behind their back.
- *
- * WHY IT IS THE AUTHOR'S CALL AND NOT tsudoi's: `WorkspaceFolder.name` is
- * defined by the protocol as the label `used to refer to this workspace folder
- * in the user interface`, so it is the CLIENT'S to choose and a server cannot
- * know it. What this function puts there is THE FULL PATH -- derived from what
- * the client sent with nothing invented, and still NOT a label any user would
- * recognise. `RequestContext.workspaceFolders` may not carry such a thing,
- * because nothing there tells an author which entries the client named; a folder
- * that arrives BECAUSE YOU CALLED THIS is a different matter.
- *
- * THE ORDER IS THE PROTOCOL'S OWN: `rootPath` is deprecated in favour of
- * `rootUri`, `rootUri` in favour of `workspaceFolders`, and `workspaceFolders`
- * exists only if the client supports workspace folders -- so a client without
- * that capability sends no folders and may still say which project the editor
- * opened. AN EMPTY LIST FALLS THROUGH, so a client that supports folders, has
- * none configured and still sends `rootUri` is read as `I do not do multi-root`
- * rather than `there is no project`.
- *
- * ABSOLUTE OR NOTHING FOR `rootPath`, AND THIS IS THE GUARD THAT WOULD OTHERWISE
- * HAVE DIED WITH THE SYNTHESIS: `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST
- * cwd, so `""` or `"."` would hand you a root made of whatever directory YOUR
- * SERVER WAS LAUNCHED IN -- through a door `??` does not cover, since `""` is
- * neither null nor undefined. That is the failure this refuses on your behalf,
- * and it is worth naming because a cwd root looks correct in every test an
- * editor runs from the project directory and is wrong for the user who has no
- * project at all.
- *
- * A URI NAMING NO LOCAL PATH YIELDS NO FOLDER RATHER THAN THROWING, and the
- * reason MOVED WITH THE CODE rather than surviving unchanged. It used to be that
- * `fileURLToPath` throwing inside the initialize handler would answer the
- * handshake with an error and leave the author no server at all. Nothing calls
- * this at `initialize` any more: the throw would land in YOUR OWN HANDLER, so a
- * completion handler that called it would fail once per keystroke against an
- * editor connected over `vscode-remote://` or `ssh://`. Smaller than losing the
- * handshake, still not yours to debug.
- *
- * A SESSION'S ROOTS DO NOT CHANGE, but the folder list does, so call this per
- * request -- `context` is a snapshot of request start and so is this answer.
- */
-export function foldersWithRootFallback(
-  client: ClientRoots & { readonly workspaceFolders: readonly WorkspaceFolder[] },
-): readonly WorkspaceFolder[] {
-  if (client.workspaceFolders.length > 0) {
-    return client.workspaceFolders;
-  }
-  const rootUri = client.rootUri;
-  if (rootUri !== null) {
-    try {
-      // THE CLIENT'S OWN BYTES for `uri`, never a round trip through the URL
-      // parser: `change` matches URIs as exact strings, so a folder holding a
-      // reparsed URI is one the client can never remove -- it would send back
-      // the spelling it sent, and nothing would match.
-      return [{ uri: rootUri, name: fileURLToPath(rootUri) }];
-    } catch {
-      // AND FALLS THROUGH TO `rootPath`, which is what the rung it replaces did:
-      // a client naming a remote root in one field and a local one in the other
-      // has named a local project, and the unusable field should not take the
-      // usable one down with it.
-    }
-  }
-  const rootPath = client.rootPath;
-  if (rootPath === null || isAbsolute(rootPath) === false) {
-    return [];
-  }
-  return [{ uri: pathToFileURL(rootPath).href, name: rootPath }];
-}
-
 export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   let folders: readonly WorkspaceFolder[] = [];
-  let roots: ClientRoots = { rootUri: null, rootPath: null };
+  let roots: Pick<RequestContext, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
 
   return {
     current: (): readonly WorkspaceFolder[] => folders,
 
-    roots: (): ClientRoots => roots,
+    roots: (): Pick<RequestContext, "rootUri" | "rootPath"> => roots,
 
     initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void {
       // MIRRORED, WITH NOTHING SYNTHESISED AND NOTHING PREFERRED. Omitted, `null`
@@ -144,11 +69,13 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // travel as the client's own bytes, including `""`, which `??` leaves
       // alone because it is neither null nor undefined.
       //
-      // NO ROOT IS BUILT FROM EITHER OF THEM, and that is this sprint's whole
-      // subject: a folder needs a `name`, the protocol makes `name` a UI label
-      // the client owns, and a server that invents one is stating something no
-      // client said. An author who wants the reduction calls
-      // `foldersWithRootFallback` and gets a derived name knowingly.
+      // NO ROOT IS BUILT FROM EITHER OF THEM, HERE OR ANYWHERE: a folder needs a
+      // `name`, the protocol makes `name` a UI label the client owns, and a
+      // server that invents one is stating something no client said. tsudoi
+      // ships no reduction over these fields either -- an author who wants a
+      // root out of them writes it themselves, and the two hazards that reading
+      // carries are recorded at `rootUri` and `rootPath` in src/types.ts, which
+      // is where the author meets the fields.
       folders = params.workspaceFolders ?? [];
       roots = { rootUri: params.rootUri ?? null, rootPath: params.rootPath ?? null };
     },
