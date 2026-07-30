@@ -301,7 +301,7 @@ export function startServer(
  *
  * IF THE SUITE HANGS, CHECK THIS TABLE'S GATES -- a `lifecycle` on `exit`
  * leaves the server alive after the client asked it to die, and the only
- * symptom is a run that used to take twelve seconds taking minutes.
+ * symptom is a run that normally takes twelve seconds taking minutes.
  */
 export function notificationEntries(
   documents: DocumentStoreHandle,
