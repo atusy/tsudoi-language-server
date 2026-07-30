@@ -527,6 +527,76 @@ for (const runtime of runtimes) {
       }
     });
 
+    // A rootPath OF THE WRONG TYPE, which is the case the null check does not
+    // cover: `node:path`'s `isAbsolute` RAISES `ERR_INVALID_ARG_TYPE` on a
+    // number, and that throw lands in the `initialize` handler -- so a client
+    // sending `"rootPath": 5` gets its handshake answered -32603, with nothing
+    // on stderr and nothing in the LSP log, and the author has no server at all.
+    // `rootPath !== null` passes a number straight into the throw.
+    //
+    // THE HANDSHAKE IS ASSERTED FIRST AND SEPARATELY from what arrived: the
+    // failure this defends is a DEAD SESSION, and reading the mirror alone would
+    // report it as `expected null, got undefined` -- a message about the fixture
+    // rather than about the server that never answered.
+    //
+    // A NUMBER AND NOT A `{}`: a JSON-RPC client can put any JSON value here,
+    // and 5 is the shortest one `typeof x === "string"` refuses while `x !==
+    // null` admits. What it must arrive as is `null` -- the same answer a
+    // relative path gets, because it is the same statement: not a root.
+    test("a rootPath of the wrong type does not fail the handshake, and arrives as null", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        const result = await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootPath: 5,
+        });
+        expect(result.capabilities).toBeDefined();
+
+        session.notify("initialized", {});
+
+        expect(await mirrored(session)).toEqual({
+          workspaceFolders: [],
+          rootUri: null,
+          rootPath: null,
+        });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE SAME CLASS ONE LEVEL UP, found by sweeping the other fields this
+    // handler reads: JSON-RPC permits `"params": null` on any request, and
+    // vscode-jsonrpc hands that null to the handler unchanged. Reading a field
+    // off it throws where `isAbsolute` did, with the same cost -- the handshake
+    // answered -32603, no server, nothing to read.
+    //
+    // MIRRORED AS `NAMED NOTHING`, which is not a new state: omitted, `null` and
+    // `[]` are already one answer here, and a client that sent no params named
+    // no folders and no root by exactly that reading.
+    //
+    // WHAT WAS SWEPT AND FOUND NOT TO BE THIS CLASS, so that a later reader does
+    // not take the two tests as covering the field set: `"rootUri": 5` and
+    // `"workspaceFolders": 5` DO NOT THROW (measured). They propagate a value of
+    // the wrong type to a handler, which is a different failure with a different
+    // remedy, and no test here claims otherwise.
+    test("initialize with null params completes the handshake and mirrors nothing", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        const result = await session.request<InitializeResult>("initialize", null);
+        expect(result.capabilities).toBeDefined();
+
+        session.notify("initialized", {});
+
+        expect(await mirrored(session)).toEqual({
+          workspaceFolders: [],
+          rootUri: null,
+          rootPath: null,
+        });
+      } finally {
+        session.dispose();
+      }
+    });
+
     // PBI-17 CRITERION 1. The client opened with one folder and added a second
     // WHILE THE SESSION WAS RUNNING, which is what `add_workspace_folder()`
     // sends. The handler must see the workspace as it is NOW.

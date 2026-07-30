@@ -27,9 +27,10 @@ export interface WorkspaceFoldersHandle {
    *
    * `null` IS `THE CLIENT NAMED NONE`, and it is what an OMITTED field arrives
    * as too, because the protocol offers no third state a reader could act on
-   * differently. IT IS ALSO WHAT A REFUSED `rootPath` ARRIVES AS -- see the
-   * reason at `initialize` below, and the cost, which is that these two states
-   * are not distinguishable downstream.
+   * differently. IT IS ALSO WHAT A REFUSED `rootPath` ARRIVES AS -- whether it
+   * was refused for being relative or for not being a string at all; see the
+   * reason at `initialize` below, and the cost, which is that these states are
+   * not distinguishable downstream.
    *
    * A SECOND READER RATHER THAN A WIDER `current`, and that is a decision about
    * what a change to this file may cost: `current` answers the question
@@ -50,8 +51,19 @@ export interface WorkspaceFoldersHandle {
    * business and there is nothing left for a caller to reduce: `workspaceFolders`
    * omitted, `null` and `[]` all mean an empty list, and the two root fields are
    * stored as bytes.
+   *
+   * `| null` IS THE WIRE SHAPE AND NOT A CONVENIENCE. JSON-RPC lets any client
+   * send `"params": null`, vscode-jsonrpc hands it through unchanged, and the
+   * declared `InitializeParams` is a description of a CONFORMING client rather
+   * than a guarantee about the bytes. MEASURED, both runtimes: reading a field
+   * off it without this throws inside the `initialize` handler, and the cost is
+   * the one recorded at `rootPath` below -- the handshake is answered -32603 and
+   * the author has no server. A client that named nothing is mirrored as having
+   * named nothing, which is what the three states above already say.
    */
-  initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void;
+  initialize(
+    params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath"> | null,
+  ): void;
   /** What `workspace/didChangeWorkspaceFolders` reported. WHEN this may be
    * called is the notification table's business, decided once at the entry. */
   change(event: WorkspaceFoldersChangeEvent): void;
@@ -66,7 +78,9 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
 
     roots: (): Pick<RequestContext, "rootUri" | "rootPath"> => roots,
 
-    initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void {
+    initialize(
+      params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath"> | null,
+    ): void {
       // MIRRORED, WITH NOTHING SYNTHESISED AND NOTHING PREFERRED. Omitted, `null`
       // and `[]` are one state here -- an empty list -- and `rootUri` travels as
       // the client's own bytes whatever scheme it names.
@@ -98,6 +112,17 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // `isAbsolute` AND NOT TRUTHINESS, which is not a style preference: `"."`
       // is truthy and is exactly the value the guard exists for.
       //
+      // AND `typeof === "string"` RATHER THAN `!== null`, which is a SECOND job
+      // in the same expression and the reason the null check is gone rather than
+      // kept beside it. `isAbsolute` does not merely answer `false` for a
+      // non-string -- it RAISES `ERR_INVALID_ARG_TYPE` (measured, both
+      // runtimes), and the throw lands in the `initialize` handler, where the
+      // whole handshake is answered -32603 and NOTHING REACHES STDERR: the
+      // author sees an editor with no server and an LSP log with no reason. A
+      // `"rootPath": 5` is a client that named no path, and it is refused the
+      // same way `"."` is. The typeof test subsumes the null one, so writing
+      // both would suggest a state the first does not already cover.
+      //
       // WHAT IT COSTS, stated rather than glossed: the author cannot tell `the
       // client sent no rootPath` from `the client sent one we refused`. Both
       // arrive as `null`.
@@ -105,11 +130,11 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // NOT EXTENDED TO `rootUri`, deliberately: a `vscode-remote://` or `ssh://`
       // root is a VALID URI that merely names no LOCAL path, and refusing it
       // would hide a legitimate value from an author who handles that scheme.
-      folders = params.workspaceFolders ?? [];
-      const rootPath = params.rootPath ?? null;
+      folders = params?.workspaceFolders ?? [];
+      const rootPath = params?.rootPath ?? null;
       roots = {
-        rootUri: params.rootUri ?? null,
-        rootPath: rootPath !== null && isAbsolute(rootPath) ? rootPath : null,
+        rootUri: params?.rootUri ?? null,
+        rootPath: typeof rootPath === "string" && isAbsolute(rootPath) ? rootPath : null,
       };
     },
 
