@@ -117,9 +117,9 @@ const bunGlobalUse = 'export const read = () => Bun.file("x").text();\n';
 // THE EXEMPT SHAPES CARRY A SECOND VIOLATION, AND IT IS THE HALF THAT MEASURES
 // ANYTHING. A bare `code === 0` is equally true of a rule that does not exist, a
 // config oxlint never read, and a path an `ignorePatterns` grew to cover -- the
-// degeneracy named at rule 4 below. Measured against a run pointed at a config
-// declaring no rules: the bare assertion stayed GREEN at both exempt shapes
-// while rule 4's paired arm reddened.
+// degeneracy named at rule 4 below. MEASURED: against a config declaring no
+// rules, a bare `code === 0` at these two shapes stays GREEN, where rule 4's
+// paired arm reddens with an empty output.
 //
 // A BUN GLOBAL ON LINE 3, flagged by a rule THE OVERRIDE LEAVES ON -- it
 // switches off `no-restricted-imports` alone. So the diagnostic is reported

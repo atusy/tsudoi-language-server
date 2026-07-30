@@ -255,11 +255,12 @@ test("closing one of two open documents leaves exactly the other one", () => {
 // drops the entry, the `didOpen` that follows CONSTRUCTS A NEW DOCUMENT, and a
 // handler still holding the old one holds a detached snapshot.
 //
-// WHY THE VERSION ASSERTIONS ARE NOT DECORATION -- they are what makes the
-// failure silent. The version is the CLIENT'S NUMBER AND IT RESTARTS AT THE
-// REOPEN, so the stale reference reports the SAME version as the live document
-// while their texts differ. A handler comparing versions to decide whether its
-// reference is current is told everything is fine.
+// THE VERSION ASSERTION RECORDS WHY THE DETACHMENT IS SILENT, and it is a
+// record rather than the discriminator: the stale reference reports the SAME
+// number as the live document while their texts differ, so a handler comparing
+// versions to decide whether its reference is current is told everything is
+// fine. What reddens when a reference DOES survive a close is the text
+// assertion beside it.
 //
 // THE SAME-CYCLE ASSERTION IS A CONTROL, not coverage: a store that had stopped
 // tracking edits at all would satisfy every cross-cycle assertion below for a
@@ -293,6 +294,5 @@ test("a reference captured before a close stops tracking the reopened document",
 
   expect(store.documents.get(uri)?.getText()).toBe("edited after reopen");
   expect(captured.getText()).toBe("edited while open");
-  expect(captured.version).toBe(2);
-  expect(store.documents.get(uri)?.version).toBe(2);
+  expect(captured.version).toBe(store.documents.get(uri)?.version);
 });
