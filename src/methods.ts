@@ -578,8 +578,14 @@ export type RequestRejection = () => ResponseError<void> | undefined;
  *
  * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added to
  * this thunk and forgotten at the context, or the reverse, does not compile.
+ *
+ * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, and deliberately not
+ * `ClientRoots`: src/workspace.ts exports that name for the two DEPRECATED
+ * FIELDS ALONE, and this is the whole slice INCLUDING the folder list. Two
+ * exported names spelled alike and meaning different things is a reading trap
+ * whether or not a compiler minds.
  */
-export type ClientRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
+export type RequestRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
 
 /**
  * Reports a config handler's failure and rethrows it.
@@ -809,7 +815,7 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
-  clientRoots: ClientRoots,
+  clientRoots: RequestRoots,
 ): void {
   /**
    * Whether this SESSION has already been told about an invalid token. One
@@ -912,7 +918,7 @@ async function driveAwaitedOnce(run: {
   params: unknown;
   cancellation: CancellationToken;
   tsudoi: Tsudoi;
-  clientRoots: ClientRoots;
+  clientRoots: RequestRoots;
 }): Promise<unknown> {
   const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
   return answerUnlessCancelled(run.method, context.signal, async () => {
@@ -980,7 +986,7 @@ async function driveStream(run: {
   entry: ErasedEntry;
   connection: RequestOnlyConnection;
   tsudoi: Tsudoi;
-  clientRoots: ClientRoots;
+  clientRoots: RequestRoots;
   reportInvalidToken: (requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
