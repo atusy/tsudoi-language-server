@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { japaneseFailure } from "./fixtures/factory-rejects-japanese.ts";
+import { getterFailure } from "./fixtures/handler-getter-throws.ts";
 import { bunRuntime, denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { type CliResult, fixture, runCli } from "./helpers/spawn.ts";
@@ -155,6 +156,57 @@ for (const runtime of runtimes) {
         expectFailureContract(result);
         expect(result.stderr).toContain(path);
         expect(result.stderr).toContain(`returned ${arrival}`);
+      });
+    }
+
+    /**
+     * WHAT `methods` HOLDS, read and refused AT LOAD -- one level inside the
+     * arms above, and refused for the same reason they are.
+     *
+     * THREE ARMS AND NOT ONE, because they fail in three different ways:
+     *
+     * `{ methods: 5 }` IS `() => 5` ONE LEVEL IN. Nothing dereferences a
+     * primitive -- `contributeCapabilities` asks `config.methods?.[method] !==
+     * undefined`, and a method name read off `5` is `undefined` -- so the server
+     * came up advertising no capability at all.
+     *
+     * A NON-FUNCTION HANDLER IS WORSE THAN INERT. That same read claims a
+     * capability on `!== undefined`, so tsudoi ADVERTISED hoverProvider and then
+     * answered -32603 to every hover the client was thereby entitled to send.
+     *
+     * THE GETTER IS THE SHARP ONE AND IT BROKE NOTHING. It type-checks, and the
+     * first thing to read it was capability assembly INSIDE the `initialize`
+     * handler -- which runs after the lifecycle has already moved to `serving`.
+     * The handshake was answered -32603 with ZERO BYTES on stderr, and the
+     * session then treated every later request as initialized out of a handshake
+     * that had failed. MEASURED with the guard reverted: exit 0, the same silent
+     * success `() => 5` produced, which is why this arm asserts exit 1 rather
+     * than merely a good message.
+     *
+     * THE THIRD ARM ASSERTS THE AUTHOR'S OWN WORDS, not just that something
+     * failed: what a lazily-built handler threw is the only thing that locates
+     * the line in their file.
+     *
+     * REJECTED RATHER THAN DIAGNOSED, for all three, on the ground this whole
+     * file asserts: config load runs before startServer, so refusing here costs
+     * NOTHING -- no protocol byte has been written -- while a warning leaves the
+     * author with the broken server they would have had anyway.
+     */
+    for (const [name, expected] of [
+      ["methods-not-an-object.ts", ["methods", "number"]],
+      ["handler-not-a-function.ts", ["textDocument/hover", "number"]],
+      ["handler-getter-throws.ts", ["textDocument/hover", getterFailure]],
+    ] as const) {
+      test(`${name} exits 1 naming the path and what is wrong, with no stdout`, async () => {
+        const path = fixture(name);
+
+        const result = await runCli(runtime, ["--config", path]);
+
+        expectFailureContract(result);
+        expect(result.stderr).toContain(path);
+        for (const fragment of expected) {
+          expect(result.stderr).toContain(fragment);
+        }
       });
     }
 

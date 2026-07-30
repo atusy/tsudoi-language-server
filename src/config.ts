@@ -1,6 +1,11 @@
 import { resolve } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+// THE ENUMERATION OF WHAT TSUDOI SERVES, taken from the TABLE rather than
+// restated here, so a method added there joins this check by existing. Only the
+// keys are read. NOT A CYCLE: src/methods.ts imports src/types.ts and
+// src/notifications.ts FOR TYPES ONLY and nothing in src/ imports this file back.
+import { requestEntries } from "./methods.ts";
 import type { TsudoiConfig, TsudoiConfigFactory } from "./types.ts";
 
 /** A config problem the user can act on. The CLI maps it to stderr plus exit 1. */
@@ -78,9 +83,108 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
         `function written \`() => { ... }\` returns nothing at all`,
     );
   }
+  // BEFORE THE CAST AND BEFORE THE RULE BELOW, and the ORDER IS LOAD-BEARING:
+  // requireCompletionBesideResolve dereferences `methods` and then a method name
+  // off it, so an accessor reached THERE raises a bare TypeError -- which is not
+  // a ConfigError, so src/cli.ts rethrows it and the author gets a raw stack with
+  // no `tsudoi: ` prefix and no config path. That is the exact defect the
+  // returned-shape guard above exists to close, one level in.
+  requireCallableMethods(returned, absolutePath);
   const config = returned as TsudoiConfig;
   requireCompletionBesideResolve(config, absolutePath);
   return config;
+}
+
+/**
+ * Refuses a `methods` tsudoi cannot serve, BY READING EVERY HANDLER IT WILL
+ * LATER READ.
+ *
+ * THE READING IS THE POINT AND NOT A SIDE EFFECT. A method key may be an
+ * ACCESSOR -- a legal spelling, and the natural one for a handler built lazily
+ * from a file, a dictionary or a compiled grammar -- and nothing here validated
+ * it, so the first dereference was `contributeCapabilities` INSIDE the
+ * `initialize` handler, which runs once the lifecycle is already `serving`. A
+ * throwing getter therefore answered the HANDSHAKE -32603 with ZERO BYTES on
+ * stderr, and left the session treating every later request as initialized out
+ * of a handshake that had failed. Read here, it is a ConfigError before
+ * startServer, so the author gets the sentence and no protocol byte is written.
+ *
+ * REJECTED RATHER THAN DIAGNOSED, on what a warning would leave behind: this
+ * runs before startServer, so refusing costs nothing, while a warning hands the
+ * author the broken server anyway. Same stage and same grounds as the rule below.
+ *
+ * A CONFIG THAT DECLARES NO METHODS IS LEGAL. An absent `methods`, an empty one
+ * and an absent key are three spellings of `answers nothing`, which is a server
+ * a config author is entitled to write -- so ABSENCE IS SKIPPED and only a
+ * PRESENT non-function is refused. `{ methods: 5 }` is not absence: it is
+ * `() => 5` one level in, dereferenced by nobody and inert in exactly the same
+ * silence.
+ *
+ * DRIVEN BY THE TABLE'S KEYS AND NOT THE AUTHOR'S, which is what makes the set
+ * read here EXACTLY the set read later. A key tsudoi does not serve is neither
+ * read nor refused: nothing dereferences it, so it cannot fail, and refusing it
+ * would forbid an author keeping a handler for a method tsudoi has yet to gain.
+ *
+ * WHAT ONE READ CANNOT PROVE, named rather than glossed: registerMethods
+ * re-reads `config.methods?.[method]` on EVERY request for the life of the
+ * session. An accessor that answers a function now and throws later is NOT
+ * defended, and would fail as that method's own request rather than as the
+ * handshake.
+ */
+function requireCallableMethods(returned: object, absolutePath: string): void {
+  const methods = readOrRefuse(absolutePath, "methods", () => {
+    return (returned as { methods?: unknown }).methods;
+  });
+  if (methods === undefined) {
+    return;
+  }
+  // The neighbouring shape, spelled the same way ON PURPOSE: two reads of `is
+  // this an object` in one file that disagreed about `null` would be a bug
+  // nobody could see by reading either one.
+  if (typeof methods !== "object" || methods === null) {
+    throw new ConfigError(
+      `config ${absolutePath} declares methods as ${methods === null ? "null" : typeof methods} ` +
+        `instead of an object of handlers; tsudoi reads no method off it, so this server would ` +
+        `come up answering nothing. A config that answers nothing omits methods entirely`,
+    );
+  }
+  for (const method of Object.keys(requestEntries)) {
+    const handler = readOrRefuse(absolutePath, method, () => {
+      return (methods as Record<string, unknown>)[method];
+    });
+    if (handler === undefined) {
+      continue;
+    }
+    if (typeof handler !== "function") {
+      // WHY PRESENCE ALONE IS NOT ENOUGH, and why this is worse than the inert
+      // case above: contributeCapabilities claims a method's capability on
+      // `!== undefined`, so a present non-function makes tsudoi ADVERTISE what it
+      // cannot answer -- and a conforming client is entitled to send exactly the
+      // requests that then fail. That is the state the rule below exists to
+      // prevent, arrived at by a different route.
+      throw new ConfigError(
+        `config ${absolutePath} supplies ${handler === null ? "null" : typeof handler} for ` +
+          `${method} instead of a function; tsudoi advertises a capability for every method the ` +
+          `config declares, so this would invite requests nothing can answer`,
+      );
+    }
+  }
+}
+
+/**
+ * One property read, with an access that THROWS reported as the config problem
+ * it is.
+ *
+ * A THUNK RATHER THAN AN OBJECT AND A KEY, so the two callers below name what
+ * they are reading in the words the author will recognise -- `methods`, or the
+ * method name itself -- instead of this function inferring it.
+ */
+function readOrRefuse(absolutePath: string, what: string, read: () => unknown): unknown {
+  try {
+    return read();
+  } catch (cause) {
+    throw new ConfigError(`reading ${what} from config ${absolutePath} failed\n  ${String(cause)}`);
+  }
 }
 
 /**

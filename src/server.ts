@@ -116,6 +116,24 @@ export function startServer(
     if (rejection !== undefined) {
       throw rejection;
     }
+    // AHEAD OF THE PREPARATION BELOW, AND MOVING IT AFTER WOULD DEFEND NOTHING
+    // REACHABLE -- written here because the argument FOR moving it is a good one
+    // and will be made again. It runs: a handshake answered -32603 from below
+    // this line leaves the phase saying `serving`, and since a second
+    // `initialize` is refused there, that session cannot retry the handshake
+    // either. What removes it is that NOTHING BELOW CAN FAIL. src/config.ts reads
+    // `methods` AND EVERY KNOWN HANDLER at load, so an accessor that throws is
+    // already a ConfigError; contributeCapabilities re-reads plain properties;
+    // workspaceFolders.initialize() guards its own throws where they were
+    // measured; and `params` came off JSON.parse, so it carries no accessors at
+    // all. The only config left is one whose getter answers a function once and
+    // throws on a later read.
+    //
+    // WHAT RE-MOTIVATES THE MOVE, so it is not rediscovered from scratch: ANY
+    // FALLIBLE WORK ADDED BELOW THIS LINE. It is a one-line change needing no new
+    // state, and it is NOT the same change as refusing the request -- the gate
+    // above decides whether the handshake is allowed, this decides when it counts
+    // as having happened.
     lifecycle.initialize();
     // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE -- they are the three the
     // protocol lets a client name a ROOT in, and nothing else here is read.
