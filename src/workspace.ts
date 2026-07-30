@@ -35,18 +35,19 @@ export interface WorkspaceFoldersHandle {
    * reason at `initialize` below, and the cost, which is that these states are
    * not distinguishable downstream.
    *
-   * A SECOND READER RATHER THAN A WIDER `current`, and that is a decision about
-   * what a change to this file may cost: `current` answers the question
-   * `workspace/didChangeWorkspaceFolders` writes to, and widening its return
-   * type would move every assertion that reads the folder list back -- turning
-   * a sprint that adds two fields into a diff that looks like a change to the
+   * A SECOND READER RATHER THAN A WIDER `folders`, and that is a decision about
+   * what a change to this file may cost: `folders` answers the question
+   * `workspace/didChangeWorkspaceFolders` writes to, and hanging these off that
+   * store would move every assertion that reads the folder list -- turning a
+   * sprint that adds two fields into a diff that looks like a change to the
    * removal predicate. These two never move after `initialize` anyway.
    *
-   * A READER AND NOT A VALUE, FOR THE SAME REASON `current` IS ONE, and the fact
-   * that these two never move afterwards does NOT weaken it: they are both
-   * `null` until `initialize` runs, and whoever wires this handle holds it
-   * before then. Something read off here at construction would be that `null`
-   * for the life of the session.
+   * A READER WHERE `folders` ABOVE IS A VALUE, and the asymmetry is the whole
+   * point rather than an inconsistency: a store answers WHEN ASKED, while these
+   * two are read out on the spot. The fact that they never move after
+   * `initialize` does NOT make a value safe -- they are both `null` UNTIL it
+   * runs, and whoever wires this handle holds it before then, so something read
+   * off here at construction would be that `null` for the life of the session.
    *
    * TYPED AS THE SLICE OF `Tsudoi` IT ANSWERS FOR, so that a field added here
    * and forgotten on that surface, or the reverse, does not compile.
