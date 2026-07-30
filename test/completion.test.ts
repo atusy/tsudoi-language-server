@@ -442,10 +442,21 @@ for (const runtime of runtimes) {
         // produced an empty list instead is INDISTINGUISHABLE at the populated
         // call above; the empty call is where the difference becomes visible.
         //
-        // THE CONTROL SURVIVED SPRINT 42 IN PLACE, RE-MEASURED RATHER THAN
-        // ASSUMED: the example's `null` is now spelled `return;` and the
-        // perturbation is spelled `return [{ isIncomplete: true, items: [] }]`,
-        // and it still reddens exactly here and nowhere else.
+        // THE CONTROL HAS NOW SURVIVED TWO SHAPE CHANGES IN PLACE, RE-MEASURED
+        // EACH TIME RATHER THAN ASSUMED. At Sprint 43 the example's `null` is
+        // what tsudoi answers for a generator that YIELDED NOTHING, and the
+        // perturbation is spelled `yield []` at that generator's own exit in
+        // examples/completion-path.ts: it reddens EXACTLY here, `Received: []`,
+        // and nowhere else -- two tests, one per runtime.
+        //
+        // AND THE FIRST ATTEMPT AT THAT RE-MEASUREMENT WAS DEGENERATE, recorded
+        // because the green looked like success. Perturbing the `if (!document)`
+        // arm in examples/tsudoi.config.ts left the whole file GREEN -- not
+        // because the control is quiet, but because THIS REQUEST NEVER REACHES
+        // THAT ARM: the document IS in the store, and the `null` comes from
+        // there being no path fragment at character 0. Sprint 42's retro asks
+        // exactly this before reading a green -- whether what you perturbed is
+        // reached by what you measured.
         const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },

@@ -18,14 +18,14 @@ import { resolvePathStat } from "./resolve-path-stat.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NOT COMPLETE, AND IT SAYS SO NOW RATHER THAN
-      // CLAIMING THE OPPOSITE BY DEFAULT. The specification says a supplied
+      // COMPLETENESS RULING: NOT COMPLETE, AND THE CLAIM THIS CONFIG MAKES ON
+      // THE WIRE IS STILL WRONG. The specification says a supplied
       // `CompletionItem[]` is identical to `{ isIncomplete: false, items }` --
       // so a bare array is a POSITIVE ASSERTION that the candidate set is final
       // and the client need not ask again. This config made that assertion from
-      // the day it was written and nobody chose it. The delegate below now
-      // answers a `CompletionList` carrying `isIncomplete: true`, and the
-      // reasoning for it lives at that function rather than being restated.
+      // the day it was written and nobody chose it. For ONE SPRINT it did not:
+      // Sprint 42 let the delegate answer a `CompletionList` carrying
+      // `isIncomplete: true`, and Sprint 43 withdrew the shape that carried it.
       //
       // WHY IT IS FALSE: the delegate lists ONE DIRECTORY filtered by the
       // trailing name of the fragment under the cursor. The next keystroke
@@ -33,6 +33,15 @@ const config: TsudoiConfigFactory = () => {
       // to a different listing entirely. A client told the set is final shows
       // the user candidates for a prefix they have already left behind, which
       // is the exact failure this PBI's user story names.
+      //
+      // AND IT CANNOT BE FIXED HERE, WHICH IS WHY THE RULING STAYS RATHER THAN
+      // BEING QUIETLY REVISED TO MATCH WHAT SHIPS. A completion handler yields
+      // `CompletionItem[]` and nothing else, so there is no value this config
+      // or its delegate could produce that says anything other than COMPLETE --
+      // the wrongness is in the published type, and the edit that removes it is
+      // at `MethodMap` in src/types.ts, not in this file. Relabelling this
+      // COMPLETE would make the tree consistent and leave nothing at all
+      // recording that a working capability was given up.
       //
       // AND THE SECOND WRONG CLAIM IS THE ONE JUST BELOW, worth separating
       // because a re-type would have papered over both: this arm fires when the

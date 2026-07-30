@@ -93,6 +93,26 @@ export interface MethodMap {
    * which is real. What it costs is TWO ENTRANCES FOR CONTENT -- `yield` and
    * `return` -- with the author choosing between them per call, which is the
    * weaker form of the very defect this shape exists to remove.
+   *
+   * WHAT THIS SHAPE CANNOT SAY, NAMED RATHER THAN LEFT TO BE REDISCOVERED:
+   * `isIncomplete`. The specification treats a supplied `CompletionItem[]` as
+   * `{ isIncomplete: false, items }`, so EVERY completion tsudoi answers claims
+   * its candidate set is final -- and two configs in this repository rule that
+   * claim FALSE at their own sites, examples/completion-path.ts and
+   * examples/tsudoi.config.ts. THIS IS A KNOWN GAP, NOT AN OVERSIGHT: Sprint 42
+   * built the capability and measured a real client acting on it, and Sprint 43
+   * withdrew the shape that carried it because one slot meant two things.
+   *
+   * THE FUTURE PATH IS TO WIDEN THE YIELD TO `CompletionItem[] | CompletionList`
+   * AND NORMALISE A MID-STREAM `CompletionList` INTO ITEMS. It is NOT BUILT, and
+   * this is the line that would change. WHY THAT SHAPE AND NOT THE TUPLE BACK:
+   * the yield slot keeps ONE meaning -- CONTENT -- and merely admits a second
+   * spelling of it, so no slot's meaning depends on its neighbour and the author
+   * still chooses no channel. The drive would take `isIncomplete` from whichever
+   * yield carried it and append every other yield's items, which is what the
+   * specification's own positional rule already describes. WHAT IT WOULD COST is
+   * a normalisation the drive does not have today, and that cost is the reason
+   * it is recorded here rather than done now.
    */
   "textDocument/completion": {
     params: CompletionParams;

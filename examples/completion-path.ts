@@ -458,6 +458,26 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
  * specification treats as identical to `{ isIncomplete: false, items }`. THE
  * VERDICT IS UNCHANGED AND THE ABILITY TO STATE IT IS GONE.
  *
+ * SO THE CLAIM THIS HANDLER MAKES ON THE WIRE IS STILL WRONG, AND IT CANNOT BE
+ * FIXED HERE. Nothing this module can write changes it: the wrongness is in the
+ * TYPE, not in this file. Every spelling available -- yielding fewer items,
+ * yielding none, batching differently -- produces the same aggregated array,
+ * and an array IS the completeness claim. A reader looking for the bug in this
+ * function will not find it, which is the whole reason this paragraph is here
+ * rather than in a commit message.
+ *
+ * WHAT IT COSTS AN EDITOR USER, so the entry is not merely bookkeeping: a client
+ * told the set is FINAL filters what it already holds instead of asking again,
+ * so after the next keystroke it shows candidates for a prefix the user has
+ * already left -- and for `/`, candidates from a directory they are no longer
+ * in. MEASURED AGAINST A REAL CLIENT AT SPRINT 42 and recorded there: nvim
+ * 0.13.0-nightly+6ecf226 re-queried 3 times against an `isIncomplete: true`
+ * answer and ONCE against the paired `false`, corroborated at completion.lua
+ * :1086. The capability worked; the shape that carried it was refused.
+ *
+ * THE FUTURE PATH, evidence-shaped rather than aspirational, and it is at
+ * `MethodMap` in src/types.ts where the edit would be made.
+ *
  * WHY IT IS FALSE, measured against what this module actually does rather than
  * argued: `pathFragments` re-derives the fragment from the line AT THE CURSOR
  * on every request, `sourcesFor` picks the roots FROM THAT FRAGMENT -- a
