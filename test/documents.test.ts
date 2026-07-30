@@ -165,6 +165,9 @@ test("successive changes leave getText() and version matching the last one sent"
 // MEASURED: rebuilding it with `TextDocument.create` from the updated text
 // reddens the first assertion below and NOTHING ELSE IN THE SUITE.
 //
+// IT IS BOUNDED BY THE OPEN/CLOSE CYCLE, which is the last test in this file
+// rather than a caveat here: a reference carried across a close stops moving.
+//
 // THE MECHANISM IS DELIBERATELY NOT ASSERTED. `held === store.documents.get(uri)`
 // is the spelling upstream happens to use; what a config author is owed is that
 // their reference is current, and every way that could stop being true --
@@ -245,4 +248,51 @@ test("closing one of two open documents leaves exactly the other one", () => {
   expect(remaining[0]?.uri).toBe(otherUri);
   expect(remaining[0]?.getText()).toBe("second");
   expect(store.documents.get(uri)).toBeUndefined();
+});
+
+// THE BOUNDARY OF THE LIVENESS PINNED ABOVE, and it is the half a reader gets
+// wrong: a reference is live WITHIN ONE OPEN/CLOSE CYCLE AND NO FURTHER. `close`
+// drops the entry, the `didOpen` that follows CONSTRUCTS A NEW DOCUMENT, and a
+// handler still holding the old one holds a detached snapshot.
+//
+// WHY THE VERSION ASSERTIONS ARE NOT DECORATION -- they are what makes the
+// failure silent. The version is the CLIENT'S NUMBER AND IT RESTARTS AT THE
+// REOPEN, so the stale reference reports the SAME version as the live document
+// while their texts differ. A handler comparing versions to decide whether its
+// reference is current is told everything is fine.
+//
+// THE SAME-CYCLE ASSERTION IS A CONTROL, not coverage: a store that had stopped
+// tracking edits at all would satisfy every cross-cycle assertion below for a
+// reason that has nothing to do with the close, and that assertion is what
+// separates the two.
+//
+// MEASURED: an `open` that reuses and updates a document it built for that URI
+// earlier -- the store the liveness paragraph in src/documents.ts would describe
+// if the reference did survive -- reddens this test and NOTHING ELSE in the
+// suite, close's own removal tests included.
+test("a reference captured before a close stops tracking the reopened document", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "first"));
+  const captured = store.documents.get(uri);
+  if (captured === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "edited while open" }],
+  });
+  expect(captured.getText()).toBe("edited while open");
+
+  store.close({ textDocument: { uri } });
+  store.open(opened(uri, "reopened"));
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "edited after reopen" }],
+  });
+
+  expect(store.documents.get(uri)?.getText()).toBe("edited after reopen");
+  expect(captured.getText()).toBe("edited while open");
+  expect(captured.version).toBe(2);
+  expect(store.documents.get(uri)?.version).toBe(2);
 });

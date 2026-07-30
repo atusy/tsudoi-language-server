@@ -65,9 +65,20 @@ export function createDocumentStore(): DocumentStoreHandle {
       //
       // MUTATED IN PLACE -- upstream's `update` returns the same instance -- so a
       // config author holding a document from an earlier `get()` holds a handle
-      // that moves under them. `set` is kept anyway, because the return value is
-      // what the contract promises and an upstream that replaced instead of
-      // mutating would otherwise leave a stale entry here.
+      // that moves under them WHILE THE URI STAYS OPEN, AND NO FURTHER. `close`
+      // drops the entry and the next `open` builds a new document, so a reference
+      // carried across a close is a detached snapshot that silently stops moving.
+      // ITS VERSION IS NO WARNING EITHER: the reopened document numbers from
+      // whatever the client sent at `didOpen`, so the two can report the same
+      // version while their texts differ, and a handler checking versions to see
+      // whether its reference is current is told everything is fine. An author
+      // who must survive a close re-reads `get()`; the store is live, a
+      // reference is not. Pinned by `a reference captured before a close stops
+      // tracking the reopened document` in test/documents.test.ts.
+      //
+      // `set` is kept anyway, because the return value is what the contract
+      // promises and an upstream that replaced instead of mutating would
+      // otherwise leave a stale entry here.
       byUri.set(uri, TextDocument.update(current, params.contentChanges, version));
     },
 
