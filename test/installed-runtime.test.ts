@@ -186,8 +186,14 @@ for (const [runtime, command] of Object.entries(route)) {
  * ./src/types.ts, which is deliberately not published -- a package.json
  * pointing at a file it does not ship.
  *
- * The subpath is type-only, so no config author has cause to import it for
- * value. That is exactly why this is asserted rather than left to be noticed.
+ * THE SUBPATH STOPPED BEING TYPE-ONLY AT PBI-49, and this probe stopped being
+ * the only thing that would notice the arm's loss. It exports
+ * `foldersWithRootFallback`, which examples/completion-path.ts CALLS -- so the
+ * example's own tests above now traverse this arm for value, and a bare
+ * `import` of the subpath is the weaker statement of the two. It stays because
+ * it is the statement about THE SUBPATH rather than about the example: a
+ * consumer importing it for types alone still resolves it, and that is what a
+ * middle arm pointing into dist/ buys.
  */
 const importsTheSubpath = 'import "@atusy/tsudoi/types";\n';
 

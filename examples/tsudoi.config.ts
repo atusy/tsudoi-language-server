@@ -86,12 +86,18 @@ const config: TsudoiConfigFactory = () => {
           //    so a plugin option that chooses between inserting and replacing
           //    is YOURS to set and does what you set it to. Completing in the
           //    MIDDLE of a path is where the two differ.
-          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR SENDS FOLDERS
+          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR NAMES A PROJECT
           //    at `initialize`, which is its configuration and not tsudoi's
-          //    behaviour: a language server started without a project root has
-          //    no workspace to answer from, and its working directory is then
-          //    wherever the editor itself was launched -- which is a root, but
-          //    not the one you meant. AND NOTHING WILL TELL YOU: the workspace
+          //    behaviour. THREE FIELDS COUNT, not one: `workspaceFolders` if
+          //    your editor declares that capability, and otherwise the
+          //    deprecated `rootUri` or `rootPath` -- examples/completion-path.ts
+          //    reads all three THROUGH `foldersWithRootFallback`, because
+          //    `context.workspaceFolders` carries only what the client sent and
+          //    tsudoi invents nothing to fill it. A language server started with
+          //    NONE of the three has no workspace to answer from, and its
+          //    working directory is then wherever the editor itself was
+          //    launched -- which is a root, but not the one you meant. AND
+          //    NOTHING WILL TELL YOU: the workspace
           //    source contributes nothing, which looks exactly like a working
           //    source in a project that holds no matches. An earlier version
           //    wrote one line to stderr per session and it was removed as

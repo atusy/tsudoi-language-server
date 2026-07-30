@@ -22,103 +22,135 @@ export interface WorkspaceFoldersHandle {
    */
   readonly current: () => readonly WorkspaceFolder[];
   /**
-   * What the client named at `initialize`, already reduced to a list by the
-   * caller -- see `initialWorkspaceFolders`.
+   * The two deprecated root fields as the client spelled them, or `null` each
+   * where it named none.
    *
-   * A FOLDER SYNTHESISED FROM rootUri OR rootPath ARRIVES AS AN ORDINARY MEMBER,
-   * carrying no mark of where it came from, so `change` writes through this list
-   * without needing a provenance flag to behave correctly.
+   * A SECOND READER RATHER THAN A WIDER `current`, and that is a decision about
+   * what a change to this file may cost: `current` answers the question
+   * `workspace/didChangeWorkspaceFolders` writes to, and widening its return
+   * type would move every assertion that reads the folder list back -- turning
+   * a sprint that adds two fields into a diff that looks like a change to the
+   * removal predicate. These two never move after `initialize` anyway.
    */
-  initialize(folders: readonly WorkspaceFolder[]): void;
+  readonly roots: () => ClientRoots;
+  /**
+   * What the client sent at `initialize`, MIRRORED AND NOT INTERPRETED.
+   *
+   * TAKES THE PARAMS RATHER THAN A LIST because the mirror is this module's
+   * business and there is nothing left for a caller to reduce: `workspaceFolders`
+   * omitted, `null` and `[]` all mean an empty list, and the two root fields are
+   * stored as bytes.
+   */
+  initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void;
   /** What `workspace/didChangeWorkspaceFolders` reported. WHEN this may be
    * called is the notification table's business, decided once at the entry. */
   change(event: WorkspaceFoldersChangeEvent): void;
 }
 
 /**
- * The folder a `rootUri` names, or undefined when the client named none.
- *
- * `uri` IS THE CLIENT'S OWN BYTES, unaltered: `change` below matches URIs as
- * exact strings, so a round trip through the URL parser here would leave a later
- * `removed` naming this folder unable to find it.
- *
- * `name` IS THE FULL PATH, because that is derivable from what the client sent
- * with nothing invented. A basename, a label or "root" each add a decision the
- * client never made.
- *
- * A URI THAT NAMES NO LOCAL PATH IS NOT A ROOT HERE: the alternative is
- * `fileURLToPath` throwing inside the initialize handler, which answers the
- * handshake with an error and leaves the author no server at all.
+ * The two deprecated fields a client may still name a project root in, as the
+ * client spelled them. `null` is `the client named none`, and it is what an
+ * OMITTED field arrives as too -- the one collapse this mirror makes, because
+ * the protocol offers no third state a reader could act on differently.
  */
-function rootUriFolder(rootUri: string | null | undefined): WorkspaceFolder | undefined {
-  if (rootUri === null || rootUri === undefined) {
-    return undefined;
-  }
-  try {
-    return { uri: rootUri, name: fileURLToPath(rootUri) };
-  } catch {
-    return undefined;
-  }
+export interface ClientRoots {
+  readonly rootUri: string | null;
+  readonly rootPath: string | null;
 }
 
 /**
- * The folder a `rootPath` names, or undefined when the client named none. Same
- * convention as the rung above, so the second synthesis site does not invent its
- * own.
+ * THE FOLDERS THE CLIENT SENT, OR FAILING THAT THE ROOT IT NAMED IN A DEPRECATED
+ * FIELD. The reduction tsudoi itself no longer performs, offered to the config
+ * author who wants it and never applied behind their back.
  *
- * ABSOLUTE OR NOTHING, and this is where cwd would otherwise walk back in:
- * `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so `""` or `"."` would
- * synthesise a root out of whatever directory this process was launched in --
- * through a door `??` does not cover, since `""` is neither null nor undefined.
+ * WHY IT IS THE AUTHOR'S CALL AND NOT tsudoi's: `WorkspaceFolder.name` is
+ * defined by the protocol as the label `used to refer to this workspace folder
+ * in the user interface`, so it is the CLIENT'S to choose and a server cannot
+ * know it. What this function puts there is THE FULL PATH -- derived from what
+ * the client sent with nothing invented, and still NOT a label any user would
+ * recognise. `RequestContext.workspaceFolders` may not carry such a thing,
+ * because nothing there tells an author which entries the client named; a folder
+ * that arrives BECAUSE YOU CALLED THIS is a different matter.
+ *
+ * THE ORDER IS THE PROTOCOL'S OWN: `rootPath` is deprecated in favour of
+ * `rootUri`, `rootUri` in favour of `workspaceFolders`, and `workspaceFolders`
+ * exists only if the client supports workspace folders -- so a client without
+ * that capability sends no folders and may still say which project the editor
+ * opened. AN EMPTY LIST FALLS THROUGH, so a client that supports folders, has
+ * none configured and still sends `rootUri` is read as `I do not do multi-root`
+ * rather than `there is no project`.
+ *
+ * ABSOLUTE OR NOTHING FOR `rootPath`, AND THIS IS THE GUARD THAT WOULD OTHERWISE
+ * HAVE DIED WITH THE SYNTHESIS: `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST
+ * cwd, so `""` or `"."` would hand you a root made of whatever directory YOUR
+ * SERVER WAS LAUNCHED IN -- through a door `??` does not cover, since `""` is
+ * neither null nor undefined. That is the failure this refuses on your behalf,
+ * and it is worth naming because a cwd root looks correct in every test an
+ * editor runs from the project directory and is wrong for the user who has no
+ * project at all.
+ *
+ * A URI NAMING NO LOCAL PATH YIELDS NO FOLDER RATHER THAN THROWING, and the
+ * reason MOVED WITH THE CODE rather than surviving unchanged. It used to be that
+ * `fileURLToPath` throwing inside the initialize handler would answer the
+ * handshake with an error and leave the author no server at all. Nothing calls
+ * this at `initialize` any more: the throw would land in YOUR OWN HANDLER, so a
+ * completion handler that called it would fail once per keystroke against an
+ * editor connected over `vscode-remote://` or `ssh://`. Smaller than losing the
+ * handshake, still not yours to debug.
+ *
+ * A SESSION'S ROOTS DO NOT CHANGE, but the folder list does, so call this per
+ * request -- `context` is a snapshot of request start and so is this answer.
  */
-function rootPathFolder(rootPath: string | null | undefined): WorkspaceFolder | undefined {
-  if (rootPath === null || rootPath === undefined || isAbsolute(rootPath) === false) {
-    return undefined;
-  }
-  return { uri: pathToFileURL(rootPath).href, name: rootPath };
-}
-
-/**
- * The list this session opens with, read from the THREE FIELDS a client may name
- * a root in, in the protocol's own order: rootPath is deprecated in favour of
- * rootUri, rootUri in favour of workspaceFolders, and workspaceFolders exists
- * only if the client supports workspace folders. So a client without that
- * capability sends no folders and may still say which project the editor opened;
- * reading only the newest field hands that author an empty list.
- *
- * COMPUTED ONCE AND STORED, never recomputed at read time. The tempting shape is
- * `folders.length > 0 ? folders : synthesise(rootUri)`, which passes the
- * rootUri-only case and is wrong twice: the first `added` would REPLACE the root
- * instead of joining it, and a `removed` that empties the list would make the
- * root REAPPEAR after the client removed it.
- *
- * WHAT ABSENCE MUST NEVER BECOME IS A ROOT. A client naming none of the three
- * gets an empty list -- never cwd. An empty `workspaceFolders` falls through to
- * the rungs below, so omitted, null and `[]` are treated alike: a client that
- * supports folders, has none configured and still sends `rootUri` is most
- * plausibly saying `I do not do multi-root` rather than `there is no project`,
- * and falling through hands that author the root where stopping hands them
- * silent absence of a root the editor did name.
- */
-export function initialWorkspaceFolders(
-  params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">,
+export function foldersWithRootFallback(
+  client: ClientRoots & { readonly workspaceFolders: readonly WorkspaceFolder[] },
 ): readonly WorkspaceFolder[] {
-  const stated = params.workspaceFolders ?? [];
-  if (stated.length > 0) {
-    return stated;
+  if (client.workspaceFolders.length > 0) {
+    return client.workspaceFolders;
   }
-  const synthesised = rootUriFolder(params.rootUri) ?? rootPathFolder(params.rootPath);
-  return synthesised === undefined ? [] : [synthesised];
+  const rootUri = client.rootUri;
+  if (rootUri !== null) {
+    try {
+      // THE CLIENT'S OWN BYTES for `uri`, never a round trip through the URL
+      // parser: `change` matches URIs as exact strings, so a folder holding a
+      // reparsed URI is one the client can never remove -- it would send back
+      // the spelling it sent, and nothing would match.
+      return [{ uri: rootUri, name: fileURLToPath(rootUri) }];
+    } catch {
+      // AND FALLS THROUGH TO `rootPath`, which is what the rung it replaces did:
+      // a client naming a remote root in one field and a local one in the other
+      // has named a local project, and the unusable field should not take the
+      // usable one down with it.
+    }
+  }
+  const rootPath = client.rootPath;
+  if (rootPath === null || isAbsolute(rootPath) === false) {
+    return [];
+  }
+  return [{ uri: pathToFileURL(rootPath).href, name: rootPath }];
 }
 
 export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   let folders: readonly WorkspaceFolder[] = [];
+  let roots: ClientRoots = { rootUri: null, rootPath: null };
 
   return {
     current: (): readonly WorkspaceFolder[] => folders,
 
-    initialize(next: readonly WorkspaceFolder[]): void {
-      folders = next;
+    roots: (): ClientRoots => roots,
+
+    initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void {
+      // MIRRORED, WITH NOTHING SYNTHESISED AND NOTHING PREFERRED. Omitted, `null`
+      // and `[]` are one state here -- an empty list -- and the two root fields
+      // travel as the client's own bytes, including `""`, which `??` leaves
+      // alone because it is neither null nor undefined.
+      //
+      // NO ROOT IS BUILT FROM EITHER OF THEM, and that is this sprint's whole
+      // subject: a folder needs a `name`, the protocol makes `name` a UI label
+      // the client owns, and a server that invents one is stating something no
+      // client said. An author who wants the reduction calls
+      // `foldersWithRootFallback` and gets a derived name knowingly.
+      folders = params.workspaceFolders ?? [];
+      roots = { rootUri: params.rootUri ?? null, rootPath: params.rootPath ?? null };
     },
 
     change(event: WorkspaceFoldersChangeEvent): void {

@@ -21,11 +21,7 @@ import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { contributeCapabilities, registerMethods } from "./methods.ts";
 import { createGatedConnection, defineNotifications } from "./notifications.ts";
 import type { Tsudoi, TsudoiConfig } from "./types.ts";
-import {
-  createWorkspaceFolders,
-  initialWorkspaceFolders,
-  type WorkspaceFoldersHandle,
-} from "./workspace.ts";
+import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -130,19 +126,25 @@ export function startServer(
     // InitializeParams on tsudoi's surface as a side effect of needing three
     // fields of it. Whoever needs capabilities opens a seam for capabilities.
     //
-    // REDUCED IN workspace.ts AND NOWHERE ELSE, which is where the precedence
-    // chain, the absent states and the two synthesis conventions are all
-    // recorded together. THIS LINE IS THE ONLY MOMENT IT RUNS: the list is
-    // synthesised once, at initialize, and stored -- computing it when the
-    // list is READ would let a delta replace the root and let a removal bring
-    // it back.
+    // MIRRORED IN workspace.ts AND NOWHERE ELSE, and NOTHING IS DERIVED FROM
+    // ANOTHER FIELD HERE OR THERE. This line used to reduce the three into one
+    // list, synthesising a folder from `rootUri` or `rootPath` when the client
+    // sent none; it no longer does, because a folder needs a `name` and the
+    // protocol makes `name` a label the CLIENT owns.
+    //
+    // THE REDUCTION STILL EXISTS AND THE CONFIG AUTHOR CALLS IT --
+    // `foldersWithRootFallback`, published from src/types.ts -- which is where
+    // the precedence chain, the absolute-or-nothing guard and the
+    // no-local-path case are now recorded together.
     //
     // What absence must NEVER become is a ROOT. cwd is the tempting default
     // and the dangerous one: nvim spawns the server with cwd = root_dir when a
     // root is found and its own launch directory when not, so a cwd fallback
     // looks correct in every test and is silently wrong for the user who has
-    // no root -- which is the state this reduction exists to make visible.
-    workspaceFolders.initialize(initialWorkspaceFolders(params));
+    // no root. Nothing here can produce one now -- there is no path from these
+    // three fields to a folder at all -- and the guard that used to stop it
+    // moved WITH the reduction rather than dying with the rung.
+    workspaceFolders.initialize(params);
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -200,7 +202,15 @@ export function startServer(
     config,
     tsudoi,
     () => lifecycle.requestRejection(),
-    workspaceFolders.current,
+    () => ({
+      // WHAT ONE REQUEST SEES OF THE CLIENT'S ROOTS, assembled at request start
+      // from the two readers rather than held as one value: the folder list moves
+      // under `workspace/didChangeWorkspaceFolders` and the two root fields never
+      // move at all, and a single stored object would have to be rewritten by the
+      // notification to keep that straight.
+      workspaceFolders: workspaceFolders.current(),
+      ...workspaceFolders.roots(),
+    }),
   );
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the

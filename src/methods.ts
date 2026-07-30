@@ -14,7 +14,6 @@ import {
   type RequestType,
   ResponseError,
   type ServerCapabilities,
-  type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
 import type { RequestOnlyConnection } from "./notifications.ts";
 import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
@@ -568,13 +567,19 @@ export function contributeCapabilities(
 export type RequestRejection = () => ResponseError<void> | undefined;
 
 /**
- * The workspace folders as of NOW. A function rather than a value because
- * registration happens before `initialize` does: the folders do not exist yet
- * when the handlers below are wired, and a value captured here would be the
- * pre-initialize one forever -- the same ordering trap src/cli.ts records for
- * the config factory, one layer in.
+ * WHAT THE CLIENT SAID ABOUT ITS ROOTS, as of NOW: the folder list, which moves
+ * mid-session, beside the two deprecated fields, which do not.
+ *
+ * A function rather than a value because registration happens before
+ * `initialize` does: none of the three exists yet when the handlers below are
+ * wired, and a value captured here would be the pre-initialize one forever --
+ * the same ordering trap src/cli.ts records for the config factory, one layer
+ * in.
+ *
+ * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added to
+ * this thunk and forgotten at the context, or the reverse, does not compile.
  */
-export type WorkspaceFolders = () => readonly WorkspaceFolder[];
+export type ClientRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
 
 /**
  * Reports a config handler's failure and rethrows it.
@@ -669,7 +674,7 @@ function requestCancelled(): never {
 function requestContext(
   tsudoi: Tsudoi,
   cancellation: CancellationToken,
-  workspaceFolders: readonly WorkspaceFolder[],
+  roots: Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">,
 ): RequestContext {
   const controller = new AbortController();
   // Read BEFORE subscribing, and not merely to save a turn: when the client
@@ -681,7 +686,9 @@ function requestContext(
     controller.abort();
   }
   cancellation.onCancellationRequested(() => controller.abort());
-  return { signal: controller.signal, tsudoi, workspaceFolders };
+  // SPREAD, so the three roots reach the context by ONE statement: a field added
+  // to the slice above and forgotten here would not compile.
+  return { signal: controller.signal, tsudoi, ...roots };
 }
 
 /**
@@ -802,7 +809,7 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
-  workspaceFolders: WorkspaceFolders,
+  clientRoots: ClientRoots,
 ): void {
   /**
    * Whether this SESSION has already been told about an invalid token. One
@@ -869,7 +876,7 @@ export function registerMethods(
             entry,
             connection,
             tsudoi,
-            workspaceFolders,
+            clientRoots,
             reportInvalidToken,
           });
         }
@@ -879,7 +886,7 @@ export function registerMethods(
           params,
           cancellation,
           tsudoi,
-          workspaceFolders,
+          clientRoots,
         });
       },
     );
@@ -905,9 +912,9 @@ async function driveAwaitedOnce(run: {
   params: unknown;
   cancellation: CancellationToken;
   tsudoi: Tsudoi;
-  workspaceFolders: WorkspaceFolders;
+  clientRoots: ClientRoots;
 }): Promise<unknown> {
-  const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
+  const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
   return answerUnlessCancelled(run.method, context.signal, async () => {
     return (await run.handler?.(context, run.params)) ?? null;
   });
@@ -973,11 +980,11 @@ async function driveStream(run: {
   entry: ErasedEntry;
   connection: RequestOnlyConnection;
   tsudoi: Tsudoi;
-  workspaceFolders: WorkspaceFolders;
+  clientRoots: ClientRoots;
   reportInvalidToken: (requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
-  const context = requestContext(run.tsudoi, run.cancellation, run.workspaceFolders());
+  const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
   if (handler === undefined) {
     // THIS DRIVE'S NO-HANDLER ANSWER, AND IT GOES THROUGH THE EPILOGUE LIKE
     // EVERY OTHER ANSWER THIS FILE PRODUCES. There is still nothing to drive,

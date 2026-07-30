@@ -212,20 +212,65 @@ export interface RequestContext {
    * mirror holds on remove too: a URI held twice and removed once still appears
    * once.
    *
-   * ONE FOLDER IS SYNTHESISED when a session opens with no `workspaceFolders`,
-   * from `rootUri` or failing that `rootPath` -- the deprecated spellings a
-   * client without the workspace-folders capability still has. It appears as an
-   * ordinary member: nothing marks it, and a later add or remove applies to it
-   * like any other. Its `name` is THE FULL PATH, since that is what can be
-   * derived without inventing anything, so a `name` here is not guaranteed to be
-   * a label the user would recognise. A client naming none of the three leaves
-   * this empty; a root the client did not name is never synthesised.
+   * NOTHING IS SYNTHESISED INTO IT, and that is a promise about `name` rather
+   * than about lists. The protocol defines `WorkspaceFolder.name` as the label
+   * `used to refer to this workspace folder in the user interface`, so it is the
+   * CLIENT'S and a server cannot know it -- and a folder tsudoi built out of
+   * `rootUri` would carry a name no client ever said, indistinguishable here
+   * from one that did. So every entry you read was sent by the client.
+   *
+   * WHICH MEANS AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and
+   * it is the one to think about: a client without the workspace-folders
+   * capability names its project in `rootUri` or `rootPath` and sends no folders
+   * at all. `foldersWithRootFallback` is the reduction that answers it, exported
+   * from this module -- see it for the precedence order and for the two hazards
+   * it holds off. Reading this field alone in that session is not wrong, it is a
+   * choice to answer from no root, and the absence is VISIBLE beside the field
+   * the client did fill.
    *
    * The name is deliberately not `initialWorkspaceFolders`: every exported name
    * here is public API, so a name that became false would have had to stay.
    */
   readonly workspaceFolders: readonly WorkspaceFolder[];
+  /**
+   * The project root a client named in `initialize`'s DEPRECATED `rootUri`, or
+   * `null` where it named none -- the client's own bytes, with no round trip
+   * through a URL parser and no filesystem question asked of it.
+   *
+   * DEPRECATED BY THE PROTOCOL, NOT BY tsudoi, and carried for exactly that
+   * reason: `workspaceFolders` supersedes it and is available only from a client
+   * that declares the capability, so this is where everyone else says which
+   * project the editor opened. An omitted field and an explicit `null` arrive
+   * alike; nothing else is normalised, so a URI naming no local path reaches you
+   * as the client spelled it rather than being dropped for being unusable.
+   */
+  readonly rootUri: string | null;
+  /**
+   * The project root a client named in `initialize`'s DEPRECATED `rootPath`, or
+   * `null` where it named none -- a PATH rather than a URI, mirrored verbatim.
+   *
+   * `rootUri` WINS WHERE BOTH ARE SET, which is the protocol's own rule and is
+   * applied by `foldersWithRootFallback` rather than here: this field is what the
+   * client said, and precedence is a reading of it.
+   *
+   * WHAT A MIRROR HANDS YOU ALONG WITH THE BYTES: `""` and `"."` are values a
+   * client can send, and they are NOT absence -- `??` does not cover them.
+   * Turning either into a URI with `pathToFileURL` resolves it against YOUR
+   * SERVER'S working directory and yields a root made of wherever the editor
+   * happened to be launched, which looks correct in every test run from the
+   * project directory. `foldersWithRootFallback` refuses a non-absolute path for
+   * that reason; a hand-rolled reduction has to refuse it too.
+   */
+  readonly rootPath: string | null;
 }
+
+/**
+ * THE REDUCTION OVER THE THREE FIELDS, re-exported here because THIS is the
+ * published subpath and the surface a config author imports from. It lives in
+ * src/workspace.ts, beside the mirror it reads and the list it prefers, so that
+ * the folder list and its fallback cannot drift apart in two files.
+ */
+export { foldersWithRootFallback } from "./workspace.ts";
 
 export type MethodHandler<M extends Method> = (
   context: RequestContext,

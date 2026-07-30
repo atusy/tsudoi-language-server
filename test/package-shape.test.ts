@@ -140,11 +140,20 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  * NOT ASSERTED, and named rather than left to be found: in the tarball the
  * `default` arm points at a path that is not shipped, so a resolver matching
  * NEITHER `types` nor `import` -- a CommonJS `require` is the only one -- gets
- * ERR_MODULE_NOT_FOUND rather than a module. That is judged acceptable, not
- * overlooked: the package is type: module, the subpath carries no runtime
- * value at all, and the alternative is shipping src/ purely so an arm nobody
- * takes can land somewhere, which would put .ts files back under node_modules
- * for a deno user to trip over.
+ * ERR_MODULE_NOT_FOUND rather than a module.
+ *
+ * ITS PREMISE MOVED AT PBI-49 AND ITS CONCLUSION DID NOT, which is the half
+ * worth writing down. This paragraph used to rest on `the subpath carries no
+ * runtime value at all`, and that is now FALSE: `./types` exports
+ * `foldersWithRootFallback`, a function the stakeholder-facing example calls, so
+ * the resolver that misses this arm now misses SOMETHING rather than nothing.
+ * What still holds is the judgement: the package is type: module, the two
+ * verified runtimes both take `import`, and the alternative is shipping src/
+ * purely so an arm nobody takes can land somewhere -- which would put .ts files
+ * back under node_modules for a deno user to trip over. WHAT IS NO LONGER FREE
+ * is that a CommonJS consumer cannot reach that function at all; adding a
+ * `require` arm is a decision about the published surface and belongs to
+ * whoever names a consumer that needs one.
  *
  * No `main` and no `.` export: the package name alone still must not resolve,
  * which test/published-specifier.test.ts asserts.

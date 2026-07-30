@@ -1,5 +1,9 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import {
+  foldersWithRootFallback,
+  type RequestContext,
+  type TsudoiConfig,
+} from "../../src/types.ts";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
 
 /**
@@ -13,9 +17,20 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  * fixture deciding how to spell absence. Wrapped, `undefined` comes back as a
  * missing key, `null` as null and `[]` as [], which is exactly the three-way
  * distinction the criteria turn on.
+ *
+ * `fallback` IS THE PUBLISHED REDUCTION RUN ON THIS VERY CONTEXT, and it is here
+ * so that one probe can report both what tsudoi handed the author and what the
+ * author gets by asking for the root -- the two states criterion 2 has to tell
+ * apart in ONE session. It is read by its own tests and never by the folder
+ * ones, so a break in the reduction cannot flip an assertion about the mirror.
  */
 export function observationOf(context: RequestContext): string {
-  return JSON.stringify({ workspaceFolders: context.workspaceFolders });
+  return JSON.stringify({
+    workspaceFolders: context.workspaceFolders,
+    rootUri: context.rootUri,
+    rootPath: context.rootPath,
+    fallback: foldersWithRootFallback(context),
+  });
 }
 
 export default (): Promise<TsudoiConfig> => {

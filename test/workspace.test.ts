@@ -86,27 +86,24 @@ const plainFolder: WorkspaceFolder = { uri: "file:///home/me/plain", name: "plai
 const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name: "plain-slash" };
 
 /**
- * A ROOT THE CLIENT NAMES IN THE DEPRECATED FIELDS -- the case PBI-19 exists
- * for: `workspaceFolders` is only available if the client supports workspace
- * folders, so a client without that capability sends none and may still say
- * which project the editor opened.
+ * A ROOT THE CLIENT NAMES IN THE DEPRECATED FIELDS -- the case that motivates
+ * the published reduction: `workspaceFolders` is only available if the client
+ * supports workspace folders, so a client without that capability sends none and
+ * may still say which project the editor opened.
+ *
+ * `rootedFolder` IS NOW AN EXPECTATION ABOUT `foldersWithRootFallback` AND NEVER
+ * ABOUT `RequestContext`. Nothing puts it on a context any more; what asserts it
+ * is what the author gets by asking.
  *
  * THE TWO SPELLINGS ARE SEPARATE LITERALS, never one derived from the other by
- * fileURLToPath/pathToFileURL. Those are the very functions the implementation
- * uses, so an expectation computed with them would assert that a function
- * equals itself and would stop pinning the convention -- `name` is the PATH and
- * `uri` is the client's own bytes.
+ * fileURLToPath/pathToFileURL. Those are the very functions the reduction uses,
+ * so an expectation computed with them would assert that a function equals
+ * itself and would stop pinning the convention -- `name` is the PATH and `uri`
+ * is the client's own bytes.
  */
 const rootedUri = "file:///home/me/rooted";
 const rootedPath = "/home/me/rooted";
 const rootedFolder: WorkspaceFolder = { uri: rootedUri, name: rootedPath };
-
-/**
- * THE CLIENT'S OWN STATEMENT ABOUT THE URI WE GUESSED, under a name it chose:
- * a client that later adds the folder synthesised for it is saying it holds
- * that folder, and this list holds what the client says.
- */
-const rootedAgain: WorkspaceFolder = { uri: rootedUri, name: "rooted again" };
 
 /**
  * A SECOND, CONFLICTING root, so each precedence rung is asserted against the
@@ -139,20 +136,49 @@ const encodedRootFolder: WorkspaceFolder = { uri: encodedRootUri, name: "/home/m
 const remoteRootUri = "vscode-remote://ssh-remote%2Bexample/home/me/rooted";
 
 /**
- * What the handler observed ON ITS OWN RequestContext, read back through the
- * fixture's hover.
+ * What the handler observed ON ITS OWN RequestContext, whole.
  *
- * `undefined` when the field was absent, which is the state the normalisation
- * criteria exist to rule out -- so this deliberately does NOT default it away.
+ * EVERY KEY IS OPTIONAL AND NOTHING IS DEFAULTED AWAY: `undefined` is what a
+ * field that never arrived looks like, and it is the state these criteria exist
+ * to tell apart from an empty list.
  */
-async function observedFolders(session: LspSession): Promise<unknown> {
+interface Observation {
+  workspaceFolders?: unknown;
+  rootUri?: unknown;
+  rootPath?: unknown;
+  fallback?: unknown;
+}
+
+/** The fixture's whole report for the session as it now stands. */
+async function observed(session: LspSession): Promise<Observation> {
   const hover = await session.request<Hover>("textDocument/hover", {
     textDocument: { uri },
     position: { line: 0, character: 0 },
   });
   const contents = hover.contents as { value?: string };
-  const observation = JSON.parse(contents.value ?? "{}") as { workspaceFolders?: unknown };
-  return observation.workspaceFolders;
+  return JSON.parse(contents.value ?? "{}") as Observation;
+}
+
+/** The folder list alone, which is what every change assertion below reads. */
+async function observedFolders(session: LspSession): Promise<unknown> {
+  return (await observed(session)).workspaceFolders;
+}
+
+/**
+ * THE THREE MIRRORED FIELDS AND NOT THE REDUCTION, which is a deliberate
+ * omission rather than a convenience: the reduction has hazards of its own and
+ * they own their own assertions below. Bundled in here, a broken guard would
+ * flip these too and the test that names it would stop being the first thing to
+ * fail.
+ */
+async function mirrored(session: LspSession): Promise<Observation> {
+  const { workspaceFolders, rootUri, rootPath } = await observed(session);
+  return { workspaceFolders, rootUri, rootPath };
+}
+
+/** What the PUBLISHED reduction answered when run on the handler's own context. */
+async function fallbackFolders(session: LspSession): Promise<unknown> {
+  return (await observed(session)).fallback;
 }
 
 /**
@@ -205,6 +231,19 @@ async function openWith(
     "initialize",
     folders === undefined ? initializeParams : { ...initializeParams, workspaceFolders: folders },
   );
+  session.notify("initialized", {});
+  session.notify("textDocument/didOpen", {
+    textDocument: { uri, languageId: "plaintext", version: 1, text: line },
+  });
+}
+
+/**
+ * The same, for a client that names its project the way a client WITHOUT the
+ * workspace-folders capability does: `rootUri` alone, with the field the newer
+ * clients use omitted entirely.
+ */
+async function openWithRootUri(session: LspSession, rootUri: string, line: string): Promise<void> {
+  await session.request<InitializeResult>("initialize", { ...initializeParams, rootUri });
   session.notify("initialized", {});
   session.notify("textDocument/didOpen", {
     textDocument: { uri, languageId: "plaintext", version: 1, text: line },
@@ -307,53 +346,62 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-19 CRITERION 1. The client named a root and sent NO workspaceFolders,
-    // which is what a client without that capability does -- and the handler
-    // must still be handed the project the editor opened.
+    // PBI-49 CRITERION 1, AND THE ABSENCE IS PAIRED INSIDE ONE ASSERTION. A
+    // test reading only the empty list cannot tell `nothing was synthesised`
+    // from `the field was dropped on the floor`, so the rootUri the client sent
+    // is read back through the SAME measurement: the empty list is then evidence
+    // about synthesis rather than about plumbing.
     //
-    // VERIFIED SYNTHETICALLY, AND SAYING SO IS PART OF THE RESULT: MEASURED
-    // across all three capability declarations, nvim sends rootUri and
-    // workspaceFolders TOGETHER OR NEITHER, so NO MEASURED CLIENT PRODUCES THIS
-    // CASE. The specification contemplates a rootUri-only client and such
-    // clients existed, which is why this stands -- but nobody should read a
-    // green here as `this works for a client we have seen`.
+    // THE PERCENT-ENCODED SPELLING IS WHAT MAKES `MIRRORED` MEAN ANYTHING. `%6A`
+    // is `j`, an unreserved character no encoder must escape, so a round trip
+    // through the URL parser hands back DIFFERENT BYTES. On a clean URI that
+    // round trip is the identity and this could not tell the two apart.
     //
-    // THE WHOLE FOLDER, not just its uri: `name` is the property that carries
-    // the convention, and asserting the uri alone would leave the second
-    // synthesis site free to invent its own.
-    test("a client sending rootUri but no workspaceFolders reaches a handler with a folder", async () => {
+    // ITS PERMANENT PRESENCE ARM IS THE TEST BELOW, through the same reader: a
+    // session that sends folders observes them here, so `[]` is not what this
+    // measurement says whatever it is given.
+    //
+    // WHAT WAS DELIBERATELY REMOVED HERE, since a reader will otherwise look for
+    // it: this used to assert that a rootUri-only client REACHED A HANDLER WITH
+    // A FOLDER. tsudoi cannot name a folder -- the protocol makes `name` a UI
+    // label the client owns -- and the reduction the config author calls is what
+    // now answers that need, asserted further down.
+    test("a client sending only rootUri is handed no folders, and the rootUri it sent", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
         await session.request<InitializeResult>("initialize", {
           ...initializeParams,
-          rootUri: rootedUri,
+          rootUri: encodedRootUri,
         });
         session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual([rootedFolder]);
+        expect(await mirrored(session)).toEqual({
+          workspaceFolders: [],
+          rootUri: encodedRootUri,
+          rootPath: null,
+        });
       } finally {
         session.dispose();
       }
     });
 
     // THE THREE SPELLINGS OF `NO FOLDERS HERE` ARE TREATED ALIKE -- omitted,
-    // null, and the EMPTY ARRAY all fall through to the rung below.
+    // null and the EMPTY ARRAY are one state, an empty list. The omitted
+    // spelling is two tests above; these are the other two.
     //
-    // PINNED AT SPRINT 18'S REVIEW, and the reason it had to be is measured:
-    // making `[]` or null STOP the chain reddened NOTHING across 315 tests.
-    // Correct behaviour with zero defence is what the first-to-fail rule was
-    // sharpened to catch.
+    // THE ROOT IS SENT AND IS NOT FOLDED IN, which is what makes this more than
+    // a repetition: the client named a project, the list stays empty, and the
+    // author can SEE the project in the field beside it. That visible absence is
+    // the whole trade this PBI made -- the old failure was an author reading an
+    // empty list with no way to know the editor had opened anything.
     //
-    // THE COUNTER-ARGUMENT, recorded because it is grounded in the same chain
-    // this feature is built on: the installed types say `null` means `supports
-    // workspace folders but none are configured` -- a STATEMENT of emptiness,
-    // where omission is the absence of one -- and workspaceFolders supersedes
-    // rootUri. It loses on HARM ASYMMETRY, not on being wrong: a client that
-    // supports folders, has none configured, and still sends rootUri is most
-    // plausibly saying `I do not do multi-root` rather than `there is no
-    // project`. Falling through hands that author the root; stopping hands them
-    // SILENT ABSENCE of a root the editor did name.
-    test("an empty workspaceFolders falls through to rootUri, as omitting it does", async () => {
+    // THE COUNTER-ARGUMENT, kept because it is grounded in the same chain: the
+    // installed types say `null` means `supports workspace folders but none are
+    // configured` -- a STATEMENT of emptiness, where omission is the absence of
+    // one. Nothing here turns on the difference any more, since neither spelling
+    // reaches a folder; it survives in `foldersWithRootFallback`, which falls
+    // through an empty list on the harm asymmetry the older tests recorded.
+    test("an empty or null workspaceFolders is an empty list beside the rootUri, as omitting it is", async () => {
       for (const spelling of [[], null]) {
         const session = LspSession.start(runtime, echoConfig);
         try {
@@ -364,22 +412,27 @@ for (const runtime of runtimes) {
           });
           session.notify("initialized", {});
 
-          expect(await observedFolders(session)).toEqual([rootedFolder]);
+          expect(await mirrored(session)).toEqual({
+            workspaceFolders: [],
+            rootUri: rootedUri,
+            rootPath: null,
+          });
         } finally {
           session.dispose();
         }
       }
     });
 
-    // PBI-19 CRITERION 2, TOP RUNG: workspaceFolders > rootUri.
+    // THE PRESENCE ARM OF THE PAIR ABOVE, through the same reader, and it is
+    // ALSO what remains of `folders win over a conflicting rootUri`: with no
+    // precedence left to apply, what that test defended is that the two fields
+    // DO NOT MIX -- neither is folded into the other, neither replaces the
+    // other, and both reach the author as sent.
     //
-    // ONE TEST PER RUNG, never three assertions in one test: a bundled test
-    // stops at its first failure, so which rungs were already satisfied and
-    // which had to be built could not be reported at all.
-    //
-    // ASSERTED AGAINST A CONFLICTING rootUri, so a `folders win` claim cannot
-    // be satisfied by an implementation that appends the root as well.
-    test("workspace folders the client sent win over a conflicting rootUri", async () => {
+    // TWO FOLDERS AND A CONFLICTING ROOT, so a list that merely CONTAINS what
+    // the client sent cannot pass: an implementation appending the root fails,
+    // and so does one keeping only the first folder.
+    test("the folders a client sent arrive beside the rootUri it also sent, neither folded into the other", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
         await session.request<InitializeResult>("initialize", {
@@ -389,16 +442,45 @@ for (const runtime of runtimes) {
         });
         session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual(sentFolders);
+        expect(await mirrored(session)).toEqual({
+          workspaceFolders: sentFolders,
+          rootUri: elsewhereUri,
+          rootPath: null,
+        });
       } finally {
         session.dispose();
       }
     });
 
-    // PBI-19 CRITERION 2, LOWER RUNG: rootUri > rootPath. MEASURED FROM THE
-    // INSTALLED TYPES, which state it outright: `If both rootPath and rootUri
-    // are set rootUri wins`.
-    test("rootUri wins over a conflicting rootPath", async () => {
+    // PBI-49 CRITERION 3, THE OWNER'S OWN CONTRACT: what the client sent is what
+    // it hands back, with NO root joined to it. Read through the reduction and
+    // not the context, so this cannot pass on the mirror alone.
+    //
+    // ASSERTED AGAINST A CONFLICTING rootUri, which is the precedence PBI-19's
+    // top rung used to pin one layer up: the reduction is where that rule lives
+    // now, and an implementation appending the root fails here.
+    test("the reduction hands back the folders the client sent, with no root joined to them", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: elsewhereUri,
+          workspaceFolders: sentFolders,
+        });
+        session.notify("initialized", {});
+
+        expect(await fallbackFolders(session)).toEqual(sentFolders);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-19 CRITERION 2'S LOWER RUNG, RE-HOMED ONE LAYER DOWN IN THE SAME
+    // COMMIT: rootUri > rootPath. MEASURED FROM THE INSTALLED TYPES, which state
+    // it outright -- `If both rootPath and rootUri are set rootUri wins` -- and
+    // it is a reading of what the client said, which is why it belongs to the
+    // reduction rather than to the mirror.
+    test("the reduction prefers a rootUri to a conflicting rootPath", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
         await session.request<InitializeResult>("initialize", {
@@ -408,17 +490,21 @@ for (const runtime of runtimes) {
         });
         session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual([rootedFolder]);
+        expect(await fallbackFolders(session)).toEqual([rootedFolder]);
       } finally {
         session.dispose();
       }
     });
 
-    // PBI-19 CRITERION 2, BOTTOM RUNG, and it is the test that pins the SECOND
-    // synthesis site's convention: rootPath is already a path, so `name` is
-    // that string VERBATIM and the uri is derived from it -- the mirror of the
-    // rung above, where the uri arrived and the name was derived.
-    test("a client naming only rootPath reaches a handler with a folder named by that path verbatim", async () => {
+    // PBI-19 CRITERION 2'S BOTTOM RUNG, RE-HOMED: rootPath is already a path, so
+    // `name` is that string VERBATIM and the uri is derived from it -- the
+    // mirror of the rung above, where the uri arrived and the name was derived.
+    //
+    // THE DERIVED NAME IS NOW THE AUTHOR'S TO ACCEPT, which is the difference
+    // this move makes: a folder tsudoi puts on `RequestContext` states that a
+    // client named it, and one this function returns states only that YOU ASKED
+    // WHAT THE ROOT WAS.
+    test("the reduction answers a rootPath-only session with a folder named by that path verbatim", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
         await session.request<InitializeResult>("initialize", {
@@ -427,18 +513,26 @@ for (const runtime of runtimes) {
         });
         session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual([rootedFolder]);
+        expect(await fallbackFolders(session)).toEqual([rootedFolder]);
       } finally {
         session.dispose();
       }
     });
 
-    // THE TWO HALVES OF THE SYNTHESIS CONVENTION, ON A URI WHERE THEY CAN BE
-    // TOLD APART: `uri` is what the CLIENT SPELLED, byte for byte, and `name`
-    // is what those bytes DECODE to. On a clean URI the round trip is the
-    // identity, so no test using one can distinguish `we kept the client's
-    // bytes` from `we reparsed and got lucky`.
-    test("a percent-encoded rootUri is held as the client spelled it and named by the path it decodes to", async () => {
+    // THE TWO HALVES OF THE REDUCTION'S CONVENTION, ON A URI WHERE THEY CAN BE
+    // TOLD APART: `uri` is what the CLIENT SPELLED, byte for byte, and `name` is
+    // what those bytes DECODE to. On a clean URI the round trip is the identity,
+    // so no test using one can distinguish `we kept the client's bytes` from `we
+    // reparsed and got lucky`.
+    //
+    // THE BYTES STILL MATTER FOR THE SAME REASON THEY DID: `change` matches URIs
+    // as EXACT STRINGS, so an author who adds this folder to their own bookkeeping
+    // and later meets it in a `removed` needs the spelling the client uses.
+    //
+    // IT IS ALSO THE PERMANENT PRESENCE PAIR for every `the reduction yields no
+    // folder` assertion below -- the same reader, the same fixture, observing a
+    // folder when there is one to observe.
+    test("the reduction holds a percent-encoded rootUri as spelled, named by the path it decodes to", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
         await session.request<InitializeResult>("initialize", {
@@ -447,50 +541,27 @@ for (const runtime of runtimes) {
         });
         session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual([encodedRootFolder]);
-      } finally {
-        session.dispose();
-      }
-    });
-
-    // WHY THE BYTES MATTER, as its own test rather than a second assertion on
-    // the one above: `change` matches URIs as EXACT STRINGS, so a synthesised
-    // entry holding a reparsed URI is one the client can never remove -- it
-    // would send back the spelling it sent, and nothing would match.
-    //
-    // A SEPARATE TEST BECAUSE THE CONSEQUENCE IS THE POINT. Appended to the
-    // test above it could never be observed: that one fails first under the
-    // same perturbation and stops.
-    //
-    // Its permanent presence pair is the test above, where the same reader
-    // observes the folder present.
-    test("a removal spelling the rootUri exactly as the client did finds the synthesised folder", async () => {
-      const session = LspSession.start(runtime, echoConfig);
-      try {
-        await session.request<InitializeResult>("initialize", {
-          ...initializeParams,
-          rootUri: encodedRootUri,
-        });
-        session.notify("initialized", {});
-
-        changeFolders(session, { removed: [{ uri: encodedRootUri, name: "whatever" }] });
-
-        expect(await observedFolders(session)).toEqual([]);
+        expect(await fallbackFolders(session)).toEqual([encodedRootFolder]);
       } finally {
         session.dispose();
       }
     });
 
     // THE HANDSHAKE SURVIVES A rootUri THAT NAMES NO LOCAL PATH, and that is
-    // ALL this asserts. `fileURLToPath` throws on such a URI, and thrown from
-    // the initialize handler it answers the handshake with an error: the author
-    // gets no server at all, which is a strictly worse failure than any list.
+    // ALL this asserts.
     //
-    // WHAT THE LIST SHOULD THEN HOLD IS DELIBERATELY NOT ASSERTED. More than
-    // one outcome is defensible -- fall to the rung below, as tsudoi does, or
-    // keep the URI under some invented name -- and no ruling exists. Pinning
-    // the debatable half here would freeze a choice nobody made; pinning the
-    // non-debatable half is what stops the catastrophic one.
+    // ITS HAZARD MOVED WITH THE CODE AND THE TEST STAYED, which is worth stating
+    // because the two are easy to confuse. `fileURLToPath` throws on such a URI;
+    // it used to run INSIDE the initialize handler, where a throw answers the
+    // handshake with an error and leaves the author no server at all. Nothing
+    // interprets these fields at initialize any more, so THAT failure is now
+    // unrepresentable rather than defended -- and the throw that remains
+    // possible is in the reduction, which the test below owns.
+    //
+    // KEPT ANYWAY, AND NOT ONLY OUT OF CAUTION: it is the one assertion here
+    // that a session carrying an exotic root STARTS AT ALL, and it is deliberately
+    // NOT deleted, since retiring a defence of an accepted criterion is a scope
+    // decision rather than tidying.
     test("a rootUri naming no local path still completes the handshake", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -505,127 +576,104 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-19 CRITERION 1'S NEGATIVE CONTROL, THE BACK DOOR HALF: cwd must not
-    // re-enter through the rootPath rung. `pathToFileURL` RESOLVES A RELATIVE
-    // PATH AGAINST cwd, so a rootPath of "" or "." would synthesise a
-    // cwd-derived root -- exactly the fabrication the criterion exists to keep
-    // out, arriving by a route `?? []` does not cover because "" is neither
-    // null nor undefined.
+    // PBI-49 CRITERION 3'S OTHER PROTECTION, and the one whose REASON changed
+    // rather than merely its address: a URI naming no local path yields NO
+    // FOLDER instead of throwing. The throw would now land in the config
+    // author's OWN handler -- for a completion, once per keystroke against an
+    // editor connected over vscode-remote:// or ssh:// -- which is smaller than
+    // losing the handshake and still not theirs to debug.
+    //
+    // A THROW FAILS THIS TEST BY ITS OWN ROUTE, since the fixture's hover is
+    // what runs the reduction: the request would answer an error and the read
+    // would reject rather than returning a list.
+    //
+    // ITS PERMANENT PRESENCE PAIR is the percent-encoded test above, where the
+    // same reader observes a folder -- so `no folder` is evidence rather than a
+    // reader that never sees one.
+    test("a rootUri naming no local path yields no folder from the reduction", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: remoteRootUri,
+        });
+        session.notify("initialized", {});
+
+        expect(await fallbackFolders(session)).toEqual([]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // PBI-49 CRITERION 2, THE MIRROR HALF: a relative rootPath reaches the
+    // author EXACTLY AS SENT and becomes no folder on the way.
+    //
+    // BOTH SPELLINGS, because they are two values and not one: "" is what a
+    // client that has a field to fill and nothing to put in it sends, and "." is
+    // what a client that means `here` sends. Neither is absence, which is the
+    // door `??` does not cover.
+    //
+    // THE REDUCTION IS NOT READ HERE, deliberately: the cwd hazard owns the test
+    // below and must be the FIRST thing to fail when the guard goes, which it
+    // cannot be if this assertion carries it too.
+    test("a relative rootPath reaches the handler exactly as sent, and becomes no folder", async () => {
+      for (const spelling of ["", "."]) {
+        const session = LspSession.start(runtime, echoConfig);
+        try {
+          await session.request<InitializeResult>("initialize", {
+            ...initializeParams,
+            rootPath: spelling,
+          });
+          session.notify("initialized", {});
+
+          expect(await mirrored(session)).toEqual({
+            workspaceFolders: [],
+            rootUri: null,
+            rootPath: spelling,
+          });
+        } finally {
+          session.dispose();
+        }
+      }
+    });
+
+    // PBI-49 CRITERION 2'S LOAD-BEARING HALF, AND THE GUARD THAT WOULD OTHERWISE
+    // HAVE DIED WITH THE RUNG: cwd must not walk in through the reduction.
+    // `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so a rootPath of ""
+    // or "." yields a root made of whatever directory THIS PROCESS WAS LAUNCHED
+    // IN -- a fabrication no client named, arriving by a route `??` does not
+    // cover because "" is neither null nor undefined.
+    //
+    // THE SESSION IS STARTED SOMEWHERE OF THIS TEST'S CHOOSING, which is what
+    // makes the assertion able to say anything: nvim spawns a server with cwd =
+    // root_dir whenever it found a root, so a cwd-derived root looks CORRECT in
+    // every test that lets the two coincide.
+    //
+    // ASSERTING THE MIRRORED "." ALONE WOULD NOT REACH THIS. A shape that
+    // mirrored the string faithfully and still handed every author a cwd root
+    // passes the test above and reddens here, naming the folder it invented.
     //
     // REASONED, NOT MEASURED: no observed client sends this, and it is pinned
-    // because the failure would be silent and indistinguishable from a correct
-    // root.
-    test("a rootPath that names no absolute path is not a root, and never becomes cwd", async () => {
-      const fixture = tree(["notes/cwd-only.txt"]);
-      const session = LspSession.startCommand(
-        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${echoConfig}`,
-        fixture.root,
-      );
-      try {
-        await session.request<InitializeResult>("initialize", {
-          ...initializeParams,
-          rootPath: "",
-        });
-        session.notify("initialized", {});
+    // because the failure is silent and indistinguishable from a correct root.
+    test("the reduction refuses a relative rootPath, and never answers with the launch directory", async () => {
+      for (const spelling of ["", "."]) {
+        const fixture = tree(["notes/cwd-only.txt"]);
+        const session = LspSession.startCommand(
+          `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${echoConfig}`,
+          fixture.root,
+        );
+        try {
+          await session.request<InitializeResult>("initialize", {
+            ...initializeParams,
+            rootPath: spelling,
+          });
+          session.notify("initialized", {});
 
-        expect(await observedFolders(session)).toEqual([]);
-      } finally {
-        session.dispose();
-        fixture.dispose();
-      }
-    });
-
-    // PBI-19 CRITERION 3. BORN GREEN BY CONSTRUCTION and recorded as such: the
-    // synthesised folder is an ORDINARY MEMBER of the list the notification
-    // writes through, so uniformity is a consequence of not special-casing
-    // rather than of any code written for it.
-    //
-    // THE WHOLE VALUE IS THE CONTROL, and the wrong implementation is the
-    // TEMPTING one: a READ-TIME `folders.length > 0 ? folders :
-    // synthesise(rootUri)` passes every assertion of criterion 1 perfectly and
-    // reddens HERE, because the first `added` finds an empty stored list and
-    // the read hands back the delta ALONE -- [added] where the client holds
-    // [root, added].
-    //
-    // BOTH folders, in order, and never `toContain`: losing the root the
-    // session opened with is exactly the failure this PBI exists against.
-    test("a folder added after a root was synthesised joins it rather than replacing it", async () => {
-      const session = LspSession.start(runtime, echoConfig);
-      try {
-        await session.request<InitializeResult>("initialize", {
-          ...initializeParams,
-          rootUri: rootedUri,
-        });
-        session.notify("initialized", {});
-
-        changeFolders(session, { added: [addedFolder] });
-
-        expect(await observedFolders(session)).toEqual([rootedFolder, addedFolder]);
-      } finally {
-        session.dispose();
-      }
-    });
-
-    // PBI-19 CRITERION 3, THE REMOVE HALF, AND THE WORSE HAZARD OF THE TWO: a
-    // read-time fallback never stored the root, so removing it is a no-op on an
-    // already-empty list and the next read SYNTHESISES IT AGAIN -- a folder the
-    // client EXPLICITLY REMOVED coming back.
-    //
-    // ITS OWN TEST, AND THE REAPPEARANCE IS ITS FIRST ASSERTION. Bundled onto
-    // the end of the test above it could never be observed: that test would
-    // fail at its own first assertion under the same perturbation and stop,
-    // leaving the hazard this one names unreported.
-    //
-    // ITS PERMANENT PRESENCE PAIR is the criterion 1 test above -- the same
-    // fixture, the same hover, the same reader, observing [rootedFolder] when
-    // the root IS there. An emptiness claim measured by a path that can never
-    // observe anything is satisfied by a broken measurement.
-    test("the synthesised folder is removed like any other, and does not come back", async () => {
-      const session = LspSession.start(runtime, echoConfig);
-      try {
-        await session.request<InitializeResult>("initialize", {
-          ...initializeParams,
-          rootUri: rootedUri,
-        });
-        session.notify("initialized", {});
-
-        changeFolders(session, { removed: [rootedFolder] });
-
-        expect(await observedFolders(session)).toEqual([]);
-      } finally {
-        session.dispose();
-      }
-    });
-
-    // PBI-19 CRITERION 4, PINNED BECAUSE A WELL-MEANING GUARD PASSES EVERY
-    // OTHER ONE: a `do not duplicate our own entry` check would leave criteria
-    // 1, 2 and 3 green while silently disagreeing with the client -- the
-    // identical hazard shape to the `includes` guard pinned above.
-    //
-    // APPEND, NEVER REPLACE, and the losing argument is strong enough to
-    // record: one folder guessed and then confirmed is arguably not two, and
-    // OUR entry is an estimate where the client's is a statement. It loses on
-    // MECHANISM COST -- replacing means knowing which entry is ours, which
-    // reintroduces the provenance the uniformity ruling removed the need for,
-    // and an exception for our own entry makes the synthesised entry
-    // EXTRAORDINARY again.
-    //
-    // THE RESIDUAL, named rather than glossed: the list can then hold two
-    // entries for one folder, our estimate beside the client's statement.
-    test("an added folder naming the synthesised URI is held beside it, not merged into it", async () => {
-      const session = LspSession.start(runtime, echoConfig);
-      try {
-        await session.request<InitializeResult>("initialize", {
-          ...initializeParams,
-          rootUri: rootedUri,
-        });
-        session.notify("initialized", {});
-
-        changeFolders(session, { added: [rootedAgain] });
-
-        expect(await observedFolders(session)).toEqual([rootedFolder, rootedAgain]);
-      } finally {
-        session.dispose();
+          expect(await fallbackFolders(session)).toEqual([]);
+        } finally {
+          session.dispose();
+          fixture.dispose();
+        }
       }
     });
 
@@ -1027,6 +1075,42 @@ for (const runtime of runtimes) {
       } finally {
         session.dispose();
         fixture.dispose();
+      }
+    });
+
+    // PBI-49 CRITERION 3, WHERE THE HAZARD THIS SPRINT CREATES IS ACTUALLY
+    // OWNED: an author reading `workspaceFolders` alone is handed `[]` where a
+    // root exists, and THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE is the
+    // consumer that would have lost its roots. It reads the three fields through
+    // `foldersWithRootFallback`, so a client that names its project the old way
+    // still gets a workspace source.
+    //
+    // A MEASURED CONSUMER, NOT A MANUFACTURED ONE: examples/completion-path.ts
+    // read `context.workspaceFolders` before this sprint, and the session below
+    // is one no client with the workspace-folders capability sends -- which is
+    // precisely the client the deprecated fields exist for.
+    //
+    // THE HAZARD'S OWN ASSERTION IS FIRST. The workspace-attributed item is what
+    // reddens when the reduction returns nothing, and it NAMES THE MISSING
+    // CANDIDATE; the whole-list assertion after it is the non-vacuity pair,
+    // since cwd answering proves the source ran for this fragment at all.
+    test("a rootUri-only session still completes paths from that root, through the reduction", async () => {
+      const cwd = tree(["notes/cwd-only.txt"]);
+      const rooted = tree(["notes/root-only.txt"]);
+      const session = exampleSession(runtime, cwd.root);
+      try {
+        await openWithRootUri(session, pathToFileURL(rooted.root).href, "notes/");
+
+        const items = await completeAt(session, "notes/");
+
+        expect(workspaceItems(items).map((item) => item.insertText)).toEqual([
+          "notes/root-only.txt",
+        ]);
+        expect(inserted(items)).toEqual(["notes/cwd-only.txt", "notes/root-only.txt"]);
+      } finally {
+        session.dispose();
+        cwd.dispose();
+        rooted.dispose();
       }
     });
 
