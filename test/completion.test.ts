@@ -436,8 +436,8 @@ for (const runtime of runtimes) {
         // fastidiousness: this project measures `none weakened` by grepping
         // every source line that opens an assertion call, so a comment quoting
         // one INFLATES THE INSTRUMENT BY ONE. MEASURED: a draft of this comment
-        // carrying such a quotation put a predicted 708 at 709, while the
-        // runtime count and the test count both landed exactly.
+        // carrying such a quotation put that grep ONE ABOVE its prediction,
+        // while the runtime count and the test count both landed exactly.
         expect(session.progressCount).toBe(0);
 
         // THE PAIR, and it is what keeps the assertion above from being

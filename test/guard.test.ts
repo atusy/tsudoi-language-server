@@ -238,8 +238,8 @@ function reportedAgainst(path: string): RegExp {
 //
 // Why a lint at all, when PBI-22 already makes src/server.ts unable to CALL
 // onNotification: it can still IMPORT the factory, build its own wide connection
-// and register beside the table. MEASURED with this rule taken out -- 331 tests
-// green, tsc 0, oxlint 0, with nothing objecting.
+// and register beside the table. MEASURED with this rule taken out -- THE WHOLE
+// SUITE green, tsc 0, oxlint 0, with nothing objecting.
 test("importing createProtocolConnection is flagged in src/server.ts", async () => {
   const result = await lintProbe({
     "src/server.ts": importsProtocolExport("createProtocolConnection"),

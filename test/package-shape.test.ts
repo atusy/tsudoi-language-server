@@ -104,10 +104,10 @@ const buildTsconfig = JSON.parse(
  * examples' `@atusy/tsudoi/*` imports through package.json's exports map to
  * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
  * therefore disagree exactly when the published surface has moved: MEASURED in
- * both directions -- a false GREEN beside 43 test failures, and a false RED
- * against a type the tree does not contain. The mapping makes this repository's
- * own
- * check read source, so a stale dist/ cannot reach it at all.
+ * both directions -- a false GREEN beside failures spread BROADLY across the
+ * suite, and a false RED against a type the tree does not contain. The mapping
+ * makes this repository's own check read source, so a stale dist/ cannot reach
+ * it at all.
  *
  * tsconfig.build.json GETS NONE, and that is the half this pair exists for.
  * It `include`s src alone, which never imports the bare specifier, so a mapping
@@ -282,7 +282,7 @@ test("packing builds, so a stale dist cannot be published", () => {
  * measured; the single-file bypass is not reachable here.
  *
  * MEASURED ON THE ROUTE IT GUARDS, with a value re-export added to src/types.ts
- * and no build: from a non-root cwd the suite gives 442 pass / 2 fail, and THIS
+ * and no build: from a non-root cwd the suite gives TWO failures, and THIS
  * IS THE ONLY STALENESS-SPECIFIC FAILURE OF THE TWO. The other --
  * published-artifacts.test.ts's exact runtime-key list -- is attributed away by
  * a control: it reddens identically when the same edit is made and the build

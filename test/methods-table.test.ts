@@ -135,7 +135,7 @@ for (const runtime of runtimes) {
      * THE PROLOGUE'S REJECTION STEP, FOR EVERY METHOD, BY CONSTRUCTION.
      *
      * THIS IS WHAT THE READINESS GATE FOUND MISSING. Deleting formatting's
-     * hand-written rejection check left all 399 tests green, and so did
+     * hand-written rejection check left THE WHOLE SUITE green, and so did
      * deleting completion's: only hover's was defended. The remedy the PBI
      * chose is the router rather than two more hand-written assertions, so
      * this test iterates the TABLE -- a fourth method is covered the moment it
@@ -303,7 +303,7 @@ for (const runtime of runtimes) {
      * other session test sends a params OBJECT and expects an answer, so a
      * guard that refused those reddens in hover, completion, formatting,
      * diagnostic and resolve's own files at once. No control is written here
-     * for a property 467 assertions already hold.
+     * for a property every other session assertion in the suite already holds.
      */
     test("every method in the table refuses params that are not an object", async () => {
       const session = LspSession.start(runtime, allMethods);

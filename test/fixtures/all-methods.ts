@@ -25,9 +25,9 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  * THOSE DELETIONS DO NOT TYPE-CHECK, AND THE MEASUREMENT ABOVE HOLDS ANYWAY --
  * said here rather than left for whoever tries to repeat it, because the two
  * are easy to confuse. RE-RUN on the two bullets that carry information rather
- * than on all four. MEASURED: hover's handler deleted, 444 GREEN across the
- * suite; completion's deleted ALONE, FOUR RED on both runtimes -- the second is
- * the one worth spending a run on, being the only bullet whose reading is not
+ * than on all four. MEASURED: hover's handler deleted, THE WHOLE SUITE GREEN;
+ * completion's deleted ALONE, FOUR RED on both runtimes -- the second is the
+ * one worth spending a run on, being the only bullet whose reading is not
  * `green`. The other two follow from the first, which establishes
  * the mechanism: NEITHER RUNTIME TYPE-CHECKS, so a compile error changes
  * nothing a test can see.

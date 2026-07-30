@@ -679,7 +679,7 @@ for (const runtime of runtimes) {
     // ONE folder, and first-match lands on `…/plain` -- the intended target --
     // so the survivor stands and this test passes whether or not the matcher
     // normalises. MEASURED: stripping a trailing slash before comparing reddens
-    // NOTHING in 321 tests.
+    // NOTHING ANYWHERE IN THE SUITE.
     //
     // WHAT WOULD UN-BLIND IT, REASONED and not measured -- measuring it needs a
     // test that does not exist -- is a removal naming the spelling that is NOT
@@ -710,7 +710,8 @@ for (const runtime of runtimes) {
         // `…/plain/` under exact matching AND under normalisation, because
         // one-copy-per-entry deletes one folder and first-match lands on the
         // intended target either way. MEASURED: with the removal naming the
-        // FIRST entry, a normalising matcher reddens NOTHING across 321 tests.
+        // FIRST entry, a normalising matcher reddens NOTHING ANYWHERE IN THE
+        // SUITE.
         // Naming the SECOND separates them -- exact matching leaves
         // `…/plain`, normalisation leaves `…/plain/`.
         changeFolders(session, { removed: [plainSlashFolder] });
@@ -742,7 +743,7 @@ for (const runtime of runtimes) {
     // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
     // two orders apart, and the reason `removed` before `added` goes
     // UNDEFENDED without it. MEASURED: applying `added` first reddens NOTHING
-    // across 321 tests.
+    // ANYWHERE IN THE SUITE.
     //
     // PINNED OPPORTUNISTICALLY, not as repair: nothing about the ordering is
     // broken, and what this adds is a defence where there was none. It earns a

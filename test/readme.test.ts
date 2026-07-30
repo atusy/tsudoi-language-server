@@ -279,17 +279,18 @@ const facts: readonly ReadmeFact[] = [
     // automatic build is NOT total: bun discovers bunfig.toml relative to the
     // CURRENT WORKING DIRECTORY and does not search upward, so `bun test`
     // started anywhere but the repository root runs the whole suite with no
-    // build. MEASURED on that route, with dist/ deliberately stale: 442 pass /
-    // 2 fail, and the ONLY staleness-specific failure is the comparison in
-    // package-shape.test.ts. That is why that comparison stands rather than
+    // build. MEASURED on that route, with dist/ deliberately stale: the suite
+    // gives TWO failures, and the ONLY staleness-specific one is the comparison
+    // in package-shape.test.ts. That is why that comparison stands rather than
     // being deleted as redundant, and why the README must keep saying where to
     // stand.
     //
     // NO TOKEN BELOW ASKS THE README FOR A NUMBER, deliberately: the suite
     // grows and any count the document carried would go false on its own. The
-    // readings belong in a comment, where they date themselves honestly --
-    // MEASURED on a dist/-less `bun test`: 47 fail / 362 pass, with 35 tests
-    // not running at all.
+    // reading belongs in a comment, and even here as a SHAPE rather than a
+    // size, for exactly that reason -- MEASURED on a dist/-less `bun test`:
+    // failures spread BROADLY across the suite rather than at one assertion,
+    // and tests that never run at all.
     name: "`bun test` builds dist/ itself, and only from the repository root",
     tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },

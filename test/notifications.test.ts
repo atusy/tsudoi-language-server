@@ -782,7 +782,7 @@ test("the same two outcomes hold for trace through an alias under a different na
  * `RequestOnlyConnection` themselves, so they assert what the TYPE means and go
  * green whatever `createGatedConnection` hands back. MEASURED -- changing that
  * function's return annotation to `ProtocolConnection` while leaving the alias
- * alone left all three of them green, `tsc --noEmit` at 0 and 331 tests
+ * alone left all three of them green, `tsc --noEmit` at 0 and THE WHOLE SUITE
  * passing, with an ungated `connection.onNotification` in src/server.ts
  * compiling fine. The foreclosure was entirely gone and NOTHING said so.
  *
