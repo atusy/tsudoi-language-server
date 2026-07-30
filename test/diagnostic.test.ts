@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   type DocumentDiagnosticReport,
   type InitializeResult,
+  type ServerCapabilities,
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
@@ -23,6 +24,16 @@ await Promise.all(runtimes.map(requireRuntime));
 const textDocumentSync: TextDocumentSyncOptions = {
   openClose: true,
   change: TextDocumentSyncKind.Incremental,
+};
+
+/**
+ * Advertised for EVERY config, so it stands in every exact-equality pin below
+ * and is not evidence about the fixture any one of them drives. Why tsudoi
+ * claims it unconditionally -- it mirrors folders whatever the config supplies --
+ * is at the capabilities literal in src/server.ts.
+ */
+const workspace: ServerCapabilities["workspace"] = {
+  workspaceFolders: { supported: true, changeNotifications: true },
 };
 
 const uri = "file:///workspace/a.txt";
@@ -69,6 +80,7 @@ for (const runtime of runtimes) {
 
         expect(result.capabilities).toEqual({
           textDocumentSync,
+          workspace,
           diagnosticProvider: { interFileDependencies: true, workspaceDiagnostics: false },
         });
       } finally {
@@ -84,7 +96,11 @@ for (const runtime of runtimes) {
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({ textDocumentSync, hoverProvider: true });
+        expect(result.capabilities).toEqual({
+          textDocumentSync,
+          workspace,
+          hoverProvider: true,
+        });
       } finally {
         session.dispose();
       }

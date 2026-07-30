@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   type Hover,
   type InitializeResult,
+  type ServerCapabilities,
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
@@ -43,6 +44,16 @@ const textDocumentSync: TextDocumentSyncOptions = {
   change: TextDocumentSyncKind.Incremental,
 };
 
+/**
+ * Advertised for EVERY config, so it stands in every exact-equality pin below
+ * and is not evidence about the fixture any one of them drives. Why tsudoi
+ * claims it unconditionally -- it mirrors folders whatever the config supplies --
+ * is at the capabilities literal in src/server.ts.
+ */
+const workspace: ServerCapabilities["workspace"] = {
+  workspaceFolders: { supported: true, changeNotifications: true },
+};
+
 const uri = "file:///workspace/a.txt";
 
 function hoverParams(line: number, character: number): unknown {
@@ -56,7 +67,11 @@ for (const runtime of runtimes) {
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({ textDocumentSync, hoverProvider: true });
+        expect(result.capabilities).toEqual({
+          textDocumentSync,
+          workspace,
+          hoverProvider: true,
+        });
       } finally {
         session.dispose();
       }
@@ -65,12 +80,18 @@ for (const runtime of runtimes) {
     // Exact equality, not `hoverProvider is absent`: a server that advertised
     // some other unasked-for capability would satisfy an absence check, and a
     // client trusts every capability it is told about.
-    test("a config supplying no hover handler advertises exactly textDocumentSync", async () => {
+    //
+    // AND THIS IS WHERE THE TWO KINDS OF CAPABILITY SEPARATE, because it drives a
+    // config that supplies NOTHING: what survives here is exactly what tsudoi
+    // claims about ITSELF rather than about the config. `workspace` standing in a
+    // pin this narrow is the assertion that folder support is unconditional --
+    // conditioning it on any declared method would empty this object of it.
+    test("a config supplying no handler advertises only what tsudoi claims about itself", async () => {
       const session = LspSession.start(runtime, hoverAbsent);
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({ textDocumentSync });
+        expect(result.capabilities).toEqual({ textDocumentSync, workspace });
       } finally {
         session.dispose();
       }

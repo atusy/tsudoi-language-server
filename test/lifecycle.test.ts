@@ -64,10 +64,42 @@ for (const runtime of runtimes) {
         expect(result.serverInfo?.name).toBe("tsudoi");
         expect(result.capabilities).toEqual({
           textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
+          workspace: { workspaceFolders: { supported: true, changeNotifications: true } },
           hoverProvider: true,
           completionProvider: { resolveProvider: true },
           diagnosticProvider: { interFileDependencies: true, workspaceDiagnostics: false },
           documentFormattingProvider: true,
+        });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THIS KEY IS WHAT MAKES workspace.ts REACHABLE, and it is not a courtesy
+    // advertisement. vscode-languageclient's WorkspaceFoldersFeature.initialize
+    // reads `capabilities.workspace.workspaceFolders.changeNotifications` and
+    // nothing else; only a string or `true` yields a registration id, and only an
+    // id reaches its register() -- the SOLE subscriber to
+    // onDidChangeWorkspaceFolders and the sole route to the notification. Without
+    // this key a conforming client never sends `didChangeWorkspaceFolders` at
+    // all, so the entire delta path in src/workspace.ts is dead code under a real
+    // editor and RequestContext.workspaceFolders is frozen for the session at
+    // whatever `initialize` stated.
+    //
+    // NARROW ON PURPOSE, and that is the point of it standing apart from the
+    // exact-equality pin above: that pin moves whenever ANY capability moves, so
+    // it can never say which key was lost. This one fails for one reason only.
+    //
+    // `supported` is asserted beside it as the honest declaration of a fact --
+    // tsudoi does answer from workspace folders -- rather than as a field any
+    // client is known to read; the client package never reads it.
+    test("initialize advertises workspace folder support and asks for change notifications", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+
+        expect(result.capabilities.workspace).toEqual({
+          workspaceFolders: { supported: true, changeNotifications: true },
         });
       } finally {
         session.dispose();

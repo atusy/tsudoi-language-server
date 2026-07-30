@@ -156,6 +156,31 @@ export function startServer(
       // that read one change per notification would corrupt every buffer a
       // client edited, silently, on the client's first keystroke.
       textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
+      // WHAT MAKES THE FOLDER MIRROR REACHABLE. `changeNotifications` is an
+      // OPT-IN and not a preference: a conforming client subscribes to folder
+      // changes only when the server asked it to, so without this key
+      // `workspace/didChangeWorkspaceFolders` never arrives, the delta path in
+      // workspace.ts is dead code, and RequestContext.workspaceFolders is frozen
+      // for the life of the session at whatever `initialize` stated.
+      //
+      // UNCONDITIONAL, AND THAT IS WHY IT IS HERE RATHER THAN CONTRIBUTED FROM
+      // THE TABLE IN src/methods.ts. Those entries are claimed per method because
+      // a client is entitled to send whatever it was told about and the CONFIG
+      // may have no handler to answer with. This one answers to nothing the
+      // config declares: tsudoi mirrors the folders and populates
+      // RequestContext.workspaceFolders whether or not any method is supplied,
+      // so it is a fact about tsudoi, and conditioning it would advertise less
+      // than tsudoi does.
+      //
+      // NOR IS IT CONDITIONED ON THE CLIENT'S OWN `workspace.workspaceFolders`,
+      // which would mean reading `params.capabilities` here -- the widening the
+      // note above refuses. A client that did not ask for this simply ignores it.
+      //
+      // `true` RATHER THAN AN ID STRING: an id exists to be handed back to
+      // `client/unregisterCapability`, and tsudoi never unregisters -- it wants
+      // these for as long as the session lasts. `supported` is the plain
+      // declaration that tsudoi answers from folders at all.
+      workspace: { workspaceFolders: { supported: true, changeNotifications: true } },
     };
     // PER-METHOD, AND THE REASON IS THE STAKEHOLDER'S POLICY: a client is
     // entitled to send whatever it was told about, so each capability is
@@ -320,9 +345,18 @@ export function notificationEntries(
       // by hand would compile against the WRONG notification's shape just as
       // happily, which is the error this table exists to keep impossible.
       handler: (params) => workspaceFolders.change(params.event),
-      // WHY THIS ENTRY EXISTS AT ALL: the notification arrives whether or not
-      // the server advertises `workspace.workspaceFolders.changeNotifications`,
-      // so tsudoi does not opt into this message and cannot opt out of it.
+      // WHY THIS ENTRY EXISTS AT ALL: tsudoi ASKED for this message. A
+      // conforming client sends it only to a server that advertised
+      // `workspace.workspaceFolders.changeNotifications`, which startServer does
+      // unconditionally -- so this entry and that advertisement stand or fall
+      // together, and dropping either leaves the folder mirror frozen at what
+      // `initialize` stated with nothing here to notice.
+      //
+      // OPTING IN ALSO BUYS A CATCH-UP EVENT: the client's feature sends the diff
+      // between the folders it named at `initialize` and the folders it holds
+      // when it registers. Usually those agree and nothing is sent; when they do
+      // not, an add/remove pair arrives before any user action, which is the
+      // ordinary path through the handler and not a special case.
       //
       // The gate: a folder change outside the serving window has no session to
       // change. Before `initialize` there is no client state and the folder list

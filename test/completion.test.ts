@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionItem,
   type InitializeResult,
+  type ServerCapabilities,
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
@@ -45,6 +46,16 @@ const textDocumentSync: TextDocumentSyncOptions = {
   change: TextDocumentSyncKind.Incremental,
 };
 
+/**
+ * Advertised for EVERY config, so it stands in every exact-equality pin below
+ * and is not evidence about the fixture any one of them drives. Why tsudoi
+ * claims it unconditionally -- it mirrors folders whatever the config supplies --
+ * is at the capabilities literal in src/server.ts.
+ */
+const workspace: ServerCapabilities["workspace"] = {
+  workspaceFolders: { supported: true, changeNotifications: true },
+};
+
 const uri = "file:///workspace/a.txt";
 
 /** A client that wants partial results names a token; one that does not omits it. */
@@ -76,7 +87,11 @@ for (const runtime of runtimes) {
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({ textDocumentSync, completionProvider: {} });
+        expect(result.capabilities).toEqual({
+          textDocumentSync,
+          workspace,
+          completionProvider: {},
+        });
       } finally {
         session.dispose();
       }
@@ -87,7 +102,11 @@ for (const runtime of runtimes) {
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({ textDocumentSync, hoverProvider: true });
+        expect(result.capabilities).toEqual({
+          textDocumentSync,
+          workspace,
+          hoverProvider: true,
+        });
       } finally {
         session.dispose();
       }
