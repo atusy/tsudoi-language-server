@@ -135,10 +135,16 @@ export function startServer(
     // AND NO REDUCTION SHIPS EITHER, which is a second withdrawal on top of the
     // first: one was published for the author who wants a root out of the
     // deprecated fields, and the stakeholder ruled that a TYPES module may not
-    // export a runtime function. The precedence chain, the absolute-or-nothing
-    // guard and the no-local-path case now live as PROSE at `rootUri` and
-    // `rootPath` in src/types.ts, where an author meets the fields -- and prose
-    // is not an artifact this suite drives, which is stated at the sprint.
+    // export a runtime function. The precedence chain and the no-local-path case
+    // now live as PROSE at `rootUri` and `rootPath` in src/types.ts, where an
+    // author meets the fields -- and prose is not an artifact this suite drives,
+    // which is stated at the sprint.
+    //
+    // THE THIRD OF THEM WENT THE OTHER WAY AND IS CODE AGAIN: a non-absolute
+    // `rootPath` is REFUSED in workspace.ts rather than forwarded, because a
+    // relative path is not a root -- it resolves against a working directory the
+    // client does not share. So the only field that could have manufactured a
+    // cwd root no longer reaches an author at all.
     //
     // What absence must NEVER become is a ROOT. cwd is the tempting default
     // and the dangerous one: nvim spawns the server with cwd = root_dir when a

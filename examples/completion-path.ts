@@ -197,9 +197,10 @@ export interface PathCompletionOptions {
  * it moved twice. `folders` arrives from `context.workspaceFolders` -- the
  * client's own list, which no cwd can enter -- so this function taking URIs as
  * given IS the whole guarantee. For one sprint it arrived through a published
- * reduction over `rootUri` and `rootPath`, which had to refuse a relative
- * `rootPath` because `pathToFileURL` resolves one against cwd; that reduction is
- * gone, and a config that writes its own inherits that refusal along with it.
+ * reduction over the deprecated root fields, which had to refuse a relative
+ * `rootPath` itself; that reduction is gone and tsudoi now refuses such a
+ * `rootPath` at its own boundary, so a config reducing those fields never meets
+ * the value that could have produced a cwd root.
  *
  * Order is most-local-first, which decides attribution rather than content:
  * items dedup by inserted text, so the survivor names the root asked first.
@@ -555,8 +556,10 @@ export async function* pathCompletion(
         // fragment still answer, so the handler is narrower rather than empty.
         // Reducing over the deprecated fields is a decision this file DOES NOT
         // TAKE: `context.rootUri` and `context.rootPath` are there for a config
-        // that wants it, and a reduction that resolved a relative `rootPath`
-        // would manufacture a root out of this process's working directory.
+        // that wants it. A `rootPath` that arrives is already absolute, since
+        // tsudoi refuses a relative one at its boundary; a `rootUri` is
+        // whatever the client said, and converting one that names no local path
+        // throws in the handler that converts it.
         context.workspaceFolders,
       )) {
         for await (const batch of itemsFrom(source, fragment, params.position, line)) {
