@@ -178,6 +178,36 @@ export interface WorkspaceFolderStore {
  * `can be taken before it`. The trap is recorded at src/tsudoi.ts, where the
  * edit that re-creates it would be made.
  */
+/**
+ * `T` with every property, at every depth, `readonly` -- and every array a
+ * `readonly` one.
+ *
+ * WHY THE ONE-LEVEL `readonly` A FIELD DECLARATION GIVES IS NOT ENOUGH: it
+ * protects the BINDING and says nothing about the object behind it, so
+ * `readonly clientCapabilities: ClientCapabilities` forbids replacing the value
+ * and permits rewriting every member of it. What that costs is not a style
+ * violation but a lie between handlers -- one handler writing
+ * `insertReplaceSupport` leaves the next reading a capability the client never
+ * declared, and choosing the wrong edit shape for it.
+ *
+ * A TYPE AND NOT A GUARANTEE. `readonly` is erased at run time, so this stops
+ * the mistake in a config that is TYPE-CHECKED and stops nothing in the
+ * JavaScript an author actually ships. The freeze at the ingress in
+ * src/tsudoi.ts is the half that runs; this is the half that says so at the
+ * point of the edit, where the diagnostic can name the field.
+ *
+ * APPLIED WHERE IT IS EXPRESSIBLE, which is why it is not on every member here:
+ * `DocumentStore` hands back upstream `TextDocument` instances that upstream
+ * MUTATES IN PLACE -- that is the documented liveness at the top of this
+ * interface -- so a deep-readonly view of one would forbid the very updates
+ * tsudoi relies on.
+ */
+export type DeepReadonly<T> = T extends readonly (infer E)[]
+  ? readonly DeepReadonly<E>[]
+  : T extends object
+    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+    : T;
+
 export interface Tsudoi {
   readonly documents: DocumentStore;
   /**
@@ -309,19 +339,28 @@ export interface Tsudoi {
    * guard, and the reader that forgot it would fail on exactly the old client
    * the capability check exists to serve.
    *
-   * NOT INSPECTED AND NOT NORMALISED, the same mirror the folder list is. A
-   * non-conforming client that sends a primitive here reaches you as that
-   * primitive: reading a member off it is `undefined` rather than a throw, so
-   * there is no exit to close, and closing one would be tsudoi deciding what a
-   * client meant. That is the difference from `workspaceFolders`, which IS
-   * checked -- a non-array there throws one notification later, where nothing
-   * spreads or iterates this.
+   * NOT NORMALISED AND NOT INTERPRETED, the same mirror the folder list is:
+   * every member you read is the client's own, and what it did not declare is
+   * ABSENT rather than defaulted. What does not reach you is a `capabilities`
+   * that is PRESENT and not an object -- that handshake is refused -32602, since
+   * the alternative is this field arriving as a number under a declaration that
+   * says it cannot. Why that one is REFUSED where `rootPath` is REDUCED is at
+   * `malformedInitializeParams` in src/server.ts.
+   *
+   * FROZEN AT EVERY DEPTH, WHICH IS A RUN-TIME FACT AND NOT ONLY A TYPE. The
+   * `DeepReadonly` above stops the assignment in a config tsc has seen, and
+   * src/tsudoi.ts freezes a clone at the handshake, so the same assignment in
+   * shipped JavaScript THROWS rather than succeeding quietly. WHAT IT PROTECTS
+   * IS NOT YOUR HANDLER BUT THE NEXT ONE: a rewritten `insertReplaceSupport`
+   * would have the following request choose its edit shape from a capability the
+   * client never declared. A handler wanting a modified copy takes one --
+   * `structuredClone` -- and owns it.
    *
    * WHAT IT IS NOT IS A ROUTE TO THE REST OF `InitializeParams`. This is one
    * field, opened because one reader needed it; the others are still unread, and
    * the reason is at the `initialize` handler in src/server.ts.
    */
-  readonly clientCapabilities: ClientCapabilities;
+  readonly clientCapabilities: DeepReadonly<ClientCapabilities>;
 }
 
 export interface MethodMap {

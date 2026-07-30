@@ -1,6 +1,6 @@
 import type { ClientCapabilities, InitializeParams } from "vscode-languageserver-protocol";
 import { createDocumentStore, type DocumentStoreHandle } from "./documents.ts";
-import type { Tsudoi } from "./types.ts";
+import type { DeepReadonly, Tsudoi } from "./types.ts";
 import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
 
 export interface TsudoiRuntime {
@@ -43,6 +43,53 @@ export interface TsudoiRuntime {
       "workspaceFolders" | "rootUri" | "rootPath" | "capabilities"
     > | null,
   ) => void;
+}
+
+/**
+ * The client's own statement, AS A VALUE NOTHING CAN REWRITE: a clone of what
+ * arrived, frozen at every depth.
+ *
+ * THE FREEZE IS WHAT BUYS THE PROPERTY. `readonly` on the published field is
+ * erased at run time, and the members of `ClientCapabilities` are ordinary
+ * writable properties, so one handler rewriting `insertReplaceSupport` leaves
+ * the NEXT one reading a capability the client never declared -- and choosing
+ * its edit shape from it, which examples/completion-path.ts does exactly. A
+ * clone alone would not touch that: every handler reads the same clone.
+ *
+ * THE CLONE IS WHAT KEEPS THE FREEZE INSIDE WHAT THIS MODULE OWNS, which is the
+ * half worth spelling out. Freezing `params.capabilities` in place would freeze
+ * an object that is still part of the message -- and the same message's
+ * `workspaceFolders` entries are STORED BY THE MIRROR in src/workspace.ts, so a
+ * freeze applied one field over would silently change another module's state
+ * under it.
+ *
+ * ITERATIVE AND NOT RECURSIVE, AND THAT IS A CORRECTNESS REQUIREMENT RATHER THAN
+ * A STYLE: this runs inside the `initialize` handler, and a recursive walk over
+ * deeply nested capabilities from a non-conforming client would exhaust the
+ * stack THERE -- answering the handshake -32603 out of a defence. A worklist has
+ * no such depth.
+ *
+ * `Object.isFrozen` IS THE TERMINATION GUARD as well as the skip: a value
+ * already frozen has already had its members queued, so a cycle -- which
+ * JSON.parse cannot build, and which structuredClone would faithfully preserve
+ * if one ever arrived -- cannot loop here.
+ *
+ * WHAT IT COSTS: one walk of a small object, ONCE PER SESSION. The alternative
+ * of freezing lazily on each read would run per request to defend against an
+ * edit that happens once.
+ */
+function frozenCapabilities(capabilities: ClientCapabilities): ClientCapabilities {
+  const clone = structuredClone(capabilities);
+  const pending: unknown[] = [clone];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (typeof current !== "object" || current === null || Object.isFrozen(current)) {
+      continue;
+    }
+    Object.freeze(current);
+    pending.push(...Object.values(current));
+  }
+  return clone;
 }
 
 /**
@@ -92,7 +139,7 @@ export function createTsudoi(): TsudoiRuntime {
     get rootPath(): string | null {
       return workspaceFolders.roots().rootPath;
     },
-    get clientCapabilities(): ClientCapabilities {
+    get clientCapabilities(): DeepReadonly<ClientCapabilities> {
       return clientCapabilities;
     },
   };
@@ -104,19 +151,18 @@ export function createTsudoi(): TsudoiRuntime {
       workspaceFolders.initialize(params);
       // MIRRORED WHOLE AND NOT READ, exactly as `rootUri` is: what a client can
       // do is the client's statement, and a server that rewrote it would be
-      // answering about capabilities nobody declared.
+      // answering about capabilities nobody declared. CLONING IS NOT REWRITING
+      // -- what a handler reads is what the client sent, member for member --
+      // and what the clone buys is at `frozenCapabilities` above.
       //
-      // `??` AND NOT A TYPE TEST, and the asymmetry with the folder list beside
-      // it is measured rather than stylistic. A non-array `workspaceFolders`
-      // survives being stored and THROWS ONE MESSAGE LATER, inside a
-      // notification that has no response to carry the failure, which is why
-      // that field is checked. Nothing here spreads, iterates or indexes this
-      // value: a handler reads a member off it, and a member read off a number
-      // or a string is `undefined` on both runtimes. So the only two values that
-      // would break a reader are the two `??` covers -- an OMITTED field, which
-      // a non-conforming client sends despite the type declaring it required,
-      // and an explicit `null`.
-      clientCapabilities = params?.capabilities ?? {};
+      // `??` AND NOT A TYPE TEST, because the type is decided ONE FILE UP: a
+      // `capabilities` that is present and not an object is refused -32602 at
+      // the `initialize` boundary in src/server.ts, so the only two shapes
+      // reaching this line are the two `??` covers -- an OMITTED field, which a
+      // non-conforming client sends despite the type declaring it required, and
+      // an explicit `null`. Both are a client that declared nothing, and `{}` is
+      // what a handler is promised for that.
+      clientCapabilities = frozenCapabilities(params?.capabilities ?? {});
     },
   };
 }
