@@ -48,7 +48,7 @@ interface Lookup {
 
 const lookups: readonly Lookup[] = [
   {
-    // THE WALK STARTS AT THE URI ITSELF. An implementation opening with the
+    // THE LOOKUP STARTS AT THE URI ITSELF. An implementation opening with the
     // parent answers a folder's own uri with its PARENT's folder, or with
     // nothing.
     name: "a folder's own uri answers with that folder",
@@ -57,8 +57,8 @@ const lookups: readonly Lookup[] = [
     expected: ["project"],
   },
   {
-    // MORE THAN ONE LEVEL UP, so a walk that takes a single step passes nothing
-    // here.
+    // MORE THAN ONE LEVEL UP, so a lookup reaching only the directory a document
+    // sits in passes nothing here.
     name: "a document deep under a folder answers with that folder",
     folders: [project, notes],
     uri: "file:///home/me/project/src/deep/a.ts",
@@ -67,8 +67,8 @@ const lookups: readonly Lookup[] = [
   {
     // THE PREFIX PAIR, AND IT IS THE ROW THAT REFUSES `startsWith`:
     // `file:///home/me/proj` IS a string prefix of `file:///home/me/project/a.ts`
-    // and is NOT a folder of it. The walk cannot make that mistake because the
-    // level it produces is `…/project/`, and `…/proj/` is not equal to it.
+    // and is NOT a folder of it. The trailing-slash form is what refuses it: the
+    // location asked about is `…/project/`, and `…/proj/` is not a prefix of it.
     name: "a folder that is a string prefix of the document's folder does not answer for it",
     folders: [folder("file:///home/me/proj", "proj"), project],
     uri: "file:///home/me/project/a.ts",
@@ -96,18 +96,18 @@ const lookups: readonly Lookup[] = [
   {
     // THE SAME NESTING IN THE OTHER MIRROR ORDER. Mirror order is the
     // PRESENTATION order among folders AT ONE LEVEL and decides nothing between
-    // levels -- an implementation that scanned the mirror first and walked
-    // second would answer `outer` here.
-    name: "nesting is resolved by the walk and not by mirror order",
+    // levels -- an implementation taking the FIRST location it matched, or the
+    // shallowest, answers `outer` here.
+    name: "nesting is resolved by depth and not by mirror order",
     folders: [folder("file:///w/inner", "inner"), folder("file:///w", "outer")],
     uri: "file:///w/inner/a.ts",
     expected: ["inner"],
   },
   {
-    // THE WALK REACHES THE ROOT, AND THIS IS THE ROW THAT SAYS SO: a walk that
-    // stops one level short answers nothing for every document in a session
-    // whose folder is the filesystem root.
-    name: "the filesystem root answers as a folder, since the walk reaches it",
+    // THE ROOT IS ONE OF THE LOCATIONS ABOVE A DOCUMENT, AND THIS ROW SAYS SO: a
+    // lookup whose range stopped one level short answers nothing for every
+    // document in a session whose folder is the filesystem root.
+    name: "the filesystem root answers as a folder, being a location above the document",
     folders: [folder("file:///", "root")],
     uri: "file:///home/me/a.ts",
     expected: ["root"],
@@ -124,9 +124,9 @@ const lookups: readonly Lookup[] = [
   },
   {
     // THE URI ASKED ABOUT IS THE FOLDER, SPELLED WITHOUT THE SLASH THE CLIENT
-    // SENT. The walk is no help here -- the level above `…/plain` is `…/me/` --
-    // so this row is carried entirely by the uri asked about being put in the
-    // trailing-slash form too, at the level where it is its own candidate.
+    // SENT. The ancestors are no help here -- the directory above `…/plain` is
+    // `…/me/` -- so this row is carried entirely by the uri asked about being put
+    // in the trailing-slash form too, at the level where it is its own location.
     name: "a folder held with a trailing slash answers for its own bare uri",
     folders: [folder("file:///home/me/plain/", "slashed")],
     uri: "file:///home/me/plain",
@@ -162,8 +162,8 @@ const lookups: readonly Lookup[] = [
   },
   {
     // AND THE SAME PAIR ASKED ABOUT BY THE BARE FOLDER URI ITSELF, which is the
-    // one shape where the two spellings can be told apart WITHOUT the walk: it
-    // is answered at the level where the uri is its own candidate, and that level
+    // one shape where the two spellings can be told apart WITHOUT an ancestor: it
+    // is answered at the level where the uri is its own location, and that level
     // must put it in the same form as everything else. Compare the uri raw there
     // and only the entry spelled the same way answers -- one folder out of two,
     // chosen by a spelling rather than by the client, which is exactly the pick
@@ -335,8 +335,8 @@ const lookups: readonly Lookup[] = [
     // A QUERY IS NOT PART OF THE LOCATION. The uri's own candidate carries it and
     // matches nothing; every level above is the parse's own directory, which the
     // query never entered. The slash INSIDE the query is what makes this a row
-    // rather than a restatement -- a walk cutting the bytes at the last slash
-    // would climb into it.
+    // rather than a restatement -- a lookup cutting the bytes at the last slash
+    // would take the query for a directory.
     name: "a query containing a slash does not hide the document's folder",
     folders: [project],
     uri: "file:///home/me/project/a.ts?path=/etc/hosts",
@@ -350,17 +350,17 @@ const lookups: readonly Lookup[] = [
     expected: ["project"],
   },
   {
-    // A NON-EMPTY AUTHORITY, and the walk ends at THAT authority's root rather
+    // A NON-EMPTY AUTHORITY, and the range ends at THAT authority's root rather
     // than at some fixed `file:///`.
-    name: "a uri with a non-empty authority walks up to that authority's root",
+    name: "a uri with a non-empty authority reaches that authority's root",
     folders: [folder("file://host/", "host root")],
     uri: "file://host/a/b.ts",
     expected: ["host root"],
   },
   {
-    // AND IT DOES NOT CLIMB OUT OF THE AUTHORITY: a folder at another authority's
-    // root is not an ancestor of this document, however far the walk goes.
-    name: "the walk does not climb out of the authority it started in",
+    // AND IT DOES NOT REACH OUT OF THE AUTHORITY: a folder at another authority's
+    // root is not an ancestor of this document, however short its uri is.
+    name: "the range does not extend past the authority the document is in",
     folders: [folder("file:///", "local root")],
     uri: "file://host/a/b.ts",
     expected: [],
@@ -415,13 +415,12 @@ const lookups: readonly Lookup[] = [
     expected: ["home"],
   },
   {
-    // TERMINATION, PINNED. Every level here is junk and none matches, so the only
-    // thing this row can measure is that the walk ENDS -- a walk that failed to
-    // would hang the suite rather than fail it, which is the failure a green run
-    // cannot show. The two runtimes disagree on what the intermediate levels of
-    // this uri even are, and nothing here reads them: the walk stops when a level
-    // is its own parent, which both reach.
-    name: "a uri that is nothing but slashes terminates",
+    // A URI THE TWO RUNTIMES DO NOT PARSE ALIKE, and the row exists because they
+    // do not: bun 1.3.13 reads `file://///////` as its own directory, deno 2.9.2
+    // collapses it to `file:///`. Nothing here reads the difference -- the answer
+    // is the same either way -- so what this pins is that a uri no client
+    // constructs still produces a RANGE and is answered rather than thrown on.
+    name: "a uri that is nothing but slashes is answered rather than thrown on",
     folders: [project],
     uri: "file://///////",
     expected: [],
@@ -539,8 +538,8 @@ function parsesDuring(read: () => unknown): number {
  * ends of the range of locations that can hold it.
  *
  * A MISS AND NOT A HIT, because a hit at the uri's own location returns before
- * the ancestor levels are considered at all and would report a number that says
- * nothing about the walk.
+ * the ancestors are derived at all and would report a number that says nothing
+ * about the half this claim is about.
  */
 test("a lookup parses a fixed number of uris however deep the one asked about is", () => {
   const handle = storeOf([project]);
