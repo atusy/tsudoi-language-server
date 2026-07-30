@@ -172,10 +172,10 @@ for (const runtime of runtimes) {
           expect(session.progress[1]).toEqual({ token: partialResultToken, value: afterGate });
 
           await session.waitForProgress(3);
-          // THE PAIR FOR THE `toBeNull()` BELOW. `gateReturned` used to be
-          // asserted AS the response; it is now the last batch, and without this
-          // line the assertion under it would be satisfied by a server that
-          // answered null having sent nothing after the gate.
+          // THE PAIR FOR THE `toBeNull()` BELOW. `gateReturned` is the LAST
+          // BATCH and not the response, and without this line the assertion
+          // under it would be satisfied by a server that answered null having
+          // sent nothing after the gate.
           expect(session.progress[2]).toEqual({ token: partialResultToken, value: gateReturned });
 
           expect(await response).toBeNull();
@@ -190,18 +190,15 @@ for (const runtime of runtimes) {
     );
 
     /**
-     * DOUBLE DELIVERY, GUARDED AT ITS NEW MECHANISM. This replaces
-     * `with a partialResultToken the response carries the returned array
-     * alone`, whose property -- do not concatenate the yields into the response
-     * -- was foreclosed at Sprint 42 by making the response `null` in every
-     * streaming case. THE HAZARD IS NOT GONE AND IT HAS NOW OUTLIVED TWO
-     * MECHANISMS: a drive that streamed a batch AND aggregated it into the
-     * response, or sent one twice, hands a client that appends 一番目 twice.
-     * Sprint 42's door -- the answer both leaving as the first literal and being
-     * merged into what followed -- is closed with the tuple; this one is the
-     * general form and does not depend on any shape.
+     * DOUBLE DELIVERY, GUARDED IN ITS GENERAL FORM. The narrow spelling of it
+     * -- `with a partialResultToken the response carries the returned array
+     * alone` -- has nothing left to say, because the response is `null` in
+     * EVERY streaming case. THE HAZARD ITSELF IS NOT GONE: a drive that
+     * streamed a batch AND aggregated it into the response, or sent one twice,
+     * hands a client that appends 一番目 twice. What is asserted here depends on
+     * no shape at all, which is what makes it survive a change to the shape.
      *
-     * THE EXACTLY-ONCE CLAIM IS THE FIRST ASSERTION, per Sprint 18: it is what
+     * THE EXACTLY-ONCE CLAIM IS THE FIRST ASSERTION, deliberately: it is what
      * this test exists for, and a test whose first assertion was the null
      * response would stop there and never observe it.
      *
@@ -229,8 +226,9 @@ for (const runtime of runtimes) {
         expect(appended.map((item) => item.label)).toEqual(
           [...firstChunk, ...secondChunk, ...chunksReturned].map((item) => item.label),
         );
-        // The response adds nothing, which is where the duplicate used to be
-        // introduced and is the half the assertion above cannot localise.
+        // The response adds nothing, which is the likeliest place for a
+        // duplicate to enter and is the half the assertion above cannot
+        // localise.
         expect(result).toBeNull();
       } finally {
         session.dispose();
@@ -241,8 +239,9 @@ for (const runtime of runtimes) {
     // that cannot take partial results drives it. That absence is the ONE
     // observable trigger -- LSP has no capability declaring partial-result
     // support, so the second trigger the brief describes collapses into this
-    // one. The PAIRED PRESENCE for its zero, per Sprint 6, is the same counter
-    // reading three in the arm above and one in the one-batch arm below.
+    // one. The PAIRED PRESENCE for its zero, per the absence-pairing rule, is
+    // the same counter reading three in the arm above and one in the one-batch
+    // arm below.
     test("without a partialResultToken every batch arrives as one response, and nothing streams", async () => {
       const session = LspSession.start(runtime, completionChunks);
       try {
@@ -281,7 +280,7 @@ for (const runtime of runtimes) {
      * `null` response, knowingly, where a look-ahead would have answered with
      * the batch and sent nothing.
      *
-     * THE PROGRESS COUNT IS THE FIRST ASSERTION, per Sprint 18 and on purpose.
+     * THE PROGRESS COUNT IS THE FIRST ASSERTION, and on purpose.
      * The perturbation this arm exists for -- make the drive skip `$/progress`
      * when only one batch was produced -- flips BOTH assertions, and bun stops
      * at the first: with the response first, the failure would name a list where
@@ -292,9 +291,9 @@ for (const runtime of runtimes) {
      * reached and this green records nothing; completion-null-after-yield.ts
      * says so at its own site.
      *
-     * AND THE SECOND SESSION IS THE PAIRED ABSENCE, per Sprint 6: zero yields
-     * must produce ZERO `$/progress`, measured by the same counter that saw one
-     * above. Both halves in one run against one build. Neither is satisfiable by
+     * AND THE SECOND SESSION IS THE PAIRED ABSENCE, per the absence-pairing
+     * rule: zero yields must produce ZERO `$/progress`, measured by the same
+     * counter that sees one above. Both halves in one run against one build. Neither is satisfiable by
      * a constant, and `null` is the response in both -- which is why the counter
      * is what discriminates them.
      */
@@ -351,7 +350,7 @@ for (const runtime of runtimes) {
     // item 6: this property is stable, the example is not, and a property whose
     // home moves whenever the example changes is a property that can be lost by
     // a change unrelated to it. The example is still driven -- see the tests
-    // below -- it is simply no longer the only thing carrying this.
+    // below -- it is simply not the only thing carrying this.
     test("without a partialResultToken one batch is the whole response, and nothing streams", async () => {
       const session = LspSession.start(runtime, nullAfterYield);
       try {
@@ -373,28 +372,24 @@ for (const runtime of runtimes) {
     });
 
     /*
-     * TWO TESTS STOOD HERE AND DIED AT SPRINT 43 -- `isIncomplete survives a
-     * merge untouched` and `a generator's return updates isIncomplete after the
-     * stream ended` -- WITH THEIR FIXTURES. TARGET DELIBERATELY REMOVED per
-     * Sprint 38 and not a defence that went quiet: a completion handler yields
-     * `CompletionItem[]` and nothing else, so neither the `CompletionList`
-     * answer they asserted about nor the content-bearing generator return that
-     * updated it can be written at all. Their subject is gone, not undefended.
+     * WHY NOTHING HERE GUARDS `isIncomplete`, said plainly so the absence reads
+     * as a ruling rather than as a gap. A completion handler yields
+     * `CompletionItem[]` and nothing else, so neither a `CompletionList` answer
+     * nor a content-bearing generator return that could update one is writable
+     * at all. There is no subject for such a test to be about.
      *
-     * AND THE QUESTION A DELETION SKIPS, ASKED: DOES THE NEW SHAPE CREATE AN
-     * ANALOGOUS HAZARD? The first test guarded tsudoi REWRITING a property the
-     * author set while merging. Nothing this drive concatenates carries a
-     * property any more -- it appends arrays of items -- so there is no member
-     * for a merge to touch and the hazard has no new door. The SECOND hazard
-     * they shared, a merge that lost or doubled items, is not gone and is
-     * guarded above by `a client that appends sees each item exactly once`.
+     * AND THE QUESTION AN ABSENCE SKIPS, ASKED: DOES THIS SHAPE CARRY AN
+     * ANALOGOUS HAZARD? One half would be tsudoi REWRITING a property the
+     * author set while merging -- and nothing this drive concatenates carries a
+     * property, since it appends arrays of items, so there is no member for a
+     * merge to touch. The OTHER half, a merge that loses or doubles items, is
+     * entirely live and is guarded above by `a client that appends sees each
+     * item exactly once`.
      *
-     * WHERE THE CAPABILITY IS RECORDED AS LOST rather than forgotten: at the two
-     * configs still ruled NOT COMPLETE, examples/completion-path.ts and
-     * examples/tsudoi.config.ts, which now say the claim is still wrong and why
-     * it cannot be stated. The nvim measurement that showed a client acting on
-     * `isIncomplete` is in Sprint 42's record, which is where a future attempt
-     * starts.
+     * WHERE THE MISSING CAPABILITY IS RECORDED rather than forgotten: at the
+     * two configs ruled NOT COMPLETE, examples/completion-path.ts and
+     * examples/tsudoi.config.ts, which say at their own sites that the claim is
+     * wrong for them and why it cannot be stated.
      */
 
     // THE EXAMPLE IS EXECUTED, which is what amended standing item 6 requires
@@ -402,13 +397,13 @@ for (const runtime of runtimes) {
     // through the same server everything else here goes through. A change that
     // breaks it -- its import, or what its handler does -- reddens THIS.
     //
-    // What it is no longer is the home of PBI-4's aggregation rule. That
-    // property now lives on a purpose-built fixture above, because it is
-    // stable and the example is not: the example lost its static demo item at
-    // the stakeholder's request mid-sprint, and a property whose only home
-    // moves with the example can be lost by a change that had nothing to do
-    // with it. Item 6 was bundling `the example is executed` with `the example
-    // is the sole subject`; only the first was ever load-bearing.
+    // What it is NOT is the home of PBI-4's aggregation rule. That property
+    // lives on a purpose-built fixture above, because it is stable and the
+    // example is not: what the example demonstrates moves at the stakeholder's
+    // request, and a property whose only home moves with the example can be
+    // lost by a change that had nothing to do with it. `The example is
+    // executed` and `the example is the sole subject` are two different
+    // requirements, and only the first is load-bearing.
     //
     // The document lives in a throwaway directory so the fixture is the test's
     // own: the example answers from the document's parent, and the session's
@@ -431,21 +426,18 @@ for (const runtime of runtimes) {
         });
 
         expect(result?.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
-        // A BARE ARRAY AGAIN SINCE SPRINT 43, AND THE ASSERTION THAT STOOD HERE
-        // DIED WITH THE CAPABILITY. An assertion that the response claimed
-        // `isIncomplete: true` was this sprint's user-facing half one sprint
-        // ago; a handler can no longer say it in any spelling, so what this
-        // request now sends is what the specification reads as
+        // A BARE ARRAY, which the specification reads as
         // `{ isIncomplete: false, items }` -- a claim
-        // examples/completion-path.ts rules FALSE at its own site and can no
-        // longer contradict on the wire.
+        // examples/completion-path.ts rules FALSE at its own site and has no
+        // way to contradict on the wire, a handler being unable to say it in
+        // any spelling.
         //
-        // THE DEAD ASSERTION IS DESCRIBED RATHER THAN QUOTED, and that is not
+        // AN ASSERTION IS DESCRIBED HERE AND NEVER QUOTED, and that is not
         // fastidiousness: this project measures `none weakened` by grepping
         // every source line that opens an assertion call, so a comment quoting
-        // one INFLATES THE INSTRUMENT BY ONE. Measured here -- a first draft of
-        // this very comment put the predicted 708 at 709, while the runtime
-        // count and the test count both landed exactly.
+        // one INFLATES THE INSTRUMENT BY ONE. MEASURED: a draft of this comment
+        // carrying such a quotation put a predicted 708 at 709, while the
+        // runtime count and the test count both landed exactly.
         expect(session.progressCount).toBe(0);
 
         // THE PAIR, and it is what keeps the assertion above from being
@@ -461,21 +453,20 @@ for (const runtime of runtimes) {
         // produced an empty list instead is INDISTINGUISHABLE at the populated
         // call above; the empty call is where the difference becomes visible.
         //
-        // THE CONTROL HAS NOW SURVIVED TWO SHAPE CHANGES IN PLACE, RE-MEASURED
-        // EACH TIME RATHER THAN ASSUMED. At Sprint 43 the example's `null` is
-        // what tsudoi answers for a generator that YIELDED NOTHING, and the
+        // THE CONTROL IS RE-MEASURED RATHER THAN ASSUMED. The example's `null`
+        // is what tsudoi answers for a generator that YIELDED NOTHING, and the
         // perturbation is spelled `yield []` at that generator's own exit in
-        // examples/completion-path.ts: it reddens EXACTLY here, `Received: []`,
-        // and nowhere else -- two tests, one per runtime.
+        // examples/completion-path.ts. MEASURED: it reddens EXACTLY here,
+        // `Received: []`, and nowhere else -- two tests, one per runtime.
         //
-        // AND THE FIRST ATTEMPT AT THAT RE-MEASUREMENT WAS DEGENERATE, recorded
-        // because the green looked like success. Perturbing the `if (!document)`
-        // arm in examples/tsudoi.config.ts left the whole file GREEN -- not
-        // because the control is quiet, but because THIS REQUEST NEVER REACHES
-        // THAT ARM: the document IS in the store, and the `null` comes from
-        // there being no path fragment at character 0. Sprint 42's retro asks
-        // exactly this before reading a green -- whether what you perturbed is
-        // reached by what you measured.
+        // AND ONE OBVIOUS PERTURBATION HERE IS DEGENERATE, recorded because its
+        // green looks like success. Perturbing the `if (!document)` arm in
+        // examples/tsudoi.config.ts leaves the whole file GREEN -- not because
+        // the control is quiet, but because THIS REQUEST NEVER REACHES THAT
+        // ARM: the document IS in the store, and the `null` comes from there
+        // being no path fragment at character 0. Ask it of every green before
+        // reading one -- whether what you perturbed is reached by what you
+        // measured.
         const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },
@@ -511,9 +502,9 @@ for (const runtime of runtimes) {
         // plausible thing to do deliberately, and it would lose this.
         //
         // Every $/progress and THIS request's response, in wire order. What is
-        // no longer required is that nothing else exists: a server that also
-        // logged to the client would have broken this test while breaking no
-        // promise it ever made.
+        // NOT required is that nothing else exists: a server that also logged
+        // to the client would break this test while breaking no promise it ever
+        // made.
         expect(session.arrivalsFor(completion.id)).toEqual([
           { kind: "progress", token: partialResultToken, value: sentBeforeThrow },
           { kind: "response", id: completion.id },

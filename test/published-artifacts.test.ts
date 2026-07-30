@@ -17,23 +17,21 @@ import { typeCheckProbe } from "./helpers/typecheck.ts";
  * map's IN-REPO arm -- straight at src/types.ts. What a stranger receives is
  * the COMPILED dist/types.d.ts, and nothing checked the artifacts against that
  * until this file. Everything here is therefore BORN GREEN by design: the
- * snippet and the example already compile, measured twice before the sprint
- * began. What was missing is the CHECK, not a fix, so all of this file's value
- * is in its controls.
+ * snippet and the example already compile, MEASURED. What this file supplies is
+ * the CHECK and not a fix, so all of its value is in its controls.
  *
  * Every control that CAN fail is a test below. Exactly one is a comment
  * instead, and only because the property it records is FORECLOSED by the
  * staging design rather than assertable -- see the stays-green note further
- * down, and the test that used to stand there and could not fail.
+ * down.
  *
- * A DIVERGENCE THIS FILE USED TO RECORD IS GONE WITH ITS SUBJECT, noted so the
- * next reader does not go looking for it: src/types.ts re-exported a runtime
- * function from ./workspace.ts for one sprint, and declaration emit did not
- * rewrite that specifier -- dist/types.js carried `./workspace.js` while
- * dist/types.d.ts carried `./workspace.ts`, a file the tarball does not ship.
- * The stakeholder withdrew the function, so src/types.ts re-exports nothing at
- * all and neither file carries the specifier. MEASURED on the built artifact
- * rather than reasoned from the source edit.
+ * THE DIVERGENCE THIS FILE WATCHES FOR HAS NO SUBJECT AT PRESENT, noted so the
+ * next reader does not go hunting for one: src/types.ts re-exports nothing at
+ * all, so neither built file carries a relative specifier. THE HAZARD IS REAL
+ * ANYWAY -- declaration emit does not rewrite such a specifier, so a runtime
+ * re-export from ./workspace.ts would put `./workspace.js` in dist/types.js
+ * beside `./workspace.ts` in dist/types.d.ts, naming a file the tarball does
+ * not ship. MEASURED on the built artifact rather than reasoned from the source.
  */
 
 /** The config the README tells a reader to write, read out of the README. */
@@ -180,22 +178,22 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
  * TSUDOI'S OWN SUBPATH CARRIES NO RUNTIME VALUE, AND THIS IS THE GUARANTEE
  * RATHER THAN A CONFIRMATION TAKEN ONCE.
  *
- * `@atusy/tsudoi/types` IS TYPES. It exported one function for a single sprint
- * -- a reduction over the deprecated root fields -- and the stakeholder ruled
- * that a types module exporting a runtime function is incoherent. Nothing
- * enforced the property before that: it was claimed by a comment in
- * test/package-shape.test.ts and by one in test/installed-runtime.test.ts, and
- * both went false without anything reddening.
+ * `@atusy/tsudoi/types` IS TYPES, AND THAT IS A RULING RATHER THAN AN
+ * OBSERVATION: a types module exporting a runtime function is incoherent, so
+ * this subpath may not grow one. IT IS A TEST AND NOT A COMMENT because a
+ * comment cannot redden -- the same claim written as prose in
+ * test/package-shape.test.ts and in test/installed-runtime.test.ts goes false
+ * with nothing anywhere to say so.
  *
  * MEASURED ON THE ARTIFACT A STRANGER RECEIVES, not grepped over src/. A name
  * grep is what missed this class before: it cannot see interface MEMBERS and it
  * cannot see a RE-EXPORT line, so it reports an empty diff over a surface that
  * grew both.
  *
- * ITS PAIR IS IN THE SAME MEASUREMENT, per Sprint 6, because this asserts an
- * ABSENCE: `[]` alone cannot tell `type-only` from `the module failed to load`
- * from `I read the wrong module`. The sibling subpath goes through the SAME
- * reader in the same test and must show keys.
+ * ITS PAIR IS IN THE SAME MEASUREMENT, per the absence-pairing rule, because
+ * this asserts an ABSENCE: `[]` alone cannot tell `type-only` from `the module
+ * failed to load` from `I read the wrong module`. The sibling subpath goes
+ * through the SAME reader in the same test and must show keys.
  *
  * PER SUBPATH AND NEVER PER PACKAGE: `@atusy/tsudoi/deps/types` re-exports the
  * dependency's data values ON PURPOSE, so `this package exports no values` would
@@ -227,9 +225,9 @@ test("tsudoi's own subpath exports nothing at run time, where its dependency sub
  * green while a config author got `undefined` at their first completion.
  *
  * Object.keys of the namespace object is therefore the assertion, and the reader
- * that takes it is shared with the type-only test above -- including the load
- * check that used to be written out here, which is the same claim in the same
- * words and had no business existing twice.
+ * that takes it is shared with the type-only test above -- INCLUDING ITS LOAD
+ * CHECK, which written out again here would be the same claim in the same words
+ * in two places.
  *
  * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE, and it must be
  * EXACTLY what vscode-languageserver-types exports at run time. src/deps/types.ts
@@ -277,10 +275,10 @@ test("every published protocol name type-checks from the installed copy", async 
  * above and the value probe below both skip it, and without this it would ship
  * with no published-surface coverage at all.
  *
- * BORN GREEN, DECLARED: the name was reachable from this subpath before PBI-31
- * too, because tsudoi declared a TextDocument of its own. What is new is the
- * CHECK, not the property -- the same honesty this file states about itself at
- * the top. Its evidence is the perturbation, RUN: removing the export from
+ * BORN GREEN, DECLARED: what this test supplies is the CHECK and not the
+ * property -- the name is reachable from this subpath either way -- which is
+ * the same honesty this file states about itself at the top. Its evidence is
+ * the perturbation, RUN: removing the export from
  * src/types.ts reddens THIS and the identity test below, and leaves the
  * published-names probe and the value probe green.
  *
@@ -448,8 +446,8 @@ const deprecatedProtocolTwin =
  * DEPRECATED TextDocument instead -- a one-line edit that adds no dependency --
  * `tsc --noEmit` exits 0, the type arm above exits 0, the value arm is
  * unchanged, and THIS IS THE ONLY TEST IN THE WHOLE SUITE THAT FAILS. Named
- * rather than counted on purpose: the count was true when first written and
- * false three tests later, in this same sprint.
+ * rather than counted on purpose: a count of what fails is true when it is
+ * written and false as soon as a test joins this file.
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
   const result = await consumer.typeCheck({
@@ -506,9 +504,8 @@ test("the identity probe reddens on both near-misses where mutual assignability 
 });
 
 /*
- * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and this
- * comment is here because a test asserting it was DELETED at Sprint 15's
- * Review rather than kept as a signpost.
+ * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and it is a
+ * comment rather than a test because no test could carry it.
  *
  * The pair the criterion asks for is `perturbing the published types reddens
  * the probe WHILE tsc --noEmit stays green`. It cannot be tied by one
@@ -546,29 +543,24 @@ function useNonHoistingLayout(dir: string): void {
 }
 
 /**
- * WHAT STOOD HERE BEFORE, AND WHY IT IS GONE. This is the record of a
- * withdrawal, kept beside the test that replaced it so the two are never read
- * apart.
+ * WHY THIS IS THE INVERSE ASSERTION RATHER THAN THE OBVIOUS ONE, said here so
+ * the absent half is read as a decision and not as a gap.
  *
- * Until PBI-26 this file asserted `without the documented install the example
- * reddens, and tsudoi itself does not`. Its premise was that the example
- * imports `vscode-languageserver-protocol` by BARE SPECIFIER -- a package the
- * consumer never declares -- so the non-hoisting layout made the example fail,
- * and the README's install step is what repaired it.
+ * `without the documented install the example reddens, and tsudoi itself does
+ * not` is UNCONSTRUCTIBLE rather than merely unwritten. It needs an undeclared
+ * BARE SPECIFIER inside the examples to withhold -- a package the consumer
+ * never declares, which the non-hoisting layout would then fail to resolve --
+ * and the examples take every protocol name through `@atusy/tsudoi/types`, so
+ * there is nothing left in them to withhold. A control that cannot be built out
+ * of anything is a different thing from a control that could be built and was
+ * not.
  *
- * THAT PREMISE WAS WITHDRAWN DELIBERATELY, not broken by accident: PBI-26 moved
- * the examples onto `@atusy/tsudoi/types` for every protocol name, so there is
- * no undeclared specifier left in them to withhold. The old assertion is
- * therefore UNCONSTRUCTIBLE rather than failing -- there is nothing to build it
- * out of -- and that is a different thing from a control that could be built and
- * was not. It was not deleted as a convenience either: deleting a test that
- * defends an accepted criterion is a scope decision, and the Product Owner
- * ruled it REPLACED BY ITS INVERSE, which is the test immediately below.
+ * WHAT CAN BE BUILT IS THE INVERSE, and it is the test immediately below: the
+ * examples type-check under that layout, and a bare protocol import does not.
  *
- * WHAT SURVIVES of its job is the harness's ability to notice a package that is
- * GENUINELY MISSING, and `wordnet` is now the only case of it. That is asserted
- * further down rather than assumed -- and measuring it turned up something the
- * plan for this sprint had wrong, recorded there.
+ * WHAT THE HARNESS MUST STILL BE ABLE TO DO is notice a package that is
+ * GENUINELY MISSING, and `wordnet` is the only case of it. That is asserted
+ * further down rather than assumed.
  */
 test("under the non-hoisting layout the examples type-check, and a bare protocol import does not", async () => {
   const strict = await installConsumer();
@@ -631,9 +623,9 @@ test("the example serves a completion from a consumer that declares no protocol 
         textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "./" },
       });
 
-      // A BARE ARRAY AGAIN SINCE SPRINT 43, and with no partialResultToken sent
-      // the whole aggregated list is in the response -- so this is every
-      // candidate this request produced.
+      // A BARE ARRAY, and with no partialResultToken sent the whole aggregated
+      // list is in the response -- so this is every candidate this request
+      // produced.
       const answer = await session.request<CompletionItem[]>("textDocument/completion", {
         textDocument: { uri: documentUri },
         // Just past `./`, so the example completes the consumer's own directory
@@ -656,21 +648,22 @@ test("the example serves a completion from a consumer that declares no protocol 
 });
 
 /**
- * THE LAST GENUINELY-MISSING-PACKAGE CASE, and the plan for this sprint had its
- * ARM WRONG -- recorded here rather than quietly built the other way.
+ * THE LAST GENUINELY-MISSING-PACKAGE CASE, AND IT IS NOT AT THE ARM ANYONE
+ * REACHES FOR FIRST -- measured rather than assumed, because that arm sees
+ * nothing at all.
  *
- * The plan said `withhold wordnet and the examples must still fail`, meaning the
- * type check. MEASURED: they do NOT. Removing `wordnet` from a consumer entirely
- * leaves `consumer.typeCheck(exampleSources())` at exit 0 with empty output,
- * because examples/wordnet.d.ts carries `declare module "wordnet"` -- an AMBIENT
+ * `withhold wordnet and the examples must still fail` is FALSE of the type
+ * check. MEASURED: removing `wordnet` from a consumer entirely leaves
+ * `consumer.typeCheck(exampleSources())` at exit 0 with empty output, because
+ * examples/wordnet.d.ts carries `declare module "wordnet"` -- an AMBIENT
  * declaration -- and that file is deliberately part of the example a reader
  * copies. tsc needs nothing on disk once a module is declared.
  *
- * SO THE CONTROL MOVED ARM RATHER THAN BEING LOST: what still detects the
- * missing package is RUNNING, where the config's import of `wordnet` is a real
- * resolution. Exit 1, and stderr names the package. Had this been taken on
- * trust, the surviving detection would have been asserted at the one arm that
- * cannot see it -- a test that passes because it measures nothing.
+ * SO THE CONTROL LIVES AT THE OTHER ARM: what detects the missing package is
+ * RUNNING, where the config's import of `wordnet` is a real resolution. Exit 1,
+ * and stderr names the package. Taken on trust, the detection would be asserted
+ * at the one arm that cannot see it -- a test that passes because it measures
+ * nothing.
  */
 test("withholding wordnet is still detected, at the runtime arm rather than the type arm", async () => {
   const strict = await installConsumer();
