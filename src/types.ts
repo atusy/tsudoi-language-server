@@ -99,13 +99,14 @@ export interface MethodMap {
    * `{ isIncomplete: false, items }`, so EVERY completion tsudoi answers claims
    * its candidate set is final -- and two configs in this repository rule that
    * claim FALSE at their own sites, examples/completion-path.ts and
-   * examples/tsudoi.config.ts. THIS IS A KNOWN GAP, NOT AN OVERSIGHT: Sprint 42
-   * built the capability and measured a real client acting on it, and Sprint 43
-   * withdrew the shape that carried it because one slot meant two things.
+   * examples/tsudoi.config.ts. THIS IS A KNOWN GAP, NOT AN OVERSIGHT: a real
+   * client DOES act on `isIncomplete`, measured with its numbers at
+   * examples/completion-path.ts, so what is missing is not the demand but a
+   * shape to carry the flag that does not make one slot mean two things.
    *
    * THE FUTURE PATH IS TO WIDEN THE YIELD TO `CompletionItem[] | CompletionList`
    * AND NORMALISE A MID-STREAM `CompletionList` INTO ITEMS. It is NOT BUILT, and
-   * this is the line that would change. WHY THAT SHAPE AND NOT THE TUPLE BACK:
+   * this is the line that would change. WHY THAT SHAPE AND NOT A TUPLE:
    * the yield slot keeps ONE meaning -- CONTENT -- and merely admits a second
    * spelling of it, so no slot's meaning depends on its neighbour and the author
    * still chooses no channel. The drive would take `isIncomplete` from whichever
