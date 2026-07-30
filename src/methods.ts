@@ -980,10 +980,10 @@ async function driveStream(run: {
     let completed = false;
     // A `finally` AROUND THE WHOLE LOOP, because ABORT IS NOT THE ONLY WAY OUT
     // OF IT. The other exits are EXCEPTIONS THROWN WHILE THE GENERATOR IS
-    // SUSPENDED AT ITS YIELD: `collected.push(...next.value)` raises a TypeError
-    // when a batch is not iterable -- NOTHING VALIDATES THAT ANYWHERE, since
-    // config.ts checks only the resolve/completion pair and both runtimes strip
-    // types without checking them -- and `sendProgress` rejects once the
+    // SUSPENDED AT ITS YIELD: the malformed-batch guard below rejects a batch
+    // that is not an array -- config.ts checks only the resolve/completion pair
+    // and both runtimes strip types without checking them, so that guard is the
+    // whole of what stands there -- and `sendProgress` rejects once the
     // connection is Closed, which is what an editor dying mid-stream looks like
     // from here. Both propagate out of this closure, so a close reachable from
     // the abort branch ALONE would leave the generator never touched again and
@@ -1039,6 +1039,45 @@ async function driveStream(run: {
           // whether the request streamed or aggregated says what the CLIENT can
           // take and nothing about what the HANDLER holds open.
           return null;
+        }
+        // THE ONE THING THIS DRIVE REQUIRES OF A BATCH, CHECKED ABOVE THE MODE
+        // SPLIT BECAUSE THE TWO MODES DISAGREED ABOUT IT. Aggregation refused a
+        // non-array INCIDENTALLY -- `push(...batch)` throws on something that is
+        // not iterable -- while streaming sent the same value out verbatim as a
+        // `$/progress` whose payload is not the array the protocol declares, and
+        // then answered `null` successfully. Same mistake, one loud failure and
+        // one SILENT WIRE-PROTOCOL VIOLATION, decided by whether the client
+        // asked for partial results.
+        //
+        // NOTHING EARLIER CAN CATCH IT. `MethodMap` says a completion handler
+        // yields `CompletionItem[]`, and both runtimes STRIP that annotation
+        // rather than checking it -- so an unannotated handler, or a config
+        // written in plain JavaScript, reaches this line with whatever it
+        // yielded. `yield item` for `yield [item]` is the whole of the mistake.
+        //
+        // THROWN, NOT ANSWERED AS -32602. The router answers that code for
+        // params that are not an object, which is a CLIENT fault the client can
+        // fix; this is a CONFIG AUTHOR fault reached from a well-formed request,
+        // so accusing the client would send the one party who cannot act on it
+        // to look at its own message. Throwing instead reaches
+        // `answerUnlessCancelled`, which reports on stderr and lets
+        // vscode-jsonrpc answer -32603 -- and, by leaving the loop from a point
+        // where the generator is suspended, runs the `finally` below, so the
+        // author's cleanup happens in BOTH modes rather than in the aggregating
+        // one alone.
+        //
+        // THE VALUE IS NAMED, and `JSON.stringify` rather than `String` for the
+        // reason the token report gives: `[object Object]` names nothing an
+        // author could act on. BOOKED AS A DEBIT: a circular batch makes this
+        // line throw a serialisation error instead of the message below. The
+        // answer, the report and the close are unchanged -- only the wording
+        // degrades -- and a circular batch already failed here, in the spread on
+        // one mode and inside `sendProgress`'s own serialisation on the other.
+        if (!Array.isArray(next.value)) {
+          throw new TypeError(
+            `${run.method} handler yielded a batch that is not an array: ` +
+              `${JSON.stringify(next.value)}`,
+          );
         }
         yielded = true;
         if (token === undefined) {

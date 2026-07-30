@@ -59,6 +59,8 @@ const ruled = [
   "test/fixtures/completion-throws.ts",
   "test/fixtures/completion-unhandled-rejection.ts",
   "test/fixtures/completion-workspace-gate.ts",
+  "test/fixtures/completion-yields-bare-item.ts",
+  "test/fixtures/completion-yields-bare-number.ts",
   "test/fixtures/completion-yields-non-array.ts",
   "test/fixtures/resolve-detail.ts",
   "test/fixtures/throws-on-cancel.ts",
