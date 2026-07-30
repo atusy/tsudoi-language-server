@@ -765,12 +765,35 @@ export function registerMethods(
 }
 
 /**
- * The AWAITED-ONCE drive: call the handler once, answer what it produced.
+ * The AWAITED-ONCE drive: call the handler once, RACE it against the abort,
+ * answer what it produced.
  *
- * `?? null` answers the NO-HANDLER case in the same expression that answers the
- * handler's own null. That is hover's original shape, kept because it is the one
- * this drive needs: there is nothing to drive, so nothing has to know whether a
- * handler exists before the call is written.
+ * THE RACE IS NOT AN OPTIMISATION AND NOT A SECOND CANCELLATION MECHANISM. A
+ * handler that ignores its `AbortSignal` and awaits work that never settles is
+ * suspended INSIDE the promise this drive awaits, so a drive that awaited it
+ * unconditionally had nowhere to ask about cancellation from: the request
+ * produced no answer AT ALL and the client waited forever for one it had already
+ * given up on. One fetch without a timeout is the whole of what it takes. The
+ * streaming drive carried the identical defect; `abortedRace` is where the one
+ * reasoning lives.
+ *
+ * `?? null` STILL ANSWERS THE NO-HANDLER CASE IN THE SAME EXPRESSION that
+ * answers the handler's own `null`, and the race did not cost that: `handler?.()`
+ * is `undefined` when there is none, and a promise of it is ALREADY SETTLED, so
+ * it wins any race it is entered in. Nothing here has to know whether a handler
+ * exists before the call is written, which is hover's original shape and the one
+ * this drive needs -- where `driveStream` must ask, because nothing both drives a
+ * generator and answers for a missing one.
+ *
+ * THE LOSING CALL IS LEFT PENDING, AND WHY THAT IS SAFE IS NOT RESTATED HERE: it
+ * is at the abort branch of `driveStream`, where the same `Promise.race`
+ * property holds it up, and it applies unchanged to a handler's own promise.
+ *
+ * ANSWERING `null` ON THE ABORT IS NOT ANSWERING THE CLIENT `null`. It returns
+ * INTO `answerUnlessCancelled`, which re-reads the abort and throws -32800 --
+ * the same route the streaming drive's abort branch takes, so a cancelled
+ * request is answered by one decision made in one place whichever drive served
+ * it.
  *
  * THE CONTEXT IS BUILT EITHER WAY, exactly as on the other drive: the epilogue
  * reads the abort off the context, so a drive that skipped building one for a
@@ -786,7 +809,11 @@ async function driveAwaitedOnce(run: {
 }): Promise<unknown> {
   const context = requestContext(run.tsudoi, run.cancellation);
   return answerUnlessCancelled(run.method, context.signal, async () => {
-    return (await run.handler?.(context, run.params)) ?? null;
+    const settled: unknown = await Promise.race([
+      Promise.resolve(run.handler?.(context, run.params)),
+      abortedRace(context.signal),
+    ]);
+    return settled === abortWon ? null : (settled ?? null);
   });
 }
 
@@ -810,12 +837,45 @@ const maxCleanupYields = 1000;
 /**
  * What the abort resolves as when it beats a pending pull.
  *
- * A SYMBOL SO IT CANNOT BE A BATCH. The race settles with either an
- * `IteratorResult` or this, and the two are told apart by identity -- a sentinel
- * a config author could yield, `null` or a string among them, would make a
- * handler able to fake its own cancellation.
+ * A SYMBOL SO IT CANNOT BE A HANDLER'S OWN VALUE. The race settles with either
+ * what the config author produced -- an `IteratorResult` on one drive, a hover
+ * or a report on the other -- or this, and the two are told apart by identity. A
+ * sentinel a config author could yield or return, `null` or a string among them,
+ * would make a handler able to fake its own cancellation. Nothing exports it, so
+ * no config can hold one to try.
  */
 const abortWon = Symbol("tsudoi.abortWon");
+
+/**
+ * The abort as something a pending promise can be RACED against.
+ *
+ * WHY EITHER DRIVE NEEDS ONE, and it is one defect rather than two. A handler
+ * that ignores its `AbortSignal` and awaits slow work is suspended INSIDE the
+ * call -- inside `next()` where a generator is driven, inside the handler's own
+ * promise where one is awaited -- and NOT at a yield, where the drive is between
+ * calls and free to notice an abort. So a drive that awaits and asks about
+ * cancellation only afterwards has no moment to ask in: the request stays parked
+ * indefinitely and the client that cancelled is answered NOTHING, which is worse
+ * than any answer.
+ *
+ * THE FLAG IS READ FIRST for the reason `requestContext` gives: a request
+ * cancelled before dispatch gets `CancellationToken.Cancelled`, whose event
+ * never fires, so a subscribe-only bridge would wait here forever.
+ *
+ * HOW MANY OF THESE A DRIVE TAKES IS THE CALLER'S BUSINESS AND NOT THIS
+ * FUNCTION'S: one race is one subscription, so a drive that pulls in a loop
+ * builds it ABOVE the loop -- one taken per pull would leave a listener per
+ * batch on a signal that outlives them all.
+ */
+function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
+  return new Promise<typeof abortWon>((resolve) => {
+    if (signal.aborted) {
+      resolve(abortWon);
+      return;
+    }
+    signal.addEventListener("abort", () => resolve(abortWon), { once: true });
+  });
+}
 
 /**
  * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
@@ -1033,31 +1093,14 @@ async function driveStream(run: {
     // exception, which belongs to answerUnlessCancelled's own reporting one
     // level up. Catching here would either swallow a handler failure or oblige
     // this code to rethrow it in the right shape.
-    // THE ABORT AS SOMETHING A PULL CAN BE RACED AGAINST, and BUILT ONCE rather
-    // than per pull: a subscription taken inside the loop would leave one
-    // listener per batch on a signal that outlives them all.
-    //
-    // WHY A RACE IS NEEDED AT ALL. A handler that ignores its `AbortSignal` and
-    // awaits slow work is suspended INSIDE `next()`, not at a yield -- so a
-    // drive that awaits the pull and asks about cancellation only afterwards has
-    // no moment to ask in. The request and the generator both stay parked
-    // indefinitely, and the client that cancelled is answered NOTHING, which is
-    // worse than any answer.
-    //
-    // THE FLAG IS READ FIRST for the reason `requestContext` gives: a request
-    // cancelled before dispatch gets `CancellationToken.Cancelled`, whose event
-    // never fires, so a subscribe-only bridge would wait here forever.
-    const abortedRace = new Promise<typeof abortWon>((resolve) => {
-      if (context.signal.aborted) {
-        resolve(abortWon);
-        return;
-      }
-      context.signal.addEventListener("abort", () => resolve(abortWon), { once: true });
-    });
+    // BUILT ONCE, ABOVE THE LOOP RATHER THAN PER PULL: a subscription taken
+    // inside it would leave one listener per batch on a signal that outlives
+    // them all. Why a race is needed at all is at `abortedRace`.
+    const aborted = abortedRace(context.signal);
     try {
       for (;;) {
         const pull = batches.next();
-        const settled = await Promise.race([pull, abortedRace]);
+        const settled = await Promise.race([pull, aborted]);
         if (settled === abortWon) {
           // THE LOSING PULL IS LEFT PENDING, AND `Promise.race` IS WHAT MAKES
           // THAT SAFE -- a load-bearing property of that call and the reason it

@@ -11,9 +11,15 @@ import {
   rejectDelayMs,
   returnedItems as rejectsReturnedItems,
 } from "./fixtures/completion-ignores-signal-rejects.ts";
+import {
+  asciiHalf as hoverAsciiHalf,
+  label as hoverLabel,
+  parkedMarker as hoverParkedMarker,
+} from "./fixtures/hover-parks-forever.ts";
 
 const ignoresSignal = fixture("completion-ignores-signal.ts");
 const ignoresSignalRejects = fixture("completion-ignores-signal-rejects.ts");
+const hoverParksForever = fixture("hover-parks-forever.ts");
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -191,6 +197,70 @@ for (const runtime of runtimes) {
           // unhandled rejection exits with.
           expect(await session.waitForExit()).toBe(0);
           expect((await shutdown.response).error).toBeUndefined();
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    /**
+     * THE SAME DEFECT ON THE OTHER DRIVE, AND THE REASON THIS FILE IS NOT ABOUT
+     * COMPLETION.
+     *
+     * A hover handler that ignores its `AbortSignal` and awaits something that
+     * never settles is suspended inside the ONE call the awaited-once drive
+     * makes -- exactly as the completion handler above is suspended inside a
+     * pull. The drive has the same nowhere to ask from, and the client is
+     * answered the same nothing. Nothing about the streaming machinery was ever
+     * what made that possible; awaiting the config author's promise
+     * unconditionally was.
+     *
+     * THE FIXTURE'S WAIT NEVER SETTLES, WHICH IS WHAT SEPARATES THIS FROM
+     * `a hover cancelled mid-flight ...` in test/cancellation.test.ts. That one's
+     * handler RETURNS, so the epilogue is reached a moment late and suppresses
+     * the answer; it would go on passing against a drive with no race at all.
+     * This one has no later to reach.
+     *
+     * THE ANSWER IS ASSERTED, AND SO IS THE ABSENCE OF THE HOVER. Both halves:
+     * -32800 with no result says the client was answered, and neither half of
+     * the label appearing on the wire says it was not answered with the very
+     * value the handler was still on its way to producing.
+     */
+    test(
+      "a hover parked inside its own await is answered -32800, and none of its answer reaches the wire",
+      async () => {
+        const session = LspSession.start(runtime, hoverParksForever);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue("textDocument/hover", {
+            textDocument: { uri },
+            position: { line: 0, character: 0 },
+          });
+          // Provably PARKED before the cancel, so this measures a handler that
+          // is running rather than one that has not been dispatched.
+          await session.waitForStderr(hoverParkedMarker, 1000);
+
+          session.cancel(inFlight.id);
+
+          // THE HEADLINE. Without the race this await never returns and the test
+          // fails as a timeout -- which is exactly what the client sees.
+          const answered = await inFlight.response;
+          expect(answered.error?.code).toBe(requestCancelled);
+          expect(answered.result).toBeUndefined();
+
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          // NEITHER HALF OF THE LABEL, and the ASCII half is what makes the
+          // absence honest: an encoder escaping the Japanese would walk straight
+          // past a search for the raw characters.
+          expect(session.stdout).not.toContain(hoverAsciiHalf);
+          expect(session.stdout).not.toContain(hoverLabel);
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();
