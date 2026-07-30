@@ -3,9 +3,14 @@ import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
 
 /**
- * A config that answers hover with WHAT ITS OWN RequestContext CARRIES, so a
- * test can read the workspace folders a handler was given rather than infer
- * them from a completion's output.
+ * A config that answers hover with WHAT THE SERVER HANDS IT THROUGH
+ * `context.tsudoi`, so a test can read the workspace folders a handler was given
+ * rather than infer them from a completion's output.
+ *
+ * READ AT THE MOMENT THE HOVER IS SERVED. Every field below is a live read off
+ * one server-lifetime object, so what this reports is the session AS OF THIS
+ * REQUEST -- which is what makes it usable for asserting that a notification
+ * moved the mirror.
  *
  * JSON.stringify of a WRAPPER OBJECT, never of the field itself: an absent
  * field must be distinguishable from an empty list here, and
