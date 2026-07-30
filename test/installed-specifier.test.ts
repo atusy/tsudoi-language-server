@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { exampleSources, type InstalledConsumer, installConsumer } from "./helpers/install.ts";
+import {
+  exampleSources,
+  type InstalledConsumer,
+  installConsumer,
+  stageEntries,
+} from "./helpers/install.ts";
 
 /**
  * The stakeholder-facing example's own bytes, read at test time. Not a fixture
@@ -105,6 +111,46 @@ test("the tarball ships the compiled module the exports entry points at, and not
   // of tsudoi's own declared dependencies; `files` is what keeps it out of the
   // tarball, and only this says so.
   expect(existsSync(join(consumer.packageDir, "node_modules"))).toBe(false);
+});
+
+/**
+ * EVERYTHING THAT TRAVELS FROM THIS REPOSITORY INTO THE THING WE PUBLISH, and
+ * the reason it is pinned is what is NOT here.
+ *
+ * tsconfig.json carries a `paths` mapping resolving `@atusy/tsudoi/*` to src/,
+ * so that this repository's own `tsc --noEmit` reads source instead of a built
+ * dist/. That mapping is safe ONLY BECAUSE IT CANNOT REACH THE PACKING STAGE:
+ * the build here runs under tsconfig.build.json, which carries no mapping (and
+ * test/package-shape.test.ts is where that absence is asserted), and the
+ * consumer's own type check runs under options that carry none either. Nothing
+ * else stopped a fourth path being copied in.
+ *
+ * node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI,
+ * whose text says three: it is symlinked in because the build must resolve the
+ * types of tsudoi's own declared dependencies, and `files` is what keeps it out
+ * of the tarball.
+ */
+const stagedPaths = ["node_modules", "package.json", "src", "tsconfig.build.json"];
+
+test("the pack stage receives package.json, src/ and tsconfig.build.json, and nothing else", () => {
+  expect(consumer.stagedEntries).toEqual(stagedPaths);
+});
+
+// THE PERMANENT PAIR for the absence above, per the standing rule that an
+// assertion that something is NOT there ships with one showing the same
+// measurement observes it when it IS. It also answers the narrower question the
+// pin cannot: whether a violating entry is REPORTED BY NAME or merely counted.
+test("the same reader names a fifth staged path when one is there", () => {
+  const dir = mkdtempSync(join(tmpdir(), "tsudoi-stage-pair-"));
+  try {
+    for (const path of [...stagedPaths, "tsconfig.json"]) {
+      writeFileSync(join(dir, path), "");
+    }
+
+    expect(stageEntries(dir)).toEqual([...stagedPaths, "tsconfig.json"].sort());
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // The paired control for the installed case, perturbing what gets PACKED rather

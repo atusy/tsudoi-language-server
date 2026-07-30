@@ -101,6 +101,23 @@ export function exampleSources(): Record<string, string> {
   };
 }
 
+/**
+ * What a staging directory holds, sorted, READ BACK RATHER THAN LISTED.
+ *
+ * A list written here would agree with a staging step that had grown a fourth
+ * copy, which is the one thing this reader exists to disagree with. It reports
+ * BY NAME rather than by a count, so a violating entry appears in the failure
+ * text instead of a number that moved.
+ *
+ * The set it observes is pinned by `the pack stage receives package.json, src/
+ * and tsconfig.build.json, and nothing else` in
+ * test/installed-specifier.test.ts, and the pair beside it shows this same
+ * reader naming a fifth path when one is there.
+ */
+export function stageEntries(stage: string): readonly string[] {
+  return readdirSync(stage).sort();
+}
+
 /** A throwaway project with tsudoi installed from a tarball, as a stranger has it. */
 export interface InstalledConsumer {
   /**
@@ -110,6 +127,11 @@ export interface InstalledConsumer {
   readonly dir: string;
   /** Where the tarball was unpacked to, for asserting what did and did not ship. */
   readonly packageDir: string;
+  /**
+   * What the staging directory held at the moment `bun pm pack` ran -- the real
+   * stage this consumer was built from, captured before the tarball lands in it.
+   */
+  readonly stagedEntries: readonly string[];
   /** Writes a file into the consumer project, e.g. the config a route names. */
   write(path: string, contents: string): void;
   /**
@@ -222,8 +244,19 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     writeFileSync(join(stage, "package.json"), JSON.stringify(packageJson, null, 2));
     cpSync(join(repoRoot, "src"), join(stage, "src"), { recursive: true });
     options.editSource?.(join(stage, "src"));
+    // tsconfig.build.json AND NOT tsconfig.json, and the omission is the load-
+    // bearing half: the repo's tsconfig.json carries a `paths` mapping that
+    // resolves `@atusy/tsudoi/*` to src/, and a stage that inherited it would
+    // type-check the thing we publish against sources we do not ship. A FOURTH
+    // COPY ADDED HERE REDDENS `the pack stage receives package.json, src/ and
+    // tsconfig.build.json, and nothing else` in
+    // test/installed-specifier.test.ts, which names what it found.
     cpSync(join(repoRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
     symlinkSync(join(repoRoot, "node_modules"), join(stage, "node_modules"), "dir");
+    // Captured HERE rather than after the pack: `bun pm pack` writes the tarball
+    // into this same directory, so a reading taken later would see a fifth entry
+    // that no copying step put there.
+    const staged = stageEntries(stage);
 
     const packed = await run("bun", ["pm", "pack", "--destination", stage], stage);
     if (packed.code !== 0) {
@@ -268,6 +301,7 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     return {
       dir: consumer,
       packageDir: join(consumer, "node_modules", "@atusy", "tsudoi"),
+      stagedEntries: staged,
       write: (path: string, contents: string): void => {
         const target = join(consumer, path);
         mkdirSync(dirname(target), { recursive: true });

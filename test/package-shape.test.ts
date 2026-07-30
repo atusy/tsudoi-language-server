@@ -72,6 +72,42 @@ test("the same tree fails once the dist exclusion is removed", async () => {
   expect(await typeCheckWith(withoutExclude, brokenDeclaration)).toBe(1);
 });
 
+/** The build config's own bytes, read at test time like the one above it. */
+const buildTsconfig = JSON.parse(
+  readFileSync(join(repoRoot, "tsconfig.build.json"), "utf8"),
+) as Record<string, unknown>;
+
+/**
+ * WHICH OF THE TWO TSCONFIGS MAY CARRY THE MAPPING, and why it is exactly one.
+ *
+ * `tsc --noEmit` is a DoD check, and without a mapping it resolves the
+ * examples' `@atusy/tsudoi/*` imports through package.json's exports map to
+ * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
+ * therefore disagreed exactly when the published surface had moved: measured in
+ * both directions, a false GREEN beside 43 test failures and a false RED against
+ * a type the tree no longer contained. The mapping makes this repository's own
+ * check read source, so a stale dist/ cannot reach it at all.
+ *
+ * tsconfig.build.json GETS NONE, and that is the half this pair exists for.
+ * It `include`s src alone, which never imports the bare specifier, so a mapping
+ * there would resolve nothing -- and it is the one of the two configs that
+ * TRAVELS INTO THE PACKING STAGE, where inheriting it would type-check what we
+ * publish against sources we do not ship. What the stage copies is pinned in
+ * test/installed-specifier.test.ts; this is the other half of the same guard.
+ *
+ * ONE PATTERN COVERS ALL FOUR EXPORTS ARMS, and every one was measured rather
+ * than assumed: breaking each name in src/ gives TS2305 at the in-repo importer
+ * with no TS2307 anywhere, so the subpath resolves to source rather than to
+ * nothing and the examples are still in the program.
+ */
+test("the repo's type check resolves the published subpaths to source, and the build config does not", () => {
+  const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
+  const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
+
+  expect(repoOptions.paths).toEqual({ "@atusy/tsudoi/*": ["./src/*.ts"] });
+  expect(buildOptions.paths).toBeUndefined();
+});
+
 /** The shipped manifest's own bytes, read at test time. */
 const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
   string,
