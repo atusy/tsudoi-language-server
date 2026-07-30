@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type {
-  CompletionItem,
-  Hover,
-  InitializeResult,
-  WorkspaceFolder,
+import {
+  type CompletionItem,
+  ErrorCodes,
+  type Hover,
+  type InitializeResult,
+  type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 import {
   bunRuntime,
@@ -560,33 +561,45 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE SAME CLASS ONE LEVEL UP, found by sweeping the other fields this
-    // handler reads: JSON-RPC permits `"params": null` on any request, and
-    // vscode-jsonrpc hands that null to the handler unchanged. Reading a field
-    // off it throws where `isAbsolute` did, with the same cost -- the handshake
-    // answered -32603, no server, nothing to read.
+    // A MALFORMED HANDSHAKE PUBLISHES NOTHING, AND THE ONE THAT FOLLOWS IS WHAT
+    // THE MIRROR ANSWERS FROM. `"params": null` is not a conforming request:
+    // JSON-RPC 2.0 requires that `If present, parameters for the rpc call MUST
+    // be provided as a Structured value. Either by-position through an Array or
+    // by-name through an Object`, and `null` is neither -- LSP requires an
+    // `InitializeParams` object besides. It is refused -32602 at the entry.
     //
-    // MIRRORED AS `NAMED NOTHING`, which is not a new state: omitted, `null` and
-    // `[]` are already one answer here, and a client that sent no params named
-    // no folders and no root by exactly that reading.
+    // THE RETRY IS ASSERTED THROUGH THE MIRROR AND NOT THROUGH THE RESPONSE,
+    // which is what keeps this row this file's business rather than a second
+    // copy of the lifecycle one: a refusal that MOVED THE PHASE would leave the
+    // client's corrected `initialize` answered InvalidRequest and the folders it
+    // named unreachable, so reading `sentFolders` back out through a hover
+    // asserts both halves at once -- refused, and the session still owed.
+    //
+    // WHAT THIS DOES NOT PIN, stated rather than glossed: the mirror cannot be
+    // OBSERVED between the refusal and the retry, since the hover that reads it
+    // needs a handshake, and the retry writes the mirror whole. `nothing was
+    // published by the refused message` is therefore carried by the entry
+    // refusing before any handler runs, not by this assertion.
     //
     // WHAT WAS SWEPT AND FOUND NOT TO BE THIS CLASS, so that a later reader does
-    // not take these tests as covering the field set: `"rootUri": 5` does not
-    // throw ANYWHERE (measured, including through a handler that reads it). It
-    // propagates a wrong-typed value, which is a different failure with a
-    // different remedy, and no test here claims otherwise. `"workspaceFolders":
-    // 5` DOES throw, but not here and not at this message -- the test below owns
-    // it.
-    test("initialize with null params completes the handshake and mirrors nothing", async () => {
+    // not take these tests as covering the field set: `"rootUri": 5` is refused
+    // at the same entry, while `"workspaceFolders": 5` is NOT -- it is a list
+    // this mirror reads as empty, and the test below owns it.
+    test("a refused handshake leaves the session owed, and the retry is what the mirror answers from", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
-        const result = await session.request<InitializeResult>("initialize", null);
-        expect(result.capabilities).toBeDefined();
+        const refusal = await session.requestError("initialize", null);
+        expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: sentFolders,
+        });
 
         session.notify("initialized", {});
 
         expect(await mirrored(session)).toEqual({
-          workspaceFolders: [],
+          workspaceFolders: sentFolders,
           rootUri: null,
           rootPath: null,
         });

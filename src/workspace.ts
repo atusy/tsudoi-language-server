@@ -61,14 +61,22 @@ export interface WorkspaceFoldersHandle {
    * omitted, `null` and `[]` all mean an empty list, and the two root fields are
    * stored as bytes.
    *
-   * `| null` IS THE WIRE SHAPE AND NOT A CONVENIENCE. JSON-RPC lets any client
-   * send `"params": null`, vscode-jsonrpc hands it through unchanged, and the
-   * declared `InitializeParams` is a description of a CONFORMING client rather
-   * than a guarantee about the bytes. MEASURED, both runtimes: reading a field
-   * off it without this throws inside the `initialize` handler, and the cost is
-   * the one recorded at `rootPath` below -- the handshake is answered -32603 and
-   * the author has no server. A client that named nothing is mirrored as having
-   * named nothing, which is what the three states above already say.
+   * `| null` IS THIS HANDLE STAYING TOTAL AND NOT A CLAIM ABOUT THE WIRE. A
+   * `"params": null` is NOT conforming -- JSON-RPC 2.0 requires that `If
+   * present, parameters for the rpc call MUST be provided as a Structured
+   * value. Either by-position through an Array or by-name through an Object` --
+   * and src/server.ts refuses it -32602 before this is reached, so no client
+   * gets here by sending it.
+   *
+   * WHAT THE TYPE BUYS IS THAT THE REFUSAL IS THE ENTRY'S JOB ALONE. This module
+   * is not the one that decides which handshakes are answered, and a signature
+   * that could not spell `nothing was named` would make every future caller
+   * re-derive that decision -- while reading a field off a `null` that reached
+   * here anyway throws inside the `initialize` handler, where the cost is the one
+   * recorded at `rootPath` below: the handshake answered -32603, and an author
+   * with no server and an LSP log with no reason. A caller that named nothing is
+   * mirrored as having named nothing, which is what the three states above
+   * already say.
    */
   initialize(
     params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath"> | null,
