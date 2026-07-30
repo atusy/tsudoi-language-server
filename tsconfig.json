@@ -3,6 +3,9 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "paths": {
+      "@atusy/tsudoi/*": ["./src/*.ts"]
+    },
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
