@@ -162,7 +162,59 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 44,
+    pbi_id: "PBI-48",
+    status: "in_progress",
+    goal: "A DEFINITION-OF-DONE CHECK STOPS READING A BUILT ARTIFACT. `tsc --noEmit` resolves `@atusy/tsudoi/*` to `./src/*.ts`, so this repository's own type check reads SOURCE and a stale `dist/` cannot reach it AT ALL -- FORECLOSED RATHER THAN DETECTED, which is why no rot detector is proposed. THE HAZARD IS MEASURED THREE TIMES ACROSS THREE SPRINTS AND IN BOTH DIRECTIONS: a false GREEN at Sprint 42, where tsc exited 0 beside 43 test failures, and a false RED at Sprint 43, where it reported TS2322 against a tuple type the tree no longer contained. WHAT MUST NOT HAPPEN IS THE REMEDY BEING INDISTINGUISHABLE FROM A TYPE CHECK THAT STOPPED READING THE EXAMPLES -- `resolves to source`, `resolves to nothing` and `examples are not in the program` produce THE SAME OBSERVATION, so criterion 1 has two arms and the second is the load-bearing one. NOTHING IS LOST, AND THAT IS A COVERAGE CLAIM RATHER THAN A CONVICTION: the installed-consumer tests own the published-surface verification and BUILD THEIR OWN TARBALL, and criterion 2 requires a CONSTRUCTED defect rather than a read premise. THE DIVISION STOPS BEING ACCIDENTAL: `tsc --noEmit` answers `does this source type-check`, and the packing tests answer `does what we publish work` -- and their overlap today is exactly what produced both false signals.",
+    subtasks: [
+      {
+        test: "EXPECTED-RED is the wrong label and BORN-GREEN is too: the mapping changes no behaviour and no assertion, so the DoD is green before and after. THE DEFENCE IS THE TWO-ARMED CONTROL, NOT THE SUITE. ARM (a): with the mapping, remove `TsudoiConfigFactory` from `dist/types.d.ts` and confirm `tsc --noEmit` EXIT 0 -- staleness cannot reach the check. ARM (b), THE ONE THAT MATTERS: with the mapping, break the SAME name in `src/types.ts` and confirm EXIT 1 with the output NAMING `examples/tsudoi.config.ts`. THE FILE NAME IS THE ASSERTION AND THE EXIT CODE IS NOT, since a src-internal error exits 1 too and proves nothing about resolution. AND THE `deps/*` ARMS ARE CONFIRMED TOO -- one `*` pattern covers four exports arms and only `./types` has been probed. THE NAME CHOICE IS NOT CASUAL: Sprint 42 perturbed `Method`, got exit 0 with zero errors, and that meant only that no example imports `Method`.",
+        implementation:
+          'Add `"paths": { "@atusy/tsudoi/*": ["./src/*.ts"] }` to tsconfig.json. NOT to tsconfig.build.json, ruled at refinement: it includes `src` alone, `src/` never imports the bare specifier -- both grep hits are prose in comments -- and it is the one of the two configs that TRAVELS INTO THE PACKING STAGE, which makes it the file this PBI must not touch.',
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A CONSTRUCTED DEFECT, NOT A READ PREMISE, and it has TWO ACCEPTABLE OUTCOMES stated in advance so a red is not read as failure. Construct a change that the CURRENT accidental overlap catches TODAY -- a divergence between `src/` and the built `dist/` that only `tsc --noEmit` reading dist would see -- and then, with the mapping in place, confirm EITHER that a named test reddens at a named assertion, OR that nothing does, in which case the sprint REPORTS WHICH CLASS LOST ITS LAST DETECTOR. THE PROPERTY IS `NO CLASS LOSES ITS LAST DETECTOR`, NOT `THE MAPPING SHIPS`: an executor who finds no survivor must feel no pressure to manufacture one, and if none exists the mapping does not ship alone.",
+        implementation:
+          "No source change of its own. This subtask converts the coverage claim -- that the installed-consumer tests already own published-surface verification -- from something read into something measured.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN-GREEN plus one new assertion. The independence of the packing stage is the load-bearing premise of criterion 2 and is currently only READ: test/helpers/install.ts BUILDS its tarball rather than finding one, and stages EXACTLY `package.json`, `src/` and `tsconfig.build.json` -- NOT `tsconfig.json` -- while the consumer type-checks with options carrying no `paths`. PIN THE STAGE'S CONTENTS AT THE SITE THE VIOLATING EDIT WOULD BE MADE, with a NEGATIVE CONTROL that a fourth staged path is REPORTED BY NAME rather than only by a count.",
+        implementation:
+          "An assertion over what the install stage copies, at test/helpers/install.ts or its nearest test. It exists because the mapping is safe ONLY IF the stage cannot inherit it, and nothing currently stops a fourth path being added.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN-GREEN. Sprint 42's active improvement says `THE PRACTICE UNTIL IT HAS A HOME: run tsc -p tsconfig.build.json BEFORE believing tsc --noEmit`. Once the mapping lands THAT SENTENCE DESCRIBES NOTHING, and a practice that has become false is WORSE THAN NO PRACTICE because it reads as protection. Retire it in this sprint with an `outcome` naming where it went. IT FAILS EXACTLY ONE WAY -- the entry still claiming homelessness after the home exists -- and the before-grep on `until it has a home` returns it, which is the control that the grep discriminates present from absent.",
+        implementation:
+          "Close the Sprint-42 improvement with its outcome. Do not delete it; a retired improvement with its outcome is the record that the hazard was real and was closed.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "BASELINE b629d23, resolved once at Planning. Planning ran as inline role-play; REVIEW WILL NOT -- the replacement Product Owner refined this PBI and will take the acceptance, as they did for Sprint 43.",
+      "THE DISCRIMINATOR FOR `IS THIS A PBI OR A RETROSPECTIVE AMENDMENT`, ruled at refinement and recorded because the next borderline case should read a precedent rather than re-derive one. THREE QUESTIONS: does the remedy change a file the repository SHIPS OR BUILDS BY, or is it a practice; does it ALREADY HAVE A HOME THAT OWNS IT; can it be PERTURBED WITH A CONTROL. WHEN THEY DISAGREE THE SECOND DECIDES -- a finding with an owning home is not homeless whatever else is true of it. Sprint 36's entry CREATED the `expect(` instrument and therefore owns its bounds, which is why that defect was an amendment; this hazard's only mention DISCLAIMS BEING ITS HOME IN ITS OWN WORDS.",
+      "THE VALUE FRAMING THE SCRUM MASTER DID NOT CLAIM AND COULD HAVE: the direct role is `tsudoi maintainer`, but WHAT THE BROKEN INSTRUMENT ENDANGERS IS THE CONFIG AUTHOR'S DOCUMENTED ROUTE. `examples/` IS that route. A maintainer misled by a green ships a broken documented route to an author who never runs `tsc --noEmit` at all.",
+      "THE SCRUM MASTER'S PROBE HAD ONE ARM AND IT IS THE FIFTH DEGENERATE PROBE OF THIS THREAD. It established that staleness cannot REACH the check and NOT that the check still reaches the EXAMPLES -- a tsconfig that stopped type-checking examples/ passes it perfectly, because `resolves to source`, `resolves to nothing` and `examples are not in the program` produce THE SAME OBSERVATION. ARM (b) IS NOW MEASURED: with the mapping on, breaking the same name in src/types.ts exits 1 with the output naming examples/tsudoi.config.ts.",
+      "A VERIFICATION WAS REFUSED AT REFINEMENT FOR BEING UNFAILABLE: a byte-diff of `dist/` across the change. tsconfig.json is not read by tsconfig.build.json, so dist/ is byte-identical BY CONSTRUCTION and nothing could violate it. Sprint 40's unmeetable-criterion entry firing in the direction nobody checks -- a criterion that CANNOT FAIL rather than one that cannot be satisfied.",
+      "PER-SPRINT REVIEW CHECKLIST. (1) CRITERION 1's ARM (b) IS THE ONE TO READ FIRST; arm (a) alone cannot tell the remedy from a check that stopped reading the examples. (2) CRITERION 2 HAS TWO ACCEPTABLE OUTCOMES and a report finding no surviving detector is a PASS that changes what ships, not a failure. (3) THE DoD IS GREEN BEFORE AND AFTER, so FOUR GREEN IS NOT EVIDENCE FOR ANY CRITERION HERE -- every one is defended by a control or an assertion, never by the suite. (4) `tsc --noEmit` BEHAVIOUR CHANGES IN THIS SPRINT, so the standing Sprint-14 re-run must state whether its target survives the mapping BEFORE stating its colour.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 43,
