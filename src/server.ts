@@ -4,6 +4,7 @@ import {
   DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  type Disposable,
   ErrorCodes,
   ExitNotification,
   InitializedNotification,
@@ -14,6 +15,7 @@ import {
   ResponseError,
   type ServerCapabilities,
   ShutdownRequest,
+  type StarRequestHandler,
   StreamMessageReader,
   StreamMessageWriter,
   TextDocumentSyncKind,
@@ -65,11 +67,12 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // server-lifetime object: this file is handed the finished view and the
   // handles that feed it, and has no way to assemble a second view per request.
   const { tsudoi, documents, workspaceFolders, handshake } = runtime;
-  // Every question about WHEN a message is allowed goes to this one object.
-  // The gate it backs reaches what tsudoi REGISTERED, never the dispatch as a
-  // whole -- that is what leaves a method nobody registered falling through to
-  // vscode-jsonrpc's MethodNotFound, since `not initialized yet` and `no such
-  // method` are different diagnoses.
+  // Every question about WHEN a message is allowed goes to this one object, and
+  // the gate it backs reaches THE WHOLE REQUEST DISPATCH -- what tsudoi
+  // registered and what nobody did alike. A method nobody registered is still a
+  // request, and outside the serving window the phase is what the client got
+  // wrong, whatever it asked for; `no such method` is the right diagnosis only
+  // inside that window, which is where the fallback below hands it back.
   //
   // NOTIFICATIONS DO NOT CONSULT IT ONE BY ONE: each entry below DECLARES when
   // it may run, and the router in notifications.ts applies that. The router is
@@ -321,6 +324,56 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       );
     }
     lifecycle.shutDown();
+  });
+
+  // EVERY REQUEST NOBODY REGISTERED, AND THE PHASE ANSWERS BEFORE THE NAME DOES.
+  // `not initialized yet` and `no such method` are different diagnoses, and WHICH
+  // ONE IS TRUE DEPENDS ON THE PHASE rather than on whether tsudoi happens to
+  // serve the method: outside the serving window the session is what the client
+  // got wrong, whatever it asked for. LSP requires a request arriving before
+  // `initialize` to be answered ServerNotInitialized, and this project answers
+  // InvalidRequest after `shutdown`, both for the reasons at requestRejection()
+  // in src/lifecycle.ts.
+  //
+  // WHAT THE CLIENT LOSES WITHOUT THIS IS A SESSION'S WORTH OF A FEATURE, not one
+  // message: a client that asks about an EXTENSION method a moment too early
+  // reads -32601, concludes the method is permanently unsupported, and never asks
+  // again -- where -32002 tells it to ask once the handshake is done.
+  //
+  // MethodNotFound STAYS THE ANSWER INSIDE THE SERVING WINDOW, in vscode-jsonrpc's
+  // own wording, so a client cannot tell from the response who produced it.
+  // REGISTERING THIS IS WHAT MAKES THAT THIS HANDLER'S DEBT: the library reaches
+  // its own MethodNotFound only when NEITHER a request handler NOR a star handler
+  // exists, so installing one takes that branch out of reach.
+  //
+  // IT SHADOWS NOTHING, MEASURED ON BOTH RUNTIMES (bun 1.3.13, deno 2.9.2) rather
+  // than assumed: vscode-jsonrpc consults the star handler ONLY when the method
+  // has no handler of its own, so `initialize`, `shutdown` and every method in
+  // src/methods.ts are dispatched exactly as before. THE DECISION IS MADE PER
+  // MESSAGE AND NOT AT REGISTRATION, so where this line sits relative to the
+  // others changes nothing -- registering it FIRST was measured to shadow nothing
+  // either.
+  //
+  // NOTIFICATIONS ARE UNTOUCHED. This is the REQUEST fallback; a mistimed
+  // notification has no response to carry a refusal and is dropped by the router,
+  // and `exit`'s carve-out from that stays at its entry in the table below.
+  //
+  // THE CAST WIDENS `onRequest` AND NOTHING ELSE, which is the sentence to read
+  // before suspecting it of reopening what createGatedConnection forecloses.
+  // vscode-jsonrpc's `MessageConnection` declares this star overload and
+  // `ProtocolConnection` RE-DECLARES `onRequest` without it, so the VALUE has a
+  // registration its TYPE does not name. Intersecting one member back leaves
+  // `onNotification`, `onUnhandledNotification`, `onProgress` and `trace` absent
+  // from the handle, so the notification gate is exactly as foreclosed as it was.
+  const withFallback = connection as typeof connection & {
+    onRequest(handler: StarRequestHandler): Disposable;
+  };
+  withFallback.onRequest((method: string): never => {
+    const rejection = lifecycle.requestRejection();
+    if (rejection !== undefined) {
+      throw rejection;
+    }
+    throw new ResponseError(ErrorCodes.MethodNotFound, `Unhandled method ${method}`);
   });
 
   // THIS PROCESS EXITS WHEN ITS EDITOR DIES BECAUSE NOTHING KEEPS THE EVENT LOOP

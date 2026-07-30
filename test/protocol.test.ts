@@ -120,10 +120,20 @@ for (const runtime of runtimes) {
       hangTimeoutMs,
     );
 
-    // The boundary the pre-initialize gate must not swallow. `not initialized`
-    // and `no such method` are different diagnoses, and a gate answering
-    // ServerNotInitialized for everything tsudoi did not register would tell a
-    // client its request was mistimed when it was actually unsupported.
+    /**
+     * PHASE TIMES REGISTRATION, AND THIS FILE HOLDS EVERY CELL OF IT: a
+     * REGISTERED method is refused -32002 before `initialize` and -32600 after
+     * `shutdown` and served in between, and an UNREGISTERED one is answered the
+     * same two refusals -- but -32601 in between, which is this test.
+     *
+     * `no such method` IS THE RIGHT DIAGNOSIS HERE AND ONLY HERE. Inside the
+     * serving window a server that answered ServerNotInitialized for everything
+     * it did not register would tell a client its request was mistimed when it
+     * was actually unsupported. Outside that window the reading inverts, and the
+     * two tests below are where it is read: a server that answered -32601 to an
+     * extension method asked too early would tell a client the method is
+     * PERMANENTLY unsupported, and a conforming client does not retry that.
+     */
     test("after initialize an unregistered method is answered -32601, and hover still answers", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
@@ -144,6 +154,112 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    /**
+     * THE SAME METHOD, THE SAME SESSION, TWO DIFFERENT ANSWERS, and that is the
+     * whole claim: -32002 says `ask again once I am initialized` and -32601 says
+     * `I will never serve this`. A client told the second one before the
+     * handshake concludes an extension method is unsupported and stops asking,
+     * which is a session-long loss produced by a message it sent one turn early.
+     *
+     * BOTH HALVES OR NEITHER. The -32002 alone is satisfied by a server that
+     * refuses everything forever, and the -32601 alone by one that never gated
+     * anything -- it is the CHANGE across the handshake that says the diagnosis
+     * tracks the phase.
+     */
+    test("an unregistered method before initialize is answered -32002, and -32601 once initialized", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const early = await session.requestError("totally/madeUp", {});
+        expect(early.code).toBe(-32002);
+
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const late = await session.requestError("totally/madeUp", {});
+        expect(late.code).toBe(-32601);
+
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE FAR END OF THE SAME WINDOW, and the diagnosis is this project's own
+     * rather than one the specification spells for unregistered methods: after
+     * `shutdown` the request was invalid AT THE MOMENT IT WAS SENT, whatever its
+     * name, because the session is over. -32601 there would answer a question
+     * about the method to a client whose mistake was the timing.
+     *
+     * THE EXIT CODE IS THE PAIR: a refusal that reached the request router by
+     * some other route could have moved the phase, and a session that did not
+     * shut down cleanly reads 1 here.
+     */
+    test(
+      "an unregistered method after shutdown is answered -32600, and exit still returns 0",
+      async () => {
+        const session = LspSession.start(runtime, demoConfig);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
+
+          const error = await session.requestError("totally/madeUp", {});
+          expect(error.code).toBe(-32600);
+
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
+
+    /**
+     * WHAT A CATCH-ALL COULD COST, ASSERTED RATHER THAN REASONED ABOUT. A
+     * fallback registered on the same connection is one dispatch decision away
+     * from intercepting methods that have handlers of their own, and the symptom
+     * would be a server that answers -32601 to everything it serves -- a session
+     * that never starts.
+     *
+     * ALL THREE REGISTRATION ROUTES, because they are three: `initialize` is
+     * registered directly, `textDocument/hover` comes from the table in
+     * src/methods.ts, and `shutdown` is registered directly again. A fallback
+     * that shadowed would turn each of them into -32601, and each is asserted on
+     * its RESULT -- the server name, the example's own heading, the null the
+     * specification requires -- because `not -32601` is satisfied by a wrong
+     * answer too.
+     */
+    test(
+      "a fallback for unknown methods shadows none of initialize, hover or shutdown",
+      async () => {
+        const session = LspSession.start(runtime, demoConfig);
+        try {
+          const result = await session.request<InitializeResult>("initialize", rendersMarkdown);
+          expect(result.serverInfo?.name).toBe("tsudoi");
+
+          session.notify("initialized", {});
+          didOpen(session, knownWord);
+          const hover = await session.request<Hover | null>(
+            "textDocument/hover",
+            hoverParams(0, 0),
+          );
+          expect(markdown(hover)).toContain(exampleHeading);
+
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
+
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      hangTimeoutMs,
+    );
 
     // Content-Length is a BYTE count; String.length counts UTF-16 units. Every
     // ASCII response in this suite satisfies both readings at once, so nothing
