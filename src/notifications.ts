@@ -257,8 +257,8 @@ export type RequestOnlyConnection = Omit<
  * adding a key here reddens rather than quietly widening this sentence's claim.
  * `sendNotification` survives and is not a gap at all -- that is SENDING a
  * notification, not installing a handler for one. NEITHER HALF OF THAT SENTENCE
- * IS COUNTED, and that is deliberate: `EXACTLY TWO MEMBERS` stood here and was
- * falsified by the very next widening.
+ * IS COUNTED, and that is deliberate: a count falsifies itself at the next
+ * widening, where the names go on being true.
  *
  * NONE OF THOSE FOUR IS REACHABLE BY THE PARTY WHO MIGHT WANT IT: this type
  * never leaves src/, and src/types.ts -- the one path package.json exports, and
