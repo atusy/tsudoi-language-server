@@ -98,9 +98,9 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  *
  * THE HANDLERS DO NO WORK ON PURPOSE. Cancellation is observed through
  * `issueThenCancel`, which frames the request and its `$/cancelRequest`
- * together, so the token is already cancelled when the handler is entered and
- * the epilogue's post-settle abort check is what answers. A parking handler per
- * method would measure the same thing and would be one more copy per method --
+ * together, so the token is already cancelled when the request reaches a drive
+ * and the answer is decided WITHOUT ENTERING these handlers at all. A parking
+ * handler per method would measure the same thing and would be one more copy --
  * THE PER-METHOD COPY, which is the shape the five-tests paragraph above
  * refuses and refuses here for the same reason.
  */

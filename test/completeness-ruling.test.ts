@@ -55,6 +55,7 @@ const ruled = [
   "test/fixtures/completion-cleanup-yields-then-throws.ts",
   "test/fixtures/completion-cleanup-yields.ts",
   "test/fixtures/completion-cleanup.ts",
+  "test/fixtures/completion-counts-pulls.ts",
   "test/fixtures/completion-gate.ts",
   "test/fixtures/completion-ignores-signal-rejects.ts",
   "test/fixtures/completion-ignores-signal.ts",

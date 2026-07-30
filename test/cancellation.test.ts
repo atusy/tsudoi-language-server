@@ -23,6 +23,8 @@ import {
   label as ignoredLabel,
 } from "./fixtures/hover-ignores-signal.ts";
 
+import { pullMarker } from "./fixtures/completion-counts-pulls.ts";
+
 import {
   completionEntered,
   hoverEntered,
@@ -32,6 +34,7 @@ import { throwMessage as uncancelledThrowMessage } from "./fixtures/hover-throws
 
 const hoverCancellable = fixture("hover-cancellable.ts");
 const completionCancel = fixture("completion-cancel.ts");
+const completionCountsPulls = fixture("completion-counts-pulls.ts");
 const hoverIgnoresSignal = fixture("hover-ignores-signal.ts");
 const throwsOnCancel = fixture("throws-on-cancel.ts");
 const hoverThrows = fixture("hover-throws.ts");
@@ -140,31 +143,100 @@ for (const runtime of runtimes) {
     // The path a subscribe-only bridge cannot see: vscode-jsonrpc cancels the
     // token source BEFORE calling the handler, which installs
     // CancellationToken.Cancelled, whose onCancellationRequested is Event.None
-    // and never fires. Only reading the flag at entry catches this.
-    test("a request cancelled before it is dispatched enters with its signal already aborted", async () => {
+    // and never fires. Only reading the flag at entry catches this, and the
+    // -32800 below is what says the flag WAS read: a bridge that merely
+    // subscribed would see no cancellation here at all and answer this hover
+    // normally.
+    //
+    // THE HANDLER IS NOT ENTERED, and that is the second claim rather than a
+    // detail of the first. Entering it would start work for a request already
+    // answered -- a timer, a child process, a lock -- with nothing left to stop
+    // it, since a stream's cleanup queues behind a pull that may never settle.
+    //
+    // THE CONTROL IS IN THE SAME SESSION AND AGAINST THE SAME MARKERS. `absent`
+    // on its own is equally true of a server that died, of a fixture that never
+    // loaded and of a marker string nobody writes.
+    test("a request cancelled before it is dispatched is answered -32800 and never entered", async () => {
       const session = LspSession.start(runtime, hoverCancellable);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
-        // Gate open from the start: this handler must not park, so the marker
-        // is written and the request settles without anything releasing it.
+        // Gate open from the start: a handler entered here would ANSWER rather
+        // than park, so nothing in this test waits on a release.
         didOpen(session, gateOpen);
 
         const inFlight = session.issueThenCancel("textDocument/hover", hoverParams(3));
-        await inFlight.response;
+        expect((await inFlight.response).error?.code).toBe(requestCancelled);
 
-        await session.waitForStderr(enteredMarker(tagOf(3), true), 500);
+        const answered = await session.request<Hover>("textDocument/hover", hoverParams(4));
+        expect(answered).toEqual(hoverFor(tagOf(4)));
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        // Read after exit: a marker written late is still a marker.
+        expect(session.stderr).toContain(enteredMarker(tagOf(4), false));
+        // BOTH STATES OF THE ENTRY MARKER, because the claim is that the
+        // handler never ran -- not that it ran and read a particular flag.
+        expect(session.stderr).not.toContain(enteredMarker(tagOf(3), true));
+        expect(session.stderr).not.toContain(enteredMarker(tagOf(3), false));
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * The other half of the same rule, one pull further in: an abort that lands
+     * while a batch is being SENT must not buy the generator another turn.
+     *
+     * WHY THE MOMENT IS FORCED RATHER THAN HOPED FOR: the fixture's body awaits
+     * nothing between yields, so every pull and every race around it settles as
+     * a microtask and the event loop is handed back at exactly one point in the
+     * loop -- the awaited `sendProgress`. An incoming `$/cancelRequest` can
+     * therefore be read THERE and nowhere else, whatever the machine's speed.
+     *
+     * COUNTED, NOT TIMED, and the two counts are what make the claim
+     * falsifiable: every pull writes a line before it yields, and every batch
+     * the drive accepts leaves as one `$/progress`. A drive that pulls once more
+     * after the abort has one line it cannot account for.
+     */
+    test("cancelling while a batch is being sent starts no further pull", async () => {
+      const session = LspSession.start(runtime, completionCountsPulls);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const inFlight = session.issue("textDocument/completion", completionParams());
+        // Cancelled while provably mid-stream, which is what puts the abort
+        // inside a send rather than before the first pull.
+        await session.waitForProgress(1);
+        session.cancel(inFlight.id);
+
+        // A response that is not -32800 says the abort never landed -- the
+        // generator ran out of batches first -- and the counts below would then
+        // be a claim about nothing.
+        expect((await inFlight.response).error?.code).toBe(requestCancelled);
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+
+        // WITHOUT THIS, `equal counts` is satisfied by zero and zero -- a server
+        // that streamed nothing and pulled nothing.
+        expect(session.progressCount).toBeGreaterThan(0);
+        expect(session.stderr.split(pullMarker).length - 1).toBe(session.progressCount);
+        expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();
       }
     });
 
     // The same pre-dispatch path on the streaming side, where a MESSAGE is at
-    // stake rather than just a return value: the handler is called anyway and
-    // does produce an answer, and that answer must be discarded before it
-    // reaches the wire. It is the ANSWER rather than a yielded chunk: it leaves
-    // as the first `$/progress` literal, which makes it the EARLIEST thing this
-    // drive could misdeliver.
+    // stake rather than just a return value. The generator is never pulled, so
+    // the first batch is never produced -- and that batch is the EARLIEST thing
+    // this drive could misdeliver, since it leaves as a `$/progress` literal
+    // rather than as a response the epilogue still holds. Zero progress is what
+    // says it stayed unproduced.
     test("a completion cancelled before it is dispatched answers -32800 and streams nothing", async () => {
       const session = LspSession.start(runtime, completionCancel);
       try {
@@ -201,11 +273,11 @@ for (const runtime of runtimes) {
     // sixth is covered the moment it is declared.
     //
     // WHAT IS PER-METHOD HERE AND NOT THERE, said precisely so the division of
-    // labour does not blur: those table tests cancel BEFORE DISPATCH,
-    // so the handler is entered with an already-cancelled token. The two tests
-    // in this file cancel a handler that is PARKED AND RUNNING, which is what
-    // measures that a result produced after the cancellation is discarded. That
-    // is asserted for hover and completion and for no other method.
+    // labour does not blur: those table tests cancel BEFORE DISPATCH, where no
+    // handler is entered at all. The two tests in this file cancel a handler
+    // that is PARKED AND RUNNING, which is what measures that a result produced
+    // after the cancellation is discarded. That is asserted for hover and
+    // completion and for no other method.
     test(
       "a cancelled hover is answered -32800 and the next hover is answered normally",
       async () => {

@@ -174,10 +174,11 @@ for (const runtime of runtimes) {
      * specifically: formatting is in the table, so it is here.
      *
      * `issueThenCancel` frames the request and its `$/cancelRequest` together,
-     * so the handler is entered with an already-cancelled token and the
-     * epilogue's post-settle abort check is what answers. That is why the
-     * fixture's handlers can return immediately: what is being measured is the
-     * ROUTER's epilogue, not any handler's cooperation.
+     * so the token is already cancelled when the request reaches a drive and
+     * the prologue's abort read answers WITHOUT ENTERING the config's handler.
+     * That is why the fixture's handlers can return immediately, and why they
+     * could equally park: what is being measured is the ROUTER's decision, not
+     * any handler's cooperation.
      */
     test("every method in the table is answered -32800 when cancelled", async () => {
       const session = LspSession.start(runtime, allMethods);
@@ -203,9 +204,9 @@ for (const runtime of runtimes) {
      * PBI-40: a cancelled request is answered -32800 WHICHEVER DRIVE its method
      * uses, whether or not the config can answer it.
      *
-     * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one drives handlers and
-     * measures the epilogue's post-settle abort check; this one drives NO
-     * handler at all, which is exactly where the two drives can disagree: a
+     * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one runs against a config
+     * supplying a handler for every entry; this one supplies NO handler at all,
+     * which is exactly where the two drives can disagree: a
      * stream drive returning `null` AHEAD of the epilogue answers differently
      * from an awaited-once drive that builds its context either way and answers
      * -32800. MEASURED by restoring that early return: this test reddens at

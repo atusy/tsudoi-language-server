@@ -512,8 +512,28 @@ function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): Reques
  * Everything cancellation changes about a request is here and nowhere else: a
  * cancelled request answers -32800 whatever its handler produced, and a
  * cancelled handler's failure is not reported, because being aborted is why it
- * failed. The abort is re-read AFTER the handler settles, so a handler that
- * never looks at its signal is suppressed exactly like one that does.
+ * failed. The abort is read BEFORE the handler is invoked and AGAIN after it
+ * settles; the second read is what suppresses a handler that never looks at its
+ * signal exactly like one that does.
+ *
+ * THE FIRST READ IS NOT AN OPTIMISATION AND NOT A SECOND ANSWER. A request
+ * cancelled before dispatch is dispatched anyway -- vscode-jsonrpc hands it
+ * CancellationToken.Cancelled and calls this file's request handler -- so
+ * without this read the CONFIG AUTHOR'S handler is entered for a request whose
+ * answer is already decided, and a handler entered is a handler free to open a
+ * timer, a child process or a lock file. NOTHING LEFT CAN TAKE THOSE BACK: the
+ * only thing that could is the signal it just proved it ignores, and on the
+ * streaming drive the cleanup that would release them is queued behind a
+ * `.next()` a parked handler never settles. One such request leaks; a client
+ * that supersedes its own completions makes them by the keystroke. FORECLOSED
+ * RATHER THAN DETECTED, which is this file's standing preference.
+ *
+ * WHAT IT DOES NOT RULE OUT, said because this read looks like more than it is:
+ * a cancellation arriving AFTER dispatch still finds the handler running and
+ * still cannot unallocate anything it holds. Only the signal the handler was
+ * given can do that, and only if the handler reads it. What this closes is the
+ * window tsudoi decides ALONE -- where the handler had no chance to cooperate
+ * because there was nothing to cooperate with.
  *
  * WHAT WOULD FALSIFY THAT, written here because that is the edit: any drive
  * answering a request before it reaches this function -- a stream drive that
@@ -534,6 +554,9 @@ async function answerUnlessCancelled<T>(
   signal: AbortSignal,
   produce: () => Promise<T>,
 ): Promise<T> {
+  if (signal.aborted) {
+    requestCancelled();
+  }
   let value: T;
   try {
     value = await produce();
@@ -1099,6 +1122,28 @@ async function driveStream(run: {
     const aborted = abortedRace(context.signal);
     try {
       for (;;) {
+        // Checked BEFORE the pull, and this is the ONE place an abort that
+        // landed during a send can be read. `sendProgress` is the only await in
+        // this loop that hands the event loop back -- a generator between yields
+        // settles its pull as a microtask -- so mid-stream cancellation lands
+        // there, and the next thing that happens without this check is another
+        // pull for a request the client has already given up on.
+        //
+        // THE PULL IT SAVES IS NOT THE POINT; WHERE IT LEAVES THE GENERATOR IS.
+        // Returning from here leaves it suspended AT A YIELD, where the
+        // `finally` below closes it and the author's own cleanup runs at once.
+        // Pulling once more resumes it into work whose only product is
+        // discarded, and a handler that then awaits anything slow -- the one
+        // fetch without a timeout -- takes its cleanup with it: `.return()` is
+        // queued behind that pull by the language.
+        //
+        // NOT THE FIRST ITERATION'S GUARD. A request cancelled before dispatch
+        // never reaches this loop at all: `answerUnlessCancelled` reads the
+        // abort before invoking the handler, so there is no generator to pull
+        // from.
+        if (context.signal.aborted) {
+          return null;
+        }
         const pull = batches.next();
         const settled = await Promise.race([pull, aborted]);
         if (settled === abortWon) {
@@ -1142,20 +1187,20 @@ async function driveStream(run: {
           return yielded && token === undefined ? collected : null;
         }
         // Checked HERE, between pulling a batch and sending it, and NOT made
-        // redundant by the race above: that one covers an abort landing while
-        // the pull is parked, and this one covers an abort landing after the
-        // pull has WON -- a batch that is already in hand and must not go out to
-        // a client that has stopped listening. Returning also stops driving the
-        // generator, which is the point of cancelling at all. The value is
-        // discarded either way -- the answer is already -32800.
+        // redundant by either check around it: the race above covers an abort
+        // landing while the pull is parked, the check at the top of the loop
+        // covers one landing while a batch was being sent, and this one covers
+        // an abort landing while the pull was in flight AND LOSING THE RACE TO
+        // IT -- both settle, and which one `Promise.race` reports is not this
+        // code's to decide. The batch is then already in hand and must not go
+        // out to a client that has stopped listening. Returning also stops
+        // driving the generator, which is the point of cancelling at all. The
+        // value is discarded either way -- the answer is already -32800.
         //
-        // AND IT COVERS THE FIRST BATCH TOO, which is not incidental:
-        // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
-        // dispatch, so a first batch sent without passing this check goes out to
-        // a client that never wanted it. The first batch is an ordinary
-        // iteration of this loop, and `a completion cancelled before it is
-        // dispatched ... streams nothing` in test/cancellation.test.ts is what
-        // watches it.
+        // REACHED BY A HANDLER THAT AWAITS BETWEEN YIELDS, which is the shape
+        // that makes a pull long enough to be racing anything: a generator whose
+        // body runs straight to its next yield settles its pull as a microtask
+        // and gives no abort the chance.
         if (context.signal.aborted) {
           // Returning stops DRIVING the generator; the `finally` below is what
           // closes it, and closing it is what runs the config author's
