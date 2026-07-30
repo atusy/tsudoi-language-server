@@ -7,9 +7,10 @@ import { createWorkspaceFolders } from "../src/workspace.ts";
  * `initialize`.
  *
  * THROUGH THE HANDLE AND NOT AROUND IT: the mirror's rules -- what an omitted
- * list means, that nothing is normalised, that a duplicate is held twice -- live
- * in `initialize`, and a store built from a bare array here would answer about a
- * list this module assembled for itself.
+ * list means, that nothing is dropped, that a duplicate is held twice -- live in
+ * `initialize`, and a store built from a bare array here would answer about a
+ * list this module assembled for itself. It is also `initialize` that builds the
+ * lookup's index, so a row reaching past it would not exercise the build at all.
  */
 function storeOf(folders: readonly WorkspaceFolder[]) {
   const handle = createWorkspaceFolders();
@@ -26,29 +27,34 @@ function folder(uri: string, name: string): WorkspaceFolder {
 }
 
 /**
- * One lookup: the mirror a client left, the uri asked about, and the NAME of the
- * folder that must answer -- `undefined` for `no folder covers this`.
+ * One lookup: the mirror a client left, the uri asked about, and the NAMES of
+ * every folder that must answer -- `[]` for `no folder covers this`.
  *
- * THE NAME AND NOT THE URI IS THE EXPECTATION, and it is what several rows below
- * turn on: two entries may carry the SAME uri, and two spellings of one
- * directory are two folders, so an assertion made on the uri would be satisfied
- * by the wrong entry in exactly the cases written to tell them apart.
+ * NAMES AND NOT URIS ARE THE EXPECTATION, and it is what several rows below turn
+ * on: two entries may carry the SAME uri, and two spellings of one directory
+ * name one location, so an assertion made on the uri would be satisfied by the
+ * wrong entry in exactly the cases written to tell them apart.
+ *
+ * A LIST AND NOT A SET, ORDERED: where a row expects more than one folder, the
+ * order is the client's own, and a row asserting membership alone would not say
+ * that.
  */
 interface Lookup {
   readonly name: string;
   readonly folders: readonly WorkspaceFolder[];
   readonly uri: string;
-  readonly expected: string | undefined;
+  readonly expected: readonly string[];
 }
 
 const lookups: readonly Lookup[] = [
   {
-    // THE WALK STARTS AT THE URI ITSELF. An implementation opening with `dirname`
-    // answers a folder's own uri with its PARENT's folder, or with nothing.
+    // THE WALK STARTS AT THE URI ITSELF. An implementation opening with the
+    // parent answers a folder's own uri with its PARENT's folder, or with
+    // nothing.
     name: "a folder's own uri answers with that folder",
     folders: [project, notes],
     uri: "file:///home/me/project",
-    expected: "project",
+    expected: ["project"],
   },
   {
     // MORE THAN ONE LEVEL UP, so a walk that takes a single step passes nothing
@@ -56,17 +62,17 @@ const lookups: readonly Lookup[] = [
     name: "a document deep under a folder answers with that folder",
     folders: [project, notes],
     uri: "file:///home/me/project/src/deep/a.ts",
-    expected: "project",
+    expected: ["project"],
   },
   {
     // THE PREFIX PAIR, AND IT IS THE ROW THAT REFUSES `startsWith`:
     // `file:///home/me/proj` IS a string prefix of `file:///home/me/project/a.ts`
     // and is NOT a folder of it. The walk cannot make that mistake because the
-    // ancestor it produces is `…/project`, and `…/proj` is not equal to it.
+    // level it produces is `…/project/`, and `…/proj/` is not equal to it.
     name: "a folder that is a string prefix of the document's folder does not answer for it",
     folders: [folder("file:///home/me/proj", "proj"), project],
     uri: "file:///home/me/project/a.ts",
-    expected: "project",
+    expected: ["project"],
   },
   {
     // THE SAME PAIR THE OTHER WAY, so the row above cannot be passed by an
@@ -75,125 +81,150 @@ const lookups: readonly Lookup[] = [
     name: "the shorter folder of a prefix pair still answers for its own documents",
     folders: [folder("file:///home/me/proj", "proj"), project],
     uri: "file:///home/me/proj/a.ts",
-    expected: "proj",
+    expected: ["proj"],
   },
   {
-    // NESTED FOLDERS RESOLVE INNERMOST-FIRST, and that falls out of the walk
-    // going inward-out rather than from any rule about specificity.
-    name: "a document in a nested folder answers with the innermost one",
+    // NESTED FOLDERS RESOLVE INNERMOST-FIRST, AND ONLY THE INNERMOST ANSWERS.
+    // This is the row that says the answer is ONE LEVEL'S folders and not every
+    // ancestor's: an implementation collecting matches all the way up answers
+    // `["inner", "outer"]` here.
+    name: "a document in a nested folder answers with the innermost one alone",
     folders: [folder("file:///w", "outer"), folder("file:///w/inner", "inner")],
     uri: "file:///w/inner/a.ts",
-    expected: "inner",
+    expected: ["inner"],
   },
   {
-    // THE SAME NESTING IN THE OTHER MIRROR ORDER. Mirror order decides between
-    // folders AT ONE LEVEL and nothing else -- an implementation that scanned
-    // the mirror first and walked second would answer `outer` here.
+    // THE SAME NESTING IN THE OTHER MIRROR ORDER. Mirror order is the
+    // PRESENTATION order among folders AT ONE LEVEL and decides nothing between
+    // levels -- an implementation that scanned the mirror first and walked
+    // second would answer `outer` here.
     name: "nesting is resolved by the walk and not by mirror order",
     folders: [folder("file:///w/inner", "inner"), folder("file:///w", "outer")],
     uri: "file:///w/inner/a.ts",
-    expected: "inner",
+    expected: ["inner"],
   },
   {
-    // THE LAST ANCESTOR IS `<scheme>://<authority>/`, AND THIS IS THE ROW THAT
-    // SAYS SO: a walk that stops one level short answers `undefined` for every
-    // document in a session whose folder is the filesystem root.
+    // THE WALK REACHES THE ROOT, AND THIS IS THE ROW THAT SAYS SO: a walk that
+    // stops one level short answers nothing for every document in a session
+    // whose folder is the filesystem root.
     name: "the filesystem root answers as a folder, since the walk reaches it",
     folders: [folder("file:///", "root")],
     uri: "file:///home/me/a.ts",
-    expected: "root",
+    expected: ["root"],
   },
   {
-    // A FOLDER HELD WITH A TRAILING SLASH IS FOUND WITHOUT ONE BEING INVENTED
-    // FOR IT: the ancestor is `…/plain`, the held uri is `…/plain/`, and the
-    // probe of both forms is what closes the gap. Normalising either side would
-    // rewrite what the client sent.
+    // A FOLDER HELD WITH A TRAILING SLASH AND A DOCUMENT UNDER IT MEET BECAUSE
+    // BOTH SIDES ARE PUT IN THE TRAILING-SLASH FORM. Put only one side in it and
+    // this still passes, which is why the row below and the cross-spelling rows
+    // further down are the ones that discriminate.
     name: "a folder held with a trailing slash answers for the documents under it",
     folders: [folder("file:///home/me/plain/", "slashed")],
     uri: "file:///home/me/plain/a.ts",
-    expected: "slashed",
+    expected: ["slashed"],
   },
   {
-    // AND AT THE FIRST LEVEL TOO, where the ancestor IS the uri asked about.
+    // THE URI ASKED ABOUT IS THE FOLDER, SPELLED WITHOUT THE SLASH THE CLIENT
+    // SENT. The walk is no help here -- the level above `…/plain` is `…/me/` --
+    // so this row is carried entirely by the uri asked about being put in the
+    // trailing-slash form too, at the level where it is its own candidate.
     name: "a folder held with a trailing slash answers for its own bare uri",
     folders: [folder("file:///home/me/plain/", "slashed")],
     uri: "file:///home/me/plain",
-    expected: "slashed",
+    expected: ["slashed"],
   },
   {
-    // THE URI ASKED ABOUT CARRIES THE SLASH INSTEAD. The match is at the SECOND
-    // level here -- the first level probes `…/plain/` and `…/plain//`, neither of
-    // which is held -- so a walk that stopped as soon as it had probed the uri
-    // itself would answer nothing.
+    // AND THE MIRROR IMAGE: the slash is on the uri asked about and not on the
+    // folder.
     name: "a trailing slash on the uri asked about does not hide the folder",
     folders: [project],
     uri: "file:///home/me/project/",
-    expected: "project",
+    expected: ["project"],
   },
   {
-    // BOTH SPELLINGS HELD AT ONCE, WHICH nvim ACCEPTS AS TWO FOLDERS. They are
-    // equally specific, so the tie is decided by the rule the mirror already has
-    // -- FIRST IN MIRROR ORDER -- and not by a preference for either spelling.
-    name: "with both spellings of one directory held, the first in mirror order answers",
+    // BOTH SPELLINGS OF ONE DIRECTORY HELD AT ONCE, WHICH nvim ACCEPTS AS TWO
+    // FOLDERS. They name ONE location, so both answer: choosing between them
+    // would be tsudoi deciding on its own authority which of two things the
+    // client said it did not mean.
+    name: "with both spellings of one directory held, both answer, in mirror order",
     folders: [folder("file:///home/me/plain", "bare"), folder("file:///home/me/plain/", "slashed")],
     uri: "file:///home/me/plain/a.ts",
-    expected: "bare",
+    expected: ["bare", "slashed"],
   },
   {
-    // THE SAME PAIR IN THE OTHER ORDER, AND IT IS THE ROW THAT REFUSES AN INDEX
-    // PROBED IN A FIXED ORDER: a lookup asking for the bare form before the
-    // slashed one answers `bare` here, which is the entry the client listed
-    // SECOND.
-    name: "with both spellings held, the slashed one answers when the client listed it first",
+    // THE SAME PAIR IN THE OTHER ORDER, AND IT IS THE ROW THAT PINS MIRROR ORDER
+    // AS THE PRESENTATION ORDER: an index that appended in any order of its own
+    // -- by spelling, by insertion into a keyed bucket it sorted -- answers
+    // `["bare", "slashed"]` here too.
+    name: "the client's order is the order both spellings are presented in",
     folders: [folder("file:///home/me/plain/", "slashed"), folder("file:///home/me/plain", "bare")],
     uri: "file:///home/me/plain/a.ts",
-    expected: "slashed",
+    expected: ["slashed", "bare"],
   },
   {
-    // THE DUPLICATE THE MIRROR DELIBERATELY KEEPS. Two entries, one uri: the
-    // first answers, for the same reason it does above.
-    name: "a uri held twice answers with the entry the client listed first",
+    // THE DUPLICATE THE MIRROR DELIBERATELY KEEPS. Two entries, one uri, and the
+    // lookup hands back both rather than picking the one the client is presumed
+    // to have meant.
+    name: "a uri held twice answers with both entries, in the order the client sent them",
     folders: [
       folder("file:///home/me/project", "first"),
       folder("file:///home/me/project", "second"),
     ],
     uri: "file:///home/me/project/a.ts",
-    expected: "first",
+    expected: ["first", "second"],
   },
   {
-    // NO FOLDER COVERS IT, and `undefined` is the answer rather than a guess at
-    // the nearest one. This is the row an implementation returning the first
+    // MULTIPLICITY COMES FROM SPELLINGS AND NEVER FROM NESTING, and this row is
+    // the pair to the nesting rows above: two folders that look nothing alike as
+    // strings name ONE location, so both answer at ONE level.
+    name: "two unlike spellings of one location both answer, in mirror order",
+    folders: [folder("file://LOCALHOST/a", "localhost"), folder("file:///a", "empty authority")],
+    uri: "file:///a/x.ts",
+    expected: ["localhost", "empty authority"],
+  },
+  {
+    // NO FOLDER COVERS IT, and the empty list is the answer rather than a guess
+    // at the nearest one. This is the row an implementation returning the first
     // folder unconditionally fails.
     name: "a document under no folder answers with nothing",
     folders: [project, notes],
     uri: "file:///elsewhere/a.ts",
-    expected: undefined,
+    expected: [],
   },
   {
     // AN EMPTY MIRROR, which is what a client that named no workspace leaves.
     name: "a client that named no folders answers with nothing",
     folders: [],
     uri: "file:///home/me/project/a.ts",
-    expected: undefined,
+    expected: [],
   },
   {
-    // THE UNSAVED BUFFER, which every editor sends: `untitled:` names no
-    // authority, so there is nothing to walk and the uri is its own only
-    // candidate. A CONFIG AUTHOR MUST NOT HAVE TO DEFEND THE CALL, so this
-    // answers `undefined` rather than throwing.
+    // THE UNSAVED BUFFER, which every editor sends. `untitled:` names no path to
+    // climb, so the uri is its own only candidate. A CONFIG AUTHOR MUST NOT HAVE
+    // TO DEFEND THE CALL, so this answers an empty list rather than throwing.
     name: "a non-hierarchical uri answers with nothing rather than throwing",
     folders: [project],
     uri: "untitled:Untitled-1",
-    expected: undefined,
+    expected: [],
   },
   {
-    // AND IF A CLIENT HOLDS ONE AS A FOLDER, it is still found -- the walk starts
-    // at the uri itself, so the answer does not depend on the scheme being
-    // hierarchical.
+    // AND IF A CLIENT HOLDS ONE AS A FOLDER, it is still found -- the uri is its
+    // own first candidate, so the answer does not depend on the scheme naming a
+    // hierarchy.
     name: "a non-hierarchical uri held as a folder answers with itself",
     folders: [folder("untitled:Untitled-1", "unsaved")],
     uri: "untitled:Untitled-1",
-    expected: "unsaved",
+    expected: ["unsaved"],
+  },
+  {
+    // AND TWO UNSAVED BUFFERS ARE TWO LOCATIONS. Putting a non-hierarchical uri
+    // in the trailing-slash form makes a string no client sent, and this row is
+    // what says the string is nonetheless INJECTIVE enough to tell two of them
+    // apart -- both sides go through the same construction, so the only thing
+    // that can collide is two uris that already named one thing.
+    name: "one unsaved buffer does not answer for another",
+    folders: [folder("untitled:Untitled-1", "unsaved")],
+    uri: "untitled:Untitled-2",
+    expected: [],
   },
   {
     // THE EMPTY STRING. Nothing in the protocol forbids a client sending one,
@@ -201,121 +232,244 @@ const lookups: readonly Lookup[] = [
     name: "the empty string answers with nothing",
     folders: [project],
     uri: "",
-    expected: undefined,
+    expected: [],
   },
   {
-    // AND A STRING THAT IS NOT A URI AT ALL, which `new URL` would have thrown
-    // on.
+    // AND A STRING THAT IS NOT A URI AT ALL, which every parse of it throws on.
     name: "a malformed uri answers with nothing",
     folders: [project],
     uri: "not a uri",
-    expected: undefined,
+    expected: [],
   },
   {
-    // A QUERY IS PART OF THE BYTES AND IS NOT STRIPPED, and this row proves the
-    // walk survives one CONTAINING A SLASH: the first ancestors it produces are
-    // cut inside the query and match nothing, and the walk goes on to reach the
-    // real folder.
+    // A FOLDER NO PARSER ACCEPTS IS UNREACHABLE THROUGH THE LOOKUP AND DOES NOT
+    // COST THE MIRROR THE REST: it is skipped when the index is built, the
+    // folders around it still answer, and `values()` still hands it over --
+    // asserted below, since this table only sees `get`.
+    name: "a folder whose uri no parser accepts does not cost the other folders their answers",
+    folders: [folder("not a uri", "junk"), project],
+    uri: "file:///home/me/project/a.ts",
+    expected: ["project"],
+  },
+  {
+    // THE NON-CONFORMING ENTRY THE MIRROR PASSES THROUGH. `initialize` writes
+    // `[5]` down as it arrived, and the index is built from the same list, so
+    // this row says the build reads `uri` off it without throwing and without
+    // taking the neighbouring folder's answer away. The build runs inside
+    // `initialize`, whose handler answers -32603 on a throw and leaves the author
+    // an editor with no server.
+    name: "an entry that is not a folder at all does not cost the other folders their answers",
+    folders: [5 as unknown as WorkspaceFolder, project],
+    uri: "file:///home/me/project/a.ts",
+    expected: ["project"],
+  },
+  {
+    // A QUERY IS NOT PART OF THE LOCATION. The uri's own candidate carries it and
+    // matches nothing; every level above is the parse's own directory, which the
+    // query never entered. The slash INSIDE the query is what makes this a row
+    // rather than a restatement -- a walk cutting the bytes at the last slash
+    // would climb into it.
     name: "a query containing a slash does not hide the document's folder",
     folders: [project],
     uri: "file:///home/me/project/a.ts?path=/etc/hosts",
-    expected: "project",
+    expected: ["project"],
   },
   {
     // THE SAME FOR A FRAGMENT.
     name: "a fragment does not hide the document's folder",
     folders: [project],
     uri: "file:///home/me/project/a.ts#L10",
-    expected: "project",
+    expected: ["project"],
   },
   {
-    // A NON-EMPTY AUTHORITY, so the boundary is derived from where the authority
-    // ENDS rather than from a fixed offset that only suits `file:///`.
+    // A NON-EMPTY AUTHORITY, and the walk ends at THAT authority's root rather
+    // than at some fixed `file:///`.
     name: "a uri with a non-empty authority walks up to that authority's root",
     folders: [folder("file://host/", "host root")],
     uri: "file://host/a/b.ts",
-    expected: "host root",
+    expected: ["host root"],
   },
   {
-    // THE WALK NEVER REACHES A SCHEME-ONLY ANCESTOR, and this row is what says
-    // so: cutting at the last slash without a boundary produces `file://` and
-    // then `file:/`, so an unbounded walk answers `single` for a document that
-    // has nothing to do with it -- and, before that, spins on a uri that is all
-    // slashes.
-    name: "a walk stops at the authority and never produces a scheme-only ancestor",
-    folders: [folder("file:/", "single")],
+    // AND IT DOES NOT CLIMB OUT OF THE AUTHORITY: a folder at another authority's
+    // root is not an ancestor of this document, however far the walk goes.
+    name: "the walk does not climb out of the authority it started in",
+    folders: [folder("file:///", "local root")],
+    uri: "file://host/a/b.ts",
+    expected: [],
+  },
+  {
+    // `file:/`, `file://` AND `file:///` ARE THREE SPELLINGS OF THE ROOT, and the
+    // parse says so on both sides at once. A client holding any of them is found
+    // for a document under any other.
+    name: "the single-slash spelling of the root answers for a document under it",
+    folders: [folder("file:/", "root")],
     uri: "file:///a.ts",
-    expected: undefined,
+    expected: ["root"],
   },
   {
-    // A URI WITH NO `//` AT ALL IS ITS OWN ONLY CANDIDATE, and the cost is
-    // stated: a client holding `file:/home` as a folder is not found for
-    // `file:/home/a.ts`, because locating a root in a path with no authority
-    // marker would mean interpreting the scheme, which is the mirror's own
-    // refusal.
-    name: "a uri with no authority marker is not walked",
-    folders: [folder("file:/home", "single")],
-    uri: "file:/home/a.ts",
-    expected: undefined,
-  },
-  {
-    // `file://` IS THE AUTHORITY-EMPTY SPELLING OF THE ROOT, and probing both
-    // forms answers it with the root folder without a special case for either.
+    // THE AUTHORITY-EMPTY SPELLING ASKED ABOUT, answered by the folder the client
+    // spelled in full.
     name: "the authority-empty spelling of the root finds the root folder",
     folders: [folder("file:///", "root")],
     uri: "file://",
-    expected: "root",
+    expected: ["root"],
   },
   {
-    // TERMINATION, PINNED. Every ancestor here is junk and none matches, so the
-    // only thing this row can measure is that the walk ENDS -- a walk that fails
-    // to would hang the suite rather than fail it, which is the failure a green
-    // run cannot show.
+    // AND THE SINGLE-SLASH SPELLING DEEPER IN. `file:/home` is the legal RFC 3986
+    // spelling of `file:///home`, so a client holding one answers for a document
+    // spelled the other way -- there is no side of this comparison that keeps a
+    // client's bytes and therefore no spelling that has to be matched exactly.
+    name: "a single-slash file uri and its three-slash spelling are one location",
+    folders: [folder("file:/home", "home")],
+    uri: "file:///home/a.ts",
+    expected: ["home"],
+  },
+  {
+    // TERMINATION, PINNED. Every level here is junk and none matches, so the only
+    // thing this row can measure is that the walk ENDS -- a walk that failed to
+    // would hang the suite rather than fail it, which is the failure a green run
+    // cannot show. The two runtimes disagree on what the intermediate levels of
+    // this uri even are, and nothing here reads them: the walk stops when a level
+    // is its own parent, which both reach.
     name: "a uri that is nothing but slashes terminates",
     folders: [project],
     uri: "file://///////",
-    expected: undefined,
+    expected: [],
   },
 ];
 
-for (const lookup of lookups) {
+/**
+ * THE CROSS-SPELLING ROWS, KEPT TOGETHER BECAUSE THEY MAKE ONE CLAIM: a folder
+ * and a document that name ONE location meet, however differently the client
+ * spelled them. Each is a mismatch a real client produces, and each is a row that
+ * an implementation normalising the DOCUMENT's side alone -- and comparing the
+ * result against the folder's bytes -- fails, since the bytes on the left of each
+ * pair are exactly what the parse rewrites.
+ */
+const spellings: readonly Lookup[] = [
+  {
+    // `localhost` IS THE EMPTY AUTHORITY for `file:`, per the URL Standard, and
+    // clients differ on which they send.
+    name: "a folder at file://LOCALHOST answers for a document spelled with the empty authority",
+    folders: [folder("file://LOCALHOST/a/b", "localhost")],
+    uri: "file:///a/b/c.ts",
+    expected: ["localhost"],
+  },
+  {
+    // THE SCHEME IS CASE-INSENSITIVE, and a client that upcased it named the same
+    // folder.
+    name: "an upper-case scheme answers for a document under it",
+    folders: [folder("FILE:///Home/proj", "upper")],
+    uri: "file:///Home/proj/a.ts",
+    expected: ["upper"],
+  },
+  {
+    // DOT SEGMENTS RESOLVE, so a folder reached through `..` is the folder it
+    // resolves to.
+    name: "a folder uri carrying dot segments answers for the documents under where it resolves",
+    folders: [folder("file:///a/../a/b", "dots")],
+    uri: "file:///a/b/c.ts",
+    expected: ["dots"],
+  },
+  {
+    // PERCENT-ENCODING IS RECONCILED, which is the mismatch clients produce most:
+    // a space in a path is `%20` from one and a literal space from another.
+    name: "a percent-encoded folder uri answers for a document spelled with the literal character",
+    folders: [folder("file:///p%20q", "encoded")],
+    uri: "file:///p q/a.ts",
+    expected: ["encoded"],
+  },
+  {
+    // AND THE CASE OF THE PATH IS NOT RECONCILED. The parse lowercases the scheme
+    // and the host and leaves the path alone, so two folders differing in path
+    // case stay two locations -- stated because the rows above could be read as
+    // `spelling never matters`.
+    name: "two folder uris differing in the case of their path are two locations",
+    folders: [folder("file:///Home/proj", "upper H")],
+    uri: "file:///home/proj/a.ts",
+    expected: [],
+  },
+];
+
+for (const lookup of [...lookups, ...spellings]) {
   test(`get: ${lookup.name}`, () => {
     const handle = storeOf(lookup.folders);
 
-    expect(handle.folders.get(lookup.uri)?.name).toBe(lookup.expected);
+    expect(handle.folders.get(lookup.uri).map((held) => held.name)).toEqual([...lookup.expected]);
   });
 }
 
 /**
  * THE ENTRY ITSELF AND NOT A FOLDER BUILT TO DESCRIBE IT. The table above
- * asserts on `name`, which a synthesised `{ uri, name }` would satisfy; this
- * says the object handed over is the one the client sent, so `name` is the
- * client's label rather than something tsudoi wrote.
+ * asserts on `name`, which a synthesised `{ uri, name }` would satisfy; this says
+ * the objects handed over are the ones the client sent, so `name` is the client's
+ * label rather than something tsudoi wrote.
  */
-test("get hands back the client's own entry", () => {
+test("get hands back the client's own entries", () => {
   const handle = storeOf([project]);
 
-  expect(handle.folders.get("file:///home/me/project/a.ts")).toBe(project);
+  expect(handle.folders.get("file:///home/me/project/a.ts")[0]).toBe(project);
+});
+
+/**
+ * AN EMPTY LIST AND NEVER `undefined`, so `for (const folder of store.get(uri))`
+ * needs no guard in front of it. `no folder covers this` and `matched nothing`
+ * are one state here, and nothing is lost by spelling them the same way.
+ */
+test("get answers a uri no folder covers with an empty list rather than undefined", () => {
+  const handle = storeOf([project]);
+
+  expect(handle.folders.get("file:///elsewhere/a.ts")).toEqual([]);
+  expect([...handle.folders.get("file:///elsewhere/a.ts")]).toEqual([]);
 });
 
 /**
  * THE LIVE HALF OF `get`, paired with the one `values()` has: the store is one
  * object for the session, so a folder added mid-session answers from the same
- * store a handler is already holding.
+ * store a handler is already holding. The lookup's index is built where the
+ * mirror is written, and this is the row that says the two are written together.
  */
 test("get answers from the mirror as of the call", () => {
   const handle = storeOf([]);
 
-  expect(handle.folders.get("file:///home/me/project/a.ts")).toBeUndefined();
+  expect(handle.folders.get("file:///home/me/project/a.ts")).toEqual([]);
   handle.change({ added: [project], removed: [] });
 
-  expect(handle.folders.get("file:///home/me/project/a.ts")).toBe(project);
+  expect(handle.folders.get("file:///home/me/project/a.ts")).toEqual([project]);
+});
+
+/**
+ * AND THE SAME FOR A REMOVAL, which is the direction an index that is built once
+ * and never rebuilt goes on answering in: a folder the user dropped would keep
+ * answering for every document under it for the rest of the session, while the
+ * row above stays green.
+ */
+test("a folder the client removed stops answering", () => {
+  const handle = storeOf([project]);
+
+  handle.change({ added: [], removed: [project] });
+
+  expect(handle.folders.get("file:///home/me/project/a.ts")).toEqual([]);
 });
 
 test("values() hands back what the client sent, in mirror order", () => {
   const handle = storeOf([project, notes]);
 
   expect([...handle.folders.values()]).toEqual([project, notes]);
+});
+
+/**
+ * WHAT THE LOOKUP CANNOT REACH, THE MIRROR STILL HOLDS. A folder uri no parser
+ * accepts is skipped when the index is built -- there is no location to file it
+ * under -- and that is a limit on `get` alone: the mirror reports what the client
+ * sent, and dropping an entry from it would be tsudoi deciding the client did not
+ * send it.
+ */
+test("values() still hands over a folder the lookup cannot reach", () => {
+  const junk = folder("not a uri", "junk");
+  const handle = storeOf([junk, project]);
+
+  expect([...handle.folders.values()]).toEqual([junk, project]);
 });
 
 /**
@@ -346,4 +500,19 @@ test("an iterable taken before a change still answers the folders it was taken w
   handle.change({ added: [notes], removed: [] });
 
   expect([...taken]).toEqual([project]);
+});
+
+/**
+ * AND THE SAME PROMISE FOR `get`, which hands back a list rather than an
+ * iterable: the index is REBUILT where the mirror is replaced, never written
+ * into, so a list a handler took before a change still answers about the moment
+ * it was taken.
+ */
+test("a list taken from get before a change still answers the folders it was taken with", () => {
+  const handle = storeOf([project]);
+  const taken = handle.folders.get("file:///home/me/project/a.ts");
+
+  handle.change({ added: [folder("file:///home/me/project/", "slashed")], removed: [] });
+
+  expect(taken).toEqual([project]);
 });

@@ -88,7 +88,7 @@ async function complete(
       // ARRAY: an array answers `values()` and would satisfy a store missing its
       // lookup, so spelling both members is what keeps this literal modelling
       // the surface a handler is actually handed.
-      workspaceFolders: { get: () => undefined, values: () => [] },
+      workspaceFolders: { get: () => [], values: () => [] },
       rootUri: null,
       rootPath: null,
       // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole

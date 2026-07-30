@@ -59,44 +59,62 @@ export interface DocumentStore {
  */
 export interface WorkspaceFolderStore {
   /**
-   * THE FOLDER A URI BELONGS TO -- the INNERMOST one the client holds that
-   * covers it -- or `undefined` where it holds none.
+   * EVERY FOLDER THE CLIENT HOLDS AT THE INNERMOST LOCATION COVERING `uri`, in
+   * the order the client sent them -- or an EMPTY LIST where it holds none.
    *
-   * FOUND BY WALKING UP FROM `uri` BY DIRNAME AND TAKING THE FIRST EXACT MATCH,
-   * which is worth knowing because it is what the answer MEANS: nothing but
-   * exact string equality is ever used, so this asks the same question of a
-   * folder uri that the mirror does and never a looser one. Two things fall out
-   * of that and can be relied on:
+   * NOT `EVERY ANCESTOR'S FOLDERS`, and that is the reading to guard against:
+   * the walk climbs from `uri` and STOPS at the first location that holds
+   * anything, so a document inside `file:///w/inner` inside `file:///w` answers
+   * with `inner` ALONE. Nesting still resolves to one folder. The list is longer
+   * than one only when SEVERAL FOLDERS NAME ONE LOCATION.
    *
-   *   - `file:///home/me/proj` CANNOT ANSWER FOR a document in
-   *     `file:///home/me/project`, though it is a string prefix of it. The
-   *     ancestor the walk produces is `…/project`, which is not `…/proj`.
-   *   - NESTED FOLDERS RESOLVE TO THE INNERMOST, because the walk goes
-   *     inward-out and stops at the first level that answers. Mirror order
-   *     decides only between folders AT THE SAME LEVEL.
+   * WHICH THEY DO, AND WHY YOU ARE HANDED ALL OF THEM. A client may hold one uri
+   * TWICE, or hold `…/plain` beside `…/plain/`, or `file://LOCALHOST/a` beside
+   * `file:///a`; this mirror keeps all of them, because it reports client state
+   * rather than interpreting it. Returning ONE would be tsudoi deciding on its
+   * own authority which of two things the client said it did not mean, so there
+   * is no tie-break rule to learn -- you get both, and the client's own order is
+   * the order they are PRESENTED in rather than a ranking.
+   *
+   * AN EMPTY LIST AND NEVER `undefined`, so
+   * `for (const folder of tsudoi.workspaceFolders.get(uri))` needs nothing in
+   * front of it. THIS DIFFERS FROM `DocumentStore.get` DELIBERATELY, and the
+   * difference is visible enough to be worth the reason: that one answers a
+   * yes/no question about ONE document, where `undefined` is the `no`. This one
+   * answers HOW MANY folders cover a uri, and `no folder covers this` and
+   * `matched nothing` are the same state -- so nothing you could have acted on
+   * is lost by spelling them the same way.
+   *
+   * MATCHED BY LOCATION AND NOT BY BYTES: both the uri you pass and the uri the
+   * client sent go through the SAME parse before they are compared, so spellings
+   * that differ where the URL Standard says they name one thing MEET. A
+   * `file://LOCALHOST/…` folder answers for a `file:///…` document, an upper-case
+   * scheme answers for a lower-case one, `..` segments resolve, and `%20` meets a
+   * literal space. THE PATH'S CASE IS NOT AMONG THEM -- `…/Home` and `…/home`
+   * stay two locations, which is that standard's own line.
+   *
+   * NORMALISING IS NOT LOOSENING, and the prefix pair is where you can see it:
+   * `file:///home/me/proj` CANNOT ANSWER FOR a document in
+   * `file:///home/me/project`. The location the walk produces is `…/project/`,
+   * which is not `…/proj/`; nothing here matches on prefixes.
    *
    * A FOLDER IS FOUND WHETHER OR NOT IT WAS SENT WITH A TRAILING SLASH, and so
-   * is one you ask about with one: both spellings are probed at every level, and
-   * neither the uri you pass nor the uri the client sent is rewritten to make
-   * them meet.
-   *
-   * WHERE TWO FOLDERS SIT AT ONE LEVEL -- a uri the client sent TWICE, or both
-   * spellings of one directory, both of which this mirror keeps -- THE FIRST IN
-   * MIRROR ORDER answers. That is the client's order, not a preference of this
-   * lookup's, and nothing may rely on which of the two a client meant.
+   * is one you ask about with one -- both sides are put in the same form, so
+   * neither spelling is a thing you have to get right.
    *
    * NOTHING YOU CAN PASS THROWS. The `untitled:Untitled-1` of an unsaved buffer,
    * a uri carrying a query or a fragment, the empty string, a string that is not
-   * a URI at all: a uri no folder covers is what `undefined` is for, and a
-   * config author should not have to defend the call to find that out.
+   * a URI at all: a uri no folder covers is what the empty list is for, and a
+   * config author should not have to defend the call to find that out. A FOLDER
+   * whose uri no parser accepts is unreachable HERE while `values()` still hands
+   * it over, since the mirror reports what the client sent either way.
    *
    * WHAT IT DOES NOT ASK IS THE FILESYSTEM. This answers about the LIST the
    * client sent, so a folder that does not exist on disk answers for the
-   * documents under it, and a symlink or a `..` in either uri is text like any
-   * other -- two spellings of one directory are two folders here, as they are
-   * everywhere else on this surface.
+   * documents under it, and a symlink is not followed -- two directories that are
+   * one on disk are two locations here.
    */
-  get(uri: string): WorkspaceFolder | undefined;
+  get(uri: string): readonly WorkspaceFolder[];
   /**
    * EXACTLY WHAT THE CLIENT SENT, IN MIRROR ORDER, with nothing dropped, nothing
    * synthesised and nothing reordered.
