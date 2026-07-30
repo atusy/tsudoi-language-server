@@ -38,6 +38,30 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-50",
+      story: {
+        role: "config author",
+        capability:
+          "read a config in this repository that answers from `rootUri` or `rootPath` CORRECTLY, and know it is exercised rather than merely written down",
+        benefit:
+          "when I meet the empty-list-beside-a-populated-root session myself, the handling I copy has been driven by a suite instead of being prose I have to get right on the first try",
+      },
+      status: "draft",
+      acceptance_criteria: [
+        {
+          criterion:
+            "SOMETHING THE SUITE DRIVES OWNS THE TWO HAZARDS PBI-49 LEFT LIVE FOR THE AUTHOR: `pathToFileURL` on a non-absolute `rootPath` yielding the LAUNCH DIRECTORY, and `fileURLToPath` on a `rootUri` naming no local path THROWING IN THE AUTHOR'S OWN HANDLER once per keystroke. NOT A PUBLISHED FUNCTION AND NOT A SECOND EXPORTED NAME -- that is the purchase the stakeholder refused, and this PBI does not reopen it. A CONFIG IN THIS REPOSITORY doing the reduction INLINE, driven end to end, adds nothing to the published surface.",
+          verification:
+            "TO BE AUTHORED AT REFINEMENT. What it must NOT become: a test written for its own sake beside prose nobody reads. The bar is standing item 6's -- a change that breaks it reddens a NAMED assertion -- and the perturbations are already known because PBI-49 measured them: strip the `isAbsolute` check and a folder whose uri contains the launch directory must be named; hand it a `vscode-remote://` root and the throw must be caught rather than reaching the handler.",
+        },
+      ],
+      notes: [
+        "FILED AT SPRINT 45'S SECOND REVIEW, WITH THE STAKEHOLDER'S LIKELY ANSWER ANTICIPATED RATHER THAN ROUTED AROUND: DECLINING THIS IS A COMPLETE ANSWER. It leaves the prose at src/types.ts's `rootUri` and `rootPath` as the accepted defence, which is a real position and not a gap -- provided that prose says plainly that nothing asserts it. The PO's job here is to put the choice in front of the stakeholder with its cost named, not to win it.",
+        "IT DOES NOT TOUCH examples/completion-path.ts, which reads `workspaceFolders` alone BY STAKEHOLDER RULING and stays that way. The subject is a SEPARATE config whose whole point is the deprecated-root reduction, so the example that argues for adoption stays as small as the ruling made it.",
+        "WHY IT IS NOT SIMPLY THE DELETED FUNCTION RESTORED: `foldersWithRootFallback` was withdrawn because A TYPES MODULE EXPORTING A RUNTIME FUNCTION IS INCOHERENT, which is a ruling about the PUBLISHED SURFACE and not about the reduction being wrong. An in-repository config carries the same knowledge with none of the surface, and the two hazards are the part worth carrying.",
+      ],
+    },
+    {
       id: "PBI-49",
       story: {
         role: "config author",
