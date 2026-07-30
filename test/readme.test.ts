@@ -285,11 +285,11 @@ const facts: readonly ReadmeFact[] = [
     // being deleted as redundant, and why the README must keep saying where to
     // stand.
     //
-    // NO COUNT IS CARRIED IN THIS ENTRY, deliberately: the suite grows and any
-    // number moves for reasons that have nothing to do with this fact. The
-    // SHAPE of the failure is worth recording and the number is not -- MEASURED
-    // on a dist/-less `bun test`: 47 fail / 362 pass, with 35 tests not running
-    // at all.
+    // NO TOKEN BELOW ASKS THE README FOR A NUMBER, deliberately: the suite
+    // grows and any count the document carried would go false on its own. The
+    // readings belong in a comment, where they date themselves honestly --
+    // MEASURED on a dist/-less `bun test`: 47 fail / 362 pass, with 35 tests
+    // not running at all.
     name: "`bun test` builds dist/ itself, and only from the repository root",
     tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },
