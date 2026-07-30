@@ -531,10 +531,20 @@ export function editFor(
  * root that is stated twice and reads a relative directory beneath its root
  * exactly as `join` did, which is the half that must not be lost.
  *
- * NO cwd CAN ENTER IT, though `resolve` is the function that would reach for
- * one: every `PathSource.root` is absolute -- `sourcesFor` builds them from a
- * parsed root, a converted URI, or the caller's own `cwd` -- so the first
- * argument always terminates the resolution.
+ * NO cwd CAN SUPPLY A DIRECTORY HERE, which is the guarantee worth having and
+ * the whole of it: every `PathSource.root` is absolute -- `sourcesFor` builds
+ * them from a parsed root, a converted URI, or the caller's own `cwd` -- so no
+ * relative segment survives to be read against wherever the process happens to
+ * be.
+ *
+ * IT CAN SUPPLY A DRIVE, ON WINDOWS, AND THAT IS THE SPELLING'S OWN MEANING
+ * RATHER THAN A LEAK. A fragment written `\foo` is rooted on the CURRENT DRIVE
+ * -- that is what the leading separator with no device means there -- so it
+ * parses to the root `\`, and node fills the letter in from `process.cwd()`.
+ * MEASURED, and the mechanism is visible even off Windows:
+ * `win32.resolve("C:\\proj", "\\")` is `C:\`, the device coming from the root
+ * and not from the directory. A reader looking for a cwd that cannot enter will
+ * find this one, so it is named.
  */
 export function listingDirectory(
   source: PathSource,
