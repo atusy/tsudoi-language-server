@@ -230,10 +230,9 @@ export interface RequestContext {
    *
    * TSUDOI SHIPS NO REDUCTION OVER THE THREE, and that is a decision rather than
    * an omission: a folder carries a `name`, and any reduction has to put
-   * something there that no client said. An author who wants one writes it, and
-   * the two fields below say what each one is safe to assume -- `rootPath` has
-   * already been refused unless absolute, and `rootUri` has not been read at
-   * all.
+   * something there that no client said. An author who wants one writes it, from
+   * the two fields below -- `rootPath` has already been refused unless absolute,
+   * and `rootUri` is the client's bytes, unread.
    *
    * The name is deliberately not `initialWorkspaceFolders`: every exported name
    * here is public API, so a name that became false would have had to stay.
@@ -250,23 +249,6 @@ export interface RequestContext {
    * project the editor opened. An omitted field and an explicit `null` arrive
    * alike; nothing else is normalised, so a URI naming no local path reaches you
    * as the client spelled it rather than being dropped for being unusable.
-   *
-   * WHICH IS THE HAZARD IF YOU TURN IT INTO A PATH: `fileURLToPath` THROWS on a
-   * URI with no local path -- `vscode-remote://` and `ssh://` are the ones an
-   * editor really sends -- and the throw lands in YOUR handler, so a completion
-   * handler that converts this field fails once per keystroke for a user
-   * connected over SSH. A reduction that wants a folder here should catch that
-   * and yield none rather than let it out, and it should carry the client's own
-   * bytes into `uri` rather than a round trip through the URL parser, since
-   * `workspace/didChangeWorkspaceFolders` matches URIs as exact strings.
-   *
-   * NOTHING IN THE SUITE ASSERTS THIS PARAGRAPH, and saying so is what makes
-   * declining a test a decision rather than an oversight. tsudoi never converts
-   * this field, so there is no tsudoi behaviour to pin -- the hazard is real only
-   * inside a handler that converts it, and no such handler ships here. DEFENDED BY
-   * PROSE, UNDEFENDED BY THE SUITE, and deliberately not Sprint 40's `detected on
-   * the rest`: that ruling's bypass route carried a rot detector and this carries
-   * nothing at all.
    */
   readonly rootUri: string | null;
   /**
