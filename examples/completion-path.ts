@@ -1,10 +1,32 @@
 /**
  * Path completion for a config author's own `textDocument/completion` handler.
+ *
+ * WHAT THIS DOES ON WINDOWS, BECAUSE THIS FILE IS COPIED AND THE ANSWER TRAVELS
+ * WITH IT. Every separator decision here is asked of `node:path` rather than
+ * spelled out, so the module reads `C:\Users\fo` on Windows and `a\b` as an
+ * ordinary filename on posix WITHOUT a branch on the platform: the flavour is a
+ * parameter, defaulting to the host's own. That default is the right answer in
+ * every deployment; it is a parameter so the Windows reading can be MEASURED on
+ * a CI machine that has no Windows, which is the only way this file's Windows
+ * behaviour is defended at all.
+ *
+ * FORWARD SLASHES ARE ACCEPTED ON WINDOWS, and not as a courtesy: editors and
+ * users both produce them there, and node's win32 flavour already reads them as
+ * separators. test/completion-path.test.ts asserts that rather than trusting it.
+ *
+ * TWO WINDOWS SPELLINGS ARE OUT OF SCOPE, stated here rather than left to be
+ * discovered, with the decision written where it is taken:
+ *
+ *   - DRIVE-RELATIVE paths (`C:foo`, meaning `relative to the current directory
+ *     ON DRIVE C`) contribute NO SOURCE at all -- see `sourcesFor`.
+ *   - A UNC SHARE NAME STILL BEING TYPED (`\\server\sh`) completes nothing; a
+ *     COMPLETE share (`\\server\share\fo`) is served like any other root -- see
+ *     `sourcesFor` again.
  */
 
 import type { Dirent } from "node:fs";
 import { opendir, stat } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import nodePath, { basename, dirname, type PlatformPath } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import type { RequestContext } from "@atusy/tsudoi/types";
@@ -12,9 +34,11 @@ import { type CompletionParams } from "@atusy/tsudoi/deps/protocol";
 import {
   type CompletionItem,
   CompletionItemKind,
+  type InsertReplaceEdit,
   type MarkupContent,
   MarkupKind,
   type Position,
+  type TextEdit,
   type WorkspaceFolder,
 } from "@atusy/tsudoi/deps/types";
 
@@ -24,7 +48,12 @@ export interface PathFragment {
   readonly text: string;
   /** Where `text` begins on the line, in UTF-16 code units, as LSP counts. */
   readonly start: number;
-  /** Up to and including the last separator -- e.g. `src/`, or `` for none. */
+  /**
+   * Up to and including the last separator -- e.g. `src/`, `C:\Users\`, or ``
+   * for none. WHICH CHARACTERS COUNT AS SEPARATORS IS THE FLAVOUR'S, never this
+   * file's: a backslash cuts on Windows and is a legal filename character on
+   * posix, and the two readings must not be merged.
+   */
   readonly directory: string;
   /** What follows it -- e.g. `fo`. The filter, and possibly empty. */
   readonly name: string;
@@ -52,8 +81,16 @@ export interface PathFragment {
  *
  * Slicing is by UTF-16 code unit, as LSP counts -- iterating code points would
  * drift on the first character outside the BMP.
+ *
+ * `flavour` IS WHAT MAKES THE WINDOWS READING TESTABLE, and it defaults to the
+ * host's own so no caller has to know it exists. Pass `path.win32` to read a
+ * line the way Windows would on a machine that is not Windows.
  */
-export function pathFragments(line: string, character: number): PathFragment[] {
+export function pathFragments(
+  line: string,
+  character: number,
+  flavour: PlatformPath = nodePath,
+): PathFragment[] {
   const isBoundary = (index: number): boolean => /\s/u.test(line[index] ?? " ");
   // Also covers `character === 0`, where index -1 reads as whitespace.
   if (isBoundary(character - 1)) {
@@ -71,6 +108,9 @@ export function pathFragments(line: string, character: number): PathFragment[] {
     end += 1;
   }
   const fragments: PathFragment[] = [];
+  // ASKED OF THE FLAVOUR ONCE, above the loop: the answer cannot change between
+  // candidates, and every candidate needs it.
+  const cutters = separatorsOf(flavour);
   // Downwards from the cursor, so the list comes out shortest-first with no
   // reversal to keep in step with the caller's preference order.
   for (let start = character - 1; start >= 0; start--) {
@@ -79,17 +119,54 @@ export function pathFragments(line: string, character: number): PathFragment[] {
       continue;
     }
     if (start === 0 || isBoundary(start - 1)) {
-      fragments.push(fragmentAt(line, start, character, end));
+      fragments.push(fragmentAt(line, start, character, end, cutters));
     }
   }
   return fragments;
 }
 
-function fragmentAt(line: string, start: number, character: number, end: number): PathFragment {
+/**
+ * Which characters this flavour reads as separators, ASKED OF THE FLAVOUR
+ * rather than written down.
+ *
+ * The list of two is the whole alphabet there is to ask about; which of them
+ * ANSWERS is the flavour's, and asking is what makes `Windows accepts a forward
+ * slash` a measurement in every run rather than a claim in a comment that would
+ * outlive the day someone checked it. `parse` is the reader because it is the
+ * one that already knows: a character it cuts `a?b` at is a separator, and one
+ * it leaves alone is a filename character.
+ *
+ * NOT `flavour.sep` ALONE, which is exactly the fix that ships the defect back:
+ * win32's `sep` is the backslash, and a module cutting on `sep` would stop
+ * reading the forward slashes Windows editors actually emit.
+ */
+function separatorsOf(flavour: PlatformPath): readonly string[] {
+  return ["/", "\\"].filter((candidate) => flavour.parse(`a${candidate}b`).base === "b");
+}
+
+function fragmentAt(
+  line: string,
+  start: number,
+  character: number,
+  end: number,
+  cutters: readonly string[],
+): PathFragment {
   const text = line.slice(start, character);
   // Everything after the last separator is the FILTER for ONE directory
   // listing. That split is what makes this completion per segment.
-  const cut = text.lastIndexOf("/") + 1;
+  //
+  // A SCAN FOR THE LAST SEPARATOR, AND NOT `parse(text).base`, WHICH IS WRONG ON
+  // THE CENTRAL CASE -- measured: `parse("notes/").base` is `notes`, because
+  // parse discards a trailing separator. Deriving the cut from its length would
+  // split `notes/` into `n` and `otes/`, and every item built from it would
+  // insert a mangled path over a range that is otherwise correct. The scan also
+  // keeps the separator THE USER TYPED, which `parse` normalises away: a
+  // `C:/Users/` fragment must complete to `C:/Users/foo.txt` and not to
+  // `C:\Users\foo.txt` over the top of what they wrote.
+  let cut = 0;
+  for (const cutter of cutters) {
+    cut = Math.max(cut, text.lastIndexOf(cutter) + 1);
+  }
   return {
     text,
     start,
@@ -179,14 +256,55 @@ export interface PathCompletionOptions {
    * would turn a permission a runtime withholds into a failed HANDSHAKE.
    */
   readonly cwd?: string;
+  /**
+   * How a path is spelled: `path.win32`, `path.posix`, or the host's own, which
+   * is the default and what a config author wants.
+   *
+   * IT IS HERE FOR THE TESTS AND SAID SO PLAINLY. Every Windows claim this file
+   * makes is measured by handing `path.win32` in from a macOS or Linux runner,
+   * and without a seam the Windows half would be defended by nothing but the
+   * comments describing it -- which is the state the platform defect was found
+   * in. A config author on Windows changes nothing: the default IS win32 there.
+   */
+  readonly flavour?: PlatformPath;
 }
 
 /**
  * The roots that make sense for THIS fragment.
  *
- * A fragment beginning at `/` is answered by the absolute source ALONE. The
- * negative half is the rule: without it, typing `/` offers the current
- * directory's children beside the filesystem root's.
+ * A fragment the flavour calls ABSOLUTE is answered by the absolute source
+ * ALONE, rooted at THE FRAGMENT'S OWN ROOT -- `/` on posix, `C:\` or `C:/` or
+ * `\\server\share\` on Windows. The negative half is the rule: without it,
+ * typing `/` offers the current directory's children beside the filesystem
+ * root's.
+ *
+ * ASKED OF THE FLAVOUR, NEVER OF THE TEXT. `startsWith("/")` is the reading that
+ * makes this file's Windows behaviour an empty popup: `C:\Users\fo` is not
+ * absolute by that test, so it is read against the working directory as ONE
+ * FILENAME and nothing matches it -- no error, no diagnostic, nothing to
+ * diagnose. `isAbsolute` and `parse().root` answer for both platforms, and the
+ * root is TAKEN FROM THE FRAGMENT rather than hardcoded because there is no one
+ * filesystem root on Windows to hardcode.
+ *
+ * DRIVE-RELATIVE PATHS ARE OUT OF SCOPE AND ANSWER WITH NO SOURCE AT ALL.
+ * `C:foo` means `relative to the current directory ON DRIVE C`, which is a
+ * per-drive cursor Windows keeps and node exposes nothing for -- `process.cwd()`
+ * is one directory on one drive. So there is no root this file could name, and
+ * the honest answer is to name none: an empty source list yields no items, where
+ * GUESSING a root would offer candidates from a directory the user's shell is
+ * not in and insert paths that resolve somewhere else. The test is
+ * `parse().root` NAMING SOMETHING THE FLAVOUR STILL CALLS RELATIVE, which is
+ * that case and only that case -- on posix `parse("C:foo").root` is `""`, so
+ * this arm cannot fire there and take a legitimate filename with it.
+ *
+ * A UNC SHARE IS SERVED BY THE SAME ARM, WITH ONE ASYMMETRY WORTH KNOWING
+ * BEFORE YOU TURN THIS ON. A COMPLETE share -- `\\server\share\fo` -- parses to
+ * the root `\\server\share\` and completes like any other directory. A share
+ * name STILL BEING TYPED -- `\\server\sh` -- parses to the root `\\server\sh`,
+ * because parse cannot tell an incomplete share from a complete one, so the
+ * listing is asked of a share that does not exist and yields nothing. Completing
+ * the SERVER and SHARE segments themselves would need network enumeration, which
+ * is not something a keystroke should do.
  *
  * ONE SOURCE PER WORKSPACE FOLDER, since a client may hold several -- keeping
  * only the first answers from whichever the editor happened to list first.
@@ -216,9 +334,14 @@ export function sourcesFor(
   uri: string,
   cwd: string,
   folders: readonly WorkspaceFolder[] = [],
+  flavour: PlatformPath = nodePath,
 ): PathSource[] {
-  if (fragment.text.startsWith("/")) {
-    return [{ name: "absolute", root: "/" }];
+  const root = flavour.parse(fragment.text).root;
+  if (flavour.isAbsolute(fragment.text)) {
+    return [{ name: "absolute", root }];
+  }
+  if (root !== "") {
+    return [];
   }
   const parent = documentParent(uri);
   const relative: PathSource[] = [{ name: "cwd", root: cwd }];
@@ -262,6 +385,11 @@ function folderPath(folder: WorkspaceFolder): string | undefined {
  *   fileURLToPath("untitled:Untitled-1") -> throws TypeError
  *
  * An editor sends the second for any buffer the user has not saved.
+ *
+ * THE FLAVOUR IS NOT THREADED HERE, and that is a decision rather than a spot
+ * missed: this path came out of `fileURLToPath`, which is bound to the host it
+ * runs on, so reading it with any other flavour would take a path in one dialect
+ * apart with the rules of another.
  */
 function documentParent(uri: string): string | undefined {
   let path: string;
@@ -330,6 +458,93 @@ function replaceEnd(line: string, fragment: PathFragment, candidate: string): nu
 }
 
 /**
+ * WHICH EDIT ONE ITEM CARRIES, AND OVER WHAT SPAN. Pure, and separated from the
+ * listing so the span can be measured for a fragment no host filesystem holds.
+ *
+ * BOTH RANGES WHERE THE CLIENT SAID IT CAN TAKE THEM, so its own
+ * insert-versus-replace preference decides what happens to the tail when the
+ * cursor sits mid-path. A plain `TextEdit` makes that setting inert and chooses
+ * for them.
+ *
+ * AND ONLY WHERE IT SAID SO. `InsertReplaceEdit` is permitted to a client that
+ * declared `insertReplaceSupport` and to no other -- so sending it
+ * unconditionally is a SPECIFICATION VIOLATION rather than a generosity, and a
+ * client entitled to receive a `TextEdit` is entitled to make nothing of an
+ * object carrying no `range` at all. That is the whole reason this handler reads
+ * a capability.
+ *
+ * THE PLAIN EDIT TAKES THE INSERT RANGE, AND THAT IS A CHOICE MADE FOR A CLIENT
+ * THAT CANNOT MAKE IT, so it is made on which mistake the user can see. The
+ * insert range ends AT THE CURSOR: completing `spa` on a line already reading
+ * `spaced (1).txt` leaves the tail standing, and the user reads
+ * `spaced (1).txtced (1).txt` and deletes what they did not want. The replace
+ * range reaches PAST the cursor -- `replaceEnd` extends it to the end of a
+ * candidate the line already carries -- so choosing it would delete text to the
+ * right of the cursor for a client that never asked for replace semantics and
+ * cannot decline it. One mistake is visible and reversible by typing; the other
+ * is text vanishing.
+ *
+ * NOT THE SAME QUESTION AS `replaceEnd`, which stays exactly as it is: that rule
+ * decides how far REPLACE reaches for a client that opted into replacing,
+ * measured in the stakeholder's own editor. This decides which of the two ranges
+ * a client with no such setting is given.
+ *
+ * EVERY SPAN IS ANCHORED AT `fragment.start`, WHICH IS WHERE THE SEPARATOR RULE
+ * AND THIS ONE MEET. `newText` is the fragment's OWN directory part with an
+ * entry name after it, so the text written back reconstructs exactly the span it
+ * is written over: `fragment.directory + fragment.name === fragment.text`, and
+ * `fragment.text` is the line from `start` to the cursor. A cut that broke that
+ * identity -- deriving it from `parse().base` rather than from a separator, say
+ * -- would leave every range here correct and every `newText` wrong at the same
+ * anchor, which writes a mangled line rather than nothing.
+ */
+export function editFor(
+  fragment: PathFragment,
+  position: Position,
+  line: string,
+  newText: string,
+  insertReplaceSupport: boolean,
+): TextEdit | InsertReplaceEdit {
+  const start = { line: position.line, character: fragment.start };
+  if (!insertReplaceSupport) {
+    return { newText, range: { start, end: position } };
+  }
+  return {
+    newText,
+    insert: { start, end: position },
+    replace: {
+      start,
+      end: { line: position.line, character: replaceEnd(line, fragment, newText) },
+    },
+  };
+}
+
+/**
+ * The one directory a source's listing is read from for this fragment.
+ *
+ * `resolve` AND NOT `join`, WHICH IS THE DEFECT'S SUBTLEST HALF -- and posix
+ * hides it by coincidence. The absolute source's root IS the fragment's own
+ * root, so the fragment's directory part ALREADY CARRIES IT. Concatenating the
+ * two is harmless on posix, where `join("/", "/usr/")` is `/usr/`, and doubles
+ * the root on Windows: `join("C:\\", "C:\\Users\\")` is `C:\C:\Users\`,
+ * MEASURED, which names no directory and so completes nothing. `resolve` drops a
+ * root that is stated twice and reads a relative directory beneath its root
+ * exactly as `join` did, which is the half that must not be lost.
+ *
+ * NO cwd CAN ENTER IT, though `resolve` is the function that would reach for
+ * one: every `PathSource.root` is absolute -- `sourcesFor` builds them from a
+ * parsed root, a converted URI, or the caller's own `cwd` -- so the first
+ * argument always terminates the resolution.
+ */
+export function listingDirectory(
+  source: PathSource,
+  fragment: PathFragment,
+  flavour: PlatformPath = nodePath,
+): string {
+  return flavour.resolve(source.root, fragment.directory);
+}
+
+/**
  * The completion items for one fragment under one root, in batches.
  *
  * NOTHING HERE RECURSES, and that is the design: the listing is ONE directory
@@ -382,8 +597,17 @@ export async function* itemsFrom(
    * forgot it the formatting on the clients that do.
    */
   documentationFormat: MarkupKind,
+  /**
+   * How this platform spells a path. DEFAULTED, unlike the two above, and the
+   * reason is the one that decides every default in this file: getting it wrong
+   * is not possible by omission. The host's own flavour is the correct answer on
+   * the host, so a caller who never learns this parameter exists is served by
+   * it; it is a parameter at all so a suite on a machine that is not Windows can
+   * still measure the Windows reading.
+   */
+  flavour: PlatformPath = nodePath,
 ): AsyncGenerator<CompletionItem[], void, void> {
-  const directory = join(source.root, fragment.directory);
+  const directory = listingDirectory(source, fragment, flavour);
   let items: CompletionItem[] = [];
   try {
     const listing = await opendir(directory);
@@ -399,64 +623,19 @@ export async function* itemsFrom(
       // COMPUTED ONCE AND USED TWICE: what the documentation shows the user is
       // what the resolve handler goes back to disk for, so the two cannot name
       // different files.
-      const absolutePath = join(directory, entry.name);
+      const absolutePath = flavour.join(directory, entry.name);
       items.push({
         label: insertText,
         documentation: documentationFor(absolutePath, source, documentationFormat),
-        kind: await entryKind(directory, entry),
+        kind: await entryKind(absolutePath, entry),
         insertText,
         // WHAT MAKES THIS ITEM RESOLVABLE. Nothing is stat'd here -- one stat per
         // entry is exactly what a directory of any size cannot afford -- so the
         // item carries the path and the detail is fetched for the ONE item the
         // user highlights. See `PathItemData` above.
         data: { pathCompletion: absolutePath } satisfies PathItemData,
-        // BOTH RANGES WHERE THE CLIENT SAID IT CAN TAKE THEM, so its own
-        // insert-versus-replace preference decides what happens to the tail when
-        // the cursor sits mid-path. A plain `TextEdit` makes that setting inert
-        // and chooses for them.
-        //
-        // AND ONLY WHERE IT SAID SO. `InsertReplaceEdit` is permitted to a
-        // client that declared `insertReplaceSupport` and to no other -- so
-        // sending it unconditionally is a SPECIFICATION VIOLATION rather than a
-        // generosity, and a client entitled to receive a `TextEdit` is entitled
-        // to make nothing of an object carrying no `range` at all. That is the
-        // whole reason this handler reads a capability.
-        //
-        // THE PLAIN EDIT TAKES THE INSERT RANGE, AND THAT IS A CHOICE MADE FOR
-        // A CLIENT THAT CANNOT MAKE IT, so it is made on which mistake the user
-        // can see. The insert range ends AT THE CURSOR: completing `spa` on a
-        // line already reading `spaced (1).txt` leaves the tail standing, and
-        // the user reads `spaced (1).txtced (1).txt` and deletes what they did
-        // not want. The replace range reaches PAST the cursor -- `replaceEnd`
-        // extends it to the end of a candidate the line already carries -- so
-        // choosing it would delete text to the right of the cursor for a client
-        // that never asked for replace semantics and cannot decline it. One
-        // mistake is visible and reversible by typing; the other is text
-        // vanishing.
-        //
-        // NOT THE SAME QUESTION AS `replaceEnd`, which stays exactly as it is:
-        // that rule decides how far REPLACE reaches for a client that opted into
-        // replacing, measured in the stakeholder's own editor. This decides
-        // which of the two ranges a client with no such setting is given.
-        textEdit: insertReplaceSupport
-          ? {
-              newText: insertText,
-              insert: {
-                start: { line: position.line, character: fragment.start },
-                end: position,
-              },
-              replace: {
-                start: { line: position.line, character: fragment.start },
-                end: { line: position.line, character: replaceEnd(line, fragment, insertText) },
-              },
-            }
-          : {
-              newText: insertText,
-              range: {
-                start: { line: position.line, character: fragment.start },
-                end: position,
-              },
-            },
+        // WHICH EDIT, AND OVER WHAT SPAN, is `editFor` above.
+        textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });
     }
   } catch (error) {
@@ -552,8 +731,12 @@ function isUnopenable(error: unknown): boolean {
 /**
  * Folder or File. `stat` is the fallback because a Dirent reports a symlink as
  * neither, and a symlink to a directory should complete as one.
+ *
+ * TAKES THE PATH THE CALLER ALREADY BUILT rather than rebuilding it from a
+ * directory and the entry: the item's `data` and its documentation name that
+ * same path, and a second join here is a second chance for the three to differ.
  */
-async function entryKind(directory: string, entry: Dirent): Promise<CompletionItemKind> {
+async function entryKind(absolutePath: string, entry: Dirent): Promise<CompletionItemKind> {
   if (entry.isDirectory()) {
     return CompletionItemKind.Folder;
   }
@@ -561,7 +744,7 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
     return CompletionItemKind.File;
   }
   try {
-    const target = await stat(join(directory, entry.name));
+    const target = await stat(absolutePath);
     return target.isDirectory() ? CompletionItemKind.Folder : CompletionItemKind.File;
   } catch {
     return CompletionItemKind.File;
@@ -601,11 +784,11 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
  * WHY IT IS FALSE, measured against what this module actually does rather than
  * argued: `pathFragments` re-derives the fragment from the line AT THE CURSOR
  * on every request, `sourcesFor` picks the roots FROM THAT FRAGMENT -- a
- * fragment beginning `/` is answered by the filesystem root alone -- and
+ * fragment the flavour calls absolute is answered by its own root alone -- and
  * `itemsFrom` filters ONE directory listing by the fragment's trailing name.
  * Every one of those three depends on the character the user is about to type.
- * Typing `/` does not narrow the previous answer; it replaces the directory
- * being listed. There is no keystroke after which the previous set is still the
+ * Typing a separator does not narrow the previous answer; it replaces the
+ * directory being listed. There is no keystroke after which the previous set is still the
  * right set, which is the strongest form of `re-query`.
  *
  * AND ONE THING IT IS NOT: the BATCHING at `batchSize` is not incompleteness.
@@ -636,6 +819,7 @@ export async function* pathCompletion(
     return;
   }
   const cwd = options.cwd ?? process.cwd();
+  const flavour = options.flavour ?? nodePath;
   const folders = Array.from(context.tsudoi.workspaceFolders.values());
   // READ ONCE, FROM THE SESSION, AND `=== true` RATHER THAN A TRUTHINESS TEST.
   // The chain is optional at every step because a client may declare nothing at
@@ -672,7 +856,7 @@ export async function* pathCompletion(
   // that and why -- nothing.
   const seen = new Set<string>();
   try {
-    for (const fragment of pathFragments(line, params.position.character)) {
+    for (const fragment of pathFragments(line, params.position.character, flavour)) {
       let named = false;
       for (const source of sourcesFor(
         fragment,
@@ -697,6 +881,7 @@ export async function* pathCompletion(
         // it is all it takes -- tsudoi replaces the list rather than writing
         // into it, so what this holds is the workspace the request began with.
         folders,
+        flavour,
       )) {
         for await (const batch of itemsFrom(
           source,
@@ -705,6 +890,7 @@ export async function* pathCompletion(
           line,
           insertReplaceSupport,
           documentationFormat,
+          flavour,
         )) {
           const fresh = batch.filter((item) => {
             const text = item.insertText ?? "";

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { isAbsolute, join, normalize } from "node:path";
+import nodePath, { isAbsolute, join, normalize, type PlatformPath, posix, win32 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CompletionItemKind,
@@ -24,7 +24,9 @@ import type { RequestContext } from "@atusy/tsudoi/types";
 import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
 import {
   batchSize,
+  editFor,
   itemsFrom,
+  listingDirectory,
   pathCompletion,
   pathFragments,
   sourcesFor,
@@ -264,6 +266,188 @@ describe("the typed prefix selects the source class", () => {
   });
 });
 
+// ============================================================================
+// THE WINDOWS READING, MEASURED ON A HOST THAT IS NOT WINDOWS. Every case below
+// hands the module `win32` EXPLICITLY, and that is the whole reason the flavour
+// is a parameter rather than a fact the module reads off the process: a suite
+// exercising only the host's own separators is green on this machine and says
+// nothing at all about the platform the defect lives on.
+//
+// PURE THROUGHOUT, and it has to be: no `win32` path names anything a macOS or
+// Linux filesystem holds, so a case driven through `opendir` would answer
+// nothing and pass for the wrong reason. What is asserted here is the PARSING
+// and the SPANS -- the two halves that decide what a Windows user's buffer ends
+// up reading -- while the tests above drive the same code through a real
+// filesystem under the host's own flavour.
+// ============================================================================
+
+describe("a fragment is split by the flavour's own separators", () => {
+  test("a drive path splits at its last separator, in EITHER spelling", () => {
+    expect(pathFragments("C:\\Users\\fo", 11, win32)).toEqual([
+      { text: "C:\\Users\\fo", start: 0, end: 11, directory: "C:\\Users\\", name: "fo" },
+    ]);
+    // FORWARD SLASHES ON WINDOWS ARE NOT A CONCESSION: editors and users both
+    // produce them there. That node's win32 flavour reads them is ASSERTED
+    // rather than assumed -- this line is the verification, and a fix that
+    // switched on `sep` alone would fail it.
+    expect(pathFragments("C:/Users/fo", 11, win32)).toEqual([
+      { text: "C:/Users/fo", start: 0, end: 11, directory: "C:/Users/", name: "fo" },
+    ]);
+  });
+
+  // THE PERMANENT PAIR, and it is what stops the fix from being `cut on both
+  // characters everywhere`: a backslash is a LEGAL FILENAME CHARACTER on posix,
+  // so a module reading it as a separator there would cut a real filename in
+  // half and complete the wrong directory.
+  test("a backslash is an ordinary filename character under the posix flavour", () => {
+    expect(pathFragments("a\\b", 3, posix)).toEqual([
+      { text: "a\\b", start: 0, end: 3, directory: "", name: "a\\b" },
+    ]);
+  });
+
+  // THE IDENTITY EVERY RANGE RESTS ON, asserted at the CUT rather than at the
+  // item because that is where it can be broken. An item writes the fragment's
+  // directory part with an entry name after it, over a span anchored at
+  // `fragment.start`; a cut whose two parts did not reconstruct the fragment
+  // would leave every range correct and every `newText` wrong at the same
+  // anchor, which writes a MANGLED LINE rather than nothing.
+  //
+  // BORN GREEN, and its falsifier is measured rather than hypothetical: deriving
+  // the cut from `parse(text).base` -- the obvious upstream spelling, and the
+  // one this fix nearly took -- breaks on a TRAILING SEPARATOR, because
+  // `parse("notes/").base` is `notes` and not `""`. That splits `notes/` into
+  // `n` and `otes/`, which is the central case of this whole feature.
+  test("the directory part and the filter reconstruct the fragment, which reconstructs the line", () => {
+    const cases: [PlatformPath, string][] = [
+      [win32, "C:\\Users\\fo"],
+      [win32, "C:\\Users\\"],
+      [win32, "C:/Users/fo"],
+      [win32, "notes\\"],
+      [win32, "see C:\\Users\\fo"],
+      [nodePath, "notes/"],
+      [nodePath, "src/fo"],
+      [nodePath, "/usr/lo"],
+    ];
+
+    for (const [flavour, line] of cases) {
+      const fragments = pathFragments(line, line.length, flavour);
+      // Not vacuous: a flavour that produced no candidate at all would satisfy
+      // every assertion below by having nothing to assert over.
+      expect(fragments.length).toBeGreaterThan(0);
+      for (const fragment of fragments) {
+        expect(fragment.directory + fragment.name).toBe(fragment.text);
+        expect(line.slice(fragment.start, line.length)).toBe(fragment.text);
+      }
+    }
+  });
+});
+
+describe("the flavour decides which fragments are absolute, and what their root is", () => {
+  test("a drive-absolute fragment is answered by its DRIVE alone, in either spelling", () => {
+    expect(
+      sourcesFor(only("C:\\Users\\fo", win32), elsewhere.uri, "/somewhere", [], win32),
+    ).toEqual([{ name: "absolute", root: "C:\\" }]);
+    expect(sourcesFor(only("C:/Users/fo", win32), elsewhere.uri, "/somewhere", [], win32)).toEqual([
+      { name: "absolute", root: "C:/" },
+    ]);
+  });
+
+  // DRIVE-RELATIVE IS OUT OF SCOPE, AND THE ANSWER IS `NO SOURCE` RATHER THAN A
+  // READING OF IT -- the decision is at `sourcesFor` in the example, with its
+  // reason. What this test defends is that the refusal is EXACT: `C:foo` and
+  // `C:\foo` differ by one character, and only the first is out of scope.
+  //
+  // BOTH ARMS IN ONE MEASUREMENT, because `[]` is satisfied by a `sourcesFor`
+  // that answers nothing for everything -- which is the degenerate reading of
+  // the emptiness, and the second line is what forbids it.
+  test("a drive-relative fragment contributes no source, where a drive-absolute one contributes its drive", () => {
+    expect(sourcesFor(only("C:foo", win32), elsewhere.uri, "/somewhere", [], win32)).toEqual([]);
+    expect(sourcesFor(only("C:\\foo", win32), elsewhere.uri, "/somewhere", [], win32)).toEqual([
+      { name: "absolute", root: "C:\\" },
+    ]);
+  });
+
+  // UNC, AND THE ASYMMETRY IS THE FINDING RATHER THAN A DETAIL: a COMPLETE share
+  // is a root the same code path serves, while a share name still being TYPED is
+  // read as a root of its own -- so the second answers from a share that does
+  // not exist and produces nothing. Both are asserted as ROOTS rather than as
+  // `no items`, which would pass against a module that had lost UNC entirely.
+  test("a complete UNC share is a root, and an INCOMPLETE share name is read as one too", () => {
+    expect(
+      sourcesFor(only("\\\\server\\share\\fo", win32), elsewhere.uri, "/somewhere", [], win32),
+    ).toEqual([{ name: "absolute", root: "\\\\server\\share\\" }]);
+    expect(
+      sourcesFor(only("\\\\server\\sh", win32), elsewhere.uri, "/somewhere", [], win32),
+    ).toEqual([{ name: "absolute", root: "\\\\server\\sh" }]);
+  });
+
+  // THE PERMANENT PAIR ON THE OTHER SIDE: the same text under the POSIX flavour
+  // is ONE ORDINARY FILENAME, which is exactly right there -- and it is what
+  // says the absolute arms above come from the flavour rather than from a
+  // hardcoded reading of `C:` that would now be wrong on every posix machine.
+  test("a drive path under the posix flavour is one filename, answered by the relative sources", () => {
+    expect(
+      sourcesFor(only("C:\\Users\\fo", posix), "file:///workspace/a.txt", "/somewhere", [], posix),
+    ).toEqual([
+      { name: "document", root: "/workspace" },
+      { name: "cwd", root: "/somewhere" },
+    ]);
+  });
+});
+
+describe("a listing directory is read under the root that produced it", () => {
+  // THE DEFECT AT ITS SHARPEST, and it is invisible on posix BY COINCIDENCE:
+  // `join("/", "/usr/")` is `/usr/`, so concatenating a root onto a directory
+  // that already carries it is harmless there and doubles the root on Windows.
+  // MEASURED: `win32.join("C:\\", "C:\\Users\\")` is `C:\C:\Users\`.
+  test("the absolute source's root is not written twice onto a directory that already carries it", () => {
+    expect(
+      listingDirectory({ name: "absolute", root: "C:\\" }, only("C:\\Users\\fo", win32), win32),
+    ).toBe("C:\\Users");
+    expect(
+      listingDirectory({ name: "absolute", root: "C:/" }, only("C:/Users/fo", win32), win32),
+    ).toBe("C:\\Users");
+  });
+
+  // THE PAIR: a NAMED root still reads the fragment's directory UNDERNEATH
+  // itself. Without it, `stop concatenating` is equally satisfied by a module
+  // that dropped the root entirely and listed every relative fragment against
+  // whatever directory the process happens to be in.
+  test("a named root still reads the fragment's directory beneath it", () => {
+    expect(
+      listingDirectory({ name: "cwd", root: "C:\\proj" }, only("notes\\fo", win32), win32),
+    ).toBe("C:\\proj\\notes");
+  });
+});
+
+describe("an item's edit spans the fragment whatever the separators are", () => {
+  // WHERE THE TWO RULES MEET. The anchor is a WHITESPACE boundary and the cut is
+  // a SEPARATOR one, so changing the separator set must not move the anchor --
+  // and the text written back must still reconstruct the span it is written
+  // over. An edit inserting the right path at the wrong span corrupts the
+  // buffer, which is worse than the empty popup this fix set out to close.
+  test("a Windows fragment's edit is anchored at the word, and writes the whole path back", () => {
+    const line = "see C:\\Users\\fo";
+    const cursor = line.length;
+    const fragment = only(line, win32);
+    const newText = `${fragment.directory}foo.txt`;
+    const edit = editFor(fragment, { line: 0, character: cursor }, line, newText, true);
+    const item: CompletionItem = { label: newText, insertText: newText, textEdit: edit };
+
+    // The directory part the user typed is CARRIED, not dropped: this is the
+    // string the client puts in the buffer.
+    expect(newText).toBe("C:\\Users\\foo.txt");
+    // 4, where the WORD begins -- not 0, and not 13 where the last separator
+    // sits. Both ranges, because a client reads whichever its own setting names.
+    expect("insert" in edit ? edit.insert.start.character : undefined).toBe(4);
+    expect("insert" in edit ? edit.replace.start.character : undefined).toBe(4);
+    // AND THE LINE THE USER IS LEFT WITH, under both preferences: at the end of
+    // the line the two coincide, and what this claims is that each is WHOLE.
+    expect(applyAsClient(line, cursor, item, "replace")).toBe("see C:\\Users\\foo.txt");
+    expect(applyAsClient(line, cursor, item, "insert")).toBe("see C:\\Users\\foo.txt");
+  });
+});
+
 describe("directories are distinguishable from files", () => {
   // A WRONG KIND STILL COMPLETES AND STILL DISPLAYS, so nothing but this
   // assertion catches it.
@@ -362,8 +546,8 @@ async function fromSource(
 }
 
 /** The one fragment a test means, out of the candidates for that line. */
-function only(line: string): PathFragment {
-  const [fragment] = pathFragments(line, line.length);
+function only(line: string, flavour: PlatformPath = nodePath): PathFragment {
+  const [fragment] = pathFragments(line, line.length, flavour);
   if (fragment === undefined) {
     throw new Error(`no fragment in ${line}`);
   }
