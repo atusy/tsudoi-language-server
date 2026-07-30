@@ -38,30 +38,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-47",
-      story: {
-        role: "editor user",
-        capability:
-          "be asked again after the next keystroke when the server's candidate set was never final",
-        benefit:
-          "I stop being shown candidates for a prefix I have already left, and for `/` candidates from a directory I am no longer in",
-      },
-      status: "draft",
-      acceptance_criteria: [
-        {
-          criterion:
-            "A completion handler can express `isIncomplete` WITHOUT ANY SLOT MEANING TWO THINGS. The shape recorded at src/types.ts:106 is the candidate and it is where the edit would be made: widen the yield to `CompletionItem[] | CompletionList` and NORMALISE a mid-stream `CompletionList` into items, so the yield slot keeps ONE meaning -- CONTENT -- and merely admits a second spelling of it. RESTORING THE TUPLE IS REFUSED IN ADVANCE: it is PBI-46's own defect, and PBI-46's price was paid to remove it.",
-          verification:
-            "TO BE AUTHORED AT REFINEMENT, and it starts from measurements that already exist rather than from argument: Sprint 42 built this capability, and its record carries nvim 0.13.0-nightly+6ecf226 re-querying 3 times against `isIncomplete: true` and ONCE against the paired `false`, corroborated at completion.lua:1086. THE TWO CONFIGS THAT NEED IT ARE NAMED AND STILL RULE THE CLAIM FALSE AT THEIR OWN SITES -- examples/completion-path.ts and examples/tsudoi.config.ts -- so the value case does not have to be re-made.",
-        },
-      ],
-      notes: [
-        "FILED AT SPRINT 43'S REVIEW BY THE PRODUCT OWNER BECAUSE A COMMENT IS THE WRONG HOME FOR IT ALONE. PBI-46 note 2 rules `isIncomplete` DEFERRED BY THE STAKEHOLDER, NOT DROPPED AS UNWANTED -- and PBI notes evaporate at close, which would leave a deferred-not-dropped capability recorded ONLY inside the file that removed it, in a backlog with nothing in it. That is the Lifetime Rule's own second clause: a decision shaping WHAT TO BUILD NEXT belongs on a PBI, written onto that PBI when created rather than rescued at compaction. The comment at src/types.ts:106 stays and is not duplicated here; it is the site of the edit, this is the intent to make it.",
-        "A SECOND LOST CAPABILITY MAY SHARE THIS ONE'S REMEDY, AND WHETHER IT DOES IS AN OPEN QUESTION TO BE MEASURED AT REFINEMENT RATHER THAN A CLAIM. Sprint 42 closed the method-table mis-keying hazard BY THE COMPILER; Sprint 43 gave that back, because a handler yielding `CompletionItem[]` makes `WireResult<'textDocument/completion'>` NARROWER than the protocol's `CompletionItem[] | CompletionList | null` and the pin refuses the real request type (TS2322, measured at Sprint 43). WIDENING THE YIELD TO `CompletionItem[] | CompletionList` WOULD APPEAR TO RESTORE THE PIN -- IF IT DOES, ONE REMEDY BUYS BOTH, and that is a materially stronger case than either loss carries alone. NOBODY HAS MEASURED IT. It is written as a question so refinement measures it rather than inheriting it.",
-        "WHAT MUST NOT HAPPEN WHILE THIS SITS IN THE BACKLOG: the two `NOT COMPLETE` rulings at examples/completion-path.ts and examples/tsudoi.config.ts being revised to COMPLETE to make the tree read consistently. They are the only record in the code that a measured capability was given up, and test/completeness-ruling.test.ts CANNOT DETECT A WRONG RULING -- it detects only a MISSING one, which it says at its own site.",
-      ],
-    },
-    {
       id: "PBI-48",
       story: {
         role: "tsudoi maintainer",
@@ -82,6 +58,8 @@ const scrum: ScrumDashboard = {
       notes: [
         "FILED AT SPRINT 43'S REVIEW. HOMELESS SINCE SPRINT 42, WHICH SAID SO TWICE IN ITS OWN RECORD AND IN ITS RETROSPECTIVE, and a finding whose only home is an active improvement labelled `until it has a home` is a finding waiting to be forgotten. THE PRACTICE UNTIL THIS SHIPS IS UNCHANGED AND IS NOT SUPERSEDED BY FILING THIS: after any change to the published types, run `tsc -p tsconfig.build.json` BEFORE believing `tsc --noEmit`.",
         "IT IS THE FOURTH INSTANCE OF THE SPRINT-35 STALENESS CLASS AND THE ONLY ONE WHERE THE STALE ARTIFACT IS READ BY A DoD CHECK ITSELF rather than by a test -- the three before it were tests reading a stale dist/, which the preload now covers. THAT IS WHY IT IS A PBI AND NOT A NOTE: a maintainer running only the type check after a types change is told green by an instrument reading a surface that no longer exists.",
+        'THE REMEDY IS MEASURED AND IT FORECLOSES RATHER THAN DETECTS, which is this project\'s stated preference and the reason a rot detector was not proposed. ADD `"paths": { "@atusy/tsudoi/*": ["./src/*.ts"] }` to tsconfig.json so THIS REPOSITORY\'S OWN type check resolves the subpath to src/ and never reads the built artifact. MEASURED BY THE SCRUM MASTER WITH ITS CONTROL: with the mapping in place, removing `TsudoiConfigFactory` from dist/types.d.ts leaves `tsc --noEmit` at EXIT 0 -- staleness cannot reach it; WITHOUT the mapping the same broken dist gives EXIT 1, so the control fires and the probe is not degenerate. NOTHING IS LOST, AND THIS IS THE HALF TO CHECK BEFORE BELIEVING IT: `tsc --noEmit` today verifies INCIDENTALLY that the examples compile against the PUBLISHED surface, and that verification is already owned properly by test/installed-specifier.test.ts, test/published-artifacts.test.ts and test/installed-without-node-types.test.ts, each of which packs or installs the real package and therefore builds by construction. THE DIVISION BECOMES CLEAN INSTEAD OF ACCIDENTAL: `tsc --noEmit` answers `does this repository\'s source type-check`, and the installed-consumer tests answer `does what we publish work`. Today they overlap by accident, and that overlap is what produced a false GREEN at Sprint 42 and a false RED at Sprint 43.',
+        "WHAT REFINEMENT MUST STILL DECIDE, so this note is not read as a finished plan: whether the `paths` mapping belongs in tsconfig.json alone or also in tsconfig.build.json, and what -- if anything -- then checks that src/ and the built dist/ agree. The build itself is the candidate and it already runs in bunfig's preload, but nobody has measured whether a divergence exists that only the current accidental overlap catches. A NEGATIVE CONTROL FOR THE WHOLE REMEDY IS OWED: construct a change that the overlap catches TODAY and confirm something still catches it after.",
       ],
     },
   ],
