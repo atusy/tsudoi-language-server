@@ -162,7 +162,38 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 43,
+    pbi_id: "PBI-46",
+    status: "in_progress",
+    goal: "ONE SLOT, ONE MEANING. A completion handler becomes `AsyncGenerator<CompletionItem[], void, void>`: every yield is content, the return carries nothing, and NOTHING THE AUTHOR WRITES SELECTS A DELIVERY CHANNEL. The tuple is withdrawn and `CompletionResponse` and `EmptyCompletionResponse` go with it. THE CHANNEL IS THE TOKEN'S ALONE -- present means every yield leaves as `$/progress` and the response is `null`, ALWAYS, including for a stream that produced one batch; absent means aggregate and answer. THE COST IS ACCEPTED KNOWINGLY rather than discovered: a single-batch answer under a token spends a `$/progress` and a null response where one response would have done, and the look-ahead that would have saved it was considered and dropped because it makes the FIRST batch wait on the SECOND pull -- a delay that lands exactly when the first chunk is slow and streaming matters most. `isIncomplete` BECOMES UNEXPRESSIBLE AGAIN AND THAT IS THE PRICE, NOT AN OVERSIGHT: the completeness rulings written at every config stay, and the two ruled NOT COMPLETE keep saying the claim is wrong and now say why it cannot be fixed here. A SPRINT THAT REMOVED THE CAPABILITY AND THEN RELABELLED THE CONFIGS THAT NEEDED IT WOULD LEAVE NOTHING RECORDING THE LOSS.",
+    subtasks: [
+      {
+        test: "EXPECTED-RED, and the three parts are ONE EDIT -- SHARED-MOMENT DECLARED: the published type, the drive and the fixtures cannot land separately because a tuple-shaped fixture does not compile against a generator-shaped type and the reverse. PERTURBATIONS, each named by the assertion it flips: P1 make the drive skip `$/progress` when only one batch was produced -- the token-present-one-batch arm must redden NAMING THE PROGRESS COUNT, which is what stops `the token decides` from being satisfied by any drive that happens to agree today. P2 make the drive aggregate under a token -- the token-present-many arm reddens. P3 make it stream with no token -- the token-absent arm reddens. THE SPRINT-6 PAIRING is required because two arms assert an ABSENCE of progress: an arm observing progress PRESENT through the same measurement ships beside them.",
+        implementation:
+          "`MethodMap['textDocument/completion'].result` becomes `AsyncGenerator<CompletionItem[], void, void>`; `CompletionResponse` and `EmptyCompletionResponse` are removed from src/types.ts; the drive decides on the token alone with no look-ahead and no special case; every completion fixture and example yields arrays again. `void` FOR THE RETURN IS MEASURED AND NOT STYLISTIC: with `null` a generator falling off its own end is TS2355 and `{done:true}` with an undefined value, so every handler would carry a ceremonial `return null;`.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN-GREEN. The completeness-ruling scan from Sprint 42 must still pass WITH its count guard and its negative control. AND THE GAP'S OWN CONTROL, which is the one this subtask exists for: grep the two NOT COMPLETE verdicts before and after and confirm they are UNCHANGED. A sprint that removes the capability and then quietly re-rules those configs COMPLETE to make the tree consistent would leave nothing recording that anything was lost.",
+        implementation:
+          "The completeness rulings STAY at every config. The two ruled NOT COMPLETE gain a sentence saying the claim is still wrong AND WHY IT CANNOT BE FIXED HERE. The future path is recorded at the type, evidence-shaped: widening the yield to `CompletionItem[] | CompletionList` and NORMALISING a mid-stream CompletionList into items restores `isIncomplete` without a slot whose meaning depends on its neighbour.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "BASELINE f94bef0, resolved once at Planning. PLANNING AND REVIEW RUN AS INLINE ROLE-PLAY per the scrum-conversation fallback: the Product Owner agent was stopped by the stakeholder and cannot be resumed. RECORDED RATHER THAN GLOSSED, because a goal and an acceptance the facilitator role-played are weaker evidence than ones an independent role gave, and Sprint 42 closed the same way.",
+      "FORWARD WORK RATHER THAN A RESET OF `main`, and the pre-change state is preserved on the branch `tuple-generator-shape` at 2e1c3f7. The stakeholder asked for a reset; the Scrum Master proposed this instead and it is open to reversal. THE REASON IS WHAT A RESET WOULD SINK: the commits it would discard carry measurements INDEPENDENT OF THE CODE THEY ARRIVED BESIDE -- nvim's partial-result behaviour with its control, the seventeen completeness rulings, and the finding that `tsc --noEmit` reads a stale `dist/`. All three outlive this design and the first is exactly what a future `isIncomplete` attempt starts from.",
+      "PER-SPRINT REVIEW CHECKLIST. (1) THIS SPRINT REMOVES A CAPABILITY, so Review asks what records the loss rather than only what passes -- the two NOT COMPLETE verdicts unchanged and the future path present at the type. FOUR GREEN IS COMPATIBLE WITH HAVING QUIETLY RELABELLED THEM. (2) CRITERION 2'S NEGATIVE CONTROL IS THE ONE THAT MATTERS: without P1, `the token decides` is satisfied by a drive that agrees by accident. (3) `tsc --noEmit` READS `dist/`, NOT `src/`, for the examples -- run `tsc -p tsconfig.build.json` FIRST or the type check reports on yesterday's surface. Sprint 42 measured this in both directions. (4) THE PROGRESS COUNT IS PART OF EVERY ARM'S ASSERTION; a test reading only the response cannot tell the arms apart.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 42,
