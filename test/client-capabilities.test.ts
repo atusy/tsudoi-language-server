@@ -96,9 +96,43 @@ test("a handler assigning to a NESTED client capability does not type-check", as
 });
 
 /**
- * THE PAIRED CONTROL, without which the two above are satisfied by a surface
+ * THE FIELD `DeepReadonly` CANNOT REACH BY MAPPING, and it is exactly where a
+ * client's own capability data lives. Upstream declares `experimental` as
+ * `LSPAny`, which is `any`, and NO conditional or mapped type can make `any`
+ * readonly -- a mapped type over it yields members that are `any` again, so the
+ * assignment below type-checks however deep it goes while the run-time freeze
+ * throws on it. The published type promising `readonly at every depth` was
+ * false precisely at the one field a config author is most likely to write to.
+ *
+ * REDUCED TO `unknown` RATHER THAN OVERRIDDEN WITH A JSON VALUE TYPE, and the
+ * two are not the same trade: an override would let an author READ a member
+ * without a cast, at the price of tsudoi inventing a shape for data the CLIENT
+ * defines -- which is the mirror this surface refuses to be everywhere else. The
+ * reduction is uniform, applies to every `any` the dependency ever adds, and
+ * says what is true: tsudoi does not know what is in there, and the reader
+ * narrows.
+ *
+ * TS18046 IS THE CODE FOR `is of type 'unknown'`, and asserting it is what
+ * separates this from a probe that failed to resolve its import -- and from one
+ * where a misplaced `any` arm collapsed the WHOLE type to `unknown`, which the
+ * TS2540 pair above is what catches.
+ */
+test("a handler writing into an experimental capability does not type-check", async () => {
+  const result = await typeCheckProbe(
+    tsudoiProbe("tsudoi.clientCapabilities.experimental.deep.value = 1;"),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("TS18046");
+  expect(result.output).toContain("experimental");
+});
+
+/**
+ * THE PAIRED CONTROL, without which the three above are satisfied by a surface
  * nobody can read at all: a `never`, a broken import, a type that resolves to
- * nothing would fail every assignment AND every read.
+ * nothing would fail every assignment AND every read. The last line is the
+ * control for the reduction specifically -- `experimental` stays READABLE, and
+ * what it costs an author is the narrowing `unknown` asks for, not the field.
  */
 test("reading the same capabilities type-checks", async () => {
   const result = await typeCheckProbe(

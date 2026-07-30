@@ -234,12 +234,40 @@ export interface WorkspaceFolderStore {
  * refuses. What stands in its place is the run-time half alone: what the store
  * hands back is SEALED where it is built, and what is not sealed is not
  * published at all.
+ *
+ * `any` IS REDUCED TO `unknown`, AND THAT ARM IS FIRST BECAUSE IT HAS TO BE.
+ * NOTHING CAN MAKE `any` READONLY -- a mapped type over it yields members that
+ * are `any` again -- so without this arm the promise above is FALSE exactly
+ * where a client's own data lives: upstream declares `ClientCapabilities
+ * .experimental` as `LSPAny`, which is `any`, and
+ * `clientCapabilities.experimental.deep.value = 1` type-checks however deep it
+ * goes while the freeze throws on it at run time. `0 extends 1 & T` is the test
+ * -- `1 & any` is `any`, which `0` extends, and `1 & T` is `1` or `never` for
+ * everything else.
+ *
+ * FIRST BECAUSE IT SHOULD SAY SO, AND NOT BECAUSE THE ORDER IS LOAD-BEARING:
+ * MEASURED, the same arm placed LAST also reduces `any` to `unknown`, since a
+ * conditional whose checked type is `any` resolves to the UNION of both
+ * branches and `X | unknown` is `unknown`. So the reduction would survive the
+ * move -- and would be inherited from an absorption three arms away rather than
+ * stated, with every future arm added between able to break it silently.
+ *
+ * REDUCED RATHER THAN OVERRIDDEN WITH A JSON VALUE TYPE OF OUR OWN, which is the
+ * live alternative and is a different trade: an override would let an author
+ * read a member without a cast, at the price of tsudoi INVENTING A SHAPE for
+ * data the client defines -- the mirror this surface refuses to be everywhere
+ * else. WHAT THE REDUCTION COSTS, stated rather than glossed: an author reading
+ * `experimental` narrows it themselves. What it buys is uniformity -- every
+ * `any` the dependency ever adds is covered by this line, with nothing to
+ * remember.
  */
-export type DeepReadonly<T> = T extends readonly (infer E)[]
-  ? readonly DeepReadonly<E>[]
-  : T extends object
-    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-    : T;
+export type DeepReadonly<T> = 0 extends 1 & T
+  ? unknown
+  : T extends readonly (infer E)[]
+    ? readonly DeepReadonly<E>[]
+    : T extends object
+      ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+      : T;
 
 export interface Tsudoi {
   readonly documents: DocumentStore;
