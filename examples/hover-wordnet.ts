@@ -23,11 +23,31 @@ import type { MethodHandler } from "@atusy/tsudoi/types";
  * The PROMISE is memoised rather than a `loaded` flag, because two hovers can
  * arrive before the first `init` settles: a flag lets the second start a
  * concurrent load, whereas awaiting the same promise makes it wait.
+ *
+ * AND THE MEMO IS DROPPED WHEN THE LOAD FAILS, which is the half the idiom is
+ * usually written without. `loading ??= init()` caches the PROMISE, not the
+ * resolution, so a rejected one is cached too: one transient failure -- a
+ * database on a mount that was not ready -- would be handed to every hover for
+ * the rest of the process's life. `await ready()` below sits OUTSIDE the try, so
+ * that cached rejection escapes `define`, escapes the handler, and each of those
+ * hovers is answered -32603. The user restarts their editor to fix it.
+ *
+ * NOT `MOVE THE AWAIT INSIDE THE TRY`, which looks like the same fix and is
+ * worse: it would not un-cache anything, so every later hover would await the
+ * same rejected promise, CATCH it, and answer `null`. That turns a permanent
+ * loud failure into a permanent silent one -- a dictionary that says every word
+ * is unknown, with nothing anywhere to say why.
+ *
+ * The derived promise is what is stored AND what is returned, so the rejection
+ * has a handler and the retry is the caller's next call rather than a loop.
  */
 let loading: Promise<void> | undefined;
 
 function ready(): Promise<void> {
-  loading ??= init();
+  loading ??= init().catch((error: unknown) => {
+    loading = undefined;
+    throw error;
+  });
   return loading;
 }
 
