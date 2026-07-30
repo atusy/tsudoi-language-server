@@ -134,7 +134,20 @@ export function createTsudoi(): TsudoiRuntime {
   // the two states are indistinguishable BY CONSTRUCTION rather than by
   // coincidence, and nothing downstream has a reason to tell them apart.
   let clientCapabilities: ClientCapabilities = {};
-  const tsudoi: Tsudoi = {
+  // SEALED, AND THE GETTERS SURVIVE IT -- MEASURED under bun 1.3.13 and deno
+  // 2.9.2 rather than assumed, since the whole shape below rests on it: freezing
+  // an ACCESSOR property makes it non-configurable and leaves the getter
+  // callable, so `rootUri` still answers about the handshake that has not
+  // happened on this line. A seal that had read the members out would hand every
+  // handler the pre-handshake `null` for the life of the session, which is the
+  // trap the paragraph above exists for.
+  //
+  // WHAT IT CLOSES is the half `readonly` on the interface cannot: `readonly` is
+  // erased, so shipped JavaScript could replace `documents` with a store of its
+  // own, or ADD a member no type declares -- and this is ONE OBJECT FOR THE
+  // WHOLE SESSION, so either lands on every later handler rather than on the one
+  // that wrote it. The stores it names seal themselves, each where it is built.
+  const tsudoi: Tsudoi = Object.freeze({
     documents: documents.documents,
     workspaceFolders: workspaceFolders.folders,
     get rootUri(): string | null {
@@ -146,7 +159,7 @@ export function createTsudoi(): TsudoiRuntime {
     get clientCapabilities(): DeepReadonly<ClientCapabilities> {
       return clientCapabilities;
     },
-  };
+  });
   return {
     tsudoi,
     documents,

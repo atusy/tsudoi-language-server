@@ -336,86 +336,95 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
     index = locationIndex(next);
   }
 
-  return {
+  // SEALED WHERE IT IS BUILT, for the reason the lists it hands back are:
+  // `WorkspaceFolderStore` declares its operations `readonly` and that is erased
+  // at run time, so shipped JavaScript could otherwise put its own `get` here --
+  // and this object answers EVERY request for the life of the session, so one
+  // write leaves every later handler reading folders the client never named. It
+  // is SHALLOW because the two members are the operations; the mirror and each
+  // index list are frozen at `mirror()` above.
+  const store: WorkspaceFolderStore = Object.freeze({
+    get: (uri: string): readonly WorkspaceFolder[] => {
+      // THE DEEPEST LOCATION THAT ANSWERS, AND EVERY FOLDER AT IT. The uri's
+      // own location is asked first and the ancestors are taken longest-first,
+      // so a nested folder resolves to the inner one -- this is NOT every
+      // ancestor's folders, and a document under `…/w/inner` inside `…/w`
+      // answers with `inner` alone.
+      //
+      // THE URI'S OWN LOCATION IS ASKED SEPARATELY AND ASKED EXACTLY, and it
+      // cannot be folded into the scan: `innermost` for a uri that NAMES a
+      // directory is that directory's PARENT, so a folder asked about by its
+      // own uri would be answered by whatever holds it. It is also the only
+      // location a non-hierarchical uri has. EXACTLY, because a location
+      // carrying a query or a fragment is reachable here or nowhere -- a
+      // canonical directory holds no literal `?` or `#` for one to prefix.
+      //
+      // AND THE SCAN IS OVER THE FOLDERS HELD, NOT OVER THE URI'S LEVELS,
+      // which is what fixes the cost of a lookup to something the client
+      // cannot inflate with a long name; the interval that makes a prefix test
+      // sound is derived at `ancestryOf`.
+      //
+      // SEVERAL FOLDERS AT ONE LEVEL ARE ALL RETURNED, and that is the whole
+      // reason this hands back a list. Two folders reach one level only by
+      // NAMING ONE LOCATION -- a uri the client sent twice, `…/plain` beside
+      // `…/plain/`, `file://LOCALHOST/a` beside `file:///a` -- and returning
+      // one of them would be tsudoi deciding on its OWN AUTHORITY which of two
+      // things the client said it did not mean. This mirror does not interpret
+      // client state, and one folder out of two is an interpretation. Handing
+      // back both removes the tie-break rule rather than choosing a better one,
+      // and mirror order survives as the order they are PRESENTED in.
+      //
+      // AN EMPTY LIST AND NEVER `undefined`, so a handler writes
+      // `for (const folder of tsudoi.workspaceFolders.get(uri))` with nothing
+      // in front of it. `no folder covers this` and `matched nothing` are one
+      // state here, so the empty list loses no answer the caller could have
+      // told apart.
+      //
+      // THE INDEX'S OWN LIST AND NOT A COPY OF IT, which is what `values()`
+      // does with the mirror and for the same reason: `mirror()` REBUILDS the
+      // index rather than writing into it, so a list a handler took before an
+      // `await` still answers about the moment it was taken.
+      //
+      // AND THAT IS EXACTLY WHY IT IS SEALED. Handing over the real list makes
+      // a handler's `push` a WRITE TO THE STORE, so the two decisions are one:
+      // the list is the store's own, and it is frozen where it is built. The
+      // miss is sealed too and for the same reason, at `noFolders` above.
+      const self = locationOf(uri);
+      if (self !== undefined) {
+        const held = index.get(self);
+        if (held !== undefined) {
+          return held;
+        }
+      }
+      const ancestry = ancestryOf(uri);
+      if (ancestry === undefined) {
+        return noFolders;
+      }
+      let deepest: readonly WorkspaceFolder[] = noFolders;
+      let depth = 0;
+      for (const [location, held] of index) {
+        if (
+          location.length > depth &&
+          location.endsWith("/") &&
+          ancestry.innermost.startsWith(location) &&
+          location.startsWith(ancestry.root)
+        ) {
+          deepest = held;
+          depth = location.length;
+        }
+      }
+      return deepest;
+    },
     // THE MIRROR ITSELF AND NOT A COPY OF IT, which is what makes taking this
     // worth anything: `change()` below replaces this array rather than writing
     // into it, so what one call hands back is the list as of that call and can
     // be iterated again later. Copying here would answer the same question at
     // the cost of saying nothing about the moment.
-    folders: {
-      get(uri: string): readonly WorkspaceFolder[] {
-        // THE DEEPEST LOCATION THAT ANSWERS, AND EVERY FOLDER AT IT. The uri's
-        // own location is asked first and the ancestors are taken longest-first,
-        // so a nested folder resolves to the inner one -- this is NOT every
-        // ancestor's folders, and a document under `…/w/inner` inside `…/w`
-        // answers with `inner` alone.
-        //
-        // THE URI'S OWN LOCATION IS ASKED SEPARATELY AND ASKED EXACTLY, and it
-        // cannot be folded into the scan: `innermost` for a uri that NAMES a
-        // directory is that directory's PARENT, so a folder asked about by its
-        // own uri would be answered by whatever holds it. It is also the only
-        // location a non-hierarchical uri has. EXACTLY, because a location
-        // carrying a query or a fragment is reachable here or nowhere -- a
-        // canonical directory holds no literal `?` or `#` for one to prefix.
-        //
-        // AND THE SCAN IS OVER THE FOLDERS HELD, NOT OVER THE URI'S LEVELS,
-        // which is what fixes the cost of a lookup to something the client
-        // cannot inflate with a long name; the interval that makes a prefix test
-        // sound is derived at `ancestryOf`.
-        //
-        // SEVERAL FOLDERS AT ONE LEVEL ARE ALL RETURNED, and that is the whole
-        // reason this hands back a list. Two folders reach one level only by
-        // NAMING ONE LOCATION -- a uri the client sent twice, `…/plain` beside
-        // `…/plain/`, `file://LOCALHOST/a` beside `file:///a` -- and returning
-        // one of them would be tsudoi deciding on its OWN AUTHORITY which of two
-        // things the client said it did not mean. This mirror does not interpret
-        // client state, and one folder out of two is an interpretation. Handing
-        // back both removes the tie-break rule rather than choosing a better one,
-        // and mirror order survives as the order they are PRESENTED in.
-        //
-        // AN EMPTY LIST AND NEVER `undefined`, so a handler writes
-        // `for (const folder of tsudoi.workspaceFolders.get(uri))` with nothing
-        // in front of it. `no folder covers this` and `matched nothing` are one
-        // state here, so the empty list loses no answer the caller could have
-        // told apart.
-        //
-        // THE INDEX'S OWN LIST AND NOT A COPY OF IT, which is what `values()`
-        // does with the mirror and for the same reason: `mirror()` REBUILDS the
-        // index rather than writing into it, so a list a handler took before an
-        // `await` still answers about the moment it was taken.
-        //
-        // AND THAT IS EXACTLY WHY IT IS SEALED. Handing over the real list makes
-        // a handler's `push` a WRITE TO THE STORE, so the two decisions are one:
-        // the list is the store's own, and it is frozen where it is built. The
-        // miss is sealed too and for the same reason, at `noFolders` above.
-        const self = locationOf(uri);
-        if (self !== undefined) {
-          const held = index.get(self);
-          if (held !== undefined) {
-            return held;
-          }
-        }
-        const ancestry = ancestryOf(uri);
-        if (ancestry === undefined) {
-          return noFolders;
-        }
-        let deepest: readonly WorkspaceFolder[] = noFolders;
-        let depth = 0;
-        for (const [location, held] of index) {
-          if (
-            location.length > depth &&
-            location.endsWith("/") &&
-            ancestry.innermost.startsWith(location) &&
-            location.startsWith(ancestry.root)
-          ) {
-            deepest = held;
-            depth = location.length;
-          }
-        }
-        return deepest;
-      },
-      values: (): Iterable<WorkspaceFolder> => folders,
-    },
+    values: (): Iterable<WorkspaceFolder> => folders,
+  });
+
+  return {
+    folders: store,
 
     roots: (): Pick<Tsudoi, "rootUri" | "rootPath"> => roots,
 

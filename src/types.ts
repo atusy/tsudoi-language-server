@@ -32,10 +32,26 @@ import type { TextDocument } from "./deps/textdocument.ts";
  * at `Tsudoi` below, spelled out here for the one member on which HOLDING THE
  * REFERENCE IS NOT TAKING THE VALUE: the instance is mutated in place, so a
  * handler keeping the document keeps a window rather than an answer.
+ *
+ * ITS OPERATIONS ARE `readonly` FUNCTION PROPERTIES AND NOT METHOD
+ * DECLARATIONS, WHICH IS THE DIFFERENCE BETWEEN A SURFACE AND A SUGGESTION. A
+ * method declaration is a WRITABLE property, so `documents.get = () => undefined`
+ * type-checks against one -- and `readonly documents` on `Tsudoi` does not reach
+ * it, protecting the BINDING and saying nothing about the object behind it. WHAT
+ * THAT COSTS IS NOT THIS HANDLER BUT EVERY LATER ONE: this store is a SINGLE
+ * OBJECT LIVING AS LONG AS THE SERVER DOES, so one write leaves every following
+ * request asking a store that answers about nothing. `WorkspaceFolderStore`
+ * below is declared the same way and for the same reason.
+ *
+ * A TYPE AND NOT A GUARANTEE, as at `DeepReadonly` below: the store is FROZEN
+ * where it is built, in src/documents.ts, and that is the half that holds for
+ * the JavaScript an author ships. Neither half substitutes for the other -- the
+ * type says nothing about untyped code, and the freeze gives no warning before
+ * it throws.
  */
 export interface DocumentStore {
-  get(uri: string): TextDocument | undefined;
-  values(): Iterable<TextDocument>;
+  readonly get: (uri: string) => TextDocument | undefined;
+  readonly values: () => Iterable<TextDocument>;
 }
 
 /**
@@ -62,6 +78,10 @@ export interface DocumentStore {
  * entries carrying the same uri and the same name are two members of it, and the
  * deduplication whoever reached for the set was after never happens. An
  * `Iterable` promises what is true of this list and nothing more.
+ *
+ * ITS OPERATIONS ARE `readonly` FUNCTION PROPERTIES for the reason spelled out
+ * at `DocumentStore` above, and the run-time half is the freeze in
+ * src/workspace.ts.
  */
 export interface WorkspaceFolderStore {
   /**
@@ -120,7 +140,7 @@ export interface WorkspaceFolderStore {
    * documents under it, and a symlink is not followed -- two directories that are
    * one on disk are two locations here.
    */
-  get(uri: string): readonly WorkspaceFolder[];
+  readonly get: (uri: string) => readonly WorkspaceFolder[];
   /**
    * EXACTLY WHAT THE CLIENT SENT, IN MIRROR ORDER, with nothing dropped, nothing
    * synthesised and nothing reordered.
@@ -133,7 +153,7 @@ export interface WorkspaceFolderStore {
    * list you can index, and the taking rather than the copying is what makes the
    * answer about one moment.
    */
-  values(): Iterable<WorkspaceFolder>;
+  readonly values: () => Iterable<WorkspaceFolder>;
 }
 
 /**

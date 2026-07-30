@@ -28,14 +28,18 @@ export interface DocumentStoreHandle {
 export function createDocumentStore(): DocumentStoreHandle {
   const byUri = new Map<string, TextDocument>();
 
-  const documents: DocumentStore = {
-    get(uri: string): TextDocument | undefined {
-      return byUri.get(uri);
-    },
-    values(): Iterable<TextDocument> {
-      return byUri.values();
-    },
-  };
+  // SEALED WHERE IT IS BUILT, which is the half of the read-only surface that
+  // runs. `DocumentStore` declares its operations `readonly` and that is erased
+  // at run time, so the JavaScript a config author ships could otherwise put its
+  // own `get` here -- and this object serves EVERY request for the life of the
+  // session, so one write leaves every later handler asking a store that answers
+  // about nothing. SHALLOW is the whole of what this needs: the two members are
+  // the operations, and what they hand back is sealed where IT is built -- the
+  // the documents this module builds, the mirror's lists in src/workspace.ts.
+  const documents: DocumentStore = Object.freeze({
+    get: (uri: string): TextDocument | undefined => byUri.get(uri),
+    values: (): Iterable<TextDocument> => byUri.values(),
+  });
 
   return {
     documents,
