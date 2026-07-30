@@ -292,7 +292,12 @@ test("a reference captured before a close stops tracking the reopened document",
     contentChanges: [{ text: "edited after reopen" }],
   });
 
-  expect(store.documents.get(uri)?.getText()).toBe("edited after reopen");
+  const reopened = store.documents.get(uri);
+  if (reopened === undefined) {
+    throw new Error("the reopened uri registered nothing");
+  }
+
+  expect(reopened.getText()).toBe("edited after reopen");
   expect(captured.getText()).toBe("edited while open");
-  expect(captured.version).toBe(store.documents.get(uri)?.version);
+  expect(captured.version).toBe(reopened.version);
 });
