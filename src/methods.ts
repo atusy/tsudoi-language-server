@@ -23,45 +23,21 @@ import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./
  *
  * TWO KINDS, NAMED, AND THE CHOICE IS NOT FREE: it is DERIVED from what
  * `MethodMap` says the handler returns, so a method declared with the wrong
- * drive does not compile. MEASURED at vscode-languageserver-protocol 3.18.2 --
- * writing `stream-driven` on hover's entry fails TS2322 naming the two strings.
+ * drive does not compile -- writing `stream-driven` on hover's entry fails
+ * TS2322 naming the two strings, and completion's entry requires the `progress`
+ * member that only a stream-driven entry declares.
  *
- * WHAT IT IS DERIVED FROM HAS MOVED TWICE AND THE HAZARD IS THE SAME BOTH
- * TIMES: A DERIVATION THAT STOPS MATCHING FAILS SILENTLY, BY ROUTING COMPLETION
- * TO THE AWAITED-ONCE ENTRY WITH NOTHING OBJECTING. At Sprint 42 the result
- * became a promise of a TUPLE, and the question `does it extend AsyncGenerator`
- * stopped matching. At Sprint 43 the tuple was withdrawn, and the question
- * `does it carry a stream slot` -- a tuple test -- stopped matching in exactly
- * the same way. THE QUESTION IS THEREFORE ASKED OF THE ONE THING THE DRIVE
- * ACTUALLY NEEDS: does the declared result YIELD BATCHES this drive must pull.
- * MEASURED rather than reasoned, on this tree: writing `stream-driven` on
- * hover's entry fails TS2322 naming the two strings, and completion's entry
- * requires the `progress` member that only a stream-driven entry declares.
+ * A DERIVATION THAT STOPS MATCHING FAILS SILENTLY, BY ROUTING COMPLETION TO THE
+ * AWAITED-ONCE ENTRY WITH NOTHING OBJECTING, which is why the question is asked
+ * of THE ONE THING THE DRIVE ACTUALLY NEEDS: does the declared result YIELD
+ * BATCHES this drive must pull. Questions that were true of the result rather
+ * than of the need -- `does it extend AsyncGenerator`, `does it carry a stream
+ * slot` -- have each stopped matching when the declared result moved.
  *
- * THIS IS WHERE THE RECORDED DECISION AGAINST A TABLE IS HONOURED RATHER THAN
- * OVERTURNED, and the distinction matters enough to state at the type itself.
- * What stood at `reportHandlerFailure` was `there is no shape both fit into
- * that is not an invention`, and IT IS STILL TRUE AND STILL LOAD-BEARING. No
- * single shape is invented here. A method picks ONE OF TWO, each with its own
- * body below, and the router applies only the prologue and epilogue they
- * genuinely share. What changed is that the difference now has a NAME and one
- * home, instead of being open-coded once per method and legible only by
- * reading two handlers side by side.
- *
- * MEASURED that two kinds cover all five of the stakeholder's methods. THE
- * HEADLINE HELD AND THE REASON GIVEN FOR ONE METHOD DID NOT, corrected here
- * because it was labelled MEASURED and was an inference: this block said
- * `textDocument/diagnostic` declares `partialResult`, SO it is generator-shaped
- * like completion. DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT --
- * see `driveStream`, which states both of that drive's requirements and which
- * this method fails on the second. `textDocument/diagnostic` is AWAITED ONCE.
- *
- * BOTH REMAINING METHODS MEASURED AT SPRINT 33 rather than one measured and one
- * carried over, protocol 3.18.2: `CompletionResolveRequest` (protocol.d.ts:2301)
- * declares NO `partialResult` member at all and its `type` is
- * `ProtocolRequestType<CompletionItem, CompletionItem, never, void, void>` --
- * `never` in the progress position -- so it is awaited once, and it needs
- * nothing of the error position either.
+ * DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT, which is the trap
+ * `textDocument/diagnostic` sits in: it declares one and is AWAITED ONCE. See
+ * `driveStream`, which states both of that drive's requirements and which that
+ * method fails on the second.
  */
 type DriveKind<M extends Method> = [StreamChunk<M>] extends [never]
   ? "awaited-once"
@@ -83,75 +59,27 @@ type WireResult<M extends Method> = Awaited<MethodMap[M]["result"]>;
  *
  * A FUNCTION, NOT A KEY AND A VALUE, and that is a requirement rather than a
  * taste. No mechanical `methods[k] !== undefined -> capabilities[flag] = true`
- * expresses what these five have to say: `completionProvider` is an OBJECT, and
+ * expresses what these five have to say: `completionProvider` is an OBJECT and
  * `completionItem/resolve` contributes `completionProvider.resolveProvider` --
- * A KEY INSIDE ANOTHER METHOD'S. A function is immune to the next shape
- * arriving; a key/value pair has to be widened for each one.
+ * A KEY INSIDE ANOTHER METHOD'S -- while `diagnosticProvider` is an object with
+ * TWO REQUIRED BOOLEANS, so for that one neither `true` nor `{}` would
+ * type-check and copying completion's shape would not either. A function is
+ * immune to the next shape arriving; a key/value pair has to be widened for each
+ * one.
  *
- * AND `immune to the next shape arriving` STOPPED BEING A PREDICTION THIS
- * SPRINT. `diagnosticProvider`'s value shape had been flagged UNMEASURED twice
- * on PBI-37, with the PO noting that even a corrected count might not survive
- * contact with it. IT DOES NOT. MEASURED at vscode-languageserver-protocol
- * 3.18.2, ServerCapabilities line 1106: `diagnosticProvider?: DiagnosticOptions
- * | DiagnosticRegistrationOptions`, and `DiagnosticOptions` (protocol.diagnostic
- * .d.ts:50-67) carries TWO REQUIRED MEMBERS -- `interFileDependencies: boolean`
- * and `workspaceDiagnostics: boolean` -- beside an optional `identifier`.
- *
- * SO IT IS A FOURTH VALUE SHAPE, and the sharpest one: `true` would not
- * type-check and neither would `{}`. A flag mechanism could not express it, and
- * NEITHER COULD COPYING COMPLETION'S. That is measurement arriving where the
- * criterion predicted it would, which is why the PO ruled the count REMOVED
- * rather than corrected -- an enumeration would have been wrong again here.
- *
- * IT MUTATES, AND IT IS NO LONGER ORDER-DEPENDENT. That WAS the price of
- * reaching inside another method's key -- A CONTRIBUTOR THAT WRITES INTO A KEY
- * ANOTHER METHOD OWNS MUST RUN AFTER THAT METHOD'S -- and for two methods it
- * was held by nothing but the order two entries happened to be declared in.
- * SINCE SPRINT 38 THE ONE KEY TWO METHODS SHARE IS MERGED INTO RATHER THAN
- * ASSIGNED OVER, so what another contributor already wrote survives and the
- * order they run in decides nothing.
- *
- * THE TABLE IS STILL ITERATED IN DECLARATION ORDER -- string keys on an object
- * literal preserve it -- AND NOTHING DEPENDS ON THAT ANY MORE.
- * `completionItem/resolve` is still declared below `textDocument/completion`,
- * which is now a reading convenience and not a requirement.
- *
- * MEASURED AT SPRINT 38 RATHER THAN ARGUED, over ALL 32 configs the five
- * methods can form and ALL 120 ORDERS their contributors can run in: the
- * capabilities emitted are IDENTICAL to what the assignment emitted, for every
- * config, and no config's result differs across orders. NEGATIVE CONTROL, taken
- * before the merge existed: 8 of those 32 -- exactly the ones supplying BOTH
- * handlers -- disagreed across orders.
- *
- * WHAT WAS REMOVED IS A HAZARD AND NOT A CHECK, which is why no assertion
- * replaced it. The property is still watched where it was: a config supplying
- * BOTH handlers is asserted in test/resolve.test.ts to advertise
- * `completionProvider: { resolveProvider: true }` by exact equality, and that
- * assertion is UNCHANGED. What changed is that declaring the two entries the
- * other way round now reddens NOTHING -- measured at Sprint 38, whole suite
- * green, the same number of tests running -- because there is nothing left for
- * that edit to break.
- *
- * AND THE MEASUREMENT THIS BLOCK CARRIED HAD GONE STALE BEFORE IT WAS REMOVED,
- * written down because the stale number is the part that would have been
- * quietly inherited: it said the swap reddens ALONE, which was true when Sprint
- * 34 measured it and FALSE ONCE SPRINT 37 GAVE THE DEMO CONFIG A RESOLVE
- * HANDLER. Re-measured on the way past with the assignment restored: FOUR tests
- * on both runtimes -- the resolve capability assertion AND the demo config's
- * pinned capabilities in test/lifecycle.test.ts.
- *
- * SO THERE IS STILL NO INDEX COMPARISON ANYWHERE, and the ground is stronger
- * than when it was a refusal: a test asserting resolve's entry sits after
- * completion's would restate a mechanism that now protects nothing.
+ * IT MUTATES, AND IT IS NOT ORDER-DEPENDENT. Reaching inside another method's
+ * key is what would make it so -- A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
+ * METHOD OWNS MUST RUN AFTER THAT METHOD'S -- and what removes the constraint is
+ * that THE ONE KEY TWO METHODS SHARE IS MERGED INTO RATHER THAN ASSIGNED OVER,
+ * so what another contributor already wrote survives and the order they run in
+ * decides nothing. The table is still iterated in DECLARATION ORDER, because
+ * string keys on an object literal preserve it, and nothing depends on that.
  *
  * WHAT IS NOT DEFENDED, NAMED RATHER THAN LEFT TO BE FOUND: nothing stops a
  * FUTURE contributor from assigning over a key another method owns. The merge
  * is a property of the two lines that write `completionProvider` and not of
  * this type, and no test can see the difference while `textDocument/completion`
- * contributes no key of its own -- MEASURED at Sprint 38, restoring the
- * assignment with the entries in their declared order leaves the whole suite
- * green. THE COST OF CLOSING IT is the check refused above, and it is refused
- * on the same ground twice over.
+ * contributes no key of its own.
  */
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 
@@ -163,13 +91,10 @@ export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
  * brevity: three entry interfaces sit at this position and a reader narrowing
  * one back to `void` would find nothing at the other two.
  *
- * IT WAS `void` UNTIL SPRINT 33 AND THAT WAS NOT A CHOICE, it was three methods
- * that happened to agree. MEASURED at vscode-languageserver-protocol 3.18.2:
- * hover, completion and formatting each declare `void` there, and
- * `DocumentDiagnosticRequest` declares `DiagnosticServerCancellationData` -- so
- * pinning `void` REFUSED THE REAL REQUEST TYPE with TS2322, `Type
- * 'DiagnosticServerCancellationData' is not assignable to type 'void'`, at
- * position 2 of `RequestType`'s phantom tuple.
+ * NOT `void`, AND THAT IS NOT A TASTE: hover, completion and formatting each
+ * declare `void` there, but `DocumentDiagnosticRequest` declares
+ * `DiagnosticServerCancellationData`, so pinning `void` REFUSES THE REAL REQUEST
+ * TYPE with TS2322 at position 2 of `RequestType`'s phantom tuple.
  *
  * TSUDOI STILL NAMES NO METHOD-SPECIFIC ERROR TYPE, which is the criterion this
  * has to be read against: `MethodMap` gains nothing, no handler's return type
@@ -177,19 +102,9 @@ export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
  * server telling a client its analysis is TRANSIENTLY unavailable, and that
  * needs a config author who can know that. None has asked to be.
  *
- * BOOKED AS A DEBIT, THE TABLE'S SECOND, so the ledger carries costs and not
- * only gains: after this an entry may name a request type whose error payload
- * disagrees with every other entry's and NOTHING OBJECTS. Nothing exercises that
- * today and nothing checks it.
- *
- * WHAT MADE THE WIDENING SAFE TO MAKE WAS A PROBE RUN BEFORE THE METHOD LANDED,
- * because a widening found unworkable after the rest is a rethink wearing a
- * patch: `connection.onRequest` still accepts the erased type, `tsc --noEmit`
- * exit 0. THE PROBE AND ITS CONTROL WERE THROWAWAY AND ARE NOT KEPT, said
- * plainly because that means they cannot be re-run from the tree -- the control
- * substituted `ProgressType<unknown>` for `ErasedEntry`'s `type` and failed
- * TS2769 `No overload matches this call` AT THE `connection.onRequest(` LINE,
- * which is what shows the call site is checked at all.
+ * BOOKED AS A DEBIT so the ledger carries costs and not only gains: an entry may
+ * name a request type whose error payload disagrees with every other entry's and
+ * NOTHING OBJECTS. Nothing exercises that today and nothing checks it.
  */
 type EntryErrorPayload = unknown;
 
@@ -205,11 +120,9 @@ type StreamChunk<M extends Method> =
 /**
  * A method whose handler is AWAITED ONCE.
  *
- * ITS `type` IS FULLY DISCRIMINATING, and this is measured rather than assumed
- * because it is the property the whole table rests on: the result is pinned to
- * `MethodMap`'s own, so `CompletionRequest.type` written into hover's slot
- * fails TS2322. MEASURED at protocol 3.18.2, with the correct pairings
- * compiling as the control.
+ * ITS `type` IS FULLY DISCRIMINATING, which is the property the whole table
+ * rests on: the result is pinned to `MethodMap`'s own, so
+ * `CompletionRequest.type` written into hover's slot fails TS2322.
  */
 interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
@@ -231,31 +144,20 @@ interface AwaitedOnceEntry<M extends Method> {
  * differ only in OPTIONAL members -- so `HoverRequest.type` in completion's slot
  * COMPILES.
  *
- * THE PIN WAS CONSTRUCTIBLE FOR EXACTLY ONE SPRINT AND THIS SPRINT GAVE IT
- * BACK, WHICH IS A COST OF THE WITHDRAWAL AND IS RECORDED AS ONE RATHER THAN
- * LEFT TO BE REDISCOVERED. Sprint 42's tuple put the protocol's own result type
- * in the pair's first slot, so `MethodMap`'s result and the real
- * `CompletionRequest.type` agreed and the compiler closed the mis-keying hazard.
- * A handler that yields `CompletionItem[]` and nothing else cannot say
- * `CompletionList`, so the agreement is gone. MEASURED ON THIS TREE at
- * typescript 7.0.2 / protocol 3.18.2, not carried from the earlier record:
- * pinning to `StreamChunk<M> | null` gives TS2322 AT THE TABLE ENTRY, reporting
- * `Type 'CompletionList' is missing the following properties from type
- * 'CompletionItem[]'`.
+ * PINNING IT BACK IS NOT AVAILABLE: a handler that yields `CompletionItem[]`
+ * and nothing else cannot say `CompletionList`, so `StreamChunk<M> | null` gives
+ * TS2322 AT THE TABLE ENTRY. And WIDENING THE DECLARED RESULT TO KEEP THE PIN IS
+ * REFUSED: declaring that a completion answer may be a `CompletionList` when
+ * nothing in this drive can produce one is a slot whose meaning does not match
+ * its contents.
  *
- * WIDENING THE DECLARED RESULT TO KEEP THE PIN WAS REFUSED IN ADVANCE, at
- * Planning, so it is a decision rather than a road not taken: declaring that a
- * completion answer may be a `CompletionList` when nothing in this drive can
- * produce one is a slot whose meaning does not match its contents, which is the
- * defect PBI-46 exists to remove wearing a different coat.
- *
- * SO THE MIS-KEYING HAZARD IS CLOSED BY A TEST AGAIN RATHER THAN BY THE
- * COMPILER: every entry's key is asserted equal to its own `type.method` in
- * test/methods-table.test.ts. That test was ALWAYS making a second, different
- * claim -- `type.method` is a RUNTIME STRING, and a dependency that renamed the
- * method a request constant carries while leaving its types alone would satisfy
- * every compile-time check and reach the wrong handler. What changed is that it
- * is once more the ONLY thing standing between this entry and a mis-keying.
+ * SO THE MIS-KEYING HAZARD IS CLOSED BY A TEST RATHER THAN BY THE COMPILER, and
+ * that test is THE ONLY thing standing between this entry and a mis-keying:
+ * every entry's key is asserted equal to its own `type.method` in
+ * test/methods-table.test.ts. It makes a second, different claim too --
+ * `type.method` is a RUNTIME STRING, and a dependency that renamed the method a
+ * request constant carries while leaving its types alone would satisfy every
+ * compile-time check and reach the wrong handler.
  */
 interface StreamDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
@@ -284,17 +186,6 @@ export type RequestEntry<M extends Method> = [StreamChunk<M>] extends [never]
  * user story -- a method that decides nothing does not compile, instead of
  * joining a convention whoever writes it must remember.
  *
- * WHAT THE READINESS GATE MEASURED BEFORE THIS WAS BUILT, recorded here because
- * it is the honest half and the PBI was argued from its opposite: the
- * capability `if`s this replaces WERE DEFENDED, all three, each by a test whose
- * title names per-method capability correctness. THE REJECTION CHECKS WERE NOT
- * -- deleting formatting's and deleting completion's each left ALL 399 TESTS
- * GREEN, and only hover's reddened anything. So this table's gain on the
- * capability half is COLOCATION AND REQUIREDNESS, NOT the removal of an
- * undefended convention, and ANYONE CITING IT AS A SMALLER src/server.ts IS
- * CITING THE WRONG THING: it is about the same number of lines, in a place
- * where forgetting them is a type error.
- *
  * THE KEY IS THE METHOD NAME AND NOTHING ELSE CARRIES IT. There is no `method`
  * field to disagree with the key, because the router looks the config's handler
  * up BY THE KEY and reports failures BY THE KEY.
@@ -314,63 +205,41 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // EMPTY OPTIONS, NOT triggerCharacters: TsudoiConfig has no surface for a
     // config author to declare them, and claiming trigger characters nobody
     // configured would have the client ask at moments the handler knows nothing
-    // about. Moved here from src/server.ts, where it sat above the `if`.
+    // about.
     //
     // IT MERGES RATHER THAN ASSIGNS, AND THAT IS WHAT MAKES THIS TABLE
-    // ORDER-INDEPENDENT. This line used to read `= {}`, which meant a
-    // contributor writing into a key THIS method owns had to run after this
-    // one -- `completionItem/resolve` is that contributor, and until Sprint 38
-    // nothing but declaration order held it. The spread is the whole fix: what
-    // is already there survives, so the two entries produce the same
-    // `completionProvider` in either order.
+    // ORDER-INDEPENDENT. `= {}` here would mean a contributor writing into a key
+    // THIS method owns had to run after this one, and `completionItem/resolve`
+    // is that contributor. The spread is the whole fix: what is already there
+    // survives, so the two entries produce the same `completionProvider` in
+    // either order.
     //
     // `{ ...undefined }` IS `{}`, which is why the no-resolve case is
     // unchanged: for a config supplying completion alone this key is absent
-    // when this runs and the spread contributes nothing. MEASURED at Sprint 38
-    // over ALL 32 configs the five methods can form -- the capabilities emitted
-    // are identical to what the assignment emitted, for every one of them.
+    // when this runs and the spread contributes nothing.
     capability: (capabilities) => {
       capabilities.completionProvider = { ...capabilities.completionProvider };
     },
   },
-  // DECLARED HERE, AND THE POSITION STOPPED BEING LOAD-BEARING AT SPRINT 38.
-  // This is still the only entry whose capability writes into a key ANOTHER
-  // METHOD OWNS, and it used to be true that moving it above
-  // `textDocument/completion` would have the line below overwritten by
-  // completion's `{}` before the client ever saw it. COMPLETION NOW MERGES, so
-  // both orders produce the same `completionProvider` and this entry sits here
+  // THE ONLY ENTRY WHOSE CAPABILITY WRITES INTO A KEY ANOTHER METHOD OWNS. Its
+  // POSITION IS NOT LOAD-BEARING: completion merges rather than assigns, so both
+  // orders produce the same `completionProvider`, and this sits below completion
   // because that is the order the pair reads in.
-  //
-  // MEASURED AT SPRINT 38 rather than inherited: with this entry moved above
-  // completion's, the whole suite is green and the same number of tests run.
-  // The exact-equality capability assertion in test/resolve.test.ts still
-  // watches WHAT A CLIENT IS TOLD -- it is what a merge that dropped
-  // `resolveProvider` would redden -- and it no longer watches the ordering,
-  // because the ordering no longer decides anything.
   "completionItem/resolve": {
     drive: "awaited-once",
     type: CompletionResolveRequest.type,
-    // THE FOURTH SHAPE THIS TABLE HOLDS AND THE ONLY ONE THAT IS NOT A KEY OF
-    // ITS OWN: `resolveProvider` lives inside `CompletionOptions` (protocol
-    // 3.18.2, protocol.d.ts:2265), which is `completionProvider`'s value -- so
-    // this is the line that makes `CapabilityContributor` a FUNCTION rather
-    // than a flag, and reading it beside hover's `true`, completion's empty
-    // options and diagnostic's two required booleans is what the table is for.
+    // THE ONE SHAPE THIS TABLE HOLDS THAT IS NOT A KEY OF ITS OWN:
+    // `resolveProvider` lives inside `CompletionOptions`, which is
+    // `completionProvider`'s value -- so this is the line that makes
+    // `CapabilityContributor` a FUNCTION rather than a flag.
     //
-    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, AND SINCE SPRINT 38
-    // THAT IS THE MECHANISM RATHER THAN A HEDGE AT THIS ONE SITE: both lines
-    // that write `completionProvider` merge into it, which is exactly what
-    // makes the pair order-independent, so this spread is no longer a defensive
-    // gesture one contributor makes about another's key.
-    //
-    // IT IS STILL NOT DEFENDED, AND THAT HALF IS UNCHANGED AND RE-MEASURED
-    // RATHER THAN CARRIED: `textDocument/completion` contributes no key of its
-    // own, so writing `{ resolveProvider: true }` outright still produces an
-    // identical result for every config -- MEASURED at Sprint 38, the whole
-    // suite green with this spread deleted, exactly as Sprint 34 measured it
-    // before the merge. What the spread buys remains a FUTURE
-    // `triggerCharacters` on completion's line not being deleted by this one,
-    // silently, at a distance.
+    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, and both lines that
+    // write `completionProvider` merge into it, which is exactly what makes the
+    // pair order-independent. IT IS NOT DEFENDED: `textDocument/completion`
+    // contributes no key of its own, so deleting this spread produces an
+    // identical result for every config and reddens nothing. What it buys is a
+    // FUTURE `triggerCharacters` on completion's line not being deleted by this
+    // one, silently, at a distance.
     //
     // THIS LINE WOULD BRING A `completionProvider` INTO BEING FOR A CONFIG THAT
     // CANNOT ANSWER COMPLETION, and what stops it is NOT here. That state --
@@ -399,56 +268,36 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // is not a style drift: DocumentFormattingOptions extends
     // WorkDoneProgressOptions and declares NOTHING ELSE, so the only thing an
     // options object could say here is `workDoneProgress`, which tsudoi does
-    // not implement for this method.
-    // `true` is the protocol's own way to say `provided, with nothing to
-    // configure`. MEASURED at vscode-languageserver-protocol 3.18.2:
+    // not implement for this method. `true` is the protocol's own way to say
+    // `provided, with nothing to configure`, and
     // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at
     // the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which is
     // why this reads like hover's and not like resolve's, which reaches inside
-    // completion's. Moved here from src/server.ts, where it sat above the `if`.
-    //
-    // READING THEM SIDE BY SIDE IS THE POINT, and it is what a table flattening
-    // them to booleans would have destroyed silently: `true` here, completion's
-    // EMPTY OPTIONS MERGED INTO WHATEVER IS ALREADY THERE, diagnostic's object
-    // with two REQUIRED booleans, and resolve's key NESTED INSIDE COMPLETION'S
-    // are each a different kind of contribution, and
-    // this is the one place the difference is visible at a glance. NAMED AND
-    // DELIBERATELY NOT COUNTED: the PO ruled a count out of this comparison at
-    // Sprint 31 because any enumeration invites the same staleness again, and
-    // the entry named last here is the one that was still a prediction then.
+    // completion's.
     capability: (capabilities) => {
       capabilities.documentFormattingProvider = true;
     },
   },
   "textDocument/diagnostic": {
-    // AWAITED ONCE, AND IT WAS PLANNED AS STREAM-DRIVEN UNTIL IT WAS
-    // MEASURED. `DocumentDiagnosticRequest` declares `partialResult`, which is
-    // where the expectation came from -- and see `driveStream`: declaring it
-    // is NECESSARY AND NOT SUFFICIENT, because that drive concatenates chunks
-    // and this method's chunks are objects. Nothing here chooses the drive
-    // anyway; `DriveKind` DERIVES it from `MethodMap`, so writing
-    // `stream-driven` on this line would not compile.
+    // AWAITED ONCE DESPITE DECLARING `partialResult` -- see `driveStream`:
+    // declaring it is NECESSARY AND NOT SUFFICIENT, because that drive
+    // concatenates chunks and this method's chunks are objects. Nothing here
+    // chooses the drive anyway; `DriveKind` DERIVES it from `MethodMap`, so
+    // writing `stream-driven` on this line would not compile.
     drive: "awaited-once",
     type: DocumentDiagnosticRequest.type,
     // AN OBJECT WITH TWO REQUIRED BOOLEANS, WHICH IS WHY NEITHER `true` NOR `{}`
-    // WOULD DO: `DiagnosticOptions` (protocol.diagnostic.d.ts:50-67, protocol
-    // 3.18.2) requires BOTH, so this is a fourth kind of contribution beside
-    // hover's `true`, completion's `{}` and resolve's nested key -- and reading
-    // the four side by side is what this table is for.
-    //
-    // THE TWO VALUES ARE DECIDED DIFFERENTLY AND THAT DISTINCTION IS THE POINT
-    // OF WRITING THEM OUT RATHER THAN INLINING A LITERAL.
+    // WOULD DO: `DiagnosticOptions` requires BOTH.
     //
     // NO `identifier`, AND ITS ABSENCE IS A DECISION RATHER THAN AN OMISSION,
-    // written here because this is the line that would gain one. `DiagnosticOptions`
-    // declares it optional, and `DocumentDiagnosticParams` carries the matching
-    // optional `identifier` a client echoes back -- so registering one would
-    // create a value tsudoi must then MATCH incoming params against, and
-    // `TsudoiConfig` has no surface for an author to name it. Exactly the
-    // reasoning that leaves completion's options empty rather than claiming
-    // triggerCharacters nobody configured. A client sending `identifier` today
-    // is answered from the same handler regardless, which is correct while
-    // tsudoi registers exactly one diagnostic source.
+    // written here because this is the line that would gain one.
+    // `DiagnosticOptions` declares it optional, and `DocumentDiagnosticParams`
+    // carries the matching optional `identifier` a client echoes back -- so
+    // registering one would create a value tsudoi must then MATCH incoming
+    // params against, and `TsudoiConfig` has no surface for an author to name
+    // it. A client sending `identifier` today is answered from the same handler
+    // regardless, which is correct while tsudoi registers exactly one diagnostic
+    // source.
     //
     // `workspaceDiagnostics: false` IS FORCED, NOT CHOSEN. tsudoi does not serve
     // `workspace/diagnostic` -- a SEPARATE request with its own params and
@@ -463,8 +312,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // not symmetric: `true` for a language with no inter-file dependencies costs
     // REDUNDANT PULLS -- visible, a performance cost, borne by the client --
     // while `false` for a language that has them leaves A STALE DIAGNOSTIC IN
-    // ANOTHER FILE THAT NEVER CLEARS, which is SILENT AND WRONG. The same
-    // preference refuses to synthesise a workspace root from cwd.
+    // ANOTHER FILE THAT NEVER CLEARS, which is SILENT AND WRONG.
     //
     // THE PROTOCOL'S OWN COMMENT SAYS `typically uncommon for linters` AND THAT
     // IS DELIBERATELY NOT THE REASON, written here because it is the obvious
@@ -503,14 +351,6 @@ interface ErasedEntry {
   /**
    * WIDER THAN THE ENTRY'S OWN FOR THE SAME REASON `type` IS: this is the
    * erasure, and the per-method payload is checked where the entry is WRITTEN.
-   *
-   * IT USED TO BE WIDER FOR A SECOND REASON AND IS NOT ANY MORE, which is worth
-   * the sentence because the erasure now looks like the only motive. Until
-   * Sprint 43 the FIRST `$/progress` this drive sent was the handler's ANSWER,
-   * which could be an object, while every later one was an array -- a positional
-   * distinction `ProgressType`'s single payload parameter cannot state. EVERY
-   * MESSAGE THIS DRIVE SENDS IS NOW A BATCH OF ITEMS, so there is one payload
-   * shape and nothing left for a type to fail to express.
    */
   readonly progress: ProgressType<unknown>;
   readonly capability: CapabilityContributor;
@@ -527,14 +367,9 @@ type ErasedStreamHandler = (
 
 /**
  * The table as a list, in DECLARATION ORDER -- which holds because these are
- * ordinary string keys.
- *
- * NOTHING DEPENDS ON THAT ORDER SINCE SPRINT 38, and this sentence said the
- * opposite until then: it named the contributor-ordering constraint at
- * `CapabilityContributor` as what declaration order was FOR. That constraint no
- * longer exists -- the one shared capability key is merged into rather than
- * assigned over -- so the order is a fact about `Object.entries` and not a
- * requirement anything here rests on.
+ * ordinary string keys, and which NOTHING DEPENDS ON: the one shared capability
+ * key is merged into rather than assigned over, so the order is a fact about
+ * `Object.entries` and not a requirement anything here rests on.
  */
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
@@ -543,10 +378,8 @@ function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
 /**
  * Claims each capability the config can actually answer for.
  *
- * THE POLICY IS THE STAKEHOLDER'S AND IS UNCHANGED: a client is entitled to send
- * whatever it was told about, so a capability is claimed ONLY where the config
- * can answer it. What moved is where the per-method answer is written, not what
- * it is.
+ * THE POLICY IS THE STAKEHOLDER'S: a client is entitled to send whatever it was
+ * told about, so a capability is claimed ONLY where the config can answer it.
  */
 export function contributeCapabilities(
   config: TsudoiConfig,
@@ -579,12 +412,9 @@ export type RequestRejection = () => ResponseError<void> | undefined;
  * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added to
  * this thunk and forgotten at the context, or the reverse, does not compile.
  *
- * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, and the name it avoids is gone
- * now: src/workspace.ts used to export `ClientRoots` for the two DEPRECATED
- * FIELDS ALONE, which this slice is not -- it is the whole thing a request
- * reads, folder list included. The clash it was named away from died with that
- * interface; what it says about THIS type is still the reason to keep it, since
- * a reader meeting `roots` here would otherwise expect the two fields.
+ * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, because a reader meeting
+ * `roots` would otherwise expect the two deprecated fields alone: this slice is
+ * the whole thing a request reads, folder list included.
  */
 export type RequestRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
 
@@ -601,15 +431,10 @@ export type RequestRoots = () => Pick<RequestContext, "workspaceFolders" | "root
  * handler behind a plausible answer -- and on the streaming path it would do so
  * after the client had already been sent partial results.
  *
- * Only the REPORTING is shared. THE CALLS STAY SEPARATE: a hover handler is
- * awaited once and a completion handler is driven a chunk at a time, and there
- * is no shape both fit into that is not an invention.
- *
- * THAT SENTENCE IS UNCHANGED AND IS NOT A LEFTOVER. A table now exists, and it
- * did NOT overturn this: the two calls are still two, at `driveAwaitedOnce` and
- * `driveStream`, and a method picks one of them BY NAME. What the table
- * carries is what they genuinely share -- the rejection, the context and the
- * cancelled answer -- and nothing was invented to make one shape out of two.
+ * Only the REPORTING is shared. THE CALLS STAY SEPARATE, at `driveAwaitedOnce`
+ * and `driveStream`, with a method picking one of them BY NAME: a hover handler
+ * is awaited once and a completion handler is driven a chunk at a time, and
+ * there is no shape both fit into that is not an invention.
  */
 function reportHandlerFailure(method: Method, error: unknown): never {
   process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
@@ -652,9 +477,8 @@ function failureDetail(error: unknown): string {
 
 /**
  * How a cancelled request is answered, whatever its handler produced and
- * whatever drive its method uses. UNQUALIFIED SINCE SPRINT 35, and it forwards
- * the qualifier `answerUnlessCancelled` no longer carries either: every request
- * that reaches a drive reaches that function, so there is no path to a cancelled
+ * whatever drive its method uses. UNQUALIFIED: every request that reaches a
+ * drive reaches `answerUnlessCancelled`, so there is no path to a cancelled
  * answer that goes around this one.
  *
  * LSP 3.17 permits answering normally instead, so this is a CHOICE: the client
@@ -708,32 +532,19 @@ function requestContext(
  * failed. The abort is re-read AFTER the handler settles, so a handler that
  * never looks at its signal is suppressed exactly like one that does.
  *
- * THAT SENTENCE CARRIED A QUALIFIER FOR THREE SPRINTS AND IT IS GONE RATHER THAN
- * FORGOTTEN. The stream drive used to return early when the config supplied
- * no handler, AHEAD of this function, so a cancelled request to a
- * stream-driven method with NO handler was answered `null` and an
- * awaited-once one -32800 -- pre-existing, revealed rather than introduced, and
- * invisible until the two drives sat side by side. MEASURED at Sprint 32 by P-D
- * and RE-MEASURED at Sprint 35 by restoring that return, which reddens the
- * table-wide no-handler test naming `textDocument/completion` and no other
- * method.
- *
- * THE DIVERGENCE WAS CLOSED AT -32800 FOR BOTH, and the ground was the sentence
- * above rather than the behaviour: LSP permits either answer, so no requirement
- * was breached, and what was at stake was that THIS CLAIM IS THE ASSET.
- * Preserving the divergence would have meant qualifying a stated principle to
- * accommodate an ordering nobody chose.
- *
- * WHAT WOULD FALSIFY IT AGAIN, written here because that is the edit: any drive
- * answering a request before it reaches this function. Both build the request
- * context whether or not a handler exists, and both answer through here, which
- * is the property test/methods-table.test.ts pins for EVERY entry in the table
- * with no handler configured.
+ * WHAT WOULD FALSIFY THAT, written here because that is the edit: any drive
+ * answering a request before it reaches this function -- a stream drive that
+ * returned early for a config with no handler would answer such a request `null`
+ * where the awaited-once drive answers -32800. LSP permits either, so nothing is
+ * breached; what would go is the claim above, and THAT CLAIM IS THE ASSET. Both
+ * drives build the request context whether or not a handler exists, and both
+ * answer through here, which is the property test/methods-table.test.ts pins for
+ * EVERY entry in the table with no handler configured.
  *
  * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
  * awaited once and a completion handler is driven a chunk at a time, and
- * `produce` is where that difference lives -- supplied now by one of the two
- * named drives rather than by a handler written out per method.
+ * `produce` is where that difference lives -- supplied by one of the two named
+ * drives rather than by a handler written out per method.
  */
 async function answerUnlessCancelled<T>(
   method: Method,
@@ -851,29 +662,25 @@ export function registerMethods(
       async (params: unknown, cancellation: CancellationToken): Promise<unknown> => {
         // THE PROLOGUE, AND IT IS THE WHOLE REASON THE ROUTER EXISTS. A refused
         // request is answered before anything else happens, because a server
-        // outside its serving window has no client state to answer FROM. It ran
-        // three times by hand before this loop; the readiness gate measured that
-        // TWO OF THOSE THREE COPIES WERE DEFENDED BY NOTHING AT ALL -- deleting
-        // formatting's and deleting completion's each left all 399 tests green.
-        // That is the finding this loop answers.
+        // outside its serving window has no client state to answer FROM. Running
+        // it once here is what stops it being a per-method convention a new
+        // method joins only if whoever writes it remembers.
         const rejection = requestRejection();
         if (rejection !== undefined) {
           throw rejection;
         }
         const handler = config.methods?.[method];
         // THE DRIVE, AND THE NO-HANDLER CASE COMES WITH IT RATHER THAN BEING A
-        // SECOND AXIS. Sprint 31 named the two shapes separately -- hover and
-        // formatting call `handler?.(...) ?? null`, while completion answers
-        // with a return of its own, because no single expression both drives a
-        // generator and answers for a missing one. They are NOT independent:
-        // each drive has exactly one of them, so choosing the drive chooses it,
-        // and nothing third is invented.
+        // SECOND AXIS. The awaited-once drive calls `handler?.(...) ?? null`,
+        // while the stream drive answers with a return of its own, because no
+        // single expression both drives a generator and answers for a missing
+        // one. They are NOT independent: each drive has exactly one of them, so
+        // choosing the drive chooses it, and nothing third is invented.
         //
-        // WHAT IS NO LONGER A DIFFERENCE BETWEEN THEM is WHERE that answer is
+        // WHAT IS NOT A DIFFERENCE BETWEEN THEM is WHERE that answer is
         // produced. Both drives build the request context whether or not a
         // handler exists and answer through `answerUnlessCancelled`, so a
-        // cancelled request is -32800 either way; until Sprint 35 completion's
-        // return sat ahead of that function and answered `null`.
+        // cancelled request is -32800 either way.
         if (entry.drive === "stream-driven") {
           return driveStream({
             method,
@@ -908,10 +715,10 @@ export function registerMethods(
  * this drive needs: there is nothing to drive, so nothing has to know whether a
  * handler exists before the call is written.
  *
- * THE CONTEXT IS BUILT EITHER WAY, WHICH IS NO LONGER A DIFFERENCE FROM THE
- * OTHER DRIVE and was one until Sprint 35: the epilogue reads the abort off the
- * context, so a drive that skipped building one for a request it answers `null`
- * would be deciding that request's cancellation itself.
+ * THE CONTEXT IS BUILT EITHER WAY, exactly as on the other drive: the epilogue
+ * reads the abort off the context, so a drive that skipped building one for a
+ * request it answers `null` would be deciding that request's cancellation
+ * itself.
  */
 async function driveAwaitedOnce(run: {
   method: Method;
@@ -956,23 +763,16 @@ async function driveAwaitedOnce(run: {
  * beside the `?? null` above: nothing here both drives a stream and answers
  * for a missing one, so the two cases are two statements. WHAT THEY ARE NOT is
  * two answers about cancellation -- that return goes through
- * `answerUnlessCancelled` like every other answer this file produces, and it
- * sat ahead of it until Sprint 35.
+ * `answerUnlessCancelled` like every other answer this file produces.
  *
  * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT: its params must carry a
  * `partialResultToken`, and what it yields must be ARRAYS, since aggregating
  * concatenates them. Both requirements are about the ONE payload shape this
- * drive handles -- until Sprint 43 the first message was an ANSWER exempt from
- * the second requirement, and that exemption is what carried `isIncomplete`.
- *
- * IT WAS WRITTEN EXPECTING TO BE MET AT PBI-38 AND IT EXCLUDED THAT METHOD
- * INSTEAD, which is the strongest evidence it was worth writing down and is why
- * the outcome is recorded rather than the prediction. MEASURED at Sprint 33,
- * vscode-languageserver-protocol 3.18.2: `DocumentDiagnosticParams` DOES declare
- * `PartialResultParams`, so the first requirement holds -- and
- * `DocumentDiagnosticRequest.partialResult` is
+ * drive handles, and the second is the one that excludes
+ * `textDocument/diagnostic`: `DocumentDiagnosticParams` DOES declare
+ * `PartialResultParams`, but `DocumentDiagnosticRequest.partialResult` is
  * `ProgressType<DocumentDiagnosticReportProgress>`, a union of two OBJECT types
- * and not an array, so the second fails and this drive cannot carry that method.
+ * and not an array.
  *
  * THE PROTOCOL'S OWN COMMENT SAYS WHY, and it is the half a type check would
  * miss: those chunks carry RELATED DOCUMENTS rather than more diagnostics for
@@ -994,22 +794,16 @@ async function driveStream(run: {
   const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
   if (handler === undefined) {
     // THIS DRIVE'S NO-HANDLER ANSWER, AND IT GOES THROUGH THE EPILOGUE LIKE
-    // EVERY OTHER ANSWER THIS FILE PRODUCES. There is still nothing to drive,
-    // so nothing pulls a generator or reads a token -- what changed at Sprint
-    // 35 is that the `null` is produced INSIDE `answerUnlessCancelled` instead
-    // of ahead of it, so a CANCELLED request with no handler is answered -32800
-    // here exactly as it is on the awaited-once drive.
+    // EVERY OTHER ANSWER THIS FILE PRODUCES. Nothing pulls a generator or reads
+    // a token, but the `null` is produced INSIDE `answerUnlessCancelled` rather
+    // than ahead of it, so a CANCELLED request with no handler is answered
+    // -32800 here exactly as it is on the awaited-once drive.
     //
     // WHY THE CONTEXT IS BUILT FOR A REQUEST NOTHING WILL ANSWER: the epilogue
-    // reads the abort off it. That is the same trade the awaited-once drive has
-    // always made -- one AbortController and one subscription for a request
-    // that answers `null` -- and it is what makes the cancellation decision one
+    // reads the abort off it. That is the same trade the awaited-once drive
+    // makes -- one AbortController and one subscription for a request that
+    // answers `null` -- and it is what makes the cancellation decision one
     // decision rather than one per drive.
-    //
-    // NOT AN ORDERING THIS DRIVE PREFERRED. LSP 3.17 permits answering a
-    // cancelled request normally, so the `null` violated nothing; what it did
-    // was falsify `answerUnlessCancelled`'s own statement that everything
-    // cancellation changes is decided there, and THAT CLAIM IS THE ASSET.
     return answerUnlessCancelled(run.method, context.signal, () => Promise.resolve(null));
   }
   // BELOW THE NO-HANDLER RETURN, AND BOTH SIDES OF THAT POSITION ARE
@@ -1038,23 +832,20 @@ async function driveStream(run: {
     // answers -- `no candidates` versus `no answer` -- and nothing but this
     // tells them apart once the loop has ended.
     //
-    // DEFENDED AT EXACTLY ONE SITE, MEASURED RATHER THAN ASSUMED, and said here
-    // per the Sprint-8 rule because this is where the deleting edit would be
-    // made. Dropping this flag -- `token === undefined ? collected : null` --
-    // reddens `the example config is driven end to end ...` in
-    // test/completion.test.ts, at its assertion that a position the example has
-    // nothing for is answered null, reporting `Received: []`, AND NOTHING ELSE
-    // in the suite: 453 pass / 2 fail, one per runtime. The assertion is
-    // DESCRIBED rather than quoted because this project measures `none
-    // weakened` by grepping source lines that open an assertion call, and a
-    // comment quoting one inflates that count. WHY ONE SITE IS ALL THERE IS:
-    // under a token the response is
-    // `null` whatever this flag says, so the zero-yield fixture cannot see it;
-    // and the helpers that read completions elsewhere spell `result ?? []`,
-    // which erases the very distinction. NOT A GAP TO CLOSE BY ADDING A TEST
-    // FOR ITS OWN SAKE -- that one site is amended standing item 6's carrier --
-    // but a reader deleting this flag should know a single assertion stands
-    // between them and telling every user there are no candidates.
+    // DEFENDED AT EXACTLY ONE SITE, and said here because this is where the
+    // deleting edit would be made. Dropping this flag -- `token === undefined ?
+    // collected : null` -- reddens `the example config is driven end to end ...`
+    // in test/completion.test.ts, at its assertion that a position the example
+    // has nothing for is answered null, AND NOTHING ELSE in the suite. That
+    // assertion is DESCRIBED rather than quoted, and must stay that way: this
+    // project measures `none weakened` by grepping source lines that open an
+    // assertion call, and a comment quoting one inflates that count. WHY ONE
+    // SITE IS ALL THERE IS: under a token the response is `null` whatever this
+    // flag says, so the zero-yield fixture cannot see it; and the helpers that
+    // read completions elsewhere spell `result ?? []`, which erases the very
+    // distinction. NOT A GAP TO CLOSE BY ADDING A TEST FOR ITS OWN SAKE, but a
+    // reader deleting this flag should know a single assertion stands between
+    // them and telling every user there are no candidates.
     let yielded = false;
     const batches = handler(context, run.params);
     for (;;) {
@@ -1072,15 +863,12 @@ async function driveStream(run: {
       // the generator, which is the point of cancelling at all. The value
       // is discarded either way -- the answer is already -32800.
       //
-      // AND IT COVERS THE FIRST BATCH TOO, WHICH IS WHERE A SECOND CHECK USED
-      // TO STAND. MEASURED at Sprint 42: vscode-jsonrpc calls the handler even
-      // for a request cancelled BEFORE dispatch, and a draft of the tuple drive
-      // that sent the handler's ANSWER unguarded made `a completion cancelled
-      // before it is dispatched ... streams nothing` observe ONE message on
-      // both runtimes. There is no answer any more -- the first batch is an
-      // ordinary iteration of this loop -- so the finding is re-homed here
-      // rather than deleted with the code it was taken against, and it is what
-      // the same test still watches.
+      // AND IT COVERS THE FIRST BATCH TOO, which is not incidental:
+      // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
+      // dispatch, so a first batch sent without passing this check goes out to a
+      // client that never wanted it. The first batch is an ordinary iteration of
+      // this loop, and `a completion cancelled before it is dispatched ...
+      // streams nothing` in test/cancellation.test.ts is what watches it.
       if (context.signal.aborted) {
         // Returning stops DRIVING the generator; closing it is what runs
         // the config author's `finally`. Without this the generator is left
@@ -1106,31 +894,27 @@ async function driveStream(run: {
         // not a defect here.
         //
         // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
-        // record of why. MEASURED under bun 1.3.13 and deno 2.9.2: when the
-        // author's `finally` itself yields, the `return(null)` below resolves
-        // `{ value, done: false }` -- the return completion is suspended by
-        // that yield. CONSEQUENCE: the generator stays parked INSIDE its own
-        // finally and every statement after that yield -- the rest of their
-        // cleanup -- never runs, silently, on every superseded keystroke.
-        // `done === false` right here is the evidence tsudoi could report.
+        // record of why. When the author's `finally` itself yields, the
+        // `return()` below resolves `{ value, done: false }` on both runtimes --
+        // the return completion is suspended by that yield. CONSEQUENCE: the
+        // generator stays parked INSIDE its own finally and every statement
+        // after that yield -- the rest of their cleanup -- never runs, silently,
+        // on every superseded keystroke. `done === false` right here is the
+        // evidence tsudoi could report.
         //
         // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE
-        // SEMANTICS rather than tsudoi doing something wrong. Measured on
-        // both runtimes, `for await (...) { break }` over the same generator
-        // leaves it in exactly this state -- one chunk seen, the code after
-        // the yield unrun. tsudoi calls .return() correctly; the author's
-        // own cleanup defers itself. Reporting it would be reporting
-        // JavaScript, so PBI-12 was dropped on culpability, not on defect.
+        // SEMANTICS rather than tsudoi doing something wrong. `for await (...) {
+        // break }` over the same generator leaves it in exactly this state.
+        // tsudoi calls .return() correctly; the author's own cleanup defers
+        // itself, so reporting it would be reporting JavaScript.
         //
         // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN
-        // OVERSIGHT. A local narrowed to `AsyncIterator` stood here for exactly
-        // one sprint, because the stream was published as an `AsyncIterable`
-        // whose `return` is OPTIONAL and a guard there defended a reachable
-        // hazard. THE PUBLISHED TYPE IS AN `AsyncGenerator` NOW, which REQUIRES
-        // `return`, so narrowing would widen a guarantee away by hand and then
-        // guard against the absence it had just manufactured. This repository
-        // prefers FORECLOSING a failure to DETECTING one, and the type
-        // forecloses this one.
+        // OVERSIGHT. THE PUBLISHED TYPE IS AN `AsyncGenerator`, which REQUIRES
+        // `return`, so narrowing to `AsyncIterator` -- whose `return` is
+        // OPTIONAL -- would widen a guarantee away by hand and then guard
+        // against the absence it had just manufactured. This repository prefers
+        // FORECLOSING a failure to DETECTING one, and the type forecloses this
+        // one.
         batches.return().then(undefined, (error: unknown) => {
           reportCleanupFailure(run.method, error);
         });
