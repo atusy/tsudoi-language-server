@@ -617,6 +617,23 @@ function streamingToken(
  * sends a request it was never told about is answered emptily rather than
  * MethodNotFound -- a server must not fail because a client misbehaves.
  *
+ * THAT EMPTY ANSWER IS OFF-SPEC FOR TWO OF THE FIVE, named rather than glossed:
+ * `completionItem/resolve` results in a `CompletionItem` and
+ * `textDocument/diagnostic` in a `DocumentDiagnosticReport`, and NEITHER TYPE
+ * HAS A NULL ARM, where hover's and completion's do.
+ *
+ * IT IS UNREACHABLE FROM A CONFORMING CLIENT, and that is a property of one
+ * expression rather than a hope: `contributeCapabilities` claims a method's
+ * capability on `config.methods?.[method] !== undefined`, and the handler below
+ * is looked up by the SAME READ over the SAME TABLE -- so advertised and
+ * answerable are one condition, and a client only ever hears about a method
+ * that has a handler.
+ *
+ * WHAT CONFORMING ANYWAY WOULD COST: a no-handler answer PER METHOD -- the item
+ * echoed back for resolve, `{ kind: "full", items: [] }` for diagnostic -- which
+ * is exactly the second axis the drive split refuses to grow, paid for a client
+ * that has already ignored what it was told.
+ *
  * TAKES THE NARROWED CONNECTION, and that is not merely what the caller happens
  * to hold: this module registers REQUESTS, so an `onNotification` on its
  * parameter would be a second door out of the router in the one other file that
