@@ -56,6 +56,19 @@ const workspace: ServerCapabilities["workspace"] = {
 
 const uri = "file:///workspace/a.txt";
 
+/**
+ * A client that renders markdown, spelled as a real editor spells it: the
+ * preference list of `textDocument.hover.contentFormat`, markdown first.
+ *
+ * The shared `initializeParams` declares NOTHING, which is a client entitled to
+ * plaintext -- so the example answers it in plaintext, correctly. Every hover
+ * test that asserts markdown is about a client that asked for it.
+ */
+const rendersMarkdown = {
+  ...initializeParams,
+  capabilities: { textDocument: { hover: { contentFormat: ["markdown", "plaintext"] } } },
+};
+
 function hoverParams(line: number, character: number): unknown {
   return { textDocument: { uri }, position: { line, character } };
 }
@@ -184,10 +197,14 @@ for (const runtime of runtimes) {
     // the whole chain in one test: their file reads the live buffer, does its
     // own position math, goes to a DICTIONARY for the answer, and the markdown
     // it composes is what an editor shows.
+    //
+    // THE CLIENT DECLARES IT RENDERS MARKDOWN, which is what makes markdown the
+    // right answer below rather than the only one this example can produce. The
+    // handshake is the whole of the difference between the two tests here.
     test("the example config answers with the definition of the word under the cursor", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
-        await session.request<InitializeResult>("initialize", initializeParams);
+        await session.request<InitializeResult>("initialize", rendersMarkdown);
         session.notify("initialized", {});
         session.notify("textDocument/didOpen", {
           textDocument: {
@@ -244,6 +261,54 @@ for (const runtime of runtimes) {
         // And the session is still healthy afterwards, which is what
         // distinguishes a caught miss from a handler that died quietly.
         expect(session.stderr).toBe("");
+
+        expect(await session.request<null>("shutdown", null)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE OTHER ARM OF THE SAME HANDSHAKE, OVER THE WIRE. The test above passes
+    // unchanged against an example that sends markdown to everyone -- which is
+    // what a client entitled to plaintext would then have to read as text -- so
+    // the pair is the claim and neither half is it alone. What differs between
+    // them is the capabilities of the `initialize` and nothing else.
+    //
+    // WORTH A SECOND SESSION RATHER THAN LEFT TO THE UNIT TEST: this is the one
+    // place the chain is complete -- the client's declaration crosses the wire,
+    // tsudoi mirrors it onto the session, and the example reads it back off
+    // `context.tsudoi` -- and a mirror that dropped the field would leave the
+    // module's own tests entirely green.
+    test("the example config answers a client that declared no markdown in plaintext", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        // `capabilities: {}` -- the client that declared nothing at all, which
+        // has declared no markdown support.
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri, languageId: "plaintext", version: 1, text: "the hover request" },
+        });
+
+        const onHover = await session.request<Hover | null>(
+          "textDocument/hover",
+          hoverParams(0, 6),
+        );
+        const contents = (onHover?.contents ?? {}) as { kind?: string; value?: string };
+
+        expect(contents.kind).toBe("plaintext");
+        // The SAME dictionary answer, so this is a claim about the format and
+        // not about a handler that gave up.
+        expect(contents.value).toContain("hover");
+        expect(contents.value).toContain("be undecided about something");
+        // AND NOT ONE MARK OF THE SYNTAX IT DID NOT ASK FOR. A `plaintext` kind
+        // on a value still carrying `**hover**` is the same defect wearing the
+        // right label, and the emphasis is what the reader would see.
+        expect(contents.value).not.toContain("*");
+        expect(contents.value).not.toContain("---");
 
         expect(await session.request<null>("shutdown", null)).toBeNull();
         session.notify("exit", null);

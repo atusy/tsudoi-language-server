@@ -11,6 +11,7 @@
  */
 import { init, lookup } from "wordnet";
 import type { MethodHandler } from "@atusy/tsudoi/types";
+import { MarkupKind } from "@atusy/tsudoi/deps/types";
 
 /**
  * The WordNet database, loaded ON FIRST USE and never twice.
@@ -77,18 +78,57 @@ export function wordAt(line: string, character: number): string {
 }
 
 /**
- * Every sense WordNet has for `word` as markdown, or null when it has none.
+ * Which markup this handler will send, out of what the client said it can
+ * render: the FIRST format the client named that this module can produce, and
+ * plaintext when it named none this module knows.
+ *
+ * THE ORDER IS THE CLIENT'S AND THE FILTER IS OURS. LSP defines
+ * `textDocument.hover.contentFormat` as the client's PREFERENCE ORDER, so
+ * scanning that list and stopping at the first producible entry honours a client
+ * that would rather have plaintext, and skips a kind nothing here can build.
+ *
+ * PLAINTEXT IS THE FALLBACK BECAUSE IT IS THE ONE FORMAT A CLIENT CANNOT REFUSE.
+ * A client that declares nothing has declared no markdown support, and markdown
+ * sent there is shown as its own syntax -- a dictionary entry fenced in
+ * asterisks the reader has to look past. The reverse mistake costs emphasis.
+ *
+ * READ THROUGH A GUARD RATHER THAN TRUSTED: the declared type describes a
+ * CONFORMING client, and one that sends something else must be answered rather
+ * than crashed at. A non-array declares nothing, and an unknown kind inside the
+ * array is skipped by the same filter that skips one this module cannot build.
+ */
+function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
+  const preference = Array.isArray(declared) ? declared : [];
+  return preference.find((kind) => producible.includes(kind)) ?? MarkupKind.PlainText;
+}
+
+/** Every markup kind this module knows how to build. */
+const producible: readonly MarkupKind[] = [MarkupKind.Markdown, MarkupKind.PlainText];
+
+/**
+ * Every sense WordNet has for `word` in the format the client can render, or
+ * null when it has none.
+ *
+ * THE FORMAT IS TAKEN, NEVER DEFAULTED, because both defaults are wrong in the
+ * way a caller cannot see: markdown emphasises a part of speech for a client
+ * that renders none, and plaintext drops it for every client that would.
  *
  * A MISS IS A REJECTION from this package rather than an empty array, so the
  * catch is what turns `not in the dictionary` into `nothing to say` instead of
  * into a failed request. WordNet is English, so every non-English word takes
  * that path.
  */
-export async function define(word: string): Promise<string | null> {
+export async function define(word: string, format: MarkupKind): Promise<string | null> {
   await ready();
   try {
     const senses = await lookup(word);
-    return senses.map((sense) => `*${sense.meta.synsetType}* — ${sense.glossary}`).join("\n\n");
+    return senses
+      .map((sense) =>
+        format === MarkupKind.Markdown
+          ? `*${sense.meta.synsetType}* — ${sense.glossary}`
+          : `${sense.meta.synsetType} — ${sense.glossary}`,
+      )
+      .join("\n\n");
   } catch {
     return null;
   }
@@ -100,8 +140,16 @@ export async function define(word: string): Promise<string | null> {
  * Position math is the config author's job: tsudoi hands over the live buffer
  * and the cursor, and what counts as a `word` in this language is exactly what
  * only this file knows.
+ *
+ * WHAT IT SENDS IS THE CLIENT'S TO DECIDE, and that decision is made ONCE at the
+ * top, before anything is awaited: every part of this answer -- the heading, the
+ * rule, each sense -- is built for one format, and a handler that read the
+ * session again further down could compose two.
  */
 export const hoverWordnet: MethodHandler<"textDocument/hover"> = async (context, params) => {
+  const format = preferredFormat(
+    context.tsudoi.clientCapabilities.textDocument?.hover?.contentFormat,
+  );
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
     return null;
@@ -114,12 +162,23 @@ export const hoverWordnet: MethodHandler<"textDocument/hover"> = async (context,
   if (word === "") {
     return null;
   }
-  const definitions = await define(word.toLowerCase());
+  const definitions = await define(word.toLowerCase(), format);
   if (definitions === null) {
     return null;
   }
   return {
-    contents: { kind: "markdown", value: `**${word}**\n\n---\n\n${definitions}` },
+    contents: {
+      kind: format,
+      // THE HEADING IS THE WORD THE USER POINTED AT, repeated because a hover
+      // window carries no other title. Its emphasis and the rule under it are
+      // markdown's alone: sent to a plaintext client they arrive as asterisks
+      // and three hyphens, so that client gets the word on its own line and the
+      // blank line already separating it from the senses below.
+      value:
+        format === MarkupKind.Markdown
+          ? `**${word}**\n\n---\n\n${definitions}`
+          : `${word}\n\n${definitions}`,
+    },
     range: undefined,
   };
 };

@@ -1,4 +1,7 @@
 import { expect, mock, test } from "bun:test";
+import type { MarkupKind } from "vscode-languageserver-protocol";
+import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
+import type { RequestContext } from "@atusy/tsudoi/types";
 
 /**
  * THE FAILURE ARM OF THE LAZY-INIT IDIOM, which is the one thing about
@@ -43,23 +46,100 @@ mock.module("wordnet", () => ({
     Promise.resolve([{ glossary: `${word} is a word`, meta: { synsetType: "noun" } }]),
 }));
 
-const { define } = await import("../examples/hover-wordnet.ts");
+const { define, hoverWordnet } = await import("../examples/hover-wordnet.ts");
 
 test("a define whose first database load failed retries, instead of failing forever", async () => {
   // The failure is REPORTED rather than swallowed, and this assertion is the
   // pair that keeps the one below honest: an example that answered `null` on a
   // load failure would pass a `the hover works` test while telling every user
   // their word is not in the dictionary.
-  await expect(define("apple")).rejects.toThrow(transientFailure);
+  await expect(define("apple", "markdown")).rejects.toThrow(transientFailure);
   expect(initCalls).toBe(1);
 
   // THE HEADLINE: the same process, the next hover, and the dictionary works.
-  expect(await define("apple")).toBe("*noun* — apple is a word");
+  expect(await define("apple", "markdown")).toBe("*noun* — apple is a word");
   expect(initCalls).toBe(2);
 
   // AND THE MEMO STILL HOLDS on the success it did reach, which is the property
   // the retry must not cost: a fix that simply stopped caching would reload a
   // ~130ms database on every keystroke, and nothing else here would notice.
-  expect(await define("pear")).toBe("*noun* — pear is a word");
+  expect(await define("pear", "markdown")).toBe("*noun* — pear is a word");
   expect(initCalls).toBe(2);
+});
+
+/** The buffer every hover below is asked about: one word, at its first column. */
+const uri = "file:///workspace/a.txt";
+
+/**
+ * The handler driven the way tsudoi drives it -- through the public
+ * RequestContext -- for a client that declared `contentFormat` as given.
+ *
+ * The context is built here rather than spawned for the reason
+ * test/completion-path.test.ts builds one: this claim is about WHAT THE HANDLER
+ * PRODUCES, and a session would additionally require the real database.
+ */
+async function hoverWhen(contentFormat: MarkupKind[] | undefined): Promise<unknown> {
+  const document = UpstreamTextDocument.create(uri, "plaintext", 1, "apple");
+  const context: RequestContext = {
+    signal: new AbortController().signal,
+    tsudoi: {
+      documents: { get: () => document, values: () => [document] },
+      // A SESSION THAT NAMED NO PROJECT, spelled out because a `Tsudoi` missing
+      // any of these is not one a handler can be given -- so this literal fails
+      // to compile rather than modelling an impossible session.
+      workspaceFolders: { get: () => [], values: () => [] },
+      rootUri: null,
+      rootPath: null,
+      // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole
+      // chain, so a rename anywhere along it reddens here rather than silently
+      // reading `undefined` and testing the fallback arm four times.
+      clientCapabilities: { textDocument: { hover: { contentFormat } } },
+    },
+  };
+  const hover = await hoverWordnet(context, {
+    textDocument: { uri },
+    position: { line: 0, character: 0 },
+  });
+  return hover?.contents;
+}
+
+/**
+ * BOTH ARMS IN ONE MEASUREMENT. `markdown is produced when markdown is
+ * supported` passes unchanged against a handler that produces markdown for
+ * everyone, which is the defect -- so the claim is the DIFFERENCE, and one hover
+ * cannot carry it.
+ *
+ * THE WHOLE MarkupContent IS COMPARED, kind AND value: a `plaintext` label on a
+ * value still fenced in asterisks is the same defect wearing the right name, and
+ * only the value says the markdown is gone -- from the heading, from the rule
+ * under it, and from every sense below it.
+ *
+ * RUNS AFTER THE TEST ABOVE HAS LOADED THE DATABASE, which is the memo's doing
+ * rather than an arrangement: `ready()` is settled by then, so nothing here
+ * depends on the failing first `init`. A regression that broke the load would
+ * reach these assertions as a rejection, not as a pass.
+ */
+test("the hover format follows the client's contentFormat, both ways", async () => {
+  expect(await hoverWhen(["markdown"])).toEqual({
+    kind: "markdown",
+    value: "**apple**\n\n---\n\n*noun* — apple is a word",
+  });
+  // No emphasis on the word, no rule under it, and no asterisks around the part
+  // of speech: what a plaintext client shows IS the string sent.
+  expect(await hoverWhen(["plaintext"])).toEqual({
+    kind: "plaintext",
+    value: "apple\n\nnoun — apple is a word",
+  });
+
+  // THE ORDER IS THE CLIENT'S: a handler asking `does the list contain
+  // markdown` satisfies both lines above and fails here.
+  expect(await hoverWhen(["plaintext", "markdown"])).toEqual({
+    kind: "plaintext",
+    value: "apple\n\nnoun — apple is a word",
+  });
+  // A client that declared no format at all declared no markdown support.
+  expect(await hoverWhen(undefined)).toEqual({
+    kind: "plaintext",
+    value: "apple\n\nnoun — apple is a word",
+  });
 });

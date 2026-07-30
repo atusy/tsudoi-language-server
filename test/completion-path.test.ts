@@ -7,6 +7,7 @@ import {
   CompletionItemKind,
   type CompletionItem,
   type InitializeResult,
+  type MarkupKind,
 } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
@@ -30,6 +31,13 @@ import {
   type PathFragment,
   type PathSource,
 } from "../examples/completion-path.ts";
+
+/**
+ * A client that named no `documentationFormat` at all, as a value a defaulted
+ * parameter can carry: `undefined` there means `take the default`, which is a
+ * different client entirely.
+ */
+const undeclared = Symbol("the client declared no documentationFormat");
 
 /** The document a completion is driven against: one line, and its uri. */
 interface Buffer {
@@ -62,6 +70,22 @@ async function complete(
    * can decide this for an author.
    */
   insertReplaceSupport = true,
+  /**
+   * What the client declared about `documentationFormat`, SPELLED AS THE CLIENT
+   * SPELLS IT -- a preference LIST rather than the one kind the module settles
+   * on, so the choosing stays the module's here exactly as it is in a session.
+   *
+   * DEFAULTED TO MARKDOWN-FIRST for the reason the flag above is defaulted: the
+   * documentation assertions elsewhere in this file read a markdown value, and
+   * this states the client class they are written about once rather than at
+   * every call.
+   *
+   * `undeclared` RATHER THAN `undefined` FOR THE CLIENT THAT DECLARED NOTHING,
+   * and it is a correction rather than a flourish: passing `undefined` to a
+   * defaulted parameter takes the DEFAULT, so that arm silently drove the
+   * markdown client and asserted the markdown answer against itself.
+   */
+  documentationFormat: MarkupKind[] | typeof undeclared = ["markdown"],
 ): Promise<CompletionItem[]> {
   // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is PBI-31's
   // break demonstrated on the only mock in this repository. A hand-written
@@ -95,7 +119,15 @@ async function complete(
       // optional chain, so a rename anywhere along it reddens here rather than
       // silently reading `undefined` and testing the other arm.
       clientCapabilities: {
-        textDocument: { completion: { completionItem: { insertReplaceSupport } } },
+        textDocument: {
+          completion: {
+            completionItem: {
+              insertReplaceSupport,
+              documentationFormat:
+                documentationFormat === undeclared ? undefined : documentationFormat,
+            },
+          },
+        },
       },
     },
   };
@@ -306,12 +338,24 @@ async function fromSource(
   // As `complete` defaults it, and for the same reason: these callers ask about
   // the two ranges, which only the supporting client's edit carries.
   insertReplaceSupport = true,
+  // THE KIND RATHER THAN THE DECLARATION, because this entrance is BELOW the
+  // choosing: `itemsFrom` is handed a format that has already been negotiated,
+  // and defaulting it here states the client class these callers' documentation
+  // assertions are written about.
+  documentationFormat: MarkupKind = "markdown",
 ): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
   // The cursor, spelled out: itemsFrom takes it rather than defaulting it,
   // because a default can only assume line 0 and would be wrong anywhere else.
   const position = { line: 0, character: fragment.start + fragment.text.length };
-  for await (const batch of itemsFrom(source, fragment, position, line, insertReplaceSupport)) {
+  for await (const batch of itemsFrom(
+    source,
+    fragment,
+    position,
+    line,
+    insertReplaceSupport,
+    documentationFormat,
+  )) {
     items.push(...batch);
   }
   return items;
@@ -444,6 +488,54 @@ describe("an item names the root that produced it", () => {
     } finally {
       documentTree.dispose();
       cwdTree.dispose();
+    }
+  });
+
+  // BOTH ARMS IN ONE MEASUREMENT, for the reason the edit-shape pair below is
+  // written that way: `markdown is produced when markdown is supported` passes
+  // unchanged against a module that produces markdown for everyone, which is
+  // the defect. The claim is the DIFFERENCE, and one request cannot carry it.
+  //
+  // THE WHOLE MarkupContent IS COMPARED, kind AND value. A kind of `plaintext`
+  // on a value still carrying `---` is the same defect wearing the right label,
+  // and only the value says the markdown is actually gone.
+  test("the documentation format follows what the client declared, both ways", async () => {
+    const fixture = tree(["notes/deep.txt"]);
+    try {
+      const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
+      const buffer = { uri, line: "notes/" };
+      const documentationWhen = async (
+        documentationFormat: MarkupKind[] | typeof undeclared,
+      ): Promise<CompletionItem["documentation"]> =>
+        (await complete(buffer, fixture.root, undefined, true, documentationFormat))[0]
+          ?.documentation;
+      const absolutePath = join(fixture.root, "notes/deep.txt");
+
+      expect(await documentationWhen(["markdown"])).toEqual({
+        kind: "markdown",
+        value: `${absolutePath}\n\n---\n\nsource: document`,
+      });
+      // The rule is GONE rather than sent as three hyphens, and the blank line
+      // between the two parts is what separates them for this client.
+      expect(await documentationWhen(["plaintext"])).toEqual({
+        kind: "plaintext",
+        value: `${absolutePath}\n\nsource: document`,
+      });
+
+      // THE ORDER IS THE CLIENT'S, and this is the arm that says so: a module
+      // asking `does the list contain markdown` satisfies both lines above and
+      // fails here, sending markdown to a client that put plaintext first.
+      expect(await documentationWhen(["plaintext", "markdown"])).toEqual({
+        kind: "plaintext",
+        value: `${absolutePath}\n\nsource: document`,
+      });
+      // A client that declared no format at all declared no markdown support.
+      expect(await documentationWhen(undeclared)).toEqual({
+        kind: "plaintext",
+        value: `${absolutePath}\n\nsource: document`,
+      });
+    } finally {
+      fixture.dispose();
     }
   });
 

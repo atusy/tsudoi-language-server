@@ -113,7 +113,14 @@ for (const [runtime, command] of Object.entries(route)) {
   test(`${runtime} serves the example's dictionary hover from the installed copy`, async () => {
     const session = LspSession.startCommand(command, consumer.dir);
     try {
-      await session.request<InitializeResult>("initialize", initializeParams);
+      // DECLARED AS AN EDITOR DECLARES IT, because the example answers the
+      // format the client named: `initializeParams` names none, which is a
+      // client entitled to plaintext, and the markdown read below is what a
+      // client that asked for markdown receives.
+      await session.request<InitializeResult>("initialize", {
+        ...initializeParams,
+        capabilities: { textDocument: { hover: { contentFormat: ["markdown"] } } },
+      });
       session.notify("textDocument/didOpen", {
         textDocument: {
           uri: "file:///こんにちは.txt",

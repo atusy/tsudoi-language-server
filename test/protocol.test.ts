@@ -45,6 +45,18 @@ function hoverParams(line: number, character: number): unknown {
 const knownWord = "dictionary";
 const exampleHeading = `**${knownWord}**`;
 
+/**
+ * A client that renders markdown, spelled as an editor spells it. The shared
+ * `initializeParams` declares NOTHING, and the example answers such a client in
+ * plaintext -- correctly -- so every test below that reads `exampleHeading`
+ * hands over this handshake instead. What is under test there is that the
+ * session still SERVES, and the heading is how that is read.
+ */
+const rendersMarkdown = {
+  ...initializeParams,
+  capabilities: { textDocument: { hover: { contentFormat: ["markdown", "plaintext"] } } },
+};
+
 /** The Hover the example answered, as markdown, or "" if it answered none. */
 function markdown(hover: Hover | null): string {
   const contents = hover?.contents as { value?: string } | undefined;
@@ -115,7 +127,7 @@ for (const runtime of runtimes) {
     test("after initialize an unregistered method is answered -32601, and hover still answers", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
-        await session.request("initialize", initializeParams);
+        await session.request("initialize", rendersMarkdown);
         session.notify("initialized", {});
         didOpen(session, knownWord);
 
@@ -195,7 +207,7 @@ for (const runtime of runtimes) {
 
         // The gate must REFUSE the request, not poison the session: initialize
         // is the one request it may not gate, and everything after it works.
-        const result = await session.request<InitializeResult>("initialize", initializeParams);
+        const result = await session.request<InitializeResult>("initialize", rendersMarkdown);
         expect(result.serverInfo?.name).toBe("tsudoi");
         session.notify("initialized", {});
         didOpen(session, knownWord);

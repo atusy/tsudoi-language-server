@@ -1142,10 +1142,15 @@ for (const runtime of runtimes) {
         // folders legible rather than one indistinguishable pile: the
         // documentation carries the absolute path it resolves to, so the two
         // are told apart by the item itself and not only by which file it is.
+        //
+        // PLAINTEXT BECAUSE THIS CLIENT DECLARED NOTHING: `initializeParams`
+        // sends `capabilities: {}`, and the example answers markdown only to a
+        // client that named it. What that costs here is the rule between the
+        // two parts, which is not what this assertion is about.
         expect(workspaceItems(items).map(documentationOf).sort()).toEqual(
           [
-            `${join(first.root, "notes/first-only.txt")}\n\n---\n\nsource: workspace`,
-            `${join(second.root, "notes/second-only.txt")}\n\n---\n\nsource: workspace`,
+            `${join(first.root, "notes/first-only.txt")}\n\nsource: workspace`,
+            `${join(second.root, "notes/second-only.txt")}\n\nsource: workspace`,
           ].sort(),
         );
       } finally {

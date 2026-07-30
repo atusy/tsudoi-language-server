@@ -13,6 +13,7 @@ import {
   type CompletionItem,
   CompletionItemKind,
   type MarkupContent,
+  MarkupKind,
   type Position,
   type WorkspaceFolder,
 } from "@atusy/tsudoi/deps/types";
@@ -370,6 +371,17 @@ export async function* itemsFrom(
    * question cannot get it wrong by omission.
    */
   insertReplaceSupport: boolean,
+  /**
+   * Which markup the client said it can render in an item's `documentation`,
+   * already chosen out of `textDocument.completion.completionItem.
+   * documentationFormat` by `preferredFormat`.
+   *
+   * REQUIRED FOR THE SAME REASON AS THE FLAG ABOVE, and the defaults fail the
+   * same way round: markdown re-creates the defect -- syntax sent to a client
+   * that never said it renders any -- and plaintext costs every caller who
+   * forgot it the formatting on the clients that do.
+   */
+  documentationFormat: MarkupKind,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];
@@ -390,7 +402,7 @@ export async function* itemsFrom(
       const absolutePath = join(directory, entry.name);
       items.push({
         label: insertText,
-        documentation: documentationFor(absolutePath, source),
+        documentation: documentationFor(absolutePath, source, documentationFormat),
         kind: await entryKind(directory, entry),
         insertText,
         // WHAT MAKES THIS ITEM RESOLVABLE. Nothing is stat'd here -- one stat per
@@ -466,16 +478,65 @@ export async function* itemsFrom(
  * this says which file is which. The source name is the shorter answer to the
  * same question and sits below the rule.
  *
- * `documentation` rather than `detail`: this is a MULTI-LINE block with a
- * markdown rule in it, and `detail` is the protocol's one-line field. A client
- * showing `detail` inline would run the three parts together.
+ * `documentation` rather than `detail`: this is a MULTI-LINE block, and `detail`
+ * is the protocol's one-line field. A client showing `detail` inline would run
+ * the parts together.
+ *
+ * THE RULE IS THE ONLY MARKDOWN IN IT, AND IT IS DROPPED RATHER THAN DOWNGRADED
+ * for a client that takes plaintext: `---` reaches such a client as three
+ * literal hyphens on a line of their own, which is a stray line of punctuation
+ * rather than a separator. The blank line between the two parts already
+ * separates them, so plaintext loses the rule and nothing else.
  */
-function documentationFor(absolutePath: string, source: PathSource): MarkupContent {
+function documentationFor(
+  absolutePath: string,
+  source: PathSource,
+  format: MarkupKind,
+): MarkupContent {
+  const attribution = `source: ${source.name}`;
   return {
-    kind: "markdown",
-    value: `${absolutePath}\n\n---\n\nsource: ${source.name}`,
+    kind: format,
+    value:
+      format === MarkupKind.Markdown
+        ? `${absolutePath}\n\n---\n\n${attribution}`
+        : `${absolutePath}\n\n${attribution}`,
   };
 }
+
+/**
+ * Which markup this handler will send, out of what the client said it can
+ * render: the FIRST format the client named that this module can produce, and
+ * plaintext when it named none this module knows.
+ *
+ * THE ORDER IS THE CLIENT'S AND THE FILTER IS OURS, which is what makes this a
+ * negotiation rather than a guess. LSP defines `documentationFormat` as the
+ * client's PREFERENCE ORDER, so scanning the client's list and stopping at the
+ * first producible entry honours a client that would rather have plaintext, and
+ * skips one that names a kind nothing here can build.
+ *
+ * PLAINTEXT IS THE FALLBACK BECAUSE IT IS THE ONE FORMAT A CLIENT CANNOT REFUSE.
+ * A client that declares nothing has declared no markdown support, and markdown
+ * sent there arrives as its own syntax -- asterisks and rules the user reads as
+ * text. The reverse mistake costs formatting and nothing else.
+ *
+ * READ THROUGH A GUARD RATHER THAN TRUSTED, for the reason the
+ * `insertReplaceSupport` read is written `=== true`: the declared type describes
+ * a CONFORMING client, and a client that sends something else must be answered
+ * rather than crashed at. A non-array declares nothing, and an unknown kind
+ * inside the array is skipped by the same filter that skips one this module
+ * cannot build.
+ *
+ * NOT SHARED WITH examples/hover-wordnet.ts, WHICH MAKES THE SAME CHOICE FOR
+ * `contentFormat`: each example is copied on its own, and a reader who took this
+ * file would find an import of a file they do not have.
+ */
+function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
+  const preference = Array.isArray(declared) ? declared : [];
+  return preference.find((kind) => producible.includes(kind)) ?? MarkupKind.PlainText;
+}
+
+/** Every markup kind `documentationFor` above knows how to build. */
+const producible: readonly MarkupKind[] = [MarkupKind.Markdown, MarkupKind.PlainText];
 
 /**
  * Whether a listing failed because THAT DIRECTORY cannot be listed -- which
@@ -585,6 +646,13 @@ export async function* pathCompletion(
   const insertReplaceSupport =
     context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
       ?.insertReplaceSupport === true;
+  // READ HERE FOR THE SAME REASON, AND ONCE FOR THE WHOLE REQUEST: this runs
+  // before the first `await`, so every item of this completion is built for the
+  // client that asked for it, and nothing re-reads the session from inside the
+  // listing loop where the answer cannot change but the cost repeats.
+  const documentationFormat = preferredFormat(
+    context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem?.documentationFormat,
+  );
   // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
   // rather than an oversight -- recorded here because someone would otherwise
   // add the report believing it was required.
@@ -636,6 +704,7 @@ export async function* pathCompletion(
           params.position,
           line,
           insertReplaceSupport,
+          documentationFormat,
         )) {
           const fresh = batch.filter((item) => {
             const text = item.insertText ?? "";
