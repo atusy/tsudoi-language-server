@@ -579,11 +579,12 @@ export type RequestRejection = () => ResponseError<void> | undefined;
  * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added to
  * this thunk and forgotten at the context, or the reverse, does not compile.
  *
- * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, and deliberately not
- * `ClientRoots`: src/workspace.ts exports that name for the two DEPRECATED
- * FIELDS ALONE, and this is the whole slice INCLUDING the folder list. Two
- * exported names spelled alike and meaning different things is a reading trap
- * whether or not a compiler minds.
+ * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, and the name it avoids is gone
+ * now: src/workspace.ts used to export `ClientRoots` for the two DEPRECATED
+ * FIELDS ALONE, which this slice is not -- it is the whole thing a request
+ * reads, folder list included. The clash it was named away from died with that
+ * interface; what it says about THIS type is still the reason to keep it, since
+ * a reader meeting `roots` here would otherwise expect the two fields.
  */
 export type RequestRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
 

@@ -186,14 +186,15 @@ for (const [runtime, command] of Object.entries(route)) {
  * ./src/types.ts, which is deliberately not published -- a package.json
  * pointing at a file it does not ship.
  *
- * THE SUBPATH STOPPED BEING TYPE-ONLY AT PBI-49, and this probe stopped being
- * the only thing that would notice the arm's loss. It exports
- * `foldersWithRootFallback`, which examples/completion-path.ts CALLS -- so the
- * example's own tests above now traverse this arm for value, and a bare
- * `import` of the subpath is the weaker statement of the two. It stays because
- * it is the statement about THE SUBPATH rather than about the example: a
- * consumer importing it for types alone still resolves it, and that is what a
- * middle arm pointing into dist/ buys.
+ * THE SUBPATH IS TYPE-ONLY, AND THIS PROBE IS THE REASON THAT COSTS ANYTHING.
+ * It stopped being type-only for one sprint, when `./types` exported a reduction
+ * the stakeholder-facing example called; the stakeholder ruled that incoherent
+ * and the function is gone, so nothing takes a VALUE from this subpath again.
+ * WHICH RESTORES THIS PROBE AS THE ONLY THING THAT WOULD NOTICE THE ARM'S LOSS:
+ * a type-only consumer never runs, so no other test in this suite resolves
+ * `@atusy/tsudoi/types` at run time at all. The bare `import` is the statement
+ * about THE SUBPATH rather than about any example, and a middle arm pointing
+ * into dist/ is what makes it resolve to a file the tarball really ships.
  */
 const importsTheSubpath = 'import "@atusy/tsudoi/types";\n';
 

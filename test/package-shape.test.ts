@@ -44,7 +44,23 @@ async function typeCheckWith(
   }
 }
 
-/** The repo's own bytes, read at test time -- never a copy that could drift. */
+/**
+ * The repo's own bytes, read at test time -- never a copy that could drift.
+ *
+ * AND THIS LINE IS WHY NEITHER TSCONFIG MAY CARRY A COMMENT. `JSON.parse`
+ * REJECTS JSONC, so a `//` in tsconfig.json or tsconfig.build.json fails this
+ * file at load rather than at an assertion -- however happily tsc itself reads
+ * it. THE CONSEQUENCE IS A RULE ABOUT WHERE REASONS LIVE: Sprint 40's `put the
+ * decision at the site where the violating edit is made` is UNAVAILABLE for
+ * either config, exactly as it is for package.json, so a TEST holds their
+ * reasons and the file holds only the setting. The next person to reach for a
+ * comment there should read this instead of discovering it as a red.
+ *
+ * REPLACING THE READER WOULD LIFT THE CONSTRAINT and is not proposed: a JSONC
+ * parser here would let the two configs carry their own reasons, and it would
+ * also make this file's readings differ from what any other JSON consumer of
+ * those files sees. It is recorded as a choice rather than a limit.
+ */
 const repoTsconfig = JSON.parse(readFileSync(join(repoRoot, "tsconfig.json"), "utf8")) as Record<
   string,
   unknown
@@ -72,7 +88,11 @@ test("the same tree fails once the dist exclusion is removed", async () => {
   expect(await typeCheckWith(withoutExclude, brokenDeclaration)).toBe(1);
 });
 
-/** The build config's own bytes, read at test time like the one above it. */
+/**
+ * The build config's own bytes, read at test time like the one above it -- and
+ * under the same constraint, which is stated there: this reader is `JSON.parse`,
+ * so tsconfig.build.json may not carry a comment either.
+ */
 const buildTsconfig = JSON.parse(
   readFileSync(join(repoRoot, "tsconfig.build.json"), "utf8"),
 ) as Record<string, unknown>;
@@ -142,18 +162,24 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  * NEITHER `types` nor `import` -- a CommonJS `require` is the only one -- gets
  * ERR_MODULE_NOT_FOUND rather than a module.
  *
- * ITS PREMISE MOVED AT PBI-49 AND ITS CONCLUSION DID NOT, which is the half
- * worth writing down. This paragraph used to rest on `the subpath carries no
- * runtime value at all`, and that is now FALSE: `./types` exports
- * `foldersWithRootFallback`, a function the stakeholder-facing example calls, so
- * the resolver that misses this arm now misses SOMETHING rather than nothing.
- * What still holds is the judgement: the package is type: module, the two
- * verified runtimes both take `import`, and the alternative is shipping src/
+ * ITS PREMISE MOVED TWICE INSIDE PBI-49 AND ITS CONCLUSION NEVER DID, which is
+ * the half worth writing down. It rested on `the subpath carries no runtime
+ * value at all`; the sprint's first increment falsified that by exporting a
+ * reduction from `./types`, and this paragraph was re-taken on the premise that
+ * the resolver now missed SOMETHING; the stakeholder then ruled that a types
+ * module may not export a runtime function, and the premise is TRUE AGAIN.
+ * Asserted rather than asserted-about: `tsudoi's own subpath exports nothing at
+ * run time` is now a test in test/published-artifacts.test.ts, taken over the
+ * INSTALLED package's module namespace, so this sentence has an owner that
+ * reddens instead of a comment that goes quietly false.
+ *
+ * The judgement is what survived both moves: the package is type: module, the
+ * two verified runtimes both take `import`, and the alternative is shipping src/
  * purely so an arm nobody takes can land somewhere -- which would put .ts files
- * back under node_modules for a deno user to trip over. WHAT IS NO LONGER FREE
- * is that a CommonJS consumer cannot reach that function at all; adding a
- * `require` arm is a decision about the published surface and belongs to
- * whoever names a consumer that needs one.
+ * back under node_modules for a deno user to trip over. A CommonJS `require`
+ * therefore reaches no module here, and it would find nothing to import if it
+ * did; adding a `require` arm is a decision about the published surface and
+ * belongs to whoever names a consumer that needs one.
  *
  * No `main` and no `.` export: the package name alone still must not resolve,
  * which test/published-specifier.test.ts asserts.

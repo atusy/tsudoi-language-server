@@ -35,12 +35,30 @@ export function isolatedCheckout(): IsolatedCheckout {
   // observe, and would be the wrong diagnosis.
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
   // dist/ IS PART OF `what a runtime needs to start`, and it became so at
-  // Sprint 25 rather than always having been: examples/completion-path.ts now
-  // takes CompletionItemKind -- a VALUE -- from `@atusy/tsudoi/types`, and
+  // Sprint 25 rather than always having been. THE WITNESS IS A DEPENDENCY VALUE
+  // ON A SIBLING SUBPATH: examples/diagnostic-trailing-whitespace.ts takes
+  // `DiagnosticSeverity` and examples/completion-path.ts takes
+  // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi/deps/types`, and
   // package self-reference resolves that subpath through the exports map's
-  // `import` arm to ./dist/types.js under both runtimes (measured, bun 1.3.13
-  // and deno 2.9.2). A checkout without it fails at ERR_MODULE_NOT_FOUND on
-  // dist/types.js while loading the config.
+  // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
+  // loading the config, with a resolve error NAMING `@atusy/tsudoi/deps/types`.
+  //
+  // MEASURED THREE WAYS AT PBI-49 rather than reasoned, because the conclusion
+  // and the reason moved independently and only running tells you which. Staging
+  // no dist/ at all reddens two tests in test/resolution.test.ts. Staging dist/
+  // WITHOUT dist/types.js leaves the checkout starting, EXIT 0 and silent --
+  // so tsudoi's OWN subpath is not what this staging is for. Deleting
+  // dist/deps/types.js from an otherwise complete dist/ reproduces the failure
+  // above by name.
+  //
+  // WHICH SETTLES A SENTENCE THAT WAS HALF WRONG FOR AN UNKNOWN NUMBER OF
+  // SPRINTS. It named `CompletionItemKind` -- a real value in a real file -- and
+  // attributed it to `@atusy/tsudoi/types`, tsudoi's own subpath, which never
+  // carried it. For one sprint that subpath really did export a function this
+  // example called, which made the sentence's SHAPE true while its witness
+  // stayed wrong; the stakeholder then withdrew the function, and the subpath is
+  // type-only again. THE CONCLUSION SURVIVED ALL OF IT, which is why the
+  // correction is to the reason and not to the staging.
   //
   // IT IS NOT THE THING BEING HELD AWAY, which is what keeps these probes
   // honest: node_modules is, and it still is. Carrying dist/ here removes a

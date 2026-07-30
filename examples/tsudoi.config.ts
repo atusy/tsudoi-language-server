@@ -86,15 +86,18 @@ const config: TsudoiConfigFactory = () => {
           //    so a plugin option that chooses between inserting and replacing
           //    is YOURS to set and does what you set it to. Completing in the
           //    MIDDLE of a path is where the two differ.
-          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR NAMES A PROJECT
-          //    at `initialize`, which is its configuration and not tsudoi's
-          //    behaviour. THREE FIELDS COUNT, not one: `workspaceFolders` if
-          //    your editor declares that capability, and otherwise the
-          //    deprecated `rootUri` or `rootPath` -- examples/completion-path.ts
-          //    reads all three THROUGH `foldersWithRootFallback`, because
-          //    `context.workspaceFolders` carries only what the client sent and
-          //    tsudoi invents nothing to fill it. A language server started with
-          //    NONE of the three has no workspace to answer from, and its
+          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR SENDS WORKSPACE
+          //    FOLDERS at `initialize`, which is its configuration and not
+          //    tsudoi's behaviour. ONE FIELD COUNTS: `workspaceFolders`, which
+          //    only an editor declaring that capability sends.
+          //    examples/completion-path.ts reads that field and nothing else.
+          //    An editor that names its project in the DEPRECATED `rootUri` or
+          //    `rootPath` instead reaches your handler with both fields filled
+          //    and the folder list EMPTY -- tsudoi mirrors what the client sent
+          //    and reduces nothing -- and this example declines to reduce them
+          //    either, which is a decision its own comments carry. A language
+          //    server whose editor names no project at all has no workspace to
+          //    answer from, and its
           //    working directory is then wherever the editor itself was
           //    launched -- which is a root, but not the one you meant. AND
           //    NOTHING WILL TELL YOU: the workspace

@@ -132,10 +132,13 @@ export function startServer(
     // sent none; it no longer does, because a folder needs a `name` and the
     // protocol makes `name` a label the CLIENT owns.
     //
-    // THE REDUCTION STILL EXISTS AND THE CONFIG AUTHOR CALLS IT --
-    // `foldersWithRootFallback`, published from src/types.ts -- which is where
-    // the precedence chain, the absolute-or-nothing guard and the
-    // no-local-path case are now recorded together.
+    // AND NO REDUCTION SHIPS EITHER, which is a second withdrawal on top of the
+    // first: one was published for the author who wants a root out of the
+    // deprecated fields, and the stakeholder ruled that a TYPES module may not
+    // export a runtime function. The precedence chain, the absolute-or-nothing
+    // guard and the no-local-path case now live as PROSE at `rootUri` and
+    // `rootPath` in src/types.ts, where an author meets the fields -- and prose
+    // is not an artifact this suite drives, which is stated at the sprint.
     //
     // What absence must NEVER become is a ROOT. cwd is the tempting default
     // and the dangerous one: nvim spawns the server with cwd = root_dir when a
