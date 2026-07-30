@@ -231,11 +231,25 @@ the request:
 | `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
 
 `workspaceFolders` answers two questions. `values()` yields every folder the client holds, in the
-order it sent them; `get(uri)` answers with the INNERMOST folder covering that uri, or `undefined`
-where the client holds none. `get` walks up from the uri by dirname and matches EXACTLY, so
-`file:///home/me/proj` never answers for a document in `file:///home/me/project`, a folder held
-with or without a trailing slash is found either way, and nothing you can pass throws -- the
-`untitled:` uri of an unsaved buffer included.
+order it sent them; `get(uri)` answers with the folders at the INNERMOST location covering that
+uri, as a list, empty where the client holds none. It is **never `undefined`**, so
+`for (const folder of workspaceFolders.get(uri))` needs no guard in front of it.
+
+`get` is not "every ancestor's folders". It walks up from the uri and stops at the first location
+that holds anything, so a document inside `file:///w/inner` inside `file:///w` answers with the
+inner folder alone -- nesting still resolves to one. The list is longer than one only when several
+folders **name one location**: a uri the client sent twice, or `…/plain` beside `…/plain/`. tsudoi
+hands you all of them rather than picking a winner on its own authority, and the client's order is
+the order they are presented in rather than a ranking.
+
+Both sides of the comparison go through the same URL parse, so spellings that name one location
+meet: a `file://LOCALHOST/…` folder answers for a `file:///…` document, an upper-case scheme
+answers for a lower-case one, `..` segments resolve, `%20` meets a literal space, and a folder held
+with or without a trailing slash is found either way. That is not prefix matching --
+`file:///home/me/proj` never answers for a document in `file:///home/me/project`. The path's case is
+not reconciled, since the URL Standard does not reconcile it. Nothing you can pass throws, the
+`untitled:` uri of an unsaved buffer included; a folder whose uri no parser accepts is simply
+unreachable through `get`, while `values()` still hands it over.
 
 **Everything reached through `context.tsudoi` is live.** It is one object for the whole session,
 so a handler that reads a member, awaits, and reads it again may read two different things -- the

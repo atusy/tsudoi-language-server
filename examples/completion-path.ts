@@ -191,10 +191,12 @@ export interface PathCompletionOptions {
  * only the first answers from whichever the editor happened to list first.
  *
  * AND NOT `workspaceFolders.get()`, WHICH ANSWERS A DIFFERENT QUESTION: which
- * ONE folder a uri sits in. EVERY folder is a completion root here, and the
- * document's own directory is already a source of its own, so narrowing to the
- * folder holding the document would DELETE the candidates the other roots
- * contribute rather than sharpen the reading. A folder is converted from its URI and NEVER guessed from cwd: an
+ * folders sit at the INNERMOST location covering a uri. EVERY folder is a
+ * completion root here, and the document's own directory is already a source of
+ * its own, so narrowing to the folders holding the document would DELETE the
+ * candidates the other roots contribute rather than sharpen the reading -- and
+ * that lookup answers nothing at all for the unsaved buffer, which still wants
+ * every root. A folder is converted from its URI and NEVER guessed from cwd: an
  * editor started without a project root leaves cwd as its own launch
  * directory, so the guess looks right in every test and wrong in real use.
  *
