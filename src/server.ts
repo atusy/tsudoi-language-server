@@ -323,7 +323,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
 export function notificationEntries(
   documents: DocumentStoreHandle,
   lifecycle: Lifecycle,
-  workspaceFolders: WorkspaceFoldersHandle,
+  workspaceFolders: Pick<WorkspaceFoldersHandle, "change">,
 ) {
   return defineNotifications([
     {

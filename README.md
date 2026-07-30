@@ -218,6 +218,31 @@ still holds, because a config never builds a document. `@atusy/tsudoi/types` exp
 deliberately not the value for that reason: tsudoi builds the documents and your handlers only
 receive them. A mock in your own tests is the exception, and it is the only one.
 
+## The session your handlers receive
+
+The store is one member of `context.tsudoi`, and everything else on it is the SESSION rather than
+the request:
+
+| member                | what it answers                                                      |
+| --------------------- | -------------------------------------------------------------------- |
+| `documents`           | the open buffers, as above                                           |
+| `workspaceFolders`    | the folders the client holds, or `[]` when it named none             |
+| `rootUri`, `rootPath` | the deprecated roots, as the client spelled them, or `null`          |
+| `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
+
+**Everything reached through `context.tsudoi` is live.** It is one object for the whole session,
+so a handler that reads a member, awaits, and reads it again may read two different things -- the
+folder list moves when the user adds a folder, and a document is mutated in place as the user
+types. A handler that needs the value it STARTED with takes it before its first `await`: holding
+the folder array is enough, because tsudoi replaces that list rather than writing into it, while
+a document needs `getText()`, since a string does not move. The two deprecated roots and the
+capabilities are written once at `initialize` and never move at all.
+
+Building a context by hand in your own tests means supplying all five members. `clientCapabilities`
+is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...` needs no guard;
+`examples/completion-path.ts` reads exactly that chain to decide whether it may send an
+`InsertReplaceEdit`, which LSP permits only to a client that declared `insertReplaceSupport`.
+
 ## Cleanup in a handler
 
 A `finally` inside a **completion handler** runs when the editor abandons the request -- which it

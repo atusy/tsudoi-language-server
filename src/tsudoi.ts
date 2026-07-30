@@ -17,9 +17,14 @@ export interface TsudoiRuntime {
    * The server's end of the folder mirror, for the ONE message that writes it
    * after the handshake. Never reachable from `tsudoi`.
    *
-   * `initialize` IS NOT WRITTEN THROUGH HERE, deliberately -- see `handshake`.
+   * NARROWED TO `change` ALONE, WHICH FORECLOSES THE HALF-MIRROR RATHER THAN
+   * MERELY DESCRIBING IT. `handshake` below exists so the two things `initialize`
+   * writes cannot be written apart, and a runtime handing out the WHOLE handle
+   * would leave `initialize` callable beside it -- an argument for the seam and
+   * an open route around it in the same object. This project prefers foreclosing
+   * a failure to detecting one, and here the type does it.
    */
-  readonly workspaceFolders: WorkspaceFoldersHandle;
+  readonly workspaceFolders: Pick<WorkspaceFoldersHandle, "change">;
   /**
    * EVERYTHING `Tsudoi` TAKES FROM `initialize`, WRITTEN BY ONE CALL.
    *

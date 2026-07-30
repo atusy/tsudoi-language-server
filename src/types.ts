@@ -40,9 +40,9 @@ export interface DocumentStore {
 
 /**
  * THE SERVER'S CONTEXT: what a config author can reach that is not about ONE
- * request, reached through `RequestContext.tsudoi`. What the SESSION is --
- * the open documents, the client's roots -- rather than what this MESSAGE
- * asked.
+ * request, reached through `RequestContext.tsudoi`. What the SESSION is -- the
+ * open documents, the client's roots, what the client said it can do -- rather
+ * than what this MESSAGE asked.
  *
  * It stays published even though no example names it, because `RequestContext`
  * declares `readonly tsudoi: Tsudoi` and every extracted handler names that.
