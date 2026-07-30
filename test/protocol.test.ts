@@ -85,7 +85,7 @@ const invalidTokenTrace = "tsudoi: ignoring an invalid partialResultToken";
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    // The carve-out this sprint's pre-initialize gate must keep. LSP drops
+    // The carve-out the pre-initialize gate must keep. LSP drops
     // notifications sent before initialize -- except `exit`, which a client is
     // entitled to send at any moment and which must still terminate the
     // process. A gate written without that exception turns this measured
@@ -384,11 +384,11 @@ for (const runtime of runtimes) {
           "textDocument/completion",
           completionWithToken("valid-token-1"),
         );
-        // THREE, not two, since Sprint 42: the handler's ANSWER is the first
-        // `$/progress` literal and its two streamed chunks follow it. The
-        // claim is unchanged -- a valid token streams and an invalid one does
-        // not -- and only the number of literals the same fixture produces has
-        // moved.
+        // THREE, not two: the handler's ANSWER is the first `$/progress`
+        // literal and its two streamed chunks follow it. What is CLAIMED is
+        // narrower than the number -- a valid token streams and an invalid one
+        // does not -- and the number is only how many literals this fixture
+        // happens to produce.
         expect(valid.progressCount).toBe(3);
 
         // Reported, not silent: an invalid token LOSES the user items unless

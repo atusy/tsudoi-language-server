@@ -104,8 +104,8 @@ test("a type error in the example reddens the example, not the snippet", async (
 });
 
 /**
- * THE CONTROL THAT PROVES THIS SPRINT DID ITS JOB, and the pair is the whole
- * point. Perturbing the PUBLISHED types must redden the probe WHILE the repo's
+ * THE CONTROL THAT MAKES THIS FILE MORE THAN A SECOND TYPE CHECK, and the pair
+ * is the whole point. Perturbing the PUBLISHED types must redden the probe WHILE the repo's
  * own `tsc --noEmit` stays green -- without the stays-green half this file is
  * `checked again` wearing the words `checked through the published arm`.
  */

@@ -30,11 +30,11 @@ interface PathShape {
 /**
  * THE SIX SHAPES, and ONE list drives rules 1 to 3.
  *
- * They used to be three lists that had drifted apart: import/extensions was
- * pinned at three paths, the Bun global at four, bun:* at four again but not
- * the same four, and examples/ appeared in none of them. The config is
- * default-deny, so examples/ was COVERED and merely unasserted -- which is the
- * shape a coverage gap takes right up until someone adds an override.
+ * ONE LIST BECAUSE THREE DRIFT APART. A list per rule ends up pinned at
+ * different paths -- three here, four there, four again but not the same four --
+ * and a path that appears in none of them is COVERED by the config's
+ * default-deny and merely unasserted, which is the shape a coverage gap takes
+ * right up until someone adds an override.
  *
  * Adding a shape here now costs three rules' worth of assertions at once, and
  * that is the point: a path that lints differently from the others has to be
@@ -236,9 +236,9 @@ function reportedAgainst(path: string): RegExp {
 // written, so the three paths are named here instead, each absence sharing its
 // run with a file the ban really flags.
 //
-// Why a lint at all, when PBI-22 already made src/server.ts unable to CALL
+// Why a lint at all, when PBI-22 already makes src/server.ts unable to CALL
 // onNotification: it can still IMPORT the factory, build its own wide connection
-// and register beside the table. Measured before this rule existed -- 331 tests
+// and register beside the table. MEASURED with this rule taken out -- 331 tests
 // green, tsc 0, oxlint 0, with nothing objecting.
 test("importing createProtocolConnection is flagged in src/server.ts", async () => {
   const result = await lintProbe({

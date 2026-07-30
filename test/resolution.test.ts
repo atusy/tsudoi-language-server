@@ -19,9 +19,9 @@ await requireRuntime(denoRuntime);
 // than defend anything we promised.
 
 /**
- * A deno.json carrying an npm import map -- the file Sprint 1 argued would flip
- * npm resolution to deno's global cache. That argument was never measured; the
- * tests below measure it, and it does not hold at deno 2.9.2.
+ * A deno.json carrying an npm import map -- the file most likely to flip npm
+ * resolution to deno's global cache, which is the argument the tests below
+ * MEASURE. It does not hold at deno 2.9.2.
  */
 const denoJsonWithNpmImports = `${JSON.stringify(
   {
@@ -64,8 +64,8 @@ async function handshake(dir: string): Promise<Handshake> {
   }
 }
 
-// THE PROPERTY, pinned instead of the file. What Sprint 1 guaranteed is that
-// deno resolves npm dependencies out of node_modules; a deno.json that
+// THE PROPERTY, pinned instead of the file. The guarantee is that deno resolves
+// npm dependencies out of node_modules; a deno.json that
 // preserved that would be equally acceptable, so asserting the file's absence
 // would pin a spelling rather than the guarantee.
 test("deno cannot start the server when node_modules is absent", async () => {
@@ -82,7 +82,7 @@ test("deno cannot start the server when node_modules is absent", async () => {
 // The pair. Same checkout, same sources, only node_modules restored -- so the
 // failure above is attributable to resolution and not to the copy being
 // incomplete. If this ever fails to fail, resolution has moved to a global
-// cache and Sprint 1's guarantee has silently changed.
+// cache and that guarantee has silently changed.
 test("the same checkout starts once node_modules is present", async () => {
   checkout.linkNodeModules();
 

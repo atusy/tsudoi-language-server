@@ -50,8 +50,8 @@ async function typeCheckWith(
  * AND THIS LINE IS WHY NEITHER TSCONFIG MAY CARRY A COMMENT. `JSON.parse`
  * REJECTS JSONC, so a `//` in tsconfig.json or tsconfig.build.json fails this
  * file at load rather than at an assertion -- however happily tsc itself reads
- * it. THE CONSEQUENCE IS A RULE ABOUT WHERE REASONS LIVE: Sprint 40's `put the
- * decision at the site where the violating edit is made` is UNAVAILABLE for
+ * it. THE CONSEQUENCE IS A RULE ABOUT WHERE REASONS LIVE: `put the decision at
+ * the site where the violating edit is made` is UNAVAILABLE for
  * either config, exactly as it is for package.json, so a TEST holds their
  * reasons and the file holds only the setting. The next person to reach for a
  * comment there should read this instead of discovering it as a red.
@@ -103,9 +103,10 @@ const buildTsconfig = JSON.parse(
  * `tsc --noEmit` is a DoD check, and without a mapping it resolves the
  * examples' `@atusy/tsudoi/*` imports through package.json's exports map to
  * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
- * therefore disagreed exactly when the published surface had moved: measured in
- * both directions, a false GREEN beside 43 test failures and a false RED against
- * a type the tree no longer contained. The mapping makes this repository's own
+ * therefore disagree exactly when the published surface has moved: MEASURED in
+ * both directions -- a false GREEN beside 43 test failures, and a false RED
+ * against a type the tree does not contain. The mapping makes this repository's
+ * own
  * check read source, so a stale dist/ cannot reach it at all.
  *
  * tsconfig.build.json GETS NONE, and that is the half this pair exists for.
@@ -149,29 +150,26 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  *   test/installed-runtime.test.ts, with the pair that drops it.
  * - `default` -> src/types.ts is the IN-REPO FALLBACK and is reached only
  *   because tsc falls through a condition whose target file is missing. That
- *   fall-through NO LONGER serves `tsc --noEmit`: since PBI-48 a `paths`
- *   mapping intercepts the subpath before the exports map is consulted, so
- *   this arm's tsc consumer is gone. MEASURED that it still has others --
- *   removing every `default` arm leaves tsc at exit 0 and reddens FOUR tests.
- *   Repointing this subpath at dist/ unconditionally was
- *   measured to break examples/tsudoi.config.ts and
- *   test/fixtures/published-specifier.ts with TS2307.
+ *   fall-through does NOT serve `tsc --noEmit`: a `paths` mapping intercepts
+ *   the subpath before the exports map is consulted, so tsc never reaches this
+ *   arm. MEASURED that it has other consumers -- removing every `default` arm
+ *   leaves tsc at exit 0 and reddens FOUR tests -- and MEASURED that it is
+ *   needed here: repointing this subpath at dist/ unconditionally breaks
+ *   examples/tsudoi.config.ts and test/fixtures/published-specifier.ts with
+ *   TS2307.
  *
  * NOT ASSERTED, and named rather than left to be found: in the tarball the
  * `default` arm points at a path that is not shipped, so a resolver matching
  * NEITHER `types` nor `import` -- a CommonJS `require` is the only one -- gets
  * ERR_MODULE_NOT_FOUND rather than a module.
  *
- * ITS PREMISE MOVED TWICE INSIDE PBI-49 AND ITS CONCLUSION NEVER DID, which is
- * the half worth writing down. It rested on `the subpath carries no runtime
- * value at all`; the sprint's first increment falsified that by exporting a
- * reduction from `./types`, and this paragraph was re-taken on the premise that
- * the resolver now missed SOMETHING; the stakeholder then ruled that a types
- * module may not export a runtime function, and the premise is TRUE AGAIN.
- * Asserted rather than asserted-about: `tsudoi's own subpath exports nothing at
- * run time` is now a test in test/published-artifacts.test.ts, taken over the
- * INSTALLED package's module namespace, so this sentence has an owner that
- * reddens instead of a comment that goes quietly false.
+ * ITS PREMISE HAS AN OWNER THAT REDDENS, which is the half worth writing down.
+ * The paragraph rests on `the subpath carries no runtime value at all`, and
+ * that is ASSERTED rather than merely asserted-about: `tsudoi's own subpath
+ * exports nothing at run time` is a test in test/published-artifacts.test.ts,
+ * taken over the INSTALLED package's module namespace. Carried by a comment
+ * alone, the premise would go quietly false the day the subpath grew a value
+ * and this paragraph would go with it.
  *
  * The judgement is what survived both moves: the package is type: module, the
  * two verified runtimes both take `import`, and the alternative is shipping src/
@@ -243,14 +241,13 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // to ./dist/types.js (MEASURED under bun 1.3.13 and deno 2.9.2, discriminated
 // against the `default` arm by writing a marker export into dist/types.js and
 // seeing it appear). So this repo's dist/ is load-bearing for `bun test` --
-// and SINCE SPRINT 40 IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than by
-// nothing, which is the clause this block used to carry and which a diff of
-// that sprint's changed lines would never have reached, since the sprint
-// edited no line in this file's neighbourhood for any other reason.
+// AND IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than by nothing, which is
+// what keeps that dependency from being a trap for whoever runs the suite.
 //
 // REQUIRED PRESENT WITH THIS VALUE, not `scripts equals exactly this`. The
-// equality also forbade every OTHER script, which is not a promise this project
-// ever made: adding one is a legitimate change, and a test that reddens for it
+// equality would also forbid every OTHER script, which is not a promise this
+// project makes: adding one is a legitimate change, and a test that reddens for
+// it
 // resists change without defending a requirement. Unlike `exports` above, where
 // an unlisted entry is unreachable and the whole map IS the public surface, a
 // second script takes nothing away from this one.
@@ -272,45 +269,39 @@ test("packing builds, so a stale dist cannot be published", () => {
  */
 
 /**
- * THIS TEST WAS AUTHORISED FOR DELETION AND ITS OWN GATE WITHDREW THE
- * AUTHORISATION. PBI-35 pre-authorised removing it, on the ground that under an
- * automatic build the staleness it watches CANNOT ARISE -- target deliberately
- * removed rather than coverage lost. The gate attached to that authorisation
- * was `is the build SKIPPABLE`, and Sprint 40 measured that it is, so the
- * comparison stayed and the PBI went back to the Product Owner.
+ * WHY THIS TEST IS NOT REDUNDANT UNDER AN AUTOMATIC BUILD, which is the
+ * obvious argument for deleting it and the one to answer first: it would hold
+ * only if the staleness this watches CANNOT ARISE, and that turns entirely on
+ * whether the build is SKIPPABLE. MEASURED: it is.
  *
- * WHAT IT GUARDS NOW IS ONE ROUTE, AND SAYING SO NARROWLY IS THE POINT: bun
+ * WHAT IT GUARDS IS ONE ROUTE, AND SAYING SO NARROWLY IS THE POINT: bun
  * discovers bunfig.toml relative to the CURRENT WORKING DIRECTORY and never
  * searches upward, so `bun test` run from anywhere but the repository root
  * executes the whole suite with no build. Every form run FROM the root --
  * bare, a file path, a name filter, `-t` -- preloads the build exactly once,
- * measured; the single-file bypass the PBI feared does not exist here.
+ * measured; the single-file bypass is not reachable here.
  *
- * MEASURED ON THE ROUTE IT GUARDS, Sprint 40, with a value re-export added to
- * src/types.ts and no build: from a non-root cwd the suite gives 442 pass /
- * 2 fail, and THIS IS THE ONLY STALENESS-SPECIFIC FAILURE OF THE TWO. The
- * other -- published-artifacts.test.ts's exact runtime-key list -- was
- * attributed away by a control: it reddens identically when the same edit is
- * made and the build DOES run, so it detects a new published name rather than
- * a stale dist/. Without that control this test would have been reported as
- * one of a redundant pair.
+ * MEASURED ON THE ROUTE IT GUARDS, with a value re-export added to src/types.ts
+ * and no build: from a non-root cwd the suite gives 442 pass / 2 fail, and THIS
+ * IS THE ONLY STALENESS-SPECIFIC FAILURE OF THE TWO. The other --
+ * published-artifacts.test.ts's exact runtime-key list -- is attributed away by
+ * a control: it reddens identically when the same edit is made and the build
+ * DOES run, so it detects a new published name rather than a stale dist/.
+ * Without that control this test would read as one of a redundant pair.
  *
- * HISTORICAL, TO SPRINT 25, AND KEPT BECAUSE THEY DESCRIBE THE FAILURE A
- * READER ON THAT ROUTE STILL MEETS -- not present-tense claims about `bun
- * test` from the root, where dist/ can no longer be missing at all.
- * test/completion-path.test.ts STATICALLY IMPORTS the example, so with a stale
- * dist/ the whole file died at module load reporting 0 pass, as `SyntaxError:
- * Export named 'CompletionItemKind' not found in module .../dist/types.js`;
- * and the files that SPAWN a server surfaced the same cause as `initialize
- * failed: server exited with code 1` carrying tsudoi's own `failed to load
- * config` on the child's stderr, with only the server-needing assertions
- * failing (test/hover.test.ts: 12 pass, 2 fail at that tree).
+ * WHAT THE FAILURE LOOKS LIKE ON THAT ROUTE, recorded because it does not name
+ * its own cause and because `bun test` from the root never shows it -- dist/
+ * cannot be missing there at all. test/completion-path.test.ts STATICALLY
+ * IMPORTS the example, so a stale dist/ kills the whole file at module load,
+ * reporting 0 pass, as `SyntaxError: Export named 'CompletionItemKind' not
+ * found in module .../dist/types.js`; and the files that SPAWN a server surface
+ * the same cause as `initialize failed: server exited with code 1` carrying
+ * tsudoi's own `failed to load config` on the child's stderr, with only the
+ * server-needing assertions failing (test/hover.test.ts: 12 pass, 2 fail).
  *
- * IT DETECTS AND DOES NOT BUILD, and the reason is now the opposite of the one
- * it used to give. It used to say a helper that quietly ran tsc would settle an
- * open question by default; that question is settled, in bunfig.toml, by
- * ruling. What keeps the build OUT of this test is that a test which repaired
- * the condition it asserts could never fail.
+ * IT DETECTS AND DOES NOT BUILD. Whether the suite builds is settled in
+ * bunfig.toml, by ruling; what keeps the build OUT of THIS test is narrower and
+ * permanent -- a test that repaired the condition it asserts could never fail.
  */
 test("the repo's own dist/ is built, and carries every LSP data value", async () => {
   // THE SOURCE SIDE IS THE DEPENDENCY ITSELF, because src/deps/types.ts is a
@@ -383,7 +374,7 @@ test("the compiler prepack builds with is pinned by this repo, at a version it d
 });
 
 // PBI-13 criterion 3, and one of the two reasons JSR was declined: it REQUIRES
-// a deno.json, which this project has done without for ten sprints.
+// a deno.json, which this project does without.
 //
 // ITS PAIR is not a probe that writes a deno.json to prove existsSync works --
 // that would assert the function, not the guarantee. The guarantee is `deno

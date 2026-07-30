@@ -58,8 +58,8 @@ await Promise.all(runtimes.map(requireRuntime));
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    // Widened from `toEqual({})` by PBI-2, PBI-3 and PBI-4, deliberately still
-    // exact: openClose is what entitles a conforming client to send
+    // EXACT EQUALITY, DELIBERATELY, however wide the value grows: openClose is
+    // what entitles a conforming client to send
     // didOpen/didClose at all, so an equality assertion is the only kind that
     // catches its loss. The capabilities are here because this file drives
     // examples/tsudoi.config.ts, and it advertises ONE FOR EACH METHOD THAT
@@ -69,23 +69,16 @@ for (const runtime of runtimes) {
     // the other capability equality sites in this suite drive purpose-built
     // fixtures, verified by reading the start argument at each.
     //
-    // ONE PER METHOD, NOT ONE TOP-LEVEL KEY PER METHOD, and the distinction
-    // arrived with the fifth: `completionItem/resolve` contributes
-    // `resolveProvider` INSIDE the object `textDocument/completion` owns, which
-    // is why the value below has five methods behind four keys. That nesting is
-    // the protocol's, and what it cost tsudoi -- AN ORDERING CONSTRAINT BETWEEN
-    // TWO CONTRIBUTORS -- IT NO LONGER COSTS: since Sprint 38 both contributors
-    // MERGE into that key, so neither has to run after the other. What is
-    // asserted in test/resolve.test.ts rather than restated here is the
-    // property both of them serve -- that a config supplying both handlers is
-    // told about resolve INSIDE the completion provider.
-    //
-    // THIS PIN IS THE SECOND HALF OF THAT HISTORY AND IS WHY IT IS MENTIONED:
-    // with the old assignment, swapping the two entries reddened this test as
-    // well as resolve's, MEASURED at Sprint 38 -- so the note at Sprint 34 that
-    // the swap reddened resolve's assertion ALONE had stopped being true here,
-    // one file away from where it was written, the moment the demo config
-    // gained a resolve handler.
+    // ONE PER METHOD, NOT ONE TOP-LEVEL KEY PER METHOD:
+    // `completionItem/resolve` contributes `resolveProvider` INSIDE the object
+    // `textDocument/completion` owns, which is why the value below has five
+    // methods behind four keys. That nesting is the protocol's, AND IT COSTS
+    // TSUDOI NO ORDERING CONSTRAINT BETWEEN THE TWO CONTRIBUTORS: both MERGE
+    // into that key, so neither has to run after the other, and the declaration
+    // order decides nothing here or in test/resolve.test.ts. What is asserted
+    // there rather than restated here is the property both of them serve --
+    // that a config supplying both handlers is told about resolve INSIDE the
+    // completion provider.
     //
     // THE SYNC KIND IS WHAT AN EDITOR READS TO DECIDE WHAT TO SEND, so this
     // value is the whole of the editor-user-facing half of incremental sync:

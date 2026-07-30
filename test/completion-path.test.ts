@@ -63,12 +63,12 @@ async function complete(
    */
   insertReplaceSupport = true,
 ): Promise<CompletionItem[]> {
-  // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is the whole of
-  // PBI-31's break demonstrated on the only mock in this repository. The object
-  // literal that stood here satisfied tsudoi's former four-member interface and
-  // does not satisfy the real one -- which is the break falling exactly where
-  // README says it falls: on an IMPLEMENTOR, in their own tests, and not on a
-  // handler that merely receives a document. `create` is the one-line remedy.
+  // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is PBI-31's
+  // break demonstrated on the only mock in this repository. A hand-written
+  // four-member object literal does NOT satisfy the real TextDocument -- which
+  // is the break falling exactly where README says it falls: on an IMPLEMENTOR,
+  // in their own tests, and not on a handler that merely receives a document.
+  // `create` is the one-line remedy.
   const document: TextDocument = UpstreamTextDocument.create(
     buffer.uri,
     "plaintext",
@@ -139,8 +139,8 @@ function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemK
 
 // WHAT THIS FILE DRIVES: examples/completion-path.ts itself, the artifact a
 // config author reads, with no fixture copy of it in existence. The rule is
-// Sprint 5's, and it is why the assertions below import the example directly
-// rather than a duplicate that would drift away from it.
+// why the assertions below import the example DIRECTLY rather than a duplicate
+// that would drift away from it.
 describe("path fragments", () => {
   // The candidates are shortest-first: a fragment widens across a space ONLY
   // when the narrower one names nothing, which is a property of
@@ -678,14 +678,15 @@ function itemInserting(items: readonly CompletionItem[], text: string): Completi
 }
 
 describe("a replace range covers a filename the line already carries", () => {
-  // THE HARM, in the feature the stakeholder uses with the setting they set:
-  // the fragment's end stops at the first space, so `replace` used to delete
-  // `spaced` alone and insert the whole filename over it -- leaving ` (1).txt`
-  // standing and writing a line NEITHER mode would have produced.
+  // THE HARM, in the feature the stakeholder uses with the setting they set: a
+  // fragment's end stops at the first space, so a `replace` range ending there
+  // deletes `spaced` alone and inserts the whole filename over it -- leaving
+  // ` (1).txt` standing and writing a line NEITHER mode would produce.
   //
-  // MEASURED IN THEIR OWN EDITOR before this was built, because everything
-  // here rests on it: an extended replace end is honoured at confirm by nvim +
-  // ddc + ddc-source-lsp, and today's end reproduces the mangled line there.
+  // IT TAKES A REAL EDITOR TO SEE, so no red in this suite catches a regression
+  // in it: an extended replace end is honoured at confirm by nvim + ddc +
+  // ddc-source-lsp, and a fragment-length end reproduces the mangled line
+  // there. Everything below rests on that, and it is not reproducible here.
   test("completing over the filename replaces the whole of it", async () => {
     const fixture = tree(["spaced (1).txt"]);
     try {
@@ -974,7 +975,7 @@ for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // THE STREAMING PROPERTY, and nothing else can catch its loss: a module
     // that collected the whole listing and returned it satisfies every content
-    // assertion in this file while discarding what four sprints were spent on.
+    // assertion in this file while discarding the streaming altogether.
     //
     // ONE directory with more entries than one batch holds. That is why
     // batching survives the per-segment foreclosure -- no walk is needed for a
@@ -1017,12 +1018,11 @@ for (const runtime of runtimes) {
         // Every entry exactly once across every batch: a count alone would be
         // satisfied by a module that streamed the same batch three times.
         //
-        // EVERY LITERAL IS A BATCH OF ITEMS AND THEY ARE ALL THE SAME SHAPE.
-        // Between Sprints 42 and 43 the first carried its items inside a
-        // `CompletionList` and later ones were bare arrays, so reading a batch
-        // meant handling either -- the BATCHING claim below never depended on
-        // which position a literal arrived in, and that is why it survived both
-        // moves without an assertion changing.
+        // EVERY LITERAL IS A BATCH OF ITEMS AND THEY ARE ALL THE SAME SHAPE, so
+        // reading one takes no case analysis on the position it arrived in. THE
+        // BATCHING CLAIM BELOW DOES NOT DEPEND ON THAT EITHER WAY: it reads
+        // every literal alike, which is why a change to the shape moves no
+        // assertion here.
         const streamed = session.progress.flatMap((progress) => progress.value as CompletionItem[]);
         expect(streamed.map((item) => item.insertText).sort()).toEqual([...names].sort());
 

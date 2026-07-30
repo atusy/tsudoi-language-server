@@ -18,10 +18,10 @@ await Promise.all(runtimes.map(requireRuntime));
  * THE FAILURE CONTRACT, one assertion for every case: exit 1, a tsudoi:-
  * prefixed reason on stderr, and nothing at all on stdout.
  *
- * The PREFIX half was named by three sprints of criteria and pinned by
- * NOTHING. Measured before writing this: deleting `tsudoi: ` from src/cli.ts
- * left every ASCII case green, because each asserted only the substring it
- * cared about. It is the one thing here a config author greps for -- every
+ * The PREFIX half is named by criteria all over this project and PINNED HERE
+ * ALONE. MEASURED: deleting `tsudoi: ` from src/cli.ts leaves every ASCII case
+ * green without this assertion, because each asserts only the substring it
+ * cares about. It is the one thing here a config author greps for -- every
  * line tsudoi writes carries it, and a message without it is indistinguishable
  * from whatever the runtime printed.
  *
@@ -29,10 +29,9 @@ await Promise.all(runtimes.map(requireRuntime));
  * in this file: the reason is the FIRST thing on stderr, so nothing the config
  * author did not ask for precedes it.
  *
- * `EVERY CASE IN THIS FILE` RATHER THAN A NUMBER, corrected at Sprint 34 when a
- * case was added and `all seven` silently became false. A count of a growing
- * file falsifies itself with nothing to show for it; every case calls this
- * helper, so the scope is legible from the helper's call sites.
+ * `EVERY CASE IN THIS FILE` RATHER THAN A NUMBER: a count of a growing file
+ * falsifies itself with nothing to show for it, where every case calls this
+ * helper, so the scope stays legible from the helper's call sites.
  */
 function expectFailureContract(result: CliResult): void {
   expect(result.code).toBe(1);
@@ -239,9 +238,6 @@ for (const runtime of runtimes) {
 
     // THE CASE NO OTHER ONE HERE CAN MAKE: every message above is ASCII, so a
     // reader that decodes each pipe chunk on its own gets them all right.
-    // (It read `the eighth case, and the one the other seven cannot make` until
-    // Sprint 34 added one above it -- the count was load-bearing for nothing and
-    // false the moment the file grew.)
     // EXACT EQUALITY over the whole stream, not toContain: a
     // decode that mangles a split character produces U+FFFD in the middle of a
     // message that still contains every substring one might think to look for.

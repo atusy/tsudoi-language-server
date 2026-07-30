@@ -587,9 +587,9 @@ export type BoundaryIsTheObservingMembers = Assert<
  * read out of vscode-languageserver-protocol's own connection.d.ts by tsc; only
  * the right side is written by hand. So the two can never quietly agree by
  * accident, and if the dependency ADDS, REMOVES or RENAMES a member, this line
- * reddens with TS2344 and names the file it lives in. What preceded it was a
- * fifteen-item list in a comment, which is exactly the artefact that let
- * `onProgress` and `trace` sit unnoticed on the handle for a sprint.
+ * reddens with TS2344 and names the file it lives in. A HAND-WRITTEN LIST IN A
+ * COMMENT IS WHAT THIS REPLACES, and it is exactly the artefact that lets a
+ * member like `onProgress` or `trace` sit unnoticed on the handle indefinitely.
  *
  * IT IS THE OTHER DIRECTION FROM THE PIN ABOVE, and neither substitutes for the
  * other: that one is a set DIFFERENCE, so a member the dependency adds appears on

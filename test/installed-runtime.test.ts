@@ -22,7 +22,7 @@ await requireRuntime(denoRuntime);
  *   deno run -A node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts
  *
  * The install line is what these tests do -- from a tarball, because
- * publishing is out of scope for sprint 10. `bun add @atusy/tsudoi` and
+ * publishing is out of scope. `bun add @atusy/tsudoi` and
  * `deno add npm:@atusy/tsudoi` are the same route once this is published, and
  * they are NOT VERIFIED HERE; nothing in this repo may claim they are until
  * something runs them.
@@ -86,9 +86,9 @@ async function start(command: string): Promise<Started> {
 // PBI-13 criteria 1 AND 2, parameterised rather than written twice: the
 // property under test is that ONE artifact and ONE install serve both
 // runtimes, and two hand-written tests could drift into two different routes
-// without either failing. Nothing in the checkout can stand in for these --
-// sprint 9's finding was that everything green in a checkout stayed green
-// while the installed route was broken.
+// without either failing. NOTHING IN THE CHECKOUT CAN STAND IN FOR THESE: a
+// checkout is entirely capable of being GREEN throughout while the installed
+// route is broken, which is the finding this whole file is built on.
 for (const [runtime, command] of Object.entries(route)) {
   test(`${runtime} completes the handshake against the installed copy`, async () => {
     const started = await start(command);
@@ -144,8 +144,9 @@ for (const [runtime, command] of Object.entries(route)) {
   // The FAILURE half of `checkout and installed do not diverge`. A handshake
   // proves the happy path; PBI-1's contract -- exit 1, a tsudoi:-prefixed
   // reason on stderr, zero bytes on stdout -- is what an editor sees when the
-  // config author gets it wrong, and until now it was only ever asserted
-  // against a checkout. The run command is DERIVED from the stated route so a
+  // config author gets it wrong, and a checkout can no more stand in for the
+  // installed copy here than it can above. The run command is DERIVED from the
+  // stated route so a
   // failure case cannot quietly test a different entry point.
   const runCommandOnly = command.split(" --config ")[0] ?? command;
 
@@ -186,13 +187,13 @@ for (const [runtime, command] of Object.entries(route)) {
  * ./src/types.ts, which is deliberately not published -- a package.json
  * pointing at a file it does not ship.
  *
- * THE SUBPATH IS TYPE-ONLY AGAIN, AND THIS PROBE IS NOT THE ONLY THING THAT
- * WOULD NOTICE THE ARM'S LOSS -- which the first draft of this paragraph claimed
- * and which MEASUREMENT REFUTED IN THE SAME SPRINT. Dropping `import` from the
- * `./types` arm reddens FIVE tests: this one, the type-only surface assertion in
+ * THE SUBPATH IS TYPE-ONLY, AND THIS PROBE IS STILL NOT THE ONLY THING THAT
+ * NOTICES THE ARM'S LOSS -- measured rather than reasoned, because the obvious
+ * argument gets it wrong. MEASURED: dropping `import` from the `./types` arm
+ * reddens FIVE tests -- this one, the type-only surface assertion in
  * test/published-artifacts.test.ts, and the deno halves of the installed-example
- * tests. The claim was written from `a type-only consumer never runs`, which is
- * true of the TYPES and false of the IMPORT STATEMENT that carries them.
+ * tests. `A type-only consumer never runs` is true of the TYPES and false of
+ * the IMPORT STATEMENT that carries them.
  *
  * WHY DENO IS IN THAT LIST AND BUN IS NOT, measured rather than reasoned:
  * examples/diagnostic-trailing-whitespace.ts writes
@@ -299,16 +300,15 @@ test("a change to src/ reaches the installed copy with no rebuild step", async (
 });
 
 /**
- * PBI-13 criterion 1's NEGATIVE CONTROL, kept as a permanent test rather than
- * run once at Review: shipping .ts sources instead of compiled .js makes the
- * Deno route fail, and it fails by NAME.
+ * PBI-13 criterion 1's NEGATIVE CONTROL, a PERMANENT test rather than a
+ * one-time perturbation: shipping .ts sources instead of compiled .js makes the
+ * Deno route fail, and it fails by NAME. A tarball whose only entry point is
+ * src/cli.ts is exactly what a Deno user cannot run.
  *
- * It is also the RED this sprint started from. Before the build landed, the
- * tarball's only entry point WAS src/cli.ts, so this is exactly what a Deno
- * user obtained. It lands earlier than the sprint's headline and defends
- * strictly less: it says `deno rejects a .ts entry point under node_modules
- * and bun does not`, NOT `the installed copy runs under deno` -- that one is
- * defended by the handshake below and by nothing here.
+ * IT DEFENDS STRICTLY LESS THAN IT LOOKS LIKE IT DOES, said so the two claims
+ * are never read as one: it says `deno rejects a .ts entry point under
+ * node_modules and bun does not`, NOT `the installed copy runs under deno` --
+ * that one is defended by the handshake below and by nothing here.
  *
  * COUPLED, deliberately, to deno 2.9.2's restriction. If a later deno strips
  * types under node_modules the first assertion will fail; the answer then is

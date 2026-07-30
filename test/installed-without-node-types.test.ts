@@ -5,8 +5,9 @@ import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { importsAndUses, publicProtocolNames } from "./helpers/published-names.ts";
 
 /**
- * THE ONE THING THAT DEFENDS src/types.ts's BARE SPECIFIER. Before this file,
- * that choice was held by a paragraph which honestly said nothing held it.
+ * THE ONE THING THAT DEFENDS src/types.ts's BARE SPECIFIER, and it has to be a
+ * TEST: a paragraph explaining why the specifier is bare holds nothing in
+ * place, however honest it is about that.
  *
  * THE PROPERTY: a config author who has never installed @types/node can
  * type-check against `@atusy/tsudoi/types`. src/types.ts re-exports its
