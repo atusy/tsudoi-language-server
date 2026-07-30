@@ -163,18 +163,16 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // field does not stop that -- it is a view, not a frozen array. The local
       // copy below is spliced for the same reason.
       //
-      // APPENDED WITH NO DUPLICATE GUARD, deliberately -- AND THE REASON THIS
-      // COMMENT USED TO GIVE IS FALSE. It said `a client that adds a URI it
-      // already holds holds it twice`, and NO OBSERVED CLIENT CAN PRODUCE THAT:
-      // nvim's `Client:_add_workspace_folder` RETURNS WITHOUT NOTIFYING when the
-      // folder is already held, so the duplicate never leaves the client. The
-      // sentence was carrying the `MEASURED against nvim` label that belongs to
-      // its NEIGHBOURS below.
+      // APPENDED WITH NO DUPLICATE GUARD, deliberately, on two grounds worth
+      // keeping apart.
       //
-      // WHAT STANDS IS THE WEAKER HALF, WHICH IS TRUE: THIS LIST IS CLIENT STATE
-      // WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET, so an `includes` guard
-      // would decide on tsudoi's own authority that a client did not mean what
-      // it sent.
+      // NO OBSERVED CLIENT SENDS THE DUPLICATE AT ALL: nvim's
+      // `Client:_add_workspace_folder` RETURNS WITHOUT NOTIFYING when the folder
+      // is already held, so it never leaves the client.
+      //
+      // AND THIS LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE
+      // INTERPRET, so an `includes` guard would decide on tsudoi's own authority
+      // that a client did not mean what it sent.
       //
       // WHAT THAT DOES NOT RULE OUT, stated rather than glossed: should some
       // client send the duplicate, this list holds it twice and the config
