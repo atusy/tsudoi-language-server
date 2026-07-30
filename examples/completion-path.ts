@@ -193,11 +193,10 @@ export interface PathCompletionOptions {
  * editor started without a project root leaves cwd as its own launch
  * directory, so the guess looks right in every test and wrong in real use.
  *
- * THAT SECOND HALF IS HELD UP HERE ALONE, and it is worth naming because it
- * looks like the kind of guarantee something upstream ought to be sharing.
- * `folders` arrives from `context.workspaceFolders` -- the client's own list,
- * which no cwd can enter -- so this function taking URIs as given IS the whole
- * guarantee. NOTHING ELSE HAS TO HOLD IT: tsudoi refuses a relative `rootPath`
+ * THAT SECOND HALF IS HELD UP HERE ALONE. `folders` arrives from
+ * `context.workspaceFolders` -- the client's own list, which no cwd can enter --
+ * so this function taking URIs as given IS the whole guarantee. NOTHING ELSE
+ * HAS TO HOLD IT: tsudoi refuses a relative `rootPath`
  * at its own boundary, so a config reducing the deprecated root fields never
  * meets the value that could have produced a cwd root.
  *

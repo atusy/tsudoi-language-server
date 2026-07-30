@@ -30,8 +30,7 @@ const config: TsudoiConfigFactory = () => {
       // trailing name of the fragment under the cursor. The next keystroke
       // changes the filter, and often changes the DIRECTORY -- typing `/` moves
       // to a different listing entirely. A client told the set is final shows
-      // the user candidates for a prefix they have already left behind, which
-      // is the exact failure this PBI's user story names.
+      // the user candidates for a prefix they have already left behind.
       //
       // AND IT CANNOT BE FIXED HERE, WHICH IS WHY THE RULING STAYS RATHER THAN
       // BEING QUIETLY REVISED TO MATCH WHAT SHIPS. A completion handler yields
