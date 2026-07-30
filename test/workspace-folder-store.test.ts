@@ -366,6 +366,28 @@ const lookups: readonly Lookup[] = [
     expected: [],
   },
   {
+    // THE SAME CLAIM WHERE THE TWO SPELLINGS OVERLAP AS STRINGS, and it is the
+    // row `file:///` above cannot make. A non-special scheme keeps the
+    // authority-less root the parse gives it -- `vscode-remote:/` is its own
+    // canonical spelling, where `file:/` is rewritten to `file:///` -- so
+    // `vscode-remote:/` IS a string prefix of `vscode-remote://ssh-remote/a/`
+    // while naming a different place entirely. Nothing may reach a folder by
+    // being spelled like the front of it.
+    name: "an authority-less root of a non-special scheme is not a folder of that scheme's hosts",
+    folders: [folder("vscode-remote:/", "pathless")],
+    uri: "vscode-remote://ssh-remote%2Bexample/home/me/a.ts",
+    expected: [],
+  },
+  {
+    // ITS POSITIVE CONTROL: that root DOES hold the documents that are actually
+    // under it, so the row above says `not this authority` rather than `this
+    // spelling is unreachable`.
+    name: "an authority-less root of a non-special scheme answers for the documents under it",
+    folders: [folder("vscode-remote:/", "pathless")],
+    uri: "vscode-remote:/home/me/a.ts",
+    expected: ["pathless"],
+  },
+  {
     // `file:/`, `file://` AND `file:///` ARE THREE SPELLINGS OF THE ROOT, and the
     // parse says so on both sides at once. A client holding any of them is found
     // for a document under any other.
@@ -466,6 +488,68 @@ for (const lookup of [...lookups, ...spellings]) {
     expect(handle.folders.get(lookup.uri).map((held) => held.name)).toEqual([...lookup.expected]);
   });
 }
+
+/**
+ * How many uris `read` PARSES, counted by standing a subclass in front of the
+ * global constructor for the length of the call.
+ *
+ * COUNTED WORK AND NOT ELAPSED TIME, which is the only form this claim can take
+ * without being flaky: a millisecond bound on shared CI measures the machine,
+ * and a bound loose enough never to trip on a busy runner is loose enough to
+ * pass over the quadratic it exists to catch.
+ *
+ * COUNTED AFTER `super`, so a uri the parse REJECTS is not counted -- the count
+ * is parses that produced a url, which is the work the lookup can be held to.
+ *
+ * RESTORED IN A `finally`, because a thrown expectation that left the counting
+ * subclass installed would make every later test in this file measure something
+ * else while reporting nothing about it.
+ */
+function parsesDuring(read: () => unknown): number {
+  const parser = globalThis.URL;
+  let parses = 0;
+  class Counting extends parser {
+    constructor(url: string | URL, base?: string | URL) {
+      super(url, base);
+      parses += 1;
+    }
+  }
+  globalThis.URL = Counting;
+  try {
+    read();
+  } finally {
+    globalThis.URL = parser;
+  }
+  return parses;
+}
+
+/**
+ * THE COST OF ONE LOOKUP IS FIXED BY THE STORE AND NOT BY THE URI, which is a
+ * claim about what a client can make this process do: uri length and uri depth
+ * are the client's to choose, and a lookup that reparsed a shrinking uri once
+ * per path segment turned a 40 KB uri into 20000 parses -- measured at 1.2 s
+ * under bun and 2.4 s under deno, SYNCHRONOUSLY, so a cancellation and every
+ * unrelated request wait behind one document's name.
+ *
+ * THREE PARSES, SPELLED AS A NUMBER RATHER THAN AS `the shallow one equals the
+ * deep one`: the two counts are equal at ZERO as well, which is what a `URL`
+ * that could not be stood in front of would report, and the equality would then
+ * be green for a reason unrelated to this claim. The three are the uri's own
+ * location, the directory holding it, and the root of its authority -- the two
+ * ends of the range of locations that can hold it.
+ *
+ * A MISS AND NOT A HIT, because a hit at the uri's own location returns before
+ * the ancestor levels are considered at all and would report a number that says
+ * nothing about the walk.
+ */
+test("a lookup parses a fixed number of uris however deep the one asked about is", () => {
+  const handle = storeOf([project]);
+  const deep = `file:///${Array.from({ length: 20_000 }, () => "a").join("/")}/x.ts`;
+
+  expect(handle.folders.get(deep)).toEqual([]);
+  expect(parsesDuring(() => handle.folders.get("file:///elsewhere/a.ts"))).toBe(3);
+  expect(parsesDuring(() => handle.folders.get(deep))).toBe(3);
+});
 
 /**
  * THE ENTRY ITSELF AND NOT A FOLDER BUILT TO DESCRIBE IT. The table above

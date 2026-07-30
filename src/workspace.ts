@@ -158,49 +158,63 @@ function locationOf(uri: unknown): string | undefined {
 }
 
 /**
- * Every location a folder could be HELD AT for `uri`, innermost first: the
- * location `uri` itself names, then each directory above it, ending at the root
- * of its own authority.
+ * THE TWO ENDS OF THE RANGE OF LOCATIONS ABOVE `uri`: the directory it sits in,
+ * and the root of the authority that directory belongs to. `undefined` where no
+ * parser accepts the uri, and where the uri names no hierarchy at all.
  *
- * THE WALK TERMINATES BECAUSE A ROOT IS ITS OWN PARENT, which is the parse's
- * property and not a bound computed here: `new URL("..", "file:///")` is
- * `file:///` and `new URL("..", "file://host/")` is `file://host/`, so the pass
- * that would climb out of the authority hands back what it was given and stops.
- * Measured on both runtimes, and measured NEVER TO LENGTHEN in between. A
- * hand-derived `<scheme>://<authority>` boundary would have to answer the same
- * question the parse already answers, and answer it from bytes the parse has
- * already rewritten.
+ * A RANGE AND NOT A CLIMB, WHICH IS WHAT KEEPS ONE LOOKUP OFF THE CLIENT'S
+ * ARITHMETIC. Uri length and uri depth are the CLIENT'S to choose, and stepping
+ * `new URL("..", …)` once per path segment reparses a shrinking string: a 40 KB
+ * document uri costs 20000 parses, measured at 1.2 s under bun 1.3.13 and 2.4 s
+ * under deno 2.9.2. That time is SYNCHRONOUS -- the cancellation an author is
+ * waiting on, and every unrelated request, is queued behind one document's name.
+ * Two parses hand back the whole range instead, and the lookup then scans THE
+ * FOLDERS, a set the client sizes with its own UI.
  *
- * THE URI'S OWN LOCATION IS YIELDED SEPARATELY FROM THE WALK, and the two cannot
- * be folded together: `new URL(".", uri)` on a uri that names a directory hands
- * back its PARENT, so a folder asked about by its own uri would be answered by
- * whatever holds it. It is also the only level a non-hierarchical uri has --
- * `new URL(".", "untitled:Untitled-1")` THROWS on both runtimes, where
- * `new URL("untitled:Untitled-1")` does not -- so the walk simply does not
- * proceed for one, and the unsaved buffer every editor sends is answered rather
- * than defended against.
+ * THE RANGE IS EXACTLY A STRING INTERVAL, and that is the property `get` reads
+ * it with: `innermost` is a canonical directory href, so the only `/` in it are
+ * its path separators -- an encoded one arrives as `%2F` -- and it carries no
+ * query and no fragment, since `new URL(".", …)` resolves against the base
+ * without them. A location is an ancestor of `uri` EXACTLY WHEN it ends in `/`,
+ * `innermost` starts with it, and it starts with `root`. Deeper is longer.
+ *
+ * THE FIRST OF THE THREE IS COMPENSATED BY THE PARSE AND IS WRITTEN ANYWAY, and
+ * the perturbation says so plainly: drop it and no row of the table moves. A
+ * location that is not a directory cannot be a prefix of one -- an OPAQUE path
+ * never begins with `/` where a hierarchical href always does, and a location
+ * carrying a query or a fragment carries a literal `?` or `#` that no canonical
+ * directory holds. It stays because the three clauses TOGETHER are what
+ * `ancestor` MEANS here, and dropping one leaves the meaning resting on two
+ * properties of the URL Standard that a reader would have to reconstruct.
+ *
+ * `root` IS NOT REDUNDANT, and the case that needs it is a scheme this protocol
+ * carries: a NON-SPECIAL scheme keeps the authority-less root the parse gives
+ * it, so `vscode-remote:/` is its own canonical spelling and is a string prefix
+ * of `vscode-remote://ssh-remote/home/` while naming a different place entirely.
+ * `file:/` cannot show this, being rewritten to `file:///`.
+ *
+ * WHAT THE INTERVAL DOES NOT COVER, stated rather than glossed: `new URL("..", …)`
+ * can hand back a LONGER string than it was given -- under bun 1.3.13,
+ * `new URL("..", "file://///////")` is `file:////////` -- and a folder held at
+ * such a level is not found for a document below it. The two runtimes do not
+ * agree that those levels exist at all, deno collapsing the same uri to
+ * `file:///`, and no client constructs one.
+ *
+ * `undefined` FOR A NON-HIERARCHICAL URI, and that is an answer rather than an
+ * error: `new URL(".", "untitled:Untitled-1")` THROWS on both runtimes where
+ * `new URL("untitled:Untitled-1")` does not, so the unsaved buffer every editor
+ * sends has ONE location -- its own -- and is answered from there rather than
+ * defended against. The empty string and `not a uri` end here too, and what the
+ * caller sees is a uri no folder covers, which is the answer it already has a
+ * shape for.
  */
-function* locations(uri: string): Generator<string> {
-  const self = locationOf(uri);
-  if (self !== undefined) {
-    yield self;
-  }
+function ancestryOf(
+  uri: string,
+): { readonly innermost: string; readonly root: string } | undefined {
   try {
-    let current = new URL(".", uri).href;
-    for (;;) {
-      yield current;
-      const parent = new URL("..", current).href;
-      if (parent === current) {
-        return;
-      }
-      current = parent;
-    }
+    return { innermost: new URL(".", uri).href, root: new URL("/", uri).href };
   } catch {
-    // NOTHING THIS FUNCTION IS ASKED MAY THROW OUT OF IT, and a uri no parser
-    // accepts is a uri with no directories above it rather than an error: the
-    // empty string, `not a uri`, and the non-hierarchical schemes above all end
-    // the walk here. What the caller sees is a uri no folder covers, which is
-    // the answer it already has a shape for.
+    return undefined;
   }
 }
 
@@ -259,7 +273,10 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
    * EAGER, AND THE COST IS ON THE RIGHT SIDE: the mirror is replaced twice a
    * session in the ordinary case -- once at `initialize`, once per folder the
    * user adds -- while `get` runs per request, and a config author calling it
-   * per completion item is doing nothing unreasonable. A lazy build would move
+   * per completion item is doing nothing unreasonable. WHAT `get` SPENDS is
+   * three parses of the uri and one pass over the locations held, so this build
+   * is what keeps the per-request half proportional to the FOLDERS rather than
+   * to whatever the client named the document. A lazy build would move
    * the work to the same place but add an INVALIDATION OBLIGATION to both
    * writers, where forgetting either is a folder that goes on answering after
    * the user removed it -- silent, and invisible to any test that only ever adds.
@@ -277,11 +294,24 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
     // the cost of saying nothing about the moment.
     folders: {
       get(uri: string): readonly WorkspaceFolder[] {
-        // THE FIRST LEVEL THAT ANSWERS, AND EVERY FOLDER AT IT. The walk is
-        // innermost-first, so stopping at the first level that holds anything is
-        // what makes a nested folder resolve to the inner one -- this is NOT
-        // every ancestor's folders, and a document under `…/w/inner` inside
-        // `…/w` answers with `inner` alone.
+        // THE DEEPEST LOCATION THAT ANSWERS, AND EVERY FOLDER AT IT. The uri's
+        // own location is asked first and the ancestors are taken longest-first,
+        // so a nested folder resolves to the inner one -- this is NOT every
+        // ancestor's folders, and a document under `…/w/inner` inside `…/w`
+        // answers with `inner` alone.
+        //
+        // THE URI'S OWN LOCATION IS ASKED SEPARATELY AND ASKED EXACTLY, and it
+        // cannot be folded into the scan: `innermost` for a uri that NAMES a
+        // directory is that directory's PARENT, so a folder asked about by its
+        // own uri would be answered by whatever holds it. It is also the only
+        // location a non-hierarchical uri has. EXACTLY, because a location
+        // carrying a query or a fragment is reachable here or nowhere -- a
+        // canonical directory holds no literal `?` or `#` for one to prefix.
+        //
+        // AND THE SCAN IS OVER THE FOLDERS HELD, NOT OVER THE URI'S LEVELS,
+        // which is what fixes the cost of a lookup to something the client
+        // cannot inflate with a long name; the interval that makes a prefix test
+        // sound is derived at `ancestryOf`.
         //
         // SEVERAL FOLDERS AT ONE LEVEL ARE ALL RETURNED, and that is the whole
         // reason this hands back a list. Two folders reach one level only by
@@ -303,13 +333,31 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
         // does with the mirror and for the same reason: `mirror()` REBUILDS the
         // index rather than writing into it, so a list a handler took before an
         // `await` still answers about the moment it was taken.
-        for (const location of locations(uri)) {
-          const held = index.get(location);
+        const self = locationOf(uri);
+        if (self !== undefined) {
+          const held = index.get(self);
           if (held !== undefined) {
             return held;
           }
         }
-        return [];
+        const ancestry = ancestryOf(uri);
+        if (ancestry === undefined) {
+          return [];
+        }
+        let deepest: readonly WorkspaceFolder[] = [];
+        let depth = 0;
+        for (const [location, held] of index) {
+          if (
+            location.length > depth &&
+            location.endsWith("/") &&
+            ancestry.innermost.startsWith(location) &&
+            location.startsWith(ancestry.root)
+          ) {
+            deepest = held;
+            depth = location.length;
+          }
+        }
+        return deepest;
       },
       values: (): Iterable<WorkspaceFolder> => folders,
     },
