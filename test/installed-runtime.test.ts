@@ -186,15 +186,26 @@ for (const [runtime, command] of Object.entries(route)) {
  * ./src/types.ts, which is deliberately not published -- a package.json
  * pointing at a file it does not ship.
  *
- * THE SUBPATH IS TYPE-ONLY, AND THIS PROBE IS THE REASON THAT COSTS ANYTHING.
- * It stopped being type-only for one sprint, when `./types` exported a reduction
- * the stakeholder-facing example called; the stakeholder ruled that incoherent
- * and the function is gone, so nothing takes a VALUE from this subpath again.
- * WHICH RESTORES THIS PROBE AS THE ONLY THING THAT WOULD NOTICE THE ARM'S LOSS:
- * a type-only consumer never runs, so no other test in this suite resolves
- * `@atusy/tsudoi/types` at run time at all. The bare `import` is the statement
- * about THE SUBPATH rather than about any example, and a middle arm pointing
- * into dist/ is what makes it resolve to a file the tarball really ships.
+ * THE SUBPATH IS TYPE-ONLY AGAIN, AND THIS PROBE IS NOT THE ONLY THING THAT
+ * WOULD NOTICE THE ARM'S LOSS -- which the first draft of this paragraph claimed
+ * and which MEASUREMENT REFUTED IN THE SAME SPRINT. Dropping `import` from the
+ * `./types` arm reddens FIVE tests: this one, the type-only surface assertion in
+ * test/published-artifacts.test.ts, and the deno halves of the installed-example
+ * tests. The claim was written from `a type-only consumer never runs`, which is
+ * true of the TYPES and false of the IMPORT STATEMENT that carries them.
+ *
+ * WHY DENO IS IN THAT LIST AND BUN IS NOT, measured rather than reasoned:
+ * examples/diagnostic-trailing-whitespace.ts writes
+ * `import { type MethodHandler } from "@atusy/tsudoi/types"`, and bun ELIDES an
+ * import whose bindings are all type-only while deno LOADS THE MODULE. So the
+ * examples resolve this subpath at run time under one runtime and not the other,
+ * from a line that looks type-only in the source.
+ *
+ * IT STAYS BECAUSE THE THREE FAIL DIFFERENTLY, which is the first-to-fail rule
+ * rather than redundancy: this one says THE SUBPATH RESOLVES AT ALL, in the
+ * smallest possible consumer and under both runtimes; the surface assertion says
+ * the module loaded AND exported nothing; the example tests say a config author's
+ * server started. Only this one names the arm.
  */
 const importsTheSubpath = 'import "@atusy/tsudoi/types";\n';
 

@@ -43,13 +43,24 @@ export function isolatedCheckout(): IsolatedCheckout {
   // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
   // loading the config, with a resolve error NAMING `@atusy/tsudoi/deps/types`.
   //
-  // MEASURED THREE WAYS AT PBI-49 rather than reasoned, because the conclusion
-  // and the reason moved independently and only running tells you which. Staging
-  // no dist/ at all reddens two tests in test/resolution.test.ts. Staging dist/
-  // WITHOUT dist/types.js leaves the checkout starting, EXIT 0 and silent --
-  // so tsudoi's OWN subpath is not what this staging is for. Deleting
+  // MEASURED AT PBI-49 rather than reasoned, because the conclusion and the
+  // reason moved independently and only running tells you which. Staging no
+  // dist/ at all reddens two tests in test/resolution.test.ts. Deleting
   // dist/deps/types.js from an otherwise complete dist/ reproduces the failure
-  // above by name.
+  // above by name, under both runtimes.
+  //
+  // AND THE TWO RUNTIMES DISAGREE ABOUT dist/types.js, WHICH A ONE-RUNTIME
+  // MEASUREMENT REPORTED AS `NOT NEEDED` BEFORE THE SECOND WAS TAKEN. With
+  // dist/types.js deleted and the rest of dist/ present, bun starts the server
+  // at EXIT 0 and silent; deno EXITS 1 with ERR_MODULE_NOT_FOUND naming
+  // dist/types.js, imported from examples/diagnostic-trailing-whitespace.ts:17.
+  // THE MECHANISM IS IMPORT ELISION AND NOT RESOLUTION: that line reads
+  // `import { type MethodHandler } from "@atusy/tsudoi/types"`, whose bindings
+  // are all type-only, and bun drops the statement while deno keeps and loads
+  // it. So a source line that looks type-only is a real runtime dependency on
+  // one of the two runtimes this project verifies -- which is exactly why this
+  // helper stages dist/ WHOLE rather than the parts one runtime happens to
+  // reach.
   //
   // WHICH SETTLES A SENTENCE THAT WAS HALF WRONG FOR AN UNKNOWN NUMBER OF
   // SPRINTS. It named `CompletionItemKind` -- a real value in a real file -- and

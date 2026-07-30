@@ -183,8 +183,9 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
  * `@atusy/tsudoi/types` IS TYPES. It exported one function for a single sprint
  * -- a reduction over the deprecated root fields -- and the stakeholder ruled
  * that a types module exporting a runtime function is incoherent. Nothing
- * enforced the property before that; the sentences claiming it lived in comments
- * in three files and went false without anything reddening.
+ * enforced the property before that: it was claimed by a comment in
+ * test/package-shape.test.ts and by one in test/installed-runtime.test.ts, and
+ * both went false without anything reddening.
  *
  * MEASURED ON THE ARTIFACT A STRANGER RECEIVES, not grepped over src/. A name
  * grep is what missed this class before: it cannot see interface MEMBERS and it
