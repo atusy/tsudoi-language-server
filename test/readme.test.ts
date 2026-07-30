@@ -305,18 +305,22 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/network/i, /cache/i, /vscode-languageserver-protocol/],
   },
   {
-    // Named because it is the ONLY breaking change this package has shipped to
-    // its published type surface, and because its blast radius is the part a
-    // reader will otherwise guess wrong. Upstream's TextDocument is a SUPERSET
-    // of the four-member shape it replaced, so receiving code is untouched and
-    // only an IMPLEMENTOR -- someone's own hand-written mock -- has anything to
-    // do. A reader who assumes the opposite rewrites handlers for nothing.
+    // Named because a reader meets this type as something they RECEIVE and
+    // finds out only in their own test suite that it is also something they may
+    // have to BUILD. The four obvious members are the shape everyone reaches
+    // for, and stopping there type-errors at a site nothing else in this
+    // document prepares them for.
+    //
+    // `receive` IS DELIBERATELY NOT A TOKEN, though the word is available: it
+    // sits in this section's own heading, so it would be matched by a section
+    // that had lost the paragraph entirely and would assert nothing about the
+    // prose this entry exists to defend.
     //
     // `TextDocument\.create` is in the tokens because the remedy is the half a
-    // reader needs: a break with no named remedy is an announcement, not a
-    // migration note.
-    name: "the document type change breaks implementors, not the code that receives a document",
-    tokens: [/TextDocument/, /implement/i, /receive/i, /TextDocument\.create/],
+    // reader needs: a named gap with no named remedy is a warning rather than
+    // documentation.
+    name: "a hand-written mock must implement the whole TextDocument, and TextDocument.create builds one",
+    tokens: [/TextDocument/, /implement/i, /mock/i, /TextDocument\.create/],
   },
   {
     // NAMED BECAUSE IT WENT FALSE AND NOTHING NOTICED. The document said every

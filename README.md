@@ -190,18 +190,16 @@ store in step with the editor and hands you the real thing:
 | `lineCount`                    | how many lines it has                        |
 
 The last four are the reason this type is not tsudoi's own. Anything that answers about the word
-under the cursor needs offset arithmetic, and while tsudoi handed out a four-member shape every
-config had to write that arithmetic again -- in code this project cannot see and could never fix.
-Now it comes from a package other people maintain.
+under the cursor needs offset arithmetic, and a shape carrying only `uri`, `languageId`, `version`
+and `getText()` would leave every config writing that arithmetic again -- in code this project
+cannot see and could never fix. It comes from a package other people maintain instead.
 
-**Adopting it broke one thing, and it is worth knowing which.** Nothing that RECEIVES a document:
-`uri`, `languageId`, `version` and `getText()` mean exactly what they meant before, and the new
-type has strictly more members than the one it replaced, so every handler that compiled still
-compiles. What breaks is code that IMPLEMENTS the type -- in practice a hand-written mock in your
-own tests, which used to be an object literal with four members and no longer satisfies anything:
+**A hand-written mock has to implement all six.** This is the one place the type asks anything of
+you, and it comes up in your own tests rather than in your config. An object literal carrying the
+four obvious members satisfies nothing:
 
 ```ts
-// no longer a TextDocument: positionAt, offsetAt and lineCount are missing
+// not a TextDocument: positionAt, offsetAt and lineCount are missing
 const document = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
 ```
 
