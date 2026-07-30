@@ -8,6 +8,7 @@ import {
   DocumentFormattingRequest,
   ErrorCodes,
   HoverRequest,
+  integer,
   LSPErrorCodes,
   type PartialResultParams,
   type ProgressToken,
@@ -575,9 +576,33 @@ async function answerUnlessCancelled<T>(
  * string`, so `0` and `""` are both legitimate AND falsy. That is why this is a
  * type test rather than a truthiness test -- `if (!token)` would fix the null
  * case and break every client that numbers its tokens from zero.
+ *
+ * `integer` IS THE PROTOCOL'S OWN AND NOT JAVASCRIPT'S, which is the whole of
+ * why the numeric arm is three conditions rather than one. LSP defines
+ * `integer` as SIGNED 32-BIT, so `2147483648` is a perfectly good
+ * `Number.isInteger` and not a token any conforming client can send -- accepting
+ * it means streaming under a token the client will not correlate, which is the
+ * silent misdelivery `streamingToken` below exists to refuse.
+ *
+ * THE BOUNDS ARE THE PACKAGE'S, DERIVED THERE AND NOT RESTATED HERE: `integer`
+ * is `vscode-languageserver-protocol`'s namespace for exactly this type, so its
+ * MIN_VALUE and MAX_VALUE move with the specification tsudoi is implementing
+ * rather than with a pair of literals somebody has to remember.
+ *
+ * `integer.is` IS NOT USED, AND THAT IS A MEASUREMENT RATHER THAN A PREFERENCE:
+ * it tests `typeof value === "number"` and the two bounds and NOTHING ELSE, so
+ * `integer.is(1.5)` is `true`. A token of 1.5 survives JSON and is not an
+ * integer in any sense, so `Number.isInteger` stays and only the bounds are
+ * borrowed.
  */
 function isProgressToken(value: unknown): value is ProgressToken {
-  return typeof value === "string" || (typeof value === "number" && Number.isInteger(value));
+  return (
+    typeof value === "string" ||
+    (typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= integer.MIN_VALUE &&
+      value <= integer.MAX_VALUE)
+  );
 }
 
 /**
