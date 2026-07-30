@@ -88,8 +88,11 @@ export function createLifecycle(): Lifecycle {
     //
     // WHY NOT THE SERVING PHASE, so that its absence is not read as an oversight:
     // LSP makes a second `initialize` InvalidRequest there too, and this returns
-    // undefined for it. Refusing it changes what a MALFORMED client is told,
-    // where refusing here changes what a CONFORMING one's session exits with.
+    // undefined for it. The client is out of order in BOTH phases -- what differs
+    // is how far the damage reaches. In the serving phase it stops at the
+    // response to that one request. Here it escapes the request entirely and
+    // lands on the exit code of a session that had already completed the
+    // handshake correctly, which is the only reason this branch is worth having.
     initializeRejection(): ResponseError<void> | undefined {
       if (phase === "shutdown") {
         return new ResponseError<void>(

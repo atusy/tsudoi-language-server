@@ -355,8 +355,10 @@ export function notificationEntries(
       // OPTING IN ALSO BUYS A CATCH-UP EVENT: the client's feature sends the diff
       // between the folders it named at `initialize` and the folders it holds
       // when it registers. Usually those agree and nothing is sent; when they do
-      // not, an add/remove pair arrives before any user action, which is the
-      // ordinary path through the handler and not a special case.
+      // not, ONE notification carrying both arms arrives before any user action.
+      // That is the ordinary path through `change()` in workspace.ts and not a
+      // special case -- a `removed` URI it does not hold is skipped, so the
+      // handler has nothing to guard against here.
       //
       // The gate: a folder change outside the serving window has no session to
       // change. Before `initialize` there is no client state and the folder list
