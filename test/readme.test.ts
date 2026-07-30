@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
 import { Buffer } from "node:buffer";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { repoRoot } from "./helpers/spawn.ts";
 import {
   extractExamplesInstall,
   extractFailureContract,
@@ -316,6 +319,28 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/TextDocument/, /implement/i, /receive/i, /TextDocument\.create/],
   },
   {
+    // NAMED BECAUSE IT WENT FALSE AND NOTHING NOTICED. The document said every
+    // protocol name the examples use comes from `@atusy/tsudoi/types`, and it
+    // had not been true since the surface was split by origin: `CompletionParams`
+    // comes from `deps/protocol` and `CompletionItem`, `CompletionItemKind`,
+    // `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity`
+    // from `deps/types`. src/types.ts says the opposite of what the README said,
+    // in so many words, and neither file was reading the other.
+    //
+    // WHY THE FALSE HALF SURVIVED A READING: the parenthetical about
+    // `CompletionItemKind` being used as a VALUE was true, and a reader who
+    // checks that nods past the sentence carrying it. That is why the value
+    // token is in this list -- it is the true half, and it must stay attached to
+    // the corrected one rather than drift back into a claim about `./types`.
+    //
+    // ALL THREE `deps/` SUBPATHS, INCLUDING THE ONE NO EXAMPLE IMPORTS:
+    // `deps/textdocument` is published and was named nowhere in the document, so
+    // a reader following the README could not learn the type of the thing every
+    // handler is handed.
+    name: "protocol names come from the deps subpaths, and tsudoi's own from ./types",
+    tokens: [/deps\/protocol/, /deps\/types/, /deps\/textdocument/, /CompletionItemKind/, /value/i],
+  },
+  {
     name: "the package is not published",
     tokens: [/not published/i, /registry/i],
   },
@@ -378,6 +403,61 @@ for (const fact of facts) {
     expect(statesFact(reword(readme), fact)).toBe(true);
   });
 }
+
+/**
+ * THE HALF NO `facts` ENTRY CAN DO, and it is worth saying which is which: a
+ * fact reddens when someone edits the README, never when someone edits the
+ * PACKAGE. The claim that went false above went false because the exports map
+ * was split by origin and this document was not touched -- an edit that no
+ * amount of token matching over prose could have caught, because the prose did
+ * not change.
+ *
+ * SO THE TWO DOCUMENTS ARE COMPARED DIRECTLY, and in BOTH directions by one
+ * equality: a subpath added to package.json that the README never mentions
+ * reddens here, and so does a README naming a subpath that is not published.
+ * test/package-shape.test.ts already pins the map's shape; nothing until now
+ * connected it to what a reader is told.
+ *
+ * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
+ * `node_modules/@atusy/tsudoi/dist/cli.js` is a path INTO the installed package
+ * that the quickstart tells a reader to run, reached by walking the tree rather
+ * than through the exports map -- which is precisely why it must not be
+ * expected to appear there.
+ */
+const publishedExports = Object.keys(
+  (
+    JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+      exports: Record<string, unknown>;
+    }
+  ).exports,
+).sort();
+
+function subpathsNamed(markdown: string): string[] {
+  return [
+    ...new Set(
+      [...markdown.matchAll(/(?<!node_modules\/)@atusy\/tsudoi\/([\w/-]+)/g)].map(
+        (match) => `./${match[1] ?? ""}`,
+      ),
+    ),
+  ].sort();
+}
+
+test("the published subpaths the README names are exactly the ones package.json exports", () => {
+  expect(subpathsNamed(readme)).toEqual(publishedExports);
+});
+
+/**
+ * THE PERMANENT PAIR, and the direction it probes is the one that actually
+ * happened: a README that stops naming a published subpath. Without it, an
+ * extractor that had quietly stopped matching anything would satisfy the
+ * equality above only by accident -- and the assertion would be reporting that
+ * two empty lists agree.
+ */
+test("a README that stopped naming one of them no longer matches the exports map", () => {
+  const narrowed = readme.replaceAll("@atusy/tsudoi/deps/textdocument", "@atusy/tsudoi/types");
+
+  expect(subpathsNamed(narrowed)).not.toEqual(publishedExports);
+});
 
 /**
  * CRITERION 4, and the whole of it is that THE README IS THE SOURCE OF THE

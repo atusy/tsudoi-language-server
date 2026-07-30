@@ -39,8 +39,9 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
-A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi/types`,
-which from inside this repository resolves to `dist/types.js`, and `dist/` is not committed
+A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi/types` and,
+for the protocol's own names, the `deps/` subpaths beside it -- which from inside this repository
+resolve to files under `dist/`, and `dist/` is not committed
 -- so `bun test` builds it **automatically**, through a `bunfig.toml` that compiles `src/`
 before any test file is loaded. An edit to `src/` cannot be tested against a `dist/` that
 has moved on without it, because there is no build to forget.
@@ -279,11 +280,24 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   Note that it fails to LOAD rather than to type-check: `examples/wordnet.d.ts` declares the
   module, so `tsc` is satisfied by the declaration whether or not the package is there.
 
-  **No protocol package is named here**, and that is the point: every protocol name the examples
-  use -- `CompletionItemKind` among them, which they use as a value rather than only as a type --
-  comes from `@atusy/tsudoi/types`. The quickstart config above imports the same module and needs
-  nothing beyond it. The test suite runs these files themselves and type-checks them as an
+  **No protocol package is named here**, and that is what tsudoi re-exporting its own dependencies
+  buys: these files name protocol types freely and still depend on nothing but tsudoi. They take
+  them from the `deps/` subpaths and not from tsudoi's own module -- `CompletionParams` from
+  `@atusy/tsudoi/deps/protocol`, which carries the protocol's request and params types, and
+  `CompletionItem`, `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity` from
+  `@atusy/tsudoi/deps/types`, which carries the data types a handler reads or builds.
+  `CompletionItemKind` comes from that second one as well, and it is why those are not all
+  `import type`: it is a **value**, and an item's `kind` is one of its members. What
+  `@atusy/tsudoi/types` carries is tsudoi's OWN names -- `MethodHandler`, `RequestContext`,
+  `TsudoiConfigFactory` -- which is why the quickstart config above needs nothing beyond it and
+  these handler files need more: a config names no protocol type, and a handler does almost
+  nothing else. The test suite runs these files themselves and type-checks them as an
   installed consumer receives them, so they cannot drift from what tsudoi does or from what it
   publishes.
 
-- `src/types.ts` is the whole published type surface, reachable as `@atusy/tsudoi/types`.
+- **The published type surface is four subpaths**, split by ORIGIN rather than by topic:
+  `@atusy/tsudoi/types` is tsudoi's own names, written in `src/types.ts`, and
+  `@atusy/tsudoi/deps/protocol`, `@atusy/tsudoi/deps/types` and `@atusy/tsudoi/deps/textdocument`
+  re-export the three packages tsudoi depends on, one subpath each. The line tsudoi draws is OURS
+  versus THEIRS; the line between the three `deps/` subpaths is upstream's own packaging, which
+  you reach past rather than reason about.
