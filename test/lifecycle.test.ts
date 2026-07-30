@@ -117,6 +117,34 @@ for (const runtime of runtimes) {
       }
     });
 
+    // WHAT THIS DEFENDS IS THE EXIT CODE, and the -32600 assertion is the half
+    // that makes it mean anything: `exited 0` alone is satisfied by a session
+    // whose second `initialize` never arrived -- a write that failed, a frame
+    // nobody read -- because a session sitting in the shutdown phase exits 0
+    // either way. Asserting the refusal CODE is what distinguishes `tsudoi
+    // refused it` from `it was never asked`. Same shape and same reason as the
+    // refused-shutdown test below.
+    //
+    // AND THE ACCEPTED SECOND `initialize` IS NOT A COSMETIC WRONG ANSWER: it
+    // returns the session to the serving phase, so the `exit` that follows reads
+    // 1 -- this protocol's word for `error` -- out of a session that shut down
+    // cleanly and did everything LSP asked of it.
+    test("initialize REFUSED after shutdown with InvalidRequest, and the exit that follows still reads 0", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        await session.request<null>("shutdown", null);
+
+        const refusal = await session.requestError("initialize", initializeParams);
+        expect(refusal.code).toBe(ErrorCodes.InvalidRequest);
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
     // A shutdown tsudoi REFUSED is not a shutdown, and this is where that reading
     // is defended. WHY IT IS NOT THE TEST ABOVE: there the client never asked to
     // shut down; here it asked and was told no, which is a different session and

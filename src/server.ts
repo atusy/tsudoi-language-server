@@ -103,8 +103,17 @@ export function startServer(
   );
 
   connection.onRequest(InitializeRequest.type, (params: InitializeParams): InitializeResult => {
-    // initialize is the one request the gate may never refuse -- refusing it
-    // would make the state it guards unreachable.
+    // THE GATE THIS REQUEST CONSULTS IS ITS OWN, and it is not the one every
+    // other request asks: requestRejection() would answer ServerNotInitialized
+    // to the very message that clears that phase, making the state it guards
+    // unreachable. So `never refuses` holds for the UNINITIALIZED phase alone --
+    // it is not a blanket carve-out, and after `shutdown` the refusal is what
+    // keeps a clean session's `exit` reading 0. The phase reading itself stays in
+    // src/lifecycle.ts, beside the code it answers with.
+    const rejection = lifecycle.initializeRejection();
+    if (rejection !== undefined) {
+      throw rejection;
+    }
     lifecycle.initialize();
     // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE -- they are the three the
     // protocol lets a client name a ROOT in, and nothing else here is read.

@@ -30,6 +30,20 @@ export interface Lifecycle {
    */
   requestRejection(): ResponseError<void> | undefined;
   /**
+   * The error an `initialize` arriving NOW must be answered with, or undefined
+   * when the handshake may proceed.
+   *
+   * ITS OWN QUESTION, AND NOT A NARROWING OF requestRejection, because one phase
+   * answers OPPOSITELY: every other request is refused before the handshake, and
+   * this is the request that ENDS that phase. Asking requestRejection here would
+   * answer ServerNotInitialized to the one message that clears it, leaving the
+   * serving phase unreachable and the session dead on arrival.
+   *
+   * After `shutdown` the reasoning inverts and the spec is explicit -- a client
+   * may send nothing but `exit`, and a second `initialize` is InvalidRequest.
+   */
+  initializeRejection(): ResponseError<void> | undefined;
+  /**
    * Whether a notification arriving NOW may be acted on. Outside the serving
    * window LSP says to drop one, SILENTLY: a notification has no response, so
    * there is nothing a client could be told and nothing it could act on.
@@ -62,6 +76,25 @@ export function createLifecycle(): Lifecycle {
         return new ResponseError<void>(
           ErrorCodes.InvalidRequest,
           "The server has shut down; only exit is accepted now.",
+        );
+      }
+      return undefined;
+    },
+
+    // WHAT A REFUSAL HERE BUYS is the EXIT CODE, which is why it is not a
+    // cosmetic correction to a wrong answer: accepting the handshake again puts
+    // the phase back to `serving`, and exitCode() below then reads 1 -- this
+    // protocol's word for `error` -- out of a session that shut down cleanly.
+    //
+    // WHY NOT THE SERVING PHASE, so that its absence is not read as an oversight:
+    // LSP makes a second `initialize` InvalidRequest there too, and this returns
+    // undefined for it. Refusing it changes what a MALFORMED client is told,
+    // where refusing here changes what a CONFORMING one's session exits with.
+    initializeRejection(): ResponseError<void> | undefined {
+      if (phase === "shutdown") {
+        return new ResponseError<void>(
+          ErrorCodes.InvalidRequest,
+          "The server has shut down; initialize is not accepted now.",
         );
       }
       return undefined;
