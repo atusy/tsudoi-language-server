@@ -4,10 +4,10 @@
 //
 // WHAT IS NOT HERE IS DELIBERATE: every LSP name a config author might want --
 // the protocol's types and the data values a handler reads or builds -- is
-// published from `@atusy/tsudoi/lsp` instead. The line between the two modules
-// is OURS versus THEIRS, which is the one distinction an author benefits from;
-// which upstream package declares a given LSP name is an accident of how those
-// libraries are cut up, and src/lsp.ts is where that is absorbed.
+// published from `@atusy/tsudoi/deps/protocol`, `@atusy/tsudoi/deps/types` and
+// `@atusy/tsudoi/deps/textdocument` instead. The line this module draws is OURS
+// versus THEIRS; the line BETWEEN the three deps subpaths is upstream's own
+// packaging, which an author reaches past rather than reasons about.
 import type {
   CompletionItem,
   CompletionParams,
