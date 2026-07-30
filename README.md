@@ -253,8 +253,8 @@ unreachable through `get`, while `values()` still hands it over.
 
 **Everything reached through `context.tsudoi` is live.** It is one object for the whole session,
 so a handler that reads a member, awaits, and reads it again may read two different things -- the
-folder list moves when the user adds a folder, and a document is mutated in place as the user
-types. A handler that needs the value it STARTED with takes it before its first `await`:
+folder list moves when the user adds a folder, and a document answers from the buffer as it stands
+when you ask it, which moves as the user types. A handler that needs the value it STARTED with takes it before its first `await`:
 `Array.from(workspaceFolders.values())` is enough, because tsudoi replaces that list rather than
 writing into it, while a document needs `getText()`, since a string does not move. The two
 deprecated roots and the capabilities are written once at `initialize` and never move at all.

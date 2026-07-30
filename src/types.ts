@@ -194,9 +194,9 @@ export interface WorkspaceFolderStore {
  *     the old one -- neither `push` nor a splice of the live list -- so what one
  *     call handed you cannot move under you. THE STORE IS WHAT IS LIVE, not what
  *     it hands back: asking it twice across an `await` is what may differ.
- *   - FOR A DOCUMENT, HOLDING THE REFERENCE IS NOT ENOUGH, because upstream
- *     mutates the instance. `getText()` returns a string, and a string does not
- *     move.
+ *   - FOR A DOCUMENT, HOLDING THE REFERENCE IS NOT ENOUGH, because what it
+ *     reads is the buffer AS IT STANDS WHEN IT IS ASKED. `getText()` returns a
+ *     string, and a string does not move.
  *
  * AND FOR `rootUri`, `rootPath` AND `clientCapabilities` THE QUESTION DOES NOT
  * ARISE: all three are written once, from `initialize`, and nothing in the
