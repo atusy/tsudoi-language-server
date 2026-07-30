@@ -36,7 +36,51 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-46",
+      story: {
+        role: "config author",
+        capability:
+          "yield batches of completion items and never decide whether they travel as a partial result or as the response",
+        benefit:
+          "the shape I write says WHAT I found, and tsudoi decides HOW it reaches the client -- so no slot in my return value means one thing in one call and another thing in the next",
+      },
+      status: "ready",
+      acceptance_criteria: [
+        {
+          criterion:
+            "A completion handler is `AsyncGenerator<CompletionItem[], null, null>` -- ONE SLOT WITH ONE MEANING. Every yield is content; nothing the author writes selects a delivery channel. THE TUPLE IS WITHDRAWN, and with it `CompletionResponse`, `EmptyCompletionResponse` and the `void` arm: a handler with nothing to say returns without yielding, which needs no separate shape.",
+          verification:
+            "The published surface loses exactly those names and gains none. NEGATIVE CONTROL, because a set comparison against a stale or empty list passes regardless: add a throwaway export to src/types.ts and confirm the comparison REPORTS it, then remove it. AND THE DIRECTION THAT MATTERS IS REMOVAL here, the opposite of PBI-44's, so a check that only looks for additions cannot discriminate this.",
+        },
+        {
+          criterion:
+            "TSUDOI DECIDES THE CHANNEL BY LOOKING ONE CHUNK AHEAD, and the rule is stated as behaviour rather than as an implementation: a stream that produces NOTHING is answered `null`; a stream that produces EXACTLY ONE batch is answered WITH THAT BATCH and sends no `$/progress` at all; a stream that produces MORE sends every batch as `$/progress` and answers `null`. The one-batch case is the point -- today it costs a `$/progress` round trip and a null response where one response would do.",
+          verification:
+            "Three sessions, one per arm, each asserting BOTH the response AND the progress count -- a test that checks only the response cannot tell the one-batch case from the many-batch case. THE PAIRED CONTROL per Sprint 6, since two arms assert an ABSENCE of progress: at least one arm must observe progress PRESENT through the same measurement. NAMED COST, to be measured rather than assumed: the first batch is held until the second pull settles, so a two-batch stream delivers its first batch LATER than it does today. Measure that delay exists rather than claiming it does not.",
+        },
+        {
+          criterion:
+            "`isIncomplete` BECOMES UNEXPRESSIBLE AGAIN, AND THAT IS RECORDED AS A KNOWN GAP RATHER THAN ALLOWED TO GO SILENT. The specification treats a supplied `CompletionItem[]` as `{ isIncomplete: false, items }`, so every completion tsudoi answers claims completeness -- which Sprint 42 measured to be FALSE for path completion. The completeness rulings written at each config in Sprint 42 STAY, and the two ruled NOT COMPLETE say at their site that the claim is still wrong and why it cannot be fixed here.",
+          verification:
+            "The completeness-ruling scan from Sprint 42 must still pass, with its count guard and its negative control. NEGATIVE CONTROL for the gap itself: the two NOT COMPLETE configs must NOT be quietly re-ruled to COMPLETE to make the file consistent -- grep their rulings before and after and confirm the verdicts are unchanged. A sprint that removes the capability AND relabels the configs that needed it would leave nothing recording that anything was lost.",
+        },
+        {
+          criterion:
+            "THE FUTURE PATH IS RECORDED AT THE TYPE, evidence-shaped rather than aspirational: widening the yield to `CompletionItem[] | CompletionList` and NORMALISING a mid-stream `CompletionList` into items is what restores `isIncomplete` without reintroducing a slot whose meaning depends on its neighbour. It is not built now.",
+          verification:
+            "Met by DOING NOTHING beyond writing it, which is what makes it meetable; it fails one way, by the note being absent. Grep for it after; the before-grep against the sprint's baseline returns nothing, which is the control that the grep can tell present from absent.",
+        },
+      ],
+      notes: [
+        "THE DISCOMFORT THIS PBI ANSWERS, in the stakeholder's own words: with the tuple, WHETHER THE FIRST RETURN VALUE IS A PROGRESS OR A RESPONSE DEPENDS ON WHETHER A GENERATOR IS PRESENT. One slot, two meanings, decided by a sibling. That is the defect; the lost capability is the price.",
+        "`isIncomplete` SUPPORT IS DEFERRED BY STAKEHOLDER RULING, not dropped as unwanted. Sprint 42 built it, measured it working against nvim (3 re-queries against the paired negative's 1, corroborated at completion.lua:1086), and it is being withdrawn because the shape that carried it was uncomfortable rather than because the capability was wrong. THE MEASUREMENTS STAY IN SPRINT 42'S RECORD and are what a future attempt starts from.",
+        "THE SEMANTICS OF `one batch means respond` ARE THE SCRUM MASTER'S READING OF THE STAKEHOLDER'S TWO MESSAGES AND ARE FLAGGED AS SUCH: to know a stream yielded exactly once you must pull twice, so the drive holds the first batch until the second pull settles. If the intent was instead `decide on the first pull alone`, the one-batch case cannot be detected at all and this criterion is wrong rather than merely imprecise.",
+        "WHY THIS IS FORWARD WORK AND NOT A RESET OF `main`, decided by the Scrum Master and open to reversal: the commits this would discard carry measurements INDEPENDENT OF THE CODE -- nvim's partial-result behaviour, the seventeen completeness rulings, and the finding that `tsc --noEmit` reads a stale `dist/`. A reset reaches the same code state and sinks those into history. The pre-change state is preserved on the branch `tuple-generator-shape` at 2e1c3f7.",
+      ],
+    },
+  ],
   completed: [
     {
       number: 42,
