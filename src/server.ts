@@ -106,10 +106,12 @@ export function startServer(
     // THE GATE THIS REQUEST CONSULTS IS ITS OWN, and it is not the one every
     // other request asks: requestRejection() would answer ServerNotInitialized
     // to the very message that clears that phase, making the state it guards
-    // unreachable. So `never refuses` holds for the UNINITIALIZED phase alone --
-    // it is not a blanket carve-out, and after `shutdown` the refusal is what
-    // keeps a clean session's `exit` reading 0. The phase reading itself stays in
-    // src/lifecycle.ts, beside the code it answers with.
+    // unreachable. So `never refuses` holds for the UNINITIALIZED phase ALONE and
+    // is not a blanket carve-out: in `serving` the refusal is what stops
+    // everything below this line REWRITING STATE THE DOCUMENT STORE DOES NOT
+    // REWRITE WITH IT, and after `shutdown` it is what keeps a clean session's
+    // `exit` reading 0. The phase reading itself stays in src/lifecycle.ts,
+    // beside the code it answers with, and so do both of those reasons.
     const rejection = lifecycle.initializeRejection();
     if (rejection !== undefined) {
       throw rejection;

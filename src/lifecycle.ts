@@ -39,8 +39,10 @@ export interface Lifecycle {
    * answer ServerNotInitialized to the one message that clears it, leaving the
    * serving phase unreachable and the session dead on arrival.
    *
-   * After `shutdown` the reasoning inverts and the spec is explicit -- a client
-   * may send nothing but `exit`, and a second `initialize` is InvalidRequest.
+   * ONCE THE HANDSHAKE HAS HAPPENED the reasoning inverts and the spec is
+   * explicit: a second `initialize` is InvalidRequest, in the serving phase and
+   * after `shutdown` alike. The two refusals protect entirely different things,
+   * and both reasons are written at the implementation.
    */
   initializeRejection(): ResponseError<void> | undefined;
   /**
@@ -81,26 +83,45 @@ export function createLifecycle(): Lifecycle {
       return undefined;
     },
 
-    // WHAT A REFUSAL HERE BUYS is the EXIT CODE, which is why it is not a
-    // cosmetic correction to a wrong answer: accepting the handshake again puts
-    // the phase back to `serving`, and exitCode() below then reads 1 -- this
-    // protocol's word for `error` -- out of a session that shut down cleanly.
+    // PERMITTED IN EXACTLY ONE PHASE, AND IT IS THE PERMISSION THAT IS WRITTEN
+    // OUT rather than the refusals: `initialize` is the request that ENDS the
+    // uninitialized phase, so refusing it THERE would leave the serving phase
+    // unreachable and the session dead on arrival. That is the one carve-out,
+    // and everywhere else LSP makes a second `initialize` InvalidRequest -- so
+    // the shape below refuses whatever is not that phase, which is how a question
+    // whose safe answer is `no` should fall through.
     //
-    // WHY NOT THE SERVING PHASE, so that its absence is not read as an oversight:
-    // LSP makes a second `initialize` InvalidRequest there too, and this returns
-    // undefined for it. The client is out of order in BOTH phases -- what differs
-    // is how far the damage reaches. In the serving phase it stops at the
-    // response to that one request. Here it escapes the request entirely and
-    // lands on the exit code of a session that had already completed the
-    // handshake correctly, which is the only reason this branch is worth having.
+    // TWO PHASES REFUSED, TWO UNRELATED DAMAGES, and neither is a footnote to the
+    // other.
+    //
+    // IN THE SERVING PHASE WHAT AN ACCEPTANCE COSTS IS THE SESSION'S COHERENCE,
+    // AND IT DOES NOT STOP AT THE RESPONSE. server.ts reruns
+    // workspaceFolders.initialize() on the accepted request, REPLACING the folder
+    // list and both root fields, while the document store is not rewritten with
+    // them -- so every later request answers out of state assembled from two
+    // different handshakes. MEASURED, both runtimes: `initialize` naming folder
+    // A, a didOpen, then `initialize` naming folder B leaves a handler reading
+    // folder B beside the document opened under A, with ZERO BYTES on stderr to
+    // say anything happened.
+    //
+    // IN THE SHUTDOWN PHASE IT ESCAPES THE SESSION STATE ENTIRELY AND LANDS ON
+    // THE EXIT CODE: accepting the handshake again puts the phase back to
+    // `serving`, and exitCode() below then reads 1 -- this protocol's word for
+    // `error` -- out of a session that shut down cleanly.
+    //
+    // ONE CODE AND TWO MESSAGES, because -32600 is what the specification names
+    // for both while `already serving` and `already shut down` are different
+    // things for a human reading their editor's LSP log to have done.
     initializeRejection(): ResponseError<void> | undefined {
-      if (phase === "shutdown") {
-        return new ResponseError<void>(
-          ErrorCodes.InvalidRequest,
-          "The server has shut down; initialize is not accepted now.",
-        );
+      if (phase === "uninitialized") {
+        return undefined;
       }
-      return undefined;
+      return new ResponseError<void>(
+        ErrorCodes.InvalidRequest,
+        phase === "serving"
+          ? "The server is already initialized; a second initialize is not accepted."
+          : "The server has shut down; initialize is not accepted now.",
+      );
     },
 
     acceptsNotification(): boolean {

@@ -2,13 +2,53 @@ import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 import {
   ErrorCodes,
+  type Hover,
   type InitializeResult,
   TextDocumentSyncKind,
+  type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { fixture } from "./helpers/spawn.ts";
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
+
+/**
+ * The config that reports the folder mirror AND the document store from ONE
+ * request, which is what the serving-phase refusal below is measured with. The
+ * example config can report neither.
+ */
+const handshakeState = fixture("handshake-state.ts");
+
+/**
+ * The two handshakes that session sends, DISJOINT IN BOTH FIELDS THEY MOVE.
+ *
+ * Disjoint folder lists so `replaced` cannot be read as `appended`, and a root
+ * that moves WITH the list so a mirror that rewrote one and not the other is a
+ * visibly different failure rather than a passing one. Neither path need exist:
+ * what a folder means is the config author's business.
+ */
+const firstFolders: WorkspaceFolder[] = [{ uri: "file:///home/me/alpha", name: "alpha" }];
+const secondFolders: WorkspaceFolder[] = [{ uri: "file:///home/me/beta", name: "beta" }];
+const firstRootUri = "file:///home/me/alpha";
+const secondRootUri = "file:///home/me/beta";
+
+/** The one document that session opens, between the two handshakes. */
+const openedUri = "file:///workspace/a.txt";
+
+/**
+ * What the handshake-state fixture reports of the session AS IT NOW STANDS --
+ * mirror and store together, from one request, because the claim is about the
+ * two halves disagreeing.
+ */
+async function sessionState(session: LspSession): Promise<unknown> {
+  const hover = await session.request<Hover>("textDocument/hover", {
+    textDocument: { uri: openedUri },
+    position: { line: 0, character: 0 },
+  });
+  const contents = hover.contents as { value?: string };
+  return JSON.parse(contents.value ?? "{}") as unknown;
+}
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -172,6 +212,54 @@ for (const runtime of runtimes) {
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    // THE SERVING PHASE'S REFUSAL, AND WHAT IT DEFENDS IS NOT AN EXIT CODE BUT
+    // THE SESSION'S OWN COHERENCE. The two assertions are one claim and neither
+    // half stands alone: -32600 measured by itself is satisfied by a server that
+    // rewrote the mirror and THEN refused, and the state assertion by itself is
+    // satisfied by a second `initialize` that never arrived.
+    //
+    // THE STATE IS READ MIRROR-AND-STORE TOGETHER FROM ONE REQUEST, deliberately.
+    // A mirror seen to hold still says nothing on its own: a server that dropped
+    // the documents alongside it would have RESET the session, which is wrong in
+    // a different way. What is asserted here is that ONE HANDSHAKE'S folders,
+    // root and documents are what a later request sees -- the accepted second
+    // `initialize` replaced the folder list and the root while the store stayed
+    // populated, so the session answered from state assembled out of two
+    // different handshakes, with ZERO BYTES on stderr to say so.
+    //
+    // BOTH HANDSHAKES NAME REAL, DISJOINT FOLDERS, so `nothing moved` is a
+    // measurement this test could have failed rather than one it cannot make.
+    test("initialize REFUSED during the serving phase with InvalidRequest, leaving one handshake's folders, root and documents in place", async () => {
+      const session = LspSession.start(runtime, handshakeState);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          rootUri: firstRootUri,
+          workspaceFolders: firstFolders,
+        });
+        session.notify("initialized", {});
+        session.notify("textDocument/didOpen", {
+          textDocument: { uri: openedUri, languageId: "plaintext", version: 1, text: "hello" },
+        });
+
+        const refusal = await session.requestError("initialize", {
+          ...initializeParams,
+          rootUri: secondRootUri,
+          workspaceFolders: secondFolders,
+        });
+        expect(refusal.code).toBe(ErrorCodes.InvalidRequest);
+
+        expect(await sessionState(session)).toEqual({
+          workspaceFolders: firstFolders,
+          rootUri: firstRootUri,
+          rootPath: null,
+          documents: [openedUri],
+        });
       } finally {
         session.dispose();
       }
