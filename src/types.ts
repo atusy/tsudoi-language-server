@@ -40,8 +40,14 @@ export interface DocumentStore {
 
 /**
  * The workspace folders a config author reads, as a STORE and not an array --
- * the same `values()` shape `DocumentStore` has, so the two halves of the
+ * the same `get` + `values` shape `DocumentStore` has, so the two halves of the
  * session are asked for the same way.
+ *
+ * THE TWO `get`s ANSWER DIFFERENT QUESTIONS ALL THE SAME, and reading this one
+ * as a lookup by key is the mistake to avoid: a document is stored UNDER its
+ * uri, while a folder is asked about a uri it CONTAINS. `documents.get(uri)` and
+ * `workspaceFolders.get(uri)` for one document uri answer about that buffer and
+ * about the project it sits in.
  *
  * AN `Iterable` AND NEVER A `Set`, which is the shape that looks right and is
  * not. The mirror MAY HOLD ONE URI TWICE -- deliberately, for the reason at
