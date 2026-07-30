@@ -23,15 +23,25 @@ import type {
 import type { TextDocument } from "./deps/textdocument.ts";
 
 /**
- * The store a config author reads, and WHAT IT HANDS BACK IS LIVE: upstream's
- * `TextDocument.update` mutates the instance it was handed, so a reference kept
- * across an `await` reflects every change that arrived meanwhile.
+ * The store a config author reads, and WHAT IT HANDS BACK IS LIVE: a document is
+ * a SEALED VIEW that answers from the buffer as it stands AT THE MOMENT IT IS
+ * ASKED, so a reference kept across an `await` reflects every change that
+ * arrived meanwhile. BOUNDED BY THE OPEN/CLOSE CYCLE: the view belongs to one
+ * open, so a reference carried across a close is a detached snapshot that
+ * silently stops moving -- and its version is no warning, since the reopened
+ * document numbers from whatever the client sent at `didOpen`.
  *
  * A handler that needs the text it STARTED with must take a copy -- `getText()`
  * returns a string, and a string does not move. That is the general rule stated
  * at `Tsudoi` below, spelled out here for the one member on which HOLDING THE
- * REFERENCE IS NOT TAKING THE VALUE: the instance is mutated in place, so a
- * handler keeping the document keeps a window rather than an answer.
+ * REFERENCE IS NOT TAKING THE VALUE: what the reference reads moves under it, so
+ * a handler keeping the document keeps a window rather than an answer.
+ *
+ * THE DOCUMENT IS UPSTREAM'S TYPE AND UPSTREAM'S MEMBERS, and what it is NOT is
+ * the instance synchronisation writes: that one stays private to
+ * src/documents.ts, because upstream declares its members as METHODS -- writable
+ * properties -- so a handler could otherwise shadow `getText` and answer every
+ * later request from a string of its own with the buffer untouched.
  *
  * ITS OPERATIONS ARE `readonly` FUNCTION PROPERTIES AND NOT METHOD
  * DECLARATIONS, WHICH IS THE DIFFERENCE BETWEEN A SURFACE AND A SUGGESTION. A
@@ -217,10 +227,13 @@ export interface WorkspaceFolderStore {
  * point of the edit, where the diagnostic can name the field.
  *
  * APPLIED WHERE IT IS EXPRESSIBLE, which is why it is not on every member here:
- * `DocumentStore` hands back upstream `TextDocument` instances that upstream
- * MUTATES IN PLACE -- that is the documented liveness at the top of this
- * interface -- so a deep-readonly view of one would forbid the very updates
- * tsudoi relies on.
+ * a document is published as UPSTREAM'S OWN `TextDocument`, held to that
+ * identity by src/deps/textdocument.ts and by the probe in
+ * test/published-artifacts.test.ts, and `DeepReadonly<TextDocument>` is a
+ * DIFFERENT type -- so applying it there would be the substitution that ruling
+ * refuses. What stands in its place is the run-time half alone: what the store
+ * hands back is SEALED where it is built, and what is not sealed is not
+ * published at all.
  */
 export type DeepReadonly<T> = T extends readonly (infer E)[]
   ? readonly DeepReadonly<E>[]

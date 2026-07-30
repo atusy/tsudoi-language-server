@@ -250,6 +250,81 @@ test("closing one of two open documents leaves exactly the other one", () => {
   expect(store.documents.get(uri)).toBeUndefined();
 });
 
+// WHAT A HANDLER IS HANDED CANNOT BE WRITTEN TO, AND THE STORE GOES ON
+// SYNCHRONISING BEHIND IT. Those are one test because they are one design: the
+// instance upstream's `update` writes is PRIVATE, and what leaves this store is
+// a sealed view of it, so refusing the write costs synchronisation nothing.
+//
+// BOTH A SHADOWED MEMBER AND A NEW ONE, because they fail differently: a forged
+// `getText` makes every later reader answer from a handler's string, and an
+// added member makes the published document a shape no type declares. A seal
+// that refused only the first would leave the second.
+//
+// THE READ AFTER THE CHANGE IS WHAT SEPARATES `sealed` FROM `frozen`: freezing
+// upstream's own instance would refuse the forge just as well and BREAK the
+// store -- `update` writes the content, the version and the line offsets -- so
+// an assertion that stopped at the refusal would pass for the change that
+// silently stops the buffer from moving at all.
+test("a handler cannot forge a member of the document it is handed, and the buffer still moves", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "genuine"));
+  const handed = store.documents.get(uri);
+  if (handed === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+  const forgeable = handed as unknown as { getText: () => string; forged?: unknown };
+
+  expect(() => {
+    forgeable.getText = () => "forged";
+  }).toThrow(TypeError);
+  expect(() => {
+    forgeable.forged = 1;
+  }).toThrow(TypeError);
+
+  expect(store.documents.get(uri)?.getText()).toBe("genuine");
+
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "edited" }],
+  });
+
+  expect(store.documents.get(uri)?.getText()).toBe("edited");
+  expect(store.documents.get(uri)?.version).toBe(2);
+});
+
+// WHICH DOCUMENT A CALLER IS HANDED IS A DECISION AND THIS IS WHERE IT IS
+// RECORDED: ONE per open uri, handed back by every route and every call, and a
+// DIFFERENT one after a close. A view built per call would answer every question
+// in this file identically while making `get(uri) === get(uri)` false, and the
+// liveness boundary below turns on exactly that identity.
+//
+// THE CROSS-CYCLE HALF IS NOT A RESTATEMENT OF THE BOUNDARY TEST BELOW: that one
+// measures what the captured reference SAYS, and this one measures that it is
+// not the object the store now holds -- a store that handed back one view per
+// uri forever, reattached to the reopened buffer, would satisfy neither.
+test("one document is handed back for the life of an open, and another after a reopen", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "first"));
+  const captured = store.documents.get(uri);
+  if (captured === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+
+  expect(store.documents.get(uri)).toBe(captured);
+  expect([...store.documents.values()][0]).toBe(captured);
+
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "edited while open" }],
+  });
+  expect(store.documents.get(uri)).toBe(captured);
+
+  store.close({ textDocument: { uri } });
+  store.open(opened(uri, "reopened"));
+
+  expect(store.documents.get(uri)).not.toBe(captured);
+});
+
 // THE BOUNDARY OF THE LIVENESS PINNED ABOVE, and it is the half a reader gets
 // wrong: a reference is live WITHIN ONE OPEN/CLOSE CYCLE AND NO FURTHER. `close`
 // drops the entry, the `didOpen` that follows CONSTRUCTS A NEW DOCUMENT, and a
