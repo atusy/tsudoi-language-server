@@ -19,6 +19,8 @@ await Promise.all(runtimes.map(requireRuntime));
  */
 const serverNotInitialized = -32002;
 const requestCancelled = -32800;
+/** JSON-RPC's InvalidParams, pinned as a WIRE VALUE for the same reason. */
+const invalidParams = -32602;
 
 const uri = "file:///workspace/a.txt";
 
@@ -265,6 +267,63 @@ for (const runtime of runtimes) {
         }
 
         expect(answered).toEqual(codeForEveryMethod(null));
+
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE PROLOGUE'S PARAMS STEP, FOR EVERY METHOD, BY CONSTRUCTION.
+     *
+     * `"params": null` IS THE ONE MALFORMED SHAPE THAT REACHES TSUDOI AT ALL,
+     * and the other two were measured rather than assumed: params OMITTED is
+     * answered `defines 1 params but received none` and params BY POSITION
+     * `defines parameters by name but received parameters by position`, both
+     * -32602, both by vscode-jsonrpc before any handler is consulted. A
+     * PRIMITIVE joins `null` in slipping through -- reading a member off `5`
+     * yields `undefined` rather than throwing -- so this asserts both.
+     *
+     * THE MESSAGE IS ASSERTED AND NOT ONLY THE CODE, because -32602 alone is
+     * satisfied by all THREE of those causes: a test reading the code would
+     * stay green with tsudoi's own refusal deleted, on the strength of a
+     * library check for a shape it was not sent. The text is tsudoi's, and it
+     * NAMES THE METHOD, so this also says the refusal is the ROUTER'S rather
+     * than one drive's -- a guard written into `driveStream` alone passes for
+     * `textDocument/completion` and reddens for the other four.
+     *
+     * WHAT SAYS THE REFUSAL IS NOT OVER-BROAD is the rest of the suite: every
+     * other session test sends a params OBJECT and expects an answer, so a
+     * guard that refused those reddens in hover, completion, formatting,
+     * diagnostic and resolve's own files at once. No control is written here
+     * for a property 467 assertions already hold.
+     */
+    test("every method in the table refuses params that are not an object", async () => {
+      const session = LspSession.start(runtime, allMethods);
+      try {
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const answered: Record<string, unknown> = {};
+        for (const method of tableMethods()) {
+          for (const params of [null, 5]) {
+            const error = await session.requestError(method, params);
+            answered[`${method} ${JSON.stringify(params)}`] =
+              `${String(error.code)} ${error.message}`;
+          }
+        }
+
+        expect(answered).toEqual(
+          Object.fromEntries(
+            tableMethods().flatMap((method) =>
+              [null, 5].map((params) => [
+                `${method} ${JSON.stringify(params)}`,
+                `${String(invalidParams)} ${method} params must be an object; received ${JSON.stringify(params)}`,
+              ]),
+            ),
+          ),
+        );
 
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {

@@ -6,6 +6,7 @@ import {
   CompletionResolveRequest,
   DocumentDiagnosticRequest,
   DocumentFormattingRequest,
+  ErrorCodes,
   HoverRequest,
   LSPErrorCodes,
   type PartialResultParams,
@@ -669,6 +670,37 @@ export function registerMethods(
         if (rejection !== undefined) {
           throw rejection;
         }
+        // THE PROLOGUE'S SECOND STEP, AND IT MAKES `MethodMap[M]["params"]`
+        // TRUE. Every method in the table declares an OBJECT there, so a
+        // handler is entitled to read a member off what it is handed -- and
+        // only this line entitles it, because nothing between the wire and here
+        // inspects the value.
+        //
+        // `"params": null` IS THE WHOLE OF WHAT ARRIVES MALFORMED, measured
+        // rather than defended against in general: vscode-jsonrpc answers
+        // -32602 itself when params are OMITTED and when they arrive BY
+        // POSITION, so those two shapes never reach this line. `null` and a
+        // primitive are what it lets through -- a member read off `null` throws
+        // a TypeError, which vscode-jsonrpc turns into -32603, telling a client
+        // its own malformed request was OUR internal error.
+        //
+        // -32602 IS THE SAME CODE THE LIBRARY ANSWERS the two shapes it does
+        // catch, which is the point: one wrong-params answer rather than one
+        // per shape, and a client that reads it learns the request was theirs
+        // to fix.
+        //
+        // THROWN IN THE ROUTER RATHER THAN IN A DRIVE, so a method added to the
+        // table joins this the moment it is declared, and NOT LEFT TO A
+        // PER-METHOD GUARD for the reason the whole prologue exists.
+        //
+        // NOT REPORTED ON STDERR: the client is told, in the response, and the
+        // one stderr channel a config author has means THEIR handler failed.
+        if (typeof params !== "object" || params === null) {
+          throw new ResponseError(
+            ErrorCodes.InvalidParams,
+            `${method} params must be an object; received ${JSON.stringify(params)}`,
+          );
+        }
         const handler = config.methods?.[method];
         // THE DRIVE, AND THE NO-HANDLER CASE COMES WITH IT RATHER THAN BEING A
         // SECOND AXIS. The awaited-once drive calls `handler?.(...) ?? null`,
@@ -806,15 +838,16 @@ async function driveStream(run: {
     // decision rather than one per drive.
     return answerUnlessCancelled(run.method, context.signal, () => Promise.resolve(null));
   }
-  // BELOW THE NO-HANDLER RETURN, AND BOTH SIDES OF THAT POSITION ARE
-  // DELIBERATE. Below it, because a config that cannot answer completion at all
-  // has no business reporting the client's token on stderr -- that line exists
-  // to tell a config author their items were aggregated rather than streamed,
-  // and here there are no items. Above `answerUnlessCancelled` rather than
-  // inside it, because a client sending `params: null` makes the read below
-  // throw a TypeError that is NOT a handler failure: inside the epilogue it
-  // would be reported as one, under a `tsudoi:` prefix naming a handler that
-  // was never called.
+  // BELOW THE NO-HANDLER RETURN, AND THAT SIDE OF THE POSITION IS DELIBERATE: a
+  // config that cannot answer completion at all has no business reporting the
+  // client's token on stderr -- that line exists to tell a config author their
+  // items were aggregated rather than streamed, and here there are no items.
+  //
+  // THE READ ITSELF CANNOT THROW, and that is the router's doing rather than
+  // this line's: the prologue refuses params that are not an object with
+  // -32602, so `params` is one by the time any drive runs. Whether the read
+  // sits inside `answerUnlessCancelled` or above it therefore decides nothing
+  // any more.
   //
   // Read through `unknown` on purpose: the declared ProgressToken type
   // describes what a CONFORMING client sends, and this path exists for the
