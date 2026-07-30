@@ -100,17 +100,54 @@ for (const { path } of pathShapes) {
   });
 }
 
+/** The Bun-global diagnostic, at one path and one line, anchored to a line start. */
+function bunGlobalAt(path: string, line: number): RegExp {
+  return new RegExp(
+    `^${path.replaceAll(".", "\\.")}:${line}:\\d+: error eslint\\(no-restricted-globals\\)`,
+    "m",
+  );
+}
+
+/** A Bun global on its own line, so a diagnostic can be attributed to that line. */
+const bunGlobalUse = 'export const read = () => Bun.file("x").text();\n';
+
 // RULE 3, bun:* imports. BOTH halves are under test at every shape: that the
 // exemption exists where `bun test` needs it, and that it is no wider.
+//
+// THE EXEMPT SHAPES CARRY A SECOND VIOLATION, AND IT IS THE HALF THAT MEASURES
+// ANYTHING. A bare `code === 0` is equally true of a rule that does not exist, a
+// config oxlint never read, and a path an `ignorePatterns` grew to cover -- the
+// degeneracy named at rule 4 below. Measured against a run pointed at a config
+// declaring no rules: the bare assertion stayed GREEN at both exempt shapes
+// while rule 4's paired arm reddened.
+//
+// A BUN GLOBAL ON LINE 3, flagged by a rule THE OVERRIDE LEAVES ON -- it
+// switches off `no-restricted-imports` alone. So the diagnostic is reported
+// against THIS FILE, which is stronger than rule 4's two-files-in-one-run: that
+// proves the RUN live, this proves the FILE was linted, so lines 1 and 2 were
+// seen and approved rather than never read. Same construction as `node:url and a
+// package subpath stay unflagged in a file that is itself flagged`.
+//
+// WHAT IT LEANS ON, named rather than left to be discovered: `the Bun global is
+// flagged in ${path}` at rule 2 is what says the witness is alive at these
+// shapes. Exempting the Bun global there would redden this arm too, which is the
+// loud failure rather than the silent one.
 for (const { path, bunModulesExempt } of pathShapes) {
   const verb = bunModulesExempt ? "is exempt" : "is flagged";
   test(`a bun:sqlite import ${verb} in ${path}`, async () => {
-    const result = await lintProbe({ [path]: importsBunModule("bun:sqlite") });
-
     if (bunModulesExempt) {
-      expect(result.code).toBe(0);
+      const result = await lintProbe({
+        [path]: `${importsBunModule("bun:sqlite")}${bunGlobalUse}`,
+      });
+
+      expect(result.output).toMatch(bunGlobalAt(path, 3));
+      expect(result.output).not.toContain(`${path}:1:`);
+      expect(result.code).toBe(1);
       return;
     }
+
+    const result = await lintProbe({ [path]: importsBunModule("bun:sqlite") });
+
     expect(result.code).toBe(1);
     expect(result.output).toContain("no-restricted-imports");
     expect(result.output).toContain(path);
