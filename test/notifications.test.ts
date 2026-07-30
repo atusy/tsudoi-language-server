@@ -144,7 +144,7 @@ test("a folder change outside the initialized window does not mutate the list, a
   const late: WorkspaceFolder = { uri: "file:///too/late", name: "late" };
 
   deliver("workspace/didChangeWorkspaceFolders", { event: { added: [early], removed: [] } });
-  expect(workspaceFolders.current()).toEqual([]);
+  expect([...workspaceFolders.folders.values()]).toEqual([]);
 
   // THE PAIRED PRESENCE, and it is what the criterion asks for in as many
   // words: a normal change STILL APPLIES. Without it, `the list is unchanged`
@@ -152,11 +152,11 @@ test("a folder change outside the initialized window does not mutate the list, a
   // dropped every delivery, and for a handle that ignores its own writer.
   lifecycle.initialize();
   deliver("workspace/didChangeWorkspaceFolders", { event: { added: [served], removed: [] } });
-  expect(workspaceFolders.current()).toEqual([served]);
+  expect([...workspaceFolders.folders.values()]).toEqual([served]);
 
   lifecycle.shutDown();
   deliver("workspace/didChangeWorkspaceFolders", { event: { added: [late], removed: [] } });
-  expect(workspaceFolders.current()).toEqual([served]);
+  expect([...workspaceFolders.folders.values()]).toEqual([served]);
 });
 
 /**

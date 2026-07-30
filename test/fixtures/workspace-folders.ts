@@ -19,6 +19,11 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  * missing key, `null` as null and `[]` as [], which is exactly the three-way
  * distinction the criteria turn on.
  *
+ * THE FOLDERS ARE SPREAD AND NOT REPORTED AS THE STORE: a store is methods and
+ * no members, so `JSON.stringify` of it is `{}` -- the same observation for a
+ * session holding two folders as for one holding none, which is exactly the
+ * distinction every criterion below turns on.
+ *
  * THE THREE MIRRORED FIELDS AND NOTHING DERIVED FROM THEM. A fourth key held
  * the published reduction run on this very context, and it went when the
  * stakeholder ruled that tsudoi's TYPES module may not export a runtime
@@ -27,7 +32,7 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  */
 export function observationOf(context: RequestContext): string {
   return JSON.stringify({
-    workspaceFolders: context.tsudoi.workspaceFolders,
+    workspaceFolders: [...context.tsudoi.workspaceFolders.values()],
     rootUri: context.tsudoi.rootUri,
     rootPath: context.tsudoi.rootPath,
   });

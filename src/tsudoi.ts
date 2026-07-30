@@ -1,8 +1,4 @@
-import type {
-  ClientCapabilities,
-  InitializeParams,
-  WorkspaceFolder,
-} from "vscode-languageserver-protocol";
+import type { ClientCapabilities, InitializeParams } from "vscode-languageserver-protocol";
 import { createDocumentStore, type DocumentStoreHandle } from "./documents.ts";
 import type { Tsudoi } from "./types.ts";
 import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
@@ -59,8 +55,12 @@ export interface TsudoiRuntime {
  * fact about this function rather than a claim made elsewhere: a handler reading
  * `tsudoi.workspaceFolders` twice is reading the same object twice.
  *
- * EVERY MEMBER THAT IS NOT THE STORE IS A GETTER, AND THAT IS A CORRECTNESS
- * REQUIREMENT RATHER THAN A STYLE. THIS RUNS BEFORE `initialize` DOES -- before
+ * EVERY MEMBER THAT IS NOT A STORE IS A GETTER, AND THAT IS A CORRECTNESS
+ * REQUIREMENT RATHER THAN A STYLE. A store is exempt because it is an OBJECT
+ * THAT ANSWERS WHEN ASKED -- the folders and the documents it reports are read
+ * inside its own methods, so the thing captured on this line holds no answer at
+ * all. Everything else here is a plain value the moment it is read.
+ * THIS RUNS BEFORE `initialize` DOES -- before
  * the config is even loaded -- so every one of these fields is at its
  * pre-handshake value on this line: no folders and no roots. Writing
  * `...workspaceFolders.roots()` here would capture THAT and hand it to every
@@ -85,9 +85,7 @@ export function createTsudoi(): TsudoiRuntime {
   let clientCapabilities: ClientCapabilities = {};
   const tsudoi: Tsudoi = {
     documents: documents.documents,
-    get workspaceFolders(): readonly WorkspaceFolder[] {
-      return workspaceFolders.current();
-    },
+    workspaceFolders: workspaceFolders.folders,
     get rootUri(): string | null {
       return workspaceFolders.roots().rootUri;
     },

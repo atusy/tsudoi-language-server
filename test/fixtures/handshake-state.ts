@@ -18,7 +18,7 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  */
 export function stateOf(context: RequestContext): string {
   return JSON.stringify({
-    workspaceFolders: context.tsudoi.workspaceFolders,
+    workspaceFolders: [...context.tsudoi.workspaceFolders.values()],
     rootUri: context.tsudoi.rootUri,
     rootPath: context.tsudoi.rootPath,
     documents: [...context.tsudoi.documents.values()].map((document) => document.uri),

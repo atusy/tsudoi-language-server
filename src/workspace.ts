@@ -4,7 +4,7 @@ import type {
   WorkspaceFolder,
   WorkspaceFoldersChangeEvent,
 } from "vscode-languageserver-protocol";
-import type { Tsudoi } from "./types.ts";
+import type { Tsudoi, WorkspaceFolderStore } from "./types.ts";
 
 /**
  * The workspace folder list, plus the handle that writes it. The same shape
@@ -14,13 +14,16 @@ import type { Tsudoi } from "./types.ts";
  */
 export interface WorkspaceFoldersHandle {
   /**
-   * The folders as of NOW.
+   * The folders as of NOW, as the store `Tsudoi` publishes them.
    *
-   * A function rather than a value because registration happens before
-   * `initialize` does: whoever wires a handler holds nothing yet, and a value
-   * captured at that moment would be the pre-initialize one forever.
+   * A VALUE WHERE `roots` BELOW IS A READER, and what makes that safe is what
+   * the value IS: this object answers from the mirror at the moment it is ASKED,
+   * so holding it from before `initialize` holds nothing stale. A bare array
+   * here would have to be a reader for exactly the reason `roots` is one --
+   * whoever wires a handler holds it before the handshake, and what they took
+   * would be the pre-initialize list for the life of the session.
    */
-  readonly current: () => readonly WorkspaceFolder[];
+  readonly folders: WorkspaceFolderStore;
   /**
    * The two deprecated root fields, `rootUri` as the client spelled it and
    * `rootPath` only where it is absolute.
@@ -46,8 +49,7 @@ export interface WorkspaceFoldersHandle {
    * for the life of the session.
    *
    * TYPED AS THE SLICE OF `Tsudoi` IT ANSWERS FOR, so that a field added here
-   * and forgotten on that surface, or the reverse, does not compile. It is the
-   * only reason this module names a type from src/types.ts at all.
+   * and forgotten on that surface, or the reverse, does not compile.
    */
   readonly roots: () => Pick<Tsudoi, "rootUri" | "rootPath">;
   /**
@@ -80,7 +82,12 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   let roots: Pick<Tsudoi, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
 
   return {
-    current: (): readonly WorkspaceFolder[] => folders,
+    // THE MIRROR ITSELF AND NOT A COPY OF IT, which is what makes taking this
+    // worth anything: `change()` below replaces this array rather than writing
+    // into it, so what one call hands back is the list as of that call and can
+    // be iterated again later. Copying here would answer the same question at
+    // the cost of saying nothing about the moment.
+    folders: { values: (): Iterable<WorkspaceFolder> => folders },
 
     roots: (): Pick<Tsudoi, "rootUri" | "rootPath"> => roots,
 

@@ -568,7 +568,7 @@ export async function* pathCompletion(
     return;
   }
   const cwd = options.cwd ?? process.cwd();
-  const folders = context.tsudoi.workspaceFolders;
+  const folders = Array.from(context.tsudoi.workspaceFolders.values());
   // READ ONCE, FROM THE SESSION, AND `=== true` RATHER THAN A TRUTHINESS TEST.
   // The chain is optional at every step because a client may declare nothing at
   // all -- `clientCapabilities` is `{}` then, never null, so nothing here has to
@@ -615,11 +615,12 @@ export async function* pathCompletion(
         // `rootUri` is whatever the client said, and converting one that names
         // no local path throws in the handler that converts it.
         //
-        // READ ONCE, ABOVE THE LOOP AND ABOVE EVERY `await` IN IT. The list is a
-        // LIVE read off the server, so re-reading it per fragment would let one
-        // response attribute items to a root the user removed while an earlier
-        // directory was being listed. Holding the array is the whole of what it
-        // takes -- tsudoi replaces that list rather than writing into it.
+        // TAKEN ONCE, ABOVE THE LOOP AND ABOVE EVERY `await` IN IT. The store
+        // is a LIVE read off the server, so asking it again per fragment would
+        // let one response attribute items to a root the user removed while an
+        // earlier directory was being listed. `Array.from` is that taking, and
+        // it is all it takes -- tsudoi replaces the list rather than writing
+        // into it, so what this holds is the workspace the request began with.
         folders,
       )) {
         for await (const batch of itemsFrom(

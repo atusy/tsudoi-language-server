@@ -39,6 +39,35 @@ export interface DocumentStore {
 }
 
 /**
+ * The workspace folders a config author reads, as a STORE and not an array --
+ * the same `values()` shape `DocumentStore` has, so the two halves of the
+ * session are asked for the same way.
+ *
+ * AN `Iterable` AND NEVER A `Set`, which is the shape that looks right and is
+ * not. The mirror MAY HOLD ONE URI TWICE -- deliberately, for the reason at
+ * `Tsudoi.workspaceFolders` below -- and a set drops the second. A
+ * `WorkspaceFolder` is an OBJECT besides, so a set would key on IDENTITY: two
+ * entries carrying the same uri and the same name are two members of it, and the
+ * deduplication whoever reached for the set was after never happens. An
+ * `Iterable` promises what is true of this list and nothing more.
+ */
+export interface WorkspaceFolderStore {
+  /**
+   * EXACTLY WHAT THE CLIENT SENT, IN MIRROR ORDER, with nothing dropped, nothing
+   * synthesised and nothing reordered.
+   *
+   * WHAT ONE CALL HANDED BACK IS THE LIST AS OF THAT CALL, FOR GOOD, and that is
+   * the one defence a handler has against the liveness rule at `Tsudoi`: the
+   * mirror is REPLACED on every change and never written into, so what you took
+   * can be iterated again later and still answers about the moment you took it.
+   * `Array.from(store.values())` before your first `await` is how you hold a
+   * list you can index, and the taking rather than the copying is what makes the
+   * answer about one moment.
+   */
+  values(): Iterable<WorkspaceFolder>;
+}
+
+/**
  * THE SERVER'S CONTEXT: what a config author can reach that is not about ONE
  * request, reached through `RequestContext.tsudoi`. What the SESSION is -- the
  * open documents, the client's roots, what the client said it can do -- rather
@@ -61,11 +90,11 @@ export interface DocumentStore {
  * SO A HANDLER THAT NEEDS THE VALUE IT STARTED WITH TAKES IT BEFORE ITS FIRST
  * `await`, and what `taking` costs differs by member:
  *
- *   - FOR THE FOLDER LIST, HOLDING THE ARRAY IS ENOUGH. `change()` in
+ *   - FOR THE FOLDERS, TAKING `values()` IS ENOUGH. `change()` in
  *     src/workspace.ts builds a NEW array on every event and never writes into
- *     the old one -- neither `push` nor a splice of the live list -- so an array
- *     you have already read cannot move under you. `readonly` on the field is
- *     not what buys that; the copy-on-write is.
+ *     the old one -- neither `push` nor a splice of the live list -- so what one
+ *     call handed you cannot move under you. THE STORE IS WHAT IS LIVE, not what
+ *     it hands back: asking it twice across an `await` is what may differ.
  *   - FOR A DOCUMENT, HOLDING THE REFERENCE IS NOT ENOUGH, because upstream
  *     mutates the instance. `getText()` returns a string, and a string does not
  *     move.
@@ -83,8 +112,8 @@ export interface DocumentStore {
 export interface Tsudoi {
   readonly documents: DocumentStore;
   /**
-   * The workspace folders the client is holding NOW, or an EMPTY LIST when it
-   * named none.
+   * The workspace folders the client is holding NOW, or a store that yields
+   * NOTHING when it named none.
    *
    * ABSENCE IS NEVER DEFAULTED -- not to the working directory, not to `/`, not
    * to anything this process could invent. An empty list means the editor opened
@@ -94,9 +123,9 @@ export interface Tsudoi {
    *
    * THE ONE MEMBER HERE THAT ACTUALLY MOVES, which is why the liveness rule
    * above is worth reading before this line: `workspace/didChangeWorkspaceFolders`
-   * REPLACES this list mid-session, and a request already in flight sees the
-   * replacement on its next read. The array it read BEFORE that is still intact,
-   * per the copy-on-write named above.
+   * REPLACES what this store answers with mid-session, and a request already in
+   * flight sees the replacement on its next call. What an EARLIER call handed it
+   * is still intact, per the copy-on-write named above.
    *
    * MIRRORED, NOT INTERPRETED: two spellings of one directory are TWO folders,
    * and a URI added twice is held twice, because this is the CLIENT's state
@@ -132,7 +161,7 @@ export interface Tsudoi {
    * name here is public API, so a name pinning this to one instant -- and this
    * list does not stand still -- would have had to stay after it became false.
    */
-  readonly workspaceFolders: readonly WorkspaceFolder[];
+  readonly workspaceFolders: WorkspaceFolderStore;
   /**
    * The project root a client named in `initialize`'s DEPRECATED `rootUri`, or
    * `null` where it named none -- the client's own bytes, with no round trip

@@ -226,17 +226,17 @@ the request:
 | member                | what it answers                                                      |
 | --------------------- | -------------------------------------------------------------------- |
 | `documents`           | the open buffers, as above                                           |
-| `workspaceFolders`    | the folders the client holds, or `[]` when it named none             |
+| `workspaceFolders`    | the folders the client holds, as a store like `documents`            |
 | `rootUri`, `rootPath` | the deprecated roots, as the client spelled them, or `null`          |
 | `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
 
 **Everything reached through `context.tsudoi` is live.** It is one object for the whole session,
 so a handler that reads a member, awaits, and reads it again may read two different things -- the
 folder list moves when the user adds a folder, and a document is mutated in place as the user
-types. A handler that needs the value it STARTED with takes it before its first `await`: holding
-the folder array is enough, because tsudoi replaces that list rather than writing into it, while
-a document needs `getText()`, since a string does not move. The two deprecated roots and the
-capabilities are written once at `initialize` and never move at all.
+types. A handler that needs the value it STARTED with takes it before its first `await`:
+`Array.from(workspaceFolders.values())` is enough, because tsudoi replaces that list rather than
+writing into it, while a document needs `getText()`, since a string does not move. The two
+deprecated roots and the capabilities are written once at `initialize` and never move at all.
 
 Building a context by hand in your own tests means supplying all five members. `clientCapabilities`
 is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...` needs no guard;
