@@ -19,13 +19,12 @@ const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: NOT COMPLETE, AND THE CLAIM THIS CONFIG MAKES ON
-      // THE WIRE IS STILL WRONG. The specification says a supplied
-      // `CompletionItem[]` is identical to `{ isIncomplete: false, items }` --
-      // so a bare array is a POSITIVE ASSERTION that the candidate set is final
-      // and the client need not ask again. This config made that assertion from
-      // the day it was written and nobody chose it. For ONE SPRINT it did not:
-      // Sprint 42 let the delegate answer a `CompletionList` carrying
-      // `isIncomplete: true`, and Sprint 43 withdrew the shape that carried it.
+      // THE WIRE IS WRONG. The specification says a supplied `CompletionItem[]`
+      // is identical to `{ isIncomplete: false, items }` -- so a bare array is a
+      // POSITIVE ASSERTION that the candidate set is final and the client need
+      // not ask again. THIS CONFIG MAKES THAT ASSERTION BY DEFAULT AND NOT BY
+      // CHOICE: it is what a bare array says, and nothing written below decides
+      // it.
       //
       // WHY IT IS FALSE: the delegate lists ONE DIRECTORY filtered by the
       // trailing name of the fragment under the cursor. The next keystroke
@@ -41,16 +40,14 @@ const config: TsudoiConfigFactory = () => {
       // the wrongness is in the published type, and the edit that removes it is
       // at `MethodMap` in src/types.ts, not in this file. Relabelling this
       // COMPLETE would make the tree consistent and leave nothing at all
-      // recording that a working capability was given up.
+      // recording that what goes out on the wire is false.
       //
-      // AND THE SECOND WRONG CLAIM IS THE ONE JUST BELOW, worth separating
-      // because a re-type would have papered over both: this arm fires when the
-      // document is NOT IN THE STORE, which means `this server cannot see the
-      // buffer yet`. It used to `return []`, which goes out as `the candidate
-      // set is complete and empty` -- a different statement, and the one thing
-      // this server is sure it cannot say. YIELDING NOTHING is `no answer`,
-      // which is what was true all along, and THAT HALF SURVIVED SPRINT 43
-      // WHILE THE FIRST DID NOT.
+      // AND THE ARM JUST BELOW DECLINES A SECOND WRONG CLAIM, worth separating
+      // because a re-type papers over both: it fires when the document is NOT IN
+      // THE STORE, which means `this server cannot see the buffer yet`. A
+      // `return []` there goes out as `the candidate set is complete and empty`
+      // -- a different statement, and the one thing this server is sure it
+      // cannot say. YIELDING NOTHING is `no answer`, which is what is true.
       "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {
@@ -102,14 +99,10 @@ const config: TsudoiConfigFactory = () => {
           //    launched -- which is a root, but not the one you meant. AND
           //    NOTHING WILL TELL YOU: the workspace
           //    source contributes nothing, which looks exactly like a working
-          //    source in a project that holds no matches. An earlier version
-          //    wrote one line to stderr per session and it was removed as
-          //    noise; see examples/completion-path.ts, where that decision and
-          //    its cost are recorded.
-          //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE, and this paragraph
-          //    said the opposite until the handler below was added -- which is
-          //    the rule it exists to state, arriving. THIS CONFIG supplies a
-          //    `completionItem/resolve` handler, so tsudoi advertises
+          //    source in a project that holds no matches, and NOTHING IS
+          //    WRITTEN ANYWHERE to tell the two apart.
+          //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE. THIS CONFIG
+          //    supplies a `completionItem/resolve` handler, so tsudoi advertises
           //    `resolveProvider` inside `completionProvider` and a client that
           //    resolves lazily gets the file's size and date when the user
           //    highlights an item. It is a fact about this file rather than
