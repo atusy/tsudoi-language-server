@@ -10,8 +10,8 @@ import { repoRoot } from "./helpers/spawn.ts";
  * WHY IT NEEDS DEFENDING AT ALL. The specification says a supplied
  * `CompletionItem[]` is identical to `{ isIncomplete: false, items }`, so a bare
  * array is a POSITIVE CLAIM that the candidate set is final and the client need
- * not ask again. Every handler here made that claim for years and nobody chose
- * it. The remedy is a RE-READ and not a re-type: rewriting each return as
+ * not ask again. Every handler here makes that claim whether or not anybody
+ * chose it. The remedy is a RE-READ and not a re-type: rewriting each return as
  * `{ isIncomplete: false, items }` satisfies every compiler and leaves the same
  * unchosen assertion in place with more syntax around it -- so what is asserted
  * below is that a RULING EXISTS AT THE SITE, which is the one thing a re-type
@@ -31,9 +31,17 @@ import { repoRoot } from "./helpers/spawn.ts";
 const rulingMarker = "COMPLETENESS RULING:";
 
 /**
- * EVERY COMPLETION HANDLER, NAMED. Not counted -- the record this list replaces
- * carried the numbers 17 and 16 for two DIFFERENT objects, and no count can say
- * which question it answered.
+ * EVERY COMPLETION HANDLER, NAMED. Not counted -- two counts over this
+ * directory answer two DIFFERENT questions, `files naming the method` and
+ * `files serving it`, and a bare number says which of them it came from to
+ * nobody.
+ *
+ * NO CONFIG IN IT ANSWERS A `CompletionList`, AND NONE CAN, said here because a
+ * short enumeration reads exactly like a ruling that was dropped: a completion
+ * handler yields `CompletionItem[]` and nothing else, so a config demonstrating
+ * that answer is UNWRITABLE rather than merely absent. THE TWO RULINGS THAT SAY
+ * `NOT COMPLETE` ARE AT examples/completion-path.ts AND
+ * examples/tsudoi.config.ts, which is where that limitation is recorded.
  */
 const ruled = [
   "examples/completion-path.ts",
@@ -50,15 +58,6 @@ const ruled = [
   "test/fixtures/completion-gate.ts",
   "test/fixtures/completion-ignores-signal-rejects.ts",
   "test/fixtures/completion-ignores-signal.ts",
-  // completion-list.ts and completion-list-final.ts STOOD HERE UNTIL SPRINT 43
-  // and are gone with the capability they demonstrated, which is worth a line
-  // because a shrinking enumeration reads exactly like a ruling that was
-  // dropped. They were the only two configs that answered a `CompletionList`;
-  // a completion handler now yields `CompletionItem[]` and nothing else, so
-  // neither file could be written at all. TARGET DELIBERATELY REMOVED per
-  // Sprint 38, not a ruling that went missing -- AND THE TWO RULINGS THAT SAY
-  // `NOT COMPLETE` ARE STILL AT examples/completion-path.ts AND
-  // examples/tsudoi.config.ts, which is where the loss is actually recorded.
   "test/fixtures/completion-null-after-yield.ts",
   "test/fixtures/completion-null-only.ts",
   "test/fixtures/completion-throws.ts",
@@ -75,11 +74,10 @@ const ruled = [
  * THE ONE FILE THAT NAMES THE METHOD AND SUPPLIES NO HANDLER FOR IT, excluded
  * BY NAME so the exclusion is a decision rather than a gap in a regex.
  *
- * IT IS ALSO WHERE THE OLD COUNT CAME FROM. `17 completion configs` is what a
- * scan for the METHOD NAME returns, and this file is the seventeenth -- it
- * mentions `textDocument/completion` only in prose, to say it deliberately has
- * none. A ruling here would be a sentence about a return value that does not
- * exist.
+ * IT IS ALSO WHY A SCAN FOR THE METHOD NAME AND A COUNT OF HANDLERS DISAGREE BY
+ * ONE. This file mentions `textDocument/completion` only in prose, to say it
+ * deliberately has none, so the scan finds it with nothing behind it. A ruling
+ * here would be a sentence about a return value that does not exist.
  */
 const namesTheMethodWithoutServingIt = ["test/fixtures/resolve-without-completion.ts"];
 

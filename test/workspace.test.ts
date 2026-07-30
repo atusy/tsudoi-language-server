@@ -740,9 +740,9 @@ for (const runtime of runtimes) {
     // question folds in: both survive, so nothing here reconciles by name
     // either.
     // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
-    // two orders apart, and the reason `removed` before `added` had been
-    // UNDEFENDED. MEASURED: applying `added` first reddens NOTHING across 321
-    // tests.
+    // two orders apart, and the reason `removed` before `added` goes
+    // UNDEFENDED without it. MEASURED: applying `added` first reddens NOTHING
+    // across 321 tests.
     //
     // PINNED OPPORTUNISTICALLY, not as repair: nothing about the ordering is
     // broken, and what this adds is a defence where there was none. It earns a

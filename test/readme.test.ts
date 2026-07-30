@@ -88,8 +88,8 @@ test("a directory named only in a marker is refused", () => {
  *
  * The asymmetry, stated rather than hidden. Every other README command in this
  * file is EXECUTED, so a stale one fails by running. This one is not: MEASURED
- * at Sprint 25, the extraction harness executes the five `quickstart` blocks
- * and this is not one of them, so no run reaches it. What stands in for it is
+ * -- the extraction harness executes the five `quickstart` blocks and this is
+ * not one of them, so no run reaches it. What stands in for it is
  * test/helpers/install.ts, which SYMLINKS `wordnet` into every consumer instead
  * of running any install line -- so that harness observes whether the examples
  * work when their dependency is PRESENT, and never whether this line names the
@@ -164,8 +164,8 @@ function label(step: QuickstartStep): string {
  * required step is worse than no README, because a reader follows it, fails,
  * and concludes the product is broken.
  *
- * ONE RUNTIME, and the licence is Sprint 10's MEASUREMENT that both runtimes
- * take one artifact, one install and one file path -- not that two would be
+ * ONE RUNTIME, and the licence is the MEASUREMENT that both runtimes take one
+ * artifact, one install and one file path -- not that two would be
  * expensive. If that route ever diverges, this basis is void and the sweep owes
  * both runtimes.
  *
@@ -251,10 +251,10 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/default export/i, /factory/i],
   },
   {
-    // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one.
-    // PBI-44 removed a parameter authors had to name and then ignore, and an
-    // unexplained token put in its place would have been a lateral move -- so
-    // the README owes the REASON, and this is what holds it to that.
+    // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one. A
+    // token the document carries without explaining is a lateral move on the
+    // parameter authors would otherwise have to name and then ignore -- so the
+    // README owes the REASON, and this entry is what holds it to that.
     //
     // Nothing type-checks an author's own config against `TsudoiConfigFactory`
     // -- src/config.ts reaches the type through a cast from `unknown` -- so the
@@ -268,32 +268,28 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
   },
   {
-    // RETARGETED AT SPRINT 40 RATHER THAN REMOVED, and the reason it survived
-    // is that only ONE of its three tokens went false. `dist/` is still
-    // gitignored and still generated; what stopped being true is that a reader
-    // must run `bun run prepack` themselves, because bunfig.toml now builds it
-    // before any test file loads. Sprint 25 called this an ARTIFACT
-    // precondition rather than an environment one -- deno-on-PATH and `bun
-    // install` are things a reader's MACHINE must have -- and that distinction
-    // is what this entry now records the END of.
+    // AN ARTIFACT PRECONDITION RATHER THAN AN ENVIRONMENT ONE, which is the
+    // distinction that puts it in its own entry: deno-on-PATH and `bun install`
+    // are things a reader's MACHINE must have, where this is about a file the
+    // repository generates. `dist/` is gitignored and generated, and
+    // bunfig.toml builds it before any test file loads, so a reader runs no
+    // `bun run prepack` of their own.
     //
-    // THE SECOND TOKEN PAIR IS THE ONE THAT MATTERS NOW, and it is here because
-    // the fix is NOT total: bun discovers bunfig.toml relative to the CURRENT
-    // WORKING DIRECTORY and does not search upward, so `bun test` started
-    // anywhere but the repository root runs the whole suite with no build.
-    // MEASURED at Sprint 40 on that route, with dist/ deliberately stale: 442
-    // pass / 2 fail, and the ONLY staleness-specific failure is the comparison
-    // in package-shape.test.ts. That is why PBI-35's pre-authorised deletion of
-    // that comparison was WITHDRAWN BY ITS OWN GATE, and why the README must
-    // keep saying where to stand.
+    // THE SECOND TOKEN PAIR IS THE ONE THAT MATTERS, and it is here because the
+    // automatic build is NOT total: bun discovers bunfig.toml relative to the
+    // CURRENT WORKING DIRECTORY and does not search upward, so `bun test`
+    // started anywhere but the repository root runs the whole suite with no
+    // build. MEASURED on that route, with dist/ deliberately stale: 442 pass /
+    // 2 fail, and the ONLY staleness-specific failure is the comparison in
+    // package-shape.test.ts. That is why that comparison stands rather than
+    // being deleted as redundant, and why the README must keep saying where to
+    // stand.
     //
-    // THE NUMBER SPRINT 25 RECORDED HERE IS GONE RATHER THAN CORRECTED IN
-    // PLACE, because it was a measurement with provenance and re-running it
-    // gave a different answer for a reason that has nothing to do with this
-    // sprint: at 9501c68 a dist/-less `bun test` gave 30 fail / 299 pass, and
-    // at Sprint 40 the same shape gives 47 fail / 362 pass with 35 tests not
-    // running at all. The suite grew; the sentence did not. It lives in
-    // bunfig.toml now, beside the mechanism that makes it historical.
+    // NO COUNT IS CARRIED IN THIS ENTRY, deliberately: the suite grows and any
+    // number moves for reasons that have nothing to do with this fact. The
+    // SHAPE of the failure is worth recording and the number is not -- MEASURED
+    // on a dist/-less `bun test`: 47 fail / 362 pass, with 35 tests not running
+    // at all.
     name: "`bun test` builds dist/ itself, and only from the repository root",
     tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },
@@ -355,22 +351,15 @@ const facts: readonly ReadmeFact[] = [
   {
     // The claim is that tsudoi CLOSES the generator, never that the author's
     // cleanup COMPLETES: a `finally` that awaits something which never settles
-    // never finishes, measured in Sprint 8 and recorded at src/methods.ts.
-    // Promising completion would document something the language forbids.
+    // never finishes -- MEASURED, and recorded at src/methods.ts. Promising
+    // completion would document something the language forbids.
     //
-    // WHERE THE `finally` GOES WAS A TOKEN FOR ONE SPRINT AND IS GONE AGAIN,
-    // which is the interesting half rather than a reversion to tidy past. It
-    // was added at Sprint 42, when a completion handler became AWAITED ONCE for
-    // a pair whose second slot held the generator -- so a `finally` written one
-    // level up ran immediately and released nothing, and `not in the handler`
-    // was a real warning. Sprint 43 made the handler the generator again, so
-    // there is one body, no level to be one above, and the token would now
-    // require the README to warn against a mistake nobody can make.
-    //
-    // THE FACT WENT FALSE BOTH TIMES THE SHAPE MOVED, in opposite directions,
-    // which is what this file exists for and is why the token is REMOVED rather
-    // than left standing harmlessly: a token nothing in the document should say
-    // is a test that forces false prose.
+    // WHERE THE `finally` GOES IS DELIBERATELY NOT A TOKEN HERE. A completion
+    // handler IS the generator -- one body, and no level to be one above it --
+    // so a `finally` cannot be written outside the work it cleans up after. A
+    // token demanding that warning would force the README to caution a reader
+    // against a mistake nobody can make, and A TOKEN NOTHING IN THE DOCUMENT
+    // SHOULD SAY IS A TEST THAT FORCES FALSE PROSE.
     name: "cleanup runs because tsudoi closes the generator, and completion is not promised",
     tokens: [/closes the generator/i, /finally/, /does not promise/i, /completes/i],
   },
@@ -385,8 +374,8 @@ for (const fact of facts) {
    * THE REMOVAL HALF, and the only form of it that can fail.
    *
    * `delete a token, the fact goes` is true of every conjunction ever written
-   * -- a test that cannot fail, which is the vacuity this whole sprint is
-   * about. What CAN fail is this: the fact must have exactly ONE home in the
+   * -- a test that cannot fail, which is the vacuity this file exists against.
+   * What CAN fail is this: the fact must have exactly ONE home in the
    * document. Then deleting that section is what loses it, and a fact
    * satisfied incidentally by tokens scattered through some other section
    * fails here instead of passing quietly.
@@ -419,8 +408,8 @@ for (const fact of facts) {
  * SO THE TWO DOCUMENTS ARE COMPARED DIRECTLY, and in BOTH directions by one
  * equality: a subpath added to package.json that the README never mentions
  * reddens here, and so does a README naming a subpath that is not published.
- * test/package-shape.test.ts already pins the map's shape; nothing until now
- * connected it to what a reader is told.
+ * test/package-shape.test.ts already pins the map's shape; nothing else
+ * connects it to what a reader is told.
  *
  * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
  * `node_modules/@atusy/tsudoi/dist/cli.js` is a path INTO the installed package
