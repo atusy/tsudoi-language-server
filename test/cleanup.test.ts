@@ -177,8 +177,9 @@ for (const runtime of runtimes) {
      *
      * The drive's loop has exits the two tests above do not reach, and two of
      * them are EXCEPTIONS THROWN WHILE THE GENERATOR IS PARKED AT ITS YIELD:
-     * spreading a batch that is not an array, and a `sendProgress` that rejects
-     * once the connection is Closed -- the editor died mid-stream. Either
+     * the drive's own `Array.isArray` guard refusing a batch that is not one,
+     * and a `sendProgress` that rejects once the connection is Closed -- the
+     * editor died mid-stream. Either
      * propagates out of the drive, and with the close reachable only from the
      * abort branch the generator was never touched again: the author's `finally`
      * NEVER RAN, on a path where the handler is holding whatever it opened.
@@ -187,8 +188,8 @@ for (const runtime of runtimes) {
      * needs a dead connection to provoke, and it leaves the drive at the same
      * point this does. What makes THIS arm the one worth a fixture is that a
      * plain client reaches it with no editor death at all -- no
-     * `partialResultToken`, one mistyped batch, and nothing in tsudoi or in
-     * either runtime checks the payload.
+     * `partialResultToken`, one mistyped batch, and nothing BEFORE that guard,
+     * in tsudoi or in either runtime, checks the payload.
      *
      * BOTH HALVES ARE ASSERTED AND NEITHER ALONE WOULD DO. The error response
      * says the handler really did throw with the generator suspended, so the

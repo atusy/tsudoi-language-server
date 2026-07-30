@@ -8,8 +8,17 @@ export const cleanupMarker = "completion-yields-non-array: released";
 
 /**
  * A handler whose batch IS NOT AN ARRAY, which is the mistake this fixture
- * exists to be: aggregating spreads what was yielded, so `collected.push(...42)`
- * raises a TypeError WHILE THE GENERATOR IS SUSPENDED AT ITS YIELD.
+ * exists to be: the drive tests every batch with `Array.isArray` and THROWS a
+ * TypeError of its own on this one, WHILE THE GENERATOR IS SUSPENDED AT ITS
+ * YIELD.
+ *
+ * THE GUARD IS EXPLICIT AND STANDS ABOVE THE MODE SPLIT, which is what makes the
+ * two modes agree: aggregation would have refused this INCIDENTALLY, since
+ * `push(...42)` is a TypeError, while streaming would have sent the value out
+ * verbatim as a `$/progress` carrying something the protocol does not declare
+ * and then answered `null` successfully. One loud failure and one silent
+ * wire-protocol violation, decided by whether the client asked for partial
+ * results. The reasoning is at the guard itself in src/methods.ts.
  *
  * NOTHING VALIDATES THIS ANYWHERE, which is why the case is reachable at all:
  * src/config.ts checks the resolve/completion pair and nothing about payloads,
