@@ -9,6 +9,7 @@
 // versus THEIRS; the line BETWEEN the three deps subpaths is upstream's own
 // packaging, which an author reaches past rather than reasons about.
 import type {
+  ClientCapabilities,
   CompletionItem,
   CompletionParams,
   DocumentDiagnosticParams,
@@ -69,13 +70,15 @@ export interface DocumentStore {
  *     mutates the instance. `getText()` returns a string, and a string does not
  *     move.
  *
- * AND FOR `rootUri` AND `rootPath` THE QUESTION DOES NOT ARISE: both are written
- * once, from `initialize`, and nothing in the protocol moves them afterwards, so
- * two reads across an `await` read the same value. They are reached through here
- * rather than captured at construction all the same, because THIS OBJECT EXISTS
- * BEFORE `initialize` DOES -- anything read out of it and kept at startup would
- * be the pre-handshake value forever, which is the trap src/tsudoi.ts records at
- * the site where it would be re-created.
+ * AND FOR `rootUri`, `rootPath` AND `clientCapabilities` THE QUESTION DOES NOT
+ * ARISE: all three are written once, from `initialize`, and nothing in the
+ * protocol moves them afterwards, so two reads across an `await` read the same
+ * value. They are reached through here rather than captured at construction all
+ * the same, and THAT IS NOT THE SAME STATEMENT: this object EXISTS BEFORE
+ * `initialize` DOES, so anything read out of it and kept at startup would be the
+ * pre-handshake value forever -- `cannot change after the handshake` is not
+ * `can be taken before it`. The trap is recorded at src/tsudoi.ts, where the
+ * edit that re-creates it would be made.
  */
 export interface Tsudoi {
   readonly documents: DocumentStore;
@@ -178,6 +181,49 @@ export interface Tsudoi {
    * -- but not for this one, which has already passed it.
    */
   readonly rootPath: string | null;
+  /**
+   * WHAT THE CLIENT SAID IT CAN DO, exactly as it sent it, or an EMPTY OBJECT
+   * where it said nothing.
+   *
+   * THIS IS THE SEAM src/server.ts DECLINED TO OPEN UNTIL SOMETHING NEEDED IT,
+   * and what needed it is a SPEC VIOLATION a config author could not avoid:
+   * `InsertReplaceEdit` is permitted only to a client that declared
+   * `textDocument.completion.completionItem.insertReplaceSupport`, so a handler
+   * with no way to read that had to either send the richer edit to clients
+   * entitled to refuse it or send it to nobody. examples/completion-path.ts
+   * reads exactly that field and chooses its edit shape from it, which is the
+   * whole motivation and is worth naming because a capability surface with no
+   * reader invites additions nothing measures.
+   *
+   * UPSTREAM'S OWN TYPE, published through `@atusy/tsudoi/deps/protocol`, so
+   * tsudoi's surface does not widen by one name for this: every capability LSP
+   * defines is already reachable, and one tsudoi has never heard of arrives the
+   * day the dependency does.
+   *
+   * `{}` WHEN THE CLIENT SENT NONE, AND NEVER `null` OR `undefined`. It is also
+   * `{}` before `initialize` has run at all -- a state no request can observe,
+   * since every request outside the serving window is refused, but one this
+   * object HAS, because it is built at startup. A HANDLER NEED NOT DEFEND
+   * AGAINST IT: `clientCapabilities.textDocument?.completion?.completionItem
+   * ?.insertReplaceSupport` answers `undefined` on an empty object and throws on
+   * neither, so absence reads as `the client did not declare it`, which is what
+   * absence means. A nullable field would have made every reader open with a
+   * guard, and the reader that forgot it would fail on exactly the old client
+   * the capability check exists to serve.
+   *
+   * NOT INSPECTED AND NOT NORMALISED, the same mirror the folder list is. A
+   * non-conforming client that sends a primitive here reaches you as that
+   * primitive: reading a member off it is `undefined` rather than a throw, so
+   * there is no exit to close, and closing one would be tsudoi deciding what a
+   * client meant. That is the difference from `workspaceFolders`, which IS
+   * checked -- a non-array there throws one notification later, where nothing
+   * spreads or iterates this.
+   *
+   * WHAT IT IS NOT IS A ROUTE TO THE REST OF `InitializeParams`. This is one
+   * field, opened because one reader needed it; the others are still unread, and
+   * the reason is at the `initialize` handler in src/server.ts.
+   */
+  readonly clientCapabilities: ClientCapabilities;
 }
 
 export interface MethodMap {

@@ -1,4 +1,8 @@
-import type { WorkspaceFolder } from "vscode-languageserver-protocol";
+import type {
+  ClientCapabilities,
+  InitializeParams,
+  WorkspaceFolder,
+} from "vscode-languageserver-protocol";
 import { createDocumentStore, type DocumentStoreHandle } from "./documents.ts";
 import type { Tsudoi } from "./types.ts";
 import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
@@ -9,8 +13,35 @@ export interface TsudoiRuntime {
   readonly tsudoi: Tsudoi;
   /** The server's end of the document store. Never reachable from `tsudoi`. */
   readonly documents: DocumentStoreHandle;
-  /** The server's end of the folder mirror. Never reachable from `tsudoi`. */
+  /**
+   * The server's end of the folder mirror, for the ONE message that writes it
+   * after the handshake. Never reachable from `tsudoi`.
+   *
+   * `initialize` IS NOT WRITTEN THROUGH HERE, deliberately -- see `handshake`.
+   */
   readonly workspaceFolders: WorkspaceFoldersHandle;
+  /**
+   * EVERYTHING `Tsudoi` TAKES FROM `initialize`, WRITTEN BY ONE CALL.
+   *
+   * ONE SEAM RATHER THAN ONE CALL PER FIELD, and that is what it buys: the
+   * folder mirror and the client's capabilities are read out of the same message
+   * and are meaningless apart from each other, so two calls at the handshake
+   * would be two things to remember and a HALF-MIRRORED SESSION would be the
+   * cost of forgetting either -- a server answering from folders the client
+   * named while believing it declared no capabilities at all. Here that is
+   * unrepresentable rather than merely unlikely.
+   *
+   * `| null` IS THE WIRE SHAPE, for the reason `WorkspaceFoldersHandle`
+   * describes at length: JSON-RPC lets any client send `"params": null`, and the
+   * declared `InitializeParams` describes a CONFORMING client rather than the
+   * bytes that arrive.
+   */
+  readonly handshake: (
+    params: Pick<
+      InitializeParams,
+      "workspaceFolders" | "rootUri" | "rootPath" | "capabilities"
+    > | null,
+  ) => void;
 }
 
 /**
@@ -40,6 +71,13 @@ export interface TsudoiRuntime {
 export function createTsudoi(): TsudoiRuntime {
   const documents = createDocumentStore();
   const workspaceFolders = createWorkspaceFolders();
+  // `{}` BEFORE THE HANDSHAKE AND `{}` FOR A CLIENT THAT DECLARED NOTHING, one
+  // value for both, which is what lets a handler read a capability without
+  // asking whether there are any. No request can observe the pre-handshake
+  // state -- the lifecycle refuses everything until `initialize` has run -- so
+  // the two states are indistinguishable BY CONSTRUCTION rather than by
+  // coincidence, and nothing downstream has a reason to tell them apart.
+  let clientCapabilities: ClientCapabilities = {};
   const tsudoi: Tsudoi = {
     documents: documents.documents,
     get workspaceFolders(): readonly WorkspaceFolder[] {
@@ -51,6 +89,31 @@ export function createTsudoi(): TsudoiRuntime {
     get rootPath(): string | null {
       return workspaceFolders.roots().rootPath;
     },
+    get clientCapabilities(): ClientCapabilities {
+      return clientCapabilities;
+    },
   };
-  return { tsudoi, documents, workspaceFolders };
+  return {
+    tsudoi,
+    documents,
+    workspaceFolders,
+    handshake(params): void {
+      workspaceFolders.initialize(params);
+      // MIRRORED WHOLE AND NOT READ, exactly as `rootUri` is: what a client can
+      // do is the client's statement, and a server that rewrote it would be
+      // answering about capabilities nobody declared.
+      //
+      // `??` AND NOT A TYPE TEST, and the asymmetry with the folder list beside
+      // it is measured rather than stylistic. A non-array `workspaceFolders`
+      // survives being stored and THROWS ONE MESSAGE LATER, inside a
+      // notification that has no response to carry the failure, which is why
+      // that field is checked. Nothing here spreads, iterates or indexes this
+      // value: a handler reads a member off it, and a member read off a number
+      // or a string is `undefined` on both runtimes. So the only two values that
+      // would break a reader are the two `??` covers -- an OMITTED field, which
+      // a non-conforming client sends despite the type declaring it required,
+      // and an explicit `null`.
+      clientCapabilities = params?.capabilities ?? {};
+    },
+  };
 }

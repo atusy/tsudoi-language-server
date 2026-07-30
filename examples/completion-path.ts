@@ -350,6 +350,19 @@ export async function* itemsFrom(
    * says nothing about the tail this rule exists to cover.
    */
   line: string,
+  /**
+   * Whether the client declared
+   * `textDocument.completion.completionItem.insertReplaceSupport`.
+   *
+   * REQUIRED AND NEVER DEFAULTED, for a reason neither default survives. `true`
+   * re-creates the defect this parameter exists to close -- an
+   * `InsertReplaceEdit` sent to a client the specification does not let receive
+   * one. `false` is worse in the way that lasts: it costs every caller who
+   * forgot it the whole insert-versus-replace feature, silently, on the clients
+   * that DO support it, which is the majority. A caller that has to answer the
+   * question cannot get it wrong by omission.
+   */
+  insertReplaceSupport: boolean,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = join(source.root, fragment.directory);
   let items: CompletionItem[] = [];
@@ -378,20 +391,53 @@ export async function* itemsFrom(
         // item carries the path and the detail is fetched for the ONE item the
         // user highlights. See `PathItemData` above.
         data: { pathCompletion: absolutePath } satisfies PathItemData,
-        // BOTH RANGES, so the client's own insert-versus-replace preference
-        // decides what happens to the tail when the cursor sits mid-path. A
-        // plain `TextEdit` would make that setting inert and choose for them.
-        textEdit: {
-          newText: insertText,
-          insert: {
-            start: { line: position.line, character: fragment.start },
-            end: position,
-          },
-          replace: {
-            start: { line: position.line, character: fragment.start },
-            end: { line: position.line, character: replaceEnd(line, fragment, insertText) },
-          },
-        },
+        // BOTH RANGES WHERE THE CLIENT SAID IT CAN TAKE THEM, so its own
+        // insert-versus-replace preference decides what happens to the tail when
+        // the cursor sits mid-path. A plain `TextEdit` makes that setting inert
+        // and chooses for them.
+        //
+        // AND ONLY WHERE IT SAID SO. `InsertReplaceEdit` is permitted to a
+        // client that declared `insertReplaceSupport` and to no other -- so
+        // sending it unconditionally is a SPECIFICATION VIOLATION rather than a
+        // generosity, and a client entitled to receive a `TextEdit` is entitled
+        // to make nothing of an object carrying no `range` at all. That is the
+        // whole reason this handler reads a capability.
+        //
+        // THE PLAIN EDIT TAKES THE INSERT RANGE, AND THAT IS A CHOICE MADE FOR
+        // A CLIENT THAT CANNOT MAKE IT, so it is made on which mistake the user
+        // can see. The insert range ends AT THE CURSOR: completing `spa` on a
+        // line already reading `spaced (1).txt` leaves the tail standing, and
+        // the user reads `spaced (1).txtced (1).txt` and deletes what they did
+        // not want. The replace range reaches PAST the cursor -- `replaceEnd`
+        // extends it to the end of a candidate the line already carries -- so
+        // choosing it would delete text to the right of the cursor for a client
+        // that never asked for replace semantics and cannot decline it. One
+        // mistake is visible and reversible by typing; the other is text
+        // vanishing.
+        //
+        // NOT THE SAME QUESTION AS `replaceEnd`, which stays exactly as it is:
+        // that rule decides how far REPLACE reaches for a client that opted into
+        // replacing, measured in the stakeholder's own editor. This decides
+        // which of the two ranges a client with no such setting is given.
+        textEdit: insertReplaceSupport
+          ? {
+              newText: insertText,
+              insert: {
+                start: { line: position.line, character: fragment.start },
+                end: position,
+              },
+              replace: {
+                start: { line: position.line, character: fragment.start },
+                end: { line: position.line, character: replaceEnd(line, fragment, insertText) },
+              },
+            }
+          : {
+              newText: insertText,
+              range: {
+                start: { line: position.line, character: fragment.start },
+                end: position,
+              },
+            },
       });
     }
   } catch (error) {
@@ -523,6 +569,15 @@ export async function* pathCompletion(
   }
   const cwd = options.cwd ?? process.cwd();
   const folders = context.tsudoi.workspaceFolders;
+  // READ ONCE, FROM THE SESSION, AND `=== true` RATHER THAN A TRUTHINESS TEST.
+  // The chain is optional at every step because a client may declare nothing at
+  // all -- `clientCapabilities` is `{}` then, never null, so nothing here has to
+  // be defended -- and a client that omits the flag has NOT declared support.
+  // The explicit comparison is what keeps a non-conforming client's `"yes"` from
+  // being read as a declaration it did not make.
+  const insertReplaceSupport =
+    context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
+      ?.insertReplaceSupport === true;
   // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
   // rather than an oversight -- recorded here because someone would otherwise
   // add the report believing it was required.
@@ -567,7 +622,13 @@ export async function* pathCompletion(
         // takes -- tsudoi replaces that list rather than writing into it.
         folders,
       )) {
-        for await (const batch of itemsFrom(source, fragment, params.position, line)) {
+        for await (const batch of itemsFrom(
+          source,
+          fragment,
+          params.position,
+          line,
+          insertReplaceSupport,
+        )) {
           const fresh = batch.filter((item) => {
             const text = item.insertText ?? "";
             if (seen.has(text)) {

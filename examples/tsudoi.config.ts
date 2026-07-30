@@ -81,7 +81,12 @@ const config: TsudoiConfigFactory = () => {
           //    the cursor and a replace range covering the whole fragment --
           //    so a plugin option that chooses between inserting and replacing
           //    is YOURS to set and does what you set it to. Completing in the
-          //    MIDDLE of a path is where the two differ.
+          //    MIDDLE of a path is where the two differ. THIS DEPENDS ON YOUR
+          //    EDITOR DECLARING `insertReplaceSupport`, which LSP makes the
+          //    condition on a server sending that edit at all: an editor that
+          //    declares it not gets a plain edit ending at the cursor, its
+          //    insert/replace option has nothing to act on, and nothing will say
+          //    so -- the completion simply always inserts.
           //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR SENDS WORKSPACE
           //    FOLDERS at `initialize`, which is its configuration and not
           //    tsudoi's behaviour. ONE FIELD COUNTS: `workspaceFolders`, which

@@ -50,6 +50,18 @@ async function complete(
   buffer: Buffer,
   cwd: string,
   character?: number,
+  /**
+   * What the client declared about `insertReplaceSupport`, and the ONE knob
+   * every other test in this file leaves alone.
+   *
+   * DEFAULTED TO `true` HERE AND NEVER IN THE MODULE, which is the same split
+   * `fromSource` makes for `line`: the assertions below read `endsOf`, which
+   * asks about the two ranges of an `InsertReplaceEdit`, so this default states
+   * the client class they are written about instead of repeating it at every
+   * call. The module itself takes the flag REQUIRED, so no default of its own
+   * can decide this for an author.
+   */
+  insertReplaceSupport = true,
 ): Promise<CompletionItem[]> {
   // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is the whole of
   // PBI-31's break demonstrated on the only mock in this repository. The object
@@ -75,6 +87,12 @@ async function complete(
       workspaceFolders: [],
       rootUri: null,
       rootPath: null,
+      // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole
+      // optional chain, so a rename anywhere along it reddens here rather than
+      // silently reading `undefined` and testing the other arm.
+      clientCapabilities: {
+        textDocument: { completion: { completionItem: { insertReplaceSupport } } },
+      },
     },
   };
   // EVERY ITEM THIS MODULE HAS FOR ONE REQUEST, in the order it produces them,
@@ -281,12 +299,15 @@ async function fromSource(
   // default here and never in the module: a module-level default would decide
   // the replace end from a line it was not given.
   line: string = fragment.text,
+  // As `complete` defaults it, and for the same reason: these callers ask about
+  // the two ranges, which only the supporting client's edit carries.
+  insertReplaceSupport = true,
 ): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
   // The cursor, spelled out: itemsFrom takes it rather than defaulting it,
   // because a default can only assume line 0 and would be wrong anywhere else.
   const position = { line: 0, character: fragment.start + fragment.text.length };
-  for await (const batch of itemsFrom(source, fragment, position, line)) {
+  for await (const batch of itemsFrom(source, fragment, position, line, insertReplaceSupport)) {
     items.push(...batch);
   }
   return items;
@@ -766,6 +787,57 @@ describe("a replace range covers a filename the line already carries", () => {
       // Everything right of the cursor stands, which is what the user asked
       // for by choosing `insert`.
       expect(applyAsClient(line, cursor, item, "insert")).toBe("spaced (1).txtced (1).txt");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // BOTH ARMS IN ONE MEASUREMENT, AND THAT IS WHAT MAKES IT A MEASUREMENT AT
+  // ALL. `an InsertReplaceEdit is produced when the client supports it` passes
+  // unchanged against a module that produces one unconditionally -- which is
+  // exactly the specification violation this pair exists to close -- so the
+  // claim is only ever about the DIFFERENCE, and one request cannot carry it.
+  // The two completions below differ in ONE input, and each perturbation that
+  // collapses the module to a single shape reddens the other line.
+  //
+  // ASSERTED BY DISCRIMINATOR, `range` versus `insert`, because that is what a
+  // client switches on: the protocol distinguishes the two edits by which key is
+  // present and by nothing else, so an item carrying the wrong one is not a
+  // degraded item but an unusable one.
+  test("the edit shape follows the client's insertReplaceSupport, both ways", async () => {
+    const fixture = tree(["spaced (1).txt"]);
+    try {
+      const line = "spaced (1).txt";
+      const cursor = "spa".length;
+      const supported = itemInserting(
+        await complete({ ...elsewhere, line }, fixture.root, cursor, true),
+        line,
+      );
+      const plain = itemInserting(
+        await complete({ ...elsewhere, line }, fixture.root, cursor, false),
+        line,
+      );
+
+      const supportedEdit = supported.textEdit;
+      const plainEdit = plain.textEdit;
+      expect(supportedEdit !== undefined && "insert" in supportedEdit).toBe(true);
+      expect(plainEdit !== undefined && "range" in plainEdit).toBe(true);
+
+      // AND THE PLAIN EDIT IS THE INSERT RANGE RATHER THAN THE REPLACE ONE,
+      // which is the half a shape check alone would miss: both are `TextEdit`s
+      // and only the end tells them apart. The replace end here reaches the end
+      // of the line, so a module that took it would put a number no client asked
+      // for on an edit the client cannot decline.
+      expect(
+        plainEdit !== undefined && "range" in plainEdit ? plainEdit.range.end : undefined,
+      ).toEqual({ line: 0, character: cursor });
+
+      // WHAT EACH CLIENT ACTUALLY GETS IN ITS BUFFER, so the ruling above is
+      // read as a consequence rather than as a preference: the supporting client
+      // that chose `replace` gets the clean line, and the client that could not
+      // choose gets the tail left standing -- visible, and deleted by typing.
+      expect(applyAsClient(line, cursor, supported, "replace")).toBe(line);
+      expect(applyAsClient(line, cursor, plain)).toBe("spaced (1).txtced (1).txt");
     } finally {
       fixture.dispose();
     }

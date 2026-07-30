@@ -62,7 +62,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // in src/tsudoi.ts. That side of the split is what makes `Tsudoi` one
   // server-lifetime object: this file is handed the finished view and the
   // handles that feed it, and has no way to assemble a second view per request.
-  const { tsudoi, documents, workspaceFolders } = runtime;
+  const { tsudoi, documents, workspaceFolders, handshake } = runtime;
   // Every question about WHEN a message is allowed goes to this one object.
   // The gate it backs reaches what tsudoi REGISTERED, never the dispatch as a
   // whole -- that is what leaves a method nobody registered falling through to
@@ -121,10 +121,11 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // either. What removes it is that NOTHING BELOW CAN FAIL. src/config.ts reads
     // `methods` AND EVERY KNOWN HANDLER at load, so an accessor that throws is
     // already a ConfigError; contributeCapabilities re-reads plain properties;
-    // workspaceFolders.initialize() guards its own throws where they were
-    // measured; and `params` came off JSON.parse, so it carries no accessors at
-    // all. The only config left is one whose getter answers a function once and
-    // throws on a later read.
+    // `handshake` guards its own throws where they were measured, and mirrors
+    // the capabilities with a `??` that cannot throw on anything; and `params`
+    // came off JSON.parse, so it carries no accessors at all. The only config
+    // left is one whose getter answers a function once and throws on a later
+    // read.
     //
     // WHAT RE-MOTIVATES THE MOVE, so it is not rediscovered from scratch: ANY
     // FALLIBLE WORK ADDED BELOW THIS LINE. It is a one-line change needing no new
@@ -132,16 +133,21 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // above decides whether the handshake is allowed, this decides when it counts
     // as having happened.
     lifecycle.initialize();
-    // THREE FIELDS, DELIBERATELY, AND NOT ONE MORE -- they are the three the
-    // protocol lets a client name a ROOT in, and nothing else here is read.
-    // `params` carries the client's capabilities too, and a config author
-    // cannot see them -- LSP 3.16's
-    // `completion.completionItem.insertReplaceSupport` is the known case, and
-    // examples/completion-path.ts sends that shape unconditionally because of
-    // it. That is a SECOND consumer of this argument, not a reason to widen
-    // this line: retaining `params` wholesale would put the whole of
-    // InitializeParams on tsudoi's surface as a side effect of needing three
-    // fields of it. Whoever needs capabilities opens a seam for capabilities.
+    // FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE: the three the protocol lets a
+    // client name a ROOT in, and the CAPABILITIES the client declared. Nothing
+    // else here is read, and `params` is NOT retained -- doing that would put the
+    // whole of InitializeParams on tsudoi's surface as a side effect of needing
+    // four fields of it, and every field on that surface is one tsudoi then owes
+    // an answer about.
+    //
+    // CAPABILITIES ARE READ BECAUSE A READER NEEDED THEM, WHICH IS THE ONLY
+    // REASON A FIELD IS ADDED HERE. LSP permits `InsertReplaceEdit` only to a
+    // client that declared `completion.completionItem.insertReplaceSupport`, so
+    // a config author with no way to read that could only violate the
+    // specification or decline the feature for everyone;
+    // examples/completion-path.ts now chooses its edit shape from that one
+    // field. A FIFTH FIELD IS THE SAME TRANSACTION AND NOT A PRECEDENT ALREADY
+    // SET: name the reader, or the field stays unread.
     //
     // MIRRORED IN workspace.ts AND NOWHERE ELSE, and NOTHING IS DERIVED FROM
     // ANOTHER FIELD HERE OR THERE. No folder is synthesised from `rootUri` or
@@ -156,7 +162,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // root is found and its own launch directory when not, so a cwd fallback
     // looks correct in every test and is silently wrong for the user who has
     // no root.
-    workspaceFolders.initialize(params);
+    handshake(params);
     const capabilities: ServerCapabilities = {
       // openClose is not optional: advertising only `change` entitles a
       // conforming client to withhold didOpen/didClose, and then the store
@@ -190,8 +196,12 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // tsudoi does.
       //
       // NOR IS IT CONDITIONED ON THE CLIENT'S OWN `workspace.workspaceFolders`,
-      // which would mean reading `params.capabilities` here -- the widening the
-      // note above refuses. A client that did not ask for this simply ignores it.
+      // AND THAT IS NOW A DECISION RATHER THAN A LIMIT: the capabilities are
+      // mirrored a few lines up, so this line COULD read them. It does not,
+      // because the claim is about what tsudoi does and not about what the
+      // client asked -- a client that did not ask for this simply ignores it,
+      // where conditioning would advertise less than tsudoi delivers and make
+      // the folder mirror depend on a field the client is free to omit.
       //
       // `true` RATHER THAN AN ID STRING: an id exists to be handed back to
       // `client/unregisterCapability`, and tsudoi never unregisters -- it wants
