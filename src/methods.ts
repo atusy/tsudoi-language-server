@@ -954,15 +954,15 @@ async function driveStream(run: {
     // wasteful. Nothing may come to depend on the skip.
     let completed = false;
     // A `finally` AROUND THE WHOLE LOOP, because ABORT IS NOT THE ONLY WAY OUT
-    // OF IT and until Sprint 46 the close was reachable from that branch alone.
-    // The other exits are EXCEPTIONS THROWN WHILE THE GENERATOR IS SUSPENDED AT
-    // ITS YIELD: `collected.push(...next.value)` raises a TypeError when a batch
-    // is not iterable -- NOTHING VALIDATES THAT ANYWHERE, since config.ts checks
-    // only the resolve/completion pair and both runtimes strip types without
-    // checking them -- and `sendProgress` rejects once the connection is Closed,
-    // which is what an editor dying mid-stream looks like from here. Both
-    // propagate out of this closure, and with no `finally` the generator was
-    // never touched again: the author's cleanup NEVER RAN.
+    // OF IT. The other exits are EXCEPTIONS THROWN WHILE THE GENERATOR IS
+    // SUSPENDED AT ITS YIELD: `collected.push(...next.value)` raises a TypeError
+    // when a batch is not iterable -- NOTHING VALIDATES THAT ANYWHERE, since
+    // config.ts checks only the resolve/completion pair and both runtimes strip
+    // types without checking them -- and `sendProgress` rejects once the
+    // connection is Closed, which is what an editor dying mid-stream looks like
+    // from here. Both propagate out of this closure, so a close reachable from
+    // the abort branch ALONE would leave the generator never touched again and
+    // the author's cleanup WOULD NEVER RUN.
     //
     // THE EDITOR-DEATH ARM IS THE ONE THAT COSTS. A handler holding a child
     // process or a lock file loses exactly the release that mattered, and THE
