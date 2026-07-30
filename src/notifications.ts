@@ -25,14 +25,10 @@ export type NotificationGate = "lifecycle" | "always";
  * One notification tsudoi answers: what it is, what to do with it, and WHEN it
  * may run.
  *
- * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design. What
- * stood here before was three hand-written copies of
- *
- *     if (lifecycle.acceptsNotification() === false) { return; }
- *
- * at the top of the didOpen, didChange and didClose handlers -- a CONVENTION,
- * which a fourth handler joins only if whoever writes it remembers. Their
- * defence is re-homed HERE, since the checks themselves are gone:
+ * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design. What it
+ * replaced was a lifecycle check at the top of each handler body -- a
+ * CONVENTION, which a fourth handler joins only if whoever writes it remembers.
+ * That defence is re-homed HERE, since the checks themselves are gone:
  *
  * - what each check prevented: a document mutation applied BEFORE initialize
  *   (the server has no client state to apply it against) or AFTER shutdown (the
@@ -41,23 +37,14 @@ export type NotificationGate = "lifecycle" | "always";
  *   session never agreed to;
  * - and why a required field prevents it now: an entry that decides nothing
  *   does not TYPE-CHECK, so the realistic failure -- a new notification whose
- *   author never thought about the lifecycle -- became a compile error instead
- *   of a handler that silently runs in every state.
+ *   author never thought about the lifecycle -- is a compile error instead of a
+ *   handler that silently runs in every state.
  *
- * HOW UNDEFENDED THE CONVENTION ACTUALLY WAS, measured on the shape this
- * replaced and homed here because it is the reason this file exists: deleting
- * didChange's check reddened NOTHING and deleting didClose's reddened NOTHING,
- * while deleting didOpen's reddened four tests that never mention it. TWO OF
- * THE THREE COPIES WERE PURE CONVENTION, and the third was defended only
- * INCIDENTALLY. That control cannot be re-run -- there is no body check left to
- * delete -- so this sentence is the evidence.
- *
- * WHAT THIS DOES NOT FORECLOSE, AND THE SENTENCE THAT USED TO STAND HERE WAS
- * WRONG: it said a future edit calling `connection.onNotification` directly
- * bypasses this file, that only a lint rule could stop it, and that NO TYPE
- * COULD. A type can, and `createGatedConnection` below is it -- src/server.ts
- * never holds a value that HAS an `onNotification` to call. What that does and
- * does not reach is named at that function rather than repeated here.
+ * A future edit calling `connection.onNotification` directly does not bypass
+ * this file, and it takes no lint rule to say so: `createGatedConnection` below
+ * is what stops it, since src/server.ts never holds a value that HAS an
+ * `onNotification` to call. What that does and does not reach is named at that
+ * function rather than repeated here.
  */
 export interface NotificationEntry<P> {
   /** The protocol message. `NotificationType0` is how `exit` is declared. */
@@ -88,9 +75,9 @@ export interface NotificationRegistrar {
  *
  * WITHOUT THIS, extracting the table costs the property this router exists
  * beside: each handler's `params` is contextually typed BY THE `type` NEXT TO
- * IT, and a plain `return [...]` from a helper drops that -- measured, three
- * handlers fell to implicit `any` -- so a handler typed against the wrong
- * notification's params would stop being a compile error.
+ * IT, and a plain `return [...]` from a helper drops that -- handlers fall to
+ * implicit `any` -- so a handler typed against the wrong notification's params
+ * would stop being a compile error.
  */
 export function defineNotifications<P extends readonly unknown[]>(entries: {
   readonly [K in keyof P]: NotificationEntry<P[K]>;
@@ -135,34 +122,33 @@ export function registerNotifications<P extends readonly unknown[]>(
 /**
  * A connection with NO MEMBER THAT OBSERVES INBOUND NOTIFICATION TRAFFIC on its
  * type. Which members those are is stated ONCE, in the `Omit` below, and each is
- * named rather than counted -- a count silently falsifies when the list grows,
- * and this list has grown twice:
+ * NAMED RATHER THAN COUNTED -- a count silently falsifies when the list grows:
  *
  * - `onNotification` installs a handler per method;
  * - `onUnhandledNotification` fires for everything nothing registered;
  * - `onProgress` installs a handler for `$/progress` under a token;
  * - `trace` hands a caller-supplied `Tracer` every notification a handler runs
  *   for, BEFORE that handler runs -- so before this module's gate, which lives
- *   inside the handler, decides anything.
+ *   inside the handler, decides anything. WHAT PUTS IT IN THE `Omit` IS ORDER
+ *   AND NOT BREADTH: a `Tracer` sees every notification that HAS a handler, plus
+ *   `$/cancelRequest`, which is COMPLEMENTARY to `onUnhandledNotification`
+ *   rather than broader than it.
  *
- * WHAT MAKES THAT SENTENCE SAYABLE IS AN ENUMERATION AND NOT A RECOLLECTION, and
- * the distinction is the whole point: `ProtocolConnection`'s member set is pinned
- * in test/notifications.test.ts, checked by `tsc --noEmit` against the
- * dependency's own connection.d.ts, so a member the dependency adds cannot arrive
- * silently. IT WAS RECALL THAT MISSED `onProgress` AND `trace` WHEN THE FIRST OF
- * THESE KEYS WENT IN; ENUMERATION IS WHAT FOUND THEM.
+ * THAT LIST IS AN ENUMERATION AND NOT A RECOLLECTION: `ProtocolConnection`'s
+ * member set is pinned in test/notifications.test.ts, checked by `tsc --noEmit`
+ * against the dependency's own connection.d.ts, so a member the dependency adds
+ * cannot arrive silently.
  *
- * AND THE PIN'S LIMITS, because the sentence above still outruns them, and they
- * are set out in full beside the pin rather than summarised away. The pin asserts
- * THE SET OF NAMES, never that no REMAINING member exposes traffic; it is a claim
- * about the INSTALLED dependency and not about the next release; and it pins the
- * TYPE, while the VALUE this module hands out is `createMessageConnection`'s
- * result unchanged and carries `onUnhandledProgress`, which sees every inbound
- * `$/progress` nothing claimed. THAT ONE IS REACHABLE ONLY BY A CAST, so it is
- * the deliberate-evasion class this module already accepts elsewhere -- but it is
- * why the opening sentence is bounded to what is ON THIS TYPE, and stops short of
- * saying nothing can observe traffic at all. Completeness remains a JUDGEMENT.
- * What changed is that it is now made against a list the compiler agrees is
+ * AND THE PIN'S LIMITS, because the sentence above still outruns them. The pin
+ * asserts THE SET OF NAMES, never that no REMAINING member exposes traffic; it is
+ * a claim about the INSTALLED dependency and not about the next release; and it
+ * pins the TYPE, while the VALUE this module hands out is
+ * `createMessageConnection`'s result unchanged and carries `onUnhandledProgress`,
+ * which sees every inbound `$/progress` nothing claimed. THAT ONE IS REACHABLE
+ * ONLY BY A CAST, so it is the deliberate-evasion class this module already
+ * accepts elsewhere -- but it is why the opening sentence is bounded to what is
+ * ON THIS TYPE, and stops short of saying nothing can observe traffic at all.
+ * Completeness remains a JUDGEMENT, made against a list the compiler agrees is
  * complete.
  *
  * `onUnhandledNotification` is an EVENT PROPERTY holding a callable rather than
@@ -173,41 +159,16 @@ export function registerNotifications<P extends readonly unknown[]>(
  * `ProtocolConnection` grows, and only the members this narrowing is about are
  * named here.
  *
- * THE REMAINDER WAS MEASURED, not assumed, at each widening of this list, AND
- * THIS WIDENING IS NO EXCEPTION: EVERY surviving member was driven through the
- * narrowed type in one project at exit 0 -- `sendRequest` and `onRequest` each
- * in their with-params and without-params forms, `sendNotification`,
- * `sendProgress`, `hasPendingResponse`, `onError`, `onClose`, `onDispose`,
- * `listen`, `end` and `dispose`. `onRequest` has five overloads and `Omit` is a
- * mapped type; overload survival through one of those is exactly the thing worth
- * checking rather than reasoning about. THAT EXIT 0 WAS CHECKED FOR
- * DISCRIMINATION rather than trusted: appending an `onProgress` call to the same
- * project exits 1 on TS2551.
- *
- * WHAT BACKS THAT PARAGRAPH PERMANENTLY IS LESS THAN THE PARAGRAPH SAYS, and the
- * three tiers are worth separating. `onRequest` has a STANDING ASSERTION -- it is
- * the permitted half of every narrowed-connection probe in
- * test/notifications.test.ts. `sendProgress` and `listen` are reached only
- * because src/methods.ts and src/server.ts happen to call them, which is
- * INCIDENTAL COVERAGE and therefore not coverage: were those callers to stop, a
- * further key that broke them would pass unnoticed. AND `sendRequest`,
- * `sendNotification`, `hasPendingResponse`, `onError`, `onClose`, `onDispose`,
- * `end` and `dispose` ARE REACHED BY NOTHING EXECUTABLE AT ALL. The measurement
- * above is a one-off, and this sentence is what says so.
- *
  * A MISSPELLED KEY HERE IS A SILENT NO-OP, and it is why no probe defending
  * this type may DISCRIMINATE on a tsc exit code: `Omit<T, K>` accepts a key that
  * is not in `keyof T` and hands back T unchanged, so the misspelling compiles at
- * 0 with nothing objecting. MEASURED -- spelled `onUnhandledNotifcation`, the
- * probe's own type-check exits 0 and only assertions naming the SYMBOL redden.
- * test/notifications.test.ts matches each removed member BY NAME, and pins the
- * removed SET exactly.
+ * 0 with nothing objecting. test/notifications.test.ts matches each removed
+ * member BY NAME, and pins the removed SET exactly.
  *
  * AND THAT IS WHY `Pick` IS THE BETTER INSTRUMENT FOR THIS BOUNDARY -- stated as
- * a PREFERENCE AND NOT A MANDATE, and continuous with the paragraph above rather
- * than a second account of the same hazard. `Omit` names what must GO and trusts
- * the base type to contain it; `Pick` names what may STAY, so a name the base
- * type does not have is a compile error rather than a no-op. The failure becomes
+ * a PREFERENCE AND NOT A MANDATE. `Omit` names what must GO and trusts the base
+ * type to contain it; `Pick` names what may STAY, so a name the base type does
+ * not have is a compile error rather than a no-op. The failure becomes
  * UNREPRESENTABLE instead of merely detected. And it is not hypothetical: the
  * one base type anyone has proposed moving to is measured at
  * `createGatedConnection` below, and two of these four keys are not its members
@@ -248,23 +209,23 @@ export type RequestOnlyConnection = Omit<
  * in scope beside the narrow one. The only way the narrow handle is the only
  * handle is for the wide one never to be bound, so creation moves here.
  *
- * WHY A TYPE RATHER THAN A LINT, MEASURED AT REFINEMENT: oxlint 1.73.0 does not
- * merely fail to match on `no-restricted-syntax`, it FAILS TO PARSE that
- * config. `no-restricted-properties` does work, and matches the IDENTIFIER
- * `connection` -- so `const conn = connection` walks straight past it, and a
- * guard a rename evades forecloses nothing. A type cannot be renamed away, and
+ * WHY A TYPE RATHER THAN A LINT: oxlint 1.73.0 does not merely fail to match on
+ * `no-restricted-syntax`, it FAILS TO PARSE that config.
+ * `no-restricted-properties` does work, and matches the IDENTIFIER `connection`
+ * -- so `const conn = connection` walks straight past it, and a guard a rename
+ * evades forecloses nothing. A type cannot be renamed away, and
  * test/notifications.test.ts drives that exact alias rather than inferring it.
  *
- * THE RESIDUAL IS NOW DETECTED, AND THE DETECTOR LEANS ON THIS FUNCTION. This
- * type forecloses the call only while NO WIDE VALUE IS IN SCOPE: an
- * `import { createProtocolConnection }` added to src/server.ts puts one back,
- * and nothing here notices. MEASURED before any remedy existed, and the number
- * was the point -- src/server.ts rewritten to import it, register the table on
- * the WIDE value and call an ungated `onNotification` beside it ran at 331 tests
- * green, `tsc --noEmit` 0, `oxlint` 0. .oxlintrc.json now bans that import in
- * every file but this one: the lint route at a target where it works, since a
- * specifier cannot be renamed the way a variable can. A SECOND GAP rather than a
- * second guard on this one, which is what allowed closing it at all.
+ * THE RESIDUAL IS DETECTED RATHER THAN FORECLOSED, AND THE DETECTOR LEANS ON
+ * THIS FUNCTION. This type forecloses the call only while NO WIDE VALUE IS IN
+ * SCOPE: an `import { createProtocolConnection }` added to src/server.ts puts
+ * one back, and nothing here notices -- src/server.ts rewritten to import it,
+ * register the table on the WIDE value and call an ungated `onNotification`
+ * beside it passes the suite, `tsc --noEmit` and `oxlint` alike, with nothing
+ * objecting. .oxlintrc.json now bans that import in every file but this one: the
+ * lint route at a target where it works, since a specifier cannot be renamed the
+ * way a variable can. A SECOND GAP rather than a second guard on this one, which
+ * is what allowed closing it at all.
  *
  * AND THE DEBT THAT CREATES IS OWED BY THIS FUNCTION, which is why it is
  * recorded here rather than only beside the rule. That lint is a ROT DETECTOR,
@@ -278,90 +239,33 @@ export type RequestOnlyConnection = Omit<
  * annotation; NOTHING REDDENS ON THE ARGUMENT, so this paragraph is the only
  * thing that carries it.
  *
- * THE RETURN ANNOTATION BELOW IS A SEPARATE SEAM, and it was briefly written
- * off as part of the same residual before being measured: it is not. Widening
- * it to `ProtocolConnection` while leaving `RequestOnlyConnection` alone once
- * left EVERY probe green, tsc at 0 and 331 tests passing, with an ungated
- * `connection.onNotification` in src/server.ts compiling fine -- the
- * foreclosure entirely gone and nothing saying so. It is now asserted: a probe
- * takes its connection FROM THIS FUNCTION rather than binding the alias, and
- * that perturbation reddens it and it alone.
+ * THE RETURN ANNOTATION BELOW IS A SEPARATE SEAM, and it is asserted rather than
+ * assumed: widening it to `ProtocolConnection` while leaving
+ * `RequestOnlyConnection` alone leaves the foreclosure entirely gone with an
+ * ungated `connection.onNotification` in src/server.ts compiling fine, so a
+ * probe takes its connection FROM THIS FUNCTION rather than binding the alias,
+ * and that perturbation reddens it and it alone.
  *
- * SO NOTHING HERE IS UNGUARDED BY ACCIDENT ANY MORE: the type carries the
- * handle, the lint carries the import. What neither reaches is named at the
- * rule -- `await import(...)`, MEASURED to walk past it, and a WRAPPER exported
- * from this module, which is why test/notifications.test.ts asserts this module
- * exports no factory. Both are the deliberate-evasion class, not slips.
- *
- * THE THIRD GAP IS NOW CLOSED, AND IT WAS THE STRONGEST OF THE RESIDUALS THEN
- * KNOWN: `onUnhandledNotification` used to survive the `Omit`, and
- * reaching it needed NO DELIBERATE ACT -- it sat on the handle THIS FUNCTION
- * HANDS OUT, so `no longer reachable by accident`, the argument that made the
- * import ban adequate, never covered it. It was held open on ONE QUESTION,
- * whether anything wants that hook for DIAGNOSTICS, and that question was
- * already answered three sprints before it was asked: at Sprint 15 unregistered
- * notifications were MEASURED to produce ZERO BYTES, and that silence was
- * endorsed deliberately, so nothing wants it. The foreclosure is
- * reversible at the same one token it cost, so the diagnostic capability is
- * DEFERRED rather than surrendered.
+ * WHAT NEITHER THE TYPE NOR THE LINT REACHES: `await import(...)`, MEASURED to
+ * walk past the rule, and a WRAPPER exported from this module, which is why
+ * test/notifications.test.ts asserts this module exports no factory -- as is the
+ * exemption in .oxlintrc.json that switches the factory ban off in test files
+ * and test/helpers/. All are the deliberate-evasion class, not slips.
  *
  * THE BOUNDARY THAT NARROWING CLAIMS: the members named in the `Omit` above are
- * foreclosed AND NOTHING ELSE IS. MEASURED as a SET DIFFERENCE rather than
- * sampled, and pinned by test/notifications.test.ts so that adding a key here
- * reddens rather than quietly widening this sentence's claim. `sendNotification`
- * survives and is not a gap at all -- that is SENDING a notification, not
- * installing a handler for one. NEITHER HALF OF THAT SENTENCE IS COUNTED, and
- * that is deliberate: `EXACTLY TWO MEMBERS` stood here and was falsified by the
- * very next widening.
+ * foreclosed AND NOTHING ELSE IS, pinned by test/notifications.test.ts so that
+ * adding a key here reddens rather than quietly widening this sentence's claim.
+ * `sendNotification` survives and is not a gap at all -- that is SENDING a
+ * notification, not installing a handler for one. NEITHER HALF OF THAT SENTENCE
+ * IS COUNTED, and that is deliberate: `EXACTLY TWO MEMBERS` stood here and was
+ * falsified by the very next widening.
  *
- * WHAT IT DOES NOT CLOSE, named so it is not read as closing more than it does.
- * The deliberate-evasion routes above are UNCHANGED -- `await import(...)`, and
- * a wrapper exported from this module -- as is the exemption in .oxlintrc.json
- * that switches the factory ban off in test files and test/helpers/. All remain
- * accepted residuals. THE ADEQUACY ARGUMENT RECORDED AT THAT RULE IS LIKEWISE
- * UNAFFECTED, checked rather than assumed: it rests on what this function
- * returns being the sole connection-shaped value in startServer's scope, and a
- * wider `Omit` widens that narrowing rather than moving it.
- *
- * THE TWO ROUTES ENUMERATION FOUND ARE NOW CLOSED, AND THE ENUMERATION IS THE
- * DURABLE PART. `ProtocolConnection`'s members are `sendRequest`, `onRequest`,
- * `sendNotification`, `onNotification`, `onProgress`, `sendProgress`, `trace`,
- * `onError`, `onClose`, `onUnhandledNotification`, `onDispose`, `end`,
- * `dispose`, `hasPendingResponse` and `listen` -- READ OFF
- * vscode-languageserver-protocol 3.18.2's connection.d.ts rather than recalled.
- * THAT LIST IS NO LONGER PROSE ALONE: test/notifications.test.ts asserts it as a
- * TYPE, so should it and the dependency ever disagree, `tsc --noEmit` fails at
- * that file and line. IT DOES NOT SAY WHICH NAME MOVED -- the diagnostic is
- * TS2344 on a boolean, and reading the two lists against each other is left to
- * whoever it stops. The version is still named, because the pin is a claim about
- * the INSTALLED version: package.json asks only for `^3.17.5`, and what `keyof`
- * is read from is whatever the lockfile put in node_modules.
- *
- * WHAT `trace` ACTUALLY SEES, CORRECTED AGAINST THE DEPENDENCY'S OWN SOURCE. The
- * sentence that stood here said `every received notification` and carried the
- * MEASURED label, and it is FALSE. At vscode-jsonrpc 9.0.1's
- * lib/common/connection.js `traceReceivedNotification` runs at three sites, and
- * the one on the ordinary notification path sits INSIDE
- * `if (notificationHandler || starNotificationHandler)`; the `else` branch fires
- * `unhandledNotificationEmitter` WITHOUT tracing. So a `Tracer` sees every
- * notification that HAS a handler, plus `$/cancelRequest` at the two cancel
- * sites -- COMPLEMENTARY to `onUnhandledNotification` rather than broader than
- * it. WHAT PUTS IT IN THE `Omit` IS ORDER AND NOT BREADTH: the trace call
- * precedes the handler, and this module's gate lives inside that handler, so a
- * tracer observes a gated notification whatever the gate then decides.
- *
- * WHY BOTH WENT, in the terms the earlier closures were argued in. Each sat on
- * the handle THIS FUNCTION HANDS OUT and needed NO DELIBERATE ACT, so
- * `no longer reachable by accident` never covered them. Neither is free the way
- * `onUnhandledNotification` was -- `$/progress` is how work-done reporting
- * arrives, and tracing is how a client asks to see the wire -- but neither is
- * REACHABLE BY THE PARTY WHO MIGHT WANT THEM: this type never leaves src/, and
- * src/types.ts -- the one path package.json exports, and so the whole of what a
- * config author is handed -- does not export it. The only party that could ask
- * is src/ ITSELF, which receives no `$/progress` at all and which at Sprint 15
- * measured `$/setTrace` inert and endorsed that silence deliberately -- recorded
- * at the logger in src/server.ts. Each foreclosure is reversible at the one
- * token it cost, so both capabilities are DEFERRED rather than surrendered.
+ * NONE OF THOSE FOUR IS REACHABLE BY THE PARTY WHO MIGHT WANT IT: this type
+ * never leaves src/, and src/types.ts -- the one path package.json exports, and
+ * so the whole of what a config author is handed -- does not export it. Each
+ * foreclosure is reversible at the one token it cost, so the capabilities behind
+ * them -- diagnostics on unhandled notifications, `$/progress`, tracing -- are
+ * DEFERRED rather than surrendered.
  *
  * ============================================================================
  *
@@ -378,17 +282,14 @@ export type RequestOnlyConnection = Omit<
  * grepping node_modules for `Connection` finds nothing and proves nothing.
  * Install it OUT OF TREE and enumerate against that. MEASURED AT
  * vscode-languageserver 10.1.0, which pins vscode-languageserver-protocol
- * 3.18.2, with the TypeScript 5.9.3 compiler API's `getPropertiesOfType` rather
- * than by reading a list. ONE THROUGH FOUR BELOW WERE RE-RUN THAT WAY WHEN THIS
- * RECORD WAS WRITTEN. FIVE AND SIX WERE NOT -- they need a spawned server and a
- * live wire where these need only a type-check -- and they carry issue #1's
- * measurement, with the paths that make them re-runnable rather than repeated.
+ * 3.18.2, with the TypeScript compiler API's `getPropertiesOfType` rather than
+ * by reading a list.
  *
  * ONE. `Connection` HAS 58 MEMBERS AND `onUnhandledNotification` AND `trace` ARE
  * NOT AMONG THEM (`Connection extends _Connection` at
  * lib/common/server.d.ts:767, the body at :359-766). Rebasing the `Omit` above
  * onto it would therefore hand back a type UNCHANGED IN TWO OF ITS FOUR KEYS --
- * the silent no-op this file already documents as a misspelling hazard, arriving
+ * the silent no-op that type already documents as a misspelling hazard, arriving
  * STRUCTURALLY rather than by typo. And it would arrive unseen: the two probes
  * in test/notifications.test.ts that name those members assert
  * `Property 'X' does not exist`, and that diagnostic STILL APPEARS under
@@ -398,64 +299,39 @@ export type RequestOnlyConnection = Omit<
  * `tracer` IS on the handle.
  *
  * TWO. NINE UNGATED NOTIFICATION REGISTRARS WOULD SURVIVE THAT `Omit` AT TOP
- * LEVEL, named rather than counted: `onInitialized`, `onDidOpenTextDocument`,
- * `onDidChangeTextDocument`, `onDidCloseTextDocument`, `onDidSaveTextDocument`,
- * `onWillSaveTextDocument`, `onDidChangeConfiguration`, `onDidChangeWatchedFiles`
- * and `onExit` -- each taking a `NotificationHandler` at
- * lib/common/server.d.ts:470-572, none consulting this module's gate. AND THE
- * NAMESPACES CARRY MORE: `workspace` takes a `NotificationHandler` at
- * `onDidCreateFiles`, `onDidRenameFiles` and `onDidDeleteFiles`
- * (lib/common/fileOperations.d.ts:9-11), and `notebooks.synchronization` at four
- * more (lib/common/notebook.d.ts:10).
- *
- * `workspace.onDidChangeWorkspaceFolders` IS COUNTED APART FROM THOSE, and the
- * distinction is the one this file already draws for `onUnhandledNotification`
- * further up: it is an `Event<WorkspaceFoldersChangeEvent>` PROPERTY, not a
- * method taking a handler (lib/common/workspaceFolder.d.ts:5). Subscribing to it
- * still installs a listener this module's gate never sees, so it belongs in the
- * tally -- but calling it a registrar of the same kind as the three above would
- * be false of the declaration.
- *
- * `languages` CARRIES REGISTRARS TOO AND EVERY ONE OF THEM IS A REQUEST, measured
- * across its nested `semanticTokens`, `diagnostics`, `inlayHint`, `foldingRange`,
- * `inlineValue`, `inlineCompletion`, `moniker`, `callHierarchy` and
- * `typeHierarchy` as well as its top level, rather than inferred from the top
- * level alone: not one takes a `NotificationHandler`. `client`, `window`,
- * `console`, `telemetry` and `tracer` carry no registrars at all. REACHING ANY OF
- * THE NOTIFICATION ONES TAKES NO DELIBERATE ACT, which is the very criterion this
- * module uses to decide what to foreclose.
- *
- * ISSUE #1'S ELEVEN IS CORRECTED HERE RATHER THAN REPEATED, since this is the
- * durable copy: that list named `onNotification`, which the `Omit` DOES remove
- * (lib/common/server.d.ts:411), and `onShutdown`, which takes a `RequestHandler0`
- * (:476) and registers a REQUEST. `onProgress` (:451) is likewise removed by the
- * `Omit`. Nine survive, and each of the nine is named above so that the sentence
- * cannot be falsified by the list growing.
+ * LEVEL, each taking a `NotificationHandler` at lib/common/server.d.ts:470-572
+ * and none consulting this module's gate. AND THE NAMESPACES CARRY MORE:
+ * `workspace` takes a `NotificationHandler` at three file-operation hooks and
+ * `notebooks.synchronization` at four more, while
+ * `workspace.onDidChangeWorkspaceFolders` is an
+ * `Event<WorkspaceFoldersChangeEvent>` PROPERTY whose subscription still
+ * installs a listener this gate never sees. `languages` carries registrars too
+ * and EVERY ONE OF THEM IS A REQUEST, measured across its nested namespaces
+ * rather than inferred from its top level. REACHING ANY OF THE NOTIFICATION ONES
+ * TAKES NO DELIBERATE ACT, which is the very criterion this module uses to
+ * decide what to foreclose.
  *
  * THREE. KEEPING THE GATE MEANS NOT USING THE FRAMEWORK'S LIFECYCLE HOOKS, AND
  * THAT TURNS OFF MOST OF WHAT THE FRAMEWORK IS FOR. src/server.ts must override
  * `InitializeRequest` -- the -32002 refusal lives there -- and vscode-jsonrpc's
  * `onRequest` REPLACES rather than chains. Overriding it skips
  * `watchDog.initialize(params)`, the `remote.initialize(capabilities)` loop and
- * the `fillServerCapabilities` loop (lib/common/server.js:724-775), so `console`,
- * `window`, `client` and `workspace` never receive the client's capabilities at
- * all. THE TRADE IS NOT PARTIAL: keep the gate and the framework goes largely
- * inert; take its forty-odd typed registrations and the ungated registrars come
- * with them.
+ * the `fillServerCapabilities` loop, so `console`, `window`, `client` and
+ * `workspace` never receive the client's capabilities at all. THE TRADE IS NOT
+ * PARTIAL: keep the gate and the framework goes largely inert; take its
+ * forty-odd typed registrations and the ungated registrars come with them.
  *
  * FOUR. `createConnection` TAKES NO LOGGER ARGUMENT. Every overload's trailing
- * parameter is `options?: ConnectionStrategy | ConnectionOptions`
- * (lib/node/main.d.ts:19, 28, 36, 43, 52, 60); the framework constructs a
- * `RemoteConsoleImpl` and passes THAT as the connection's logger
- * (lib/common/server.js:554), and its `error`/`warn`/`info`/`log` send
- * `window/logMessage` (lib/common/server.js:136-149). A notification handler's
- * failure would leave as a FRAMED PROTOCOL MESSAGE rather than on stderr, which
- * falsifies the first sentence of the logger block in src/server.ts.
- * `Features.console` restores it -- measured in issue #1, no cast, strict
- * type-check at 0 -- BUT IT MAKES STDOUT PURITY OPT-IN: omit the `features`
- * argument and the failure goes quiet AND onto the wire. THAT IS THE SAME SHAPE
- * AS AN UNGATED REGISTRAR, safe behaviour resting on memory rather than on
- * structure, which is why the remedy counts against rather than cancelling out.
+ * parameter is `options?: ConnectionStrategy | ConnectionOptions`; the framework
+ * constructs a `RemoteConsoleImpl` and passes THAT as the connection's logger,
+ * and its `error`/`warn`/`info`/`log` send `window/logMessage`. A notification
+ * handler's failure would leave as a FRAMED PROTOCOL MESSAGE rather than on
+ * stderr, which falsifies the first sentence of the logger block in
+ * src/server.ts. `Features.console` restores it -- no cast, strict type-check at
+ * 0 -- BUT IT MAKES STDOUT PURITY OPT-IN: omit the `features` argument and the
+ * failure goes quiet AND onto the wire. THAT IS THE SAME SHAPE AS AN UNGATED
+ * REGISTRAR, safe behaviour resting on memory rather than on structure, which is
+ * why the remedy counts against rather than cancelling out.
  *
  * AND NOW THE OTHER COLUMN, WHICH IS NOT OPTIONAL: two rulings that stood
  * AGAINST adoption were measured FALSE, and they are recorded at the same weight
@@ -464,43 +340,34 @@ export type RequestOnlyConnection = Omit<
  * FIVE. `fillServerCapabilities` ADDS NOTHING. On a bare
  * `createConnection(reader, writer)` -- no `Features`, no `ProposedFeatures` --
  * the `InitializeResult` on the wire was byte-identical to what the handler
- * returned, measured at EMPTY client capabilities AND at rich ones
- * (workspace/fileOperations, notebooks, semanticTokens, diagnostic, inlayHint,
- * callHierarchy, foldingRange, workspaceFolders); the rich arm is load-bearing
- * because `remote.initialize(capabilities)` runs BEFORE the fill loop. STRUCTURAL
- * RATHER THAN SAMPLED: every base remote's `fillServerCapabilities` is empty, the
- * single override in lib/common (workspaceFolder.js:28-31) only READS client
- * capabilities to set an internal flag and writes nothing, and `textDocumentSync`
- * is filled only when it is undefined/null or its `.change` is not numeric --
- * tsudoi clears both guards. SO src/server.ts's PER-METHOD CAPABILITY DERIVATION
- * WOULD SURVIVE ADOPTION INTACT. RESERVATION, self-reported at the measurement:
- * that is a property of 10.1.0's default remote set and NOT an invariant, so a
- * later release adding a remote that WRITES would pass unnoticed.
+ * returned, measured at EMPTY client capabilities AND at rich ones; the rich arm
+ * is load-bearing because `remote.initialize(capabilities)` runs BEFORE the fill
+ * loop. STRUCTURAL RATHER THAN SAMPLED: every base remote's
+ * `fillServerCapabilities` is empty, the single override in lib/common only READS
+ * client capabilities to set an internal flag and writes nothing, and
+ * `textDocumentSync` is filled only when it is undefined/null or its `.change` is
+ * not numeric -- tsudoi clears both guards. SO src/server.ts's PER-METHOD
+ * CAPABILITY DERIVATION WOULD SURVIVE ADOPTION INTACT. RESERVATION,
+ * self-reported at the measurement: that is a property of 10.1.0's default remote
+ * set and NOT an invariant, so a later release adding a remote that WRITES would
+ * pass unnoticed.
  *
  * SIX. `onShutdown` COEXISTS WITH THE -32600 REFUSAL. `watchDog.shutdownReceived
  * = true` is the FIRST STATEMENT of the framework's shutdown handler and runs
- * before the handler does (lib/common/server.js:767-775), so a handler that
- * throws cannot break the flag. Measured with tsudoi's own refusal logic on that
- * hook and no `exit` registered: initialize/shutdown/exit exits 0; a SECOND
- * shutdown is answered -32600 and exit is still 0; a hover after shutdown is
- * answered -32600 and exit is still 0. The earlier ruling that the framework's
- * exit path is unreachable behind tsudoi's refusal is FALSE.
+ * before the handler does, so a handler that throws cannot break the flag.
+ * Measured with tsudoi's own refusal logic on that hook and no `exit`
+ * registered: initialize/shutdown/exit exits 0; a SECOND shutdown is answered
+ * -32600 and exit is still 0; a hover after shutdown is answered -32600 and exit
+ * is still 0.
  *
  * WHAT THE OTHER COLUMN COSTS, so it is not read as an unpriced win. Taking that
  * exit path requires DELETING the `exit` entry from the gated table, and that
  * entry is the only inhabitant of the `always` arm -- what follows from that is
- * written at the test which asserts it, in test/notifications.test.ts, rather
- * than here. Two further findings arrived with the same measurement, and ONE OF
- * THEM IS NO LONGER FILED. SETTLED: shutdown-before-initialize-then-exit is 1
- * here and 0 through the framework, and `which no assertion in this suite
- * catches` was true when written and is now false -- it is asserted on both
- * runtimes in test/lifecycle.test.ts, and RULED at exitCode() in
- * src/lifecycle.ts, which is where the reading lives and why the divergence does
- * not count against tsudoi: a shutdown answered -32002 was refused, and the
- * framework reaches 0 by never refusing at all. STILL FILED:
- * `watchDog.initialize(params)` starts an un-`unref`ed three-second interval when
- * `processId` is numeric, which the suite cannot observe because
- * test/helpers/lsp.ts sends `processId: null`.
+ * written at the test which asserts it, in test/notifications.test.ts. AND ONE
+ * FINDING IS STILL FILED: `watchDog.initialize(params)` starts an un-`unref`ed
+ * three-second interval when `processId` is numeric -- exactly the hazard
+ * src/server.ts's unref requirement is about -- which the suite cannot observe
+ * because test/helpers/lsp.ts sends `processId: null`.
  *
  * THE RULING, AND IT IS A CHOICE RATHER THAN A DEDUCTION: the gate is kept, so
  * the framework's server layer is not taken. Five and six say the price is real
