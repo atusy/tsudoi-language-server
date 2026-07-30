@@ -32,10 +32,14 @@ export interface TsudoiRuntime {
    * named while believing it declared no capabilities at all. Here that is
    * unrepresentable rather than merely unlikely.
    *
-   * `| null` IS THE WIRE SHAPE, for the reason `WorkspaceFoldersHandle`
-   * describes at length: JSON-RPC lets any client send `"params": null`, and the
-   * declared `InitializeParams` describes a CONFORMING client rather than the
-   * bytes that arrive.
+   * `| null` IS UNREACHABLE AND IS KEPT ANYWAY, WHICH IS A SCOPE FACT AND NOT A
+   * READING OF THE PROTOCOL. It is NOT that a client may send `"params": null`:
+   * JSON-RPC 2.0 makes `params` a `Structured value` -- `an Array` or `an
+   * Object` where present -- so `null` is malformed, and the `initialize`
+   * boundary in src/server.ts refuses it -32602 before anything reaches here.
+   * What the arm survives on is that `WorkspaceFoldersHandle.initialize`
+   * declares it too: narrowing this alone would contradict a module this one
+   * does not own, and the two must be narrowed together or not at all.
    */
   readonly handshake: (
     params: Pick<
