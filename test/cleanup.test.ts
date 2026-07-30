@@ -20,11 +20,13 @@ import {
   cleanupFinished,
   returnedItems as hangsReturnedItems,
 } from "./fixtures/completion-cleanup-hangs.ts";
+import { cleanupMarker as nonArrayCleanupMarker } from "./fixtures/completion-yields-non-array.ts";
 
 const completionCleanup = fixture("completion-cleanup.ts");
 const cleanupThrows = fixture("completion-cleanup-throws.ts");
 const cleanupHangs = fixture("completion-cleanup-hangs.ts");
 const unhandledRejection = fixture("completion-unhandled-rejection.ts");
+const yieldsNonArray = fixture("completion-yields-non-array.ts");
 
 /**
  * The line a config author is meant to act on -- the PREFIX tsudoi composes,
@@ -39,6 +41,12 @@ const cleanupFailureLine = "tsudoi: textDocument/completion cleanup failed:";
  * another of the library's error codes would still compile.
  */
 const requestCancelled = -32800;
+
+/**
+ * JSON-RPC's InternalError, which is what vscode-jsonrpc answers a request whose
+ * handler threw. Written out for the same reason as the constant above.
+ */
+const internalError = -32603;
 
 /** A client that wants partial results names a token; one that does not omits it. */
 const streamingToken = "cleanup-partial-1";
@@ -155,6 +163,61 @@ for (const runtime of runtimes) {
           // Re-read after exit: a chunk sent late is still a chunk sent, and an
           // aggregating request must never have produced one.
           expect(session.progressCount).toBe(0);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    /**
+     * CANCELLATION IS NOT THE ONLY WAY OUT OF THAT LOOP, and it was the only one
+     * that closed the generator.
+     *
+     * The drive's loop has exits the two tests above do not reach, and two of
+     * them are EXCEPTIONS THROWN WHILE THE GENERATOR IS PARKED AT ITS YIELD:
+     * spreading a batch that is not an array, and a `sendProgress` that rejects
+     * once the connection is Closed -- the editor died mid-stream. Either
+     * propagates out of the drive, and with the close reachable only from the
+     * abort branch the generator was never touched again: the author's `finally`
+     * NEVER RAN, on a path where the handler is holding whatever it opened.
+     *
+     * THE EDITOR-DEATH ARM IS THE ONE THAT COSTS, and this test is not it: it
+     * needs a dead connection to provoke, and it leaves the drive at the same
+     * point this does. What makes THIS arm the one worth a fixture is that a
+     * plain client reaches it with no editor death at all -- no
+     * `partialResultToken`, one mistyped batch, and nothing in tsudoi or in
+     * either runtime checks the payload.
+     *
+     * BOTH HALVES ARE ASSERTED AND NEITHER ALONE WOULD DO. The error response
+     * says the handler really did throw with the generator suspended, so the
+     * marker is evidence about an ABANDONED generator rather than one that ran
+     * to completion; the marker says the abandonment closed it. A test asserting
+     * only the marker would pass against a fixture that simply finished.
+     */
+    test(
+      "a completion abandoned by a THROW is closed too, so the handler's finally runs",
+      async () => {
+        const session = LspSession.start(runtime, yieldsNonArray);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const failure = await session.requestError(
+            "textDocument/completion",
+            completionParams(undefined),
+          );
+          expect(failure.code).toBe(internalError);
+
+          await session.waitForStderr(nonArrayCleanupMarker, 1000);
+
+          // The session goes on to shut down cleanly: a close fired on this path
+          // must no more take the process down than one fired on the abort path.
+          expect(await session.request<null>("shutdown", null)).toBeNull();
+          session.notify("exit", null);
+          expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();

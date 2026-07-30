@@ -848,83 +848,128 @@ async function driveStream(run: {
     // them and telling every user there are no candidates.
     let yielded = false;
     const batches = handler(context, run.params);
-    for (;;) {
-      const next = await batches.next();
-      if (next.done === true) {
-        // THE RETURN CARRIES NOTHING AND IS NOT READ. `next.value` is `void`
-        // here by the published type, so a handler has no second entrance for
-        // content and this drive has no second thing to interpret.
-        return yielded && token === undefined ? collected : null;
+    // CLOSING THE GENERATOR IS WHAT RUNS THE CONFIG AUTHOR'S `finally`, and it
+    // is a local rather than an inline call because the loop below has SEVERAL
+    // ways out and all but one of them owe it. It is fired from the `finally`
+    // around that loop, so this is the one statement of how, and the branches
+    // are statements of when.
+    //
+    // FIRED, NEVER AWAITED, and the rejection handler is not optional.
+    // Measured on both runtimes: a `finally` that never settles leaves this
+    // promise pending forever, so awaiting it would mean the answer the client
+    // is waiting for is never sent at all -- and a `finally` that throws
+    // rejects it, which unhandled kills the process. That one handler does both
+    // jobs: it is how a throwing cleanup gets reported, and it is what stops
+    // the same rejection being fatal. Drop it and both halves fail together.
+    //
+    // What no arrangement of this can do: a generator parked inside its own
+    // `await` queues return() behind the pending next(), so its cleanup runs
+    // only when that settles. A limit of async generators, not a defect here.
+    //
+    // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one record
+    // of why. When the author's `finally` itself yields, the `return()` below
+    // resolves `{ value, done: false }` on both runtimes -- the return
+    // completion is suspended by that yield. CONSEQUENCE: the generator stays
+    // parked INSIDE its own finally and every statement after that yield -- the
+    // rest of their cleanup -- never runs, silently, on every superseded
+    // keystroke. `done === false` right here is the evidence tsudoi could
+    // report.
+    //
+    // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE SEMANTICS
+    // rather than tsudoi doing something wrong. `for await (...) { break }` over
+    // the same generator leaves it in exactly this state. tsudoi calls
+    // .return() correctly; the author's own cleanup defers itself, so reporting
+    // it would be reporting JavaScript.
+    //
+    // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN OVERSIGHT.
+    // THE PUBLISHED TYPE IS AN `AsyncGenerator`, which REQUIRES `return`, so
+    // narrowing to `AsyncIterator` -- whose `return` is OPTIONAL -- would widen
+    // a guarantee away by hand and then guard against the absence it had just
+    // manufactured. This repository prefers FORECLOSING a failure to DETECTING
+    // one, and the type forecloses this one.
+    const close = (): void => {
+      batches.return().then(undefined, (error: unknown) => {
+        reportCleanupFailure(run.method, error);
+      });
+    };
+    // WHETHER THE GENERATOR ENDED ON ITS OWN, and the only thing the `finally`
+    // below reads. `.return()` on a COMPLETED generator is a no-op that runs no
+    // cleanup, so this skip is an OPTIMISATION AND NOT A REQUIREMENT: an edit
+    // that dropped the flag and closed unconditionally would be correct, merely
+    // wasteful. Nothing may come to depend on the skip.
+    let completed = false;
+    // A `finally` AROUND THE WHOLE LOOP, because ABORT IS NOT THE ONLY WAY OUT
+    // OF IT and until Sprint 46 the close was reachable from that branch alone.
+    // The other exits are EXCEPTIONS THROWN WHILE THE GENERATOR IS SUSPENDED AT
+    // ITS YIELD: `collected.push(...next.value)` raises a TypeError when a batch
+    // is not iterable -- NOTHING VALIDATES THAT ANYWHERE, since config.ts checks
+    // only the resolve/completion pair and both runtimes strip types without
+    // checking them -- and `sendProgress` rejects once the connection is Closed,
+    // which is what an editor dying mid-stream looks like from here. Both
+    // propagate out of this closure, and with no `finally` the generator was
+    // never touched again: the author's cleanup NEVER RAN.
+    //
+    // THE EDITOR-DEATH ARM IS THE ONE THAT COSTS. A handler holding a child
+    // process or a lock file loses exactly the release that mattered, and THE
+    // SAME UNRELEASED HANDLE KEEPS THE EVENT LOOP ALIVE -- which is the orphaned
+    // server src/server.ts treats as a correctness requirement rather than an
+    // untidiness.
+    //
+    // A `finally` AND NOT A `catch`: this drive has nothing to say about the
+    // exception, which belongs to answerUnlessCancelled's own reporting one
+    // level up. Catching here would either swallow a handler failure or oblige
+    // this code to rethrow it in the right shape.
+    try {
+      for (;;) {
+        const next = await batches.next();
+        if (next.done === true) {
+          // THE RETURN CARRIES NOTHING AND IS NOT READ. `next.value` is `void`
+          // here by the published type, so a handler has no second entrance for
+          // content and this drive has no second thing to interpret.
+          completed = true;
+          return yielded && token === undefined ? collected : null;
+        }
+        // Checked HERE, between pulling a batch and sending it: the abort
+        // typically lands while `next()` is parked, so a check at the top of
+        // the loop would already have passed and this batch would go out to
+        // a client that has stopped listening. Returning also stops driving
+        // the generator, which is the point of cancelling at all. The value
+        // is discarded either way -- the answer is already -32800.
+        //
+        // AND IT COVERS THE FIRST BATCH TOO, which is not incidental:
+        // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
+        // dispatch, so a first batch sent without passing this check goes out to
+        // a client that never wanted it. The first batch is an ordinary
+        // iteration of this loop, and `a completion cancelled before it is
+        // dispatched ... streams nothing` in test/cancellation.test.ts is what
+        // watches it.
+        if (context.signal.aborted) {
+          // Returning stops DRIVING the generator; the `finally` below is what
+          // closes it, and closing it is what runs the config author's
+          // `finally`. Without that close the generator is left suspended at its
+          // yield forever, and cleanup nobody can watch succeed is silently
+          // skipped on every superseded keystroke.
+          //
+          // NOTHING IS CLOSED ON THIS LINE ANY MORE, and the reason is that this
+          // branch turned out not to be the only exit that owed a close -- see
+          // the `try` above. A close fired here AND from the `finally` would
+          // report one throwing cleanup twice.
+          //
+          // The close stays above the mode split, where this check already is:
+          // whether the request streamed or aggregated says what the CLIENT can
+          // take and nothing about what the HANDLER holds open.
+          return null;
+        }
+        yielded = true;
+        if (token === undefined) {
+          collected.push(...next.value);
+        } else {
+          await run.connection.sendProgress(progress, token, next.value);
+        }
       }
-      // Checked HERE, between pulling a batch and sending it: the abort
-      // typically lands while `next()` is parked, so a check at the top of
-      // the loop would already have passed and this batch would go out to
-      // a client that has stopped listening. Returning also stops driving
-      // the generator, which is the point of cancelling at all. The value
-      // is discarded either way -- the answer is already -32800.
-      //
-      // AND IT COVERS THE FIRST BATCH TOO, which is not incidental:
-      // vscode-jsonrpc calls the handler even for a request cancelled BEFORE
-      // dispatch, so a first batch sent without passing this check goes out to a
-      // client that never wanted it. The first batch is an ordinary iteration of
-      // this loop, and `a completion cancelled before it is dispatched ...
-      // streams nothing` in test/cancellation.test.ts is what watches it.
-      if (context.signal.aborted) {
-        // Returning stops DRIVING the generator; closing it is what runs
-        // the config author's `finally`. Without this the generator is left
-        // suspended at its yield forever, and cleanup nobody can watch
-        // succeed is silently skipped on every superseded keystroke.
-        //
-        // Above the mode split, where the abort check already is: whether
-        // this request streamed or aggregated says what the CLIENT can take
-        // and nothing about what the HANDLER holds open.
-        //
-        // FIRED, NEVER AWAITED, and the rejection handler is not optional.
-        // Measured on both runtimes: a `finally` that never settles leaves
-        // this promise pending forever, so awaiting it would mean the
-        // -32800 the client is waiting for is never sent at all -- and a
-        // `finally` that throws rejects it, which unhandled kills the
-        // process. That one handler does both jobs: it is how a throwing
-        // cleanup gets reported, and it is what stops the same rejection
-        // being fatal. Drop it and both halves fail together.
-        //
-        // What no arrangement of this can do: a generator parked inside its
-        // own `await` queues return() behind the pending next(), so its
-        // cleanup runs only when that settles. A limit of async generators,
-        // not a defect here.
-        //
-        // THE ITERATOR RESULT IS DISCARDED ON PURPOSE, and this is the one
-        // record of why. When the author's `finally` itself yields, the
-        // `return()` below resolves `{ value, done: false }` on both runtimes --
-        // the return completion is suspended by that yield. CONSEQUENCE: the
-        // generator stays parked INSIDE its own finally and every statement
-        // after that yield -- the rest of their cleanup -- never runs, silently,
-        // on every superseded keystroke. `done === false` right here is the
-        // evidence tsudoi could report.
-        //
-        // NOT HANDLED, and NOT because it is invisible: it is LANGUAGE
-        // SEMANTICS rather than tsudoi doing something wrong. `for await (...) {
-        // break }` over the same generator leaves it in exactly this state.
-        // tsudoi calls .return() correctly; the author's own cleanup defers
-        // itself, so reporting it would be reporting JavaScript.
-        //
-        // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN
-        // OVERSIGHT. THE PUBLISHED TYPE IS AN `AsyncGenerator`, which REQUIRES
-        // `return`, so narrowing to `AsyncIterator` -- whose `return` is
-        // OPTIONAL -- would widen a guarantee away by hand and then guard
-        // against the absence it had just manufactured. This repository prefers
-        // FORECLOSING a failure to DETECTING one, and the type forecloses this
-        // one.
-        batches.return().then(undefined, (error: unknown) => {
-          reportCleanupFailure(run.method, error);
-        });
-        return null;
-      }
-      yielded = true;
-      if (token === undefined) {
-        collected.push(...next.value);
-      } else {
-        await run.connection.sendProgress(progress, token, next.value);
+    } finally {
+      if (!completed) {
+        close();
       }
     }
   });
