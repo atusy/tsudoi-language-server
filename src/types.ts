@@ -259,6 +259,14 @@ export interface RequestContext {
    * and yield none rather than let it out, and it should carry the client's own
    * bytes into `uri` rather than a round trip through the URL parser, since
    * `workspace/didChangeWorkspaceFolders` matches URIs as exact strings.
+   *
+   * NOTHING IN THE SUITE ASSERTS THIS PARAGRAPH, and saying so is what makes
+   * declining a test a decision rather than an oversight. tsudoi never converts
+   * this field, so there is no tsudoi behaviour to pin -- the hazard is real only
+   * inside a handler that converts it, and no such handler ships here. DEFENDED BY
+   * PROSE, UNDEFENDED BY THE SUITE, and deliberately not Sprint 40's `detected on
+   * the rest`: that ruling's bypass route carried a rot detector and this carries
+   * nothing at all.
    */
   readonly rootUri: string | null;
   /**
