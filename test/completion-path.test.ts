@@ -84,7 +84,11 @@ async function complete(
       // The module reads them itself, so a `Tsudoi` missing any of the three is
       // not one a handler can be given -- which is what makes this literal fail
       // to compile rather than silently model an impossible session.
-      workspaceFolders: [],
+      // A STORE THAT HOLDS NOTHING, WRITTEN OUT RATHER THAN STOOD IN FOR BY AN
+      // ARRAY: an array answers `values()` and would satisfy a store missing its
+      // lookup, so spelling both members is what keeps this literal modelling
+      // the surface a handler is actually handed.
+      workspaceFolders: { get: () => undefined, values: () => [] },
       rootUri: null,
       rootPath: null,
       // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole

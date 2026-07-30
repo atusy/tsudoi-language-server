@@ -53,6 +53,45 @@ export interface DocumentStore {
  */
 export interface WorkspaceFolderStore {
   /**
+   * THE FOLDER A URI BELONGS TO -- the INNERMOST one the client holds that
+   * covers it -- or `undefined` where it holds none.
+   *
+   * FOUND BY WALKING UP FROM `uri` BY DIRNAME AND TAKING THE FIRST EXACT MATCH,
+   * which is worth knowing because it is what the answer MEANS: nothing but
+   * exact string equality is ever used, so this asks the same question of a
+   * folder uri that the mirror does and never a looser one. Two things fall out
+   * of that and can be relied on:
+   *
+   *   - `file:///home/me/proj` CANNOT ANSWER FOR a document in
+   *     `file:///home/me/project`, though it is a string prefix of it. The
+   *     ancestor the walk produces is `…/project`, which is not `…/proj`.
+   *   - NESTED FOLDERS RESOLVE TO THE INNERMOST, because the walk goes
+   *     inward-out and stops at the first level that answers. Mirror order
+   *     decides only between folders AT THE SAME LEVEL.
+   *
+   * A FOLDER IS FOUND WHETHER OR NOT IT WAS SENT WITH A TRAILING SLASH, and so
+   * is one you ask about with one: both spellings are probed at every level, and
+   * neither the uri you pass nor the uri the client sent is rewritten to make
+   * them meet.
+   *
+   * WHERE TWO FOLDERS SIT AT ONE LEVEL -- a uri the client sent TWICE, or both
+   * spellings of one directory, both of which this mirror keeps -- THE FIRST IN
+   * MIRROR ORDER answers. That is the client's order, not a preference of this
+   * lookup's, and nothing may rely on which of the two a client meant.
+   *
+   * NOTHING YOU CAN PASS THROWS. The `untitled:Untitled-1` of an unsaved buffer,
+   * a uri carrying a query or a fragment, the empty string, a string that is not
+   * a URI at all: a uri no folder covers is what `undefined` is for, and a
+   * config author should not have to defend the call to find that out.
+   *
+   * WHAT IT DOES NOT ASK IS THE FILESYSTEM. This answers about the LIST the
+   * client sent, so a folder that does not exist on disk answers for the
+   * documents under it, and a symlink or a `..` in either uri is text like any
+   * other -- two spellings of one directory are two folders here, as they are
+   * everywhere else on this surface.
+   */
+  get(uri: string): WorkspaceFolder | undefined;
+  /**
    * EXACTLY WHAT THE CLIENT SENT, IN MIRROR ORDER, with nothing dropped, nothing
    * synthesised and nothing reordered.
    *

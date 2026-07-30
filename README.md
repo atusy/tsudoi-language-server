@@ -230,6 +230,13 @@ the request:
 | `rootUri`, `rootPath` | the deprecated roots, as the client spelled them, or `null`          |
 | `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
 
+`workspaceFolders` answers two questions. `values()` yields every folder the client holds, in the
+order it sent them; `get(uri)` answers with the INNERMOST folder covering that uri, or `undefined`
+where the client holds none. `get` walks up from the uri by dirname and matches EXACTLY, so
+`file:///home/me/proj` never answers for a document in `file:///home/me/project`, a folder held
+with or without a trailing slash is found either way, and nothing you can pass throws -- the
+`untitled:` uri of an unsaved buffer included.
+
 **Everything reached through `context.tsudoi` is live.** It is one object for the whole session,
 so a handler that reads a member, awaits, and reads it again may read two different things -- the
 folder list moves when the user adds a folder, and a document is mutated in place as the user

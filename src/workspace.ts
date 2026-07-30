@@ -78,6 +78,67 @@ export interface WorkspaceFoldersHandle {
   change(event: WorkspaceFoldersChangeEvent): void;
 }
 
+/**
+ * Every uri a folder could be HELD UNDER for `uri`, innermost first: `uri`
+ * itself, then each parent by URI dirname, ending at `<scheme>://<authority>/`.
+ *
+ * A URI DIRNAME IS NOT A PATH DIRNAME, and that difference is the whole of this
+ * function. Cutting at the last `/` and stopping at nothing walks `file:///` ->
+ * `file://` -> `file:/` -- an EMPTY AUTHORITY and then a scheme-relative path,
+ * two things no client ever meant -- and on a uri that is all slashes it does
+ * not terminate at all. The authority ends at the first `/` after `://`, which
+ * is RFC 3986's own boundary, and nothing below it is produced.
+ *
+ * `URL` IS NOT USED HERE, AND IT WAS MEASURED BEFORE IT WAS REFUSED.
+ * `new URL(".", uri)` DOES find the boundary correctly -- a fixed point at
+ * `file:///`, `file://host/` for a non-empty authority -- but every ancestor it
+ * hands back has been NORMALISED, and this surface compares uris as THE CLIENT'S
+ * OWN BYTES. Identical under bun 1.3.13 and deno 2.9.2:
+ *
+ *   new URL(".", "file://LOCALHOST/a/b") -> "file:///a/"    the host, dropped
+ *   new URL(".", "FILE:///Home/a.ts")    -> "file:///Home/" the scheme, recased
+ *   new URL(".", "file:///a/../a/b.ts")  -> "file:///a/"    the dots, resolved
+ *   new URL(".", "untitled:Untitled-1")  -> throws
+ *
+ * An ancestor built through that can FAIL TO EQUAL a folder the client is
+ * holding, which is the failure `MATCHED AS A STRING, EXACTLY` exists to
+ * prevent. NOR CAN IT BE USED FOR THE BOUNDARY ALONE with the slicing done here:
+ * `new URL("file://LOCALHOST/a/b").host` is `""`, so the parse discards what it
+ * normalised away and hands back no offset into the bytes that arrived.
+ */
+function* ancestors(uri: string): Generator<string> {
+  // THE URI ITSELF IS THE FIRST CANDIDATE, so a folder's own uri answers with
+  // that folder and a client holding a uri under any scheme is found under it.
+  yield uri;
+  const authority = uri.indexOf("://");
+  if (authority === -1) {
+    // NO AUTHORITY MARKER, NO WALK. `untitled:Untitled-1` is what an editor
+    // sends for a buffer the user has not saved, and it names no hierarchy to
+    // climb. WHAT IT COSTS, stated rather than glossed: `file:/home` -- the
+    // legal single-slash spelling -- is not walked either, so a client holding
+    // it as a folder is not found for a document under it. Locating a root in a
+    // path with no authority would mean deciding what the scheme means, which is
+    // the one thing this file does not do to a client's bytes.
+    return;
+  }
+  const rootEnd = uri.indexOf("/", authority + 3);
+  if (rootEnd === -1) {
+    // AN AUTHORITY AND NO PATH -- `file://`, `scheme://host` -- has nothing
+    // above it. A uri whose authority is terminated by `?` or `#` instead of `/`
+    // lands here too, and it likewise names no folder to walk out of.
+    return;
+  }
+  let current = uri;
+  // THE BOUND IS `rootEnd + 1`, THE LENGTH OF `<scheme>://<authority>/`, and
+  // that is what makes this terminate: every pass shortens `current`, and the
+  // pass that would cut INTO the authority yields that prefix and stops.
+  while (current.length > rootEnd + 1) {
+    const cut = current.lastIndexOf("/");
+    current = cut <= rootEnd ? uri.slice(0, rootEnd + 1) : current.slice(0, cut);
+    yield current;
+  }
+}
+
 export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   let folders: readonly WorkspaceFolder[] = [];
   let roots: Pick<Tsudoi, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
@@ -88,7 +149,50 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
     // into it, so what one call hands back is the list as of that call and can
     // be iterated again later. Copying here would answer the same question at
     // the cost of saying nothing about the moment.
-    folders: { values: (): Iterable<WorkspaceFolder> => folders },
+    folders: {
+      get(uri: string): WorkspaceFolder | undefined {
+        for (const ancestor of ancestors(uri)) {
+          // BOTH SPELLINGS PROBED AT THE COMPARISON, AND NEITHER SIDE REWRITTEN
+          // TO A KEY. Stripping trailing slashes to index the mirror looks like
+          // the same thing done once instead of per level, and it is not, on
+          // three counts.
+          //
+          // `file:///` IS THE ONE FOLDER URI THAT CANNOT BE WRITTEN WITHOUT ITS
+          // TRAILING SLASH: stripped, it is `file://`, which says EMPTY
+          // AUTHORITY and means something else. Probing both forms needs no
+          // special case for it.
+          //
+          // WHAT IS COMPARED STAYS THE CLIENT'S BYTES. A client legitimately
+          // holding BOTH `…/plain` and `…/plain/` -- nvim accepts them as two
+          // folders -- keeps two entries here, where one stripped key would
+          // collapse them and silently drop the folder it did not keep.
+          //
+          // AND FIRST IN MIRROR ORDER IS NOT A NEW RULE, it is the one the
+          // absent duplicate guard already forces, reused: `a` and `a + "/"` are
+          // equally specific, so no tie-break has to be invented for the level
+          // that holds both. A key looked up in a fixed order would answer with
+          // whichever spelling the lookup preferred rather than whichever the
+          // client listed first.
+          //
+          // WHAT IT COSTS is a scan of the mirror per level rather than a hash
+          // lookup, on a list an editor keeps in single digits and which is
+          // REPLACED on every change -- an index would be rebuilt about as often
+          // as it was read.
+          //
+          // A NON-CONFORMING ENTRY ANSWERS FOR NOTHING AND THROWS ON NOTHING:
+          // `initialize` mirrors `[5]` through as it arrived, and `(5).uri` is
+          // `undefined`, which no ancestor equals.
+          const held = folders.find(
+            (folder) => folder.uri === ancestor || folder.uri === `${ancestor}/`,
+          );
+          if (held !== undefined) {
+            return held;
+          }
+        }
+        return undefined;
+      },
+      values: (): Iterable<WorkspaceFolder> => folders,
+    },
 
     roots: (): Pick<Tsudoi, "rootUri" | "rootPath"> => roots,
 
