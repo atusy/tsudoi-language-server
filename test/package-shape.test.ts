@@ -129,8 +129,11 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  *   test/installed-runtime.test.ts, with the pair that drops it.
  * - `default` -> src/types.ts is the IN-REPO FALLBACK and is reached only
  *   because tsc falls through a condition whose target file is missing. That
- *   fall-through is what lets `tsc --noEmit` stay green in a checkout that has
- *   never run a build; repointing this subpath at dist/ unconditionally was
+ *   fall-through NO LONGER serves `tsc --noEmit`: since PBI-48 a `paths`
+ *   mapping intercepts the subpath before the exports map is consulted, so
+ *   this arm's tsc consumer is gone. MEASURED that it still has others --
+ *   removing every `default` arm leaves tsc at exit 0 and reddens FOUR tests.
+ *   Repointing this subpath at dist/ unconditionally was
  *   measured to break examples/tsudoi.config.ts and
  *   test/fixtures/published-specifier.ts with TS2307.
  *
