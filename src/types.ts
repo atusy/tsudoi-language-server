@@ -47,7 +47,13 @@ export interface DocumentStore {
  * as a lookup by key is the mistake to avoid: a document is stored UNDER its
  * uri, while a folder is asked about a uri it CONTAINS. `documents.get(uri)` and
  * `workspaceFolders.get(uri)` for one document uri answer about that buffer and
- * about the project it sits in.
+ * about the folders the client holds over it.
+ *
+ * WHICH IS ALSO WHY THEIR RETURN SHAPES DIFFER, and the asymmetry is deliberate
+ * rather than an inconsistency: one buffer either is open or is not, so
+ * `undefined` is that `no`. A uri may be covered by NO folder or by SEVERAL the
+ * client spelled differently, so this one hands back a list -- see `get` below
+ * for what the plural means and why choosing among them is refused.
  *
  * AN `Iterable` AND NEVER A `Set`, which is the shape that looks right and is
  * not. The mirror MAY HOLD ONE URI TWICE -- deliberately, for the reason at

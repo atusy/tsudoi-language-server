@@ -161,6 +161,19 @@ const lookups: readonly Lookup[] = [
     expected: ["slashed", "bare"],
   },
   {
+    // AND THE SAME PAIR ASKED ABOUT BY THE BARE FOLDER URI ITSELF, which is the
+    // one shape where the two spellings can be told apart WITHOUT the walk: it
+    // is answered at the level where the uri is its own candidate, and that level
+    // must put it in the same form as everything else. Compare the uri raw there
+    // and only the entry spelled the same way answers -- one folder out of two,
+    // chosen by a spelling rather than by the client, which is exactly the pick
+    // this lookup refuses to make.
+    name: "both spellings answer for the bare folder uri, not the one spelled the same way",
+    folders: [folder("file:///home/me/plain", "bare"), folder("file:///home/me/plain/", "slashed")],
+    uri: "file:///home/me/plain",
+    expected: ["bare", "slashed"],
+  },
+  {
     // THE DUPLICATE THE MIRROR DELIBERATELY KEEPS. Two entries, one uri, and the
     // lookup hands back both rather than picking the one the client is presumed
     // to have meant.
@@ -252,14 +265,17 @@ const lookups: readonly Lookup[] = [
     expected: ["project"],
   },
   {
-    // THE NON-CONFORMING ENTRY THE MIRROR PASSES THROUGH. `initialize` writes
-    // `[5]` down as it arrived, and the index is built from the same list, so
-    // this row says the build reads `uri` off it without throwing and without
-    // taking the neighbouring folder's answer away. The build runs inside
-    // `initialize`, whose handler answers -32603 on a throw and leaves the author
-    // an editor with no server.
+    // THE NON-CONFORMING ENTRIES THE MIRROR PASSES THROUGH. `Array.isArray` is
+    // all that guards the list, so `5` and `null` both arrive written down as
+    // they were sent, and the index is built from that same list -- this row
+    // says the build reads `uri` off either without throwing and without taking
+    // the neighbouring folder's answer away. BOTH SPELLINGS, because they fail
+    // differently: reading a property off `5` yields `undefined`, and reading one
+    // off `null` throws. The build runs inside `initialize`, whose handler
+    // answers the whole handshake -32603 on a throw and leaves the author an
+    // editor with no server and an LSP log with no reason.
     name: "an entry that is not a folder at all does not cost the other folders their answers",
-    folders: [5 as unknown as WorkspaceFolder, project],
+    folders: [5 as unknown as WorkspaceFolder, null as unknown as WorkspaceFolder, project],
     uri: "file:///home/me/project/a.ts",
     expected: ["project"],
   },

@@ -203,7 +203,9 @@ function* locations(uri: string): Generator<string> {
  * `Array.isArray` is all that guards the mirror -- so `uri` is read off through
  * `locationOf`, which is total.
  */
-function indexOf(folders: readonly WorkspaceFolder[]): ReadonlyMap<string, WorkspaceFolder[]> {
+function locationIndex(
+  folders: readonly WorkspaceFolder[],
+): ReadonlyMap<string, WorkspaceFolder[]> {
   const index = new Map<string, WorkspaceFolder[]>();
   for (const folder of folders) {
     const location = locationOf((folder as { readonly uri?: unknown } | null | undefined)?.uri);
@@ -239,7 +241,7 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
    */
   function mirror(next: readonly WorkspaceFolder[]): void {
     folders = next;
-    index = indexOf(next);
+    index = locationIndex(next);
   }
 
   return {
