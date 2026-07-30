@@ -193,9 +193,11 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // REMOVED FIRST, THEN ADDED, where LSP specifies no order. A client
       // spelling a rename as one event -- the same URI in both arms -- ends
       // HOLDING the folder, which is visible if wrong; the other order ends
-      // holding nothing, which is silent. NOTHING ASSERTS THIS ORDER: no test
-      // sends the same URI in both arms, so swapping these two lines is a silent
-      // change.
+      // holding nothing, which is silent. SWAPPING THESE TWO LINES IS NOT A
+      // SILENT CHANGE: `one event removing and adding the same URI ends holding
+      // the folder` in test/workspace.test.ts sends that shape from a list that
+      // does NOT already hold the URI, which is the only construction the two
+      // orders disagree on, and it reddens under the flip.
       //
       // ONE COPY PER `removed` ENTRY -- a loop taking the first match, not a
       // filter over a Set. N entries remove N copies, mirroring what the client
