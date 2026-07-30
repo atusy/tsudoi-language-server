@@ -6,7 +6,7 @@ import {
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { message } from "./fixtures/diagnostic-offsets.ts";
@@ -198,7 +198,7 @@ for (const runtime of runtimes) {
             diagnosticParams(),
           ),
         ).toBe(null);
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);

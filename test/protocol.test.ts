@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { CompletionItem, Hover, InitializeResult } from "vscode-languageserver-protocol";
 import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
 import { fixedHover } from "./fixtures/hover-fixed.ts";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -235,7 +235,7 @@ for (const runtime of runtimes) {
           didOpen(session, "こんにちは");
           // The document IS open, so a server that simply served the request
           // would answer a real Hover here -- the failure mode being refused.
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
 
           const error = await session.requestError("textDocument/hover", hoverParams(0, 0));
           expect(error.code).toBe(-32600);
@@ -277,7 +277,7 @@ for (const runtime of runtimes) {
           // fixture reports UNPRIMED rather than an empty store, which is what
           // stops the assertion below passing for the wrong reason.
           await session.request<null>("textDocument/hover", hoverParams(0, 0));
-          await session.request<null>("shutdown", null);
+          await session.request<null>("shutdown", noParams);
           // WELL-FORMED, and after shutdown: the handler would succeed if it
           // ran, so an empty store means the notification was dropped rather
           // than that it failed.
@@ -314,14 +314,14 @@ for (const runtime of runtimes) {
           // Malformed on purpose, BEFORE shutdown, so the handler is reached
           // and throws for real rather than by an injected fault.
           noisy.notify("textDocument/didOpen", {});
-          await noisy.request<null>("shutdown", null);
+          await noisy.request<null>("shutdown", noParams);
           noisy.notify("exit", null);
           expect(await noisy.waitForExit()).toBe(0);
           expect(tsudoiLines(noisy).join("\n")).toContain("textDocument/didOpen");
 
           await quiet.request("initialize", initializeParams);
           quiet.notify("initialized", {});
-          await quiet.request<null>("shutdown", null);
+          await quiet.request<null>("shutdown", noParams);
           didOpen(quiet, "こんにちは");
           quiet.notify("exit", null);
           expect(await quiet.waitForExit()).toBe(0);
@@ -353,7 +353,7 @@ for (const runtime of runtimes) {
           // before this ran, so an empty store here is the drop rather than a
           // fixture that was never handed anything.
           await session.request<null>("textDocument/hover", hoverParams(0, 0));
-          await session.request<null>("shutdown", null);
+          await session.request<null>("shutdown", noParams);
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
 

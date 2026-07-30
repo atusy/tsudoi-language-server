@@ -10,7 +10,7 @@ import {
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -259,7 +259,7 @@ for (const runtime of runtimes) {
         // still floods a client that never asked for partial results.
         expect(session.progressCount).toBe(0);
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         // Re-read after exit: progress sent AFTER the response is still
@@ -532,7 +532,7 @@ for (const runtime of runtimes) {
         });
         expect(second).toBeNull();
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 

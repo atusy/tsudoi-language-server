@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -132,7 +132,7 @@ for (const runtime of runtimes) {
           // about -- trading a silent leak for a louder protocol violation.
           expect(session.progressCount).toBe(1);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           // Re-read after exit: a chunk sent late is still a chunk sent.
@@ -199,7 +199,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -259,7 +259,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);

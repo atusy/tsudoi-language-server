@@ -7,7 +7,7 @@ import {
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixedHover } from "./fixtures/hover-fixed.ts";
 import { recoveredHover as rejectsRecovered, rejectMessage } from "./fixtures/hover-rejects.ts";
@@ -145,7 +145,7 @@ for (const runtime of runtimes) {
         expect(await session.request<Hover | null>("textDocument/hover", hoverParams(2, 4))).toBe(
           null,
         );
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
@@ -180,7 +180,7 @@ for (const runtime of runtimes) {
           );
           expect(second).toEqual(recovered);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
 
@@ -262,7 +262,7 @@ for (const runtime of runtimes) {
         // distinguishes a caught miss from a handler that died quietly.
         expect(session.stderr).toBe("");
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);
@@ -310,7 +310,7 @@ for (const runtime of runtimes) {
         expect(contents.value).not.toContain("*");
         expect(contents.value).not.toContain("---");
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);

@@ -6,7 +6,7 @@ import {
   TextDocumentSyncKind,
   type TextEdit,
 } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { fixedEdits } from "./fixtures/formatting-fixed.ts";
@@ -190,7 +190,7 @@ for (const runtime of runtimes) {
         expect(
           await session.request<TextEdit[] | null>("textDocument/formatting", formattingParams()),
         ).toBe(null);
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);

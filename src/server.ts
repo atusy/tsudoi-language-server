@@ -260,10 +260,65 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.
-  connection.onRequest(ShutdownRequest.type, (): void => {
+  //
+  // A REST PARAMETER AND NOT A ZERO-ARGUMENT CALLBACK, AND THAT IS THE WHOLE OF
+  // WHAT LETS THIS REFUSE ANYTHING. `shutdown`'s LSP signature takes no params,
+  // so a callback declaring none reads as exactly right and SILENTLY ACCEPTS
+  // every malformed spelling -- a `"params": null` shutdown would move the phase
+  // permanently, in a repository that refuses `null` at the router's prologue and
+  // at the `initialize` boundary alike, on the grounds that JSON-RPC 2.0 requires
+  // a present `params` to be a Structured value.
+  //
+  // WHAT THE LIBRARY HANDS THIS HANDLER, MEASURED ON BOTH RUNTIMES (bun 1.3.13,
+  // deno 2.9.2) rather than read off the types, because the arity IS the
+  // discriminator:
+  //
+  // - params OMITTED: the cancellation token ALONE. `ShutdownRequest.type`
+  //   declares zero params, which clears vscode-jsonrpc's own arity check, so
+  //   nothing is prepended;
+  // - params by NAME, or `null`, or a primitive: the value, THEN the token;
+  // - params by POSITION: one argument PER ELEMENT, then the token.
+  //
+  // So `args.length > 1` is `the client supplied something`, and it is the only
+  // question this handler can ask -- a typed registration never sees the raw
+  // `params` value.
+  //
+  // THE ONE SHAPE IT CANNOT SEE IS `"params": []`, WHICH PROCEEDS. Spreading an
+  // empty array prepends nothing, so it arrives identical to an omission -- and
+  // that is the right answer rather than a leak: an empty by-position list is the
+  // by-position spelling of `no arguments`, which is what `shutdown` accepts.
+  // WHAT WOULD SEE IT is vscode-jsonrpc's STAR handler, which is handed the RAW
+  // `params` and so tells `undefined`, `null` and `[]` apart exactly. DECLINED,
+  // because reaching it means NOT REGISTERING `shutdown` AT ALL -- a registered
+  // handler always wins the dispatch -- which trades `ShutdownRequest.type`'s
+  // typing, and a method-agnostic handler's generality, for one shape that
+  // already gets the answer it should.
+  //
+  // THE PHASE IS CONSULTED FIRST, exactly as the router's prologue in
+  // src/methods.ts and the `initialize` boundary above both do: a server that has
+  // not been initialized has no shutdown to refuse the params of, and -32002 tells
+  // a client to send `initialize` where -32602 would send it hunting a field that
+  // was never the reason.
+  //
+  // AND THE REFUSAL IS THROWN BEFORE shutDown(), which is the half a refusal
+  // alone would not deliver. A phase moved and THEN refused leaves the client
+  // holding a shutdown it may not repeat: its corrected `shutdown` meets the
+  // shutdown phase and is answered -32600, so one malformed message would cost
+  // the session rather than the message.
+  connection.onRequest(ShutdownRequest.type, (...args: readonly unknown[]): void => {
     const rejection = lifecycle.requestRejection();
     if (rejection !== undefined) {
       throw rejection;
+    }
+    if (args.length > 1) {
+      // The ARGUMENT LIST vscode-jsonrpc built, token dropped -- one element for
+      // a by-name object, a primitive or `null`, and one per element for a
+      // by-position array. Not the wire's `params` verbatim, because that value
+      // does not reach a typed registration to be quoted.
+      throw new ResponseError(
+        ErrorCodes.InvalidParams,
+        `shutdown takes no params; received ${JSON.stringify(args.slice(0, -1))}`,
+      );
     }
     lifecycle.shutDown();
   });

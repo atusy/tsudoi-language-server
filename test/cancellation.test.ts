@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -171,7 +171,7 @@ for (const runtime of runtimes) {
         const answered = await session.request<Hover>("textDocument/hover", hoverParams(4));
         expect(answered).toEqual(hoverFor(tagOf(4)));
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         // Read after exit: a marker written late is still a marker.
@@ -217,7 +217,7 @@ for (const runtime of runtimes) {
         // be a claim about nothing.
         expect((await inFlight.response).error?.code).toBe(requestCancelled);
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -248,7 +248,7 @@ for (const runtime of runtimes) {
         const inFlight = session.issueThenCancel("textDocument/completion", completionParams());
         expect((await inFlight.response).error?.code).toBe(requestCancelled);
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.progressCount).toBe(0);
@@ -302,7 +302,7 @@ for (const runtime of runtimes) {
           const next = await session.request<Hover>("textDocument/hover", hoverParams(4));
           expect(next).toEqual(hoverFor(tagOf(4)));
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -332,7 +332,7 @@ for (const runtime of runtimes) {
         expect(answered.result).toBeUndefined();
 
         // Read after exit: a value delivered LATE is still delivered.
-        expect(await cancelled.request<null>("shutdown", null)).toBeNull();
+        expect(await cancelled.request<null>("shutdown", noParams)).toBeNull();
         cancelled.notify("exit", null);
         expect(await cancelled.waitForExit()).toBe(0);
         expect(cancelled.stdout).not.toContain(ignoredLabel);
@@ -383,7 +383,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -416,7 +416,7 @@ for (const runtime of runtimes) {
         expect((await completion.response).error?.code).toBe(requestCancelled);
 
         // Read after exit, so nothing written late is missed.
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.stderr).not.toContain("handler failed:");
@@ -463,7 +463,7 @@ for (const runtime of runtimes) {
         const next = await session.request<Hover>("textDocument/hover", hoverParams(6));
         expect(next).toEqual(hoverFor(tagOf(6)));
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         // Every line tsudoi itself writes carries this prefix, whether it came
@@ -513,7 +513,7 @@ for (const runtime of runtimes) {
             { kind: "response", id: inFlight.id },
           ]);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           // Re-read after exit: a chunk sent late is still a chunk sent.

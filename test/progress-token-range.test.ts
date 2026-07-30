@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "vscode-languageserver-protocol";
 import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 
@@ -109,7 +109,7 @@ for (const runtime of runtimes) {
           expect(result).toBeNull();
         }
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);

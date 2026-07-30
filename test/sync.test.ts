@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot, snapshotMarker, unprimedSnapshotMarker } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -74,7 +74,7 @@ for (const runtime of runtimes) {
         // Awaiting a REQUEST after the notifications is the ordering barrier:
         // its response cannot arrive before the notifications ahead of it on
         // the same connection have been handled.
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -133,7 +133,7 @@ for (const runtime of runtimes) {
           ],
         });
 
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -164,7 +164,7 @@ for (const runtime of runtimes) {
         await prime(session);
         session.notify("textDocument/didOpen", didOpen(uri, largeText));
 
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -184,7 +184,7 @@ for (const runtime of runtimes) {
         session.notify("textDocument/didOpen", didOpen(uri, openedText));
         session.notify("textDocument/didClose", { textDocument: { uri } });
 
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -215,7 +215,7 @@ for (const runtime of runtimes) {
         // The server must still be alive and speaking: a notification handler
         // that threw would have been swallowed by the JSON-RPC layer, so the
         // exit code is what shows the difference.
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -247,7 +247,7 @@ for (const runtime of runtimes) {
         await prime(session);
         session.notify("textDocument/didOpen", {});
 
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -273,7 +273,7 @@ for (const runtime of runtimes) {
         session.notify("textDocument/didOpen", didOpen(otherUri, "second"));
         session.notify("textDocument/didClose", { textDocument: { uri } });
 
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
@@ -311,7 +311,7 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         // NO prime(session) HERE -- that absence IS the test.
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         await session.waitForExit();
 
@@ -329,7 +329,7 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
         await prime(session);
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         await session.waitForExit();
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -119,7 +119,7 @@ for (const runtime of runtimes) {
             await session.waitForStderr(shape.marker, 1000);
 
             // The session survives what is, after all, one bad request.
-            expect(await session.request<null>("shutdown", null)).toBeNull();
+            expect(await session.request<null>("shutdown", noParams)).toBeNull();
             session.notify("exit", null);
             expect(await session.waitForExit()).toBe(0);
             expect(session.unframedStdoutBytes).toBe(0);
@@ -155,7 +155,7 @@ for (const runtime of runtimes) {
         // mangled it would say 裸の候補 in replacement characters instead.
         expect(session.stderr).toContain(JSON.stringify(bareItem));
 
-        expect(await session.request<null>("shutdown", null)).toBeNull();
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);

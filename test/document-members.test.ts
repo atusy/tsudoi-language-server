@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { membersMarker, readMarkedLine } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -79,7 +79,7 @@ for (const runtime of runtimes) {
         // Awaiting a REQUEST after the notifications is the ordering barrier:
         // its response cannot arrive before the notifications ahead of it on
         // the same connection have been handled.
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 

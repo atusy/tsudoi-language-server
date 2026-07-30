@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { beforeGate, cleanupMarker, parkedMarker } from "./fixtures/completion-ignores-signal.ts";
@@ -131,7 +131,7 @@ for (const runtime of runtimes) {
           // told is cancelled.
           expect(session.progressCount).toBe(1);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.progressCount).toBe(1);
@@ -198,7 +198,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          const shutdown = session.issue("shutdown", null);
+          const shutdown = session.issue("shutdown", noParams);
           await shutdown.response;
           session.notify("exit", null);
           // The whole claim, in one number: 1 is what a session killed by an
@@ -261,7 +261,7 @@ for (const runtime of runtimes) {
           expect(answered.error?.code).toBe(requestCancelled);
           expect(answered.result).toBeUndefined();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           // NEITHER HALF OF THE LABEL, and the ASCII half is what makes the
@@ -332,7 +332,7 @@ for (const runtime of runtimes) {
           );
           expect(next.contents.value).toBe(hoverAnsweredValue);
 
-          const shutdown = session.issue("shutdown", null);
+          const shutdown = session.issue("shutdown", noParams);
           await shutdown.response;
           session.notify("exit", null);
           // The whole claim, in one number: 1 is what a session killed by an

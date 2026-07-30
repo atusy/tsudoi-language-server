@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -117,7 +117,7 @@ for (const runtime of runtimes) {
           // The headline: cleanup a config author can never watch succeed.
           await session.waitForStderr(cleanupMarker, 1000);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -157,7 +157,7 @@ for (const runtime of runtimes) {
 
           await session.waitForStderr(cleanupMarker, 1000);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           // Re-read after exit: a chunk sent late is still a chunk sent, and an
@@ -216,7 +216,7 @@ for (const runtime of runtimes) {
 
           // The session goes on to shut down cleanly: a close fired on this path
           // must no more take the process down than one fired on the abort path.
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -259,7 +259,7 @@ for (const runtime of runtimes) {
           // replacement characters instead.
           expect(session.stderr).toContain(cleanupThrowMessage);
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -310,7 +310,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -374,7 +374,7 @@ for (const runtime of runtimes) {
           });
           expect(next).toBeNull();
 
-          expect(await session.request<null>("shutdown", null)).toBeNull();
+          expect(await session.request<null>("shutdown", noParams)).toBeNull();
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
@@ -437,7 +437,7 @@ for (const runtime of runtimes) {
             // `issue`, not `request`: a session that died settles this with a
             // wire-shaped error, so the assertion that flips is the EXIT CODE
             // rather than an await that rejects one line earlier.
-            const shutdown = session.issue("shutdown", null);
+            const shutdown = session.issue("shutdown", noParams);
             await shutdown.response;
             session.notify("exit", null);
             expect(await session.waitForExit()).toBe(0);

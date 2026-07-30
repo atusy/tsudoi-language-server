@@ -8,7 +8,7 @@ import {
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol";
 import { hoverText } from "./fixtures/handler-proxy-throws-on-second-read.ts";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 
@@ -161,7 +161,7 @@ for (const runtime of runtimes) {
 
         // Awaiting the shutdown response before notifying exit is what keeps
         // the response from racing the server's process.exit.
-        const shutdownResult = await session.request<null>("shutdown", null);
+        const shutdownResult = await session.request<null>("shutdown", noParams);
         expect(shutdownResult).toBeNull();
 
         session.notify("exit", null);
@@ -199,7 +199,7 @@ for (const runtime of runtimes) {
       const session = LspSession.start(runtime, demoConfig);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
-        await session.request<null>("shutdown", null);
+        await session.request<null>("shutdown", noParams);
 
         const refusal = await session.requestError("initialize", initializeParams);
         expect(refusal.code).toBe(ErrorCodes.InvalidRequest);
@@ -273,6 +273,116 @@ for (const runtime of runtimes) {
     // a write that failed, a frame that was never read -- which is precisely the
     // case the refusal is supposed to distinguish this test from.
     test("shutdown REFUSED before initialize, then exit, exits 1 -- a refused shutdown is not a shutdown", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        const refusal = await session.requestError("shutdown", noParams);
+        expect(refusal.code).toBe(ErrorCodes.ServerNotInitialized);
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(1);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * `shutdown` TAKES NO PARAMS, so every one of these is a message no reading
+     * of LSP makes sense of. `null` and the primitives are not Structured values
+     * at all; an object and a non-empty array are Structured and still carry
+     * arguments to a signature that declares none.
+     *
+     * THE EXIT CODE IS THE HALF THAT MAKES THE REFUSALS MEAN SOMETHING, and it
+     * is not decoration: -32602 measured alone is satisfied by a server that
+     * moved to the shutdown phase and THEN refused, which is the failure this
+     * exists to catch. A phase that moved reads 0 here. Five refusals in one
+     * session also say the damage does not accumulate -- the first malformed
+     * shutdown does not poison the ones after it.
+     */
+    test("shutdown carrying params is refused -32602 in every spelling, and the phase does not move", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        for (const params of [null, {}, 7, "x", [1, 2]]) {
+          const refusal = await session.requestError("shutdown", params);
+          expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+        }
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(1);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * WHAT A REFUSED `shutdown` COSTS IS THE MESSAGE AND NOT THE SESSION, and
+     * this is the pair to the test above rather than a repetition of it: there
+     * the client never corrected itself, so `the phase did not move` is all that
+     * could be read. Here it corrects itself and the session shuts down cleanly,
+     * which is the property a client actually depends on.
+     *
+     * THE ORDER INSIDE THE HANDLER IS WHAT THIS PINS. A refusal answered from
+     * AFTER the transition would leave this session unable to shut down at all:
+     * the corrected `shutdown` would meet the shutdown phase and be answered
+     * -32600, and the client would hold a shutdown it may not repeat.
+     */
+    test("a shutdown refused for its params still accepts the corrected one, and exit reads 0", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const refusal = await session.requestError("shutdown", null);
+        expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE ONE PRESENT `params` THAT PROCEEDS, AND IT IS A RULING RATHER THAN A
+     * GAP LEFT OPEN. An EMPTY by-position array is the by-position spelling of
+     * `no arguments`, and `shutdown` declares none -- so it says exactly what
+     * omission says, and is answered the same way.
+     *
+     * IT IS ALSO THE ONE SHAPE THE REFUSAL ABOVE CANNOT SEE, which is why it is
+     * asserted here rather than left to be inferred: vscode-jsonrpc SPREADS a
+     * by-position array across the handler's arguments, so `[]` and an omitted
+     * `params` reach a handler as the same single argument. The shape that could
+     * tell them apart is named at the handler in src/server.ts, along with why it
+     * was declined.
+     */
+    test("shutdown with an empty by-position params proceeds, exactly as an omitted one does", async () => {
+      const session = LspSession.start(runtime, demoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        expect(await session.request<null>("shutdown", [])).toBeNull();
+
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * TWO THINGS ARE WRONG WITH THIS MESSAGE AND THE PHASE ANSWERS FIRST, which
+     * is the same order the request router in src/methods.ts and the `initialize`
+     * boundary both use. A server that has not been initialized has no shutdown
+     * to refuse the params of, and -32002 is the diagnosis a client can act on:
+     * it says send `initialize` first, where -32602 would send the client
+     * hunting a params field that was never the reason.
+     */
+    test("shutdown carrying params BEFORE initialize is answered -32002, not -32602", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
         const refusal = await session.requestError("shutdown", null);

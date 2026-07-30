@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 
 /**
@@ -86,7 +86,7 @@ for (const runtime of runtimes) {
 
           await live.request<InitializeResult>("initialize", initializeParams);
           live.notify("initialized", {});
-          expect(await live.request<null>("shutdown", null)).toBeNull();
+          expect(await live.request<null>("shutdown", noParams)).toBeNull();
           live.notify("exit", null);
           expect(await live.waitForExit()).toBe(0);
 

@@ -584,6 +584,22 @@ export class LspSession {
   }
 }
 
+/**
+ * WHAT A CLIENT SENDS TO A METHOD WHOSE SIGNATURE TAKES NO PARAMS: no `params`
+ * member at all.
+ *
+ * `JSON.stringify` DROPS AN `undefined` MEMBER, so a message framed from this
+ * carries no `params` key -- which is what JSON-RPC's `params MAY be omitted`
+ * means. `null` is a DIFFERENT message and not a shorthand for this one: the
+ * specification requires a present `params` to be a Structured value, so `null`
+ * is malformed and tsudoi answers it -32602.
+ *
+ * NAMED RATHER THAN WRITTEN AS A BARE `undefined` AT EACH SITE, because the two
+ * spellings are visually one keystroke apart from `null` and are answered
+ * differently. A site reading `noParams` says which message it meant to send.
+ */
+export const noParams = undefined;
+
 /** The smallest InitializeParams a conforming client can send. */
 export const initializeParams = {
   processId: null,
