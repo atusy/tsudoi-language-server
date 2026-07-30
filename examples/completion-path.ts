@@ -187,9 +187,14 @@ export interface PathCompletionOptions {
  * negative half is the rule: without it, typing `/` offers the current
  * directory's children beside the filesystem root's.
  *
- * ONE SOURCE PER WORKSPACE FOLDER, since the field is an array on the wire --
- * keeping only the first answers from whichever the editor happened to list
- * first. A folder is converted from its URI and NEVER guessed from cwd: an
+ * ONE SOURCE PER WORKSPACE FOLDER, since a client may hold several -- keeping
+ * only the first answers from whichever the editor happened to list first.
+ *
+ * AND NOT `workspaceFolders.get()`, WHICH ANSWERS A DIFFERENT QUESTION: which
+ * ONE folder a uri sits in. EVERY folder is a completion root here, and the
+ * document's own directory is already a source of its own, so narrowing to the
+ * folder holding the document would DELETE the candidates the other roots
+ * contribute rather than sharpen the reading. A folder is converted from its URI and NEVER guessed from cwd: an
  * editor started without a project root leaves cwd as its own launch
  * directory, so the guess looks right in every test and wrong in real use.
  *
