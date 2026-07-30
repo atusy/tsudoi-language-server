@@ -90,12 +90,10 @@ const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name:
  * the workspace-folders capability produces: it sends no folders and may still
  * say which project the editor opened.
  *
- * NO FOLDER IS DERIVED FROM IT ANYWHERE, and there is no longer a constant here
- * that says what one would look like. There was: `rootedFolder` was the
- * expectation about the published reduction, and it went with the reduction when
- * the stakeholder ruled that tsudoi's TYPES module may not export a runtime
- * function. What is left is the two spellings themselves, read back as the bytes
- * the client sent.
+ * NO FOLDER IS DERIVED FROM IT ANYWHERE, AND NO CONSTANT HERE SAYS WHAT ONE
+ * WOULD LOOK LIKE. tsudoi's TYPES module may not export a runtime function, so
+ * there is no published reduction to derive one with. What these constants are
+ * is the two spellings themselves, read back as the bytes the client sent.
  *
  * `rootedPath` IS ABSOLUTE AND THAT IS ITS JOB, not an incidental property of a
  * plausible path: it is the PRESENCE ARM of the refusal below, so a value that
@@ -161,11 +159,10 @@ async function observedFolders(session: LspSession): Promise<unknown> {
 }
 
 /**
- * THE THREE MIRRORED FIELDS, WHOLE, which is now everything the fixture reports.
- * It used to be a deliberate subset -- a fourth key carried the published
- * reduction, and reading it here would have let a broken guard flip an assertion
- * about the mirror. That reduction no longer exists, so the omission has nothing
- * left to omit and this reader is kept for the assertions that spell all three.
+ * THE THREE MIRRORED FIELDS, WHOLE, which is everything the fixture reports. It
+ * is not a deliberate subset: there is no published reduction for a fourth key
+ * to carry, so this reader has nothing left to omit and exists for the
+ * assertions that spell all three.
  */
 async function mirrored(session: LspSession): Promise<Observation> {
   const { workspaceFolders, rootUri, rootPath } = await observed(session);
@@ -352,12 +349,12 @@ for (const runtime of runtimes) {
     // session that sends folders observes them here, so `[]` is not what this
     // measurement says whatever it is given.
     //
-    // WHAT WAS DELIBERATELY REMOVED HERE, since a reader will otherwise look for
-    // it: this used to assert that a rootUri-only client REACHED A HANDLER WITH
-    // A FOLDER. tsudoi cannot name a folder -- the protocol makes `name` a UI
-    // label the client owns. A published reduction answered that need for one
-    // sprint and was withdrawn with it, so what a rootUri-only client gets is
-    // this and only this: the bytes, and an empty list beside them.
+    // WHAT IS DELIBERATELY NOT ASSERTED HERE, since a reader will otherwise
+    // look for it: that a rootUri-only client REACHES A HANDLER WITH A FOLDER.
+    // tsudoi cannot name a folder -- the protocol makes `name` a UI label the
+    // client owns -- and no published reduction exists to synthesise one. What
+    // a rootUri-only client gets is this and only this: the bytes, and an empty
+    // list beside them.
     test("a client sending only rootUri is handed no folders, and the rootUri it sent", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -449,14 +446,12 @@ for (const runtime of runtimes) {
     // THE HANDSHAKE SURVIVES A rootUri THAT NAMES NO LOCAL PATH, and that is
     // ALL this asserts.
     //
-    // ITS HAZARD MOVED TWICE AND THE TEST STAYED BOTH TIMES, which is worth
-    // stating because it is now the weakest test in this file. `fileURLToPath`
-    // throws on such a URI; it used to run INSIDE the initialize handler, where
-    // a throw answers the handshake with an error and leaves the author no
-    // server at all. Then it ran in a published reduction, whose own test owned
-    // it. Now NOTHING IN tsudoi CALLS IT ON THESE BYTES AT ALL, so the throw
-    // belongs to whatever a config author writes, and src/types.ts says so at
-    // `rootUri`.
+    // IT IS THE WEAKEST TEST IN THIS FILE, AND SAYING SO IS THE POINT OF THIS
+    // BLOCK. `fileURLToPath` throws on such a URI, and NOTHING IN tsudoi CALLS
+    // IT ON THESE BYTES AT ALL -- so the throw belongs to whatever a config
+    // author writes, and src/types.ts says so at `rootUri`. What is left for
+    // this test is the handshake surviving, which is a real claim and a small
+    // one.
     //
     // WHAT WOULD MAKE THIS RED TODAY, asked because a green that measures
     // nothing is what this project's rules exist to catch: only a server that
@@ -491,8 +486,9 @@ for (const runtime of runtimes) {
     // is what a client that means `here` sends. Neither is absence, which is the
     // door `??` does not cover.
     //
-    // THE PRESENCE ARM IS IN THIS TABLE AND NOT IN A TEST OF ITS OWN, per Sprint
-    // 6: an absolute path travels THROUGH THE SAME READER and must arrive
+    // THE PRESENCE ARM IS IN THIS TABLE AND NOT IN A TEST OF ITS OWN, per the
+    // absence-pairing rule: an absolute path travels THROUGH THE SAME READER
+    // and must arrive
     // VERBATIM, so `null` here is evidence about the refusal rather than about a
     // field that was dropped, a handle that never stored it, or a fixture that
     // stopped reporting it. Read as a pair, the table also says the refusal is
@@ -648,10 +644,10 @@ for (const runtime of runtimes) {
     // WHILE THE SESSION WAS RUNNING, which is what `add_workspace_folder()`
     // sends. The handler must see the workspace as it is NOW.
     //
-    // ITS NEGATIVE CONTROL IS THE STATE THIS REPLACED, and it was observed
-    // rather than argued: before the entry existed the notification was
-    // unregistered and inert, the hover observed `[sentFolders[0]]` alone, and
-    // this assertion failed on the missing second entry.
+    // ITS NEGATIVE CONTROL IS OBSERVED RATHER THAN ARGUED: with the
+    // notification's table entry taken out it is unregistered and inert, the
+    // hover observes `[sentFolders[0]]` alone, and this assertion fails on the
+    // missing second entry.
     //
     // BOTH folders, in order, and never `toContain`: a list that lost what the
     // session started with is exactly as wrong as one that never gained what
@@ -677,15 +673,13 @@ for (const runtime of runtimes) {
     // implementation that only appends passes the added criterion above and
     // fails here.
     //
-    // ITS NORMALISATION HALF WAS BLINDED BY PBI-20 AND IS ANNOTATED RATHER THAN
-    // REPAIRED, because repairing it would rewrite a defence of an accepted
-    // criterion, which is a scope decision. It used to catch a normalising
-    // implementation because REMOVE-ALL deleted the survivor along with the
-    // target. One copy per `removed` entry deletes exactly ONE folder, and
-    // first-match lands on `…/plain` -- the intended target -- so the survivor
-    // stands and this test passes. MEASURED both ways: stripping a trailing
-    // slash before comparing reddens this test under the old filter and reddens
-    // NOTHING in 321 tests under the current one.
+    // ITS NORMALISATION HALF IS BLIND, AND IS ANNOTATED RATHER THAN REPAIRED,
+    // because repairing it would rewrite a defence of an accepted criterion,
+    // which is a scope decision. One copy per `removed` entry deletes exactly
+    // ONE folder, and first-match lands on `…/plain` -- the intended target --
+    // so the survivor stands and this test passes whether or not the matcher
+    // normalises. MEASURED: stripping a trailing slash before comparing reddens
+    // NOTHING in 321 tests.
     //
     // WHAT WOULD UN-BLIND IT, REASONED and not measured -- measuring it needs a
     // test that does not exist -- is a removal naming the spelling that is NOT
@@ -715,9 +709,9 @@ for (const runtime of runtimes) {
         // discriminate. Removing `…/plain` -- the first entry -- leaves
         // `…/plain/` under exact matching AND under normalisation, because
         // one-copy-per-entry deletes one folder and first-match lands on the
-        // intended target either way. MEASURED at Sprint 19: with the removal
-        // naming the FIRST entry, a normalising matcher reddened NOTHING across
-        // 321 tests. Naming the SECOND separates them -- exact matching leaves
+        // intended target either way. MEASURED: with the removal naming the
+        // FIRST entry, a normalising matcher reddens NOTHING across 321 tests.
+        // Naming the SECOND separates them -- exact matching leaves
         // `…/plain`, normalisation leaves `…/plain/`.
         changeFolders(session, { removed: [plainSlashFolder] });
 
@@ -747,13 +741,13 @@ for (const runtime of runtimes) {
     // either.
     // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
     // two orders apart, and the reason `removed` before `added` had been
-    // UNDEFENDED since it was decided at Sprint 17. MEASURED at Sprint 19:
-    // applying `added` first reddened NOTHING across 321 tests, and equally
-    // nothing across the 317 that predate that sprint.
+    // UNDEFENDED. MEASURED: applying `added` first reddens NOTHING across 321
+    // tests.
     //
-    // PINNED OPPORTUNISTICALLY, not as repair: this sprint did not break the
-    // ordering, it REVEALED that nothing defended it. It earns a test because
-    // the PO ruled it ONE REQUIRED OUTCOME -- a client spelling a rename as one
+    // PINNED OPPORTUNISTICALLY, not as repair: nothing about the ordering is
+    // broken, and what this adds is a defence where there was none. It earns a
+    // test because the ordering has ONE REQUIRED OUTCOME -- a client spelling a
+    // rename as one
     // event ends HOLDING the folder, a phantom that is visible if wrong, where
     // the other order ends holding NOTHING, which is silent.
     test("one event removing and adding the same URI ends holding the folder", async () => {
@@ -844,9 +838,9 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-20 CRITERION 2, AND IT IS BORN GREEN AND SAYS SO: it was written
-    // against UNCHANGED src/ and passed there, because the remove-all filter it
-    // was written to outlive already gets this case right.
+    // PBI-20 CRITERION 2, AND IT IS BORN GREEN AND SAYS SO: it passes against a
+    // remove-all filter just as readily as against one-copy-per-entry removal,
+    // because that filter gets this particular case right.
     //
     // ITS OWN TEST BECAUSE THE HAZARDS DIFFER, which is the whole reason a
     // born-green test is worth writing here. The remove-all filter PASSES this
@@ -1035,8 +1029,8 @@ for (const runtime of runtimes) {
     // Its permanent pair is the workspace-source test below, where the same
     // filter over the same wire DOES find items.
     //
-    // WHAT THIS DOES NOT DEFEND, measured at Sprint 18 and recorded so nobody
-    // reads two tests as two defences: it is BLIND TO THE cwd SUBSTITUTION its
+    // WHAT THIS DOES NOT DEFEND, MEASURED and recorded so nobody reads two
+    // tests as two defences: it is BLIND TO THE cwd SUBSTITUTION its
     // sibling names. Under a cwd fallback this test stays GREEN, because
     // PBI-14's dedup-by-inserted-text collapses the identical item a cwd root
     // produces. THE CONTEXT-LEVEL TEST CARRIES THAT CRITERION ALONE -- one of
@@ -1059,19 +1053,18 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE HAZARD THIS SPRINT CREATED, NOW UNOWNED BY CODE AND ASSERTED AS THE
-    // BEHAVIOUR IT IS: an author reading `workspaceFolders` alone is handed `[]`
-    // where a root exists, and THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE
-    // is such an author. It read the three fields through a published reduction
-    // for one sprint; the stakeholder withdrew that function, and this test is
-    // the inverse of the one that stood here.
+    // THE HAZARD IS UNOWNED BY CODE AND IS ASSERTED HERE AS THE BEHAVIOUR IT
+    // IS: an author reading `workspaceFolders` alone is handed `[]` where a
+    // root exists, and THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE is such
+    // an author. No published reduction exists to fold the three fields
+    // together on their behalf.
     //
-    // WHAT IT ASSERTS IS WHAT examples/completion-path.ts NOW CLAIMS IN PROSE at
+    // WHAT IT ASSERTS IS WHAT examples/completion-path.ts CLAIMS IN PROSE at
     // its `sourcesFor` call -- that a rootUri-only client leaves the workspace
     // source contributing NOTHING while the other sources still answer. An
     // unasserted claim in the document that argues for adoption is exactly what
-    // Sprint 14's standing prose item exists against, so the claim and the
-    // assertion move together.
+    // the standing prose item exists against, so the claim and the assertion
+    // move together.
     //
     // THE ABSENCE IS FIRST AND ITS NON-VACUITY PAIR IS SECOND: cwd answering
     // proves the completion ran for this fragment at all, so the empty workspace

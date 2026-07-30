@@ -61,8 +61,8 @@ const ungatedType = new NotificationType<{ mark: string }>("test/ungated");
 // CRITERION 1, and the handler bodies are EMPTY of any lifecycle knowledge on
 // purpose: whoever writes a notification cannot make it run at a moment the
 // entry did not allow, because nothing in the body decides that. This is what
-// the three deleted hand-written checks used to do by convention, three times
-// over, for whoever remembered.
+// a hand-written lifecycle check in each handler body would have to do by
+// convention, once per handler, for whoever remembered.
 test("a handler whose body consults nothing is refused before initialize and after shutdown, and runs in between", () => {
   const lifecycle = createLifecycle();
   const { connection, deliver } = recordingConnection();
@@ -232,7 +232,7 @@ function recordBlockOf(source: string): string {
  * What the record must NAME, each token paired with the clause it defends.
  *
  * THE VERSION IS ASSERTED ADJACENT TO ITS PACKAGE, not as a second independent
- * substring, and that is S8 as amended at Sprint 24 taken literally: a path
+ * substring, and that is S8 taken literally: a path
  * WITHOUT a version misleads, because it reads as re-checkable and points at the
  * wrong lines after a bump. `vscode-languageserver` alone would also be matched
  * by the `vscode-languageserver-protocol 3.18.2` sentences ALREADY in that file,
@@ -506,8 +506,8 @@ test("the same two outcomes hold through an alias under a different name", async
  *
  * WHY IT IS WORTH A TOKEN WHEN `onNotification` ALREADY WENT: reaching this one
  * needs NO DELIBERATE ACT. It sits on the handle `createGatedConnection` hands
- * out, so `no longer reachable by accident` -- the argument that made the import
- * ban adequate -- never covered it.
+ * out, so `no longer reachable by accident` -- the argument that makes the
+ * import ban adequate -- never covered it.
  *
  * THE PERMITTED HALF IS NOT OPTIONAL, for the same reason as above:
  * `Omit<ProtocolConnection, keyof ProtocolConnection>` satisfies the failing
@@ -527,8 +527,8 @@ test("the narrowed connection rejects onUnhandledNotification and accepts onRequ
   const result = await typeCheckProbe(forbidsUnhandledAndPermits);
 
   // BOUND TO THE FILE AND TO THE SYMBOL. A bare non-zero exit would go GREEN
-  // against a module with no narrowing whatsoever -- measured at Sprint 21,
-  // where an unresolved `RequestOnlyConnection` exited 1 on TS2305 alone. And a
+  // against a module with no narrowing whatsoever -- MEASURED: an unresolved
+  // `RequestOnlyConnection` exits 1 on TS2305 alone. And a
   // symbol MISSPELLED inside the `Omit` is a silent no-op: `Omit<T, K>` accepts
   // a key that is not in `keyof T` and returns T unchanged, so nothing but a
   // probe naming this symbol can tell the two apart.
@@ -550,10 +550,9 @@ type Assert<T extends true> = T;
  * the ONLY thing in this repo that carries it.
  *
  * Every probe above names a member the `Omit` REMOVES or one it KEEPS, so all of
- * them stay green when a FURTHER key is added to it -- MEASURED at Sprint 23 and
- * RE-MEASURED at this widening: appending `| "sendNotification"` leaves the whole
- * suite green with nothing objecting, while the boundary sentence beside the type
- * silently becomes false. This fails first and by name in that case, so it is not
+ * them stay green when a FURTHER key is added to it -- MEASURED: appending
+ * `| "sendNotification"` leaves the whole suite green with nothing objecting,
+ * while the boundary sentence beside the type silently becomes false. This fails first and by name in that case, so it is not
  * a control that could never fire.
  *
  * A SET DIFFERENCE RATHER THAN A SAMPLE, which is what `and nothing else`
@@ -830,8 +829,8 @@ function factorySource(body: string[]): string {
  * exports `defineNotifications`, `registerNotifications` and
  * `createGatedConnection` at runtime -- recorded here as CONTEXT for what it
  * legitimately provides, never as the assertion. Pinning the set exactly is the
- * `scripts` over-pinning removed at PBI-9: this module will grow, and a test
- * that fails when it does defends nothing.
+ * `scripts` over-pinning mistake: this module will grow, and a test that fails
+ * when it does defends nothing.
  *
  * THE PAIR IS `createGatedConnection`, not an arbitrary export: without it,
  * `no key named createProtocolConnection` would hold just as well for a

@@ -32,12 +32,11 @@ const uri = "file:///workspace/a.txt";
  * shape per method would be a per-method copy in the tests that exist to prove
  * per-method copies are gone.
  *
- * `label` JOINED IT AT SPRINT 34 AND NOT BECAUSE ANYTHING FAILED WITHOUT IT.
- * `completionItem/resolve` takes a CompletionItem rather than a document and a
- * position, and `label` is its one required member -- nothing on the wire
- * validates that, so omitting it would have left the sentence above FALSE while
- * every test here stayed green. It is here to keep the claim true, which is the
- * only reason it needs.
+ * `label` IS HERE AND NOTHING FAILS WITHOUT IT. `completionItem/resolve` takes
+ * a CompletionItem rather than a document and a position, and `label` is its
+ * one required member -- nothing on the wire validates that, so omitting it
+ * leaves the sentence above FALSE while every test here stays green. It is here
+ * to keep that claim true, which is the only reason it needs.
  */
 function paramsForAnyMethod(): unknown {
   return {
@@ -70,23 +69,22 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * differing only in OPTIONAL members, so `HoverRequest.type` written into
  * completion's slot COMPILES. That is the defect this test was built for.
  *
- * IT WAS CLOSED BY THE COMPILER FOR EXACTLY ONE SPRINT, and saying so is what
- * stops the next reader re-deriving the pin and finding out why it fails.
- * Sprint 42's tuple put the protocol's own result type in the pair's first
- * slot, so `MethodMap` and `CompletionRequest.type` agreed and the entry could
- * pin; Sprint 43 withdrew the tuple, and a handler that yields items and
- * nothing else cannot say `CompletionList`. RE-MEASURED ON THIS TREE at
- * typescript 7.0.2 / protocol 3.18.2 rather than inherited from either record:
- * pinning the entry gives TS2322 AT THE TABLE, `Type 'CompletionList' is
- * missing the following properties from type 'CompletionItem[]'`. The reasoning
- * for accepting that cost is at `StreamDrivenEntry` in src/methods.ts.
+ * AND THE COMPILER CANNOT CLOSE IT HERE, said plainly so the next reader does
+ * not re-derive the pin and find out the hard way. A tsudoi completion handler
+ * yields `CompletionItem[]` and nothing else, so it cannot say
+ * `CompletionList`, where `CompletionRequest.type` carries the protocol's own
+ * result type. MEASURED ON THIS TREE at typescript 7.0.2 / protocol 3.18.2
+ * rather than taken on trust: pinning the entry gives TS2322 AT THE TABLE,
+ * `Type 'CompletionList' is missing the following properties from type
+ * 'CompletionItem[]'`. The reasoning for accepting that cost is at
+ * `StreamDrivenEntry` in src/methods.ts.
  *
  * WHAT THIS TEST SAYS THAT NO PIN EVER COULD, and it is why it would be kept
  * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in
  * the type system reads it. A dependency that changed the method name a request
  * constant carries while leaving its types alone would pass every compile check
  * and register completion's entry under another method's name. NAMED AS A
- * DIFFERENT CLAIM rather than left looking redundant, per Sprint 9: a control
+ * DIFFERENT CLAIM rather than left looking redundant: a control
  * that could never be first to fail is not a control, and this one can -- it is
  * the only thing here that reads the wire name at all.
  *
@@ -170,10 +168,10 @@ for (const runtime of runtimes) {
 
     /**
      * THE PROLOGUE'S CANCELLATION STEP, FOR EVERY METHOD, BY CONSTRUCTION --
-     * and this is the assertion Sprint 31 recorded as owed. Its residual was
-     * `a cancelled formatting request is answered -32800 through the same
-     * answerUnlessCancelled and nothing asserts it`. Nothing had to be written
-     * for formatting specifically; formatting is in the table, so it is here.
+     * which is what makes a per-method residual unnecessary. `a cancelled
+     * formatting request is answered -32800 through the same
+     * answerUnlessCancelled` needs nothing written for formatting
+     * specifically: formatting is in the table, so it is here.
      *
      * `issueThenCancel` frames the request and its `$/cancelRequest` together,
      * so the handler is entered with an already-cancelled token and the
@@ -207,12 +205,11 @@ for (const runtime of runtimes) {
      *
      * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one drives handlers and
      * measures the epilogue's post-settle abort check; this one drives NO
-     * handler at all, which is the case the two drives used to disagree about
-     * -- the stream drive returned `null` ahead of the epilogue where the
-     * awaited-once drive built its context either way and answered -32800.
-     * MEASURED at Sprint 32 by P-D, RE-MEASURED at Sprint 35 by restoring that
-     * early return: this test reddens at `textDocument/completion` and at no
-     * other method.
+     * handler at all, which is exactly where the two drives can disagree: a
+     * stream drive returning `null` AHEAD of the epilogue answers differently
+     * from an awaited-once drive that builds its context either way and answers
+     * -32800. MEASURED by restoring that early return: this test reddens at
+     * `textDocument/completion` and at no other method.
      *
      * LSP 3.17 PERMITS EITHER ANSWER, so this pins a CHOICE rather than a
      * requirement -- the same choice `requestCancelled` in src/methods.ts is
@@ -254,14 +251,14 @@ for (const runtime of runtimes) {
      * error code up there is attributable to CANCELLATION rather than to a
      * fixture that failed to load or a method that refused.
      *
-     * IT IS ALSO WHAT SAYS PBI-40 CHANGED ONE ANSWER AND NOT TWO. Making the
+     * IT IS ALSO WHAT BOUNDS PBI-40 TO ONE ANSWER AND NOT TWO. Making the
      * cancelled answer agree across the drives must leave the UNCANCELLED
-     * no-handler answer exactly where it was -- `null`, on both drives -- and
-     * answering `[]` for the stream-driven one instead reddens here.
+     * no-handler answer where it is -- `null`, on both drives -- and answering
+     * `[]` for the stream-driven one instead reddens here.
      *
-     * BORN GREEN, DECLARED. Nothing about it could fail before the change that
-     * made the test above pass, and it is kept because it is the only assertion
-     * that names this property for every entry at once; the per-method twins in
+     * BORN GREEN, DECLARED. It is not a red-driven claim, and it is kept
+     * because it is the only assertion that names this property for every entry
+     * at once; the per-method twins in
      * hover, formatting, diagnostic and resolve's files each name one.
      */
     test("every method in the table is answered null with no handler and no cancellation", async () => {
