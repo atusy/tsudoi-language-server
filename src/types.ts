@@ -10,7 +10,6 @@
 // libraries are cut up, and src/lsp.ts is where that is absorbed.
 import type {
   CompletionItem,
-  CompletionList,
   CompletionParams,
   DocumentDiagnosticParams,
   DocumentDiagnosticReport,
@@ -51,110 +50,53 @@ export interface Tsudoi {
   readonly documents: DocumentStore;
 }
 
-/**
- * What a completion handler answers with. `null` IS NOT IN IT, deliberately: a
- * handler with nothing to say returns NOTHING -- see `MethodMap` below -- so
- * `no answer` is never a value that could be paired with a stream.
- *
- * NAMED FOR THE RESPONSE THOUGH IT IS NOT ALWAYS THE RESPONSE, which is worth a
- * sentence because it looks like a misnomer for one of the four modes. Under a
- * token this value leaves as the FIRST `$/progress` literal and the response is
- * `null`; with no token it IS the response. It is the same claim either way --
- * the answer this handler gives to this request -- and the position it travels
- * in is the client's choice rather than the author's. `EmptyCompletionResponse`
- * below is the OTHER thing that can occupy the response slot, and the two names
- * pair deliberately.
- */
-export type CompletionResponse = CompletionItem[] | CompletionList;
-
-/**
- * A COMPLETION RESPONSE WITH NO RESULT VALUES IN IT -- which is what the
- * specification requires of a response once partial results have been streamed,
- * TURNED FROM PROSE A READER MUST OBEY INTO A PROPERTY THE COMPILER ENFORCES.
- *
- * BOTH SHAPES THE SPECIFICATION PERMITS, AND NOTHING IT FORBIDS. Measured: `[]`,
- * `{ isIncomplete: true, items: [] }` and `{ isIncomplete: false, items: [] }`
- * all compile; `[item]` and `{ isIncomplete: true, items: [item] }` are both
- * REFUSED. EVERY OTHER `CompletionList` MEMBER SURVIVES -- `itemDefaults`
- * included, which is not academic: nvim advertises
- * `completionList.itemDefaults`, so a narrower shape would have silently
- * removed a capability the client asked for. MEASURED WITH ITS PROVENANCE
- * rather than recalled, nvim 0.13.0-nightly+6ecf226: protocol.lua's default
- * client capabilities declare `completionList.itemDefaults` as
- * `commitCharacters`, `editRange`, `insertTextFormat`, `insertTextMode` and
- * `data`, and completion.lua applies them to every item it receives.
- *
- * WHY A HANDLER WOULD USE IT: after draining its own source it may know
- * something it did not know when it answered -- above all whether the candidate
- * set is really complete. That is an UPDATE and not a contradiction of the
- * answer's own `isIncomplete`, because the two are claims about different
- * moments: the answer speaks BEFORE the stream, this speaks AFTER it.
- *
- * A ROT MODE WORTH THE SENTENCE, flagged rather than measured: `Omit` is
- * computed over the DEPENDENCY'S declaration, so a member upstream ADDS arrives
- * here automatically, which is right. But if upstream ever RENAMES `items`, the
- * `Omit` stops omitting anything and the intersection becomes unsatisfiable --
- * a shape nothing can be assigned to, failing at every call site rather than
- * here.
- */
-export type EmptyCompletionResponse = [] | (Omit<CompletionList, "items"> & { items: [] });
-
 export interface MethodMap {
   /**
-   * AN ANSWER, AND OPTIONALLY A STREAM OF MORE OF IT. The pair is one value
-   * because the two questions are one question: a handler with nothing to say
-   * has nothing to stream. `return;` IS `nothing to say` -- `void` sits OUTSIDE
-   * the tuple, so `no answer plus a stream` is not merely discouraged but
-   * UNWRITEABLE, measured: `[null, stream]` and `[null]` both fail TS2322
-   * naming `null`, while `[items]`, `[list]`, `[items, stream]` and
-   * `[list, stream]` all compile.
+   * BATCHES OF ITEMS, AND NOTHING ELSE. ONE SLOT WITH ONE MEANING: every `yield`
+   * is CONTENT, the return carries NOTHING, and no part of what an author writes
+   * selects how their items reach the client. A handler with nothing to say
+   * yields nothing.
    *
-   * A `CompletionList` IS THE POINT AND NOT A CONVENIENCE. The specification
-   * treats a supplied `CompletionItem[]` as IDENTICAL TO
-   * `{ isIncomplete: false, items }` -- so a bare array is a POSITIVE CLAIM that
-   * the candidate set is final and the client need not ask again. That claim was
-   * made by every completion handler tsudoi has ever run and nobody chose it.
+   * WHAT THE DRIVE DOES, and it is the whole of the streaming API:
    *
-   * WHAT THE DRIVE DOES WITH THE PAIR, which is the whole of the streaming API:
+   *   partialResultToken present -> EVERY yield leaves as its own `$/progress`
+   *                                 and the response is `null`. ALWAYS --
+   *                                 including for a stream that yielded once.
+   *   partialResultToken absent  -> every yield is aggregated and the whole list
+   *                                 is the response; a stream that yielded
+   *                                 NOTHING is answered `null`.
    *
-   *   return;                        -> `null` on the wire, nothing streams
-   *   [answer]         no token      -> `answer`
-   *   [answer]         token         -> `answer` as one `$/progress`, then null
-   *   [answer, chunks] no token      -> `answer` MERGED with every chunk, and
-   *                                     the generator's return applied over it
-   *   [answer, chunks] token         -> `answer` as the FIRST `$/progress`
-   *                                     literal, each chunk as a subsequent one,
-   *                                     and the generator's return AS the
-   *                                     response, unchanged and already empty
+   * THE TOKEN DECIDES, AND NOTHING ELSE DOES. There is no look-ahead and no
+   * special case, so the drive never has to hold a batch back to find out what
+   * comes after it. THE COST IS ACCEPTED KNOWINGLY rather than discovered: a
+   * one-batch answer under a token spends a `$/progress` and a `null` response
+   * where a single response would have done. The look-ahead that would have
+   * saved it makes the FIRST batch wait on the SECOND pull -- a delay landing
+   * exactly when the first chunk is slow and streaming matters most.
    *
-   * THE POSITION IS THE SPECIFICATION'S, not a tsudoi invention: the first
-   * provided partial result may be a `CompletionList` and subsequent ones ADD TO
-   * ITS `items`. THE MERGE NEVER REWRITES `isIncomplete` -- draining the
-   * iterator proves THE STREAM ended, not that THE CANDIDATE SET is complete.
-   * Only the generator's own RETURN may update it, because only that is the
-   * author speaking.
+   * `null` FOR A STREAM THAT YIELDED NOTHING IS A VALUE DECISION AND NOT A
+   * CHANNEL ONE, which is why it is not a special case in the sense above: the
+   * token still decides where anything that WAS yielded travels. `[]` is not
+   * available to mean this, because the specification treats a supplied
+   * `CompletionItem[]` as `{ isIncomplete: false, items }` -- so `[]` tells the
+   * user there are NO CANDIDATES, which is a stronger statement than `this
+   * server has no answer for that position`.
    *
-   * AND A RETURNED `[]` IS THE AUTHOR SAYING `COMPLETE`, NOT `NOTHING TO ADD`.
-   * The specification's equivalence applies to the returned array exactly as it
-   * applies to the answer, so `return []` after answering `isIncomplete: true`
-   * WITHDRAWS that claim. `return;` -- returning nothing from the generator --
-   * is what leaves the answer's own claim standing. The two are one keystroke
-   * apart and they say opposite things, which is why it is stated here and at
-   * the drive rather than left to be derived.
+   * `void` RATHER THAN `null` IN THE RETURN POSITION IS MEASURED, NOT
+   * STYLISTIC. With `null` there, a generator that falls off its own end is
+   * TS2355 at compile time and `{ done: true }` with an UNDEFINED value at run
+   * time, so every handler in this repository would carry a ceremonial
+   * `return null;` that says nothing.
    *
-   * AN `AsyncGenerator` RATHER THAN AN `AsyncIterable`, which is NARROWER than
-   * an earlier ruling here and is a deliberate reversal: the return value is
-   * what buys it, and a bare iterable has nowhere to put one.
+   * AND `return` CARRIES NO CONTENT, WHICH WAS DECLINED RATHER THAN OVERLOOKED.
+   * A content-bearing return makes a single-batch answer detectable in ONE pull,
+   * which is real. What it costs is TWO ENTRANCES FOR CONTENT -- `yield` and
+   * `return` -- with the author choosing between them per call, which is the
+   * weaker form of the very defect this shape exists to remove.
    */
   "textDocument/completion": {
     params: CompletionParams;
-    result: Promise<
-      | void
-      | [
-          CompletionResponse,
-          AsyncGenerator<CompletionItem[], EmptyCompletionResponse | undefined, null>?,
-        ]
-    >;
+    result: AsyncGenerator<CompletionItem[], void, void>;
   };
 
   "textDocument/hover": {

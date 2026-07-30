@@ -34,8 +34,12 @@ export default (): Promise<TsudoiConfig> => {
       // that is a different axis from `isIncomplete`, which is about the SET
       // growing as the user types. Confusing the two would be easy in this file
       // of all files, so the distinction is named.
-      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) =>
-        Promise.resolve([[bareItem]] as const),
+      "textDocument/completion": async function* (
+        _context: RequestContext,
+        _params: CompletionParams,
+      ) {
+        yield [bareItem];
+      },
       // SPREAD FIRST, so every member the client sent survives -- `data` above
       // all, which is the field a client echoes back and the only thing linking
       // this request to the item it is about.

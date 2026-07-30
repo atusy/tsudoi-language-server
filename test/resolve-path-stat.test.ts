@@ -2,11 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type {
-  CompletionItem,
-  CompletionList,
-  InitializeResult,
-} from "vscode-languageserver-protocol";
+import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
@@ -98,15 +94,14 @@ async function completedItems(session: LspSession, root: string): Promise<Comple
   session.notify("textDocument/didOpen", {
     textDocument: { uri, languageId: "plaintext", version: 1, text: prefix },
   });
-  // No partialResultToken: the answer and every chunk are merged into the
-  // response, which is the shape a client without partial-result support
-  // receives. Since Sprint 42 that response is a `CompletionList`, so the items
-  // come off `.items`.
-  const answer = await session.request<CompletionList | null>("textDocument/completion", {
+  // No partialResultToken: every batch is aggregated into the response, which
+  // is the shape a client without partial-result support receives, so the
+  // response IS the whole list.
+  const answer = await session.request<CompletionItem[] | null>("textDocument/completion", {
     textDocument: { uri },
     position: { line: 0, character: prefix.length },
   });
-  return answer?.items ?? [];
+  return answer ?? [];
 }
 
 /** The one item that inserts `insertText`, or a failure naming what was there. */

@@ -60,28 +60,33 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
 }
 
 /**
- * THE COMPILER DOES MOST OF THIS ONE NOW, AND WHAT IS LEFT IS THE HALF IT
- * CANNOT SEE. The paragraph this replaces said the compiler could do NONE of
- * it, and it was true until Sprint 42: a stream-driven entry could not pin its
- * result, because the protocol declares `CompletionItem[] | CompletionList |
- * null` where a tsudoi generator returned `CompletionItem[] | null`, so the
- * slot was left OPEN -- and `HoverParams` is assignable to `CompletionParams`,
- * they differing only in OPTIONAL members, so `HoverRequest.type` written into
- * completion's slot COMPILED. That is the defect this test was built for.
+ * THE COMPILER CANNOT DO THIS ONE, AND THIS TEST IS AGAIN THE ONLY THING THAT
+ * CATCHES A MIS-KEYED STREAM-DRIVEN ENTRY. A stream-driven entry cannot pin its
+ * result: the protocol declares `CompletionItem[] | CompletionList | null`
+ * where a tsudoi completion handler yields `CompletionItem[]`, so the slot is
+ * left OPEN -- and `HoverParams` is assignable to `CompletionParams`, they
+ * differing only in OPTIONAL members, so `HoverRequest.type` written into
+ * completion's slot COMPILES. That is the defect this test was built for.
  *
- * IT NO LONGER COMPILES. MEASURED at typescript 7.0.2 / protocol 3.18.2 on this
- * tree: the same edit fails TS2322 with `Type 'Hover' is not assignable to type
- * 'CompletionResponse | null'`, because the handler's answer is now EXACTLY the
- * protocol's declared result and the entry pins to it.
+ * IT WAS CLOSED BY THE COMPILER FOR EXACTLY ONE SPRINT, and saying so is what
+ * stops the next reader re-deriving the pin and finding out why it fails.
+ * Sprint 42's tuple put the protocol's own result type in the pair's first
+ * slot, so `MethodMap` and `CompletionRequest.type` agreed and the entry could
+ * pin; Sprint 43 withdrew the tuple, and a handler that yields items and
+ * nothing else cannot say `CompletionList`. RE-MEASURED ON THIS TREE at
+ * typescript 7.0.2 / protocol 3.18.2 rather than inherited from either record:
+ * pinning the entry gives TS2322 AT THE TABLE, `Type 'CompletionList' is
+ * missing the following properties from type 'CompletionItem[]'`. The reasoning
+ * for accepting that cost is at `StreamDrivenEntry` in src/methods.ts.
  *
- * WHAT THIS TEST STILL SAYS, AND IT IS WHY IT IS KEPT RATHER THAN RETIRED WITH
- * THE HAZARD: `type.method` IS A RUNTIME STRING, and nothing in the type system
- * reads it. A dependency that changed the method name a request constant
- * carries while leaving its types alone would pass every compile check and
- * register completion's entry under another method's name. NAMED AS A DIFFERENT
- * CLAIM rather than left looking redundant, per Sprint 9: a control that could
- * never be first to fail is not a control, and this one can -- it is the only
- * thing here that reads the wire name at all.
+ * WHAT THIS TEST SAYS THAT NO PIN EVER COULD, and it is why it would be kept
+ * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in
+ * the type system reads it. A dependency that changed the method name a request
+ * constant carries while leaving its types alone would pass every compile check
+ * and register completion's entry under another method's name. NAMED AS A
+ * DIFFERENT CLAIM rather than left looking redundant, per Sprint 9: a control
+ * that could never be first to fail is not a control, and this one can -- it is
+ * the only thing here that reads the wire name at all.
  *
  * WHY EITHER WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
  * with the entry's `type` and looks the config author's handler up BY THE KEY.

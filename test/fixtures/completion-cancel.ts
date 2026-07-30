@@ -15,30 +15,11 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "r
 /** Written from the signal's own abort event -- a standard Web API, so Deno-safe. */
 export const abortedMarker = "completion-cancel: aborted";
 
-/** Everything after the answer: parks, then streams the rest. */
-async function* rest(
-  context: RequestContext,
-  params: CompletionParams,
-): AsyncGenerator<CompletionItem[], undefined, null> {
-  // Awaited polling, not a busy loop: awaiting hands the event loop back
-  // so the server can process what opens this gate.
-  while (
-    context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
-    !context.signal.aborted
-  ) {
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-
-  yield afterGate;
-  yield returnedItems;
-  return undefined;
-}
-
 /**
- * Answers, parks, then streams again -- and it yields that second
- * chunk whether or not it was cancelled. Stopping AFTER an abort is tsudoi's
- * job here, not the handler's: a fixture that returned early on abort would
- * prove nothing about what tsudoi suppresses.
+ * Yields, parks, then yields again -- and it yields that second batch whether or
+ * not it was cancelled. Stopping AFTER an abort is tsudoi's job here, not the
+ * handler's: a fixture that returned early on abort would prove nothing about
+ * what tsudoi suppresses.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
@@ -49,11 +30,32 @@ export default (): Promise<TsudoiConfig> => {
       // return the same list. THE CANCELLED PATH MAKES NO CLAIM EITHER WAY --
       // that request is answered -32800 and carries no result -- which is the
       // path this fixture actually exists for.
-      "textDocument/completion": (context: RequestContext, params: CompletionParams) => {
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        params: CompletionParams,
+      ) {
+        // SUBSCRIBED BEFORE THE FIRST YIELD, WHICH IS WHERE IT HAS TO BE NOW.
+        // Until Sprint 43 the handler was awaited and this ran before any
+        // generator body did; a generator body does not start until its first
+        // `next()`, so a listener written after the first `yield` would miss an
+        // abort that arrived while the drive was still sending that batch.
         context.signal.addEventListener("abort", () => {
           process.stderr.write(`${abortedMarker}\n`);
         });
-        return Promise.resolve([beforeGate, rest(context, params)] as const);
+
+        yield beforeGate;
+
+        // Awaited polling, not a busy loop: awaiting hands the event loop back
+        // so the server can process what opens this gate.
+        while (
+          context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
+          !context.signal.aborted
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+
+        yield afterGate;
+        yield returnedItems;
       },
     },
   });

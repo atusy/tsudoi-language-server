@@ -22,29 +22,8 @@ export function itemsFor(folders: readonly WorkspaceFolder[]): CompletionItem[] 
 }
 
 /**
- * Everything after the answer. THE READ IS STILL INSIDE THE HANDLER AT EACH
- * EMISSION -- once for the answer at the call site and once here -- and never
- * hoisted into a local above them, which is the whole reason this fixture
- * exists rather than reusing completion-gate.ts.
- */
-async function* rest(
-  context: RequestContext,
-  params: CompletionParams,
-): AsyncGenerator<CompletionItem[], undefined, null> {
-  // Awaited polling, not a busy loop, exactly as completion-gate.ts does:
-  // awaiting hands the event loop back so the server can process the
-  // notifications that open this gate -- a busy loop would starve them.
-  while (context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen) {
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-
-  yield itemsFor(context.workspaceFolders);
-  return undefined;
-}
-
-/**
- * Answers what its RequestContext says the workspace is, parks until the test
- * changes the document, then streams that again.
+ * Yields what its RequestContext says the workspace is, parks until the test
+ * changes the document, then yields that again.
  *
  * THE READ IS INSIDE THE HANDLER AT EACH YIELD, never hoisted into a local
  * above them, and that is the whole reason this fixture exists rather than
@@ -64,8 +43,27 @@ export default (): Promise<TsudoiConfig> => {
       // anything the user typed, and no further keystroke can add a folder to
       // it. Ruling it INCOMPLETE would contradict what this fixture exists to
       // assert: that the list a handler sees does not move mid-request.
-      "textDocument/completion": (context: RequestContext, params: CompletionParams) =>
-        Promise.resolve([itemsFor(context.workspaceFolders), rest(context, params)] as const),
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        params: CompletionParams,
+      ) {
+        // THE READ IS INSIDE THE GENERATOR AT EACH YIELD, never hoisted into a
+        // local above them. Both reads are now in one body -- until Sprint 43
+        // the first was at the handler's call site and the second in a separate
+        // generator -- and the property they defend is unchanged: a fixture that
+        // captured `context.workspaceFolders` ONCE would go on passing under a
+        // RequestContext that read the folders lazily.
+        yield itemsFor(context.workspaceFolders);
+
+        // Awaited polling, not a busy loop, exactly as completion-gate.ts does:
+        // awaiting hands the event loop back so the server can process the
+        // notifications that open this gate -- a busy loop would starve them.
+        while (context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+
+        yield itemsFor(context.workspaceFolders);
+      },
     },
   });
 };

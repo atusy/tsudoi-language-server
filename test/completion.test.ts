@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionItem,
-  type CompletionList,
   type InitializeResult,
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
@@ -26,19 +25,7 @@ import {
 } from "./fixtures/completion-gate.ts";
 import { partialChunk } from "./fixtures/completion-null-after-yield.ts";
 import { recoveredItems, sentBeforeThrow, throwMessage } from "./fixtures/completion-throws.ts";
-import {
-  answered as listAnswered,
-  firstChunk as listFirst,
-  secondChunk as listSecond,
-} from "./fixtures/completion-list.ts";
-import {
-  answered as finalAnswered,
-  streamed as finalStreamed,
-} from "./fixtures/completion-list-final.ts";
-
 const completionChunks = fixture("completion-chunks.ts");
-const completionList = fixture("completion-list.ts");
-const completionListFinal = fixture("completion-list-final.ts");
 const completionGate = fixture("completion-gate.ts");
 const nullAfterYield = fixture("completion-null-after-yield.ts");
 const nullOnly = fixture("completion-null-only.ts");
@@ -106,17 +93,19 @@ for (const runtime of runtimes) {
       }
     });
 
-    // Ordering against an outstanding response, not counting: a server that
-    // buffered the answer and every yield and flushed them immediately before
-    // responding produces the same three $/progress, and is the exact opposite
-    // of what this story is for.
+    // TOKEN PRESENT, SEVERAL BATCHES -- and this arm asserts the thing a count
+    // alone cannot: ORDERING AGAINST AN OUTSTANDING RESPONSE. A server that
+    // buffered every yield and flushed them immediately before responding
+    // produces the same three $/progress and is the exact opposite of what this
+    // story is for, so what is measured is that a batch leaves WHILE THE HANDLER
+    // IS STILL RUNNING.
     //
-    // THE FIRST LITERAL IS THE HANDLER'S ANSWER AND THE REST ARE ITS STREAM,
-    // which is the specification's position rather than tsudoi's arrangement.
-    // The property this test defends did not move with it: what leaves early
-    // has to leave WHILE THE HANDLER IS STILL RUNNING.
+    // THE PROPERTY SURVIVED TWO SHAPE CHANGES UNTOUCHED, which is worth the
+    // sentence: these three literals were three yields, then an answer plus two
+    // chunks, and are three yields again. What has to leave early has never
+    // depended on which of them the handler called what.
     test(
-      "the answer and each chunk reach the client as one $/progress while the handler is still running",
+      "each batch reaches the client as its own $/progress while the handler is still running",
       async () => {
         const session = LspSession.start(runtime, completionGate);
         try {
@@ -165,14 +154,14 @@ for (const runtime of runtimes) {
 
           await session.waitForProgress(3);
           // THE PAIR FOR THE `toBeNull()` BELOW. `gateReturned` used to be
-          // asserted AS the response; it is now the stream's last chunk, and
-          // without this line the assertion under it would be satisfied by a
-          // server that answered null having sent nothing after the gate.
+          // asserted AS the response; it is now the last batch, and without this
+          // line the assertion under it would be satisfied by a server that
+          // answered null having sent nothing after the gate.
           expect(session.progress[2]).toEqual({ token: partialResultToken, value: gateReturned });
 
           expect(await response).toBeNull();
-          // One $/progress per literal -- the answer and the two chunks -- and
-          // no repeat of any of them on the way out.
+          // One $/progress per batch, and no repeat of any of them on the way
+          // out -- the response half of this arm's channel claim.
           expect(session.progressCount).toBe(3);
         } finally {
           session.dispose();
@@ -186,10 +175,12 @@ for (const runtime of runtimes) {
      * `with a partialResultToken the response carries the returned array
      * alone`, whose property -- do not concatenate the yields into the response
      * -- was foreclosed at Sprint 42 by making the response `null` in every
-     * streaming case. THE HAZARD IS NOT GONE, IT MOVED: the handler's ANSWER is
-     * now the FIRST `$/progress` literal, so a drive that also merged it into
-     * what it sent afterwards, or sent it twice, would hand a client that
-     * appends 一番目 twice. Same defect, different door.
+     * streaming case. THE HAZARD IS NOT GONE AND IT HAS NOW OUTLIVED TWO
+     * MECHANISMS: a drive that streamed a batch AND aggregated it into the
+     * response, or sent one twice, hands a client that appends 一番目 twice.
+     * Sprint 42's door -- the answer both leaving as the first literal and being
+     * merged into what followed -- is closed with the tuple; this one is the
+     * general form and does not depend on any shape.
      *
      * THE EXACTLY-ONCE CLAIM IS THE FIRST ASSERTION, per Sprint 18: it is what
      * this test exists for, and a test whose first assertion was the null
@@ -227,11 +218,13 @@ for (const runtime of runtimes) {
       }
     });
 
-    // The same handler, driven the way a client that cannot take partial
-    // results drives it: no token. That absence is the ONE observable trigger
-    // -- LSP has no capability declaring partial-result support, so the second
-    // trigger the brief describes collapses into this one.
-    test("without a partialResultToken the answer and every chunk arrive as one response, and nothing streams", async () => {
+    // TOKEN ABSENT, SEVERAL BATCHES: the same handler, driven the way a client
+    // that cannot take partial results drives it. That absence is the ONE
+    // observable trigger -- LSP has no capability declaring partial-result
+    // support, so the second trigger the brief describes collapses into this
+    // one. The PAIRED PRESENCE for its zero, per Sprint 6, is the same counter
+    // reading three in the arm above and one in the one-batch arm below.
+    test("without a partialResultToken every batch arrives as one response, and nothing streams", async () => {
       const session = LspSession.start(runtime, completionChunks);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
@@ -261,27 +254,32 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * RETARGETED AT SPRINT 42 RATHER THAN DELETED, and what it used to say is
-     * worth one paragraph because the deletion looked obvious. It asserted `[]`
-     * after a partial result against `null` when there was none -- two
-     * different empty answers, told apart by request-local state. THAT
-     * DISTINCTION IS GONE BY CONSTRUCTION: under a token EVERY response is
-     * `null`, because the answer has already left as the first literal and the
-     * specification requires what follows to be empty in terms of result
-     * values. Measured: both arms answer `null` now.
+     * TOKEN PRESENT, ONE BATCH -- THE ARM THE WHOLE RULE TURNS ON. The other
+     * three arms of `the token decides the channel` are satisfied by any drive
+     * that happens to agree today; this is the one that separates `the token
+     * decides` from `the drive decides, and the token usually agrees`. A stream
+     * that yielded EXACTLY ONCE under a token spends one `$/progress` and a
+     * `null` response, knowingly, where a look-ahead would have answered with
+     * the batch and sent nothing.
      *
-     * WHAT SURVIVED IS THE TEST'S SHAPE, AND IT GUARDS THE REPLACEMENT HAZARD.
-     * The two sessions still discriminate, on the question the new shape makes
-     * decidable: an answer with NO stream must still STREAM ITS ANSWER, and
-     * `return;` must stream NOTHING -- while both answer `null`. A drive that
-     * skipped the literal when there was no generator would pass the response
-     * half of both arms and fail here; so would one that emitted a literal for
-     * a handler that said nothing at all.
+     * THE PROGRESS COUNT IS THE FIRST ASSERTION, per Sprint 18 and on purpose.
+     * The perturbation this arm exists for -- make the drive skip `$/progress`
+     * when only one batch was produced -- flips BOTH assertions, and bun stops
+     * at the first: with the response first, the failure would name a list where
+     * `null` was expected and say nothing about the channel. Reading only the
+     * response cannot tell this arm from the no-token one at all.
      *
-     * Both halves in one run against one build, as before. Neither is
-     * satisfiable by a constant.
+     * ITS FIXTURE MUST YIELD EXACTLY ONE BATCH or the perturbation is not
+     * reached and this green records nothing; completion-null-after-yield.ts
+     * says so at its own site.
+     *
+     * AND THE SECOND SESSION IS THE PAIRED ABSENCE, per Sprint 6: zero yields
+     * must produce ZERO `$/progress`, measured by the same counter that saw one
+     * above. Both halves in one run against one build. Neither is satisfiable by
+     * a constant, and `null` is the response in both -- which is why the counter
+     * is what discriminates them.
      */
-    test("an answer with no stream still streams its answer, where `return;` streams nothing", async () => {
+    test("with a token, a stream that yields once still streams it, where one that yields nothing streams nothing", async () => {
       const afterYield = LspSession.start(runtime, nullAfterYield);
       const immediate = LspSession.start(runtime, nullOnly);
       try {
@@ -292,17 +290,22 @@ for (const runtime of runtimes) {
           "textDocument/completion",
           completionParams(partialResultToken),
         );
-        // The answer did leave, so the client already has it, and repeating it
-        // in the response would double it for a client that appends.
+        // ONE, and it is the channel claim: the batch left as $/progress rather
+        // than as the response, even though this stream produced only one.
+        expect(afterYield.progressCount).toBe(1);
+        // ...carrying what the handler produced, so `one message` cannot be
+        // satisfied by a server that sent an empty one.
         expect(afterYield.progress).toEqual([{ token: partialResultToken, value: partialChunk }]);
+        // The batch already left, so repeating it in the response would double
+        // it for a client that appends.
         expect(afterYieldResult).toBeNull();
 
         const immediateResult = await immediate.request<CompletionItem[] | null>(
           "textDocument/completion",
           completionParams(partialResultToken),
         );
-        // Nothing left, so null says `nothing to say` -- which [] would have
-        // reported to the client as an answered request with no candidates.
+        // Nothing was yielded, so null says `nothing to say` -- which [] would
+        // have reported to the client as an answered request with no candidates.
         expect(immediate.progressCount).toBe(0);
         expect(immediateResult).toBeNull();
       } finally {
@@ -311,26 +314,26 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE NO-TOKEN MODE, and until Sprint 13 its only home was the example
-    // config. The three-case enumeration that stood here named
-    // `emitted ? collected : null` in src/methods.ts -- AN EXPRESSION THAT NO
-    // LONGER EXISTS, and the enumeration went with it. THE MODE TABLE THAT
-    // REPLACES IT LIVES AT `MethodMap` IN src/types.ts, which is where the
-    // violating edit would be made: five rows over `return;`, `[answer]` and
-    // `[answer, chunks]`, each with and without a token. It is not restated
-    // here, because a table in two places is a table that disagrees with itself.
+    // TOKEN ABSENT, ONE BATCH -- the fourth arm, and it is the SAME FIXTURE the
+    // token-present one-batch arm above drives. That is what makes the pair
+    // discriminating: one handler, one build, and the ONLY difference between
+    // the two runs is whether the client sent a token.
     //
-    // WHAT THIS TEST STILL CARRIES is the row a client that cannot take partial
-    // results sees: with no token the answer is IN THE RESPONSE, and `null`
-    // there would not merely lose the shape -- it would lose the CANDIDATES,
-    // and the user would be told there are none.
+    // THE MODE TABLE IS AT `MethodMap` IN src/types.ts, which is where the
+    // violating edit would be made, and it is not restated here because a table
+    // in two places is a table that disagrees with itself.
+    //
+    // WHAT THIS TEST CARRIES is the row a client that cannot take partial
+    // results sees: with no token the batch is IN THE RESPONSE, and `null` there
+    // would not merely lose the shape -- it would lose the CANDIDATES, and the
+    // user would be told there are none.
     //
     // A PURPOSE-BUILT FIXTURE rather than the example, per amended standing
     // item 6: this property is stable, the example is not, and a property whose
     // home moves whenever the example changes is a property that can be lost by
     // a change unrelated to it. The example is still driven -- see the tests
     // below -- it is simply no longer the only thing carrying this.
-    test("without a partialResultToken the answer is the response, and nothing streams", async () => {
+    test("without a partialResultToken one batch is the whole response, and nothing streams", async () => {
       const session = LspSession.start(runtime, nullAfterYield);
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
@@ -350,67 +353,30 @@ for (const runtime of runtimes) {
       }
     });
 
-    /**
-     * THE MERGE IS CONFORMANCE, NOT A TSUDOI RULING, so what is cited here is
-     * the specification and not an argument of ours: subsequent partial results
-     * of `CompletionItem[]` ADD TO THE `items` PROPERTY of the `CompletionList`
-     * provided first -- `_specifications/lsp/3.18/language/completion.md`, in
-     * `textDocument/completion`'s own Partial Result line.
+    /*
+     * TWO TESTS STOOD HERE AND DIED AT SPRINT 43 -- `isIncomplete survives a
+     * merge untouched` and `a generator's return updates isIncomplete after the
+     * stream ended` -- WITH THEIR FIXTURES. TARGET DELIBERATELY REMOVED per
+     * Sprint 38 and not a defence that went quiet: a completion handler yields
+     * `CompletionItem[]` and nothing else, so neither the `CompletionList`
+     * answer they asserted about nor the content-bearing generator return that
+     * updated it can be written at all. Their subject is gone, not undefended.
      *
-     * NO TOKEN, so the merge happens locally and its RESULT is observable in one
-     * response. Under a token the same rule is the client's to apply and tsudoi
-     * has nothing to be right or wrong about.
+     * AND THE QUESTION A DELETION SKIPS, ASKED: DOES THE NEW SHAPE CREATE AN
+     * ANALOGOUS HAZARD? The first test guarded tsudoi REWRITING a property the
+     * author set while merging. Nothing this drive concatenates carries a
+     * property any more -- it appends arrays of items -- so there is no member
+     * for a merge to touch and the hazard has no new door. The SECOND hazard
+     * they shared, a merge that lost or doubled items, is not gone and is
+     * guarded above by `a client that appends sees each item exactly once`.
      *
-     * `isIncomplete` FIRST, per Sprint 18: it is the hazard this test owns. A
-     * drive that rewrote it on drain would still concatenate the items
-     * correctly, so a test whose first assertion was the items would go green on
-     * exactly the defect this one exists to catch.
+     * WHERE THE CAPABILITY IS RECORDED AS LOST rather than forgotten: at the two
+     * configs still ruled NOT COMPLETE, examples/completion-path.ts and
+     * examples/tsudoi.config.ts, which now say the claim is still wrong and why
+     * it cannot be stated. The nvim measurement that showed a client acting on
+     * `isIncomplete` is in Sprint 42's record, which is where a future attempt
+     * starts.
      */
-    test("isIncomplete survives a merge untouched", async () => {
-      const session = LspSession.start(runtime, completionList);
-      try {
-        await session.request<InitializeResult>("initialize", initializeParams);
-
-        const result = await session.request<CompletionList | null>(
-          "textDocument/completion",
-          completionParams(),
-        );
-
-        expect(result?.isIncomplete).toBe(true);
-        expect(result?.items).toEqual([...listAnswered, ...listFirst, ...listSecond]);
-      } finally {
-        session.dispose();
-      }
-    });
-
-    /**
-     * THE AUTHOR'S LAST WORD, AND IT IS THE ONLY THING THAT MAY MOVE
-     * `isIncomplete` AFTER THE ANSWER. The generator's return exists for the
-     * case a handler cannot decide up front -- it answers INCOMPLETE, drains its
-     * own source, and only then knows the set was final.
-     *
-     * THE VERDICT FIRST AND THE ITEMS SECOND, and the second assertion is not
-     * decoration: the returned value is EMPTY by its own type, so a drive that
-     * took its `items` rather than applying its other members over the merged
-     * list would answer `isIncomplete: false` with NO CANDIDATES AT ALL -- and
-     * would pass the first assertion while losing everything the request found.
-     */
-    test("a generator's return updates isIncomplete after the stream ended", async () => {
-      const session = LspSession.start(runtime, completionListFinal);
-      try {
-        await session.request<InitializeResult>("initialize", initializeParams);
-
-        const result = await session.request<CompletionList | null>(
-          "textDocument/completion",
-          completionParams(),
-        );
-
-        expect(result?.isIncomplete).toBe(false);
-        expect(result?.items).toEqual([...finalAnswered, ...finalStreamed]);
-      } finally {
-        session.dispose();
-      }
-    });
 
     // THE EXAMPLE IS EXECUTED, which is what amended standing item 6 requires
     // of it: the config a reader copies is loaded and DRIVEN, end to end,
@@ -440,19 +406,27 @@ for (const runtime of runtimes) {
           textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "aggreg" },
         });
 
-        const result = await session.request<CompletionList | null>("textDocument/completion", {
+        const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: "aggreg".length },
         });
 
-        expect(result?.items.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
-        // THE SPRINT'S USER-FACING HALF, ASSERTED AT THE ARTIFACT A READER
-        // COPIES. The example completes a path, so the candidate set changes
-        // with the next keystroke and a client must re-query rather than filter
-        // what it holds. Before Sprint 42 this same request answered a bare
-        // array, which the specification reads as `{ isIncomplete: false }` --
-        // the opposite claim, made by nobody's decision.
-        expect(result?.isIncomplete).toBe(true);
+        expect(result?.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
+        // A BARE ARRAY AGAIN SINCE SPRINT 43, AND THE ASSERTION THAT STOOD HERE
+        // DIED WITH THE CAPABILITY. An assertion that the response claimed
+        // `isIncomplete: true` was this sprint's user-facing half one sprint
+        // ago; a handler can no longer say it in any spelling, so what this
+        // request now sends is what the specification reads as
+        // `{ isIncomplete: false, items }` -- a claim
+        // examples/completion-path.ts rules FALSE at its own site and can no
+        // longer contradict on the wire.
+        //
+        // THE DEAD ASSERTION IS DESCRIBED RATHER THAN QUOTED, and that is not
+        // fastidiousness: this project measures `none weakened` by grepping
+        // every source line that opens an assertion call, so a comment quoting
+        // one INFLATES THE INSTRUMENT BY ONE. Measured here -- a first draft of
+        // this very comment put the predicted 708 at 709, while the runtime
+        // count and the test count both landed exactly.
         expect(session.progressCount).toBe(0);
 
         // THE PAIR, and it is what keeps the assertion above from being
@@ -472,7 +446,7 @@ for (const runtime of runtimes) {
         // ASSUMED: the example's `null` is now spelled `return;` and the
         // perturbation is spelled `return [{ isIncomplete: true, items: [] }]`,
         // and it still reddens exactly here and nowhere else.
-        const nothing = await session.request<CompletionList | null>("textDocument/completion", {
+        const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },
         });

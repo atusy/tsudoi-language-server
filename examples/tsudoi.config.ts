@@ -39,12 +39,13 @@ const config: TsudoiConfigFactory = () => {
       // document is NOT IN THE STORE, which means `this server cannot see the
       // buffer yet`. It used to `return []`, which goes out as `the candidate
       // set is complete and empty` -- a different statement, and the one thing
-      // this server is sure it cannot say. `return;` is `no answer`, which is
-      // what was true all along.
-      "textDocument/completion": (context, params) => {
+      // this server is sure it cannot say. YIELDING NOTHING is `no answer`,
+      // which is what was true all along, and THAT HALF SURVIVED SPRINT 43
+      // WHILE THE FIRST DID NOT.
+      "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {
-          return Promise.resolve();
+          return;
         }
 
         {
@@ -101,20 +102,20 @@ const config: TsudoiConfigFactory = () => {
           //    where `methods` below can answer it, so ADDING A KEY IS THE
           //    WHOLE OF TURNING A FEATURE ON.
           //
-          // RETURNED WHOLE, PAIR AND ALL: the delegate hands back its answer
-          // and the generator that carries the rest of it, and tsudoi decides
-          // from the client's `partialResultToken` whether that generator
-          // becomes a stream of `$/progress` or is merged into one response.
-          // A handler that wanted to add items of its own would merge them into
-          // the answer's `items` here; this one has nothing to add.
+          // DELEGATED WHOLE: the batches this yields are the delegate's, and
+          // tsudoi decides from the client's `partialResultToken` whether they
+          // leave as `$/progress` or are aggregated into one response. NOTHING
+          // WRITTEN HERE CHOOSES BETWEEN THEM, which is the whole shape of the
+          // API -- a handler that had items of its own would `yield` them and
+          // still choose nothing.
           //
-          // WHERE THE CLEANUP WENT, because it used to be visible in this file
-          // and a reader will look for it: a `finally` here would run the
-          // moment this function returned its pair, which is BEFORE any of the
-          // streaming happens, so it would release nothing that was still
-          // held. The block that outlives the answer is the generator inside
-          // `pathCompletion`, and the cleanup lives there with the reasons.
-          return pathCompletion(context, params);
+          // `yield*` RATHER THAN A RETURN, and it has to be: this handler is a
+          // generator, so handing the delegate's generator BACK would make it
+          // the yielded value instead of running it. `yield*` is what forwards
+          // every batch AND the close -- tsudoi's `.return()` on cancellation
+          // reaches the delegate through it, which is what runs the `finally`
+          // that lives with the work in examples/completion-path.ts.
+          yield* pathCompletion(context, params);
         }
       },
 

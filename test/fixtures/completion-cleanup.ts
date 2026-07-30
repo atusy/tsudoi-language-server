@@ -22,37 +22,12 @@ export const parkedMarker = "completion-cleanup: parked";
 /** The config author's cleanup, and the only evidence that it ran at all. */
 export const cleanupMarker = "completion-cleanup: released";
 
-/** Everything after the answer, and the `finally` is the whole user story. */
-async function* rest(
-  context: RequestContext,
-  params: CompletionParams,
-): AsyncGenerator<CompletionItem[], undefined, null> {
-  try {
-    process.stderr.write(`${parkedMarker}\n`);
-
-    // Awaited polling, not a busy loop: awaiting hands the event loop back
-    // so the server can process what opens this gate or cancels it.
-    while (
-      context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
-      !context.signal.aborted
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-
-    yield afterGate;
-    yield returnedItems;
-    return undefined;
-  } finally {
-    process.stderr.write(`${cleanupMarker}\n`);
-  }
-}
-
 /**
- * Answers, parks, then streams AGAIN -- and it yields that second
- * chunk whether or not it was cancelled, which is what leaves the generator
- * suspended at a `yield` when tsudoi decides to abandon it. That shape is the
- * one an early close can reach: a generator parked inside its own `await`
- * queues `return()` behind the pending `next()` instead.
+ * Yields, parks, then yields AGAIN -- and it yields that second batch whether or
+ * not it was cancelled, which is what leaves the generator suspended at a
+ * `yield` when tsudoi decides to abandon it. That shape is the one an early
+ * close can reach: a generator parked inside its own `await` queues `return()`
+ * behind the pending `next()` instead.
  *
  * The `finally` is the whole user story. A config author cannot watch it run --
  * the request is answered -32800 either way -- so nothing but this record says
@@ -67,8 +42,36 @@ export default (): Promise<TsudoiConfig> => {
       // `finally` -- whether a config author's cleanup RUNS -- and that is
       // orthogonal to whether the set it was building was final, which is why
       // the ruling can be made here without weakening anything the tests say.
-      "textDocument/completion": (context: RequestContext, params: CompletionParams) =>
-        Promise.resolve([beforeGate, rest(context, params)] as const),
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        params: CompletionParams,
+      ) {
+        // THE `try` OPENS BEFORE THE FIRST YIELD, WHICH IS WIDER THAN IT WAS AND
+        // DELIBERATELY SO. Until Sprint 43 the first batch was an ANSWER outside
+        // this generator, so a request abandoned before the second pull ran no
+        // cleanup at all -- the generator had never been started, and `.return()`
+        // on an unstarted generator runs no `finally`. Every batch is now inside
+        // it, so the author's cleanup covers the whole of the work.
+        try {
+          yield beforeGate;
+
+          process.stderr.write(`${parkedMarker}\n`);
+
+          // Awaited polling, not a busy loop: awaiting hands the event loop back
+          // so the server can process what opens this gate or cancels it.
+          while (
+            context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
+            !context.signal.aborted
+          ) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+          }
+
+          yield afterGate;
+          yield returnedItems;
+        } finally {
+          process.stderr.write(`${cleanupMarker}\n`);
+        }
+      },
     },
   });
 };

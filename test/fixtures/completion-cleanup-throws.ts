@@ -33,37 +33,6 @@ function failCleanup(): never {
   throw new Error(cleanupThrowMessage);
 }
 
-/** Everything after the answer, with a `finally` that fails once abandoned. */
-async function* rest(
-  context: RequestContext,
-  params: CompletionParams,
-): AsyncGenerator<CompletionItem[], undefined, null> {
-  try {
-    process.stderr.write(`${parkedMarker}\n`);
-
-    // Awaited polling, not a busy loop: awaiting hands the event loop back
-    // so the server can process what opens this gate or cancels it.
-    while (
-      context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
-      !context.signal.aborted
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-
-    // Yielded whether or not it was cancelled: this is what leaves the
-    // generator SUSPENDED AT A YIELD for tsudoi to close, rather than
-    // finishing on its own and never reaching the abort branch at all.
-    yield afterGate;
-    yield returnedItems;
-    return undefined;
-  } finally {
-    if (context.signal.aborted) {
-      process.stderr.write(`${cleanupMarker}\n`);
-      failCleanup();
-    }
-  }
-}
-
 /**
  * Cleanup that fails, but only for a request that was ABANDONED: tsudoi closes
  * a generator from its abort path alone, so `context.signal.aborted` is what
@@ -80,8 +49,39 @@ export default (): Promise<TsudoiConfig> => {
       // and `a session whose cleanup threw answers a later completion normally`
       // is a claim about that constant ARRIVING, never about the set being
       // partial.
-      "textDocument/completion": (context: RequestContext, params: CompletionParams) =>
-        Promise.resolve([beforeGate, rest(context, params)] as const),
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        params: CompletionParams,
+      ) {
+        // The `try` opens before the FIRST yield since Sprint 43: every batch is
+        // inside the generator now, so the author's cleanup covers all of it
+        // rather than everything after the answer.
+        try {
+          yield beforeGate;
+
+          process.stderr.write(`${parkedMarker}\n`);
+
+          // Awaited polling, not a busy loop: awaiting hands the event loop back
+          // so the server can process what opens this gate or cancels it.
+          while (
+            context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen &&
+            !context.signal.aborted
+          ) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+          }
+
+          // Yielded whether or not it was cancelled: this is what leaves the
+          // generator SUSPENDED AT A YIELD for tsudoi to close, rather than
+          // finishing on its own and never reaching the abort branch at all.
+          yield afterGate;
+          yield returnedItems;
+        } finally {
+          if (context.signal.aborted) {
+            process.stderr.write(`${cleanupMarker}\n`);
+            failCleanup();
+          }
+        }
+      },
     },
   });
 };

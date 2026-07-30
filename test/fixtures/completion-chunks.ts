@@ -8,31 +8,39 @@ import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 // the response body are two different serialisation paths out of the server.
 export const firstChunk: CompletionItem[] = [{ label: "一番目", detail: "yielded first" }];
 export const secondChunk: CompletionItem[] = [{ label: "二番目", detail: "yielded second" }];
-export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "returned" }];
-
 /**
- * Everything after the answer. The three payloads reach the wire in the same
- * order they always did -- the first as the answer, the other two as chunks --
- * so what moved is WHICH MESSAGE carries the last of them, not the order.
+ * THE NAME IS STALE AND IS LEFT ALONE DELIBERATELY, flagged here rather than
+ * fixed: nothing is RETURNED any more -- a completion generator's return carries
+ * no content, so this is the third YIELD. It went stale at Sprint 42, when this
+ * payload became the last chunk rather than the generator's return value, so it
+ * is not this sprint's to correct and the rename would touch five test files.
+ * Surfaced to the Scrum Master instead, per the Sprint-42 precedent that
+ * correcting prose outside the criteria is how scope grows.
  */
-async function* rest(): AsyncGenerator<CompletionItem[], undefined, null> {
-  yield secondChunk;
-  yield returnedItems;
-  return undefined;
-}
+export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "yielded last" }];
 
 /** Supplies completion and NOT hover, so advertisement cannot cross over. */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: COMPLETE. Both parameters are unused -- they are
-      // spelled underscore-prefixed above -- so nothing about the request
+      // spelled underscore-prefixed below -- so nothing about the request
       // reaches this answer and the three constants ARE the whole candidate set
       // at every position in every document. The tests here assert ORDER and
       // IDENTITY of chunks, which is a claim about the transport rather than
       // about whether more items exist.
-      "textDocument/completion": (_context: RequestContext, _params: CompletionParams) =>
-        Promise.resolve([firstChunk, rest()] as const),
+      "textDocument/completion": async function* (
+        _context: RequestContext,
+        _params: CompletionParams,
+      ) {
+        // THREE YIELDS AND NO RETURN VALUE, WHICH IS THE WHOLE SHAPE. The three
+        // payloads reach the wire in the order they always did; what moved at
+        // Sprint 43 is that all three travel through ONE entrance instead of the
+        // first being an answer and the other two a stream beside it.
+        yield firstChunk;
+        yield secondChunk;
+        yield returnedItems;
+      },
     },
   });
 };

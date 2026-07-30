@@ -42,7 +42,17 @@ export default (): Promise<TsudoiConfig> => {
       // and the specification's array equivalence has nothing to apply to. The
       // ruling is recorded so the enumeration covers every completion handler
       // rather than only the ones that answer.
-      "textDocument/completion": async (context: RequestContext, _params: CompletionParams) => {
+      //
+      // IT DRAWS `eslint(require-yield)` AND THAT IS THE FIXTURE WORKING, said
+      // here so the warning is not read as an oversight and silenced. A
+      // generator that never yields is exactly what this file is for. THE
+      // WARNING COUNT IS UNCHANGED AT ONE: it used to be raised by
+      // completion-throws.ts, whose throwing generator merged into a handler
+      // that does yield when the shape moved at Sprint 43.
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        _params: CompletionParams,
+      ) {
         process.stderr.write(`${completionEntered}\n`);
         await aborted(context);
         throw new Error(throwMessage);

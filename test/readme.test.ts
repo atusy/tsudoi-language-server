@@ -329,23 +329,21 @@ const facts: readonly ReadmeFact[] = [
     // never finishes, measured in Sprint 8 and recorded at src/methods.ts.
     // Promising completion would document something the language forbids.
     //
-    // WHERE THE `finally` GOES IS A TOKEN SINCE SPRINT 42, and it is a
-    // STRENGTHENING of this fact rather than a second one. Until then the
-    // handler WAS the generator and the question could not be asked; now the
-    // handler is awaited once and the generator sits in the pair beside its
-    // answer, so a reader who writes the `finally` one level up gets a block
-    // that runs immediately and releases nothing. THIS FACT WENT FALSE THE
-    // MOMENT THE SHAPE MOVED and nothing pointed at it -- which is exactly the
-    // failure this file exists for, so it is closed here rather than only
-    // corrected in the README.
+    // WHERE THE `finally` GOES WAS A TOKEN FOR ONE SPRINT AND IS GONE AGAIN,
+    // which is the interesting half rather than a reversion to tidy past. It
+    // was added at Sprint 42, when a completion handler became AWAITED ONCE for
+    // a pair whose second slot held the generator -- so a `finally` written one
+    // level up ran immediately and released nothing, and `not in the handler`
+    // was a real warning. Sprint 43 made the handler the generator again, so
+    // there is one body, no level to be one above, and the token would now
+    // require the README to warn against a mistake nobody can make.
+    //
+    // THE FACT WENT FALSE BOTH TIMES THE SHAPE MOVED, in opposite directions,
+    // which is what this file exists for and is why the token is REMOVED rather
+    // than left standing harmlessly: a token nothing in the document should say
+    // is a test that forces false prose.
     name: "cleanup runs because tsudoi closes the generator, and completion is not promised",
-    tokens: [
-      /closes the generator/i,
-      /finally/,
-      /does not promise/i,
-      /completes/i,
-      /not in the handler/i,
-    ],
+    tokens: [/closes the generator/i, /finally/, /does not promise/i, /completes/i],
   },
 ];
 

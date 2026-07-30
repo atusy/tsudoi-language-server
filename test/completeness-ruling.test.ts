@@ -45,8 +45,15 @@ const ruled = [
   "test/fixtures/completion-cleanup-throws.ts",
   "test/fixtures/completion-cleanup.ts",
   "test/fixtures/completion-gate.ts",
-  "test/fixtures/completion-list-final.ts",
-  "test/fixtures/completion-list.ts",
+  // completion-list.ts and completion-list-final.ts STOOD HERE UNTIL SPRINT 43
+  // and are gone with the capability they demonstrated, which is worth a line
+  // because a shrinking enumeration reads exactly like a ruling that was
+  // dropped. They were the only two configs that answered a `CompletionList`;
+  // a completion handler now yields `CompletionItem[]` and nothing else, so
+  // neither file could be written at all. TARGET DELIBERATELY REMOVED per
+  // Sprint 38, not a ruling that went missing -- AND THE TWO RULINGS THAT SAY
+  // `NOT COMPLETE` ARE STILL AT examples/completion-path.ts AND
+  // examples/tsudoi.config.ts, which is where the loss is actually recorded.
   "test/fixtures/completion-null-after-yield.ts",
   "test/fixtures/completion-null-only.ts",
   "test/fixtures/completion-throws.ts",

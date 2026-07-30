@@ -9,25 +9,8 @@ export const beforeGate: CompletionItem[] = [{ label: "門前", detail: "yielded
 export const afterGate: CompletionItem[] = [{ label: "門後", detail: "yielded after the gate" }];
 export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "returned" }];
 
-/** Everything after the answer: parks, then yields the rest. */
-async function* rest(
-  context: RequestContext,
-  params: CompletionParams,
-): AsyncGenerator<CompletionItem[], undefined, null> {
-  // Awaited polling, not a busy loop. Awaiting hands the event loop back
-  // so the server can process the didChange that opens this gate; a busy
-  // loop would starve the very notification it is waiting for.
-  while (context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen) {
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-
-  yield afterGate;
-  yield returnedItems;
-  return undefined;
-}
-
 /**
- * Answers, then parks until the test changes the document, then streams again.
+ * Yields, then parks until the test changes the document, then yields again.
  * The park is what makes incrementality observable: the first chunk has to
  * reach the client while this handler is provably still running.
  */
@@ -41,9 +24,24 @@ export default (): Promise<TsudoiConfig> => {
       // partial. `isIncomplete` says THE SET MAY GROW AS THE USER TYPES, where
       // streaming says THE SET ARRIVES IN PIECES -- the two are independent, and
       // this fixture exercises the second while claiming nothing about the
-      // first.
-      "textDocument/completion": (context: RequestContext, params: CompletionParams) =>
-        Promise.resolve([beforeGate, rest(context, params)] as const),
+      // first. IT CAN NO LONGER SAY THE FIRST IN ANY SPELLING since Sprint 43,
+      // which does not change this ruling: it was already COMPLETE.
+      "textDocument/completion": async function* (
+        context: RequestContext,
+        params: CompletionParams,
+      ) {
+        yield beforeGate;
+
+        // Awaited polling, not a busy loop. Awaiting hands the event loop back
+        // so the server can process the didChange that opens this gate; a busy
+        // loop would starve the very notification it is waiting for.
+        while (context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+
+        yield afterGate;
+        yield returnedItems;
+      },
     },
   });
 };
