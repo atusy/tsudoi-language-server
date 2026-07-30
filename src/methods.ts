@@ -1023,6 +1023,24 @@ async function driveStream(run: {
     // request-local state this drive keeps. `[]` and `null` are different
     // answers -- `no candidates` versus `no answer` -- and nothing but this
     // tells them apart once the loop has ended.
+    //
+    // DEFENDED AT EXACTLY ONE SITE, MEASURED RATHER THAN ASSUMED, and said here
+    // per the Sprint-8 rule because this is where the deleting edit would be
+    // made. Dropping this flag -- `token === undefined ? collected : null` --
+    // reddens `the example config is driven end to end ...` in
+    // test/completion.test.ts, at its assertion that a position the example has
+    // nothing for is answered null, reporting `Received: []`, AND NOTHING ELSE
+    // in the suite: 453 pass / 2 fail, one per runtime. The assertion is
+    // DESCRIBED rather than quoted because this project measures `none
+    // weakened` by grepping source lines that open an assertion call, and a
+    // comment quoting one inflates that count. WHY ONE SITE IS ALL THERE IS:
+    // under a token the response is
+    // `null` whatever this flag says, so the zero-yield fixture cannot see it;
+    // and the helpers that read completions elsewhere spell `result ?? []`,
+    // which erases the very distinction. NOT A GAP TO CLOSE BY ADDING A TEST
+    // FOR ITS OWN SAKE -- that one site is amended standing item 6's carrier --
+    // but a reader deleting this flag should know a single assertion stands
+    // between them and telling every user there are no candidates.
     let yielded = false;
     const batches = handler(context, run.params);
     for (;;) {
