@@ -1,3 +1,4 @@
+import { isAbsolute } from "node:path";
 import type {
   InitializeParams,
   WorkspaceFolder,
@@ -21,12 +22,14 @@ export interface WorkspaceFoldersHandle {
    */
   readonly current: () => readonly WorkspaceFolder[];
   /**
-   * The two deprecated root fields as the client spelled them.
+   * The two deprecated root fields, `rootUri` as the client spelled it and
+   * `rootPath` only where it is absolute.
    *
    * `null` IS `THE CLIENT NAMED NONE`, and it is what an OMITTED field arrives
-   * as too -- the one collapse this mirror makes, because the protocol offers no
-   * third state a reader could act on differently. Nothing else is normalised:
-   * `""` and `"."` are values a client can send and they travel as sent.
+   * as too, because the protocol offers no third state a reader could act on
+   * differently. IT IS ALSO WHAT A REFUSED `rootPath` ARRIVES AS -- see the
+   * reason at `initialize` below, and the cost, which is that these two states
+   * are not distinguishable downstream.
    *
    * A SECOND READER RATHER THAN A WIDER `current`, and that is a decision about
    * what a change to this file may cost: `current` answers the question
@@ -65,19 +68,49 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
 
     initialize(params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath">): void {
       // MIRRORED, WITH NOTHING SYNTHESISED AND NOTHING PREFERRED. Omitted, `null`
-      // and `[]` are one state here -- an empty list -- and the two root fields
-      // travel as the client's own bytes, including `""`, which `??` leaves
-      // alone because it is neither null nor undefined.
+      // and `[]` are one state here -- an empty list -- and `rootUri` travels as
+      // the client's own bytes whatever scheme it names.
       //
-      // NO ROOT IS BUILT FROM EITHER OF THEM, HERE OR ANYWHERE: a folder needs a
+      // NO ROOT IS BUILT FROM EITHER FIELD, HERE OR ANYWHERE: a folder needs a
       // `name`, the protocol makes `name` a UI label the client owns, and a
       // server that invents one is stating something no client said. tsudoi
       // ships no reduction over these fields either -- an author who wants a
-      // root out of them writes it themselves, and the two hazards that reading
-      // carries are recorded at `rootUri` and `rootPath` in src/types.ts, which
-      // is where the author meets the fields.
+      // root out of them writes it themselves, and what that reading costs is
+      // recorded at `rootUri` and `rootPath` in src/types.ts, which is where the
+      // author meets the fields.
+      //
+      // AND A NON-ABSOLUTE `rootPath` IS REFUSED HERE RATHER THAN FORWARDED,
+      // which is the one place this handle declines to pass something on. A
+      // RELATIVE PATH IS NOT A ROOT: it resolves only against a working
+      // directory THE CLIENT DOES NOT SHARE, so forwarding it hands the author a
+      // value that means one thing to the editor and another to this process --
+      // and `pathToFileURL` turns it into `file://` plus WHATEVER DIRECTORY THIS
+      // SERVER WAS LAUNCHED IN, a root no client named. `""` and `"."` are the
+      // spellings that arrive, and `??` does not cover either.
+      //
+      // NOT A BREACH OF THE MIRROR, and the distinction is the whole reason this
+      // is defensible: the mirror refuses to NORMALISE what a client meant --
+      // two spellings of one directory stay two folders -- and that does not
+      // oblige us to forward a value the author cannot correctly use. THE
+      // INVARIANT RUNS THE OTHER WAY TOO: `absence must never become a root`
+      // bounds the dangerous direction, and this turns a root into absence.
+      //
+      // `isAbsolute` AND NOT TRUTHINESS, which is not a style preference: `"."`
+      // is truthy and is exactly the value the guard exists for.
+      //
+      // WHAT IT COSTS, stated rather than glossed: the author cannot tell `the
+      // client sent no rootPath` from `the client sent one we refused`. Both
+      // arrive as `null`.
+      //
+      // NOT EXTENDED TO `rootUri`, deliberately: a `vscode-remote://` or `ssh://`
+      // root is a VALID URI that merely names no LOCAL path, and refusing it
+      // would hide a legitimate value from an author who handles that scheme.
       folders = params.workspaceFolders ?? [];
-      roots = { rootUri: params.rootUri ?? null, rootPath: params.rootPath ?? null };
+      const rootPath = params.rootPath ?? null;
+      roots = {
+        rootUri: params.rootUri ?? null,
+        rootPath: rootPath !== null && isAbsolute(rootPath) ? rootPath : null,
+      };
     },
 
     change(event: WorkspaceFoldersChangeEvent): void {

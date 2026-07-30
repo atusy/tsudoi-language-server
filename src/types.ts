@@ -231,8 +231,9 @@ export interface RequestContext {
    * TSUDOI SHIPS NO REDUCTION OVER THE THREE, and that is a decision rather than
    * an omission: a folder carries a `name`, and any reduction has to put
    * something there that no client said. An author who wants one writes it, and
-   * the two fields below record what such a reduction must refuse -- both are
-   * failures that look correct in every test run from the project directory.
+   * the two fields below say what each one is safe to assume -- `rootPath` has
+   * already been refused unless absolute, and `rootUri` has not been read at
+   * all.
    *
    * The name is deliberately not `initialWorkspaceFolders`: every exported name
    * here is public API, so a name that became false would have had to stay.
@@ -261,30 +262,38 @@ export interface RequestContext {
    */
   readonly rootUri: string | null;
   /**
-   * The project root a client named in `initialize`'s DEPRECATED `rootPath`, or
-   * `null` where it named none -- a PATH rather than a URI, mirrored verbatim.
+   * The ABSOLUTE project root a client named in `initialize`'s DEPRECATED
+   * `rootPath`, or `null` -- a PATH rather than a URI, and the one field on this
+   * surface that is not a pure mirror.
    *
    * `rootUri` WINS WHERE BOTH ARE SET. That is the protocol's own rule and
-   * NOTHING HERE APPLIES IT: this field is what the client said, precedence is a
-   * reading of it, and both fields reach you unread. An empty `workspaceFolders`
-   * beside a filled `rootUri` beside a filled `rootPath` is three statements,
-   * and which one answers your question is yours to decide.
+   * NOTHING HERE APPLIES IT: precedence is a reading, and both fields reach you
+   * unread. An empty `workspaceFolders` beside a filled `rootUri` beside a
+   * filled `rootPath` is three statements, and which one answers your question
+   * is yours to decide.
    *
-   * THE cwd HAZARD, WHICH IS THIS FIELD'S AND NOT A GENERAL WARNING TO BE
-   * CAREFUL. `""` and `"."` are values a client can send, and they are NOT
-   * absence -- `??` does not cover them, since neither is null nor undefined.
-   * `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so passing either one
-   * through it yields `file://` plus WHATEVER DIRECTORY YOUR SERVER WAS LAUNCHED
-   * IN -- a root no client named, spelled exactly like one that was. It is
+   * A NON-ABSOLUTE `rootPath` IS REFUSED AND ARRIVES AS `null`. A relative path
+   * is not a root: it resolves only against a working directory THE CLIENT DOES
+   * NOT SHARE, so it means one thing to your editor and another to the process
+   * answering you. `""` and `"."` are the spellings clients send, neither is
+   * absence, and `??` covers neither -- and `pathToFileURL` turns either into
+   * `file://` plus WHATEVER DIRECTORY YOUR SERVER WAS LAUNCHED IN, a root no
+   * client named and spelled exactly like one that was. That failure is
    * invisible in testing because an editor launches the server FROM the project:
    * nvim spawns it with cwd = root_dir whenever it found a root, so cwd and the
-   * project coincide in every session that has one and diverge only for the user
-   * who has no project at all.
+   * project coincide in every session that HAS one and diverge only for the user
+   * who has none.
    *
-   * SO A REDUCTION OVER THIS FIELD TAKES IT ONLY WHEN IT IS ABSOLUTE. `isAbsolute`
-   * is the check; a null check is not, and neither is truthiness -- `"."` passes
-   * both. tsudoi held that guard while it synthesised a folder from this field
-   * and it holds it no longer, because it no longer reads the field at all.
+   * WHAT THE REFUSAL COSTS YOU, stated rather than glossed: YOU CANNOT TELL `the
+   * client sent no rootPath` FROM `the client sent one we refused`. Both are
+   * `null` here, and nothing else on this surface records the difference. What
+   * you are spared in exchange is a value you could not have used correctly.
+   *
+   * THE CHECK IS `isAbsolute`, named because the near misses are the whole
+   * point: a null check is not it, and neither is truthiness, since `"."` is
+   * truthy and is exactly the value the guard exists for. If you reduce these
+   * fields yourself you inherit that check for any path you take from elsewhere
+   * -- but not for this one, which has already passed it.
    */
   readonly rootPath: string | null;
 }

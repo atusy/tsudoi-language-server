@@ -94,10 +94,15 @@ const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name:
  * that says what one would look like. There was: `rootedFolder` was the
  * expectation about the published reduction, and it went with the reduction when
  * the stakeholder ruled that tsudoi's TYPES module may not export a runtime
- * function. What is left is the URI itself, read back as the bytes the client
- * sent.
+ * function. What is left is the two spellings themselves, read back as the bytes
+ * the client sent.
+ *
+ * `rootedPath` IS ABSOLUTE AND THAT IS ITS JOB, not an incidental property of a
+ * plausible path: it is the PRESENCE ARM of the refusal below, so a value that
+ * stopped being absolute would turn that pair into two assertions about nothing.
  */
 const rootedUri = "file:///home/me/rooted";
+const rootedPath = "/home/me/rooted";
 
 /**
  * A SECOND, CONFLICTING root, so that a mirror which merely CONTAINED what the
@@ -474,39 +479,47 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-49 CRITERION 2, AND IT IS NOW THE WHOLE OF IT: a relative rootPath
-    // reaches the author EXACTLY AS SENT and becomes no folder on the way.
+    // THE cwd HAZARD, OWNED BY CODE AGAIN AND AT THE BOUNDARY THIS TIME. A
+    // RELATIVE rootPath IS NOT A ROOT -- it resolves only against a working
+    // directory the client does not share -- so it is REFUSED rather than
+    // forwarded, and reaches a handler as null. Nothing downstream can turn it
+    // into `file://` plus this process's launch directory, because nothing
+    // downstream ever sees it.
     //
-    // BOTH SPELLINGS, because they are two values and not one: "" is what a
-    // client that has a field to fill and nothing to put in it sends, and "." is
-    // what a client that means `here` sends. Neither is absence, which is the
-    // door `??` does not cover -- and an implementation reading these fields
-    // with `||` instead of `??` reddens HERE, on the mirrored `""`.
+    // BOTH RELATIVE SPELLINGS, because they are two values and not one: "" is
+    // what a client with a field to fill and nothing to put in it sends, and "."
+    // is what a client that means `here` sends. Neither is absence, which is the
+    // door `??` does not cover.
     //
-    // THE cwd HAZARD NO LONGER HAS A TEST, AND THAT IS A LOSS RATHER THAN A
-    // TIDY-UP. A sibling test used to run the published reduction on this very
-    // session and assert it answered NO folder -- with the session started
-    // somewhere of the test's choosing, so a `pathToFileURL` on "." would have
-    // named the launch directory out loud. That reduction was withdrawn, so
-    // there is no code left in this repository that could manufacture the root,
-    // and no artifact the suite drives that could be perturbed into it. WHAT
-    // OWNS THE HAZARD NOW IS PROSE at `rootPath` in src/types.ts, addressed to
-    // the author who writes the reduction themselves. Nothing here can fail if
-    // that prose goes wrong.
-    test("a relative rootPath reaches the handler exactly as sent, and becomes no folder", async () => {
-      for (const spelling of ["", "."]) {
+    // THE PRESENCE ARM IS IN THIS TABLE AND NOT IN A TEST OF ITS OWN, per Sprint
+    // 6: an absolute path travels THROUGH THE SAME READER and must arrive
+    // VERBATIM, so `null` here is evidence about the refusal rather than about a
+    // field that was dropped, a handle that never stored it, or a fixture that
+    // stopped reporting it. Read as a pair, the table also says the refusal is
+    // NARROW -- it takes the relative spellings and nothing else.
+    //
+    // ITS NEGATIVE CONTROL IS WHY `isAbsolute` IS NAMED RATHER THAN IMPLIED:
+    // replace it with a truthiness test and the "." row reddens, reporting "."
+    // where null was expected, while "" and the absolute row stay green. A guard
+    // written the obvious way passes two thirds of this table.
+    test("a relative rootPath is refused and arrives as null, where an absolute one arrives verbatim", async () => {
+      for (const [sent, expected] of [
+        ["", null],
+        [".", null],
+        [rootedPath, rootedPath],
+      ] as const) {
         const session = LspSession.start(runtime, echoConfig);
         try {
           await session.request<InitializeResult>("initialize", {
             ...initializeParams,
-            rootPath: spelling,
+            rootPath: sent,
           });
           session.notify("initialized", {});
 
           expect(await mirrored(session)).toEqual({
             workspaceFolders: [],
             rootUri: null,
-            rootPath: spelling,
+            rootPath: expected,
           });
         } finally {
           session.dispose();
