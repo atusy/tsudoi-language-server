@@ -141,6 +141,17 @@ for (const runtime of runtimes) {
      * this test iterates the TABLE -- a fourth method is covered the moment it
      * is declared, which is the property, and hand-copying an assertion per
      * method would have been the convention this work exists to retire.
+     *
+     * WHAT IT NO LONGER SAYS ON ITS OWN, because two different answers are now
+     * one answer on the wire: the fallback in src/server.ts refuses an
+     * UNREGISTERED method -32002 in this phase as well, so a table entry that
+     * reached no registration at all would satisfy every assertion here.
+     *
+     * THE HALF THAT STILL DISCRIMINATES IS THE -32800 TEST BELOW, which drives
+     * the SAME table inside the serving window -- where an unregistered method
+     * reads -32601 and a registered one reads -32800. Neither test measures
+     * registration by itself, and deleting either leaves the other passing over
+     * a method nothing serves.
      */
     test("every method in the table is refused -32002 before initialize", async () => {
       const session = LspSession.start(runtime, allMethods);
