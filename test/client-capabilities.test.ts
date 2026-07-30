@@ -151,5 +151,39 @@ for (const runtime of runtimes) {
         session.dispose();
       }
     });
+
+    /**
+     * THE OTHER SHAPE THAT REACHES THE INGRESS, AND THE ONLY OTHER ONE: a
+     * `capabilities` PRESENT and not an object is refused -32602 at the
+     * handshake, so an OMITTED field -- which a non-conforming client sends
+     * despite the protocol declaring it required -- and an explicit `null` are
+     * what is left. src/tsudoi.ts reads both as `{}` and says so in a comment;
+     * this is what measures it rather than asserting it.
+     *
+     * THE `{}` IS FROZEN TOO, which is not a free consequence of the paragraph
+     * above: the value a handler meets before the client has declared anything
+     * is the same object for the rest of the session, so a handler writing into
+     * it would furnish a capability out of nothing at all.
+     *
+     * NOTHING IS REFUSED AT THE NESTED DEPTH HERE BECAUSE THERE IS NO NESTED
+     * VALUE TO WRITE TO, which is the honest reading of `false` below rather
+     * than a weaker claim: the handler's guard finds no `completionItem` and
+     * never attempts the write.
+     */
+    test("a client that declares nothing is given an empty object no handler can write into", async () => {
+      const session = LspSession.start(runtime, fixture("capabilities-mutation.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", { processId: null, rootUri: null });
+        session.notify("initialized", {});
+
+        expect(await reportFrom(session)).toEqual({
+          nestedRefused: false,
+          topRefused: true,
+          insertReplaceSupport: undefined,
+        });
+      } finally {
+        session.dispose();
+      }
+    });
   });
 }
