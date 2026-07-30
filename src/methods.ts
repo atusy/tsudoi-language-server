@@ -402,25 +402,6 @@ export function contributeCapabilities(
 export type RequestRejection = () => ResponseError<void> | undefined;
 
 /**
- * WHAT THE CLIENT SAID ABOUT ITS ROOTS, as of NOW: the folder list, which moves
- * mid-session, beside the two deprecated fields, which do not.
- *
- * A function rather than a value because registration happens before
- * `initialize` does: none of the three exists yet when the handlers below are
- * wired, and a value captured here would be the pre-initialize one forever --
- * the same ordering trap src/cli.ts records for the config factory, one layer
- * in.
- *
- * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added to
- * this thunk and forgotten at the context, or the reverse, does not compile.
- *
- * NAMED FOR THE REQUEST RATHER THAN THE CLIENT, because a reader meeting
- * `roots` would otherwise expect the two deprecated fields alone: this slice is
- * the whole thing a request reads, folder list included.
- */
-export type RequestRoots = () => Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">;
-
-/**
  * Reports a config handler's failure and rethrows it.
  *
  * vscode-jsonrpc answers the client -32603 for a throwing REQUEST handler, so
@@ -504,11 +485,7 @@ function requestCancelled(): never {
  * track it if it wanted to -- vscode-jsonrpc consumes that notification before
  * consulting any handler, and a request handler is never told its own id.
  */
-function requestContext(
-  tsudoi: Tsudoi,
-  cancellation: CancellationToken,
-  roots: Pick<RequestContext, "workspaceFolders" | "rootUri" | "rootPath">,
-): RequestContext {
+function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
   const controller = new AbortController();
   // Read BEFORE subscribing, and not merely to save a turn: when the client
   // cancels before the request is dispatched, vscode-jsonrpc cancels the token
@@ -519,9 +496,13 @@ function requestContext(
     controller.abort();
   }
   cancellation.onCancellationRequested(() => controller.abort());
-  // SPREAD, so the three roots reach the context by ONE statement: a field added
-  // to the slice above and forgotten here would not compile.
-  return { signal: controller.signal, tsudoi, ...roots };
+  // TWO MEMBERS AND NOTHING ASSEMBLED, which is what the split between the two
+  // context types buys: the signal is built here because it is this request's,
+  // and `tsudoi` is passed straight through because it is the SESSION'S and this
+  // function has nothing to say about it. Anything read OFF `tsudoi` here would
+  // be a snapshot taken at request start, which is the decision src/types.ts
+  // leaves to the handler.
+  return { signal: controller.signal, tsudoi };
 }
 
 /**
@@ -675,7 +656,6 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
-  clientRoots: RequestRoots,
 ): void {
   /**
    * Whether this SESSION has already been told about an invalid token. One
@@ -769,7 +749,6 @@ export function registerMethods(
             entry,
             connection,
             tsudoi,
-            clientRoots,
             reportInvalidToken,
           });
         }
@@ -779,7 +758,6 @@ export function registerMethods(
           params,
           cancellation,
           tsudoi,
-          clientRoots,
         });
       },
     );
@@ -805,9 +783,8 @@ async function driveAwaitedOnce(run: {
   params: unknown;
   cancellation: CancellationToken;
   tsudoi: Tsudoi;
-  clientRoots: RequestRoots;
 }): Promise<unknown> {
-  const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
+  const context = requestContext(run.tsudoi, run.cancellation);
   return answerUnlessCancelled(run.method, context.signal, async () => {
     return (await run.handler?.(context, run.params)) ?? null;
   });
@@ -893,11 +870,10 @@ async function driveStream(run: {
   entry: ErasedEntry;
   connection: RequestOnlyConnection;
   tsudoi: Tsudoi;
-  clientRoots: RequestRoots;
   reportInvalidToken: (requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
-  const context = requestContext(run.tsudoi, run.cancellation, run.clientRoots());
+  const context = requestContext(run.tsudoi, run.cancellation);
   if (handler === undefined) {
     // THIS DRIVE'S NO-HANDLER ANSWER, AND IT GOES THROUGH THE EPILOGUE LIKE
     // EVERY OTHER ANSWER THIS FILE PRODUCES. Nothing pulls a generator or reads

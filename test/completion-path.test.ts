@@ -67,14 +67,15 @@ async function complete(
     signal: new AbortController().signal,
     tsudoi: {
       documents: { get: () => document, values: () => [document] },
+      // THE THREE ROOT FIELDS AS A CLIENT THAT NAMED NO PROJECT SENDS THEM, and
+      // on `tsudoi` because they are the SESSION'S rather than this request's.
+      // The module reads them itself, so a `Tsudoi` missing any of the three is
+      // not one a handler can be given -- which is what makes this literal fail
+      // to compile rather than silently model an impossible session.
+      workspaceFolders: [],
+      rootUri: null,
+      rootPath: null,
     },
-    // THE THREE ROOT FIELDS AS A CLIENT THAT NAMED NO PROJECT SENDS THEM. The
-    // module reduces them itself now, so a context missing any of the three is
-    // not a context a handler can be given -- which is what makes this literal
-    // fail to compile rather than silently model an impossible session.
-    workspaceFolders: [],
-    rootUri: null,
-    rootPath: null,
   };
   // EVERY ITEM THIS MODULE HAS FOR ONE REQUEST, in the order it produces them,
   // read the way tsudoi's own no-token drive reads it: every batch it yields,

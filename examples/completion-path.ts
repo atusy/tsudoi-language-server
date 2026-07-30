@@ -194,9 +194,9 @@ export interface PathCompletionOptions {
  * directory, so the guess looks right in every test and wrong in real use.
  *
  * THAT SECOND HALF IS HELD UP HERE ALONE. `folders` arrives from
- * `context.workspaceFolders` -- the client's own list, which no cwd can enter --
- * so this function taking URIs as given IS the whole guarantee. NOTHING ELSE
- * HAS TO HOLD IT: tsudoi refuses a relative `rootPath`
+ * `context.tsudoi.workspaceFolders` -- the client's own list, which no cwd can
+ * enter -- so this function taking URIs as given IS the whole guarantee. NOTHING
+ * ELSE HAS TO HOLD IT: tsudoi refuses a relative `rootPath`
  * at its own boundary, so a config reducing the deprecated root fields never
  * meets the value that could have produced a cwd root.
  *
@@ -522,6 +522,7 @@ export async function* pathCompletion(
     return;
   }
   const cwd = options.cwd ?? process.cwd();
+  const folders = context.tsudoi.workspaceFolders;
   // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
   // rather than an oversight -- recorded here because someone would otherwise
   // add the report believing it was required.
@@ -553,12 +554,18 @@ export async function* pathCompletion(
         // document's own directory, the working directory and an absolute
         // fragment still answer, so the handler is narrower rather than empty.
         // Reducing over the deprecated fields is a decision this file DOES NOT
-        // TAKE: `context.rootUri` and `context.rootPath` are there for a config
-        // that wants it. A `rootPath` that arrives is already absolute, since
-        // tsudoi refuses a relative one at its boundary; a `rootUri` is
-        // whatever the client said, and converting one that names no local path
-        // throws in the handler that converts it.
-        context.workspaceFolders,
+        // TAKE: `context.tsudoi.rootUri` and `context.tsudoi.rootPath` are
+        // there for a config that wants it. A `rootPath` that arrives is already
+        // absolute, since tsudoi refuses a relative one at its boundary; a
+        // `rootUri` is whatever the client said, and converting one that names
+        // no local path throws in the handler that converts it.
+        //
+        // READ ONCE, ABOVE THE LOOP AND ABOVE EVERY `await` IN IT. The list is a
+        // LIVE read off the server, so re-reading it per fragment would let one
+        // response attribute items to a root the user removed while an earlier
+        // directory was being listed. Holding the array is the whole of what it
+        // takes -- tsudoi replaces that list rather than writing into it.
+        folders,
       )) {
         for await (const batch of itemsFrom(source, fragment, params.position, line)) {
           const fresh = batch.filter((item) => {

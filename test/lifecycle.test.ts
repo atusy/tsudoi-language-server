@@ -123,8 +123,8 @@ for (const runtime of runtimes) {
     // onDidChangeWorkspaceFolders and the sole route to the notification. Without
     // this key a conforming client never sends `didChangeWorkspaceFolders` at
     // all, so the entire delta path in src/workspace.ts is dead code under a real
-    // editor and RequestContext.workspaceFolders is frozen for the session at
-    // whatever `initialize` stated.
+    // editor and Tsudoi.workspaceFolders is frozen for the session at whatever
+    // `initialize` stated.
     //
     // NARROW ON PURPOSE, and that is the point of it standing apart from the
     // exact-equality pin above: that pin moves whenever ANY capability moves, so

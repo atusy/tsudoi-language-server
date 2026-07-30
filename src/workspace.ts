@@ -4,7 +4,7 @@ import type {
   WorkspaceFolder,
   WorkspaceFoldersChangeEvent,
 } from "vscode-languageserver-protocol";
-import type { RequestContext } from "./types.ts";
+import type { Tsudoi } from "./types.ts";
 
 /**
  * The workspace folder list, plus the handle that writes it. The same shape
@@ -39,11 +39,17 @@ export interface WorkspaceFoldersHandle {
    * a sprint that adds two fields into a diff that looks like a change to the
    * removal predicate. These two never move after `initialize` anyway.
    *
-   * TYPED AS THE SLICE OF `RequestContext` IT BECOMES, so that a field added
-   * here and forgotten at the context, or the reverse, does not compile. It is
-   * the only reason this module names a type from src/types.ts at all.
+   * A READER AND NOT A VALUE, FOR THE SAME REASON `current` IS ONE, and the fact
+   * that these two never move afterwards does NOT weaken it: they are both
+   * `null` until `initialize` runs, and whoever wires this handle holds it
+   * before then. Something read off here at construction would be that `null`
+   * for the life of the session.
+   *
+   * TYPED AS THE SLICE OF `Tsudoi` IT ANSWERS FOR, so that a field added here
+   * and forgotten on that surface, or the reverse, does not compile. It is the
+   * only reason this module names a type from src/types.ts at all.
    */
-  readonly roots: () => Pick<RequestContext, "rootUri" | "rootPath">;
+  readonly roots: () => Pick<Tsudoi, "rootUri" | "rootPath">;
   /**
    * What the client sent at `initialize`, MIRRORED AND NOT INTERPRETED.
    *
@@ -71,12 +77,12 @@ export interface WorkspaceFoldersHandle {
 
 export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   let folders: readonly WorkspaceFolder[] = [];
-  let roots: Pick<RequestContext, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
+  let roots: Pick<Tsudoi, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
 
   return {
     current: (): readonly WorkspaceFolder[] => folders,
 
-    roots: (): Pick<RequestContext, "rootUri" | "rootPath"> => roots,
+    roots: (): Pick<Tsudoi, "rootUri" | "rootPath"> => roots,
 
     initialize(
       params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath"> | null,
@@ -157,11 +163,15 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
     },
 
     change(event: WorkspaceFoldersChangeEvent): void {
-      // A NEW ARRAY, NEVER A `push` INTO THE OLD ONE: methods.ts hands each
-      // request the array it read AT REQUEST START, so mutating in place would
-      // rewrite what an in-flight handler is already holding. `readonly` on the
-      // field does not stop that -- it is a view, not a frozen array. The local
-      // copy below is spliced for the same reason.
+      // A NEW ARRAY, NEVER A `push` INTO THE OLD ONE, AND THAT IS THE WHOLE OF
+      // WHAT A HANDLER'S OWN COPY IS WORTH. `Tsudoi.workspaceFolders` is LIVE --
+      // a handler reading it after an `await` reads whatever this line last
+      // wrote -- so the one defence a handler has is to READ IT ONCE and hold
+      // the array. Mutating in place would take that defence away: the array it
+      // is already holding would change under it, and there would be no way at
+      // all to answer about the folders a request began with. `readonly` on the
+      // field does not stop that -- it is a view, not a frozen array -- so the
+      // copy is what buys it. The local below is spliced for the same reason.
       //
       // APPENDED WITH NO DUPLICATE GUARD, deliberately, on two grounds worth
       // keeping apart.

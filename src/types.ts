@@ -27,11 +27,10 @@ import type { TextDocument } from "./deps/textdocument.ts";
  * across an `await` reflects every change that arrived meanwhile.
  *
  * A handler that needs the text it STARTED with must take a copy -- `getText()`
- * returns a string, and a string does not move. This is the opposite of
- * `RequestContext.workspaceFolders`, which IS a snapshot, and the asymmetry is
- * deliberate: a folder list that shifted mid-request would let one response
- * carry items attributed to a root that no longer exists, while a document that
- * did not shift would let a handler answer about text the user has replaced.
+ * returns a string, and a string does not move. That is the general rule stated
+ * at `Tsudoi` below, spelled out here for the one member on which HOLDING THE
+ * REFERENCE IS NOT TAKING THE VALUE: the instance is mutated in place, so a
+ * handler keeping the document keeps a window rather than an answer.
  */
 export interface DocumentStore {
   get(uri: string): TextDocument | undefined;
@@ -39,15 +38,146 @@ export interface DocumentStore {
 }
 
 /**
- * What a config author can reach that is not per-request, reached through
- * `RequestContext.tsudoi`.
+ * THE SERVER'S CONTEXT: what a config author can reach that is not about ONE
+ * request, reached through `RequestContext.tsudoi`. What the SESSION is --
+ * the open documents, the client's roots -- rather than what this MESSAGE
+ * asked.
  *
  * It stays published even though no example names it, because `RequestContext`
  * declares `readonly tsudoi: Tsudoi` and every extracted handler names that.
  * Withholding it would leave a member no author could write the type of.
+ *
+ * EVERYTHING REACHED THROUGH HERE IS LIVE, AND THAT IS ONE RULE RATHER THAN A
+ * NOTE PER MEMBER. This is a SINGLE OBJECT LIVING AS LONG AS THE SERVER DOES,
+ * not something assembled per request, so a handler that reads a member, awaits,
+ * and reads it again may read two different things. THE HAZARD IS REAL AND IT IS
+ * THE HANDLER'S: a completion handler streams over time, and one that re-reads
+ * the folder list mid-request can attribute items to a root the user has already
+ * removed. tsudoi does not decide for a handler which moment its answer is
+ * about, and a surface that took that decision would be wrong for the handler
+ * that WANTS the latest folders.
+ *
+ * SO A HANDLER THAT NEEDS THE VALUE IT STARTED WITH TAKES IT BEFORE ITS FIRST
+ * `await`, and what `taking` costs differs by member:
+ *
+ *   - FOR THE FOLDER LIST, HOLDING THE ARRAY IS ENOUGH. `change()` in
+ *     src/workspace.ts builds a NEW array on every event and never writes into
+ *     the old one -- neither `push` nor a splice of the live list -- so an array
+ *     you have already read cannot move under you. `readonly` on the field is
+ *     not what buys that; the copy-on-write is.
+ *   - FOR A DOCUMENT, HOLDING THE REFERENCE IS NOT ENOUGH, because upstream
+ *     mutates the instance. `getText()` returns a string, and a string does not
+ *     move.
+ *
+ * AND FOR `rootUri` AND `rootPath` THE QUESTION DOES NOT ARISE: both are written
+ * once, from `initialize`, and nothing in the protocol moves them afterwards, so
+ * two reads across an `await` read the same value. They are reached through here
+ * rather than captured at construction all the same, because THIS OBJECT EXISTS
+ * BEFORE `initialize` DOES -- anything read out of it and kept at startup would
+ * be the pre-handshake value forever, which is the trap src/tsudoi.ts records at
+ * the site where it would be re-created.
  */
 export interface Tsudoi {
   readonly documents: DocumentStore;
+  /**
+   * The workspace folders the client is holding NOW, or an EMPTY LIST when it
+   * named none.
+   *
+   * ABSENCE IS NEVER DEFAULTED -- not to the working directory, not to `/`, not
+   * to anything this process could invent. An empty list means the editor opened
+   * no workspace, and answering from a root nobody named is the failure this
+   * shape refuses. Both of the protocol's absent states, the field omitted and
+   * the field sent as null, arrive here as the same empty list.
+   *
+   * THE ONE MEMBER HERE THAT ACTUALLY MOVES, which is why the liveness rule
+   * above is worth reading before this line: `workspace/didChangeWorkspaceFolders`
+   * REPLACES this list mid-session, and a request already in flight sees the
+   * replacement on its next read. The array it read BEFORE that is still intact,
+   * per the copy-on-write named above.
+   *
+   * MIRRORED, NOT INTERPRETED: two spellings of one directory are TWO folders,
+   * and a URI added twice is held twice, because this is the CLIENT's state
+   * rather than the filesystem's. Measured against nvim, which accepts `…/plain`
+   * and `…/plain/` as different folders and removes them separately, so a
+   * normalising implementation would delete a folder the client still holds. The
+   * mirror holds on remove too: a URI held twice and removed once still appears
+   * once.
+   *
+   * NOTHING IS SYNTHESISED INTO IT, and that is a promise about `name` rather
+   * than about lists. The protocol defines `WorkspaceFolder.name` as the label
+   * `used to refer to this workspace folder in the user interface`, so it is the
+   * CLIENT'S and a server cannot know it -- and a folder tsudoi built out of
+   * `rootUri` would carry a name no client ever said, indistinguishable here
+   * from one that did. So every entry you read was sent by the client.
+   *
+   * WHICH MEANS AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and
+   * it is the one to think about: a client without the workspace-folders
+   * capability names its project in `rootUri` or `rootPath` and sends no folders
+   * at all. Reading this field alone in that session is not wrong, it is a
+   * choice to answer from no root, and the absence is VISIBLE beside the field
+   * the client did fill -- which is the whole trade, since the failure it
+   * replaced was an author reading an empty list with no way to know the editor
+   * had opened anything.
+   *
+   * TSUDOI SHIPS NO REDUCTION OVER THE THREE, and that is a decision rather than
+   * an omission: a folder carries a `name`, and any reduction has to put
+   * something there that no client said. An author who wants one writes it, from
+   * the two fields below -- `rootPath` has already been refused unless absolute,
+   * and `rootUri` is the client's bytes, unread.
+   *
+   * THE NAME SAYS THE FOLDERS AND NOT A MOMENT, deliberately: every exported
+   * name here is public API, so a name pinning this to one instant -- and this
+   * list does not stand still -- would have had to stay after it became false.
+   */
+  readonly workspaceFolders: readonly WorkspaceFolder[];
+  /**
+   * The project root a client named in `initialize`'s DEPRECATED `rootUri`, or
+   * `null` where it named none -- the client's own bytes, with no round trip
+   * through a URL parser and no filesystem question asked of it.
+   *
+   * DEPRECATED BY THE PROTOCOL, NOT BY tsudoi, and carried for exactly that
+   * reason: `workspaceFolders` supersedes it and is available only from a client
+   * that declares the capability, so this is where everyone else says which
+   * project the editor opened. An omitted field and an explicit `null` arrive
+   * alike; nothing else is normalised, so a URI naming no local path reaches you
+   * as the client spelled it rather than being dropped for being unusable.
+   */
+  readonly rootUri: string | null;
+  /**
+   * The ABSOLUTE project root a client named in `initialize`'s DEPRECATED
+   * `rootPath`, or `null` -- a PATH rather than a URI, and the one field on this
+   * surface that is not a pure mirror.
+   *
+   * `rootUri` WINS WHERE BOTH ARE SET. That is the protocol's own rule and
+   * NOTHING HERE APPLIES IT: precedence is a reading, and both fields reach you
+   * unread. An empty `workspaceFolders` beside a filled `rootUri` beside a
+   * filled `rootPath` is three statements, and which one answers your question
+   * is yours to decide.
+   *
+   * A NON-ABSOLUTE `rootPath` IS REFUSED AND ARRIVES AS `null`. A relative path
+   * is not a root: it resolves only against a working directory THE CLIENT DOES
+   * NOT SHARE, so it means one thing to your editor and another to the process
+   * answering you. `""` and `"."` are the spellings clients send, neither is
+   * absence, and `??` covers neither -- and `pathToFileURL` turns either into
+   * `file://` plus WHATEVER DIRECTORY YOUR SERVER WAS LAUNCHED IN, a root no
+   * client named and spelled exactly like one that was. That failure is
+   * invisible in testing because an editor launches the server FROM the project:
+   * nvim spawns it with cwd = root_dir whenever it found a root, so cwd and the
+   * project coincide in every session that HAS one and diverge only for the user
+   * who has none.
+   *
+   * WHAT THE REFUSAL COSTS YOU, stated rather than glossed: YOU CANNOT TELL `the
+   * client sent no rootPath` FROM `the client sent one we refused`. Both are
+   * `null` here, and nothing else on this surface records the difference. What
+   * you are spared in exchange is a value you could not have used correctly.
+   *
+   * THE CHECK IS `isAbsolute`, named because the near misses are the whole
+   * point: a null check is not it, and neither is truthiness, since `"."` is
+   * truthy and is exactly the value the guard exists for. If you reduce these
+   * fields yourself you inherit that check for any path you take from elsewhere
+   * -- but not for this one, which has already passed it.
+   */
+  readonly rootPath: string | null;
 }
 
 export interface MethodMap {
@@ -185,108 +315,21 @@ export interface MethodMap {
 
 export type Method = keyof MethodMap;
 
+/**
+ * WHAT THIS ONE REQUEST IS, and nothing that outlives it. Two members, and the
+ * line between them is the whole of what this type says: the SIGNAL is about
+ * this message and dies with it, while `tsudoi` is the SERVER -- the same object
+ * every request is handed, described at `Tsudoi` above.
+ *
+ * A FIELD THAT DOES NOT CHANGE PER REQUEST DOES NOT BELONG HERE, and that is the
+ * rule rather than a description of today's two members. The folder list, the
+ * client's roots and its capabilities are facts about the SESSION; carried here
+ * they would say, by their position alone, that a request could see something
+ * different from its neighbour.
+ */
 export interface RequestContext {
   readonly signal: AbortSignal;
   readonly tsudoi: Tsudoi;
-  /**
-   * The workspace folders this request started on, or an EMPTY LIST when the
-   * client named none.
-   *
-   * ABSENCE IS NEVER DEFAULTED -- not to the working directory, not to `/`, not
-   * to anything this process could invent. An empty list means the editor opened
-   * no workspace, and answering from a root nobody named is the failure this
-   * shape refuses. Both of the protocol's absent states, the field omitted and
-   * the field sent as null, arrive here as the same empty list.
-   *
-   * A SNAPSHOT OF REQUEST START, not of `initialize`: a folder the user adds or
-   * removes mid-session reaches the NEXT request, while a request already in
-   * flight keeps the list it began with. That stops one response carrying items
-   * attributed to a root that no longer exists, which matters because a
-   * completion handler may stream over time. It is the only snapshot on this
-   * surface -- the documents reached through `tsudoi` are live.
-   *
-   * MIRRORED, NOT INTERPRETED: two spellings of one directory are TWO folders,
-   * and a URI added twice is held twice, because this is the CLIENT's state
-   * rather than the filesystem's. Measured against nvim, which accepts `…/plain`
-   * and `…/plain/` as different folders and removes them separately, so a
-   * normalising implementation would delete a folder the client still holds. The
-   * mirror holds on remove too: a URI held twice and removed once still appears
-   * once.
-   *
-   * NOTHING IS SYNTHESISED INTO IT, and that is a promise about `name` rather
-   * than about lists. The protocol defines `WorkspaceFolder.name` as the label
-   * `used to refer to this workspace folder in the user interface`, so it is the
-   * CLIENT'S and a server cannot know it -- and a folder tsudoi built out of
-   * `rootUri` would carry a name no client ever said, indistinguishable here
-   * from one that did. So every entry you read was sent by the client.
-   *
-   * WHICH MEANS AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and
-   * it is the one to think about: a client without the workspace-folders
-   * capability names its project in `rootUri` or `rootPath` and sends no folders
-   * at all. Reading this field alone in that session is not wrong, it is a
-   * choice to answer from no root, and the absence is VISIBLE beside the field
-   * the client did fill -- which is the whole trade, since the failure it
-   * replaced was an author reading an empty list with no way to know the editor
-   * had opened anything.
-   *
-   * TSUDOI SHIPS NO REDUCTION OVER THE THREE, and that is a decision rather than
-   * an omission: a folder carries a `name`, and any reduction has to put
-   * something there that no client said. An author who wants one writes it, from
-   * the two fields below -- `rootPath` has already been refused unless absolute,
-   * and `rootUri` is the client's bytes, unread.
-   *
-   * The name is deliberately not `initialWorkspaceFolders`: every exported name
-   * here is public API, so a name that became false would have had to stay.
-   */
-  readonly workspaceFolders: readonly WorkspaceFolder[];
-  /**
-   * The project root a client named in `initialize`'s DEPRECATED `rootUri`, or
-   * `null` where it named none -- the client's own bytes, with no round trip
-   * through a URL parser and no filesystem question asked of it.
-   *
-   * DEPRECATED BY THE PROTOCOL, NOT BY tsudoi, and carried for exactly that
-   * reason: `workspaceFolders` supersedes it and is available only from a client
-   * that declares the capability, so this is where everyone else says which
-   * project the editor opened. An omitted field and an explicit `null` arrive
-   * alike; nothing else is normalised, so a URI naming no local path reaches you
-   * as the client spelled it rather than being dropped for being unusable.
-   */
-  readonly rootUri: string | null;
-  /**
-   * The ABSOLUTE project root a client named in `initialize`'s DEPRECATED
-   * `rootPath`, or `null` -- a PATH rather than a URI, and the one field on this
-   * surface that is not a pure mirror.
-   *
-   * `rootUri` WINS WHERE BOTH ARE SET. That is the protocol's own rule and
-   * NOTHING HERE APPLIES IT: precedence is a reading, and both fields reach you
-   * unread. An empty `workspaceFolders` beside a filled `rootUri` beside a
-   * filled `rootPath` is three statements, and which one answers your question
-   * is yours to decide.
-   *
-   * A NON-ABSOLUTE `rootPath` IS REFUSED AND ARRIVES AS `null`. A relative path
-   * is not a root: it resolves only against a working directory THE CLIENT DOES
-   * NOT SHARE, so it means one thing to your editor and another to the process
-   * answering you. `""` and `"."` are the spellings clients send, neither is
-   * absence, and `??` covers neither -- and `pathToFileURL` turns either into
-   * `file://` plus WHATEVER DIRECTORY YOUR SERVER WAS LAUNCHED IN, a root no
-   * client named and spelled exactly like one that was. That failure is
-   * invisible in testing because an editor launches the server FROM the project:
-   * nvim spawns it with cwd = root_dir whenever it found a root, so cwd and the
-   * project coincide in every session that HAS one and diverge only for the user
-   * who has none.
-   *
-   * WHAT THE REFUSAL COSTS YOU, stated rather than glossed: YOU CANNOT TELL `the
-   * client sent no rootPath` FROM `the client sent one we refused`. Both are
-   * `null` here, and nothing else on this surface records the difference. What
-   * you are spared in exchange is a value you could not have used correctly.
-   *
-   * THE CHECK IS `isAbsolute`, named because the near misses are the whole
-   * point: a null check is not it, and neither is truthiness, since `"."` is
-   * truthy and is exactly the value the guard exists for. If you reduce these
-   * fields yourself you inherit that check for any path you take from elsewhere
-   * -- but not for this one, which has already passed it.
-   */
-  readonly rootPath: string | null;
 }
 
 export type MethodHandler<M extends Method> = (
@@ -302,7 +345,7 @@ export type TsudoiConfig = {
 
 /**
  * The config's default export, and it takes nothing. The store is reached
- * through `RequestContext.tsudoi` instead, where it is per-request and live.
+ * through `RequestContext.tsudoi` instead, where it is live.
  *
  * A PARAMETER ADDED BACK HERE RE-CREATES A FORECLOSED FAILURE, and this is the
  * site where that edit would be made. loadConfig calls this factory BEFORE the

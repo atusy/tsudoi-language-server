@@ -20,8 +20,9 @@ import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import { contributeCapabilities, registerMethods } from "./methods.ts";
 import { createGatedConnection, defineNotifications } from "./notifications.ts";
-import type { Tsudoi, TsudoiConfig } from "./types.ts";
-import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
+import type { TsudoiRuntime } from "./tsudoi.ts";
+import type { TsudoiConfig } from "./types.ts";
+import type { WorkspaceFoldersHandle } from "./workspace.ts";
 
 /**
  * Where vscode-jsonrpc reports what it cannot answer for -- above all a
@@ -56,11 +57,12 @@ const stderrLogger: Logger = {
  * `capabilities` is assembled per method from what the config actually
  * supplies, so tsudoi never claims something the config cannot answer.
  */
-export function startServer(
-  config: TsudoiConfig,
-  documents: DocumentStoreHandle,
-  tsudoi: Tsudoi,
-): void {
+export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void {
+  // THE SESSION'S OWN STATE AND THE WRITERS FOR IT, taken apart HERE and built
+  // in src/tsudoi.ts. That side of the split is what makes `Tsudoi` one
+  // server-lifetime object: this file is handed the finished view and the
+  // handles that feed it, and has no way to assemble a second view per request.
+  const { tsudoi, documents, workspaceFolders } = runtime;
   // Every question about WHEN a message is allowed goes to this one object.
   // The gate it backs reaches what tsudoi REGISTERED, never the dispatch as a
   // whole -- that is what leaves a method nobody registered falling through to
@@ -74,11 +76,6 @@ export function startServer(
   // themselves, in methods.ts, because a refused request must be ANSWERED with a
   // code the handler's own signature can carry.
   const lifecycle = createLifecycle();
-
-  // The workspace folders this session answers from. A HANDLE rather than a
-  // local: what writes it and what reads it are different messages, and
-  // workspace.ts is where that split lives.
-  const workspaceFolders = createWorkspaceFolders();
 
   // EVERY notification tsudoi answers is declared here, and each one DECIDES
   // when it may run. The gate is applied by the router, never by a handler
@@ -180,17 +177,17 @@ export function startServer(
       // OPT-IN and not a preference: a conforming client subscribes to folder
       // changes only when the server asked it to, so without this key
       // `workspace/didChangeWorkspaceFolders` never arrives, the delta path in
-      // workspace.ts is dead code, and RequestContext.workspaceFolders is frozen
-      // for the life of the session at whatever `initialize` stated.
+      // workspace.ts is dead code, and Tsudoi.workspaceFolders is frozen for the
+      // life of the session at whatever `initialize` stated.
       //
       // UNCONDITIONAL, AND THAT IS WHY IT IS HERE RATHER THAN CONTRIBUTED FROM
       // THE TABLE IN src/methods.ts. Those entries are claimed per method because
       // a client is entitled to send whatever it was told about and the CONFIG
       // may have no handler to answer with. This one answers to nothing the
       // config declares: tsudoi mirrors the folders and populates
-      // RequestContext.workspaceFolders whether or not any method is supplied,
-      // so it is a fact about tsudoi, and conditioning it would advertise less
-      // than tsudoi does.
+      // Tsudoi.workspaceFolders whether or not any method is supplied, so it is
+      // a fact about tsudoi, and conditioning it would advertise less than
+      // tsudoi does.
       //
       // NOR IS IT CONDITIONED ON THE CLIENT'S OWN `workspace.workspaceFolders`,
       // which would mean reading `params.capabilities` here -- the widening the
@@ -220,21 +217,11 @@ export function startServer(
   // What the config can answer lives in its own module: lifecycle and document
   // sync are tsudoi's own business, whereas these hand control to code the
   // config author wrote and have a failure path of their own.
-  registerMethods(
-    connection,
-    config,
-    tsudoi,
-    () => lifecycle.requestRejection(),
-    () => ({
-      // WHAT ONE REQUEST SEES OF THE CLIENT'S ROOTS, assembled at request start
-      // from the two readers rather than held as one value: the folder list moves
-      // under `workspace/didChangeWorkspaceFolders` and the two root fields never
-      // move at all, and a single stored object would have to be rewritten by the
-      // notification to keep that straight.
-      workspaceFolders: workspaceFolders.current(),
-      ...workspaceFolders.roots(),
-    }),
-  );
+  // NOTHING ABOUT THE CLIENT'S ROOTS IS HANDED OVER HERE, and the absence is the
+  // decision: the folder list and the two deprecated fields are reached through
+  // `tsudoi`, which this call already passes. A thunk assembling them per request
+  // would put a snapshot back where the surface says there is a live read.
+  registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection());
 
   // ShutdownRequest's declared result is void; vscode-jsonrpc puts null on the
   // wire for it, which is what the LSP specification requires.

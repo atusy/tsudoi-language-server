@@ -22,38 +22,44 @@ export function itemsFor(folders: readonly WorkspaceFolder[]): CompletionItem[] 
 }
 
 /**
- * Yields what its RequestContext says the workspace is, parks until the test
- * changes the document, then yields that again.
+ * Yields what the SERVER says the workspace is, parks until the test changes
+ * the document, then yields that again AND yields the array it took before it
+ * parked -- three batches carrying the two halves of one property.
  *
- * THE READ IS INSIDE THE HANDLER AT EACH YIELD, never hoisted into a local
- * above them, and that is the whole reason this fixture exists rather than
- * reusing completion-gate.ts. The perturbation it is written for makes
- * RequestContext hold the thunk and read the folders LAZILY; a fixture that
- * captured `context.workspaceFolders` once would go on passing under that
- * change, which is a test that proves nothing about where the snapshot is
- * taken.
+ * `tsudoi.workspaceFolders` IS A LIVE READ, so the second yield is the one that
+ * must differ from the first once the test has changed the folders underneath.
+ * THE READS ARE INSIDE THE GENERATOR AT EACH YIELD, never hoisted into a local
+ * above them, which is the whole reason this fixture exists rather than reusing
+ * completion-gate.ts: a fixture that read once and yielded the same local twice
+ * would pass whether the surface were live or frozen, and would prove neither.
+ *
+ * THE THIRD YIELD IS THE OTHER HALF, AND IT IS DELIBERATELY THE SAME ARRAY THE
+ * FIRST ONE CAME FROM. What a handler can do about liveness is TAKE THE VALUE
+ * BEFORE ITS FIRST `await`, and that is worth nothing unless the array it took
+ * stays as it was. `change()` in src/workspace.ts builds a new array rather than
+ * writing into the live one; make it `push` into the old one instead and this
+ * yield reddens while the second one goes on passing, which is what makes the
+ * two halves separable rather than one assertion in two spellings.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: COMPLETE, and it is the ONE fixture where the
       // question needed thinking about rather than reading off a constant. The
-      // candidate set is the CLIENT'S OWN workspace folder list, which is
-      // mutable -- but it is snapshotted at request start, it is NOT filtered by
-      // anything the user typed, and no further keystroke can add a folder to
-      // it. Ruling it INCOMPLETE would contradict what this fixture exists to
-      // assert: that the list a handler sees does not move mid-request.
+      // candidate set is the CLIENT'S OWN workspace folder list, which MOVES --
+      // but `isIncomplete` is about a set that changes AS THE USER TYPES, and no
+      // keystroke narrows this one: it is not filtered by the line, the position
+      // or anything else in the request. A folder arrives on a notification of
+      // its own, and the client is entitled to ask again then whatever this
+      // answer claimed.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,
       ) {
-        // THE READ IS INSIDE THE GENERATOR AT EACH YIELD, never hoisted into a
-        // local above them. Both reads are now in one body -- until Sprint 43
-        // the first was at the handler's call site and the second in a separate
-        // generator -- and the property they defend is unchanged: a fixture that
-        // captured `context.workspaceFolders` ONCE would go on passing under a
-        // RequestContext that read the folders lazily.
-        yield itemsFor(context.workspaceFolders);
+        // TAKEN BEFORE THE FIRST `await`, which is the one move the published
+        // surface offers a handler that needs the folders it started with.
+        const started = context.tsudoi.workspaceFolders;
+        yield itemsFor(started);
 
         // Awaited polling, not a busy loop, exactly as completion-gate.ts does:
         // awaiting hands the event loop back so the server can process the
@@ -62,7 +68,13 @@ export default (): Promise<TsudoiConfig> => {
           await new Promise((resolve) => setTimeout(resolve, 5));
         }
 
-        yield itemsFor(context.workspaceFolders);
+        // READ AGAIN, AND FROM THE SERVER RATHER THAN FROM `started`: this is
+        // the live read, and it is the batch that must carry the folder the test
+        // added while this generator was parked.
+        yield itemsFor(context.tsudoi.workspaceFolders);
+
+        // AND THE ARRAY THIS REQUEST BEGAN WITH, UNMOVED.
+        yield itemsFor(started);
       },
     },
   });

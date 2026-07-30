@@ -894,23 +894,30 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-17 CRITERION 4, AND IT IS BORN GREEN AND SAYS SO: per-request capture
-    // is ALREADY today's behaviour, because methods.ts calls the folders thunk
-    // ONCE while building the RequestContext. It is pinned so that nobody
-    // meeting this later mistakes correct code for a bug and `fixes` it into a
-    // lazy read.
+    // WHAT `tsudoi` BEING ONE SERVER-LIFETIME OBJECT MEANS FOR A HANDLER, and
+    // both halves of it in ONE request: the folder list is a LIVE READ, so a
+    // handler that reads it after an `await` sees a change that landed
+    // meanwhile -- and the array it read BEFORE that await is still the array it
+    // read, because src/workspace.ts replaces the list rather than writing into
+    // it.
+    //
+    // NEITHER HALF STANDS ALONE. Live-without-copy-on-write is a surface on
+    // which a handler cannot answer about the moment it started; copy-on-write
+    // without liveness is the frozen snapshot this surface deliberately no
+    // longer takes. THE TWO PERTURBATIONS ARE DIFFERENT AND EACH REDDENS ONE
+    // ASSERTION: making the handler capture the folders once flips the second
+    // batch, and making `change()` push into the live array flips the third.
     //
     // PROVEN BY ORDERING, NEVER BY A TIMING BOUND. The change is written to the
     // same stdin as the release that follows it, and the server frames what it
     // is sent in order -- so by the time the gate opens the change has already
     // been applied. Nothing here says `within N milliseconds`.
     //
-    // THE SECOND HALF IS LOAD-BEARING: without a NEW request seeing the change,
-    // every assertion above is satisfied by a server that applied NOTHING.
-    //
-    // THE VALUE IS THE PERTURBATION: make RequestContext hold the thunk and
-    // read lazily, and the in-flight assertion must redden.
-    test("a completion in flight keeps the folders it started with, while the next one sees the change", async () => {
+    // THE LAST ASSERTION IS STILL LOAD-BEARING: a server that applied the change
+    // to NOTHING would be caught by the in-flight batch alone only if that batch
+    // is read as the change arriving, so the next request is what says the
+    // mirror really moved rather than that one read happened to differ.
+    test("a completion in flight sees a folder change, and the array it already took does not move", async () => {
       const session = LspSession.start(runtime, workspaceGate);
       const parkedToken = "workspace-parked";
       const nextToken = "workspace-next";
@@ -960,22 +967,29 @@ for (const runtime of runtimes) {
           contentChanges: [{ text: gateOpen }],
         });
 
-        await session.waitForProgress(2);
-        // ITS SECOND YIELD MATCHES ITS FIRST: the request finished on the list
-        // it began with, though the workspace had already changed under it.
-        expect(session.progress[1]).toEqual({ token: parkedToken, value: itemsFor(before) });
+        await session.waitForProgress(3);
+        // ITS SECOND YIELD CARRIES THE FOLDER ADDED WHILE IT WAS PARKED: the
+        // read went to the server, and the server had already changed.
+        expect(session.progress[1]).toEqual({ token: parkedToken, value: itemsFor(after) });
+        // AND ITS THIRD YIELD IS THE ARRAY IT TOOK BEFORE PARKING, UNCHANGED --
+        // the copy-on-write, which is the only thing that makes `take it before
+        // your first await` an answer rather than advice.
+        expect(session.progress[2]).toEqual({ token: parkedToken, value: itemsFor(before) });
         await parked;
 
-        // THE NEXT REQUEST SEES THE CHANGE. Its gate is already open, so both
-        // its yields arrive at once -- and both carry the folder the parked one
-        // never saw.
+        // THE NEXT REQUEST SEES THE CHANGE FROM ITS FIRST BATCH ON. Its gate is
+        // already open, so all three yields arrive at once, and the third one --
+        // the array that request took before it never had to park -- carries the
+        // new folder too, which is what says the mirror moved rather than that
+        // one read was late.
         await session.request<CompletionItem[] | null>("textDocument/completion", {
           textDocument: { uri },
           position: { line: 0, character: 0 },
           partialResultToken: nextToken,
         });
 
-        expect(session.progress.slice(2)).toEqual([
+        expect(session.progress.slice(3)).toEqual([
+          { token: nextToken, value: itemsFor(after) },
           { token: nextToken, value: itemsFor(after) },
           { token: nextToken, value: itemsFor(after) },
         ]);

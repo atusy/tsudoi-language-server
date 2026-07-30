@@ -3,7 +3,7 @@ import { ConfigError, loadConfig } from "./config.ts";
 import { startServer } from "./server.ts";
 import { createTsudoi } from "./tsudoi.ts";
 
-const { tsudoi, documents } = createTsudoi();
+const runtime = createTsudoi();
 
 try {
   // startServer runs only on success; that ordering is what keeps stdout clean
@@ -14,7 +14,7 @@ try {
   // anything read there would capture the pre-initialize value forever. With no
   // parameter that is unrepresentable; the guard against giving it one back is at
   // `TsudoiConfigFactory`, where the edit would be made.
-  startServer(await loadConfig(process.argv.slice(2)), documents, tsudoi);
+  startServer(await loadConfig(process.argv.slice(2)), runtime);
 } catch (error) {
   if (!(error instanceof ConfigError)) {
     throw error;
