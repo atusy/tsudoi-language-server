@@ -897,9 +897,9 @@ for (const runtime of runtimes) {
     // WHAT `tsudoi` BEING ONE SERVER-LIFETIME OBJECT MEANS FOR A HANDLER, and
     // both halves of it in ONE request: the folder list is a LIVE READ, so a
     // handler that reads it after an `await` sees a change that landed
-    // meanwhile -- and the array it read BEFORE that await is still the array it
-    // read, because src/workspace.ts replaces the list rather than writing into
-    // it.
+    // meanwhile -- and what it TOOK before that await still answers with the
+    // folders it took, because src/workspace.ts replaces the list rather than
+    // writing into it.
     //
     // NEITHER HALF STANDS ALONE. Live-without-copy-on-write is a surface on
     // which a handler cannot answer about the moment it started; copy-on-write
@@ -917,7 +917,7 @@ for (const runtime of runtimes) {
     // to NOTHING would be caught by the in-flight batch alone only if that batch
     // is read as the change arriving, so the next request is what says the
     // mirror really moved rather than that one read happened to differ.
-    test("a completion in flight sees a folder change, and the array it already took does not move", async () => {
+    test("a completion in flight sees a folder change, and the folders it already took do not move", async () => {
       const session = LspSession.start(runtime, workspaceGate);
       const parkedToken = "workspace-parked";
       const nextToken = "workspace-next";
