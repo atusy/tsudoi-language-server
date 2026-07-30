@@ -282,7 +282,7 @@ function documentParent(uri: string): string | undefined {
  * with ddc and ddc-source-lsp under `confirmBehavior: replace` HONOURS an
  * extended replace end at confirm, and the same harness with the whitespace
  * end reproduces the mangled line. That measurement needs their editor, so it
- * is not in this suite; it is recorded on Sprint 20.
+ * is not in this suite and no red here will catch a regression in it.
  *
  * EXACT, AND ANCHORED AT `fragment.start`, and both halves are asserted by
  * their own test in test/completion-path.test.ts because each relaxation
@@ -459,30 +459,29 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
 /**
  * A `textDocument/completion` handler that completes paths.
  *
- * COMPLETENESS RULING: NOT COMPLETE, AND IT CAN NO LONGER SAY SO ON THE WIRE.
- * This is the case the whole question was raised from. Sprint 42 gave this
- * module a way to say it -- `isIncomplete: true` on a `CompletionList` answer --
- * and Sprint 43 withdrew the shape that carried it, so every batch this
- * generator yields is aggregated into a bare `CompletionItem[]`, which the
+ * COMPLETENESS RULING: NOT COMPLETE, AND IT CANNOT SAY SO ON THE WIRE. A
+ * completion handler yields `CompletionItem[]` and nothing else, so every batch
+ * this generator yields is aggregated into a bare `CompletionItem[]`, which the
  * specification treats as identical to `{ isIncomplete: false, items }`. THE
- * VERDICT IS UNCHANGED AND THE ABILITY TO STATE IT IS GONE.
+ * VERDICT AND WHAT LEAVES THIS PROCESS DISAGREE.
  *
- * SO THE CLAIM THIS HANDLER MAKES ON THE WIRE IS STILL WRONG, AND IT CANNOT BE
- * FIXED HERE. Nothing this module can write changes it: the wrongness is in the
- * TYPE, not in this file. Every spelling available -- yielding fewer items,
- * yielding none, batching differently -- produces the same aggregated array,
- * and an array IS the completeness claim. A reader looking for the bug in this
- * function will not find it, which is the whole reason this paragraph is here
- * rather than in a commit message.
+ * SO THE CLAIM THIS HANDLER MAKES ON THE WIRE IS WRONG, AND IT CANNOT BE FIXED
+ * HERE. Nothing this module can write changes it: the wrongness is in the TYPE,
+ * not in this file. Every spelling available -- yielding fewer items, yielding
+ * none, batching differently -- produces the same aggregated array, and an array
+ * IS the completeness claim. A reader looking for the bug in this function will
+ * not find it, which is the whole reason this paragraph is here rather than in a
+ * commit message.
  *
  * WHAT IT COSTS AN EDITOR USER, so the entry is not merely bookkeeping: a client
  * told the set is FINAL filters what it already holds instead of asking again,
  * so after the next keystroke it shows candidates for a prefix the user has
  * already left -- and for `/`, candidates from a directory they are no longer
- * in. MEASURED AGAINST A REAL CLIENT AT SPRINT 42 and recorded there: nvim
- * 0.13.0-nightly+6ecf226 re-queried 3 times against an `isIncomplete: true`
- * answer and ONCE against the paired `false`, corroborated at completion.lua
- * :1086. The capability worked; the shape that carried it was refused.
+ * in. MEASURED AGAINST A REAL CLIENT, so the cost is not inferred from the
+ * specification: nvim 0.13.0-nightly+6ecf226 re-queried 3 times against an
+ * `isIncomplete: true` answer and ONCE against the paired `false`, corroborated
+ * at completion.lua:1086. A CLIENT ACTS ON THE FLAG, which is what makes the
+ * bare array a claim with consequences rather than a formality.
  *
  * THE FUTURE PATH, evidence-shaped rather than aspirational, and it is at
  * `MethodMap` in src/types.ts where the edit would be made.
@@ -528,13 +527,15 @@ export async function* pathCompletion(
   const cwd = options.cwd ?? process.cwd();
   // WHEN THE CLIENT SENT NO FOLDERS THIS SAYS NOTHING, and that is a CHOICE
   // rather than an oversight -- recorded here because someone would otherwise
-  // re-add the report believing it was required.
+  // add the report believing it was required.
   //
-  // An earlier version wrote one line to stderr per session: with no workspace
-  // the workspace source contributes nothing, and nothing looks exactly like a
-  // working source in a project that holds no matches. The stakeholder removed
-  // it as noise. THE COST STANDS: a config author whose editor opened no
-  // workspace now gets no items from that source and no explanation of why.
+  // WHY NOT ONE LINE ON STDERR PER SESSION: the stakeholder reads that as noise
+  // in the LSP log, which is the one channel a config author has for a handler
+  // that failed. THE COST STANDS AND IS NOT ARGUED AWAY: with no workspace the
+  // workspace source contributes nothing, and nothing looks exactly like a
+  // working source in a project that holds no matches, so a config author whose
+  // editor opened no workspace gets no items from that source and no
+  // explanation of why.
   //
   // AND `NO FOLDERS` IS THE WHOLE OF IT, WHICH IS WIDER THAN IT LOOKS: a client
   // without the workspace-folders capability names its project in `rootUri` or
