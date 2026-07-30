@@ -9,10 +9,9 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  * IT EXISTS FOR THE BY-CONSTRUCTION TESTS IN test/methods-table.test.ts, which
  * iterate `requestEntries` rather than naming methods.
  *
- * WHAT OBLIGATION THAT PUTS ON THIS FILE WAS MEASURED RATHER THAN ASSUMED, AND
- * IT HAS NOW BEEN WRONG TWICE -- once by being written from expectation, and
- * once by being TRUE AND THEN OVERTAKEN. RE-MEASURED AT SPRINT 35, deleting one
- * handler at a time and reverting between, whole suite on both runtimes:
+ * WHAT OBLIGATION THAT PUTS ON THIS FILE IS MEASURED RATHER THAN ASSUMED, and
+ * writing it from expectation is how it comes out wrong. MEASURED by deleting
+ * one handler at a time and reverting between, whole suite on both runtimes:
  *
  * - delete hover's, formatting's, diagnostic's or resolve's, and EVERY TEST IN
  *   THE SUITE STAYS GREEN;
@@ -23,69 +22,64 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
  *   that load failure, and EVERY TEST IN THE SUITE STAYS GREEN TOO.
  *
- * THOSE DELETIONS NO LONGER TYPE-CHECK, AND THE MEASUREMENT ABOVE IS UNCHANGED
- * ANYWAY -- said here rather than left for whoever tries to repeat it, because
- * the two are easy to confuse. RE-RUN AT SPRINT 39, on the two bullets that
- * carry information rather than on all four: hover's handler deleted leaves the
- * suite at 444 GREEN, and completion's deleted ALONE still reddens FOUR on both
- * runtimes -- the second is the one worth spending a run on, being the only
- * bullet whose recorded result is not `green`. The other two follow from the
- * first, which establishes the mechanism: NEITHER RUNTIME TYPE-CHECKS, so a
- * compile error changes nothing a test can see.
+ * THOSE DELETIONS DO NOT TYPE-CHECK, AND THE MEASUREMENT ABOVE HOLDS ANYWAY --
+ * said here rather than left for whoever tries to repeat it, because the two
+ * are easy to confuse. RE-RUN on the two bullets that carry information rather
+ * than on all four: hover's handler deleted leaves the suite at 444 GREEN, and
+ * completion's deleted ALONE still reddens FOUR on both runtimes -- the second
+ * is the one worth spending a run on, being the only bullet whose recorded
+ * result is not `green`. The other two follow from the first, which establishes
+ * the mechanism: NEITHER RUNTIME TYPE-CHECKS, so a compile error changes
+ * nothing a test can see.
  *
- * WHAT IS NEW IS THE PRICE, NOT THE RESULT. `tsc --noEmit` now fails TS2741 on
- * each of those trees, so an edit that cost nothing costs a DoD check. THE
- * PERTURBATION IS STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS -- this
- * is neither a measurement gone stale nor a perturbation gone unconstructible,
- * and it is not one of the four outcomes either, since those answer why a
- * standing re-run goes GREEN and these went exactly as recorded. It is the
- * point of the line at the bottom of this file arriving as a side effect.
+ * THE PRICE IS WHAT THE ANNOTATION MOVES, NOT THE RESULT. `tsc --noEmit` fails
+ * TS2741 on each of those trees, so the perturbation costs a DoD check. IT IS
+ * STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS -- this is neither a
+ * measurement gone stale nor a perturbation gone unconstructible, and it is not
+ * one of the four outcomes either, since those answer why a standing re-run
+ * goes GREEN and these go exactly as recorded. It is the point of the line at
+ * the bottom of this file arriving as a side effect.
  *
- * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS. That last
- * line reddened the `answered -32800 when cancelled` test from Sprint 32 until
- * Sprint 35, and PBI-40 is why it does not any more: the stream drive's
- * no-handler return used to sit AHEAD of the cancellation epilogue and answer
- * `null`, so removing this file's completion handler changed a cancelled
- * request's answer. That drive now answers through the epilogue like the other
- * one, both answer -32800, and the perturbation has nothing left to observe.
+ * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS, AND THE
+ * `answered -32800 when cancelled` TEST IS NOT AN EXCEPTION: both drives answer
+ * a cancelled request through the cancellation epilogue, so both answer -32800
+ * whether or not this file supplies a completion handler. Deleting that handler
+ * leaves that test nothing to observe.
  *
- * A CONTROL WHOSE TARGET BEHAVIOUR AN ACCEPTED CRITERION DELIBERATELY REMOVED IS
- * NOT A DEFENCE THAT WENT MISSING, and the distinction is worth the sentence:
- * this is not a control gone quiet, and not Sprint 34's perturbation whose edit
- * grew a second half. The thing it detected was ruled a divergence and closed.
+ * A CONTROL WITH NO TARGET BEHAVIOUR LEFT TO DETECT IS NOT A DEFENCE THAT WENT
+ * MISSING, and the distinction is worth the sentence: the behaviour that
+ * perturbation would catch is DELIBERATELY ABSENT under an accepted criterion,
+ * so this is not a control gone quiet and not a perturbation whose edit needs a
+ * second half.
  *
- * THE HANDLERS ARE NAMED AND THE TESTS ARE NOT COUNTED, which is a correction
- * rather than a style: this block said `ALL SIX TESTS STAY GREEN` and named
- * formatting as though it were the only awaited-once handler here. Two methods
- * have joined the table since, and a count of a growing file falsifies itself
- * silently -- the exact failure the standing prose rule is about.
+ * THE HANDLERS ARE NAMED AND THE TESTS ARE NOT COUNTED, which is a rule rather
+ * than a style: the request table grows, and a count of a growing file
+ * falsifies itself silently -- the exact failure the standing prose rule is
+ * about.
  *
- * WHAT THIS FIXTURE ENFORCES GREW AT SPRINT 39, AND IT IS A COMPILE-TIME
- * PROPERTY RATHER THAN AN ASSERTION: the handler literal below is checked
- * against `{ [M in Method]: MethodHandler<M> }`, so a method `MethodMap`
- * declares and this file omits IS TS2741 NAMING THE MISSING METHOD -- the same
- * error `requestEntries` produces, for the same reason and by the same
- * mechanism. THE SENTENCE THIS PARAGRAPH REPLACES IS THE ONE THAT SPRINT
- * FALSIFIED: it read `a method added to the table and not added here fails
- * NOTHING, whichever drive it uses`, which was true when written and is now
- * false by construction rather than by anyone remembering.
+ * WHAT THIS FIXTURE ENFORCES IS A COMPILE-TIME PROPERTY RATHER THAN AN
+ * ASSERTION: the handler literal below is checked against
+ * `{ [M in Method]: MethodHandler<M> }`, so a method `MethodMap` declares and
+ * this file omits IS TS2741 NAMING THE MISSING METHOD -- the same error
+ * `requestEntries` produces, for the same reason and by the same mechanism. A
+ * METHOD ADDED TO THE TABLE AND NOT ADDED HERE THEREFORE FAILS SOMETHING,
+ * whichever drive it uses, and it fails BY CONSTRUCTION rather than by anyone
+ * remembering to check.
  *
  * MEASURED BOTH WAYS, BECAUSE `tsc` EXIT 0 PROVES NOTHING UNLESS THE SITE IS
  * REACHED: a probe method added to `MethodMap` AND to `requestEntries` -- both,
  * so the table is not itself the error -- fails TS2741 AT THIS FILE naming that
- * method; add the handler here and tsc is 0. AND THE CONTROL WAS TAKEN BEFORE
- * THE LINE EXISTED, which is what makes this a change rather than a claim: the
- * same probe against the un-annotated file left tsc at 0 WITH NO ERRORS
- * ANYWHERE. The annotation adds PRESENCE ONLY -- per-method typing was already
- * contextual through the partial and still is, measured by writing a
+ * method; add the handler here and tsc is 0. AND THE ANNOTATION IS WHAT DOES
+ * IT, which is what makes this a property of this line rather than of the
+ * table: strip the `satisfies` clause and the same probe leaves tsc at 0 WITH
+ * NO ERRORS ANYWHERE. The annotation adds PRESENCE ONLY -- per-method typing is
+ * contextual through the partial with or without it, measured by writing a
  * `Promise<Hover>` handler into `textDocument/completion` and watching it fail.
  *
- * WHAT IS STILL UNDEFENDED IS EVERY ANSWER, AND THAT IS NOW A RULING RATHER
- * THAN A RESIDUAL. THE PROPERTY RATHER THAN A FRACTION, because the paragraphs
- * above say why: no assertion anywhere pins what any handler in this file
- * returns -- the ones standing here today are hover, completion, formatting,
- * diagnostic and resolve -- where at Sprint 34 that could be said of the
- * awaited-once ones only.
+ * WHAT IS UNDEFENDED IS EVERY ANSWER, AND THAT IS A RULING RATHER THAN A
+ * RESIDUAL. THE PROPERTY RATHER THAN A FRACTION, because the paragraphs above
+ * say why: no assertion anywhere pins what any handler in this file returns --
+ * hover's, completion's, formatting's, diagnostic's and resolve's alike.
  *
  * THE REASON THEY STAY THAT WAY IS RECORDED HERE BECAUSE OTHERWISE THE NEXT
  * PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI. Defending them means
@@ -107,8 +101,8 @@ import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../
  * together, so the token is already cancelled when the handler is entered and
  * the epilogue's post-settle abort check is what answers. A parking handler per
  * method would measure the same thing and would be one more copy per method --
- * THE PER-METHOD COPY, which is the shape PBI-42 was filed against and the same
- * one the five-tests paragraph above refuses.
+ * THE PER-METHOD COPY, which is the shape the five-tests paragraph above
+ * refuses and refuses here for the same reason.
  */
 export const hoverAnswer: Hover = {
   contents: { kind: "markdown", value: "表からの応答" },
@@ -129,11 +123,11 @@ export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       "textDocument/hover": (): Promise<Hover> => Promise.resolve(hoverAnswer),
-      // COMPLETENESS RULING: COMPLETE, and now said deliberately. The
-      // specification treats a supplied `CompletionItem[]` as identical to
-      // `{ isIncomplete: false, items }`, so aggregating this handler has
-      // always asserted that the candidate set is final -- nobody chose that
-      // until now. IT IS TRUE HERE: `completionAnswer` is a module constant and
+      // COMPLETENESS RULING: COMPLETE, and said deliberately rather than left
+      // to the default. The specification treats a supplied `CompletionItem[]`
+      // as identical to `{ isIncomplete: false, items }`, so aggregating this
+      // handler asserts that the candidate set is final whether or not anyone
+      // chooses it. IT IS TRUE HERE: `completionAnswer` is a module constant and
       // THIS HANDLER TAKES NO PARAMETERS AT ALL, so no prefix, position or
       // document can reach it. A re-query on the next keystroke would produce
       // the identical single item, which is exactly what `do not re-query`

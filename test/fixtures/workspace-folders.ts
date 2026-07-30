@@ -24,11 +24,11 @@ import type { Hover, HoverParams } from "vscode-languageserver-protocol";
  * session holding two folders as for one holding none, which is exactly the
  * distinction every criterion below turns on.
  *
- * THE THREE MIRRORED FIELDS AND NOTHING DERIVED FROM THEM. A fourth key held
- * the published reduction run on this very context, and it went when the
- * stakeholder ruled that tsudoi's TYPES module may not export a runtime
- * function: there is no reduction left to run, so a probe that computed one HERE
- * would be asserting against a helper this fixture had written for itself.
+ * THE THREE MIRRORED FIELDS AND NOTHING DERIVED FROM THEM, which is a ruling
+ * rather than an omission: tsudoi's TYPES module may not export a runtime
+ * function, so there is no published reduction to run over this context at all,
+ * and a fourth key computing one HERE would be asserting against a helper this
+ * fixture had written for itself.
  */
 export function observationOf(context: RequestContext): string {
   return JSON.stringify({

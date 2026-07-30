@@ -22,8 +22,8 @@ let captured: Tsudoi | undefined;
 /**
  * WHAT THIS FIXTURE SAYS WHEN IT WAS NEVER HANDED A CONTEXT AT ALL.
  *
- * A PRECONDITION THAT DID NOT EXIST BEFORE: the factory used to be handed the
- * store unconditionally, so it could not fail to be primed. Now it can, and an
+ * A PRECONDITION THAT IS REAL RATHER THAN THEORETICAL: the factory is NOT
+ * handed the store unconditionally, so it can fail to be primed, and an
  * unprimed session left to print `[]` would be INDISTINGUISHABLE from a
  * session that was primed and found the store empty -- which is most of the
  * assertions this fixture serves. Two outcomes producing one observation

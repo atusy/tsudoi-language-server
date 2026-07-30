@@ -5,8 +5,8 @@ import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 /**
  * Says nothing at all: a generator that yields NOTHING.
  *
- * THE EMPTY BODY IS THE POINT, NOT AN OVERSIGHT, and since Sprint 43 there is
- * exactly one spelling of it because there is exactly one entrance for content.
+ * THE EMPTY BODY IS THE POINT, NOT AN OVERSIGHT, and there is exactly one
+ * spelling of it because there is exactly one entrance for content.
  * `no answer` is `no yields`; it cannot be confused with an empty answer paired
  * with a stream, because no such pair exists to write. What this fixture is for
  * is that `nothing to say about this position` stays distinguishable from an
@@ -20,8 +20,8 @@ import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM IS MADE, AND IT IS NOW UNWRITEABLE TO
-      // MAKE ONE HERE BY ACCIDENT. It yields NOTHING, so the drive answers
+      // COMPLETENESS RULING: NO CLAIM IS MADE, AND ONE IS UNWRITEABLE HERE BY
+      // ACCIDENT. It yields NOTHING, so the drive answers
       // `null` on the wire -- and the specification's equivalence is stated for
       // a SUPPLIED `CompletionItem[]`, which `null` is not. RULED RATHER THAN
       // SKIPPED: `no claim` is the answer here, not an omission, and recording

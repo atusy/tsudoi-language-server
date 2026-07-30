@@ -34,11 +34,10 @@ export default (): Promise<TsudoiConfig> => {
         context: RequestContext,
         params: CompletionParams,
       ) {
-        // SUBSCRIBED BEFORE THE FIRST YIELD, WHICH IS WHERE IT HAS TO BE NOW.
-        // Until Sprint 43 the handler was awaited and this ran before any
-        // generator body did; a generator body does not start until its first
-        // `next()`, so a listener written after the first `yield` would miss an
-        // abort that arrived while the drive was still sending that batch.
+        // SUBSCRIBED BEFORE THE FIRST YIELD, WHICH IS WHERE IT HAS TO BE. A
+        // generator body does not start until its first `next()`, so a listener
+        // written after the first `yield` would miss an abort that arrived while
+        // the drive was still sending that batch.
         context.signal.addEventListener("abort", () => {
           process.stderr.write(`${abortedMarker}\n`);
         });

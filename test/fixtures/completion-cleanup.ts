@@ -46,12 +46,13 @@ export default (): Promise<TsudoiConfig> => {
         context: RequestContext,
         params: CompletionParams,
       ) {
-        // THE `try` OPENS BEFORE THE FIRST YIELD, WHICH IS WIDER THAN IT WAS AND
-        // DELIBERATELY SO. Until Sprint 43 the first batch was an ANSWER outside
-        // this generator, so a request abandoned before the second pull ran no
-        // cleanup at all -- the generator had never been started, and `.return()`
-        // on an unstarted generator runs no `finally`. Every batch is now inside
-        // it, so the author's cleanup covers the whole of the work.
+        // THE `try` OPENS BEFORE THE FIRST YIELD, WHICH IS WIDER THAN IT LOOKS
+        // LIKE IT NEEDS TO BE AND DELIBERATELY SO. A first batch delivered from
+        // OUTSIDE this generator would leave a request abandoned before the
+        // second pull running no cleanup at all -- the generator would never
+        // have been started, and `.return()` on an unstarted generator runs no
+        // `finally`. Every batch is inside it, so the author's cleanup covers
+        // the whole of the work.
         try {
           yield beforeGate;
 

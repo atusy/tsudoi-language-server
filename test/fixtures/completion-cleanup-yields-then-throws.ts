@@ -36,7 +36,7 @@ function failCleanup(): never {
  * Cleanup that fails AFTER yielding -- the one rejection only a DRAIN can meet.
  *
  * A `finally` that throws before yielding rejects the `.return()` itself, which
- * is a case tsudoi has always had a handler for. This one throws from a
+ * is a case tsudoi already handles. This one throws from a
  * statement that is only ever reached by a `.next()` PULLED DURING CLEANUP, so
  * its rejection arrives on a promise that did not exist until the drain created
  * it. Unhandled, that rejection kills the process -- strictly worse than the

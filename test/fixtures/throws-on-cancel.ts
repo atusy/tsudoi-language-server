@@ -45,10 +45,9 @@ export default (): Promise<TsudoiConfig> => {
       //
       // IT DRAWS `eslint(require-yield)` AND THAT IS THE FIXTURE WORKING, said
       // here so the warning is not read as an oversight and silenced. A
-      // generator that never yields is exactly what this file is for. THE
-      // WARNING COUNT IS UNCHANGED AT ONE: it used to be raised by
-      // completion-throws.ts, whose throwing generator merged into a handler
-      // that does yield when the shape moved at Sprint 43.
+      // generator that never yields is exactly what this file is for. IT IS THE
+      // SUITE'S ONLY `require-yield` WARNING, so a lint run reporting more than
+      // one has grown a second such generator somewhere else, not here.
       "textDocument/completion": async function* (
         context: RequestContext,
         _params: CompletionParams,

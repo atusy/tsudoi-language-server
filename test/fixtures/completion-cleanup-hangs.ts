@@ -49,9 +49,9 @@ export default (): Promise<TsudoiConfig> => {
         const gateClosed = (): boolean =>
           context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen;
 
-        // The `try` opens before the FIRST yield since Sprint 43: every batch is
-        // inside the generator now, so the author's cleanup covers all of it
-        // rather than everything after the answer.
+        // The `try` opens before the FIRST yield, deliberately: every batch is
+        // inside the generator, so the author's cleanup covers all of it rather
+        // than only what follows an answer.
         try {
           yield beforeGate;
 

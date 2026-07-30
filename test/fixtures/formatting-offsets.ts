@@ -19,8 +19,8 @@ export const replacement = ", ";
  * OFFSETS into a buffer. The protocol wants Positions. Everything in this file
  * exists to make that conversion the visible step: `scan` returns numbers and
  * nothing else, and the handler below turns each one into a Position with
- * `document.positionAt`, which arrived with upstream's TextDocument at Sprint
- * 28 and did not exist before it.
+ * `document.positionAt`, which comes from upstream's TextDocument and is not
+ * something this project wrote.
  */
 function scan(text: string): number[] {
   const offsets: number[] = [];

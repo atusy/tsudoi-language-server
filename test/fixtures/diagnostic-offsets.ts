@@ -4,16 +4,16 @@
 // second thing this file measures. `DiagnosticSeverity` is imported from
 // ../../src/types.ts rather than from vscode-languageserver-protocol, so this
 // fixture is the standing evidence that THAT NAME is REACHABLE AND USABLE AS A
-// VALUE by a config that installed one package. (It read `the ninth published
-// name` until the surface grew past nine, which is why it now names it.)
+// VALUE by a config that installed one package. (NAMED RATHER THAN COUNTED: the
+// published surface grows, and an ordinal into it falsifies itself silently.)
 //
 // THERE IS NO ANNOTATION ON THE HANDLER, AND THAT IS WHAT THIS FILE IS FOR --
 // no `DocumentDiagnosticParams`, no `DocumentDiagnosticReport`, no
-// `Diagnostic`. It used to be evidence that those names DO NOT JOIN THE
-// SURFACE; two of them since have, for examples/diagnostic-trailing-whitespace.ts,
-// which is an EXTRACTED handler and gets no contextual typing. So what this
-// file now proves is the half that decided which side of that line each name
-// fell on: A HANDLER WRITTEN INLINE IN A CONFIG NEEDS NONE OF THEM, because
+// `Diagnostic`. TWO OF THOSE NAMES ARE THEMSELVES ON THE SURFACE, for
+// examples/diagnostic-trailing-whitespace.ts, which is an EXTRACTED handler and
+// gets no contextual typing. So what this file proves is the half that decides
+// which side of that line each name falls on: A HANDLER WRITTEN INLINE IN A
+// CONFIG NEEDS NONE OF THEM, because
 // `MethodHandler` supplies them. Add an annotation here and that evidence is
 // gone, and with it the argument that publication is about EXTRACTION rather
 // than about the method.
@@ -33,8 +33,8 @@ export const message = "読点が使われています";
  * vscode-languageserver-types 3.18.0: `range: Range` is REQUIRED). So the
  * conversion is the visible step here exactly as it is in the formatting
  * fixture: `scan` returns numbers and nothing else, and the handler turns each
- * into a Position with `document.positionAt`, which arrived with upstream's
- * TextDocument at Sprint 28 and did not exist before it.
+ * into a Position with `document.positionAt`, which comes from upstream's
+ * TextDocument and is not something this project wrote.
  */
 function scan(text: string): number[] {
   const offsets: number[] = [];

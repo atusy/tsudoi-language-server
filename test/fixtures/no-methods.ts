@@ -18,10 +18,11 @@ import type { TsudoiConfig } from "../../src/types.ts";
  *
  * WHAT IT IS FOR: the by-construction assertions in test/methods-table.test.ts
  * that a request with no handler is answered `null` normally and -32800 when
- * cancelled, WHICHEVER DRIVE its method uses. Before Sprint 35 those two
- * answers disagreed across the drives -- the stream drive returned ahead of
- * the cancellation epilogue and answered `null` to a cancelled request, where
- * the awaited-once drive reached the epilogue and answered -32800.
+ * cancelled, WHICHEVER DRIVE its method uses. THE DRIVES ARE THE THING THAT CAN
+ * DISAGREE HERE, which is why the assertion is written across all of them: a
+ * drive returning AHEAD of the cancellation epilogue answers a cancelled
+ * request `null`, where one that reaches the epilogue answers -32800, and the
+ * two are indistinguishable from any single method's test.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({ methods: {} });
