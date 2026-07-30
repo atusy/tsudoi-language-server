@@ -16,10 +16,18 @@ import {
   label as hoverLabel,
   parkedMarker as hoverParkedMarker,
 } from "./fixtures/hover-parks-forever.ts";
+import {
+  answeredValue as hoverAnsweredValue,
+  failedMarker as hoverFailedMarker,
+  gateOpen as hoverGateOpen,
+  parkedMarker as hoverRejectsParkedMarker,
+  rejectDelayMs as hoverRejectDelayMs,
+} from "./fixtures/hover-parks-forever-rejects.ts";
 
 const ignoresSignal = fixture("completion-ignores-signal.ts");
 const ignoresSignalRejects = fixture("completion-ignores-signal-rejects.ts");
 const hoverParksForever = fixture("hover-parks-forever.ts");
+const hoverParksForeverRejects = fixture("hover-parks-forever-rejects.ts");
 
 const runtimes = [bunRuntime, denoRuntime];
 
@@ -261,6 +269,76 @@ for (const runtime of runtimes) {
           // past a search for the raw characters.
           expect(session.stdout).not.toContain(hoverAsciiHalf);
           expect(session.stdout).not.toContain(hoverLabel);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+      gatedTimeoutMs,
+    );
+
+    /**
+     * THE ABANDONED CALL IS A PROMISE ON THIS DRIVE TOO, AND IT CAN REJECT.
+     *
+     * The claim is the one the completion test above makes, and it is NOT
+     * covered by it: the two drives race at TWO call sites, only one of which is
+     * a pull. A hand-rolled race written at either -- forwarding fulfilments and
+     * dropping the rejection -- kills the session, and the fixture standing over
+     * the other site would never see it. So each site owes its own exit code.
+     *
+     * THE MEASUREMENT IS THE SESSION'S OWN EXIT CODE, for that reason.
+     * test/cleanup.test.ts holds the permanent control that this measurement can
+     * observe a death when there is one: a session that drops an unhandled
+     * rejection exits 1 there.
+     *
+     * AND THE RUNTIMES DISAGREE ABOUT WHETHER IT IS OBSERVABLE AT ALL -- a
+     * hand-rolled race dies under deno with `Uncaught (in promise)` and survives
+     * under bun -- which is why this runs on both and why the reason is recorded
+     * at the site in src/methods.ts rather than left to this test to imply.
+     */
+    test(
+      "a parked hover's later rejection is handled: the session survives and goes on serving",
+      async () => {
+        const session = LspSession.start(runtime, hoverParksForeverRejects);
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          didOpen(session, "hold");
+
+          const inFlight = session.issue("textDocument/hover", {
+            textDocument: { uri },
+            position: { line: 0, character: 0 },
+          });
+          await session.waitForStderr(hoverRejectsParkedMarker, 1000);
+
+          session.cancel(inFlight.id);
+          expect((await inFlight.response).error?.code).toBe(requestCancelled);
+
+          // ...and the response provably OVERTOOK the wait, which makes this a
+          // claim about ORDER rather than about this machine's speed: the marker
+          // below cannot exist until the wait fails, and the -32800 was already
+          // in hand above.
+          await session.waitForStderr(hoverFailedMarker, hoverRejectDelayMs + 2000);
+
+          // THE SESSION IS STILL THERE. An unhandled rejection out of the
+          // abandoned call would have taken it down before this line.
+          session.notify("textDocument/didChange", {
+            textDocument: { uri, version: 2 },
+            contentChanges: [{ text: hoverGateOpen }],
+          });
+          const next = await session.request<{ contents: { value: string } }>(
+            "textDocument/hover",
+            { textDocument: { uri }, position: { line: 0, character: 0 } },
+          );
+          expect(next.contents.value).toBe(hoverAnsweredValue);
+
+          const shutdown = session.issue("shutdown", null);
+          await shutdown.response;
+          session.notify("exit", null);
+          // The whole claim, in one number: 1 is what a session killed by an
+          // unhandled rejection exits with.
+          expect(await session.waitForExit()).toBe(0);
+          expect((await shutdown.response).error).toBeUndefined();
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();
