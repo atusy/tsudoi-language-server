@@ -320,6 +320,24 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/TextDocument/, /implement/i, /mock/i, /TextDocument\.create/],
   },
   {
+    // NAMED BECAUSE THE CLAIM IT REPLACES WENT FALSE AND NOTHING NOTICED. The
+    // document said tsudoi hands a reader `the real thing`, and it had not been
+    // true since the store began publishing a sealed forwarder: upstream's
+    // `update` refuses anything its own `create` did not build, so a reader who
+    // took that sentence at its word met a throw inside a live handler.
+    //
+    // THE COMPILE TOKEN IS THE HALF A READER CANNOT INFER. `DocumentView` and
+    // upstream's interface carry the same seven members, so tsc accepts the call
+    // -- and a warning about a runtime throw that omits `nothing stops you at
+    // compile time` reads as a mistake the compiler would have caught.
+    //
+    // `applyEdits` IS IN THE TOKENS BECAUSE THE LINE HAS TWO SIDES: a reader told
+    // only what fails learns to avoid the package, which is the opposite of what
+    // this section is for.
+    name: "an upstream helper that only reads works, TextDocument.update throws, and neither is a compile error",
+    tokens: [/TextDocument\.update/, /applyEdits/, /throws/i, /type-check/i],
+  },
+  {
     // NAMED BECAUSE IT WENT FALSE AND NOTHING NOTICED. The document said every
     // protocol name the examples use comes from `@atusy/tsudoi/types`, and it
     // had not been true since the surface was split by origin: `CompletionParams`

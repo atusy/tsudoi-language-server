@@ -4,7 +4,9 @@ import type {
   Range,
   TextDocumentContentChangeEvent,
 } from "vscode-languageserver-protocol";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import { createDocumentStore } from "../src/documents.ts";
+import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 const uri = "file:///workspace/a.txt";
 const otherUri = "file:///workspace/b.txt";
@@ -375,4 +377,133 @@ test("a reference captured before a close stops tracking the reopened document",
   expect(reopened.getText()).toBe("edited after reopen");
   expect(captured.getText()).toBe("edited while open");
   expect(captured.version).toBe(reopened.version);
+});
+
+// WHICH UPSTREAM HELPERS ANSWER FROM A DOCUMENT THIS STORE HANDS OUT, and the
+// line runs between READING and NEEDING THE INSTANCE rather than between
+// documented and undocumented. `TextDocument.update` is the whole of the far
+// side today: it opens with an `instanceof` against the class `create` builds,
+// so the view -- a sealed forwarder, built by no constructor -- is refused
+// before a single member is read.
+//
+// PINNED RATHER THAN LEFT TO BE DISCOVERED IN AN EDITOR, which is where a config
+// author otherwise meets it: the call TYPE-CHECKS, per the probe below, so
+// nothing warns them and the throw arrives inside a live handler.
+//
+// THE MESSAGE IS ASSERTED AND NOT ONLY THE THROW, because every other reason a
+// call like this could fail -- a member missing, a range rejected -- also throws,
+// and this test would then pass for a document that had stopped forwarding at
+// all.
+//
+// THE READ AFTERWARDS IS THE OTHER HALF: the refusal must cost the buffer
+// nothing, and an `update` that had written the version before checking would
+// leave the store reporting a state no client sent.
+test("an upstream update refuses a document the store hands out, and the buffer is untouched", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "genuine"));
+  const handed = store.documents.get(uri);
+  if (handed === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+
+  expect(() => TextDocument.update(handed, [{ text: "forged" }], 9)).toThrow(
+    "document must be created by TextDocument.create",
+  );
+
+  expect(store.documents.get(uri)?.getText()).toBe("genuine");
+  expect(store.documents.get(uri)?.version).toBe(1);
+});
+
+// THE NEAR SIDE OF THAT LINE, and it is what makes the refusal above a BOUNDARY
+// rather than a blanket incompatibility: `applyEdits` only ever READS the seven
+// members and returns a string, so it answers from the view exactly as it would
+// from upstream's own instance.
+//
+// ASKED AFTER A CHANGE, because a helper reading a SNAPSHOT would answer this
+// identically at version 1: what is measured is that upstream's reader reaches
+// the buffer as it stands when it is called, which is the liveness the store
+// publishes carried through a function that never heard of this project.
+test("an upstream helper that only reads answers from the document the store hands out", () => {
+  const store = createDocumentStore();
+  store.open(opened(uri, "hello world"));
+  const handed = store.documents.get(uri);
+  if (handed === undefined) {
+    throw new Error("open registered nothing under the uri it was given");
+  }
+
+  expect(TextDocument.applyEdits(handed, [])).toBe("hello world");
+
+  store.change({
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "hello there" }],
+  });
+
+  expect(TextDocument.applyEdits(handed, [{ range: on(0, 0, 5), newText: "bye" }])).toBe(
+    "bye there",
+  );
+});
+
+/**
+ * THE ONE THING THE PUBLISHED TYPE CANNOT SAY, ASSERTED AS THE GREEN IT IS.
+ *
+ * `DocumentView` carries exactly upstream's seven members with exactly their
+ * signatures, so the two interfaces are MUTUALLY ASSIGNABLE and tsc accepts a
+ * view wherever upstream's `TextDocument` is asked for -- including the call the
+ * test above watches THROW. A reader who assumes the rename closed that hole is
+ * owed the measurement rather than the assurance.
+ *
+ * WHY IT IS NOT CLOSED, since the shape that would close it is one line: a
+ * required brand member makes the view unassignable to upstream AND upstream
+ * unassignable to the view, and the second direction is the one an author uses
+ * -- a helper of theirs typed against `DocumentView`, handed a document they
+ * built with `TextDocument.create` in their own tests. That direction is pinned
+ * below. There is no member set that keeps it and refuses this.
+ *
+ * WHAT REDDENS IT is upstream branding its own interface, which would make the
+ * runtime refusal a compile error at last -- and this is the test that would
+ * report it, rather than the change being noticed by nobody.
+ */
+test("passing a handed-out document to an upstream update still type-checks, which is why the throw is pinned", async () => {
+  const result = await typeCheckProbe({
+    "probe.ts": [
+      'import { TextDocument } from "vscode-languageserver-textdocument";',
+      'import type { Tsudoi } from "./src/types.ts";',
+      "const tsudoi = null as unknown as Tsudoi;",
+      'const document = tsudoi.documents.get("file:///a.txt");',
+      "if (document !== undefined) {",
+      '  TextDocument.update(document, [{ text: "x" }], 2);',
+      "}",
+      "",
+    ].join("\n"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * THE DIRECTION AN AUTHOR ACTUALLY WRITES, and the reason the view is declared
+ * structurally rather than branded: `DocumentView` is SATISFIED BY a real
+ * upstream document, so a helper typed against tsudoi's own type accepts the one
+ * a config author builds with `TextDocument.create` for their own tests. Without
+ * this they would have to keep two overloads, or annotate against a type tsudoi
+ * does not hand them.
+ *
+ * `TextDocument.create` AND NOT A DECLARED BINDING, because the value is what an
+ * author has: a probe over `declare const` would go on passing if `create` ever
+ * returned something narrower than the interface it is declared to return.
+ */
+test("a document built by the upstream factory satisfies the published view", async () => {
+  const result = await typeCheckProbe({
+    "probe.ts": [
+      'import { TextDocument } from "vscode-languageserver-textdocument";',
+      'import type { DocumentView } from "./src/types.ts";',
+      'export const view: DocumentView = TextDocument.create("file:///a.txt", "plaintext", 1, "x");',
+      "export const text = view.getText();",
+      "",
+    ].join("\n"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
 });

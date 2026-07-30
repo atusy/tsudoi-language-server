@@ -175,10 +175,13 @@ would desynchronise its client instead of failing.
 
 ## The documents your handlers receive
 
-`context.tsudoi.documents.get(uri)` gives you a `TextDocument` from
-`vscode-languageserver-textdocument` -- Microsoft's own package, out of the same repository as
-the protocol types, and the one those types' own deprecation notice points at. tsudoi keeps the
-store in step with the editor and hands you the real thing:
+`context.tsudoi.documents.get(uri)` gives you a `DocumentView` from `@atusy/tsudoi/types`: a
+sealed facade over one open buffer, carrying the seven members
+`vscode-languageserver-textdocument` declares for READING a document -- Microsoft's own package,
+out of the same repository as the protocol types, and the one those types' own deprecation notice
+points at. tsudoi keeps the store in step with the editor and every member forwards to it at the
+moment you ask, so a reference you keep across an `await` answers about the buffer as it stands
+then:
 
 | member                         | what it answers                              |
 | ------------------------------ | -------------------------------------------- |
@@ -189,22 +192,41 @@ store in step with the editor and hands you the real thing:
 | `offsetAt(position)`           | the string offset of a `{ line, character }` |
 | `lineCount`                    | how many lines it has                        |
 
-The last four are the reason this type is not tsudoi's own. Anything that answers about the word
-under the cursor needs offset arithmetic, and a shape carrying only `uri`, `languageId`, `version`
-and `getText()` would leave every config writing that arithmetic again -- in code this project
-cannot see and could never fix. It comes from a package other people maintain instead.
+The last four are the reason those members are not invented here. Anything that answers about the
+word under the cursor needs offset arithmetic, and a shape carrying only `uri`, `languageId`,
+`version` and `getText()` would leave every config writing that arithmetic again -- in code this
+project cannot see and could never fix. The answers come from a package other people maintain;
+what tsudoi owns is the declaration, and the paragraph after next says what that buys you.
 
-**A hand-written mock has to implement all six.** This is the one place the type asks anything of
+**What you hold is a view over the buffer, not one of upstream's documents.** Upstream marks its
+`TextDocument` interface "not to be implemented" and enforces it, so an upstream helper works on
+what you are handed exactly when it only READS:
+
+| upstream helper                                   | what it does                                             |
+| ------------------------------------------------- | -------------------------------------------------------- |
+| `TextDocument.applyEdits(document, edits)`        | works, and reads the buffer as it stands at the call     |
+| `TextDocument.update(document, changes, version)` | throws `document must be created by TextDocument.create` |
+
+**Neither call is a compile error**, and that is the half nothing warns you about: `DocumentView`
+carries upstream's seven members with upstream's signatures, so both type-check and only one of
+them runs. When you need a document you can update, take a copy that is yours --
+`TextDocument.create(document.uri, document.languageId, document.version, document.getText())`
+builds a real one, detached from the buffer, which nothing in tsudoi will move under you.
+
+The exchange runs the other way too: a real upstream document SATISFIES `DocumentView`, so your
+own helpers annotated with tsudoi's type accept the documents you build in your own tests.
+
+**A hand-written mock has to implement all seven.** This is the one place the type asks anything of
 you, and it comes up in your own tests rather than in your config. An object literal carrying the
 four obvious members satisfies nothing:
 
 ```ts
-// not a TextDocument: positionAt, offsetAt and lineCount are missing
+// not a document: positionAt, offsetAt and lineCount are missing
 const document = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
 ```
 
 Build one instead. `TextDocument.create` is the remedy and the only supported way to make a
-document at all:
+document at all -- and what it builds satisfies both types:
 
 ```ts
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -212,11 +234,12 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 const document = TextDocument.create(uri, "plaintext", 1, "hello");
 ```
 
-That import is the one place you name the package yourself, and it is in your TESTS rather than
-in your config -- the quickstart's "`@atusy/tsudoi/types` is the only import a config needs"
-still holds, because a config never builds a document. `@atusy/tsudoi/types` exports the TYPE and
-deliberately not the value for that reason: tsudoi builds the documents and your handlers only
-receive them. A mock in your own tests is the exception, and it is the only one.
+That import is where you name the package yourself, and a config that only reads the buffer never
+writes it -- so the quickstart's "`@atusy/tsudoi/types` is the only import a config needs" holds
+for the handlers you start with. The two exceptions are above: a mock in your own tests, and a
+handler taking a copy it can update. `@atusy/tsudoi/types` exports the TYPE and deliberately not
+the value: tsudoi builds the documents your handlers receive, and building one is the caller's
+job on both of those routes rather than something tsudoi can do for you.
 
 ## The session your handlers receive
 

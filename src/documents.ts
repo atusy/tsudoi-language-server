@@ -2,10 +2,11 @@ import type {
   DidChangeTextDocumentParams,
   DidCloseTextDocumentParams,
   DidOpenTextDocumentParams,
+  Position,
+  Range,
 } from "vscode-languageserver-protocol";
-import type { Position, Range } from "vscode-languageserver-textdocument";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import type { DocumentStore } from "./types.ts";
+import type { DocumentStore, DocumentView } from "./types.ts";
 
 /**
  * The store plus the handle that feeds it. The mutators live HERE and not on
@@ -25,12 +26,19 @@ export interface DocumentStoreHandle {
  *
  * TWO OBJECTS BECAUSE ONE CANNOT BE BOTH. Upstream's instance MUST stay writable
  * -- `update` writes its content, its version and its line offsets -- and what
- * leaves this store MUST NOT be, since upstream declares its members as METHODS,
- * which are writable properties, so a handler shipping `document.getText = () =>
- * "forged"` would answer every later request from its own string with the buffer
- * itself untouched and the version still rising. Sealing the instance refuses
- * that and stops synchronisation dead; sealing a view over it refuses it and
- * costs synchronisation nothing.
+ * leaves this store MUST NOT be, since a handler shipping `document.getText = ()
+ * => "forged"` would answer every later request from its own string with the
+ * buffer itself untouched and the version still rising. Sealing the instance
+ * refuses that and stops synchronisation dead; sealing a view over it refuses it
+ * and costs synchronisation nothing.
+ *
+ * AND TWO TYPES FOR THE SAME REASON. The view is published as `DocumentView`,
+ * which is TSUDOI'S declaration of upstream's reader members: upstream marks its
+ * own interface `Not to be implemented` and enforces it -- `TextDocument.update`
+ * refuses anything `TextDocument.create` did not build -- so typing the view as
+ * that interface would promise a substitutability no forwarder can have. What
+ * that costs an author, and which upstream helpers still answer from the view,
+ * is at `DocumentView` in src/types.ts.
  */
 interface OpenDocument {
   /**
@@ -46,7 +54,7 @@ interface OpenDocument {
    * belongs to ONE open, so a reference carried across a close goes on
    * forwarding to a buffer nothing writes any more.
    */
-  readonly published: TextDocument;
+  readonly published: DocumentView;
 }
 
 /**
@@ -73,9 +81,9 @@ function openDocument(
   // reopened uri is a DIFFERENT one. Pinned by `one document is handed back for
   // the life of an open, and another after a reopen` in test/documents.test.ts.
   //
-  // EVERY MEMBER UPSTREAM DECLARES, and forgetting one is not a compile error to
-  // rely on -- an object literal missing `lineCount` would fail the annotation,
-  // but one forwarding it to the wrong place would not. What measures the
+  // EVERY MEMBER `DocumentView` DECLARES, and forgetting one is not a compile
+  // error to rely on -- an object literal missing `lineCount` would fail the
+  // annotation, but one forwarding it to the wrong place would not. What measures the
   // forwarding is test/document-members.test.ts, which reads `lineCount`,
   // `offsetAt`, `positionAt` and a ranged `getText` off a CHANGED document
   // through a real session.
@@ -107,7 +115,7 @@ function openDocument(
  * upstream's map iterator: building an array here would turn a live iteration
  * into a snapshot taken at the call.
  */
-function* publishedOf(entries: Iterable<OpenDocument>): Iterable<TextDocument> {
+function* publishedOf(entries: Iterable<OpenDocument>): Iterable<DocumentView> {
   for (const entry of entries) {
     yield entry.published;
   }
@@ -126,8 +134,8 @@ export function createDocumentStore(): DocumentStoreHandle {
   // published document at `openDocument` above, the mirror's lists in
   // src/workspace.ts.
   const documents: DocumentStore = Object.freeze({
-    get: (uri: string): TextDocument | undefined => byUri.get(uri)?.published,
-    values: (): Iterable<TextDocument> => publishedOf(byUri.values()),
+    get: (uri: string): DocumentView | undefined => byUri.get(uri)?.published,
+    values: (): Iterable<DocumentView> => publishedOf(byUri.values()),
   });
 
   return {

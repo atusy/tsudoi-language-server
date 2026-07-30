@@ -23,21 +23,23 @@ async function reportFrom(session: LspSession): Promise<DocumentMutationReport> 
 }
 
 /**
- * THERE IS NO COMPILE-TIME HALF HERE, AND THAT IS MEASURED RATHER THAN ASSUMED.
- * The document a config author receives is UPSTREAM'S OWN TYPE, published
- * unchanged through `@atusy/tsudoi/deps/textdocument` and held to that identity
- * by the probe in test/published-artifacts.test.ts -- and upstream declares its
- * members as METHODS, which are writable properties. So the assignment below
- * type-checks, and closing it would mean publishing a type that is not
- * upstream's, which is a ruling this project has already made the other way.
+ * THE COMPILE-TIME HALF, AND IT EXISTS BECAUSE THE DECLARATION IS TSUDOI'S OWN.
+ * `DocumentView` declares its seven members as `readonly` function properties,
+ * so the forgery below is TS2540 -- the code for `assigned to a read-only
+ * property` and nothing else, which the exit code alone would also be earned by
+ * a probe that failed to resolve its import.
  *
- * ASSERTED AS A GREEN rather than left unsaid, because the neighbouring findings
- * each close both halves: a reader comparing them is owed the reason this one
- * closes only the half that runs, and a claim that stopped holding -- upstream
- * marking those members `readonly` -- would show up here as a failure to
- * compile.
+ * WHAT A METHOD DECLARATION WOULD COST is exactly this test: upstream declares
+ * the same members as METHODS, which are writable properties, so a view typed
+ * as upstream's interface accepts the assignment and the seal below is the whole
+ * defence. Publishing our own declaration is what makes both halves closeable,
+ * and this is the half that reports the mistake at the point of the edit.
+ *
+ * NEITHER HALF SUBSTITUTES FOR THE OTHER, which is why the session below stays:
+ * `readonly` is erased at run time and says nothing about the JavaScript a
+ * config author actually ships.
  */
-test("forging a document member type-checks, which is why the seal is the whole defence", async () => {
+test("forging a document member does not type-check", async () => {
   const result = await typeCheckProbe({
     "probe.ts": [
       'import type { Tsudoi } from "./src/types.ts";',
@@ -46,6 +48,32 @@ test("forging a document member type-checks, which is why the seal is the whole 
       "if (document !== undefined) {",
       '  document.getText = () => "forged";',
       "}",
+      "",
+    ].join("\n"),
+  });
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("TS2540");
+  expect(result.output).toContain("getText");
+});
+
+/**
+ * THE PAIRED CONTROL, without which the probe above is satisfied by a document
+ * nobody can READ at all: members that had become non-callable, a broken import
+ * or a type resolving to nothing would refuse the assignment AND every call.
+ */
+test("reading the same document members type-checks", async () => {
+  const result = await typeCheckProbe({
+    "probe.ts": [
+      'import type { Tsudoi } from "./src/types.ts";',
+      "const tsudoi = null as unknown as Tsudoi;",
+      'const document = tsudoi.documents.get("file:///a.txt");',
+      "export const read = document?.getText({",
+      "  start: { line: 0, character: 0 },",
+      "  end: document.positionAt(document.offsetAt({ line: 0, character: 0 })),",
+      "});",
+      "export const about = [document?.uri, document?.languageId];",
+      "export const numbers = [document?.version, document?.lineCount];",
       "",
     ].join("\n"),
   });

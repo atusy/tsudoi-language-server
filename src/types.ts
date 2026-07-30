@@ -17,10 +17,78 @@ import type {
   DocumentFormattingParams,
   Hover,
   HoverParams,
+  Position,
+  Range,
   TextEdit,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
-import type { TextDocument } from "./deps/textdocument.ts";
+
+/**
+ * THE DOCUMENT A CONFIG AUTHOR IS HANDED: a LIVE, SEALED FACADE over one open
+ * buffer, carrying the seven members upstream's `TextDocument` declares for
+ * READING it and forwarding each one to that buffer AT THE MOMENT IT IS ASKED.
+ * What it is not is upstream's instance -- that one stays private to
+ * src/documents.ts, for the reason recorded there.
+ *
+ * TSUDOI'S OWN DECLARATION AND NOT UPSTREAM'S INTERFACE, WHICH IS A STATEMENT
+ * ABOUT WHAT A TYPE MAY PROMISE. Upstream marks its interface `Not to be
+ * implemented`, and its own namespace enforces that: `TextDocument.update`
+ * opens with an instance check and refuses anything `TextDocument.create` did
+ * not build. So declaring this facade as that interface would announce a
+ * substitutability it does not have, and an author taking the declaration at its
+ * word meets the difference as a throw inside a live handler. The type says what
+ * is true of the value: seven readers, and no claim of upstream identity.
+ *
+ * `readonly` FUNCTION PROPERTIES AND NOT METHOD DECLARATIONS, for the reason
+ * `DocumentStore` below is declared that way: a method is a WRITABLE property,
+ * so `document.getText = () => "forged"` type-checks against one -- and the
+ * document lives in the store for as long as the uri is open, so a forgery that
+ * landed would answer EVERY LATER HANDLER from a string of its own while
+ * synchronisation went on raising the version. The seal in src/documents.ts is
+ * the half that runs; this is the half that reports it at the point of the edit.
+ *
+ * UPSTREAM'S OWN DOCUMENT SATISFIES THIS TYPE, and it is declared structurally
+ * so that it does: a helper of yours annotated `DocumentView` accepts the
+ * document you build with `TextDocument.create` in your own tests, with no
+ * second overload and no annotation against a type tsudoi never hands you.
+ * Pinned by `a document built by the upstream factory satisfies the published
+ * view` in test/documents.test.ts.
+ *
+ * AND THE REVERSE COMPILES TOO, WHICH IS THE ONE THING THIS TYPE CANNOT SAY.
+ * The seven members are upstream's with upstream's signatures, so the two
+ * interfaces are MUTUALLY assignable and `TextDocument.update(document, …)`
+ * type-checks and then THROWS. A brand member would refuse it -- and would
+ * refuse the direction above in the same stroke, since nothing distinguishes a
+ * required member from a required member. The compile half is unbuildable here;
+ * what stands in its place is this paragraph and the pair of tests in
+ * test/documents.test.ts, one watching the throw and one watching the call
+ * compile.
+ *
+ * SO THE LINE BETWEEN UPSTREAM HELPERS RUNS BETWEEN READING AND NEEDING THE
+ * INSTANCE, not between documented and undocumented: `TextDocument.applyEdits`
+ * only reads the members and answers from this document exactly as from
+ * upstream's own -- LIVE, so it sees the edits that have arrived since you took
+ * the reference -- while `TextDocument.update` needs the instance and is
+ * refused. AN AUTHOR WHO NEEDS ONE TAKES A COPY THEY OWN:
+ * `TextDocument.create(document.uri, document.languageId, document.version,
+ * document.getText())` is a real instance, detached from the buffer, and theirs
+ * to update.
+ *
+ * NOT WRAPPED IN `DeepReadonly`, and that is measured rather than stylistic:
+ * that mapped type walks a function member as an OBJECT and leaves `{}`, so
+ * `getText` would stop being callable (TS2349). Every member here is a primitive
+ * or a function, so the `readonly` written on each is the whole of what depth
+ * there is to add.
+ */
+export interface DocumentView {
+  readonly uri: string;
+  readonly languageId: string;
+  readonly version: number;
+  readonly lineCount: number;
+  readonly getText: (range?: Range) => string;
+  readonly positionAt: (offset: number) => Position;
+  readonly offsetAt: (position: Position) => number;
+}
 
 /**
  * The store a config author reads, and WHAT IT HANDS BACK IS LIVE: a document is
@@ -37,11 +105,10 @@ import type { TextDocument } from "./deps/textdocument.ts";
  * REFERENCE IS NOT TAKING THE VALUE: what the reference reads moves under it, so
  * a handler keeping the document keeps a window rather than an answer.
  *
- * THE DOCUMENT IS UPSTREAM'S TYPE AND UPSTREAM'S MEMBERS, and what it is NOT is
- * the instance synchronisation writes: that one stays private to
- * src/documents.ts, because upstream declares its members as METHODS -- writable
- * properties -- so a handler could otherwise shadow `getText` and answer every
- * later request from a string of its own with the buffer untouched.
+ * THE DOCUMENT IS `DocumentView` ABOVE -- upstream's reader members under
+ * tsudoi's own declaration -- and what it is NOT is the instance synchronisation
+ * writes: that one stays private to src/documents.ts. Which upstream helpers
+ * still answer from it, and which one throws, is stated there.
  *
  * ITS OPERATIONS ARE `readonly` FUNCTION PROPERTIES AND NOT METHOD
  * DECLARATIONS, WHICH IS THE DIFFERENCE BETWEEN A SURFACE AND A SUGGESTION. A
@@ -60,8 +127,8 @@ import type { TextDocument } from "./deps/textdocument.ts";
  * it throws.
  */
 export interface DocumentStore {
-  readonly get: (uri: string) => TextDocument | undefined;
-  readonly values: () => Iterable<TextDocument>;
+  readonly get: (uri: string) => DocumentView | undefined;
+  readonly values: () => Iterable<DocumentView>;
 }
 
 /**
@@ -227,13 +294,11 @@ export interface WorkspaceFolderStore {
  * point of the edit, where the diagnostic can name the field.
  *
  * APPLIED WHERE IT IS EXPRESSIBLE, which is why it is not on every member here:
- * a document is published as UPSTREAM'S OWN `TextDocument`, held to that
- * identity by src/deps/textdocument.ts and by the probe in
- * test/published-artifacts.test.ts, and `DeepReadonly<TextDocument>` is a
- * DIFFERENT type -- so applying it there would be the substitution that ruling
- * refuses. What stands in its place is the run-time half alone: what the store
- * hands back is SEALED where it is built, and what is not sealed is not
- * published at all.
+ * a document is published as `DocumentView`, whose members are primitives and
+ * FUNCTIONS, and this mapped type walks a function as an object and leaves `{}`
+ * -- a document whose `getText` is no longer callable (TS2349, measured). That
+ * type writes its own `readonly` on every member instead, which is the whole of
+ * the depth it has; the run-time half is the seal in src/documents.ts.
  *
  * `any` IS REDUCED TO `unknown`, AND THAT ARM IS FIRST BECAUSE IT HAS TO BE.
  * NOTHING CAN MAKE `any` READONLY -- a mapped type over it yields members that
