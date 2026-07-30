@@ -94,10 +94,8 @@ test("the same example spelled with a relative path into src fails in a consumer
 
 // SCOPE: this file asserts what the tarball CONTAINS and what type-checks
 // against it. That the installed copy RUNS is asserted in
-// test/installed-runtime.test.ts -- it now does, under both runtimes, which is
-// what sprint 10 changed. The note this comment used to carry, that an
-// installed copy cannot run under deno, was true until the package started
-// shipping compiled .js and is retained nowhere.
+// test/installed-runtime.test.ts -- it does, under BOTH runtimes, because the
+// package ships compiled .js rather than the sources.
 //
 // `src/types.ts` is deliberately absent: dist/ is the whole published tree, so
 // a user cannot aim a runtime at a .ts file under node_modules even by

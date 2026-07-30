@@ -162,9 +162,9 @@ for (const runtime of runtimes) {
     // The same pre-dispatch path on the streaming side, where a MESSAGE is at
     // stake rather than just a return value: the handler is called anyway and
     // does produce an answer, and that answer must be discarded before it
-    // reaches the wire. It is the ANSWER and no longer a yielded chunk since
-    // Sprint 42 -- the pair's first element leaves as the first `$/progress`
-    // literal, so it is now the EARLIEST thing this drive could misdeliver.
+    // reaches the wire. It is the ANSWER rather than a yielded chunk: it leaves
+    // as the first `$/progress` literal, which makes it the EARLIEST thing this
+    // drive could misdeliver.
     test("a completion cancelled before it is dispatched answers -32800 and streams nothing", async () => {
       const session = LspSession.start(runtime, completionCancel);
       try {
@@ -191,20 +191,17 @@ for (const runtime of runtimes) {
     // answering a cancelled request normally; tsudoi does not, because the
     // client has already discarded the request's context.
     //
-    // `both` NAMES THE METHODS THIS FILE DRIVES AND HAS NOT BEEN AN ENUMERATION
-    // OF TSUDOI'S SINCE SPRINT 31. Formatting arrived then, diagnostic and
-    // resolve after it, and every one of them goes through the same
-    // `answerUnlessCancelled`.
+    // `both` NAMES THE METHODS THIS FILE DRIVES AND IS NOT AN ENUMERATION OF
+    // TSUDOI'S. Formatting, diagnostic and resolve are cancellable too, and
+    // every one of them goes through the same `answerUnlessCancelled`.
     //
-    // WHAT THIS COMMENT WENT ON TO SAY WAS `AND NOTHING HERE OR ANYWHERE ELSE
-    // ASSERTS THAT`, AND IT HAD BEEN FALSE SINCE SPRINT 32 -- falsified by a
-    // test rather than by this file, which is why nothing pointed at it:
-    // test/methods-table.test.ts asserts that EVERY method in the request table
-    // is answered -32800 when cancelled, by construction, so a sixth is covered
-    // the moment it is declared.
+    // THE REST IS COVERED ELSEWHERE AND BY CONSTRUCTION, said here so this file
+    // is not read as the whole of it: test/methods-table.test.ts asserts that
+    // EVERY method in the request table is answered -32800 when cancelled, so a
+    // sixth is covered the moment it is declared.
     //
-    // WHAT IS STILL PER-METHOD HERE AND NOT THERE, said precisely so the
-    // correction does not overshoot: those table tests cancel BEFORE DISPATCH,
+    // WHAT IS PER-METHOD HERE AND NOT THERE, said precisely so the division of
+    // labour does not blur: those table tests cancel BEFORE DISPATCH,
     // so the handler is entered with an already-cancelled token. The two tests
     // in this file cancel a handler that is PARKED AND RUNNING, which is what
     // measures that a result produced after the cancellation is discarded. That

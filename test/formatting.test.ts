@@ -58,7 +58,7 @@ const formattableText = "第一行、こんにちは。\n第二行、さよう�
  * unchanged. No fixture in this file reads it, so every assertion below passes
  * against a tsudoi that dropped it on the floor. Asserting it needs a fixture
  * that echoes the value back -- through stderr, as the document-members fixture
- * does -- and that was not written, because no criterion of PBI-36 asks for it.
+ * does -- and none exists here, because no criterion of PBI-36 asks for one.
  */
 function formattingParams(): unknown {
   return { textDocument: { uri }, options: { tabSize: 2, insertSpaces: true } };
@@ -128,9 +128,8 @@ for (const runtime of runtimes) {
     /**
      * THE AFFORDABILITY CLAIM, MEASURED HERE RATHER THAN ASSERTED FOR THE
      * REMAINING FOUR METHODS. A handler emits Positions from whatever OFFSETS
-     * its analysis produced, which is `positionAt` -- a member that did not
-     * exist on this project's document before Sprint 28 put upstream's
-     * TextDocument behind it.
+     * its analysis produced, which is `positionAt` -- a member this project's
+     * document has only because upstream's TextDocument sits behind it.
      *
      * THE EXPECTED RANGES ARE WRITTEN OUT BY HAND AND ARE NEVER COMPUTED BY
      * CALLING positionAt. Both sides would otherwise run one function, and two

@@ -45,10 +45,9 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  *
  * WHY IT IS NOT SIMPLY TURNED OFF HERE, MEASURED rather than argued: setting it
  * `false` reddens NOTHING -- the whole of `bun test` stays green -- and it would
- * also SEE nothing, because `types: ["node"]` above is
- * the other half of the pair and cancels it. Only skipLibCheck OFF TOGETHER
- * WITH `types: []` discriminates, and `types: []` is what these options must
- * not have: the
+ * also SEE nothing, because `types: ["node"]` above is the other half of the
+ * pair and cancels it. Only skipLibCheck OFF TOGETHER WITH `types: []`
+ * discriminates, and `types: []` is what these options must not have: the
  * example config reads the filesystem, so the paragraph above would stop
  * holding. That is why the probe carries its own tsconfig instead.
  */

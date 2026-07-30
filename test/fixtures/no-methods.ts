@@ -21,8 +21,8 @@ import type { TsudoiConfig } from "../../src/types.ts";
  * cancelled, WHICHEVER DRIVE its method uses. THE DRIVES ARE THE THING THAT CAN
  * DISAGREE HERE, which is why the assertion is written across all of them: a
  * drive returning AHEAD of the cancellation epilogue answers a cancelled
- * request `null`, where one that reaches the epilogue answers -32800, and the
- * two are indistinguishable from any single method's test.
+ * request `null`, where one that reaches the epilogue answers -32800, and a
+ * test naming one method exercises only whichever drive that method uses.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({ methods: {} });

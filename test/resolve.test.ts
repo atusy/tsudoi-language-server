@@ -67,20 +67,18 @@ for (const runtime of runtimes) {
      * EXACT EQUALITY ON THE WHOLE OBJECT: two capability contributors write
      * into ONE key, and this is what the client is told after both have run.
      *
-     * THE ASSERTION IS UNCHANGED AND ITS REASON IS NOT, WHICH IS WHY THIS
-     * PARAGRAPH WAS REWRITTEN BY AN EDIT IN src/methods.ts THAT TOUCHED NO LINE
-     * IN THIS FILE. It used to say that `textDocument/completion`'s entry must
-     * be declared ABOVE `completionItem/resolve`'s, since completion's
-     * contributor ASSIGNED a fresh object over whatever was there, and that
-     * swapping the two entries reddens this. SINCE SPRINT 38 COMPLETION MERGES:
-     * both orders produce the same object, and the swap reddens NOTHING --
-     * measured there, whole suite green with the same number of tests running.
+     * THE DECLARATION ORDER DECIDES NOTHING, AND THAT IS WORTH SAYING BECAUSE
+     * IT LOOKS AS THOUGH IT SHOULD. Completion's contributor MERGES rather than
+     * assigning a fresh object over whatever is already in the key, so
+     * declaring `textDocument/completion`'s entry above or below
+     * `completionItem/resolve`'s produces the same object either way. MEASURED
+     * by swapping the two entries: reddens NOTHING, whole suite green with the
+     * same number of tests running.
      *
-     * WHAT THIS STILL CHECKS is the property, not the mechanism: that
+     * WHAT THIS CHECKS is the property, not the mechanism: that
      * `resolveProvider` reaches the client at all, and that it arrives INSIDE
      * `completionProvider` rather than beside it. A merge that dropped what the
-     * other contributor wrote would redden here; the declaration order can no
-     * longer make it fail, because it no longer decides anything.
+     * other contributor wrote would redden here.
      */
     test("a config supplying a resolve handler advertises resolveProvider inside the completion provider", async () => {
       const session = LspSession.start(runtime, resolveDetail);
@@ -105,12 +103,11 @@ for (const runtime of runtimes) {
      * and it carries nothing inside it.
      *
      * IT IS BYTE-IDENTICAL TO AN ASSERTION IN test/completion.test.ts, SAME
-     * FIXTURE AND ALL, AND IT IS KEPT ON THE SPRINT-31 GROUND RATHER THAN BY
-     * OVERSIGHT. That one's TITLE names completionProvider's PRESENCE; this
-     * one's names resolveProvider's ABSENCE, and they are the two different
-     * properties one object happens to carry. A duplicate detection that
-     * arrives without naming its cause is the half of S9 this project has
-     * already been caught by.
+     * FIXTURE AND ALL, AND IT IS KEPT DELIBERATELY RATHER THAN BY OVERSIGHT.
+     * That one's TITLE names completionProvider's PRESENCE; this one's names
+     * resolveProvider's ABSENCE, and they are the two different properties one
+     * object happens to carry. A duplicate detection that arrives without
+     * naming its cause is the half of S9 that costs a real defence.
      *
      * WHAT IT IS MEASURED TO CATCH: naming this method inside
      * contributeCapabilities' shared condition -- so resolveProvider is
@@ -119,7 +116,7 @@ for (const runtime of runtimes) {
      * and the demo config's pinned capabilities. TWENTY ASSERTIONS ACROSS FIVE
      * FILES, both runtimes, with the number of tests RUN unchanged. So the
      * `ONLY when a handler exists` half is MEASURED and is NOT isolated, which
-     * is the same shape Sprint 31 recorded and is not a defect.
+     * is a recognised shape in this suite and not a defect.
      */
     test("a config supplying completion and no resolve handler advertises a completion provider with nothing inside it", async () => {
       const session = LspSession.start(runtime, resolveAbsent);

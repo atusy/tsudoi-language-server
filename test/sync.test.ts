@@ -297,11 +297,11 @@ for (const runtime of runtimes) {
      * says nothing about whether the fixture was primed in the tests asserting
      * absence.
      *
-     * THE HAZARD IS NEW, AND IT IS THIS SPRINT'S OWN: the factory used to be
-     * handed the store unconditionally, so an unprimed instrument was
-     * unrepresentable and this pair would have had nothing to discriminate.
-     * Now `prime` is a precondition, and deleting it from any test above must
-     * not be able to turn that test's absence assertion into a pass.
+     * THE HAZARD IS REACHABLE RATHER THAN THEORETICAL: the store arrives on a
+     * REQUEST and not from the factory, so `prime` is a genuine precondition
+     * and an unprimed instrument is a state a session can actually be in.
+     * Deleting `prime` from any test above must not be able to turn that test's
+     * absence assertion into a pass.
      *
      * TWO TESTS RATHER THAN ONE: each arm is the FIRST assertion of its own
      * test, so neither can be masked by the other stopping the run early.

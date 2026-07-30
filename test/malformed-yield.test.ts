@@ -70,19 +70,21 @@ for (const runtime of runtimes) {
     for (const shape of shapes) {
       for (const mode of modes) {
         /**
-         * WHERE THE RED WAS AND WHERE IT WAS NOT, recorded because the two
-         * halves of this table were not born equal.
+         * WHERE THE RED IS AND WHERE IT IS NOT, recorded because the two halves
+         * of this table are not equal.
          *
-         * The STREAMING cell is the finding: the value went out verbatim as a
-         * `$/progress` whose payload is not the array the protocol declares,
-         * and the request was then answered `null` successfully -- a silent
-         * wire-protocol violation the client has no way to report.
+         * The STREAMING cell is the finding: with nothing checking the batch,
+         * the value goes out verbatim as a `$/progress` whose payload is not
+         * the array the protocol declares, and the request is then answered
+         * `null` successfully -- a silent wire-protocol violation the client
+         * has no way to report.
          *
-         * The AGGREGATING cell was already answered -32603, by `push(...batch)`
-         * throwing on something that is not iterable. It is asserted anyway,
-         * as a REGRESSION LOCK rather than a red-driven claim: with the guard
-         * in place the spread can no longer be what refuses this, so nothing
-         * else would notice if the spread were later replaced by a plain push.
+         * The AGGREGATING cell is answered -32603 with or without the guard, by
+         * `push(...batch)` throwing on something that is not iterable. It is
+         * asserted anyway, as a REGRESSION LOCK rather than a red-driven claim:
+         * with the guard in place the spread is not what refuses this, so
+         * nothing else would notice if the spread were later replaced by a
+         * plain push.
          */
         test(`${mode.name}, ${shape.name} is refused, reported, and the handler's finally runs`, async () => {
           const session = LspSession.start(runtime, fixture(shape.config));

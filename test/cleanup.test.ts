@@ -347,7 +347,7 @@ for (const runtime of runtimes) {
           // ...and cleanup provably STARTS, so the absence above says the
           // response overtook cleanup rather than that nothing was closed.
           //
-          // AWAITED RATHER THAN READ, because the response no longer waits on
+          // AWAITED RATHER THAN READ, because the response does not wait on
           // this handler at all: the abort is raced against the pending pull, so
           // the -32800 is sent while the generator is still inside it, and the
           // close cannot reach the author's `finally` until that pull settles --

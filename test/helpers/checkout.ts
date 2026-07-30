@@ -36,8 +36,8 @@ export function isolatedCheckout(): IsolatedCheckout {
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
   // dist/ IS PART OF `what a runtime needs to start`, which is not obvious from
   // the staging above and is why the witness is named. THE WITNESS IS A
-  // DEPENDENCY VALUE
-  // ON A SIBLING SUBPATH: examples/diagnostic-trailing-whitespace.ts takes
+  // DEPENDENCY VALUE ON A SIBLING SUBPATH:
+  // examples/diagnostic-trailing-whitespace.ts takes
   // `DiagnosticSeverity` and examples/completion-path.ts takes
   // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi/deps/types`, and
   // package self-reference resolves that subpath through the exports map's

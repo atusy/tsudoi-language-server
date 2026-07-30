@@ -140,10 +140,10 @@ export interface InstalledConsumer {
    * IT, and the distinction is written here because the other semantics fail
    * SILENTLY: an override that REPLACES a rule's options rather than merging
    * them turns off every option it did not restate, and the thing it turns off
-   * can be the guard in the very file whose purpose is guarding. Merging means a
-   * probe
-   * that moves ONE option keeps the other six identical to every consumer probe
-   * in the suite, so a red it produces is about the option it moved.
+   * can be the guard in the very file whose purpose is guarding. Merging means
+   * a probe that moves ONE option keeps the other six identical to every
+   * consumer probe in the suite, so a red it produces is about the option it
+   * moved.
    *
    * WHY THE PARAMETER EXISTS AT ALL: a probe whose SUBJECT is a compiler option
    * cannot take that option from a shared constant. `skipLibCheck` is the case

@@ -6,11 +6,11 @@ import { requireRuntime } from "./helpers/preflight.ts";
 
 /**
  * THE HELPER ITSELF UNDER TEST, driven through the real server like everything
- * else. Sprint 5 ruled that a helper terminating a subprocess must settle every
- * promise it owns, and that cross-test misattribution is a suite-integrity
- * failure rather than a single-test bug -- but the rule was only ever kept by
- * hand. A helper that hangs or swallows makes every OTHER file's evidence worth
- * less, so these two properties are pinned where they can fail.
+ * else. THE RULE IS THAT A HELPER TERMINATING A SUBPROCESS SETTLES EVERY
+ * PROMISE IT OWNS, and that cross-test misattribution is a suite-integrity
+ * failure rather than a single-test bug -- and nothing but these two tests
+ * keeps it. A helper that hangs or swallows makes every OTHER file's evidence
+ * worth less, so these two properties are pinned where they can fail.
  */
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 

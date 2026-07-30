@@ -109,8 +109,8 @@ for (const runtime of runtimes) {
     /**
      * THE AFFORDABILITY CLAIM, MEASURED A SECOND TIME AND ON A DIFFERENT METHOD.
      * A handler emits Positions from whatever OFFSETS its analysis produced,
-     * which is `positionAt` -- a member that did not exist on this project's
-     * document before Sprint 28 put upstream's TextDocument behind it.
+     * which is `positionAt` -- a member this project's document has only
+     * because upstream's TextDocument sits behind it.
      *
      * THE EXPECTED RANGES ARE WRITTEN OUT BY HAND AND ARE NEVER COMPUTED BY
      * CALLING positionAt. Both sides would otherwise run one function, and two
