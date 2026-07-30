@@ -625,9 +625,14 @@ function streamingToken(
  * IT IS UNREACHABLE FROM A CONFORMING CLIENT, and that is a property of one
  * expression rather than a hope: `contributeCapabilities` claims a method's
  * capability on `config.methods?.[method] !== undefined`, and the handler below
- * is looked up by the SAME READ over the SAME TABLE -- so advertised and
- * answerable are one condition, and a client only ever hears about a method
- * that has a handler.
+ * is looked up by the SAME READ over the SAME TABLE -- so for each method's OWN
+ * capability key, advertised and answerable are one condition.
+ *
+ * NOT A CLAIM ABOUT EVERY KEY, and the exception is the one this table already
+ * names: `completionItem/resolve`'s contributor writes into `completionProvider`,
+ * so it advertises COMPLETION on the strength of resolve's handler. That pair is
+ * refused at config load instead, and completion's result HAS a null arm anyway,
+ * so the reachable case there is conformant.
  *
  * WHAT CONFORMING ANYWAY WOULD COST: a no-handler answer PER METHOD -- the item
  * echoed back for resolve, `{ kind: "full", items: [] }` for diagnostic -- which

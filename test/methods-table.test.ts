@@ -151,6 +151,15 @@ for (const runtime of runtimes) {
           const error = await session.requestError(method, paramsForAnyMethod());
 
           expect(error.code).toBe(serverNotInitialized);
+
+          // THE STEPS ARE ORDERED AND THIS IS WHAT SAYS SO. The prologue refuses
+          // an unservable request BEFORE it looks at params, because a server
+          // outside its serving window has no client state to answer FROM --
+          // including no answer about the shape of what it was sent. Swap the
+          // two guards and this reads -32602.
+          const malformed = await session.requestError(method, null);
+
+          expect(malformed.code).toBe(serverNotInitialized);
         }
 
         expect(session.unframedStdoutBytes).toBe(0);
