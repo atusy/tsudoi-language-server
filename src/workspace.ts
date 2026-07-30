@@ -241,10 +241,16 @@ function ancestryOf(
  * server and an LSP log with no reason. `[5]` and `[null]` both reach here --
  * `Array.isArray` is all that guards the mirror -- so `uri` is read off through
  * `locationOf`, which is total.
+ *
+ * AND EACH LIST IS SEALED ONCE IT IS FILLED, because `get` hands the list ITSELF
+ * over. `readonly` on the return type is a view the compiler checks and a
+ * handler compiled elsewhere does not have, so the freeze is what makes an
+ * appended folder a thrown TypeError at the handler rather than a folder the
+ * store never held.
  */
 function locationIndex(
   folders: readonly WorkspaceFolder[],
-): ReadonlyMap<string, WorkspaceFolder[]> {
+): ReadonlyMap<string, readonly WorkspaceFolder[]> {
   const index = new Map<string, WorkspaceFolder[]>();
   for (const folder of folders) {
     const location = locationOf((folder as { readonly uri?: unknown } | null | undefined)?.uri);
@@ -258,12 +264,27 @@ function locationIndex(
       held.push(folder);
     }
   }
+  for (const held of index.values()) {
+    Object.freeze(held);
+  }
   return index;
 }
 
+/**
+ * The answer for a uri no folder covers, SHARED AND SEALED.
+ *
+ * ONE VALUE RATHER THAN A FRESH `[]` PER MISS, and the reason is the freeze
+ * rather than the allocation: a list built at the point of return is the one
+ * surface a handler could append to and disturb nothing, so the miss would be
+ * the only answer from this store that is not the store's own sealed state. A
+ * shared empty list loses nothing, since there is no order and no identity to
+ * tell two empty answers apart.
+ */
+const noFolders: readonly WorkspaceFolder[] = Object.freeze([]);
+
 export function createWorkspaceFolders(): WorkspaceFoldersHandle {
-  let folders: readonly WorkspaceFolder[] = [];
-  let index: ReadonlyMap<string, WorkspaceFolder[]> = new Map();
+  let folders: readonly WorkspaceFolder[] = noFolders;
+  let index: ReadonlyMap<string, readonly WorkspaceFolder[]> = new Map();
   let roots: Pick<Tsudoi, "rootUri" | "rootPath"> = { rootUri: null, rootPath: null };
 
   /**
@@ -280,9 +301,30 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
    * the work to the same place but add an INVALIDATION OBLIGATION to both
    * writers, where forgetting either is a folder that goes on answering after
    * the user removed it -- silent, and invisible to any test that only ever adds.
+   *
+   * AND THE ONE PLACE THE MIRROR IS SEALED, for the same reason it is the one
+   * place it is written: everything that leaves this store is either this array
+   * or a list built from it, so a freeze anywhere else would be a freeze that
+   * some later writer forgets. THE ENTRIES AND NOT ONLY THE ARRAY -- a folder's
+   * `uri` is what the index is KEYED BY, so a handler that renames a folder it
+   * was handed leaves the old key answering for it and the new one answering
+   * nothing, with nothing rebuilt and nothing said, for the rest of the session.
+   *
+   * SHALLOW, which is the whole of what a `WorkspaceFolder` needs: the protocol
+   * declares two string fields, and a deep freeze would be walking whatever a
+   * non-conforming entry happens to carry -- work proportional to a client's
+   * bytes, for a nesting the type does not have.
+   *
+   * WRITTEN IN PLACE RATHER THAN COPIED FIRST. The entries are the client's own
+   * objects and the freeze reaches them either way; copying the array would only
+   * spare the array `initialize` was handed, which is decoded params this
+   * process owns and drops after the handshake.
    */
   function mirror(next: readonly WorkspaceFolder[]): void {
-    folders = next;
+    for (const folder of next) {
+      Object.freeze(folder);
+    }
+    folders = Object.freeze(next);
     index = locationIndex(next);
   }
 
@@ -333,6 +375,11 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
         // does with the mirror and for the same reason: `mirror()` REBUILDS the
         // index rather than writing into it, so a list a handler took before an
         // `await` still answers about the moment it was taken.
+        //
+        // AND THAT IS EXACTLY WHY IT IS SEALED. Handing over the real list makes
+        // a handler's `push` a WRITE TO THE STORE, so the two decisions are one:
+        // the list is the store's own, and it is frozen where it is built. The
+        // miss is sealed too and for the same reason, at `noFolders` above.
         const self = locationOf(uri);
         if (self !== undefined) {
           const held = index.get(self);
@@ -342,9 +389,9 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
         }
         const ancestry = ancestryOf(uri);
         if (ancestry === undefined) {
-          return [];
+          return noFolders;
         }
-        let deepest: readonly WorkspaceFolder[] = [];
+        let deepest: readonly WorkspaceFolder[] = noFolders;
         let depth = 0;
         for (const [location, held] of index) {
           if (

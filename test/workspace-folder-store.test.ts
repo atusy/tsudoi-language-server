@@ -668,3 +668,58 @@ test("a list taken from get before a change still answers the folders it was tak
 
   expect(taken).toEqual([project]);
 });
+
+/**
+ * THE MIRROR AND ITS INDEX CANNOT BE MADE TO DISAGREE BY A HANDLER, and this is
+ * the claim `readonly` does not carry: it is a VIEW, checked where the code is
+ * compiled, and a handler compiled elsewhere -- or written in a config that was
+ * not type-checked at all -- assigns straight through it.
+ *
+ * RENAMING IS THE SHARP CASE AND IS WHY THE ENTRIES AND NOT ONLY THE LISTS ARE
+ * SEALED: the index is keyed by the location a folder's uri named WHEN IT WAS
+ * BUILT, so a write to `uri` leaves the old key answering for a folder that no
+ * longer claims it and the new one answering nothing. Nothing rebuilds, nothing
+ * is logged, and neither the client nor the author is told -- for the rest of
+ * the session.
+ *
+ * BOTH LOOKUPS ARE ASSERTED AND NOT ONLY THE THROW. A test that stopped at
+ * `toThrow` would go on passing under an implementation that froze the entries
+ * and then let some other path rebuild the mirror out of step, which is the
+ * state this row is actually about.
+ */
+test("a folder the lookup handed back cannot be renamed out from under the index", () => {
+  const handle = storeOf([folder("file:///old", "renamed")]);
+  const held = handle.folders.get("file:///old/a.ts")[0];
+
+  expect(() => {
+    held.uri = "file:///new";
+  }).toThrow(TypeError);
+
+  expect(handle.folders.get("file:///old/a.ts").map((each) => each.name)).toEqual(["renamed"]);
+  expect(handle.folders.get("file:///new/a.ts")).toEqual([]);
+});
+
+/**
+ * AND THE LISTS THEMSELVES, ALL THREE SURFACES THAT LEAVE. A handler that
+ * appended to what it was handed would be writing into the store's own state --
+ * `get` returns the index's list and `values()` the mirror, both deliberately,
+ * so that a list taken before an `await` answers about the moment it was taken.
+ * That decision is exactly what makes an unfrozen list a write to the store.
+ *
+ * THE MISS PATH IS ONE OF THE THREE, since a lookup that found nothing hands
+ * back a list too, and an empty one built fresh per call would be the one
+ * surface a handler could append to without anyone noticing.
+ */
+test("no list the store hands back can be written into", () => {
+  const handle = storeOf([project]);
+
+  expect(() =>
+    (handle.folders.get("file:///home/me/project/a.ts") as WorkspaceFolder[]).push(notes),
+  ).toThrow(TypeError);
+  expect(() =>
+    (handle.folders.get("file:///elsewhere/a.ts") as WorkspaceFolder[]).push(notes),
+  ).toThrow(TypeError);
+  expect(() => (handle.folders.values() as WorkspaceFolder[]).push(notes)).toThrow(TypeError);
+
+  expect([...handle.folders.values()]).toEqual([project]);
+});
