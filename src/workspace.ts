@@ -130,7 +130,25 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       // NOT EXTENDED TO `rootUri`, deliberately: a `vscode-remote://` or `ssh://`
       // root is a VALID URI that merely names no LOCAL path, and refusing it
       // would hide a legitimate value from an author who handles that scheme.
-      folders = params?.workspaceFolders ?? [];
+      // `Array.isArray` AND NOT `?? []`, which is the same sweep as the typeof
+      // test below and NOT the same failure. A non-array does not throw HERE --
+      // it is written down whole and read back whole -- so the first sweep of
+      // this field reported it clean. IT THROWS ONE MESSAGE LATER: `change()`
+      // opens with `[...folders]`, and `[...5]` is a TypeError in the
+      // `workspace/didChangeWorkspaceFolders` handler (measured, both runtimes).
+      // A notification has NO RESPONSE, so the client is never told; the folder
+      // the user added is silently missing from every handler for the rest of
+      // the session, with one line on stderr as the only trace.
+      //
+      // AN EMPTY LIST is what this handle already reads omitted and `null` as,
+      // and a client that sent no usable list named no folders. The predicate
+      // subsumes `?? []`, since neither `undefined` nor `null` is an array.
+      //
+      // ELEMENTS ARE NOT INSPECTED, and that is the mirror holding: `[5]` passes
+      // and reaches a handler as it arrived. Nothing downstream throws on it --
+      // `held.uri` on a number is `undefined` -- so there is no exit to close,
+      // and closing one would be tsudoi deciding what a client meant.
+      folders = Array.isArray(params?.workspaceFolders) ? params.workspaceFolders : [];
       const rootPath = params?.rootPath ?? null;
       roots = {
         rootUri: params?.rootUri ?? null,

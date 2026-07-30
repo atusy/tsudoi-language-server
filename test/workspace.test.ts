@@ -575,10 +575,12 @@ for (const runtime of runtimes) {
     // no folders and no root by exactly that reading.
     //
     // WHAT WAS SWEPT AND FOUND NOT TO BE THIS CLASS, so that a later reader does
-    // not take the two tests as covering the field set: `"rootUri": 5` and
-    // `"workspaceFolders": 5` DO NOT THROW (measured). They propagate a value of
-    // the wrong type to a handler, which is a different failure with a different
-    // remedy, and no test here claims otherwise.
+    // not take these tests as covering the field set: `"rootUri": 5` does not
+    // throw ANYWHERE (measured, including through a handler that reads it). It
+    // propagates a wrong-typed value, which is a different failure with a
+    // different remedy, and no test here claims otherwise. `"workspaceFolders":
+    // 5` DOES throw, but not here and not at this message -- the test below owns
+    // it.
     test("initialize with null params completes the handshake and mirrors nothing", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -592,6 +594,51 @@ for (const runtime of runtimes) {
           rootUri: null,
           rootPath: null,
         });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE SAME CLASS ONE MESSAGE LATER, and it is here because the first sweep
+     * of this field REPORTED IT CLEAN. That sweep initialized with
+     * `"workspaceFolders": 5` and read the mirror back through a hover: nothing
+     * threw, so the field was written down as `propagates a lying value`. IT
+     * NEVER SENT THE NOTIFICATION THAT SPREADS THE LIST. `change()` opens with
+     * `[...folders]`, and `[...5]` is a TypeError -- measured, in the
+     * `workspace/didChangeWorkspaceFolders` handler.
+     *
+     * WHY IT IS WORSE THAN THE HANDSHAKE ONE RATHER THAN MILDER, though the
+     * session survives it: a notification has NO RESPONSE, so the client is
+     * never told its change failed. The folder the user added is silently
+     * missing from every handler for the rest of the session, and the only trace
+     * is one line on stderr.
+     *
+     * A NON-ARRAY IS AN EMPTY LIST, which is the reading this handle already
+     * gives to omitted and to `null`: a client that sent no usable list named no
+     * folders. The change then applies to that empty list, so the folder the
+     * user really did add arrives -- which is what this asserts, and it is
+     * strictly more than `nothing threw`.
+     *
+     * WHAT IS STILL PROPAGATED, so that this is not read as a validating mirror:
+     * `[5]` -- an ARRAY of things that are not folders -- passes here and
+     * reaches a handler as it arrived. `held.uri` on a number is `undefined`,
+     * not a throw, so no exit is closed by inspecting elements, and inspecting
+     * them would be tsudoi deciding what a client meant.
+     */
+    test("a workspaceFolders that is not a list is an empty one, and a later change still applies", async () => {
+      const session = LspSession.start(runtime, echoConfig);
+      try {
+        await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          workspaceFolders: 5,
+        });
+        session.notify("initialized", {});
+        expect(await observedFolders(session)).toEqual([]);
+
+        changeFolders(session, { added: [addedFolder] });
+
+        expect(await observedFolders(session)).toEqual([addedFolder]);
       } finally {
         session.dispose();
       }
