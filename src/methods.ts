@@ -1089,11 +1089,16 @@ async function driveStream(run: {
           // handler whose ignored wait later FAILS rejects exactly it; unhandled,
           // that kills the process, which would trade a parked request for a
           // dead session. `Promise.race` subscribes to EVERY element, so the
-          // rejection is already handled however late it lands. MEASURED, both
-          // ways: a hand-rolled race that forwards only fulfilments dies with
-          // `Uncaught (in promise)`, and `the abandoned pull's later rejection
-          // is handled ...` in test/cancel-parked-pull.test.ts is what stands
-          // over this, by the session's own exit code.
+          // rejection is already handled however late it lands.
+          //
+          // MEASURED BY PERTURBATION, AND THE RUNTIMES DISAGREE ABOUT IT: a
+          // hand-rolled race forwarding only fulfilments dies under DENO with
+          // `Uncaught (in promise)` and survives under bun, so deno is the only
+          // runtime in which this property is observable at all. `the abandoned
+          // pull's later rejection is handled ...` in
+          // test/cancel-parked-pull.test.ts stands over it by the session's own
+          // exit code -- on one of the two runtimes, which is why the reason is
+          // written here rather than left to that test to imply.
           //
           // NOTHING IS REPORTED ABOUT IT, which is this file's existing ruling
           // and not a new one: a cancelled handler is EXPECTED to fail, an

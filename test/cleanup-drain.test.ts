@@ -120,6 +120,11 @@ for (const runtime of runtimes) {
           await session.waitForStderr(cleanupEntered, 1000);
           // THE HEADLINE: the statement AFTER the `finally`'s own yield.
           await session.waitForStderr(cleanupFinished, 1000);
+          // THE PERMANENT PAIR for the two tests below, which assert this line
+          // PRESENT. A cleanup that finished is not a cleanup that failed, so a
+          // drain reporting on every close would satisfy both of those and only
+          // this absence tells the two apart.
+          expect(session.stderr).not.toContain(cleanupFailureLine);
 
           // THE CLEANUP'S YIELD IS DISCARDED, WHICH IS THE OTHER HALF. Draining
           // pulls batches out of the generator, and a drive that forwarded them
