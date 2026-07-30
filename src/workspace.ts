@@ -109,12 +109,33 @@ export interface WorkspaceFoldersHandle {
  * `…/home` stay two locations. That is the URL Standard's own line and not one
  * drawn here.
  *
- * APPENDED TO A NON-HIERARCHICAL URI TOO, DELIBERATELY. `untitled:Untitled-1/`
- * is a string no client ever sends, and it is nonetheless the right key for it:
- * both sides are built the same way, so the only pair that can collide is a pair
- * that already named one thing. The alternative -- comparing those uris raw --
- * would leave a folder held as `…/plain/` unfindable by its own bare uri, since
- * the walk below cannot reach a location it is standing on.
+ * PARSED FIRST AND NORMALISED SECOND, WHICH IS THE WHOLE OF WHY THE SLASH LANDS
+ * SOMEWHERE IT MEANS SOMETHING. A slash appended to the BYTES lands wherever the
+ * string happens to end -- inside a query, inside a fragment, inside an opaque
+ * path -- and every one of those is a DIFFERENT URI filed under one key, which
+ * is `get` attributing a document to a folder no client put it in. A wrong
+ * answer is acted on where a missing one is not. Writing `pathname` puts the
+ * slash on the path or nowhere, and the three clauses that follow are the whole
+ * of what this normalises:
+ *
+ *   THE PATH'S TRAILING SLASH IS COLLAPSED. `file:///a/b` and `file:///a/b/` are
+ *   one location, which is the pair nvim accepts as two folders.
+ *
+ *   QUERY AND FRAGMENT SURVIVE BYTE FOR BYTE. `?x` and `?x/` are two queries and
+ *   stay two locations, as `#f` and `#f/` are two fragments.
+ *
+ *   AN OPAQUE PATH IS LEFT ALONE. The setter RETURNS WITHOUT WRITING where the
+ *   path is opaque (measured, bun 1.3.13 and deno 2.9.2), so
+ *   `untitled:Untitled-1` is keyed by its own canonical `href` and
+ *   `untitled:Untitled-1/` -- a second unsaved buffer, not a folder holding the
+ *   first -- by its own. There are no segments to collapse a trailing slash into
+ *   where the path is one string.
+ *
+ * SO TWO ENTRIES COLLIDE ONLY BY NAMING ONE LOCATION: one path up to its
+ * trailing slash, with the query and the fragment byte-identical. `…/a.ts` and
+ * `…/a.ts/` are one such pair and the collision is the point -- it is the same
+ * clause that makes `…/plain` findable by `…/plain/`, and nothing here can tell
+ * a client's directory from its document.
  *
  * `undefined` RATHER THAN A THROW, and `unknown` rather than `string`, because
  * BOTH CALLERS CAN BE HANDED A NON-URI. The mirror passes a non-conforming entry
@@ -126,7 +147,11 @@ function locationOf(uri: unknown): string | undefined {
     return undefined;
   }
   try {
-    return new URL(uri.endsWith("/") ? uri : `${uri}/`).href;
+    const parsed = new URL(uri);
+    if (!parsed.pathname.endsWith("/")) {
+      parsed.pathname = `${parsed.pathname}/`;
+    }
+    return parsed.href;
   } catch {
     return undefined;
   }

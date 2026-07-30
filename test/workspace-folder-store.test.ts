@@ -229,14 +229,66 @@ const lookups: readonly Lookup[] = [
     expected: ["unsaved"],
   },
   {
-    // AND TWO UNSAVED BUFFERS ARE TWO LOCATIONS. Putting a non-hierarchical uri
-    // in the trailing-slash form makes a string no client sent, and this row is
-    // what says the string is nonetheless INJECTIVE enough to tell two of them
-    // apart -- both sides go through the same construction, so the only thing
-    // that can collide is two uris that already named one thing.
+    // AND TWO UNSAVED BUFFERS ARE TWO LOCATIONS, which is what says the key is
+    // INJECTIVE enough to tell them apart: both sides go through one
+    // construction, so the only pair that can collide is a pair that already
+    // named one thing.
     name: "one unsaved buffer does not answer for another",
     folders: [folder("untitled:Untitled-1", "unsaved")],
     uri: "untitled:Untitled-2",
+    expected: [],
+  },
+  {
+    // AND THE TWO THE SLASH ITSELF TELLS APART. An OPAQUE path is a string and
+    // not a list of segments, so a `/` at its end is a byte of the name rather
+    // than directory syntax: `untitled:Untitled-1/` is a SECOND unsaved buffer.
+    // Normalising by appending to the bytes files both under one key, which
+    // attributes a document to a folder the client never put it in -- worse
+    // than not finding the folder, since the wrong answer is acted on.
+    name: "an unsaved buffer whose name ends in a slash is a different buffer",
+    folders: [folder("untitled:Untitled-1/", "slashed buffer")],
+    uri: "untitled:Untitled-1",
+    expected: [],
+  },
+  {
+    // THE SAME PAIR THE OTHER WAY, so neither side may be the one rewritten.
+    name: "an unsaved buffer does not answer for one whose name ends in a slash",
+    folders: [folder("untitled:Untitled-1", "unsaved")],
+    uri: "untitled:Untitled-1/",
+    expected: [],
+  },
+  {
+    // AND THE POSITIVE CONTROL FOR BOTH: the slashed buffer is still KEYED, so
+    // the two rows above say `two locations` rather than `no location`, which
+    // an implementation dropping every opaque uri from the index satisfies.
+    name: "an unsaved buffer whose name ends in a slash answers for itself",
+    folders: [folder("untitled:Untitled-1/", "slashed buffer")],
+    uri: "untitled:Untitled-1/",
+    expected: ["slashed buffer"],
+  },
+  {
+    // A SLASH INSIDE A QUERY IS QUERY BYTES, and the same false positive
+    // reaches a hierarchical uri through it: `?x` and `?x/` are two queries, so
+    // the folder here and the uri asked about are two uris. Appending to the
+    // bytes lands the slash in the query and makes one key of them.
+    name: "a folder whose query ends in a slash does not answer for the same path without it",
+    folders: [folder("file:///a?x/", "query slash")],
+    uri: "file:///a?x",
+    expected: [],
+  },
+  {
+    // ITS POSITIVE CONTROL, and it is what says the row above is about the
+    // QUERY rather than about a query-bearing folder being unreachable at all.
+    name: "a folder carrying a query answers for its own uri",
+    folders: [folder("file:///a?x", "query")],
+    uri: "file:///a?x",
+    expected: ["query"],
+  },
+  {
+    // AND THE FRAGMENT, which is the third place the appended byte can land.
+    name: "a folder whose fragment ends in a slash does not answer for the same path without it",
+    folders: [folder("file:///a#f/", "fragment slash")],
+    uri: "file:///a#f",
     expected: [],
   },
   {
