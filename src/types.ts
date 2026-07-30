@@ -159,6 +159,19 @@ export interface DocumentStore {
  * ITS OPERATIONS ARE `readonly` FUNCTION PROPERTIES for the reason spelled out
  * at `DocumentStore` above, and the run-time half is the freeze in
  * src/workspace.ts.
+ *
+ * AND ITS ELEMENTS ARE `Readonly<WorkspaceFolder>`, WHICH IS THE SAME PAIRING
+ * ONE LEVEL DOWN. src/workspace.ts freezes the entries themselves, so
+ * `folder.name = "new"` throws at run time -- and upstream declares both members
+ * writable, so without this it type-checks first and an author is warned by
+ * nothing until the request that dies. WHAT THE RUN-TIME HALF IS PROTECTING is
+ * at `mirror()` in that file: `uri` is what the lookup's index is KEYED BY, so a
+ * rename leaves the old key answering for a folder that no longer claims it.
+ *
+ * SHALLOW, AND THE DECLARATION IS WHY RATHER THAN A HABIT: the protocol gives
+ * `WorkspaceFolder` two members, `uri` and `name`, and both are strings. There
+ * is no depth here for `DeepReadonly` below to reach, and applying it would say
+ * something about a nesting the type does not have.
  */
 export interface WorkspaceFolderStore {
   /**
@@ -217,7 +230,7 @@ export interface WorkspaceFolderStore {
    * documents under it, and a symlink is not followed -- two directories that are
    * one on disk are two locations here.
    */
-  readonly get: (uri: string) => readonly WorkspaceFolder[];
+  readonly get: (uri: string) => readonly Readonly<WorkspaceFolder>[];
   /**
    * EXACTLY WHAT THE CLIENT SENT, IN MIRROR ORDER, with nothing dropped, nothing
    * synthesised and nothing reordered.
@@ -230,7 +243,7 @@ export interface WorkspaceFolderStore {
    * list you can index, and the taking rather than the copying is what makes the
    * answer about one moment.
    */
-  readonly values: () => Iterable<WorkspaceFolder>;
+  readonly values: () => Iterable<Readonly<WorkspaceFolder>>;
 }
 
 /**

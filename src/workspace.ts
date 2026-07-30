@@ -321,7 +321,10 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
    * SHALLOW, which is the whole of what a `WorkspaceFolder` needs: the protocol
    * declares two string fields, and a deep freeze would be walking whatever a
    * non-conforming entry happens to carry -- work proportional to a client's
-   * bytes, for a nesting the type does not have.
+   * bytes, for a nesting the type does not have. `WorkspaceFolderStore` publishes
+   * its elements `Readonly<WorkspaceFolder>` for the same two-field reason, so
+   * the write this line refuses is also the one a type-checked config is told
+   * about before it ships.
    *
    * WRITTEN IN PLACE RATHER THAN COPIED FIRST. The entries are the client's own
    * objects and the freeze reaches them either way; copying the array would only
@@ -344,7 +347,7 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
   // is SHALLOW because the two members are the operations; the mirror and each
   // index list are frozen at `mirror()` above.
   const store: WorkspaceFolderStore = Object.freeze({
-    get: (uri: string): readonly WorkspaceFolder[] => {
+    get: (uri: string): readonly Readonly<WorkspaceFolder>[] => {
       // THE DEEPEST LOCATION THAT ANSWERS, AND EVERY FOLDER AT IT. The uri's
       // own location is asked first and the ancestors are taken longest-first,
       // so a nested folder resolves to the inner one -- this is NOT every
@@ -420,7 +423,7 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
     // into it, so what one call hands back is the list as of that call and can
     // be iterated again later. Copying here would answer the same question at
     // the cost of saying nothing about the moment.
-    values: (): Iterable<WorkspaceFolder> => folders,
+    values: (): Iterable<Readonly<WorkspaceFolder>> => folders,
   });
 
   return {

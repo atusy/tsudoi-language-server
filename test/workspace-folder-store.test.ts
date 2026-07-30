@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { WorkspaceFolder } from "vscode-languageserver-protocol";
 import { createWorkspaceFolders } from "../src/workspace.ts";
+import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
  * The store as a config author meets it, built from what a client sent at
@@ -685,10 +686,15 @@ test("a list taken from get before a change still answers the folders it was tak
  * `toThrow` would go on passing under an implementation that froze the entries
  * and then let some other path rebuild the mirror out of step, which is the
  * state this row is actually about.
+ *
+ * THE CAST IS THE POINT AND NOT A NUISANCE: the published element is
+ * `Readonly<WorkspaceFolder>`, so reaching this write requires leaving the type
+ * system -- which is exactly what the JavaScript a config author ships does by
+ * default. The type-checked route is refused at compile time by the probe below.
  */
 test("a folder the lookup handed back cannot be renamed out from under the index", () => {
   const handle = storeOf([folder("file:///old", "renamed")]);
-  const held = handle.folders.get("file:///old/a.ts")[0];
+  const held = handle.folders.get("file:///old/a.ts")[0] as WorkspaceFolder;
 
   expect(() => {
     held.uri = "file:///new";
@@ -721,4 +727,89 @@ test("no list the store hands back can be written into", () => {
   expect(() => (handle.folders.values() as WorkspaceFolder[]).push(notes)).toThrow(TypeError);
 
   expect([...handle.folders.values()]).toEqual([project]);
+});
+
+/**
+ * A probe project's source, with `body` spliced in under a bound `Tsudoi`.
+ *
+ * The binding is `null as unknown as` because nothing here RUNS -- the claim is
+ * about what tsc accepts, and a probe that had to build a real session would be
+ * measuring the construction as well.
+ */
+function tsudoiProbe(body: string): Record<string, string> {
+  return {
+    "probe.ts": [
+      'import type { Tsudoi } from "./src/types.ts";',
+      "const tsudoi = null as unknown as Tsudoi;",
+      body,
+      "",
+    ].join("\n"),
+  };
+}
+
+/**
+ * THE COMPILE-TIME HALF OF THE RENAME THE MIRROR REFUSES ABOVE, and the two
+ * halves are not one claim: `readonly` is erased at run time and the freeze
+ * arrives with no warning before it, so a type-checked config was told nothing
+ * until the request that threw.
+ *
+ * TS2540 AND NOT THE EXIT CODE, which a probe that failed to resolve its import
+ * would earn just as well; the code names `assigned to a read-only property` and
+ * nothing else.
+ *
+ * SHALLOW `Readonly<>` IS THE WHOLE OF WHAT THIS NEEDS, and it is the
+ * declaration that says so rather than a habit: the protocol gives
+ * `WorkspaceFolder` two members, `uri` and `name`, both strings. There is no
+ * depth for a deep wrapper to reach.
+ */
+test("a handler renaming a folder the lookup handed back does not type-check", async () => {
+  const result = await typeCheckProbe(
+    tsudoiProbe(
+      'for (const folder of tsudoi.workspaceFolders.get("file:///a.ts")) {\n  folder.name = "new";\n}',
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("TS2540");
+  expect(result.output).toContain("name");
+});
+
+/**
+ * THE OTHER SURFACE, and it is not the same claim: `get` hands back the index's
+ * list and `values()` the mirror, so a type applied to one leaves the other
+ * open. The member differs too -- `uri` is what the index is KEYED BY, so this
+ * is the write whose run-time cost is a folder answering under a key nobody
+ * holds any more.
+ */
+test("a handler rewriting the uri of a folder from values() does not type-check", async () => {
+  const result = await typeCheckProbe(
+    tsudoiProbe(
+      'for (const folder of tsudoi.workspaceFolders.values()) {\n  folder.uri = "file:///z";\n}',
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("TS2540");
+  expect(result.output).toContain("uri");
+});
+
+/**
+ * THE PAIRED CONTROL, and it reads the MEMBERS rather than merely calling the
+ * operations: a folder type that had become unreadable -- mapped to `{}`, or
+ * resolving to nothing -- would refuse both writes above for a reason that has
+ * nothing to do with `readonly`, and a control that stopped at iterating would
+ * not see it.
+ */
+test("reading those same members type-checks", async () => {
+  const result = await typeCheckProbe(
+    tsudoiProbe(
+      [
+        'export const covering = tsudoi.workspaceFolders.get("file:///a.ts").map((f) => `${f.name} ${f.uri}`);',
+        "export const all = [...tsudoi.workspaceFolders.values()].map((f) => `${f.name} ${f.uri}`);",
+      ].join("\n"),
+    ),
+  );
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
 });
