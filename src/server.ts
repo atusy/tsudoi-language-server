@@ -132,28 +132,6 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       throw new ResponseError(ErrorCodes.InvalidParams, malformed);
     }
     const initializeParams = params as InitializeParams;
-    // AHEAD OF THE PREPARATION BELOW, AND WHAT KEEPS THAT SAFE IS A PROPERTY OF
-    // ANOTHER FILE -- which is exactly why it is written down at this one. A
-    // handshake answered -32603 from below this line leaves the phase saying
-    // `serving`, and since a second `initialize` is refused there, that session
-    // cannot retry the handshake either: the client holds a failed handshake it
-    // may not repeat, and every later request is treated as initialized.
-    //
-    // NOTHING BELOW CAN FAIL, member by member rather than as an assurance.
-    // src/config.ts hands over a MATERIALISED method table -- plain own data
-    // properties, filled once at load -- so contributeCapabilities reads DATA,
-    // and an accessor or a `Proxy` trap of the author's is never asked a second
-    // question however it would answer one. `handshake` guards its own throws
-    // where they were measured, and mirrors the capabilities with a `??` that
-    // cannot throw on anything. `params` came off JSON.parse, so it carries no
-    // accessors at all.
-    //
-    // WHAT WOULD RE-OPEN IT: ANY FALLIBLE WORK ADDED BELOW THIS LINE. Moving the
-    // transition under the preparation is a one-line change needing no new
-    // state, and it is NOT the same change as refusing the request -- the gate
-    // above decides whether the handshake is ALLOWED, this decides when it counts
-    // as having HAPPENED.
-    lifecycle.initialize();
     // FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE: the three the protocol lets a
     // client name a ROOT in, and the CAPABILITIES the client declared. Nothing
     // else here is read, and `params` is NOT retained -- doing that would put the
@@ -242,6 +220,32 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // A method whose entry omits a capability contributor DOES NOT COMPILE,
     // where a forgotten `if` here was silent.
     contributeCapabilities(config, capabilities);
+    // AFTER EVERY FALLIBLE LINE OF THE HANDSHAKE, AND THE ORDERING IS THE
+    // DEFENCE RATHER THAN A PREFERENCE. This transition records that the
+    // handshake HAPPENED, so it happens once the handshake has been prepared: a
+    // failure from anywhere above answers the client with the phase still
+    // `uninitialized`, which is the one state a corrected `initialize` can be
+    // sent from. Below a transition the same failure leaves the phase saying
+    // `serving`, where a second `initialize` is InvalidRequest -- so the client
+    // would hold a failed handshake it may not repeat, while every later request
+    // is treated as initialized.
+    //
+    // IT IS NOT THE SAME DECISION AS THE GATE AT THE TOP: that one decides
+    // whether the handshake is ALLOWED, this one decides when it counts as
+    // having HAPPENED.
+    //
+    // NOTHING BETWEEN THE GATE AND THIS LINE READS THE PHASE, which is what
+    // makes the placement free rather than a trade: `handshake` writes the
+    // mirror and the client's capabilities, `contributeCapabilities` reads the
+    // config's own table, and neither asks the lifecycle anything.
+    //
+    // AND NO MESSAGE CAN OBSERVE THE WINDOW, BECAUSE THIS HANDLER IS
+    // SYNCHRONOUS: nothing is dispatched between its first line and its return.
+    // AN `await` ADDED ABOVE THIS LINE WOULD OPEN THAT WINDOW -- a notification
+    // arriving inside it reads `uninitialized` and is DROPPED, silently, since
+    // there is no response to carry a refusal. That is what this ordering costs
+    // and the reason the handler stays synchronous.
+    lifecycle.initialize();
     return { capabilities, serverInfo: { name: "tsudoi" } };
   });
 
