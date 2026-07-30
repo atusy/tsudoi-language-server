@@ -139,7 +139,59 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 45,
+    pbi_id: "PBI-49",
+    status: "in_progress",
+    goal: 'TSUDOI STOPS INVENTING A NAME IT CANNOT KNOW. The protocol defines `WorkspaceFolder.name` as A UI LABEL -- `used to refer to this workspace folder in the user interface` -- so it belongs to the client, and tsudoi invents one every time it builds a folder from `rootUri` or `rootPath`. NOTHING IS SYNTHESISED ANY MORE: `workspaceFolders` carries what the client sent and nothing else, and `rootUri` and `rootPath` are exposed AS THE CLIENT SAID THEM. THE MIRROR STOPS BEING PARTLY OURS. WHAT THE SYNTHESIS PREVENTED IS SOLVED MORE HONESTLY THAN IT WAS: an author reading only the newest field used to get an empty list and conclude the editor opened nothing, and an empty `workspaceFolders` BESIDE A POPULATED `rootUri` is a VISIBLE absence where the old failure was an invisible one. WHAT THIS SPRINT MUST NOT DO IS LEAVE THE CREATED HAZARD UNOWNED: the author now meets the protocol\'s precedence over TWO DEPRECATED FIELDS, and a guard nobody was watching dies with the rung -- `rootPath` is refused unless absolute because `pathToFileURL` RESOLVES A RELATIVE PATH AGAINST cwd, so `""` or `"."` would manufacture a root out of the launch directory. THE REMOVAL PREDICATE IS PINNED UNCHANGED: it matches BY URI ALONE, deliberately, and the argument that motivated this PBI was CIRCULAR -- it cited a hazard that only exists once identity moves to (uri, name), which is not in this sprint.',
+    subtasks: [
+      {
+        test: "EXPECTED-RED. The nine synthesis tests in test/workspace.test.ts are CLASSIFIED ONE BY ONE, not in a batch: each is TARGET DELIBERATELY REMOVED per Sprint 38, or re-homed, and the classification is stated per test. CRITERION 1'S ABSENCE NEEDS ITS PAIR, which is the trap: a test reading only the empty list CANNOT TELL `nothing was synthesised` from `the field was dropped on the floor`, so the rootUri-only session asserts THE EMPTY LIST AND THE CLIENT'S EXACT rootUri BYTES IN ONE TEST, with a folders-present arm through the same measurement per Sprint 6.",
+        implementation:
+          "Remove the synthesis from src/workspace.ts and expose `rootUri` and `rootPath` on `RequestContext` as the client sent them. `initialWorkspaceFolders` and its two rung helpers go with it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: 'THE NEGATIVE CONTROL IS THE LOAD-BEARING ONE AND A WEAKER TEST WOULD PASS WITHOUT IT: strip the absolute-path check from the reduction and the assertion must redden NAMING A FOLDER WHOSE URI CONTAINS THE LAUNCH DIRECTORY. A criterion that only asserted a mirrored `"."` reaches the author is met by a shape that hands EVERY author a cwd root.',
+        implementation:
+          'Re-home the cwd guard. `pathToFileURL` resolves a relative path against cwd, so `""` or `"."` manufactures a root from wherever the process was launched -- through a door `??` does not cover, since `""` is neither null nor undefined. Mirroring hands that hazard to the author, so whatever owns the reduction owns this too.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "THE PROPERTY IS `THE HAZARD IS OWNED BY SOMETHING THE SUITE DRIVES`, NOT `THE REDUCTION IS PUBLISHED`. If the executor finds a better owner, that MEETS this; only NOTHING OWNS IT fails. THE CONSUMER IS MEASURED RATHER THAN MANUFACTURED: examples/completion-path.ts reads `context.workspaceFolders` today, so a client sending only `rootUri` would lose its roots IN THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE.",
+        implementation:
+          "Own the gap this PBI creates. THE NAME IS THE PO'S, NOT THE EXECUTOR'S, because it is published surface: `foldersWithRootFallback`, with departure permitted only with the reason recorded. `initialWorkspaceFolders` is refused -- src/types.ts records why -- and so is anything built on `resolve`, which in this repository means filesystem interpretation, the opposite of what this does.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "BORN-GREEN, AND THE DRIFT THIS SPRINT IS MOST EXPOSED TO. PREDICTED ZERO `expect(` DIFF in the didChangeWorkspaceFolders tests. COUNTERFACTUAL: a non-zero diff there means the identity change CREPT IN, because it touches the same file and adjacent lines.",
+        implementation:
+          "The removal predicate stays `held.uri === folder.uri`. Matching by URI alone is deliberate and recorded: LSP has no rename event, so a client sends `removed` then `added`, and a differing name is a different statement about the same folder rather than a mismatch. IDENTITY ON (uri, name) IS NOT IN THIS SPRINT. Also correct the false sentence this file carries -- `a client that adds a URI it already holds holds it twice` -- which nvim refutes by returning WITHOUT NOTIFYING in exactly that case.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "BASELINE 1c27c77, resolved once at Planning. Planning ran as inline role-play; the Product Owner refined this PBI and will take the acceptance.",
+      "THE SCRUM MASTER'S ARGUMENT FOR THIS PBI WAS CIRCULAR AND THE PO CAUGHT IT. I claimed a synthesised folder becomes UNREMOVABLE once a client sends its own name in `removed`. VERIFIED: the predicate is `held.uri === folder.uri` -- URI ALONE -- so that hazard CANNOT OCCUR TODAY. It occurs only once identity moves to (uri, name), which is the change the hazard was being used to motivate. WHAT THE NVIM MEASUREMENT ACTUALLY SHOWS is that such a change would be HARMLESS AGAINST NVIM, since nvim builds uri and name from ONE input and therefore cannot exhibit the counter-case the code's own comment describes. A CLIENT ACCIDENT IS NOT A PROTOCOL GUARANTEE. Identity-on-both is sequenced rather than refused, and its first obligation is to REFUTE src/workspace.ts's recorded reason rather than overwrite it.",
+      "DEDUPE-ON-ADD IS DEFERRED ON A STRONGER GROUND THAN THE ONE THE SCRUM MASTER GAVE. I said it was a separate property and should not ride along merely because it touches one file. THE PO SAYS ITS MOTIVATION IS REFUTED: the comment justifies the absent guard with `a client that adds a URI it already holds holds it twice`, and nvim's `_add_workspace_folder` RETURNS WITHOUT NOTIFYING when `folder.name == dir` already. A GUARD AGAINST A CLIENT NOBODY HAS OBSERVED IS `an author might want it` IN DIFFERENT CLOTHING, which this project has refused by name. It becomes ready when someone names a client that sends the duplicate, or shows what holding it costs an author.",
+      "THE REDUCTION HELPER SHIPS, AND NOT ON THE ARGUMENT THE SCRUM MASTER OFFERED. `the stakeholder approved it` is not a reason the PO can hold, and `an author might want it` is one they have refused. IT SHIPS BECAUSE IT OWNS THE HAZARD THIS PBI CREATES -- withdrawing a behaviour every config silently relied on, and handing the author a precedence rule over two DEPRECATED fields, is a strictly worse deal unless something owns the gap. The same shape as PBI-46 owing the record when it withdrew `isIncomplete`.",
+      "THREE FRAMEWORKS COMPARED, AND TSUDOI IS THE OUTLIER FOR A REASON IT BOUGHT ON PURPOSE. vscode-languageserver-node's WorkspaceFoldersFeature holds NO list -- it fires an Emitter and answers `getWorkspaceFolders()` BY SENDING A REQUEST TO THE CLIENT. tower-lsp-server's default `did_change_workspace_folders` is `let _ = params;` plus a warning. NEITHER FOLDS `added`/`removed` INTO ANYTHING, so neither has a duplicate question, a normalisation question, a removal-predicate question or a synthesis question. tsudoi holds a list to make `RequestContext.workspaceFolders` SYNCHRONOUS. NOT PROPOSED HERE, recorded so the option is visible: dropping the list would retire all four questions at the cost of that synchrony.",
+      "PER-SPRINT REVIEW CHECKLIST. (1) CRITERION 1'S ABSENCE MUST BE PAIRED IN ONE TEST -- an empty list alone cannot tell `nothing was synthesised` from `the field was dropped`. (2) CRITERION 2'S NEGATIVE CONTROL IS THE LOAD-BEARING ONE and must redden NAMING a folder whose uri contains the launch directory; a weaker assertion is met by a shape that hands every author a cwd root. (3) CRITERION 3 PASSES IF ANYTHING THE SUITE DRIVES OWNS THE HAZARD, so a report proposing a different owner is a PASS, and only `nothing owns it` fails. (4) A NON-ZERO `expect(` DIFF IN THE FOLDER-CHANGE TESTS MEANS THE IDENTITY CHANGE CREPT IN. (5) THE NINE SYNTHESIS TESTS ARE CLASSIFIED ONE BY ONE; a batch classification is the shape that hides a coverage loss.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 44,
