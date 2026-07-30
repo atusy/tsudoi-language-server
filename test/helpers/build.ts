@@ -32,12 +32,12 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * what produced it. The throw protects the SUITE and says nothing about what is
  * left on disk.
  *
- * MEASURED: it poisoned a probe during PBI-48, where a construction read exit 0
- * against a prediction of 1, and it was caught only because the prediction was
- * written first. Every AUTOMATED route is covered -- this throw stops the suite,
- * `tsc --noEmit` reads source since PBI-48, `bun pm pack` builds in its own
- * stage -- so what stays exposed is HAND-RUN PROBE SEQUENCES: break src, run
- * something, revert, then read dist/.
+ * MEASURED, AND IT POISONS PROBES: a construction built on a freshly wrong
+ * dist/ reads exit 0 against a prediction of 1, and that is caught only when
+ * the prediction is written first. Every AUTOMATED route is covered -- this
+ * throw stops the suite, `tsc --noEmit` reads source rather than dist/, `bun pm
+ * pack` builds in its own stage -- so what stays exposed is HAND-RUN PROBE
+ * SEQUENCES: break src, run something, revert, then read dist/.
  *
  * REMOVING dist/ BEFORE RETHROWING IS AUTHORISED AND NOT DONE, which turns a
  * silently wrong artifact into a loudly missing one and is this repository's

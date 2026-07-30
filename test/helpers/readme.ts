@@ -5,8 +5,8 @@
 // command, the flag, the exit code or the prefix it expects. That edit costs
 // nothing and destroys everything: a plausible-but-wrong README -- right shape,
 // stale command, wrong flag, wrong exit code -- passes every test holding its
-// own copy, and fails one that EXTRACTS. It is the same property that has kept
-// examples/tsudoi.config.ts from rotting for eleven sprints, applied to prose.
+// own copy, and fails one that EXTRACTS. It is the same property that keeps
+// examples/tsudoi.config.ts from rotting, applied to prose.
 // If you need a constant here, ask first whether a README that contradicted it
 // would still be green.
 //

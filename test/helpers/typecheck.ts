@@ -22,10 +22,10 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * has no reason to carry, and its absence would fail the probe for a reason
  * unrelated to the specifier under test.
  *
- * `node` IS carried, and it was `[]` until sprint 13. MEASURED: a source that
- * imports `node:fs/promises` or `node:process` is reported TS2591 without both
+ * `node` IS carried rather than left `[]`. MEASURED: a source that imports
+ * `node:fs/promises` or `node:process` is reported TS2591 without both
  * @types/node installed AND `node` named here -- neither half alone is enough.
- * The example config now completes paths, so it reads the filesystem, and a
+ * The example config completes paths, so it reads the filesystem, and a
  * config author who does that installs @types/node exactly as this does. The
  * probe would otherwise fail for a reason unrelated to the specifier, which is
  * the same standard the `bun` exclusion above is held to.
@@ -43,9 +43,9 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * test/installed-without-node-types.test.ts, which passes its own value through
  * installConsumer's `typeCheck` rather than moving this line.
  *
- * WHY IT IS NOT SIMPLY TURNED OFF HERE, MEASURED at sprint 27 rather than
- * argued: setting it `false` reddens NOTHING -- the whole of `bun test` stayed
- * green -- and it would also SEE nothing, because `types: ["node"]` above is
+ * WHY IT IS NOT SIMPLY TURNED OFF HERE, MEASURED rather than argued: setting it
+ * `false` reddens NOTHING -- the whole of `bun test` stays green -- and it would
+ * also SEE nothing, because `types: ["node"]` above is
  * the other half of the pair and cancels it. Only skipLibCheck OFF TOGETHER
  * WITH `types: []` discriminates, and `types: []` is what these options must
  * not have: the
@@ -94,9 +94,9 @@ export function runTsc(cwd: string): Promise<TypeCheckResult> {
  * tests track the identity and the module that actually ship. Only
  * node_modules is borrowed for convenience -- src/types.ts imports tsudoi's own
  * declared dependencies, and installing them per probe would cost a network
- * fetch to prove nothing. Named that way rather than listed: the list was ONE
- * package until PBI-31 made it two, and a comment that spells it out goes stale
- * at the next one.
+ * fetch to prove nothing. Named that way rather than listed: the set of
+ * declared dependencies grows, and a comment that spells it out goes stale at
+ * the next one.
  */
 export async function typeCheckProbe(
   files: Record<string, string>,

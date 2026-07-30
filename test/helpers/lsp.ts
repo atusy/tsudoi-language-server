@@ -48,8 +48,8 @@ export interface InFlightRequest {
   /**
    * How it settled, result and error alike, RESOLVED either way. A rejection
    * here would go unhandled whenever an assertion fails before the await, and
-   * be reported against whichever test ran next -- the misattribution Sprint 5
-   * recorded as a suite-integrity failure.
+   * be reported against whichever test ran next -- a misattribution that is a
+   * suite-integrity failure rather than a nuisance.
    */
   readonly response: Promise<ResponseMessage>;
 }
@@ -120,8 +120,8 @@ export class LspSession {
    * How the child closed, or undefined while it is still running. Pending
    * requests are flushed ONCE, at the close event, so a request registered
    * afterwards would wait forever for a settle that has already happened. The
-   * rule from Sprint 5 is that a helper settles every promise it owns; it
-   * applies just as much when the process died BEFORE the request as after it.
+   * rule is that a helper settles every promise it owns; it applies just as
+   * much when the process died BEFORE the request as after it.
    */
   #closed: { readonly code: number | null } | undefined = undefined;
   #buffer = Buffer.alloc(0);
@@ -133,10 +133,10 @@ export class LspSession {
    * EVERY framed message, exactly as stdout carried it -- responses,
    * `$/progress` and any other server-initiated notification alike.
    *
-   * Notifications were dropped here on the grounds that nothing awaited them,
-   * twice over: first for `$/progress`, which made `zero $/progress` an
-   * assertion a server streaming furiously satisfied, and then for the rest,
-   * which made `tolerates an unexpected notification` unfalsifiable.
+   * DROPPING WHAT NOTHING AWAITS IS THE TEMPTING ECONOMY, AND IT COSTS BOTH
+   * CLAIMS: with `$/progress` left out, `zero $/progress` is an assertion a
+   * server streaming furiously satisfies; with the other notifications left
+   * out, `tolerates an unexpected notification` is unfalsifiable.
    *
    * Complete on purpose, and read through `arrivalsFor` on purpose: what a
    * claim is about is the CALLER's business, and a list that leaves things out
@@ -178,12 +178,12 @@ export class LspSession {
     // it must fail on its own assertion -- `the exit code was 1` -- rather than
     // on an uncaught EPIPE from a stream nothing is listening to.
     //
-    // RECORDED rather than ignored, which is the correction: the previous
-    // reasoning here was that ignoring hid nothing, since a write that went
-    // nowhere shows up as a response that never arrives. That is only true of
-    // REQUESTS, and it describes a HANG. A `notify` awaits nothing at all, so a
-    // notification whose write failed left no trace anywhere -- the helper
-    // swallowed the one piece of evidence that the client never spoke.
+    // RECORDED rather than ignored, and the argument for ignoring does not
+    // hold: `a write that went nowhere shows up as a response that never
+    // arrives` is true of REQUESTS alone, and even there it describes a HANG. A
+    // `notify` awaits nothing at all, so a notification whose write fails leaves
+    // no trace anywhere unless this records it -- the one piece of evidence that
+    // the client never spoke.
     child.stdin.on("error", (error: Error) => {
       this.writeFailures.push(error.message);
     });
@@ -381,9 +381,8 @@ export class LspSession {
    * WHOLE arrival list instead pins three things a claim about ordering never
    * meant to require: that no other message exists, that the ids of unrelated
    * requests are what they are, and that the server never speaks unprompted.
-   * The first is why a `window/logMessage` would have broken tests about
-   * cancellation; the second is the hardcoded-id brittleness recorded at
-   * Sprint 7.
+   * The first is why a `window/logMessage` would break tests about
+   * cancellation; the second is hardcoded-id brittleness.
    *
    * Progress is deliberately NOT filtered by token: a server that streamed
    * under a token it invented is exactly the cheat these tests exist to catch.

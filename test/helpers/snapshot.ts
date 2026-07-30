@@ -18,8 +18,8 @@ export const snapshotMarker = "TSUDOI_SNAPSHOT ";
  *
  * A SECOND marker rather than a second field on the first, because the two
  * fixtures answer different questions and sync.test.ts asserts the snapshot
- * line by deep equality -- widening that line would move six tests that this
- * sprint's criterion says stay put.
+ * line by deep equality -- widening that line would move six tests that have no
+ * stake in the second question at all.
  */
 export const membersMarker = "TSUDOI_MEMBERS ";
 
@@ -27,12 +27,11 @@ export const membersMarker = "TSUDOI_MEMBERS ";
  * What EITHER fixture writes instead of a report when no request ever handed it
  * a `RequestContext`, and therefore no store.
  *
- * A PRECONDITION THAT DID NOT EXIST BEFORE PBI-44: both fixtures used to be
- * handed the store by the factory itself, unconditionally, so being unprimed
- * was unrepresentable. Now the store arrives on a request, and a session that
- * makes none must not be reportable as one that looked and found nothing --
- * most of what these fixtures serve is an ABSENCE assertion, and two outcomes
- * that serialise alike record nothing.
+ * A PRECONDITION THAT IS REACHABLE RATHER THAN THEORETICAL: the store arrives
+ * on a REQUEST and not from the factory, so a session that makes none leaves
+ * both fixtures unprimed -- and such a session must not be reportable as one
+ * that looked and found nothing, because most of what these fixtures serve is
+ * an ABSENCE assertion and two outcomes that serialise alike record nothing.
  *
  * ONLY THE SNAPSHOT FIXTURE'S SPELLING IS EXPORTED, and the asymmetry is a
  * ruling rather than an omission. The vacuity this guards is a `toEqual([])`
@@ -53,9 +52,9 @@ export const unprimedSnapshotMarker = `${snapshotMarker.trim()}_UNPRIMED`;
  * never arrived means the fixture never ran, which is a different failure from
  * a fixture that ran and found nothing, and must not be reported as one.
  *
- * IT LEFT `readSnapshot` THE MOMENT A SECOND FIXTURE REPORTED THIS WAY, and the
- * move came BEFORE that fixture was written, so no copy of the absent-line
- * throw ever existed to drift from this one.
+ * IT SITS HERE RATHER THAN INSIDE `readSnapshot` BECAUSE A SECOND FIXTURE
+ * REPORTS THIS WAY, and one absent-line throw shared by both is a throw that
+ * cannot drift from itself.
  */
 export function readMarkedLine(stderr: string, marker: string): unknown {
   const line = stderr.split("\n").find((candidate) => candidate.startsWith(marker));

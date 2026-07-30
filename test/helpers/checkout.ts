@@ -34,8 +34,9 @@ export function isolatedCheckout(): IsolatedCheckout {
   // exactly like the dependency-resolution failure these tests exist to
   // observe, and would be the wrong diagnosis.
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
-  // dist/ IS PART OF `what a runtime needs to start`, and it became so at
-  // Sprint 25 rather than always having been. THE WITNESS IS A DEPENDENCY VALUE
+  // dist/ IS PART OF `what a runtime needs to start`, which is not obvious from
+  // the staging above and is why the witness is named. THE WITNESS IS A
+  // DEPENDENCY VALUE
   // ON A SIBLING SUBPATH: examples/diagnostic-trailing-whitespace.ts takes
   // `DiagnosticSeverity` and examples/completion-path.ts takes
   // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi/deps/types`, and
@@ -43,14 +44,14 @@ export function isolatedCheckout(): IsolatedCheckout {
   // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
   // loading the config, with a resolve error NAMING `@atusy/tsudoi/deps/types`.
   //
-  // MEASURED AT PBI-49 rather than reasoned, because the conclusion and the
-  // reason moved independently and only running tells you which. Staging no
+  // MEASURED rather than reasoned, because the conclusion and the reason move
+  // independently here and only running tells you which is which. Staging no
   // dist/ at all reddens two tests in test/resolution.test.ts. Deleting
   // dist/deps/types.js from an otherwise complete dist/ reproduces the failure
   // above by name, under both runtimes.
   //
   // AND THE TWO RUNTIMES DISAGREE ABOUT dist/types.js, WHICH A ONE-RUNTIME
-  // MEASUREMENT REPORTED AS `NOT NEEDED` BEFORE THE SECOND WAS TAKEN. With
+  // MEASUREMENT REPORTS AS `NOT NEEDED`. With
   // dist/types.js deleted and the rest of dist/ present, bun starts the server
   // at EXIT 0 and silent; deno EXITS 1 with ERR_MODULE_NOT_FOUND naming
   // dist/types.js, imported from examples/diagnostic-trailing-whitespace.ts:17.
@@ -62,14 +63,10 @@ export function isolatedCheckout(): IsolatedCheckout {
   // helper stages dist/ WHOLE rather than the parts one runtime happens to
   // reach.
   //
-  // WHICH SETTLES A SENTENCE THAT WAS HALF WRONG FOR AN UNKNOWN NUMBER OF
-  // SPRINTS. It named `CompletionItemKind` -- a real value in a real file -- and
-  // attributed it to `@atusy/tsudoi/types`, tsudoi's own subpath, which never
-  // carried it. For one sprint that subpath really did export a function this
-  // example called, which made the sentence's SHAPE true while its witness
-  // stayed wrong; the stakeholder then withdrew the function, and the subpath is
-  // type-only again. THE CONCLUSION SURVIVED ALL OF IT, which is why the
-  // correction is to the reason and not to the staging.
+  // AND THE WITNESS IS ON `@atusy/tsudoi/deps/types`, NEVER ON
+  // `@atusy/tsudoi/types`: tsudoi's own subpath is TYPE-ONLY, so it carries no
+  // value an example could call, and naming it here would put a real conclusion
+  // on a witness that does not exist.
   //
   // IT IS NOT THE THING BEING HELD AWAY, which is what keeps these probes
   // honest: node_modules is, and it still is. Carrying dist/ here removes a

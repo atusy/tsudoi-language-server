@@ -50,11 +50,10 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
  * misdiagnosed as one. The artifact under test is the SET, and no fixture copy
  * of any member exists.
  *
- * STATED AS A SET RATHER THAN A NUMBER, and the correction is the reason: this
- * block read `TWO FILES, not one` and `the artifact under test is both files`
- * while the function returned FOUR. A count in prose falsifies itself the next
- * time the thing it counts grows, and nothing about editing the returned object
- * draws the editor's eye up here. The set grows; the sentence must not have to.
+ * STATED AS A SET RATHER THAN A NUMBER, and that is the load-bearing choice: a
+ * count in prose falsifies itself the next time the thing it counts grows, and
+ * nothing about editing the returned object draws the editor's eye up here. The
+ * set grows; the sentence must not have to.
  */
 export function exampleSources(): Record<string, string> {
   return {
@@ -138,10 +137,11 @@ export interface InstalledConsumer {
    * Type-checks probe sources, keyed by path relative to the consumer root.
    *
    * `overrides` are MERGED OVER `consumerCompilerOptions`, NOT SUBSTITUTED FOR
-   * IT, and the distinction is written here because this project has already
-   * paid for the other semantics: at sprint 22 an oxlint override REPLACED a
-   * rule's options instead of merging them and silently disabled a different
-   * guard, in the file whose whole purpose was guarding. Merging means a probe
+   * IT, and the distinction is written here because the other semantics fail
+   * SILENTLY: an override that REPLACES a rule's options rather than merging
+   * them turns off every option it did not restate, and the thing it turns off
+   * can be the guard in the very file whose purpose is guarding. Merging means a
+   * probe
    * that moves ONE option keeps the other six identical to every consumer probe
    * in the suite, so a red it produces is about the option it moved.
    *
@@ -263,8 +263,8 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
       fail("bun pm pack", packed);
     }
     // Found rather than spelled out: bun derives the filename from name and
-    // version, so hardcoding it would turn a version bump into a puzzling
-    // ENOENT three sprints from now.
+    // version, so hardcoding it would turn the next version bump into a
+    // puzzling ENOENT.
     const tarballName = readdirSync(stage).find((entry) => entry.endsWith(".tgz"));
     if (tarballName === undefined) {
       fail("bun pm pack", { code: packed.code, output: `no .tgz in ${stage}\n${packed.output}` });
