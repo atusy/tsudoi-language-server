@@ -116,6 +116,49 @@ for (const runtime of runtimes) {
     });
 
     /**
+     * WHAT THE FACTORY RETURNED, refused before anything dereferences it.
+     *
+     * THREE ARMS AND NOT ONE, because they failed in three different ways and
+     * any one of them alone leaves the other two green:
+     *
+     * `() => {}` -- the arrow whose braces are a BODY -- reached
+     * requireCompletionBesideResolve and raised a TYPEERROR. A TypeError is not
+     * a ConfigError, so src/cli.ts RETHROWS it: the author got a raw stack, and
+     * the `tsudoi: ` prefix that `expectFailureContract` asserts for every other
+     * case in this file was simply absent.
+     *
+     * `Promise.resolve(null)` is the arm a guard written `typeof returned !==
+     * "object"` still admits, since `typeof null` is `"object"`.
+     *
+     * `() => 5` IS THE ONE WORTH THE FIXTURE. It broke NO assertion: a number
+     * has no `methods` to read, so nothing threw, loadConfig SUCCEEDED, and the
+     * server started advertising no capability at all. This test is the only
+     * thing standing between a config author and a server that answers every
+     * request with silence -- and it is why the arms are asserted for exit 1
+     * rather than merely for a good message.
+     *
+     * WHAT ARRIVED IS NAMED, not just that something was wrong: `undefined` and
+     * `null` and `number` are three different mistakes with three different
+     * fixes, and a message saying only `invalid config` sends all three authors
+     * to the same wrong place.
+     */
+    for (const [name, arrival] of [
+      ["factory-returns-nothing.ts", "undefined"],
+      ["factory-returns-null.ts", "null"],
+      ["factory-returns-primitive.ts", "number"],
+    ] as const) {
+      test(`a factory returning ${arrival} exits 1 naming the path and what arrived, with no stdout`, async () => {
+        const path = fixture(name);
+
+        const result = await runCli(runtime, ["--config", path]);
+
+        expectFailureContract(result);
+        expect(result.stderr).toContain(path);
+        expect(result.stderr).toContain(`returned ${arrival}`);
+      });
+    }
+
+    /**
      * THE ONE CASE THAT IS NOT ABOUT REACHING THE CONFIG AT ALL: this file
      * loads, exports a factory, and the factory returns -- and what it returned
      * is REFUSED. Every case above fails on the way to the config author's

@@ -34,12 +34,51 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
     throw new ConfigError(`the default export of config ${absolutePath} is not a function`);
   }
 
-  let config: TsudoiConfig;
+  // `unknown`, and the cast is DELAYED until the guard below has run. Declaring
+  // this as `TsudoiConfig` would make every check on it dead code to the type
+  // checker -- `typeof config !== "object"` does not compile against a type that
+  // says it is one -- so the type would be asserting exactly the thing this
+  // function exists to establish.
+  let returned: unknown;
   try {
-    config = await (factory as TsudoiConfigFactory)();
+    returned = await (factory as TsudoiConfigFactory)();
   } catch (cause) {
     throw new ConfigError(`the config factory in ${absolutePath} failed\n  ${String(cause)}`);
   }
+  // OUTSIDE THE `try` ABOVE, and that placement is the whole of whether the
+  // message is usable: raised inside it, this ConfigError would be caught by the
+  // handler one line up and re-wrapped as `the config factory failed\n
+  // ConfigError: ...` -- a report that the author's code threw, about a factory
+  // that returned perfectly well.
+  //
+  // WHAT IT COSTS TO OMIT, which is not `a worse message`: nothing else looks at
+  // this value before it is dereferenced, so `export default () => {};` -- the
+  // arrow whose braces are a BODY and not an object literal, and its `async () =>
+  // { methods: {...} }` twin where `methods:` is silently a LABEL -- reached
+  // requireCompletionBesideResolve and raised a TypeError. A TypeError is not a
+  // ConfigError, so src/cli.ts rethrows it and the author gets a raw stack with
+  // no `tsudoi: ` prefix and no config path: the one contract every case in
+  // test/cli.test.ts asserts, broken by the shortest way to write the mistake.
+  //
+  // AND THE PRIMITIVE ARM IS THE WORSE HALF, though it fails no assertion at
+  // all: `() => 5` has no `methods` to read, so nothing threw, loadConfig
+  // SUCCEEDED, and the server came up advertising no capability whatever. A
+  // silently inert server is a bug report about tsudoi that the author cannot
+  // begin to diagnose.
+  //
+  // THE TYPE IS NAMED, NEVER THE VALUE: `${returned as string}` on a symbol
+  // throws, turning a diagnostic into a second failure, and a config object
+  // printed whole would bury the sentence. `null` is spelled out because
+  // `typeof null` is `"object"`, which is the one answer that would confuse the
+  // reader it is written for.
+  if (typeof returned !== "object" || returned === null) {
+    throw new ConfigError(
+      `the config factory in ${absolutePath} returned ${returned === null ? "null" : typeof returned} ` +
+        `instead of a config object; a factory must return the config, and an arrow ` +
+        `function written \`() => { ... }\` returns nothing at all`,
+    );
+  }
+  const config = returned as TsudoiConfig;
   requireCompletionBesideResolve(config, absolutePath);
   return config;
 }
