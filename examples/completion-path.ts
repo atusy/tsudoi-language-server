@@ -193,14 +193,13 @@ export interface PathCompletionOptions {
  * editor started without a project root leaves cwd as its own launch
  * directory, so the guess looks right in every test and wrong in real use.
  *
- * THAT SECOND HALF IS HELD UP HERE ALONE AGAIN, and it is worth naming because
- * it moved twice. `folders` arrives from `context.workspaceFolders` -- the
- * client's own list, which no cwd can enter -- so this function taking URIs as
- * given IS the whole guarantee. For one sprint it arrived through a published
- * reduction over the deprecated root fields, which had to refuse a relative
- * `rootPath` itself; that reduction is gone and tsudoi now refuses such a
- * `rootPath` at its own boundary, so a config reducing those fields never meets
- * the value that could have produced a cwd root.
+ * THAT SECOND HALF IS HELD UP HERE ALONE, and it is worth naming because it
+ * looks like the kind of guarantee something upstream ought to be sharing.
+ * `folders` arrives from `context.workspaceFolders` -- the client's own list,
+ * which no cwd can enter -- so this function taking URIs as given IS the whole
+ * guarantee. NOTHING ELSE HAS TO HOLD IT: tsudoi refuses a relative `rootPath`
+ * at its own boundary, so a config reducing the deprecated root fields never
+ * meets the value that could have produced a cwd root.
  *
  * Order is most-local-first, which decides attribution rather than content:
  * items dedup by inserted text, so the survivor names the root asked first.
@@ -499,10 +498,9 @@ async function entryKind(directory: string, entry: Dirent): Promise<CompletionIt
  * AND ONE THING IT IS NOT: the BATCHING at `batchSize` is not incompleteness.
  * Batches are the same final set arriving in pieces; `isIncomplete` is about
  * the set CHANGING as the user types. A reader who conflates them would
- * conclude that draining the iterator makes the answer complete -- and the
- * conflation is easier to make now that batching is ALL this generator can
- * express, which is why the paragraph is kept rather than trimmed with the
- * capability.
+ * conclude that draining the iterator makes the answer complete -- and batching
+ * being ALL this generator can express makes that conflation EASIER to fall
+ * into rather than harder, which is the whole reason the paragraph is here.
  *
  * NOTHING TO SAY IS YIELDING NOTHING, AND THAT IS NOT THE SAME AS AN EMPTY
  * LIST. No document, no line, or a listing that produced no batch at all means
@@ -596,11 +594,11 @@ export async function* pathCompletion(
     // happens even though the request is answered `RequestCancelled` and
     // nothing here can be watched succeeding.
     //
-    // THERE IS NOWHERE ELSE IT COULD GO, and that stopped being true for one
-    // sprint. Between Sprints 42 and 43 the handler was AWAITED for a pair and
-    // the yields lived in a second generator beside it, so a `finally` written
-    // one call up ran immediately and released nothing -- a real trap, and the
-    // README carried a warning about it. The handler is the generator again, so
-    // there is one body and the trap has no site.
+    // THERE IS NOWHERE ELSE IT COULD GO, and the shape that would move it is
+    // worth naming because it is a REAL TRAP RATHER THAN A STYLE PREFERENCE:
+    // split this handler into a plain function that RETURNS a generator, and a
+    // `finally` written in that outer body runs the moment the generator is
+    // handed back -- before any of the work, releasing nothing. THE HANDLER IS
+    // THE GENERATOR, so there is one body and the trap has no site.
   }
 }
