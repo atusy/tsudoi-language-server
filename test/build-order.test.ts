@@ -30,6 +30,14 @@ test("every package the workspace declares is ordered exactly once", () => {
   // THE NODE SET IS READ AGAINST THE WORKSPACE ITSELF, so an order that
   // returned nothing -- or that quietly dropped whatever it could not place --
   // cannot satisfy the sequence assertion by being short.
+  //
+  // BUILT A SECOND TIME FROM THE SAME ENUMERATOR, DELIBERATELY, and the choice
+  // is worth stating because it looks like a tautology and is not one: what is
+  // asserted here is the SEQUENCE, and `declaredMembers` is the repository's
+  // one answer to WHO THE MEMBERS ARE. A hand-written list would assert
+  // membership as well -- a second answer to a question already owned
+  // elsewhere, going stale at the next package, and reddening this file for a
+  // reason that has nothing to do with an order.
   expect([...order].sort()).toEqual([repoRoot, ...declaredMembers(repoRoot)].sort());
   expect(new Set(order).size).toBe(order.length);
 });

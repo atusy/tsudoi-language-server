@@ -34,6 +34,16 @@ import { fileURLToPath } from "node:url";
  * that asymmetry is the point: the callers are the only things looking at the
  * paths the root type check gave up, so `I found no members` and `I was given no
  * way to find them` must not produce the same silence.
+ *
+ * THE SORT STAYS HERE AND IS NOT THE BUILD ORDER, which is worth saying at this
+ * site because `buildOrder` below sorts too and a reader who noticed both could
+ * reasonably conclude one of them is redundant. A STABLE LIST AND A BUILD ORDER
+ * ARE DIFFERENT QUESTIONS: this one's callers -- the fifth check, the guards it
+ * runs -- want the same sequence twice running so a diagnostic naming `the
+ * first offender` means something, and they ask nothing about what needs what.
+ * Moving this sort into the orderer would leave those callers reading an order
+ * derived from declarations they do not care about, and would make the
+ * tie-break look like the answer rather than the fallback.
  */
 export function declaredMembers(root: string): readonly string[] {
   const manifestPath = join(root, "package.json");
