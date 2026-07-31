@@ -211,20 +211,36 @@ function publishedArm(condition: string): Record<string, string> {
  * package is renamed there are two places to carry it and one test to tell you
  * which. Both sides here come from `exports` instead, and an arm added there is
  * covered with nothing edited.
+ *
+ * WHAT AN ARM NOTHING IMPORTS COSTS, named so the next person to add one does
+ * not meet it as a mystery: a subpath no file in this program asks for is
+ * answered by nothing, which reads here as an empty list against its source and
+ * REDDENS. That is the honest colour -- this check verifies the arms it
+ * resolves and can say nothing about one it never sees -- and it does not arrive
+ * alone. MEASURED, on a fifth arm added to the map: TWO tests redden, this one
+ * and the published-surface equality, which is where adding an arm is already a
+ * decision rather than a convenience.
  */
 test("the repo's type check resolves the published subpaths to source, and the build config does not", async () => {
   const sources = publishedArm("default");
   const { answers } = await traceResolutions(repoRoot);
+  // BOTH SIDES RESOLVED, for the reason the compiler-pinning test below states
+  // about its own two: a checkout reached through a link is answered by the path
+  // the compiler walked, and an expectation built from the path this file was
+  // loaded by is a claim about the same file under another name.
   const answered = Object.fromEntries(
     Object.keys(sources).map((specifier) => [
       specifier,
-      [...(answers.get(specifier) ?? [])].sort(),
+      [...(answers.get(specifier) ?? [])].map((file) => realpathSync(file)).sort(),
     ]),
   );
 
   expect(answered).toEqual(
     Object.fromEntries(
-      Object.entries(sources).map(([specifier, file]) => [specifier, [join(repoRoot, file)]]),
+      Object.entries(sources).map(([specifier, file]) => [
+        specifier,
+        [realpathSync(join(repoRoot, file))],
+      ]),
     ),
   );
   expect(buildOptions.paths).toBeUndefined();
