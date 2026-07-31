@@ -38,7 +38,7 @@
 // preference -- measured, TS2724 names it.
 import type { Stats } from "node:fs";
 import { stat } from "node:fs/promises";
-import type { MethodHandler } from "@atusy/tsudoi/types";
+import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import { completedPath } from "./completion-path.ts";
 
 /**

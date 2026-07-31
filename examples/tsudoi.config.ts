@@ -1,4 +1,4 @@
-import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";
+import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";

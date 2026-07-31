@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import type { MarkupKind } from "vscode-languageserver-protocol";
 import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
-import type { RequestContext } from "@atusy/tsudoi/types";
+import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 
 /**
  * THE FAILURE ARM OF THE LAZY-INIT IDIOM, which is the one thing about

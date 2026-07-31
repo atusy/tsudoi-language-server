@@ -339,7 +339,7 @@ const facts: readonly ReadmeFact[] = [
   },
   {
     // NAMED BECAUSE IT WENT FALSE AND NOTHING NOTICED. The document said every
-    // protocol name the examples use comes from `@atusy/tsudoi/types`, and it
+    // protocol name the examples use comes from `@atusy/tsudoi-language-server/types`, and it
     // had not been true since the surface was split by origin: `CompletionParams`
     // comes from `deps/protocol` and `CompletionItem`, `CompletionItemKind`,
     // `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity`
@@ -365,7 +365,11 @@ const facts: readonly ReadmeFact[] = [
   },
   {
     name: "the registry route is intended and unverified",
-    tokens: [/bun add @atusy\/tsudoi/, /deno add npm:@atusy\/tsudoi/, /unverified/i],
+    tokens: [
+      /bun add @atusy\/tsudoi-language-server/,
+      /deno add npm:@atusy\/tsudoi-language-server/,
+      /unverified/i,
+    ],
   },
   {
     // The claim is that tsudoi CLOSES the generator, never that the author's
@@ -431,7 +435,7 @@ for (const fact of facts) {
  * connects it to what a reader is told.
  *
  * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
- * `node_modules/@atusy/tsudoi/dist/cli.js` is a path INTO the installed package
+ * `node_modules/@atusy/tsudoi-language-server/dist/cli.js` is a path INTO the installed package
  * that the quickstart tells a reader to run, reached by walking the tree rather
  * than through the exports map -- which is precisely why it must not be
  * expected to appear there.
@@ -447,7 +451,7 @@ const publishedExports = Object.keys(
 function subpathsNamed(markdown: string): string[] {
   return [
     ...new Set(
-      [...markdown.matchAll(/(?<!node_modules\/)@atusy\/tsudoi\/([\w/-]+)/g)].map(
+      [...markdown.matchAll(/(?<!node_modules\/)@atusy\/tsudoi-language-server\/([\w/-]+)/g)].map(
         (match) => `./${match[1] ?? ""}`,
       ),
     ),
@@ -466,7 +470,10 @@ test("the published subpaths the README names are exactly the ones package.json 
  * two empty lists agree.
  */
 test("a README that stopped naming one of them no longer matches the exports map", () => {
-  const narrowed = readme.replaceAll("@atusy/tsudoi/deps/textdocument", "@atusy/tsudoi/types");
+  const narrowed = readme.replaceAll(
+    "@atusy/tsudoi-language-server/deps/textdocument",
+    "@atusy/tsudoi-language-server/types",
+  );
 
   expect(subpathsNamed(narrowed)).not.toEqual(publishedExports);
 });

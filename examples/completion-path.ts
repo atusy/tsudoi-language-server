@@ -29,8 +29,8 @@ import { opendir, stat } from "node:fs/promises";
 import nodePath, { basename, dirname, type PlatformPath } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import type { RequestContext } from "@atusy/tsudoi/types";
-import { type CompletionParams } from "@atusy/tsudoi/deps/protocol";
+import type { RequestContext } from "@atusy/tsudoi-language-server/types";
+import { type CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import {
   type CompletionItem,
   CompletionItemKind,
@@ -40,7 +40,7 @@ import {
   type Position,
   type TextEdit,
   type WorkspaceFolder,
-} from "@atusy/tsudoi/deps/types";
+} from "@atusy/tsudoi-language-server/deps/types";
 
 /** One candidate for the path the user is typing. */
 export interface PathFragment {

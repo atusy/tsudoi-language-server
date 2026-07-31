@@ -11,7 +11,7 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * beside that preload.
  *
  * SYNCHRONOUS ON PURPOSE. `examples/completion-path.ts` imports
- * `@atusy/tsudoi/types`, which from inside this package resolves through the
+ * `@atusy/tsudoi-language-server/types`, which from inside this package resolves through the
  * exports map to ./dist/types.js, and test/completion-path.test.ts imports that
  * example STATICALLY. A build that had not finished when the module graph was
  * resolved would be no build at all.

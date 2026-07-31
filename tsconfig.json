@@ -4,7 +4,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@atusy/tsudoi/*": ["./src/*.ts"]
+      "@atusy/tsudoi-language-server/*": ["./src/*.ts"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true,

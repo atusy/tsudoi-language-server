@@ -101,7 +101,7 @@ const buildTsconfig = JSON.parse(
  * WHICH OF THE TWO TSCONFIGS MAY CARRY THE MAPPING, and why it is exactly one.
  *
  * `tsc --noEmit` is a DoD check, and without a mapping it resolves the
- * examples' `@atusy/tsudoi/*` imports through package.json's exports map to
+ * examples' `@atusy/tsudoi-language-server/*` imports through package.json's exports map to
  * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
  * therefore disagree exactly when the published surface has moved: MEASURED in
  * both directions -- a false GREEN beside failures spread BROADLY across the
@@ -125,7 +125,7 @@ test("the repo's type check resolves the published subpaths to source, and the b
   const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
   const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
 
-  expect(repoOptions.paths).toEqual({ "@atusy/tsudoi/*": ["./src/*.ts"] });
+  expect(repoOptions.paths).toEqual({ "@atusy/tsudoi-language-server/*": ["./src/*.ts"] });
   expect(buildOptions.paths).toBeUndefined();
 });
 
@@ -236,7 +236,7 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 //
 // THE REPO'S OWN dist/, which is a different artifact from the tarball's:
 // examples/completion-path.ts takes CompletionItemKind -- a VALUE -- from
-// `@atusy/tsudoi/types`, and from inside this repository package
+// `@atusy/tsudoi-language-server/types`, and from inside this repository package
 // self-reference resolves that subpath through the exports map's `import` arm
 // to ./dist/types.js (MEASURED under bun 1.3.13 and deno 2.9.2, discriminated
 // against the `default` arm by writing a marker export into dist/types.js and

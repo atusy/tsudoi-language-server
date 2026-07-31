@@ -26,7 +26,7 @@ const example = exampleSources();
  * than against this repository's own sources.
  */
 const consumerConfig = [
-  'import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";',
+  'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
   "const config: TsudoiConfigFactory = () => Promise.resolve({});",
   "export default config;",
   "",
@@ -45,7 +45,7 @@ afterAll(() => {
 // The story is `a stranger imports our types`. Self-reference proves it from
 // inside the repo, where the package.json is already on the resolution path;
 // only a packed-and-installed copy proves it from outside.
-test("a config in an installed consumer type-checks against @atusy/tsudoi/types", async () => {
+test("a config in an installed consumer type-checks against @atusy/tsudoi-language-server/types", async () => {
   const result = await consumer.typeCheck({ "tsudoi.config.ts": consumerConfig });
 
   expect(result.output).toBe("");
@@ -82,7 +82,7 @@ test("the example itself, copied into an installed consumer, type-checks unchang
 // specifier, and not passing for any consumer config at all.
 test("the same example spelled with a relative path into src fails in a consumer", async () => {
   const config = example["tsudoi.config.ts"] ?? "";
-  const relative = config.replace('"@atusy/tsudoi/types"', '"../src/types.ts"');
+  const relative = config.replace('"@atusy/tsudoi-language-server/types"', '"../src/types.ts"');
   expect(relative).not.toBe(config);
 
   const result = await consumer.typeCheck({ ...example, "tsudoi.config.ts": relative });
@@ -115,7 +115,7 @@ test("the tarball ships the compiled module the exports entry points at, and not
  * EVERYTHING THAT TRAVELS FROM THIS REPOSITORY INTO THE THING WE PUBLISH, and
  * the reason it is pinned is what is NOT here.
  *
- * tsconfig.json carries a `paths` mapping resolving `@atusy/tsudoi/*` to src/,
+ * tsconfig.json carries a `paths` mapping resolving `@atusy/tsudoi-language-server/*` to src/,
  * so that this repository's own `tsc --noEmit` reads source instead of a built
  * dist/. That mapping is safe ONLY BECAUSE IT CANNOT REACH THE PACKING STAGE:
  * the build here runs under tsconfig.build.json, which carries no mapping (and
@@ -165,7 +165,7 @@ test("dropping ./types from the packed exports makes the consumer fail with TS23
 
     expect(result.code).toBe(1);
     expect(result.output).toContain("error TS2307");
-    expect(result.output).toContain("@atusy/tsudoi/types");
+    expect(result.output).toContain("@atusy/tsudoi-language-server/types");
   } finally {
     perturbed.dispose();
   }

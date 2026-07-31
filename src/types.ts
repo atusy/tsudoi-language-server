@@ -1,11 +1,11 @@
-// TSUDOI'S OWN TYPES. package.json maps `@atusy/tsudoi/types` here, so every
+// TSUDOI'S OWN TYPES. package.json maps `@atusy/tsudoi-language-server/types` here, so every
 // exported name is public API and renaming one breaks configs we cannot see.
 // What ships is the compiled dist/types.d.ts, not this file.
 //
 // WHAT IS NOT HERE IS DELIBERATE: every LSP name a config author might want --
 // the protocol's types and the data values a handler reads or builds -- is
-// published from `@atusy/tsudoi/deps/protocol`, `@atusy/tsudoi/deps/types` and
-// `@atusy/tsudoi/deps/textdocument` instead. The line this module draws is OURS
+// published from `@atusy/tsudoi-language-server/deps/protocol`, `@atusy/tsudoi-language-server/deps/types` and
+// `@atusy/tsudoi-language-server/deps/textdocument` instead. The line this module draws is OURS
 // versus THEIRS; the line BETWEEN the three deps subpaths is upstream's own
 // packaging, which an author reaches past rather than reasons about.
 import type {
@@ -462,7 +462,7 @@ export interface Tsudoi {
    * whole motivation and is worth naming because a capability surface with no
    * reader invites additions nothing measures.
    *
-   * UPSTREAM'S OWN TYPE, published through `@atusy/tsudoi/deps/protocol`, so
+   * UPSTREAM'S OWN TYPE, published through `@atusy/tsudoi-language-server/deps/protocol`, so
    * tsudoi's surface does not widen by one name for this: every capability LSP
    * defines is already reachable, and one tsudoi has never heard of arrives the
    * day the dependency does.

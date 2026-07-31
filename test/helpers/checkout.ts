@@ -39,10 +39,10 @@ export function isolatedCheckout(): IsolatedCheckout {
   // DEPENDENCY VALUE ON A SIBLING SUBPATH:
   // examples/diagnostic-trailing-whitespace.ts takes
   // `DiagnosticSeverity` and examples/completion-path.ts takes
-  // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi/deps/types`, and
+  // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi-language-server/deps/types`, and
   // package self-reference resolves that subpath through the exports map's
   // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
-  // loading the config, with a resolve error NAMING `@atusy/tsudoi/deps/types`.
+  // loading the config, with a resolve error NAMING `@atusy/tsudoi-language-server/deps/types`.
   //
   // MEASURED rather than reasoned, because the conclusion and the reason move
   // independently here and only running tells you which is which. Staging no
@@ -56,15 +56,15 @@ export function isolatedCheckout(): IsolatedCheckout {
   // at EXIT 0 and silent; deno EXITS 1 with ERR_MODULE_NOT_FOUND naming
   // dist/types.js, imported from examples/diagnostic-trailing-whitespace.ts:17.
   // THE MECHANISM IS IMPORT ELISION AND NOT RESOLUTION: that line reads
-  // `import { type MethodHandler } from "@atusy/tsudoi/types"`, whose bindings
+  // `import { type MethodHandler } from "@atusy/tsudoi-language-server/types"`, whose bindings
   // are all type-only, and bun drops the statement while deno keeps and loads
   // it. So a source line that looks type-only is a real runtime dependency on
   // one of the two runtimes this project verifies -- which is exactly why this
   // helper stages dist/ WHOLE rather than the parts one runtime happens to
   // reach.
   //
-  // AND THE WITNESS IS ON `@atusy/tsudoi/deps/types`, NEVER ON
-  // `@atusy/tsudoi/types`: tsudoi's own subpath is TYPE-ONLY, so it carries no
+  // AND THE WITNESS IS ON `@atusy/tsudoi-language-server/deps/types`, NEVER ON
+  // `@atusy/tsudoi-language-server/types`: tsudoi's own subpath is TYPE-ONLY, so it carries no
   // value an example could call, and naming it here would put a real conclusion
   // on a witness that does not exist.
   //

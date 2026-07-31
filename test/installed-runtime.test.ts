@@ -17,13 +17,13 @@ await requireRuntime(denoRuntime);
  *
  * In a project that is not this repo, with a tsudoi.config.ts in it:
  *
- *   bun install ./atusy-tsudoi-0.0.0.tgz
- *   bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts
- *   deno run -A node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts
+ *   bun install ./atusy-tsudoi-language-server-0.0.0.tgz
+ *   bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
+ *   deno run -A node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
  *
  * The install line is what these tests do -- from a tarball, because
- * publishing is out of scope. `bun add @atusy/tsudoi` and
- * `deno add npm:@atusy/tsudoi` are the same route once this is published, and
+ * publishing is out of scope. `bun add @atusy/tsudoi-language-server` and
+ * `deno add npm:@atusy/tsudoi-language-server` are the same route once this is published, and
  * they are NOT VERIFIED HERE; nothing in this repo may claim they are until
  * something runs them.
  *
@@ -33,8 +33,8 @@ await requireRuntime(denoRuntime);
  * runtime-specific install or a runtime-specific entry point would fail it.
  */
 const route = {
-  bun: "bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
-  deno: "deno run -A node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
+  bun: "bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
+  deno: "deno run -A node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
 } as const;
 
 /**
@@ -204,7 +204,7 @@ for (const [runtime, command] of Object.entries(route)) {
  *
  * WHY DENO IS IN THAT LIST AND BUN IS NOT, measured rather than reasoned:
  * examples/diagnostic-trailing-whitespace.ts writes
- * `import { type MethodHandler } from "@atusy/tsudoi/types"`, and bun ELIDES an
+ * `import { type MethodHandler } from "@atusy/tsudoi-language-server/types"`, and bun ELIDES an
  * import whose bindings are all type-only while deno LOADS THE MODULE. So the
  * examples resolve this subpath at run time under one runtime and not the other,
  * from a line that looks type-only in the source.
@@ -215,7 +215,7 @@ for (const [runtime, command] of Object.entries(route)) {
  * the module loaded AND exported nothing; the example tests say a config author's
  * server started. Only this one names the arm.
  */
-const importsTheSubpath = 'import "@atusy/tsudoi/types";\n';
+const importsTheSubpath = 'import "@atusy/tsudoi-language-server/types";\n';
 
 test("a runtime import of the types subpath resolves in the installed copy", async () => {
   consumer.write("probe.js", importsTheSubpath);
@@ -330,7 +330,7 @@ test("deno refuses a .ts entry point under node_modules, and bun runs it fine", 
     },
   });
   try {
-    const tsEntry = "node_modules/@atusy/tsudoi/src/cli.ts";
+    const tsEntry = "node_modules/@atusy/tsudoi-language-server/src/cli.ts";
     // A --config that does not exist, on purpose: reaching the CLI's own
     // `tsudoi:` message is what proves the module was loaded at all, and it
     // needs no config file to prove it.

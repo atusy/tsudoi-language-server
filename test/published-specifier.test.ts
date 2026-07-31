@@ -10,13 +10,13 @@ import { typeCheckProbe } from "./helpers/typecheck.ts";
  * to take unchecked here.
  */
 const consumerConfig = [
-  'import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";',
+  'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
   "const config: TsudoiConfigFactory = () => Promise.resolve({});",
   "export default config;",
   "",
 ].join("\n");
 
-test("a config importing @atusy/tsudoi/types type-checks against the shipped package.json", async () => {
+test("a config importing @atusy/tsudoi-language-server/types type-checks against the shipped package.json", async () => {
   const result = await typeCheckProbe({ "tsudoi.config.ts": consumerConfig });
 
   expect(result.output).toBe("");
@@ -33,7 +33,7 @@ test("the same config fails with TS2307 once the exports entry is removed", asyn
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2307");
-  expect(result.output).toContain("@atusy/tsudoi/types");
+  expect(result.output).toContain("@atusy/tsudoi-language-server/types");
   expect(result.output).toContain("tsudoi.config.ts");
 });
 
@@ -42,7 +42,8 @@ test("the same config fails with TS2307 once the exports entry is removed", asyn
 // omits, see the //exports key in package.json -- would go unnoticed.
 test("the bare package name does not resolve, only the ./types subpath", async () => {
   const result = await typeCheckProbe({
-    "tsudoi.config.ts": 'import type { Tsudoi } from "@atusy/tsudoi";\nexport type T = Tsudoi;\n',
+    "tsudoi.config.ts":
+      'import type { Tsudoi } from "@atusy/tsudoi-language-server";\nexport type T = Tsudoi;\n',
   });
 
   expect(result.code).toBe(1);

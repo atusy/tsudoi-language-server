@@ -85,7 +85,7 @@ export function runTsc(cwd: string): Promise<TypeCheckResult> {
  * exit code and diagnostics.
  *
  * The project is generated rather than committed because `editPackage` exists
- * to DELETE keys: the paired control for `@atusy/tsudoi/types` resolves is
+ * to DELETE keys: the paired control for `@atusy/tsudoi-language-server/types` resolves is
  * that removing the exports entry makes the same check fail, and that half can
  * only be observed against a package.json nobody ships.
  *

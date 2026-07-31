@@ -11,9 +11,9 @@ artifact.
 
 ## The package is not published
 
-`@atusy/tsudoi` is **not published** to npm or to any other registry.
+`@atusy/tsudoi-language-server` is **not published** to npm or to any other registry.
 
-Once it is, `bun add @atusy/tsudoi` and `deno add npm:@atusy/tsudoi` are the intended way to get
+Once it is, `bun add @atusy/tsudoi-language-server` and `deno add npm:@atusy/tsudoi-language-server` are the intended way to get
 it -- and both are **unverified**: nothing has ever run them, and installing a tarball and
 resolving `npm:` through deno's own cache are different mechanisms, so one of them working says
 little about the other.
@@ -39,7 +39,7 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
-A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi/types` and,
+A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types` and,
 for the protocol's own names, the `deps/` subpaths beside it -- which from inside this repository
 resolve to files under `dist/`, and `dist/` is not committed
 -- so `bun test` builds it **automatically**, through a `bunfig.toml` that compiles `src/`
@@ -91,7 +91,7 @@ This works in an empty directory -- bun writes the `package.json` for you.
 <!-- quickstart in=my-language-server write=tsudoi.config.ts -->
 
 ```ts
-import type { TsudoiConfigFactory } from "@atusy/tsudoi/types";
+import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
@@ -116,14 +116,14 @@ Three things you cannot guess from the outside:
   all, and a factory written to an older shape fails silently instead.
 - Handlers are typed by the method key. `context` and `params` above need no annotations, and
   neither does the return type, because that one annotation supplies them all;
-  `@atusy/tsudoi/types` is the only import a config needs.
+  `@atusy/tsudoi-language-server/types` is the only import a config needs.
 
 ### 4. In `my-language-server/`, start the server
 
 <!-- quickstart in=my-language-server start=bun -->
 
 ```sh
-bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts
+bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
 ```
 
 or, under deno:
@@ -131,7 +131,7 @@ or, under deno:
 <!-- quickstart in=my-language-server start=deno -->
 
 ```sh
-deno run -A node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts
+deno run -A node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
 ```
 
 Nothing appears to happen, and that is correct: the server reads LSP messages on stdin and
@@ -175,7 +175,7 @@ would desynchronise its client instead of failing.
 
 ## The documents your handlers receive
 
-`context.tsudoi.documents.get(uri)` gives you a `DocumentView` from `@atusy/tsudoi/types`: a
+`context.tsudoi.documents.get(uri)` gives you a `DocumentView` from `@atusy/tsudoi-language-server/types`: a
 sealed facade over one open buffer, carrying the seven members
 `vscode-languageserver-textdocument` declares for READING a document -- Microsoft's own package,
 out of the same repository as the protocol types, and the one those types' own deprecation notice
@@ -235,9 +235,9 @@ const document = TextDocument.create(uri, "plaintext", 1, "hello");
 ```
 
 That import is where you name the package yourself, and a config that only reads the buffer never
-writes it -- so the quickstart's "`@atusy/tsudoi/types` is the only import a config needs" holds
+writes it -- so the quickstart's "`@atusy/tsudoi-language-server/types` is the only import a config needs" holds
 for the handlers you start with. The two exceptions are above: a mock in your own tests, and a
-handler taking a copy it can update. `@atusy/tsudoi/types` exports the TYPE and deliberately not
+handler taking a copy it can update. `@atusy/tsudoi-language-server/types` exports the TYPE and deliberately not
 the value: tsudoi builds the documents your handlers receive, and building one is the caller's
 job on both of those routes rather than something tsudoi can do for you.
 
@@ -350,12 +350,12 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   **No protocol package is named here**, and that is what tsudoi re-exporting its own dependencies
   buys: these files name protocol types freely and still depend on nothing but tsudoi. They take
   them from the `deps/` subpaths and not from tsudoi's own module -- `CompletionParams` from
-  `@atusy/tsudoi/deps/protocol`, which carries the protocol's request and params types, and
+  `@atusy/tsudoi-language-server/deps/protocol`, which carries the protocol's request and params types, and
   `CompletionItem`, `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity` from
-  `@atusy/tsudoi/deps/types`, which carries the data types a handler reads or builds.
+  `@atusy/tsudoi-language-server/deps/types`, which carries the data types a handler reads or builds.
   `CompletionItemKind` comes from that second one as well, and it is why those are not all
   `import type`: it is a **value**, and an item's `kind` is one of its members. What
-  `@atusy/tsudoi/types` carries is tsudoi's OWN names -- `MethodHandler`, `RequestContext`,
+  `@atusy/tsudoi-language-server/types` carries is tsudoi's OWN names -- `MethodHandler`, `RequestContext`,
   `TsudoiConfigFactory` -- which is why the quickstart config above needs nothing beyond it and
   these handler files need more: a config names no protocol type, and a handler does almost
   nothing else. The test suite runs these files themselves and type-checks them as an
@@ -363,8 +363,8 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   publishes.
 
 - **The published type surface is four subpaths**, split by ORIGIN rather than by topic:
-  `@atusy/tsudoi/types` is tsudoi's own names, written in `src/types.ts`, and
-  `@atusy/tsudoi/deps/protocol`, `@atusy/tsudoi/deps/types` and `@atusy/tsudoi/deps/textdocument`
+  `@atusy/tsudoi-language-server/types` is tsudoi's own names, written in `src/types.ts`, and
+  `@atusy/tsudoi-language-server/deps/protocol`, `@atusy/tsudoi-language-server/deps/types` and `@atusy/tsudoi-language-server/deps/textdocument`
   re-export the three packages tsudoi depends on, one subpath each. The line tsudoi draws is OURS
   versus THEIRS; the line between the three `deps/` subpaths is upstream's own packaging, which
   you reach past rather than reason about.

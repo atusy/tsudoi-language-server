@@ -246,7 +246,7 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     options.editSource?.(join(stage, "src"));
     // tsconfig.build.json AND NOT tsconfig.json, and the omission is the load-
     // bearing half: the repo's tsconfig.json carries a `paths` mapping that
-    // resolves `@atusy/tsudoi/*` to src/, and a stage that inherited it would
+    // resolves `@atusy/tsudoi-language-server/*` to src/, and a stage that inherited it would
     // type-check the thing we publish against sources we do not ship. A FOURTH
     // COPY ADDED HERE REDDENS `the pack stage receives package.json, src/ and
     // tsconfig.build.json, and nothing else` in
@@ -300,7 +300,7 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
 
     return {
       dir: consumer,
-      packageDir: join(consumer, "node_modules", "@atusy", "tsudoi"),
+      packageDir: join(consumer, "node_modules", "@atusy", "tsudoi-language-server"),
       stagedEntries: staged,
       write: (path: string, contents: string): void => {
         const target = join(consumer, path);

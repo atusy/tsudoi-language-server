@@ -10,7 +10,7 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
  * place, however honest it is about that.
  *
  * THE PROPERTY: a config author who has never installed @types/node can
- * type-check against `@atusy/tsudoi/types`. src/types.ts re-exports its
+ * type-check against `@atusy/tsudoi-language-server/types`. src/types.ts re-exports its
  * protocol names from the BARE `vscode-languageserver-protocol` rather than from
  * `/node`, and `/node` drags Node stream typings into a consumer that has none.
  *
@@ -99,7 +99,10 @@ import { importsAndUses, publicProtocolNames } from "./helpers/published-names.t
 const noNodeTypings = { skipLibCheck: false, types: [] };
 
 const publishedNames = {
-  "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/deps/protocol"),
+  "published-names.ts": importsAndUses(
+    publicProtocolNames,
+    "@atusy/tsudoi-language-server/deps/protocol",
+  ),
 };
 
 let consumer: InstalledConsumer;

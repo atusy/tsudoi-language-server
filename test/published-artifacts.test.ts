@@ -13,7 +13,7 @@ import { typeCheckProbe } from "./helpers/typecheck.ts";
 /**
  * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT.
  *
- * The repo's own type check resolves `@atusy/tsudoi/types` through the exports
+ * The repo's own type check resolves `@atusy/tsudoi-language-server/types` through the exports
  * map's IN-REPO arm -- straight at src/types.ts. What a stranger receives is
  * the COMPILED dist/types.d.ts, and nothing checked the artifacts against that
  * until this file. Everything here is therefore BORN GREEN by design: the
@@ -130,7 +130,7 @@ test("perturbing the published types reddens the probe while tsc --noEmit stays 
     const result = await perturbed.typeCheck({ "readme-snippet.ts": readmeSnippet() });
 
     expect(result.code).not.toBe(0);
-    expect(result.output).toContain("@atusy/tsudoi/types");
+    expect(result.output).toContain("@atusy/tsudoi-language-server/types");
   } finally {
     perturbed.dispose();
   }
@@ -178,7 +178,7 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
  * TSUDOI'S OWN SUBPATH CARRIES NO RUNTIME VALUE, AND THIS IS THE GUARANTEE
  * RATHER THAN A CONFIRMATION TAKEN ONCE.
  *
- * `@atusy/tsudoi/types` IS TYPES, AND THAT IS A RULING RATHER THAN AN
+ * `@atusy/tsudoi-language-server/types` IS TYPES, AND THAT IS A RULING RATHER THAN AN
  * OBSERVATION: a types module exporting a runtime function is incoherent, so
  * this subpath may not grow one. IT IS A TEST AND NOT A COMMENT because a
  * comment cannot redden -- the same claim written as prose in
@@ -195,7 +195,7 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
  * failed to load` from `I read the wrong module`. The sibling subpath goes
  * through the SAME reader in the same test and must show keys.
  *
- * PER SUBPATH AND NEVER PER PACKAGE: `@atusy/tsudoi/deps/types` re-exports the
+ * PER SUBPATH AND NEVER PER PACKAGE: `@atusy/tsudoi-language-server/deps/types` re-exports the
  * dependency's data values ON PURPOSE, so `this package exports no values` would
  * be false. Only tsudoi's OWN subpath makes this claim, and the pair below is
  * also what stops the claim being quietly widened.
@@ -206,8 +206,11 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
  * from it.
  */
 test("tsudoi's own subpath exports nothing at run time, where its dependency subpath exports values", async () => {
-  const ours = await runtimeKeysOf("@atusy/tsudoi/types", "own-surface.js");
-  const dependency = await runtimeKeysOf("@atusy/tsudoi/deps/types", "sibling-surface.js");
+  const ours = await runtimeKeysOf("@atusy/tsudoi-language-server/types", "own-surface.js");
+  const dependency = await runtimeKeysOf(
+    "@atusy/tsudoi-language-server/deps/types",
+    "sibling-surface.js",
+  );
 
   expect(ours).toEqual([]);
   expect(dependency.length).toBeGreaterThan(0);
@@ -236,7 +239,10 @@ test("tsudoi's own subpath exports nothing at run time, where its dependency sub
  * explicit list and this reddens the day upstream adds a name.
  */
 test("the published module re-exports every LSP data value, and nothing else", async () => {
-  const published = await runtimeKeysOf("@atusy/tsudoi/deps/types", "value-surface.js");
+  const published = await runtimeKeysOf(
+    "@atusy/tsudoi-language-server/deps/types",
+    "value-surface.js",
+  );
 
   const upstream = Object.keys(await import("vscode-languageserver-types")).sort();
   expect(published.sort()).toEqual(upstream);
@@ -258,7 +264,10 @@ test("the published module re-exports every LSP data value, and nothing else", a
  */
 test("every published protocol name type-checks from the installed copy", async () => {
   const result = await consumer.typeCheck({
-    "published-names.ts": importsAndUses(publicProtocolNames, "@atusy/tsudoi/deps/protocol"),
+    "published-names.ts": importsAndUses(
+      publicProtocolNames,
+      "@atusy/tsudoi-language-server/deps/protocol",
+    ),
   });
 
   expect(result.output).toBe("");
@@ -289,7 +298,10 @@ test("every published protocol name type-checks from the installed copy", async 
  */
 test("TextDocument type-checks from the installed copy, though it is not one of the protocol names", async () => {
   const result = await consumer.typeCheck({
-    "text-document.ts": importsAndUses(["TextDocument"], "@atusy/tsudoi/deps/textdocument"),
+    "text-document.ts": importsAndUses(
+      ["TextDocument"],
+      "@atusy/tsudoi-language-server/deps/textdocument",
+    ),
   });
 
   expect(result.output).toBe("");
@@ -308,7 +320,10 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
  */
 test("a protocol type no example names is reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
-    "unpublished-name.ts": importsAndUses(["DefinitionParams"], "@atusy/tsudoi/deps/protocol"),
+    "unpublished-name.ts": importsAndUses(
+      ["DefinitionParams"],
+      "@atusy/tsudoi-language-server/deps/protocol",
+    ),
   });
 
   expect(result.output).toBe("");
@@ -330,7 +345,7 @@ test("a protocol type no example names is reachable from the subpath", async () 
 test("a protocol request constant is not reachable as a value from the subpath", async () => {
   const result = await consumer.typeCheck({
     "request-constant.ts":
-      'import { CodeActionRequest } from "@atusy/tsudoi/deps/protocol";\nconsole.log(CodeActionRequest);\n',
+      'import { CodeActionRequest } from "@atusy/tsudoi-language-server/deps/protocol";\nconsole.log(CodeActionRequest);\n',
   });
 
   expect(result.code).not.toBe(0);
@@ -451,7 +466,7 @@ const deprecatedProtocolTwin =
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
   const result = await consumer.typeCheck({
-    "identity.ts": identityProbe("@atusy/tsudoi/deps/textdocument"),
+    "identity.ts": identityProbe("@atusy/tsudoi-language-server/deps/textdocument"),
   });
 
   expect(result.output).toBe("");
@@ -526,7 +541,7 @@ test("the identity probe reddens on both near-misses where mutual assignability 
 
 /**
  * THE NON-HOISTING LAYOUT: a consumer's tree with tsudoi's own dependency moved
- * out of the top level and under node_modules/@atusy/tsudoi/node_modules/,
+ * out of the top level and under node_modules/@atusy/tsudoi-language-server/node_modules/,
  * which is where a package manager that does not hoist puts it.
  *
  * It is the only arrangement that DISCRIMINATES `the consumer declared this
@@ -537,7 +552,7 @@ test("the identity probe reddens on both near-misses where mutual assignability 
  */
 function useNonHoistingLayout(dir: string): void {
   const hoisted = join(dir, "node_modules", "vscode-languageserver-protocol");
-  const nested = join(dir, "node_modules", "@atusy", "tsudoi", "node_modules");
+  const nested = join(dir, "node_modules", "@atusy", "tsudoi-language-server", "node_modules");
   mkdirSync(nested, { recursive: true });
   renameSync(hoisted, join(nested, "vscode-languageserver-protocol"));
 }
@@ -550,7 +565,7 @@ function useNonHoistingLayout(dir: string): void {
  * not` is UNCONSTRUCTIBLE rather than merely unwritten. It needs an undeclared
  * BARE SPECIFIER inside the examples to withhold -- a package the consumer
  * never declares, which the non-hoisting layout would then fail to resolve --
- * and the examples take every protocol name through `@atusy/tsudoi/types`, so
+ * and the examples take every protocol name through `@atusy/tsudoi-language-server/types`, so
  * there is nothing left in them to withhold. A control that cannot be built out
  * of anything is a different thing from a control that could be built and was
  * not.
@@ -591,7 +606,7 @@ test("under the non-hoisting layout the examples type-check, and a bare protocol
 /**
  * THE RUNTIME HALF, and no type check can stand in for it.
  *
- * `CompletionItemKind` is an enum, so the example needs `@atusy/tsudoi/types`
+ * `CompletionItemKind` is an enum, so the example needs `@atusy/tsudoi-language-server/types`
  * to resolve TO A VALUE at run time. A criterion checked only by tsc would go
  * green against a dist/types.d.ts that declares every published name beside a
  * dist/types.js that re-exports none -- the two are separate files emitted from
@@ -614,7 +629,7 @@ test("the example serves a completion from a consumer that declares no protocol 
     useNonHoistingLayout(strict.dir);
 
     const session = strict.start(
-      "bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
+      "bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
     );
     try {
       await session.request<InitializeResult>("initialize", initializeParams);
@@ -680,7 +695,7 @@ test("withholding wordnet is still detected, at the runtime arm rather than the 
     expect(typeChecked.code).toBe(0);
 
     const started = await runCommand(
-      "bun run node_modules/@atusy/tsudoi/dist/cli.js --config ./tsudoi.config.ts",
+      "bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
       strict.dir,
     );
 

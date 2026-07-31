@@ -10,8 +10,8 @@
  * needs is examples/wordnet.d.ts, and a reader copying this must copy that too.
  */
 import { init, lookup } from "wordnet";
-import type { MethodHandler } from "@atusy/tsudoi/types";
-import { MarkupKind } from "@atusy/tsudoi/deps/types";
+import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
+import { MarkupKind } from "@atusy/tsudoi-language-server/deps/types";
 
 /**
  * The WordNet database, loaded ON FIRST USE and never twice.

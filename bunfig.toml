@@ -1,6 +1,6 @@
 # THE DEVELOP-TIME BUILD, AND WHY IT IS HERE RATHER THAN IN A SCRIPT.
 #
-# examples/ import `@atusy/tsudoi/types`, which from inside this package
+# examples/ import `@atusy/tsudoi-language-server/types`, which from inside this package
 # resolves through package.json's exports map to ./dist/types.js, and dist/ is
 # gitignored -- so a clone that has only run `bun install` has no dist/ at all.
 #

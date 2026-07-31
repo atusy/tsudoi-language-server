@@ -18,7 +18,7 @@
  * other, which is why `exampleSources()` carries every module and the README
  * tells a reader to take the set.
  */
-import type { MethodHandler } from "@atusy/tsudoi/types";
+import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import { trailingRuns } from "./diagnostic-trailing-whitespace.ts";
 
 /**
