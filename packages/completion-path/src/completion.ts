@@ -681,10 +681,17 @@ export async function* itemsFrom(
         documentation: documentationFor(absolutePath, source, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
-        // WHAT MAKES THIS ITEM RESOLVABLE. Nothing is stat'd here -- one stat per
-        // entry is exactly what a directory of any size cannot afford -- so the
-        // item carries the path and the detail is fetched for the ONE item the
+        // WHAT MAKES THIS ITEM RESOLVABLE. No DETAIL is read here -- a size and a
+        // date per entry is exactly what a directory of any size cannot afford --
+        // so the item carries the path and that work is done for the ONE item the
         // user highlights. See `PathItemData` above.
+        //
+        // WHICH IS NOT THE SAME AS TOUCHING NO DISK, and the difference is
+        // `entryKind` on the line above: an ordinary file or directory is
+        // classified from the dirent the listing already produced, and an entry
+        // the dirent calls NEITHER -- a symlink -- costs one stat to say what it
+        // points at. So the cost is bounded by how many symlinks a directory
+        // holds rather than by how many entries.
         data: { pathCompletion: absolutePath } satisfies PathItemData,
         // WHICH EDIT, AND OVER WHAT SPAN, is `editFor` above.
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),

@@ -35,9 +35,11 @@ published — it is an agreement between two modules, not a promise to you. And 
 config supplying the resolve method with no completion handler beside it.
 
 The completion **streams**: it yields the listing in batches, so a client that sent a
-`partialResultToken` sees the first entries while the rest is still being read. Nothing here
-stats an entry — that is exactly the work `resolvePathStat` defers to the one item you
-highlight.
+`partialResultToken` sees the first entries while the rest is still being read. No entry's
+**detail** is read here — that is exactly the work `resolvePathStat` defers to the one item you
+highlight. Classifying an entry is cheaper but not free: an ordinary file or directory is told
+apart from the directory listing alone, and a **symlink** costs one `stat`, to report the kind of
+what it points at.
 
 ## What bounds it
 

@@ -9,7 +9,9 @@
  *
  * TWO HANDLERS AND NOT ONE, AND THE PACKAGE NAME CANNOT SAY SO, which is why it
  * is said here and in the README. `pathCompletion` offers a directory's entries
- * and asks the disk about none of them; `resolvePathStat` fetches the size and
+ * and reads the DETAIL of none of them -- an ordinary file or directory is
+ * classified from the listing alone, and only a symlink costs a stat, to report
+ * the kind of what it points at; `resolvePathStat` fetches the size and
  * date for the ONE item the user highlights. They travel together because the
  * second reads a mark the first writes onto its items, and tsudoi keeps no
  * record of what a completion handler produced -- so publishing the resolve half
