@@ -164,9 +164,9 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
  * A MARKER OF ITS OWN rather than a sixth `quickstart` step, and the reason is
  * the omission sweep: that sweep asserts that dropping any quickstart step
  * leaves a reader with no server, and dropping this one leaves the quickstart
- * config working perfectly -- it imports `@atusy/tsudoi/types` and nothing
- * else. Folding this in would have made the sweep assert something false about
- * it.
+ * config working perfectly -- it imports `@atusy/tsudoi-language-server/types`
+ * and nothing else. Folding this in would have made the sweep assert something
+ * false about it.
  *
  * NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all
  * are and a reader would otherwise assume it. What consumes this is a
