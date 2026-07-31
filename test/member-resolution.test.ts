@@ -1,5 +1,14 @@
 import { expect, test } from "bun:test";
-import { existsSync, lstatSync, mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join, relative } from "node:path";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
@@ -132,7 +141,7 @@ test("breaking a member's own link to tsudoi reddens that member's check, naming
  */
 test("removing the root's paths mapping leaves every member's own check unchanged", async () => {
   const tsconfigPath = join(repoRoot, "tsconfig.json");
-  const original = await Bun.file(tsconfigPath).text();
+  const original = readFileSync(tsconfigPath, "utf8");
   const parsed = JSON.parse(original) as { compilerOptions?: Record<string, unknown> };
   // Narrowed rather than assumed: a perturbation that removed a key which was
   // not there measures the tree as it stands and calls it a control.
@@ -140,7 +149,7 @@ test("removing the root's paths mapping leaves every member's own check unchange
   delete parsed.compilerOptions?.paths;
 
   try {
-    await Bun.write(tsconfigPath, `${JSON.stringify(parsed, null, 2)}\n`);
+    writeFileSync(tsconfigPath, `${JSON.stringify(parsed, null, 2)}\n`);
     for (const member of members) {
       const result = await runTsc(member);
 
@@ -150,7 +159,7 @@ test("removing the root's paths mapping leaves every member's own check unchange
       expect(result.code).toBe(0);
     }
   } finally {
-    await Bun.write(tsconfigPath, original);
+    writeFileSync(tsconfigPath, original);
   }
 }, 120_000);
 
@@ -178,7 +187,7 @@ test("a name the subpath does not export is TS2305 in every member, with no TS23
   for (const member of members) {
     const probe = join(member, "src", "__reach-probe.ts");
     try {
-      await Bun.write(
+      writeFileSync(
         probe,
         `import type { NoSuchNameIsExportedHere } from "${subpath}/types";\nexport type Probe = NoSuchNameIsExportedHere;\n`,
       );
