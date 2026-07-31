@@ -29,17 +29,22 @@ export function isolatedCheckout(): IsolatedCheckout {
   cpSync(join(repoRoot, "package.json"), join(dir, "package.json"));
   cpSync(join(repoRoot, "src"), join(dir, "src"), { recursive: true });
   // The WHOLE examples directory, not the config alone: the config imports its
-  // path-completion module by relative specifier, so a checkout carrying one
-  // file fails at import with a message about a missing module -- which reads
-  // exactly like the dependency-resolution failure these tests exist to
+  // trailing-whitespace modules by relative specifier, so a checkout carrying
+  // one file fails at import with a message about a missing module -- which
+  // reads exactly like the dependency-resolution failure these tests exist to
   // observe, and would be the wrong diagnosis.
+  //
+  // THE HANDLERS THE CONFIG NAMES BY PACKAGE SPECIFIER ARE NOT COPIED AND MUST
+  // NOT BE, which is a different absence from a missing entry: they resolve out
+  // of node_modules, which is the thing this helper HOLDS AWAY on purpose. A
+  // checkout with no node_modules therefore fails at those specifiers, and that
+  // failure IS what the probes here read.
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
   // dist/ IS PART OF `what a runtime needs to start`, which is not obvious from
   // the staging above and is why the witness is named. THE WITNESS IS A
   // DEPENDENCY VALUE ON A SIBLING SUBPATH:
   // examples/diagnostic-trailing-whitespace.ts takes
-  // `DiagnosticSeverity` and examples/completion-path.ts takes
-  // `CompletionItemKind` -- both VALUES -- from `@atusy/tsudoi-language-server/deps/types`, and
+  // `DiagnosticSeverity` -- a VALUE -- from `@atusy/tsudoi-language-server/deps/types`, and
   // package self-reference resolves that subpath through the exports map's
   // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
   // loading the config, with a resolve error NAMING `@atusy/tsudoi-language-server/deps/types`.

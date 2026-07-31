@@ -569,7 +569,8 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // in a preload rather than in a script.
 //
 // THE REPO'S OWN dist/, which is a different artifact from the tarball's:
-// examples/completion-path.ts takes CompletionItemKind -- a VALUE -- from
+// examples/diagnostic-trailing-whitespace.ts takes DiagnosticSeverity -- a
+// VALUE -- from
 // `@atusy/tsudoi-language-server/deps/types`, and THE TWO RUNTIMES ANSWER THAT
 // SUBPATH FROM DIFFERENT FILES. Deno takes the exports map's `import` arm to
 // ./dist/deps/types.js. Bun never reaches the map: the `paths` mapping above

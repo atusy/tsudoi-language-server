@@ -387,7 +387,7 @@ for (const runtime of runtimes) {
      * item exactly once`.
      *
      * WHERE THE MISSING CAPABILITY IS RECORDED rather than forgotten: at the
-     * two configs ruled NOT COMPLETE, examples/completion-path.ts and
+     * two handlers ruled NOT COMPLETE, `@atusy/tsudoi-completion-path` and
      * examples/tsudoi.config.ts, which say at their own sites that the claim is
      * wrong for them and why it cannot be stated.
      */
@@ -428,7 +428,7 @@ for (const runtime of runtimes) {
         expect(result?.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
         // A BARE ARRAY, which the specification reads as
         // `{ isIncomplete: false, items }` -- a claim
-        // examples/completion-path.ts rules FALSE at its own site and has no
+        // `@atusy/tsudoi-completion-path` rules FALSE at its own site and has no
         // way to contradict on the wire, a handler being unable to say it in
         // any spelling.
         //
@@ -456,7 +456,8 @@ for (const runtime of runtimes) {
         // THE CONTROL IS RE-MEASURED RATHER THAN ASSUMED. The example's `null`
         // is what tsudoi answers for a generator that YIELDED NOTHING, and the
         // perturbation is spelled `yield []` at that generator's own exit in
-        // examples/completion-path.ts. MEASURED: it reddens EXACTLY here,
+        // packages/completion-path/src/completion.ts. MEASURED: it reddens EXACTLY
+        // here,
         // `Received: []`, and nowhere else -- two tests, one per runtime.
         //
         // AND ONE OBVIOUS PERTURBATION HERE IS DEGENERATE, recorded because its

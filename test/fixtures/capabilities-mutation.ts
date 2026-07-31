@@ -24,7 +24,7 @@ export interface MutationReport {
  *
  * BOTH DEPTHS, because they fail differently: the top-level property is what a
  * one-level `readonly` already covers in a type, and the NESTED one is the field
- * examples/completion-path.ts actually reads to choose its edit shape. A defence
+ * `@atusy/tsudoi-completion-path` actually reads to choose its edit shape. A defence
  * that reached only the first would leave the lie that matters.
  *
  * NESTED FIRST: a successful top-level write REPLACES the object the nested

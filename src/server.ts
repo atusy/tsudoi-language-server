@@ -147,7 +147,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // client that declared `completion.completionItem.insertReplaceSupport`, so
     // a config author with no way to read that could only violate the
     // specification or decline the feature for everyone;
-    // examples/completion-path.ts now chooses its edit shape from that one
+    // `@atusy/tsudoi-completion-path` chooses its edit shape from that one
     // field. A FIFTH FIELD IS THE SAME TRANSACTION AND NOT A PRECEDENT ALREADY
     // SET: name the reader, or the field stays unread.
     //

@@ -93,7 +93,8 @@ const uri = "file:///workspace/a.txt";
  * RequestContext -- for a client that declared `contentFormat` as given.
  *
  * The context is built here rather than spawned for the reason
- * test/completion-path.test.ts builds one: this claim is about WHAT THE HANDLER
+ * the sibling handler package's own tests build one: this claim is about WHAT
+ * THE HANDLER
  * PRODUCES, and a session would additionally require the real database.
  */
 async function hoverWhen(contentFormat: MarkupKind[] | undefined): Promise<unknown> {

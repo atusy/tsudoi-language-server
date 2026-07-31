@@ -1073,7 +1073,7 @@ for (const runtime of runtimes) {
     // an author. No published reduction exists to fold the three fields
     // together on their behalf.
     //
-    // WHAT IT ASSERTS IS WHAT examples/completion-path.ts CLAIMS IN PROSE at
+    // WHAT IT ASSERTS IS WHAT `@atusy/tsudoi-completion-path` CLAIMS IN PROSE at
     // its `sourcesFor` call -- that a rootUri-only client leaves the workspace
     // source contributing NOTHING while the other sources still answer. An
     // unasserted claim in the document that argues for adoption is exactly what

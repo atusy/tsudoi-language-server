@@ -457,7 +457,7 @@ export interface Tsudoi {
    * `InsertReplaceEdit` is permitted only to a client that declared
    * `textDocument.completion.completionItem.insertReplaceSupport`, so a handler
    * with no way to read that had to either send the richer edit to clients
-   * entitled to refuse it or send it to nobody. examples/completion-path.ts
+   * entitled to refuse it or send it to nobody. `@atusy/tsudoi-completion-path`
    * reads exactly that field and chooses its edit shape from it, which is the
    * whole motivation and is worth naming because a capability surface with no
    * reader invites additions nothing measures.
@@ -550,10 +550,10 @@ export interface MethodMap {
    * `isIncomplete`. The specification treats a supplied `CompletionItem[]` as
    * `{ isIncomplete: false, items }`, so EVERY completion tsudoi answers claims
    * its candidate set is final -- and two configs in this repository rule that
-   * claim FALSE at their own sites, examples/completion-path.ts and
+   * claim FALSE at their own sites, `@atusy/tsudoi-completion-path` and
    * examples/tsudoi.config.ts. THIS IS A KNOWN GAP, NOT AN OVERSIGHT: a real
-   * client DOES act on `isIncomplete`, measured with its numbers at
-   * examples/completion-path.ts, so what is missing is not the demand but a
+   * client DOES act on `isIncomplete`, measured with its numbers at that
+   * package's own completion handler, so what is missing is not the demand but a
    * shape to carry the flag that does not make one slot mean two things.
    *
    * THE FUTURE PATH IS TO WIDEN THE YIELD TO `CompletionItem[] | CompletionList`

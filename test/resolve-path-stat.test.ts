@@ -69,7 +69,7 @@ function sampleTree(): Tree {
 
 /** The demo config, started with its working directory INSIDE the fixture. */
 function startDemo(runtime: (typeof runtimes)[number], cwd: string): LspSession {
-  // startCommand rather than start, for completion-path.test.ts's reason: the
+  // startCommand rather than start, for test/completion-path.test.ts's reason: the
   // route `start` runs names the CLI relative to the repo, and the whole point
   // of this fixture is a cwd that is not the repo.
   return LspSession.startCommand(

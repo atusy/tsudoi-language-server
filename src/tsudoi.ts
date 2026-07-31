@@ -57,7 +57,7 @@ export interface TsudoiRuntime {
  * erased at run time, and the members of `ClientCapabilities` are ordinary
  * writable properties, so one handler rewriting `insertReplaceSupport` leaves
  * the NEXT one reading a capability the client never declared -- and choosing
- * its edit shape from it, which examples/completion-path.ts does exactly. A
+ * its edit shape from it, which `@atusy/tsudoi-completion-path` does exactly. A
  * clone alone would not touch that: every handler reads the same clone.
  *
  * THE CLONE IS WHAT KEEPS THE FREEZE INSIDE WHAT THIS MODULE OWNS, which is the

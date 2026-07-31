@@ -8,7 +8,7 @@ import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
  * WHAT THE CLIENT DECLARES, and the one field it declares is the one
- * examples/completion-path.ts reads to choose between a `TextEdit` and an
+ * `@atusy/tsudoi-completion-path` reads to choose between a `TextEdit` and an
  * `InsertReplaceEdit`. `false` rather than absent on purpose: a handler that
  * forged it would be claiming a capability whose ABSENCE the client stated,
  * which is the sharper half of the lie.
