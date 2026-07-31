@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
@@ -109,6 +109,74 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
 >;
 
 /**
+ * What a compiler run at `cwd` RESOLVED and what it MATCHED: every specifier
+ * against the files that answered it, beside the `paths` patterns that took any
+ * specifier at all.
+ *
+ * `--traceResolution` IS WHAT MAKES A READING OF THIS POSITIVE, and the two
+ * cheaper instruments are named because both were tried. AN EXIT CODE CANNOT
+ * SEPARATE SOURCE FROM ARTIFACT: each answers at 0 with nothing printed, so the
+ * absence of an error says only that SOMETHING answered. `--listFiles` names
+ * files without saying which specifier reached them, and src/ is in the program
+ * by glob whether or not a specifier resolved there at all.
+ */
+async function traceResolutions(cwd: string): Promise<{
+  answers: Map<string, Set<string>>;
+  matched: Set<string>;
+}> {
+  const { output } = await runTsc(cwd, ["--traceResolution"]);
+  const answers = new Map<string, Set<string>>();
+  for (const [, specifier, file] of output.matchAll(
+    /Module name '(.+?)' was successfully resolved to '(.+?)'/g,
+  )) {
+    const answered = answers.get(specifier) ?? new Set<string>();
+    answered.add(file);
+    answers.set(specifier, answered);
+  }
+
+  return {
+    answers,
+    matched: new Set(
+      [...output.matchAll(/matched pattern '(.+?)'/g)].map(([, pattern]) => pattern),
+    ),
+  };
+}
+
+/**
+ * The specifier a consumer writes for each published subpath, against the file
+ * this manifest's own `condition` arm names for it -- `default` for source and
+ * `types` for the built declaration.
+ *
+ * BOTH SIDES OF EVERY COMPARISON BELOW COME FROM `exports`, AND NEITHER FROM THE
+ * MAPPING THEY GRADE, which is what keeps an expectation from following the
+ * fault: a key that has stopped matching still names ./src/*.ts, so a file
+ * derived from the mapping would be exactly as wrong as the resolution and the
+ * two would agree.
+ *
+ * THROWS where an arm is missing, for the reason every extractor in this project
+ * does: `undefined` on both sides compares equal, and a subpath that names no
+ * source is the state this is read for.
+ */
+function publishedArm(condition: string): Record<string, string> {
+  const name = packageJson.name;
+  const map = packageJson.exports;
+  if (typeof name !== "string" || typeof map !== "object" || map === null) {
+    throw new Error("this manifest carries no name and exports map to read a subpath out of");
+  }
+  const files: Record<string, string> = {};
+  for (const [subpath, arm] of Object.entries(map as Record<string, unknown>)) {
+    const file = (arm as Record<string, unknown>)[condition];
+    if (typeof file !== "string") {
+      throw new Error(`${subpath} carries no \`${condition}\` arm for this comparison to expect`);
+    }
+    // Joined rather than kept as written: the map spells a relative import and
+    // a compiler reports a path, and `./src/types.ts` is not that path.
+    files[`${name}${subpath.slice(1)}`] = join(file);
+  }
+  return files;
+}
+
+/**
  * WHICH OF THE TWO TSCONFIGS MAY CARRY THE MAPPING, and why it is exactly one.
  *
  * `tsc --noEmit` is a DoD check, and without a mapping it resolves the
@@ -127,14 +195,123 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
  * publish against sources we do not ship. What the stage copies is pinned in
  * test/installed-specifier.test.ts; this is the other half of the same guard.
  *
- * ONE PATTERN COVERS ALL FOUR EXPORTS ARMS, and every one was measured rather
- * than assumed: breaking each name in src/ gives TS2305 at the in-repo importer
- * with no TS2307 anywhere, so the subpath resolves to source rather than to
- * nothing and the examples are still in the program.
+ * WHAT IS ASSERTED IS WHICH FILE ANSWERED, AND NOT HOW THE MAPPING IS SPELLED,
+ * because a key that has stopped matching DOES NOT FAIL: the specifier falls
+ * through to the exports map and lands in dist/ AT EXIT 0, so the check grades a
+ * built artifact against sources nobody compiled it from. MEASURED on this
+ * config with the key misspelled, at 5f7abdd: `tsc --noEmit` exits 0 and prints
+ * nothing, and all four subpaths are answered by dist/*.d.ts.
+ *
+ * AN EQUALITY ON THE MAPPING'S LITERAL CONTENT IS THE CHEAPER ASSERTION AND IT
+ * IS NARROWER THAN THE NAME OF THIS TEST: it catches the key being deleted --
+ * which is covered anyway, since a deleted key sends the same subpaths to the
+ * same artifact -- and it is silent about a key that is present, well-formed and
+ * matching nothing. It also spells today's key a second time, so the day the
+ * package is renamed there are two places to carry it and one test to tell you
+ * which. Both sides here come from `exports` instead, and an arm added there is
+ * covered with nothing edited.
  */
-test("the repo's type check resolves the published subpaths to source, and the build config does not", () => {
-  expect(repoOptions.paths).toEqual({ "@atusy/tsudoi-language-server/*": ["./src/*.ts"] });
+test("the repo's type check resolves the published subpaths to source, and the build config does not", async () => {
+  const sources = publishedArm("default");
+  const { answers } = await traceResolutions(repoRoot);
+  const answered = Object.fromEntries(
+    Object.keys(sources).map((specifier) => [
+      specifier,
+      [...(answers.get(specifier) ?? [])].sort(),
+    ]),
+  );
+
+  expect(answered).toEqual(
+    Object.fromEntries(
+      Object.entries(sources).map(([specifier, file]) => [specifier, [join(repoRoot, file)]]),
+    ),
+  );
   expect(buildOptions.paths).toBeUndefined();
+});
+
+/**
+ * A KEY THAT MATCHES NOTHING IS THE ONE EDIT TO THIS CONFIG NOTHING MAKES A
+ * NOISE ABOUT, and this is the half of the pair that names the KEY rather than
+ * the file that answered -- a reader of this failure is sent to the spelling,
+ * where the fault is, instead of to dist/, where its symptom is.
+ *
+ * OVER THE DECLARED MAPPING AS A CLASS: the expected set IS what the config
+ * declares, so a second mapping added tomorrow is covered by this line and a key
+ * that reaches nothing is refused whatever it is spelled. MEASURED, at 5f7abdd:
+ * one pattern is declared and thirteen resolutions match it; with that same key
+ * misspelled, NOTHING matches any pattern while resolution stays at exit 0.
+ *
+ * DELETING THE MAPPING LEAVES THIS GREEN -- an empty set matches an empty set --
+ * and that is a division of labour rather than a hole: the resolution assertion
+ * above reddens for it, naming dist/. Neither line covers the other, and the
+ * failure a reader gets first is the one that names their edit.
+ */
+test("every specifier mapping this config declares is one the check really matches", async () => {
+  const { matched } = await traceResolutions(repoRoot);
+
+  expect([...matched].sort()).toEqual(Object.keys((repoOptions.paths ?? {}) as object).sort());
+});
+
+/**
+ * THE PAIR, AND IT IS WHAT MAKES THE GREEN ABOVE EVIDENCE: source-versus-
+ * artifact is only a distinction while the artifact is REACHABLE, and this is
+ * the reading where the same manifest, the same settings and the same specifiers
+ * answer from dist/ because one key is absent.
+ *
+ * IT IS ALSO THE EFFECT HALF OF `and the build config does not`. That config
+ * declares no mapping, which is asserted directly; what a program with no
+ * mapping RESOLVES is measured here, once, over the same subpaths.
+ *
+ * THE TREE IS WRITTEN FROM THE MANIFEST'S OWN ARMS AND NOTHING IN IT IS BUILT,
+ * which is deliberate: a probe that read this repository's dist/ would report on
+ * whatever the last compiler run left there, and a build that fails writes dist/
+ * before it exits non-zero. Every file here is empty and this test is about
+ * WHICH ONE ANSWERS, so there is nothing for a compiler to have got wrong.
+ */
+test("with no mapping the same subpaths answer from the built artifact", async () => {
+  // The symlink resolved once, up front: tsc reports the path it walked, and on
+  // macOS a temp directory is reached through a link that would make every
+  // answer look like it came from somewhere else.
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-mapping-")));
+  try {
+    const declarations = publishedArm("types");
+    const { paths: _dropped, ...withoutMapping } = repoOptions;
+    symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir");
+    writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson));
+    for (const arm of Object.values(
+      packageJson.exports as Record<string, Record<string, string>>,
+    )) {
+      for (const file of Object.values(arm)) {
+        mkdirSync(dirname(join(dir, file)), { recursive: true });
+        writeFileSync(join(dir, file), "export {};\n");
+      }
+    }
+    writeFileSync(
+      join(dir, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: withoutMapping, files: ["probe.ts"] }),
+    );
+    writeFileSync(
+      join(dir, "probe.ts"),
+      Object.keys(declarations)
+        .map((specifier) => `import "${specifier}";\n`)
+        .join(""),
+    );
+    const { answers } = await traceResolutions(dir);
+    const answered = Object.fromEntries(
+      Object.keys(declarations).map((specifier) => [
+        specifier,
+        [...(answers.get(specifier) ?? [])].map((file) => relative(dir, file)).sort(),
+      ]),
+    );
+
+    expect(answered).toEqual(
+      Object.fromEntries(
+        Object.entries(declarations).map(([specifier, file]) => [specifier, [file]]),
+      ),
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 /**

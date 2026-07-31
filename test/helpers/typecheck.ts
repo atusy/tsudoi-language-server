@@ -62,9 +62,21 @@ export const consumerCompilerOptions = {
   types: ["node"],
 };
 
-export function runTsc(cwd: string): Promise<TypeCheckResult> {
+/**
+ * Type-checks the project at `cwd` and collects its exit code and diagnostics,
+ * with any further flags appended.
+ *
+ * `--noEmit` IS NOT ONE OF THEM, so no caller can drop it: a probe that emitted
+ * would leave a built artifact in the tree it is reading, which is the one
+ * thing a probe about resolution must not do.
+ *
+ * A FLAG THAT CHANGES WHAT IS REPORTED RATHER THAN WHAT IS CHECKED is what this
+ * parameter is for -- `--traceResolution` names the file each specifier reached,
+ * which no exit code distinguishes from any other exit code.
+ */
+export function runTsc(cwd: string, args: readonly string[] = []): Promise<TypeCheckResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn("tsc", ["--noEmit"], { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("tsc", ["--noEmit", ...args], { cwd, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     child.stdout.on("data", (chunk: Buffer) => {
       output += chunk.toString("utf8");
