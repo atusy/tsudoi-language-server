@@ -273,6 +273,113 @@ test("a member whose own resolution is broken reddens the fifth check while the 
 });
 
 /**
+ * A member's tsconfig carrying the mapping the ROOT's is forbidden to carry.
+ *
+ * THE MAPPING IS LIVE RATHER THAN DECORATIVE: the member imports the specifier
+ * and the mapping is what answers it, so a workspace built this way type-checks
+ * GREEN under every other check here. That is the whole hazard -- the false
+ * green the members' exclusion from the root program exists to foreclose is
+ * reconstructible from inside the member, and nothing about it looks broken.
+ */
+function memberMappingItsOwnResolution(mapping: Record<string, unknown>): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    ...mapping,
+    "packages/late/shared/thing.ts": "export const thing = 1;\n",
+    "packages/late/src/index.ts": `import { thing } from "${sharedModule}";\nexport const inMember: number = thing;\n`,
+  };
+}
+
+/** The member's own options, plus whatever the mapping arrives by. */
+const mappedMemberOptions = {
+  target: "esnext",
+  module: "esnext",
+  moduleResolution: "bundler",
+  noEmit: true,
+  strict: true,
+  types: [],
+};
+
+/** Where the mapping points, from a member's own directory. */
+const memberPaths = { [`${sharedModule.split("/")[0] ?? ""}/*`]: ["./shared/*.ts"] };
+
+/**
+ * A MEMBER MAY NOT MAP A SPECIFIER TO A FILE, and the guard is over members as a
+ * CLASS rather than over the one package that exists.
+ *
+ * WHAT IT FORECLOSES is the original false green rebuilt one directory down: the
+ * root check answered a member's imports through the ROOT's `paths` and reported
+ * success, so the members were excluded from it and this script took the
+ * coverage over. A mapping in the MEMBER'S OWN tsconfig answers the same
+ * specifier the same way -- without the member's node_modules and without the
+ * framework's `exports` map -- and every check in this suite stays green while
+ * the resolution nobody checks is the one a stranger will actually take.
+ */
+test("a member that maps a specifier to a file fails loudly", async () => {
+  const result = await checkWorkspace(
+    memberMappingItsOwnResolution({
+      "packages/late/package.json": JSON.stringify({ name: "late" }),
+      "packages/late/tsconfig.json": JSON.stringify({
+        compilerOptions: { ...mappedMemberOptions, paths: memberPaths },
+        include: ["src"],
+      }),
+    }),
+  );
+
+  expect(result.stderr).toContain("packages/late");
+  expect(result.stderr).toContain("paths");
+  expect(result.code).not.toBe(0);
+});
+
+// THE SNEAKIER HALF, and the reason the guard resolves the chain instead of
+// reading the member's own file: `extends` puts the mapping in a document whose
+// name nobody greps for, and a member whose tsconfig holds no `paths` key at all
+// still compiles with one. Upstream flattens the chain -- `tsc --showConfig` --
+// so what is inspected is the EFFECTIVE configuration rather than the bytes of
+// one file in it.
+test("a member that inherits the mapping through `extends` fails just as loudly", async () => {
+  const result = await checkWorkspace(
+    memberMappingItsOwnResolution({
+      "packages/late/package.json": JSON.stringify({ name: "late" }),
+      "packages/late/mapping.json": JSON.stringify({ compilerOptions: { paths: memberPaths } }),
+      "packages/late/tsconfig.json": JSON.stringify({
+        extends: "./mapping.json",
+        compilerOptions: mappedMemberOptions,
+        include: ["src"],
+      }),
+    }),
+  );
+
+  expect(result.stderr).toContain("packages/late");
+  expect(result.stderr).toContain("paths");
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR, and without it the two reds above are satisfied by a guard that
+// refuses every member there is. `extends` IS KEPT rather than dropped, so what
+// distinguishes this workspace from the one above is the MAPPING and not the
+// inheritance -- a guard that refused `extends` itself would redden here too and
+// would be forbidding a shape tsconfig exists to offer.
+test("a member that extends a base carrying no mapping is left alone", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/mapping.json": JSON.stringify({ compilerOptions: { strict: true } }),
+    "packages/late/tsconfig.json": JSON.stringify({
+      extends: "./mapping.json",
+      compilerOptions: mappedMemberOptions,
+      include: ["src"],
+    }),
+    "packages/late/src/index.ts": typeChecks,
+  });
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
  * THE LINK THE BUILDER PUTS IN A MEMBER'S node_modules IS ABSOLUTE, so a
  * checkout that is MOVED OR RENAMED leaves every member pointing at a path that
  * is no longer there.

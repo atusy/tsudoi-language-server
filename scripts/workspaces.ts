@@ -264,3 +264,69 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
     }
   }
 }
+
+/**
+ * Throws when a workspace member's own tsconfig maps a specifier to a file --
+ * the one edit that rebuilds, one directory down, the false green the members'
+ * exclusion from the root type check exists to foreclose.
+ *
+ * WHY `paths` IS THE SUBJECT AND NOT A STYLE PREFERENCE: the root check answered
+ * a member's `@atusy/tsudoi-language-server/*` import THROUGH THE ROOT'S OWN
+ * MAPPING and reported success, so a member whose dependency resolution was
+ * broken type-checked green. The members were excluded and this script took the
+ * coverage over. A mapping in the MEMBER'S tsconfig answers the same specifier
+ * the same way -- without the member's node_modules and without the framework's
+ * `exports` map -- and every check in this repository stays green while the
+ * resolution a stranger will actually take is the one nothing looked at.
+ *
+ * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION. A guard
+ * naming packages/hover-wordnet would leave the second member unpinned and
+ * NOTHING WOULD SAY SO -- the same reason the fifth check reads `workspaces`
+ * rather than a list, applied to the shape of the member rather than to its
+ * existence.
+ *
+ * THE EFFECTIVE CONFIGURATION AND NOT THE BYTES OF ONE FILE, which is the half a
+ * reader of `tsconfig.json` alone would miss: `extends` puts the mapping in a
+ * document whose name nobody greps for, and a member whose own file holds no
+ * `paths` key still compiles with one. THE CHAIN IS RESOLVED BY UPSTREAM RATHER
+ * THAN HERE -- `tsc --showConfig` flattens it, MEASURED, including `paths`
+ * inherited from a base -- so a spelling of `extends` this repository has never
+ * seen (an array, a bare package specifier, a directory) is handled by the
+ * compiler that will read it rather than by a second implementation that agrees
+ * with the compiler only until it does not.
+ *
+ * A CONFIG tsc CANNOT READ IS LOUD RATHER THAN SKIPPED: `execFileSync` throws on
+ * a non-zero exit and the parse below throws on output that is not a
+ * configuration, because a guard that answers `no mapping found` for a file it
+ * failed to read reports the safe colour for the wrong reason.
+ */
+export function refuseMemberMappings(root: string, members: readonly string[]): void {
+  for (const member of members) {
+    const config = join(member, "tsconfig.json");
+    // Absent is NOT this function's to report: `typeCheckMember` refuses a
+    // member with no tsconfig by name, and a second message about the same
+    // directory would send a reader looking for two faults.
+    if (!existsSync(config)) {
+      continue;
+    }
+    const shown = execFileSync(join(toolRoot, "node_modules", ".bin", "tsc"), [
+      "-p",
+      config,
+      "--showConfig",
+    ]).toString("utf8");
+    let effective: { compilerOptions?: Record<string, unknown> };
+    try {
+      effective = JSON.parse(shown) as { compilerOptions?: Record<string, unknown> };
+    } catch {
+      throw new Error(
+        `${relative(root, config)} could not be read back as a configuration, so nothing here can say whether it maps a specifier:\n${shown}`,
+      );
+    }
+    const paths = effective.compilerOptions?.paths;
+    if (paths !== undefined) {
+      throw new Error(
+        `${relative(root, member)} resolves through a \`paths\` mapping (${JSON.stringify(paths)}), which answers a specifier without its own node_modules and without the framework's \`exports\` map -- the false green this check exists to foreclose. Remove it, from ${relative(root, config)} or from whatever it \`extends\`.`,
+      );
+    }
+  }
+}

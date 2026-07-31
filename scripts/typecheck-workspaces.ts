@@ -3,7 +3,12 @@ import { existsSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { declaredMembers, prepareWorkspace, refuseUncoveredPackages } from "./workspaces.ts";
+import {
+  declaredMembers,
+  prepareWorkspace,
+  refuseMemberMappings,
+  refuseUncoveredPackages,
+} from "./workspaces.ts";
 
 /**
  * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
@@ -19,6 +24,14 @@ import { declaredMembers, prepareWorkspace, refuseUncoveredPackages } from "./wo
  * shadowed by a root green, and without this check the exclusion means nothing
  * type-checks a member at all. The exclusion's reason is asserted in
  * test/package-shape.test.ts, since a tsconfig cannot carry one.
+ *
+ * AND NEITHER HALF SURVIVES A MAPPING ONE DIRECTORY DOWN. Withdrawing the root's
+ * answer buys nothing if a MEMBER may write the same mapping into its own
+ * tsconfig: it answers the same specifier the same way, this check goes green,
+ * and the resolution a stranger takes is again the one nothing looked at. So
+ * `refuseMemberMappings` refuses it -- over members as a class, and over the
+ * EFFECTIVE configuration, so a mapping arriving through `extends` is refused
+ * too.
  *
  * ENUMERATED FROM `workspaces` by scripts/workspaces.ts, which the build shares,
  * so adding a package under `packages/` costs no edit here.
@@ -70,6 +83,11 @@ const root = resolve(process.argv[2] ?? process.cwd());
 prepareWorkspace(root);
 const members = declaredMembers(root);
 refuseUncoveredPackages(root, members);
+// BEFORE ANY MEMBER IS CHECKED, because a mapping makes the check that follows
+// answer the wrong question: a member reaching past its own resolution
+// type-checks GREEN, so running the checks first and the guard afterwards would
+// print a success no reader would then go back and disbelieve.
+refuseMemberMappings(root, members);
 let failed = false;
 for (const member of members) {
   if (!typeCheckMember(root, member)) {
