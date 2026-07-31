@@ -395,13 +395,22 @@ const scrum: ScrumDashboard = {
       {
         test: "In test/workspace-members.test.ts, via the existing throwaway-workspace runner: (a) a member directory whose manifest name mismatches is refused, the message naming that directory and both spellings; (b) the mismatch staged from the OTHER side is refused, the message naming the other side; (c) a SCOPED name whose unscoped segment matches goes exit 0 with empty stderr.",
         implementation:
-          "`refuseMemberNames(root, members)` in scripts/workspaces.ts, called from scripts/typecheck-workspaces.ts beside the two refusals already there. One symmetric predicate, not two branches.",
+          "`refuseMemberDirectoriesUnlikeTheUnscopedName(root, members)` in scripts/workspaces.ts, called from scripts/typecheck-workspaces.ts beside the two refusals already there. One symmetric predicate, not two branches. PLANNED AS `refuseMemberNames` AND RENAMED BEFORE IT WAS WRITTEN, by this record's own next note: that spelling states `the names agree`, which is a class the function cannot check.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "083eec5",
+            message: "feat(workspaces): refuse a member directory that is not its unscoped name",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BUILT BEFORE THE RENAME AND COMMITTED AFTER IT -- see the sprint decision. THE EVIDENCE `GUARD FIRST` EXISTS FOR, MEASURED ON THE MISMATCHING CHECKOUT: `bun run scripts/typecheck-workspaces.ts` exited 1 with `packages/completion-path is declared `@atusy/tsudoi-completion-path`, whose unscoped name is `tsudoi-completion-path` -- one package spelled two ways. Rename the directory to `tsudoi-completion-path`, or change the `name` in packages/completion-path/package.json to match the directory.` It names ONE member and not both, because it throws at the first, and completion-path sorts first. After the rename the same command exited 0 with the guard still wired in, which is the other half: the rename is what made it green, not the guard's removal.",
+          "A FOURTH ARM WAS ADDED TO THE THREE THIS SUBTASK NAMED, AND IT IS THE ONLY ONE THAT DEFENDS AGAINST THE VACUITY THE OTHER THREE ADMIT. The three as written are all satisfied by `pass anything holding a scope` -- (a) and (b) stage unscoped names so they still refuse, and (c) is exactly what that implementation passes. MEASURED with that predicate in place: the three arms stayed green AND the fifth check on the still-mismatching checkout exited 0 in silence, which is a guard with no subject on the one repository it is for. The fourth arm is a SCOPED member whose unscoped segment mismatches; it is the only one of the four that reddens under that implementation. A FIFTH pins the manifest that declares no `name` at all, since `nothing to disagree with` is the reading that would make deleting a name the edit which silences the guard.",
           "ARM (c) IS NOT DECORATION AND IT IS THE ONE THE FIXTURES CANNOT ALREADY DO: every throwaway member in that file is UNSCOPED while every real member is SCOPED, and the stakeholder's ruling makes scope-stripping load-bearing. Without it, a guard that refuses every scoped name passes (a) and (b) and surfaces only as a repo red that reads like the rename's fault.",
           "WHY NOT REDUNDANT WITH THE README TEST: arm (b) is incidentally caught there today, but as `install command does not name the member's own tarball` -- a diagnostic that sends the reader to the README rather than to the mismatch. ARM (a) IS CAUGHT BY NOTHING AT ALL. The incidental redness is to be measured during the sprint, not asserted from reading.",
+          "AND IT WAS MEASURED, IN S3'S PRE-REPAIR RUN, WHICH IS THE SAME PERTURBATION AS ARM (b): the directory moved and the manifest left alone. The readme suite reported `each member's install command names that member's own tarball` -- `Expected to contain: \"tsudoi-completion-path.tgz\"` -- exactly the diagnostic this note predicted, pointing at a document rather than at the two spellings. So the prediction held and the incidental cover is real but MISDIRECTING, which is the case for the guard rather than against it.",
           "THE CALL HANGS OFF THE CHECK PATH AND NOT THE SHARED ONE, and this is not tidiness: scripts/workspaces.ts is read by the `bun test` PRELOAD too, through `prepareWorkspace`. A refusal wired in there aborts every test run at preload while the repository is mid-rename -- and the reds this sprint is required to observe would become unobservable because nothing would load. It goes beside the other two refusals in scripts/typecheck-workspaces.ts.",
           "THE GUARD'S NAME AND MESSAGE MUST SAY `UNSCOPED`. The relation is not `directory equals package name` -- `packages/tsudoi-hover-wordnet` against `@atusy/tsudoi-hover-wordnet` are not the same string -- and Sprint 49's remedy for a guard whose stated class is wider than its implementation is to narrow the NAME.",
         ],
@@ -411,9 +420,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "None, if the guard was written over the enumerated members. If an edit is needed here, the guard was written per-instance and this arm is what caught it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1d295ad",
+            message:
+              "test(members): a third package the guard was never written for is refused too",
+            phase: "green",
+          },
+        ],
         notes: [
+          "NO EDIT WAS NEEDED, AND IT WAS READ RATHER THAN ASSERTED: `git diff --stat` between the guard's commit and this one names ONE FILE, the test. Nothing under scripts/ moved. Both arms use SCOPED names for all three members, which is what the real repository has and what the existing throwaway fixtures did not.",
+          "AND THE MESSAGE'S SILENCE ABOUT THE OTHER TWO IS ASSERTED, which the subtask did not ask for: a guard that reported every member it inspected would satisfy `names the third package` while sending a reader to three directories, two of which are correct.",
           "THE THROWAWAY ROOT IS A REQUIREMENT AND NOT A PREFERENCE: bun runs the suite in one process, so a third package created inside the real packages/, even transiently, would make any later caller of `declaredMembers(repoRoot)` see three members and its own subject become order-dependent.",
           "THE POSITIVE CONTROL IS WHAT DISTINGUISHES `refused` FROM `the throwaway is malformed, tsc absent, no package.json` -- ask why it fired, not whether.",
           "`NO EDIT TO THE GUARD` IS A PROPERTY OF THE HISTORY: this subtask's commit follows the guard's, and `the guard` means every file that would have to change for a third package to be covered -- a fixture list, an allowlist, an exclude entry keyed to the new name.",
@@ -450,9 +468,26 @@ const scrum: ScrumDashboard = {
         implementation:
           "The sprint record in scrum.ts, and the CLAUDE.md line naming the two members (which is inside the rename's 23).",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "df1191f",
+            message:
+              "docs(scrum): the three hardcoded member paths are loud, measured before the rename",
+            phase: "refactoring",
+          },
+          {
+            hash: "ca4c3b1",
+            message:
+              "docs(scrum): the pre-repair red, recorded where a squashed commit cannot show it",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "CLAUDE.md WAS SPLIT ACROSS TWO COMMITS ON PURPOSE, though this subtask reads it as one edit: the member DIRECTORY names went with the rename, and the sentence describing the guard went with the guard. A rename commit that already documented a function it does not contain would be a forward reference in the one document a reader consults before anything else.",
+          "A SECOND FLAKE WAS OBSERVED AND IS RECORDED RATHER THAN CHASED, because a flake found mid-sprint is otherwise indistinguishable from a regression the sprint caused. `the same two members pass once the error is removed` (test/workspace-members.test.ts) failed ONCE in a full-suite run with `Expected: 0 / Received: null` -- a null exit code is a CHILD THAT WAS KILLED rather than one that failed. It did not recur: the next two full runs were 0 fail, and that file alone passed three times in a row. WHAT MAKES IT THIS SPRINT'S BUSINESS ANYWAY: the file gained seven tests that each spawn the fifth check, so this sprint raised the concurrent-process load in the file where it appeared. Reported rather than ruled on.",
+          "ONE RED WAS COMMITTED AND AMENDED AWAY WITHIN THE MINUTE, self-disclosed because the log cannot show it. The scrum record at ca4c3b1 was committed while `oxfmt --check .` was failing on scrum.ts: the verifying command had been written as `oxfmt --check . | grep -c 'correct format'`, whose OUTPUT WAS `0` -- the count of matching lines, read at a glance as an exit code. A checking command whose failure and whose success both print a small number is a bad instrument, and it was one this sprint built for itself.",
+        ],
       },
     ],
     impediments: [],
@@ -463,6 +498,7 @@ const scrum: ScrumDashboard = {
       "THE PO'S EVIDENCE REQUIREMENT AND THE DEV'S ATOMICITY REQUIREMENT COLLIDED, AND THE FACILITATOR SPLIT THEM RATHER THAN PICKING ONE. PO required the pre-repair red to survive as evidence and asked for it as a separate COMMIT; Dev required the rename not to be split across commits because the root's relative links dangle in between; and this project commits on green, never on red. RULED: the red is obtained and RECORDED AS MEASURED FAILURE TEXT in the subtask notes, and the commit stays atomic. The evidence the PO named is the failure text, which a commit boundary does not produce and cannot improve. DISSENT RECORDED: the PO holds that a commit boundary is stronger evidence than a recorded run.",
       "THE PO WILL REFUSE THE SPRINT, EVERY CHECK GREEN, IF THE RENAME IS ACHIEVED BY RETARGETING, GENERALISING OR DELETING AN ASSERTION THAT KEYS ON THE MEMBER'S DIRECTORY BASENAME. Once the two spellings are equal, `read the manifest name instead` is a locally reasonable tidy that removes the second, independent reader -- and the story's benefit is one fact rather than two kept equal by hand. Explicitly outside that refusal: the basename(repoRoot) sites, which key on the CHECKOUT root and belong to PBI-56's marker collision.",
       'THE BASELINE IS NOT WHOLLY GREEN AND THE ONE RED IS FLAKY, MEASURED BEFORE ANY SPRINT EDIT: `a completion handler that throws after yielding keeps the chunk it already sent` fails on roughly one run in three under bun, with `Expected to contain: "tsudoi: textDocument/completion handler failed:" / Received: ""` -- the server\'s stderr had not arrived when the assertion read it. IT IS RECORDED HERE RATHER THAN FIXED because a flake discovered mid-sprint is indistinguishable from a regression the sprint caused, and this sprint touches no code it runs. Anyone reading a red on that name during sprint 50 should re-run it before diagnosing.',
+      "THE FOUR ARMS THE GUARD SHIPPED WITH WERE MEASURED AGAINST A WRONG IMPLEMENTATION RATHER THAN ARGUED ABOUT, AND THE MEASUREMENT CHANGED THE TEST SET. The three arms this sprint planned are ALL satisfied by a guard that simply passes any name holding a scope -- which on this repository, where both members are scoped, refuses nothing at all. Measured with exactly that predicate: three arms green, fifth check exit 0 and silent on the still-mismatching checkout. A fourth arm was added, a scoped member whose unscoped segment mismatches, and it is the only one of the four that reddens it. THE GENERAL SHAPE, and it is Sprint 45's per-test question asked of a test set rather than of a test: WRITE THE DEGENERATE IMPLEMENTATION AND RUN THE ARMS AGAINST IT -- if they all pass, the arms describe an author's intention rather than a property.",
       "ENVIRONMENT, MEASURED THIS SPRINT AND NOT A REPOSITORY DEFECT: neither `tsc` nor `oxfmt` is on PATH in this session, and the suite spawns a BARE `tsc` (test/helpers/typecheck.ts), so the first baseline read 123 failures that belonged to the environment. Shimmed for the session. A baseline taken before the sprint is what stopped those reds from being read as the sprint's.",
     ],
   },
