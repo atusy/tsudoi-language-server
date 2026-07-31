@@ -16,7 +16,7 @@
  * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through the member's own
  * node_modules and tsudoi's `exports` map, with no `paths` mapping and no
  * tsconfig of the parent's reaching it -- a mapping here is refused by
- * scripts/workspaces.ts rather than merely absent.
+ * the repository's own workspace tooling rather than merely absent.
  *
  * A PEER AND NOT A DEPENDENCY BECAUSE THE FRAMEWORK IS THE HOST'S TO CHOOSE.
  * This handler is loaded into a server the consumer's own tsudoi is running, and
@@ -36,12 +36,13 @@
  * `peer` is for.
  *
  * That is why this package is not a file move with a package.json on top, and
- * the manifest's reasons are asserted in test/package-shape.test.ts beside this
+ * the manifest's reasons are asserted in the package-shape test beside this
  * file, since package.json cannot carry them itself.
  *
- * The dictionary is `wordnet`, which ships no types. The declaration is
- * src/wordnet.d.ts, source-only and deliberately unshipped -- the reason is
- * written there, at the file whose publication would be the mistake.
+ * The dictionary is `wordnet`, which ships no types. The declaration that fixes
+ * that is source-only and deliberately unshipped -- the reason is written there,
+ * at the file whose publication would be the mistake, and a reader of this
+ * comment holds the tarball rather than the checkout it names.
  */
 import { init, lookup } from "wordnet";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";

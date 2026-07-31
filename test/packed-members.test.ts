@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { packPackage } from "./helpers/install.ts";
@@ -171,6 +171,100 @@ for (const one of packed) {
     ).toEqual([]);
   });
 }
+
+/**
+ * NO SHIPPED MODULE MAY NAME A REPOSITORY FILE THE READER DOES NOT HAVE.
+ *
+ * THIS IS A MECHANISM GAP RATHER THAN A DILIGENCE ONE, and the record says so:
+ * three consecutive sprints found a false claim in a shipped comment, one of
+ * them AFTER the team's attention had been pointed at the class, so `be more
+ * careful` is refuted by the evidence. THE ARTIFACT IS WHERE IT MATTERS AND
+ * NOTHING READ IT. The build keeps comments, so a sentence citing
+ * `test/package-shape.test.ts` compiles straight into dist/ and lands in a
+ * consumer's node_modules, where that path names nothing.
+ *
+ * WHAT MAKES A CLAIM RATHER THAN A SPECIFIER, and it is the discrimination this
+ * check turns on: a path-shaped token whose file IS in the tarball is the
+ * package talking about itself, and `export { x } from "./y.ts"` in a
+ * declaration is CODE -- tsc emits the source extension and resolves it to the
+ * sibling `.d.ts`, so the `.d.ts` spelling is accepted for exactly that reason.
+ * What is left is a token naming a file the reader does not have.
+ *
+ * SCOPED TO WHAT `exports` MAKES CODE. A member's README names
+ * `scripts/typecheck-workspaces.ts` DELIBERATELY -- it is addressed to somebody
+ * standing in a checkout, packing the tarball -- so a rule over the whole
+ * archive would force that document to stop saying the one thing it is there to
+ * say. dist/ is addressed to nobody but a consumer.
+ *
+ * THE INSTRUMENT IS A MATCHER AND IS THEREFORE BOUNDED BEFORE IT IS TRUSTED,
+ * which is this project's standing rule about sweeping for a defect that is a
+ * property of matching: the pattern requires a SEPARATOR and a source extension,
+ * so a prose fragment like `src/fo` is not a claim, and the test below proves it
+ * finds real claims in real prose rather than reporting that nothing was found
+ * by something nobody checked.
+ */
+const pathClaim =
+  /(?:\.\/)?[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+\.(?:ts|js|mjs|cjs|json|toml|md)\b/g;
+
+/** Every path-shaped token in `text` that names no file inside `root`. */
+function unreachableClaims(root: string, text: string): string[] {
+  const missing: string[] = [];
+  for (const [token] of text.matchAll(pathClaim)) {
+    const bare = token.replace(/^\.\//, "");
+    const candidates = [bare, bare.replace(/\.ts$/, ".d.ts")];
+    if (!candidates.some((name) => existsSync(join(root, name)))) {
+      missing.push(token);
+    }
+  }
+  return missing;
+}
+
+test("no member ships a module naming a repository file its reader does not have", () => {
+  const offenders: string[] = [];
+  let read = 0;
+  for (const one of packed) {
+    for (const entry of one.entries) {
+      const path = join(one.dir, entry);
+      if (!entry.startsWith("dist/") || !statSync(path).isFile()) {
+        continue;
+      }
+      read += 1;
+      for (const token of unreachableClaims(join(one.dir, "dist"), readFileSync(path, "utf8"))) {
+        offenders.push(`${one.name}: ${entry} names ${token}`);
+      }
+    }
+  }
+
+  // NAMED rather than counted, so the offending sentence is findable from the
+  // failure text.
+  expect(offenders).toEqual([]);
+  // The pair for the absence: a reader that opened nothing satisfies the line
+  // above on every repository ever written.
+  expect(read).toBeGreaterThan(0);
+});
+
+/**
+ * THE INSTRUMENT, PROVED ON PROSE THAT REALLY MAKES THE CLAIM.
+ *
+ * REAL PROSE AND A SYNTHETIC TOKEN, both, because they fail differently. The
+ * synthetic half pins the PATTERN -- what shape counts as a claim and what does
+ * not -- and would pass on a matcher that could never reach a real comment. The
+ * real half is scripts/workspaces.ts, a file of this repository whose comments
+ * cite repository paths on purpose: run against a tarball's dist/, its sentences
+ * name files that are not there, which is exactly the condition above.
+ */
+test("the pattern that found nothing in the tarballs finds the claims in real prose", () => {
+  const root = join(packed[0]?.dir ?? repoRoot, "dist");
+  const source = readFileSync(join(repoRoot, "scripts", "workspaces.ts"), "utf8");
+
+  expect(unreachableClaims(root, source)).toContain("test/helpers/typecheck.ts");
+  // The shape rule, both ways: a separator and a source extension make a claim,
+  // and a bare prose fragment does not.
+  expect(unreachableClaims(root, "see test/package-shape.test.ts for the reason")).toEqual([
+    "test/package-shape.test.ts",
+  ]);
+  expect(unreachableClaims(root, "a fragment like src/fo names no file")).toEqual([]);
+});
 
 /**
  * NO MEMBER MAY SHIP AN AMBIENT MODULE DECLARATION, over members as a class
