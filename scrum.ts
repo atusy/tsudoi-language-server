@@ -361,18 +361,34 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extract the throwaway-workspace builder out of test/workspace-members.test.ts into a helper and import it back, so the new file can drive the same tree. Kept separate from the path-shape helper beside it, with a comment saying which is which so the next reader does not merge them.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c3d2bce",
+            message: "refactor(test): lift the throwaway-workspace builder into a helper",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "LANDED AS test/helpers/workspace.ts, and the `which is which` comment names test/helpers/tree.ts by its SUBJECT rather than by its age: tree.ts writes EMPTY entries because it asks what a PATH resolves to, this one writes bytes because it asks what a package DECLARES. MEASURED, no behaviour change: test/workspace-members.test.ts ran 20 pass / 0 fail before and after, and the full suite 741 pass / 0 fail.",
+        ],
       },
       {
         test: "`buildOrder(repoRoot)` equals today's constructed order EXACTLY -- root, then the two members -- and contains each node exactly once. Paired with a reading of the node set against the root plus `declaredMembers`, so an empty answer cannot pass.",
         implementation:
           "`buildOrder` exported from scripts/workspaces.ts: nodes are the root plus `declaredMembers`, keys are manifest names, edges are the declared dependency fields intersected with the node names, Kahn with a sorted-path tie-break. `prepareWorkspace` is not touched yet.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b4d6624",
+            message: "feat(workspaces): derive the build order from what each package declares",
+            phase: "green",
+          },
+        ],
         notes: [
+          "MEASURED, THE ORDER IS A VALUE AND IT IS TODAY'S: buildOrder(repoRoot) returns the checkout root, then packages/tsudoi-completion-path, then packages/tsudoi-hover-wordnet -- byte for byte `[repoRoot, ...declaredMembers(repoRoot)]`, which is what the builder constructed. So the derivation went in with nothing changing colour, exactly as the sprint decision required.",
+          "IT RETURNS DIRECTORIES AND NOT NAMES, decided while writing it: names are the keys the edges are computed with, but the callers build directories and the tie-break is over paths. A nameless package therefore still has a position.",
           "THE ROOT IS A NODE BECAUSE IT IS A BUILDABLE PACKAGE, NOT BECAUSE IT IS THE ROOT -- it carries a build config. That phrasing is what makes the move a no-op here: tsudoi becomes a member and stops being special with no edit to this function.",
           "EXACTLY ONCE IS ASSERTED BECAUSE THE VALUE READING CANNOT SEE IT: `build everything twice` and `build in any order and retry until green` both produce the same artifact the correct order does. That is why the order is a RETURNED VALUE and not only an execution -- the two degenerates are visible in the sequence and invisible in the result.",
         ],
@@ -381,9 +397,17 @@ const scrum: ScrumDashboard = {
         test: "A throwaway where the producer sorts LAST: the derived order contradicts the alphabet. Control: the SAME tree with the consumer's declaration removed orders by the tie-break instead.",
         implementation: "None -- this is the arm that forbids `sort()` as the implementation.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "db7696e",
+            message:
+              "test(build-order): forbid the sort by ordering a tree the alphabet gets wrong",
+            phase: "green",
+          },
+        ],
         notes: [
+          "RUN AGAINST THE DEGENERATE IMPLEMENTATION RATHER THAN ARGUED, which is sprint 50's retro entry applied here: with buildOrder's body replaced by `[root, ...declaredMembers(root)]`, THIS ARM ALONE REDDENS -- the diff transposes packages/producer and packages/consumer -- and the other three arms stay green. So the arms in this file are not all satisfied by the sort, and exactly one of them is why.",
           "THE CONTROL IS THE REAL IMPLEMENTATION WITH ONE DECLARATION DELETED, AND THAT IS A SUBSTITUTION MADE ON PURPOSE for the criterion's `one run against a deliberately broken control`. It is strictly stronger: it shows the order came from THE DECLARATION rather than from anything else in the tree, where a hand-written sorted rival only shows that some other function behaves differently.",
         ],
       },
@@ -392,9 +416,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "Whatever the orderer needs to satisfy these, with each ruling's reason written at the site.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f0283f7",
+            message: "test(build-order): pin the three rulings an edge is read by",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE OPTIONAL-PEER RULING IS NOW MEASURED AND NOT ONLY REASONED, and the measurement is worse than the note predicted. With peers marked optional skipped, the optional-peer arm reddens AND THIS REPOSITORY'S OWN ORDER DOES NOT MOVE -- still root, completion-path, hover-wordnet. The graph loses every edge it has and the answer degenerates to the tie-break while looking exactly as it does now, so no arm asserted against this checkout could ever have seen it.",
+          "THE devDependency RULING, MEASURED WITH THE FIELD COUNTED: buildOrder(repoRoot) comes back EMPTY -- the root devDepends on both handlers and both depend back on it, so every node is inside a cycle. Three arms redden, one of them the node-set reading that exists precisely so an empty answer cannot pass. That is the state the preload would have been in.",
           "RULING, AND IT IS THE LANDMINE THAT WOULD HAVE MADE THE WHOLE ITEM VACUOUS: `peerDependenciesMeta.optional` DOES NOT DROP THE EDGE. The flag buys installability while tsudoi is unpublished and says nothing about compilation -- and dropping optional peers leaves THIS repository's graph with ZERO EDGES, so the order degenerates to the tie-break and the alphabet comes back wearing a topological sort's clothes.",
           "RULING, DECIDED FROM WHAT IS ON DISK: devDependencies create no edge. The root devDepends on both handlers and both handlers peer-depend on the root, so INCLUDING them makes today's graph hold two 2-cycles, the orderer throws, and the throw lands in the `bun test` PRELOAD -- the exact inverse of `it goes in green`. Substantively: the root's published artifact is not compiled against either handler, so a devDep edge would order a build against a dependency the build does not have. THE COST IS ACCEPTED AND NAMED: a member devDepending on another member for its TESTS gets no ordering guarantee.",
           "A NAMELESS NODE IS TOLERATED RATHER THAN REFUSED, and the reason is a test that would otherwise go green-looking while measuring a different function: the name guard runs in the FIFTH CHECK, after the preload, so an orderer that threw on a nameless node would abort `bun test` before that guard could speak -- and the existing arm for it would stay red, still containing the word `name`, now reddened by the wrong function.",
@@ -404,9 +436,17 @@ const scrum: ScrumDashboard = {
         test: "A cycle fails, and the message names BOTH packages and the declaration that closes it; the same tree with one declaration removed builds.",
         implementation: "The cycle refusal, landing only after the acyclic arms above hold.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ce7ed5b",
+            message: "feat(workspaces): refuse a cycle instead of picking one of its packages",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE RED BEFORE THE REFUSAL EXISTED IS RECORDED, because it is the reason the fallback could not be left: the orderer returned an array holding the ROOT ALONE and no error at all -- two packages silently dropped from a sequence a caller was about to build from.",
+          "WHAT THE MESSAGE SAYS, MEASURED BY READING IT: `@scope/left and @scope/right need each other, so no order builds either one against something that exists: packages/left/package.json names `@scope/right` in `dependencies`; packages/right/package.json names `@scope/left` in `dependencies`. Delete one of those declarations, or move it to `devDependencies`, which is deliberately not a build edge.` The walk is trimmed to the cycle, so a package merely BLOCKED by one is not named as though it were at fault.",
           "A CYCLE THROWS RATHER THAN FALLING BACK TO SORTED: a cycle is unbuildable, and the alternative is silently picking one and letting a package compile against an absent or stale artifact -- the class this story exists to end. SIZED DELIBERATELY BECAUSE THE THROW LANDS IN THE PRELOAD: it must be reachable only from a state this repository can never be in, which the byte-identical-order arm is what establishes.",
         ],
       },
@@ -415,9 +455,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Rewire `prepareWorkspace` to loop the derived order, linking only for non-root nodes. Rewrite the `THE ROOT IS BUILT FIRST` comment in the same commit, because the conclusion survives and THE MECHANISM INVERTS.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "d57c329",
+            message:
+              "feat(workspaces): build in the derived order and read which file a consumer got",
+            phase: "green",
+          },
+        ],
         notes: [
+          'THE RED AND THE GREEN ARE BOTH VALUES OUT OF THE CONSUMER\'S OWN .d.ts. Against the un-rewired builder the arm reported `export declare const SAW: "src";` -- the consumer, built first because it sorts first, compiled against the producer\'s SOURCE through the `default` arm AND EXITED 0, with the builder raising nothing and a dist/ left behind. With the order derived, the same tree emits `"dist"`. THE CONTROL IS THE SAME TREE MINUS THE DECLARATION and it emits `"src"` at exit 0, which is the whole demonstration that no exit code answers this question.',
+          "THE PRODUCER'S TWO FILES ARE THE INSTRUMENT: its build config compiles a directory declaring the literal type `dist` while its `default` arm points at a source declaring `src`, so the compiler NAMES the arm that answered. The node_modules entry joining consumer to producer is written by the fixture in BOTH arms, so resolution is identical and the declaration is the only difference.",
           "AN EXIT CODE CANNOT ANSWER THIS AND THAT IS MEASURED, NOT FEARED: the probe read EXIT 0 under both member configs from a consumer compiled against the producer's SOURCE, through the `default: ./src/*.ts` arm. So the reading is WHICH FILE, taken as a value out of an artifact. It works because the consumer's build is itself a step inside the loop, so the reading is taken DURING the ordering rather than after everything is built. The dist ABSENT state is the subject and PARTIAL is not: in PARTIAL the compiler reads source LEGITIMATELY, and a source marker there indicts nothing.",
         ],
       },
@@ -426,9 +475,23 @@ const scrum: ScrumDashboard = {
         implementation:
           "Replace the wholesale symlink in test/helpers/typecheck.ts with a per-package mirror whose exclusion predicate is read off `realpath`, so the entry the move will create is dropped WITH NO EDIT.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1519aa2",
+            message: "refactor(test): name the harness step that decides what a probe can reach",
+            phase: "refactoring",
+          },
+          {
+            hash: "80517a3",
+            message: "fix(test): stop handing every probe a route into this checkout",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE RED, MEASURED AND NAMING BOTH ROUTES: a probe's node_modules reached /packages/tsudoi-hover-wordnet and /packages/tsudoi-completion-path. The green half of the pair -- the compiler and the type packages still reachable -- passed BEFORE the change too, which is what makes it a control on the mirror rather than a restatement of it.",
+          "THE PREDICATE READS `realpath` AND THE BOUNDARY IS node_modules RATHER THAN THE CHECKOUT, decided from what is on disk: every installed package resolves into node_modules/.bun, which IS inside the checkout, so `outside the checkout` would have dropped the entire install. Only a workspace link leaves node_modules.",
+          "`linkRootPackage`'s MEASURED BLOCK WAS REWRITTEN IN THIS COMMIT AND NOT IN THE LAST SUBTASK, WHICH IS WHERE THE PLAN PUT IT. The subject dies HERE -- this is the commit that closes the wholesale symlink -- and a comment asserting a mechanism the code denies may not survive even one commit. What replaced it keeps the finding as history and states what still makes a root entry dangerous: everything walking up out of this checkout finds it, and only one of those things has been closed.",
           "THE HAZARD HAS A SUBJECT TODAY, READ AND NOT ASSUMED: the root's entries for both handler packages RESOLVE, so every throwaway probe silently holds a working route to a package it never installed. AND A SECOND DEFECT IN THE SAME LINE: because the probe's only node_modules IS THE REPOSITORY'S, shared and concurrent, A PROBE CANNOT STASH A ROUTE AT ALL without damaging the checkout for every other test -- which is the mechanical reason this cannot be closed by letting the probe delete an entry.",
           "BOTH HALVES OF THE PAIR ARE REQUIRED: without the green half, a mirror that accidentally dropped a declared dependency reddens for an apparatus reason and looks identical to the finding.",
         ],
@@ -438,9 +501,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "None beyond the mirror; the sweep records, PER FILE, whether that consumer's perturbation had a second route and why.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "29848de",
+            message:
+              "test(probe-routes): read the closure through the compiler, and close the second site the sweep found",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE SWEEP NEEDED TWO PERTURBATIONS AND NOT ONE, WHICH THE FIRST RUN IS WHAT TAUGHT IT. P1 = `exports` deleted from the manifest the probe copies; P2 = the src/ symlink not created. MOST PROBES NAME A RELATIVE PATH RATHER THAN THE PACKAGE, so under P1 alone they are GREEN FOR WANT OF A SUBJECT -- which is the reading that would have been written up as `no second route` if only P1 had been run. Every consumer below is reported under the perturbation that has a subject for it.",
+          "PER CONSUMER, EACH WITH ITS PAIR. (1) test/published-specifier.test.ts -- P1: 2 arms red, TS2307 naming `@atusy/tsudoi-language-server/types`; P2: red at the same specifier; unperturbed green. (2) test/published-artifacts.test.ts -- its one typeCheckProbe arm, `the in-repo arm cannot observe what the published arm checks`, asserts EXIT 0 and reddens under P1 and under P2 at Expected 0 / Received 1; unperturbed green. (3) test/notifications.test.ts -- P1 has no subject; P2: 12 red, TS2307 naming './src/lifecycle.ts' and './src/notifications.ts'; unperturbed green. (4) test/documents.test.ts -- P2: 2 red, TS2307 './src/types.ts'. (5) test/store-mutation.test.ts -- P2: 3 red, same specifier. (6) test/client-capabilities.test.ts -- P2: 4 red, same specifier. (7) test/workspace-folder-store.test.ts -- P2: 3 red, same specifier. (8) test/document-mutation.test.ts -- P2: 2 red, same specifier. Each of (4)-(8) green unperturbed.",
+          "AND THE THREE `runTsc` CONSUMERS, WHICH TAKE NO node_modules FROM THE HARNESS AT ALL -- the helper only spawns a compiler at a directory. (9) test/workspace-members.test.ts drives throwaway roots that have no node_modules, so nothing is supplied to answer anything. (10) test/member-resolution.test.ts runs the compiler in the REAL members and CARRIES ITS OWN PERTURBATION -- `withRouteBroken` stashes the member's own link and asserts TS2307 with the subpath, then green once restored; that pair is in the file and green today. (11) test/package-shape.test.ts IS THE ONE THE SWEEP CAUGHT.",
+          "THE SECOND SITE, AND READING ALONE WOULD NOT HAVE FOUND IT: test/package-shape.test.ts built its OWN throwaway node_modules, symlinking the repository's whole directory, TWICE -- so the closure at the harness did not reach it. One of those two probes has this package's route as its very SUBJECT (`with no mapping the same subpaths answer from the built artifact`), which is where a second route lies rather than merely sits, and after the move an installed entry for tsudoi would answer the specifier the probe's own manifest is supposed to. Both now take the mirror. PERTURBED by removing that probe manifest's `exports`: that arm alone reddens. UNPERTURBED: the file is green.",
+          "THE COMPILER-LEVEL PAIR THAT SAYS WHAT THE CLOSURE BOUGHT: a probe importing `@atusy/tsudoi-hover-wordnet` -- a package the throwaway never installed -- USED TO RESOLVE, measured with the wholesale symlink restored, at EXIT 0 with EMPTY OUTPUT. It is now TS2307 naming that specifier, beside an installed dependency that still resolves; no apparatus failure produces that combination.",
           "THE PO WILL REFUSE A SWEEP REPORTED AS `CONSUMERS REVIEWED` OR AS A COUNT. Each consumer is named with its pair. AND THE HONEST STATEMENT ABOUT THE ONE THAT MATTERS MOST: the exports-deletion control is NOT answerable by a second route today, because no root entry for tsudoi exists -- it becomes answerable THE DAY THE MOVE LANDS, by construction of the ruling that the root declares the dependency. That is why this closure precedes the move.",
         ],
       },
@@ -449,9 +524,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Rewrite the measured block that cited the wholesale symlink as its reason, record the decision about the second construction of the node set, and write the tie-break-is-not-the-order reason at BOTH sites.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9b723f3",
+            message: "docs(workspaces): say at both sorting sites which one is the build order",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "ONE ITEM WAS DELIVERED EARLIER THAN THIS SUBTASK AND SAYS SO: the `linkRootPackage` measured block was rewritten in the commit that closed the wholesale symlink, because a comment asserting a mechanism the code denies may not survive even one commit. Filing it here would have shipped that state deliberately.",
+          "WHAT THE TWO SITES NOW SAY. `declaredMembers` keeps its sort with the reason that its callers -- the fifth check and the guards it runs -- want the same sequence twice running so `the first offender` means something, and ask nothing about what needs what. `buildOrder` says the tie-break is the FALLBACK and names the arm that forbids reading it as the answer. Neither site can be read without meeting the other's reason.",
+          "THE SECOND CONSTRUCTION OF THE NODE SET IS A DECISION AND IS RECORDED AT THE ASSERTION: the order's own test rebuilds `[repoRoot, ...declaredMembers(repoRoot)]`, which looks like a tautology and is not one. What is asserted is the SEQUENCE; WHO THE MEMBERS ARE is a question `declaredMembers` already owns, and a hand-written list would answer it a second time, go stale at the next package, and redden this file for a reason that has nothing to do with an order.",
           "THE TIE-BREAK IS WHAT LETS A FUTURE READER CONCLUDE `THE SORT IS THE ORDER`, and the contradicting-sort arm is the only thing forbidding it -- so that arm may never be retargeted at a tree where the two orders agree. The member list keeps its own sort: its callers want a stable LIST, and a stable list and a build order are different questions.",
         ],
       },
@@ -460,6 +544,8 @@ const scrum: ScrumDashboard = {
     decisions: [
       "THE SPRINT GOES IN GREEN BY DESIGN, so the sprint's own tests are the only thing that can fail -- and the PO accepts on READINGS rather than colours. Today's constructed order already equals the derived one, which is what lets the ordering land with no behaviour change and stops the move from being the thing that first exercises it.",
       "THE PO'S REFUSAL, EVERY CHECK GREEN: the second-route hazard closed PER PROBE instead of AT THE HARNESS. Each enumerated consumer producing its predicted failure while the helper still hands the NEXT probe a second route is exactly the outcome that is green today and walks into the move intact, where it becomes the reason a control lies.",
+      "THE THIRD CHECK'S TOOL WAS LOST AND REBUILT MID-SPRINT, DISCLOSED BECAUSE A REVIEWER CANNOT SEE IT AND IT IS NOT THE REPOSITORY'S. This session reaches `oxfmt` through a shim running `bunx oxfmt`, whose cached install went PARTIAL -- tinypool present, the file its manifest names absent -- and every invocation died in node's resolver rather than reporting a format. Clearing the cache made it worse: the re-download never completed, so the check was unrunnable for a while. REBUILT from bun's own package cache (oxfmt 0.61.0, its darwin-arm64 binding, tinypool 2.1.0) with the shim repointed at that install, and the check is still run BARE, as the Definition of Done spells it. Nothing in the repository was edited for this.",
+      "THE ONE RED THAT WAS NOT THE INCREMENT, AND IT IS THE FLAKE SPRINT 50 FILED: `a completion handler that throws after yielding keeps the chunk it already sent` failed once under deno in a full run and passed alone moments later, and the next full run was clean. Recorded rather than diagnosed -- this sprint touches no code that test runs.",
       "TWO SUBSTITUTIONS THE DEVELOPER MADE AGAINST THE CRITERIA, STATED AS DECISIONS RATHER THAN LEFT AS MISSES: the criterion's `deliberately broken control` is served by the same tree with one declaration deleted, which is stronger because it shows the order came from THE DECLARATION; and `read as a value` is served by the dependent's own emitted declaration, because the builder inherits stdio and no diagnostic is capturable through it.",
     ],
   },
