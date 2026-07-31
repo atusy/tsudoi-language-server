@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
@@ -7,7 +7,8 @@ import { exampleSources, type InstalledConsumer, installConsumer } from "./helpe
 import { initializeParams } from "./helpers/lsp.ts";
 import { importsAndUses, publicProtocolNames } from "./helpers/published-names.ts";
 import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readme.ts";
-import { runCommand } from "./helpers/spawn.ts";
+import { declaredMembers } from "../scripts/workspaces.ts";
+import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
@@ -577,8 +578,10 @@ function useNonHoistingLayout(dir: string): void {
  * examples type-check under that layout, and a bare protocol import does not.
  *
  * WHAT THE HARNESS MUST STILL BE ABLE TO DO is notice a package that is
- * GENUINELY MISSING, and `wordnet` is the only case of it. That is asserted
- * further down rather than assumed.
+ * GENUINELY MISSING, and `wordnet` is the only case of it -- no longer as a
+ * package the harness withholds by hand, but as the handler package's own
+ * declared dependency, which a consumer's install fetches and this suite can
+ * delete. That is asserted further down rather than assumed.
  */
 test("under the non-hoisting layout the examples type-check, and a bare protocol import does not", async () => {
   const strict = await installConsumer();
@@ -720,4 +723,58 @@ test("withholding wordnet is still detected, at the runtime arm rather than the 
   } finally {
     strict.dispose();
   }
+});
+
+/**
+ * WHAT THE MAIN PACKAGE MAKES A STRANGER INSTALL, READ OFF THE TARBALL.
+ *
+ * FROM THE UNPACKED TARBALL AND NOT FROM THE REPOSITORY, because those are
+ * different files the moment a pack stage edits one -- and this repository's
+ * stage does write its own package.json. A reading taken at the repo root would
+ * be a claim about what we intend to publish rather than about what we do.
+ *
+ * SCOPED TO `dependencies` DELIBERATELY. A workspace member in devDependencies
+ * is normal, reaches no consumer, and is exactly what the repo's own demo config
+ * needs; `files: ["dist"]` keeps examples/ out of the tarball anyway. A claim
+ * written over both fields would force the demo config out of this package as a
+ * side effect nobody asked for.
+ *
+ * OVER MEMBERS AS A CLASS rather than over the one handler that exists, on the
+ * same reasoning as the fifth Definition-of-Done check and the deno guard's
+ * member shape: the names come from the workspace configuration, so a package
+ * added under packages/ is covered here with nothing edited, and a claim naming
+ * one package would go quietly narrow at the second.
+ *
+ * TWO GUARDS AGAINST A VACUOUS GREEN, both needed and for different reasons: an
+ * empty member list would make the filter trivially empty, and an empty
+ * dependency map would make it empty for the wrong reason -- a tarball whose
+ * manifest failed to parse looks exactly like a package that depends on nothing.
+ *
+ * AND WHAT THIS CANNOT CURRENTLY BE THE FIRST THING TO CATCH, MEASURED rather
+ * than assumed, because a control that never fires first is not a control.
+ * Moving the handler from devDependencies into dependencies does NOT reach this
+ * assertion: `bun install` of the tarball 404s on `@atusy/tsudoi-hover-wordnet`
+ * -- nothing here is published -- and installConsumer throws before any test
+ * runs. So the property is FORECLOSED BY THE REGISTRY TODAY and this reading is
+ * shadowed by a louder failure.
+ *
+ * IT IS KEPT ANYWAY, AND THE REASON IS DATED RATHER THAN GENERAL: the
+ * foreclosure lasts exactly as long as both packages stay unpublished. Publish
+ * either and the 404 goes away, the dependency installs cleanly, and this
+ * becomes the only thing that says a framework must not drag a handler along
+ * with it. The 404 also names a registry rather than the rule it happens to
+ * enforce, which is the case S9 admits for a control that would fail first.
+ */
+test("the published package depends on no package from this workspace", () => {
+  const published = JSON.parse(readFileSync(join(consumer.packageDir, "package.json"), "utf8")) as {
+    dependencies?: Record<string, string>;
+  };
+  const members = declaredMembers(repoRoot).map(
+    (dir) => (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string }).name,
+  );
+  const declared = Object.keys(published.dependencies ?? {});
+
+  expect(members.length).toBeGreaterThan(0);
+  expect(declared).toContain("vscode-languageserver-protocol");
+  expect(declared.filter((name) => members.includes(name))).toEqual([]);
 });

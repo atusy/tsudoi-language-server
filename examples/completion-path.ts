@@ -715,9 +715,13 @@ function documentationFor(
  * inside the array is skipped by the same filter that skips one this module
  * cannot build.
  *
- * NOT SHARED WITH examples/hover-wordnet.ts, WHICH MAKES THE SAME CHOICE FOR
- * `contentFormat`: each example is copied on its own, and a reader who took this
- * file would find an import of a file they do not have.
+ * NOT SHARED WITH @atusy/tsudoi-hover-wordnet, WHICH MAKES THE SAME CHOICE FOR
+ * `contentFormat`, AND THE REASON HAS CHANGED SHAPE RATHER THAN GONE. It used to
+ * be that each example is copied on its own; now the other one is an INSTALLED
+ * PACKAGE, so sharing would mean this example -- a file a reader copies -- taking
+ * a dependency on a handler package they may not want. The direction that WOULD
+ * be sound, a helper published by tsudoi itself, is a decision nobody has asked
+ * for and is not made here.
  */
 function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
   const preference = Array.isArray(declared) ? declared : [];

@@ -210,6 +210,35 @@ test("the repo depends on the handler package for its own examples, at the versi
 });
 
 /**
+ * THE DICTIONARY IS NOT THIS PACKAGE'S BUSINESS IN EITHER DIRECTION.
+ *
+ * `wordnet` is a RUNTIME dependency of @atusy/tsudoi-hover-wordnet and nothing
+ * this package knows about. It is asserted rather than left absent because the
+ * absence is exactly what a well-meaning edit undoes: the repo's own suite drives
+ * a hover, the dictionary is what answers it, and reaching for a devDependency
+ * here is the obvious way to make that work from a fresh checkout. It already
+ * works -- the handler declares it, and a workspace install puts it where the
+ * handler can see it -- so an entry here would be a second, silently divergent
+ * declaration of one dependency.
+ *
+ * BOTH FIELDS, because the argument differs by field and only one half is
+ * obvious: in `dependencies` it would ship a 27MB dictionary to every consumer
+ * of a language-server framework that does not read one; in `devDependencies` it
+ * would ship nothing and still be the second declaration.
+ */
+test("the dictionary belongs to the handler package, and this manifest declares it nowhere", () => {
+  const dependencies = (packageJson.dependencies ?? {}) as Record<string, string>;
+  const devDependencies = (packageJson.devDependencies ?? {}) as Record<string, string>;
+
+  expect(Object.keys(dependencies)).not.toContain("wordnet");
+  expect(Object.keys(devDependencies)).not.toContain("wordnet");
+  // The pair: these are the real fields, not two empty objects a rename left
+  // behind, so the absences above are absences from something.
+  expect(Object.keys(dependencies)).toContain("vscode-languageserver-protocol");
+  expect(Object.keys(devDependencies)).toContain("typescript");
+});
+
+/**
  * THE PUBLISHED SHAPE, asserted whole rather than key by key: `exports` makes
  * every path not listed unreachable by bare specifier, so adding an entry is a
  * decision about the public surface and never a convenience, and an equality

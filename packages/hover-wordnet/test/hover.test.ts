@@ -19,9 +19,9 @@ import type { RequestContext } from "@atusy/tsudoi-language-server/types";
  * THE FAILURE ARM OF THE LAZY-INIT IDIOM, which is the one thing about
  * src/hover.ts that no session test can reach.
  *
- * Every other test of the examples drives the real config through a real server
- * under BOTH runtimes, and a real `init()` succeeds -- so the whole suite
- * observes the arm where nothing goes wrong. What is defended here is what
+ * Every other test that reaches this handler drives the demo config through a
+ * real server under BOTH runtimes, and a real `init()` succeeds -- so the whole
+ * suite observes the arm where nothing goes wrong. What is defended here is what
  * happens when the FIRST load fails: the promise is memoised, not the
  * resolution, so a single transient failure would be handed back to every later
  * hover for the life of the process. `await ready()` sits outside `define`'s own
@@ -32,12 +32,13 @@ import type { RequestContext } from "@atusy/tsudoi-language-server/types";
  * ONE RUNTIME, AND THE REASON IS THE APPARATUS RATHER THAN THE CLAIM: making
  * `init` fail exactly once requires replacing the `wordnet` module, and
  * `mock.module` is bun's. What is under test is arithmetic on a module-level
- * variable, with no runtime-specific behaviour in it, and the example itself is
- * loaded and driven under deno by the session tests over examples/tsudoi.config.ts.
+ * variable, with no runtime-specific behaviour in it, and this package is loaded
+ * and driven under deno by the session tests over examples/tsudoi.config.ts,
+ * which reaches it by package specifier out of node_modules.
  *
  * THE MOCK IS INSTALLED BEFORE THE MODULE IS IMPORTED, and the import below is
  * dynamic for exactly that reason: a static import is hoisted above this call,
- * and the example would bind the real `init` -- which would then take ~130ms and
+ * and the handler would bind the real `init` -- which would then take ~130ms and
  * SUCCEED, making every assertion here a statement about the happy path.
  */
 const transientFailure = "tsudoi test: the database is not there yet";

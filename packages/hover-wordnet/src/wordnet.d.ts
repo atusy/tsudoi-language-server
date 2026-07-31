@@ -19,11 +19,19 @@
  * constraint on the published surface rather than on this file: no name declared
  * here appears in what this package publishes. `hoverWordnet` is a
  * `MethodHandler<"textDocument/hover">` and `Definition` is reached only inside
- * `define`, which stays internal -- so dist/index.d.ts never names `wordnet` and
- * a consumer never needs this declaration to type-check against us. PUBLISH ONE
- * NAME FROM HERE AND THE ARGUMENT INVERTS: the emitted declaration would
- * reference a module the consumer has no declaration for, and the choice would
- * be between shipping this file and breaking them.
+ * `define`, which stays internal.
+ *
+ * MEASURED ON THE EMITTED ARTIFACT RATHER THAN REASONED FROM THE SOURCE, because
+ * declaration emit is where this would go wrong and reading src/ cannot see it:
+ * neither dist file carries `wordnet` or `declare module` at all, and a consumer
+ * compiled with `types: []` and NO `allowImportingTsExtensions` resolves
+ * `hoverWordnet` to the full `MethodHandler<"textDocument/hover">` -- shown by
+ * assigning it to a `number` and reading TS2322, since a green there is equally
+ * what `any` produces.
+ *
+ * PUBLISH ONE NAME FROM HERE AND THE ARGUMENT INVERTS: the emitted declaration
+ * would reference a module the consumer has no declaration for, and the choice
+ * would be between shipping this file and breaking them.
  */
 declare module "wordnet" {
   /** One sense of a word -- WordNet has several for most of them. */
