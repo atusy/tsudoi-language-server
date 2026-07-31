@@ -29,10 +29,13 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
-**Neither half is usable alone**, which is why they ship together. The resolve handler
-recognises an item by a mark the completion handler wrote onto it, and that mark is not
-published — it is an agreement between two modules, not a promise to you. And tsudoi refuses a
-config supplying the resolve method with no completion handler beside it.
+**The dependence runs one way**, and that is why they ship together. `pathCompletion` stands on
+its own: register it, leave the resolve half out, and you get the listing — only without the size
+and date on the item you highlight. The resolve half is the one that cannot. It recognises an
+item by a mark the completion handler wrote onto it, and that mark is not published — it is an
+agreement between two modules, not a promise to you. tsudoi refuses a config supplying the
+resolve method with no completion handler beside it, so that arrangement is rejected when the
+config loads rather than left to disappoint you at the first request.
 
 The completion **streams**: it yields the listing in batches, so a client that sent a
 `partialResultToken` sees the first entries while the rest is still being read. No entry's
