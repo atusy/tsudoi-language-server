@@ -307,6 +307,73 @@ test("a member declaring no name is refused rather than passed over", async () =
   expect(result.code).not.toBe(0);
 });
 
+/**
+ * A workspace holding THREE members, all scoped, the last of which agrees with
+ * its directory or does not.
+ *
+ * A THIRD PACKAGE AND NOT A SECOND, because two is the number this repository
+ * happens to have: a guard written per instance passes every arm above and stops
+ * at the members its author had in mind. THREE is the smallest count that is not
+ * the one on disk.
+ *
+ * IN A THROWAWAY ROOT, AND THAT IS A REQUIREMENT RATHER THAN A PREFERENCE. bun
+ * runs this suite in ONE PROCESS, so a third package created under the real
+ * packages/ -- even for the length of one test -- would be seen by every later
+ * caller of `declaredMembers(repoRoot)`, and their subjects would become
+ * order-dependent on this file.
+ */
+function threeMembers(third: string): Record<string, string> {
+  const files: Record<string, string> = {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+  };
+  for (const [directory, declared] of [
+    ["first", "@scope/first"],
+    ["second", "@scope/second"],
+    ["third", third],
+  ]) {
+    files[`packages/${directory}/package.json`] = JSON.stringify({ name: declared });
+    files[`packages/${directory}/tsconfig.json`] = memberTsconfig;
+    files[`packages/${directory}/src/index.ts`] = typeChecks;
+  }
+  return files;
+}
+
+/**
+ * THE GUARD IS OVER MEMBERS AS A CLASS, DEMONSTRATED ON A MEMBER NOBODY WROTE IT
+ * FOR -- and the demonstration is a property of the HISTORY as much as of this
+ * file: the commit that added the guard came first, and this arm cost it no
+ * edit. `the guard` means everything that would have to change for a further
+ * package to be covered -- a fixture list, an allowlist, an exclude entry keyed
+ * to a name.
+ *
+ * THE FIRST TWO ARE ASSERTED ABSENT FROM THE MESSAGE, which is the half that
+ * makes this about the third package rather than about the workspace: a guard
+ * reporting every member it looked at would satisfy `names the third` while
+ * telling a reader to inspect three directories, two of which are correct.
+ */
+test("a third member the guard was never written for is refused, by name", async () => {
+  const result = await checkWorkspace(threeMembers("@scope/elsewhere"));
+
+  expect(result.stderr).toContain("packages/third");
+  expect(result.stderr).toContain("@scope/elsewhere");
+  expect(result.stderr).not.toContain("packages/first");
+  expect(result.stderr).not.toContain("packages/second");
+  expect(result.code).not.toBe(0);
+});
+
+// THE POSITIVE CONTROL, and it is what separates `refused` from `the throwaway
+// is malformed` -- a workspace that could not be read, a compiler that is not
+// there, a member with no manifest all exit non-zero above and look identical.
+// THE SAME THREE MEMBERS, with the third's name changed and nothing else, so
+// what the pair measures is the disagreement rather than the tree.
+test("the same three members pass once the third agrees with its directory", async () => {
+  const result = await checkWorkspace(threeMembers("@scope/third"));
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
 /** The specifier the root maps through `paths` and the member cannot reach. */
 const sharedModule = "shared/thing";
 
