@@ -98,6 +98,16 @@ const buildTsconfig = JSON.parse(
   readFileSync(join(repoRoot, "tsconfig.build.json"), "utf8"),
 ) as Record<string, unknown>;
 
+/** The settings half of each, which is where every claim below reads from. */
+const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
+const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
+
+/** The shipped manifest's own bytes, read at test time. */
+const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
+  string,
+  unknown
+>;
+
 /**
  * WHICH OF THE TWO TSCONFIGS MAY CARRY THE MAPPING, and why it is exactly one.
  *
@@ -123,18 +133,9 @@ const buildTsconfig = JSON.parse(
  * nothing and the examples are still in the program.
  */
 test("the repo's type check resolves the published subpaths to source, and the build config does not", () => {
-  const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
-  const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
-
   expect(repoOptions.paths).toEqual({ "@atusy/tsudoi-language-server/*": ["./src/*.ts"] });
   expect(buildOptions.paths).toBeUndefined();
 });
-
-/** The shipped manifest's own bytes, read at test time. */
-const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
-  string,
-  unknown
->;
 
 /**
  * WHY THE MEMBERS ARE EXCLUDED FROM THE CHECK ABOVE, which is the one exclusion
