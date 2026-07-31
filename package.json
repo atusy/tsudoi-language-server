@@ -1,6 +1,7 @@
 {
   "name": "@atusy/tsudoi-language-server",
   "version": "0.0.0",
+  "private": true,
   "license": "MIT",
   "workspaces": [
     "packages/*"

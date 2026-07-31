@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { readReadme, statesFact, UNPUBLISHED } from "./helpers/readme.ts";
+
 import { repoRoot } from "./helpers/spawn.ts";
 
 /**
@@ -25,27 +26,59 @@ import { repoRoot } from "./helpers/spawn.ts";
  * project's dashboard COMPACTS, and nobody re-reads a closed sprint's decisions
  * on publication day. Something has to REDDEN.
  *
- * WHERE THE PUBLISHING EDIT PASSES. The README's `The package is not published`
- * section is the one durable statement of the premise, and the suite already
- * executes that document -- test/readme.test.ts requires that fact to have
- * exactly ONE home, so the section a publisher rewrites is the section this
- * reads. The moment it stops saying so, every member carrying the flag is named
- * here.
+ * WHERE THE PUBLISHING EDIT PASSES, AND IT IS A MACHINE GATE RATHER THAN PROSE.
+ * The root manifest carries `private: true`, and `bun publish` REFUSES a private
+ * package outright -- MEASURED on this manifest: `error: attempted to publish a
+ * private package`, raised before `prepack` is even run. So a publisher cannot
+ * reach a registry without first deleting that key, and deleting it is what
+ * reddens every member still carrying the flag.
+ *
+ * WHY NOT THE README, which is the obvious instrument and the weaker one: prose
+ * is not on the publication path. A publisher who runs `bun publish` without
+ * opening the document succeeds, and every member's manifest goes on saying
+ * tsudoi is optional with nothing anywhere having moved. The manifest cannot be
+ * bypassed that way, because the tool reads it.
+ *
+ * WHY NOT `prepublishOnly` EITHER: a guard script fires at publish time, which
+ * is precisely when nobody is running this suite. It could not be exercised
+ * without publishing, so its own correctness would go unmeasured -- and a guard
+ * that has never been observed to fire is a guard on paper. `private` is read by
+ * the tool AND readable here, which is what lets both halves be checked in the
+ * gate that runs every day.
+ *
+ * NO REGISTRY IS EVER CONSULTED. A probe that asked one would make this
+ * repository's green depend on somebody else's uptime, and would redden for a
+ * network fault as loudly as for a broken premise.
  *
  * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION, because
  * two packages now repeat one falsehood and a third would repeat it again.
  *
- * WHAT THIS CANNOT SEE, said rather than left to be discovered: a publisher who
- * publishes and does not touch the README. Nothing in a test suite observes a
- * registry, and a probe that did would make this repository's green depend on
- * somebody else's uptime. What is bought instead is that the ONE edit a
- * publisher must make to stop the document lying is also the edit that reddens
- * this.
+ * WHAT THIS CATCHES: any route to publication that goes through THIS manifest,
+ * which is every route a publisher standing in this repository can take.
+ *
+ * WHAT IT CANNOT SEE, said rather than left to be discovered. It reads a file,
+ * not the world: a publish from a FORK, or under a DIFFERENT NAME, or from a
+ * tree whose manifest was rewritten in flight, leaves this green because the
+ * package it describes is no longer the one being published. It also cannot know
+ * whether tsudoi is published -- only whether this repository still forbids it.
+ * The two part company for exactly as long as it takes someone to delete the key
+ * and not publish, and in that window the flag is a lie this file already names.
  */
 
-/** Whether the README still states the premise the flag is carried under. */
+/**
+ * Whether this repository still forbids publishing tsudoi, which is the premise
+ * the flag is carried under.
+ *
+ * THE MANIFEST AND NOT THE DOCUMENT, because this is the copy `bun publish`
+ * reads. `private` absent and `private: false` are the same answer -- publication
+ * is permitted -- so the reading is for the key being TRUE rather than for its
+ * presence.
+ */
 function tsudoiIsUnpublished(): boolean {
-  return statesFact(readReadme(), UNPUBLISHED);
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+    private?: unknown;
+  };
+  return manifest.private === true;
 }
 
 /**
@@ -65,7 +98,7 @@ function disagreeing(unpublished: boolean): string[] {
       manifest.peerDependenciesMeta?.["@atusy/tsudoi-language-server"]?.optional === true;
     if (optional !== unpublished) {
       offenders.push(
-        `${relative(repoRoot, member)} marks the peer optional=${String(optional)} while the README says unpublished=${String(unpublished)}`,
+        `${relative(repoRoot, member)} marks the peer optional=${String(optional)} while the root manifest forbids publication=${String(unpublished)}`,
       );
     }
   }
@@ -74,18 +107,18 @@ function disagreeing(unpublished: boolean): string[] {
 
 /**
  * THE LIVE READING, AND IT IS WRITTEN SO THAT PUBLICATION DAY GETS A FAILURE
- * NAMING THE FILES TO EDIT rather than one saying the README moved.
+ * NAMING THE FILES TO EDIT rather than one saying the manifest moved.
  *
- * THE PREMISE IS READ, NEVER ASSERTED. `the README says unpublished` is TRUE
- * today and must be allowed to become false -- an assertion on it would demand
- * the document keep lying, which is the opposite of what this file is for. What
- * may not happen is the two DISAGREEING.
+ * THE PREMISE IS READ, NEVER ASSERTED. `publication is forbidden` is TRUE today
+ * and must be allowed to become false -- an assertion on it would demand the
+ * repository stay unpublishable for ever, which is the opposite of what this
+ * file is for. What may not happen is the two DISAGREEING.
  *
  * BOTH DIRECTIONS, and the second is the one nobody thinks about: a member that
  * quietly dropped the flag while tsudoi is still unpublished is named here too,
  * because installing that package then 404s.
  */
-test("no member's optional-peer flag disagrees with what the README says about publication", () => {
+test("no member's optional-peer flag disagrees with what the root manifest says about publication", () => {
   // The pair: with no members this reading is empty for a reason that has
   // nothing to do with the premise.
   expect(declaredMembers(repoRoot).length).toBeGreaterThan(0);
@@ -96,16 +129,16 @@ test("no member's optional-peer flag disagrees with what the README says about p
  * THE CONTROL, AND IT IS THE WHOLE POINT OF THE FILE: the day the premise dies,
  * this reading names every member still carrying the flag.
  *
- * PERTURBING THE ANSWER RATHER THAN THE DOCUMENT, deliberately. Editing a copy
- * of the README and re-reading it would measure the fact extractor, which
- * test/readme.test.ts already owns; what is under test here is that a FALSE
- * premise produces a red against the manifests as they stand today.
+ * PERTURBING THE ANSWER RATHER THAN THE MANIFEST, deliberately. Rewriting a copy
+ * of package.json and re-reading it would measure the JSON parser; what is under
+ * test here is that a FALSE premise produces a red against the members'
+ * manifests as they stand today.
  *
  * BOTH MEMBERS NAMED, not merely a non-empty list: a control that fired on one
  * package would leave the second repeating the falsehood with nothing saying so,
  * which is exactly what a claim naming one package does.
  */
-test("the same reading names every member the moment the README stops saying so", () => {
+test("the same reading names every member the moment the manifest permits publication", () => {
   const offenders = disagreeing(false);
 
   expect(offenders.length).toBe(declaredMembers(repoRoot).length);
@@ -124,6 +157,22 @@ test("the same reading names every member the moment the README stops saying so"
  * things about when the flag is a lie. test/packed-members.test.ts reads the
  * same word off the TARBALL, which is where a registry reader meets it.
  */
+/**
+ * THE DOCUMENT IS HELD TO THE GATE, which is what keeps the prose from drifting
+ * once the machine reading above stopped depending on it.
+ *
+ * THE MANIFEST IS THE SUBJECT AND THE README IS THE PREDICATE, in that order: a
+ * publisher deletes `private` because the tool forced them to, and this is what
+ * says the document must catch up. Without it the root README could go on
+ * calling tsudoi unpublished for as long as nobody noticed -- true of the flag's
+ * premise and false of the world.
+ */
+test("the root README agrees with the manifest about whether publication is forbidden", () => {
+  expect(`README says unpublished: ${String(statesFact(readReadme(), UNPUBLISHED))}`).toBe(
+    `README says unpublished: ${String(tsudoiIsUnpublished())}`,
+  );
+});
+
 test("every member's own README states the premise the flag is carried under", () => {
   const members = declaredMembers(repoRoot);
 

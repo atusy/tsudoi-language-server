@@ -512,13 +512,19 @@ export function statesFact(markdown: string, fact: ReadmeFact): boolean {
  * that purchase EXPIRES the day tsudoi is published, leaving a plain lie with
  * nothing bought by it.
  *
- * THE README IS THE INSTRUMENT BECAUSE IT IS THE SITE THE PUBLISHING EDIT PASSES
- * THROUGH, and because it is the only durable statement of the premise: a
- * dashboard entry saying the flag `should` change is read by nobody on
- * publication day, and this dashboard compacts. test/readme.test.ts requires
- * this fact to have exactly ONE home in the document, so the section that states
- * it is the section a publisher rewrites -- and test/optional-peer-premise.test.ts
- * turns that rewrite into a red across every member.
+ * THE README IS NOT WHAT THE PREMISE HANGS ON, and saying so here is the point
+ * of this paragraph: prose is not on the publication path. `bun publish` never
+ * opens this document, so a publisher who does not edit it succeeds with every
+ * member's manifest still calling tsudoi optional. The premise hangs on the root
+ * manifest's `private: true`, which the tool DOES read and refuses to publish
+ * past -- test/optional-peer-premise.test.ts keys on that key and reddens across
+ * every member the moment it goes.
+ *
+ * WHAT THIS FACT IS STILL FOR: the document must not contradict that gate. It is
+ * the statement a reader meets, and test/readme.test.ts requires it to have
+ * exactly ONE home so there is a single section to rewrite -- with
+ * test/optional-peer-premise.test.ts holding the two to each other, so the prose
+ * cannot go on calling tsudoi unpublished after the manifest has stopped.
  */
 export const UNPUBLISHED: ReadmeFact = {
   name: "the package is not published",
