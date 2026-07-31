@@ -6,7 +6,6 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,7 +13,7 @@ import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
-import { runTsc } from "./helpers/typecheck.ts";
+import { mirrorInstalledDependencies, runTsc } from "./helpers/typecheck.ts";
 
 /**
  * Decisions that have to live in package.json and tsconfig.json, asserted
@@ -32,7 +31,7 @@ async function typeCheckWith(
 ): Promise<number | null> {
   const dir = mkdtempSync(join(tmpdir(), "tsudoi-tsconfig-"));
   try {
-    symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir");
+    mirrorInstalledDependencies(dir);
     mkdirSync(join(dir, "src"));
     mkdirSync(join(dir, "dist"));
     writeFileSync(join(dir, "src", "ok.ts"), "export const ok = 1;\n");
@@ -312,7 +311,13 @@ test("with no mapping the same subpaths answer from the built artifact", async (
   try {
     const declarations = publishedArm("types");
     const { paths: _dropped, ...withoutMapping } = repoOptions;
-    symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir");
+    // MIRRORED AND NOT THE WHOLE DIRECTORY, because the subject here IS a route
+    // to this package: the manifest written below is what must answer
+    // `@atusy/tsudoi-language-server/*`, and an installed entry for this package
+    // reachable from the probe would answer it INSTEAD, silently, with the
+    // reading still printing a file. Perturbed by removing that manifest's
+    // `exports`, this arm reddens and nothing else answers -- measured.
+    mirrorInstalledDependencies(dir);
     writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson));
     for (const arm of Object.values(
       packageJson.exports as Record<string, Record<string, string>>,

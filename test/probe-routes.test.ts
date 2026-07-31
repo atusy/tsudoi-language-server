@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { repoRoot } from "./helpers/spawn.ts";
-import { mirrorInstalledDependencies } from "./helpers/typecheck.ts";
+import { mirrorInstalledDependencies, typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
  * WHAT A THROWAWAY PROBE IS ALLOWED TO REACH, ASSERTED AT THE HARNESS THAT HANDS
@@ -109,4 +109,30 @@ test("the compiler and the type packages a probe compiles against are still reac
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+/**
+ * THE SAME PROPERTY READ THROUGH THE COMPILER, which is the reading that says
+ * what the arms above are FOR: an entry the mirror drops is a specifier the
+ * probe can no longer answer, so a control that perturbs the probe's own copy of
+ * a manifest is the only thing left that can answer it.
+ *
+ * THE PAIR IS TWO SPECIFIERS AND ONE PROBE, because `TS2307` on its own is also
+ * what a broken harness prints: one names a workspace package the probe never
+ * installed and must fail, the other names an installed dependency and must
+ * resolve, and no apparatus failure produces that combination.
+ */
+test("a probe cannot resolve a workspace package it never installed, and still resolves one it did", async () => {
+  const unreachable = await typeCheckProbe({
+    "probe.ts": 'export { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";\n',
+  });
+  const reachable = await typeCheckProbe({
+    "probe.ts": 'export { CompletionItemKind } from "vscode-languageserver-protocol";\n',
+  });
+
+  expect(unreachable.output).toContain("TS2307");
+  expect(unreachable.output).toContain("@atusy/tsudoi-hover-wordnet");
+  expect(unreachable.code).not.toBe(0);
+  expect(reachable.output).toBe("");
+  expect(reachable.code).toBe(0);
 });
