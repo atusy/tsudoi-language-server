@@ -234,6 +234,27 @@ test("each member's pack command runs, and writes the file its own install names
       );
     }
     const tarball = join(repoRoot, installed.slice(prefix.length));
+    const alsoRemoved = join(repoRoot, pack.dir, basename(tarball));
+    // REFUSED BEFORE THE COMMAND RUNS, and this is what makes the existence
+    // check below a reading of THIS run rather than of the directory. A tarball
+    // already sitting at either path -- left by a hand-run pack, or by an earlier
+    // run that died between the command and the cleanup -- satisfies `the pack
+    // wrote the file the install names` with the pack having written nothing, so
+    // the one defect this test exists to catch is the one a stale artifact
+    // hides. AND THE COST IS NOT ONLY A FALSE GREEN: the cleanup below then
+    // deletes a file this run did not create.
+    //
+    // BOTH PATHS, because both are removed. Guarding only the documented target
+    // would leave the clobber open on the other, which is the one the cleanup
+    // reaches when the document is wrong -- exactly the case the `finally` is
+    // written for.
+    for (const stale of [tarball, alsoRemoved]) {
+      if (existsSync(stale)) {
+        throw new Error(
+          `${stale} exists before ${member.name}'s pack runs: this reading would pass on a file it did not write, and the cleanup would delete it. Remove it and run again.`,
+        );
+      }
+    }
     try {
       const result = await runCommand(pack.command, join(repoRoot, pack.dir));
 
