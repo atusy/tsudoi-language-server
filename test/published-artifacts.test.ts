@@ -536,10 +536,10 @@ test("the identity probe reddens on both near-misses where mutual assignability 
  * The evidence lives in those two: the probe reddens when the published arm
  * breaks, and an in-repo check cannot observe that break at all.
  *
- * The deleted test called runTsc(repoRoot), which IS the `tsc --noEmit` the
- * Definition of Done already runs -- so it could not fail unless the DoD had
- * already failed. A control that cannot fail is not one, and an inert test is
- * how a suite's green stops meaning what it says.
+ * NO TEST HERE MAY CALL runTsc(repoRoot), and this is the trap to refuse: that
+ * IS the `tsc --noEmit` the Definition of Done already runs, so it cannot fail
+ * unless the DoD has already failed. A control that cannot fail is not one, and
+ * an inert test is how a suite's green stops meaning what it says.
  */
 
 /**

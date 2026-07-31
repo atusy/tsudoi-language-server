@@ -26,15 +26,15 @@
 # a config, and a top-level preload would build once per spawned process and
 # make every one of them depend on the compiler.
 #
-# WHAT THIS DOES NOT REACH, AND IT IS THE REASON PBI-35 WENT BACK TO THE
-# PRODUCT OWNER RATHER THAN CLOSING. Measured across every invocation form:
+# WHAT THIS DOES NOT REACH, AND IT IS WHY STALENESS IS HANDLED HERE RATHER
+# THAN IMPOSSIBLE. Measured across every invocation form:
 # `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>`
 # all preload this ONCE, so the single-file bypass the PBI named does not
 # exist. But bun discovers bunfig.toml relative to the CURRENT WORKING
 # DIRECTORY and does NOT search upward, so `cd test && bun test` RUNS all 681
 # tests with no build at all -- and, measured on a tree whose dist/deps/types.js
-# has been narrowed to `export {}`, 596 of them PASS. PBI-35 required staleness
-# to be IMPOSSIBLE rather than handled; on that one route it is merely handled,
+# has been narrowed to `export {}`, 596 of them PASS. On that one route
+# staleness is merely handled rather than foreclosed,
 # by the comparison in test/package-shape.test.ts between dist/deps/types.js and
 # the names `vscode-languageserver-types` declares -- the failure among those 85
 # WRITTEN TO NAME THE BUILD as its cause, where the four in test/hover.test.ts
