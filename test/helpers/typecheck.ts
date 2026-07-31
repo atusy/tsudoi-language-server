@@ -1,7 +1,16 @@
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { repoRoot } from "./spawn.ts";
 
 export interface TypeCheckResult {
@@ -119,15 +128,73 @@ export function runTsc(cwd: string, args: readonly TscReportFlag[] = []): Promis
 }
 
 /**
- * Gives a throwaway project the dependencies this repository installed.
+ * Whether an entry leads back into this checkout rather than into something the
+ * package manager installed.
+ *
+ * READ OFF `realpath` AND NOT OFF A LIST OF NAMES, which is what makes the
+ * exclusion survive the next workspace member: the entry the day's `bun install`
+ * writes is dropped here with no edit anywhere. A list would have to be kept in
+ * step with `workspaces` by whoever remembered, and the failure of remembering
+ * is a probe that goes green measuring nothing.
+ *
+ * THE BOUNDARY IS node_modules AND NOT THE CHECKOUT, because everything a
+ * package manager put here IS inside the checkout: the installed packages
+ * resolve into node_modules/.bun, and only a workspace link leaves it.
+ */
+function reachesBackIntoTheCheckout(entry: string): boolean {
+  const at = realpathSync(entry);
+  const checkout = realpathSync(repoRoot);
+  const installed = realpathSync(join(repoRoot, "node_modules"));
+  return at.startsWith(checkout + sep) && !at.startsWith(installed + sep);
+}
+
+/**
+ * Gives a throwaway project the dependencies this repository INSTALLED, and
+ * nothing this repository merely CONTAINS.
  *
  * A NAMED STEP RATHER THAN A LINE INSIDE THE PROBE BUILDER, because what a probe
  * can reach is a property of THE HARNESS: every probe gets whatever this hands
  * out, so a route added here is added to every control ever written against it,
  * and nothing at the probe's own site would say so.
+ *
+ * PER PACKAGE AND NOT THE WHOLE DIRECTORY, WHICH IS THE WHOLE POINT OF THE
+ * FUNCTION. MEASURED with the wholesale symlink in place: a probe reached
+ * packages/tsudoi-hover-wordnet and packages/tsudoi-completion-path by name --
+ * packages it never installed, whose manifests it never copied and cannot
+ * perturb. A probe that deleted `exports` from its own copy of a manifest
+ * resolved anyway and reported EXIT 0, so the control written to prove the
+ * exports map load-bearing measured nothing at all. That is a control LYING
+ * rather than a control missing, which is the failure mode with no colour.
+ *
+ * SCOPE DIRECTORIES ARE WALKED INTO rather than linked whole: a scope holds
+ * packages from different places, and this repository's `@atusy` holds exactly
+ * the two the exclusion is for. Linking the scope would re-import wholesale
+ * precisely what the per-package mirror is here to drop.
+ *
+ * THE ROUTE IT LEAVES IS THE PROBE'S OWN. A probe copies the manifest it is
+ * about and writes its own sources; whatever it wants to be reachable, it
+ * declares or symlinks for itself, where a reader of that probe can see it.
  */
 export function mirrorInstalledDependencies(into: string): void {
-  symlinkSync(join(repoRoot, "node_modules"), join(into, "node_modules"), "dir");
+  const installed = join(repoRoot, "node_modules");
+  const modules = join(into, "node_modules");
+  mkdirSync(modules, { recursive: true });
+  for (const entry of readdirSync(installed)) {
+    const source = join(installed, entry);
+    if (!entry.startsWith("@")) {
+      if (!reachesBackIntoTheCheckout(source)) {
+        symlinkSync(source, join(modules, entry), "dir");
+      }
+      continue;
+    }
+    for (const scoped of readdirSync(source)) {
+      if (reachesBackIntoTheCheckout(join(source, scoped))) {
+        continue;
+      }
+      mkdirSync(join(modules, entry), { recursive: true });
+      symlinkSync(join(source, scoped), join(modules, entry, scoped), "dir");
+    }
+  }
 }
 
 /**
@@ -141,12 +208,17 @@ export function mirrorInstalledDependencies(into: string): void {
  * only be observed against a package.json nobody ships.
  *
  * package.json is COPIED from the repo and src/ is SYMLINKED to it, so these
- * tests track the identity and the module that actually ship. Only
- * node_modules is borrowed for convenience -- src/types.ts imports tsudoi's own
- * declared dependencies, and installing them per probe would cost a network
- * fetch to prove nothing. Named that way rather than listed: the set of
+ * tests track the identity and the module that actually ship. The installed
+ * dependencies are MIRRORED rather than installed -- src/types.ts imports
+ * tsudoi's own declared dependencies, and installing them per probe would cost a
+ * network fetch to prove nothing. Named that way rather than listed: the set of
  * declared dependencies grows, and a comment that spells it out goes stale at
  * the next one.
+ *
+ * MIRRORED AND NOT BORROWED, which is the difference this probe's controls rest
+ * on: the whole directory used to be handed over, and it carried entries leading
+ * back into this checkout that answered the very specifiers a probe had
+ * perturbed.
  */
 export async function typeCheckProbe(
   files: Record<string, string>,

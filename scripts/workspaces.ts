@@ -306,13 +306,17 @@ const toolRoot = fileURLToPath(new URL("../", import.meta.url));
  * the dist/ this repository is building, not a snapshot of it.
  *
  * IN THE MEMBER'S node_modules AND NOT THE ROOT'S, AND THAT IS NOT TIDINESS.
- * MEASURED at the root: test/helpers/typecheck.ts symlinks the repo's whole
- * node_modules into every throwaway probe, so an entry there hands each probe a
- * SECOND route to this package -- one that reaches the repository's real
- * package.json. The probe that DELETES `exports` from its own copy then resolves
- * anyway and reports EXIT 0, and a control written to prove the exports map is
- * load-bearing measures nothing. A member's own node_modules is reached by
- * nothing but that member.
+ * MEASURED at the root, and kept because the finding outlives the route it
+ * arrived by: test/helpers/typecheck.ts USED TO HAND every throwaway probe the
+ * repository's whole node_modules, so an entry there was a SECOND route to this
+ * package -- one reaching the repository's real package.json. A probe that
+ * DELETED `exports` from its own copy resolved anyway and reported EXIT 0, and
+ * the control written to prove the exports map load-bearing measured nothing.
+ * THAT HELPER NOW MIRRORS PER PACKAGE and drops whatever leads back into this
+ * checkout, so the probes are no longer the reason -- WHAT REMAINS THE REASON is
+ * what made a root entry dangerous in the first place: everything that walks up
+ * out of this checkout finds it, and only one of those things has been closed. A
+ * member's own node_modules is reached by nothing but that member.
  *
  * WHAT THIS IS NOT: a shortcut around the member's own resolution. It creates
  * the node_modules ENTRY and nothing else, so the specifier is answered the way
