@@ -135,12 +135,18 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * -name resolution the next paragraph is about. It is run by bun, which is the
  * toolchain this repository documents.
  *
- * THE ROOT PACKAGE'S OWN prepack DOES NOT CLEAR, and the asymmetry is measured
- * rather than forgotten: test/helpers/install.ts packs the root from a FRESH
- * staging directory holding package.json, src/ and tsconfig.build.json alone, so
- * its dist/ is built into an empty tree every time. This package is packed FROM
- * WHERE IT LIVES -- deliberately, so no probe has to perturb a copy -- so its
- * dist/ is the one that persists between packs and the one that needs clearing.
+ * THE ROOT PACKAGE'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
+ * ROUTE UNDER TEST rather than everywhere: test/helpers/install.ts packs the root
+ * from a FRESH staging directory holding package.json, src/ and
+ * tsconfig.build.json alone, so its dist/ is built into an empty tree every time.
+ * This package is packed FROM WHERE IT LIVES -- deliberately, so no probe has to
+ * perturb a copy -- so its dist/ is the one that persists between packs.
+ *
+ * WHAT THAT LEAVES UNCOVERED, said rather than implied: a HUMAN running
+ * `bun pm pack` at the repository root packs whatever dist/ is lying there, with
+ * the same staleness this clear removes here. Nothing in the suite takes that
+ * route, so nothing observes it; the root has no `.d.ts` input to leak, which
+ * bounds the consequence to a stale artifact rather than to a global declaration.
  *
  * BY BARE NAME, which is what takes the node_modules/.bin resolution: script
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one
