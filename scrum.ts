@@ -38,6 +38,36 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-59",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "add a package that another package depends on without discovering that the build order was the alphabet",
+        benefit:
+          "the order things are built in is a fact about what they need, so it keeps being right when the names change",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "The order packages are built in is derived from what they depend on, not from the order their directory names sort in.",
+          verification:
+            "Arrange a package set where a dependent sorts before tsudoi, remove every dist/, run the build, require success. THE CONTROL FILED HERE IS MEASURED FALSE AND IS REPLACED, which is why this field is rewritten rather than annotated: against an order-by-sort implementation the dependent does NOT fail and names nothing -- probe cell 6 reads EXIT 0 under BOTH member configs, emitting a `HANDLER_SAW` declaration whose type is the SOURCE marker, having compiled against tsudoi's SOURCE through the `default: ./src/*.ts` arm. So no colour distinguishes the two implementations and an exit code is the wrong instrument for this criterion. THE DISCRIMINATOR IS WHICH FILE THE DEPENDENT COMPILED AGAINST, READ AS A VALUE: the probe already built that instrument -- a marker whose TYPE differs between source and dist, so the compiler NAMES the arm that answered -- and the control is the order-by-sort implementation caught reading SOURCE where the derived order reads DIST. STATED IN ADVANCE, since this reads an ordering and not a colour: what a degenerate implementation would produce (build everything twice, or build in any order and retry until green), with one run against a deliberately broken control. AND THE PARTIAL STATE IS PART OF THE SUBJECT RATHER THAN AN EDGE CASE: `bun pm pack` runs `rm -rf dist && tsc`, so a member's dist is transiently ABSENT and then PARTIAL during ordinary suite operation, and in the PARTIAL window the COMPILER READS SOURCE WHILE THE RUNTIME READS DIST -- two files, two values, both exit 0. MEASURED BY READING, and unchanged: `prepareWorkspace` builds the root and then loops `declaredMembers`, which returns `[...members].sort()`; with the stakeholder's `packages/tsudoi-language-server`, tsudoi sorts AFTER both handler members.",
+        },
+        {
+          criterion:
+            "A probe that perturbs a package's OWN route to tsudoi cannot be answered by a second route the harness supplied.",
+          verification:
+            "The hazard has a subject TODAY and is therefore measurable before the move rather than after it: test/helpers/typecheck.ts symlinks the whole root node_modules into every throwaway probe, and `node_modules/@atusy/tsudoi-hover-wordnet` resolves in this checkout -- READ, not assumed. So take every consumer of that helper, perturb the member's own route, and read whether the probe still resolves. MEASURED IN THE PROBE AND THIS IS WHY THE CRITERION EXISTS: a control stated in advance did not fail, because the root entry answered what the perturbation removed, and a second control in a different cell was vacuous for the same reason. THE PAIR: each such probe, with EVERY route stashed, produces the failure it predicts.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "SPLIT OUT OF PBI-56 BY THE PRODUCT OWNER, AND THE BOUNDARY IS A SPRINT BOUNDARY AND NOT A COMMIT BOUNDARY -- sprint 50's retrospective filed exactly that ambiguity against a decision that did not say which it meant.",
+        "IT GOES IN GREEN, WHICH IS THE POINT OF DOING IT FIRST: today's constructed order already EQUALS the derived one, so this lands with no behaviour change and the move afterwards cannot be the thing that first exercises it. Doing it inside the move would mean debugging an ordering and a resolution at once, with each able to explain the other's failure.",
+        "THE SECOND-ROUTE HAZARD IS HERE RATHER THAN IN THE MOVE FOR THE SAME REASON: it already has a subject in this checkout, and after the move it spreads to every control the move writes. Closing it while it is small is cheaper than closing it while it is the reason a control lies.",
+      ],
+    },
+    {
       id: "PBI-56",
       story: {
         role: "tsudoi maintainer",
@@ -58,12 +88,6 @@ const scrum: ScrumDashboard = {
             "With dist/ present and built from the PREVIOUS source, a type error introduced in tsudoi's own source reddens the Definition of Done, and the failure names that source file.",
           verification:
             "Introduce the error, run the checks AS THE DEFINITION OF DONE SPELLS THEM AND NOT A MODEL OF THEM, read WHICH check reports it and WHAT the failing output names; remove it and confirm green, so it is not a permanent red. THE CRUX IS SETTLED AND CHECK 4 IS NOT THE OWNER: with dist built from the previous source, root `tsc --noEmit` EXITS 0 (4c) because it reads dist/types.d.ts, while the fifth check reports it naming packages/tsudoi-language-server/src/types.ts (4d). AND CHECKS 1 AND 5 BOTH OWN IT THROUGH ONE `execFileSync`, which the probe could not see because it ran the fifth check alone: `prepareWorkspace` is ALSO the `bun test` preload, so the same failed build aborts `bun test` before a single test file loads. WHAT `NAMES THAT SOURCE FILE` MUST MEAN, NARROWED BECAUSE THE REAL SCRIPT WAS READ AND THE MODEL FLATTERED IT: `build` runs tsc with `cwd` INSIDE the member and `execFileSync` throws on a nonzero exit, so the crux arrives as the BUILD failure alone, before `typeCheckMember` runs, printing a member-relative `src/types.ts(3,14)` -- and after the move this repository has THREE `src/` directories, so that string identifies none of them. THE CRITERION IS MET ONLY IF THE FAILING RUN'S OWN OUTPUT NAMES THE MEMBER AND THE FILE TOGETHER, readable without consulting a second source, in BOTH readers. `typeCheckMember` already carries the reason for its own half -- run from the root, which is what puts the member's name in tsc's own diagnostics -- and the build half now needs the same property. A run that exits 1 printing only `src/types.ts` FAILS THIS CRITERION.",
-        },
-        {
-          criterion:
-            "The order packages are built in is derived from what they depend on, not from the order their directory names sort in.",
-          verification:
-            "Arrange a package set where a dependent sorts before tsudoi, remove every dist/, run the build, require success. THE CONTROL FILED HERE IS MEASURED FALSE AND IS REPLACED, which is why this field is rewritten rather than annotated: against an order-by-sort implementation the dependent does NOT fail and names nothing -- probe cell 6 reads EXIT 0 under BOTH member configs, emitting a `HANDLER_SAW` declaration whose type is the SOURCE marker, having compiled against tsudoi's SOURCE through the `default: ./src/*.ts` arm. So no colour distinguishes the two implementations and an exit code is the wrong instrument for this criterion. THE DISCRIMINATOR IS WHICH FILE THE DEPENDENT COMPILED AGAINST, READ AS A VALUE: the probe already built that instrument -- a marker whose TYPE differs between source and dist, so the compiler NAMES the arm that answered -- and the control is the order-by-sort implementation caught reading SOURCE where the derived order reads DIST. STATED IN ADVANCE, since this reads an ordering and not a colour: what a degenerate implementation would produce (build everything twice, or build in any order and retry until green), with one run against a deliberately broken control. AND THE PARTIAL STATE IS PART OF THE SUBJECT RATHER THAN AN EDGE CASE: `bun pm pack` runs `rm -rf dist && tsc`, so a member's dist is transiently ABSENT and then PARTIAL during ordinary suite operation, and in the PARTIAL window the COMPILER READS SOURCE WHILE THE RUNTIME READS DIST -- two files, two values, both exit 0. MEASURED BY READING, and unchanged: `prepareWorkspace` builds the root and then loops `declaredMembers`, which returns `[...members].sort()`; with the stakeholder's `packages/tsudoi-language-server`, tsudoi sorts AFTER both handler members.",
         },
         {
           criterion:
