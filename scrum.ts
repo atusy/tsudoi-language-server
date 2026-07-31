@@ -522,7 +522,139 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 52,
+    pbi_id: "PBI-56",
+    goal: "tsudoi is acquired by `bun install` the same way a stranger's project acquires it, and the CLI still starts and answers under Bun and Deno, from a checkout and from an installed tarball.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A member whose source carries a type error is built through the real entry point in a SPAWNED child with piped stdio, and the failing run's own output names the member and the file TOGETHER. Arms: the same tree without the error writes the same artifact at the same path with the same bytes, so the invocation change is not an artifact change; and the degenerate control -- the old invocation on the same tree -- prints a bare `src/x.ts` and names no member.",
+        implementation:
+          "The builder runs the compiler from the ROOT with the member's config named relatively, so the compiler's OWN diagnostic carries the member. Not a wrapper that prints the member on another line: the criterion asks for them together, and with three src/ directories a wrapper leaves the joining to the reader.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ONE CALL SITE CLOSES BOTH READERS, which is why this is an invocation change and not a report: check 1's preload and check 5 own the crux through the SAME `execFileSync`, and it throws before the per-member type check can speak. Verifiably not an artifact change -- no member config uses `extends`, so its rootDir/outDir/include resolve against the config file and not the cwd.",
+        ],
+      },
+      {
+        test: "The handler enumeration equals the member enumeration BYTE FOR BYTE TODAY, and in a throwaway three-member tree the member declaring no peer on tsudoi is excluded while the two that do are returned in order. Plus the non-empty pair, plus the falsifier that a tsudoi-shaped member is not returned.",
+        implementation:
+          "A `handlerMembers` enumerator beside `declaredMembers`, then a PER-SITE re-read of every caller -- each repointed or left with a written reason. Never applied wholesale.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE LARGEST RISK IN THE SPRINT AND IT IS CLOSED BEFORE ANYTHING MOVES: ten test files would silently gain tsudoi as a third HANDLER. One of them asserts every member declares a peer on tsudoi, WHICH TSUDOI CANNOT DO FOR ITSELF; another demands a pack-and-install route and a root-README link for a package that is not a handler; another scans a member's src/ for the completion method and would begin scanning tsudoi's own.",
+          "THE ENUMERATION'S NARROWING IS FORCED RATHER THAN CHOSEN, which is the PO's ratification: two of the four facts a member README must state are unstatable by tsudoi about itself.",
+        ],
+      },
+      {
+        test: "A quickstart marker whose token equals a declared member's basename is REFUSED, naming the marker and both directories it would denote; the unperturbed README stays green with its existing arms.",
+        implementation:
+          "The marker's vocabulary changes so that no quickstart token can denote two directories, and the directory a reader is SHOWN is the directory the marker OBEYS.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "RULED AS A PROPERTY AND NOT AS A SPELLING, because the two marker families use different vocabularies: one is checkout-relative, the other names a SIBLING resolved through the checkout's own basename inside a staged parent. The PO declined to hand over a string they could not verify resolves.",
+        ],
+      },
+      {
+        test: "Today green and byte-identical. Falsifier in a throwaway where the sentinel is deleted from the LOCATED manifest: both members are reported. Control: a different manifest losing it does not move the reading.",
+        implementation:
+          "The premise locates tsudoi's manifest by WHICH PACKAGE DECLARES THE PUBLISHED NAME rather than by the checkout root.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PRE-MOVE HALF ONLY. The differential the criterion actually asks for -- deleting the sentinel from the MEMBER's manifest reddens both members AND deleting it from the ROOT's alone does not -- is post-move, and today's implementation produces exactly the opposite pair.",
+        ],
+      },
+      {
+        test: "Measurement only, recorded in the dashboard, no production edit.",
+        implementation:
+          "Five uncited facts, measured before anything is built on them: whether bun links a workspace member for the PLAIN range the handlers actually spell (sprint 51 measured `workspace:*`, which is not what is on disk); what `bun install` does when two packages in one workspace claim one name; whether publishing from inside a member consults anything but that member's manifest; whether bun hoists a REGULAR workspace dependency into the root; and a re-measurement IN THIS TREE that member-to-member resolution works natively, since that reading was taken elsewhere.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "None new -- its pair is the whole Definition of Done plus every arm landed above. THE FIRST READING IS TAKEN IN THE MOVED-BUT-NOT-YET-INSTALLED TREE and recorded as failure text, with the shapes stated in advance, because that is the state the checkout is IN between two commits and sprint 51 measured that state CRASHING a helper rather than reddening a test.",
+        implementation:
+          "The move, one atomic commit: record the four existing node_modules entries FIRST so the post-install reading can say which route answered; move src/ and the build config into packages/tsudoi-language-server and write its manifest and tsconfig; strip the root to a private workspace root under its new name with tsudoi in devDependencies; DELETE each handler's hand-written entry explicitly and retire the linker; read the pre-install tree; install; follow every entry to its target; rewrite in the same commit everything the move falsifies; then the full Definition of Done.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EACH HANDLER'S ENTRY MUST BE DELETED BY HAND AND THAT IS THE SILENT HAZARD OF THIS MOVE: those links are ABSOLUTE and point at the checkout root, so after the move they still RESOLVE -- to a directory that is no longer the tsudoi package -- and the linker's own `a directory that resolves is somebody's install` early-return makes it structurally unable to repair them.",
+          "THE ROOT DECLARES TSUDOI IN devDependencies, RULED AND NOT DISCOVERED: the root ships nothing, is private forever, carries no build config after the move so the builder skips it, and already devDepends on both handlers. No production-install route exists anywhere in this repository, so devDependencies are always installed here -- the one fact that would have flipped it. CONSEQUENCE, and it is the redness filed as the derivation earning its keep: the derived order becomes root, tsudoi, then the two handlers, contradicting the sorted order, and the byte-for-byte arm is rewritten to EXACTLY THAT SEQUENCE, never to a set comparison.",
+          "ATOMIC BECAUSE THE STATE IS REAL AND IS ENTERED ON PURPOSE: between the first edit and the install, every handler's specifier is answered by the wrong package or by nothing. `never leaves the tree in a state where nothing loads` is achievable at COMMIT granularity only; the bad state is entered once, deliberately, and READ.",
+        ],
+      },
+      {
+        test: "Deleting the publish sentinel from the MEMBER's manifest reddens both members; deleting it from the ROOT's alone does not.",
+        implementation:
+          "None if the premise was already retargeted; if an edit is needed here, it was located wrongly.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "The entry is READ AND FOLLOWED, not merely present. Then, with the root entry and any member-local copy STASHED, removing a handler's declaration gives the unresolved-module failure naming that handler's own source and the tsudoi subpath; restoring it goes green.",
+        implementation:
+          "The vacuity sweep across the three wholesale node_modules symlinks outside the harness closed last sprint, each of which now hands its tree a RESOLVING tsudoi entry: per site, the mirror treatment or a written reason why the second route cannot answer that site's question.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "EVERY CONTROL THAT PERTURBS A MEMBER'S OWN ROUTE STATES IN ADVANCE WHAT A DEGENERATE IMPLEMENTATION PRINTS AND IS RUN ONCE AGAINST A DELIBERATELY BROKEN CONTROL. This is the sprint's second standing refusal and it is not the byte-for-byte one: that protects an EXISTING assertion from being weakened to fit the move; this protects the NEW ones from being unable to fail.",
+        ],
+      },
+      {
+        test: "The existing cross-runtime and tarball arms, read as the pair -- the exports arms are relative to the manifest that just moved, and a broken arm reddens the deno route first.",
+        implementation:
+          "The documented pack command's TEXT does not change and its DIRECTORY does; the tarball still lands at the workspace root, so the install line a human follows stays true -- and that non-change is load-bearing prose a reader is owed rather than a coincidence.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE FIVE DEFINITION-OF-DONE CHECKS MUST KEEP WORKING FROM THE CHECKOUT ROOT, for the reason bunfig.toml records. What `bun pm pack` at the checkout root does after the move is a first-day measurement rather than a gate: it is the muscle-memory route, and it is the same mechanism the publish sentinel rests on.",
+        ],
+      },
+      {
+        test: "A named subtask rather than a first-run discovery: the README test builds its expectation from the ROOT manifest's `exports`, which the move deletes -- so it would throw AT MODULE LOAD, taking the comparison and its permanent pair down with it rather than failing an assertion.",
+        implementation: "Repoint it at the manifest that carries the published surface.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "None -- the suite is the pair.",
+        implementation:
+          "The rewritten-not-deleted sweep, each measurement dispositioned rather than swept: the linker's failed-spelling record moves to this dashboard as history because its function is deleted; the absolute-link reading is RE-MEASURED, because bun's link is relative and the dangle mode inverts; bunfig's causal clause and first-failure shape are RE-MEASURED; the two package-shape records lose their subject and are rewritten with the weakening DECLARED; the redundant-covers reading is retired with its reason; the lint override globs and the spawn helper's root ambiguity are DEFECTS and are rewritten; the published-surface note moves with the exports map; CLAUDE.md's build model is rewritten after re-measurement, because whether a fresh checkout's root type check still fails is now an open question.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE C4 RESIDUE IS CARRIED AS A COMMENT AND DELIBERATELY NOT AS A TEST. Root importers read dist when dist is PRESENT; in the ABSENT and PARTIAL states the compiler alone falls through to source and exits 0, and PARTIAL is entered CONCURRENTLY by this suite's own pack tests. A TEST THAT PINNED THE FLIP WOULD BLESS IT -- it would pass while the residue persists, specifying rather than detecting it, and would make the later fix look like a regression. The choosing test the PO gave: does the form FAIL when someone closes the residue? If yes, it is blessing a defect.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "TSUDOI GETS NO README AS A MEMBER AND THE MEMBER ENUMERATION NARROWS TO HANDLER PACKAGES. A prose-only pointer is REFUSED on this repository's own doctrine -- the document nobody executes is the one that goes stale, and it would be a new liability rather than a closure. WHAT THAT COSTS, FILED RATHER THAN DISCOVERED: a member pack ships a tarball with NO README where today's root pack ships one. It binds only the day tsudoi publishes, and the sentinel travelling to the member manifest forecloses that until a publishing decision reopens it.",
+      "THE ROOT TAKES A DISTINCT PRIVATE NAME, `@atusy/tsudoi-workspace`, AND THE COLLISION IS NOT KEPT-AND-MEASURED. Two packages claiming one name is `one package spelled two ways` in the ONE PLACE the name guard cannot see -- it iterates members and the root is not one -- and its failure mode is SILENCE: last-write-wins, no throw, no reorder. Measuring that green would license a state whose whole defect is that nothing reports it. Dropping `name` is refused for the SAME reason rather than a different one. The string must not be a prefix-extension of the published name, because a recorded boundary exists to refuse exactly that string class.",
+      "THE EXACT STRING IS THE PO'S AND NOT THE STAKEHOLDER'S, stated so the boundary is on the record: it appears in no registry, no consumer's manifest and no executed command block. The stakeholder's ruling -- the directory, and a root with no src/ -- is what all three of this sprint's decisions sit inside.",
+      "IF THE SPRINT MUST SHRINK, THE NAMING REPAIR IS WHAT DROPS AND THE PUBLISH SENTINEL IS WHAT NEVER DOES. The crux itself is already answered, so what remains of the first is a repair whose absence leaves a failure that is LOUD BUT AMBIGUOUS -- the only one of the five whose absence produces nothing green-but-wrong. The sentinel goes green MEASURING NOTHING the moment the manifest moves, so a sprint that ships the move without it ships a test certifying a premise it can no longer see.",
+      "THE `default: ./src/*.ts` ARM'S FATE IS A FOLLOW-UP'S AND NOT THIS SPRINT'S: its recorded costs were measured under the layout this move destroys, and deleting it here would put TWO subject flips in one sprint and make the move's own readings unattributable. UNTIL IT LANDS THE FLIP STANDS UNDETECTED AND THIS SPRINT MUST NOT BE REVIEWED AS THOUGH IT WERE CLOSED.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 51,
