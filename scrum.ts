@@ -350,7 +350,119 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 51,
+    pbi_id: "PBI-59",
+    goal: "The build order comes from what each package declares it needs -- proven in a set where the alphabet gets it wrong -- and no probe of a member's own route to tsudoi can be answered by a route the harness handed it.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- extraction only; the file it comes out of stays green with no behaviour change.",
+        implementation:
+          "Extract the throwaway-workspace builder out of test/workspace-members.test.ts into a helper and import it back, so the new file can drive the same tree. Kept separate from the path-shape helper beside it, with a comment saying which is which so the next reader does not merge them.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "`buildOrder(repoRoot)` equals today's constructed order EXACTLY -- root, then the two members -- and contains each node exactly once. Paired with a reading of the node set against the root plus `declaredMembers`, so an empty answer cannot pass.",
+        implementation:
+          "`buildOrder` exported from scripts/workspaces.ts: nodes are the root plus `declaredMembers`, keys are manifest names, edges are the declared dependency fields intersected with the node names, Kahn with a sorted-path tie-break. `prepareWorkspace` is not touched yet.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE ROOT IS A NODE BECAUSE IT IS A BUILDABLE PACKAGE, NOT BECAUSE IT IS THE ROOT -- it carries a build config. That phrasing is what makes the move a no-op here: tsudoi becomes a member and stops being special with no edit to this function.",
+          "EXACTLY ONCE IS ASSERTED BECAUSE THE VALUE READING CANNOT SEE IT: `build everything twice` and `build in any order and retry until green` both produce the same artifact the correct order does. That is why the order is a RETURNED VALUE and not only an execution -- the two degenerates are visible in the sequence and invisible in the result.",
+        ],
+      },
+      {
+        test: "A throwaway where the producer sorts LAST: the derived order contradicts the alphabet. Control: the SAME tree with the consumer's declaration removed orders by the tie-break instead.",
+        implementation: "None -- this is the arm that forbids `sort()` as the implementation.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE CONTROL IS THE REAL IMPLEMENTATION WITH ONE DECLARATION DELETED, AND THAT IS A SUBSTITUTION MADE ON PURPOSE for the criterion's `one run against a deliberately broken control`. It is strictly stronger: it shows the order came from THE DECLARATION rather than from anything else in the tree, where a hand-written sorted rival only shows that some other function behaves differently.",
+        ],
+      },
+      {
+        test: "An OPTIONAL peer still orders the producer first. devDependencies create NO edge -- A devDepending on B while B depends on A builds rather than being called a cycle. A nameless member, and a nameless root, are ordered rather than refused.",
+        implementation:
+          "Whatever the orderer needs to satisfy these, with each ruling's reason written at the site.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "RULING, AND IT IS THE LANDMINE THAT WOULD HAVE MADE THE WHOLE ITEM VACUOUS: `peerDependenciesMeta.optional` DOES NOT DROP THE EDGE. The flag buys installability while tsudoi is unpublished and says nothing about compilation -- and dropping optional peers leaves THIS repository's graph with ZERO EDGES, so the order degenerates to the tie-break and the alphabet comes back wearing a topological sort's clothes.",
+          "RULING, DECIDED FROM WHAT IS ON DISK: devDependencies create no edge. The root devDepends on both handlers and both handlers peer-depend on the root, so INCLUDING them makes today's graph hold two 2-cycles, the orderer throws, and the throw lands in the `bun test` PRELOAD -- the exact inverse of `it goes in green`. Substantively: the root's published artifact is not compiled against either handler, so a devDep edge would order a build against a dependency the build does not have. THE COST IS ACCEPTED AND NAMED: a member devDepending on another member for its TESTS gets no ordering guarantee.",
+          "A NAMELESS NODE IS TOLERATED RATHER THAN REFUSED, and the reason is a test that would otherwise go green-looking while measuring a different function: the name guard runs in the FIFTH CHECK, after the preload, so an orderer that threw on a nameless node would abort `bun test` before that guard could speak -- and the existing arm for it would stay red, still containing the word `name`, now reddened by the wrong function.",
+        ],
+      },
+      {
+        test: "A cycle fails, and the message names BOTH packages and the declaration that closes it; the same tree with one declaration removed builds.",
+        implementation: "The cycle refusal, landing only after the acyclic arms above hold.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A CYCLE THROWS RATHER THAN FALLING BACK TO SORTED: a cycle is unbuildable, and the alternative is silently picking one and letting a package compile against an absent or stale artifact -- the class this story exists to end. SIZED DELIBERATELY BECAUSE THE THROW LANDS IN THE PRELOAD: it must be reachable only from a state this repository can never be in, which the byte-identical-order arm is what establishes.",
+        ],
+      },
+      {
+        test: "The value instrument: build the throwaway through the real entry point, then read the CONSUMER'S OWN EMITTED DECLARATION -- it says `dist` when it compiled against the built artifact. Control: the same tree minus the declaration says `src`.",
+        implementation:
+          "Rewire `prepareWorkspace` to loop the derived order, linking only for non-root nodes. Rewrite the `THE ROOT IS BUILT FIRST` comment in the same commit, because the conclusion survives and THE MECHANISM INVERTS.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "AN EXIT CODE CANNOT ANSWER THIS AND THAT IS MEASURED, NOT FEARED: the probe read EXIT 0 under both member configs from a consumer compiled against the producer's SOURCE, through the `default: ./src/*.ts` arm. So the reading is WHICH FILE, taken as a value out of an artifact. It works because the consumer's build is itself a step inside the loop, so the reading is taken DURING the ordering rather than after everything is built. The dist ABSENT state is the subject and PARTIAL is not: in PARTIAL the compiler reads source LEGITIMATELY, and a source marker there indicts nothing.",
+        ],
+      },
+      {
+        test: "RED TODAY: no entry reachable from a throwaway probe's node_modules resolves into this checkout outside its node_modules. Paired with: the compiler and the type packages ARE still reachable.",
+        implementation:
+          "Replace the wholesale symlink in test/helpers/typecheck.ts with a per-package mirror whose exclusion predicate is read off `realpath`, so the entry the move will create is dropped WITH NO EDIT.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE HAZARD HAS A SUBJECT TODAY, READ AND NOT ASSUMED: the root's entries for both handler packages RESOLVE, so every throwaway probe silently holds a working route to a package it never installed. AND A SECOND DEFECT IN THE SAME LINE: because the probe's only node_modules IS THE REPOSITORY'S, shared and concurrent, A PROBE CANNOT STASH A ROUTE AT ALL without damaging the checkout for every other test -- which is the mechanical reason this cannot be closed by letting the probe delete an entry.",
+          "BOTH HALVES OF THE PAIR ARE REQUIRED: without the green half, a mirror that accidentally dropped a declared dependency reddens for an apparatus reason and looks identical to the finding.",
+        ],
+      },
+      {
+        test: "Per consumer class: the perturbed probe is RED naming the specifier, and the unperturbed probe is GREEN. A probe importing a package the throwaway never installed is now unresolved where it resolved before.",
+        implementation:
+          "None beyond the mirror; the sweep records, PER FILE, whether that consumer's perturbation had a second route and why.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PO WILL REFUSE A SWEEP REPORTED AS `CONSUMERS REVIEWED` OR AS A COUNT. Each consumer is named with its pair. AND THE HONEST STATEMENT ABOUT THE ONE THAT MATTERS MOST: the exports-deletion control is NOT answerable by a second route today, because no root entry for tsudoi exists -- it becomes answerable THE DAY THE MOVE LANDS, by construction of the ruling that the root declares the dependency. That is why this closure precedes the move.",
+        ],
+      },
+      {
+        test: "None -- the suite is the pair.",
+        implementation:
+          "Rewrite the measured block that cited the wholesale symlink as its reason, record the decision about the second construction of the node set, and write the tie-break-is-not-the-order reason at BOTH sites.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE TIE-BREAK IS WHAT LETS A FUTURE READER CONCLUDE `THE SORT IS THE ORDER`, and the contradicting-sort arm is the only thing forbidding it -- so that arm may never be retargeted at a tree where the two orders agree. The member list keeps its own sort: its callers want a stable LIST, and a stable list and a build order are different questions.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE SPRINT GOES IN GREEN BY DESIGN, so the sprint's own tests are the only thing that can fail -- and the PO accepts on READINGS rather than colours. Today's constructed order already equals the derived one, which is what lets the ordering land with no behaviour change and stops the move from being the thing that first exercises it.",
+      "THE PO'S REFUSAL, EVERY CHECK GREEN: the second-route hazard closed PER PROBE instead of AT THE HARNESS. Each enumerated consumer producing its predicted failure while the helper still hands the NEXT probe a second route is exactly the outcome that is green today and walks into the move intact, where it becomes the reason a control lies.",
+      "TWO SUBSTITUTIONS THE DEVELOPER MADE AGAINST THE CRITERIA, STATED AS DECISIONS RATHER THAN LEFT AS MISSES: the criterion's `deliberately broken control` is served by the same tree with one declaration deleted, which is stronger because it shows the order came from THE DECLARATION; and `read as a value` is served by the dependent's own emitted declaration, because the builder inherits stdio and no diagnostic is capturable through it.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 50,
