@@ -38,37 +38,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-54",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "trust that `tsc --noEmit` is reading the source I just edited and not a built artifact from an earlier state",
-        benefit:
-          "the DoD's type check keeps meaning what Sprint 42 bought it for, instead of silently degrading to a check against dist/ that passes while src/ is broken",
-      },
-      status: "ready",
-      acceptance_criteria: [
-        {
-          criterion:
-            "A `paths` MAPPING THAT NO LONGER REACHES tsudoi IS DETECTED, NOT SILENTLY SURVIVED. MEASURED IN SPRINT 46 AND THIS IS THE WHOLE MOTIVATION: deleting the key reddens test/package-shape.test.ts, but MISSPELLING it leaves `tsc --noEmit` AT EXIT 0, because self-reference through the exports map resolves into the built dist/*.d.ts instead. So the two spellings of one defect have opposite colours, and the dangerous one is the quiet one.",
-          verification:
-            "THE PERTURBATION IS THE MISSPELLING AND NOT THE DELETION, because deletion is already covered and covers nothing new: point the key at a name nothing answers to and the suite must redden NAMING THE MAPPING. AND THE PAIR PER SPRINT 6, since the claim is about WHICH FILE ANSWERED: a probe must distinguish `resolved to src/` from `resolved to dist/` positively, not by the absence of an error -- a stale-or-absent dist/ makes both readings look alike, so the discriminating probe is one where src/ and dist/ DISAGREE.",
-        },
-        {
-          criterion:
-            "test/package-shape.test.ts's `the repo's type check resolves the published subpaths to source` EITHER VERIFIES WHAT ITS NAME CLAIMS OR IS RENAMED TO WHAT IT VERIFIES. Today its assertion is a `toEqual` on the mapping's literal content, which is a real property and a NARROWER one than resolution-to-source. A NAME THAT OVERCLAIMS IS THE SAME DEFECT CLASS AS A FALSE COMMENT, and this project treats those as repairs rather than as taste.",
-          verification:
-            "Whichever is chosen, the discriminating perturbation above must redden it or the name must stop saying `to source`. Both outcomes are acceptable; leaving the name as it is with nothing behind it is the one that is not.",
-        },
-      ],
-      notes: [
-        "FOUND BY SPRINT 46 AND DELIBERATELY NOT FIXED THERE, which is the right call and is recorded so it is not read as an oversight. It is PRE-EXISTING rather than sprint-introduced, and Sprint 45's precedent governs: a separate property does not ride along merely because it touches a file the sprint touched. What Sprint 46 owed was to REPORT it, and it did.",
-        "WHY THIS IS NOT COSMETIC. Sprint 42's retrospective records the stale-dist/ hazard as FORECLOSED by the `paths` mapping -- `tsc --noEmit` no longer reads dist/ at all. THIS MEASUREMENT NARROWS THAT CLAIM: it is foreclosed only while the mapping is spelled correctly, and NOTHING DETECTS A MISSPELLING. An `outcome` recorded as foreclosure that is really a foreclosure-plus-an-unwatched-precondition is exactly the shape this project calls a false proof closing a question.",
-        "THE SPRINT-46 EVIDENCE, so whoever plans this does not re-derive it: `name` and `paths` are REDUNDANT COVERS OF ONE ROUTE. Reverting package.json's `name` alone leaves tsc at EXIT 0; deleting `paths` alone leaves tsc at EXIT 0; only the conjunction reddens, with fourteen TS2307. Neither key is pinned by the type check alone.",
-        "SEQUENCED AFTER PBI-51 AND THE OVERLAP IS NAMED RATHER THAN LEFT TO COLLIDE: PBI-51 adds a root exclusion and a fifth check over the same tsconfig, so whoever plans PBI-51 should say explicitly whether this folds into it or stays separate. THE DEFAULT IS SEPARATE, on the precedent above.",
-      ],
-    },
-    {
       id: "PBI-52",
       story: {
         role: "config author",
@@ -120,6 +89,123 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 48,
+      pbi_id: "PBI-54",
+      status: "done",
+      goal: "A misspelled paths mapping is caught rather than falling through to dist/ at exit 0, so the stale-artifact hazard is foreclosed rather than foreclosed-plus-an-unwatched-precondition.",
+      impediments: [],
+      decisions: [
+        "SPRINT 47'S RETROSPECTIVE BINDS THIS SPRINT'S CRITERIA: a criterion naming a colour must CITE THE MEASUREMENT THAT PRODUCED IT, so an uncited colour is visibly a guess. This PBI's own discriminating perturbation is THE MISSPELLING, NOT THE DELETION -- deletion is already covered and covers nothing new, which is precisely the distinction Sprint 47's criterion 2 got wrong.",
+        "THE CLASS IS NAMED RATHER THAN THE INSTANCE. An outcome recorded as FORECLOSED that is really FORECLOSURE PLUS AN UNWATCHED PRECONDITION is what this PBI corrects: Sprint 42 recorded the stale-dist hazard as foreclosed, and it is foreclosed only while `paths` is spelled correctly.",
+        "THE ASSERTION WAS FIXED, NOT THE CLAIM. The test name states the property the type check BUYS; renaming it to `the mapping is spelled thus` would leave nobody holding that property. The literal toEqual on the mapping key went, since a deleted key and a misspelled one land in the same dist/ and it spelled today's key twice.",
+        "THE INSTRUMENT WAS CHOSEN BY MEASUREMENT: an exit code cannot tell src from dist -- both are 0 and silent -- and `--listFiles` does not say WHICH specifier reached a file. `--traceResolution` makes the compiler NAME the file that answered each subpath. BOTH SIDES OF THE COMPARISON ARE DERIVED FROM DECLARATIONS, so an added exports arm or a second mapping key is covered with no edit to the test.",
+        "A PREDICTION WAS REFUTED AND THE REFUTATION DECIDED THE FIX. Building the literal resolution probe the criterion asked for against tsconfig.build.json resolves every published subpath to ./src/*.ts, NOT dist/ -- `rootDir` with `outDir` makes tsc read a declaration file back to the input that generates it, and it happens with no dist/ on disk at all. SO THE PROBE REFUTES THE TEST NAME RATHER THAN BACKING IT, and the rename is the honest outcome.",
+        "AN EXECUTOR CLAIM WAS SPLIT AND HALF-REFUTED by the independent reviewer. `the fifth check is exit 0 and silent on a wrong peerDependencies key` HOLDS; `nothing in test/ reads that key` IS FALSE -- packages/hover-wordnet/test/package-shape.test.ts asserts the exact key, so the described disagreement reddens the suite.",
+      ],
+      subtasks: [
+        {
+          test: "A misspelled paths key is caught, and the catch names the misspelling rather than a downstream symptom.",
+          implementation:
+            "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "2c44942",
+              message: "tidy(test): one home for the two configs' settings and the manifest",
+              phase: "refactoring",
+            },
+            {
+              hash: "ac11856",
+              message:
+                "test(package-shape): read which file answered, not how the mapping is spelled",
+              phase: "green",
+            },
+            {
+              hash: "6016f2d",
+              message: "docs(test): name the tree the misspelling readings were taken on",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "Measured at Sprint 47: `name` and `paths` are REDUNDANT COVERS, so deleting either alone leaves tsc green. The misspelling is the discriminating edit.",
+            "The test named `the repo's type check resolves the published subpaths to source` claims more than its assertion verifies -- it defends the mapping's PRESENCE and SPELLING, not the resolution. Fix the claim or the assertion, and say which.",
+            "THE ASSERTION WAS FIXED AND NOT THE CLAIM, and the reason is which of the two the Definition of Done is buying: the name states the property the type check exists for, so renaming it to `the mapping is spelled thus` would have left that property owned by nothing while every check stayed green. THE LITERAL EQUALITY IS GONE RATHER THAN KEPT BESIDE THE NEW READING, on two grounds measured rather than argued: it is SUBSUMED, since a deleted key sends the same subpaths to the same artifact as a misspelled one, and it SPELLED TODAY'S KEY A SECOND TIME, which subtask 2 forbids.",
+            "THE INSTRUMENT IS `--traceResolution` AND THE TWO CHEAPER ONES WERE TRIED FIRST. An exit code cannot separate source from artifact -- both answer 0 with nothing printed -- and `--listFiles` names files without saying which specifier reached them, which matters because src/ is in the program by glob whether or not anything resolved there. The trace names the file each specifier reached, so the green is a positive reading rather than the absence of a red.",
+            "CRITERION 1'S VERIFICATION NAMES A MECHANISM THIS SPRINT DID NOT BUILD, AND THE SUBSTITUTION IS DECLARED HERE RATHER THAN ARGUED AT REVIEW. It asks for a probe where src/ and dist/ DISAGREE, so that which one answered can be read off a difference between them; the hermetic tree here holds the same empty module at both paths, and they differ in PATH alone. WHAT REPLACES IT IS STRICTLY STRONGER ON THE PROPERTY THE CRITERION STATES -- distinguishing `resolved to src/` from `resolved to dist/` POSITIVELY -- because the compiler NAMES the file it reached, so nothing has to be inferred from a disagreement between two contents. Sprint 41's entry is the precedent: the constraint survived the replacement of the mechanism it was derived from, which is evidence it was a constraint on the property.",
+            "PREDICTION WRITTEN FIRST AND IT HELD, on the tree at 38b8709 with the key misspelled to a name nothing answers to: `tsc --noEmit` EXITS 0 AND PRINTS ZERO BYTES while all four published subpaths are answered by dist/*.d.ts, and `bun test` gives 685 pass / 2 fail of 687. The failure that names the KEY prints the misspelling against an EMPTY matched set; the failure that names the EFFECT prints the four dist/*.d.ts against the four src/*.ts. Reverted, and the tree verified identical to HEAD.",
+            "A POISONED MEASUREMENT WAS CAUGHT BY THE PREDICTION AND IS REPORTED RATHER THAN DROPPED: a first attempt at the deletion arm left tsconfig.json UNEDITED -- the substitution failed -- and returned 687 pass / 0 fail against a prediction of one failure. The mismatch is what exposed it; the reading was discarded and retaken.",
+            "THE INHERITED REDUNDANCY IS RE-MEASURED ON BOTH HALVES AND NOT ONE, at 38b8709, and the second half is a POSITIVE reading rather than a colour: with `name` alone repointed and `paths` untouched, `tsc --noEmit` EXITS 0 AT ZERO BYTES and the trace shows all four subpaths still answered by src/*.ts -- the mapping intercepts before the exports map is consulted, so the check never reaches the renamed manifest. With `paths` alone deleted, the same check is EXIT 0 AT ZERO BYTES too. Both halves confirmed; neither key is pinned by the type check's COLOUR alone.",
+            "AND THE GUARD IS NOT BLIND WHERE THE COLOUR IS, WHICH NARROWS PBI-54'S OWN NOTE: `neither key is pinned by the type check alone` holds of the exit code and NOT of this reading. MEASURED, both arms, one key each: with `name` alone repointed the resolution reading REDDENS, since the specifier a consumer writes is derived from the manifest and nothing in the program asks for it; with `paths` alone deleted it reddens naming dist/. So the two keys are now pinned to AGREE, by the one assertion, without either being spelled in it.",
+            "NONE WEAKENED IS DIFFED RATHER THAN ASSERTED, per Sprint 36 as amended by Sprint 43, because the note above claims a removal is subsumed and a coverage claim may not be recalled. Across this sprint's commits over src/ and test/: THREE `expect(` lines added, ONE removed, and the removed one is named -- the literal equality on the mapping's content. ZERO are quoted in comments, so the count is not inflated by its own commentary: the new prose DESCRIBES assertions.",
+            "SPRINT 14'S STANDING RE-RUN, WITH SPRINT 43'S QUESTION ASKED FIRST -- which of Sprint 47's perturbations still HAS a target here. Arm (a), the root mapping removed, does: re-run on this tree it gives the fifth Definition-of-Done check UNCHANGED AT EXIT 0, the same colour Sprint 47 recorded, while `bun test` gives 686 pass / 1 fail. So the member's route survives the parent's mapping going away, re-measured rather than inherited.",
+            "WHAT SHIPS WAS READ OFF THE ARTIFACT RATHER THAN ARGUED FROM `files`: `bun pm pack --dry-run` packs TWENTY-NINE entries -- package.json, LICENSE, README.md and dist/** -- and this sprint's diff is scrum.ts, test/package-shape.test.ts and test/helpers/typecheck.ts, which INTERSECTS NONE OF THEM. So no comment written here reaches a stranger, and the named negative is the instrument's rather than an inference from the manifest.",
+          ],
+        },
+        {
+          test: "The guard is written over the property, not over this one spelling.",
+          implementation:
+            "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "ac11856",
+              message:
+                "test(package-shape): read which file answered, not how the mapping is spelled",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "A guard naming one key leaves the next unpinned and nothing says so -- the same shape as the deno-guard shape over members as a class.",
+            "NO COMMIT OF ITS OWN, AND THAT IS THIS SUBTASK'S OWN REQUIREMENT RATHER THAN AN OMISSION: an intermediate guard spelling today's key is exactly what `without naming today's key twice` forbids, so the guard was written over the class in the same edit and this subtask cites that commit. What it can be checked against: the key is now the subject of NO assertion anywhere but tsconfig.json itself, and the remaining occurrences in the tree are prose describing it.",
+            "EVERY SIDE OF EVERY COMPARISON COMES FROM A DECLARATION AND NONE FROM THE MAPPING IT GRADES -- specifiers from package.json's `name` and `exports` keys, expected files from each subpath's own `default` arm, declared patterns from the config itself. A FIFTH EXPORTS ARM OR A SECOND MAPPING KEY IS COVERED WITH NOTHING EDITED, and an expectation derived from the mapping would have followed the fault instead: a key that has stopped matching still names ./src/*.ts.",
+            "TWO FAILURES, AND NEITHER COVERS THE OTHER. The resolution reading names the FILE THAT ANSWERED; the matched-pattern reading names the KEY THAT REACHED NOTHING. MEASURED, prediction first and held: with `paths` DELETED, `bun test` gives 686 pass / 1 fail -- the resolution reading reddens naming dist/, the matched-pattern reading stays green because an empty set matches an empty set. So the pair's division of labour is measured rather than claimed, and the failure a reader meets first is the one that names their edit.",
+            "THE SWEEP IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 47, since a sweep for a defect that is a property of MATCHING is itself an instance of that class. THE INSTRUMENT IS NOT A NAME GREP: it is the enumeration of every tracked configuration file -- `git ls-files` filtered to json/toml/yaml plus bunfig, which is EIGHT -- and then, within each, every key whose value must MATCH something to have any effect. RESULT: the root `paths` was the only silent one. MEASURED LOUD, one command each: a misspelled `types` entry gives TS2688 at exit 1; a misspelled oxlint rule name gives `Rule 'extensionz' not found in plugin 'import'` at exit 1; a misspelled `preload` path gives `preload not found` at exit 1. PINNED BY AN EFFECT PROBE RATHER THAN BY SPELLING, which is the standard this sprint brings `paths` up to: tsconfig's `exclude` (the dist pair in the same file), .oxlintrc's override globs (guard.test.ts lints a probe at every shape, so an override that stops matching reddens the shape it stopped covering), `workspaces` (refuseUncoveredPackages), and a MEMBER's `paths` (refuseMemberMappings, over the effective configuration).",
+            "A SECOND POISONED MEASUREMENT, SAME MECHANISM AND SAME CATCH, REPORTED BECAUSE THE RATE IS THE FINDING: an in-place substitution that did not apply returned the UNPERTURBED colour against a prediction of two failures. Twice in one sprint the perturbation silently failed to land, and both times what exposed it was the prediction written first plus a check that the edit was really there. A probe sequence therefore reads back the file it just edited before it believes the run.",
+            "THE PARSER'S OWN NON-VACUITY, since the readings rest on a compiler's diagnostic TEXT: if that text ever changes, no resolution and no matched pattern is seen at all, so both readings go RED against non-empty expectations. There is no spelling of the trace that turns this green by accident.",
+            "ONE MORE INSTANCE OF THE CLASS FOUND AND DELIBERATELY NOT FIXED, ON SPRINT 45'S PRECEDENT: the member's `peerDependencies` key names tsudoi in a spelling of its own, while the apparatus symlink that actually satisfies it is DERIVED from the root manifest's `name`. MEASURED: repointing that key at a package that does not exist -- leaving `peerDependenciesMeta` still naming the real one, so the two disagree with each other as well -- leaves the fifth Definition-of-Done check at EXIT 0 AND SILENT, and nothing in test/ or scripts/ reads the key at all. It is PBI-51's territory rather than this sprint's, and a separate property does not ride along merely because it is the same class.",
+          ],
+        },
+        {
+          test: "Sprint 42's recorded foreclosure is corrected in place rather than left standing beside its own counterexample.",
+          implementation:
+            "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "7f2b786",
+              message: "docs(test): a mapping forecloses the artifact only while it matches",
+              phase: "refactoring",
+            },
+            {
+              hash: "e236bb8",
+              message: "docs(scrum): the stale-dist foreclosure names the precondition it rests on",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "Sprint 47's retrospective: a record contradicting a measurement is the same class as a comment contradicting a comment.",
+            "Correct it where a reader meets it, and do not narrate the change.",
+            "TWO SITES, NOT ONE, AND THE SECOND IS THE ONE A READER ACTUALLY MEETS: the retrospective outcome states the precondition and what watches it, and the same unconditional sentence stood in test/package-shape.test.ts's own prose -- `a stale dist/ cannot reach it at all` -- three paragraphs above the assertions that now watch it. A correction made only in the dashboard would have left the comment contradicting the test beneath it.",
+            "ONE RECORD IN THIS FILE STILL CONTRADICTS THE TREE AND IS LEFT FOR ITS AUTHOR: PBI-54's second note says NOTHING DETECTS A MISSPELLING, which held when it was written and is now false at the same commit as this entry. The Developer does not rewrite a Product Backlog Item mid-sprint -- that is the acceptance's business -- so it is REPORTED rather than edited, and named exactly so Review acts on it instead of inheriting a comment-contradicts-comment inside one file.",
+            "THE ACTION TEXT IS UNTOUCHED, as it says of itself, and so is the old package name inside that entry: Sprint 47's census classes a name quoted in a recorded measurement as EVIDENCE, and re-spelling it would edit what was measured. THE COMMITS SEPARATE BECAUSE THE DASHBOARD COMMITS ALONE -- a hook refuses scrum.ts beside anything else, which is a constraint worth knowing before staging.",
+          ],
+        },
+        {
+          test: "Review does not open until revise has converged.",
+          implementation: "Run the revise skill without a PR.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "The stakeholder's standing instruction. Two sprints of evidence that it finds what the gate and the criteria both miss.",
+          ],
+        },
+      ],
+    },
     {
       number: 47,
       pbi_id: "PBI-51",
@@ -311,137 +397,6 @@ const scrum: ScrumDashboard = {
         },
       ],
     },
-    {
-      number: 46,
-      pbi_id: "PBI-53",
-      status: "done",
-      goal: "The published package is named @atusy/tsudoi-language-server on all three routes, and the sweep's own controls are proven still armed.",
-      subtasks: [
-        {
-          test: "The census is committed before any file is touched, so it is a prediction rather than a report.",
-          implementation:
-            "Take a two-pattern census. P1 is boundary-aware so the old name is not counted inside the new one; P2 widens to `atusy`, and P2-minus-P1 is enumerated BY NAME.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "46f2281",
-              message:
-                "docs(scrum): the census before the sweep, and two controls refuted in advance",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "Counts are OCCURRENCES (grep -o | wc -l), never lines: one README line holds three.",
-            "The file list comes from git ls-files, never by hand.",
-            "LICENSE's copyright line is the DELIBERATE NON-TARGET, named in the census so a wide sweep corrupting the author's name is a caught error rather than a silent one.",
-            "Writing the census adds old-name occurrences to the file holding it. Harmless only because scrum.ts is excluded from the subject by construction.",
-          ],
-        },
-        {
-          test: "The four DoD checks pass at the end of the commit, which is what exercises all three routes.",
-          implementation:
-            "One atomic rename: package.json name, tsconfig paths key, every live specifier and split spelling and regex, the README's EXECUTED bytes, then bun install for bun.lock.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "116644c",
-              message: "feat(pkg): the package answers to @atusy/tsudoi-language-server",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "NOT test/helpers/readme.ts. It is criterion 2's instrument and must testify about this commit while unmodified.",
-            "The red window lives inside this commit's working tree and NEVER at a commit boundary. A dual-name shim is refused: paths is only the tsc route, and neither the runtime self-reference nor the tarball layout can be dual-named.",
-            "README's --filename tsudoi.tgz is an arbitrary local filename, not the package name, and stays.",
-          ],
-        },
-        {
-          test: "The suite passes with the instrument unchanged in the rename commit, and the edit to it is reported rather than absorbed.",
-          implementation:
-            "Repair test/helpers/readme.ts's single doc comment, alone, in its own commit after its subject has moved.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "b09b49b",
-              message: "docs(test): the extractor's comment names the package it describes",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "Criteria 1 and 2 collide on this one file. The separation is structural rather than argued.",
-            "Reported rather than absorbed: the rename commit's --stat does not list this file, which is criterion 2's evidence mechanically rather than by assurance. The edit is the one doc comment, reflowed because the longer name crosses the width.",
-          ],
-        },
-        {
-          test: "Each control names what it measured, and a green that measures nothing is recorded as such.",
-          implementation:
-            "Run the five controls: C1 revert name alone; C2 delete the paths key; C3 revert one README start line; C4 the standing Sprint-14 re-run; C5 criterion 3's sliced-JSON comparison.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "No commit of its own: the controls change no product file, and their output IS the record in decisions.",
-            "C4 states TARGET SURVIVAL BEFORE COLOUR: the examples still import through the subpath, now new-spelled, so the re-run is available. Predict exit 1 naming the subpath and ZERO TS2307.",
-            "C5 compares completed and retrospectives SLICED OUT of the JSON. Whole-document comparison fails by construction, since this sprint writes its own census into it.",
-            "Any hand-run probe runs on both runtimes or its record names the one it ran on.",
-          ],
-        },
-        {
-          test: "No control the sweep touched is left disarmed.",
-          implementation:
-            "Ask Sprint 45's question -- what would make this red, now? -- of every control the sweep touched, individually.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "The tightening landed inside the rename commit, so this subtask adds no commit: it is the ASKING and the three-arm measurement that are its output.",
-            "A rename is the ARCHETYPAL DISARMING EDIT: it changes what a matcher matches without changing whether it passes.",
-            "test/readme.test.ts:368's /bun add @atusy\\/tsudoi/ still matches the renamed command BY PREFIX. Tighten to the full new name, or record the green as measuring nothing.",
-            "That is the known instance. Find the rest rather than fixing only it.",
-          ],
-        },
-        {
-          test: "Review does not open until revise has converged.",
-          implementation:
-            "Run the revise skill without a PR: multi-perspective review, then independent review, fixing findings at each stage until no actionable ones remain.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "The stakeholder's standing instruction, carried as an active retrospective improvement.",
-            "A criterion asserts a property a perturbation can falsify; revise finds what nobody thought to assert. No criterion may be met by argument at Review.",
-          ],
-        },
-      ],
-      impediments: [],
-      decisions: [
-        "SCOPE RULED BEFORE EXECUTION: NO `packages/` IN THIS SPRINT. The Developer checked the objection against the PBI's own sentence, which is the strongest form it could take -- criterion 1 ends `the four DoD checks pass, which is what exercises all three routes`, and a member is answered by root tsc THROUGH THE VERY `paths` KEY THIS PBI RE-SPELLS, reporting success. Building the workspace here would ship the hazard PBI-51 exists to foreclose, inside the sprint that re-spells its mechanism, and destroy PBI-51's criterion-2 contrast before it could be taken.",
-        "THE GATE WAS RED AT THE COMMIT THIS SPRINT WOULD HAVE OPENED ON, AND THE SCRUM MASTER PUT IT THERE. Writing the dashboard back through a JSON serialiser left scrum.ts unformatted and `oxfmt --check .` at exit 1, so criterion 1 was unsatisfiable for a reason having nothing to do with its subject. THE DEVELOPER FOUND IT AT PLANNING -- not the PO, not the Scrum Master. Repaired in e060f01 with a control rather than an assurance, and THAT CONTROL BECAME CRITERION 3'S INSTRUMENT: scrum.ts prints its record as JSON and that output is byte-identical across the reformat, so the record is the extracted value and the file is one serialisation of it.",
-        "THE NAME IS SPELLED IN FIVE FORMS THIS REPOSITORY CANNOT GREP FOR AS ONE STRING, measured at Planning: split across function arguments at test/helpers/install.ts and test/published-artifacts.test.ts, in TARBALL form `atusy-tsudoi-0.0.0.tgz` which shares no substring with the specifier, and inside regexes with escaped slashes at test/readme.test.ts. This is why the census takes two patterns rather than one.",
-        "THE CENSUS, TAKEN AND COMMITTED BEFORE ANY FILE IS TOUCHED, WITH ITS PROVENANCE ATTACHED RATHER THAN ASSUMED. The file list is `git ls-files`, 140 tracked files, AND NEVER A HAND LIST. Counts are OCCURRENCES from `grep -o | wc -l` AND NEVER LINES, since one README line carries three. P1, the specifier pattern, is `@atusy/tsudoi([^A-Za-z0-9._-]|$)`: THE NEGATIVE CLASS IS THE WHOLE POINT, because the old name is a prefix of the new one and an unbounded pattern would count every success as a survivor. P2, the scope instrument, is `atusy`. MEASURED AT bee94c5 WITH ALL FOUR DoD CHECKS GREEN, each command run unpiped. P1 IS 109 OCCURRENCES ACROSS 27 FILES, beside 14 inside scrum.ts, which is excluded from the subject by construction because writing this census into it moves its own count. PER FILE: README.md 18; test/published-artifacts.test.ts 17; test/installed-runtime.test.ts 9; test/installed-specifier.test.ts 5; test/helpers/checkout.ts 5; src/types.ts 5; test/readme.test.ts 4; test/published-specifier.test.ts 4; test/package-shape.test.ts 3; test/completion-path.test.ts 3; examples/completion-path.ts 3; test/installed-without-node-types.test.ts 2; examples/hover-wordnet.ts 2; examples/diagnostic-trailing-whitespace.ts 2; and ONE EACH in tsconfig.json, test/hover-wordnet.test.ts, test/helpers/typecheck.ts, test/helpers/readme.ts, test/helpers/install.ts, test/helpers/build.ts, test/fixtures/published-specifier.ts, package.json, examples/tsudoi.config.ts, examples/resolve-path-stat.ts, examples/formatting-trailing-whitespace.ts, bunfig.toml and bun.lock. THE NEW NAME STANDS AT ZERO IN ALL 27, so the after-reading is not inflated by anything already present. AFTER, EACH OF THESE FILES STILL EXISTS AND CARRIES THAT SAME COUNT OF THE NEW NAME, PER FILE AND NEVER IN TOTAL, and a census file that no longer exists FAILS rather than counting as zero.",
-        "P2-MINUS-P1 ENUMERATED BY NAME AND CLOSING TO ZERO, WHICH IS THE CENSUS'S OWN COMPLETENESS CONTROL RATHER THAN A FOOTNOTE TO IT. A surplus that merely had a plausible size would prove nothing; one where every occurrence is named is what makes the wide pattern an instrument. THE SURPLUS IS 19: seven outside scrum.ts and twelve within. OUTSIDE, SIX ARE THE OLD NAME IN A FORM NO SPECIFIER SEARCH CAN SEE -- test/helpers/install.ts:303 and test/published-artifacts.test.ts:540 SPLIT ACROSS FUNCTION ARGUMENTS as join(..., `@atusy`, `tsudoi`, ...); test/installed-runtime.test.ts:20 in TARBALL FORM `atusy-tsudoi-0.0.0.tgz`; and THREE INSIDE REGEXES WITH ESCAPED SLASHES, two on test/readme.test.ts:368 and one on :450. THE SEVENTH IS LICENSE:3 `Copyright (c) 2026 atusy`, THE DELIBERATE NON-TARGET: a naive wide sweep corrupts the author's name, and naming it here is what makes that a caught error rather than a silent one. THE TWELVE WITHIN are five occurrences of the new name, two future member names, two prose quotations of the escaped-slash regex, the LICENSE non-target quoted in criterion 1, the tarball form quoted above, and P2's own pattern named in a subtask. NOTHING IS LEFT OVER, AND THE ASSIGNMENT IS THE PROPERTY RATHER THAN THE COUNT.",
-        "C1 AND C2 AS PLANNED ARE EACH MASKED BY THE OTHER MECHANISM, MEASURED BEFORE THE SWEEP SO THE COLOURS ARE PREDICTED HONESTLY RATHER THAN RESCORED AFTERWARDS. The plan predicts root tsc TS2307 from reverting package.json `name` alone, and tsc red from deleting the tsconfig `paths` key alone. BOTH ARE REFUTED AT bee94c5, each probe unpiped and the tree restored after: mutating `name` with `paths` intact gives tsc EXIT 0, because `paths` answers the subpath before self-name resolution is ever consulted; deleting `paths` with `name` intact ALSO gives EXIT 0, because self-reference through the exports map resolves into the built dist/*.d.ts. ONLY THE CONJUNCTION REDDENS -- both together give EXIT 1 with FOURTEEN TS2307 naming the three subpaths from examples/ and test/. THE TWO KEYS ARE REDUNDANT COVERS OF ONE ROUTE AND NEITHER IS PINNED ALONE, which is Sprint 42's degenerate shape exactly: `EXIT 0 WITH ZERO ERRORS` is what hides a probe whose subject is reached by something else. C1'S SURVIVING ARM IS THE RUNTIME ONE, and it pays Sprint 45's two-runtime rule out inside a control: mutating `name` reddens test/completion-path.test.ts ON DENO AND NOT ON BUN, because bun elides the type-only import that deno loads. C2'S DEGENERACY IS CONDITIONAL ON dist/ BEING BUILT, which is the only reason the exports arm can stand in for paths at all.",
-        "THE PREDICTIONS, COMMITTED BEFORE ANY FILE IS TOUCHED, WITH THEIR COUNTERFACTUALS BESIDE THEM per Sprint 40 -- a 0/0/0 reads as confirmation only next to what a non-zero would have meant. PREDICTED: per-file `expect(` diff ZERO EVERYWHERE; 635 tests to 635; 1923 expect() calls to 1923; NO NEW TEST FILE; bun.lock diff EXACTLY ONE LINE; the DoD stays at FOUR checks; no packages/ directory and no workspaces key. THE COUNTERFACTUALS. A NON-ZERO `expect(` DIFF ANYWHERE means the sweep changed behaviour while claiming to change only a name -- AND THE ONE EXCEPTION IS RESERVED IN ADVANCE RATHER THAN CLAIMED LATER: tightening a prefix-matching matcher in place is a zero-delta edit, so if re-arming any control turns out to require ADDING an assertion, THAT IS A MISSED PREDICTION AND IS REPORTED AS ONE. A bun.lock diff wider than one line means the rename moved a dependency and not only this package's own name. A CHANGED TEST COUNT means a specifier edit renamed a test into or out of existence.",
-        "C1, TARGET SURVIVING FIRST: package.json carries a `name` field spelling the new name, so reverting it is constructible. IT MEASURES IN TWO ARMS THAT DISAGREE, AND THE DISAGREEMENT IS THE RESULT. THE tsc ARM IS DEGENERATE AND IS RECORDED AS MEASURING NOTHING -- EXIT 0, zero errors, because `paths` answers the subpath before self-name resolution is ever consulted. THE RUNTIME AND TARBALL ARM IS THE REAL ONE: 83 of 635 tests redden, across every installed-* file, the published-artifact checks, and the deno arm of the in-repo examples. NOTHING ASSERTS THE `name` FIELD DIRECTLY AND NOTHING NEEDS TO -- what pins it is the tarball the suite packs and installs from it, which is a stronger owner than an equality on a string would be.",
-        "C2, TARGET SURVIVING FIRST: the `paths` key exists, new-spelled. DELETING IT LEAVES tsc AT EXIT 0 WITH ZERO ERRORS, degenerate for a reason worth keeping -- self-reference through the exports map resolves into the built dist/*.d.ts, so `name` and `paths` are REDUNDANT COVERS OF ONE ROUTE and neither is pinned by the type check alone. ONLY THE CONJUNCTION REDDENS tsc: name reverted AND paths deleted gives EXIT 1 with FOURTEEN TS2307 naming the three new subpaths from examples/ and test/, which doubles as the positive proof that the tsc route resolves the NEW name. AND WHAT ACTUALLY PINS `paths` IS THE SUITE: deleting the key reddens test/package-shape.test.ts's `the repo's type check resolves the published subpaths to source`, whose toEqual carries the mapping literally. C2 IS RE-AIMED AT THAT ASSERTION rather than at the type check the plan named, because that is where the property is defended.",
-        "C3, TARGET SURVIVING FIRST: the README's two start-command lines carry the new name inside blocks the suite extracts and runs. Reverting THE BUN LINE ALONE reddens EXACTLY TWO tests -- `the README's quickstart brings up a server under bun` and `the documented failure behaviour is what happens under bun` -- while the deno pair stays green, which is the blast radius a one-line perturbation ought to have and evidence that the two runtimes are separately defended. THE README'S EXECUTED BYTES ARE THE SUBJECT, MEASURED RATHER THAN ASSERTED.",
-        "C4, THE STANDING SPRINT-14 RE-RUN, TARGET SURVIVAL STATED BEFORE COLOUR: tsconfig's `paths` maps the new name to ./src/*.ts and all six examples/ still import through that subpath, so the arm is available and now runs against the new spelling -- strictly more than the recorded run had. COLOUR: EXIT 1, errors at examples/ naming the subpath, ZERO TS2307, which is the recorded shape. ONE MISSED PREDICTION, STATED RATHER THAN SMOOTHED: TS2305 and not the TS2724 the previous run recorded, because the compiler offers no near-miss for this name where it offered one before. A TYPE CHECK AND NOT A RUNTIME PROBE, so the two-runtime rule does not bite here and is not claimed.",
-        "C5, CRITERION 3'S INSTRUMENT: `completed` and `retrospectives` sliced out of `bun scrum.ts`'s JSON are BYTE-IDENTICAL across the whole sprint at sha256 2df1838a, WHILE THE WHOLE DOCUMENT'S HASH MOVES. That the two readings disagree is exactly what shows the slicing is load-bearing rather than a convenience. The record still carries NINE old-name occurrences, SEVEN under completed and TWO under retrospectives, VERBATIM.",
-        "S5 ASKED ONE AT A TIME OF EVERY NAME-BEARING MATCHER THE SWEEP TOUCHED, NEVER AS A BATCH. THE CLASS IS SEVEN: three `toContain` on the types subpath in installed-specifier, published-specifier and published-artifacts; package-shape's `toEqual` on the paths mapping; the two token regexes at test/readme.test.ts; and the subpath-collecting regex beside them. THE KNOWN INSTANCE IS MEASURED IN THREE ARMS RATHER THAN ARGUED. Tightened pattern with the old name restored in the README: RED, three tests. Loosened pattern with the CORRECT README: GREEN. Loosened pattern with the old name restored: ALSO GREEN. THE SECOND AND THIRD SHARING A COLOUR IS THE WHOLE PROOF -- a prefix-matching pattern cannot distinguish the two names at all, so its green measured nothing, and tightening it is what created a control where there had only been a shape. ITS SIBLING REDDENS HONESTLY, VERIFIED RATHER THAN INHERITED FROM THE CRITERION THAT ASSERTED IT: reverting ONE README subpath mention reddens the set-equality against the exports map. RE-SPELLING A PREFIX PATTERN WITH THE FULL NEW NAME IS NOT BOUNDING IT, AND THAT IS WHERE THIS ENTRY READ FALSE: the two README token regexes stayed RIGHT-UNBOUNDED after being re-spelled, so the class carried THREE prefix matchers and not one. MEASURED: a README naming `@atusy/tsudoi-language-server-wrong` throughout satisfies all three tokens of `the registry route is intended and unverified`, and those two commands are the only ones in the document the suite never executes, so that fact is their sole spelling control. Both tokens now carry `(?![A-Za-z0-9._-])`, and with it the same perturbation reddens all three of the fact's tests. A BOUNDARY-AWARE RE-SWEEP OF THE CLASS FINDS NO OTHER UNBOUNDED MEMBER, measured rather than argued: the three `toContain` and package-shape's `toEqual` spell the specifier through `/types`, which a longer name fails, and the subpath-collecting regex is bounded by the slash it requires -- it reddens under that same perturbation. C1's 83 reddening tests reach all three toContain sites.",
-        "`NONE WEAKENED` IS DIFFED AND NOT ASSERTED, WHICH READS STRICTLY MORE THAN THE PER-FILE COUNT DID. The predicted per-file `expect(` diff is ZERO EVERYWHERE and it held -- but a count cannot see an assertion SWAPPED for another, so the line diff is taken as well. ACROSS THE WHOLE SPRINT test/, src/ AND examples/ CARRY EIGHT `expect(` LINES OF DIFF, WHICH ARE FOUR PAIRS: three `toContain` on the types subpath and package-shape's `toEqual` on the paths mapping, EACH THE SAME ASSERTION WITH THE NAME MOVED. NONE ADDED, NONE REMOVED, NONE WEAKENED, and the four are exactly the members of S5's matcher class that live on an `expect(` line -- the other three are bare regexes and do not appear in this instrument at all, which is itself the reason the class was swept by hand rather than by this diff.",
-        "THE PAIRED GUARD BESIDE THE SUBPATH EXTRACTOR IS MEASURED RATHER THAN REASONED, because inferring a control's colour is the move this project keeps catching. Breaking the extractor's regex so it matches NOTHING reddens `the published subpaths the README names are exactly the ones package.json exports` ALONE, ONE test, while its permanent pair stays GREEN -- which is what that pair's own comment predicts, since a `not.toEqual` against an empty list is satisfied by a dead extractor. THE PAIR DOES NOT GUARD THE DEAD-EXTRACTOR CASE AND DOES NOT CLAIM TO; the equality above it does, and the two together are what make Sprint 6's absence rule hold here.",
-        "A GAP FOUND BY ASKING, AND IT IS AN ABSENT CONTROL RATHER THAN A DISARMED ONE: NOTHING PINS THE TARBALL FILENAME TO THE PACKAGE NAME. test/helpers/install.ts finds the packed artifact by `.endsWith('.tgz')`, name-agnostic BY DESIGN, and that is precisely why the installed route survived the rename without a single edit to the helper. The name reaches that route only through package.json, which C1 covers. RECORDED AS A GAP RATHER THAN REPAIRED, because building an assertion here would add an `expect(` this sprint predicted it would not add, and quietly widening a prediction to fit the work is the failure this record exists to prevent.",
-        "A MISSED PREDICTION, REPORTED RATHER THAN ABSORBED. `bun install` DOES NOT REWRITE THE ROOT WORKSPACE NAME IN bun.lock, AND NEITHER DOES `bun install --force`: the lockfile is regenerated from the dependency graph, and the root's own name is not part of what bun considers stale. The plan's `then bun install for bun.lock` would have left the lockfile spelling the old name and the census one file short, with all four checks still green -- a silent shortfall of exactly the kind the per-file census exists to catch, and the census is what caught it. The line was edited by hand and `bun install` re-run to prove it stable: EXIT 0, diff still EXACTLY ONE LINE, not reverted.",
-        "THE CENSUS BALANCES, PER FILE AND NEVER IN TOTAL. ALL 27 CENSUS FILES STILL EXIST and each carries EXACTLY the count of the new name it carried of the old -- 18 in README.md, 17 in test/published-artifacts.test.ts, 9 in test/installed-runtime.test.ts, and so down to the singletons, compared file by file rather than summed. LICENSE IS UNTOUCHED and its copyright line still reads `atusy`, the named non-target intact. THE OLD-NAME GREP IS THEN THE CHEAP CONFIRMATION IT WAS MEANT TO BE: FIFTEEN HITS REMAIN AND ALL FIFTEEN ARE IN scrum.ts, none anywhere else in the tree. THE THREE CLASSES, WITH NONE LEFT OVER. USE IS EMPTY -- not one live specifier, path segment, key or command spells the old name, which is the sweep's actual result and the only class whose emptiness is the point. MENTION IS THREE: criterion 1 and criterion 3, which name the old name AS THEIR SUBJECT and would be self-defeating if re-spelled, and this sprint's own census entry quoting the P1 pattern. EVIDENCE IS TWELVE: PBI-51's three recorded probe readings, seven under `completed` and two under `retrospectives`, all VERBATIM. THE COUNT IS MEASURED IMMEDIATELY BEFORE THIS ENTRY IS WRITTEN AND WRITING IT MOVES THE COUNT, which is why the criterion freezes no number and the ASSIGNMENT rather than the total is the property.",
-        "TWO DRIFTS FROM THE HANDED PLAN, RE-MEASURED RATHER THAN COPIED per Sprint 27, and both are findings rather than corrections. FIRST, the plan's baseline was taken where `oxfmt --check .` was RED; at bee94c5 ALL FOUR CHECKS ARE GREEN and the reformat the plan reserved as its own first step is already landed, so it is not this sprint's to run and criterion 1's premise is satisfiable as written. SECOND, scrum.ts carries FOURTEEN P1 hits and not the plan's fifteen: product_backlog FIVE rather than six, completed seven, retrospectives two. The missing one is criterion 1's verification, rewritten between the plan and the sprint. SPRINT 43'S LIVING-FILE POINT DEMONSTRATING ITSELF ON THE EXACT COUNT THAT ENTRY EXISTS TO KEEP UNFROZEN -- which is why the criterion freezes no number and this one carries the commit it was taken at. THE THREE-CLASS ASSIGNMENT OF THE REMAINING HITS IS DELIBERATELY NOT TAKEN HERE: committing this census adds old-name occurrences to scrum.ts, so an assignment made now would be stale on the next commit and must be measured at acceptance instead.",
-        "ACCEPTED BY AN INDEPENDENT PRODUCT OWNER. CRITERION 4 IS MET ON THE SECOND PASS AND THE FIRST-PASS MISS STAYS BESIDE IT -- the fix does not rewrite the miss. The increment was incomplete and is now complete, fixed by code; THE RECORD ASSERTED THE OPPOSITE OF WHAT WAS TRUE, and that is the more serious of the two because a false proof closing a question is the highest-cost error in this economy.",
-        "CONCEALMENT WAS NOT MERELY AVAILABLE, IT WAS ACHIEVED. Four green DoD checks, a per-file census that balanced, and a sprint record stating no prefix matcher remained -- and two right-unbounded matchers survived in test/readme.test.ts, where `@atusy/tsudoi-language-server-wrong` satisfied all three fact tokens. NOTHING IN THE GATE COULD SEE IT. `revise` broke it, running for the first time under the stakeholder's standing instruction, and earned its keep in its first sprint.",
-        "THE TARBALL FILENAME QUESTION IS MEASURED AND THE RECORD STANDS. test/installed-runtime.test.ts's install line carries NO filename -- it reads `bun install ./<the packed tarball>` -- while the two lines below it ARE `route`'s own bytes and fail by running if their spelling goes stale. So nothing anywhere pins the filename, and that asymmetry is stated at the site: bun derives the filename from name AND version, so a literal would go stale at the next release with every check green.",
-      ],
-    },
   ],
   definition_of_done: {
     checks: [
@@ -467,120 +422,27 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 48,
-    pbi_id: "PBI-54",
-    status: "in_progress",
-    goal: "A misspelled paths mapping is caught rather than falling through to dist/ at exit 0, so the stale-artifact hazard is foreclosed rather than foreclosed-plus-an-unwatched-precondition.",
-    impediments: [],
-    decisions: [
-      "SPRINT 47'S RETROSPECTIVE BINDS THIS SPRINT'S CRITERIA: a criterion naming a colour must CITE THE MEASUREMENT THAT PRODUCED IT, so an uncited colour is visibly a guess. This PBI's own discriminating perturbation is THE MISSPELLING, NOT THE DELETION -- deletion is already covered and covers nothing new, which is precisely the distinction Sprint 47's criterion 2 got wrong.",
-      "THE CLASS IS NAMED RATHER THAN THE INSTANCE. An outcome recorded as FORECLOSED that is really FORECLOSURE PLUS AN UNWATCHED PRECONDITION is what this PBI corrects: Sprint 42 recorded the stale-dist hazard as foreclosed, and it is foreclosed only while `paths` is spelled correctly.",
-    ],
-    subtasks: [
-      {
-        test: "A misspelled paths key is caught, and the catch names the misspelling rather than a downstream symptom.",
-        implementation:
-          "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "2c44942",
-            message: "tidy(test): one home for the two configs' settings and the manifest",
-            phase: "refactoring",
-          },
-          {
-            hash: "ac11856",
-            message:
-              "test(package-shape): read which file answered, not how the mapping is spelled",
-            phase: "green",
-          },
-          {
-            hash: "6016f2d",
-            message: "docs(test): name the tree the misspelling readings were taken on",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "Measured at Sprint 47: `name` and `paths` are REDUNDANT COVERS, so deleting either alone leaves tsc green. The misspelling is the discriminating edit.",
-          "The test named `the repo's type check resolves the published subpaths to source` claims more than its assertion verifies -- it defends the mapping's PRESENCE and SPELLING, not the resolution. Fix the claim or the assertion, and say which.",
-          "THE ASSERTION WAS FIXED AND NOT THE CLAIM, and the reason is which of the two the Definition of Done is buying: the name states the property the type check exists for, so renaming it to `the mapping is spelled thus` would have left that property owned by nothing while every check stayed green. THE LITERAL EQUALITY IS GONE RATHER THAN KEPT BESIDE THE NEW READING, on two grounds measured rather than argued: it is SUBSUMED, since a deleted key sends the same subpaths to the same artifact as a misspelled one, and it SPELLED TODAY'S KEY A SECOND TIME, which subtask 2 forbids.",
-          "THE INSTRUMENT IS `--traceResolution` AND THE TWO CHEAPER ONES WERE TRIED FIRST. An exit code cannot separate source from artifact -- both answer 0 with nothing printed -- and `--listFiles` names files without saying which specifier reached them, which matters because src/ is in the program by glob whether or not anything resolved there. The trace names the file each specifier reached, so the green is a positive reading rather than the absence of a red.",
-          "CRITERION 1'S VERIFICATION NAMES A MECHANISM THIS SPRINT DID NOT BUILD, AND THE SUBSTITUTION IS DECLARED HERE RATHER THAN ARGUED AT REVIEW. It asks for a probe where src/ and dist/ DISAGREE, so that which one answered can be read off a difference between them; the hermetic tree here holds the same empty module at both paths, and they differ in PATH alone. WHAT REPLACES IT IS STRICTLY STRONGER ON THE PROPERTY THE CRITERION STATES -- distinguishing `resolved to src/` from `resolved to dist/` POSITIVELY -- because the compiler NAMES the file it reached, so nothing has to be inferred from a disagreement between two contents. Sprint 41's entry is the precedent: the constraint survived the replacement of the mechanism it was derived from, which is evidence it was a constraint on the property.",
-          "PREDICTION WRITTEN FIRST AND IT HELD, on the tree at 38b8709 with the key misspelled to a name nothing answers to: `tsc --noEmit` EXITS 0 AND PRINTS ZERO BYTES while all four published subpaths are answered by dist/*.d.ts, and `bun test` gives 685 pass / 2 fail of 687. The failure that names the KEY prints the misspelling against an EMPTY matched set; the failure that names the EFFECT prints the four dist/*.d.ts against the four src/*.ts. Reverted, and the tree verified identical to HEAD.",
-          "A POISONED MEASUREMENT WAS CAUGHT BY THE PREDICTION AND IS REPORTED RATHER THAN DROPPED: a first attempt at the deletion arm left tsconfig.json UNEDITED -- the substitution failed -- and returned 687 pass / 0 fail against a prediction of one failure. The mismatch is what exposed it; the reading was discarded and retaken.",
-          "THE INHERITED REDUNDANCY IS RE-MEASURED ON BOTH HALVES AND NOT ONE, at 38b8709, and the second half is a POSITIVE reading rather than a colour: with `name` alone repointed and `paths` untouched, `tsc --noEmit` EXITS 0 AT ZERO BYTES and the trace shows all four subpaths still answered by src/*.ts -- the mapping intercepts before the exports map is consulted, so the check never reaches the renamed manifest. With `paths` alone deleted, the same check is EXIT 0 AT ZERO BYTES too. Both halves confirmed; neither key is pinned by the type check's COLOUR alone.",
-          "AND THE GUARD IS NOT BLIND WHERE THE COLOUR IS, WHICH NARROWS PBI-54'S OWN NOTE: `neither key is pinned by the type check alone` holds of the exit code and NOT of this reading. MEASURED, both arms, one key each: with `name` alone repointed the resolution reading REDDENS, since the specifier a consumer writes is derived from the manifest and nothing in the program asks for it; with `paths` alone deleted it reddens naming dist/. So the two keys are now pinned to AGREE, by the one assertion, without either being spelled in it.",
-          "NONE WEAKENED IS DIFFED RATHER THAN ASSERTED, per Sprint 36 as amended by Sprint 43, because the note above claims a removal is subsumed and a coverage claim may not be recalled. Across this sprint's commits over src/ and test/: THREE `expect(` lines added, ONE removed, and the removed one is named -- the literal equality on the mapping's content. ZERO are quoted in comments, so the count is not inflated by its own commentary: the new prose DESCRIBES assertions.",
-          "SPRINT 14'S STANDING RE-RUN, WITH SPRINT 43'S QUESTION ASKED FIRST -- which of Sprint 47's perturbations still HAS a target here. Arm (a), the root mapping removed, does: re-run on this tree it gives the fifth Definition-of-Done check UNCHANGED AT EXIT 0, the same colour Sprint 47 recorded, while `bun test` gives 686 pass / 1 fail. So the member's route survives the parent's mapping going away, re-measured rather than inherited.",
-          "WHAT SHIPS WAS READ OFF THE ARTIFACT RATHER THAN ARGUED FROM `files`: `bun pm pack --dry-run` packs TWENTY-NINE entries -- package.json, LICENSE, README.md and dist/** -- and this sprint's diff is scrum.ts, test/package-shape.test.ts and test/helpers/typecheck.ts, which INTERSECTS NONE OF THEM. So no comment written here reaches a stranger, and the named negative is the instrument's rather than an inference from the manifest.",
-        ],
-      },
-      {
-        test: "The guard is written over the property, not over this one spelling.",
-        implementation:
-          "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "ac11856",
-            message:
-              "test(package-shape): read which file answered, not how the mapping is spelled",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "A guard naming one key leaves the next unpinned and nothing says so -- the same shape as the deno-guard shape over members as a class.",
-          "NO COMMIT OF ITS OWN, AND THAT IS THIS SUBTASK'S OWN REQUIREMENT RATHER THAN AN OMISSION: an intermediate guard spelling today's key is exactly what `without naming today's key twice` forbids, so the guard was written over the class in the same edit and this subtask cites that commit. What it can be checked against: the key is now the subject of NO assertion anywhere but tsconfig.json itself, and the remaining occurrences in the tree are prose describing it.",
-          "EVERY SIDE OF EVERY COMPARISON COMES FROM A DECLARATION AND NONE FROM THE MAPPING IT GRADES -- specifiers from package.json's `name` and `exports` keys, expected files from each subpath's own `default` arm, declared patterns from the config itself. A FIFTH EXPORTS ARM OR A SECOND MAPPING KEY IS COVERED WITH NOTHING EDITED, and an expectation derived from the mapping would have followed the fault instead: a key that has stopped matching still names ./src/*.ts.",
-          "TWO FAILURES, AND NEITHER COVERS THE OTHER. The resolution reading names the FILE THAT ANSWERED; the matched-pattern reading names the KEY THAT REACHED NOTHING. MEASURED, prediction first and held: with `paths` DELETED, `bun test` gives 686 pass / 1 fail -- the resolution reading reddens naming dist/, the matched-pattern reading stays green because an empty set matches an empty set. So the pair's division of labour is measured rather than claimed, and the failure a reader meets first is the one that names their edit.",
-          "THE SWEEP IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 47, since a sweep for a defect that is a property of MATCHING is itself an instance of that class. THE INSTRUMENT IS NOT A NAME GREP: it is the enumeration of every tracked configuration file -- `git ls-files` filtered to json/toml/yaml plus bunfig, which is EIGHT -- and then, within each, every key whose value must MATCH something to have any effect. RESULT: the root `paths` was the only silent one. MEASURED LOUD, one command each: a misspelled `types` entry gives TS2688 at exit 1; a misspelled oxlint rule name gives `Rule 'extensionz' not found in plugin 'import'` at exit 1; a misspelled `preload` path gives `preload not found` at exit 1. PINNED BY AN EFFECT PROBE RATHER THAN BY SPELLING, which is the standard this sprint brings `paths` up to: tsconfig's `exclude` (the dist pair in the same file), .oxlintrc's override globs (guard.test.ts lints a probe at every shape, so an override that stops matching reddens the shape it stopped covering), `workspaces` (refuseUncoveredPackages), and a MEMBER's `paths` (refuseMemberMappings, over the effective configuration).",
-          "A SECOND POISONED MEASUREMENT, SAME MECHANISM AND SAME CATCH, REPORTED BECAUSE THE RATE IS THE FINDING: an in-place substitution that did not apply returned the UNPERTURBED colour against a prediction of two failures. Twice in one sprint the perturbation silently failed to land, and both times what exposed it was the prediction written first plus a check that the edit was really there. A probe sequence therefore reads back the file it just edited before it believes the run.",
-          "THE PARSER'S OWN NON-VACUITY, since the readings rest on a compiler's diagnostic TEXT: if that text ever changes, no resolution and no matched pattern is seen at all, so both readings go RED against non-empty expectations. There is no spelling of the trace that turns this green by accident.",
-          "ONE MORE INSTANCE OF THE CLASS FOUND AND DELIBERATELY NOT FIXED, ON SPRINT 45'S PRECEDENT: the member's `peerDependencies` key names tsudoi in a spelling of its own, while the apparatus symlink that actually satisfies it is DERIVED from the root manifest's `name`. MEASURED: repointing that key at a package that does not exist -- leaving `peerDependenciesMeta` still naming the real one, so the two disagree with each other as well -- leaves the fifth Definition-of-Done check at EXIT 0 AND SILENT, and nothing in test/ or scripts/ reads the key at all. It is PBI-51's territory rather than this sprint's, and a separate property does not ride along merely because it is the same class.",
-        ],
-      },
-      {
-        test: "Sprint 42's recorded foreclosure is corrected in place rather than left standing beside its own counterexample.",
-        implementation:
-          "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "7f2b786",
-            message: "docs(test): a mapping forecloses the artifact only while it matches",
-            phase: "refactoring",
-          },
-          {
-            hash: "e236bb8",
-            message: "docs(scrum): the stale-dist foreclosure names the precondition it rests on",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "Sprint 47's retrospective: a record contradicting a measurement is the same class as a comment contradicting a comment.",
-          "Correct it where a reader meets it, and do not narrate the change.",
-          "TWO SITES, NOT ONE, AND THE SECOND IS THE ONE A READER ACTUALLY MEETS: the retrospective outcome states the precondition and what watches it, and the same unconditional sentence stood in test/package-shape.test.ts's own prose -- `a stale dist/ cannot reach it at all` -- three paragraphs above the assertions that now watch it. A correction made only in the dashboard would have left the comment contradicting the test beneath it.",
-          "ONE RECORD IN THIS FILE STILL CONTRADICTS THE TREE AND IS LEFT FOR ITS AUTHOR: PBI-54's second note says NOTHING DETECTS A MISSPELLING, which held when it was written and is now false at the same commit as this entry. The Developer does not rewrite a Product Backlog Item mid-sprint -- that is the acceptance's business -- so it is REPORTED rather than edited, and named exactly so Review acts on it instead of inheriting a comment-contradicts-comment inside one file.",
-          "THE ACTION TEXT IS UNTOUCHED, as it says of itself, and so is the old package name inside that entry: Sprint 47's census classes a name quoted in a recorded measurement as EVIDENCE, and re-spelling it would edit what was measured. THE COMMITS SEPARATE BECAUSE THE DASHBOARD COMMITS ALONE -- a hook refuses scrum.ts beside anything else, which is a constraint worth knowing before staging.",
-        ],
-      },
-      {
-        test: "Review does not open until revise has converged.",
-        implementation: "Run the revise skill without a PR.",
-        type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [
-          "The stakeholder's standing instruction. Two sprints of evidence that it finds what the gate and the criteria both miss.",
-        ],
-      },
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 48,
+      improvements: [
+        {
+          action:
+            "A CONFIG KEY THAT FAILS TO MATCH AND THEREFORE STOPS APPLYING IS A CLASS, AND IT WAS SWEPT RATHER THAN PATCHED. Eight tracked configuration files were enumerated, then each was searched for keys whose effect depends on MATCHING. The loud ones were measured, not assumed: a misspelled `types` gives TS5023 exit 2, an unknown oxlint rule name gives `Rule not found` exit 1, a bad `preload` path exits 1. The silent one was the root `paths` alone. `exclude`, oxlint override globs, `workspaces` and member `paths` are pinned BY EFFECT. THE INSTRUMENT WAS AN ENUMERATION OF FILES AND KEYS, NOT A NAME GREP -- which is the shape Sprint 46's retrospective requires when the defect being hunted is itself a property of matching.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "BUILDING THE PROBE A CRITERION ASKS FOR CAN REFUTE THE CRITERION, AND THAT IS THE PROBE EARNING ITS COST. The literal resolution probe against the build config resolves to ./src and not dist/, because `rootDir` with `outDir` makes tsc read a declaration back to its generating input -- with no dist/ on disk. THE CRITERION'S NAME WAS THE THING THAT WAS WRONG. Two sprints running, a criterion named a colour nobody had measured; here the executor measured it before satisfying it and the measurement changed the answer. PAIRS WITH SPRINT 47'S RULE -- a criterion naming a colour must cite the measurement that produced it -- by supplying the other half: WHEN NO CITATION EXISTS, MEASURE BEFORE BUILDING TO THE COLOUR.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 47,
       improvements: [
