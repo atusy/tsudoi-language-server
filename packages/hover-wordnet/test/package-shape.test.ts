@@ -68,11 +68,19 @@ test("only the built output ships, which is what keeps the ambient declaration i
 /**
  * TSUDOI IS A PEER, AND THE DICTIONARY IS NOT.
  *
- * A PEER BECAUSE THE CONFIG AND THE HANDLER MUST SHARE ONE TSUDOI: two installed
- * copies are two `MethodHandler` declarations, and a config annotated against one
- * cannot be given a handler typed against the other. A plain dependency would
- * permit exactly that, silently, and the error it produced would name two types
- * that look identical.
+ * A PEER BECAUSE THE FRAMEWORK IS THE HOST'S TO CHOOSE: this handler is loaded
+ * into a server the consumer's own tsudoi is running, and a plain dependency
+ * would let this package pin a range of its own and hand the consumer a second
+ * copy their CLI never runs.
+ *
+ * NOT BECAUSE TWO COPIES WOULD BE INCOMPATIBLE, and the correction is kept here
+ * because it is the reason a reader supplies for themselves: `MethodHandler` is a
+ * plain function type alias, compared STRUCTURALLY. MEASURED with two copies of
+ * tsudoi's dist/ installed at different versions -- the same version measures
+ * nothing, tsc redirects the second by package id -- a handler typed against one
+ * assigns to the other's `MethodHandler` and into `TsudoiConfig.methods`, exit 0.
+ * The error naming two identical-looking types is what a VERSION SKEW produces,
+ * and refusing to name a version is exactly what `peer` does about it.
  *
  * `wordnet` IS A REAL DEPENDENCY AND THE ASYMMETRY IS THE POINT: nothing shares
  * the dictionary with anyone, a consumer has no opinion about which copy is

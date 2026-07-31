@@ -13,15 +13,31 @@
  * comments here address a MAINTAINER -- the reader whose questions this file
  * must answer is now the person changing it, not the person copying it.
  *
- * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through its own
- * `peerDependencies` entry and tsudoi's `exports` map, with no `paths` mapping
- * and no tsconfig of the parent's reaching it. A PEER AND NOT A DEPENDENCY
- * BECAUSE THE CONFIG AND THE HANDLER MUST SHARE ONE TSUDOI: two installed copies
- * are two `MethodHandler` declarations, and a config annotated against one
- * cannot be given a handler typed against the other. That is why this package is
- * not a file move with a package.json on top, and the manifest's reasons are
- * asserted in test/package-shape.test.ts beside this file, since package.json
- * cannot carry them itself.
+ * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through the member's own
+ * node_modules and tsudoi's `exports` map, with no `paths` mapping and no
+ * tsconfig of the parent's reaching it -- a mapping here is refused by
+ * scripts/workspaces.ts rather than merely absent.
+ *
+ * A PEER AND NOT A DEPENDENCY BECAUSE THE FRAMEWORK IS THE HOST'S TO CHOOSE.
+ * This handler is loaded into a server the consumer's own tsudoi is running, and
+ * `context.tsudoi` is built by that copy; declaring tsudoi as a dependency would
+ * let this package pin a range of its own and hand the consumer a second copy
+ * their CLI never runs. A peer says the version is not ours to name.
+ *
+ * NOT BECAUSE TWO COPIES WOULD BE INCOMPATIBLE, which is the plausible reason to
+ * reach for and is FALSE: `MethodHandler` is a plain function type alias and
+ * TypeScript compares it structurally. MEASURED with two copies of tsudoi's
+ * dist/ installed at DIFFERENT versions -- the same version is not a
+ * measurement, tsc redirects the second by package id and there is literally one
+ * declaration -- a handler typed against one assigns to the other's
+ * `MethodHandler` and into `TsudoiConfig.methods`, exit 0; the same probe reports
+ * TS2322 naming both paths once the shapes actually diverge. So a divergent
+ * version is what produces the confusing error, and identity of version is what
+ * `peer` is for.
+ *
+ * That is why this package is not a file move with a package.json on top, and
+ * the manifest's reasons are asserted in test/package-shape.test.ts beside this
+ * file, since package.json cannot carry them itself.
  *
  * The dictionary is `wordnet`, which ships no types. The declaration is
  * src/wordnet.d.ts, source-only and deliberately unshipped -- the reason is

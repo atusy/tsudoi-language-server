@@ -367,8 +367,9 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   everyone who installs it.
 
   **It does not bring tsudoi, and its manifest will not warn you.** The handler declares
-  `@atusy/tsudoi-language-server` as a **peer** — the config and the handler must share ONE
-  copy, or a config annotated against one cannot be given a handler typed against the other —
+  `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not the
+  handler's, and a plain dependency would pin a range of its own and leave a second copy in
+  your `node_modules` that your CLI never runs —
   and marks that peer `optional`. That flag reads as _this works without tsudoi_ and is FALSE:
   the handler imports a value from it, and a project that installed only the handler fails at
   load with `Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one

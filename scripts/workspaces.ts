@@ -134,9 +134,15 @@ const toolRoot = fileURLToPath(new URL("../", import.meta.url));
  * nothing but that member.
  *
  * WHAT THIS IS NOT: a shortcut around the member's own resolution. It creates
- * the node_modules ENTRY and nothing else, so the member still resolves through
- * its own manifest and tsudoi's `exports` map, and a `paths` mapping -- which
- * would resolve the specifier WITHOUT either -- is still refused everywhere.
+ * the node_modules ENTRY and nothing else, so the specifier is answered the way
+ * a stranger's is -- by walking the MEMBER'S OWN node_modules, and then by the
+ * FRAMEWORK'S manifest, whose `exports` map decides which file a subpath
+ * reaches. THE MEMBER'S MANIFEST ANSWERS NOTHING HERE, worth saying because the
+ * dependency is declared there and the reading is therefore available: MEASURED
+ * with `tsc --traceResolution` on this member, its own package.json is read for
+ * the module format and the specifier is never looked up in it. A `paths`
+ * mapping would answer WITHOUT either, which `refuseMemberMappings` below
+ * refuses rather than leaving merely absent.
  *
  * Skipped where the member has no node_modules to put it in, which is what lets
  * a throwaway workspace built by a test run through here untouched.

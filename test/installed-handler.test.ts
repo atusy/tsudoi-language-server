@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Hover, InitializeResult, MarkupContent } from "vscode-languageserver-protocol";
@@ -142,8 +142,14 @@ test("an installed consumer answers a real hover, from a project holding no hand
  * WHAT IT MUST PRODUCE IS A FAILURE NAMING THE SPECIFIER. An empty hover would
  * mean the probe above is measuring something other than the handler; a hover
  * that STILL ANSWERED would mean a copied file or a hoisted stray is supplying
- * it. The dictionary is deliberately left in place, so the one thing withdrawn
- * is the package itself.
+ * it.
+ *
+ * THE DICTIONARY GOES WITH IT, AND THAT IS WHY THE SPECIFIER IN stderr IS THE
+ * ASSERTION RATHER THAN THE EXIT CODE. `wordnet` reaches a consumer only as this
+ * package's declared dependency -- no probe symlinks one in, deliberately -- so
+ * withdrawing the handler withdraws two modules, and TWO different failures can
+ * exit non-zero here. The absence below is asserted so the reader can see which
+ * one is being observed, and the name in stderr is what distinguishes them.
  */
 test("without the handler package installed, the same config cannot load, naming the specifier", async () => {
   const consumer = await consumerRunningTheExample(true);
@@ -155,6 +161,10 @@ test("without the handler package installed, the same config cannot load, naming
 
     expect(started.code).not.toBe(0);
     expect(started.stderr).toContain("@atusy/tsudoi-hover-wordnet");
+    // The second absence, MEASURED rather than reasoned about, because a
+    // dictionary still sitting there would mean some other route installed it
+    // and the withdrawal above was not the whole of what changed.
+    expect(existsSync(join(consumer.dir, "node_modules", "wordnet"))).toBe(false);
   } finally {
     consumer.dispose();
   }
