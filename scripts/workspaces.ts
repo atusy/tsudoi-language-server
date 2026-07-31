@@ -9,7 +9,7 @@ import {
   statSync,
   symlinkSync,
 } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -78,6 +78,28 @@ function packagesUnder(dir: string): readonly string[] {
     if (entry.isDirectory() && entry.name !== "node_modules") {
       found.push(...packagesUnder(join(dir, entry.name)));
     }
+  }
+  return found;
+}
+
+/**
+ * Every package directory one `exclude` entry covers, the entry read as the
+ * PATTERN tsconfig defines it to be.
+ *
+ * node_modules IS DROPPED FROM THE MATCHES AND NOT ONLY FROM THE WALK, which
+ * `packages/**` is what makes necessary: that pattern matches straight INTO a
+ * member's installed dependencies, and a match that starts there hands
+ * `packagesUnder` a directory whose own package.json belongs to a stranger. Such
+ * a package is uncovered by this repository's type checking and always will be,
+ * so reporting it would be a permanent red about somebody else's file.
+ */
+function excludedDirectories(root: string, entry: string): readonly string[] {
+  const found: string[] = [];
+  for (const match of globSync(entry, { cwd: root })) {
+    if (match.split(sep).includes("node_modules")) {
+      continue;
+    }
+    found.push(...packagesUnder(join(root, match)));
   }
   return found;
 }
@@ -213,6 +235,16 @@ export function prepareWorkspace(root: string): void {
  * criterion this closes is about a member no list names -- so trusting the two
  * keys to agree would leave exactly the gap the enumeration was chosen to avoid.
  * They are edited in different files for different reasons.
+ *
+ * AN ENTRY IS A PATTERN AND NOT A DIRECTORY NAME, which is what tsconfig means
+ * by `exclude` and the one reading that does not lose a package quietly:
+ * `packages/*` names nothing on disk, so joining it to the root and walking
+ * finds nothing, reports nothing, and exits 0 -- with the uncovered package
+ * missed by the only thing looking for it. EXPANDED RATHER THAN REFUSED, since a
+ * glob there is legal tsconfig a reader writes the moment they want the children
+ * excluded and the parent kept, and refusing it would trade a silent miss for a
+ * red on a correct file. THE SAME ENUMERATOR `workspaces` IS READ WITH, so the
+ * two keys this function compares cannot be interpreted differently.
  */
 export function refuseUncoveredPackages(root: string, members: readonly string[]): void {
   const tsconfigPath = join(root, "tsconfig.json");
@@ -223,7 +255,7 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
     if (typeof entry !== "string") {
       continue;
     }
-    for (const found of packagesUnder(join(root, entry))) {
+    for (const found of excludedDirectories(root, entry)) {
       if (!declared.has(found)) {
         throw new Error(
           `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`,

@@ -129,6 +129,51 @@ test("a package the workspace patterns do not declare fails loudly", async () =>
   expect(result.code).not.toBe(0);
 });
 
+// THE SAME UNCOVERED PACKAGE, BEHIND AN EXCLUSION WRITTEN AS A GLOB, which
+// tsconfig permits everywhere it permits a path and which a reader reaches for
+// the moment they want `packages/*` excluded but `packages` itself kept.
+//
+// A LITERAL READING OF THE ENTRY LOSES THIS ONE SILENTLY: `packages/*` names no
+// directory on disk, so a check that joins it to the root and walks finds
+// nothing, reports nothing, and exits 0 -- the uncovered package is missed by
+// the one thing looking for it. The exclusion is expanded by the same enumerator
+// `workspaces` is read with, so the two keys are interpreted the same way.
+test("a glob-form exclusion still names the package nothing declares", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages/*"] }),
+    "packages/declared/package.json": JSON.stringify({ name: "declared" }),
+    "packages/declared/tsconfig.json": memberTsconfig,
+    "packages/declared/src/index.ts": typeChecks,
+    "packages/forgotten/package.json": JSON.stringify({ name: "forgotten" }),
+    "packages/forgotten/src/index.ts": typeError,
+  });
+
+  expect(result.stderr).toContain("packages/forgotten");
+  expect(result.code).not.toBe(0);
+});
+
+// THE OTHER HALF OF READING THE ENTRY AS A PATTERN, and it only appears once
+// the entry is expanded: `packages/**` matches straight INTO a member's
+// installed dependencies, so a match that starts there names a package.json
+// belonging to a stranger. Nothing in this repository will ever type-check it,
+// which would make the report a permanent red about somebody else's file.
+// MEASURED without the node_modules filter: exit 1 naming
+// `packages/declared/node_modules/stranger`.
+test("an exclusion reaching into node_modules reports nobody else's package", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages/**"] }),
+    "packages/declared/package.json": JSON.stringify({ name: "declared" }),
+    "packages/declared/tsconfig.json": memberTsconfig,
+    "packages/declared/src/index.ts": typeChecks,
+    "packages/declared/node_modules/stranger/package.json": JSON.stringify({ name: "stranger" }),
+  });
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
 // `I found no members` and `I was given no way to find them` must not produce
 // the same observation, since this check is the only thing looking at the paths
 // the root check gave up.
