@@ -70,6 +70,7 @@ afterAll(() => {
 const publishedFiles: Record<string, readonly string[]> = {
   "@atusy/tsudoi-completion-path": [
     "LICENSE",
+    "README.md",
     "dist/completion.d.ts",
     "dist/completion.js",
     "dist/index.d.ts",
@@ -80,6 +81,7 @@ const publishedFiles: Record<string, readonly string[]> = {
   ],
   "@atusy/tsudoi-hover-wordnet": [
     "LICENSE",
+    "README.md",
     "dist/hover.d.ts",
     "dist/hover.js",
     "dist/index.d.ts",
@@ -101,6 +103,72 @@ test("every workspace member's published file list is written down", () => {
 for (const one of packed) {
   test(`${one.name} packs exactly the files this repository says it does`, () => {
     expect(one.entries).toEqual([...(publishedFiles[one.name] ?? ["NOT WRITTEN DOWN"])]);
+  });
+}
+
+/**
+ * WHAT A MEMBER'S README OWES THE ONE READER WHO CANNOT GET IT ANYWHERE ELSE,
+ * AND IT IS READ OFF THE TARBALL.
+ *
+ * A REGISTRY PAGE IS THE README IN THE ARCHIVE, not the file in this repository,
+ * and the two part company the moment `files` or a pack step touches one --
+ * MEASURED, and the measurement is why the list above grew a row rather than
+ * this test trusting the tree: `files: ["dist"]` does NOT name README.md and the
+ * tarball carries it anyway, because npm's collection adds it unconditionally.
+ * A member that renamed it to `readme.txt` would still satisfy a reader of this
+ * repository and hand a stranger a blank page.
+ *
+ * THREE THINGS, AND EACH IS SOMETHING A STRANGER CANNOT GET ELSEWHERE. WHAT IT
+ * ANSWERS: the method names, since the package name says one at best and this
+ * repository has one member whose name says neither. THAT IT NEEDS TSUDOI AT RUN
+ * TIME: the manifest says the opposite -- `peerDependenciesMeta.optional` reads
+ * as `this works alone` -- and the account of why that flag is there lives in a
+ * test `files` keeps out of the tarball, so without this the flag reaches a
+ * consumer with no correction anywhere. WHAT BOUNDS IT: every handler decides
+ * something that limits which documents it serves, and a decision that lives
+ * only in a maintainer's source file is not one an installing stranger can act
+ * on.
+ *
+ * OVER MEMBERS AS A CLASS, with the tokens per member because the third thing is
+ * a DIFFERENT sentence in each: whitespace as a word rule bounds one, whitespace
+ * as a path terminator bounds the other, and a token shared between them would
+ * be satisfied by whichever member happened to carry it.
+ */
+const readmeTokens: Record<string, readonly RegExp[]> = {
+  "@atusy/tsudoi-completion-path": [
+    /textDocument\/completion/,
+    /completionItem\/resolve/,
+    /peer/i,
+    /optional/,
+    /Cannot find module/,
+    /Whitespace ends a path/i,
+  ],
+  "@atusy/tsudoi-hover-wordnet": [
+    /textDocument\/hover/,
+    /peer/i,
+    /optional/,
+    /Cannot find module/,
+    /Whitespace is its word rule/i,
+  ],
+};
+
+test("every workspace member's README tokens are written down", () => {
+  expect(packed.map((one) => one.name).filter((name) => readmeTokens[name] === undefined)).toEqual(
+    [],
+  );
+});
+
+for (const one of packed) {
+  test(`${one.name} ships a README a stranger can act on`, () => {
+    const readme = readFileSync(join(one.dir, "README.md"), "utf8");
+
+    // NAMED rather than counted, so a missing subject appears in the failure
+    // text instead of a number that moved.
+    expect(
+      (readmeTokens[one.name] ?? [/THIS MEMBER HAS NO TOKENS WRITTEN DOWN/])
+        .filter((token) => !token.test(readme))
+        .map(String),
+    ).toEqual([]);
   });
 }
 

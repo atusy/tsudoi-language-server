@@ -21,14 +21,16 @@ little about the other.
 Until then the working route is the one below: build a tarball out of a checkout and install
 that. It is the route the test suite runs, and it runs it from this file's own bytes. **The
 quickstart's commands are extracted from this README and executed**, under both runtimes, so an
-instruction there that no longer works fails the suite. So is the handler package's **pack**
-command further down.
+instruction there that no longer works fails the suite. **Every command block in this document is
+executed**, so there is no block here whose promise a reader has to guess at.
 
-**One command here is read and never run**, said so you know which promise covers what: the
-handler's **install** line. It installs into a project that already has tsudoi, and the suite
-builds such a project by a different route than the quickstart's -- so what is checked is the
-command's text, that it names the handler package and no protocol package. A wrong flag there
-would ship green.
+**Neither is the handler packages under `packages/`.** The route for each of those lives in that
+package's own README -- `packages/hover-wordnet/README.md` and
+`packages/completion-path/README.md` -- rather than here: one copy of it, beside the code it is
+about, and each of those documents says for itself which of its commands the suite runs and which
+it only reads. What is true of all of them is the same and is stated once, further down: they are
+**peers** of tsudoi, their manifests say `optional` and that is false, and nothing corrects it
+anywhere a reader who installed one will look except in that package's own README.
 
 ## What you need first
 
@@ -324,87 +326,54 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | file                                         | what it does                                                                  |
   | -------------------------------------------- | ----------------------------------------------------------------------------- |
   | `examples/tsudoi.config.ts`                  | the config itself: which methods, and a `finally` that documents when it runs |
-  | `examples/completion-path.ts`                | streaming completion of filesystem paths                                      |
   | `examples/diagnostic-trailing-whitespace.ts` | warns about trailing whitespace, one warning per line                         |
   | `examples/formatting-trailing-whitespace.ts` | removes exactly what that diagnostic reports                                  |
-  | `examples/resolve-path-stat.ts`              | fills in a path item's size and date when the user highlights it              |
 
   The **trailing-whitespace two are a matched pair**: run the demo, see the warnings, format,
   and watch them clear. The formatter imports its analysis from the diagnostic module, so the
-  two can never disagree about what a problem is. **The path two are the other pair**, and it
-  runs the other way round: completion offers a directory's entries without asking the disk
-  about any of them, and resolve fetches the detail for the one item you highlight — so the
-  resolve module imports from the completion module the mark it recognises its own items by.
-  Neither pairing is namable by row position, which is why both are named by file.
+  two can never disagree about what a problem is.
 
-  **These teach two shapes of handler, and both are worth reading.** One **goes somewhere
-  else** for its answer — completion and resolve to the filesystem, and the installed hover
-  handler to a dictionary — and shows what a
-  handler that waits on something outside itself has to look like. The other **computes its
-  answer from the document it was given** and goes nowhere at all: the trailing-whitespace pair
-  reads the buffer, turns offsets into `Position`s with `positionAt`, and is done. The second is
-  the commoner shape in a real language server — a parser does not go anywhere else either — so
-  do not read the first as the one to copy.
+  **Copy the whole set**, or the imports fail. The config imports every handler module beside it
+  by relative path, and the formatter imports the diagnostic module. The set is what the test
+  suite type-checks and runs.
 
-  **Copy the whole set**, or the imports fail. The config imports every handler module by
-  relative path, the formatter imports the diagnostic module, and the resolve module imports the
-  completion module. The set is what the test suite type-checks and runs.
+  **What that set teaches is one shape of handler out of two**, and it is the commoner one: it
+  **computes its answer from the document it was given** and goes nowhere at all — reads the
+  buffer, turns offsets into `Position`s with `positionAt`, and is done. A parser does not go
+  anywhere else either. The other shape **goes somewhere else** for its answer and has to wait
+  on it, and the two packages below are where that one is worked out.
 
-  **The hover handler is not in that set, and that is the point of it.** The config gets it by
-  importing `@atusy/tsudoi-hover-wordnet`, a package you INSTALL — so a fix to the handler
-  reaches you by reinstalling instead of by diffing your copy against an example you have already
-  edited. The trade runs the other way too: a file you copied is yours to edit, and this one is
-  not, so a language whose words are not whitespace-delimited wants a handler of its own rather
-  than a setting on this one.
+- **Two handlers are packages you install rather than files you copy**, which is the trade this
+  repository makes deliberately: a fix reaches you by reinstalling instead of by diffing your
+  copy against an example you have already edited, and the price is that the file is not yours
+  to edit. Each carries **its own README** — what it answers, that it needs tsudoi at run time
+  however its manifest reads, what bounds it, and the route for getting it — and that document,
+  rather than this one, is what a registry page would show:
 
-  It travels the same local-tarball route tsudoi does, with one step of its own in front.
-  Packing it compiles it, and its build reaches tsudoi through a link inside the checkout that
-  `bun install` does not create -- so in a checkout where nothing else has run, the pack fails
-  with `src/hover.ts(47,36): error TS2307: Cannot find module
-'@atusy/tsudoi-language-server/types'`, naming the handler's own source for a fault that lives
-  in `node_modules`. `bun run scripts/typecheck-workspaces.ts` in the checkout writes the link
-  and clears it; `bun test` does too.
+  | package                                                               | answers                                             |
+  | --------------------------------------------------------------------- | --------------------------------------------------- |
+  | [`@atusy/tsudoi-hover-wordnet`](packages/hover-wordnet/README.md)     | `textDocument/hover`                                |
+  | [`@atusy/tsudoi-completion-path`](packages/completion-path/README.md) | `textDocument/completion`, `completionItem/resolve` |
 
-  Then in `tsudoi-language-server/packages/hover-wordnet/`:
+  **Neither brings tsudoi, and neither manifest will warn you.** Both declare
+  `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a
+  handler's, and a plain dependency would pin a range of its own and leave a second copy in your
+  `node_modules` that your CLI never runs — and both mark that peer `optional`. That flag reads
+  as _this works without tsudoi_ and is FALSE: each imports a value from it, and a project that
+  installed only a handler fails at load with
+  `Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one thing and
+  buys it only while tsudoi is **unpublished**, which is the section at the top of this file: put
+  a handler into the project that already has tsudoi, never into an empty one.
 
-  <!-- handler-pack in=packages/hover-wordnet -->
+  **The second one answers two methods and its name says one**, which is worth reading before
+  you go looking for a third package: path completion offers a directory's entries without
+  asking the disk about any of them, and the item resolution fetches the detail for the one item
+  you highlight. They ship together because the resolution recognises an item by a mark the
+  completion wrote onto it — unpublished, so that the two can keep changing how they agree.
 
-  ```sh
-  bun pm pack --filename hover-wordnet.tgz
-  ```
-
-  **The tarball does not land in that directory.** `bun pm pack` run inside a workspace member
-  writes to the workspace ROOT, so what you just built is
-  `tsudoi-language-server/hover-wordnet.tgz` -- beside `tsudoi.tgz` from quickstart step 1, not
-  under `packages/`. Then, in your own project:
-
-  <!-- examples-install -->
-
-  ```sh
-  bun install ../tsudoi-language-server/hover-wordnet.tgz
-  ```
-
-  That one install brings the dictionary with it: the package declares `wordnet` itself (~27MB,
-  MIT, loaded on the first hover rather than at startup), so there is nothing else for you to
-  add and no declaration file to copy. `wordnet` ships no types, and the declaration that fixes
-  that lives INSIDE the handler package and is deliberately not published — an ambient
-  `declare module` in a published package would declare a third party's module on behalf of
-  everyone who installs it.
-
-  **It does not bring tsudoi, and its manifest will not warn you.** The handler declares
-  `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not the
-  handler's, and a plain dependency would pin a range of its own and leave a second copy in
-  your `node_modules` that your CLI never runs —
-  and marks that peer `optional`. That flag reads as _this works without tsudoi_ and is FALSE:
-  the handler imports a value from it, and a project that installed only the handler fails at
-  load with `Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one
-  thing and buys it only while tsudoi is **unpublished**: without it your installer goes looking
-  for a name nobody has put anywhere, and the install itself fails. So install this into the
-  project that already has tsudoi — quickstart step 2 is what put it there — and never into an
-  empty one.
-
-  **No protocol package is named here**, and that is what tsudoi re-exporting its own dependencies
-  buys: these files name protocol types freely and still depend on nothing but tsudoi. They take
+- **No protocol package is named** by any of them, and that is what tsudoi re-exporting its own
+  dependencies buys: the copied modules and the installed packages alike name protocol types
+  freely and still depend on nothing but tsudoi. They take
   them from the `deps/` subpaths and not from tsudoi's own module -- `CompletionParams` from
   `@atusy/tsudoi-language-server/deps/protocol`, which carries the protocol's request and params types, and
   `CompletionItem`, `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity` from
@@ -413,10 +382,11 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   `import type`: it is a **value**, and an item's `kind` is one of its members. What
   `@atusy/tsudoi-language-server/types` carries is tsudoi's OWN names -- `MethodHandler`, `RequestContext`,
   `TsudoiConfigFactory` -- which is why the quickstart config above needs nothing beyond it and
-  these handler files need more: a config names no protocol type, and a handler does almost
-  nothing else. The test suite runs these files themselves and type-checks them as an
-  installed consumer receives them, so they cannot drift from what tsudoi does or from what it
-  publishes.
+  a handler module needs more: a config names no protocol type, and a handler does almost
+  nothing else. The test suite runs the copied modules themselves and type-checks them as an
+  installed consumer receives them; the packages are type-checked under their own configs,
+  through the same resolution a stranger takes. Neither can drift from what tsudoi does or from
+  what it publishes.
 
 - **The published type surface is four subpaths**, split by ORIGIN rather than by topic:
   `@atusy/tsudoi-language-server/types` is tsudoi's own names, written in `src/types.ts`, and

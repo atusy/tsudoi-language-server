@@ -49,6 +49,20 @@ export function readReadme(): string {
 }
 
 /**
+ * One workspace member's README -- the document a registry page would show, and
+ * the only place a stranger who installed that package can read anything about
+ * it.
+ *
+ * IT IS A SECOND ARTIFACT UNDER TEST AND NOT A COPY OF THE FIRST, which is what
+ * the extractors above already allow for by taking markdown as an argument: the
+ * per-handler route lives in the member's document so there is ONE copy of it,
+ * and the root README carries a pointer instead of a duplicate that diverges.
+ */
+export function readMemberReadme(member: string): string {
+  return readFileSync(join(member, "README.md"), "utf8");
+}
+
+/**
  * How many marked steps the quickstart has. A CONSTANT the test holds, and it
  * has to be: a count read out of the README would be satisfied by a README
  * carrying no steps at all.
