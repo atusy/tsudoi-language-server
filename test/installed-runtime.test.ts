@@ -32,9 +32,14 @@ await requireRuntime(denoRuntime);
  *
  * The install line is what these tests do -- from a tarball, because
  * publishing is out of scope. `bun add @atusy/tsudoi-language-server` and
- * `deno add npm:@atusy/tsudoi-language-server` are the same route once this is published, and
- * they are NOT VERIFIED HERE; nothing in this repo may claim they are until
- * something runs them.
+ * `deno add npm:@atusy/tsudoi-language-server` are TWO SEPARATE intended
+ * acquisition routes once this is published, and NOT ONE ROUTE: installing a
+ * tarball and resolving `npm:` through deno's own cache are different
+ * mechanisms, so one of them working says little about the other. README.md
+ * tells a reader the same thing, and a comment disagreeing with it would be the
+ * repo arguing with itself about what is covered. WHAT THESE TESTS COVER IS THE PACKED-AND-BUN-INSTALLED node_modules
+ * LAYOUT AND NOTHING ELSE; both registry routes are NOT VERIFIED HERE, and
+ * nothing in this repo may claim they are until something runs them.
  *
  * One artifact, one install, one file path, two runtimes: the only difference
  * between the last two lines is the runtime's own name and its permission
