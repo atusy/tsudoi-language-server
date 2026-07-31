@@ -843,3 +843,120 @@ test("the same consumer resolves the handler, and to its real type rather than a
   expect(notAny.code).not.toBe(0);
   expect(notAny.output).toContain("TS2322");
 });
+
+/** The path package's specifier, spelled once for the probes that follow. */
+const pathPackage = "@atusy/tsudoi-completion-path";
+
+/**
+ * WHAT THE PATH PACKAGE PROMISES, READ FROM AN INSTALLED COPY IN BOTH
+ * DIRECTIONS -- and the second direction is the one this file exists for.
+ *
+ * BOTH HANDLERS OR NEITHER. `resolvePathStat` reads a mark `pathCompletion`
+ * writes onto its items, and tsudoi refuses a config that supplies the resolve
+ * method with no completion handler beside it, so a consumer who received only
+ * one of these names has received half an artifact. They are asserted in ONE
+ * probe because that is the claim: the package answers two methods.
+ *
+ * AND TO THEIR REAL TYPES RATHER THAN `any`, which is the pair that keeps the
+ * green above honest: a consumer where the specifier resolved to nothing
+ * type-checks exactly as green as one where it resolved to a `MethodHandler`.
+ * The assignments to `number` must be REJECTED, and both are asserted because
+ * the two names come from different modules inside the package -- one green and
+ * one red would say the re-export reaches one of them.
+ */
+test("the path package publishes both handlers, and to their real types rather than any", async () => {
+  const resolves = await consumer.typeCheck({
+    "path-probe.ts": `import { pathCompletion, resolvePathStat } from "${pathPackage}";\nexport const handlers = { pathCompletion, resolvePathStat };\n`,
+  });
+  const completionNotAny = await consumer.typeCheck({
+    "path-completion-any-probe.ts": `import { pathCompletion } from "${pathPackage}";\nexport const wrong: number = pathCompletion;\n`,
+  });
+  const resolveNotAny = await consumer.typeCheck({
+    "path-resolve-any-probe.ts": `import { resolvePathStat } from "${pathPackage}";\nexport const wrong: number = resolvePathStat;\n`,
+  });
+
+  expect(resolves.output).toBe("");
+  expect(resolves.code).toBe(0);
+  expect(completionNotAny.code).not.toBe(0);
+  expect(completionNotAny.output).toContain("TS2322");
+  expect(resolveNotAny.code).not.toBe(0);
+  expect(resolveNotAny.output).toContain("TS2322");
+});
+
+/**
+ * THE MARK IS NOT PUBLISHED, AND THE TARBALL IS WHERE THAT IS DECIDED RATHER
+ * THAN THE SOURCE.
+ *
+ * `completedPath` and `PathItemData` describe how a completed item says which
+ * file it came from. The two handlers agree about it by importing one
+ * definition; a consumer who could import it would make every change to that
+ * agreement a compatibility question with a stranger.
+ *
+ * WHAT THIS IS NOT: an assertion that the name is absent from the tarball. IT IS
+ * IN THERE -- `dist/completion.d.ts` declares it, because the module must export
+ * it for the sibling module to import it, and `files: ["dist"]` ships the whole
+ * directory. What makes it internal is the `exports` map naming `.` alone, so
+ * this reads the thing that map decides: WHETHER A CONSUMER CAN NAME IT.
+ *
+ * THE DEEP PATH IS THE OTHER HALF AND IT IS NOT REDUNDANT, because the two
+ * failures have different causes: the first is `the entry point does not
+ * re-export this`, the second is `the package does not expose this file at all`.
+ * Drop the `exports` map and the first stays red while the second goes GREEN,
+ * which is exactly the edit that would publish the mark by accident.
+ *
+ * ITS PAIR IS THE TEST ABOVE, in the same consumer: an install that failed, or a
+ * specifier nothing answers, produces these same two reds while publishing
+ * nothing at all.
+ */
+test("the mark the two handlers share cannot be named by a consumer, by either route", async () => {
+  const throughEntryPoint = await consumer.typeCheck({
+    "mark-probe.ts": `import { completedPath } from "${pathPackage}";\nexport const reader = completedPath;\n`,
+  });
+  const throughDeepPath = await consumer.typeCheck({
+    "mark-deep-probe.ts": `import { completedPath } from "${pathPackage}/dist/completion.js";\nexport const reader = completedPath;\n`,
+  });
+
+  expect(throughEntryPoint.code).not.toBe(0);
+  expect(throughEntryPoint.output).toContain("completedPath");
+  expect(throughDeepPath.code).not.toBe(0);
+  expect(throughDeepPath.output).toContain(`${pathPackage}/dist/completion.js`);
+});
+
+/**
+ * THE OPTION BAG IS INTERNAL AND A CONSUMER LOSES NOTHING BY IT, MEASURED RATHER
+ * THAN ARGUED -- because this is the one classification where withholding a name
+ * could have taken a capability away with it.
+ *
+ * `PathCompletionOptions` is the third parameter of `pathCompletion`, so a
+ * config author who wants to name the directory a bare relative path is read
+ * against must be able to PASS one. They can: the value is an object literal,
+ * and the parameter's type is reached through the declaration's own relative
+ * import whether or not the name is re-exported. What they cannot do is annotate
+ * a variable with it, which is the cost this classification accepts.
+ *
+ * WHY IT IS WITHHELD AT ALL: its second member is `flavour`, a seam that exists
+ * so this repository can measure the Windows reading on a machine that is not
+ * Windows. Publishing the type would promise that seam to strangers.
+ *
+ * THE EXCESS-PROPERTY ARM IS THE ONE THAT DISCRIMINATES, and without it the
+ * green above is equally what `any` produces: a misspelled member must be
+ * REJECTED, which only happens if the parameter really has that type.
+ */
+test("a consumer can pass options without naming their type, and a misspelled member is refused", async () => {
+  const notNamed = await consumer.typeCheck({
+    "options-name-probe.ts": `import type { PathCompletionOptions } from "${pathPackage}";\nexport type Options = PathCompletionOptions;\n`,
+  });
+  const passed = await consumer.typeCheck({
+    "options-probe.ts": `import { pathCompletion } from "${pathPackage}";\nconst options: Parameters<typeof pathCompletion>[2] = { cwd: "/somewhere" };\nexport const chosen = options;\n`,
+  });
+  const misspelled = await consumer.typeCheck({
+    "options-misspelled-probe.ts": `import { pathCompletion } from "${pathPackage}";\nconst options: Parameters<typeof pathCompletion>[2] = { cdw: "/somewhere" };\nexport const chosen = options;\n`,
+  });
+
+  expect(notNamed.code).not.toBe(0);
+  expect(notNamed.output).toContain("PathCompletionOptions");
+  expect(passed.output).toBe("");
+  expect(passed.code).toBe(0);
+  expect(misspelled.code).not.toBe(0);
+  expect(misspelled.output).toContain("cdw");
+});

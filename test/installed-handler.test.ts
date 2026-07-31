@@ -2,13 +2,20 @@ import { expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { Hover, InitializeResult, MarkupContent } from "vscode-languageserver-protocol";
+import {
+  CompletionItemKind,
+  type CompletionItem,
+  type Hover,
+  type InitializeResult,
+  type MarkupContent,
+} from "vscode-languageserver-protocol";
 import { exampleSources, installConsumer } from "./helpers/install.ts";
 import { initializeParams, LspSession } from "./helpers/lsp.ts";
 import { runCommand } from "./helpers/spawn.ts";
 
 /**
- * A CONFIG AUTHOR GETS THE HOVER HANDLER BY INSTALLING IT, NOT BY COPYING IT.
+ * A CONFIG AUTHOR GETS THE HANDLER PACKAGES BY INSTALLING THEM, NOT BY COPYING
+ * THEM.
  *
  * WHAT MAKES THIS DIFFERENT FROM EVERY OTHER CONSUMER PROBE IN THIS SUITE, and
  * it is the whole reason the file exists: the others write the example's own
@@ -93,8 +100,8 @@ test("an installed consumer answers a real hover, from a project holding no hand
     //
     // `wordAt` IS THE NEEDLE AND THE FIRST CHOICE WAS WRONG, which is worth the
     // sentence because the instrument has to be unique to be worth anything:
-    // `preferredFormat` reddened this immediately, on examples/completion-path.ts
-    // -- the two files make the same choice about a declared capability and
+    // `preferredFormat` reddened this immediately, on the path completion --
+    // the two handlers make the same choice about a declared capability and
     // named the function the same way. `wordAt` appears nowhere in examples/ or
     // src/, and it is unpublished, so it reaches a consumer's own tree only by
     // being copied there.
@@ -127,6 +134,92 @@ test("an installed consumer answers a real hover, from a project holding no hand
       const contents = hover?.contents as MarkupContent | undefined;
       expect(`${String(contents?.value)} | stderr: ${running.stderr}`).toContain(word);
       expect((contents?.value ?? "").length).toBeGreaterThan(word.length);
+    } finally {
+      running.dispose();
+    }
+  } finally {
+    consumer.dispose();
+  }
+}, 60_000);
+
+/**
+ * THE SECOND HANDLER PACKAGE, AND BOTH ITS METHODS IN ONE INSTALLED CONSUMER --
+ * because either alone is half the artifact.
+ *
+ * WHY BOTH IN ONE TEST AND NOT TWO: the resolve handler recognises an item by a
+ * mark the completion handler wrote onto it, and that mark is unpublished. A
+ * resolve driven against an item this suite BUILT would answer from a mark this
+ * suite spelled, which is the agreement under test spelled twice. So the item
+ * resolved below is one the completion in the same session produced.
+ *
+ * AND FROM A PROJECT HOLDING NO SOURCE, exactly as the hover above: the config's
+ * only mention of either handler is a package specifier.
+ *
+ * `separatorsOf` IS THE NEEDLE AND ITS UNIQUENESS IS MEASURED RATHER THAN
+ * ASSUMED, which is what the hover's own needle had to learn: it appears in
+ * NOTHING under src/, examples/, test/ or scripts/, and it is unpublished, so it
+ * reaches a consumer's own tree only by being copied there. It is also a name a
+ * reader would not invent -- the point of asking the flavour which characters
+ * cut is that the two spellings must not be merged.
+ *
+ * A `detail` THAT NAMES A SIZE, not merely a non-empty one: the handler returns
+ * the item UNCHANGED both for an item it did not produce and for a path that has
+ * gone, so `an answer arrived` is satisfied by a handler that recognised
+ * nothing.
+ */
+test("an installed consumer answers a completion and then resolves one of its own items", async () => {
+  const consumer = await consumerRunningTheExample();
+  try {
+    expect(consumer.files.filter((path) => path.includes("completion-path"))).toEqual([]);
+    expect(
+      consumer.files.filter((path) => readFileSync(path, "utf8").includes("separatorsOf")),
+    ).toEqual([]);
+    expect(consumer.files.filter((path) => path.endsWith("tsudoi.config.ts")).length).toBe(1);
+
+    const documentUri = pathToFileURL(join(consumer.dir, "probe.txt")).href;
+    const running = LspSession.startCommand(
+      "bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
+      consumer.dir,
+    );
+    try {
+      await running.request<InitializeResult>("initialize", initializeParams);
+      running.notify("textDocument/didOpen", {
+        // `./` completes the consumer's own directory, which the install and the
+        // config it was handed have both put files in.
+        textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "./" },
+      });
+
+      const items = await running.request<CompletionItem[]>("textDocument/completion", {
+        textDocument: { uri: documentUri },
+        position: { line: 0, character: 2 },
+      });
+      expect(`${String(items.length)} items, stderr: ${running.stderr}`).toBe(
+        `${String(items.length)} items, stderr: `,
+      );
+      expect(items.length).toBeGreaterThan(0);
+
+      // A FILE AND NOT A DIRECTORY, because the resolve handler deliberately
+      // shows no size for a directory -- a directory's `size` is its own entry's
+      // and says nothing about what is inside -- so a directory would satisfy
+      // this test's weaker half and not its assertion.
+      const file = items.find((item) => item.kind === CompletionItemKind.File);
+      // Narrowed by a throw rather than by an assertion, so the resolve below
+      // reads a real item: `expect(...).toBeDefined()` leaves the type wide and
+      // the request would go out carrying `undefined`.
+      if (file === undefined) {
+        throw new Error(
+          `the completion produced no file item among ${String(items.length)} candidates`,
+        );
+      }
+
+      const resolved = await running.request<CompletionItem>("completionItem/resolve", file);
+
+      expect(`${String(resolved.detail)} | stderr: ${running.stderr}`).toContain("bytes");
+      expect(resolved.detail).toContain("modified ");
+      // The item came back, rather than being replaced by something else: an
+      // answer that dropped the label would take the entry out of the user's
+      // list.
+      expect(resolved.label).toBe(file.label);
     } finally {
       running.dispose();
     }
