@@ -584,19 +584,6 @@ test("packing builds, so a stale dist cannot be published", () => {
 });
 
 /**
- * The VALUE names src/types.ts re-exports, read out of that file rather than
- * copied: a list held here would agree with a src/types.ts that had dropped one.
- *
- * `export type { ... }` is deliberately not matched. Type re-exports leave no
- * runtime trace, so a declaration-only name has nothing to compare against in
- * the emitted .js and including it would make the assertion below fail forever.
- *
- * THROWS on finding none, for the reason every extractor in this project does:
- * an empty expectation is satisfied by an empty dist/, which is the exact state
- * this is here to catch.
- */
-
-/**
  * WHY THIS TEST IS NOT REDUNDANT UNDER AN AUTOMATIC BUILD, which is the
  * obvious argument for deleting it and the one to answer first: it would hold
  * only if the staleness this watches CANNOT ARISE, and that turns entirely on
@@ -609,23 +596,24 @@ test("packing builds, so a stale dist cannot be published", () => {
  * bare, a file path, a name filter, `-t` -- preloads the build exactly once,
  * measured; the single-file bypass is not reachable here.
  *
- * MEASURED ON THE ROUTE IT GUARDS, with a value re-export added to src/types.ts
- * and no build: from a non-root cwd the suite gives TWO failures, and THIS
- * IS THE ONLY STALENESS-SPECIFIC FAILURE OF THE TWO. The other --
- * published-artifacts.test.ts's exact runtime-key list -- is attributed away by
- * a control: it reddens identically when the same edit is made and the build
- * DOES run, so it detects a new published name rather than a stale dist/.
- * Without that control this test would read as one of a redundant pair.
+ * WHAT IT WATCHES ON THAT ROUTE IS dist/deps/types.js AND ONLY THAT FILE, which
+ * is narrower than `dist/ is stale` and is the reading to hold it to. MEASURED
+ * from a non-root cwd with that one file replaced by `export {}`: this REDDENS,
+ * printing its remedy beside an empty list. MEASURED on the same route with a
+ * value added to src/types.ts instead: this stays GREEN, because neither side of
+ * the comparison below reads that file -- the single failure there is
+ * published-artifacts.test.ts's runtime-key list, and that one reddens
+ * identically when the build DOES run, so it detects a new published name rather
+ * than a stale dist/.
  *
- * WHAT THE FAILURE LOOKS LIKE ON THAT ROUTE, recorded because it does not name
- * its own cause and because `bun test` from the root never shows it -- dist/
- * cannot be missing there at all. test/completion-path.test.ts STATICALLY
- * IMPORTS the example, so a stale dist/ kills the whole file at module load,
- * reporting 0 pass, as `SyntaxError: Export named 'CompletionItemKind' not
- * found in module .../dist/types.js`; and the files that SPAWN a server surface
- * the same cause as `initialize failed: server exited with code 1` carrying
- * tsudoi's own `failed to load config` on the child's stderr, with only the
- * server-needing assertions failing (test/hover.test.ts: 12 pass, 2 fail).
+ * IT IS ONE FAILURE AMONG MANY AND EARNS ITS PLACE BY NAMING ITS OWN CAUSE.
+ * MEASURED on the stale-dist route: the suite from a non-root cwd gives 85 fail
+ * / 596 pass, because every file that spawns a server loads dist/ too -- and
+ * those arrive as `initialize failed: server exited with code 1` carrying
+ * tsudoi's own `failed to load config` and a `SyntaxError: Export named
+ * 'MarkupKind' not found in module .../dist/deps/types.js` on the child's
+ * stderr (test/hover.test.ts: 12 pass, 4 fail). That text sends a reader to the
+ * config; the remedy string below sends them to the build.
  *
  * IT DETECTS AND DOES NOT BUILD. Whether the suite builds is settled in
  * bunfig.toml, by ruling; what keeps the build OUT of THIS test is narrower and
