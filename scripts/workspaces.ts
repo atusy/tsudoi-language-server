@@ -60,6 +60,129 @@ export function declaredMembers(root: string): readonly string[] {
 }
 
 /**
+ * The manifest fields a build edge is read out of.
+ *
+ * `devDependencies` IS ABSENT AND THAT IS A RULING RATHER THAN AN OVERSIGHT.
+ * The root devDepends on both handler packages and both handler packages depend
+ * back on the root, so an edge per devDependency would make this repository's
+ * own graph hold two cycles -- and the refusal below runs inside the `bun test`
+ * preload, so nothing would load. Substantively: the root's published artifact
+ * is not compiled against either handler, so such an edge would order a build
+ * against a dependency that build does not have. THE PRICE IS ACCEPTED AND
+ * NAMED: a package that devDepends on another package for its TESTS gets no
+ * ordering guarantee from here.
+ *
+ * `peerDependencies` IS PRESENT EVEN WHERE IT IS DECLARED OPTIONAL, and that is
+ * the landmine rather than a detail: `peerDependenciesMeta.optional` buys
+ * INSTALLABILITY while the peer is unpublished and says nothing about
+ * compilation -- each of this repository's handlers imports values from the peer
+ * it calls optional. Dropping optional peers leaves this graph with NO EDGES AT
+ * ALL, and the order silently degenerates to the tie-break, which is the
+ * alphabet wearing a topological sort's clothes.
+ */
+const dependencyFields = ["dependencies", "peerDependencies"] as const;
+
+/** A package as the ordering sees it: where it is, what it is called, what it needs. */
+interface OrderedPackage {
+  readonly dir: string;
+  readonly name: string | undefined;
+  readonly needs: readonly { readonly producer: string; readonly field: string }[];
+}
+
+/**
+ * Reads one package as a node, WITH A MISSING `name` CARRIED RATHER THAN
+ * REFUSED.
+ *
+ * A NAMELESS PACKAGE IS TOLERATED HERE AND REFUSED ELSEWHERE, which is an
+ * ordering constraint between two guards and not a disagreement about the state:
+ * `refuseMemberDirectoriesUnlikeTheUnscopedName` is the one that refuses it, and
+ * it runs in the fifth check. This function runs in the `bun test` PRELOAD, so a
+ * throw here would abort the suite before that guard could speak -- and the arm
+ * that pins the refusal would go red still containing the word `name`, now
+ * reddened by the wrong function.
+ *
+ * Nothing depends on a package that has no name, since an edge is a name found
+ * in another package's declaration; such a node is ordered by the tie-break
+ * alone.
+ */
+function orderedPackage(dir: string): OrderedPackage {
+  const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as Record<
+    string,
+    unknown
+  >;
+  const name = manifest.name;
+  const needs: { producer: string; field: string }[] = [];
+  for (const field of dependencyFields) {
+    const declared = manifest[field];
+    if (typeof declared !== "object" || declared === null) {
+      continue;
+    }
+    for (const producer of Object.keys(declared as Record<string, unknown>)) {
+      needs.push({ producer, field });
+    }
+  }
+  return { dir, name: typeof name === "string" ? name : undefined, needs };
+}
+
+/**
+ * The order the packages of this workspace can be built in: every package after
+ * everything it declares it needs.
+ *
+ * THE ROOT IS A NODE BECAUSE IT IS A BUILDABLE PACKAGE AND NOT BECAUSE IT IS THE
+ * ROOT. That phrasing is what makes this survive the day the main package moves
+ * under `packages/`: it stops being special with no edit here.
+ *
+ * A SEQUENCE IS RETURNED RATHER THAN A BUILD PERFORMED, and the reason is what
+ * the callers cannot check for themselves: `build everything twice` and `build
+ * in any order and retry until it goes green` leave exactly the artifacts a
+ * correct order leaves. They differ from it only as a SEQUENCE, so the sequence
+ * has to be a value somebody can read.
+ *
+ * THE TIE-BREAK IS NOT THE ORDER, and it is the one thing here a later reader
+ * could mistake for the whole answer. Packages nothing separates are emitted by
+ * path so two runs agree; packages a declaration separates are emitted by the
+ * DECLARATION, which on this repository's own graph happens to agree with the
+ * path order -- an accident of the names, pinned as an accident by an arm in
+ * test/build-order.test.ts built on a tree where the two disagree. The member
+ * enumeration above sorts for a different reason and keeps its own sort: its
+ * callers want a stable LIST, and a stable list is not a build order.
+ *
+ * EDGES ARE INTERSECTED WITH THE NODES, so a dependency on a package outside
+ * this workspace -- which is most of them -- constrains nothing here. It is
+ * installed rather than built.
+ */
+export function buildOrder(root: string): readonly string[] {
+  const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
+  const dirsByName = new Map<string, string>();
+  for (const node of nodes) {
+    if (node.name !== undefined) {
+      dirsByName.set(node.name, node.dir);
+    }
+  }
+  const pending = [...nodes].sort((a, b) => (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
+  const placed = new Set<string>();
+  const order: string[] = [];
+  while (pending.length > 0) {
+    const index = pending.findIndex((node) =>
+      node.needs.every((need) => {
+        const producer = dirsByName.get(need.producer);
+        return producer === undefined || placed.has(producer);
+      }),
+    );
+    if (index === -1) {
+      break;
+    }
+    const [next] = pending.splice(index, 1);
+    if (next === undefined) {
+      break;
+    }
+    placed.add(next.dir);
+    order.push(next.dir);
+  }
+  return order;
+}
+
+/**
  * Every directory holding a package.json underneath `dir`, which is how a
  * package the root program cannot see is recognised without knowing its name.
  *
