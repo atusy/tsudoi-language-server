@@ -308,6 +308,32 @@ test("a member declaring no name is refused rather than passed over", async () =
 });
 
 /**
+ * The allowance the two arms below need, because they build and type-check
+ * THREE members where every other test in this file builds two.
+ *
+ * A MEASUREMENT AND NOT A PRECAUTION: bun's default is 5000ms, which is not a
+ * meaningful bound on a tsc invocation at all. MEASURED in a full-suite run on a
+ * machine at load average ~76, `the same three members pass once the third
+ * agrees with its directory` failed at 5006ms with `this test timed out after
+ * 5000ms`, while the same test alone on the same machine finished well inside
+ * it. A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE, because its
+ * pair then reads as `the guard refused a workspace it should have passed` --
+ * the one conclusion this file exists to make unavailable.
+ *
+ * THE OTHER TESTS HERE HAVE THE SAME EXPOSURE AND ARE DELIBERATELY LEFT ALONE.
+ * MEASURED at load average ~59, with nothing in this repository changed: the two
+ * two-member arms BOTH timed out at ~5002ms and both passed alone moments later,
+ * so this is the file's condition rather than these arms'. It is not fixed here
+ * because the remedy for the file is a third argument on twenty `test` calls,
+ * which pushes every one of them past the formatter width and re-indents twenty
+ * unrelated bodies -- and because `[test] timeout` in bunfig.toml is NOT an
+ * option: MEASURED on bun 1.3.13, that key is ignored and the default still
+ * applies. Left for whoever weighs that, with the measurement rather than
+ * without it.
+ */
+const threeMembersBuildOneMore = 120_000;
+
+/**
  * A workspace holding THREE members, all scoped, the last of which agrees with
  * its directory or does not.
  *
@@ -352,27 +378,35 @@ function threeMembers(third: string): Record<string, string> {
  * reporting every member it looked at would satisfy `names the third` while
  * telling a reader to inspect three directories, two of which are correct.
  */
-test("a third member the guard was never written for is refused, by name", async () => {
-  const result = await checkWorkspace(threeMembers("@scope/elsewhere"));
+test(
+  "a third member the guard was never written for is refused, by name",
+  async () => {
+    const result = await checkWorkspace(threeMembers("@scope/elsewhere"));
 
-  expect(result.stderr).toContain("packages/third");
-  expect(result.stderr).toContain("@scope/elsewhere");
-  expect(result.stderr).not.toContain("packages/first");
-  expect(result.stderr).not.toContain("packages/second");
-  expect(result.code).not.toBe(0);
-});
+    expect(result.stderr).toContain("packages/third");
+    expect(result.stderr).toContain("@scope/elsewhere");
+    expect(result.stderr).not.toContain("packages/first");
+    expect(result.stderr).not.toContain("packages/second");
+    expect(result.code).not.toBe(0);
+  },
+  threeMembersBuildOneMore,
+);
 
 // THE POSITIVE CONTROL, and it is what separates `refused` from `the throwaway
 // is malformed` -- a workspace that could not be read, a compiler that is not
 // there, a member with no manifest all exit non-zero above and look identical.
 // THE SAME THREE MEMBERS, with the third's name changed and nothing else, so
 // what the pair measures is the disagreement rather than the tree.
-test("the same three members pass once the third agrees with its directory", async () => {
-  const result = await checkWorkspace(threeMembers("@scope/third"));
+test(
+  "the same three members pass once the third agrees with its directory",
+  async () => {
+    const result = await checkWorkspace(threeMembers("@scope/third"));
 
-  expect(result.stderr).toBe("");
-  expect(result.code).toBe(0);
-});
+    expect(result.stderr).toBe("");
+    expect(result.code).toBe(0);
+  },
+  threeMembersBuildOneMore,
+);
 
 /** The specifier the root maps through `paths` and the member cannot reach. */
 const sharedModule = "shared/thing";
