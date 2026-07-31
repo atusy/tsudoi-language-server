@@ -269,7 +269,96 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 46,
+    pbi_id: "PBI-53",
+    status: "in_progress",
+    goal: "The published package is named @atusy/tsudoi-language-server on all three routes, and the sweep's own controls are proven still armed.",
+    subtasks: [
+      {
+        test: "The census is committed before any file is touched, so it is a prediction rather than a report.",
+        implementation:
+          "Take a two-pattern census. P1 is boundary-aware so the old name is not counted inside the new one; P2 widens to `atusy`, and P2-minus-P1 is enumerated BY NAME.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Counts are OCCURRENCES (grep -o | wc -l), never lines: one README line holds three.",
+          "The file list comes from git ls-files, never by hand.",
+          "LICENSE's copyright line is the DELIBERATE NON-TARGET, named in the census so a wide sweep corrupting the author's name is a caught error rather than a silent one.",
+          "Writing the census adds old-name occurrences to the file holding it. Harmless only because scrum.ts is excluded from the subject by construction.",
+        ],
+      },
+      {
+        test: "The four DoD checks pass at the end of the commit, which is what exercises all three routes.",
+        implementation:
+          "One atomic rename: package.json name, tsconfig paths key, every live specifier and split spelling and regex, the README's EXECUTED bytes, then bun install for bun.lock.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NOT test/helpers/readme.ts. It is criterion 2's instrument and must testify about this commit while unmodified.",
+          "The red window lives inside this commit's working tree and NEVER at a commit boundary. A dual-name shim is refused: paths is only the tsc route, and neither the runtime self-reference nor the tarball layout can be dual-named.",
+          "README's --filename tsudoi.tgz is an arbitrary local filename, not the package name, and stays.",
+        ],
+      },
+      {
+        test: "The suite passes with the instrument unchanged in the rename commit, and the edit to it is reported rather than absorbed.",
+        implementation:
+          "Repair test/helpers/readme.ts's single doc comment, alone, in its own commit after its subject has moved.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Criteria 1 and 2 collide on this one file. The separation is structural rather than argued.",
+        ],
+      },
+      {
+        test: "Each control names what it measured, and a green that measures nothing is recorded as such.",
+        implementation:
+          "Run the five controls: C1 revert name alone; C2 delete the paths key; C3 revert one README start line; C4 the standing Sprint-14 re-run; C5 criterion 3's sliced-JSON comparison.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "C4 states TARGET SURVIVAL BEFORE COLOUR: the examples still import through the subpath, now new-spelled, so the re-run is available. Predict exit 1 naming the subpath and ZERO TS2307.",
+          "C5 compares completed and retrospectives SLICED OUT of the JSON. Whole-document comparison fails by construction, since this sprint writes its own census into it.",
+          "Any hand-run probe runs on both runtimes or its record names the one it ran on.",
+        ],
+      },
+      {
+        test: "No control the sweep touched is left disarmed.",
+        implementation:
+          "Ask Sprint 45's question -- what would make this red, now? -- of every control the sweep touched, individually.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A rename is the ARCHETYPAL DISARMING EDIT: it changes what a matcher matches without changing whether it passes.",
+          "test/readme.test.ts:368's /bun add @atusy\\/tsudoi/ still matches the renamed command BY PREFIX. Tighten to the full new name, or record the green as measuring nothing.",
+          "That is the known instance. Find the rest rather than fixing only it.",
+        ],
+      },
+      {
+        test: "Review does not open until revise has converged.",
+        implementation:
+          "Run the revise skill without a PR: multi-perspective review, then independent review, fixing findings at each stage until no actionable ones remain.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The stakeholder's standing instruction, carried as an active retrospective improvement.",
+          "A criterion asserts a property a perturbation can falsify; revise finds what nobody thought to assert. No criterion may be met by argument at Review.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "SCOPE RULED BEFORE EXECUTION: NO `packages/` IN THIS SPRINT. The Developer checked the objection against the PBI's own sentence, which is the strongest form it could take -- criterion 1 ends `the four DoD checks pass, which is what exercises all three routes`, and a member is answered by root tsc THROUGH THE VERY `paths` KEY THIS PBI RE-SPELLS, reporting success. Building the workspace here would ship the hazard PBI-51 exists to foreclose, inside the sprint that re-spells its mechanism, and destroy PBI-51's criterion-2 contrast before it could be taken.",
+      "THE GATE WAS RED AT THE COMMIT THIS SPRINT WOULD HAVE OPENED ON, AND THE SCRUM MASTER PUT IT THERE. Writing the dashboard back through a JSON serialiser left scrum.ts unformatted and `oxfmt --check .` at exit 1, so criterion 1 was unsatisfiable for a reason having nothing to do with its subject. THE DEVELOPER FOUND IT AT PLANNING -- not the PO, not the Scrum Master. Repaired in e060f01 with a control rather than an assurance, and THAT CONTROL BECAME CRITERION 3'S INSTRUMENT: scrum.ts prints its record as JSON and that output is byte-identical across the reformat, so the record is the extracted value and the file is one serialisation of it.",
+      "THE NAME IS SPELLED IN FIVE FORMS THIS REPOSITORY CANNOT GREP FOR AS ONE STRING, measured at Planning: split across function arguments at test/helpers/install.ts and test/published-artifacts.test.ts, in TARBALL form `atusy-tsudoi-0.0.0.tgz` which shares no substring with the specifier, and inside regexes with escaped slashes at test/readme.test.ts. This is why the census takes two patterns rather than one.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 45,
