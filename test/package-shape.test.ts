@@ -136,6 +136,40 @@ const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf
 >;
 
 /**
+ * WHY THE MEMBERS ARE EXCLUDED FROM THE CHECK ABOVE, which is the one exclusion
+ * in this repository that REMOVES coverage rather than declining to grade a
+ * build artifact.
+ *
+ * ROOT `tsc --noEmit` DOES NOT MERELY MISS A MEMBER -- IT ANSWERS FOR ONE AND
+ * REPORTS SUCCESS. The mapping asserted above resolves
+ * `@atusy/tsudoi-language-server/*` for EVERY file in the root program, a
+ * member's files included, so a member that declares no dependency on tsudoi at
+ * all still type-checks green at the root through a route no consumer of that
+ * member has. MEASURED, on a member planted for it: with the mapping in place
+ * its subpath import produces NO error, and deleting the mapping turns that
+ * exact line into TS2307. A green that arrives that way is worse than no check,
+ * because it is read as one.
+ *
+ * SO THE COVERAGE IS TRANSFERRED RATHER THAN DROPPED, and the two keys asserted
+ * here are the two halves of that transfer: `exclude` makes the wrong answer
+ * unconstructible, and `workspaces` is what scripts/typecheck-workspaces.ts
+ * enumerates the members from so that nothing has to remember them. NEITHER HALF
+ * WORKS ALONE -- without the exclusion the fifth check is shadowed by a root
+ * green, and without the fifth check the exclusion leaves the members checked by
+ * nothing while every command exits 0.
+ *
+ * THE TWO KEYS ARE ASSERTED TOGETHER BECAUSE THEY MUST AGREE, and they live in
+ * different files edited for different reasons. What the script does when they
+ * DISAGREE -- a package under an excluded path that the patterns do not declare
+ * -- is driven in test/workspace-members.test.ts against workspaces built for
+ * it, since this repository can only ever be in the state where they agree.
+ */
+test("the members are outside the root type check, and the workspace patterns are what finds them", () => {
+  expect(repoTsconfig.exclude).toEqual(["dist", "packages"]);
+  expect(packageJson.workspaces).toEqual(["packages/*"]);
+});
+
+/**
  * THE PUBLISHED SHAPE, asserted whole rather than key by key: `exports` makes
  * every path not listed unreachable by bare specifier, so adding an entry is a
  * decision about the public surface and never a convenience, and an equality

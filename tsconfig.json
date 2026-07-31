@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": ["node", "bun"]
   },
-  "exclude": ["dist"]
+  "exclude": ["dist", "packages"]
 }
