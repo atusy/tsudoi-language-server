@@ -265,6 +265,19 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     // Found rather than spelled out: bun derives the filename from name and
     // version, so hardcoding it would turn the next version bump into a
     // puzzling ENOENT.
+    //
+    // NOT ASSERTED AGAINST package.json's `name` EITHER, which is the edit this
+    // looseness invites and the reason it is refused: the filename is the
+    // PACKER'S derivation, not this package's identity, so an equality here
+    // would pin how bun spells a temporary file and would redden on a change
+    // that costs a consumer nothing. Nor can the search pick the wrong
+    // artifact -- the stage is a fresh mkdtemp holding exactly one .tgz.
+    // WHAT THE NAME MUST REACH ON THIS ROUTE IS THE INSTALL LAYOUT, spelled at
+    // `packageDir` below, and reverting `name` reddens the consumer suite
+    // through that rather than through this line. README.md declines the
+    // derived filename outright for its own reason, packing with
+    // `--filename tsudoi.tgz` so the command it hands a reader cannot go stale
+    // at a release.
     const tarballName = readdirSync(stage).find((entry) => entry.endsWith(".tgz"));
     if (tarballName === undefined) {
       fail("bun pm pack", { code: packed.code, output: `no .tgz in ${stage}\n${packed.output}` });
