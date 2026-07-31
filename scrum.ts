@@ -496,11 +496,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "Per-member READMEs over BOTH packages, naming what it answers, that it requires tsudoi at run time, and the constraint that bounds it.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "68c4ee4",
+            message:
+              "docs(packages): each handler package carries the README a registry page shows",
+            phase: "green",
+          },
+        ],
         notes: [
           "hover-wordnet's bounding constraint is that whitespace is its word rule. completion-path's must be found and stated, not invented.",
           "Nothing is published yet, so no registry page is blank today -- but tsudoi's README cannot be where every handler explains its own constraints.",
+          "FOUND IN THE SOURCE, NOT INVENTED, AND THE REJECTED CANDIDATE IS NAMED: completion-path's bound is WHITESPACE ENDS A PATH -- `pathFragments` scans back from the cursor to the nearest whitespace, so a document that QUOTES, ESCAPES or COMMA-SEPARATES its paths is served by a handler of its own. The candidate declined as the headline is `nothing recurses; one directory listing per fragment`: it is true and it is stated, but it bounds WHAT IT COSTS rather than WHICH DOCUMENTS IT SERVES, and the criterion asks for the second. The two packages arriving at the same whitespace rule independently is a coincidence worth reading, not a shared implementation.",
+          'MEASURED BEFORE THE TABLE WAS EDITED: `files: ["dist"]` names no README.md and `bun pm pack` COLLECTS IT ANYWAY, so a reading taken from the manifest would have concluded the registry page is blank. Both members\' READMEs are read out of the ARCHIVE, and the three subjects are pinned per member -- the bounding sentence differs by package, so a shared needle would be satisfied by whichever member carried it.',
+          "THE ROUTE MOVED RATHER THAN BEING DUPLICATED. The `handler-pack` and `examples-install` markers are gone from the root README and live in each member's, extracted and executed PER MEMBER; a root test refuses either marker's return. The root document's own promise is narrowed to `every block HERE is executed`, and the read-only exception now sits in the documents that carry the read-only command.",
         ],
       },
       {
@@ -508,11 +518,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "Pin the optional-peer reversal where the publishing edit passes, over BOTH members.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "dd15221",
+            message:
+              "test(premise): the optional-peer falsehood cannot outlive the reason it is carried",
+            phase: "green",
+          },
+        ],
         notes: [
           "`peerDependenciesMeta.optional: true` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Measured: a project given the handler tarball alone installs with NO warning at all, then fails at load.",
           "The property is required; the instrument is Planning's to choose. README's `The package is not published` section is executed by the suite and is a candidate, not a requirement.",
+          "THE INSTRUMENT CHOSEN, AND THE SHAPE MATTERS MORE THAN THE SITE: the premise is READ and never ASSERTED. An assertion that the README still says `not published` would demand the document keep lying after publication, which is the opposite of the property; what may not happen is the manifest and the document DISAGREEING, in either direction -- a member that dropped the flag early is named too, because installing it then 404s.",
+          "WATCHED FAILING RATHER THAN ARGUED: with that section rewritten to say tsudoi is published, the reading names `packages/completion-path` and `packages/hover-wordnet` and what each of them says. The fact itself is shared with test/readme.test.ts as one exported constant, so the two cannot disagree about which section states the premise, and that file already requires it to have exactly ONE home.",
+          "WHAT IT CANNOT SEE, BOUNDED HONESTLY: a publisher who publishes and never touches the README. Nothing in a suite observes a registry, and a probe that did would make this repository's green depend on somebody else's uptime. What is bought is that the one edit needed to stop the document lying is the edit that reddens this.",
         ],
       },
       {
@@ -520,11 +540,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
         type: "structural",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [
           "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
           "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
+          "THE ENUMERATION, COMMITTED BEFORE THE SITES ARE REPAIRED. Twenty-one predicted sites in fourteen files, in three classes. CLASS ONE, A PATH THAT NO LONGER EXISTS: bunfig.toml's measured diagnosis naming `examples/completion-path.ts`; test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason, which rests on that example being STATICALLY imported by a root test; test/completion.test.ts x3; test/client-capabilities.test.ts; test/workspace.test.ts; test/package-shape.test.ts; test/helpers/checkout.ts; test/fixtures/capabilities-mutation.ts; test/resolve-path-stat.test.ts; packages/hover-wordnet/test/hover.test.ts; and src/types.ts x3, src/server.ts, src/tsudoi.ts -- the last five being tsudoi's OWN source citing an example that is now a package.",
+          "CLASS TWO, A CLAIM WHOSE PREMISE THIS SPRINT REMOVED rather than a path that moved: test/helpers/build.ts's account of WHICH ARM NEEDS dist/, and the README's `examples/ import ...` sentence, both written when the path handlers were files in examples/.",
+          "CLASS THREE, AND IT IS SPRINT 47'S OPEN ITEM MEASURED ON THE ARTIFACT: packages/hover-wordnet/dist/hover.js SHIPS three repository-path claims -- `scripts/workspaces.ts`, `test/package-shape.test.ts`, `src/wordnet.d.ts` -- read off the packed tarball. completion-path's packed files carry NONE by the same instrument. THE INSTRUMENT IS A MATCHER AND THEREFORE SUSPECT, so the sweep is turned into a test with a proven-positive control rather than left as a grep.",
         ],
       },
       {
