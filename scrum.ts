@@ -432,6 +432,8 @@ const scrum: ScrumDashboard = {
       "THE RESOLVE HALF TRAVELS WITH THE COMPLETION HALF, ruled by the stakeholder. Leaving resolve-path-stat behind would promote `completedPath` -- the internal marker the completion attaches to its items -- into a package's PUBLIC API, and every change to how the marker is attached would become a compatibility question. The accepted cost is that the package name does not say it answers two methods, and it is paid where a reader meets it rather than in the name.",
       "THIS SPRINT ADDS NO SHAPE TO test/guard.test.ts, A PREDICTION SPRINT 47 MADE ABOUT THIS ONE. Its deno-guard shape was written over MEMBERS AS A CLASS rather than naming a package, so a second member needs no second shape. IF A SHAPE IS ADDED HERE, SPRINT 47'S CLASS-LEVEL CLAIM WAS FALSE and that is the finding.",
       "SPRINT 47'S CRITERION 2 CARRIED A REFUTED MECHANISM AND THIS PBI INHERITS THE CORRECTED ONE: break the MEMBER'S OWN route -- its peer entry or the apparatus symlink -- and require TS2307 naming the subpath. It reads only the member, so no root observation is involved.",
+      "SPRINT 47'S CLASS-LEVEL CLAIM HELD AND THE PREDICTION IS DISCHARGED: test/guard.test.ts NEEDED NO NEW SHAPE. Its deno-guard shape is `packages/probe/src/index.ts`, a path no package occupies, so a second member is covered by the shape that was already there -- and the suite was green on that file at every gate this sprint with nothing added to it.",
+      "THE APPARATUS MOSTLY SUFFICED AND WHAT IT DID NOT IS REPORTED. The symlink builder, the fifth check, the packed-tarball reader and the deno guard all took a second member with no edit. THREE THINGS DID NOT: the member's tsconfig.build.json needs `types: [\"node\"]` where hover-wordnet's needs none, because this handler imports `node:` builtins and `types: []` gives TS2591 on every one of them; test/helpers/install.ts named ONE handler package and had to be enumerated from `workspaces`; and its `omitHandler` flag had to become a NAME, since a flag over two members withholds both and the config then fails on whichever import the loader reached first.",
     ],
     subtasks: [
       {
@@ -540,14 +542,45 @@ const scrum: ScrumDashboard = {
         implementation:
           "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
         type: "structural",
-        status: "red",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "fa2d766",
+            message: "fix(test): the route perturbation refuses an entry it did not put there",
+            phase: "refactoring",
+          },
+          {
+            hash: "4e5304b",
+            message:
+              "docs(comments): the path handlers are named as a package, not as a file that moved",
+            phase: "refactoring",
+          },
+          {
+            hash: "4b65698",
+            message: "docs(build): the preload's reason is re-measured, not reworded",
+            phase: "refactoring",
+          },
+          {
+            hash: "2435df1",
+            message: "test(packed): a shipped comment may not name a file the reader does not have",
+            phase: "green",
+          },
+          {
+            hash: "485060f",
+            message:
+              "docs(readme): the capability chain's reader is named as the package it is now",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
           "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
           "THE ENUMERATION, COMMITTED BEFORE THE SITES ARE REPAIRED. Twenty-one predicted sites in fourteen files, in three classes. CLASS ONE, A PATH THAT NO LONGER EXISTS: bunfig.toml's measured diagnosis naming `examples/completion-path.ts`; test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason, which rests on that example being STATICALLY imported by a root test; test/completion.test.ts x3; test/client-capabilities.test.ts; test/workspace.test.ts; test/package-shape.test.ts; test/helpers/checkout.ts; test/fixtures/capabilities-mutation.ts; test/resolve-path-stat.test.ts; packages/hover-wordnet/test/hover.test.ts; and src/types.ts x3, src/server.ts, src/tsudoi.ts -- the last five being tsudoi's OWN source citing an example that is now a package.",
           "CLASS TWO, A CLAIM WHOSE PREMISE THIS SPRINT REMOVED rather than a path that moved: test/helpers/build.ts's account of WHICH ARM NEEDS dist/, and the README's `examples/ import ...` sentence, both written when the path handlers were files in examples/.",
           "CLASS THREE, AND IT IS SPRINT 47'S OPEN ITEM MEASURED ON THE ARTIFACT: packages/hover-wordnet/dist/hover.js SHIPS three repository-path claims -- `scripts/workspaces.ts`, `test/package-shape.test.ts`, `src/wordnet.d.ts` -- read off the packed tarball. completion-path's packed files carry NONE by the same instrument. THE INSTRUMENT IS A MATCHER AND THEREFORE SUSPECT, so the sweep is turned into a test with a proven-positive control rather than left as a grep.",
+          "ONE SITE THE ENUMERATION MISSED, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT: README.md's handler-context paragraph, which names the reader of `clientCapabilities.textDocument.completion.completionItem.insertReplaceSupport`. It survived the section rewrite because it sits in prose about a handler's CONTEXT rather than in the install prose that moved, so the edit that fixed the rest never passed through it.",
+          "CLASS TWO CAME BACK LARGER THAN PREDICTED, AND THE SURPLUS IS THE FINDING. test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason was not merely citing a moved file: it was ALREADY FALSE FOR BUN, and the same file said so two paragraphs down -- `paths` intercepts a self-referencing subpath before the exports map. MEASURED, from the repository root, with a probe in each place: under test/ that subpath resolves to ./src/deps/types.ts and inside a member's test directory to ./dist/deps/types.js, because bun applies the tsconfig NEAREST THE IMPORTING FILE and a member's carries no mapping. So the synchronicity now has a true reason it did not have before -- the members' own tests are the static importers that need the build finished.",
+          "AND TWO MEASURED CLAIMS WERE RE-RUN RATHER THAN REWORDED. With dist/ removed from the root AND both members and bunfig.toml absent: 87 fail / 603 pass / 2 errors, 690 of 729 tests even RUN, and the first failure names the demo config failing on `@atusy/tsudoi-completion-path`. AND `cd test && bun test` NO LONGER RUNS THE SUITE AT ALL -- measured with a filter matching nothing, 45 files and 680 tests from test/ against 49 and 731 from the root -- because bun discovers test FILES relative to the working directory too and the members' tests are outside it. A count of how many others fail under a narrowed dist/ was DROPPED rather than re-measured: it is a size that moves whenever the suite grows, and what earns the comparison its keep is which failure names the cause.",
         ],
       },
       {
