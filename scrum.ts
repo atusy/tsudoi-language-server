@@ -483,11 +483,33 @@ const scrum: ScrumDashboard = {
         implementation:
           "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "2c44942",
+            message: "tidy(test): one home for the two configs' settings and the manifest",
+            phase: "refactoring",
+          },
+          {
+            hash: "ac11856",
+            message:
+              "test(package-shape): read which file answered, not how the mapping is spelled",
+            phase: "green",
+          },
+          {
+            hash: "6016f2d",
+            message: "docs(test): name the tree the misspelling readings were taken on",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "Measured at Sprint 47: `name` and `paths` are REDUNDANT COVERS, so deleting either alone leaves tsc green. The misspelling is the discriminating edit.",
           "The test named `the repo's type check resolves the published subpaths to source` claims more than its assertion verifies -- it defends the mapping's PRESENCE and SPELLING, not the resolution. Fix the claim or the assertion, and say which.",
+          "THE ASSERTION WAS FIXED AND NOT THE CLAIM, and the reason is which of the two the Definition of Done is buying: the name states the property the type check exists for, so renaming it to `the mapping is spelled thus` would have left that property owned by nothing while every check stayed green. THE LITERAL EQUALITY IS GONE RATHER THAN KEPT BESIDE THE NEW READING, on two grounds measured rather than argued: it is SUBSUMED, since a deleted key sends the same subpaths to the same artifact as a misspelled one, and it SPELLED TODAY'S KEY A SECOND TIME, which subtask 2 forbids.",
+          "THE INSTRUMENT IS `--traceResolution` AND THE TWO CHEAPER ONES WERE TRIED FIRST. An exit code cannot separate source from artifact -- both answer 0 with nothing printed -- and `--listFiles` names files without saying which specifier reached them, which matters because src/ is in the program by glob whether or not anything resolved there. The trace names the file each specifier reached, so the green is a positive reading rather than the absence of a red.",
+          "PREDICTION WRITTEN FIRST AND IT HELD, on the tree at 38b8709 with the key misspelled to a name nothing answers to: `tsc --noEmit` EXITS 0 AND PRINTS ZERO BYTES while all four published subpaths are answered by dist/*.d.ts, and `bun test` gives 685 pass / 2 fail of 687. The failure that names the KEY prints the misspelling against an EMPTY matched set; the failure that names the EFFECT prints the four dist/*.d.ts against the four src/*.ts. Reverted, and the tree verified identical to HEAD.",
+          "A POISONED MEASUREMENT WAS CAUGHT BY THE PREDICTION AND IS REPORTED RATHER THAN DROPPED: a first attempt at the deletion arm left tsconfig.json UNEDITED -- the substitution failed -- and returned 687 pass / 0 fail against a prediction of one failure. The mismatch is what exposed it; the reading was discarded and retaken.",
+          "WHAT SHIPS WAS READ OFF THE ARTIFACT RATHER THAN ARGUED FROM `files`: `bun pm pack --dry-run` packs TWENTY-NINE entries -- package.json, LICENSE, README.md and dist/** -- and this sprint's diff is scrum.ts, test/package-shape.test.ts and test/helpers/typecheck.ts, which INTERSECTS NONE OF THEM. So no comment written here reaches a stranger, and the named negative is the instrument's rather than an inference from the manifest.",
         ],
       },
       {
@@ -495,10 +517,22 @@ const scrum: ScrumDashboard = {
         implementation:
           "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ac11856",
+            message:
+              "test(package-shape): read which file answered, not how the mapping is spelled",
+            phase: "green",
+          },
+        ],
         notes: [
           "A guard naming one key leaves the next unpinned and nothing says so -- the same shape as the deno-guard shape over members as a class.",
+          "NO COMMIT OF ITS OWN, AND THAT IS THIS SUBTASK'S OWN REQUIREMENT RATHER THAN AN OMISSION: an intermediate guard spelling today's key is exactly what `without naming today's key twice` forbids, so the guard was written over the class in the same edit and this subtask cites that commit. What it can be checked against: the key is now the subject of NO assertion anywhere but tsconfig.json itself, and the remaining occurrences in the tree are prose describing it.",
+          "EVERY SIDE OF EVERY COMPARISON COMES FROM A DECLARATION AND NONE FROM THE MAPPING IT GRADES -- specifiers from package.json's `name` and `exports` keys, expected files from each subpath's own `default` arm, declared patterns from the config itself. A FIFTH EXPORTS ARM OR A SECOND MAPPING KEY IS COVERED WITH NOTHING EDITED, and an expectation derived from the mapping would have followed the fault instead: a key that has stopped matching still names ./src/*.ts.",
+          "TWO FAILURES, AND NEITHER COVERS THE OTHER. The resolution reading names the FILE THAT ANSWERED; the matched-pattern reading names the KEY THAT REACHED NOTHING. MEASURED, prediction first and held: with `paths` DELETED, `bun test` gives 686 pass / 1 fail -- the resolution reading reddens naming dist/, the matched-pattern reading stays green because an empty set matches an empty set. So the pair's division of labour is measured rather than claimed, and the failure a reader meets first is the one that names their edit.",
+          "THE SWEEP IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 47, since a sweep for a defect that is a property of MATCHING is itself an instance of that class. THE INSTRUMENT IS NOT A NAME GREP: it is the enumeration of every tracked configuration file -- `git ls-files` filtered to json/toml/yaml plus bunfig, which is EIGHT -- and then, within each, every key whose value must MATCH something to have any effect. RESULT: the root `paths` was the only silent one. MEASURED LOUD, one command each: a misspelled `types` entry gives TS2688 at exit 1; a misspelled oxlint rule name gives `Rule 'extensionz' not found in plugin 'import'` at exit 1; a misspelled `preload` path gives `preload not found` at exit 1. PINNED BY AN EFFECT PROBE RATHER THAN BY SPELLING, which is the standard this sprint brings `paths` up to: tsconfig's `exclude` (the dist pair in the same file), .oxlintrc's override globs (guard.test.ts lints a probe at every shape, so an override that stops matching reddens the shape it stopped covering), `workspaces` (refuseUncoveredPackages), and a MEMBER's `paths` (refuseMemberMappings, over the effective configuration).",
+          "ONE MORE INSTANCE OF THE CLASS FOUND AND DELIBERATELY NOT FIXED, ON SPRINT 45'S PRECEDENT: the member's `peerDependencies` key names tsudoi in a spelling of its own, while the apparatus symlink that actually satisfies it is DERIVED from the root manifest's `name`. MEASURED: repointing that key at a package that does not exist -- leaving `peerDependenciesMeta` still naming the real one, so the two disagree with each other as well -- leaves the fifth Definition-of-Done check at EXIT 0 AND SILENT, and nothing in test/ or scripts/ reads the key at all. It is PBI-51's territory rather than this sprint's, and a separate property does not ride along merely because it is the same class.",
         ],
       },
       {
@@ -506,11 +540,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7f2b786",
+            message: "docs(test): a mapping forecloses the artifact only while it matches",
+            phase: "refactoring",
+          },
+          {
+            hash: "e236bb8",
+            message: "docs(scrum): the stale-dist foreclosure names the precondition it rests on",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "Sprint 47's retrospective: a record contradicting a measurement is the same class as a comment contradicting a comment.",
           "Correct it where a reader meets it, and do not narrate the change.",
+          "TWO SITES, NOT ONE, AND THE SECOND IS THE ONE A READER ACTUALLY MEETS: the retrospective outcome states the precondition and what watches it, and the same unconditional sentence stood in test/package-shape.test.ts's own prose -- `a stale dist/ cannot reach it at all` -- three paragraphs above the assertions that now watch it. A correction made only in the dashboard would have left the comment contradicting the test beneath it.",
+          "THE ACTION TEXT IS UNTOUCHED, as it says of itself, and so is the old package name inside that entry: Sprint 47's census classes a name quoted in a recorded measurement as EVIDENCE, and re-spelling it would edit what was measured. THE COMMITS SEPARATE BECAUSE THE DASHBOARD COMMITS ALONE -- a hook refuses scrum.ts beside anything else, which is a constraint worth knowing before staging.",
         ],
       },
       {
