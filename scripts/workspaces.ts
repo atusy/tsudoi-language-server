@@ -125,6 +125,57 @@ function orderedPackage(dir: string): OrderedPackage {
 }
 
 /**
+ * Reports the packages that need each other, NAMING THE DECLARATIONS AND NOT
+ * ONLY THE PACKAGES.
+ *
+ * `these form a cycle` LEAVES THE READER OPENING EVERY MANIFEST IN IT to find
+ * which line to delete, and on a workspace holding more than two declarations
+ * per package, which of the many. The line to delete is what the reader came
+ * for, so it is what the message carries.
+ *
+ * ONLY THE PACKAGES IN THE CYCLE, WHICH IS WHY THE WALK IS TRIMMED rather than
+ * the whole unplaced set reported: everything downstream of a cycle is unplaced
+ * too, and naming those sends a reader to inspect manifests that are correct.
+ */
+function refuseCycle(
+  root: string,
+  pending: readonly OrderedPackage[],
+  dirsByName: ReadonlyMap<string, string>,
+): never {
+  const unplaced = new Map(pending.map((node) => [node.dir, node]));
+  const blocking = new Map<string, { producer: string; field: string }>();
+  for (const node of pending) {
+    const need = node.needs.find((one) => {
+      const producer = dirsByName.get(one.producer);
+      return producer !== undefined && unplaced.has(producer);
+    });
+    if (need !== undefined) {
+      blocking.set(node.dir, need);
+    }
+  }
+  const walked: string[] = [];
+  let at: string | undefined = pending[0]?.dir;
+  while (at !== undefined && !walked.includes(at)) {
+    walked.push(at);
+    const need = blocking.get(at);
+    at = need === undefined ? undefined : dirsByName.get(need.producer);
+  }
+  const cycle = walked.slice(at === undefined ? 0 : walked.indexOf(at));
+  const named = cycle.map((dir) => unplaced.get(dir)?.name ?? relative(root, dir));
+  const links = cycle.flatMap((dir) => {
+    const need = blocking.get(dir);
+    return need === undefined
+      ? []
+      : [
+          `${join(relative(root, dir), "package.json")} names \`${need.producer}\` in \`${need.field}\``,
+        ];
+  });
+  throw new Error(
+    `${named.join(" and ")} need each other, so no order builds either one against something that exists: ${links.join("; ")}. Delete one of those declarations, or move it to \`devDependencies\`, which is deliberately not a build edge.`,
+  );
+}
+
+/**
  * The order the packages of this workspace can be built in: every package after
  * everything it declares it needs.
  *
@@ -150,6 +201,15 @@ function orderedPackage(dir: string): OrderedPackage {
  * EDGES ARE INTERSECTED WITH THE NODES, so a dependency on a package outside
  * this workspace -- which is most of them -- constrains nothing here. It is
  * installed rather than built.
+ *
+ * A CYCLE THROWS RATHER THAN FALLING BACK TO THE TIE-BREAK. A cycle is
+ * unbuildable, and the fallback picks one of its members and lets the rest
+ * compile against an artifact that is absent or stale -- which under the
+ * `default: ./src/*.ts` arm exits 0 reading a different file, the exact class
+ * this derivation exists to end. THE THROW LANDS IN THE `bun test` PRELOAD, so
+ * it must be reachable only from a state this repository can never be in: what
+ * establishes that is the ruling above that dev edges are not build edges,
+ * together with the arm asserting this workspace's order byte for byte.
  */
 export function buildOrder(root: string): readonly string[] {
   const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
@@ -170,14 +230,12 @@ export function buildOrder(root: string): readonly string[] {
       }),
     );
     if (index === -1) {
-      break;
+      refuseCycle(root, pending, dirsByName);
     }
-    const [next] = pending.splice(index, 1);
-    if (next === undefined) {
-      break;
+    for (const next of pending.splice(index, 1)) {
+      placed.add(next.dir);
+      order.push(next.dir);
     }
-    placed.add(next.dir);
-    order.push(next.dir);
   }
   return order;
 }

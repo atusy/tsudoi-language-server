@@ -142,6 +142,63 @@ test("a package that only devDepends on another is neither ordered by it nor a c
 });
 
 /**
+ * TWO PACKAGES THAT EACH NEED THE OTHER, with the second's declaration supplied
+ * separately so the pair differs by that declaration and by nothing else.
+ */
+function needingEachOther(rightNeeds: Record<string, unknown>): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "@scope/root", workspaces: ["packages/*"] }),
+    "packages/left/package.json": JSON.stringify({
+      name: "@scope/left",
+      dependencies: { "@scope/right": "*" },
+    }),
+    "packages/right/package.json": JSON.stringify({ name: "@scope/right", ...rightNeeds }),
+  };
+}
+
+/**
+ * A CYCLE IS REFUSED RATHER THAN BROKEN ARBITRARILY. The alternative is picking
+ * one of the two and letting the other compile against an artifact that is
+ * absent or stale -- which exits 0 through the source fall-through and is the
+ * exact class the derivation exists to end.
+ *
+ * THE MESSAGE MUST NAME THE DECLARATIONS AND NOT ONLY THE PACKAGES, because
+ * `these two form a cycle` leaves a reader opening both manifests to find out
+ * which line to delete, and on a graph larger than this one, which two of the
+ * many they hold.
+ */
+test("two packages that need each other are refused, by name and by declaration", () => {
+  const root = workspace(needingEachOther({ dependencies: { "@scope/left": "*" } }));
+  try {
+    expect(() => buildOrder(root)).toThrow(/@scope\/left/);
+    expect(() => buildOrder(root)).toThrow(/@scope\/right/);
+    // The two manifests holding the lines to delete, and the field they sit in.
+    expect(() => buildOrder(root)).toThrow(/packages\/left\/package\.json/);
+    expect(() => buildOrder(root)).toThrow(/packages\/right\/package\.json/);
+    expect(() => buildOrder(root)).toThrow(/dependencies/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// THE PAIR, and without it the refusal above is satisfied by a function that
+// refuses every workspace it is handed. The same two packages, one declaration
+// lighter, order fine -- and against the ALPHABET, so this green is not the
+// trivial one either.
+test("the same two packages build once one of the two declarations is gone", () => {
+  const root = workspace(needingEachOther({}));
+  try {
+    expect(buildOrder(root)).toEqual([
+      root,
+      join(root, "packages", "right"),
+      join(root, "packages", "left"),
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
  * A PACKAGE THAT DECLARES NO `name` IS ORDERED RATHER THAN REFUSED, AT THE ROOT
  * AND AT A MEMBER, and the reason is an ordering between two guards rather than
  * a view about the state.
