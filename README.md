@@ -373,8 +373,9 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   the handler imports a value from it, and a project that installed only the handler fails at
   load with `Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one
   thing and buys it only while tsudoi is **unpublished**: without it your installer goes looking
-  for a name nobody has put anywhere, and the install itself fails. Install the two together, as
-  the quickstart does.
+  for a name nobody has put anywhere, and the install itself fails. So install this into the
+  project that already has tsudoi — quickstart step 2 is what put it there — and never into an
+  empty one.
 
   **No protocol package is named here**, and that is what tsudoi re-exporting its own dependencies
   buys: these files name protocol types freely and still depend on nothing but tsudoi. They take
