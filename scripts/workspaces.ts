@@ -383,13 +383,37 @@ function linkRootPackage(root: string, member: string): void {
   symlinkSync(root, target, "dir");
 }
 
-/** Compiles one package's published artifact, where one is configured. */
-function build(dir: string): void {
-  if (!existsSync(join(dir, "tsconfig.build.json"))) {
+/**
+ * Compiles one package's published artifact, where one is configured.
+ *
+ * RUN FROM THE WORKSPACE ROOT WITH THE CONFIG NAMED RELATIVELY, which is the
+ * same reason `typeCheckMember` in scripts/typecheck-workspaces.ts already
+ * carries for its own half: tsc prints paths relative to the working directory,
+ * so a build started inside the member reports `src/index.ts` -- and this
+ * repository holds more than one `src/`, so that string identifies none of them.
+ * THE COMPILER'S OWN DIAGNOSTIC CARRIES THE MEMBER, rather than a wrapper
+ * printing the member on another line and leaving the joining to the reader.
+ *
+ * IT IS THIS CALL AND NOT THE PER-MEMBER CHECK THAT SPEAKS FIRST, which is why
+ * the invocation is worth changing at all: `execFileSync` throws on a non-zero
+ * exit, so a type error in a member's own source arrives HERE and the check
+ * never runs -- and this function is reached by two Definition-of-Done checks,
+ * the `bun test` preload as well as the fifth.
+ *
+ * NOT AN ARTIFACT CHANGE, and that is a property of the configs rather than of
+ * tsc: no build config in this repository uses `extends`, so `rootDir`, `outDir`
+ * and `include` resolve against the config file and not against the working
+ * directory. Measured on the emitted bytes in test/build-diagnostics.test.ts,
+ * because a config that gained an `extends` would move the artifact with every
+ * check still green.
+ */
+function build(root: string, dir: string): void {
+  const config = join(dir, "tsconfig.build.json");
+  if (!existsSync(config)) {
     return;
   }
-  execFileSync(join(toolRoot, "node_modules", ".bin", "tsc"), ["-p", "tsconfig.build.json"], {
-    cwd: dir,
+  execFileSync(join(toolRoot, "node_modules", ".bin", "tsc"), ["-p", relative(root, config)], {
+    cwd: root,
     stdio: "inherit",
   });
 }
@@ -431,7 +455,7 @@ export function prepareWorkspace(root: string): void {
     if (dir !== root) {
       linkRootPackage(root, dir);
     }
-    build(dir);
+    build(root, dir);
   }
 }
 
