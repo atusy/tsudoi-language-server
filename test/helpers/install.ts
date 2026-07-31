@@ -384,6 +384,17 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     // tsconfig.build.json, and nothing else` in
     // test/installed-specifier.test.ts, which names what it found.
     cpSync(join(frameworkRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
+    // THE BORROWED node_modules NOW HOLDS A RESOLVING ENTRY FOR THIS PACKAGE,
+    // created by the framework becoming a member the root declares -- and it
+    // answers nothing here, which is a property of what is compiled rather than
+    // a hope: the stage runs `prepack` over this package's OWN src/, and no file
+    // there names the package by specifier. What the borrow is for is the three
+    // upstream packages the build needs.
+    //
+    // THE CONSUMER BELOW BORROWS ONLY @types AND NOT THIS, which is where it
+    // would have mattered: a consumer with a route to this checkout would be
+    // answering the tarball's specifiers from the repository, and the tarball is
+    // the whole subject there.
     symlinkSync(join(repoRoot, "node_modules"), join(stage, "node_modules"), "dir");
     // Captured HERE rather than after the pack: `bun pm pack` writes the tarball
     // into this same directory, so a reading taken later would see a fifth entry

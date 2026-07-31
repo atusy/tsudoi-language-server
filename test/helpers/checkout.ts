@@ -17,7 +17,25 @@ import { frameworkRoot, repoRoot } from "./spawn.ts";
  */
 export interface IsolatedCheckout {
   readonly dir: string;
-  /** Points node_modules at the repo's, so the checkout can resolve again. */
+  /**
+   * Points node_modules at the repo's, so the checkout can resolve again.
+   *
+   * IT NOW CARRIES A RESOLVING ENTRY FOR tsudoi ITSELF, which the framework
+   * becoming a workspace member created: the root declares it, so the borrowed
+   * node_modules holds `@atusy/tsudoi-language-server` pointing into the REAL
+   * checkout. That is a SECOND ROUTE this staging never used to hand out, and it
+   * would answer the very specifier these probes are about.
+   *
+   * MEASURED RATHER THAN REASONED, because the two are indistinguishable in a
+   * green: with node_modules linked, `import.meta.resolve` inside the staged
+   * copy answers THE COPY'S OWN dist/deps/types.js -- package self-reference
+   * wins, because the manifest at the copy's root declares that name. So the
+   * borrowed entry cannot answer here and the probes keep their subject.
+   *
+   * AND THE DISCRIMINATING CONTROL IS IMMUNE BY CONSTRUCTION: the arm that must
+   * fail is the one run with NO node_modules at all, where there is no entry to
+   * disarm it with.
+   */
   linkNodeModules(): void;
   /** Writes a file relative to the checkout root, e.g. a deno.json. */
   write(path: string, contents: string): void;

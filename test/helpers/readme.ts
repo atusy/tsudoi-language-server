@@ -376,6 +376,13 @@ function stageQuickstart(dirs: readonly string[]): { readonly root: string; disp
     cpSync(join(frameworkRoot, "src"), join(framework, "src"), { recursive: true });
     // `bun install` already run, which the README names as a prerequisite: the
     // prepack build needs vscode-languageserver-protocol's types to compile.
+    //
+    // IT NOW CARRIES A RESOLVING ENTRY FOR tsudoi, and it is handed to THE
+    // CHECKOUT ONLY. The reader's own project is staged EMPTY and gets nothing,
+    // which is where it would have mattered: every step after the pack runs
+    // there, and the tarball the reader installs is the only route to tsudoi
+    // that exists in it. A borrow into that directory would have made the
+    // documented install unnecessary while every arm stayed green.
     symlinkSync(join(repoRoot, "node_modules"), join(checkout, "node_modules"), "dir");
     return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
   } catch (cause) {
