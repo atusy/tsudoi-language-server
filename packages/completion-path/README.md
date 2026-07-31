@@ -87,7 +87,8 @@ installing this package adds nothing to your tree but itself.
 
 Neither this package nor tsudoi is published to any registry. The working route is a local
 tarball built out of a checkout, and it assumes you have already installed tsudoi itself — the
-quickstart in the [repository's README](../../README.md) is what does that.
+quickstart in the [repository's README](https://github.com/atusy/tsudoi-language-server#readme) is
+what does that.
 
 Packing compiles the package, and its build reaches tsudoi through a link inside the checkout
 that `bun install` does not create. In a checkout where nothing else has run, the pack fails

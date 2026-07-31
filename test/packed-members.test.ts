@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { packPackage } from "./helpers/install.ts";
 import { repoRoot } from "./helpers/spawn.ts";
@@ -171,6 +171,110 @@ for (const one of packed) {
     ).toEqual([]);
   });
 }
+
+/**
+ * EVERY LINK IN A PACKED README MUST BE FOLLOWABLE FROM WHERE IT IS READ, AND
+ * THAT PLACE IS A REGISTRY PAGE OR node_modules -- NEVER THIS CHECKOUT.
+ *
+ * WHY A RELATIVE LINK IS THE WHOLE CLASS. A member sits two directories under
+ * the root here, so `../../README.md` reaches the repository README for anybody
+ * standing in the checkout and is the natural thing to write. Installed, that
+ * same target climbs out of the package and lands on `node_modules/README.md`,
+ * which nothing writes. IT FAILS SILENTLY AND ONLY FOR THE STRANGER: the author
+ * who wrote it, and every reviewer reading the file in place, follow it
+ * successfully.
+ *
+ * AND NO REGISTRY REWRITES IT FOR THEM. npm rewrites relative links against
+ * `repository` metadata, and neither member manifest carries that key -- so the
+ * one mechanism that would paper over this is absent, which is what makes the
+ * absolute URL the fix rather than a preference.
+ *
+ * A SEPARATE READING FROM THE SHIPPED-PATH GUARD BELOW, deliberately: that one is
+ * scoped to dist/ because a member's README names checkout paths ON PURPOSE, for
+ * a reader packing the tarball. This is not about naming a path in prose. It is
+ * about a LINK, which promises to resolve, and a link out of the package is
+ * broken however true the sentence around it.
+ *
+ * THE ESCAPE IS DECIDED STRUCTURALLY AND NOT BY ASKING THE DISK, which matters
+ * because the alternative reads as equivalent and is not. Looking for
+ * `../../README.md` above the extraction directory answers `absent` only because
+ * of where the tarball happened to be unpacked -- unpack it two levels under a
+ * checkout and the same broken link resolves, turning this green on a defect it
+ * exists to catch. Whether a target climbs out of the package root is a property
+ * of the LINK, so it is computed from the link.
+ *
+ * INLINE LINKS ONLY, and the bound is stated because it is invisible otherwise:
+ * a reference-style `[text][ref]` with its definition elsewhere is not read here.
+ * Neither member uses that form, and widening a matcher for a case nothing in the
+ * tree exhibits is how a pattern nobody can check gets written.
+ */
+function unfollowableLinks(root: string, markdown: string): string[] {
+  const broken: string[] = [];
+  for (const [, text, target] of markdown.matchAll(/\[([^\]]*)\]\(([^)]+)\)/g)) {
+    if (target === undefined || /^(?:https?:|mailto:|#)/.test(target)) {
+      continue;
+    }
+    // The fragment is stripped before the target is judged: `guide.md#usage`
+    // names a file plus a heading, and only the file half is a path.
+    const path = (target.split("#")[0] ?? "").trim();
+    if (path === "") {
+      continue;
+    }
+    const destination = resolve(root, path);
+    // OUT OF THE PACKAGE, OR MISSING INSIDE IT -- two different failures, both of
+    // them a link the reader cannot follow. The separator on the prefix is what
+    // stops a sibling directory whose name merely STARTS with the root's from
+    // counting as inside it.
+    if (!destination.startsWith(root + sep) || !existsSync(destination)) {
+      broken.push(`[${text ?? ""}](${target})`);
+    }
+  }
+  return broken;
+}
+
+test("no member's packed README links somewhere its reader cannot follow", () => {
+  const offenders: string[] = [];
+  let read = 0;
+  for (const one of packed) {
+    if (!one.entries.includes("README.md")) {
+      throw new Error(`${one.name} packs no README.md, so this reading has no subject`);
+    }
+    read += 1;
+    for (const link of unfollowableLinks(
+      one.dir,
+      readFileSync(join(one.dir, "README.md"), "utf8"),
+    )) {
+      offenders.push(`${one.name}: ${link}`);
+    }
+  }
+
+  // NAMED rather than counted, so the failure quotes the link to edit.
+  expect(offenders).toEqual([]);
+  // The pair for the absence: a reading over no READMEs passes on any repository.
+  expect(read).toBeGreaterThan(0);
+});
+
+// The instrument, proved on both answers: a link that escapes the package is
+// caught, and the absolute and in-package spellings that replace it are not.
+test("the link reading catches an escape and clears what a reader can follow", () => {
+  const root = packed[0]?.dir ?? repoRoot;
+
+  expect(unfollowableLinks(root, "the [quickstart](../../README.md) does that")).toEqual([
+    "[quickstart](../../README.md)",
+  ]);
+  expect(
+    unfollowableLinks(
+      root,
+      "the [quickstart](https://github.com/atusy/tsudoi-language-server#readme) does that",
+    ),
+  ).toEqual([]);
+  expect(unfollowableLinks(root, "this [package](./package.json) declares it")).toEqual([]);
+  // THE ESCAPE IS CAUGHT EVEN WHEN THE TARGET EXISTS, which is the half that
+  // separates this reading from `does the file happen to be there`: the parent
+  // of the extraction directory is real, and a link reaching it is still one no
+  // installed reader can follow.
+  expect(unfollowableLinks(root, "up [one](..) level")).toEqual(["[one](..)"]);
+});
 
 /**
  * NO SHIPPED MODULE MAY NAME A REPOSITORY FILE THE READER DOES NOT HAVE.
