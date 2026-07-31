@@ -385,13 +385,19 @@ test("the members are outside the root type check, and the workspace patterns ar
 });
 
 /**
- * WHY THE HANDLER PACKAGE IS DECLARED AT AN EXACT VERSION AND NOT AS
+ * WHY EACH HANDLER PACKAGE IS DECLARED AT AN EXACT VERSION AND NOT AS
  * `workspace:*`, which is the spelling anyone reaching for this line will try
  * first and which this repository cannot use.
  *
- * IT IS DEVDEPENDENCIES BY RIGHT: examples/tsudoi.config.ts imports the handler
- * by package specifier, so the repo's own demo config depends on it, and nothing
- * this package PUBLISHES does -- which is why it may not appear one field up.
+ * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION, because
+ * a test naming one package leaves the second unchecked in BOTH directions --
+ * undeclared where the demo config needs it, or declared one field up where it
+ * would reach a consumer -- and nothing would say so.
+ *
+ * IT IS DEVDEPENDENCIES BY RIGHT: examples/tsudoi.config.ts imports the handlers
+ * by package specifier, so the repo's own demo config depends on them, and
+ * nothing this package PUBLISHES does -- which is why they may not appear one
+ * field up.
  *
  * `workspace:*` BREAKS EVERY DETACHED COPY OF THIS MANIFEST, MEASURED, and both
  * copies are things this suite makes: the pack stage in test/helpers/install.ts
@@ -408,20 +414,30 @@ test("the members are outside the root type check, and the workspace patterns ar
  * that has never heard of it. The failure is loud -- a 404 at `bun install` --
  * which is why it is accepted rather than guarded.
  */
-test("the repo depends on the handler package for its own examples, at the version the member carries", () => {
+test("the repo depends on every handler package for its own examples, at the version each member carries", () => {
   const devDependencies = packageJson.devDependencies as Record<string, string>;
-  const member = JSON.parse(
-    readFileSync(join(repoRoot, "packages", "hover-wordnet", "package.json"), "utf8"),
-  ) as { version?: unknown };
-  // Narrowed rather than coerced: an equality against `undefined` would pass the
-  // day the member loses its version, which is the day the declaration above
-  // stops meaning anything.
-  if (typeof member.version !== "string") {
-    throw new Error("the handler package carries no version for this declaration to match");
-  }
+  const members = declaredMembers(repoRoot).map(
+    (dir) =>
+      JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+        name?: unknown;
+        version?: unknown;
+      },
+  );
+  // The pair for the loop: an empty member list would satisfy every assertion
+  // inside it without reading a manifest at all.
+  expect(members.length).toBeGreaterThan(0);
 
-  expect(devDependencies["@atusy/tsudoi-hover-wordnet"]).toBe(member.version);
-  expect(packageJson.dependencies).not.toHaveProperty("@atusy/tsudoi-hover-wordnet");
+  for (const member of members) {
+    // Narrowed rather than coerced: an equality against `undefined` would pass
+    // the day a member loses its version, which is the day the declaration above
+    // stops meaning anything.
+    if (typeof member.name !== "string" || typeof member.version !== "string") {
+      throw new Error("a handler package carries no name or version for this declaration to match");
+    }
+
+    expect(devDependencies[member.name]).toBe(member.version);
+    expect(packageJson.dependencies).not.toHaveProperty(member.name);
+  }
 });
 
 /**

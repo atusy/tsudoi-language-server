@@ -1,12 +1,10 @@
 /**
  * Filesystem detail for a config author's own `completionItem/resolve` handler.
  *
- * WHAT THIS IS AND WHAT IT IS NOT: an EXAMPLE, in examples/, and not a line of
- * it lives in tsudoi. It is here to show WHAT THE METHOD IS FOR, which is the
- * one thing a list of supported methods cannot: work too expensive to do for
- * every item is done for the ONE ITEM THE USER HIGHLIGHTS.
+ * THE SECOND HALF OF THIS PACKAGE, AND THE REASON IT HAS TWO. Work too
+ * expensive to do for every item is done for the ONE ITEM THE USER HIGHLIGHTS.
  *
- * THE ARITHMETIC IS THE ARGUMENT. `examples/completion-path.ts` lists one
+ * THE ARITHMETIC IS THE ARGUMENT. The completion beside this file lists one
  * directory and offers what is in it -- and a directory of a few thousand
  * entries is ordinary. One `stat` per entry to show a size would put a few
  * thousand syscalls on the keystroke that opened the popup; one `stat` per
@@ -14,16 +12,23 @@
  * only difference is WHEN it is fetched.
  *
  * IT IS PAIRED WITH THE COMPLETION MODULE AND THE IMPORT BELOW IS THE PAIRING.
- * tsudoi keeps NO record of what a completion handler produced -- the ruling is
- * at `MethodMap` in src/types.ts -- so this handler cannot ask tsudoi whether an
- * item is one of the example's own. It can only read what the completion module
- * WROTE ONTO THE ITEM, which is why the mark and its reader are defined THERE
- * and imported here rather than spelled out twice. Two modules agreeing about a
- * key by convention drift the first time either is edited, and nothing in an
- * editor says so: the details simply stop appearing.
+ * tsudoi keeps NO record of what a completion handler produced -- it is ruled at
+ * the method map tsudoi's own types declare -- so this handler cannot ask tsudoi
+ * whether an item is one of this package's own. It can only read what the
+ * completion module WROTE ONTO THE ITEM, which is why the mark and its reader
+ * are defined THERE and imported here rather than spelled out twice. Two modules
+ * agreeing about a key by convention drift the first time either is edited, and
+ * nothing in an editor says so: the details simply stop appearing.
  *
- * WHAT A READER SHOULD KNOW BEFORE COPYING IT, and it is a property of any
- * resolve handler rather than of this one: THE ITEM ARRIVES FROM THE CLIENT.
+ * THAT IMPORT IS WHY THE TWO HALVES SHIP AS ONE PACKAGE. The mark is unpublished
+ * on purpose; split across two packages it would have to be published, and every
+ * change to how an item is marked would become a compatibility question. And the
+ * split could not be undone by a config author either: tsudoi REFUSES a config
+ * supplying `completionItem/resolve` with no completion handler beside it, so
+ * this handler is unusable without the one beside it.
+ *
+ * WHAT A MAINTAINER MUST NOT CLOSE, and it is a property of any resolve handler
+ * rather than of this one: THE ITEM ARRIVES FROM THE CLIENT.
  * `data` is whatever the client sent back, so a mark can be forged, and this
  * handler will then `stat` a path nobody's completion chose. That is harmless
  * here -- a `stat` reveals a size and a date to the user who asked for it, on a
@@ -39,7 +44,7 @@
 import type { Stats } from "node:fs";
 import { stat } from "node:fs/promises";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
-import { completedPath } from "./completion-path.ts";
+import { completedPath } from "./completion.ts";
 
 /**
  * What one line of `detail` says about a path.
@@ -71,11 +76,11 @@ function detailFor(stats: Stats): string {
  *
  * THE ITEM COMES BACK UNCHANGED IN TWO CASES, and neither is an error path.
  *
- * AN ITEM THIS EXAMPLE DID NOT PRODUCE carries no mark, and the protocol's
+ * AN ITEM THIS PACKAGE DID NOT PRODUCE carries no mark, and the protocol's
  * answer REPLACES the item in the client's list -- so anything other than the
- * item itself DROPS THE ENTRY THE USER IS LOOKING AT. src/types.ts rules it, and
- * a client may legitimately send one: resolve asks about an item the client
- * holds, not about one tsudoi remembers.
+ * item itself DROPS THE ENTRY THE USER IS LOOKING AT. tsudoi rules it at the same
+ * method map, and a client may legitimately send one: resolve asks about an item
+ * the client holds, not about one tsudoi remembers.
  *
  * A PATH THAT IS GONE by the time the user highlights the item is ordinary
  * rather than exceptional -- a popup outlives a `git checkout` in another window

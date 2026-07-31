@@ -1,18 +1,39 @@
 /**
  * Path completion for a config author's own `textDocument/completion` handler.
  *
- * WHAT THIS DOES ON WINDOWS, BECAUSE THIS FILE IS COPIED AND THE ANSWER TRAVELS
- * WITH IT. Every separator decision here is asked of `node:path` rather than
- * spelled out, so the module reads `C:\Users\fo` on Windows and `a\b` as an
- * ordinary filename on posix WITHOUT a branch on the platform: the flavour is a
- * parameter, defaulting to the host's own. That default is the right answer in
- * every deployment; it is a parameter so the Windows reading can be MEASURED on
- * a CI machine that has no Windows, which is the only way this file's Windows
- * behaviour is defended at all.
+ * WHAT THIS IS: a PACKAGE a config author INSTALLS, and not a line of it lives
+ * in tsudoi. It is also the worked shape of a handler that GOES TO THE
+ * FILESYSTEM for its answer and streams what it finds, which is what a handler
+ * that waits on something outside itself has to look like.
+ *
+ * WHAT A PACKAGE CHANGES ABOUT THE FILE IT WAS, and it decides how this file is
+ * written: a reader who took this as an example owned it and could edit any
+ * line, where an installed copy is ours to keep working. So the surface is
+ * chosen in index.ts rather than being whatever this file happens to export, and
+ * the comments here address a MAINTAINER -- the reader whose questions this file
+ * must answer is now the person changing it, not the person copying it.
+ *
+ * WHAT BOUNDS IT, said where a maintainer meets it and repeated in the README
+ * because an installing stranger reads only that: WHITESPACE ENDS A PATH.
+ * `pathFragments` scans back from the cursor to the nearest whitespace, so a
+ * filename containing a space is reachable only through the widening candidates
+ * it produces, and a document where paths are quoted, escaped or comma-separated
+ * is served by a handler of its own rather than by a setting on this one.
+ *
+ * AND NOTHING RECURSES: the answer for a fragment is ONE directory listing
+ * filtered by the fragment's trailing name, so no keystroke walks a tree.
+ *
+ * WHAT THIS DOES ON WINDOWS. Every separator decision here is asked of
+ * `node:path` rather than spelled out, so the module reads `C:\Users\fo` on
+ * Windows and `a\b` as an ordinary filename on posix WITHOUT a branch on the
+ * platform: the flavour is a parameter, defaulting to the host's own. That
+ * default is the right answer in every deployment; it is a parameter so the
+ * Windows reading can be MEASURED on a CI machine that has no Windows, which is
+ * the only way this file's Windows behaviour is defended at all.
  *
  * FORWARD SLASHES ARE ACCEPTED ON WINDOWS, and not as a courtesy: editors and
  * users both produce them there, and node's win32 flavour already reads them as
- * separators. test/completion-path.test.ts asserts that rather than trusting it.
+ * separators. This package's own tests assert that rather than trusting it.
  *
  * TWO WINDOWS SPELLINGS ARE OUT OF SCOPE, stated here rather than left to be
  * discovered, with the decision written where it is taken:
@@ -22,6 +43,15 @@
  *   - A UNC SHARE NAME STILL BEING TYPED (`\\server\sh`) completes nothing; a
  *     COMPLETE share (`\\server\share\fo`) is served like any other root -- see
  *     `sourcesFor` again.
+ *
+ * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through the member's own
+ * node_modules and tsudoi's `exports` map, with no `paths` mapping and no
+ * tsconfig of the parent's reaching it. A PEER AND NOT A DEPENDENCY because the
+ * framework is the host's to choose: `context.tsudoi` is built by the copy the
+ * consumer's own CLI is running, and a plain dependency would pin a range of our
+ * own and hand them a second copy nothing runs. The manifest's reasons are
+ * asserted in the package-shape test beside this file, since package.json cannot
+ * carry them itself.
  */
 
 import type { Dirent } from "node:fs";
@@ -181,11 +211,11 @@ function fragmentAt(
  * HANDLER CAN KEY OFF.
  *
  * `completionItem/resolve` asks about an item THE CLIENT HOLDS, and tsudoi keeps
- * no record of what a completion handler produced -- the ruling is at
- * `MethodMap` in src/types.ts. So a handler cannot ask tsudoi whether an item is
- * one of its own; it can only read what it wrote onto the item itself. `data` is
- * the protocol's field for exactly that: it is preserved across the round trip
- * and means nothing to anyone but the server that set it.
+ * no record of what a completion handler produced -- it is ruled at the method
+ * map tsudoi's own types declare. So a handler cannot ask tsudoi whether an item
+ * is one of its own; it can only read what it wrote onto the item itself. `data`
+ * is the protocol's field for exactly that: it is preserved across the round
+ * trip and means nothing to anyone but the server that set it.
  *
  * A NAMED KEY RATHER THAN A BARE STRING, because `data` is one field and every
  * source in a client's list writes to its own copy of it. A handler that treated
@@ -196,11 +226,17 @@ function fragmentAt(
  * relative path, and by resolve time the fragment that produced it is gone. It
  * is the same value the documentation shows, computed once at the item.
  *
- * EXPORTED, WITH ITS READER, SO THE RESOLVE HANDLER IMPORTS RATHER THAN RESTATES
- * IT -- the pairing examples/formatting-trailing-whitespace.ts has with its
- * scanner. Two modules agreeing about a key by convention drift the first time
- * either is edited, and nothing in an editor would say so: the details would
- * simply stop appearing.
+ * EXPORTED FROM THIS MODULE, WITH ITS READER, SO THE RESOLVE HANDLER IMPORTS
+ * RATHER THAN RESTATES IT. Two modules agreeing about a key by convention drift
+ * the first time either is edited, and nothing in an editor would say so: the
+ * details would simply stop appearing.
+ *
+ * AND NOT FROM THE PACKAGE. This name and its reader are absent from index.ts,
+ * which is what keeps the mark an implementation detail of the pair rather than
+ * a promise: published, every change to how an item says `I came from here`
+ * would be a compatibility question with a stranger. It is also the whole reason
+ * the two handlers ship in ONE package -- split, the mark would have to cross a
+ * published boundary to reach the half that reads it.
  */
 export interface PathItemData {
   /** The absolute path the item completes to. */
@@ -230,8 +266,14 @@ export function completedPath(item: CompletionItem): string | undefined {
  * because no walk is needed for one directory to be too large to hand over at
  * once. The value is a judgement: small enough that the first batch arrives
  * while the rest is still being read.
+ *
+ * NOT EXPORTED FROM THIS MODULE EITHER, WHICH IS FURTHER IN THAN THE OTHER
+ * INTERNAL NAMES GO. What it decides is observable where it matters -- as the
+ * SIZE OF EACH `$/progress` a client receives -- so a test that imported the
+ * number would agree with itself, where the one that reads the wire disagrees
+ * loudly the day this moves.
  */
-export const batchSize = 100;
+const batchSize = 100;
 
 /**
  * What produced an item. A CLOSED set: a free `string` lets a fifth kind of
@@ -419,7 +461,7 @@ function documentParent(uri: string): string | undefined {
  * is not in this suite and no red here will catch a regression in it.
  *
  * EXACT, AND ANCHORED AT `fragment.start`, and both halves are asserted by
- * their own test in test/completion-path.test.ts because each relaxation
+ * their own test in this package because each relaxation
  * writes a DIFFERENT wrong line. The three lines below are MEASURED -- each
  * relaxation was built and the line it leaves was read -- rather than derived
  * from what the rule looks like it would do:
@@ -716,12 +758,12 @@ function documentationFor(
  * cannot build.
  *
  * NOT SHARED WITH @atusy/tsudoi-hover-wordnet, WHICH MAKES THE SAME CHOICE FOR
- * `contentFormat`, AND THE REASON HAS CHANGED SHAPE RATHER THAN GONE. It used to
- * be that each example is copied on its own; now the other one is an INSTALLED
- * PACKAGE, so sharing would mean this example -- a file a reader copies -- taking
- * a dependency on a handler package they may not want. The direction that WOULD
- * be sound, a helper published by tsudoi itself, is a decision nobody has asked
- * for and is not made here.
+ * `contentFormat`. Sharing would make one handler package depend on another, so
+ * a config author who wanted path completion would install a dictionary too --
+ * and neither package may reach into the other's unpublished surface, which is
+ * where both of these functions deliberately sit. The direction that WOULD be
+ * sound, a helper published by tsudoi itself, is a decision nobody has asked for
+ * and is not made here.
  */
 function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
   const preference = Array.isArray(declared) ? declared : [];
@@ -792,8 +834,9 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
  * at completion.lua:1086. A CLIENT ACTS ON THE FLAG, which is what makes the
  * bare array a claim with consequences rather than a formality.
  *
- * THE FUTURE PATH, evidence-shaped rather than aspirational, and it is at
- * `MethodMap` in src/types.ts where the edit would be made.
+ * THE FUTURE PATH, evidence-shaped rather than aspirational, and the edit is
+ * tsudoi's to make at the method map its own types declare -- not this
+ * package's.
  *
  * WHY IT IS FALSE, measured against what this module actually does rather than
  * argued: `pathFragments` re-derives the fragment from the line AT THE CURSOR

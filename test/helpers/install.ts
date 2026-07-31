@@ -52,13 +52,13 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
  * would be misdiagnosed as one. The artifact under test is the SET, and no
  * fixture copy of any member exists.
  *
- * AND THE HOVER HANDLER IS NOT IN IT, WHICH IS A DIFFERENT KIND OF ABSENCE FROM
- * A MISSING ENTRY. It is not copied at all: the config imports
- * `@atusy/tsudoi-hover-wordnet` by PACKAGE SPECIFIER, and installConsumer
- * installs that package's own tarball beside tsudoi's. Adding its source back
- * here would put the bytes in the consumer that criterion 1 asserts are absent,
- * and every probe would still pass -- which is why the omission is written down
- * rather than left to be read off the list.
+ * AND THE INSTALLED HANDLERS ARE NOT IN IT, WHICH IS A DIFFERENT KIND OF ABSENCE
+ * FROM A MISSING ENTRY. They are not copied at all: the config imports
+ * `@atusy/tsudoi-hover-wordnet` and `@atusy/tsudoi-completion-path` by PACKAGE
+ * SPECIFIER, and installConsumer installs each package's own tarball beside
+ * tsudoi's. Adding their source back here would put the bytes in the consumer
+ * that criterion 1 asserts are absent, and every probe would still pass -- which
+ * is why the omission is written down rather than left to be read off the list.
  *
  * STATED AS A SET RATHER THAN A NUMBER, and that is the load-bearing choice: a
  * count in prose falsifies itself the next time the thing it counts grows, and
@@ -71,10 +71,6 @@ export function exampleSources(): Record<string, string> {
       fileURLToPath(new URL("../../examples/tsudoi.config.ts", import.meta.url)),
       "utf8",
     ),
-    "completion-path.ts": readFileSync(
-      fileURLToPath(new URL("../../examples/completion-path.ts", import.meta.url)),
-      "utf8",
-    ),
     // THE PAIR, AND NEITHER TRAVELS WITHOUT THE OTHER: the formatting module
     // imports its scan from the diagnostic one, so a consumer given only the
     // formatter fails exactly as a consumer given only the config does.
@@ -84,14 +80,6 @@ export function exampleSources(): Record<string, string> {
     ),
     "formatting-trailing-whitespace.ts": readFileSync(
       fileURLToPath(new URL("../../examples/formatting-trailing-whitespace.ts", import.meta.url)),
-      "utf8",
-    ),
-    // A SECOND PAIRING, AND IT RUNS THE OTHER WAY: this module imports the MARK
-    // and its reader from completion-path.ts, because tsudoi keeps no record of
-    // what a completion handler produced and a resolve handler can only key off
-    // what the completion module wrote onto the item.
-    "resolve-path-stat.ts": readFileSync(
-      fileURLToPath(new URL("../../examples/resolve-path-stat.ts", import.meta.url)),
       "utf8",
     ),
   };

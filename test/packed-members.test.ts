@@ -68,6 +68,16 @@ afterAll(() => {
  * difference between a claim about members and a claim about one of them.
  */
 const publishedFiles: Record<string, readonly string[]> = {
+  "@atusy/tsudoi-completion-path": [
+    "LICENSE",
+    "dist/completion.d.ts",
+    "dist/completion.js",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "dist/resolve.d.ts",
+    "dist/resolve.js",
+    "package.json",
+  ],
   "@atusy/tsudoi-hover-wordnet": [
     "LICENSE",
     "dist/hover.d.ts",

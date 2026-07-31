@@ -1,9 +1,8 @@
+import { pathCompletion, resolvePathStat } from "@atusy/tsudoi-completion-path";
 import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
-import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
-import { resolvePathStat } from "./resolve-path-stat.ts";
 
 // ANNOTATED, AND THE ANNOTATION IS THE POINT RATHER THAN THE STYLE: it binds
 // this file to the factory type tsudoi declares, so the day that type changes
@@ -91,7 +90,8 @@ const config: TsudoiConfigFactory = () => {
           //    FOLDERS at `initialize`, which is its configuration and not
           //    tsudoi's behaviour. ONE FIELD COUNTS: `workspaceFolders`, which
           //    only an editor declaring that capability sends.
-          //    examples/completion-path.ts reads that field and nothing else.
+          //    `@atusy/tsudoi-completion-path` reads that field and nothing
+          //    else.
           //    An editor that names its project in the DEPRECATED `rootUri` or
           //    `rootPath` instead reaches your handler with both fields filled
           //    and the folder list EMPTY -- tsudoi mirrors what the client sent
@@ -129,7 +129,7 @@ const config: TsudoiConfigFactory = () => {
           // the yielded value instead of running it. `yield*` is what forwards
           // every batch AND the close -- tsudoi's `.return()` on cancellation
           // reaches the delegate through it, which is what runs the `finally`
-          // that lives with the work in examples/completion-path.ts.
+          // that lives with the work inside `@atusy/tsudoi-completion-path`.
           yield* pathCompletion(context, params);
         }
       },
@@ -138,13 +138,14 @@ const config: TsudoiConfigFactory = () => {
       // writes can be one line when the work has a home of its own. What stays
       // here is the CHOICE of which method this config answers.
       //
-      // AND THIS ONE'S HOME IS A PACKAGE RATHER THAN A FILE BESIDE THIS ONE,
-      // which is the difference worth reading: `@atusy/tsudoi-hover-wordnet` is
-      // INSTALLED, so a fix to it arrives by reinstalling instead of by diffing
-      // your copy against an example you have already edited. The trade is the
-      // other way round too -- a file you copied is yours to edit, and this one
-      // is not, so a language whose words are not whitespace-delimited wants a
-      // handler of its own rather than a setting on this one.
+      // AND ITS HOME IS A PACKAGE, as the completion above is: both are
+      // INSTALLED, so a fix arrives by reinstalling instead of by diffing your
+      // copy against an example you have already edited. The trade runs the
+      // other way too -- a file you copied is yours to edit, and these are not,
+      // so a language whose words are not whitespace-delimited wants a handler
+      // of its own rather than a setting on this one. THE TWO FILES BELOW ARE
+      // THE OTHER ARRANGEMENT, kept deliberately: they are copied, and reading
+      // them beside these is how the difference is seen.
       "textDocument/hover": hoverWordnet,
 
       // THE OTHER SHAPE A HANDLER CAN HAVE, and it is here to be read beside

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
 /**
@@ -40,12 +41,12 @@ const rulingMarker = "COMPLETENESS RULING:";
  * short enumeration reads exactly like a ruling that was dropped: a completion
  * handler yields `CompletionItem[]` and nothing else, so a config demonstrating
  * that answer is UNWRITABLE rather than merely absent. THE TWO RULINGS THAT SAY
- * `NOT COMPLETE` ARE AT examples/completion-path.ts AND
+ * `NOT COMPLETE` ARE AT packages/completion-path/src/completion.ts AND
  * examples/tsudoi.config.ts, which is where that limitation is recorded.
  */
 const ruled = [
-  "examples/completion-path.ts",
   "examples/tsudoi.config.ts",
+  "packages/completion-path/src/completion.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
   "test/fixtures/completion-chunks.ts",
@@ -82,9 +83,32 @@ const ruled = [
  */
 const namesTheMethodWithoutServingIt = ["test/fixtures/resolve-without-completion.ts"];
 
+/**
+ * Every directory a completion handler can live in, WITH THE WORKSPACE MEMBERS
+ * ENUMERATED RATHER THAN LISTED.
+ *
+ * A HANDLER THAT MOVED INTO A PACKAGE WOULD OTHERWISE LEAVE THIS SCAN SILENTLY,
+ * and the ruling it carries would stop being defended by anything: the scan
+ * would find one fewer file, the enumeration below would be edited to match, and
+ * both tests would go green over a handler nothing looks at. Members come from
+ * `workspaces`, so a package added under packages/ is covered here with no list
+ * edited -- the same reasoning the fifth Definition-of-Done check reads that key
+ * for.
+ *
+ * ONE LEVEL AND NOT A WALK, matching how the two directories beside it are read:
+ * every handler in this repository sits directly under one of these.
+ */
+function handlerDirectories(): string[] {
+  return [
+    "examples",
+    join("test", "fixtures"),
+    ...declaredMembers(repoRoot).map((member) => join(relative(repoRoot, member), "src")),
+  ];
+}
+
 /** Every file under the config directories that names the completion method. */
 function scanned(): string[] {
-  return ["examples", join("test", "fixtures")]
+  return handlerDirectories()
     .flatMap((dir) =>
       readdirSync(join(repoRoot, dir))
         .filter((name) => name.endsWith(".ts"))
@@ -138,7 +162,7 @@ test("every completion handler carries a completeness ruling at its own site", (
  * pointed at.
  */
 test("a completion handler whose ruling was removed is reported by name", () => {
-  const probe = "examples/completion-path.ts";
+  const probe = "packages/completion-path/src/completion.ts";
 
   expect(unruled(new Map([[probe, sourceOf(probe).replace(rulingMarker, "once said:")]]))).toEqual([
     probe,

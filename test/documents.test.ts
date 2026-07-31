@@ -4,6 +4,10 @@ import type {
   Range,
   TextDocumentContentChangeEvent,
 } from "vscode-languageserver-protocol";
+// THE TYPE FROM THE PUBLISHED SUBPATH AND THE CONSTRUCTOR FROM UPSTREAM, which
+// is the pair a config author ends up writing: tsudoi publishes this name
+// TYPE-ONLY, so a value has to come from the package that declares it.
+import type { TextDocument as PublishedTextDocument } from "@atusy/tsudoi-language-server/deps/textdocument";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { createDocumentStore } from "../src/documents.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
@@ -33,7 +37,13 @@ function replayed(sequence: readonly TextDocumentContentChangeEvent[][]): string
   sequence.forEach((contentChanges, index) => {
     store.change({ textDocument: { uri, version: index + 2 }, contentChanges });
   });
-  const text = store.documents.get(uri)?.getText();
+  // ANNOTATED RATHER THAN INFERRED, and the annotation is the assertion: what
+  // the store hands back must BE the type tsudoi PUBLISHES, not merely something
+  // shaped like it. IT IS ALSO WHAT ASKS THE ROOT PROGRAM FOR THAT SUBPATH,
+  // which the resolution probe in test/package-shape.test.ts then observes -- a
+  // published arm no file here imports is answered by nothing and reddens there.
+  const document: PublishedTextDocument | undefined = store.documents.get(uri);
+  const text = document?.getText();
   if (text === undefined) {
     throw new Error("the replayed sequence left no document under the uri");
   }
