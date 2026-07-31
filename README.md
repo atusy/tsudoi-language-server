@@ -303,7 +303,7 @@ deprecated roots and the capabilities are written once at `initialize` and never
 
 Building a context by hand in your own tests means supplying all five members. `clientCapabilities`
 is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...` needs no guard;
-`examples/completion-path.ts` reads exactly that chain to decide whether it may send an
+`@atusy/tsudoi-completion-path` reads exactly that chain to decide whether it may send an
 `InsertReplaceEdit`, which LSP permits only to a client that declared `insertReplaceSupport`.
 
 ## Cleanup in a handler
