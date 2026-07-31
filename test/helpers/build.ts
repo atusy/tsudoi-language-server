@@ -11,10 +11,18 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * beside that preload.
  *
  * SYNCHRONOUS ON PURPOSE. `examples/completion-path.ts` imports
- * `@atusy/tsudoi-language-server/types`, which from inside this package resolves through the
- * exports map to ./dist/types.js, and test/completion-path.test.ts imports that
- * example STATICALLY. A build that had not finished when the module graph was
- * resolved would be no build at all.
+ * `@atusy/tsudoi-language-server/deps/types` for its VALUES, and
+ * test/completion-path.test.ts imports that example STATICALLY. A build that
+ * had not finished when the module graph was resolved would be no build at all.
+ *
+ * WHICH ARM NEEDS dist/ IS NOT THE ONE THE SUBPATH SUGGESTS, and the difference
+ * decides whether this preload can be deleted. tsconfig's `paths` intercepts a
+ * self-referencing subpath BEFORE the exports map, so bun's own loads reach
+ * ./src and never ./dist. What reaches ./dist/deps/types.js is the arms that
+ * SPAWN DENO -- deno has no `paths` and takes the exports map -- so removing
+ * dist/ leaves bun green and fails deno at config load with ERR_MODULE_NOT_FOUND.
+ * A marker written into dist/ cannot discriminate this under `bun test`: the
+ * preload rebuilds over it before any test module loads.
  *
  * The compiler is reached through node_modules/.bin rather than by bare name,
  * because nothing here is a package script and PATH is not this repo's to

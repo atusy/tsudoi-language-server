@@ -1,8 +1,11 @@
 # THE DEVELOP-TIME BUILD, AND WHY IT IS HERE RATHER THAN IN A SCRIPT.
 #
-# examples/ import `@atusy/tsudoi-language-server/types`, which from inside this package
-# resolves through package.json's exports map to ./dist/types.js, and dist/ is
-# gitignored -- so a clone that has only run `bun install` has no dist/ at all.
+# examples/ import `@atusy/tsudoi-language-server/deps/types` for their VALUES,
+# and dist/ is gitignored -- so a clone that has only run `bun install` has no
+# dist/ at all. The arm that needs it is the one that SPAWNS DENO: tsconfig's
+# `paths` intercepts a self-referencing subpath before the exports map, so bun's
+# own loads reach ./src, while deno has no `paths` and takes the map to
+# ./dist/deps/types.js.
 #
 # MEASURED AT SPRINT 40, ON THIS TREE, and re-measured rather than copied
 # because the recorded number had gone stale with nobody editing it: with dist/
