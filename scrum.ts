@@ -439,12 +439,35 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extract examples/completion-path.ts and examples/resolve-path-stat.ts into packages/completion-path as @atusy/tsudoi-completion-path.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "fb435bb",
+            message: "tidy(test): a consumer installs every declared member, not one named package",
+            phase: "refactoring",
+          },
+          {
+            hash: "b446c20",
+            message:
+              "feat(completion-path): path completion and its item resolution are installed, not copied",
+            phase: "green",
+          },
+          {
+            hash: "dd72677",
+            message:
+              "test(published): the path package's promise is read off the installed copy, both ways",
+            phase: "green",
+          },
+        ],
         notes: [
           "completion-path.ts exports THIRTEEN names against hover-wordnet's three. An example's exports are incidental; a package's are a promise. CLASSIFY EACH ONE INDIVIDUALLY -- the PO named this the largest single cost in the whole request.",
           "`completedPath` stays internal: it is the marker the completion attaches and the resolution reads, so publishing it would make the marker a compatibility surface.",
           "loadConfig refuses a config supplying completionItem/resolve without textDocument/completion, so the two halves must arrive together.",
+          "CLASSIFIED: TWO PUBLISHED, ELEVEN INTERNAL, ONE INTERNAL FURTHER IN. `pathCompletion` and `resolvePathStat` are index.ts's whole surface. `batchSize` is not exported by its own module at all, since what it decides is the SIZE OF EACH $/progress and a test importing the number would agree with itself. The other eleven are module-exported so the member's own tests reach them and index.ts omits them.",
+          "THE MARK IS IN THE TARBALL AND STILL UNPUBLISHED, which is the distinction the probe had to be built for: dist/completion.d.ts DECLARES `completedPath` -- one module must export it for the other to import it -- so what makes it internal is the `exports` map naming `.` alone. Both routes are refused, and the deep-path arm is not redundant: drop the map and the entry-point arm stays red while the deep one goes GREEN.",
+          "THE OPTION BAG COST WAS MEASURED BEFORE IT WAS ACCEPTED. A consumer passes `{ cwd }` through `Parameters<typeof pathCompletion>[2]` at exit 0, a misspelled member is refused naming it, and `import type { PathCompletionOptions }` fails. So withholding the name costs the annotation and nothing else -- and the excess-property arm is what separates that green from the one `any` produces.",
+          "TWO APPARATUS FACTS THIS PACKAGE FORCED, neither of which hover-wordnet had exercised. (1) tsconfig.build.json's `types: []` gives TS2591 on every `node:` specifier, so this member's build config carries `types: [\"node\"]` and its manifest a devDependency; hover-wordnet imports no builtin and never met it. (2) The member resolves THREE tsudoi subpaths -- `/types`, `/deps/protocol`, `/deps/types` -- where hover-wordnet resolves two; the symlink apparatus covered all three with no change.",
+          "AND ONE ROOT-PROGRAM ARM LOST ITS ONLY IMPORTER. `deps/textdocument` was asked for by test/completion-path.test.ts alone, which moved into the member, and test/package-shape.test.ts's resolution probe REDDENED naming the empty answer -- the colour its own doc block predicts for an arm nothing imports. Repaired by annotating the document store's read in test/documents.test.ts with the PUBLISHED type, which is the pair a config author writes anyway.",
         ],
       },
       {
@@ -452,11 +475,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Apply the corrected perturbation: break the member's peer entry or the apparatus symlink and require TS2307 naming the subpath.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b270197",
+            message:
+              "test(members): each member reaches tsudoi by its own route, broken one arm at a time",
+            phase: "green",
+          },
+        ],
         notes: [
           "The mechanism Sprint 47's criterion asked for was refuted by this repository's own record -- root tsc stays green because `name` and `paths` are redundant covers. This reads ONLY the member.",
           "Sprint 48 measured that a wrong peerDependencies key leaves the fifth check exit 0 and silent, while packages/hover-wordnet's own package-shape test DOES redden on it. Know which instrument you are relying on.",
+          "RE-MEASURED ON THIS MEMBER AND SPRINT 48 HOLDS, WIDER THAN IT WAS WRITTEN: with `peerDependencies` DELETED from packages/completion-path/package.json, the member's own `tsc --noEmit` is exit 0 AND the fifth check is exit 0, both silent -- so the load-bearing route is the apparatus SYMLINK and the manifest entry is a declaration nothing resolves through. What refuses it is the member's own package-shape test, watched failing at `+ undefined`.",
+          "THE THIRD ARM'S MECHANISM WAS SUBSTITUTED ON A MEASUREMENT rather than followed. `break a name in src/types.ts` cannot reach a member at all: the member resolves through the `exports` map into dist/, so nothing it reads changes until a rebuild -- and a failed rebuild leaves dist/ fresh and wrong, which is the Sprint-44 class. The probe asks the subpath for a name it does not export instead: TS2305 with ZERO TS2307 separates `a real declaration` from `unresolved` and from `any`, with no build of anyone's.",
         ],
       },
       {
