@@ -28,7 +28,7 @@ interface PathShape {
 }
 
 /**
- * THE SIX SHAPES, and ONE list drives rules 1 to 3.
+ * THE SHAPES, NAMED RATHER THAN COUNTED, and ONE list drives rules 1 to 3.
  *
  * ONE LIST BECAUSE THREE DRIFT APART. A list per rule ends up pinned at
  * different paths -- three here, four there, four again but not the same four --
@@ -39,6 +39,26 @@ interface PathShape {
  * Adding a shape here now costs three rules' worth of assertions at once, and
  * that is the point: a path that lints differently from the others has to be
  * declared different, in the one place that says what the guard is for.
+ *
+ * THE MEMBER SHAPE NAMES NO PACKAGE, AND THAT IS THE LOAD-BEARING PART OF IT.
+ * `packages/probe/src/index.ts` is a WORKSPACE MEMBER AS A CLASS: no package by
+ * that name exists, and the config holds nothing keyed to one, so what this pins
+ * is that a file under `packages/` lints exactly as src/ does. A shape naming the
+ * one package that exists today would leave the second one unpinned with nothing
+ * anywhere saying so -- and would have to be edited for every package added,
+ * which is the same defect the fifth Definition-of-Done check avoids by
+ * enumerating members from the workspace configuration.
+ *
+ * IT IS `src/` INSIDE THE MEMBER AND NOT ITS TESTS, deliberately: the overrides
+ * switch `no-restricted-imports` off at every test-file path, which a member's
+ * own test files match, so a member shape spelled as a test path would assert the
+ * RELAXED configuration while reading as the strict one.
+ *
+ * WHAT IT DEFENDS, and it is not hypothetical: without a `packages/` shape here,
+ * the ban reaches a member BY DEFAULT AND NOT BY ASSERTION -- an override later
+ * widened to cover `packages/` would redden NOTHING, because this file pins only
+ * the shapes it carries. Shipped to strangers who cannot fix it, a handler that
+ * lost its Bun-freeness is worse than an example a reader can edit.
  */
 const pathShapes: readonly PathShape[] = [
   { path: "src/server.ts", bunModulesExempt: false },
@@ -47,6 +67,7 @@ const pathShapes: readonly PathShape[] = [
   { path: "test/helpers/probe.ts", bunModulesExempt: true },
   { path: "test/fixtures/probe.ts", bunModulesExempt: false },
   { path: "examples/probe.config.ts", bunModulesExempt: false },
+  { path: "packages/probe/src/index.ts", bunModulesExempt: false },
 ];
 
 /** The `./lib.ts` a probe at `path` imports, beside it in the same directory. */

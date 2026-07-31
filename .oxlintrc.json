@@ -5,11 +5,20 @@
 // Default-deny, not src/-only: test/fixtures/*.ts are executed by deno in the
 // cross-runtime suite and examples/ holds the stakeholder's own config, which
 // deno runs too, so scoping the ban to src/ would leave the highest-risk files
-// unguarded. The five path shapes that follows from -- src/, **/*.test.ts,
-// test/helpers/, test/fixtures/ and examples/ -- are pinned by guard.test.ts
-// from ONE list, so widening an override here reddens the shape it widens.
+// unguarded. The path shapes that follows from -- src/, **/*.test.ts,
+// test/helpers/, test/fixtures/, examples/ and packages/ -- are pinned by
+// guard.test.ts from ONE list, so widening an override here reddens the shape it
+// widens.
 //
-// A SIXTH SHAPE IN THAT LIST, src/notifications.ts, follows from something else
+// packages/ IS NOT AN EXEMPT SHAPE AND MUST NOT BECOME ONE, written here because
+// this is the file where that edit would be made. A workspace member under
+// packages/ is a HANDLER PACKAGE, and a handler runs under both runtimes for the
+// same reason an example does AND WITH MORE FORCE: an example is copied by one
+// reader who can fix it, a package is SHIPPED TO STRANGERS WHO CANNOT. The
+// member's shape in guard.test.ts names no package, so it covers every package
+// added here and the next one costs nothing.
+//
+// ONE MORE SHAPE IN THAT LIST, src/notifications.ts, follows from something else
 // entirely and is named so it is not read as part of the argument above: the
 // connection-factory ban below exempts it. It is carried as its own shape so the
 // exemption's SPELLING is pinned -- an `"off"` there would silence bun and bun:*
