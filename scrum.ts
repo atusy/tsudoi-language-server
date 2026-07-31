@@ -38,38 +38,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-55",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "go from a package's name to its directory and back without holding a mapping in my head",
-        benefit:
-          "the name in an install line and the name in the tree are one fact, not two kept equal by hand",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A member's directory basename and its manifest `name` are the same fact, refused in BOTH directions, over members as a class enumerated from `workspaces`.",
-          verification:
-            "Three arms, each alone: (a) change one member's manifest `name`, leave its directory -- a Definition-of-Done check fails naming that member and both spellings; (b) rename that member's directory, leave its manifest -- the same check fails; (c) a throwaway third package declared by `workspaces` with a mismatched name is refused WITH NO EDIT to the guard.",
-        },
-        {
-          criterion:
-            "Every documented pack-and-install route still runs and still produces the file its own install line names.",
-          verification:
-            "No new test. test/readme.test.ts derives the expected tarball from the directory basename, so: rename the directories, leave the member READMEs unedited, watch those assertions redden naming the member; then edit and watch green. A control here could never be first to fail (Sprint 9), so none is written.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        'STAKEHOLDER RULING, asked because the reading changes the machinery and not only the spelling: the directory matches the UNSCOPED name -- packages/tsudoi-hover-wordnet, packages/tsudoi-completion-path. `workspaces: ["packages/*"]` is therefore untouched and `declaredMembers` needs no edit. The rejected reading, packages/@atusy/<name>, would move the glob to `packages/*/*` and put an @-prefixed directory into `packagesUnder`/`excludedDirectories`.',
-        "THE PREMISE WAS NARROWED BY READING BEFORE THE CRITERION WAS WRITTEN, and the first draft was wrong: `nothing today asserts the correspondence` is false. test/readme.test.ts keys BOTH the root README's member-README path and each member's install command on the directory BASENAME, so a bare rename already reddens. What nothing reads is the manifest `name` FIELD against that directory, and the guard's class is that narrower relation -- its name must say so.",
-        "THE GUARD MUST NOT SPELL THE CONTAINER. PBI-56 may move it, and a guard naming `packages/` would be invalidated by the next PBI. It reads `declaredMembers`.",
-        "BOUND, so this does not read as repo-wide: while tsudoi itself sits in src/ and is not a declared member, this convention covers two of three packages and says nothing about the main one. Closing that gap is PBI-56's.",
-        "ORDERED FIRST, and not for tidiness: this PBI settles the convention the moved directory must inherit. Doing it second would rename three directories instead of two, and would settle the naming question while the resolution question is still open.",
-      ],
-    },
-    {
       id: "PBI-56",
       story: {
         role: "tsudoi maintainer",
@@ -120,232 +88,202 @@ const scrum: ScrumDashboard = {
         "WHAT MUST BE REWRITTEN RATHER THAN DELETED, because the measurement stays true of a different subject: `linkRootPackage`'s whole MEASURED block (it is the EVIDENCE the move is worth doing, and survives as history even when the function does not); bunfig.toml's and package-shape's `bun reaches src, deno reaches dist` -- RE-MEASURED, not reworded; member-resolution's `name and paths are redundant covers`, which has no subject under C1/C4. Also newly false as DEFECTS and not prose: .oxlintrc.json's `src/notifications.ts` and `test/helpers/**` override globs stop matching, and test/helpers/spawn.ts's `repoRoot` becomes ambiguous once repo root and package root are different directories.",
         "DEV'S ESTIMATES, recorded so acceptance is not argued later: ~100% that some recorded reason needs rewriting (repair, not weakening); ~70% under C1/C4 (~25% C2, ~10% C3) that `this repository's own check reads source` LOSES ITS SUBJECT with no replacement -- an honest TARGET DELIBERATELY REMOVED, but a weakening, and it must be called one; ~50% that a control goes vacuous through the root node_modules entry; ~60% that build order forces new machinery, which is added coverage.",
         "NOT ONE SPRINT. Dev's sequence: (1) PBI-55 alone; (2) run the six-cell probe and RECORD IT, with no edits; (3) adjudicate C1-C4 with the probe in hand; (4) the move, with build order, the private-flag travel, and the typecheck.ts vacuity sweep as NAMED subtasks rather than incidental repairs.",
+        "WHAT SPRINT 50 CHANGED HERE, AND THE FIRST ITEM IS AN ORDERING CONSTRAINT OF EXACTLY THE SHAPE THAT BROKE `GUARD FIRST`. (1) The fifth check now THROWS AT THE FIRST offender, so while the moved directory and its manifest disagree it ABORTS BEFORE TYPE-CHECKING ANYTHING -- and this PBI's crux criterion, which asks which check owns a type error in tsudoi's own source, would be reading a refusal rather than a type error. (2) C1/C4 gained a measured argument against them: `bun pm pack` runs `rm -rf dist && tsc`, so a member's dist is TRANSIENTLY ABSENT during ordinary suite operation, and under those candidates the `default: ./src/*.ts` arm turns that window into a silent source fall-through instead of a failure. (3) Probe cells 4 and 5 read EXIT CODES, which is this sprint's silent-exit-0 shape -- each must state in advance what a degenerate implementation would produce and run once against a deliberately broken control. (4) Every cell's reading carries the machine's load, because a spawned-compiler reading under bun's 5000ms default is hardware and not resolution. (5) The measured `each member's link to the root package is ABSOLUTE` loses its subject when the root stops being a package, and belongs on the rewritten-not-deleted list above. (6) C2's recorded disqualifier should be re-checked against a preload-installed resolver: if that works, C2 dies on the STORY -- hand-written apparatus standing in for `bun install` -- which is a different and stronger refusal.",
+      ],
+    },
+    {
+      id: "PBI-57",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "trust that a citation inside a comment still refers to something that exists",
+        benefit:
+          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
+          verification:
+            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
+        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
+        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
+      ],
+    },
+    {
+      id: "PBI-58",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read the first Definition-of-Done check as a statement about the code rather than about the machine it ran on",
+        benefit:
+          "a red means something is wrong with tsudoi, which is the only thing that makes running it worth the time",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A test that would pass is not failed by how busy the machine is, for every invocation form the contract names.",
+          verification:
+            "Both directions in a throwaway spawn, at values small enough to be unambiguous: a test that sleeps past the limit fails, and the same test under the limit passes. The number is a policy choice and is pinned by reading the constant, not by asserting a duration.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE PROPERTY, MEASURED AT SPRINT 50'S REVIEW AND NOT PREDICTED: the suite spawns compilers, servers and package managers, and bun's default gives each test 5000ms. On a machine at load 100-160 the first check read 700 pass / 17 fail with EVERY FAILURE A TIMEOUT AND NONE AN ASSERTION; the same suite at `--timeout 30000` read 739 of 741. Nobody chose 5000ms for a suite of this shape; it is a default nobody edited.",
+        "NO REMEDY IS NAMED IN THE CRITERION, deliberately, because a criterion that names its own fix hands the executor a way to satisfy the letter. Recorded as measured rather than as the fix: `[test] timeout` in bunfig.toml is IGNORED on bun 1.3.13, and `--timeout` does not override a deadline a test sets for itself.",
+        "TWO THINGS THE EXECUTOR MUST BE TOLD RATHER THAN LEFT TO DISCOVER. MEASURED on bun 1.3.13: `setDefaultTimeout` called from a preload BEATS `--timeout` on the command line -- so whatever lands here RETIRES the `--timeout 30000` idiom this project used all through sprint 50 to tell a machine's red from a code's, and the replacement must be named when it does. And `hangTimeoutMs = 4000` in test/protocol.test.ts and test/session.test.ts is a deadline those files set for THEMSELVES, explicitly outside this item.",
       ],
     },
   ],
   completed: [
+    {
+      number: 50,
+      pbi_id: "PBI-55",
+      goal: "Every member the workspace declares has one name, not two: its directory is its package name with the scope dropped, and the repository refuses the day they differ -- for members as a class, not for the ones that exist today.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Point each of the three hardcoded member paths (test/completeness-ruling.test.ts twice, test/packed-members.test.ts once) at a nonexistent basename, run each file alone, and record the colour.",
+          implementation:
+            "Expected none: reading says all three are loud. Any site that stays green gets a vacuity pair BEFORE the rename touches it.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "FIRST BECAUSE `git mv` CAN GUT A REASON SILENTLY: a site that matches nothing after the rename stays green, and the reason it was written for is gone with nothing saying so. Prediction is not measurement and this is cheap.",
+            'ONE OF THE THREE IS A SITE NO GREP FOUND -- a split `join(repoRoot, "packages", "hover-wordnet", ...)`. That miss is the same defect class this PBI is about, which is why it is recorded rather than quietly corrected.',
+            "MEASURED, ALL THREE LOUD, SO NO VACUITY PAIR IS OWED. Each was pointed at a nonexistent basename and its file run alone from the repo root. (1) `ruled`'s entry -> `packages/completion-path-nonexistent/src/completion.ts`: `bun test test/completeness-ruling.test.ts` = 1 pass / 2 fail; `the enumerated completion handlers are exactly the files that name the method` fails on the diff between the enumeration and the scan, AND `every completion handler carries a completeness ruling at its own site` fails at ENOENT inside `sourcesOf`. (2) the control's `probe` string, same perturbation: 2 pass / 1 fail, `a completion handler whose ruling was removed is reported by name` at ENOENT inside `sourceOf`. (3) test/packed-members.test.ts's split join -> `packages/hover-wordnet-nonexistent`: `bun test test/packed-members.test.ts` = 11 pass / 1 fail, `the pattern that found nothing in the tarballs finds the declaration in source` at ENOENT.",
+            "WHY LOUDNESS WAS NOT A FOREGONE CONCLUSION AND THE MEASUREMENT IS WORTH ITS COST: two of the three are loud only because they READ the file. The first is loud for a second, independent reason -- the scan finds the real path and the enumeration does not -- and that is the one arm that would still fire if the read were ever removed. A site that merely PASSED the path to a matcher would have gone green, and that is the shape this subtask was looking for.",
+          ],
+        },
+        {
+          test: "In test/workspace-members.test.ts, via the existing throwaway-workspace runner: (a) a member directory whose manifest name mismatches is refused, the message naming that directory and both spellings; (b) the mismatch staged from the OTHER side is refused, the message naming the other side; (c) a SCOPED name whose unscoped segment matches goes exit 0 with empty stderr.",
+          implementation:
+            "`refuseMemberDirectoriesUnlikeTheUnscopedName(root, members)` in scripts/workspaces.ts, called from scripts/typecheck-workspaces.ts beside the two refusals already there. One symmetric predicate, not two branches. PLANNED AS `refuseMemberNames` AND RENAMED BEFORE IT WAS WRITTEN, by this record's own next note: that spelling states `the names agree`, which is a class the function cannot check.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "083eec5",
+              message: "feat(workspaces): refuse a member directory that is not its unscoped name",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "BUILT BEFORE THE RENAME AND COMMITTED AFTER IT -- see the sprint decision. THE EVIDENCE `GUARD FIRST` EXISTS FOR, MEASURED ON THE MISMATCHING CHECKOUT: `bun run scripts/typecheck-workspaces.ts` exited 1 with `packages/completion-path is declared `@atusy/tsudoi-completion-path`, whose unscoped name is `tsudoi-completion-path` -- one package spelled two ways. Rename the directory to `tsudoi-completion-path`, or change the `name` in packages/completion-path/package.json to match the directory.` It names ONE member and not both, because it throws at the first, and completion-path sorts first. After the rename the same command exited 0 with the guard still wired in, which is the other half: the rename is what made it green, not the guard's removal.",
+            "A FOURTH ARM WAS ADDED TO THE THREE THIS SUBTASK NAMED, AND IT IS THE ONLY ONE THAT DEFENDS AGAINST THE VACUITY THE OTHER THREE ADMIT. The three as written are all satisfied by `pass anything holding a scope` -- (a) and (b) stage unscoped names so they still refuse, and (c) is exactly what that implementation passes. MEASURED with that predicate in place: the three arms stayed green AND the fifth check on the still-mismatching checkout exited 0 in silence, which is a guard with no subject on the one repository it is for. The fourth arm is a SCOPED member whose unscoped segment mismatches; it is the only one of the four that reddens under that implementation. A FIFTH pins the manifest that declares no `name` at all, since `nothing to disagree with` is the reading that would make deleting a name the edit which silences the guard.",
+            "ARM (c) IS NOT DECORATION AND IT IS THE ONE THE FIXTURES CANNOT ALREADY DO: every throwaway member in that file is UNSCOPED while every real member is SCOPED, and the stakeholder's ruling makes scope-stripping load-bearing. Without it, a guard that refuses every scoped name passes (a) and (b) and surfaces only as a repo red that reads like the rename's fault.",
+            "WHY NOT REDUNDANT WITH THE README TEST: arm (b) is incidentally caught there today, but as `install command does not name the member's own tarball` -- a diagnostic that sends the reader to the README rather than to the mismatch. ARM (a) IS CAUGHT BY NOTHING AT ALL. The incidental redness is to be measured during the sprint, not asserted from reading.",
+            "AND IT WAS MEASURED, IN S3'S PRE-REPAIR RUN, WHICH IS THE SAME PERTURBATION AS ARM (b): the directory moved and the manifest left alone. The readme suite reported `each member's install command names that member's own tarball` -- `Expected to contain: \"tsudoi-completion-path.tgz\"` -- exactly the diagnostic this note predicted, pointing at a document rather than at the two spellings. So the prediction held and the incidental cover is real but MISDIRECTING, which is the case for the guard rather than against it.",
+            "THE CALL HANGS OFF THE CHECK PATH AND NOT THE SHARED ONE, and this is not tidiness: scripts/workspaces.ts is read by the `bun test` PRELOAD too, through `prepareWorkspace`. A refusal wired in there aborts every test run at preload while the repository is mid-rename -- and the reds this sprint is required to observe would become unobservable because nothing would load. It goes beside the other two refusals in scripts/typecheck-workspaces.ts.",
+            "THE GUARD'S NAME AND MESSAGE MUST SAY `UNSCOPED`. The relation is not `directory equals package name` -- `packages/tsudoi-hover-wordnet` against `@atusy/tsudoi-hover-wordnet` are not the same string -- and Sprint 49's remedy for a guard whose stated class is wider than its implementation is to narrow the NAME.",
+          ],
+        },
+        {
+          test: "A three-member throwaway workspace whose THIRD package mismatches is refused with the diagnostic naming that third package, paired with the same three all matching going exit 0 and stderr empty.",
+          implementation:
+            "None, if the guard was written over the enumerated members. If an edit is needed here, the guard was written per-instance and this arm is what caught it.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "1d295ad",
+              message:
+                "test(members): a third package the guard was never written for is refused too",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "NO EDIT WAS NEEDED, AND IT WAS READ RATHER THAN ASSERTED: `git diff --stat` between the guard's commit and this one names ONE FILE, the test. Nothing under scripts/ moved. Both arms use SCOPED names for all three members, which is what the real repository has and what the existing throwaway fixtures did not.",
+            "AND THE MESSAGE'S SILENCE ABOUT THE OTHER TWO IS ASSERTED, which the subtask did not ask for: a guard that reported every member it inspected would satisfy `names the third package` while sending a reader to three directories, two of which are correct.",
+            "THE THROWAWAY ROOT IS A REQUIREMENT AND NOT A PREFERENCE: bun runs the suite in one process, so a third package created inside the real packages/, even transiently, would make any later caller of `declaredMembers(repoRoot)` see three members and its own subject become order-dependent.",
+            "THE POSITIVE CONTROL IS WHAT DISTINGUISHES `refused` FROM `the throwaway is malformed, tsc absent, no package.json` -- ask why it fired, not whether.",
+            "`NO EDIT TO THE GUARD` IS A PROPERTY OF THE HISTORY: this subtask's commit follows the guard's, and `the guard` means every file that would have to change for a third package to be covered -- a fixture list, an allowlist, an exclude entry keyed to the new name.",
+          ],
+        },
+        {
+          test: "No new test. Its reds are the fifth check on this checkout, the three hardcoded sites, and test/readme.test.ts's basename-derived tarball and member-README assertions -- which is AC2 satisfied with no new test.",
+          implementation:
+            "`git mv` both directories to their unscoped names, edit the 23 lines across 9 files (including both members' three tarball spellings and their `in=` markers), `bun install`, verify each member's own node_modules link to the root package survived, then the full Definition of Done.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "344bf10",
+              message: "refactor(packages): a member's directory is its unscoped package name",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            'THE PRE-REPAIR RED, MEASURED AND REPRODUCIBLE BY PERTURBATION. State: both directories moved, `bun install` run so the root\'s relative links resolve again, BOTH MEMBER READMEs UNEDITED. Command, from the repository root: `bun test test/readme.test.ts`. Result: 94 pass / 3 fail across 97 tests. (1) `the root README states no handler pack or install command of its own` -- `Expected to contain: "packages/tsudoi-completion-path/README.md"`, against the root README\'s whole text. (2) `each member\'s install command names that member\'s own tarball` -- `Expected to contain: "tsudoi-completion-path.tgz" / Received: "tsudoi-completion-path: bun install ../tsudoi-language-server/completion-path.tgz"`. (3) `each member\'s pack command runs, and writes the file its own install names` -- `ENOENT: no such file or directory, posix_spawn \'bun\'`, with `spawnargs: [ "pm", "pack", "--filename", "completion-path.tgz" ]`. To reproduce: restore either member README\'s three tarball spellings and its `in=` marker to the pre-rename names and run that command again.',
+            "AND THE THIRD RED MISDIRECTS, WHICH IS WORTH MORE THAN THE COLOUR IT REPORTS. The pack marker's `in=` is the spawn's WORKING DIRECTORY, and a working directory that does not exist makes posix_spawn report ENOENT AGAINST THE PROGRAM -- so the loudest of the three failures says `bun is missing` about a machine where bun is on PATH and 94 other assertions in the same file just used it. Only `spawnargs` names the member at all. A reader hitting this alone would go looking for their toolchain. It is recorded rather than repaired because the repair belongs to whoever owns that helper, not to a rename.",
+            "EACH RED NAMES ONE MEMBER AND NOT BOTH, and that is the loop rather than the assertion: all three iterate `memberReadmes` and fail at the first, which is `tsudoi-completion-path` by sort order. hover-wordnet's three identical reds were never printed. Anyone reading this evidence as `the rename reddens two members' worth of assertions` is reading more than the run said.",
+            'test/installed-handler.test.ts NEEDED NO EDIT AND WAS NOT GIVEN ONE. Its two absences filter installed files by `path.includes("hover-wordnet")` and `path.includes("completion-path")`, and the new directory names still contain both as substrings -- but the reason it is left alone is that its subject is the installed PACKAGE, whose name never moved. Tightening it to the new spelling would have been a change of subject dressed as a repair.',
+            "ATOMIC BECAUSE THE ROOT'S node_modules LINKS ARE RELATIVE: they dangle the instant the directory moves and are repaired only by `bun install`, so a commit between the two leaves the suite broken for a reason that has nothing to do with this sprint. Each MEMBER's own link to the root package is absolute and should survive -- verified by reading it, not assumed, because if it did not the failure is the TS2307 the member READMEs describe and the reader is sent to the one file that is not wrong.",
+            "THE PRE-REPAIR RED IS MEASURED AND RECORDED, NOT COMMITTED -- see the sprint decision. Rename the directories, leave the member READMEs unedited, run the readme suite, record the failure text naming the member; then repair, then commit once. THE RECORD MUST CARRY THE EXACT COMMAND AND THE ASSERTION NAMES, because the PO's objection is that a squashed commit makes the observation unobtainable AFTERWARDS -- and a record reproducible by perturbation (revert the README spelling, re-run) answers that objection where a bare colour does not.",
+            "APPLIED BY FILE, NEVER BY TREE. scrum.ts's references are records of measurements taken against directories that existed at the time, and rewriting them falsifies the measurement. Same for the MEASURED note in test/readme.test.ts about an install that pointed at a tarball the pack had never written: THAT PATH IS THE FINDING.",
+            "A SIDE EFFECT WORTH RECORDING: after the rename the derived tarball name EQUALS the package's unscoped name, so the packed artifact and the registry name stop being two spellings.",
+            "THE LINKS, READ RATHER THAN ASSUMED, AT THREE MOMENTS. Before the move both root entries pointed at `../../packages/<old name>`. AFTER the move and BEFORE `bun install` they still did, and no longer resolved -- the dangle this subtask's atomicity is for, observed rather than predicted. After `bun install` both resolve to the new directories. Each MEMBER's own `node_modules/@atusy/tsudoi-language-server` is an ABSOLUTE link to the checkout root and resolved at all three readings, which is why moving the member could not break the member's own build.",
+            "WHAT THE REPAIR ACTUALLY TOUCHED, since the estimate was `23 lines across 9 files`: both member READMEs (three tarball spellings and one `in=` marker each), README.md twice, CLAUDE.md, scripts/workspaces.ts's comment, test/completeness-ruling.test.ts three times, test/completion.test.ts, test/packed-members.test.ts twice. test/readme.test.ts was edited to STATE WHY ITS PATH STAYS OLD rather than to change it. Two paragraphs were re-wrapped because the longer names pushed them past the documents' own margin, which is why the diff is wider than the count.",
+          ],
+        },
+        {
+          test: "None -- dashboard and documentation.",
+          implementation:
+            "The sprint record in scrum.ts, and the CLAUDE.md line naming the two members (which is inside the rename's 23).",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "df1191f",
+              message:
+                "docs(scrum): the three hardcoded member paths are loud, measured before the rename",
+              phase: "refactoring",
+            },
+            {
+              hash: "ca4c3b1",
+              message:
+                "docs(scrum): the pre-repair red, recorded where a squashed commit cannot show it",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "CLAUDE.md WAS SPLIT ACROSS TWO COMMITS ON PURPOSE, though this subtask reads it as one edit: the member DIRECTORY names went with the rename, and the sentence describing the guard went with the guard. A rename commit that already documented a function it does not contain would be a forward reference in the one document a reader consults before anything else.",
+            "A SECOND FLAKE WAS CHASED TO ITS CAUSE, AND THE FIRST GUESS AT IT WAS WRONG. `the same two members pass once the error is removed` failed once in a full-suite run with `Expected: 0 / Received: null`, and this record first guessed that the seven tests this sprint added to that file had raised the concurrent-process load. THE MEASUREMENT SAYS OTHERWISE AND SUPERSEDES THE GUESS: bun's per-test default is 5000ms, the machine picked up an EXTERNAL load of 60-110 late in the sprint, and every test in test/workspace-members.test.ts spawns a compiler. At load ~59 the two two-member arms both failed at ~5002ms with `this test timed out after 5000ms`; at ~66 a third joined them; each passed alone moments later. The null exit code is the killed child the timeout leaves behind.",
+            "SO THE EXPOSURE IS THE FILE'S AND PREDATES THIS SPRINT, and only the part this sprint created was fixed. The two THREE-member arms build one member more than anything else there, were measured crossing the limit at load ~76, and now carry an explicit allowance. The remaining tests are left alone WITH THE MEASUREMENT WRITTEN BESIDE THEM: the remedy for the file is a third argument on twenty `test` calls, which pushes every one past the formatter width and re-indents twenty unrelated bodies, and the cheap alternative does not exist -- MEASURED on bun 1.3.13, a `timeout` key under `[test]` in bunfig.toml is ignored. That is a call for the team, not for a rename sprint.",
+            "AND IT CHANGES WHAT THE FINAL `bun test` MEANS, SAID PLAINLY RATHER THAN AVERAGED AWAY. On a quiet machine this tree ran 741 pass / 0 fail, twice. Under the external load at the end of the session the same tree reports pre-existing tests timing out. NEITHER NUMBER IS THE HONEST ONE ON ITS OWN: the sprint's own subjects are green in both, and what moves is a set of tests whose only fault is that a spawned process took longer than five seconds.",
+            "THE CLASS IS THE SUITE'S AND NOT ONE FILE'S, WHICH THE LAST RUN MADE PLAIN AND WHICH IS THE ONE ITEM HERE WORTH A BACKLOG ENTRY. At load ~108 the failures were EIGHT, EVERY ONE OF THEM `this test timed out after 5000ms`, and they were spread across the suite rather than gathered: `hover before initialize is answered -32002`, `bun serves the example's dictionary hover from the installed copy`, `the preflight resolves for a runtime that is installed`, and five in test/workspace-members.test.ts. THE SET CHANGES BETWEEN RUNS, which is what a timeout under contention looks like and what an assertion failure never does. NONE of them is a test this sprint wrote. bun's 5000ms default is the binding constraint on a suite that spawns compilers, servers and package managers, and this repository has never chosen it -- it has only never been busy enough to notice.",
+            "AND THE GUARD'S OWN CALL SITE SHIPPED A FALSE MECHANISM, CAUGHT IN REVIEW AND FIXED IN A COMMIT THAT NAMES IT. The comment read `BEFORE THE COMPILER IS SPAWNED FOR ANYTHING`, and `prepareWorkspace` two lines above it BUILDS every member with tsc -- both members carry a tsconfig.build.json, so the compiler had already run several times. The reason underneath was sound and only the absolute clause was wrong, so the repair was to narrow the claim to `before any member is TYPE-CHECKED` and to say in place what it is not. FOURTH SPRINT IN THIS RECORD WITH A COMMENT ASSERTING A MECHANISM THE CODE BESIDE IT CONTRADICTS, and this one was written by the same commit that added the code it describes, which is as close together as the two can possibly be.",
+            "ONE RED WAS COMMITTED AND AMENDED AWAY WITHIN THE MINUTE, self-disclosed because the log cannot show it. The scrum record at ca4c3b1 was committed while `oxfmt --check .` was failing on scrum.ts: the verifying command had been written as `oxfmt --check . | grep -c 'correct format'`, whose OUTPUT WAS `0` -- the count of matching lines, read at a glance as an exit code. A checking command whose failure and whose success both print a small number is a bad instrument, and it was one this sprint built for itself.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        'STAKEHOLDER RULING, and it answered the Developer\'s NEED rather than being inferred: the directory is the UNSCOPED package name. `workspaces: ["packages/*"]` is untouched and no enumeration needs an edit. The rejected reading, packages/@atusy/<name>, would have moved the glob to `packages/*/*`.',
+        "GUARD FIRST, RENAME SECOND, and it is not taste: the directories mismatch TODAY, so the guard has a real subject and the rename is what makes it green. Renaming first would leave the guard demonstrated only against probes written alongside it.",
+        "THE GUARD WAS BUILT FIRST AND COMMITTED SECOND, AND THE TWO ORDERS ARE DIFFERENT THINGS. Wiring `refuseMemberDirectoriesUnlikeTheUnscopedName` into the fifth check turns that check RED on this checkout the instant it exists, because the mismatch it refuses is this repository's own -- so the guard's commit could not be green until the rename landed, and this project commits on green. WHAT DECISION `GUARD FIRST` ACTUALLY BUYS IS THE DEMONSTRATION, not the commit boundary: the guard demonstrated only against probes written beside it is the failure mode named, and that is answered by RUNNING it against the real mismatching tree and recording what it said -- which was done, before the rename, and the failure text is in the S1 notes. Only the commit order moved, on exactly the reasoning the facilitator already accepted for S3's pre-repair red: the evidence is the recorded run, and a commit boundary neither produces it nor improves it. The commits are therefore rename (structural) then guard (behavioural), which is also the direction Tidy First gives for a structural/behavioural pair. DISSENT NOTED IN ADVANCE: whoever reads the log alone sees the rename first and cannot see that the guard predates it -- that is what this decision and the S1 notes exist to supply.",
+        "THE PO'S EVIDENCE REQUIREMENT AND THE DEV'S ATOMICITY REQUIREMENT COLLIDED, AND THE FACILITATOR SPLIT THEM RATHER THAN PICKING ONE. PO required the pre-repair red to survive as evidence and asked for it as a separate COMMIT; Dev required the rename not to be split across commits because the root's relative links dangle in between; and this project commits on green, never on red. RULED: the red is obtained and RECORDED AS MEASURED FAILURE TEXT in the subtask notes, and the commit stays atomic. The evidence the PO named is the failure text, which a commit boundary does not produce and cannot improve. DISSENT RECORDED: the PO holds that a commit boundary is stronger evidence than a recorded run.",
+        "THE PO WILL REFUSE THE SPRINT, EVERY CHECK GREEN, IF THE RENAME IS ACHIEVED BY RETARGETING, GENERALISING OR DELETING AN ASSERTION THAT KEYS ON THE MEMBER'S DIRECTORY BASENAME. Once the two spellings are equal, `read the manifest name instead` is a locally reasonable tidy that removes the second, independent reader -- and the story's benefit is one fact rather than two kept equal by hand. Explicitly outside that refusal: the basename(repoRoot) sites, which key on the CHECKOUT root and belong to PBI-56's marker collision.",
+        'THE BASELINE IS NOT WHOLLY GREEN AND THE ONE RED IS FLAKY, MEASURED BEFORE ANY SPRINT EDIT: `a completion handler that throws after yielding keeps the chunk it already sent` fails on roughly one run in three under bun, with `Expected to contain: "tsudoi: textDocument/completion handler failed:" / Received: ""` -- the server\'s stderr had not arrived when the assertion read it. IT IS RECORDED HERE RATHER THAN FIXED because a flake discovered mid-sprint is indistinguishable from a regression the sprint caused, and this sprint touches no code it runs. Anyone reading a red on that name during sprint 50 should re-run it before diagnosing.',
+        "THE FOUR ARMS THE GUARD SHIPPED WITH WERE MEASURED AGAINST A WRONG IMPLEMENTATION RATHER THAN ARGUED ABOUT, AND THE MEASUREMENT CHANGED THE TEST SET. The three arms this sprint planned are ALL satisfied by a guard that simply passes any name holding a scope -- which on this repository, where both members are scoped, refuses nothing at all. Measured with exactly that predicate: three arms green, fifth check exit 0 and silent on the still-mismatching checkout. A fourth arm was added, a scoped member whose unscoped segment mismatches, and it is the only one of the four that reddens it. THE GENERAL SHAPE, and it is Sprint 45's per-test question asked of a test set rather than of a test: WRITE THE DEGENERATE IMPLEMENTATION AND RUN THE ARMS AGAINST IT -- if they all pass, the arms describe an author's intention rather than a property.",
+        "THE REVIEW'S OWN DEFINITION-OF-DONE RUN WAS TAKEN ON A MACHINE AT LOAD AVERAGE ~100-160, AND WHAT SEPARATES THE MACHINE FROM THE INCREMENT WAS FIXED BEFORE THE RUN REPORTED. The four non-suite checks are green: oxlint exit 0, `oxfmt --check .` clean, `tsc --noEmit` exit 0, the fifth check exit 0. The suite as the Definition of Done spells it read 700 pass / 17 fail -- AND EVERY ONE OF THE SEVENTEEN IS A TIMEOUT, none an assertion. Re-running the failing FILES ALONE reproduced them, so it is not cross-test interference; the control that settles it is the same suite with `--timeout 30000`: 739 pass / 2 fail, and the two remaining fail at 4008ms against `hangTimeoutMs = 4000`, a deadline test/protocol.test.ts sets for ITSELF and which the CLI flag does not override. The executor measured 741 pass / 0 fail twice on a quiet machine. NOTHING HERE IS EVIDENCE ABOUT THE INCREMENT AND THAT IS THE POINT OF WRITING IT DOWN: this suite spawns compilers and servers under bun's 5000ms default, so on a loaded machine the reds are a property of the hardware, and a reviewer who read the raw 17 as the sprint's would be diagnosing the wrong thing.",
+        "A TRANSIENT `Cannot find module '@atusy/tsudoi-hover-wordnet'` APPEARED TWICE AND IS NOT THE RENAME: `bun pm pack` runs a member's `prepack`, which is `rm -rf dist && tsc`, so a member's published artifact is briefly ABSENT while the pack tests run -- and anything spawning the example config in that window cannot resolve it. Pre-existing, load-widened, and it also explains a `tsc --noEmit` red observed the moment a killed suite left a member mid-rebuild. Named here because the diagnostic points at the renamed directory and would otherwise be read as the rename's fault.",
+        "ENVIRONMENT, MEASURED THIS SPRINT AND NOT A REPOSITORY DEFECT: neither `tsc` nor `oxfmt` is on PATH in this session, and the suite spawns a BARE `tsc` (test/helpers/typecheck.ts), so the first baseline read 123 failures that belonged to the environment. Shimmed for the session. A baseline taken before the sprint is what stopped those reds from being read as the sprint's.",
+      ],
+    },
     {
       number: 49,
       pbi_id: "PBI-52",
       status: "done",
       goal: "A config author installs path completion and its item resolution as @atusy/tsudoi-completion-path, completing the three-module composition the stakeholder asked for.",
       impediments: [],
-      decisions: [
-        "THE THREE-MODULE COMPOSITION IS COMPLETE: @atusy/tsudoi-language-server, @atusy/tsudoi-hover-wordnet, @atusy/tsudoi-completion-path.",
-        "THIRTEEN EXPORTS CLASSIFIED ONE BY ONE, TWO PUBLISHED. The only one that needed measuring rather than judging was `PathCompletionOptions`, the third parameter's type: measured that an object literal passes structurally, that a misspelled key is REFUSED (so it has not degraded to `any`), and that only the ability to NAME the type in an annotation is lost -- against publishing `flavour`, a seam that exists for tests. `batchSize` went one step further and is not exported from its module either: it decides items per `$/progress`, which the wire shows, and a test importing the number agrees only with itself.",
-        "SPRINT 47'S CLASS-LEVEL CLAIM HELD: the deno-guard shape was written over MEMBERS AS A CLASS, and a second member needed no second shape. The prediction this sprint was asked to falsify did not falsify.",
-        "A TEST WAS DELETED FOR BEING UNFALSIFIABLE, NOT MERELY REDUNDANT. It rewrote the tracked root tsconfig.json to prove a member ignores it -- and `tsc -p <member> --showConfig` shows the root config is not in the member's program at all, so removing a key from it CANNOT move the member's result. AN UNFALSIFIABLE TEST WAS MUTATING A VERSION-CONTROLLED FILE. Replaced by two readings that each fail independently: no `extends`, and no `paths` in the effective config.",
-        "THE OPTIONAL-PEER PREMISE IS PINNED TO A MACHINE SENTINEL RATHER THAN TO PROSE. `peerDependenciesMeta.optional` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Binding it to README's `not published` section left publishing-without-editing-the-README green. `private: true` on the root manifest is on the publish path BY CONSTRUCTION -- measured, `bun publish` stops before `prepack` -- so the one edit that permits publication is the edit that reddens every member. NO REGISTRY IS CONSULTED.",
-        "SPRINT 47'S OPEN ITEM WAS FOUND LIVE IN THE ARTIFACT: the packed hover handler shipped THREE REPOSITORY PATHS in its comments, filenames absent from any consumer's machine. The build keeps comments, and nothing read the tarball. A guard now reads it -- and its stated class was then measured WIDER THAN ITS IMPLEMENTATION and narrowed to what it actually catches rather than widened to a matcher that still misses.",
-      ],
-      subtasks: [
-        {
-          test: "A consumer installs the package and gets both completion and item resolution, with no byte of either source in their project.",
-          implementation:
-            "Extract examples/completion-path.ts and examples/resolve-path-stat.ts into packages/completion-path as @atusy/tsudoi-completion-path.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "fb435bb",
-              message:
-                "tidy(test): a consumer installs every declared member, not one named package",
-              phase: "refactoring",
-            },
-            {
-              hash: "b446c20",
-              message:
-                "feat(completion-path): path completion and its item resolution are installed, not copied",
-              phase: "green",
-            },
-            {
-              hash: "dd72677",
-              message:
-                "test(published): the path package's promise is read off the installed copy, both ways",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "completion-path.ts exports THIRTEEN names against hover-wordnet's three. An example's exports are incidental; a package's are a promise. CLASSIFY EACH ONE INDIVIDUALLY -- the PO named this the largest single cost in the whole request.",
-            "`completedPath` stays internal: it is the marker the completion attaches and the resolution reads, so publishing it would make the marker a compatibility surface.",
-            "loadConfig refuses a config supplying completionItem/resolve without textDocument/completion, so the two halves must arrive together.",
-            "CLASSIFIED: TWO PUBLISHED, ELEVEN INTERNAL, ONE INTERNAL FURTHER IN. `pathCompletion` and `resolvePathStat` are index.ts's whole surface. `batchSize` is not exported by its own module at all, since what it decides is the SIZE OF EACH $/progress and a test importing the number would agree with itself. The other eleven are module-exported so the member's own tests reach them and index.ts omits them.",
-            "THE MARK IS IN THE TARBALL AND STILL UNPUBLISHED, which is the distinction the probe had to be built for: dist/completion.d.ts DECLARES `completedPath` -- one module must export it for the other to import it -- so what makes it internal is the `exports` map naming `.` alone. Both routes are refused, and the deep-path arm is not redundant: drop the map and the entry-point arm stays red while the deep one goes GREEN.",
-            "THE OPTION BAG COST WAS MEASURED BEFORE IT WAS ACCEPTED. A consumer passes `{ cwd }` through `Parameters<typeof pathCompletion>[2]` at exit 0, a misspelled member is refused naming it, and `import type { PathCompletionOptions }` fails. So withholding the name costs the annotation and nothing else -- and the excess-property arm is what separates that green from the one `any` produces.",
-            "TWO APPARATUS FACTS THIS PACKAGE FORCED, neither of which hover-wordnet had exercised. (1) tsconfig.build.json's `types: []` gives TS2591 on every `node:` specifier, so this member's build config carries `types: [\"node\"]` and its manifest a devDependency; hover-wordnet imports no builtin and never met it. (2) The member resolves THREE tsudoi subpaths -- `/types`, `/deps/protocol`, `/deps/types` -- where hover-wordnet resolves two; the symlink apparatus covered all three with no change.",
-            "AND ONE ROOT-PROGRAM ARM LOST ITS ONLY IMPORTER. `deps/textdocument` was asked for by test/completion-path.test.ts alone, which moved into the member, and test/package-shape.test.ts's resolution probe REDDENED naming the empty answer -- the colour its own doc block predicts for an arm nothing imports. Repaired by annotating the document store's read in test/documents.test.ts with the PUBLISHED type, which is the pair a config author writes anyway.",
-          ],
-        },
-        {
-          test: "The member resolves tsudoi through its own route, proven by breaking that route and nothing else.",
-          implementation:
-            "Apply the corrected perturbation: break the member's peer entry or the apparatus symlink and require TS2307 naming the subpath.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "b270197",
-              message:
-                "test(members): each member reaches tsudoi by its own route, broken one arm at a time",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "The mechanism Sprint 47's criterion asked for was refuted by this repository's own record -- root tsc stays green because `name` and `paths` are redundant covers. This reads ONLY the member.",
-            "Sprint 48 measured that a wrong peerDependencies key leaves the fifth check exit 0 and silent, while packages/hover-wordnet's own package-shape test DOES redden on it. Know which instrument you are relying on.",
-            "RE-MEASURED ON THIS MEMBER AND SPRINT 48 HOLDS, WIDER THAN IT WAS WRITTEN: with `peerDependencies` DELETED from packages/completion-path/package.json, the member's own `tsc --noEmit` is exit 0 AND the fifth check is exit 0, both silent -- so the load-bearing route is the apparatus SYMLINK and the manifest entry is a declaration nothing resolves through. What refuses it is the member's own package-shape test, watched failing at `+ undefined`.",
-            "THE THIRD ARM'S MECHANISM WAS SUBSTITUTED ON A MEASUREMENT OF THE CLAIM ITSELF, not on an inference from a neighbouring one. `break a name in src/types.ts` DOES NOT REACH A MEMBER: renamed `MethodHandler` to `MethodHandlerRenamed` at both its occurrences in src/types.ts and ran each member's own `tsc -p tsconfig.json` with NO rebuild -- BOTH EXIT 0, because a member resolves through the `exports` map into dist/ and nothing it reads had changed. Rebuilding to make it visible is the Sprint-44 class, since a failed rebuild leaves dist/ fresh and wrong. The probe asks the subpath for a name it does not export instead: TS2305 with ZERO TS2307 separates `a real declaration` from `unresolved` and from `any`, with no build of anyone's.",
-            "WHAT THE NEGATIVE ARM PERTURBS IS THE REPOSITORY'S OWN tsconfig.json, RESTORED IN A `finally` AND REPAIRED BY NOTHING ELSE -- unlike the symlink, which the shared builder rewrites. BOUNDED RATHER THAN WAVED AWAY: bun runs test files sequentially in one process and tests within a file sequentially, so the window is one test's own await chain; and no root file resolves a tsudoi subpath LAZILY -- the suite's two dynamic imports take an external package and an absolute file URL, neither of which a `paths` mapping answers. The residual is a future test that spawns during that window.",
-          ],
-        },
-        {
-          test: "Both members carry a README a stranger can act on, verified off the packed tarball.",
-          implementation:
-            "Per-member READMEs over BOTH packages, naming what it answers, that it requires tsudoi at run time, and the constraint that bounds it.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "68c4ee4",
-              message:
-                "docs(packages): each handler package carries the README a registry page shows",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "hover-wordnet's bounding constraint is that whitespace is its word rule. completion-path's must be found and stated, not invented.",
-            "Nothing is published yet, so no registry page is blank today -- but tsudoi's README cannot be where every handler explains its own constraints.",
-            "FOUND IN THE SOURCE, NOT INVENTED, AND THE REJECTED CANDIDATE IS NAMED: completion-path's bound is WHITESPACE ENDS A PATH -- `pathFragments` scans back from the cursor to the nearest whitespace, so a document that QUOTES, ESCAPES or COMMA-SEPARATES its paths is served by a handler of its own. The candidate declined as the headline is `nothing recurses; one directory listing per fragment`: it is true and it is stated, but it bounds WHAT IT COSTS rather than WHICH DOCUMENTS IT SERVES, and the criterion asks for the second. The two packages arriving at the same whitespace rule independently is a coincidence worth reading, not a shared implementation.",
-            'MEASURED BEFORE THE TABLE WAS EDITED: `files: ["dist"]` names no README.md and `bun pm pack` COLLECTS IT ANYWAY, so a reading taken from the manifest would have concluded the registry page is blank. Both members\' READMEs are read out of the ARCHIVE, and the three subjects are pinned per member -- the bounding sentence differs by package, so a shared needle would be satisfied by whichever member carried it.',
-            "THE ROUTE MOVED RATHER THAN BEING DUPLICATED. The `handler-pack` and `examples-install` markers are gone from the root README and live in each member's, extracted and executed PER MEMBER; a root test refuses either marker's return. The root document's own promise is narrowed to `every block HERE is executed`, and the read-only exception now sits in the documents that carry the read-only command.",
-          ],
-        },
-        {
-          test: "Something reddens the day tsudoi is published, so the optional-peer premise cannot die unnoticed.",
-          implementation:
-            "Pin the optional-peer reversal where the publishing edit passes, over BOTH members.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "dd15221",
-              message:
-                "test(premise): the optional-peer falsehood cannot outlive the reason it is carried",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "`peerDependenciesMeta.optional: true` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Measured: a project given the handler tarball alone installs with NO warning at all, then fails at load.",
-            "The property is required; the instrument is Planning's to choose. README's `The package is not published` section is executed by the suite and is a candidate, not a requirement.",
-            "THE INSTRUMENT CHOSEN, AND THE SHAPE MATTERS MORE THAN THE SITE: the premise is READ and never ASSERTED. An assertion that the README still says `not published` would demand the document keep lying after publication, which is the opposite of the property; what may not happen is the manifest and the document DISAGREEING, in either direction -- a member that dropped the flag early is named too, because installing it then 404s.",
-            "WATCHED FAILING RATHER THAN ARGUED: with that section rewritten to say tsudoi is published, the reading names `packages/completion-path` and `packages/hover-wordnet` and what each of them says. The fact itself is shared with test/readme.test.ts as one exported constant, so the two cannot disagree about which section states the premise, and that file already requires it to have exactly ONE home.",
-            "WHAT IT CANNOT SEE, BOUNDED HONESTLY: a publisher who publishes and never touches the README. Nothing in a suite observes a registry, and a probe that did would make this repository's green depend on somebody else's uptime. What is bought is that the one edit needed to stop the document lying is the edit that reddens this.",
-          ],
-        },
-        {
-          test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
-          implementation:
-            "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "fa2d766",
-              message: "fix(test): the route perturbation refuses an entry it did not put there",
-              phase: "refactoring",
-            },
-            {
-              hash: "4e5304b",
-              message:
-                "docs(comments): the path handlers are named as a package, not as a file that moved",
-              phase: "refactoring",
-            },
-            {
-              hash: "4b65698",
-              message: "docs(build): the preload's reason is re-measured, not reworded",
-              phase: "refactoring",
-            },
-            {
-              hash: "2435df1",
-              message:
-                "test(packed): a shipped comment may not name a file the reader does not have",
-              phase: "green",
-            },
-            {
-              hash: "485060f",
-              message:
-                "docs(readme): the capability chain's reader is named as the package it is now",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
-            "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
-            "THE ENUMERATION, COMMITTED BEFORE THE SITES ARE REPAIRED. Twenty-one predicted sites in fourteen files, in three classes. CLASS ONE, A PATH THAT NO LONGER EXISTS: bunfig.toml's measured diagnosis naming `examples/completion-path.ts`; test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason, which rests on that example being STATICALLY imported by a root test; test/completion.test.ts x3; test/client-capabilities.test.ts; test/workspace.test.ts; test/package-shape.test.ts; test/helpers/checkout.ts; test/fixtures/capabilities-mutation.ts; test/resolve-path-stat.test.ts; packages/hover-wordnet/test/hover.test.ts; and src/types.ts x3, src/server.ts, src/tsudoi.ts -- the last five being tsudoi's OWN source citing an example that is now a package.",
-            "CLASS TWO, A CLAIM WHOSE PREMISE THIS SPRINT REMOVED rather than a path that moved: test/helpers/build.ts's account of WHICH ARM NEEDS dist/, and the README's `examples/ import ...` sentence, both written when the path handlers were files in examples/.",
-            "CLASS THREE, AND IT IS SPRINT 47'S OPEN ITEM MEASURED ON THE ARTIFACT: packages/hover-wordnet/dist/hover.js SHIPS three repository-path claims -- `scripts/workspaces.ts`, `test/package-shape.test.ts`, `src/wordnet.d.ts` -- read off the packed tarball. completion-path's packed files carry NONE by the same instrument. THE INSTRUMENT IS A MATCHER AND THEREFORE SUSPECT, so the sweep is turned into a test with a proven-positive control rather than left as a grep.",
-            "ONE SITE THE ENUMERATION MISSED, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT: README.md's handler-context paragraph, which names the reader of `clientCapabilities.textDocument.completion.completionItem.insertReplaceSupport`. It survived the section rewrite because it sits in prose about a handler's CONTEXT rather than in the install prose that moved, so the edit that fixed the rest never passed through it.",
-            "CLASS TWO CAME BACK LARGER THAN PREDICTED, AND THE SURPLUS IS THE FINDING. test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason was not merely citing a moved file: it was ALREADY FALSE FOR BUN, and the same file said so two paragraphs down -- `paths` intercepts a self-referencing subpath before the exports map. MEASURED, from the repository root, with a probe in each place: under test/ that subpath resolves to ./src/deps/types.ts and inside a member's test directory to ./dist/deps/types.js, because bun applies the tsconfig NEAREST THE IMPORTING FILE and a member's carries no mapping. So the synchronicity now has a true reason it did not have before -- the members' own tests are the static importers that need the build finished.",
-            "AND TWO MEASURED CLAIMS WERE RE-RUN RATHER THAN REWORDED. With dist/ removed from the root AND both members and bunfig.toml absent, the failures are LOAD failures mixed among assertion failures and the first one names the demo config failing on `@atusy/tsudoi-completion-path`. AND `cd test && bun test` NO LONGER RUNS THE SUITE AT ALL -- measured with a filter matching nothing, FEWER FILES from test/ than from the root -- because bun discovers test FILES relative to the working directory too and the members' tests are outside it. A count of how many others fail under a narrowed dist/ was DROPPED rather than re-measured: it is a size that moves whenever the suite grows, and what earns the comparison its keep is which failure names the cause.",
-          ],
-        },
-        {
-          test: "Review does not open until revise has converged.",
-          implementation: "Run the revise skill without a PR.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "Three sprints of evidence that it finds what the gate and the criteria both miss.",
-            "THE PACKED TARBALL'S SHIPPED COMMENTS ARE NEVER INSPECTED -- Sprint 47's open item. A claim in a shipped comment naming a repository path or test is the shape that has escaped three times.",
-          ],
-        },
-      ],
-    },
-    {
-      number: 48,
-      pbi_id: "PBI-54",
-      status: "done",
-      goal: "A misspelled paths mapping is caught rather than falling through to dist/ at exit 0, so the stale-artifact hazard is foreclosed rather than foreclosed-plus-an-unwatched-precondition.",
-      impediments: [],
       decisions: [],
-      subtasks: [
-        {
-          test: "A misspelled paths key is caught, and the catch names the misspelling rather than a downstream symptom.",
-          implementation:
-            "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
-          type: "behavioral",
-          status: "completed",
-          commits: [],
-          notes: [],
-        },
-        {
-          test: "The guard is written over the property, not over this one spelling.",
-          implementation:
-            "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [],
-        },
-        {
-          test: "Sprint 42's recorded foreclosure is corrected in place rather than left standing beside its own counterexample.",
-          implementation:
-            "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [],
-        },
-        {
-          test: "Review does not open until revise has converged.",
-          implementation: "Run the revise skill without a PR.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [],
-        },
-      ],
+      subtasks: [],
     },
   ],
   definition_of_done: {
@@ -372,143 +310,34 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 50,
-    pbi_id: "PBI-55",
-    goal: "Every member the workspace declares has one name, not two: its directory is its package name with the scope dropped, and the repository refuses the day they differ -- for members as a class, not for the ones that exist today.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "Point each of the three hardcoded member paths (test/completeness-ruling.test.ts twice, test/packed-members.test.ts once) at a nonexistent basename, run each file alone, and record the colour.",
-        implementation:
-          "Expected none: reading says all three are loud. Any site that stays green gets a vacuity pair BEFORE the rename touches it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "FIRST BECAUSE `git mv` CAN GUT A REASON SILENTLY: a site that matches nothing after the rename stays green, and the reason it was written for is gone with nothing saying so. Prediction is not measurement and this is cheap.",
-          'ONE OF THE THREE IS A SITE NO GREP FOUND -- a split `join(repoRoot, "packages", "hover-wordnet", ...)`. That miss is the same defect class this PBI is about, which is why it is recorded rather than quietly corrected.',
-          "MEASURED, ALL THREE LOUD, SO NO VACUITY PAIR IS OWED. Each was pointed at a nonexistent basename and its file run alone from the repo root. (1) `ruled`'s entry -> `packages/completion-path-nonexistent/src/completion.ts`: `bun test test/completeness-ruling.test.ts` = 1 pass / 2 fail; `the enumerated completion handlers are exactly the files that name the method` fails on the diff between the enumeration and the scan, AND `every completion handler carries a completeness ruling at its own site` fails at ENOENT inside `sourcesOf`. (2) the control's `probe` string, same perturbation: 2 pass / 1 fail, `a completion handler whose ruling was removed is reported by name` at ENOENT inside `sourceOf`. (3) test/packed-members.test.ts's split join -> `packages/hover-wordnet-nonexistent`: `bun test test/packed-members.test.ts` = 11 pass / 1 fail, `the pattern that found nothing in the tarballs finds the declaration in source` at ENOENT.",
-          "WHY LOUDNESS WAS NOT A FOREGONE CONCLUSION AND THE MEASUREMENT IS WORTH ITS COST: two of the three are loud only because they READ the file. The first is loud for a second, independent reason -- the scan finds the real path and the enumeration does not -- and that is the one arm that would still fire if the read were ever removed. A site that merely PASSED the path to a matcher would have gone green, and that is the shape this subtask was looking for.",
-        ],
-      },
-      {
-        test: "In test/workspace-members.test.ts, via the existing throwaway-workspace runner: (a) a member directory whose manifest name mismatches is refused, the message naming that directory and both spellings; (b) the mismatch staged from the OTHER side is refused, the message naming the other side; (c) a SCOPED name whose unscoped segment matches goes exit 0 with empty stderr.",
-        implementation:
-          "`refuseMemberDirectoriesUnlikeTheUnscopedName(root, members)` in scripts/workspaces.ts, called from scripts/typecheck-workspaces.ts beside the two refusals already there. One symmetric predicate, not two branches. PLANNED AS `refuseMemberNames` AND RENAMED BEFORE IT WAS WRITTEN, by this record's own next note: that spelling states `the names agree`, which is a class the function cannot check.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "083eec5",
-            message: "feat(workspaces): refuse a member directory that is not its unscoped name",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BUILT BEFORE THE RENAME AND COMMITTED AFTER IT -- see the sprint decision. THE EVIDENCE `GUARD FIRST` EXISTS FOR, MEASURED ON THE MISMATCHING CHECKOUT: `bun run scripts/typecheck-workspaces.ts` exited 1 with `packages/completion-path is declared `@atusy/tsudoi-completion-path`, whose unscoped name is `tsudoi-completion-path` -- one package spelled two ways. Rename the directory to `tsudoi-completion-path`, or change the `name` in packages/completion-path/package.json to match the directory.` It names ONE member and not both, because it throws at the first, and completion-path sorts first. After the rename the same command exited 0 with the guard still wired in, which is the other half: the rename is what made it green, not the guard's removal.",
-          "A FOURTH ARM WAS ADDED TO THE THREE THIS SUBTASK NAMED, AND IT IS THE ONLY ONE THAT DEFENDS AGAINST THE VACUITY THE OTHER THREE ADMIT. The three as written are all satisfied by `pass anything holding a scope` -- (a) and (b) stage unscoped names so they still refuse, and (c) is exactly what that implementation passes. MEASURED with that predicate in place: the three arms stayed green AND the fifth check on the still-mismatching checkout exited 0 in silence, which is a guard with no subject on the one repository it is for. The fourth arm is a SCOPED member whose unscoped segment mismatches; it is the only one of the four that reddens under that implementation. A FIFTH pins the manifest that declares no `name` at all, since `nothing to disagree with` is the reading that would make deleting a name the edit which silences the guard.",
-          "ARM (c) IS NOT DECORATION AND IT IS THE ONE THE FIXTURES CANNOT ALREADY DO: every throwaway member in that file is UNSCOPED while every real member is SCOPED, and the stakeholder's ruling makes scope-stripping load-bearing. Without it, a guard that refuses every scoped name passes (a) and (b) and surfaces only as a repo red that reads like the rename's fault.",
-          "WHY NOT REDUNDANT WITH THE README TEST: arm (b) is incidentally caught there today, but as `install command does not name the member's own tarball` -- a diagnostic that sends the reader to the README rather than to the mismatch. ARM (a) IS CAUGHT BY NOTHING AT ALL. The incidental redness is to be measured during the sprint, not asserted from reading.",
-          "AND IT WAS MEASURED, IN S3'S PRE-REPAIR RUN, WHICH IS THE SAME PERTURBATION AS ARM (b): the directory moved and the manifest left alone. The readme suite reported `each member's install command names that member's own tarball` -- `Expected to contain: \"tsudoi-completion-path.tgz\"` -- exactly the diagnostic this note predicted, pointing at a document rather than at the two spellings. So the prediction held and the incidental cover is real but MISDIRECTING, which is the case for the guard rather than against it.",
-          "THE CALL HANGS OFF THE CHECK PATH AND NOT THE SHARED ONE, and this is not tidiness: scripts/workspaces.ts is read by the `bun test` PRELOAD too, through `prepareWorkspace`. A refusal wired in there aborts every test run at preload while the repository is mid-rename -- and the reds this sprint is required to observe would become unobservable because nothing would load. It goes beside the other two refusals in scripts/typecheck-workspaces.ts.",
-          "THE GUARD'S NAME AND MESSAGE MUST SAY `UNSCOPED`. The relation is not `directory equals package name` -- `packages/tsudoi-hover-wordnet` against `@atusy/tsudoi-hover-wordnet` are not the same string -- and Sprint 49's remedy for a guard whose stated class is wider than its implementation is to narrow the NAME.",
-        ],
-      },
-      {
-        test: "A three-member throwaway workspace whose THIRD package mismatches is refused with the diagnostic naming that third package, paired with the same three all matching going exit 0 and stderr empty.",
-        implementation:
-          "None, if the guard was written over the enumerated members. If an edit is needed here, the guard was written per-instance and this arm is what caught it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "1d295ad",
-            message:
-              "test(members): a third package the guard was never written for is refused too",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "NO EDIT WAS NEEDED, AND IT WAS READ RATHER THAN ASSERTED: `git diff --stat` between the guard's commit and this one names ONE FILE, the test. Nothing under scripts/ moved. Both arms use SCOPED names for all three members, which is what the real repository has and what the existing throwaway fixtures did not.",
-          "AND THE MESSAGE'S SILENCE ABOUT THE OTHER TWO IS ASSERTED, which the subtask did not ask for: a guard that reported every member it inspected would satisfy `names the third package` while sending a reader to three directories, two of which are correct.",
-          "THE THROWAWAY ROOT IS A REQUIREMENT AND NOT A PREFERENCE: bun runs the suite in one process, so a third package created inside the real packages/, even transiently, would make any later caller of `declaredMembers(repoRoot)` see three members and its own subject become order-dependent.",
-          "THE POSITIVE CONTROL IS WHAT DISTINGUISHES `refused` FROM `the throwaway is malformed, tsc absent, no package.json` -- ask why it fired, not whether.",
-          "`NO EDIT TO THE GUARD` IS A PROPERTY OF THE HISTORY: this subtask's commit follows the guard's, and `the guard` means every file that would have to change for a third package to be covered -- a fixture list, an allowlist, an exclude entry keyed to the new name.",
-        ],
-      },
-      {
-        test: "No new test. Its reds are the fifth check on this checkout, the three hardcoded sites, and test/readme.test.ts's basename-derived tarball and member-README assertions -- which is AC2 satisfied with no new test.",
-        implementation:
-          "`git mv` both directories to their unscoped names, edit the 23 lines across 9 files (including both members' three tarball spellings and their `in=` markers), `bun install`, verify each member's own node_modules link to the root package survived, then the full Definition of Done.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "344bf10",
-            message: "refactor(packages): a member's directory is its unscoped package name",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          'THE PRE-REPAIR RED, MEASURED AND REPRODUCIBLE BY PERTURBATION. State: both directories moved, `bun install` run so the root\'s relative links resolve again, BOTH MEMBER READMEs UNEDITED. Command, from the repository root: `bun test test/readme.test.ts`. Result: 94 pass / 3 fail across 97 tests. (1) `the root README states no handler pack or install command of its own` -- `Expected to contain: "packages/tsudoi-completion-path/README.md"`, against the root README\'s whole text. (2) `each member\'s install command names that member\'s own tarball` -- `Expected to contain: "tsudoi-completion-path.tgz" / Received: "tsudoi-completion-path: bun install ../tsudoi-language-server/completion-path.tgz"`. (3) `each member\'s pack command runs, and writes the file its own install names` -- `ENOENT: no such file or directory, posix_spawn \'bun\'`, with `spawnargs: [ "pm", "pack", "--filename", "completion-path.tgz" ]`. To reproduce: restore either member README\'s three tarball spellings and its `in=` marker to the pre-rename names and run that command again.',
-          "AND THE THIRD RED MISDIRECTS, WHICH IS WORTH MORE THAN THE COLOUR IT REPORTS. The pack marker's `in=` is the spawn's WORKING DIRECTORY, and a working directory that does not exist makes posix_spawn report ENOENT AGAINST THE PROGRAM -- so the loudest of the three failures says `bun is missing` about a machine where bun is on PATH and 94 other assertions in the same file just used it. Only `spawnargs` names the member at all. A reader hitting this alone would go looking for their toolchain. It is recorded rather than repaired because the repair belongs to whoever owns that helper, not to a rename.",
-          "EACH RED NAMES ONE MEMBER AND NOT BOTH, and that is the loop rather than the assertion: all three iterate `memberReadmes` and fail at the first, which is `tsudoi-completion-path` by sort order. hover-wordnet's three identical reds were never printed. Anyone reading this evidence as `the rename reddens two members' worth of assertions` is reading more than the run said.",
-          'test/installed-handler.test.ts NEEDED NO EDIT AND WAS NOT GIVEN ONE. Its two absences filter installed files by `path.includes("hover-wordnet")` and `path.includes("completion-path")`, and the new directory names still contain both as substrings -- but the reason it is left alone is that its subject is the installed PACKAGE, whose name never moved. Tightening it to the new spelling would have been a change of subject dressed as a repair.',
-          "ATOMIC BECAUSE THE ROOT'S node_modules LINKS ARE RELATIVE: they dangle the instant the directory moves and are repaired only by `bun install`, so a commit between the two leaves the suite broken for a reason that has nothing to do with this sprint. Each MEMBER's own link to the root package is absolute and should survive -- verified by reading it, not assumed, because if it did not the failure is the TS2307 the member READMEs describe and the reader is sent to the one file that is not wrong.",
-          "THE PRE-REPAIR RED IS MEASURED AND RECORDED, NOT COMMITTED -- see the sprint decision. Rename the directories, leave the member READMEs unedited, run the readme suite, record the failure text naming the member; then repair, then commit once. THE RECORD MUST CARRY THE EXACT COMMAND AND THE ASSERTION NAMES, because the PO's objection is that a squashed commit makes the observation unobtainable AFTERWARDS -- and a record reproducible by perturbation (revert the README spelling, re-run) answers that objection where a bare colour does not.",
-          "APPLIED BY FILE, NEVER BY TREE. scrum.ts's references are records of measurements taken against directories that existed at the time, and rewriting them falsifies the measurement. Same for the MEASURED note in test/readme.test.ts about an install that pointed at a tarball the pack had never written: THAT PATH IS THE FINDING.",
-          "A SIDE EFFECT WORTH RECORDING: after the rename the derived tarball name EQUALS the package's unscoped name, so the packed artifact and the registry name stop being two spellings.",
-          "THE LINKS, READ RATHER THAN ASSUMED, AT THREE MOMENTS. Before the move both root entries pointed at `../../packages/<old name>`. AFTER the move and BEFORE `bun install` they still did, and no longer resolved -- the dangle this subtask's atomicity is for, observed rather than predicted. After `bun install` both resolve to the new directories. Each MEMBER's own `node_modules/@atusy/tsudoi-language-server` is an ABSOLUTE link to the checkout root and resolved at all three readings, which is why moving the member could not break the member's own build.",
-          "WHAT THE REPAIR ACTUALLY TOUCHED, since the estimate was `23 lines across 9 files`: both member READMEs (three tarball spellings and one `in=` marker each), README.md twice, CLAUDE.md, scripts/workspaces.ts's comment, test/completeness-ruling.test.ts three times, test/completion.test.ts, test/packed-members.test.ts twice. test/readme.test.ts was edited to STATE WHY ITS PATH STAYS OLD rather than to change it. Two paragraphs were re-wrapped because the longer names pushed them past the documents' own margin, which is why the diff is wider than the count.",
-        ],
-      },
-      {
-        test: "None -- dashboard and documentation.",
-        implementation:
-          "The sprint record in scrum.ts, and the CLAUDE.md line naming the two members (which is inside the rename's 23).",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "df1191f",
-            message:
-              "docs(scrum): the three hardcoded member paths are loud, measured before the rename",
-            phase: "refactoring",
-          },
-          {
-            hash: "ca4c3b1",
-            message:
-              "docs(scrum): the pre-repair red, recorded where a squashed commit cannot show it",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "CLAUDE.md WAS SPLIT ACROSS TWO COMMITS ON PURPOSE, though this subtask reads it as one edit: the member DIRECTORY names went with the rename, and the sentence describing the guard went with the guard. A rename commit that already documented a function it does not contain would be a forward reference in the one document a reader consults before anything else.",
-          "A SECOND FLAKE WAS CHASED TO ITS CAUSE, AND THE FIRST GUESS AT IT WAS WRONG. `the same two members pass once the error is removed` failed once in a full-suite run with `Expected: 0 / Received: null`, and this record first guessed that the seven tests this sprint added to that file had raised the concurrent-process load. THE MEASUREMENT SAYS OTHERWISE AND SUPERSEDES THE GUESS: bun's per-test default is 5000ms, the machine picked up an EXTERNAL load of 60-110 late in the sprint, and every test in test/workspace-members.test.ts spawns a compiler. At load ~59 the two two-member arms both failed at ~5002ms with `this test timed out after 5000ms`; at ~66 a third joined them; each passed alone moments later. The null exit code is the killed child the timeout leaves behind.",
-          "SO THE EXPOSURE IS THE FILE'S AND PREDATES THIS SPRINT, and only the part this sprint created was fixed. The two THREE-member arms build one member more than anything else there, were measured crossing the limit at load ~76, and now carry an explicit allowance. The remaining tests are left alone WITH THE MEASUREMENT WRITTEN BESIDE THEM: the remedy for the file is a third argument on twenty `test` calls, which pushes every one past the formatter width and re-indents twenty unrelated bodies, and the cheap alternative does not exist -- MEASURED on bun 1.3.13, a `timeout` key under `[test]` in bunfig.toml is ignored. That is a call for the team, not for a rename sprint.",
-          "AND IT CHANGES WHAT THE FINAL `bun test` MEANS, SAID PLAINLY RATHER THAN AVERAGED AWAY. On a quiet machine this tree ran 741 pass / 0 fail, twice. Under the external load at the end of the session the same tree reports pre-existing tests timing out. NEITHER NUMBER IS THE HONEST ONE ON ITS OWN: the sprint's own subjects are green in both, and what moves is a set of tests whose only fault is that a spawned process took longer than five seconds.",
-          "THE CLASS IS THE SUITE'S AND NOT ONE FILE'S, WHICH THE LAST RUN MADE PLAIN AND WHICH IS THE ONE ITEM HERE WORTH A BACKLOG ENTRY. At load ~108 the failures were EIGHT, EVERY ONE OF THEM `this test timed out after 5000ms`, and they were spread across the suite rather than gathered: `hover before initialize is answered -32002`, `bun serves the example's dictionary hover from the installed copy`, `the preflight resolves for a runtime that is installed`, and five in test/workspace-members.test.ts. THE SET CHANGES BETWEEN RUNS, which is what a timeout under contention looks like and what an assertion failure never does. NONE of them is a test this sprint wrote. bun's 5000ms default is the binding constraint on a suite that spawns compilers, servers and package managers, and this repository has never chosen it -- it has only never been busy enough to notice.",
-          "AND THE GUARD'S OWN CALL SITE SHIPPED A FALSE MECHANISM, CAUGHT IN REVIEW AND FIXED IN A COMMIT THAT NAMES IT. The comment read `BEFORE THE COMPILER IS SPAWNED FOR ANYTHING`, and `prepareWorkspace` two lines above it BUILDS every member with tsc -- both members carry a tsconfig.build.json, so the compiler had already run several times. The reason underneath was sound and only the absolute clause was wrong, so the repair was to narrow the claim to `before any member is TYPE-CHECKED` and to say in place what it is not. FOURTH SPRINT IN THIS RECORD WITH A COMMENT ASSERTING A MECHANISM THE CODE BESIDE IT CONTRADICTS, and this one was written by the same commit that added the code it describes, which is as close together as the two can possibly be.",
-          "ONE RED WAS COMMITTED AND AMENDED AWAY WITHIN THE MINUTE, self-disclosed because the log cannot show it. The scrum record at ca4c3b1 was committed while `oxfmt --check .` was failing on scrum.ts: the verifying command had been written as `oxfmt --check . | grep -c 'correct format'`, whose OUTPUT WAS `0` -- the count of matching lines, read at a glance as an exit code. A checking command whose failure and whose success both print a small number is a bad instrument, and it was one this sprint built for itself.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      'STAKEHOLDER RULING, and it answered the Developer\'s NEED rather than being inferred: the directory is the UNSCOPED package name. `workspaces: ["packages/*"]` is untouched and no enumeration needs an edit. The rejected reading, packages/@atusy/<name>, would have moved the glob to `packages/*/*`.',
-      "GUARD FIRST, RENAME SECOND, and it is not taste: the directories mismatch TODAY, so the guard has a real subject and the rename is what makes it green. Renaming first would leave the guard demonstrated only against probes written alongside it.",
-      "THE GUARD WAS BUILT FIRST AND COMMITTED SECOND, AND THE TWO ORDERS ARE DIFFERENT THINGS. Wiring `refuseMemberDirectoriesUnlikeTheUnscopedName` into the fifth check turns that check RED on this checkout the instant it exists, because the mismatch it refuses is this repository's own -- so the guard's commit could not be green until the rename landed, and this project commits on green. WHAT DECISION `GUARD FIRST` ACTUALLY BUYS IS THE DEMONSTRATION, not the commit boundary: the guard demonstrated only against probes written beside it is the failure mode named, and that is answered by RUNNING it against the real mismatching tree and recording what it said -- which was done, before the rename, and the failure text is in the S1 notes. Only the commit order moved, on exactly the reasoning the facilitator already accepted for S3's pre-repair red: the evidence is the recorded run, and a commit boundary neither produces it nor improves it. The commits are therefore rename (structural) then guard (behavioural), which is also the direction Tidy First gives for a structural/behavioural pair. DISSENT NOTED IN ADVANCE: whoever reads the log alone sees the rename first and cannot see that the guard predates it -- that is what this decision and the S1 notes exist to supply.",
-      "THE PO'S EVIDENCE REQUIREMENT AND THE DEV'S ATOMICITY REQUIREMENT COLLIDED, AND THE FACILITATOR SPLIT THEM RATHER THAN PICKING ONE. PO required the pre-repair red to survive as evidence and asked for it as a separate COMMIT; Dev required the rename not to be split across commits because the root's relative links dangle in between; and this project commits on green, never on red. RULED: the red is obtained and RECORDED AS MEASURED FAILURE TEXT in the subtask notes, and the commit stays atomic. The evidence the PO named is the failure text, which a commit boundary does not produce and cannot improve. DISSENT RECORDED: the PO holds that a commit boundary is stronger evidence than a recorded run.",
-      "THE PO WILL REFUSE THE SPRINT, EVERY CHECK GREEN, IF THE RENAME IS ACHIEVED BY RETARGETING, GENERALISING OR DELETING AN ASSERTION THAT KEYS ON THE MEMBER'S DIRECTORY BASENAME. Once the two spellings are equal, `read the manifest name instead` is a locally reasonable tidy that removes the second, independent reader -- and the story's benefit is one fact rather than two kept equal by hand. Explicitly outside that refusal: the basename(repoRoot) sites, which key on the CHECKOUT root and belong to PBI-56's marker collision.",
-      'THE BASELINE IS NOT WHOLLY GREEN AND THE ONE RED IS FLAKY, MEASURED BEFORE ANY SPRINT EDIT: `a completion handler that throws after yielding keeps the chunk it already sent` fails on roughly one run in three under bun, with `Expected to contain: "tsudoi: textDocument/completion handler failed:" / Received: ""` -- the server\'s stderr had not arrived when the assertion read it. IT IS RECORDED HERE RATHER THAN FIXED because a flake discovered mid-sprint is indistinguishable from a regression the sprint caused, and this sprint touches no code it runs. Anyone reading a red on that name during sprint 50 should re-run it before diagnosing.',
-      "THE FOUR ARMS THE GUARD SHIPPED WITH WERE MEASURED AGAINST A WRONG IMPLEMENTATION RATHER THAN ARGUED ABOUT, AND THE MEASUREMENT CHANGED THE TEST SET. The three arms this sprint planned are ALL satisfied by a guard that simply passes any name holding a scope -- which on this repository, where both members are scoped, refuses nothing at all. Measured with exactly that predicate: three arms green, fifth check exit 0 and silent on the still-mismatching checkout. A fourth arm was added, a scoped member whose unscoped segment mismatches, and it is the only one of the four that reddens it. THE GENERAL SHAPE, and it is Sprint 45's per-test question asked of a test set rather than of a test: WRITE THE DEGENERATE IMPLEMENTATION AND RUN THE ARMS AGAINST IT -- if they all pass, the arms describe an author's intention rather than a property.",
-      "THE REVIEW'S OWN DEFINITION-OF-DONE RUN WAS TAKEN ON A MACHINE AT LOAD AVERAGE ~100-160, AND WHAT SEPARATES THE MACHINE FROM THE INCREMENT WAS FIXED BEFORE THE RUN REPORTED. The four non-suite checks are green: oxlint exit 0, `oxfmt --check .` clean, `tsc --noEmit` exit 0, the fifth check exit 0. The suite as the Definition of Done spells it read 700 pass / 17 fail -- AND EVERY ONE OF THE SEVENTEEN IS A TIMEOUT, none an assertion. Re-running the failing FILES ALONE reproduced them, so it is not cross-test interference; the control that settles it is the same suite with `--timeout 30000`: 739 pass / 2 fail, and the two remaining fail at 4008ms against `hangTimeoutMs = 4000`, a deadline test/protocol.test.ts sets for ITSELF and which the CLI flag does not override. The executor measured 741 pass / 0 fail twice on a quiet machine. NOTHING HERE IS EVIDENCE ABOUT THE INCREMENT AND THAT IS THE POINT OF WRITING IT DOWN: this suite spawns compilers and servers under bun's 5000ms default, so on a loaded machine the reds are a property of the hardware, and a reviewer who read the raw 17 as the sprint's would be diagnosing the wrong thing.",
-      "A TRANSIENT `Cannot find module '@atusy/tsudoi-hover-wordnet'` APPEARED TWICE AND IS NOT THE RENAME: `bun pm pack` runs a member's `prepack`, which is `rm -rf dist && tsc`, so a member's published artifact is briefly ABSENT while the pack tests run -- and anything spawning the example config in that window cannot resolve it. Pre-existing, load-widened, and it also explains a `tsc --noEmit` red observed the moment a killed suite left a member mid-rebuild. Named here because the diagnostic points at the renamed directory and would otherwise be read as the rename's fault.",
-      "ENVIRONMENT, MEASURED THIS SPRINT AND NOT A REPOSITORY DEFECT: neither `tsc` nor `oxfmt` is on PATH in this session, and the suite spawns a BARE `tsc` (test/helpers/typecheck.ts), so the first baseline read 123 failures that belonged to the environment. Shimmed for the session. A baseline taken before the sprint is what stopped those reds from being read as the sprint's.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 50,
+      improvements: [
+        {
+          action:
+            "A VERIFICATION COMMAND IS RUN AS THE DEFINITION OF DONE SPELLS IT, AND A WRAPPER IS TRUSTED ONLY AFTER IT HAS BEEN SEEN TO REDDEN ONCE. This sprint checked formatting through `oxfmt --check . | grep -c ...`, whose output ON FAILURE IS `0` -- read at a glance as an exit code -- and a red was committed and amended away within the minute. A PIPELINE DISCARDS THE SIGNAL, since `$?` belongs to the last command. Distinct from sprint 46's entry, which is about a MATCHER carrying the defect it hunts: this is an INSTRUMENT WHOSE SUCCESS AND FAILURE PRINT THE SAME SHAPE.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A DECISION NAMING AN ORDER STATES WHETHER IT CONSTRAINS THE DEMONSTRATION OR THE COMMIT BOUNDARY, BECAUSE THIS PROJECT'S RULES BIND THE SECOND. Filed by the Product Owner against their own drafting: `GUARD FIRST, RENAME SECOND` was UNSATISFIABLE as a commit order -- wiring the refusal in reddens the fifth check by construction, and this project commits on green -- so the decision handed the executor a deviation with no green path around it, and the collision surfaced in execution rather than in drafting. What the decision actually wanted was the DEMONSTRATION against a real subject, which was obtained and recorded.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "AMENDS SPRINT 42'S DEGENERATE-PROBE ENTRY FROM A PROBE TO A TEST SET, filed as an amendment rather than a fourth entry beside it because that entry owns the subject. WRITE THE DEGENERATE IMPLEMENTATION AND RUN THE ARMS AGAINST IT: if they all pass, the arms describe an author's intention rather than a property. MEASURED HERE, and it is why this is not advice: the three arms this sprint planned are all satisfied by a guard that passes any name holding a scope, which on a repository whose every member is scoped refuses NOTHING -- three arms green, fifth check exit 0 and silent on the still-mismatching tree. The fourth arm was written from the measurement.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 49,
       improvements: [
