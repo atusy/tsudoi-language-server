@@ -14,10 +14,14 @@
  * must answer is now the person changing it, not the person copying it.
  *
  * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through its own
- * `dependencies` entry and tsudoi's `exports` map, with no `paths` mapping and
- * no tsconfig of the parent's reaching it. That is why this package is not a
- * file move with a package.json on top, and it is asserted rather than intended:
- * test/package-shape.test.ts beside this file carries what it depends on.
+ * `peerDependencies` entry and tsudoi's `exports` map, with no `paths` mapping
+ * and no tsconfig of the parent's reaching it. A PEER AND NOT A DEPENDENCY
+ * BECAUSE THE CONFIG AND THE HANDLER MUST SHARE ONE TSUDOI: two installed copies
+ * are two `MethodHandler` declarations, and a config annotated against one
+ * cannot be given a handler typed against the other. That is why this package is
+ * not a file move with a package.json on top, and the manifest's reasons are
+ * asserted in test/package-shape.test.ts beside this file, since package.json
+ * cannot carry them itself.
  *
  * The dictionary is `wordnet`, which ships no types. The declaration is
  * src/wordnet.d.ts, source-only and deliberately unshipped -- the reason is

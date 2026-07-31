@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Hover, InitializeResult, MarkupContent } from "vscode-languageserver-protocol";
@@ -21,6 +21,18 @@ import { runCommand } from "./helpers/spawn.ts";
  * hover ANSWERS WITH A DEFINITION and the project HOLDS NO HANDLER SOURCE. Either
  * alone is satisfied by the wrong tree -- a project with the file copied in
  * answers too, and a project where nothing works holds no source either.
+ *
+ * BUN ONLY, AND THE DENO HALF IS NAMED RATHER THAN ASSUMED, because a one-runtime
+ * measurement in a two-runtime project is narrower than its wording. What is
+ * runtime-specific about this claim is already covered:
+ * `deno serves the example's dictionary hover from the installed copy` in
+ * test/installed-runtime.test.ts drives the SAME consumer layout and the SAME
+ * config, which reaches this handler by package specifier, under deno. That
+ * matters more than usual here -- this package ships dist/ and no source arm
+ * PRECISELY BECAUSE deno refuses to type-strip under node_modules -- so the
+ * design's own premise is exercised there and not here. What this file adds is
+ * the two things that are not about a runtime at all: the absence of source, and
+ * the negative control.
  */
 
 /** The word the probe points at, and the buffer holding it at line 0, column 0. */
@@ -74,6 +86,21 @@ test("an installed consumer answers a real hover, from a project holding no hand
     // cleared it. NAMED rather than counted: a violating file appears in the
     // failure text, where `0 files` would only say a number moved.
     expect(consumer.files.filter((path) => path.includes("hover-wordnet"))).toEqual([]);
+    // AND BY CONTENT, because the claim is `no byte of the handler's source` and
+    // the line above only measures `no file called that`. A copy under another
+    // name is exactly what a reader who half-followed the README would produce,
+    // and it passes a name check while failing the property.
+    //
+    // `wordAt` IS THE NEEDLE AND THE FIRST CHOICE WAS WRONG, which is worth the
+    // sentence because the instrument has to be unique to be worth anything:
+    // `preferredFormat` reddened this immediately, on examples/completion-path.ts
+    // -- the two files make the same choice about a declared capability and
+    // named the function the same way. `wordAt` appears nowhere in examples/ or
+    // src/, and it is unpublished, so it reaches a consumer's own tree only by
+    // being copied there.
+    expect(consumer.files.filter((path) => readFileSync(path, "utf8").includes("wordAt"))).toEqual(
+      [],
+    );
     // The pair for the pair: the reader IS looking at a populated tree, so `[]`
     // above cannot be a walk that found nothing at all.
     expect(consumer.files.filter((path) => path.endsWith("tsudoi.config.ts")).length).toBe(1);
