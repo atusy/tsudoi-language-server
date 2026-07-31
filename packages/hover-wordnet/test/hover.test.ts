@@ -1,11 +1,23 @@
 import { expect, mock, test } from "bun:test";
-import type { MarkupKind } from "vscode-languageserver-protocol";
 import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
+import type { MarkupKind } from "@atusy/tsudoi-language-server/deps/types";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 
 /**
+ * EVERY SPECIFIER HERE IS ONE THIS PACKAGE DECLARES, and the two are declared
+ * differently on purpose. `MarkupKind` comes through tsudoi's `deps/` subpath,
+ * which is the route this package's documentation gives a config author and
+ * therefore the one worth exercising. `vscode-languageserver-textdocument` comes
+ * by its own name and is a devDependency of this package, because the thing this
+ * file needs is the CONSTRUCTOR: tsudoi publishes that type deliberately
+ * type-only -- an author receives documents and never builds them -- so
+ * `deps/textdocument` cannot supply a value, MEASURED as TS1362 rather than
+ * assumed. Leaning on the workspace root's copy without declaring it would
+ * resolve perfectly well here and break the day this package is checked out
+ * alone.
+ *
  * THE FAILURE ARM OF THE LAZY-INIT IDIOM, which is the one thing about
- * examples/hover-wordnet.ts that no session test can reach.
+ * src/hover.ts that no session test can reach.
  *
  * Every other test of the examples drives the real config through a real server
  * under BOTH runtimes, and a real `init()` succeeds -- so the whole suite
@@ -46,7 +58,12 @@ mock.module("wordnet", () => ({
     Promise.resolve([{ glossary: `${word} is a word`, meta: { synsetType: "noun" } }]),
 }));
 
-const { define, hoverWordnet } = await import("../examples/hover-wordnet.ts");
+// RELATIVE, INTO src/, AND NOT THROUGH THIS PACKAGE'S OWN SPECIFIER, which is
+// what lets the two names below stay unpublished: `define` is not on the
+// `exports` map and nothing outside this directory can reach it. Importing the
+// package by name here would test dist/ -- the built artifact rather than the
+// source just edited -- and would only see the one name index.ts publishes.
+const { define, hoverWordnet } = await import("../src/hover.ts");
 
 test("a define whose first database load failed retries, instead of failing forever", async () => {
   // The failure is REPORTED rather than swallowed, and this assertion is the

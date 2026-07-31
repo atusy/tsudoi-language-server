@@ -1,13 +1,27 @@
 /**
  * Dictionary hover for a config author's own `textDocument/hover` handler.
  *
- * WHAT THIS IS: an EXAMPLE, in examples/, and not a line of it lives in
- * tsudoi. It is here to show the shape of a handler that has to GO SOMEWHERE
- * ELSE for its answer -- a dictionary here, a type checker or a project index
- * in a real language server. tsudoi does not care which, or how long it takes.
+ * WHAT THIS IS: a PACKAGE a config author INSTALLS, and not a line of it lives
+ * in tsudoi. It is also the worked shape of a handler that has to GO SOMEWHERE
+ * ELSE for its answer -- a dictionary here, a type checker or a project index in
+ * a real language server. tsudoi does not care which, or how long it takes.
  *
- * The dictionary is `wordnet`, which ships no types; the declaration this file
- * needs is examples/wordnet.d.ts, and a reader copying this must copy that too.
+ * WHAT A PACKAGE CHANGES ABOUT THE FILE IT WAS, and it is not merely where it
+ * sits: a reader who took this as an example owned it and could edit any line,
+ * where an installed copy is ours to keep working. So the surface is chosen in
+ * index.ts rather than being whatever this file happens to export, and the
+ * comments here address a MAINTAINER -- the reader whose questions this file
+ * must answer is now the person changing it, not the person copying it.
+ *
+ * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through its own
+ * `dependencies` entry and tsudoi's `exports` map, with no `paths` mapping and
+ * no tsconfig of the parent's reaching it. That is why this package is not a
+ * file move with a package.json on top, and it is asserted rather than intended:
+ * test/package-shape.test.ts beside this file carries what it depends on.
+ *
+ * The dictionary is `wordnet`, which ships no types. The declaration is
+ * src/wordnet.d.ts, source-only and deliberately unshipped -- the reason is
+ * written there, at the file whose publication would be the mistake.
  */
 import { init, lookup } from "wordnet";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";

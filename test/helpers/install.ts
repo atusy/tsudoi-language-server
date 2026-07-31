@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -42,13 +43,21 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
  * The stakeholder-facing example's own bytes, keyed by the path each must be
  * written to in a consumer project.
  *
- * THE WHOLE SET, NEVER THE CONFIG ALONE, and that is the point of it being a
- * function rather than a constant at each call site. The config imports a
- * module per method by RELATIVE specifier, so a consumer given only the config
- * fails at import with a MISSING-MODULE ERROR -- which looks exactly like the
- * dependency-resolution failure these probes exist to observe, and would be
- * misdiagnosed as one. The artifact under test is the SET, and no fixture copy
- * of any member exists.
+ * THE WHOLE SET OF WHAT IS COPIED, NEVER THE CONFIG ALONE, and that is the point
+ * of it being a function rather than a constant at each call site. The config
+ * imports a module per method by RELATIVE specifier, so a consumer given only
+ * the config fails at import with a MISSING-MODULE ERROR -- which looks exactly
+ * like the dependency-resolution failure these probes exist to observe, and
+ * would be misdiagnosed as one. The artifact under test is the SET, and no
+ * fixture copy of any member exists.
+ *
+ * AND THE HOVER HANDLER IS NOT IN IT, WHICH IS A DIFFERENT KIND OF ABSENCE FROM
+ * A MISSING ENTRY. It is not copied at all: the config imports
+ * `@atusy/tsudoi-hover-wordnet` by PACKAGE SPECIFIER, and installConsumer
+ * installs that package's own tarball beside tsudoi's. Adding its source back
+ * here would put the bytes in the consumer that criterion 1 asserts are absent,
+ * and every probe would still pass -- which is why the omission is written down
+ * rather than left to be read off the list.
  *
  * STATED AS A SET RATHER THAN A NUMBER, and that is the load-bearing choice: a
  * count in prose falsifies itself the next time the thing it counts grows, and
@@ -63,19 +72,6 @@ export function exampleSources(): Record<string, string> {
     ),
     "completion-path.ts": readFileSync(
       fileURLToPath(new URL("../../examples/completion-path.ts", import.meta.url)),
-      "utf8",
-    ),
-    // THE DECLARATION IS PART OF THE EXAMPLE, not of this harness: `wordnet`
-    // ships no types and has no DefinitelyTyped entry, so a reader who copies
-    // the handler modules and not this one gets TS7016 in their own project.
-    // Including it here is what makes the published-artifacts check answer the
-    // question a reader actually has.
-    "hover-wordnet.ts": readFileSync(
-      fileURLToPath(new URL("../../examples/hover-wordnet.ts", import.meta.url)),
-      "utf8",
-    ),
-    "wordnet.d.ts": readFileSync(
-      fileURLToPath(new URL("../../examples/wordnet.d.ts", import.meta.url)),
       "utf8",
     ),
     // THE PAIR, AND NEITHER TRAVELS WITHOUT THE OTHER: the formatting module
@@ -116,6 +112,16 @@ export function exampleSources(): Record<string, string> {
 export function stageEntries(stage: string): readonly string[] {
   return readdirSync(stage).sort();
 }
+
+/**
+ * The handler package a consumer installs BESIDE tsudoi, named once here.
+ *
+ * ITS DIRECTORY IS RESOLVED AND NOT SPELLED, through the workspace link the
+ * install created: this helper has business knowing what a consumer installs,
+ * and none knowing which directory under packages/ it is built from.
+ */
+const handlerPackage = "@atusy/tsudoi-hover-wordnet";
+const handlerRoot = realpathSync(join(repoRoot, "node_modules", ...handlerPackage.split("/")));
 
 /** A throwaway project with tsudoi installed from a tarball, as a stranger has it. */
 export interface InstalledConsumer {
@@ -190,6 +196,16 @@ export interface InstallOptions {
    * observable rather than merely intended.
    */
   readonly editSource?: (srcDir: string) => void;
+  /**
+   * Leaves the handler package OUT of the install, which is criterion 1's
+   * negative control and nothing else's.
+   *
+   * WHAT IT HAS TO PRODUCE, or the green beside it records nothing: a failure
+   * NAMING THE SPECIFIER. An empty hover would mean the probe is measuring
+   * something other than the handler, and a hover that still ANSWERED would mean
+   * some other route -- a copied file, a hoisted stray -- is supplying it.
+   */
+  readonly omitHandler?: boolean;
 }
 
 function fail(step: string, result: TypeCheckResult): never {
@@ -231,9 +247,11 @@ function fail(step: string, result: TypeCheckResult): never {
  */
 export async function installConsumer(options: InstallOptions = {}): Promise<InstalledConsumer> {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-pack-"));
+  const handlerStage = mkdtempSync(join(tmpdir(), "tsudoi-handler-pack-"));
   const consumer = mkdtempSync(join(tmpdir(), "tsudoi-consumer-"));
   const dispose = (): void => {
     rmSync(stage, { recursive: true, force: true });
+    rmSync(handlerStage, { recursive: true, force: true });
     rmSync(consumer, { recursive: true, force: true });
   };
   try {
@@ -284,11 +302,46 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     }
     const tarball = join(stage, tarballName);
 
+    // THE HANDLER PACKAGE IS PACKED FROM WHERE IT LIVES, not from a staged copy,
+    // and the asymmetry with the block above is deliberate rather than an
+    // oversight. The staging exists to let `editPackage` and `editSource` perturb
+    // what gets packed; no probe perturbs the handler, and a copy would only add
+    // a second place for its build to go wrong. Its own `prepack` compiles it in
+    // place, so the tarball is still built at test time from current source.
+    //
+    // ITS OWN DESTINATION DIRECTORY, AND THAT IS LOAD-BEARING: the tarball
+    // filename is FOUND rather than spelled, for the reason written above, and
+    // that search is sound only while a stage holds exactly one .tgz. Packing
+    // both into one directory would make each search able to pick the other's.
+    const handlerTarballs: string[] = [];
+    if (options.omitHandler !== true) {
+      const packedHandler = await run(
+        "bun",
+        ["pm", "pack", "--destination", handlerStage],
+        handlerRoot,
+      );
+      if (packedHandler.code !== 0) {
+        fail(`bun pm pack (${handlerPackage})`, packedHandler);
+      }
+      const handlerTarballName = readdirSync(handlerStage).find((entry) => entry.endsWith(".tgz"));
+      if (handlerTarballName === undefined) {
+        fail(`bun pm pack (${handlerPackage})`, {
+          code: packedHandler.code,
+          output: `no .tgz in ${handlerStage}\n${packedHandler.output}`,
+        });
+      }
+      handlerTarballs.push(join(handlerStage, handlerTarballName));
+    }
+
     writeFileSync(
       join(consumer, "package.json"),
       JSON.stringify({ name: "tsudoi-consumer", version: "1.0.0", type: "module", private: true }),
     );
-    const installed = await run("bun", ["install", tarball], consumer);
+    // BOTH TARBALLS IN ONE COMMAND, which is the route the README states and the
+    // only one that puts the two packages in the same node_modules -- the handler
+    // declares tsudoi as a PEER, so it must find the consumer's copy by walking
+    // up rather than carry one of its own.
+    const installed = await run("bun", ["install", tarball, ...handlerTarballs], consumer);
     if (installed.code !== 0) {
       fail("bun install", installed);
     }
@@ -300,16 +353,20 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     // specifier would add a dependency and no information. It is a devDependency
     // of this package and never ships, so nothing here can reach a user.
     symlinkSync(join(repoRoot, "node_modules", "@types"), join(consumer, "node_modules", "@types"));
-    // `wordnet` BORROWED for the same reason and on the same terms. The README
-    // tells a reader to install it, and this stands in for that install: the
-    // property under test is that the example works WHEN ITS DEPENDENCY IS
-    // PRESENT, never that bun can reach the registry. It is 27MB, so fetching
-    // it once per consumer would cost minutes across this suite and prove
-    // nothing tsudoi is responsible for.
-    symlinkSync(
-      join(repoRoot, "node_modules", "wordnet"),
-      join(consumer, "node_modules", "wordnet"),
-    );
+    // `wordnet` IS NOT BORROWED, AND THE PREMISE THAT MADE IT A LOAN IS GONE
+    // RATHER THAN RESTATED. It stood in for an install a README told a reader to
+    // perform by hand, which was worth faking because it proved nothing about
+    // tsudoi. NOW `@atusy/tsudoi-hover-wordnet` DECLARES IT, so the line above
+    // installs it for real -- MEASURED: the consumer's node_modules/wordnet is
+    // there before this point is reached, which is what turned the symlink into
+    // an EEXIST rather than into a redundancy nobody would have noticed.
+    //
+    // WHAT THAT COSTS AND WHY IT IS WORTH IT: a cold bun cache now fetches 27MB
+    // once for the whole suite, where before it fetched none. What it buys is
+    // that the dependency arrives BY THE ROUTE UNDER TEST -- a consumer who
+    // installs the handler gets its dependency -- so a handler package that
+    // FORGOT to declare `wordnet` reddens here instead of being propped up by a
+    // symlink this helper puts in reach of it.
 
     return {
       dir: consumer,

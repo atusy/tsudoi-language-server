@@ -90,11 +90,11 @@ test("a directory named only in a marker is refused", () => {
  * file is EXECUTED, so a stale one fails by running. This one is not: MEASURED
  * -- the extraction harness executes the five `quickstart` blocks and this is
  * not one of them, so no run reaches it. What stands in for it is
- * test/helpers/install.ts, which SYMLINKS `wordnet` into every consumer instead
- * of running any install line -- so that harness observes whether the examples
- * work when their dependency is PRESENT, and never whether this line names the
- * right set. Telling a reader to install a package they do not need would leave
- * every other assertion in this suite green.
+ * test/helpers/install.ts, which packs and installs the handler package's own
+ * tarball into every consumer -- so that harness observes whether the config
+ * works when the handler is INSTALLED, and never whether this line names the
+ * right thing to install. Telling a reader to install a package they do not
+ * need would leave every other assertion in this suite green.
  *
  * ITS OWN TEST, not a second assertion on the one below, because the two
  * hazards are different and either can hide the other: naming a package the
@@ -106,12 +106,17 @@ test("the README's examples install names no protocol package", () => {
 
 /**
  * THE PAIR for the absence above, and it is what stops the absence being
- * satisfied by deleting the command's arguments altogether. `wordnet` is the
- * one package examples/hover-wordnet.ts imports that a reader's project does
- * not already have from tsudoi.
+ * satisfied by deleting the command's arguments altogether.
+ *
+ * THE HANDLER PACKAGE IS WHAT IT MUST NAME, and `wordnet` is what it must NOT
+ * have to: the config imports `@atusy/tsudoi-hover-wordnet` by specifier, and
+ * that package declares the dictionary itself, so a reader who installs the
+ * handler is done. A README that still named the dictionary here would be
+ * telling them to install a transitive dependency by hand -- true today, wrong
+ * the moment the handler changes what it reads from.
  */
-test("the README's examples install names the package the examples do need", () => {
-  expect(extractExamplesInstall(readme)).toMatch(/\bwordnet\b/);
+test("the README's examples install names the handler package the config imports", () => {
+  expect(extractExamplesInstall(readme)).toMatch(/hover-wordnet/);
 });
 
 // The extractor's own vacuity guard, permanent: both assertions above are

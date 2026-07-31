@@ -1,8 +1,8 @@
+import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 import { pathCompletion } from "./completion-path.ts";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
-import { hoverWordnet } from "./hover-wordnet.ts";
 import { resolvePathStat } from "./resolve-path-stat.ts";
 
 // ANNOTATED, AND THE ANNOTATION IS THE POINT RATHER THAN THE STYLE: it binds
@@ -137,6 +137,14 @@ const config: TsudoiConfigFactory = () => {
       // DELEGATED, exactly as completion is: the handler a config author
       // writes can be one line when the work has a home of its own. What stays
       // here is the CHOICE of which method this config answers.
+      //
+      // AND THIS ONE'S HOME IS A PACKAGE RATHER THAN A FILE BESIDE THIS ONE,
+      // which is the difference worth reading: `@atusy/tsudoi-hover-wordnet` is
+      // INSTALLED, so a fix to it arrives by reinstalling instead of by diffing
+      // your copy against an example you have already edited. The trade is the
+      // other way round too -- a file you copied is yours to edit, and this one
+      // is not, so a language whose words are not whitespace-delimited wants a
+      // handler of its own rather than a setting on this one.
       "textDocument/hover": hoverWordnet,
 
       // THE OTHER SHAPE A HANDLER CAN HAVE, and it is here to be read beside

@@ -170,10 +170,10 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
  *
  * NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all
  * are and a reader would otherwise assume it. What consumes this is a
- * SOURCE-TEXT assertion in test/readme.test.ts; the property that the examples
- * work once their dependency is present is carried by
- * test/published-artifacts.test.ts, which stands in for this install by
- * borrowing `wordnet`.
+ * SOURCE-TEXT assertion in test/readme.test.ts; the property that the config
+ * works once the handler package is installed is carried by
+ * test/published-artifacts.test.ts, whose consumer installs that package's own
+ * tarball rather than standing in for the install.
  *
  * THROWS unless it finds exactly one block, and this guard is load-bearing in a
  * way the quickstart's is not: the assertion downstream is NEGATIVE -- the

@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, globSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { declaredMembers, prepareWorkspace, refuseUncoveredPackages } from "./workspaces.ts";
 
 /**
  * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
@@ -19,12 +20,9 @@ import { fileURLToPath } from "node:url";
  * type-checks a member at all. The exclusion's reason is asserted in
  * test/package-shape.test.ts, since a tsconfig cannot carry one.
  *
- * ENUMERATED FROM `workspaces`, AND NEVER FROM A LIST WRITTEN HERE. With the
- * members outside the root program, a member a list here forgot would be checked
- * by NOTHING AT ALL while every command in the Definition of Done exits 0 --
- * a failure with no symptom, which is the shape this file exists to make
- * impossible. Adding a package under `packages/` must therefore cost no edit to
- * this file, and test/workspace-members.test.ts drives that by construction.
+ * ENUMERATED FROM `workspaces` by scripts/workspaces.ts, which the build shares,
+ * so adding a package under `packages/` costs no edit here.
+ * test/workspace-members.test.ts drives that by construction.
  *
  * WHAT IS RUN IS `tsc`, NOT A REIMPLEMENTATION OF ONE, and the binary is reached
  * through node_modules/.bin rather than by bare name: nothing here is a package
@@ -39,92 +37,6 @@ import { fileURLToPath } from "node:url";
 
 /** The checkout this script ships in, which is where its compiler is found. */
 const toolRoot = fileURLToPath(new URL("../", import.meta.url));
-
-/**
- * Every directory the workspace configuration declares a member, expanded from
- * the `workspaces` patterns themselves.
- *
- * AN ABSENT OR EMPTY `workspaces` IS A FAILURE RATHER THAN AN EMPTY ANSWER, and
- * that asymmetry is the point: this check is the only thing looking at the paths
- * the root tsconfig gave up, so `I found no members` and `I was given no way to
- * find them` must not produce the same green.
- */
-function declaredMembers(root: string): readonly string[] {
-  const manifestPath = join(root, "package.json");
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
-  const patterns = manifest.workspaces;
-  if (!Array.isArray(patterns) || patterns.length === 0) {
-    throw new Error(
-      `${manifestPath} declares no \`workspaces\`, so nothing enumerates the members the root type check has stopped covering.`,
-    );
-  }
-  const members = new Set<string>();
-  for (const pattern of patterns) {
-    if (typeof pattern !== "string") {
-      throw new Error(`\`workspaces\` in ${manifestPath} holds a non-string pattern.`);
-    }
-    for (const match of globSync(pattern, { cwd: root })) {
-      const dir = join(root, match);
-      if (statSync(dir).isDirectory() && existsSync(join(dir, "package.json"))) {
-        members.add(dir);
-      }
-    }
-  }
-  return [...members].sort();
-}
-
-/**
- * Every directory holding a package.json underneath `dir`, which is how a
- * package that the root program cannot see is recognised without knowing its
- * name.
- *
- * node_modules IS SKIPPED because it is full of other people's packages and none
- * of them is ours to type-check.
- */
-function packagesUnder(dir: string): readonly string[] {
-  if (!existsSync(dir) || !statSync(dir).isDirectory()) {
-    return [];
-  }
-  const found: string[] = [];
-  if (existsSync(join(dir, "package.json"))) {
-    found.push(dir);
-  }
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory() && entry.name !== "node_modules") {
-      found.push(...packagesUnder(join(dir, entry.name)));
-    }
-  }
-  return found;
-}
-
-/**
- * Fails when a package sits somewhere the root type check excludes and the
- * workspace configuration does not declare -- the one state in which a package
- * is covered by nothing and every check still exits 0.
- *
- * IT READS THE EXCLUSION RATHER THAN RESTATING IT, so narrowing `workspaces`
- * while leaving `packages` excluded is caught here instead of going quiet. The
- * cheap alternative -- trusting that the two keys agree -- is what makes the
- * gap silent, since they are edited in different files for different reasons.
- */
-function refuseUncoveredPackages(root: string, members: readonly string[]): void {
-  const tsconfigPath = join(root, "tsconfig.json");
-  const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as Record<string, unknown>;
-  const excluded = Array.isArray(tsconfig.exclude) ? tsconfig.exclude : [];
-  const declared = new Set(members);
-  for (const entry of excluded) {
-    if (typeof entry !== "string") {
-      continue;
-    }
-    for (const found of packagesUnder(join(root, entry))) {
-      if (!declared.has(found)) {
-        throw new Error(
-          `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`,
-        );
-      }
-    }
-  }
-}
 
 /**
  * Type-checks one member under its own tsconfig, reporting whether it passed.
@@ -149,6 +61,13 @@ function typeCheckMember(root: string, member: string): boolean {
 }
 
 const root = resolve(process.argv[2] ?? process.cwd());
+// A MEMBER IS TYPE-CHECKED AGAINST WHAT IT ACTUALLY RESOLVES, which is the
+// dist/ its dependency publishes and not that dependency's source. So this
+// builds before it reads, on the preload's own reasoning: a check run against a
+// dist/ nobody rebuilt reports on a tree that no longer exists, and the failure
+// it invents -- TS2307 for a subpath that resolves perfectly well -- is exactly
+// the one this check exists to distinguish.
+prepareWorkspace(root);
 const members = declaredMembers(root);
 refuseUncoveredPackages(root, members);
 let failed = false;

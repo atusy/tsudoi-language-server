@@ -1,6 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { prepareWorkspace } from "../../scripts/workspaces.ts";
 
 // import.meta.dir is Bun-only; the URL form is what every other helper uses.
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -15,19 +14,28 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * test/completion-path.test.ts imports that example STATICALLY. A build that
  * had not finished when the module graph was resolved would be no build at all.
  *
- * WHICH ARM NEEDS dist/ IS NOT THE ONE THE SUBPATH SUGGESTS, and the difference
- * decides whether this preload can be deleted. tsconfig's `paths` intercepts a
- * self-referencing subpath BEFORE the exports map, so bun's own loads reach
- * ./src and never ./dist. What reaches ./dist/deps/types.js is the arms that
- * SPAWN DENO -- deno has no `paths` and takes the exports map -- so removing
- * dist/ leaves bun green and fails deno at config load with ERR_MODULE_NOT_FOUND.
- * A marker written into dist/ cannot discriminate this under `bun test`: the
- * preload rebuilds over it before any test module loads.
+ * WHICH ARM NEEDS THIS PACKAGE'S dist/ IS NOT THE ONE THE SUBPATH SUGGESTS, and
+ * the difference decides whether this preload can be deleted. tsconfig's `paths`
+ * intercepts a self-referencing subpath BEFORE the exports map, so bun's own
+ * loads reach ./src and never ./dist. What reaches ./dist/deps/types.js is the
+ * arms that SPAWN DENO -- deno has no `paths` and takes the exports map -- so
+ * removing dist/ leaves bun green and fails deno at config load with
+ * ERR_MODULE_NOT_FOUND. A marker written into dist/ cannot discriminate this
+ * under `bun test`: the preload rebuilds over it before any test module loads.
  *
- * The compiler is reached through node_modules/.bin rather than by bare name,
- * because nothing here is a package script and PATH is not this repo's to
- * choose; test/package-shape.test.ts pins that the binary there is the version
- * this repo declares.
+ * A WORKSPACE MEMBER'S dist/ IS NEEDED BY EVERYTHING INSTEAD, which is the half
+ * that argument does not reach: a member ships dist/ and not src/, its `exports`
+ * map names no source arm, and no `paths` mapping stands in for one -- so bun,
+ * deno and tsc alike resolve a member ONLY through what this build writes. The
+ * reasoning lives with the builder, in scripts/workspaces.ts, because the fifth
+ * Definition-of-Done check runs the same one.
+ *
+ * WHAT THIS PRELOAD THEREFORE DOES NOT COVER, stated because it is a real hole
+ * rather than a theoretical one: `tsc --noEmit` run on a checkout NOTHING HAS
+ * BUILT reports TS2307 at examples/tsudoi.config.ts, naming the member. That is
+ * LOUD and it names its own remedy, which is why it is accepted rather than
+ * papered over with a mapping that would defeat the members' exclusion from that
+ * very check. Any other Definition-of-Done command clears it.
  *
  * stdio is inherited so a broken src/ prints tsc's own diagnostics, and the
  * throw on a non-zero exit is deliberate: a suite that ran on the previous
@@ -43,9 +51,9 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * MEASURED, AND IT POISONS PROBES: a construction built on a freshly wrong
  * dist/ reads exit 0 against a prediction of 1, and that is caught only when
  * the prediction is written first. Every AUTOMATED route is covered -- this
- * throw stops the suite, `tsc --noEmit` reads source rather than dist/, `bun pm
- * pack` builds in its own stage -- so what stays exposed is HAND-RUN PROBE
- * SEQUENCES: break src, run something, revert, then read dist/.
+ * throw stops the suite, `tsc --noEmit` reads THIS package's source rather than
+ * its dist/, `bun pm pack` builds in its own stage -- so what stays exposed is
+ * HAND-RUN PROBE SEQUENCES: break src, run something, revert, then read dist/.
  *
  * REMOVING dist/ BEFORE RETHROWING IS AUTHORISED AND NOT DONE, which turns a
  * silently wrong artifact into a loudly missing one and is this repository's
@@ -53,7 +61,4 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * exposure is a manual sequence rather than any route the suite takes, and that
  * sentence is the whole of the reason.
  */
-execFileSync(join(repoRoot, "node_modules", ".bin", "tsc"), ["-p", "tsconfig.build.json"], {
-  cwd: repoRoot,
-  stdio: "inherit",
-});
+prepareWorkspace(repoRoot);

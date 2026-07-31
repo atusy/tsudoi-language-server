@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, renameSync, unlinkSync } from "node:fs";
+import { mkdirSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
@@ -674,17 +674,27 @@ test("the example serves a completion from a consumer that declares no protocol 
  * nothing at all.
  *
  * `withhold wordnet and the examples must still fail` is FALSE of the type
- * check. MEASURED: removing `wordnet` from a consumer entirely leaves
- * `consumer.typeCheck(exampleSources())` at exit 0 with empty output, because
- * examples/wordnet.d.ts carries `declare module "wordnet"` -- an AMBIENT
- * declaration -- and that file is deliberately part of the example a reader
- * copies. tsc needs nothing on disk once a module is declared.
+ * check, AND THE REASON IS NOW THE HANDLER PACKAGE'S PUBLISHED SURFACE RATHER
+ * THAN A FILE THE READER COPIED. `wordnet` is a dependency of
+ * `@atusy/tsudoi-hover-wordnet`; the ambient `declare module "wordnet"` that
+ * types it lives inside that package and is deliberately NOT published, and no
+ * name it declares appears in what the package publishes. So a consumer's type
+ * space never mentions the dictionary at all, and tsc has nothing to miss.
  *
- * SO THE CONTROL LIVES AT THE OTHER ARM: what detects the missing package is
- * RUNNING, where the config's import of `wordnet` is a real resolution. Exit 1,
- * and stderr names the package. Taken on trust, the detection would be asserted
- * at the one arm that cannot see it -- a test that passes because it measures
- * nothing.
+ * THAT MAKES THIS TEST THE CONTROL FOR THAT DECISION AS WELL, in the direction
+ * that matters: if the handler ever published a type reaching into `wordnet`,
+ * the consumer would need a declaration it does not have and this type check
+ * would redden -- which is the loud failure the decision is worth having.
+ *
+ * SO THE DETECTION LIVES AT THE OTHER ARM: what notices the missing package is
+ * RUNNING, where the handler's own import of `wordnet` is a real resolution.
+ * Exit 1, and stderr names the package. Taken on trust, the detection would be
+ * asserted at the one arm that cannot see it -- a test that passes because it
+ * measures nothing.
+ *
+ * REMOVED RATHER THAN UNLINKED, and RECURSIVELY: the dictionary now arrives as
+ * the handler package's declared dependency, which bun installs as a real
+ * directory, where it used to be a symlink this suite put there by hand.
  */
 test("withholding wordnet is still detected, at the runtime arm rather than the type arm", async () => {
   const strict = await installConsumer();
@@ -692,7 +702,7 @@ test("withholding wordnet is still detected, at the runtime arm rather than the 
     for (const [path, source] of Object.entries(exampleSources())) {
       strict.write(path, source);
     }
-    unlinkSync(join(strict.dir, "node_modules", "wordnet"));
+    rmSync(join(strict.dir, "node_modules", "wordnet"), { recursive: true, force: true });
 
     const typeChecked = await strict.typeCheck(exampleSources());
     // The half that does NOT discriminate, asserted so the claim above stays

@@ -308,8 +308,6 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | -------------------------------------------- | ----------------------------------------------------------------------------- |
   | `examples/tsudoi.config.ts`                  | the config itself: which methods, and a `finally` that documents when it runs |
   | `examples/completion-path.ts`                | streaming completion of filesystem paths                                      |
-  | `examples/hover-wordnet.ts`                  | hover that looks a word up in a dictionary                                    |
-  | `examples/wordnet.d.ts`                      | types for `wordnet`, which ships none                                         |
   | `examples/diagnostic-trailing-whitespace.ts` | warns about trailing whitespace, one warning per line                         |
   | `examples/formatting-trailing-whitespace.ts` | removes exactly what that diagnostic reports                                  |
   | `examples/resolve-path-stat.ts`              | fills in a path item's size and date when the user highlights it              |
@@ -322,30 +320,41 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   resolve module imports from the completion module the mark it recognises its own items by.
   Neither pairing is namable by row position, which is why both are named by file.
 
-  **The set teaches two shapes of handler, and both are worth reading.** One **goes somewhere
-  else** for its answer — completion and resolve to the filesystem, hover to a dictionary — and shows what a
+  **These teach two shapes of handler, and both are worth reading.** One **goes somewhere
+  else** for its answer — completion and resolve to the filesystem, and the installed hover
+  handler to a dictionary — and shows what a
   handler that waits on something outside itself has to look like. The other **computes its
   answer from the document it was given** and goes nowhere at all: the trailing-whitespace pair
   reads the buffer, turns offsets into `Position`s with `positionAt`, and is done. The second is
   the commoner shape in a real language server — a parser does not go anywhere else either — so
   do not read the first as the one to copy.
 
-  **Copy the whole set**, or the imports fail. The config imports every handler module, the
-  formatter imports the diagnostic module, the resolve module imports the completion module,
-  and `wordnet.d.ts` is imported by nobody and needed
-  all the same — it is what makes `hover-wordnet.ts`'s `wordnet` import type-check. The set is
-  what the test suite type-checks and runs. They also need `wordnet` in your own project:
+  **Copy the whole set**, or the imports fail. The config imports every handler module by
+  relative path, the formatter imports the diagnostic module, and the resolve module imports the
+  completion module. The set is what the test suite type-checks and runs.
+
+  **The hover handler is not in that set, and that is the point of it.** The config gets it by
+  importing `@atusy/tsudoi-hover-wordnet`, a package you INSTALL — so a fix to the handler
+  reaches you by reinstalling instead of by diffing your copy against an example you have already
+  edited. The trade runs the other way too: a file you copied is yours to edit, and this one is
+  not, so a language whose words are not whitespace-delimited wants a handler of its own rather
+  than a setting on this one.
+
+  It travels the same local-tarball route tsudoi does. In `tsudoi-language-server/packages/hover-wordnet/`,
+  `bun pm pack --filename hover-wordnet.tgz`; then in your own project:
 
   <!-- examples-install -->
 
   ```sh
-  bun install wordnet
+  bun install ../tsudoi-language-server/packages/hover-wordnet/hover-wordnet.tgz
   ```
 
-  The hover module reads its definitions from it (~27MB, MIT, and loaded on the first hover
-  rather than at startup). Without it the example fails to load, naming the missing module.
-  Note that it fails to LOAD rather than to type-check: `examples/wordnet.d.ts` declares the
-  module, so `tsc` is satisfied by the declaration whether or not the package is there.
+  That one install brings the dictionary with it: the package declares `wordnet` itself (~27MB,
+  MIT, loaded on the first hover rather than at startup), so there is nothing else for you to
+  add and no declaration file to copy. `wordnet` ships no types, and the declaration that fixes
+  that lives INSIDE the handler package and is deliberately not published — an ambient
+  `declare module` in a published package would declare a third party's module on behalf of
+  everyone who installs it.
 
   **No protocol package is named here**, and that is what tsudoi re-exporting its own dependencies
   buys: these files name protocol types freely and still depend on nothing but tsudoi. They take

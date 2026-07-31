@@ -170,6 +170,46 @@ test("the members are outside the root type check, and the workspace patterns ar
 });
 
 /**
+ * WHY THE HANDLER PACKAGE IS DECLARED AT AN EXACT VERSION AND NOT AS
+ * `workspace:*`, which is the spelling anyone reaching for this line will try
+ * first and which this repository cannot use.
+ *
+ * IT IS DEVDEPENDENCIES BY RIGHT: examples/tsudoi.config.ts imports the handler
+ * by package specifier, so the repo's own demo config depends on it, and nothing
+ * this package PUBLISHES does -- which is why it may not appear one field up.
+ *
+ * `workspace:*` BREAKS EVERY DETACHED COPY OF THIS MANIFEST, MEASURED, and both
+ * copies are things this suite makes: the pack stage in test/helpers/install.ts
+ * and the README checkout in test/helpers/readme.ts each write package.json into
+ * a temp directory with no workspace around it, and `bun pm pack` there refuses
+ * with `Failed to resolve workspace version`. AND THE EXACT VERSION IS NOT A
+ * WORKAROUND WEARING A SPEC'S CLOTHES: `bun pm pack` run at the repo root
+ * REWRITES `workspace:*` to exactly this string before it seals the tarball, so
+ * the two spellings publish identically and only one of them survives being
+ * copied.
+ *
+ * WHAT IT COSTS, named because nothing detects it: the two versions are now kept
+ * equal by hand, and bumping the member's alone would send bun to a registry
+ * that has never heard of it. The failure is loud -- a 404 at `bun install` --
+ * which is why it is accepted rather than guarded.
+ */
+test("the repo depends on the handler package for its own examples, at the version the member carries", () => {
+  const devDependencies = packageJson.devDependencies as Record<string, string>;
+  const member = JSON.parse(
+    readFileSync(join(repoRoot, "packages", "hover-wordnet", "package.json"), "utf8"),
+  ) as { version?: unknown };
+  // Narrowed rather than coerced: an equality against `undefined` would pass the
+  // day the member loses its version, which is the day the declaration above
+  // stops meaning anything.
+  if (typeof member.version !== "string") {
+    throw new Error("the handler package carries no version for this declaration to match");
+  }
+
+  expect(devDependencies["@atusy/tsudoi-hover-wordnet"]).toBe(member.version);
+  expect(packageJson.dependencies).not.toHaveProperty("@atusy/tsudoi-hover-wordnet");
+});
+
+/**
  * THE PUBLISHED SHAPE, asserted whole rather than key by key: `exports` makes
  * every path not listed unreachable by bare specifier, so adding an entry is a
  * decision about the public surface and never a convenience, and an equality
@@ -403,8 +443,14 @@ test("the compiler prepack builds with is pinned by this repo, at a version it d
 
   // 2. The executable a package manager reaches first belongs to that package,
   //    resolved through the link rather than trusted by name.
+  //
+  //    BOTH SIDES ARE REALPATHED, and only one of them used to be. A workspace
+  //    install makes node_modules/typescript ITSELF a link into node_modules/
+  //    .bun, so the fully-resolved binary sits under a directory the unresolved
+  //    package path is not a prefix of -- and the claim, that the two are the
+  //    same package on disk, is a claim about resolved paths on both sides.
   const binary = join(repoRoot, "node_modules", ".bin", "tsc");
-  const packageDirectory = join(repoRoot, "node_modules", "typescript") + sep;
+  const packageDirectory = realpathSync(join(repoRoot, "node_modules", "typescript")) + sep;
   expect(realpathSync(binary).startsWith(packageDirectory)).toBe(true);
 
   // 3. And it really is that compiler when run, rather than a stale link.
