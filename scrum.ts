@@ -36,7 +36,119 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-51",
+      story: {
+        role: "config author",
+        capability:
+          "get the wordnet hover handler by INSTALLING a package, instead of copying two files into my project and installing its dependency myself",
+        benefit:
+          "the handler is maintained where it lives rather than forked into my tree the moment I take it, so a fix to it reaches me by reinstalling instead of by diffing my copy against an example I have already edited",
+      },
+      status: "ready",
+      acceptance_criteria: [
+        {
+          criterion:
+            "A CONSUMER OBTAINS THE HOVER HANDLER WITHOUT RECEIVING ITS SOURCE. A throwaway project that has installed tsudoi and `@atusy/tsudoi-hover-wordnet` -- both by the README's own route, a tarball packed out of this checkout -- writes a config whose only hover import is the PACKAGE SPECIFIER, and answers a real `textDocument/hover` over the wire. NO BYTE OF THE HANDLER'S SOURCE IS WRITTEN INTO THAT PROJECT, which is what distinguishes this from what test/helpers/install.ts does today.",
+          verification:
+            "THE LIFT IS NAMED RATHER THAN IMPLIED, because it is the largest implementation change in this PBI: test/helpers/install.ts today packs ONE tarball from repoRoot/package.json + src/ + tsconfig.build.json and HARDCODES packageDir at node_modules/@atusy/tsudoi. It must pack and install TWO, and the consumer's config must load with the handler resolved out of node_modules. THE PROBE THEN ASSERTS BOTH DIRECTIONS IN ONE MEASUREMENT, per Sprint 6: the hover answers with a definition, AND the consumer's own directory holds no hover-wordnet source. NEGATIVE CONTROL, and it is what stops a green meaning `some other route answered`: omit the handler package from the install and the same test must redden NAMING THE SPECIFIER -- an empty hover, or a hover that still answers, both mean the probe measured the wrong thing.",
+        },
+        {
+          criterion:
+            "THE HANDLER PACKAGE RESOLVES TSUDOI THROUGH PACKAGE RESOLUTION, AND NOT THROUGH THE PARENT'S ROUTE. This is the load-bearing criterion and the whole reason this is not a file move with a package.json on top: NOTHING IN THIS REPOSITORY RESOLVES TSUDOI FROM ANOTHER PACKAGE TODAY. Two routes exist and both are consumed by LOOSE FILES -- tsc through `paths` in tsconfig.json into src/, and the installed consumer through the exports map into dist/, where the examples arrive as files with RELATIVE imports between them. The extracted package must take a third route: its own `dependencies` entry, tsudoi's `exports` map, and nothing of the parent's. AND IT IS TYPE-CHECKED BY ITS OWN PROGRAM -- its own tsconfig, invoked so that the root's `paths` cannot reach it. That clause is part of the criterion and not of its verification, because without it there is NO SEPARABLE READING to take: a member whose files sit in the root program is checked under the root's mapping, and the perturbation below has nothing to observe.",
+          verification:
+            "TWO PERTURBATIONS IN OPPOSITE DIRECTIONS, because either alone is degenerate. (a) REMOVE the `@atusy/tsudoi/*` -> ./src/*.ts entry from the ROOT tsconfig.json: the ROOT check reddens on examples/ AND THE MEMBER'S OWN CHECK IS UNCHANGED. That contrast is the discrimination; a member check that reddens with it means the member is resolving through the parent's mapping and this criterion is unbacked however green it was. (b) BREAK A NAME in src/types.ts that the handler imports: the package's own check MUST redden NAMING THE SUBPATH, with zero TS2307 anywhere -- Sprint 44's recorded shape, which is what shows the resolution reaches a real declaration rather than `any`.",
+        },
+        {
+          criterion:
+            "THE FOUR DoD CHECKS REACH INSIDE THE EXTRACTED PACKAGE. All four are ROOT-LEVEL commands and a workspace member can fall outside every one of them silently. The plan must also SAY where the package's tests live -- test/hover-wordnet.test.ts travels or it does not -- and this criterion holds either way.",
+          verification:
+            "FOUR PLANTED DEFECTS, ONE PER CHECK, EACH INSIDE THE PACKAGE: a type error, a failing test, a lint violation and a format violation. Each of `bun test`, `oxlint`, `oxfmt --check .` and `tsc --noEmit`, run FROM THE REPO ROOT EXACTLY AS SPELLED IN definition_of_done, must redden on its own. GREEN FROM THE ROOT IS NOT EVIDENCE THE CHECK REACHED THE MEMBER; only the four reddenings are. THE EXPECTED SHAPE IS PREDICTED HERE RATHER THAN MET AT REVIEW: criterion 2 requires the member to have its OWN tsconfig, and the likely consequence is that root `tsc --noEmit` STOPS COVERING IT -- in which case the honest outcome is the DoD GROWING A FIFTH CHECK, not a member quietly outside the fourth. A check that cannot be made to redden is reported as a gap rather than worked around.",
+        },
+        {
+          criterion:
+            "`wordnet` LEAVES THE MAIN PACKAGE ENTIRELY. It is a devDependency today used by one example; extracted, it is a runtime dependency of the handler package and nothing the main package knows about.",
+          verification:
+            "It appears in NEITHER `dependencies` NOR `devDependencies` of the root package.json, and the suite passes. AND THE BORROWED SYMLINK IS RE-HOMED RATHER THAN LEFT: test/helpers/install.ts symlinks `wordnet` into the consumer with the recorded reason `the README tells a reader to install it, and this stands in for that install`. THAT PREMISE BECOMES FALSE -- the reader installs the handler package, which declares wordnet itself -- so the symlink either moves to standing in for the handler package's own dependency, with the new reason written where it stands, or it goes.",
+        },
+        {
+          criterion:
+            "EVERY PROSE SITE THIS FALSIFIES IS REPAIRED RATHER THAN SURFACED, per Sprint 44, AND THEY ARE ENUMERATED BEFORE THEY ARE FOUND. The examples stop being one kind of thing: two are copied and one is installed, and README currently says the set is copied WHOLE. NAMED: README's `Copy the whole set, or the imports fail`; its example table rows for hover-wordnet.ts and wordnet.d.ts; its `<!-- examples-install -->` block, WHICH THE SUITE EXECUTES AS `bun install wordnet` and which becomes wrong; `exampleSources()`'s `THE WHOLE SET, NEVER THE CONFIG ALONE` doc and its two wordnet entries in test/helpers/install.ts; and the borrowed-wordnet comment at the symlink. A site found during execution that this list does not carry is REPORTED, because the list being short is itself a finding.",
+          verification:
+            "Each named site repaired, the README's executed blocks still passing, and any unlisted site reported by name at Review.",
+        },
+        {
+          criterion:
+            "THE PUBLISHED MAIN PACKAGE DEPENDS ON NO HANDLER PACKAGE. Scoped to `dependencies` DELIBERATELY: a workspace member in devDependencies is normal, never reaches a consumer, and `files: [\"dist\"]` keeps examples/ out of the tarball anyway -- a criterion written over devDependencies too would force the demo config out of the main package as a side effect nobody asked for.",
+          verification:
+            "Read from the PACKED TARBALL's package.json, not from the repository's, since those are different files the moment a pack stage edits one.",
+        },
+      ],
+      notes: [
+        "WHY HOVER FIRST, AND IT IS NOT `SMALLEST BLAST RADIUS`. It is THE ONLY EXTRACTION THAT CAN BE SIZED WITHOUT A STAKEHOLDER ANSWER. completion-path cannot be scoped at all until the resolve-path-stat question is ruled, and hover-wordnet imports no other example and is imported by none. So the sequencing costs nothing: the ruling arrives while this runs.",
+        "AND THE SECOND REASON, WHICH IS ABOUT COST RATHER THAN ORDER. AN EXAMPLE'S EXPORTS ARE INCIDENTAL AND A PACKAGE'S ARE A PROMISE. hover-wordnet.ts exports three names. completion-path.ts exports eleven-plus -- pathFragments, sourcesFor, editFor, listingDirectory, itemsFrom, pathCompletion, batchSize, completedPath, PathFragment, PathItemData, PathSource, PathSourceName, PathCompletionOptions -- and every one of them either becomes published API or must be made internal. THAT IS THE LARGEST SINGLE COST IN THIS WHOLE REQUEST, and it is not paid in this PBI.",
+        "NO REGISTRY IS CLAIMED ANYWHERE, and this is the one thing the criteria must not drift on. `@atusy/tsudoi` is unpublished and so is every package this creates. WHAT MAKES THE VALUE REAL ANYWAY: the README's documented working route is ALREADY a local tarball -- pack out of a checkout, `bun install ../tsudoi-language-server/tsudoi.tgz` -- and a second package travels that same route with nothing new invented. So `install rather than copy` is deliverable today. `npm install` is not, no criterion here says it, and the README must not grow a sentence promising one.",
+        "UNMEASURED, AND FLAGGED RATHER THAN ASSERTED per Sprint 43, because the PO has no shell and this premise is inside criteria 2 and 3: whether root `bun test`, `tsc --noEmit`, `oxlint` and `oxfmt --check .` reach files inside a new workspace member. WHAT I CAN READ SUGGESTS THE HAZARD IS THE OPPOSITE OF THE OBVIOUS ONE: tsconfig.json carries no `include` and excludes only dist/, so root tsc probably DOES pull the member's files into the root program -- under the ROOT's `paths` mapping, which would type-check them green through the parent's route while their own package resolution is broken. That is not coverage; it is criterion 2's degenerate green wearing coverage's clothes. MEASURE IT AT PLANNING, BEFORE THE CRITERIA BIND.",
+        "A COST THAT BELONGS AT PLANNING RATHER THAN AT EXECUTION, AND IT IS NOT DECIDED HERE. examples/wordnet.d.ts is an ambient `declare module \"wordnet\"`, which exists because the package ships no types and has no DefinitelyTyped entry. SHIPPED INSIDE A PUBLISHED PACKAGE AN AMBIENT DECLARATION LANDS IN EVERY CONSUMER'S GLOBAL TYPE SPACE -- a package declaring someone else's module for everyone who installs it. The alternatives are to ship it and own that, or to expose only the handler's own typed surface so no consumer ever names `wordnet` and the declaration stays internal to the package's build. Named so it is a decision at Planning rather than a discovery mid-sprint.",
+        "NOT BLOCKED BY THE RENAME. See PBI-53: doing the rename first is cheaper, but this PBI is writable and executable under either name and must not wait for the answer.",
+        "THE DEMO CONFIG IS THE HINGE AND IT KEEPS ITS JOB. examples/tsudoi.config.ts is driven end to end by the suite, so the extracted package is consumed BY IT, through the package specifier, and that is what keeps those tests meaning what they meant. A config that imported the member by relative path would leave every criterion above green and measure nothing.",
+      ],
+    },
+    {
+      id: "PBI-52",
+      story: {
+        role: "config author",
+        capability:
+          "get path completion the same way -- installed rather than copied -- with the item-resolution half arriving in whatever shape the ruling gives it",
+        benefit:
+          "the handler I am most likely to want and least likely to be able to write myself stops being a file I fork on the day I take it",
+      },
+      status: "draft",
+      acceptance_criteria: [
+        {
+          criterion:
+            "UNWRITABLE UNTIL THE RESOLVE RULING LANDS, AND SAYING SO IS THE POINT. Criteria 1, 2, 3 and 6 of PBI-51 apply unchanged to this package. What CANNOT be written yet is what the package CONTAINS, because that is exactly what the ruling decides.",
+          verification:
+            "N/A until refined. This PBI is not ready and must not be pulled into a sprint.",
+        },
+        {
+          criterion:
+            "WHICHEVER WAY THE RULING GOES, `completedPath` DOES NOT BECOME PUBLISHED API BY ACCIDENT. If resolve-path-stat TRAVELS, the mark stays internal to the package. If it STAYS AN EXAMPLE, it must import the mark from the package, so `completedPath` IS published -- a deliberate API commitment, recorded at the export, and not a leak nobody noticed.",
+          verification:
+            "The packed tarball's type surface either names it or does not, and the tree says which was chosen and why at the site of the choice.",
+        },
+      ],
+      notes: [
+        "WHAT MAKES THIS UNSIZEABLE, MEASURED RATHER THAN RECALLED. examples/resolve-path-stat.ts imports `completedPath` from examples/completion-path.ts -- A VALUE IMPORT, not a type -- because tsudoi keeps no record of what a completion handler produced and a resolve handler can only key off the mark the completion module wrote onto the item. AND loadConfig REFUSES a config supplying `completionItem/resolve` without `textDocument/completion`, which test/fixtures/resolve-without-completion.ts pins. So the two are coupled in one direction by code and constrained together by the loader.",
+        "THE PO'S RECOMMENDATION, WITH THE ALTERNATIVE'S COST NAMED SO IT CAN BE OVERTURNED ON EVIDENCE: resolve-path-stat TRAVELS with completion-path. The cost of the alternative is what decides it -- leaving resolve behind as an example forces an internal marker onto the package's PUBLISHED surface, where every future change to how an item is marked becomes a compatibility question with a stranger. The cost of the recommendation is smaller and purely cosmetic: the package name under-describes a package that answers two methods. THE STAKEHOLDER ENUMERATED TWO PACKAGES AND THIS IS THEIRS TO OVERTURN.",
+        "A THIRD OPTION EXISTS AND IS NOT RECOMMENDED, recorded so the ruling is made over the whole field: resolve-path-stat becomes its OWN package, `@atusy/tsudoi-resolve-path-stat`, depending on the completion package. It publishes the same marker across the same boundary as option two and adds a third package to maintain, so it costs strictly more than either -- but it is what a reader of the stakeholder's list might have meant by naming only two.",
+      ],
+    },
+    {
+      id: "PBI-53",
+      story: {
+        role: "config author",
+        capability:
+          "name tsudoi by ONE name -- in package.json, in every import specifier, and in the docs",
+        benefit:
+          "one name to learn and to type, rather than a package whose name and whose repository disagree",
+      },
+      status: "draft",
+      acceptance_criteria: [
+        {
+          criterion:
+            "NOT A CRITERION. THE STAKEHOLDER'S MODULE LIST NAMES THE MAIN PACKAGE `@atusy/tsudoi-language-server`, AND IT IS CALLED `@atusy/tsudoi`. That is a rename of the published main package, and the PO will not infer it: the stakeholder may equally have written THE REPOSITORY DIRECTORY'S NAME, which is `tsudoi-language-server`, while listing what the packages are. The ambiguity is the reason to ask rather than to guess.",
+          verification: "A ruling from the stakeholder. Nothing else discharges this.",
+        },
+      ],
+      notes: [
+        "WHY IT IS SAFE TO ASK AND WRONG TO ASSUME. The package is version 0.0.0 and NEVER PUBLISHED, so no consumer breaks either way -- which is exactly what makes this cheap now and expensive later, not what makes it a detail.",
+        "WHAT IT COSTS IF THE ANSWER IS YES, so the answer can be given with the price visible. Every import specifier in examples/ and in the README's EXECUTED quickstart bytes; the four exports subpaths a config author types (`@atusy/tsudoi-language-server/types` in place of `@atusy/tsudoi/types`); the hardcoded consumer path in test/helpers/install.ts; the `paths` mapping in tsconfig.json; and the start commands in the README, which the suite runs verbatim.",
+        "WHY IT IS CHEAPER BEFORE THE EXTRACTIONS THAN AFTER: afterwards it is the same pass PLUS every extracted package's dependency line and every import specifier inside them. BUT THE AFTER-COST IS SMALL AND PBI-51 MUST NOT STALL ON IT. If the answer is yes, this becomes a real PBI sequenced first; if it is no, this PBI is deleted and the reason recorded.",
+      ],
+    },
+  ],
   completed: [
     {
       number: 45,
