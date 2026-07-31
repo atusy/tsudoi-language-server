@@ -91,11 +91,14 @@ refuseUncoveredPackages(root, members);
 // nothing would get far enough to produce them. A refusal belongs on the check
 // path, beside the two that are already here.
 //
-// BEFORE THE COMPILER IS SPAWNED FOR ANYTHING, because every diagnostic after
-// this point is printed as a path under the directory whose name is in question,
-// and a reader sent to `packages/<one spelling>` by a run that has not yet said
-// the other spelling exists is being sent by the half of the disagreement that
-// happens to be on disk.
+// BEFORE ANY MEMBER IS TYPE-CHECKED, AND NOT BEFORE THE COMPILER RUNS AT ALL --
+// `prepareWorkspace` above has already spawned tsc to BUILD each member, so this
+// cannot be and does not claim to be the first thing to touch one. What it is
+// ahead of are the DIAGNOSTICS: every one of them is printed as a path under the
+// directory whose name is in question, and a reader sent to
+// `packages/<one spelling>` by a run that has not yet said the other spelling
+// exists is being sent by whichever half of the disagreement happens to be on
+// disk.
 refuseMemberDirectoriesUnlikeTheUnscopedName(root, members);
 // BEFORE ANY MEMBER IS CHECKED, because a mapping makes the check that follows
 // answer the wrong question: a member reaching past its own resolution
