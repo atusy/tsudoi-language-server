@@ -17,9 +17,18 @@ await requireRuntime(denoRuntime);
  *
  * In a project that is not this repo, with a tsudoi.config.ts in it:
  *
- *   bun install ./atusy-tsudoi-language-server-0.0.0.tgz
+ *   bun install ./<the packed tarball>
  *   bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
  *   deno run -A node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts
+ *
+ * THE INSTALL LINE CARRIES NO FILENAME, and it is the one line here that must
+ * not: the two below it are `route`'s own bytes, so a stale spelling fails by
+ * running, while this line is prose nothing executes. bun derives the tarball's
+ * FILENAME from the package's name and version, and NOTHING PINS THAT FILENAME
+ * -- test/helpers/install.ts installs whatever .tgz the pack wrote -- so a
+ * literal here would go stale at the next release with every check still green.
+ * README.md forecloses the same drift for a reader by packing with
+ * `--filename tsudoi.tgz`.
  *
  * The install line is what these tests do -- from a tarball, because
  * publishing is out of scope. `bun add @atusy/tsudoi-language-server` and
