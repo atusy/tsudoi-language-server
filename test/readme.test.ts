@@ -364,10 +364,24 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/not published/i, /registry/i],
   },
   {
+    // THE RIGHT BOUNDARY IS WHAT MAKES THESE TOKENS A CONTROL RATHER THAN A
+    // SHAPE. Every other command this file matches is also EXECUTED, so a wrong
+    // spelling fails by running; these two cannot be, because the package is
+    // unpublished and running them is the thing that does not work yet. This
+    // fact is their only spelling control, and an unbounded pattern gives that
+    // control away: this package's name is a PREFIX of every name that extends
+    // it, so a README telling a reader to install `...-language-server-wrong`
+    // satisfies all three tokens -- MEASURED.
+    //
+    // THE COMPLETE INLINE COMMAND WOULD BE STRICTER AND IS DECLINED: the
+    // subject here is the NAME, and a token carrying the backticks and the
+    // words around them reddens for a rewording that left the name exactly
+    // right -- which is the punishment `survives having its section reworded`
+    // exists to refuse.
     name: "the registry route is intended and unverified",
     tokens: [
-      /bun add @atusy\/tsudoi-language-server/,
-      /deno add npm:@atusy\/tsudoi-language-server/,
+      /bun add @atusy\/tsudoi-language-server(?![A-Za-z0-9._-])/,
+      /deno add npm:@atusy\/tsudoi-language-server(?![A-Za-z0-9._-])/,
       /unverified/i,
     ],
   },
