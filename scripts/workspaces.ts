@@ -82,18 +82,6 @@ function packagesUnder(dir: string): readonly string[] {
   return found;
 }
 
-/**
- * Throws when a package sits somewhere the root type check excludes and the
- * workspace configuration does not declare -- the one state in which a package
- * is covered by nothing while every command still exits 0.
- *
- * IT READS THE EXCLUSION RATHER THAN RESTATING IT, so narrowing `workspaces`
- * while leaving `packages` excluded is caught here instead of going quiet.
- * `workspaces` IS ITSELF A LIST, merely one kept in another file, and the
- * criterion this closes is about a member no list names -- so trusting the two
- * keys to agree would leave exactly the gap the enumeration was chosen to avoid.
- * They are edited in different files for different reasons.
- */
 /** The checkout these scripts ship in, which is where their compiler is found. */
 const toolRoot = fileURLToPath(new URL("../", import.meta.url));
 
@@ -195,6 +183,18 @@ export function prepareWorkspace(root: string): void {
   }
 }
 
+/**
+ * Throws when a package sits somewhere the root type check excludes and the
+ * workspace configuration does not declare -- the one state in which a package
+ * is covered by nothing while every command still exits 0.
+ *
+ * IT READS THE EXCLUSION RATHER THAN RESTATING IT, so narrowing `workspaces`
+ * while leaving `packages` excluded is caught here instead of going quiet.
+ * `workspaces` IS ITSELF A LIST, merely one kept in another file, and the
+ * criterion this closes is about a member no list names -- so trusting the two
+ * keys to agree would leave exactly the gap the enumeration was chosen to avoid.
+ * They are edited in different files for different reasons.
+ */
 export function refuseUncoveredPackages(root: string, members: readonly string[]): void {
   const tsconfigPath = join(root, "tsconfig.json");
   const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as Record<string, unknown>;
