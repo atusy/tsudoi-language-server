@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { spawn } from "node:child_process";
 import {
   existsSync,
   lstatSync,
@@ -30,19 +31,33 @@ import { runTsc } from "./helpers/typecheck.ts";
  * check redden on a member -- DOES NOT WORK AND THIS REPOSITORY HAD ALREADY
  * MEASURED WHY: `name` and `paths` are redundant covers, so a specifier the
  * mapping stops answering falls through to the `exports` map and lands in dist/
- * at exit 0. The reading below is the member's own check, and the root appears
- * only as the thing whose removal must change NOTHING.
+ * at exit 0. The reading below is the member's own check.
+ *
+ * AND THE ROOT'S INDEPENDENCE IS READ RATHER THAN PERTURBED, which is the
+ * difference between a reading that can fail and one that cannot. Each member's
+ * tsconfig.json declares its whole compiler configuration and `extends` NOTHING,
+ * so the root's file is not in the program a member's check reads -- asserted
+ * below, together with the `paths` the compiler reports for each member under
+ * `--showConfig`. Deleting the root's mapping and watching the members stay green
+ * would assert the same conclusion with a reading that is green whether the
+ * dependence exists or not, and would edit a version-controlled file to do it.
  *
  * THREE ARMS, AND NO TWO OF THEM SAY THE SAME THING: the member resolves
- * (positive), it resolves WITHOUT the parent's help (negative), and what it
- * resolves TO is a real declaration rather than `any` (reach). Any one alone is
- * satisfied by a tree the other two refuse.
+ * (positive), its configuration reaches nothing of the root's (independence),
+ * and what it resolves TO is a real declaration rather than `any` (reach). Any
+ * one alone is satisfied by a tree the other two refuse.
  *
  * PERTURBED IN PLACE AND RESTORED, which is a hazard this file owns rather than
  * hides: what is moved is a node_modules entry the shared builder REWRITES, so
  * a run that died between the two would be repaired by the next `bun test` or
- * fifth check rather than leaving a broken checkout. Nothing under version
- * control is touched.
+ * fifth check rather than leaving a broken checkout.
+ *
+ * NO TRACKED FILE IS MODIFIED, stated at exactly its true width. The reach arm
+ * does WRITE one, a probe under a member's src/, because the member's `include`
+ * covers that directory and a file outside it is not in the program -- but it is
+ * a new path this repository does not track, removed in a `finally` and asserted
+ * gone afterwards. Nothing version-controlled is edited, so a run that dies
+ * leaves at worst an untracked file `git status` names.
  */
 
 /** The subpath every member imports, and the one a broken route must name. */
@@ -127,39 +142,57 @@ test("breaking a member's own link to tsudoi reddens that member's check, naming
 }, 120_000);
 
 /**
- * THE NEGATIVE ARM: the parent's mapping is not what answers a member, and the
- * way to show that is to take the mapping away and watch NOTHING move.
+ * THE MEMBER'S CONFIGURATION STANDS ALONE, WHICH IS WHY NO ARM PERTURBS THE
+ * ROOT'S.
  *
- * WITHOUT THE ROOT'S OWN CHECK BEING RUN AT ALL, which is the difference from
- * the refuted mechanism this file's header records: the claim is not `the root
- * notices` but `the member does not depend on the root's tsconfig`, and the only
- * reading that can say so is the member's.
+ * READ RATHER THAN PERTURBED, deliberately, and the two are not
+ * interchangeable here. Deleting the root's `paths` and watching a member stay
+ * green cannot settle anything, because that reading is green whether the
+ * dependence exists or not. These readings can each fail.
  *
- * THE MAPPING IS REMOVED FROM THE FILE AND NOT FROM A COPY, because a copy would
- * be a config the member was never able to reach anyway -- the perturbation has
- * to be one that WOULD change the answer if the dependence existed.
+ * BOTH HALVES, BECAUSE NEITHER ALONE IS THE CLAIM. `extends` is the mechanism --
+ * the one way a member's tsconfig could pull the root's in -- and its absence is
+ * read off the file. The RESOLVED configuration is the outcome, taken from the
+ * compiler itself rather than deduced from the source: `--showConfig` reports the
+ * options tsc will actually use, so a mapping arriving by any route this file
+ * did not think of is still named here. The first says how it cannot happen; the
+ * second says it has not.
+ *
+ * `--showConfig` AND NOT A TYPE CHECK, which is what keeps this cheap: it prints
+ * the merged configuration and compiles nothing, so the reading costs no program.
  */
-test("removing the root's paths mapping leaves every member's own check unchanged", async () => {
-  const tsconfigPath = join(repoRoot, "tsconfig.json");
-  const original = readFileSync(tsconfigPath, "utf8");
-  const parsed = JSON.parse(original) as { compilerOptions?: Record<string, unknown> };
-  // Narrowed rather than assumed: a perturbation that removed a key which was
-  // not there measures the tree as it stands and calls it a control.
-  expect(parsed.compilerOptions?.paths).toBeDefined();
-  delete parsed.compilerOptions?.paths;
+async function resolvedConfig(member: string): Promise<{ compilerOptions?: { paths?: unknown } }> {
+  const output = await new Promise<string>((done, fail) => {
+    const child = spawn("tsc", ["-p", member, "--showConfig"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let text = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      text += chunk.toString("utf8");
+    });
+    child.on("error", fail);
+    child.on("close", () => {
+      done(text);
+    });
+  });
+  return JSON.parse(output) as { compilerOptions?: { paths?: unknown } };
+}
 
-  try {
-    writeFileSync(tsconfigPath, `${JSON.stringify(parsed, null, 2)}\n`);
-    for (const member of members) {
-      const result = await runTsc(member);
+test("no member's tsconfig extends another, and none resolves the root's paths mapping", async () => {
+  expect(members.length).toBeGreaterThan(0);
+  for (const member of members) {
+    const declared = JSON.parse(readFileSync(join(member, "tsconfig.json"), "utf8")) as {
+      extends?: unknown;
+    };
+    const resolved = await resolvedConfig(member);
+    const name = relative(repoRoot, member);
 
-      expect(`${relative(repoRoot, member)}: ${result.output}`).toBe(
-        `${relative(repoRoot, member)}: `,
-      );
-      expect(result.code).toBe(0);
-    }
-  } finally {
-    writeFileSync(tsconfigPath, original);
+    expect(`${name}: extends ${JSON.stringify(declared.extends)}`).toBe(
+      `${name}: extends undefined`,
+    );
+    expect(`${name}: paths ${JSON.stringify(resolved.compilerOptions?.paths)}`).toBe(
+      `${name}: paths undefined`,
+    );
   }
 }, 120_000);
 
