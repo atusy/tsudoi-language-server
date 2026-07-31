@@ -119,6 +119,18 @@ export function runTsc(cwd: string, args: readonly TscReportFlag[] = []): Promis
 }
 
 /**
+ * Gives a throwaway project the dependencies this repository installed.
+ *
+ * A NAMED STEP RATHER THAN A LINE INSIDE THE PROBE BUILDER, because what a probe
+ * can reach is a property of THE HARNESS: every probe gets whatever this hands
+ * out, so a route added here is added to every control ever written against it,
+ * and nothing at the probe's own site would say so.
+ */
+export function mirrorInstalledDependencies(into: string): void {
+  symlinkSync(join(repoRoot, "node_modules"), join(into, "node_modules"), "dir");
+}
+
+/**
  * Type-checks probe sources, keyed by their path relative to a throwaway
  * project root, against the repo's OWN package.json, and resolves with tsc's
  * exit code and diagnostics.
@@ -148,7 +160,7 @@ export async function typeCheckProbe(
     editPackage(packageJson);
     writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson, null, 2));
     symlinkSync(join(repoRoot, "src"), join(dir, "src"), "dir");
-    symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir");
+    mirrorInstalledDependencies(dir);
     writeFileSync(
       join(dir, "tsconfig.json"),
       JSON.stringify(
