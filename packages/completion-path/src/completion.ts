@@ -9,7 +9,7 @@
  * WHAT A PACKAGE CHANGES ABOUT THE FILE IT WAS, and it decides how this file is
  * written: a reader who took this as an example owned it and could edit any
  * line, where an installed copy is ours to keep working. So the surface is
- * chosen in index.ts rather than being whatever this file happens to export, and
+ * chosen in the entry module rather than being whatever this file happens to export, and
  * the comments here address a MAINTAINER -- the reader whose questions this file
  * must answer is now the person changing it, not the person copying it.
  *
@@ -231,8 +231,8 @@ function fragmentAt(
  * the first time either is edited, and nothing in an editor would say so: the
  * details would simply stop appearing.
  *
- * AND NOT FROM THE PACKAGE. This name and its reader are absent from index.ts,
- * which is what keeps the mark an implementation detail of the pair rather than
+ * AND NOT FROM THE PACKAGE. This name and its reader are absent from the entry
+ * module, which is what keeps the mark an implementation detail of the pair rather than
  * a promise: published, every change to how an item says `I came from here`
  * would be a compatibility question with a stranger. It is also the whole reason
  * the two handlers ship in ONE package -- split, the mark would have to cross a
@@ -831,7 +831,7 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
  * in. MEASURED AGAINST A REAL CLIENT, so the cost is not inferred from the
  * specification: nvim 0.13.0-nightly+6ecf226 re-queried 3 times against an
  * `isIncomplete: true` answer and ONCE against the paired `false`, corroborated
- * at completion.lua:1086. A CLIENT ACTS ON THE FLAG, which is what makes the
+ * in that client's own LSP completion module. A CLIENT ACTS ON THE FLAG, which is what makes the
  * bare array a claim with consequences rather than a formality.
  *
  * THE FUTURE PATH, evidence-shaped rather than aspirational, and the edit is

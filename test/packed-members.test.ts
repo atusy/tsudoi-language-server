@@ -202,6 +202,21 @@ for (const one of packed) {
  * so a prose fragment like `src/fo` is not a claim, and the test below proves it
  * finds real claims in real prose rather than reporting that nothing was found
  * by something nobody checked.
+ *
+ * THE SEPARATOR IS IN THE TEST'S NAME BECAUSE A BARE FILENAME IS OUTSIDE THE
+ * CLASS, and dropping it is MEASURED rather than argued -- a name claiming more
+ * than its assertion reads is this repository's definition of a defect, so the
+ * bound is stated instead of implied. Run over both tarballs, a pattern that
+ * also admitted bare filenames added exactly two tokens and NEITHER is a
+ * repository file a reader lacks: `package.json`, which a consumer has at the
+ * package root and this reading misses only because it is rooted at dist/, and
+ * `completion.lua`, which is nvim's file rather than this repository's.
+ *
+ * AND IT WOULD NOT HAVE CAUGHT THE CASE THAT PROMPTED THE QUESTION, which is the
+ * measurement that settles the shape: a bare `index.ts` RESOLVES here, because
+ * the `.d.ts` acceptance above answers it with dist/index.d.ts. So widening the
+ * separator buys none of the bare-filename claims a shipped comment can make
+ * about its own source, and those are corrected by reading rather than by this.
  */
 const pathClaim =
   /(?:\.\/)?[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+\.(?:ts|js|mjs|cjs|json|toml|md)\b/g;
@@ -219,7 +234,7 @@ function unreachableClaims(root: string, text: string): string[] {
   return missing;
 }
 
-test("no member ships a module naming a repository file its reader does not have", () => {
+test("no member ships a module naming a directory-qualified repository file its reader does not have", () => {
   const offenders: string[] = [];
   let read = 0;
   for (const one of packed) {

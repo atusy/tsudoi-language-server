@@ -9,7 +9,7 @@
  * WHAT A PACKAGE CHANGES ABOUT THE FILE IT WAS, and it is not merely where it
  * sits: a reader who took this as an example owned it and could edit any line,
  * where an installed copy is ours to keep working. So the surface is chosen in
- * index.ts rather than being whatever this file happens to export, and the
+ * the entry module rather than being whatever this file happens to export, and the
  * comments here address a MAINTAINER -- the reader whose questions this file
  * must answer is now the person changing it, not the person copying it.
  *
