@@ -281,7 +281,14 @@ const scrum: ScrumDashboard = {
           "Take a two-pattern census. P1 is boundary-aware so the old name is not counted inside the new one; P2 widens to `atusy`, and P2-minus-P1 is enumerated BY NAME.",
         type: "structural",
         status: "completed",
-        commits: [],
+        commits: [
+          {
+            hash: "46f2281",
+            message:
+              "docs(scrum): the census before the sweep, and two controls refuted in advance",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "Counts are OCCURRENCES (grep -o | wc -l), never lines: one README line holds three.",
           "The file list comes from git ls-files, never by hand.",
@@ -294,8 +301,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "One atomic rename: package.json name, tsconfig paths key, every live specifier and split spelling and regex, the README's EXECUTED bytes, then bun install for bun.lock.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "116644c",
+            message: "feat(pkg): the package answers to @atusy/tsudoi-language-server",
+            phase: "green",
+          },
+        ],
         notes: [
           "NOT test/helpers/readme.ts. It is criterion 2's instrument and must testify about this commit while unmodified.",
           "The red window lives inside this commit's working tree and NEVER at a commit boundary. A dual-name shim is refused: paths is only the tsc route, and neither the runtime self-reference nor the tarball layout can be dual-named.",
@@ -307,10 +320,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "Repair test/helpers/readme.ts's single doc comment, alone, in its own commit after its subject has moved.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b09b49b",
+            message: "docs(test): the extractor's comment names the package it describes",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "Criteria 1 and 2 collide on this one file. The separation is structural rather than argued.",
+          "Reported rather than absorbed: the rename commit's --stat does not list this file, which is criterion 2's evidence mechanically rather than by assurance. The edit is the one doc comment, reflowed because the longer name crosses the width.",
         ],
       },
       {
@@ -318,9 +338,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Run the five controls: C1 revert name alone; C2 delete the paths key; C3 revert one README start line; C4 the standing Sprint-14 re-run; C5 criterion 3's sliced-JSON comparison.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "No commit of its own: the controls change no product file, and their output IS the record in decisions.",
           "C4 states TARGET SURVIVAL BEFORE COLOUR: the examples still import through the subpath, now new-spelled, so the re-run is available. Predict exit 1 naming the subpath and ZERO TS2307.",
           "C5 compares completed and retrospectives SLICED OUT of the JSON. Whole-document comparison fails by construction, since this sprint writes its own census into it.",
           "Any hand-run probe runs on both runtimes or its record names the one it ran on.",
@@ -331,9 +352,10 @@ const scrum: ScrumDashboard = {
         implementation:
           "Ask Sprint 45's question -- what would make this red, now? -- of every control the sweep touched, individually.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "The tightening landed inside the rename commit, so this subtask adds no commit: it is the ASKING and the three-arm measurement that are its output.",
           "A rename is the ARCHETYPAL DISARMING EDIT: it changes what a matcher matches without changing whether it passes.",
           "test/readme.test.ts:368's /bun add @atusy\\/tsudoi/ still matches the renamed command BY PREFIX. Tighten to the full new name, or record the green as measuring nothing.",
           "That is the known instance. Find the rest rather than fixing only it.",
@@ -361,6 +383,15 @@ const scrum: ScrumDashboard = {
       "P2-MINUS-P1 ENUMERATED BY NAME AND CLOSING TO ZERO, WHICH IS THE CENSUS'S OWN COMPLETENESS CONTROL RATHER THAN A FOOTNOTE TO IT. A surplus that merely had a plausible size would prove nothing; one where every occurrence is named is what makes the wide pattern an instrument. THE SURPLUS IS 19: seven outside scrum.ts and twelve within. OUTSIDE, SIX ARE THE OLD NAME IN A FORM NO SPECIFIER SEARCH CAN SEE -- test/helpers/install.ts:303 and test/published-artifacts.test.ts:540 SPLIT ACROSS FUNCTION ARGUMENTS as join(..., `@atusy`, `tsudoi`, ...); test/installed-runtime.test.ts:20 in TARBALL FORM `atusy-tsudoi-0.0.0.tgz`; and THREE INSIDE REGEXES WITH ESCAPED SLASHES, two on test/readme.test.ts:368 and one on :450. THE SEVENTH IS LICENSE:3 `Copyright (c) 2026 atusy`, THE DELIBERATE NON-TARGET: a naive wide sweep corrupts the author's name, and naming it here is what makes that a caught error rather than a silent one. THE TWELVE WITHIN are five occurrences of the new name, two future member names, two prose quotations of the escaped-slash regex, the LICENSE non-target quoted in criterion 1, the tarball form quoted above, and P2's own pattern named in a subtask. NOTHING IS LEFT OVER, AND THE ASSIGNMENT IS THE PROPERTY RATHER THAN THE COUNT.",
       "C1 AND C2 AS PLANNED ARE EACH MASKED BY THE OTHER MECHANISM, MEASURED BEFORE THE SWEEP SO THE COLOURS ARE PREDICTED HONESTLY RATHER THAN RESCORED AFTERWARDS. The plan predicts root tsc TS2307 from reverting package.json `name` alone, and tsc red from deleting the tsconfig `paths` key alone. BOTH ARE REFUTED AT bee94c5, each probe unpiped and the tree restored after: mutating `name` with `paths` intact gives tsc EXIT 0, because `paths` answers the subpath before self-name resolution is ever consulted; deleting `paths` with `name` intact ALSO gives EXIT 0, because self-reference through the exports map resolves into the built dist/*.d.ts. ONLY THE CONJUNCTION REDDENS -- both together give EXIT 1 with FOURTEEN TS2307 naming the three subpaths from examples/ and test/. THE TWO KEYS ARE REDUNDANT COVERS OF ONE ROUTE AND NEITHER IS PINNED ALONE, which is Sprint 42's degenerate shape exactly: `EXIT 0 WITH ZERO ERRORS` is what hides a probe whose subject is reached by something else. C1'S SURVIVING ARM IS THE RUNTIME ONE, and it pays Sprint 45's two-runtime rule out inside a control: mutating `name` reddens test/completion-path.test.ts ON DENO AND NOT ON BUN, because bun elides the type-only import that deno loads. C2'S DEGENERACY IS CONDITIONAL ON dist/ BEING BUILT, which is the only reason the exports arm can stand in for paths at all.",
       "THE PREDICTIONS, COMMITTED BEFORE ANY FILE IS TOUCHED, WITH THEIR COUNTERFACTUALS BESIDE THEM per Sprint 40 -- a 0/0/0 reads as confirmation only next to what a non-zero would have meant. PREDICTED: per-file `expect(` diff ZERO EVERYWHERE; 635 tests to 635; 1923 expect() calls to 1923; NO NEW TEST FILE; bun.lock diff EXACTLY ONE LINE; the DoD stays at FOUR checks; no packages/ directory and no workspaces key. THE COUNTERFACTUALS. A NON-ZERO `expect(` DIFF ANYWHERE means the sweep changed behaviour while claiming to change only a name -- AND THE ONE EXCEPTION IS RESERVED IN ADVANCE RATHER THAN CLAIMED LATER: tightening a prefix-matching matcher in place is a zero-delta edit, so if re-arming any control turns out to require ADDING an assertion, THAT IS A MISSED PREDICTION AND IS REPORTED AS ONE. A bun.lock diff wider than one line means the rename moved a dependency and not only this package's own name. A CHANGED TEST COUNT means a specifier edit renamed a test into or out of existence.",
+      "C1, TARGET SURVIVING FIRST: package.json carries a `name` field spelling the new name, so reverting it is constructible. IT MEASURES IN TWO ARMS THAT DISAGREE, AND THE DISAGREEMENT IS THE RESULT. THE tsc ARM IS DEGENERATE AND IS RECORDED AS MEASURING NOTHING -- EXIT 0, zero errors, because `paths` answers the subpath before self-name resolution is ever consulted. THE RUNTIME AND TARBALL ARM IS THE REAL ONE: 83 of 635 tests redden, across every installed-* file, the published-artifact checks, and the deno arm of the in-repo examples. NOTHING ASSERTS THE `name` FIELD DIRECTLY AND NOTHING NEEDS TO -- what pins it is the tarball the suite packs and installs from it, which is a stronger owner than an equality on a string would be.",
+      "C2, TARGET SURVIVING FIRST: the `paths` key exists, new-spelled. DELETING IT LEAVES tsc AT EXIT 0 WITH ZERO ERRORS, degenerate for a reason worth keeping -- self-reference through the exports map resolves into the built dist/*.d.ts, so `name` and `paths` are REDUNDANT COVERS OF ONE ROUTE and neither is pinned by the type check alone. ONLY THE CONJUNCTION REDDENS tsc: name reverted AND paths deleted gives EXIT 1 with FOURTEEN TS2307 naming the three new subpaths from examples/ and test/, which doubles as the positive proof that the tsc route resolves the NEW name. AND WHAT ACTUALLY PINS `paths` IS THE SUITE: deleting the key reddens test/package-shape.test.ts's `the repo's type check resolves the published subpaths to source`, whose toEqual carries the mapping literally. C2 IS RE-AIMED AT THAT ASSERTION rather than at the type check the plan named, because that is where the property is defended.",
+      "C3, TARGET SURVIVING FIRST: the README's two start-command lines carry the new name inside blocks the suite extracts and runs. Reverting THE BUN LINE ALONE reddens EXACTLY TWO tests -- `the README's quickstart brings up a server under bun` and `the documented failure behaviour is what happens under bun` -- while the deno pair stays green, which is the blast radius a one-line perturbation ought to have and evidence that the two runtimes are separately defended. THE README'S EXECUTED BYTES ARE THE SUBJECT, MEASURED RATHER THAN ASSERTED.",
+      "C4, THE STANDING SPRINT-14 RE-RUN, TARGET SURVIVAL STATED BEFORE COLOUR: tsconfig's `paths` maps the new name to ./src/*.ts and all six examples/ still import through that subpath, so the arm is available and now runs against the new spelling -- strictly more than the recorded run had. COLOUR: EXIT 1, errors at examples/ naming the subpath, ZERO TS2307, which is the recorded shape. ONE MISSED PREDICTION, STATED RATHER THAN SMOOTHED: TS2305 and not the TS2724 the previous run recorded, because the compiler offers no near-miss for this name where it offered one before. A TYPE CHECK AND NOT A RUNTIME PROBE, so the two-runtime rule does not bite here and is not claimed.",
+      "C5, CRITERION 3'S INSTRUMENT: `completed` and `retrospectives` sliced out of `bun scrum.ts`'s JSON are BYTE-IDENTICAL across the whole sprint at sha256 2df1838a, WHILE THE WHOLE DOCUMENT'S HASH MOVES. That the two readings disagree is exactly what shows the slicing is load-bearing rather than a convenience. The record still carries NINE old-name occurrences, SEVEN under completed and TWO under retrospectives, VERBATIM.",
+      "S5 ASKED ONE AT A TIME OF EVERY NAME-BEARING MATCHER THE SWEEP TOUCHED, NEVER AS A BATCH. THE CLASS IS SEVEN: three `toContain` on the types subpath in installed-specifier, published-specifier and published-artifacts; package-shape's `toEqual` on the paths mapping; the two token regexes at test/readme.test.ts; and the subpath-collecting regex beside them. THE KNOWN INSTANCE IS MEASURED IN THREE ARMS RATHER THAN ARGUED. Tightened pattern with the old name restored in the README: RED, three tests. Loosened pattern with the CORRECT README: GREEN. Loosened pattern with the old name restored: ALSO GREEN. THE SECOND AND THIRD SHARING A COLOUR IS THE WHOLE PROOF -- a prefix-matching pattern cannot distinguish the two names at all, so its green measured nothing, and tightening it is what created a control where there had only been a shape. ITS SIBLING REDDENS HONESTLY, VERIFIED RATHER THAN INHERITED FROM THE CRITERION THAT ASSERTED IT: reverting ONE README subpath mention reddens the set-equality against the exports map. NO OTHER MEMBER OF THE CLASS IS PREFIX-MATCHING -- each spells the full new name under toContain or toEqual, which the old name fails -- and C1's 83 reddening tests reach all three toContain sites.",
+      "A GAP FOUND BY ASKING, AND IT IS AN ABSENT CONTROL RATHER THAN A DISARMED ONE: NOTHING PINS THE TARBALL FILENAME TO THE PACKAGE NAME. test/helpers/install.ts finds the packed artifact by `.endsWith('.tgz')`, name-agnostic BY DESIGN, and that is precisely why the installed route survived the rename without a single edit to the helper. The name reaches that route only through package.json, which C1 covers. RECORDED AS A GAP RATHER THAN REPAIRED, because building an assertion here would add an `expect(` this sprint predicted it would not add, and quietly widening a prediction to fit the work is the failure this record exists to prevent.",
+      "A MISSED PREDICTION, REPORTED RATHER THAN ABSORBED. `bun install` DOES NOT REWRITE THE ROOT WORKSPACE NAME IN bun.lock, AND NEITHER DOES `bun install --force`: the lockfile is regenerated from the dependency graph, and the root's own name is not part of what bun considers stale. The plan's `then bun install for bun.lock` would have left the lockfile spelling the old name and the census one file short, with all four checks still green -- a silent shortfall of exactly the kind the per-file census exists to catch, and the census is what caught it. The line was edited by hand and `bun install` re-run to prove it stable: EXIT 0, diff still EXACTLY ONE LINE, not reverted.",
+      "THE CENSUS BALANCES, PER FILE AND NEVER IN TOTAL. ALL 27 CENSUS FILES STILL EXIST and each carries EXACTLY the count of the new name it carried of the old -- 18 in README.md, 17 in test/published-artifacts.test.ts, 9 in test/installed-runtime.test.ts, and so down to the singletons, compared file by file rather than summed. LICENSE IS UNTOUCHED and its copyright line still reads `atusy`, the named non-target intact. THE OLD-NAME GREP IS THEN THE CHEAP CONFIRMATION IT WAS MEANT TO BE: FIFTEEN HITS REMAIN AND ALL FIFTEEN ARE IN scrum.ts, none anywhere else in the tree. THE THREE CLASSES, WITH NONE LEFT OVER. USE IS EMPTY -- not one live specifier, path segment, key or command spells the old name, which is the sweep's actual result and the only class whose emptiness is the point. MENTION IS THREE: criterion 1 and criterion 3, which name the old name AS THEIR SUBJECT and would be self-defeating if re-spelled, and this sprint's own census entry quoting the P1 pattern. EVIDENCE IS TWELVE: PBI-51's three recorded probe readings, seven under `completed` and two under `retrospectives`, all VERBATIM. THE COUNT IS MEASURED IMMEDIATELY BEFORE THIS ENTRY IS WRITTEN AND WRITING IT MOVES THE COUNT, which is why the criterion freezes no number and the ASSIGNMENT rather than the total is the property.",
       "TWO DRIFTS FROM THE HANDED PLAN, RE-MEASURED RATHER THAN COPIED per Sprint 27, and both are findings rather than corrections. FIRST, the plan's baseline was taken where `oxfmt --check .` was RED; at bee94c5 ALL FOUR CHECKS ARE GREEN and the reformat the plan reserved as its own first step is already landed, so it is not this sprint's to run and criterion 1's premise is satisfiable as written. SECOND, scrum.ts carries FOURTEEN P1 hits and not the plan's fifteen: product_backlog FIVE rather than six, completed seven, retrospectives two. The missing one is criterion 1's verification, rewritten between the plan and the sprint. SPRINT 43'S LIVING-FILE POINT DEMONSTRATING ITSELF ON THE EXACT COUNT THAT ENTRY EXISTS TO KEEP UNFROZEN -- which is why the criterion freezes no number and this one carries the commit it was taken at. THE THREE-CLASS ASSIGNMENT OF THE REMAINING HITS IS DELIBERATELY NOT TAKEN HERE: committing this census adds old-name occurrences to scrum.ts, so an assignment made now would be stale on the next commit and must be measured at acceptance instead.",
     ],
   },
