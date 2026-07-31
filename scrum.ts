@@ -386,7 +386,114 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 47,
+    pbi_id: "PBI-51",
+    status: "in_progress",
+    goal: "A config author installs the wordnet hover handler as @atusy/tsudoi-hover-wordnet instead of copying two files, and the package resolves tsudoi through package resolution rather than through the parent's route.",
+    impediments: [],
+    decisions: [
+      "THE ORDER OF THE FIRST TWO SUBTASKS IS THE SPRINT'S ONE REAL RISK. Criterion 4 WITHDRAWS root tsc's coverage of members, and criterion 3 depends on the other three root checks still reaching in. Building the member BEFORE the withdrawal leaves a window in which root tsc answers for it THROUGH THE PARENT'S `paths` AND REPORTS SUCCESS -- measured at Sprint 46's planning, where a planted member's `@atusy/tsudoi/types` import produced no error and deleting `paths` turned the same line into TS2307. Foreclose first, then build, so the hazard is never constructible rather than merely unobserved.",
+      "SPRINT 46'S RETROSPECTIVE BINDS THIS SPRINT'S VERIFICATION: a sweep for a defect that is a property of matching is itself an instance of that class. Any grep over package names here is bounded on the right BEFORE it is trusted, and a negative result names the instrument that produced it.",
+    ],
+    subtasks: [
+      {
+        test: "Root tsc answers for no member at all, and the fifth check answers for every member the workspace declares.",
+        implementation:
+          "Foreclose first: exclude members from the root tsconfig and add the fifth DoD check, which enumerates members FROM THE WORKSPACE CONFIGURATION and never from a hand-written list.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Neither half works alone: without the exclusion the fifth check is shadowed by a root green; without the check, excluding members means nothing checks them.",
+          "A member the list forgot would be checked by NOTHING and every command would exit 0. That is why enumeration comes from the workspace configuration.",
+          "This lands BEFORE the member exists, so the hazard is unconstructible rather than watched.",
+        ],
+      },
+      {
+        test: "A consumer obtains the handler without receiving its source, and answers a real textDocument/hover over the wire.",
+        implementation:
+          "Extract examples/hover-wordnet.ts and its ambient wordnet.d.ts into packages/ as @atusy/tsudoi-hover-wordnet, with wordnet as its runtime dependency.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          'examples/wordnet.d.ts is an ambient `declare module "wordnet"`. Shipped inside a published package it lands in every consumer\'s global type space -- decide and state what happens to it.',
+          "hover-wordnet.ts exports three names. An example's exports are incidental; a package's are a promise. Classify each one by one.",
+          "The negative control is that NO BYTE of the handler's source is written into the consumer project.",
+        ],
+      },
+      {
+        test: "The handler package resolves tsudoi through package resolution, not through the parent's route.",
+        implementation: "Prove criterion 2 with the two opposed perturbations it names.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE LOAD-BEARING CRITERION and the whole reason this is not a file move with a package.json on top: nothing in this repository resolves tsudoi from another PACKAGE today. Both existing routes are consumed by loose files.",
+          "Sprint 46 measured the discriminating control for the parent's route: deleting tsconfig's `paths` turns a member's subpath import into TS2307.",
+        ],
+      },
+      {
+        test: "bun test, oxlint and oxfmt --check . each reach inside the member, proven by planted defects rather than by argument.",
+        implementation: "Verify criterion 3 with one planted defect per check.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Measured at Sprint 46's planning against a planted member: all three reach. Re-measure rather than inherit -- this is the sprint that makes the member real.",
+          "The fourth check is deliberately outside this criterion because subtask 1 withdraws it.",
+        ],
+      },
+      {
+        test: "The member gets no deno-guard exemption, and the absence is pinned rather than defaulted.",
+        implementation:
+          "Criterion 5: state the reason at .oxlintrc.json where the widening edit would be made, and add the member path to guard.test.ts's list AS A SHAPE OVER MEMBERS AS A CLASS.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The ban reaches a member BY DEFAULT AND NOT BY ASSERTION today: an override widened to reach packages/ reddens nothing, because guard.test.ts pins only the shapes it carries.",
+          "A shape naming one package leaves the second unpinned and nothing says so. PBI-52 should therefore add no shape -- a prediction this sprint makes about a later one.",
+        ],
+      },
+      {
+        test: "wordnet appears in neither dependencies nor devDependencies of the root package.json, and the suite passes.",
+        implementation:
+          "Criterion 6, including re-homing the symlink test/helpers/install.ts borrows.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "It is a devDependency today used by one example; extracted it is a runtime dependency of the handler package and nothing the main package knows about.",
+        ],
+      },
+      {
+        test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
+        implementation:
+          "Criteria 7 and 8: repair the named README sites, and read the packed tarball's dependencies.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The examples stop being one kind of thing -- two are copied and one is installed -- while README says the set is copied WHOLE.",
+          'Criterion 8 is scoped to `dependencies` deliberately: a workspace member in devDependencies never reaches a consumer, and files:["dist"] keeps examples/ out of the tarball anyway.',
+          "The enumeration is a PREDICTION, worthless if not committed first. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
+        ],
+      },
+      {
+        test: "Review does not open until revise has converged.",
+        implementation: "Run the revise skill without a PR.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The stakeholder's standing instruction. A criterion asserts a property a perturbation can falsify; revise finds what nobody thought to assert.",
+          "Sprint 46 is the evidence it earns its keep: four green checks, a balanced census and a record claiming completeness all concealed two disarmed controls.",
+        ],
+      },
+    ],
+  },
   retrospectives: [
     {
       sprint: 46,
