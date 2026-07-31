@@ -422,7 +422,92 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 49,
+    pbi_id: "PBI-52",
+    status: "in_progress",
+    goal: "A config author installs path completion and its item resolution as @atusy/tsudoi-completion-path, completing the three-module composition the stakeholder asked for.",
+    impediments: [],
+    decisions: [
+      "THE RESOLVE HALF TRAVELS WITH THE COMPLETION HALF, ruled by the stakeholder. Leaving resolve-path-stat behind would promote `completedPath` -- the internal marker the completion attaches to its items -- into a package's PUBLIC API, and every change to how the marker is attached would become a compatibility question. The accepted cost is that the package name does not say it answers two methods, and it is paid where a reader meets it rather than in the name.",
+      "THIS SPRINT ADDS NO SHAPE TO test/guard.test.ts, A PREDICTION SPRINT 47 MADE ABOUT THIS ONE. Its deno-guard shape was written over MEMBERS AS A CLASS rather than naming a package, so a second member needs no second shape. IF A SHAPE IS ADDED HERE, SPRINT 47'S CLASS-LEVEL CLAIM WAS FALSE and that is the finding.",
+      "SPRINT 47'S CRITERION 2 CARRIED A REFUTED MECHANISM AND THIS PBI INHERITS THE CORRECTED ONE: break the MEMBER'S OWN route -- its peer entry or the apparatus symlink -- and require TS2307 naming the subpath. It reads only the member, so no root observation is involved.",
+    ],
+    subtasks: [
+      {
+        test: "A consumer installs the package and gets both completion and item resolution, with no byte of either source in their project.",
+        implementation:
+          "Extract examples/completion-path.ts and examples/resolve-path-stat.ts into packages/completion-path as @atusy/tsudoi-completion-path.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "completion-path.ts exports THIRTEEN names against hover-wordnet's three. An example's exports are incidental; a package's are a promise. CLASSIFY EACH ONE INDIVIDUALLY -- the PO named this the largest single cost in the whole request.",
+          "`completedPath` stays internal: it is the marker the completion attaches and the resolution reads, so publishing it would make the marker a compatibility surface.",
+          "loadConfig refuses a config supplying completionItem/resolve without textDocument/completion, so the two halves must arrive together.",
+        ],
+      },
+      {
+        test: "The member resolves tsudoi through its own route, proven by breaking that route and nothing else.",
+        implementation:
+          "Apply the corrected perturbation: break the member's peer entry or the apparatus symlink and require TS2307 naming the subpath.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The mechanism Sprint 47's criterion asked for was refuted by this repository's own record -- root tsc stays green because `name` and `paths` are redundant covers. This reads ONLY the member.",
+          "Sprint 48 measured that a wrong peerDependencies key leaves the fifth check exit 0 and silent, while packages/hover-wordnet's own package-shape test DOES redden on it. Know which instrument you are relying on.",
+        ],
+      },
+      {
+        test: "Both members carry a README a stranger can act on, verified off the packed tarball.",
+        implementation:
+          "Per-member READMEs over BOTH packages, naming what it answers, that it requires tsudoi at run time, and the constraint that bounds it.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "hover-wordnet's bounding constraint is that whitespace is its word rule. completion-path's must be found and stated, not invented.",
+          "Nothing is published yet, so no registry page is blank today -- but tsudoi's README cannot be where every handler explains its own constraints.",
+        ],
+      },
+      {
+        test: "Something reddens the day tsudoi is published, so the optional-peer premise cannot die unnoticed.",
+        implementation:
+          "Pin the optional-peer reversal where the publishing edit passes, over BOTH members.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "`peerDependenciesMeta.optional: true` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Measured: a project given the handler tarball alone installs with NO warning at all, then fails at load.",
+          "The property is required; the instrument is Planning's to choose. README's `The package is not published` section is executed by the suite and is a candidate, not a requirement.",
+        ],
+      },
+      {
+        test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
+        implementation:
+          "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
+          "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
+        ],
+      },
+      {
+        test: "Review does not open until revise has converged.",
+        implementation: "Run the revise skill without a PR.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Three sprints of evidence that it finds what the gate and the criteria both miss.",
+          "THE PACKED TARBALL'S SHIPPED COMMENTS ARE NEVER INSPECTED -- Sprint 47's open item. A claim in a shipped comment naming a repository path or test is the shape that has escaped three times.",
+        ],
+      },
+    ],
+  },
   retrospectives: [
     {
       sprint: 48,
