@@ -36,73 +36,193 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [
+  product_backlog: [],
+  completed: [
     {
-      id: "PBI-52",
-      story: {
-        role: "config author",
-        capability:
-          "get path completion the same way -- installed rather than copied -- with the item-resolution half inside the same package, so highlighting an item still fills in its size and date",
-        benefit:
-          "the handler I am most likely to want and least likely to be able to write myself stops being a file I fork on the day I take it, and its two halves cannot arrive out of step",
-      },
-      status: "ready",
-      acceptance_criteria: [
-        {
-          criterion:
-            "`@atusy/tsudoi-completion-path` CARRIES BOTH HALVES, RULED: completion-path.ts and resolve-path-stat.ts travel together. PBI-51's criteria apply here unchanged against this package, AND THEY ARE NAMED RATHER THAN NUMBERED because a positional reference falsifies itself the next time a criterion is inserted above it: `a consumer obtains the handler without receiving its source`, `the package resolves tsudoi through package resolution`, `the three root-level DoD checks reach inside the package`, `the fifth check covers this member too` (it is enumerated from the workspace configuration, so a package added here must be picked up with no list edited), `no exemption from the deno guard` (PBI-51 pins the shape over MEMBERS AS A CLASS, so this package should need NO new shape -- and if it does, PBI-51's prediction was wrong and that is reported), `every prose site this falsifies is repaired`, and `the published main package depends on no handler package`. The wordnet criterion has NO ANALOGUE -- this package's imports are `node:` builtins, which leave the main package's dependencies untouched.",
-          verification:
-            "As in PBI-51, against this package, WITH ONE INHERITED MECHANISM CORRECTED RATHER THAN COPIED. The end-to-end probe answers BOTH `textDocument/completion` AND `completionItem/resolve` in one installed consumer, since either alone is half the artifact. THE CORRECTION, and it is the PO's defect being repaired at the only place it can still do harm: PBI-51's resolution criterion said perturbation (a), removing the root `paths` mapping, would make THE ROOT CHECK REDDEN ON examples/. IT DOES NOT, AND THIS REPOSITORY HAD ALREADY MEASURED THAT -- PBI-54 records `name` and `paths` as redundant covers, so examples/ resolve by self-reference into dist/ and root tsc EXITS 0 SILENT. THE PROPERTY NEVER NEEDED THAT ARM. WHAT REPLACES IT, and it reads only the member so no root observation is involved at all: the POSITIVE arm is the member's own check with ITS OWN route broken -- remove the member's peer entry on tsudoi, or the apparatus symlink that satisfies it -- which must give TS2307 NAMING THE SUBPATH. Paired with the negative arm (the root mapping removed, the member's check UNCHANGED) and with the reach arm (a name broken in src/types.ts giving TS2305 and ZERO TS2307), the three together establish that the member resolves, resolves WITHOUT the parent, and reaches a REAL DECLARATION rather than `any`.",
-        },
-        {
-          criterion:
-            "`completedPath` STAYS INTERNAL. It is the mark the completion attaches and the resolve reads back, and the ruling's whole reason is that publishing it would make every future change to how an item is marked a compatibility question with a stranger. So it is NOT in the package's published surface.",
-          verification:
-            "Read from the PACKED TARBALL's type surface, in both directions per Sprint 6: the names the package DOES publish are found there, and `completedPath` is not. An empty or failed read cannot distinguish `internal` from `nothing was published at all`.",
-        },
-        {
-          criterion:
-            "THE PACKAGE'S PUBLISHED SURFACE IS CHOSEN RATHER THAN INHERITED, and this is the criterion that carries the cost this PBI exists to pay. completion-path.ts exports THIRTEEN names today -- incidental, because an example is copied and edited. Each becomes published API or becomes internal, DECIDED ONE BY ONE AND NOT AS A BATCH, which is Sprint 45's per-item rule applied to exports instead of to tests.",
-          verification:
-            "Every export classified individually in the plan with a reason, and the packed tarball's surface compared against that classification in both directions. A BATCH `everything stays exported` FAILS THIS CRITERION even if it is the right answer, because the point is that thirteen promises were made deliberately.",
-        },
-        {
-          criterion:
-            "EACH PUBLISHED HANDLER CARRIES ITS OWN README, AND THIS BECOMES STRUCTURAL AT THE SECOND PACKAGE RATHER THAN THE FIRST. Sprint 47 shipped a member with no README, and the PO ruled that a DECISION rather than a defect BECAUSE NOTHING IS PUBLISHED AND NO REGISTRY PAGE CAN BE SEEN. What it cannot survive is two members: tsudoi's own README cannot be the place where every handler explains its constraints, and the constraints are real -- Sprint 47's handler decided WHITESPACE IS ITS WORD RULE, which bounds the languages it serves, and that fact lives today in a maintainer's source file where no installing stranger reads it. THE MEMBERS' READMEs ARE ADDED FOR BOTH PACKAGES IN THIS PBI, not just the new one.",
-          verification:
-            "Each member's README is IN THE PACKED TARBALL, read off the artifact rather than the tree, and names three things a stranger cannot get elsewhere: what the handler answers, that it REQUIRES tsudoi at run time, and the constraint that bounds it. AND THE ROOT README STOPS CARRYING PER-HANDLER INSTALL PROSE for anything that has its own -- the duplication is what silently diverges.",
-        },
-        {
-          criterion:
-            "`peerDependenciesMeta.optional: true` IS A FALSEHOOD KEPT FOR AN APPARATUS REASON, AND IT MUST BE OWNED BY SOMETHING THAT FIRES WHEN ITS PREMISE DIES. It reads `this package works without tsudoi`; the handler imports a value from tsudoi, so it does not. MEASURED IN SPRINT 47: a project given the handler tarball alone installs WITH NO WARNING AT ALL and then fails at config load. WHAT IT BUYS IS REAL -- without it `bun install` exits 1 on a 404 while tsudoi is unpublished -- so it is ACCEPTABLE TO CARRY AND NOT ACCEPTABLE TO CARRY SILENTLY. The premise is `tsudoi is unpublished`, and the day that stops being true the field becomes a plain lie with no compensation.",
-          verification:
-            "NOT a dashboard entry saying it `should` change: this dashboard COMPACTS, and nobody re-reads a closed sprint's decisions on publication day. Something must REDDEN when the premise dies. The one durable statement of that premise I can see is README's `The package is not published` section, WHICH THE SUITE ALREADY EXECUTES -- tying the two is a candidate and NOT A REQUIREMENT, since naming the instrument is Planning's job and mine to leave open. WHAT IS REQUIRED IS THE PROPERTY: the reversal is pinned at a site the publishing edit passes through, over BOTH members, since two packages now repeat one falsehood.",
-        },
+      number: 49,
+      pbi_id: "PBI-52",
+      status: "done",
+      goal: "A config author installs path completion and its item resolution as @atusy/tsudoi-completion-path, completing the three-module composition the stakeholder asked for.",
+      impediments: [],
+      decisions: [
+        "THE THREE-MODULE COMPOSITION IS COMPLETE: @atusy/tsudoi-language-server, @atusy/tsudoi-hover-wordnet, @atusy/tsudoi-completion-path.",
+        "THIRTEEN EXPORTS CLASSIFIED ONE BY ONE, TWO PUBLISHED. The only one that needed measuring rather than judging was `PathCompletionOptions`, the third parameter's type: measured that an object literal passes structurally, that a misspelled key is REFUSED (so it has not degraded to `any`), and that only the ability to NAME the type in an annotation is lost -- against publishing `flavour`, a seam that exists for tests. `batchSize` went one step further and is not exported from its module either: it decides items per `$/progress`, which the wire shows, and a test importing the number agrees only with itself.",
+        "SPRINT 47'S CLASS-LEVEL CLAIM HELD: the deno-guard shape was written over MEMBERS AS A CLASS, and a second member needed no second shape. The prediction this sprint was asked to falsify did not falsify.",
+        "A TEST WAS DELETED FOR BEING UNFALSIFIABLE, NOT MERELY REDUNDANT. It rewrote the tracked root tsconfig.json to prove a member ignores it -- and `tsc -p <member> --showConfig` shows the root config is not in the member's program at all, so removing a key from it CANNOT move the member's result. AN UNFALSIFIABLE TEST WAS MUTATING A VERSION-CONTROLLED FILE. Replaced by two readings that each fail independently: no `extends`, and no `paths` in the effective config.",
+        "THE OPTIONAL-PEER PREMISE IS PINNED TO A MACHINE SENTINEL RATHER THAN TO PROSE. `peerDependenciesMeta.optional` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Binding it to README's `not published` section left publishing-without-editing-the-README green. `private: true` on the root manifest is on the publish path BY CONSTRUCTION -- measured, `bun publish` stops before `prepack` -- so the one edit that permits publication is the edit that reddens every member. NO REGISTRY IS CONSULTED.",
+        "SPRINT 47'S OPEN ITEM WAS FOUND LIVE IN THE ARTIFACT: the packed hover handler shipped THREE REPOSITORY PATHS in its comments, filenames absent from any consumer's machine. The build keeps comments, and nothing read the tarball. A guard now reads it -- and its stated class was then measured WIDER THAN ITS IMPLEMENTATION and narrowed to what it actually catches rather than widened to a matcher that still misses.",
       ],
-      notes: [
-        "RULED BY THE STAKEHOLDER, ON THE PO'S RECOMMENDATION AND ITS STATED REASON: resolve-path-stat TRAVELS. The cost of the alternative decided it -- leaving resolve behind as an example forces an internal marker onto the package's PUBLISHED surface. The accepted cost is cosmetic: THE PACKAGE NAME DOES NOT SAY IT ANSWERS TWO METHODS, and a reader of the module list will not learn that from the name. WRITE IT WHERE THEY MEET IT -- in the package's own README and at its exports -- since the name cannot carry it.",
-        "THE COUPLING, MEASURED RATHER THAN RECALLED, because it is the ruling's evidence and outlives the ruling. examples/resolve-path-stat.ts imports `completedPath` from examples/completion-path.ts -- A VALUE IMPORT, not a type -- since tsudoi keeps no record of what a completion handler produced and a resolve handler can only key off the mark the completion module wrote onto the item. AND loadConfig REFUSES a config supplying `completionItem/resolve` without `textDocument/completion`, which test/fixtures/resolve-without-completion.ts pins.",
-        "A THIRD OPTION WAS AVAILABLE AND WAS NOT TAKEN, recorded so nobody re-opens it as though it were unconsidered: resolve-path-stat as its OWN package depending on the completion one. It publishes the same marker across the same boundary as leaving it an example AND adds a third package to maintain, so it cost strictly more than either.",
-        "A README HAZARD SPRINT 47 CREATED AND THIS PBI WILL DOUBLE, CARRIED HERE SO IT IS MET AT PLANNING. The root README's whole credibility rests on `the commands below are extracted from this README and executed, so an instruction here that no longer works fails the suite`. Sprint 47 added a handler pack/install block that WAS NOT EXECUTED AND DID NOT WORK -- it named an install path for a file never created, because `bun pm pack` inside a member writes to the workspace root. A NON-EXECUTED BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Either every command block is executed, or the ones that are not SAY SO WHERE THEY ARE.",
-        "SEQUENCED THIRD, AND `ready` DESCRIBES THE PBI RATHER THAN THE ORDER. PBI-53 re-spells the name every criterion here uses and PBI-51 builds the two-tarball consumer, the workspace, the root exclusion and the fifth DoD check that this PBI's criteria 1 and 3 reuse wholesale. Pulled first, this PBI would have to build all of it against the larger of the two export surfaces.",
+      subtasks: [
+        {
+          test: "A consumer installs the package and gets both completion and item resolution, with no byte of either source in their project.",
+          implementation:
+            "Extract examples/completion-path.ts and examples/resolve-path-stat.ts into packages/completion-path as @atusy/tsudoi-completion-path.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "fb435bb",
+              message:
+                "tidy(test): a consumer installs every declared member, not one named package",
+              phase: "refactoring",
+            },
+            {
+              hash: "b446c20",
+              message:
+                "feat(completion-path): path completion and its item resolution are installed, not copied",
+              phase: "green",
+            },
+            {
+              hash: "dd72677",
+              message:
+                "test(published): the path package's promise is read off the installed copy, both ways",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "completion-path.ts exports THIRTEEN names against hover-wordnet's three. An example's exports are incidental; a package's are a promise. CLASSIFY EACH ONE INDIVIDUALLY -- the PO named this the largest single cost in the whole request.",
+            "`completedPath` stays internal: it is the marker the completion attaches and the resolution reads, so publishing it would make the marker a compatibility surface.",
+            "loadConfig refuses a config supplying completionItem/resolve without textDocument/completion, so the two halves must arrive together.",
+            "CLASSIFIED: TWO PUBLISHED, ELEVEN INTERNAL, ONE INTERNAL FURTHER IN. `pathCompletion` and `resolvePathStat` are index.ts's whole surface. `batchSize` is not exported by its own module at all, since what it decides is the SIZE OF EACH $/progress and a test importing the number would agree with itself. The other eleven are module-exported so the member's own tests reach them and index.ts omits them.",
+            "THE MARK IS IN THE TARBALL AND STILL UNPUBLISHED, which is the distinction the probe had to be built for: dist/completion.d.ts DECLARES `completedPath` -- one module must export it for the other to import it -- so what makes it internal is the `exports` map naming `.` alone. Both routes are refused, and the deep-path arm is not redundant: drop the map and the entry-point arm stays red while the deep one goes GREEN.",
+            "THE OPTION BAG COST WAS MEASURED BEFORE IT WAS ACCEPTED. A consumer passes `{ cwd }` through `Parameters<typeof pathCompletion>[2]` at exit 0, a misspelled member is refused naming it, and `import type { PathCompletionOptions }` fails. So withholding the name costs the annotation and nothing else -- and the excess-property arm is what separates that green from the one `any` produces.",
+            "TWO APPARATUS FACTS THIS PACKAGE FORCED, neither of which hover-wordnet had exercised. (1) tsconfig.build.json's `types: []` gives TS2591 on every `node:` specifier, so this member's build config carries `types: [\"node\"]` and its manifest a devDependency; hover-wordnet imports no builtin and never met it. (2) The member resolves THREE tsudoi subpaths -- `/types`, `/deps/protocol`, `/deps/types` -- where hover-wordnet resolves two; the symlink apparatus covered all three with no change.",
+            "AND ONE ROOT-PROGRAM ARM LOST ITS ONLY IMPORTER. `deps/textdocument` was asked for by test/completion-path.test.ts alone, which moved into the member, and test/package-shape.test.ts's resolution probe REDDENED naming the empty answer -- the colour its own doc block predicts for an arm nothing imports. Repaired by annotating the document store's read in test/documents.test.ts with the PUBLISHED type, which is the pair a config author writes anyway.",
+          ],
+        },
+        {
+          test: "The member resolves tsudoi through its own route, proven by breaking that route and nothing else.",
+          implementation:
+            "Apply the corrected perturbation: break the member's peer entry or the apparatus symlink and require TS2307 naming the subpath.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "b270197",
+              message:
+                "test(members): each member reaches tsudoi by its own route, broken one arm at a time",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "The mechanism Sprint 47's criterion asked for was refuted by this repository's own record -- root tsc stays green because `name` and `paths` are redundant covers. This reads ONLY the member.",
+            "Sprint 48 measured that a wrong peerDependencies key leaves the fifth check exit 0 and silent, while packages/hover-wordnet's own package-shape test DOES redden on it. Know which instrument you are relying on.",
+            "RE-MEASURED ON THIS MEMBER AND SPRINT 48 HOLDS, WIDER THAN IT WAS WRITTEN: with `peerDependencies` DELETED from packages/completion-path/package.json, the member's own `tsc --noEmit` is exit 0 AND the fifth check is exit 0, both silent -- so the load-bearing route is the apparatus SYMLINK and the manifest entry is a declaration nothing resolves through. What refuses it is the member's own package-shape test, watched failing at `+ undefined`.",
+            "THE THIRD ARM'S MECHANISM WAS SUBSTITUTED ON A MEASUREMENT OF THE CLAIM ITSELF, not on an inference from a neighbouring one. `break a name in src/types.ts` DOES NOT REACH A MEMBER: renamed `MethodHandler` to `MethodHandlerRenamed` at both its occurrences in src/types.ts and ran each member's own `tsc -p tsconfig.json` with NO rebuild -- BOTH EXIT 0, because a member resolves through the `exports` map into dist/ and nothing it reads had changed. Rebuilding to make it visible is the Sprint-44 class, since a failed rebuild leaves dist/ fresh and wrong. The probe asks the subpath for a name it does not export instead: TS2305 with ZERO TS2307 separates `a real declaration` from `unresolved` and from `any`, with no build of anyone's.",
+            "WHAT THE NEGATIVE ARM PERTURBS IS THE REPOSITORY'S OWN tsconfig.json, RESTORED IN A `finally` AND REPAIRED BY NOTHING ELSE -- unlike the symlink, which the shared builder rewrites. BOUNDED RATHER THAN WAVED AWAY: bun runs test files sequentially in one process and tests within a file sequentially, so the window is one test's own await chain; and no root file resolves a tsudoi subpath LAZILY -- the suite's two dynamic imports take an external package and an absolute file URL, neither of which a `paths` mapping answers. The residual is a future test that spawns during that window.",
+          ],
+        },
+        {
+          test: "Both members carry a README a stranger can act on, verified off the packed tarball.",
+          implementation:
+            "Per-member READMEs over BOTH packages, naming what it answers, that it requires tsudoi at run time, and the constraint that bounds it.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "68c4ee4",
+              message:
+                "docs(packages): each handler package carries the README a registry page shows",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "hover-wordnet's bounding constraint is that whitespace is its word rule. completion-path's must be found and stated, not invented.",
+            "Nothing is published yet, so no registry page is blank today -- but tsudoi's README cannot be where every handler explains its own constraints.",
+            "FOUND IN THE SOURCE, NOT INVENTED, AND THE REJECTED CANDIDATE IS NAMED: completion-path's bound is WHITESPACE ENDS A PATH -- `pathFragments` scans back from the cursor to the nearest whitespace, so a document that QUOTES, ESCAPES or COMMA-SEPARATES its paths is served by a handler of its own. The candidate declined as the headline is `nothing recurses; one directory listing per fragment`: it is true and it is stated, but it bounds WHAT IT COSTS rather than WHICH DOCUMENTS IT SERVES, and the criterion asks for the second. The two packages arriving at the same whitespace rule independently is a coincidence worth reading, not a shared implementation.",
+            'MEASURED BEFORE THE TABLE WAS EDITED: `files: ["dist"]` names no README.md and `bun pm pack` COLLECTS IT ANYWAY, so a reading taken from the manifest would have concluded the registry page is blank. Both members\' READMEs are read out of the ARCHIVE, and the three subjects are pinned per member -- the bounding sentence differs by package, so a shared needle would be satisfied by whichever member carried it.',
+            "THE ROUTE MOVED RATHER THAN BEING DUPLICATED. The `handler-pack` and `examples-install` markers are gone from the root README and live in each member's, extracted and executed PER MEMBER; a root test refuses either marker's return. The root document's own promise is narrowed to `every block HERE is executed`, and the read-only exception now sits in the documents that carry the read-only command.",
+          ],
+        },
+        {
+          test: "Something reddens the day tsudoi is published, so the optional-peer premise cannot die unnoticed.",
+          implementation:
+            "Pin the optional-peer reversal where the publishing edit passes, over BOTH members.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "dd15221",
+              message:
+                "test(premise): the optional-peer falsehood cannot outlive the reason it is carried",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "`peerDependenciesMeta.optional: true` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Measured: a project given the handler tarball alone installs with NO warning at all, then fails at load.",
+            "The property is required; the instrument is Planning's to choose. README's `The package is not published` section is executed by the suite and is a candidate, not a requirement.",
+            "THE INSTRUMENT CHOSEN, AND THE SHAPE MATTERS MORE THAN THE SITE: the premise is READ and never ASSERTED. An assertion that the README still says `not published` would demand the document keep lying after publication, which is the opposite of the property; what may not happen is the manifest and the document DISAGREEING, in either direction -- a member that dropped the flag early is named too, because installing it then 404s.",
+            "WATCHED FAILING RATHER THAN ARGUED: with that section rewritten to say tsudoi is published, the reading names `packages/completion-path` and `packages/hover-wordnet` and what each of them says. The fact itself is shared with test/readme.test.ts as one exported constant, so the two cannot disagree about which section states the premise, and that file already requires it to have exactly ONE home.",
+            "WHAT IT CANNOT SEE, BOUNDED HONESTLY: a publisher who publishes and never touches the README. Nothing in a suite observes a registry, and a probe that did would make this repository's green depend on somebody else's uptime. What is bought is that the one edit needed to stop the document lying is the edit that reddens this.",
+          ],
+        },
+        {
+          test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
+          implementation:
+            "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "fa2d766",
+              message: "fix(test): the route perturbation refuses an entry it did not put there",
+              phase: "refactoring",
+            },
+            {
+              hash: "4e5304b",
+              message:
+                "docs(comments): the path handlers are named as a package, not as a file that moved",
+              phase: "refactoring",
+            },
+            {
+              hash: "4b65698",
+              message: "docs(build): the preload's reason is re-measured, not reworded",
+              phase: "refactoring",
+            },
+            {
+              hash: "2435df1",
+              message:
+                "test(packed): a shipped comment may not name a file the reader does not have",
+              phase: "green",
+            },
+            {
+              hash: "485060f",
+              message:
+                "docs(readme): the capability chain's reader is named as the package it is now",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
+            "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
+            "THE ENUMERATION, COMMITTED BEFORE THE SITES ARE REPAIRED. Twenty-one predicted sites in fourteen files, in three classes. CLASS ONE, A PATH THAT NO LONGER EXISTS: bunfig.toml's measured diagnosis naming `examples/completion-path.ts`; test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason, which rests on that example being STATICALLY imported by a root test; test/completion.test.ts x3; test/client-capabilities.test.ts; test/workspace.test.ts; test/package-shape.test.ts; test/helpers/checkout.ts; test/fixtures/capabilities-mutation.ts; test/resolve-path-stat.test.ts; packages/hover-wordnet/test/hover.test.ts; and src/types.ts x3, src/server.ts, src/tsudoi.ts -- the last five being tsudoi's OWN source citing an example that is now a package.",
+            "CLASS TWO, A CLAIM WHOSE PREMISE THIS SPRINT REMOVED rather than a path that moved: test/helpers/build.ts's account of WHICH ARM NEEDS dist/, and the README's `examples/ import ...` sentence, both written when the path handlers were files in examples/.",
+            "CLASS THREE, AND IT IS SPRINT 47'S OPEN ITEM MEASURED ON THE ARTIFACT: packages/hover-wordnet/dist/hover.js SHIPS three repository-path claims -- `scripts/workspaces.ts`, `test/package-shape.test.ts`, `src/wordnet.d.ts` -- read off the packed tarball. completion-path's packed files carry NONE by the same instrument. THE INSTRUMENT IS A MATCHER AND THEREFORE SUSPECT, so the sweep is turned into a test with a proven-positive control rather than left as a grep.",
+            "ONE SITE THE ENUMERATION MISSED, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT: README.md's handler-context paragraph, which names the reader of `clientCapabilities.textDocument.completion.completionItem.insertReplaceSupport`. It survived the section rewrite because it sits in prose about a handler's CONTEXT rather than in the install prose that moved, so the edit that fixed the rest never passed through it.",
+            "CLASS TWO CAME BACK LARGER THAN PREDICTED, AND THE SURPLUS IS THE FINDING. test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason was not merely citing a moved file: it was ALREADY FALSE FOR BUN, and the same file said so two paragraphs down -- `paths` intercepts a self-referencing subpath before the exports map. MEASURED, from the repository root, with a probe in each place: under test/ that subpath resolves to ./src/deps/types.ts and inside a member's test directory to ./dist/deps/types.js, because bun applies the tsconfig NEAREST THE IMPORTING FILE and a member's carries no mapping. So the synchronicity now has a true reason it did not have before -- the members' own tests are the static importers that need the build finished.",
+            "AND TWO MEASURED CLAIMS WERE RE-RUN RATHER THAN REWORDED. With dist/ removed from the root AND both members and bunfig.toml absent, the failures are LOAD failures mixed among assertion failures and the first one names the demo config failing on `@atusy/tsudoi-completion-path`. AND `cd test && bun test` NO LONGER RUNS THE SUITE AT ALL -- measured with a filter matching nothing, FEWER FILES from test/ than from the root -- because bun discovers test FILES relative to the working directory too and the members' tests are outside it. A count of how many others fail under a narrowed dist/ was DROPPED rather than re-measured: it is a size that moves whenever the suite grows, and what earns the comparison its keep is which failure names the cause.",
+          ],
+        },
+        {
+          test: "Review does not open until revise has converged.",
+          implementation: "Run the revise skill without a PR.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "Three sprints of evidence that it finds what the gate and the criteria both miss.",
+            "THE PACKED TARBALL'S SHIPPED COMMENTS ARE NEVER INSPECTED -- Sprint 47's open item. A claim in a shipped comment naming a repository path or test is the shape that has escaped three times.",
+          ],
+        },
       ],
     },
-  ],
-  completed: [
     {
       number: 48,
       pbi_id: "PBI-54",
       status: "done",
       goal: "A misspelled paths mapping is caught rather than falling through to dist/ at exit 0, so the stale-artifact hazard is foreclosed rather than foreclosed-plus-an-unwatched-precondition.",
       impediments: [],
-      decisions: [
-        "SPRINT 47'S RETROSPECTIVE BINDS THIS SPRINT'S CRITERIA: a criterion naming a colour must CITE THE MEASUREMENT THAT PRODUCED IT, so an uncited colour is visibly a guess. This PBI's own discriminating perturbation is THE MISSPELLING, NOT THE DELETION -- deletion is already covered and covers nothing new, which is precisely the distinction Sprint 47's criterion 2 got wrong.",
-        "THE CLASS IS NAMED RATHER THAN THE INSTANCE. An outcome recorded as FORECLOSED that is really FORECLOSURE PLUS AN UNWATCHED PRECONDITION is what this PBI corrects: Sprint 42 recorded the stale-dist hazard as foreclosed, and it is foreclosed only while `paths` is spelled correctly.",
-        "THE ASSERTION WAS FIXED, NOT THE CLAIM. The test name states the property the type check BUYS; renaming it to `the mapping is spelled thus` would leave nobody holding that property. The literal toEqual on the mapping key went, since a deleted key and a misspelled one land in the same dist/ and it spelled today's key twice.",
-        "THE INSTRUMENT WAS CHOSEN BY MEASUREMENT: an exit code cannot tell src from dist -- both are 0 and silent -- and `--listFiles` does not say WHICH specifier reached a file. `--traceResolution` makes the compiler NAME the file that answered each subpath. BOTH SIDES OF THE COMPARISON ARE DERIVED FROM DECLARATIONS, so an added exports arm or a second mapping key is covered with no edit to the test.",
-        "A PREDICTION WAS REFUTED AND THE REFUTATION DECIDED THE FIX. Building the literal resolution probe the criterion asked for against tsconfig.build.json resolves every published subpath to ./src/*.ts, NOT dist/ -- `rootDir` with `outDir` makes tsc read a declaration file back to the input that generates it, and it happens with no dist/ on disk at all. SO THE PROBE REFUTES THE TEST NAME RATHER THAN BACKING IT, and the rename is the honest outcome.",
-        "AN EXECUTOR CLAIM WAS SPLIT AND HALF-REFUTED by the independent reviewer. `the fifth check is exit 0 and silent on a wrong peerDependencies key` HOLDS; `nothing in test/ reads that key` IS FALSE -- packages/hover-wordnet/test/package-shape.test.ts asserts the exact key, so the described disagreement reddens the suite.",
-      ],
+      decisions: [],
       subtasks: [
         {
           test: "A misspelled paths key is caught, and the catch names the misspelling rather than a downstream symptom.",
@@ -110,38 +230,8 @@ const scrum: ScrumDashboard = {
             "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
           type: "behavioral",
           status: "completed",
-          commits: [
-            {
-              hash: "2c44942",
-              message: "tidy(test): one home for the two configs' settings and the manifest",
-              phase: "refactoring",
-            },
-            {
-              hash: "ac11856",
-              message:
-                "test(package-shape): read which file answered, not how the mapping is spelled",
-              phase: "green",
-            },
-            {
-              hash: "6016f2d",
-              message: "docs(test): name the tree the misspelling readings were taken on",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "Measured at Sprint 47: `name` and `paths` are REDUNDANT COVERS, so deleting either alone leaves tsc green. The misspelling is the discriminating edit.",
-            "The test named `the repo's type check resolves the published subpaths to source` claims more than its assertion verifies -- it defends the mapping's PRESENCE and SPELLING, not the resolution. Fix the claim or the assertion, and say which.",
-            "THE ASSERTION WAS FIXED AND NOT THE CLAIM, and the reason is which of the two the Definition of Done is buying: the name states the property the type check exists for, so renaming it to `the mapping is spelled thus` would have left that property owned by nothing while every check stayed green. THE LITERAL EQUALITY IS GONE RATHER THAN KEPT BESIDE THE NEW READING, on two grounds measured rather than argued: it is SUBSUMED, since a deleted key sends the same subpaths to the same artifact as a misspelled one, and it SPELLED TODAY'S KEY A SECOND TIME, which subtask 2 forbids.",
-            "THE INSTRUMENT IS `--traceResolution` AND THE TWO CHEAPER ONES WERE TRIED FIRST. An exit code cannot separate source from artifact -- both answer 0 with nothing printed -- and `--listFiles` names files without saying which specifier reached them, which matters because src/ is in the program by glob whether or not anything resolved there. The trace names the file each specifier reached, so the green is a positive reading rather than the absence of a red.",
-            "CRITERION 1'S VERIFICATION NAMES A MECHANISM THIS SPRINT DID NOT BUILD, AND THE SUBSTITUTION IS DECLARED HERE RATHER THAN ARGUED AT REVIEW. It asks for a probe where src/ and dist/ DISAGREE, so that which one answered can be read off a difference between them; the hermetic tree here holds the same empty module at both paths, and they differ in PATH alone. WHAT REPLACES IT IS STRICTLY STRONGER ON THE PROPERTY THE CRITERION STATES -- distinguishing `resolved to src/` from `resolved to dist/` POSITIVELY -- because the compiler NAMES the file it reached, so nothing has to be inferred from a disagreement between two contents. Sprint 41's entry is the precedent: the constraint survived the replacement of the mechanism it was derived from, which is evidence it was a constraint on the property.",
-            "PREDICTION WRITTEN FIRST AND IT HELD, on the tree at 38b8709 with the key misspelled to a name nothing answers to: `tsc --noEmit` EXITS 0 AND PRINTS ZERO BYTES while all four published subpaths are answered by dist/*.d.ts, and `bun test` gives 685 pass / 2 fail of 687. The failure that names the KEY prints the misspelling against an EMPTY matched set; the failure that names the EFFECT prints the four dist/*.d.ts against the four src/*.ts. Reverted, and the tree verified identical to HEAD.",
-            "A POISONED MEASUREMENT WAS CAUGHT BY THE PREDICTION AND IS REPORTED RATHER THAN DROPPED: a first attempt at the deletion arm left tsconfig.json UNEDITED -- the substitution failed -- and returned 687 pass / 0 fail against a prediction of one failure. The mismatch is what exposed it; the reading was discarded and retaken.",
-            "THE INHERITED REDUNDANCY IS RE-MEASURED ON BOTH HALVES AND NOT ONE, at 38b8709, and the second half is a POSITIVE reading rather than a colour: with `name` alone repointed and `paths` untouched, `tsc --noEmit` EXITS 0 AT ZERO BYTES and the trace shows all four subpaths still answered by src/*.ts -- the mapping intercepts before the exports map is consulted, so the check never reaches the renamed manifest. With `paths` alone deleted, the same check is EXIT 0 AT ZERO BYTES too. Both halves confirmed; neither key is pinned by the type check's COLOUR alone.",
-            "AND THE GUARD IS NOT BLIND WHERE THE COLOUR IS, WHICH NARROWS PBI-54'S OWN NOTE: `neither key is pinned by the type check alone` holds of the exit code and NOT of this reading. MEASURED, both arms, one key each: with `name` alone repointed the resolution reading REDDENS, since the specifier a consumer writes is derived from the manifest and nothing in the program asks for it; with `paths` alone deleted it reddens naming dist/. So the two keys are now pinned to AGREE, by the one assertion, without either being spelled in it.",
-            "NONE WEAKENED IS DIFFED RATHER THAN ASSERTED, per Sprint 36 as amended by Sprint 43, because the note above claims a removal is subsumed and a coverage claim may not be recalled. Across this sprint's commits over src/ and test/: THREE `expect(` lines added, ONE removed, and the removed one is named -- the literal equality on the mapping's content. ZERO are quoted in comments, so the count is not inflated by its own commentary: the new prose DESCRIBES assertions.",
-            "SPRINT 14'S STANDING RE-RUN, WITH SPRINT 43'S QUESTION ASKED FIRST -- which of Sprint 47's perturbations still HAS a target here. Arm (a), the root mapping removed, does: re-run on this tree it gives the fifth Definition-of-Done check UNCHANGED AT EXIT 0, the same colour Sprint 47 recorded, while `bun test` gives 686 pass / 1 fail. So the member's route survives the parent's mapping going away, re-measured rather than inherited.",
-            "WHAT SHIPS WAS READ OFF THE ARTIFACT RATHER THAN ARGUED FROM `files`: `bun pm pack --dry-run` packs TWENTY-NINE entries -- package.json, LICENSE, README.md and dist/** -- and this sprint's diff is scrum.ts, test/package-shape.test.ts and test/helpers/typecheck.ts, which INTERSECTS NONE OF THEM. So no comment written here reaches a stranger, and the named negative is the instrument's rather than an inference from the manifest.",
-          ],
+          commits: [],
+          notes: [],
         },
         {
           test: "The guard is written over the property, not over this one spelling.",
@@ -149,24 +239,8 @@ const scrum: ScrumDashboard = {
             "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
           type: "structural",
           status: "completed",
-          commits: [
-            {
-              hash: "ac11856",
-              message:
-                "test(package-shape): read which file answered, not how the mapping is spelled",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "A guard naming one key leaves the next unpinned and nothing says so -- the same shape as the deno-guard shape over members as a class.",
-            "NO COMMIT OF ITS OWN, AND THAT IS THIS SUBTASK'S OWN REQUIREMENT RATHER THAN AN OMISSION: an intermediate guard spelling today's key is exactly what `without naming today's key twice` forbids, so the guard was written over the class in the same edit and this subtask cites that commit. What it can be checked against: the key is now the subject of NO assertion anywhere but tsconfig.json itself, and the remaining occurrences in the tree are prose describing it.",
-            "EVERY SIDE OF EVERY COMPARISON COMES FROM A DECLARATION AND NONE FROM THE MAPPING IT GRADES -- specifiers from package.json's `name` and `exports` keys, expected files from each subpath's own `default` arm, declared patterns from the config itself. A FIFTH EXPORTS ARM OR A SECOND MAPPING KEY IS COVERED WITH NOTHING EDITED, and an expectation derived from the mapping would have followed the fault instead: a key that has stopped matching still names ./src/*.ts.",
-            "TWO FAILURES, AND NEITHER COVERS THE OTHER. The resolution reading names the FILE THAT ANSWERED; the matched-pattern reading names the KEY THAT REACHED NOTHING. MEASURED, prediction first and held: with `paths` DELETED, `bun test` gives 686 pass / 1 fail -- the resolution reading reddens naming dist/, the matched-pattern reading stays green because an empty set matches an empty set. So the pair's division of labour is measured rather than claimed, and the failure a reader meets first is the one that names their edit.",
-            "THE SWEEP IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 47, since a sweep for a defect that is a property of MATCHING is itself an instance of that class. THE INSTRUMENT IS NOT A NAME GREP: it is the enumeration of every tracked configuration file -- `git ls-files` filtered to json/toml/yaml plus bunfig, which is EIGHT -- and then, within each, every key whose value must MATCH something to have any effect. RESULT: the root `paths` was the only silent one. MEASURED LOUD, one command each: a misspelled `types` entry gives TS2688 at exit 1; a misspelled oxlint rule name gives `Rule 'extensionz' not found in plugin 'import'` at exit 1; a misspelled `preload` path gives `preload not found` at exit 1. PINNED BY AN EFFECT PROBE RATHER THAN BY SPELLING, which is the standard this sprint brings `paths` up to: tsconfig's `exclude` (the dist pair in the same file), .oxlintrc's override globs (guard.test.ts lints a probe at every shape, so an override that stops matching reddens the shape it stopped covering), `workspaces` (refuseUncoveredPackages), and a MEMBER's `paths` (refuseMemberMappings, over the effective configuration).",
-            "A SECOND POISONED MEASUREMENT, SAME MECHANISM AND SAME CATCH, REPORTED BECAUSE THE RATE IS THE FINDING: an in-place substitution that did not apply returned the UNPERTURBED colour against a prediction of two failures. Twice in one sprint the perturbation silently failed to land, and both times what exposed it was the prediction written first plus a check that the edit was really there. A probe sequence therefore reads back the file it just edited before it believes the run.",
-            "THE PARSER'S OWN NON-VACUITY, since the readings rest on a compiler's diagnostic TEXT: if that text ever changes, no resolution and no matched pattern is seen at all, so both readings go RED against non-empty expectations. There is no spelling of the trace that turns this green by accident.",
-            "ONE MORE INSTANCE OF THE CLASS FOUND AND DELIBERATELY NOT FIXED, ON SPRINT 45'S PRECEDENT: the member's `peerDependencies` key names tsudoi in a spelling of its own, while the apparatus symlink that actually satisfies it is DERIVED from the root manifest's `name`. MEASURED: repointing that key at a package that does not exist -- leaving `peerDependenciesMeta` still naming the real one, so the two disagree with each other as well -- leaves the fifth Definition-of-Done check at EXIT 0 AND SILENT, and nothing in test/ or scripts/ reads the key at all. It is PBI-51's territory rather than this sprint's, and a separate property does not ride along merely because it is the same class.",
-          ],
+          commits: [],
+          notes: [],
         },
         {
           test: "Sprint 42's recorded foreclosure is corrected in place rather than left standing beside its own counterexample.",
@@ -174,25 +248,8 @@ const scrum: ScrumDashboard = {
             "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
           type: "structural",
           status: "completed",
-          commits: [
-            {
-              hash: "7f2b786",
-              message: "docs(test): a mapping forecloses the artifact only while it matches",
-              phase: "refactoring",
-            },
-            {
-              hash: "e236bb8",
-              message: "docs(scrum): the stale-dist foreclosure names the precondition it rests on",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "Sprint 47's retrospective: a record contradicting a measurement is the same class as a comment contradicting a comment.",
-            "Correct it where a reader meets it, and do not narrate the change.",
-            "TWO SITES, NOT ONE, AND THE SECOND IS THE ONE A READER ACTUALLY MEETS: the retrospective outcome states the precondition and what watches it, and the same unconditional sentence stood in test/package-shape.test.ts's own prose -- `a stale dist/ cannot reach it at all` -- three paragraphs above the assertions that now watch it. A correction made only in the dashboard would have left the comment contradicting the test beneath it.",
-            "ONE RECORD IN THIS FILE STILL CONTRADICTS THE TREE AND IS LEFT FOR ITS AUTHOR: PBI-54's second note says NOTHING DETECTS A MISSPELLING, which held when it was written and is now false at the same commit as this entry. The Developer does not rewrite a Product Backlog Item mid-sprint -- that is the acceptance's business -- so it is REPORTED rather than edited, and named exactly so Review acts on it instead of inheriting a comment-contradicts-comment inside one file.",
-            "THE ACTION TEXT IS UNTOUCHED, as it says of itself, and so is the old package name inside that entry: Sprint 47's census classes a name quoted in a recorded measurement as EVIDENCE, and re-spelling it would edit what was measured. THE COMMITS SEPARATE BECAUSE THE DASHBOARD COMMITS ALONE -- a hook refuses scrum.ts beside anything else, which is a constraint worth knowing before staging.",
-          ],
+          commits: [],
+          notes: [],
         },
         {
           test: "Review does not open until revise has converged.",
@@ -200,200 +257,7 @@ const scrum: ScrumDashboard = {
           type: "structural",
           status: "completed",
           commits: [],
-          notes: [
-            "The stakeholder's standing instruction. Two sprints of evidence that it finds what the gate and the criteria both miss.",
-          ],
-        },
-      ],
-    },
-    {
-      number: 47,
-      pbi_id: "PBI-51",
-      status: "done",
-      goal: "A config author installs the wordnet hover handler as @atusy/tsudoi-hover-wordnet instead of copying two files, and the package resolves tsudoi through package resolution rather than through the parent's route.",
-      impediments: [],
-      decisions: [
-        "THE ORDER OF THE FIRST TWO SUBTASKS IS THE SPRINT'S ONE REAL RISK. Criterion 4 WITHDRAWS root tsc's coverage of members, and criterion 3 depends on the other three root checks still reaching in. Building the member BEFORE the withdrawal leaves a window in which root tsc answers for it THROUGH THE PARENT'S `paths` AND REPORTS SUCCESS -- measured at Sprint 46's planning, where a planted member's `@atusy/tsudoi/types` import produced no error and deleting `paths` turned the same line into TS2307. Foreclose first, then build, so the hazard is never constructible rather than merely unobserved.",
-        "SPRINT 46'S RETROSPECTIVE BINDS THIS SPRINT'S VERIFICATION: a sweep for a defect that is a property of matching is itself an instance of that class. Any grep over package names here is bounded on the right BEFORE it is trusted, and a negative result names the instrument that produced it.",
-        "THE DEFINITION OF DONE, EACH COMMAND RUN UNPIPED, AS RUN: `bun test` 655 pass / 0 fail across 44 files; `bunx tsc --noEmit` EXIT 0; `bunx oxlint` EXIT 0 with the one pre-existing require-yield warning at test/fixtures/throws-on-cancel.ts:51; `bunx oxfmt --check .` EXIT 0; `bun run scripts/typecheck-workspaces.ts` EXIT 0. BASELINE AT THE SPRINT'S START, re-measured rather than taken from the brief: 635 pass / 1923 expect() calls, and the brief's number matched.",
-        "A COST THIS SPRINT ADDS, AND IT IS THE ONE PLACE THE DoD GOT WEAKER: `bunx tsc --noEmit` ON A CHECKOUT NOTHING HAS BUILT now reports TS2307 at examples/tsudoi.config.ts naming the member. A member ships dist/ and not src/, its `exports` names no source arm, and the root tsconfig deliberately holds no `paths` mapping standing in for one -- because a mapping added to spare this build would pull member SOURCE into the root program through module resolution, which `exclude` does not stop, and that is precisely the hazard criterion 4 forecloses. SO THE FAILURE IS LOUD AND NAMES ITS OWN REMEDY, and any other Definition-of-Done command clears it, since both the test preload and the fifth check run the same builder. IT IS NOT A SILENT DEGRADATION AND IT IS NOT NOTHING; it is written at test/helpers/build.ts where the next reader meets it.",
-        "TWO RESIDUALS IN THE MEMBER'S MANIFEST, NAMED RATHER THAN LEFT TO BE DISCOVERED. `peerDependenciesMeta.optional` READS AS `THIS PACKAGE WORKS WITHOUT TSUDOI`, WHICH IS FALSE -- the handler imports a value from it. What it actually buys is that no installer goes looking in a registry for a package nothing has published, which is the state this whole backlog insists on; without it `bun install` EXITS 1 on a 404, measured. It should become a plain peer the day tsudoi is published. AND THE ROOT'S DEVDEPENDENCY ON THE MEMBER IS AN EXACT VERSION RATHER THAN `workspace:*`, because `workspace:*` breaks every DETACHED COPY of the manifest -- the pack stage and the README checkout both write package.json into a temp directory and `bun pm pack` there refuses with `Failed to resolve workspace version`. A real pack at the repo root rewrites it to that same exact string, so the two publish identically and only one survives being copied; what it costs is two versions kept equal by hand, asserted in test/package-shape.test.ts.",
-        "THREE DEFECTS THIS SPRINT SHIPPED AND THEN CAUGHT, ALL ON A SECOND PASS AND NONE VISIBLE TO THE GATE. (1) A FALSE COMMENT, AND IT REACHED CONSUMERS: src/hover.ts said this package resolves tsudoi through its own `dependencies` entry -- it is a PEER -- and cited a test/package-shape.test.ts beside it that DID NOT EXIST. The build keeps comments, so dist/hover.js carried it into every installed copy. Sprint 19, Sprint 22 and Sprint 46's comment-contradiction entry in one sentence, written while editing the very file it described. (2) THE MEMBER'S package.json HAD NO TEST CARRYING ITS REASONS, so four decisions -- the two-armed exports map, `files`, the peer plus its `meta.optional` residual, and the dictionary -- lived only in this dashboard, which compacts. The Lifetime Rule names exactly that case and it was not applied to the new manifest. (3) CRITERION 1'S ABSENCE WAS MEASURED BY FILENAME WHERE THE CLAIM IS ABOUT BYTES; a copy under another name passed it.",
-        "AND THE INSTRUMENT THAT FIXED (3) WAS ITSELF WRONG ON ITS FIRST NEEDLE, CAUGHT BY RUNNING IT: `preferredFormat` is not unique to the handler -- examples/completion-path.ts makes the same choice about a declared capability and named its function the same way -- so the content check reddened immediately on a file that is copied ON PURPOSE. `wordAt` appears nowhere in examples/ or src/ and is unpublished. A uniqueness claim about a needle is a coverage claim, and this one was measured rather than recalled.",
-        "CRITERION 1'S DENO HALF IS COVERED BY A TEST THIS SPRINT DID NOT WRITE, NAMED RATHER THAN ASSUMED. test/installed-handler.test.ts runs BUN ONLY. `deno serves the example's dictionary hover from the installed copy` in test/installed-runtime.test.ts drives the SAME consumer layout and the SAME config -- which now reaches the handler by package specifier -- under deno. That matters more than usual: the member ships dist/ with no source arm PRECISELY BECAUSE deno refuses to type-strip under node_modules, so the design's own premise is exercised there and nowhere else in this sprint's own work.",
-        "A PRE-EXISTING SHAPE THIS SPRINT GAVE A SUBJECT TO, REPORTED AND NOT FIXED HERE. test/published-artifacts.test.ts records the declaration-emit divergence as a hazard with NO SUBJECT, because nothing published carried a relative re-export. The member's src/index.ts is one, so dist/index.d.ts now reads `export { hoverWordnet } from \"./hover.ts\"` beside dist/index.js's correct `./hover.js` -- a specifier naming a file the tarball does not ship. MEASURED HARMLESS FOR A CONSUMER: with `types: []` and no allowImportingTsExtensions the full `MethodHandler<\"textDocument/hover\">` is reached, read off TS2322. AND THE SAME SPELLING IS ALREADY THROUGHOUT THIS PACKAGE'S OWN dist/*.d.ts, so it is the build config's behaviour repo-wide and not something the member introduced. WHAT IS WORTH A PBI: deleting dist/hover.d.ts leaves that consumer at EXIT 0, so a missing re-export target is not reported at all and the export would silently be `any`.",
-        "ACCEPTED BY AN INDEPENDENT PRODUCT OWNER, all eight criteria met. THREE ARE MET BETTER THAN ASKED and the difference is between a green and a proof: criterion 1's hover was read off a DELIBERATE MISMATCH, since a toContain that passes is equally what `undefined` produces; criterion 4 was built BEFORE THE MEMBER EXISTED, so the hazard was never constructible rather than merely unobserved; and criterion 5's control reddens on exactly the new shape where BEFORE THIS SPRINT THAT SAME EDIT REDDENED NOTHING AT ALL -- which is what shows a control was created rather than a shape restated.",
-        "CRITERION 2 IS MET ON ITS PROPERTY AND ITS MECHANISM WAS WRONG, THE DEFECT FILED AGAINST THE PRODUCT OWNER. The criterion asked root tsc to redden on examples/ when the root mapping is removed. Measured: EXIT 0 AND SILENT -- because `name` and `paths` are redundant covers, WHICH PBI-54 ALREADY RECORDS. A criterion contradicted a record by the same author, one item below it. THE EXECUTOR REPLACED THE LOST CONTRAST WITH A STRONGER READING rather than losing it: part (b) run with (a) STILL IN FORCE gives TS2305 naming MethodHandler and ZERO TS2307 counted, establishing in one measurement that resolution succeeded, succeeded WITHOUT the parent, and reached a real declaration rather than `any`.",
-        "TWO REFUTATIONS ACCEPTED, BOTH NARROWING A HAZARD RATHER THAN DISMISSING IT. The `.ts` specifier in emitted declarations does NOT fail open to `any`: the EXIT 0 appears only under `skipLibCheck: true`, which suppresses .d.ts errors for every package on npm, and hand-editing the specifier to `./hover.js` gives byte-identical behaviour in all six cells. AND `an ambient declaration shipped reaches every consumer's global type space` IS FALSE AS STATED -- measured three ways, including one that is syntactically unconstructible -- because tsc reads only files in the program. THE HAZARD IS REAL BUT CONDITIONAL, which is the more useful statement.",
-      ],
-      subtasks: [
-        {
-          test: "Root tsc answers for no member at all, and the fifth check answers for every member the workspace declares.",
-          implementation:
-            "Foreclose first: exclude members from the root tsconfig and add the fifth DoD check, which enumerates members FROM THE WORKSPACE CONFIGURATION and never from a hand-written list.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "b262af1",
-              message:
-                "feat(dod): withdraw root tsc from the members and hand them a check of their own",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "Neither half works alone: without the exclusion the fifth check is shadowed by a root green; without the check, excluding members means nothing checks them.",
-            "A member the list forgot would be checked by NOTHING and every command would exit 0. That is why enumeration comes from the workspace configuration.",
-            "This lands BEFORE the member exists, so the hazard is unconstructible rather than watched.",
-            "SPRINT 46'S MEASUREMENT RE-TAKEN ON THIS TREE RATHER THAN INHERITED, and it held at the renamed specifier: a planted member at packages/probe/ carrying BOTH a `@atusy/tsudoi-language-server/types` import and a type error gave root tsc EXIT 1 reporting ONLY the type error -- the subpath import produced NO diagnostic. Deleting `paths` turned that exact line into TS2307 while examples/ stayed silent, which is PBI-54's recorded redundancy showing itself in the same run.",
-            "THE PAIR THAT PROVES THE TRANSFER, taken in one measurement with the planted member still present: root `tsc --noEmit` EXIT 0 AND SILENT, `bun run scripts/typecheck-workspaces.ts` EXIT 1 naming packages/probe/src/index.ts on both lines. The responsibility moved rather than two greens showing nothing.",
-            "THE CHECK CLOSES THE GAP ITS OWN ENUMERATION COULD OPEN, which the criterion's `never from a hand-written list` does not by itself reach: `workspaces` IS a list, merely one in another file, so the script also reads the root tsconfig's `exclude` and REFUSES any package.json sitting under an excluded path that the patterns do not declare. Narrowing `workspaces` while leaving `packages` excluded is the one edit that would leave a package covered by nothing, and it now fails loudly naming the directory.",
-            "FIVE ASSERTIONS IN test/workspace-members.test.ts, driven against THROWAWAY WORKSPACES rather than this one, because every state they describe is a state this repository must never be in. All five predicted before running and all five held: a member's type error reported at a member no list names; the same two members green once the error is removed (the pair, since an apparatus failure reddens identically); an undeclared package refused by name; a manifest with no `workspaces` refused rather than reporting nothing to do; a member with no tsconfig.json refused rather than skipped.",
-            "PREDICTED AND OBSERVED: 635 -> 641 tests, 1923 -> 1936 expect() calls, exactly. Root tsc, oxlint, oxfmt and the new fifth check all EXIT 0 unpiped.",
-          ],
-        },
-        {
-          test: "A consumer obtains the handler without receiving its source, and answers a real textDocument/hover over the wire.",
-          implementation:
-            "Extract examples/hover-wordnet.ts and its ambient wordnet.d.ts into packages/ as @atusy/tsudoi-hover-wordnet, with wordnet as its runtime dependency.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "3b04fdd",
-              message: "feat(hover): the wordnet handler is a package a config author installs",
-              phase: "green",
-            },
-          ],
-          notes: [
-            'examples/wordnet.d.ts is an ambient `declare module "wordnet"`. Shipped inside a published package it lands in every consumer\'s global type space -- decide and state what happens to it.',
-            "hover-wordnet.ts exports three names. An example's exports are incidental; a package's are a promise. Classify each one by one.",
-            "The negative control is that NO BYTE of the handler's source is written into the consumer project.",
-            "CRITERION 1 MET, BOTH DIRECTIONS IN ONE MEASUREMENT. The consumer installs two tarballs, writes a config whose only hover mention is the package specifier, and the hover answers `apple\\n\\nnoun — fruit with red or yellow or green skin and sweet to tart crisp whitish flesh` over the wire -- READ OFF A DELIBERATE MISMATCH rather than trusted, since a `toContain` that passes is equally what an `undefined` produces. Its own directory holds no path matching `hover-wordnet` while holding tsudoi.config.ts, so the empty list is not a walk that found nothing. NEGATIVE CONTROL: omit the handler tarball and the same config cannot load, stderr naming `@atusy/tsudoi-hover-wordnet`.",
-            'THE AMBIENT DECLARATION IS KEPT INSIDE THE PACKAGE AND DELIBERATELY NOT PUBLISHED, which is the decision Planning left open. `declare module "wordnet"` in a shipped package declares a third party\'s module for everyone who installs it -- including a project with its own declaration, or a future @types/wordnet it would collide with. `files: ["dist"]` keeps it out and declaration emit does not copy a `.d.ts` INPUT. WHAT MAKES IT AFFORDABLE IS A CONSTRAINT ON THE SURFACE, not on the file: nothing published names a `wordnet` type. MEASURED ON THE ARTIFACT -- neither dist file carries `wordnet` or `declare module`, and a consumer with `types: []` and NO allowImportingTsExtensions resolves `hoverWordnet` to the full `MethodHandler<"textDocument/hover">`, read off TS2322 from assigning it to a number because a green there is equally what `any` gives.',
-            "THE THREE EXPORTS, CLASSIFIED ONE BY ONE AND NOT AS A BATCH. `hoverWordnet` IS PUBLISHED -- it is the artifact, and src/index.ts names it alone. `define` IS INTERNAL: only this package's own test reads it, by relative import, so keeping it in costs no coverage and publishing it would promise a dictionary-lookup signature to strangers. `wordAt` IS INTERNAL AND IT IS THE ONE THAT COSTS SOMETHING: its own comment calls it the function an author replaces with their language's notion of a word, which is TRUE OF A FILE YOU COPY AND FALSE OF A PACKAGE YOU INSTALL. Publishing it would not restore that -- an author cannot make this handler call their version by importing ours -- and the thing that would, an option on the handler, is the `an author might want it` purchase this backlog refuses by name. So whitespace is this package's word rule, the loss is real, and it is written at src/index.ts rather than bought off.",
-            "WHERE THE PACKAGE'S TESTS LIVE, which criterion 3 required the plan to say: INSIDE THE MEMBER, at packages/hover-wordnet/test/hover.test.ts. That makes `bun test` reaching the member a standing fact rather than a one-off probe, and it is what lets `define` stay unpublished -- a test outside the package could only reach it through the exports map.",
-            "THE MEMBER'S OWN DEPENDENCIES ARE ITS OWN, and one was found by measurement rather than by design: the moved test needs the TextDocument CONSTRUCTOR, and tsudoi publishes that type deliberately type-only, MEASURED as TS1362 at the member's check. So `vscode-languageserver-textdocument` is a devDependency of the member rather than borrowed from the workspace root.",
-            "BUN CANNOT LINK A WORKSPACE ROOT AS A MEMBER'S DEPENDENCY, MEASURED IN SIX SPELLINGS, and this is the sprint's one structural surprise. `workspace:*` and `workspace:.` report `Workspace dependency not found`; a plain range and `link:` reach the registry and 404; `file:../..` and a root `override` of `file:.` HARDLINK THE WHOLE CHECKOUT into node_modules/.bun -- same inodes, so the next `tsc` write silently strands the copy. THE ANSWER: `peerDependencies` plus `peerDependenciesMeta.optional`, which is the honest shape for a handler anyway -- the config and the handler must share ONE tsudoi -- plus an APPARATUS SYMLINK created by scripts/workspaces.ts. Recorded as apparatus, not design, and the layout that would remove the need for it -- the main package under packages/ rather than at the root -- is named as the alternative nobody chose.",
-            "THE APPARATUS SYMLINK BELONGS IN THE MEMBER'S node_modules AND NOT THE ROOT'S, FOUND BY A RED RATHER THAN BY THOUGHT. Placed at the root it DISARMED AN EXISTING CONTROL: test/helpers/typecheck.ts symlinks the repo's whole node_modules into every probe, so the entry handed each probe a second route to this package's real package.json, and `the same config fails with TS2307 once the exports entry is removed` went EXIT 0 with its own copy's `exports` deleted. A member's own node_modules is reached by nothing but that member.",
-          ],
-        },
-        {
-          test: "The handler package resolves tsudoi through package resolution, not through the parent's route.",
-          implementation: "Prove criterion 2 with the two opposed perturbations it names.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "THE LOAD-BEARING CRITERION and the whole reason this is not a file move with a package.json on top: nothing in this repository resolves tsudoi from another PACKAGE today. Both existing routes are consumed by loose files.",
-            "Sprint 46 measured the discriminating control for the parent's route: deleting tsconfig's `paths` turns a member's subpath import into TS2307.",
-            "NO COMMIT OF ITS OWN, because this subtask is a MEASUREMENT of what subtask 2 built rather than an edit. Both perturbations were applied and reverted, and the tree was verified identical to HEAD afterwards.",
-            "(a) THE ROOT MAPPING REMOVED: the member's own check is UNCHANGED at EXIT 0, which is the load-bearing half and it held. THE CRITERION'S OWN PREDICTION MISSED AND IT IS REPORTED RATHER THAN SMOOTHED: it says `the ROOT check reddens on examples/`, and root `tsc --noEmit` EXITED 0 AND SILENT. The reason is already in this backlog -- PBI-54 records that `name` and `paths` are REDUNDANT COVERS, since deleting the mapping alone lets examples/ resolve by self-reference through the exports map into dist/. So the criterion asked for a colour its own repository had already measured to be impossible from that one edit.",
-            "(b) THE NAME BROKEN, AND TAKEN WITH (a) STILL IN FORCE, which is strictly stronger than the criterion asks: with NO `paths` mapping anywhere, renaming `MethodHandler` in src/types.ts gives the member's own check `packages/hover-wordnet/src/hover.ts(27,15): error TS2305: Module '\"@atusy/tsudoi-language-server/types\"' has no exported member 'MethodHandler'` and ZERO TS2307 -- counted, not eyeballed. So the member reaches a REAL DECLARATION through package resolution alone, and the parent's mapping is not on its route at all.",
-            "THE PERTURBATION WAS CHOSEN SO THE BUILD SURVIVES IT: `MethodHandler` is referenced in exactly one place inside src/ (the MethodMap mapped type), so renaming both leaves src/ compiling and dist/ emitted -- otherwise the member would have been type-checked against a poisoned artifact, which is the Sprint-44 class rather than a measurement.",
-          ],
-        },
-        {
-          test: "bun test, oxlint and oxfmt --check . each reach inside the member, proven by planted defects rather than by argument.",
-          implementation: "Verify criterion 3 with one planted defect per check.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "Measured at Sprint 46's planning against a planted member: all three reach. Re-measure rather than inherit -- this is the sprint that makes the member real.",
-            "The fourth check is deliberately outside this criterion because subtask 1 withdraws it.",
-            "NO COMMIT OF ITS OWN: three defects planted in the REAL member, each measured and reverted. All three predictions written before running and all three held.",
-            "`bun test` REACHES IT AS A STANDING FACT rather than by a probe, because the member's tests live inside it: a planted failing assertion in packages/hover-wordnet/test/hover.test.ts gave 644 pass / 1 fail, the failure named.",
-            "`bunx oxlint` FROM THE ROOT WITH NO ARGUMENTS EXITED 1 naming packages/hover-wordnet/src/planted.ts TWICE, and the double reading is the strong one because the two rules fire for DIFFERENT REASONS: `import(extensions)`, which is repo-wide, and `no-restricted-imports` on `bun:sqlite`, which fires only because nothing exempts the member. One violation would not have separated `oxlint reaches the member` from `oxlint reaches it under a relaxed configuration`.",
-            "`bunx oxfmt --check .` EXITED 1 naming packages/hover-wordnet/src/planted.ts. THE DEFECT WENT IN THE MEMBER'S src/ AND NOT ITS TESTS, deliberately: the config's overrides switch `no-restricted-imports` off at every test-file path, so a defect planted in the member's test would have measured the relaxed configuration for the lint arm.",
-          ],
-        },
-        {
-          test: "The member gets no deno-guard exemption, and the absence is pinned rather than defaulted.",
-          implementation:
-            "Criterion 5: state the reason at .oxlintrc.json where the widening edit would be made, and add the member path to guard.test.ts's list AS A SHAPE OVER MEMBERS AS A CLASS.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "f8e997b",
-              message:
-                "test(guard): the deno ban over workspace members is pinned, not merely defaulted",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "The ban reaches a member BY DEFAULT AND NOT BY ASSERTION today: an override widened to reach packages/ reddens nothing, because guard.test.ts pins only the shapes it carries.",
-            "A shape naming one package leaves the second unpinned and nothing says so. PBI-52 should therefore add no shape -- a prediction this sprint makes about a later one.",
-            "THE SHAPE IS `packages/probe/src/index.ts`, WHICH NAMES NO PACKAGE. No package by that name exists and the config holds nothing keyed to one, so what it pins is that a file under packages/ lints exactly as src/ does. It is the member's src/ and not its tests, because the test-file override switches the rule off and a member shape spelled as a test path would assert the RELAXED configuration while reading as the strict one.",
-            "THE CONTROL FIRED ON EXACTLY THE NEW SHAPE, as the comment at .oxlintrc.json promises for the shapes already there: widening the first override's `files` to include `packages/**/*.ts` reddens ONE test -- `a bun:sqlite import is flagged in packages/probe/src/index.ts` -- with the other forty green. Before this sprint that same edit reddened nothing at all.",
-            "TWO COUNTS THE NEW SHAPE FALSIFIES WERE REPLACED BY NAMING RATHER THAN BY A BIGGER NUMBER, per the standing prefer-naming rule: `THE SIX SHAPES` in guard.test.ts and `The five path shapes` / `A SIXTH SHAPE` in .oxlintrc.json.",
-            "PREDICTED AND OBSERVED: the list drives three rules, so 644 -> 649 tests exactly.",
-          ],
-        },
-        {
-          test: "wordnet appears in neither dependencies nor devDependencies of the root package.json, and the suite passes.",
-          implementation:
-            "Criterion 6, including re-homing the symlink test/helpers/install.ts borrows.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "3b04fdd",
-              message: "feat(hover): the wordnet handler is a package a config author installs",
-              phase: "green",
-            },
-            {
-              hash: "e874c4c",
-              message: "test(package): pin what the dictionary and the workspace may not reach",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "It is a devDependency today used by one example; extracted it is a runtime dependency of the handler package and nothing the main package knows about.",
-            "THE SYMLINK GOES RATHER THAN MOVES, which is the second of the two outcomes the criterion allows, and the premise died rather than being restated: it stood in for an install a README told a reader to perform BY HAND. No reader is told that now -- the handler declares the dictionary -- so the consumer's own `bun install` fetches it for real. FOUND BY A RED, NOT BY READING: the symlink threw EEXIST because the directory was already there.",
-            "WHAT IT COSTS AND WHY IT IS WORTH IT: a cold bun cache now fetches 27MB once for the whole suite where before it fetched none. What it buys is that the dependency arrives BY THE ROUTE UNDER TEST, so a handler package that FORGOT to declare `wordnet` reddens instead of being propped up by a symlink the harness puts in reach of it.",
-            "THE ABSENCE IS ASSERTED IN BOTH FIELDS AND THE ARGUMENT DIFFERS BY FIELD: in `dependencies` an entry would ship a 27MB dictionary to every consumer of a framework that reads none; in `devDependencies` it would ship nothing and still be a second, silently divergent declaration of one dependency. The suite drives a real hover, so reaching for that entry is the obvious well-meaning edit.",
-          ],
-        },
-        {
-          test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
-          implementation:
-            "Criteria 7 and 8: repair the named README sites, and read the packed tarball's dependencies.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "3b04fdd",
-              message: "feat(hover): the wordnet handler is a package a config author installs",
-              phase: "green",
-            },
-            {
-              hash: "e874c4c",
-              message: "test(package): pin what the dictionary and the workspace may not reach",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "The examples stop being one kind of thing -- two are copied and one is installed -- while README says the set is copied WHOLE.",
-            'Criterion 8 is scoped to `dependencies` deliberately: a workspace member in devDependencies never reaches a consumer, and files:["dist"] keeps examples/ out of the tarball anyway.',
-            "The enumeration is a PREDICTION, worthless if not committed first. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
-            "EVERY ENUMERATED SITE REPAIRED, one by one against the list as committed: README's `Copy the whole set, or the imports fail`, which now says what IS copied and then that the handler is not; its two table rows for hover-wordnet.ts and wordnet.d.ts, REMOVED with the files; its `<!-- examples-install -->` block, which installs the handler's tarball instead of `bun install wordnet`; `exampleSources()`'s doc and its two wordnet entries in test/helpers/install.ts; and the borrowed-wordnet comment, which now records why the loan ended.",
-            "THREE SITES THE LIST DID NOT NAME, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT. test/readme.test.ts x2 -- the `stands in by SYMLINKING wordnet` asymmetry note, and a test whose name and premise both said the block names `the package the examples do need`, which is now the HANDLER and not the dictionary. test/helpers/readme.ts's matching `borrowing wordnet` sentence. examples/completion-path.ts's justification for not sharing `preferredFormat`, which rested on `each example is copied on its own` -- now half false, since the other one is installed. AND test/published-artifacts.test.ts's withheld-wordnet test, whose whole premise was that the ambient declaration sits in the CONSUMER'S tree; it reddened rather than drifting quietly, because the file it deleted is now a real directory.",
-            "THE SWEEP THAT FOUND THEM IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 46: the hazard is that `@atusy/tsudoi-` is now a SHARED PREFIX of two package names, so a matcher meant for one could silently take the other. THE INSTRUMENT: `grep -rhoE '@atusy/tsudoi.{0,22}'` reduced to the full name-character class and grouped, which SEES a longer name instead of matching it. RESULT: six distinct tokens across the tree -- `-language-server` 109, `-hover-wordnet` 21, the BARE `@atusy/tsudoi` 13, `-language-server-wrong` 2, `-language-server.` 1, `-completion-path` 1 -- and every bare and `-wrong` occurrence is inside scrum.ts, quoting the pre-rename name or Sprint 46's own record. A SECOND INSTRUMENT for the matcher class rather than the name class: every `startsWith(` and `.includes(` in src/, test/, scripts/ and packages/, unbounded on the needle. Thirteen and eleven sites, read one by one; none takes a package name as its needle except the two README token regexes, which already carry `(?![A-Za-z0-9._-])`, and package-shape's directory prefix, which this sprint bounded by realpathing BOTH sides after a workspace install made node_modules/typescript itself a link.",
-            "CRITERION 8 IS ASSERTED OVER MEMBERS AS A CLASS, read off the unpacked tarball's package.json, with two vacuity guards. AND WHAT IT CANNOT CURRENTLY BE THE FIRST THING TO CATCH IS MEASURED: moving the handler into `dependencies` never reaches the assertion, because `bun install` 404s on an unpublished name and the consumer is never built. The property is FORECLOSED BY THE REGISTRY for exactly as long as both packages stay unpublished, and the assertion becomes load-bearing the moment either is published. Recorded at the test, not argued away.",
-          ],
-        },
-        {
-          test: "Review does not open until revise has converged.",
-          implementation: "Run the revise skill without a PR.",
-          type: "structural",
-          status: "completed",
-          commits: [],
-          notes: [
-            "The stakeholder's standing instruction. A criterion asserts a property a perturbation can falsify; revise finds what nobody thought to assert.",
-            "Sprint 46 is the evidence it earns its keep: four green checks, a balanced census and a record claiming completeness all concealed two disarmed controls.",
-          ],
+          notes: [],
         },
       ],
     },
@@ -422,182 +286,34 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 49,
-    pbi_id: "PBI-52",
-    status: "in_progress",
-    goal: "A config author installs path completion and its item resolution as @atusy/tsudoi-completion-path, completing the three-module composition the stakeholder asked for.",
-    impediments: [],
-    decisions: [
-      "THE RESOLVE HALF TRAVELS WITH THE COMPLETION HALF, ruled by the stakeholder. Leaving resolve-path-stat behind would promote `completedPath` -- the internal marker the completion attaches to its items -- into a package's PUBLIC API, and every change to how the marker is attached would become a compatibility question. The accepted cost is that the package name does not say it answers two methods, and it is paid where a reader meets it rather than in the name.",
-      "THIS SPRINT ADDS NO SHAPE TO test/guard.test.ts, A PREDICTION SPRINT 47 MADE ABOUT THIS ONE. Its deno-guard shape was written over MEMBERS AS A CLASS rather than naming a package, so a second member needs no second shape. IF A SHAPE IS ADDED HERE, SPRINT 47'S CLASS-LEVEL CLAIM WAS FALSE and that is the finding.",
-      "SPRINT 47'S CRITERION 2 CARRIED A REFUTED MECHANISM AND THIS PBI INHERITS THE CORRECTED ONE: break the MEMBER'S OWN route -- its peer entry or the apparatus symlink -- and require TS2307 naming the subpath. It reads only the member, so no root observation is involved.",
-      "SPRINT 47'S CLASS-LEVEL CLAIM HELD AND THE PREDICTION IS DISCHARGED: test/guard.test.ts NEEDED NO NEW SHAPE. Its deno-guard shape is `packages/probe/src/index.ts`, a path no package occupies, so a second member is covered by the shape that was already there -- and the suite was green on that file at every gate this sprint with nothing added to it.",
-      "THE APPARATUS MOSTLY SUFFICED AND WHAT IT DID NOT IS REPORTED. The symlink builder, the fifth check, the packed-tarball reader and the deno guard all took a second member with no edit. THREE THINGS DID NOT: the member's tsconfig.build.json needs `types: [\"node\"]` where hover-wordnet's needs none, because this handler imports `node:` builtins and `types: []` gives TS2591 on every one of them; test/helpers/install.ts named ONE handler package and had to be enumerated from `workspaces`; and its `omitHandler` flag had to become a NAME, since a flag over two members withholds both and the config then fails on whichever import the loader reached first.",
-    ],
-    subtasks: [
-      {
-        test: "A consumer installs the package and gets both completion and item resolution, with no byte of either source in their project.",
-        implementation:
-          "Extract examples/completion-path.ts and examples/resolve-path-stat.ts into packages/completion-path as @atusy/tsudoi-completion-path.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "fb435bb",
-            message: "tidy(test): a consumer installs every declared member, not one named package",
-            phase: "refactoring",
-          },
-          {
-            hash: "b446c20",
-            message:
-              "feat(completion-path): path completion and its item resolution are installed, not copied",
-            phase: "green",
-          },
-          {
-            hash: "dd72677",
-            message:
-              "test(published): the path package's promise is read off the installed copy, both ways",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "completion-path.ts exports THIRTEEN names against hover-wordnet's three. An example's exports are incidental; a package's are a promise. CLASSIFY EACH ONE INDIVIDUALLY -- the PO named this the largest single cost in the whole request.",
-          "`completedPath` stays internal: it is the marker the completion attaches and the resolution reads, so publishing it would make the marker a compatibility surface.",
-          "loadConfig refuses a config supplying completionItem/resolve without textDocument/completion, so the two halves must arrive together.",
-          "CLASSIFIED: TWO PUBLISHED, ELEVEN INTERNAL, ONE INTERNAL FURTHER IN. `pathCompletion` and `resolvePathStat` are index.ts's whole surface. `batchSize` is not exported by its own module at all, since what it decides is the SIZE OF EACH $/progress and a test importing the number would agree with itself. The other eleven are module-exported so the member's own tests reach them and index.ts omits them.",
-          "THE MARK IS IN THE TARBALL AND STILL UNPUBLISHED, which is the distinction the probe had to be built for: dist/completion.d.ts DECLARES `completedPath` -- one module must export it for the other to import it -- so what makes it internal is the `exports` map naming `.` alone. Both routes are refused, and the deep-path arm is not redundant: drop the map and the entry-point arm stays red while the deep one goes GREEN.",
-          "THE OPTION BAG COST WAS MEASURED BEFORE IT WAS ACCEPTED. A consumer passes `{ cwd }` through `Parameters<typeof pathCompletion>[2]` at exit 0, a misspelled member is refused naming it, and `import type { PathCompletionOptions }` fails. So withholding the name costs the annotation and nothing else -- and the excess-property arm is what separates that green from the one `any` produces.",
-          "TWO APPARATUS FACTS THIS PACKAGE FORCED, neither of which hover-wordnet had exercised. (1) tsconfig.build.json's `types: []` gives TS2591 on every `node:` specifier, so this member's build config carries `types: [\"node\"]` and its manifest a devDependency; hover-wordnet imports no builtin and never met it. (2) The member resolves THREE tsudoi subpaths -- `/types`, `/deps/protocol`, `/deps/types` -- where hover-wordnet resolves two; the symlink apparatus covered all three with no change.",
-          "AND ONE ROOT-PROGRAM ARM LOST ITS ONLY IMPORTER. `deps/textdocument` was asked for by test/completion-path.test.ts alone, which moved into the member, and test/package-shape.test.ts's resolution probe REDDENED naming the empty answer -- the colour its own doc block predicts for an arm nothing imports. Repaired by annotating the document store's read in test/documents.test.ts with the PUBLISHED type, which is the pair a config author writes anyway.",
-        ],
-      },
-      {
-        test: "The member resolves tsudoi through its own route, proven by breaking that route and nothing else.",
-        implementation:
-          "Apply the corrected perturbation: break the member's peer entry or the apparatus symlink and require TS2307 naming the subpath.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "b270197",
-            message:
-              "test(members): each member reaches tsudoi by its own route, broken one arm at a time",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "The mechanism Sprint 47's criterion asked for was refuted by this repository's own record -- root tsc stays green because `name` and `paths` are redundant covers. This reads ONLY the member.",
-          "Sprint 48 measured that a wrong peerDependencies key leaves the fifth check exit 0 and silent, while packages/hover-wordnet's own package-shape test DOES redden on it. Know which instrument you are relying on.",
-          "RE-MEASURED ON THIS MEMBER AND SPRINT 48 HOLDS, WIDER THAN IT WAS WRITTEN: with `peerDependencies` DELETED from packages/completion-path/package.json, the member's own `tsc --noEmit` is exit 0 AND the fifth check is exit 0, both silent -- so the load-bearing route is the apparatus SYMLINK and the manifest entry is a declaration nothing resolves through. What refuses it is the member's own package-shape test, watched failing at `+ undefined`.",
-          "THE THIRD ARM'S MECHANISM WAS SUBSTITUTED ON A MEASUREMENT OF THE CLAIM ITSELF, not on an inference from a neighbouring one. `break a name in src/types.ts` DOES NOT REACH A MEMBER: renamed `MethodHandler` to `MethodHandlerRenamed` at both its occurrences in src/types.ts and ran each member's own `tsc -p tsconfig.json` with NO rebuild -- BOTH EXIT 0, because a member resolves through the `exports` map into dist/ and nothing it reads had changed. Rebuilding to make it visible is the Sprint-44 class, since a failed rebuild leaves dist/ fresh and wrong. The probe asks the subpath for a name it does not export instead: TS2305 with ZERO TS2307 separates `a real declaration` from `unresolved` and from `any`, with no build of anyone's.",
-          "WHAT THE NEGATIVE ARM PERTURBS IS THE REPOSITORY'S OWN tsconfig.json, RESTORED IN A `finally` AND REPAIRED BY NOTHING ELSE -- unlike the symlink, which the shared builder rewrites. BOUNDED RATHER THAN WAVED AWAY: bun runs test files sequentially in one process and tests within a file sequentially, so the window is one test's own await chain; and no root file resolves a tsudoi subpath LAZILY -- the suite's two dynamic imports take an external package and an absolute file URL, neither of which a `paths` mapping answers. The residual is a future test that spawns during that window.",
-        ],
-      },
-      {
-        test: "Both members carry a README a stranger can act on, verified off the packed tarball.",
-        implementation:
-          "Per-member READMEs over BOTH packages, naming what it answers, that it requires tsudoi at run time, and the constraint that bounds it.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "68c4ee4",
-            message:
-              "docs(packages): each handler package carries the README a registry page shows",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "hover-wordnet's bounding constraint is that whitespace is its word rule. completion-path's must be found and stated, not invented.",
-          "Nothing is published yet, so no registry page is blank today -- but tsudoi's README cannot be where every handler explains its own constraints.",
-          "FOUND IN THE SOURCE, NOT INVENTED, AND THE REJECTED CANDIDATE IS NAMED: completion-path's bound is WHITESPACE ENDS A PATH -- `pathFragments` scans back from the cursor to the nearest whitespace, so a document that QUOTES, ESCAPES or COMMA-SEPARATES its paths is served by a handler of its own. The candidate declined as the headline is `nothing recurses; one directory listing per fragment`: it is true and it is stated, but it bounds WHAT IT COSTS rather than WHICH DOCUMENTS IT SERVES, and the criterion asks for the second. The two packages arriving at the same whitespace rule independently is a coincidence worth reading, not a shared implementation.",
-          'MEASURED BEFORE THE TABLE WAS EDITED: `files: ["dist"]` names no README.md and `bun pm pack` COLLECTS IT ANYWAY, so a reading taken from the manifest would have concluded the registry page is blank. Both members\' READMEs are read out of the ARCHIVE, and the three subjects are pinned per member -- the bounding sentence differs by package, so a shared needle would be satisfied by whichever member carried it.',
-          "THE ROUTE MOVED RATHER THAN BEING DUPLICATED. The `handler-pack` and `examples-install` markers are gone from the root README and live in each member's, extracted and executed PER MEMBER; a root test refuses either marker's return. The root document's own promise is narrowed to `every block HERE is executed`, and the read-only exception now sits in the documents that carry the read-only command.",
-        ],
-      },
-      {
-        test: "Something reddens the day tsudoi is published, so the optional-peer premise cannot die unnoticed.",
-        implementation:
-          "Pin the optional-peer reversal where the publishing edit passes, over BOTH members.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "dd15221",
-            message:
-              "test(premise): the optional-peer falsehood cannot outlive the reason it is carried",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "`peerDependenciesMeta.optional: true` says `works without tsudoi`, which is false; it buys silence on a 404 while tsudoi is unpublished. Measured: a project given the handler tarball alone installs with NO warning at all, then fails at load.",
-          "The property is required; the instrument is Planning's to choose. README's `The package is not published` section is executed by the suite and is a candidate, not a requirement.",
-          "THE INSTRUMENT CHOSEN, AND THE SHAPE MATTERS MORE THAN THE SITE: the premise is READ and never ASSERTED. An assertion that the README still says `not published` would demand the document keep lying after publication, which is the opposite of the property; what may not happen is the manifest and the document DISAGREEING, in either direction -- a member that dropped the flag early is named too, because installing it then 404s.",
-          "WATCHED FAILING RATHER THAN ARGUED: with that section rewritten to say tsudoi is published, the reading names `packages/completion-path` and `packages/hover-wordnet` and what each of them says. The fact itself is shared with test/readme.test.ts as one exported constant, so the two cannot disagree about which section states the premise, and that file already requires it to have exactly ONE home.",
-          "WHAT IT CANNOT SEE, BOUNDED HONESTLY: a publisher who publishes and never touches the README. Nothing in a suite observes a registry, and a probe that did would make this repository's green depend on somebody else's uptime. What is bought is that the one edit needed to stop the document lying is the edit that reddens this.",
-        ],
-      },
-      {
-        test: "Every prose site this falsifies is repaired, and the enumeration is committed before the sites are found.",
-        implementation:
-          "README and comment repair. The examples set shrinks again: what remains copied, what is installed.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "fa2d766",
-            message: "fix(test): the route perturbation refuses an entry it did not put there",
-            phase: "refactoring",
-          },
-          {
-            hash: "4e5304b",
-            message:
-              "docs(comments): the path handlers are named as a package, not as a file that moved",
-            phase: "refactoring",
-          },
-          {
-            hash: "4b65698",
-            message: "docs(build): the preload's reason is re-measured, not reworded",
-            phase: "refactoring",
-          },
-          {
-            hash: "2435df1",
-            message: "test(packed): a shipped comment may not name a file the reader does not have",
-            phase: "green",
-          },
-          {
-            hash: "485060f",
-            message:
-              "docs(readme): the capability chain's reader is named as the package it is now",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "A NON-EXECUTED README BLOCK IS INDISTINGUISHABLE FROM AN EXECUTED ONE TO A READER, so one such block silently withdraws the guarantee for the whole document. Sprint 47 found two defects behind one unexecuted block, including an install path naming a file that is never created -- `bun pm pack` inside a member writes to the WORKSPACE ROOT.",
-          "The enumeration is a PREDICTION. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
-          "THE ENUMERATION, COMMITTED BEFORE THE SITES ARE REPAIRED. Twenty-one predicted sites in fourteen files, in three classes. CLASS ONE, A PATH THAT NO LONGER EXISTS: bunfig.toml's measured diagnosis naming `examples/completion-path.ts`; test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason, which rests on that example being STATICALLY imported by a root test; test/completion.test.ts x3; test/client-capabilities.test.ts; test/workspace.test.ts; test/package-shape.test.ts; test/helpers/checkout.ts; test/fixtures/capabilities-mutation.ts; test/resolve-path-stat.test.ts; packages/hover-wordnet/test/hover.test.ts; and src/types.ts x3, src/server.ts, src/tsudoi.ts -- the last five being tsudoi's OWN source citing an example that is now a package.",
-          "CLASS TWO, A CLAIM WHOSE PREMISE THIS SPRINT REMOVED rather than a path that moved: test/helpers/build.ts's account of WHICH ARM NEEDS dist/, and the README's `examples/ import ...` sentence, both written when the path handlers were files in examples/.",
-          "CLASS THREE, AND IT IS SPRINT 47'S OPEN ITEM MEASURED ON THE ARTIFACT: packages/hover-wordnet/dist/hover.js SHIPS three repository-path claims -- `scripts/workspaces.ts`, `test/package-shape.test.ts`, `src/wordnet.d.ts` -- read off the packed tarball. completion-path's packed files carry NONE by the same instrument. THE INSTRUMENT IS A MATCHER AND THEREFORE SUSPECT, so the sweep is turned into a test with a proven-positive control rather than left as a grep.",
-          "ONE SITE THE ENUMERATION MISSED, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT: README.md's handler-context paragraph, which names the reader of `clientCapabilities.textDocument.completion.completionItem.insertReplaceSupport`. It survived the section rewrite because it sits in prose about a handler's CONTEXT rather than in the install prose that moved, so the edit that fixed the rest never passed through it.",
-          "CLASS TWO CAME BACK LARGER THAN PREDICTED, AND THE SURPLUS IS THE FINDING. test/helpers/build.ts's `SYNCHRONOUS ON PURPOSE` reason was not merely citing a moved file: it was ALREADY FALSE FOR BUN, and the same file said so two paragraphs down -- `paths` intercepts a self-referencing subpath before the exports map. MEASURED, from the repository root, with a probe in each place: under test/ that subpath resolves to ./src/deps/types.ts and inside a member's test directory to ./dist/deps/types.js, because bun applies the tsconfig NEAREST THE IMPORTING FILE and a member's carries no mapping. So the synchronicity now has a true reason it did not have before -- the members' own tests are the static importers that need the build finished.",
-          "AND TWO MEASURED CLAIMS WERE RE-RUN RATHER THAN REWORDED. With dist/ removed from the root AND both members and bunfig.toml absent: 87 fail / 603 pass / 2 errors, 690 of 729 tests even RUN, and the first failure names the demo config failing on `@atusy/tsudoi-completion-path`. AND `cd test && bun test` NO LONGER RUNS THE SUITE AT ALL -- measured with a filter matching nothing, 45 files and 680 tests from test/ against 49 and 731 from the root -- because bun discovers test FILES relative to the working directory too and the members' tests are outside it. A count of how many others fail under a narrowed dist/ was DROPPED rather than re-measured: it is a size that moves whenever the suite grows, and what earns the comparison its keep is which failure names the cause.",
-        ],
-      },
-      {
-        test: "Review does not open until revise has converged.",
-        implementation: "Run the revise skill without a PR.",
-        type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [
-          "Three sprints of evidence that it finds what the gate and the criteria both miss.",
-          "THE PACKED TARBALL'S SHIPPED COMMENTS ARE NEVER INSPECTED -- Sprint 47's open item. A claim in a shipped comment naming a repository path or test is the shape that has escaped three times.",
-        ],
-      },
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 49,
+      improvements: [
+        {
+          action:
+            "AN UNFALSIFIABLE TEST IS WORSE THAN A MISSING ONE WHEN IT PAYS A COST TO EXIST. One rewrote the tracked root tsconfig.json to show a member ignores it; `tsc -p <member> --showConfig` proves the root config is never in the member's program, so that edit could not move the result. IT COULD NOT FAIL, AND IT WAS MUTATING A VERSION-CONTROLLED FILE TO NOT FAIL. THE DETECTOR IS CHEAP AND SHOULD BE ROUTINE: before writing a perturbation, ask whether the perturbed input is in the program the assertion reads.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "PIN A PREMISE TO SOMETHING ON THE PATH BY CONSTRUCTION, NOT TO PROSE THAT DESCRIBES IT. The optional-peer falsehood was bound to a README section, so publishing WITHOUT editing the README stayed green -- the pin sat beside the door rather than in it. `private: true` is on the publish path by construction: the one edit that permits publication is the edit that reddens. GENERALISES BEYOND THIS CASE: when a claim must die on an event, find the artifact the event CANNOT AVOID TOUCHING.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A GUARD'S STATED CLASS WAS MEASURED WIDER THAN ITS IMPLEMENTATION, AND THE HONEST FIX WAS TO NARROW THE NAME. Widening the matcher to bare filenames was measured NOT to catch the named escapee -- `.ts` reads back to `.d.ts`, which resolves -- and would add only words a consumer genuinely has. SO THE CHOICE WAS BETWEEN A TRUE NARROW NAME AND A WIDER MATCHER THAT STILL MISSES, and the name was narrowed. Pairs with the standing rule that a test name claiming more than its assertion verifies is a defect: THE REPAIR MAY BE THE NAME.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 48,
       improvements: [
@@ -778,14 +494,6 @@ const scrum: ScrumDashboard = {
     {
       sprint: 42,
       improvements: [
-        {
-          action:
-            "A DoD CHECK CAN READ A STALE ARTIFACT, AND THIS ONE DOES. `tsc --noEmit` type-checks examples/ against `dist/types.d.ts` rather than src/, because package.json maps `@atusy/tsudoi/types` to the BUILT file; `bun test`'s preload rebuilds dist/ and TSC DOES NOT. So the two disagree exactly when the published surface has moved, which is the only time it matters. MEASURED TWICE IN ONE SPRINT, in both directions: tsc EXIT 0 beside 43 test failures on one tree, and tsc EXIT 1 on a CLEAN src/ against a leftover dist/. FILED AS A FOURTH INSTANCE OF THE SPRINT-35 STALENESS CLASS AND THE FIRST WHERE THE STALE ARTIFACT IS READ BY AN INSTRUMENT RATHER THAN BY A TEST -- the three before it were tests reading a stale dist/, which the preload now covers. THE PRACTICE UNTIL IT HAS A HOME: after any change to the published types, run `tsc -p tsconfig.build.json` BEFORE believing `tsc --noEmit`. It has no home and that is the gap: nothing protects the type check the way bunfig protects the suite.",
-          timing: "immediate",
-          status: "completed",
-          outcome:
-            "THE HOME EXISTS AND IS NAMED: `paths` in tsconfig.json at ac35327, mapping `@atusy/tsudoi/*` to ./src/*.ts, with its reason asserted in test/package-shape.test.ts because JSON cannot carry one. THE FORECLOSURE HOLDS ONLY WHILE THAT KEY MATCHES, WHICH IS THE PRECONDITION THIS OUTCOME OWES ITS READER. With a mapping that matches, `tsc --noEmit` does not read dist/ at all, measured on all four exports arms in both directions. With the same key MISSPELLED it reads dist/ on every one of them, AT EXIT 0 AND ZERO BYTES, measured at 38b8709, because the specifier falls through to the exports map -- so what is here is foreclosure PLUS A WATCHED PRECONDITION, and the watch is test/package-shape.test.ts reading which file answered each published subpath and refusing a declared mapping that matches nothing. THE ACTION TEXT IS LEFT VERBATIM because it is what was true then; this outcome is what changed. AND THE PRACTICE IS SUPERSEDED RATHER THAN FALSE, which is a distinction worth the sentence: its stated purpose -- `before BELIEVING tsc --noEmit` -- is gone, since that check no longer reads the artifact the build produces. What running `tsc -p tsconfig.build.json` STILL answers is a different question, `does src/ compile under the BUILD config`, whose types and module settings differ from the DoD's; that question is owned by bunfig.toml's preload, which builds before any test loads, and by prepack, which builds before any tarball is collected. MEASURED THIS SPRINT rather than argued: src/ carrying a `Bun` global passes `tsc --noEmit` and fails the build, and the suite reddens at test/published-specifier.test.ts naming the offending line.",
-        },
         {
           action:
             "A PROBE IS DEGENERATE WHEN ITS SUBJECT IS NOT REACHED BY WHAT IT PERTURBS, AND `EXIT 0 WITH ZERO ERRORS` IS THE SHAPE THAT HIDES IT. MEASURED, BY THE SCRUM MASTER, AGAINST THEMSELVES: renaming `Method` in dist/types.d.ts left tsc at exit 0 and was nearly read as `tsc does not consult dist/` -- when it meant only that NO EXAMPLE IMPORTS `Method`. The re-probe used a name they DO import and gave TS2305 at the example. THIS IS THE THIRD DEGENERATE PROBE THIS THREAD -- an excess object member that excess-property checking could not reach, an import that failed to resolve so every name was `any`, and now a perturbation of an unimported symbol -- AND ALL THREE PRODUCED A CLEAN GREEN. EXTENDS the Sprint-9 non-vacuity entry with the specific question that catches this class: BEFORE READING A GREEN, ASK WHETHER WHAT YOU PERTURBED IS REACHED BY WHAT YOU MEASURED. Not whether the control fired -- whether it COULD have.",
