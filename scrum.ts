@@ -376,7 +376,7 @@ const scrum: ScrumDashboard = {
     number: 50,
     pbi_id: "PBI-55",
     goal: "Every member the workspace declares has one name, not two: its directory is its package name with the scope dropped, and the repository refuses the day they differ -- for members as a class, not for the ones that exist today.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "Point each of the three hardcoded member paths (test/completeness-ruling.test.ts twice, test/packed-members.test.ts once) at a nonexistent basename, run each file alone, and record the colour.",
@@ -447,6 +447,7 @@ const scrum: ScrumDashboard = {
       "GUARD FIRST, RENAME SECOND, and it is not taste: the directories mismatch TODAY, so the guard has a real subject and the rename is what makes it green. Renaming first would leave the guard demonstrated only against probes written alongside it.",
       "THE PO'S EVIDENCE REQUIREMENT AND THE DEV'S ATOMICITY REQUIREMENT COLLIDED, AND THE FACILITATOR SPLIT THEM RATHER THAN PICKING ONE. PO required the pre-repair red to survive as evidence and asked for it as a separate COMMIT; Dev required the rename not to be split across commits because the root's relative links dangle in between; and this project commits on green, never on red. RULED: the red is obtained and RECORDED AS MEASURED FAILURE TEXT in the subtask notes, and the commit stays atomic. The evidence the PO named is the failure text, which a commit boundary does not produce and cannot improve. DISSENT RECORDED: the PO holds that a commit boundary is stronger evidence than a recorded run.",
       "THE PO WILL REFUSE THE SPRINT, EVERY CHECK GREEN, IF THE RENAME IS ACHIEVED BY RETARGETING, GENERALISING OR DELETING AN ASSERTION THAT KEYS ON THE MEMBER'S DIRECTORY BASENAME. Once the two spellings are equal, `read the manifest name instead` is a locally reasonable tidy that removes the second, independent reader -- and the story's benefit is one fact rather than two kept equal by hand. Explicitly outside that refusal: the basename(repoRoot) sites, which key on the CHECKOUT root and belong to PBI-56's marker collision.",
+      'THE BASELINE IS NOT WHOLLY GREEN AND THE ONE RED IS FLAKY, MEASURED BEFORE ANY SPRINT EDIT: `a completion handler that throws after yielding keeps the chunk it already sent` fails on roughly one run in three under bun, with `Expected to contain: "tsudoi: textDocument/completion handler failed:" / Received: ""` -- the server\'s stderr had not arrived when the assertion read it. IT IS RECORDED HERE RATHER THAN FIXED because a flake discovered mid-sprint is indistinguishable from a regression the sprint caused, and this sprint touches no code it runs. Anyone reading a red on that name during sprint 50 should re-run it before diagnosing.',
       "ENVIRONMENT, MEASURED THIS SPRINT AND NOT A REPOSITORY DEFECT: neither `tsc` nor `oxfmt` is on PATH in this session, and the suite spawns a BARE `tsc` (test/helpers/typecheck.ts), so the first baseline read 123 failures that belonged to the environment. Shimmed for the session. A baseline taken before the sprint is what stopped those reds from being read as the sprint's.",
     ],
   },
