@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
 import { prepareWorkspace } from "../scripts/workspaces.ts";
 import { runTsc } from "./helpers/typecheck.ts";
+import { workspace } from "./helpers/workspace.ts";
 
 /**
  * WHAT scripts/typecheck-workspaces.ts OWES, DRIVEN AGAINST WORKSPACES BUILT
@@ -48,17 +48,6 @@ const memberTsconfig = JSON.stringify({
   },
   include: ["src"],
 });
-
-/** Writes `files` under a fresh directory, creating parents as needed. */
-function workspace(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), "tsudoi-workspace-"));
-  for (const [path, contents] of Object.entries(files)) {
-    const target = join(root, path);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, contents);
-  }
-  return root;
-}
 
 /** Runs the fifth Definition-of-Done check over a throwaway workspace. */
 async function checkWorkspace(files: Record<string, string>): Promise<CliResult> {
