@@ -173,11 +173,23 @@ test("removing the root's paths mapping leaves every member's own check unchange
  * it -- without that half, a probe that failed to resolve would produce a red
  * and be read as a pass.
  *
- * A PERTURBATION OF tsudoi's OWN SOURCE WOULD NOT REACH THIS AND THAT IS
- * MEASURED RATHER THAN ASSUMED: a member resolves the subpath through the
- * `exports` map to dist/, so an edit to src/types.ts changes nothing a member
- * sees until something rebuilds -- and a rebuild that failed would leave dist/
- * fresh and wrong. The probe below needs no build of anyone's.
+ * A PERTURBATION OF tsudoi's OWN SOURCE WOULD NOT REACH THIS, AND THAT IS A
+ * DEDUCTION RATHER THAN A READING TAKEN HERE. The distinction is written down
+ * because it decides what a later editor may lean on: nothing below perturbs
+ * this package's source, so nothing below can report what such an edit does.
+ *
+ * WHAT IS MEASURED IS ONE STEP AWAY, in test/package-shape.test.ts, and the
+ * deduction is its consequence: `with no mapping the same subpaths answer from
+ * the built artifact` reads these specifiers resolving through the `exports` map
+ * to dist/, and a member declares no `paths` of its own -- so an edit to this
+ * package's src/ changes nothing a member sees until something rebuilds, and a
+ * rebuild that failed would leave dist/ fresh and wrong.
+ *
+ * THE ISOLATED SOURCE-ONLY PERTURBATION IS REFUSED RATHER THAN OVERLOOKED: the
+ * only way to take that reading directly is to edit a tracked source file of
+ * this package and put it back, and a suite that mutates version-controlled
+ * files is a hazard this repository declines to carry for a fact already
+ * established elsewhere. The probe below needs no build of anyone's.
  *
  * WRITTEN INTO THE MEMBER AND REMOVED AGAIN, because the member's `include`
  * covers src/ and test/: a probe anywhere else is not in the program its own
