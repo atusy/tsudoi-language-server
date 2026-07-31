@@ -74,9 +74,13 @@ function ready(): Promise<void> {
  * The run of non-whitespace characters containing `character`, or "" when the
  * cursor sits on whitespace.
  *
- * Whitespace is the crudest word rule there is, and that is the point: this is
- * the one function a real config author replaces with their own language's
- * notion of a word.
+ * WHITESPACE IS THIS PACKAGE'S WORD RULE, FULL STOP, and it is a decision rather
+ * than a placeholder. A word rule is exactly the line a reader of an EXAMPLE
+ * edits, and an installed package offers no such line: nothing here is
+ * published, and importing this function could not make `hoverWordnet` call
+ * another. What would is an option on the handler, which is a purchase this
+ * package refuses -- so a language that does not delimit its words with spaces
+ * wants a handler of its own rather than a setting on this one.
  *
  * Both LSP `character` and JavaScript string indices count UTF-16 code units,
  * so plain slicing is correct -- iterating code points would drift on the

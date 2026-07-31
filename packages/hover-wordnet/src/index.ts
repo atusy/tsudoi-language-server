@@ -13,13 +13,13 @@
  * costs no coverage.
  *
  * `wordAt` IS THE ONE THAT COSTS SOMETHING, and the cost is stated rather than
- * bought off. Its own comment calls it the function a config author replaces
- * with their own language's notion of a word -- true of a file you copy, and
- * FALSE OF A PACKAGE YOU INSTALL. Publishing it would not restore that: an
+ * bought off. A crude word rule is the line a reader of an example edits, and
+ * withholding it takes that away: publishing it would not give it back, since an
  * author cannot make this handler call their version by importing ours. What
  * would is an option on the handler, and inventing one here to keep an
  * affordance nobody has asked for is a purchase this backlog refuses by name. So
- * whitespace is this package's word rule, full stop, and an author who needs
- * another writes a handler rather than configuring this one.
+ * whitespace is this package's word rule, full stop -- said at the function
+ * itself, which is where a maintainer meets the question -- and an author who
+ * needs another writes a handler rather than configuring this one.
  */
 export { hoverWordnet } from "./hover.ts";
