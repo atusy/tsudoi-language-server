@@ -399,6 +399,10 @@ const scrum: ScrumDashboard = {
     decisions: [
       "THE ORDER OF THE FIRST TWO SUBTASKS IS THE SPRINT'S ONE REAL RISK. Criterion 4 WITHDRAWS root tsc's coverage of members, and criterion 3 depends on the other three root checks still reaching in. Building the member BEFORE the withdrawal leaves a window in which root tsc answers for it THROUGH THE PARENT'S `paths` AND REPORTS SUCCESS -- measured at Sprint 46's planning, where a planted member's `@atusy/tsudoi/types` import produced no error and deleting `paths` turned the same line into TS2307. Foreclose first, then build, so the hazard is never constructible rather than merely unobserved.",
       "SPRINT 46'S RETROSPECTIVE BINDS THIS SPRINT'S VERIFICATION: a sweep for a defect that is a property of matching is itself an instance of that class. Any grep over package names here is bounded on the right BEFORE it is trusted, and a negative result names the instrument that produced it.",
+      "THE DEFINITION OF DONE, EACH COMMAND RUN UNPIPED, AS RUN: `bun test` 651 pass / 0 fail across 43 files; `bunx tsc --noEmit` EXIT 0; `bunx oxlint` EXIT 0 with the one pre-existing require-yield warning at test/fixtures/throws-on-cancel.ts:51; `bunx oxfmt --check .` EXIT 0; `bun run scripts/typecheck-workspaces.ts` EXIT 0. BASELINE AT THE SPRINT'S START, re-measured rather than taken from the brief: 635 pass / 1923 expect() calls, and the brief's number matched.",
+      "A COST THIS SPRINT ADDS, AND IT IS THE ONE PLACE THE DoD GOT WEAKER: `bunx tsc --noEmit` ON A CHECKOUT NOTHING HAS BUILT now reports TS2307 at examples/tsudoi.config.ts naming the member. A member ships dist/ and not src/, its `exports` names no source arm, and the root tsconfig deliberately holds no `paths` mapping standing in for one -- because a mapping added to spare this build would pull member SOURCE into the root program through module resolution, which `exclude` does not stop, and that is precisely the hazard criterion 4 forecloses. SO THE FAILURE IS LOUD AND NAMES ITS OWN REMEDY, and any other Definition-of-Done command clears it, since both the test preload and the fifth check run the same builder. IT IS NOT A SILENT DEGRADATION AND IT IS NOT NOTHING; it is written at test/helpers/build.ts where the next reader meets it.",
+      "TWO RESIDUALS IN THE MEMBER'S MANIFEST, NAMED RATHER THAN LEFT TO BE DISCOVERED. `peerDependenciesMeta.optional` READS AS `THIS PACKAGE WORKS WITHOUT TSUDOI`, WHICH IS FALSE -- the handler imports a value from it. What it actually buys is that no installer goes looking in a registry for a package nothing has published, which is the state this whole backlog insists on; without it `bun install` EXITS 1 on a 404, measured. It should become a plain peer the day tsudoi is published. AND THE ROOT'S DEVDEPENDENCY ON THE MEMBER IS AN EXACT VERSION RATHER THAN `workspace:*`, because `workspace:*` breaks every DETACHED COPY of the manifest -- the pack stage and the README checkout both write package.json into a temp directory and `bun pm pack` there refuses with `Failed to resolve workspace version`. A real pack at the repo root rewrites it to that same exact string, so the two publish identically and only one survives being copied; what it costs is two versions kept equal by hand, asserted in test/package-shape.test.ts.",
+      "A PRE-EXISTING SHAPE THIS SPRINT GAVE A SUBJECT TO, REPORTED AND NOT FIXED HERE. test/published-artifacts.test.ts records the declaration-emit divergence as a hazard with NO SUBJECT, because nothing published carried a relative re-export. The member's src/index.ts is one, so dist/index.d.ts now reads `export { hoverWordnet } from \"./hover.ts\"` beside dist/index.js's correct `./hover.js` -- a specifier naming a file the tarball does not ship. MEASURED HARMLESS FOR A CONSUMER: with `types: []` and no allowImportingTsExtensions the full `MethodHandler<\"textDocument/hover\">` is reached, read off TS2322. AND THE SAME SPELLING IS ALREADY THROUGHOUT THIS PACKAGE'S OWN dist/*.d.ts, so it is the build config's behaviour repo-wide and not something the member introduced. WHAT IS WORTH A PBI: deleting dist/hover.d.ts leaves that consumer at EXIT 0, so a missing re-export target is not reported at all and the export would silently be `any`.",
     ],
     subtasks: [
       {
@@ -431,34 +435,55 @@ const scrum: ScrumDashboard = {
         implementation:
           "Extract examples/hover-wordnet.ts and its ambient wordnet.d.ts into packages/ as @atusy/tsudoi-hover-wordnet, with wordnet as its runtime dependency.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3b04fdd",
+            message: "feat(hover): the wordnet handler is a package a config author installs",
+            phase: "green",
+          },
+        ],
         notes: [
           'examples/wordnet.d.ts is an ambient `declare module "wordnet"`. Shipped inside a published package it lands in every consumer\'s global type space -- decide and state what happens to it.',
           "hover-wordnet.ts exports three names. An example's exports are incidental; a package's are a promise. Classify each one by one.",
           "The negative control is that NO BYTE of the handler's source is written into the consumer project.",
+          "CRITERION 1 MET, BOTH DIRECTIONS IN ONE MEASUREMENT. The consumer installs two tarballs, writes a config whose only hover mention is the package specifier, and the hover answers `apple\\n\\nnoun — fruit with red or yellow or green skin and sweet to tart crisp whitish flesh` over the wire -- READ OFF A DELIBERATE MISMATCH rather than trusted, since a `toContain` that passes is equally what an `undefined` produces. Its own directory holds no path matching `hover-wordnet` while holding tsudoi.config.ts, so the empty list is not a walk that found nothing. NEGATIVE CONTROL: omit the handler tarball and the same config cannot load, stderr naming `@atusy/tsudoi-hover-wordnet`.",
+          'THE AMBIENT DECLARATION IS KEPT INSIDE THE PACKAGE AND DELIBERATELY NOT PUBLISHED, which is the decision Planning left open. `declare module "wordnet"` in a shipped package declares a third party\'s module for everyone who installs it -- including a project with its own declaration, or a future @types/wordnet it would collide with. `files: ["dist"]` keeps it out and declaration emit does not copy a `.d.ts` INPUT. WHAT MAKES IT AFFORDABLE IS A CONSTRAINT ON THE SURFACE, not on the file: nothing published names a `wordnet` type. MEASURED ON THE ARTIFACT -- neither dist file carries `wordnet` or `declare module`, and a consumer with `types: []` and NO allowImportingTsExtensions resolves `hoverWordnet` to the full `MethodHandler<"textDocument/hover">`, read off TS2322 from assigning it to a number because a green there is equally what `any` gives.',
+          "THE THREE EXPORTS, CLASSIFIED ONE BY ONE AND NOT AS A BATCH. `hoverWordnet` IS PUBLISHED -- it is the artifact, and src/index.ts names it alone. `define` IS INTERNAL: only this package's own test reads it, by relative import, so keeping it in costs no coverage and publishing it would promise a dictionary-lookup signature to strangers. `wordAt` IS INTERNAL AND IT IS THE ONE THAT COSTS SOMETHING: its own comment calls it the function an author replaces with their language's notion of a word, which is TRUE OF A FILE YOU COPY AND FALSE OF A PACKAGE YOU INSTALL. Publishing it would not restore that -- an author cannot make this handler call their version by importing ours -- and the thing that would, an option on the handler, is the `an author might want it` purchase this backlog refuses by name. So whitespace is this package's word rule, the loss is real, and it is written at src/index.ts rather than bought off.",
+          "WHERE THE PACKAGE'S TESTS LIVE, which criterion 3 required the plan to say: INSIDE THE MEMBER, at packages/hover-wordnet/test/hover.test.ts. That makes `bun test` reaching the member a standing fact rather than a one-off probe, and it is what lets `define` stay unpublished -- a test outside the package could only reach it through the exports map.",
+          "THE MEMBER'S OWN DEPENDENCIES ARE ITS OWN, and one was found by measurement rather than by design: the moved test needs the TextDocument CONSTRUCTOR, and tsudoi publishes that type deliberately type-only, MEASURED as TS1362 at the member's check. So `vscode-languageserver-textdocument` is a devDependency of the member rather than borrowed from the workspace root.",
+          "BUN CANNOT LINK A WORKSPACE ROOT AS A MEMBER'S DEPENDENCY, MEASURED IN SIX SPELLINGS, and this is the sprint's one structural surprise. `workspace:*` and `workspace:.` report `Workspace dependency not found`; a plain range and `link:` reach the registry and 404; `file:../..` and a root `override` of `file:.` HARDLINK THE WHOLE CHECKOUT into node_modules/.bun -- same inodes, so the next `tsc` write silently strands the copy. THE ANSWER: `peerDependencies` plus `peerDependenciesMeta.optional`, which is the honest shape for a handler anyway -- the config and the handler must share ONE tsudoi -- plus an APPARATUS SYMLINK created by scripts/workspaces.ts. Recorded as apparatus, not design, and the layout that would remove the need for it -- the main package under packages/ rather than at the root -- is named as the alternative nobody chose.",
+          "THE APPARATUS SYMLINK BELONGS IN THE MEMBER'S node_modules AND NOT THE ROOT'S, FOUND BY A RED RATHER THAN BY THOUGHT. Placed at the root it DISARMED AN EXISTING CONTROL: test/helpers/typecheck.ts symlinks the repo's whole node_modules into every probe, so the entry handed each probe a second route to this package's real package.json, and `the same config fails with TS2307 once the exports entry is removed` went EXIT 0 with its own copy's `exports` deleted. A member's own node_modules is reached by nothing but that member.",
         ],
       },
       {
         test: "The handler package resolves tsudoi through package resolution, not through the parent's route.",
         implementation: "Prove criterion 2 with the two opposed perturbations it names.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "THE LOAD-BEARING CRITERION and the whole reason this is not a file move with a package.json on top: nothing in this repository resolves tsudoi from another PACKAGE today. Both existing routes are consumed by loose files.",
           "Sprint 46 measured the discriminating control for the parent's route: deleting tsconfig's `paths` turns a member's subpath import into TS2307.",
+          "NO COMMIT OF ITS OWN, because this subtask is a MEASUREMENT of what subtask 2 built rather than an edit. Both perturbations were applied and reverted, and the tree was verified identical to HEAD afterwards.",
+          "(a) THE ROOT MAPPING REMOVED: the member's own check is UNCHANGED at EXIT 0, which is the load-bearing half and it held. THE CRITERION'S OWN PREDICTION MISSED AND IT IS REPORTED RATHER THAN SMOOTHED: it says `the ROOT check reddens on examples/`, and root `tsc --noEmit` EXITED 0 AND SILENT. The reason is already in this backlog -- PBI-54 records that `name` and `paths` are REDUNDANT COVERS, since deleting the mapping alone lets examples/ resolve by self-reference through the exports map into dist/. So the criterion asked for a colour its own repository had already measured to be impossible from that one edit.",
+          "(b) THE NAME BROKEN, AND TAKEN WITH (a) STILL IN FORCE, which is strictly stronger than the criterion asks: with NO `paths` mapping anywhere, renaming `MethodHandler` in src/types.ts gives the member's own check `packages/hover-wordnet/src/hover.ts(27,15): error TS2305: Module '\"@atusy/tsudoi-language-server/types\"' has no exported member 'MethodHandler'` and ZERO TS2307 -- counted, not eyeballed. So the member reaches a REAL DECLARATION through package resolution alone, and the parent's mapping is not on its route at all.",
+          "THE PERTURBATION WAS CHOSEN SO THE BUILD SURVIVES IT: `MethodHandler` is referenced in exactly one place inside src/ (the MethodMap mapped type), so renaming both leaves src/ compiling and dist/ emitted -- otherwise the member would have been type-checked against a poisoned artifact, which is the Sprint-44 class rather than a measurement.",
         ],
       },
       {
         test: "bun test, oxlint and oxfmt --check . each reach inside the member, proven by planted defects rather than by argument.",
         implementation: "Verify criterion 3 with one planted defect per check.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "Measured at Sprint 46's planning against a planted member: all three reach. Re-measure rather than inherit -- this is the sprint that makes the member real.",
           "The fourth check is deliberately outside this criterion because subtask 1 withdraws it.",
+          "NO COMMIT OF ITS OWN: three defects planted in the REAL member, each measured and reverted. All three predictions written before running and all three held.",
+          "`bun test` REACHES IT AS A STANDING FACT rather than by a probe, because the member's tests live inside it: a planted failing assertion in packages/hover-wordnet/test/hover.test.ts gave 644 pass / 1 fail, the failure named.",
+          "`bunx oxlint` FROM THE ROOT WITH NO ARGUMENTS EXITED 1 naming packages/hover-wordnet/src/planted.ts TWICE, and the double reading is the strong one because the two rules fire for DIFFERENT REASONS: `import(extensions)`, which is repo-wide, and `no-restricted-imports` on `bun:sqlite`, which fires only because nothing exempts the member. One violation would not have separated `oxlint reaches the member` from `oxlint reaches it under a relaxed configuration`.",
+          "`bunx oxfmt --check .` EXITED 1 naming packages/hover-wordnet/src/planted.ts. THE DEFECT WENT IN THE MEMBER'S src/ AND NOT ITS TESTS, deliberately: the config's overrides switch `no-restricted-imports` off at every test-file path, so a defect planted in the member's test would have measured the relaxed configuration for the lint arm.",
         ],
       },
       {
@@ -466,11 +491,22 @@ const scrum: ScrumDashboard = {
         implementation:
           "Criterion 5: state the reason at .oxlintrc.json where the widening edit would be made, and add the member path to guard.test.ts's list AS A SHAPE OVER MEMBERS AS A CLASS.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "f8e997b",
+            message:
+              "test(guard): the deno ban over workspace members is pinned, not merely defaulted",
+            phase: "green",
+          },
+        ],
         notes: [
           "The ban reaches a member BY DEFAULT AND NOT BY ASSERTION today: an override widened to reach packages/ reddens nothing, because guard.test.ts pins only the shapes it carries.",
           "A shape naming one package leaves the second unpinned and nothing says so. PBI-52 should therefore add no shape -- a prediction this sprint makes about a later one.",
+          "THE SHAPE IS `packages/probe/src/index.ts`, WHICH NAMES NO PACKAGE. No package by that name exists and the config holds nothing keyed to one, so what it pins is that a file under packages/ lints exactly as src/ does. It is the member's src/ and not its tests, because the test-file override switches the rule off and a member shape spelled as a test path would assert the RELAXED configuration while reading as the strict one.",
+          "THE CONTROL FIRED ON EXACTLY THE NEW SHAPE, as the comment at .oxlintrc.json promises for the shapes already there: widening the first override's `files` to include `packages/**/*.ts` reddens ONE test -- `a bun:sqlite import is flagged in packages/probe/src/index.ts` -- with the other forty green. Before this sprint that same edit reddened nothing at all.",
+          "TWO COUNTS THE NEW SHAPE FALSIFIES WERE REPLACED BY NAMING RATHER THAN BY A BIGGER NUMBER, per the standing prefer-naming rule: `THE SIX SHAPES` in guard.test.ts and `The five path shapes` / `A SIXTH SHAPE` in .oxlintrc.json.",
+          "PREDICTED AND OBSERVED: the list drives three rules, so 644 -> 649 tests exactly.",
         ],
       },
       {
@@ -478,10 +514,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "Criterion 6, including re-homing the symlink test/helpers/install.ts borrows.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3b04fdd",
+            message: "feat(hover): the wordnet handler is a package a config author installs",
+            phase: "green",
+          },
+          {
+            hash: "e874c4c",
+            message: "test(package): pin what the dictionary and the workspace may not reach",
+            phase: "green",
+          },
+        ],
         notes: [
           "It is a devDependency today used by one example; extracted it is a runtime dependency of the handler package and nothing the main package knows about.",
+          "THE SYMLINK GOES RATHER THAN MOVES, which is the second of the two outcomes the criterion allows, and the premise died rather than being restated: it stood in for an install a README told a reader to perform BY HAND. No reader is told that now -- the handler declares the dictionary -- so the consumer's own `bun install` fetches it for real. FOUND BY A RED, NOT BY READING: the symlink threw EEXIST because the directory was already there.",
+          "WHAT IT COSTS AND WHY IT IS WORTH IT: a cold bun cache now fetches 27MB once for the whole suite where before it fetched none. What it buys is that the dependency arrives BY THE ROUTE UNDER TEST, so a handler package that FORGOT to declare `wordnet` reddens instead of being propped up by a symlink the harness puts in reach of it.",
+          "THE ABSENCE IS ASSERTED IN BOTH FIELDS AND THE ARGUMENT DIFFERS BY FIELD: in `dependencies` an entry would ship a 27MB dictionary to every consumer of a framework that reads none; in `devDependencies` it would ship nothing and still be a second, silently divergent declaration of one dependency. The suite drives a real hover, so reaching for that entry is the obvious well-meaning edit.",
         ],
       },
       {
@@ -489,12 +539,27 @@ const scrum: ScrumDashboard = {
         implementation:
           "Criteria 7 and 8: repair the named README sites, and read the packed tarball's dependencies.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3b04fdd",
+            message: "feat(hover): the wordnet handler is a package a config author installs",
+            phase: "green",
+          },
+          {
+            hash: "e874c4c",
+            message: "test(package): pin what the dictionary and the workspace may not reach",
+            phase: "green",
+          },
+        ],
         notes: [
           "The examples stop being one kind of thing -- two are copied and one is installed -- while README says the set is copied WHOLE.",
           'Criterion 8 is scoped to `dependencies` deliberately: a workspace member in devDependencies never reaches a consumer, and files:["dist"] keeps examples/ out of the tarball anyway.',
           "The enumeration is a PREDICTION, worthless if not committed first. Its SUFFICIENCY belongs to revise's reviewer, working without sight of the list.",
+          "EVERY ENUMERATED SITE REPAIRED, one by one against the list as committed: README's `Copy the whole set, or the imports fail`, which now says what IS copied and then that the handler is not; its two table rows for hover-wordnet.ts and wordnet.d.ts, REMOVED with the files; its `<!-- examples-install -->` block, which installs the handler's tarball instead of `bun install wordnet`; `exampleSources()`'s doc and its two wordnet entries in test/helpers/install.ts; and the borrowed-wordnet comment, which now records why the loan ended.",
+          "THREE SITES THE LIST DID NOT NAME, REPORTED AS DRIFT RATHER THAN FOLDED INTO IT. test/readme.test.ts x2 -- the `stands in by SYMLINKING wordnet` asymmetry note, and a test whose name and premise both said the block names `the package the examples do need`, which is now the HANDLER and not the dictionary. test/helpers/readme.ts's matching `borrowing wordnet` sentence. examples/completion-path.ts's justification for not sharing `preferredFormat`, which rested on `each example is copied on its own` -- now half false, since the other one is installed. AND test/published-artifacts.test.ts's withheld-wordnet test, whose whole premise was that the ambient declaration sits in the CONSUMER'S tree; it reddened rather than drifting quietly, because the file it deleted is now a real directory.",
+          "THE SWEEP THAT FOUND THEM IS BOUNDED AND ITS INSTRUMENT IS NAMED, per Sprint 46: the hazard is that `@atusy/tsudoi-` is now a SHARED PREFIX of two package names, so a matcher meant for one could silently take the other. THE INSTRUMENT: `grep -rhoE '@atusy/tsudoi.{0,22}'` reduced to the full name-character class and grouped, which SEES a longer name instead of matching it. RESULT: six distinct tokens across the tree -- `-language-server` 109, `-hover-wordnet` 21, the BARE `@atusy/tsudoi` 13, `-language-server-wrong` 2, `-language-server.` 1, `-completion-path` 1 -- and every bare and `-wrong` occurrence is inside scrum.ts, quoting the pre-rename name or Sprint 46's own record. A SECOND INSTRUMENT for the matcher class rather than the name class: every `startsWith(` and `.includes(` in src/, test/, scripts/ and packages/, unbounded on the needle. Thirteen and eleven sites, read one by one; none takes a package name as its needle except the two README token regexes, which already carry `(?![A-Za-z0-9._-])`, and package-shape's directory prefix, which this sprint bounded by realpathing BOTH sides after a workspace install made node_modules/typescript itself a link.",
+          "CRITERION 8 IS ASSERTED OVER MEMBERS AS A CLASS, read off the unpacked tarball's package.json, with two vacuity guards. AND WHAT IT CANNOT CURRENTLY BE THE FIRST THING TO CATCH IS MEASURED: moving the handler into `dependencies` never reaches the assertion, because `bun install` 404s on an unpublished name and the consumer is never built. The property is FORECLOSED BY THE REGISTRY for exactly as long as both packages stay unpublished, and the assertion becomes load-bearing the moment either is published. Recorded at the test, not argued away.",
         ],
       },
       {
