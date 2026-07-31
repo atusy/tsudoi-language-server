@@ -7,18 +7,21 @@
 # own loads reach ./src, while deno has no `paths` and takes the map to
 # ./dist/deps/types.js.
 #
-# MEASURED ON THIS TREE, and re-measured rather than copied every time the
-# sentence around it moves, because the recorded number goes stale with nobody
-# editing it: with THIS package's dist/ AND both members' dist/ removed and this
-# file absent, `bun test` gives 87 fail / 603 pass / 2 errors and 690 of 729
-# tests even RUN. With this file present and no build run by hand, the same tree
-# gives 729 pass.
+# MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
+# number written here goes stale with nobody editing it -- the suite grows and
+# the sentence quietly stops being true -- so what is kept is the SHAPE of the
+# failure, which does not move. With THIS package's dist/ AND both members' dist/
+# removed and this file absent, much of the suite does not merely fail: it never
+# RUNS, because test files fail to LOAD. Load errors standing beside assertion
+# failures are the signature of a missing build, and no other fault in this
+# repository produces it. With this file present and no build run by hand, the
+# same tree is green.
 #
-# THE DIAGNOSIS MOVED WITH THE HANDLERS AND THE NUMBER IS THE LESSER HALF: the
-# first failure names the demo config failing to load on
-# `@atusy/tsudoi-completion-path`, a workspace member reachable only through the
-# dist/ its own build writes. It used to name a subpath of this package,
-# imported from a handler that lived in examples/.
+# AND THE FIRST FAILURE IS THE HALF WORTH KEEPING: it names the demo config
+# failing to load on `@atusy/tsudoi-completion-path`, a workspace member
+# reachable only through the dist/ its own build writes. WHICH failure comes
+# first is what points at the cause; HOW MANY there are is a size that changes
+# whenever anybody adds a test.
 #
 # WHY NOT A `build` SCRIPT: a step a human is trusted to remember reintroduces
 # the very staleness this removes -- src/ edited, dist/ not rebuilt, the suite
@@ -37,9 +40,10 @@
 # DIRECTORY and does NOT search upward, so `cd test && bun test` runs with no
 # build at all. IT ALSO RUNS A DIFFERENT SUITE, which is a second reason that
 # route is not the suite and is easy to miss: bun discovers test FILES relative
-# to that directory too, so the workspace members' own tests are outside it --
-# MEASURED with a filter matching nothing, 45 files and 680 tests from test/
-# against 49 files and 729 from the root. On that one route
+# to that directory too, so every workspace member's own tests -- which live
+# under packages/, not under test/ -- are outside that walk and NONE of them runs.
+# The structure is the durable statement and a file count is not: members are
+# added and removed, and the containment that makes them invisible is not. On that one route
 # staleness is merely handled rather than foreclosed,
 # by the comparison in test/package-shape.test.ts between dist/deps/types.js and
 # the names `vscode-languageserver-types` declares -- MEASURED on a tree whose
