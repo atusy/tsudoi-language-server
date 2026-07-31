@@ -300,6 +300,38 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },
   {
+    // THE ENTRY ABOVE IS ABOUT WHAT THE BUILD COVERS; THIS ONE IS ABOUT WHAT IT
+    // DOES NOT, and they are separate because a reader who takes the first at
+    // its word runs a Definition-of-Done command and gets a failure the document
+    // never mentioned. MEASURED on a clone with `bun install` run and nothing
+    // built: `tsc --noEmit` reports TS2307 at examples/tsudoi.config.ts naming
+    // `@atusy/tsudoi-hover-wordnet`, because the config reaches the handler by
+    // PACKAGE SPECIFIER and a workspace member publishes dist/ with no source
+    // arm.
+    //
+    // THE REMEDY IS A TOKEN AND THE DIAGNOSTIC IS A TOKEN, both, because either
+    // alone leaves a reader somewhere they cannot act: a document naming the
+    // failure and no command tells them they are stuck, and a document naming a
+    // command they have no reason to run is not read until after they are.
+    //
+    // WHY NO `paths` MAPPING IS ALSO OWED, and it is the sentence that stops the
+    // next reader from supplying one: a mapping would resolve a member's imports
+    // through the ROOT'S map and report success for a member whose own
+    // resolution is broken, which is the false green the members' exclusion from
+    // the root check exists to make unconstructible. That reason is asserted
+    // from the code's side in test/package-shape.test.ts and driven by
+    // test/workspace-members.test.ts; here it is owed to the person holding the
+    // error message.
+    name: "`tsc --noEmit` on an unbuilt checkout fails, which command clears it, and why no mapping",
+    tokens: [
+      /tsc --noEmit/,
+      /TS2307/,
+      /@atusy\/tsudoi-hover-wordnet(?![A-Za-z0-9._-])/,
+      /scripts\/typecheck-workspaces\.ts/,
+      /paths/,
+    ],
+  },
+  {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
     // dependency on a cold cache, and a reader without a network gets a failure
     // the README would otherwise have told them nothing about.

@@ -46,6 +46,16 @@ resolve to files under `dist/`, and `dist/` is not committed
 before any test file is loaded. An edit to `src/` cannot be tested against a `dist/` that
 has moved on without it, because there is no build to forget.
 
+**That build belongs to `bun test`, and one command does not get it.** `tsc --noEmit` on a
+checkout nothing has built reports `TS2307` at `examples/tsudoi.config.ts`, naming
+`@atusy/tsudoi-hover-wordnet` -- the hover handler is a workspace member, and a member is
+reachable only through the `dist/` its own build writes. Run `bun test` first, or
+`bun run scripts/typecheck-workspaces.ts`, which builds before it checks; both leave the tree
+in a state `tsc --noEmit` reads. A `paths` mapping standing in for that build is refused
+rather than missing: it would let the root type check answer a member's imports through the
+root's own map and report success for a member whose resolution nobody checked, which is what
+excluding the members from that check exists to make impossible.
+
 Run it **from the repository root**. bun looks for `bunfig.toml` in the directory you are
 standing in and never searches upward, so a `bun test` started anywhere else runs the whole
 suite with no build -- the one route on which a stale `dist/` is still reachable, and the
