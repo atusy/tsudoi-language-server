@@ -196,6 +196,21 @@ function publishedArm(condition: string): Record<string, string> {
  * publish against sources we do not ship. What the stage copies is pinned in
  * test/installed-specifier.test.ts; this is the other half of the same guard.
  *
+ * WHAT IS ASSERTED OF THAT CONFIG IS THE ABSENT KEY AND NOT A RESOLUTION, and
+ * the stronger-looking probe is DECLINED ON A MEASUREMENT rather than on cost:
+ * run its compilerOptions verbatim over a probe under src/ importing all four
+ * subpaths and every one answers from ./src/*.ts. `rootDir` TOGETHER WITH
+ * `outDir` MAKES tsc REDIRECT A DECLARATION TARGET BACK TO THE INPUT THAT EMITS
+ * IT -- the trace reads `Matched 'exports' condition 'types'` naming
+ * ./dist/types.d.ts and then answers src/types.ts -- and it fires with dist/
+ * ABSENT, which is every clone that has only run `bun install`. Drop either key
+ * and the same probe answers ./dist/types.d.ts, measured, which is what pins the
+ * cause. So a build config that resolved these subpaths would resolve them TO
+ * SOURCE, and the property that actually holds there is about the program's
+ * CONTENTS -- src imports no bare specifier, so nothing resolves at all --
+ * rather than about its resolver. The name below says the key because the key is
+ * what a build config can be held to.
+ *
  * WHAT IS ASSERTED IS WHICH FILE ANSWERED, AND NOT HOW THE MAPPING IS SPELLED,
  * because a key that has stopped matching DOES NOT FAIL: the specifier falls
  * through to the exports map and lands in dist/ AT EXIT 0, so the check grades a
@@ -221,7 +236,7 @@ function publishedArm(condition: string): Record<string, string> {
  * and the published-surface equality, which is where adding an arm is already a
  * decision rather than a convenience.
  */
-test("the repo's type check resolves the published subpaths to source, and the build config does not", async () => {
+test("the repo's type check resolves the published subpaths to source, and the build config declares no paths mapping", async () => {
   const sources = publishedArm("default");
   const { answers } = await traceResolutions(repoRoot);
   // BOTH SIDES RESOLVED, for the reason the compiler-pinning test below states
@@ -275,9 +290,13 @@ test("every specifier mapping this config declares is one the check really match
  * the reading where the same manifest, the same settings and the same specifiers
  * answer from dist/ because one key is absent.
  *
- * IT IS ALSO THE EFFECT HALF OF `and the build config does not`. That config
- * declares no mapping, which is asserted directly; what a program with no
- * mapping RESOLVES is measured here, once, over the same subpaths.
+ * IT IS NOT A STAND-IN FOR THE BUILD CONFIG, and the correction belongs here
+ * because the substitution is the one a reader makes unprompted: these are the
+ * REPOSITORY's settings with one key removed, and they carry no `rootDir` or
+ * `outDir`. Those two are exactly what move the answer -- under the build
+ * config's own options the same four subpaths resolve to ./src/*.ts, measured,
+ * for the reason recorded above it. What is read here is `no mapping`, and it
+ * says nothing about that config.
  *
  * THE TREE IS WRITTEN FROM THE MANIFEST'S OWN ARMS AND NOTHING IN IT IS BUILT,
  * which is deliberate: a probe that read this repository's dist/ would report on
