@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -128,8 +129,8 @@ export function runTsc(cwd: string, args: readonly TscReportFlag[] = []): Promis
 }
 
 /**
- * Whether an entry leads back into this checkout rather than into something the
- * package manager installed.
+ * Whether an entry is one of the packages this repository INSTALLED, rather than
+ * one of the packages it merely CONTAINS.
  *
  * READ OFF `realpath` AND NOT OFF A LIST OF NAMES, which is what makes the
  * exclusion survive the next workspace member: the entry the day's `bun install`
@@ -139,13 +140,30 @@ export function runTsc(cwd: string, args: readonly TscReportFlag[] = []): Promis
  *
  * THE BOUNDARY IS node_modules AND NOT THE CHECKOUT, because everything a
  * package manager put here IS inside the checkout: the installed packages
- * resolve into node_modules/.bun, and only a workspace link leaves it.
+ * resolve into node_modules/.bun, and only a workspace link leaves it. Landing
+ * outside the checkout altogether is somebody's install too and is carried.
+ *
+ * AN ENTRY THAT RESOLVES TO NOTHING IS DROPPED AND DOES NOT RAISE, and it is the
+ * one state the wholesale symlink this replaced was immune to -- it resolved
+ * nothing, so nothing could dangle. MEASURED: `realpathSync` on a dangling link
+ * THROWS ENOENT naming the link, so without this the FIRST failure of every
+ * probe-using test would be an error about node_modules rather than about the
+ * probe. THE STATE IS THIS REPOSITORY'S ROUTINE ONE: the root's workspace links
+ * are RELATIVE and dangle the instant a member directory is renamed or moved,
+ * until `bun install` runs again -- which is precisely the next sprint's work.
+ * Dropped rather than reported, on this repository's existing ruling that an
+ * entry resolving to nothing PROVIDES nothing; a package a probe actually needs
+ * going missing is caught by the green half of the pair in
+ * test/probe-routes.test.ts.
  */
-function reachesBackIntoTheCheckout(entry: string): boolean {
+function isInstalledDependency(entry: string): boolean {
+  if (!existsSync(entry)) {
+    return false;
+  }
   const at = realpathSync(entry);
   const checkout = realpathSync(repoRoot);
   const installed = realpathSync(join(repoRoot, "node_modules"));
-  return at.startsWith(checkout + sep) && !at.startsWith(installed + sep);
+  return at.startsWith(installed + sep) || !at.startsWith(checkout + sep);
 }
 
 /**
@@ -182,13 +200,13 @@ export function mirrorInstalledDependencies(into: string): void {
   for (const entry of readdirSync(installed)) {
     const source = join(installed, entry);
     if (!entry.startsWith("@")) {
-      if (!reachesBackIntoTheCheckout(source)) {
+      if (isInstalledDependency(source)) {
         symlinkSync(source, join(modules, entry), "dir");
       }
       continue;
     }
     for (const scoped of readdirSync(source)) {
-      if (reachesBackIntoTheCheckout(join(source, scoped))) {
+      if (!isInstalledDependency(join(source, scoped))) {
         continue;
       }
       mkdirSync(join(modules, entry), { recursive: true });
