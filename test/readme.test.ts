@@ -1,13 +1,14 @@
 import { expect, test } from "bun:test";
 import { Buffer } from "node:buffer";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { basename, join } from "node:path";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { repoRoot } from "./helpers/spawn.ts";
+import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import {
   extractExamplesInstall,
   extractFailureContract,
+  extractHandlerPack,
   extractQuickstart,
   invocationOf,
   type ReadmeFact,
@@ -88,13 +89,18 @@ test("a directory named only in a marker is refused", () => {
  *
  * The asymmetry, stated rather than hidden. Every other README command in this
  * file is EXECUTED, so a stale one fails by running. This one is not: MEASURED
- * -- the extraction harness executes the five `quickstart` blocks and this is
- * not one of them, so no run reaches it. What stands in for it is
+ * -- the extraction harness executes the five `quickstart` blocks and the pack
+ * block, and this is neither, so no run reaches it. What stands in for it is
  * test/helpers/install.ts, which packs and installs the handler package's own
  * tarball into every consumer -- so that harness observes whether the config
  * works when the handler is INSTALLED, and never whether this line names the
  * right thing to install. Telling a reader to install a package they do not
  * need would leave every other assertion in this suite green.
+ *
+ * ITS PATH IS THE ONE PART OF IT THAT IS CHECKED BY RUNNING, and only because
+ * the pack test compares the file it produced against the file this line names.
+ * The README's own promise is narrowed to say exactly this: the command's TEXT
+ * is what is read, and a wrong flag on it would still ship green.
  *
  * ITS OWN TEST, not a second assertion on the one below, because the two
  * hazards are different and either can hide the other: naming a package the
@@ -126,6 +132,94 @@ test("a README with no examples-install marker states no install command, and sa
   const unmarked = readme.replace("<!-- examples-install -->", "");
 
   expect(() => extractExamplesInstall(unmarked)).toThrow("expected 1 marked block, found 0");
+});
+
+/**
+ * THE PACK COMMAND IS RUN, AND THAT IS WHAT THE INSTALL COMMAND BESIDE IT CANNOT
+ * BE.
+ *
+ * WHY IT IS WORTH RUNNING RATHER THAN MATCHING: the pack COMPILES the package, so
+ * a wrong directory, a wrong subcommand, a wrong flag or a build that cannot
+ * resolve are all one failure here -- and the last of those is not hypothetical.
+ * MEASURED on this repository with the member's link to the root package removed,
+ * which is the state of a checkout where only `bun install` has run: the
+ * documented command exits 2 with `src/hover.ts(47,36): error TS2307`, and the
+ * document said nothing about it until the prose beside the marker did.
+ *
+ * IN THE REAL MEMBER DIRECTORY AND NOT A STAGED COPY, deliberately: the
+ * prerequisite this command needs is a link INSIDE the checkout, and a staged
+ * tree would have to reproduce it -- which is supplying the very thing the
+ * measurement is about.
+ *
+ * AND THE FILE IT PRODUCES IS THE ONE THE NEXT COMMAND NAMES, which is the half
+ * that makes running it worth more than reading it. The pack and the install are
+ * two commands in two directories joined by a PATH, and nothing but this compares
+ * them. MEASURED, and it is what this found: `bun pm pack` run inside a workspace
+ * member writes to the WORKSPACE ROOT, not to the member -- so the documented
+ * install pointed at `packages/hover-wordnet/hover-wordnet.tgz`, which the pack
+ * had never written.
+ *
+ * THE TARBALL IS REMOVED IN A `finally`, because it lands in a directory this
+ * repository tracks and a leftover is an untracked file the next reader has to
+ * explain.
+ */
+test("the README's handler pack command runs, and writes the file its install names", async () => {
+  const pack = extractHandlerPack(readme);
+  // The install command is a READER'S path -- relative to their own project,
+  // which sits beside the checkout -- so it is resolved the way they would
+  // resolve it, through the checkout's own directory name. A README that renamed
+  // the checkout in one place and not the other fails here.
+  const installed = extractExamplesInstall(readme).split(" ").at(-1) ?? "";
+  const prefix = `../${basename(repoRoot)}/`;
+  if (!installed.startsWith(prefix)) {
+    throw new Error(
+      `README handler install: ${installed} does not reach the checkout at ${prefix}`,
+    );
+  }
+  const tarball = join(repoRoot, installed.slice(prefix.length));
+  try {
+    const result = await runCommand(pack.command, join(repoRoot, pack.dir));
+
+    // THE EXIT CODE AND NOT AN EMPTY STREAM: bun echoes the `prepack` line it is
+    // about to run on stderr even when everything works, so `stderr is empty`
+    // would fail on a success. The whole stream rides on the assertion anyway, so
+    // a failure explains itself instead of reporting a number that moved.
+    expect(`exit ${String(result.code)} | ${result.stderr}`).toContain("exit 0 |");
+    // The pair that keeps the line above from passing on a compiler that
+    // reported and continued.
+    expect(result.stderr).not.toContain("error TS");
+    // NAMED rather than asserted as a boolean, so the failure says which path was
+    // looked for instead of `expected true`.
+    expect(existsSync(tarball) ? tarball : `${tarball} was never written`).toBe(tarball);
+  } finally {
+    // BOTH CANDIDATE LOCATIONS, and the second is not belt-and-braces: when the
+    // README names the wrong path this test is RED, and the cleanup that follows
+    // the document would then leave the real tarball behind -- an untracked file
+    // arriving with a failure, which is the moment a reader can least afford a
+    // second puzzle.
+    rmSync(tarball, { force: true });
+    rmSync(join(repoRoot, pack.dir, basename(tarball)), { force: true });
+  }
+}, 60_000);
+
+// The vacuity guard, permanent and for the same reason its neighbour's is: an
+// extractor that found nothing would make the run above a test of no command.
+test("a README with no handler-pack marker states no pack command, and says so", () => {
+  const unmarked = readme.replace(/<!--\s*handler-pack\b[^>]*-->/, "");
+
+  expect(() => extractHandlerPack(unmarked)).toThrow("expected 1 marked block, found 0");
+});
+
+// The other half of the extractor's contract: the directory it obeys must be one
+// a READER is told to stand in. A marker naming the directory that works while
+// the prose named another would run green and mislead every human.
+test("a README whose pack marker names a directory the prose does not says so", () => {
+  const moved = readme.replace(
+    /<!--\s*handler-pack\s+in=\S+\s*-->/,
+    "<!-- handler-pack in=packages/elsewhere -->",
+  );
+
+  expect(() => extractHandlerPack(moved)).toThrow("packages/elsewhere");
 });
 
 /**
@@ -420,6 +514,41 @@ const facts: readonly ReadmeFact[] = [
   {
     name: "the package is not published",
     tokens: [/not published/i, /registry/i],
+  },
+  {
+    // WHAT THIS DOCUMENT PROMISES ABOUT ITSELF, owed because the promise is the
+    // reason a reader trusts a command here over one in a blog post -- and
+    // because it went overbroad once already: the document said the commands
+    // below were extracted and executed while the handler's install line was
+    // neither. A promise that covers more than it does is worse than none, since
+    // it is the thing that stops a reader checking.
+    //
+    // `never run` IS THE LOAD-BEARING TOKEN and the reason this is one entry
+    // rather than two: `these are executed` alone is exactly the sentence that
+    // was false, and it goes false again the moment a command is added outside
+    // the extraction. The document owes the exception, not the rule.
+    name: "the quickstart's commands are executed, and which command is only read",
+    tokens: [/extracted from this README/i, /executed/i, /never run/i],
+  },
+  {
+    // NAMED BECAUSE THE INSTRUCTION WAS BROKEN AND NOTHING SAID SO. MEASURED on
+    // this checkout with the member's link to the root package removed -- which
+    // is the state after `bun install` and nothing else, the only prerequisite
+    // this document names: the documented pack command exits 2 at TS2307,
+    // pointing at the handler's own source for a fault that lives in
+    // node_modules.
+    //
+    // THE REMEDY AND THE DIAGNOSTIC ARE BOTH TOKENS, for the reason the
+    // neighbouring `tsc --noEmit` entry gives: a document naming the failure and
+    // no command leaves a reader stuck, and a command they have no reason to run
+    // is not read until after they are.
+    //
+    // WHY THE EXECUTING TEST DOES NOT COVER THIS: it runs the pack in a checkout
+    // where the link is already there, because that is the state of any tree the
+    // suite has touched. The prerequisite is therefore prose nothing runs, which
+    // is exactly the case a fact exists for.
+    name: "packing the handler needs a link `bun install` does not create",
+    tokens: [/TS2307/, /scripts\/typecheck-workspaces\.ts/, /bun pm pack/, /link/i],
   },
   {
     // THE RIGHT BOUNDARY IS WHAT MAKES THESE TOKENS A CONTROL RATHER THAN A

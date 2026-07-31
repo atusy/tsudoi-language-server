@@ -19,9 +19,16 @@ resolving `npm:` through deno's own cache are different mechanisms, so one of th
 little about the other.
 
 Until then the working route is the one below: build a tarball out of a checkout and install
-that. It is the route the test suite runs, and it runs it from this file's own bytes -- the
-commands below are extracted from this README and executed, so an instruction here that no
-longer works fails the suite.
+that. It is the route the test suite runs, and it runs it from this file's own bytes. **The
+quickstart's commands are extracted from this README and executed**, under both runtimes, so an
+instruction there that no longer works fails the suite. So is the handler package's **pack**
+command further down.
+
+**One command here is read and never run**, said so you know which promise covers what: the
+handler's **install** line. It installs into a project that already has tsudoi, and the suite
+builds such a project by a different route than the quickstart's -- so what is checked is the
+command's text, that it names the handler package and no protocol package. A wrong flag there
+would ship green.
 
 ## What you need first
 
@@ -350,13 +357,31 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   not, so a language whose words are not whitespace-delimited wants a handler of its own rather
   than a setting on this one.
 
-  It travels the same local-tarball route tsudoi does. In `tsudoi-language-server/packages/hover-wordnet/`,
-  `bun pm pack --filename hover-wordnet.tgz`; then in your own project:
+  It travels the same local-tarball route tsudoi does, with one step of its own in front.
+  Packing it compiles it, and its build reaches tsudoi through a link inside the checkout that
+  `bun install` does not create -- so in a checkout where nothing else has run, the pack fails
+  with `src/hover.ts(47,36): error TS2307: Cannot find module
+'@atusy/tsudoi-language-server/types'`, naming the handler's own source for a fault that lives
+  in `node_modules`. `bun run scripts/typecheck-workspaces.ts` in the checkout writes the link
+  and clears it; `bun test` does too.
+
+  Then in `tsudoi-language-server/packages/hover-wordnet/`:
+
+  <!-- handler-pack in=packages/hover-wordnet -->
+
+  ```sh
+  bun pm pack --filename hover-wordnet.tgz
+  ```
+
+  **The tarball does not land in that directory.** `bun pm pack` run inside a workspace member
+  writes to the workspace ROOT, so what you just built is
+  `tsudoi-language-server/hover-wordnet.tgz` -- beside `tsudoi.tgz` from quickstart step 1, not
+  under `packages/`. Then, in your own project:
 
   <!-- examples-install -->
 
   ```sh
-  bun install ../tsudoi-language-server/packages/hover-wordnet/hover-wordnet.tgz
+  bun install ../tsudoi-language-server/hover-wordnet.tgz
   ```
 
   That one install brings the dictionary with it: the package declares `wordnet` itself (~27MB,

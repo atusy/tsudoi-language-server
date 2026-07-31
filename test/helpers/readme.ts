@@ -203,6 +203,55 @@ export function extractExamplesInstall(markdown: string): string {
   return command;
 }
 
+/**
+ * The command the README tells a reader to PACK the handler package with, and
+ * the directory it says to run it in.
+ *
+ * EXECUTED, unlike the install command beside it, and that asymmetry is the
+ * whole reason this is a separate extractor rather than a second use of the one
+ * above. The pack runs inside this repository, needs nothing a reader owns, and
+ * COMPILES the package -- so a wrong directory, a wrong command, or a build that
+ * cannot resolve reddens by running. MEASURED, and it is why this exists: on a
+ * checkout where only `bun install` had run, the documented command failed at
+ * TS2307 and the document said nothing about it.
+ *
+ * THE DIRECTORY IS STATED TWICE -- in the marker this test obeys and in the prose
+ * the reader obeys -- and required to be the same string, for the reason the
+ * quickstart extractor gives: a marker could otherwise name the directory that
+ * works while the README sent the reader somewhere else.
+ *
+ * THROWS unless it finds exactly one block, and the guard is what makes the
+ * execution mean anything: a command nobody found runs vacuously green.
+ */
+export function extractHandlerPack(markdown: string): { dir: string; command: string } {
+  const blocks = [
+    ...markdown.matchAll(/<!--\s*handler-pack\b([^>]*?)-->\s*\n\s*```[a-z]*\n([\s\S]*?)\n\s*```/g),
+  ];
+  if (blocks.length !== 1) {
+    throw new Error(`README handler pack: expected 1 marked block, found ${String(blocks.length)}`);
+  }
+  const dir = attributes(blocks[0]?.[1] ?? "").get("in");
+  if (dir === undefined) {
+    throw new Error("README handler pack: the marked block does not say which directory");
+  }
+  if (!visibleProse(markdown).includes(dir)) {
+    throw new Error(
+      `README handler pack: the marker says in=${dir}, but no prose a reader sees names ${dir}`,
+    );
+  }
+  const lines = (blocks[0]?.[2] ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  const [command] = lines;
+  if (lines.length !== 1 || command === undefined) {
+    throw new Error(
+      `README handler pack: expected ONE command a reader can run verbatim; got ${String(lines.length)} lines`,
+    );
+  }
+  return { dir, command };
+}
+
 /** The steps ONE runtime's reader follows: the shared ones, plus its own start. */
 export function sequenceFor(
   steps: readonly QuickstartStep[],
