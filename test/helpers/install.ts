@@ -13,6 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { declaredMembers } from "../../scripts/workspaces.ts";
 import { LspSession } from "./lsp.ts";
 import { repoRoot } from "./spawn.ts";
 import {
@@ -198,14 +199,26 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
 }
 
 /**
- * The handler package a consumer installs BESIDE tsudoi, named once here.
+ * The handler packages a consumer installs BESIDE tsudoi, ENUMERATED FROM THE
+ * WORKSPACE CONFIGURATION rather than named here.
  *
- * ITS DIRECTORY IS RESOLVED AND NOT SPELLED, through the workspace link the
- * install created: this helper has business knowing what a consumer installs,
- * and none knowing which directory under packages/ it is built from.
+ * OVER MEMBERS AS A CLASS, on the same reasoning as the fifth Definition-of-Done
+ * check and test/packed-members.test.ts: a name written here would go quietly
+ * narrow at the second member, and a consumer missing one of the packages the
+ * demo config imports fails at config load with no test saying which package was
+ * never installed.
+ *
+ * THE DIRECTORY IS THE MEMBER'S OWN AND NOT THE WORKSPACE LINK. Both routes
+ * reach the same tree, and `declaredMembers` is the enumerator every other tool
+ * in this repository reads -- so taking the names from `workspaces` and the
+ * directories from a node_modules walk would be two answers to one question.
  */
-const handlerPackage = "@atusy/tsudoi-hover-wordnet";
-const handlerRoot = realpathSync(join(repoRoot, "node_modules", ...handlerPackage.split("/")));
+const handlerRoots = declaredMembers(repoRoot).map((dir) => realpathSync(dir));
+
+/** The name in a member's own manifest, for saying which package was withheld. */
+function packageNameOf(dir: string): string {
+  return (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string }).name;
+}
 
 /** A throwaway project with tsudoi installed from a tarball, as a stranger has it. */
 export interface InstalledConsumer {
@@ -281,15 +294,22 @@ export interface InstallOptions {
    */
   readonly editSource?: (srcDir: string) => void;
   /**
-   * Leaves the handler package OUT of the install, which is criterion 1's
+   * Leaves ONE NAMED handler package out of the install, which is criterion 1's
    * negative control and nothing else's.
    *
    * WHAT IT HAS TO PRODUCE, or the green beside it records nothing: a failure
-   * NAMING THE SPECIFIER. An empty hover would mean the probe is measuring
-   * something other than the handler, and a hover that still ANSWERED would mean
-   * some other route -- a copied file, a hoisted stray -- is supplying it.
+   * NAMING THE SPECIFIER. An empty answer would mean the probe is measuring
+   * something other than the handler, and an answer that still ARRIVED would
+   * mean some other route -- a copied file, a hoisted stray -- is supplying it.
+   *
+   * A NAME AND NOT A FLAG, because with two members a flag withholds both and
+   * the config then fails on whichever import the loader reached first: the
+   * specifier in stderr would name a package the caller did not choose, and the
+   * control would silently stop being about the package under test. An
+   * unrecognised name is refused rather than ignored, since a typo would leave
+   * every member installed and the negative control passing on the positive tree.
    */
-  readonly omitHandler?: boolean;
+  readonly omitHandler?: string;
 }
 
 function fail(step: string, result: TypeCheckResult): never {
@@ -331,11 +351,17 @@ function fail(step: string, result: TypeCheckResult): never {
  */
 export async function installConsumer(options: InstallOptions = {}): Promise<InstalledConsumer> {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-pack-"));
-  const handlerStage = mkdtempSync(join(tmpdir(), "tsudoi-handler-pack-"));
+  // ONE STAGE PER MEMBER, and it is the same reason each member is packed into a
+  // directory of its own below: the tarball filename is FOUND rather than
+  // spelled, and that search is sound only while a directory holds exactly one
+  // .tgz.
+  const handlerStages = handlerRoots.map(() => mkdtempSync(join(tmpdir(), "tsudoi-handler-pack-")));
   const consumer = mkdtempSync(join(tmpdir(), "tsudoi-consumer-"));
   const dispose = (): void => {
     rmSync(stage, { recursive: true, force: true });
-    rmSync(handlerStage, { recursive: true, force: true });
+    for (const one of handlerStages) {
+      rmSync(one, { recursive: true, force: true });
+    }
     rmSync(consumer, { recursive: true, force: true });
   };
   try {
@@ -386,19 +412,29 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     }
     const tarball = join(stage, tarballName);
 
-    // THE HANDLER PACKAGE IS PACKED FROM WHERE IT LIVES, not from a staged copy,
-    // and the asymmetry with the block above is deliberate rather than an
+    // EVERY HANDLER PACKAGE IS PACKED FROM WHERE IT LIVES, not from a staged
+    // copy, and the asymmetry with the block above is deliberate rather than an
     // oversight. The staging exists to let `editPackage` and `editSource` perturb
-    // what gets packed; no probe perturbs the handler, and a copy would only add
-    // a second place for its build to go wrong. Its own `prepack` compiles it in
-    // place, so the tarball is still built at test time from current source.
+    // what gets packed; no probe perturbs a member, and a copy would only add
+    // a second place for its build to go wrong. Each member's own `prepack`
+    // compiles it in place, so every tarball is still built at test time from
+    // current source.
     //
-    // ITS OWN DESTINATION DIRECTORY, AND THAT IS LOAD-BEARING: the tarball
+    // ONE DESTINATION DIRECTORY EACH, AND THAT IS LOAD-BEARING: the tarball
     // filename is FOUND rather than spelled, for the reason written above, and
     // that search is sound only while a stage holds exactly one .tgz. Packing
-    // both into one directory would make each search able to pick the other's.
+    // two members into one directory would make each search able to pick the
+    // other's.
     const handlerTarballs: string[] = [];
-    if (options.omitHandler !== true) {
+    const omitted = options.omitHandler;
+    let withheld = false;
+    for (const [index, handlerRoot] of handlerRoots.entries()) {
+      const handlerPackage = packageNameOf(handlerRoot);
+      if (handlerPackage === omitted) {
+        withheld = true;
+        continue;
+      }
+      const handlerStage = handlerStages[index] ?? stage;
       const packedHandler = await run(
         "bun",
         ["pm", "pack", "--destination", handlerStage],
@@ -415,6 +451,14 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
         });
       }
       handlerTarballs.push(join(handlerStage, handlerTarballName));
+    }
+    // A NAME THAT MATCHED NOTHING IS A FAILED CONTROL WEARING A PASS: every
+    // member would be installed, the config would load, and the caller's
+    // negative assertion would be taken against the positive tree.
+    if (omitted !== undefined && !withheld) {
+      throw new Error(
+        `installConsumer was asked to omit ${omitted}, which is not a workspace member: ${handlerRoots.map(packageNameOf).join(", ")}`,
+      );
     }
 
     writeFileSync(

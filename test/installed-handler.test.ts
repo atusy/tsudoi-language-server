@@ -63,12 +63,12 @@ function authorsOwnFiles(dir: string): readonly string[] {
 }
 
 /** The consumer's config, its own files written, ready to be driven. */
-async function consumerRunningTheExample(omitHandler = false): Promise<{
+async function consumerRunningTheExample(omitHandler?: string): Promise<{
   dir: string;
   files: readonly string[];
   dispose: () => void;
 }> {
-  const consumer = await installConsumer(omitHandler ? { omitHandler: true } : {});
+  const consumer = await installConsumer(omitHandler === undefined ? {} : { omitHandler });
   for (const [path, source] of Object.entries(exampleSources())) {
     consumer.write(path, source);
   }
@@ -152,7 +152,7 @@ test("an installed consumer answers a real hover, from a project holding no hand
  * one is being observed, and the name in stderr is what distinguishes them.
  */
 test("without the handler package installed, the same config cannot load, naming the specifier", async () => {
-  const consumer = await consumerRunningTheExample(true);
+  const consumer = await consumerRunningTheExample("@atusy/tsudoi-hover-wordnet");
   try {
     const started = await runCommand(
       "bun run node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts",
