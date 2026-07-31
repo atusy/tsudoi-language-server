@@ -215,6 +215,13 @@ test("a README with no examples-install marker states no install command, and sa
  * install pointed at `packages/hover-wordnet/hover-wordnet.tgz`, which the pack
  * had never written.
  *
+ * THAT PATH IS THE FINDING AND IS DELIBERATELY NOT RENAMED, though the directory
+ * it names is gone. It is a record of what a document said at the moment it was
+ * read, and a measurement rewritten to spell a directory that did not exist when
+ * it was taken is no longer a measurement of anything. What the reader needs is
+ * that the pack writes to the root, which is as true of the new spelling as of
+ * the old.
+ *
  * THE TARBALL IS REMOVED IN A `finally`, because it lands in a directory this
  * repository tracks and a leftover is an untracked file the next reader has to
  * explain.

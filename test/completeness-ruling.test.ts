@@ -41,12 +41,12 @@ const rulingMarker = "COMPLETENESS RULING:";
  * short enumeration reads exactly like a ruling that was dropped: a completion
  * handler yields `CompletionItem[]` and nothing else, so a config demonstrating
  * that answer is UNWRITABLE rather than merely absent. THE TWO RULINGS THAT SAY
- * `NOT COMPLETE` ARE AT packages/completion-path/src/completion.ts AND
+ * `NOT COMPLETE` ARE AT packages/tsudoi-completion-path/src/completion.ts AND
  * examples/tsudoi.config.ts, which is where that limitation is recorded.
  */
 const ruled = [
   "examples/tsudoi.config.ts",
-  "packages/completion-path/src/completion.ts",
+  "packages/tsudoi-completion-path/src/completion.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
   "test/fixtures/completion-chunks.ts",
@@ -162,7 +162,7 @@ test("every completion handler carries a completeness ruling at its own site", (
  * pointed at.
  */
 test("a completion handler whose ruling was removed is reported by name", () => {
-  const probe = "packages/completion-path/src/completion.ts";
+  const probe = "packages/tsudoi-completion-path/src/completion.ts";
 
   expect(unruled(new Map([[probe, sourceOf(probe).replace(rulingMarker, "once said:")]]))).toEqual([
     probe,

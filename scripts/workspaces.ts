@@ -286,7 +286,7 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
  * resolution a stranger will actually take is the one nothing looked at.
  *
  * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION. A guard
- * naming packages/hover-wordnet would leave the second member unpinned and
+ * naming packages/tsudoi-hover-wordnet would leave the second member unpinned and
  * NOTHING WOULD SAY SO -- the same reason the fifth check reads `workspaces`
  * rather than a list, applied to the shape of the member rather than to its
  * existence.

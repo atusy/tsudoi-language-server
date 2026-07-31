@@ -456,7 +456,7 @@ for (const runtime of runtimes) {
         // THE CONTROL IS RE-MEASURED RATHER THAN ASSUMED. The example's `null`
         // is what tsudoi answers for a generator that YIELDED NOTHING, and the
         // perturbation is spelled `yield []` at that generator's own exit in
-        // packages/completion-path/src/completion.ts. MEASURED: it reddens EXACTLY
+        // packages/tsudoi-completion-path/src/completion.ts. MEASURED: it reddens EXACTLY
         // here,
         // `Received: []`, and nowhere else -- two tests, one per runtime.
         //

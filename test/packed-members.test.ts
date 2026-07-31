@@ -389,7 +389,7 @@ test("the pattern that found nothing in the tarballs finds the claims in real pr
  * NO MEMBER MAY SHIP AN AMBIENT MODULE DECLARATION, over members as a class
  * rather than over the one package that has an ambient declaration to leak.
  *
- * A claim naming packages/hover-wordnet would go quietly narrow at the second
+ * A claim naming packages/tsudoi-hover-wordnet would go quietly narrow at the second
  * member, on the same reasoning the fifth Definition-of-Done check reads
  * `workspaces` rather than a list. The hazard is not this package's: any member
  * that types an untyped dependency writes the same `declare module`, and the day
@@ -431,7 +431,7 @@ test("no member ships a declaration that names a module in the global type space
  */
 test("the pattern that found nothing in the tarballs finds the declaration in source", () => {
   const source = readFileSync(
-    join(repoRoot, "packages", "hover-wordnet", "src", "wordnet.d.ts"),
+    join(repoRoot, "packages", "tsudoi-hover-wordnet", "src", "wordnet.d.ts"),
     "utf8",
   );
 

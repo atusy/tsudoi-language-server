@@ -25,12 +25,12 @@ instruction there that no longer works fails the suite. **Every command block in
 executed**, so there is no block here whose promise a reader has to guess at.
 
 **Neither is the handler packages under `packages/`.** The route for each of those lives in that
-package's own README -- `packages/hover-wordnet/README.md` and
-`packages/completion-path/README.md` -- rather than here: one copy of it, beside the code it is
-about, and each of those documents says for itself which of its commands the suite runs and which
-it only reads. What is true of all of them is the same and is stated once, further down: they are
-**peers** of tsudoi, their manifests say `optional` and that is false, and nothing corrects it
-anywhere a reader who installed one will look except in that package's own README.
+package's own README -- `packages/tsudoi-hover-wordnet/README.md` and
+`packages/tsudoi-completion-path/README.md` -- rather than here: one copy of it, beside the code
+it is about, and each of those documents says for itself which of its commands the suite runs and
+which it only reads. What is true of all of them is the same and is stated once, further down:
+they are **peers** of tsudoi, their manifests say `optional` and that is false, and nothing
+corrects it anywhere a reader who installed one will look except in that package's own README.
 
 ## What you need first
 
@@ -350,10 +350,10 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   however its manifest reads, what bounds it, and the route for getting it — and that document,
   rather than this one, is what a registry page would show:
 
-  | package                                                               | answers                                             |
-  | --------------------------------------------------------------------- | --------------------------------------------------- |
-  | [`@atusy/tsudoi-hover-wordnet`](packages/hover-wordnet/README.md)     | `textDocument/hover`                                |
-  | [`@atusy/tsudoi-completion-path`](packages/completion-path/README.md) | `textDocument/completion`, `completionItem/resolve` |
+  | package                                                                      | answers                                             |
+  | ---------------------------------------------------------------------------- | --------------------------------------------------- |
+  | [`@atusy/tsudoi-hover-wordnet`](packages/tsudoi-hover-wordnet/README.md)     | `textDocument/hover`                                |
+  | [`@atusy/tsudoi-completion-path`](packages/tsudoi-completion-path/README.md) | `textDocument/completion`, `completionItem/resolve` |
 
   **Neither brings tsudoi, and neither manifest will warn you.** Both declare
   `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a

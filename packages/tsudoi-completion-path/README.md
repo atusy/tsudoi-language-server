@@ -101,23 +101,23 @@ with `error TS2307: Cannot find module '@atusy/tsudoi-language-server/types'`, n
 package's own source for a fault that lives in `node_modules`. `bun test` in the checkout writes
 the link and clears it; so does `bun run scripts/typecheck-workspaces.ts`.
 
-Then, in `tsudoi-language-server/packages/completion-path/`:
+Then, in `tsudoi-language-server/packages/tsudoi-completion-path/`:
 
-<!-- handler-pack in=packages/completion-path -->
+<!-- handler-pack in=packages/tsudoi-completion-path -->
 
 ```sh
-bun pm pack --filename completion-path.tgz
+bun pm pack --filename tsudoi-completion-path.tgz
 ```
 
 **The tarball does not land in that directory.** `bun pm pack` run inside a workspace member
 writes to the workspace **root**, so what you just built is
-`tsudoi-language-server/completion-path.tgz`, not something under `packages/`. Then, in your own
-project:
+`tsudoi-language-server/tsudoi-completion-path.tgz`, not something under `packages/`. Then, in
+your own project:
 
 <!-- examples-install -->
 
 ```sh
-bun install ../tsudoi-language-server/completion-path.tgz
+bun install ../tsudoi-language-server/tsudoi-completion-path.tgz
 ```
 
 **Which of these the test suite runs**, so you know what the commands above are worth: the
