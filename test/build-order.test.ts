@@ -78,6 +78,98 @@ test("a producer that sorts last is still built first", () => {
   }
 });
 
+// AN OPTIONAL PEER IS AN EDGE, and this is the arm that keeps the whole
+// derivation from being vacuous on this repository: both handler packages reach
+// tsudoi through a peer they declare OPTIONAL, so a reading that dropped
+// optional peers would leave this graph with no edges at all and hand the order
+// back to the alphabet under a topological sort's name. The flag buys
+// installability while the peer is unpublished; it says nothing about what a
+// compiler needs, and each of those packages imports values from it.
+test("a peer declared optional still orders its producer first", () => {
+  const root = workspace(
+    producerSortingLast({
+      peerDependencies: { "@scope/producer": "*" },
+      peerDependenciesMeta: { "@scope/producer": { optional: true } },
+    }),
+  );
+  try {
+    expect(buildOrder(root)).toEqual([
+      root,
+      join(root, "packages", "producer"),
+      join(root, "packages", "consumer"),
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A DEPENDENCY THAT ONLY THE TESTS NEED IS NOT A BUILD EDGE, shown on the tree
+ * where the difference is visible from the outside: `early` needs `late` to
+ * BUILD, and `late` devDepends back on `early`.
+ *
+ * TWO READINGS AT ONCE, which is why the arrows point opposite ways rather than
+ * along the alphabet. If the dev edge were taken this pair would be a CYCLE and
+ * the answer could not be an order at all; if the real edge were not taken the
+ * answer would be the alphabet's. Only one sequence satisfies both.
+ *
+ * IT IS THIS REPOSITORY'S OWN SHAPE AND NOT A HYPOTHETICAL: the root devDepends
+ * on both handler packages and both of them depend back on the root, so a reader
+ * counting dev edges finds two cycles here -- inside the `bun test` preload,
+ * where a refusal means nothing loads.
+ */
+test("a package that only devDepends on another is neither ordered by it nor a cycle", () => {
+  const root = workspace({
+    "package.json": JSON.stringify({ name: "@scope/root", workspaces: ["packages/*"] }),
+    "packages/early/package.json": JSON.stringify({
+      name: "@scope/early",
+      dependencies: { "@scope/late": "*" },
+    }),
+    "packages/late/package.json": JSON.stringify({
+      name: "@scope/late",
+      devDependencies: { "@scope/early": "*" },
+    }),
+  });
+  try {
+    expect(buildOrder(root)).toEqual([
+      root,
+      join(root, "packages", "late"),
+      join(root, "packages", "early"),
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A PACKAGE THAT DECLARES NO `name` IS ORDERED RATHER THAN REFUSED, AT THE ROOT
+ * AND AT A MEMBER, and the reason is an ordering between two guards rather than
+ * a view about the state.
+ *
+ * `refuseMemberDirectoriesUnlikeTheUnscopedName` is what refuses a nameless
+ * member, and it runs in the FIFTH CHECK. This runs in the `bun test` PRELOAD, so
+ * a refusal here would abort the suite before that guard could speak -- and the
+ * arm in test/workspace-members.test.ts that pins it would go red still
+ * containing the word `name`, reddened by the wrong function, which is a red
+ * that sends its reader to the wrong file.
+ */
+test("a nameless root and a nameless member are ordered rather than refused", () => {
+  const root = workspace({
+    "package.json": JSON.stringify({ workspaces: ["packages/*"] }),
+    "packages/anonymous/package.json": JSON.stringify({ version: "0.0.0" }),
+    "packages/named/package.json": JSON.stringify({ name: "@scope/named" }),
+  });
+  try {
+    expect(buildOrder(root)).toEqual([
+      root,
+      join(root, "packages", "anonymous"),
+      join(root, "packages", "named"),
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // THE CONTROL IS THE SAME TREE WITH ONE DECLARATION DELETED, and it is stronger
 // than a hand-written sorted rival would be: a rival only shows that some other
 // function behaves differently, where this shows the order came from THE
