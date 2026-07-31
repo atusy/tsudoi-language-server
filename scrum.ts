@@ -372,7 +372,83 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 50,
+    pbi_id: "PBI-55",
+    goal: "Every member the workspace declares has one name, not two: its directory is its package name with the scope dropped, and the repository refuses the day they differ -- for members as a class, not for the ones that exist today.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "Point each of the three hardcoded member paths (test/completeness-ruling.test.ts twice, test/packed-members.test.ts once) at a nonexistent basename, run each file alone, and record the colour.",
+        implementation:
+          "Expected none: reading says all three are loud. Any site that stays green gets a vacuity pair BEFORE the rename touches it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "FIRST BECAUSE `git mv` CAN GUT A REASON SILENTLY: a site that matches nothing after the rename stays green, and the reason it was written for is gone with nothing saying so. Prediction is not measurement and this is cheap.",
+          'ONE OF THE THREE IS A SITE NO GREP FOUND -- a split `join(repoRoot, "packages", "hover-wordnet", ...)`. That miss is the same defect class this PBI is about, which is why it is recorded rather than quietly corrected.',
+        ],
+      },
+      {
+        test: "In test/workspace-members.test.ts, via the existing throwaway-workspace runner: (a) a member directory whose manifest name mismatches is refused, the message naming that directory and both spellings; (b) the mismatch staged from the OTHER side is refused, the message naming the other side; (c) a SCOPED name whose unscoped segment matches goes exit 0 with empty stderr.",
+        implementation:
+          "`refuseMemberNames(root, members)` in scripts/workspaces.ts, called from scripts/typecheck-workspaces.ts beside the two refusals already there. One symmetric predicate, not two branches.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ARM (c) IS NOT DECORATION AND IT IS THE ONE THE FIXTURES CANNOT ALREADY DO: every throwaway member in that file is UNSCOPED while every real member is SCOPED, and the stakeholder's ruling makes scope-stripping load-bearing. Without it, a guard that refuses every scoped name passes (a) and (b) and surfaces only as a repo red that reads like the rename's fault.",
+          "WHY NOT REDUNDANT WITH THE README TEST: arm (b) is incidentally caught there today, but as `install command does not name the member's own tarball` -- a diagnostic that sends the reader to the README rather than to the mismatch. ARM (a) IS CAUGHT BY NOTHING AT ALL. The incidental redness is to be measured during the sprint, not asserted from reading.",
+          "THE GUARD'S NAME AND MESSAGE MUST SAY `UNSCOPED`. The relation is not `directory equals package name` -- `packages/tsudoi-hover-wordnet` against `@atusy/tsudoi-hover-wordnet` are not the same string -- and Sprint 49's remedy for a guard whose stated class is wider than its implementation is to narrow the NAME.",
+        ],
+      },
+      {
+        test: "A three-member throwaway workspace whose THIRD package mismatches is refused with the diagnostic naming that third package, paired with the same three all matching going exit 0 and stderr empty.",
+        implementation:
+          "None, if the guard was written over the enumerated members. If an edit is needed here, the guard was written per-instance and this arm is what caught it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE THROWAWAY ROOT IS A REQUIREMENT AND NOT A PREFERENCE: bun runs the suite in one process, so a third package created inside the real packages/, even transiently, would make any later caller of `declaredMembers(repoRoot)` see three members and its own subject become order-dependent.",
+          "THE POSITIVE CONTROL IS WHAT DISTINGUISHES `refused` FROM `the throwaway is malformed, tsc absent, no package.json` -- ask why it fired, not whether.",
+          "`NO EDIT TO THE GUARD` IS A PROPERTY OF THE HISTORY: this subtask's commit follows the guard's, and `the guard` means every file that would have to change for a third package to be covered -- a fixture list, an allowlist, an exclude entry keyed to the new name.",
+        ],
+      },
+      {
+        test: "No new test. Its reds are the fifth check on this checkout, the three hardcoded sites, and test/readme.test.ts's basename-derived tarball and member-README assertions -- which is AC2 satisfied with no new test.",
+        implementation:
+          "`git mv` both directories to their unscoped names, edit the 23 lines across 9 files (including both members' three tarball spellings and their `in=` markers), `bun install`, verify each member's own node_modules link to the root package survived, then the full Definition of Done.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ATOMIC BECAUSE THE ROOT'S node_modules LINKS ARE RELATIVE: they dangle the instant the directory moves and are repaired only by `bun install`, so a commit between the two leaves the suite broken for a reason that has nothing to do with this sprint. Each MEMBER's own link to the root package is absolute and should survive -- verified by reading it, not assumed, because if it did not the failure is the TS2307 the member READMEs describe and the reader is sent to the one file that is not wrong.",
+          "THE PRE-REPAIR RED IS MEASURED AND RECORDED, NOT COMMITTED -- see the sprint decision. Rename the directories, leave the member READMEs unedited, run the readme suite, record the failure text naming the member; then repair, then commit once.",
+          "APPLIED BY FILE, NEVER BY TREE. scrum.ts's references are records of measurements taken against directories that existed at the time, and rewriting them falsifies the measurement. Same for the MEASURED note in test/readme.test.ts about an install that pointed at a tarball the pack had never written: THAT PATH IS THE FINDING.",
+          "A SIDE EFFECT WORTH RECORDING: after the rename the derived tarball name EQUALS the package's unscoped name, so the packed artifact and the registry name stop being two spellings.",
+        ],
+      },
+      {
+        test: "None -- dashboard and documentation.",
+        implementation:
+          "The sprint record in scrum.ts, and the CLAUDE.md line naming the two members (which is inside the rename's 23).",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      'STAKEHOLDER RULING, and it answered the Developer\'s NEED rather than being inferred: the directory is the UNSCOPED package name. `workspaces: ["packages/*"]` is untouched and no enumeration needs an edit. The rejected reading, packages/@atusy/<name>, would have moved the glob to `packages/*/*`.',
+      "GUARD FIRST, RENAME SECOND, and it is not taste: the directories mismatch TODAY, so the guard has a real subject and the rename is what makes it green. Renaming first would leave the guard demonstrated only against probes written alongside it.",
+      "THE PO'S EVIDENCE REQUIREMENT AND THE DEV'S ATOMICITY REQUIREMENT COLLIDED, AND THE FACILITATOR SPLIT THEM RATHER THAN PICKING ONE. PO required the pre-repair red to survive as evidence and asked for it as a separate COMMIT; Dev required the rename not to be split across commits because the root's relative links dangle in between; and this project commits on green, never on red. RULED: the red is obtained and RECORDED AS MEASURED FAILURE TEXT in the subtask notes, and the commit stays atomic. The evidence the PO named is the failure text, which a commit boundary does not produce and cannot improve. DISSENT RECORDED: the PO holds that a commit boundary is stronger evidence than a recorded run.",
+      "THE PO WILL REFUSE THE SPRINT, EVERY CHECK GREEN, IF THE RENAME IS ACHIEVED BY RETARGETING, GENERALISING OR DELETING AN ASSERTION THAT KEYS ON THE MEMBER'S DIRECTORY BASENAME. Once the two spellings are equal, `read the manifest name instead` is a locally reasonable tidy that removes the second, independent reader -- and the story's benefit is one fact rather than two kept equal by hand. Explicitly outside that refusal: the basename(repoRoot) sites, which key on the CHECKOUT root and belong to PBI-56's marker collision.",
+      "ENVIRONMENT, MEASURED THIS SPRINT AND NOT A REPOSITORY DEFECT: neither `tsc` nor `oxfmt` is on PATH in this session, and the suite spawns a BARE `tsc` (test/helpers/typecheck.ts), so the first baseline read 123 failures that belonged to the environment. Shimmed for the session. A baseline taken before the sprint is what stopped those reds from being read as the sprint's.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 49,
