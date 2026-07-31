@@ -38,78 +38,98 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-56",
+      id: "PBI-60",
       story: {
         role: "tsudoi maintainer",
         capability:
-          "acquire tsudoi by the same mechanism a stranger's project uses, with no hand-written apparatus standing in for `bun install`",
+          "learn from a diagnostic, rather than from a green run, that the artifact a check read was not there",
         benefit:
-          "the resolution this repository's own checks exercise is the resolution a consumer gets",
+          "the file a check graded is the file I think it graded, in every state the build passes through",
       },
       acceptance_criteria: [
         {
           criterion:
-            "In a fresh copy of the checkout where only `bun install` has run -- no repository script, no build -- every package depending on tsudoi has a RESOLVING node_modules entry for it.",
+            "With a package's published artifact ABSENT, and with it PARTIAL, what reads it says so by naming a file rather than exiting 0 against a different one.",
           verification:
-            "Read the ENTRY and follow it to its target, because `lstat` succeeds on a dangling link and `something is there` is the wrong question -- and because in a state where NOTHING HAS BEEN BUILT a compile-based reading answers `src` legitimately, through the `default` arm, so a green compile here would bank a reading that means nothing. THE FALSIFIER FILED HERE WAS MEASURED VACUOUS (probe 5c): with the depending package's declaration removed but the ROOT's dependency on tsudoi still present, that package's type check EXITS 0 -- the root node_modules entry answers it, and the same entry disarmed a control stated in advance in cell 4. So the falsifier runs only with EVERY OTHER ROUTE ENUMERATED AND STASHED FIRST -- the root entry, any member-local copy, any `paths` mapping -- and in that state, and only there, removing the declaration fails at TS2307 naming the depending package's own source and the tsudoi subpath (5d), with restoring it going green. WHICH ROUTE ANSWERED IS READ AND NOT INFERRED FROM A COLOUR: a member-local copy WINS over the root's (5b). TWO THINGS TO RECORD RATHER THAN DISCOVER: bun's link is RELATIVE where `linkRootPackage`'s is ABSOLUTE, so the dangle-on-moving-the-checkout failure mode INVERTS rather than disappears; and the pre-move discriminator stands -- no such entry exists today, which is the whole reason `linkRootPackage` exists.",
-        },
-        {
-          criterion:
-            "With dist/ present and built from the PREVIOUS source, a type error introduced in tsudoi's own source reddens the Definition of Done, and the failure names that source file.",
-          verification:
-            "Introduce the error, run the checks AS THE DEFINITION OF DONE SPELLS THEM AND NOT A MODEL OF THEM, read WHICH check reports it and WHAT the failing output names; remove it and confirm green, so it is not a permanent red. THE CRUX IS SETTLED AND CHECK 4 IS NOT THE OWNER: with dist built from the previous source, root `tsc --noEmit` EXITS 0 (4c) because it reads dist/types.d.ts, while the fifth check reports it naming packages/tsudoi-language-server/src/types.ts (4d). AND CHECKS 1 AND 5 BOTH OWN IT THROUGH ONE `execFileSync`, which the probe could not see because it ran the fifth check alone: `prepareWorkspace` is ALSO the `bun test` preload, so the same failed build aborts `bun test` before a single test file loads. WHAT `NAMES THAT SOURCE FILE` MUST MEAN, NARROWED BECAUSE THE REAL SCRIPT WAS READ AND THE MODEL FLATTERED IT: `build` runs tsc with `cwd` INSIDE the member and `execFileSync` throws on a nonzero exit, so the crux arrives as the BUILD failure alone, before `typeCheckMember` runs, printing a member-relative `src/types.ts(3,14)` -- and after the move this repository has THREE `src/` directories, so that string identifies none of them. THE CRITERION IS MET ONLY IF THE FAILING RUN'S OWN OUTPUT NAMES THE MEMBER AND THE FILE TOGETHER, readable without consulting a second source, in BOTH readers. `typeCheckMember` already carries the reason for its own half -- run from the root, which is what puts the member's name in tsc's own diagnostics -- and the build half now needs the same property. A run that exits 1 printing only `src/types.ts` FAILS THIS CRITERION.",
-        },
-        {
-          criterion:
-            "The edit that permits tsudoi to be published is still the edit that reddens both members' optional-peer premise.",
-          verification:
-            "Make that edit and watch both members redden naming what each says -- BUT `THAT EDIT` IS NOW A DIFFERENT FILE'S, AND THE VERIFICATION AS FILED WAS PERFORMABLE AND GREEN, which is the same false-pass shape as AC1's disarmed falsifier and AC3's false control and is repaired here rather than filed as a gap. Sprint 49 pinned the premise to `private: true` on the ROOT manifest, measured on the ground that `bun publish` refuses a private package before `prepack` is run. After the move the root is a pure workspace root that keeps that key FOREVER, so test/optional-peer-premise.test.ts's `tsudoiIsUnpublished`, which reads repoRoot/package.json, answers TRUE BY CONSTRUCTION: deleting `private` from packages/tsudoi-language-server/package.json -- the edit that actually permits publication -- leaves both members GREEN. THE CRITERION IS MET ONLY IF THE PREMISE'S READING TAKES AS ITS SUBJECT THE MANIFEST WHOSE EDIT PERMITS PUBLICATION, and the root's permanent flag cannot satisfy it. THE DIFFERENTIAL THAT PROVES THE SUBJECT MOVED, and it waits on nothing unmeasured: deleting `private` from the MEMBER's manifest reddens both members AND deleting it from the ROOT's alone does NOT -- today's implementation produces exactly the opposite pair, which is what makes this a control rather than a restatement. SPRINT-INTERNAL AND NOT A GATE ON READINESS: whether `bun publish` run inside a member consults anything but that member's own manifest, measured once before the pin is rewritten onto it. This is Sprint 38's DISARMED outcome and the defect Sprint 49 filed one sprint ago, arriving in the criterion written to prevent it.",
-        },
-        {
-          criterion:
-            "The CLI starts and the fixtures answer under Bun and Deno, from a checkout and from an installed tarball.",
-          verification:
-            "The suite's existing shape, named here because the move is not accepted on the root's checks alone: this is the product goal's third success metric verbatim. Its own falsifier is that the `exports` map's arms are relative to the manifest carrying them and the move relocates that manifest; a broken arm reddens the deno route first.",
+            "Both states staged -- absent, and the partial window the pack step passes through -- and the reading taken on both runtimes AND the compiler, because it is the compiler alone that probes for existence and falls through. STARTING EVIDENCE, MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS FROM BEFORE IT: with every dist/ removed the root check exits 1 with exactly two errors, both at examples/tsudoi.config.ts and both naming HANDLER packages, while the trace shows tsudoi's own subpath falling SILENTLY through the `default: ./src/*.ts` arm. THE RECORDED COSTS OF DELETING THAT ARM WERE MEASURED UNDER THE LAYOUT THE MOVE DESTROYED and must be re-measured rather than quoted: the two importers that broke reached tsudoi through a mapping that no longer exists and now reach it through node_modules, so the cost may simply have evaporated.",
         },
       ],
-      status: "ready",
+      status: "draft",
       notes: [
-        "PO RULING 1, NO README FOR packages/tsudoi-language-server THIS SPRINT, AND THE ENUMERATION NARROWS TO HANDLER PACKAGES. The `memberFacts` loop is written for a reader who has ONLY that document, and tsudoi's reader does not arrive that way by construction: the sole documented route to the tarball IS the root README's quickstart, so the reader has already read it. Two of the four member facts (the peer on tsudoi, the link `bun install` does not create) are unstatable by tsudoi about itself, so the enumeration would have to narrow anyway. WHAT IS NOT CLOSED AND IS FILED RATHER THAN DISCOVERED: after the move `bun pm pack` in the member produces a tarball with NO README, where today's root pack ships one -- a registry-page gap that binds only the day tsudoi publishes, which `private: true` travelling to the member manifest (AC4) forecloses until a publishing decision reopens it. The honest close today is moving quickstart step 1 into a member README, which cascades into the ~15 `facts` entries hung off that quickstart; that cascade is the reason to defer, not tidiness. A prose-only pointer README is REFUSED: a document nobody executes is the one that goes stale, which is this repository's own doctrine.",
-        "PO RULING 2, THE ROOT TAKES A DISTINCT PRIVATE NAME AND THE COLLISION IS NOT KEPT-AND-MEASURED. Two packages claiming one name is `one package spelled two ways` in the one place sprint 51's guard cannot see -- it iterates members and the root is not one -- and its failure mode is silence: last-write-wins in `dirsByName`, no throw, no reorder, and which package a member's specifier then resolves to unmeasured. Measuring it green would license a state whose defect is that nothing reports it. DROPPING `name` IS ALSO REFUSED, and for the same reason rather than a different one: a nameless root is missed by `dirsByName` silently. THE EXACT STRING IS THE PO'S AND NOT THE STAKEHOLDER'S -- it appears in no registry, no consumer's manifest and no executed command block -- and it MUST NOT BE A PREFIX-EXTENSION of the published name, which the `registry route is intended and unverified` fact's right boundary was written (MEASURED) to refuse; `@atusy/tsudoi-workspace` satisfies that. CONSTRAINTS: the root keeps `private: true` PERMANENTLY, and the rename must not become a second manifest the optional-peer premise reads -- AC4 already retargets it onto the member's. MEASURED BEFORE IT IS BUILT ON: after `bun install`, follow the member's node_modules entry to its target and read WHICH package answered, positively rather than from an exit code.",
-        "PO RULING 3, THE PACK COMMAND'S TEXT DOES NOT CHANGE AND ITS DIRECTORY DOES. `bun pm pack --filename tsudoi.tgz` runs in the member; the tarball still lands at the WORKSPACE ROOT, so quickstart step 2's `bun install ../tsudoi-language-server/tsudoi.tgz` is UNCHANGED -- and that non-change is load-bearing PROSE a human is owed, exactly as each handler README already owes `the tarball does not land in that directory`. RE-MEASURED FOR TSUDOI-AS-MEMBER: the writes-to-the-root reading is the handlers' and is not this package's. THE MARKER COLLISION IS RULED AS A PROPERTY AND NOT A SPELLING, because the two marker families use different vocabularies -- `handler-pack in=` is repoRoot-relative while `quickstart in=` names a SIBLING resolved through `basename(repoRoot)` in a staged parent that copies the root's package.json, tsconfig.build.json and src/. The requirement: no quickstart token may denote two directories, and the directory a reader is SHOWN is the directory the marker obeys. WHAT MUST KEEP WORKING FROM THE CHECKOUT ROOT: the five Definition-of-Done checks, for bunfig.toml's recorded reason. FIRST-DAY MEASUREMENT, NOT A GATE: what `bun pm pack` at the root does after the move, which is the muscle-memory route and the same mechanism AC4's premise rests on. NAMED SO THEY ARE NOT FOUND BY A RED: CLAUDE.md's tarball line (BOTH halves -- the directory, and `the prepack script compiles src/`, which the root will not have), and the pack invocation's cwd in test/helpers/install.ts and test/installed-runtime.test.ts.",
-        "A BLOCKER THE PO'S READING FOUND, IN THE MARKER COLLISION'S CLASS -- A TEST WHOSE SUBJECT RELOCATES WITH THE MANIFEST. test/readme.test.ts builds `publishedExports` from `join(repoRoot, \"package.json\").exports`; after the move the root has no `exports`, so that is `Object.keys(undefined)` -- A THROW AT MODULE LOAD rather than a failed assertion, taking the exports comparison and its permanent pair with it. A named subtask, not a first-run discovery.",
-        "WHAT SPRINT 51 CHANGED HERE, AND THE FIRST IS A REFUSAL IN SPRINT 50'S WORDING. test/build-order.test.ts asserts `buildOrder(repoRoot)` equals the root followed by the sorted members BYTE FOR BYTE, and THE MOVE REDDENS THAT ARM BY CONSTRUCTION -- after it, tsudoi sorts last among the members and both handlers declare it, so the derived order contradicts the sorted one. THAT REDNESS IS THE DERIVATION EARNING ITS KEEP. THE SPRINT IS REFUSED, EVERY CHECK GREEN, IF THAT ARM IS GENERALISED TO A SET COMPARISON, RETARGETED AT A TREE WHERE THE TWO ORDERS AGREE, OR DELETED. It is rewritten to the new derived order, in the same commit as the move.",
-        "AND THAT ARM CARRIES A COUPLING NOBODY HAD NAMED: the cycle refusal is safe to land in the `bun test` PRELOAD only because it is reachable from no state this repository can be in, and what establishes that is the dev-edge ruling TOGETHER WITH the byte-for-byte arm -- the very arm the move reddens. So there is a window in which a preload-level throw has nothing establishing it cannot fire, and a wrong answer there means NOTHING LOADS. THE GATE: the post-move graph's acyclicity is verified BEFORE the move lands.",
-        "THE GATE IS ANSWERABLE WITHOUT MOVING ANYTHING, MEASURED. `buildOrder` reads only names and declared dependency fields out of package.json files -- no src/, no dist/, no node_modules, no install, no build -- so the post-move MANIFEST GRAPH is the entire subject, and it is constructible as four manifests in a throwaway tree DERIVED PROGRAMMATICALLY FROM TODAY'S REAL ONES rather than hand-copied, which is what gives the gate a live subject: drop a handler's optional peer tomorrow and the mirror's edges change and the assertion reddens. MEASURED across the cells: acyclic under BOTH spellings of the root's declaration (so the gate does not wait on the field question below); the control, both optional peers dropped, degenerates to the alphabet -- without it `acyclic` is satisfied by a mirror that quietly lost its edges, which is this sprint's own for-want-of-a-subject shape; and the falsifier, the member declaring the root back, throws naming both packages, both manifests and the field.",
-        "THE ROOT'S DECLARATION MUST NAME ITS FIELD, and that was free before sprint 51 and is not free now: `devDependencies` creates NO edge and the root is ordered first, while `dependencies` creates one and packages/tsudoi-language-server is ordered BEFORE the root. Name it rather than discover it. AND WRITE DOWN WHY THE DEV-EDGE RULING'S ACCEPTED PRICE IS BENIGN HERE: the post-move root carries no build config, so the builder skips it and its position decides no artifact -- a sentence that should exist before someone gives the root a build config rather than after.",
-        "WHAT SPRINT 51 DID NOT CHANGE, STATED SO IT IS NOT ASSUMED. AC2's filed gap stands: the builder still runs tsc with cwd INSIDE the member and inherits stdio, and execFileSync still throws first, so the crux still arrives as a member-relative `src/types.ts(n,m)` naming the file but NOT the member -- the rewire looks like it might have touched this and did not. AC1's likewise: the harness closure removed ONE of the two routes that made its falsifier vacuous; the other, the root's own declared dependency, remains BY RULING. `every route enumerated and stashed first` stands as written -- the closure narrows the work, it does not retire the requirement.",
-        "ADDED TO SCOPE BY THE PO'S REVIEW READING: three wholesale node_modules symlinks live OUTSIDE the harness this sprint closed -- in the readme, checkout and install helpers. None is a route-perturbation probe today, so none was a shortfall against sprint 51; each will hand its tree a RESOLVING entry for tsudoi pointing into the real checkout the day the move lands. The readme helper needs attention regardless, because it copies a root src/ that will no longer exist -- which belongs beside the already-filed spawn-helper `repoRoot` ambiguity and the lint override globs.",
-        "A RESIDUE NAMED AND DELIBERATELY NOT MADE WORK: a root that keeps the published name while the member also takes it neither throws nor changes the order, because the name-to-directory map is last-write-wins and the member is written second -- and the root is not a member, so the name guard does not cover it. Different fault from the one the gate was asked about.",
-        "STAKEHOLDER RULING: the directory is packages/tsudoi-language-server, and the root keeps no src/ -- it becomes a pure workspace root. THE COLLISION THAT COMES WITH IT AND MUST BE CLOSED BY THIS PBI: README quickstart markers spell `in=tsudoi-language-server` to mean the CHECKOUT ROOT, resolved through `basename(repoRoot)`, so after the move one token denotes two directories AND EVERY ASSERTION STAYS GREEN while the prose misleads a human. The marker's spelling is what changes.",
-        "WHY THE MOVE IS WORTH ITS COST: `linkRootPackage` exists SOLELY because the main package is the workspace root, which the `workspaces` globs never match -- the one route where this repository's resolution differs from a stranger's, the exact class this project has spent sprints proving it cannot trust. MEASURED in a throwaway workspace on bun 1.3.13: member->member `workspace:*` resolves natively, writing the symlink into the depending member's node_modules. THAT MEASUREMENT WAS TAKEN ELSEWHERE AND IS NOT THIS TREE'S -- it must be re-measured here before it is built on.",
-        "OPEN, AND REFINEMENT'S JOB TO MEASURE BEFORE ANY CANDIDATE IS NAMED (no citation exists, so measure before building to the colour). Four candidates for tsudoi's develop-time self-resolution once the root `paths` mapping goes: C1 no mapping anywhere -- and then the root check's subject SILENTLY FLIPS with the state of a gitignored directory, via the `default: ./src/*.ts` fall-through; C2 a custom export condition, DISQUALIFIED if bun needs a per-invocation flag, since that flag would leak into README command blocks the suite executes; C3 the root takes the mapping over, pointed into the member -- NOT refused on the recorded reason without adjudication, because tsudoi-as-member has no tsudoi dependency for the root to shadow, and the recorded constraint may be about a root mapping answering a HANDLER member's specifier; C4 = C1 plus a ruling that examples/ SHOULD read dist/ because a consumer does. THAT LAST SENTENCE IS THE FRAMING THE PO RULING BELOW DECLINES TO ACCEPT UNCONDITIONALLY -- this note records what was open at the time and is left standing as that record, not as the decision.",
-        'THE PROBE, DESIGNED AND NOT YET RUN: a throwaway workspace mirroring the target layout, discriminating on a VALUE rather than an exit code -- src/types.ts exports MARK="src" and a hand-written, deliberately POISONED dist/ exports MARK="dist", so `resolved to dist` is read positively. Six cells, each on bun AND deno AND tsc --traceResolution: (1) root importer, no mapping, dist present/absent/poisoned; (2) importer INSIDE the member (self-reference), same three; (3) does bun select a custom condition with NO flag, does deno, does tsc under moduleResolution bundler; (4) C3 -- does root `tsc --noEmit` then compile member source, and does check 5 still redden on a member whose own route is broken; (5) an optional peer satisfied by hoisting, with tsudoi only in the ROOT node_modules -- does `workspace:*` even apply to a peer; (6) build order with tsudoi unbuilt. A ONE-RUNTIME RESULT IS NOT THE ANSWER IN A TWO-RUNTIME PROJECT (Sprint 45).',
-        "THE RISK THAT IS GREEN WHILE MEASURING NOTHING, AND IT IS THE ONE NOBODY HAD SEEN: `linkRootPackage`'s comment records, MEASURED, that an entry for this package in the ROOT node_modules hands every throwaway probe a SECOND route to it, because test/helpers/typecheck.ts symlinks the whole root node_modules into each probe -- a probe that DELETES `exports` from its own copy then resolves anyway and reports exit 0. AFTER THE MOVE, `bun install` CREATES EXACTLY THAT ENTRY, BY CONSTRUCTION. Every consumer of typecheck.ts must be enumerated and re-read for vacuity, whichever candidate wins.",
-        "WHAT MUST BE REWRITTEN RATHER THAN DELETED, because the measurement stays true of a different subject: `linkRootPackage`'s whole MEASURED block (it is the EVIDENCE the move is worth doing, and survives as history even when the function does not); bunfig.toml's and package-shape's `bun reaches src, deno reaches dist` -- RE-MEASURED, not reworded; member-resolution's `name and paths are redundant covers`, which has no subject under C1/C4. Also newly false as DEFECTS and not prose: .oxlintrc.json's `src/notifications.ts` and `test/helpers/**` override globs stop matching, and test/helpers/spawn.ts's `repoRoot` becomes ambiguous once repo root and package root are different directories.",
-        "DEV'S ESTIMATES, recorded so acceptance is not argued later: ~100% that some recorded reason needs rewriting (repair, not weakening); ~70% under C1/C4 (~25% C2, ~10% C3) that `this repository's own check reads source` LOSES ITS SUBJECT with no replacement -- an honest TARGET DELIBERATELY REMOVED, but a weakening, and it must be called one; ~50% that a control goes vacuous through the root node_modules entry; ~60% that build order forces new machinery, which is added coverage.",
-        "NOT ONE SPRINT. Dev's sequence: (1) PBI-55 alone; (2) run the six-cell probe and RECORD IT, with no edits; (3) adjudicate C1-C4 with the probe in hand; (4) the move, with build order, the private-flag travel, and the typecheck.ts vacuity sweep as NAMED subtasks rather than incidental repairs.",
-        'THE PROBE WAS RUN. C2 IS DEAD, C3 IS DEAD, C1 IS WOUNDED, C4 SURVIVES -- and the readings are in the scratchpad\'s probe/FINDINGS.txt with the raw log beside it. Toolchain bun 1.3.13, deno 2.8.3, tsc 7.0.2, load 88-112 on every reading and NOT ONE READING A TIMEOUT: every result is a compiler or runtime exit. The discriminator was a VALUE and not an exit code -- src exports MARK="src", a hand-written poisoned dist exports "dist", a custom-condition arm "cond", a member-local copy "member-nm" -- and tsc was made to read the value too, through `export const SEEN: "src" = MARK`, so TS2322 NAMES THE ARM THAT ANSWERED.',
-        "THE STATE NOBODY HAD NAMED, AND IT IS THE PROBE'S BEST FINDING: there are FOUR dist states, not three. PRESENT and POISONED are one state by construction; the fourth is PARTIAL -- types.js present, types.d.ts absent -- which is precisely the window `rm -rf dist && tsc` passes through, and which this suite ENTERS CONCURRENTLY every time a pack test runs. MEASURED IN THAT WINDOW: the COMPILER READS SOURCE WHILE THE RUNTIME READS DIST. Two files, two values, both exit 0.",
-        "C2 DIED ON ITS RECORDED DISQUALIFIER RATHER THAN ON THE STORY: bun selects a custom export condition ONLY from a per-invocation CLI flag. MEASURED, every route -- `BUN_CONDITIONS` in the environment IGNORED, and `conditions` under [run], [test], [install], at top level, and `exportConditions`, ALL FIVE SPELLINGS IGNORED. deno takes `DENO_CONDITIONS` from the environment and tsc takes `customConditions` from tsconfig; bun is the only one of the three with no config and no env route, and a flag leaks into the README blocks the suite executes.",
-        "C3 DIED ON WHAT IT BUYS. Its only virtue is real -- MEASURED, a root mapping pointed into the member makes the ROOT check exit 1 on a type error in tsudoi's own source, naming packages/tsudoi-language-server/src/types.ts -- but it buys that by grading tsudoi's SOURCE from the root, which is the inversion the story exists to end. And it is unnecessary: see the next note. E5 also settled the adjudication the notes above asked for -- with a handler's published d.ts carrying a tsudoi specifier and every node_modules route gone, the root mapping ANSWERS THAT HANDLER'S SPECIFIER (exit 0 with, TS2307 without), so the recorded refusal's exact shape does apply.",
-        "AC2'S CRUX IS ANSWERED AND THE ANSWER IS `CHECK 5, ALREADY, UNDER EVERY CANDIDATE`. MEASURED with a type error in the member's own source and dist built from the PREVIOUS source: the fifth-check model exits 1 TWICE, at BUILD FAILED and CHECK FAILED, both naming packages/tsudoi-language-server/src/types.ts; with the error removed, both green. THE GAP THE EXECUTOR MUST CLOSE, measured against the REAL script rather than the model: `prepareWorkspace` uses execFileSync, which throws on a nonzero build, so the crux arrives as the BUILD failure alone and prints a MEMBER-RELATIVE `src/types.ts(3,14)` -- naming the file but NOT THE MEMBER. AC2 asks that the failure name that source file; a bare `src/types.ts` in a repository with three of them does not.",
-        "AC1 IS SATISFIED BY `bun install` ALONE ONCE TSUDOI IS A MEMBER, AND `linkRootPackage` RETIRES. MEASURED: an optional peer gets an entry written into the handler's OWN node_modules even with no root dependency at all (a stranger's shape), `workspace:*` DOES apply to a peerDependency (install exit 0, no warning, entry written), and a member-local copy WINS over the root's. One inversion to carry into the rewrite: the link bun writes is RELATIVE where `linkRootPackage`'s is ABSOLUTE, so the dangle-on-moving-the-checkout failure mode inverts rather than disappears.",
-        "AC1'S OWN FALSIFIER IS VACUOUS AS FILED, MEASURED, AND THE CRITERION MUST BE REPAIRED BEFORE IT BINDS ANYONE. It says: remove the depending package's dependency on tsudoi, re-install, and that package's type check fails at TS2307. MEASURED: with the peer removed but a ROOT devDependency still present, the handler's check EXITS 0 -- the root entry answers it. Only removing BOTH produces the TS2307 naming the handler's source. Same shape as the disarmed control in cell 4: the stated control did not fail, and the cause was that same root entry.",
-        "AND THE ROOT devDependency IS THE DECISION THE MOVE CANNOT AVOID: it is what makes examples/ resolve tsudoi by name, AND it is what disarms every member-route control. IT CANNOT BE BOTH. Note 87's `bun install CREATES EXACTLY THAT ENTRY, BY CONSTRUCTION` is therefore HALF RIGHT and is corrected here: measured, with no root dependency declared, NO ROOT ENTRY APPEARS. The second route is a consequence of a choice the move makes, not of the installer.",
-        "TWO RECORDED MEASUREMENTS STOP HOLDING AFTER THE MOVE, NAMED WITH THEIR SITES. (1) test/package-shape.test.ts's `the default arm does NOT serve tsc --noEmit, because a paths mapping intercepts the subpath before the exports map` -- true of today's layout; with the mapping gone, MEASURED, tsc reaches exactly that arm. (2) test/package-shape.test.ts's `the repo's type check resolves the published subpaths to source`, which builds its expectation from the default arm: under C4 the root check reads DIST. That is the concrete site whose subject dies, and it retires the ~70% estimate above as MEASURED rather than guessed. bunfig.toml's comment, by contrast, is CONFIRMED with its causal clause: paths present -> bun src / deno dist, paths absent -> both dist.",
-        "WHAT KILLED C1 IS THE COMPILER AND NOT THE RUNTIMES. Both runtimes match the `import` arm and FAIL LOUDLY when dist is absent; only tsc probes for existence and falls through to `default: ./src/*.ts`, reading a DIFFERENT FILE and EXITING 0 in both the ABSENT and PARTIAL states. C4 survives because its positive reading holds -- with a declared dependency and a present dist, root bun, root deno and root tsc ALL READ DIST, which is what a consumer gets -- and C4 differs from C1 only in making that a RULING instead of an accident.",
-        "MEASURED AND DELIBERATELY NOT PROPOSED: deleting the `default: ./src/*.ts` arm converts every silent green above into a diagnostic naming a file (TS2307 with dist absent, TS7016 naming dist/types.js in the PARTIAL window). THE PROBE MODELS NONE OF ITS COST -- test/package-shape.test.ts records, measured, that removing the arms reddens four tests, and that repointing at dist breaks examples/tsudoi.config.ts and test/fixtures/published-specifier.ts at TS2307. It says what deletion BUYS, not that it is affordable, and it is a subtask with its own measurement rather than part of the candidate.",
-        "PO RULING, C4 ACCEPTED -- AND NOT IN THE SENTENCE IT WAS PROPOSED IN. C2 and C3 are dead on measurement and the only alternative left to C4 is keeping a `paths` mapping, which is the apparatus this story exists to remove. WHAT IS NOT ACCEPTED IS `ROOT-LEVEL IMPORTERS READ dist` AS AN UNCONDITIONAL CLAIM: it is measured TRUE in the PRESENT and POISONED states and FALSE in ABSENT and PARTIAL, where tsc alone probes for existence, falls through the `default: ./src/*.ts` arm, reads a DIFFERENT FILE and EXITS 0 -- and PARTIAL is a state this suite ENTERS CONCURRENTLY every time a pack test runs. THE RULING IS THEREFORE: root importers read dist WHEN dist IS PRESENT, and the ABSENT/PARTIAL subject flip is a NAMED, ACCEPTED RESIDUE THAT NOTHING DETECTS. Accepted rather than fixed because the one fix measured has costs the probe does not model; NAMED rather than left implicit because an undetected subject flip nobody wrote down is how this record's worst defects started. The move must not be reviewed as though the flip were closed.",
-        "THE `default: ./src/*.ts` ARM IS ITS OWN ITEM, WITH A RIDER THAT DECIDES WHAT ITS RECORDED COSTS ARE WORTH. E2 measures what deleting it BUYS: every silent green becomes a diagnostic naming a file -- TS2307 with dist absent, TS7016 naming dist/types.js in the PARTIAL window. Its recorded COSTS (four tests in test/package-shape.test.ts redden; repointing the subpaths at dist breaks examples/tsudoi.config.ts and test/fixtures/published-specifier.ts at TS2307) were MEASURED UNDER THE LAYOUT THIS MOVE DESTROYS -- both of those files reach tsudoi through the root `paths` mapping today and through node_modules afterwards. SO THOSE COSTS ARE RE-MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS, and the item is filed against the post-move tree or not at all. Nothing here weakens the residue above: until that item lands, the flip stands undetected and said so.",
-        "PO RULING, THE ROOT DECLARES THE DEPENDENCY, AND ITS PRICE IS PAID EXPLICITLY RATHER THAN AVOIDED. Three readings, strongest first: (i) the root manifest ALREADY declares devDependencies on both members, so tsudoi-as-member is a third entry in a list this repository has already chosen, not a new concession; (ii) cell 1 phase A -- without a root declaration a root-level importer resolves in NO tool in NO dist state; (iii) test/fixtures/published-specifier.ts is SPAWNED AS A REAL SERVER, so no compiler-only route could substitute for it, and examples/tsudoi.config.ts is the documented route a config author copies. WHAT THE RULING COSTS, WRITTEN DOWN SO IT IS NOT DISCOVERED: that entry hands every member a SECOND route and it silently disarmed BOTH of the probe's stated controls (4f, 5c). The cost is not paid by remembering it -- every control this move writes that perturbs a MEMBER'S OWN route to tsudoi states in advance what a degenerate implementation prints and is run once against a deliberately broken control, which is sprint 50's retro entry applied to a class of controls rather than to one. THE ESCAPE HATCH IF THAT PROVES UNAFFORDABLE IS UNMEASURED AND MAY NOT BE ASSUMED: examples/ and the consumer-shaped fixtures becoming packages that declare tsudoi themselves would put the entry in their own node_modules, which depends on whether bun hoists a REGULAR workspace dependency into the root node_modules -- 5f measured that only for an OPTIONAL PEER.",
-        "PO RULING ON SIZE: IT SPLITS, AND THE BOUNDARY IS A SPRINT BOUNDARY AND NOT A COMMIT BOUNDARY -- sprint 50's retro filed exactly that ambiguity as an order nothing could satisfy. FIRST HALF, and it can go in green because today's constructed order already equals the derived one: the build order derived from declared dependencies (AC3), demonstrated in throwaway package sets where its subject is real, PLUS the second-route hazard closed at the place that SPREADS it -- test/helpers/typecheck.ts symlinks the whole root node_modules into every probe, and root node_modules/@atusy/tsudoi-hover-wordnet RESOLVES TODAY (read, not assumed), so that hazard has a subject BEFORE the move and its remedy can be demonstrated before the move disarms anything. SECOND HALF, one full sprint with nothing beside it: the move itself, AC1, AC2, AC4, AC5, the README marker collision, and the rewritten-not-deleted measurements. AC4 CANNOT TRAIL -- the premise goes green measuring nothing at the moment the manifest moves, which is the defect it was filed for.",
-        "WHAT IS STILL WITHOUT A CITATION, NAMED RATHER THAN LEFT FOR THE EXECUTOR -- AND EACH IS A FIRST-DAY MEASUREMENT INSIDE THE SPRINT, NOT A GATE ON READINESS, because none of them decides a criterion's shape. (1) AC4's mechanism is cited (test/optional-peer-premise.test.ts measures the refusal before `prepack`) and its SCOPE is not: whether `bun publish` run inside a member consults anything but that member's own manifest. The SUBJECT question that reading raised was not a gap and is repaired in AC4's verification above. (2) bun's hoisting of a regular workspace dependency, above. (3) AC5 is uncited by this probe entirely -- the `exports` map's arms are relative to the manifest carrying them and the move relocates that manifest, and no cell touched the CLI or the tarball route.",
-        "WHAT SPRINT 50 CHANGED HERE, AND THE FIRST ITEM IS AN ORDERING CONSTRAINT OF EXACTLY THE SHAPE THAT BROKE `GUARD FIRST`. (1) The fifth check now THROWS AT THE FIRST offender, so while the moved directory and its manifest disagree it ABORTS BEFORE TYPE-CHECKING ANYTHING -- and this PBI's crux criterion, which asks which check owns a type error in tsudoi's own source, would be reading a refusal rather than a type error. (2) C1/C4 gained a measured argument against them: `bun pm pack` runs `rm -rf dist && tsc`, so a member's dist is TRANSIENTLY ABSENT during ordinary suite operation, and under those candidates the `default: ./src/*.ts` arm turns that window into a silent source fall-through instead of a failure. (3) Probe cells 4 and 5 read EXIT CODES, which is this sprint's silent-exit-0 shape -- each must state in advance what a degenerate implementation would produce and run once against a deliberately broken control. (4) Every cell's reading carries the machine's load, because a spawned-compiler reading under bun's 5000ms default is hardware and not resolution. (5) The measured `each member's link to the root package is ABSOLUTE` loses its subject when the root stops being a package, and belongs on the rewritten-not-deleted list above. (6) C2's recorded disqualifier should be re-checked against a preload-installed resolver: if that works, C2 dies on the STORY -- hand-written apparatus standing in for `bun install` -- which is a different and stronger refusal.",
+        "THIS IS THE RESIDUE SPRINT 52 SHIPPED OPEN AND SAID SO. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable. IT IS CARRIED AS PROSE IN FOUR PLACES AND PINNED BY NOTHING, DELIBERATELY: a test that pinned the flip would PASS WHILE THE RESIDUE PERSISTS, specifying rather than detecting it, and would make this PBI look like a regression.",
+        "THE DECIDING MEASUREMENT, so this does not become a deletion looking for a justification: it lands if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted. Otherwise the residue stays named.",
+      ],
+    },
+    {
+      id: "PBI-61",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "add a file without discovering later that nothing type-checks it",
+        benefit: "a green run means what it says for every file in the tree, not for most of them",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A TypeScript file in the checkout that no compiler program includes is refused, over files as a class.",
+          verification:
+            "The standing pair, and its shape is already measured: a file planted outside any program's reach runs under `bun test` AND IS TYPE-CHECKED BY NOTHING, with all five checks exit 0 -- planted and removed to establish it. The faithful reader is likely the compiler's own file list, because tsc's directory expansion and default excludes decide membership rather than the JSON globs a reader sees.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "A WIDENING OF A REFUSAL THAT ALREADY EXISTS AND NOT A SECOND COVERAGE GUARD: the existing one reasons about DIRECTORIES HOLDING A MANIFEST that the root excludes and the workspace does not declare, so it is blind one level in -- IT RAN OVER THE PLANTED PROBE AND PASSED.",
+        "THE MOVE CREATED THE ASYMMETRY THAT MAKES IT LIVE: the framework member is the only member whose config includes just its source, because it is the only one with no tests of its own, so anything added to it outside that directory is run by the suite and graded by nobody.",
+      ],
+    },
+    {
+      id: "PBI-62",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read a comment or a documented number and find it describes the repository I am in",
+        benefit:
+          "the reasons this project writes down keep being evidence rather than becoming folklore",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "No statement in the tree explains a present-day fact by a mechanism the move removed, and no document hard-codes a count.",
+          verification:
+            "Three named sites, each read rather than grepped for. The staged-path pin licenses itself with `that mapping is safe only because it cannot reach the packing stage` -- and there is NO MAPPING ANYWHERE NOW, so the tree's one narrative statement of how this repository resolves its own subpaths is false, and a contributor learns the pre-move story from the file that pins what we publish. The root config still excludes a directory the root no longer produces, matching nothing, with a test pinning the literal. And two documents hard-code a file count in a repository whose own convention refuses counts because they go stale -- the same defect its success metric carried for thirty sprints.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "SEPARATED FROM THE OTHER STALE-VALUE REPAIRS BY WHAT MAKES THEM WRONG: the count and the excluded directory are VALUES that went stale, while the pin's licence is a MECHANISM CLAIM that is now false -- which is the class this project has filed four instances of and has no check for.",
+        "THE GENERALISATION IS REFUSED IN ADVANCE: no guard that every exclude entry matches something on disk. An unmatched pattern is legitimate configuration, such a guard would redden correct files, and this instance was caught by the layer meant to catch it -- filed by its executor rather than shipped.",
+      ],
+    },
+    {
+      id: "PBI-63",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "trust that the tarball at the path the documentation names is the one it means",
+        benefit:
+          "the route a human follows by hand produces what the route the suite runs produces",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "The documented pack routes cannot leave one route's artifact standing where another route's install reads.",
+          verification:
+            "FIRST TASK IS THE MEASUREMENT AND NO FIX IS NAMED IN ADVANCE, because the obvious one is chosen by the answer: does installing the workspace tarball fail loudly, or install the private root quietly and leave a config's specifiers unresolved? MEASURED ALREADY: a member pack and a root pack write THE SAME FILENAME TO THE SAME PATH -- the workspace root is the checkout root -- and the documentation tells a reader the root command packs the workspace without telling them it OVERWRITES the artifact the other step produced, at the path the install reads by name. Harmless inside the suite, which packs and installs in sequence; for a human an interrupted or reordered sequence leaves a poisoned artifact that looks exactly right.",
+        },
+        {
+          criterion:
+            "What answers a member's specifier is read from the package that answered, not from the presence of an entry.",
+          verification:
+            "Promote to a test arm what sprint 52 could only run by hand: follow the entry to its target and read the target manifest's declared name. TODAY ONLY THAT IT IS A SYMLINK IS ASSERTED -- and the move measured why that is not enough, since `resolves to the wrong package` and `no entry at all` produced BYTE-IDENTICAL failure text.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "RANKED LOW ON THE FIRST CRITERION AND NOT ON THE SECOND: the root is private for ever and the artifact is local, but the entry-name reading is the discrimination the move showed missing.",
       ],
     },
     {
@@ -161,6 +181,227 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 52,
+      pbi_id: "PBI-56",
+      goal: "tsudoi is acquired by `bun install` the same way a stranger's project acquires it, and the CLI still starts and answers under Bun and Deno, from a checkout and from an installed tarball.",
+      status: "done",
+      subtasks: [
+        {
+          test: "A member whose source carries a type error is built through the real entry point in a SPAWNED child with piped stdio, and the failing run's own output names the member and the file TOGETHER. Arms: the same tree without the error writes the same artifact at the same path with the same bytes, so the invocation change is not an artifact change; and the degenerate control -- the old invocation on the same tree -- prints a bare `src/x.ts` and names no member.",
+          implementation:
+            "The builder runs the compiler from the ROOT with the member's config named relatively, so the compiler's OWN diagnostic carries the member. Not a wrapper that prints the member on another line: the criterion asks for them together, and with three src/ directories a wrapper leaves the joining to the reader.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "e16dfba",
+              message:
+                "feat(workspaces): build from the root so a failing build names whose source it was",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "ONE CALL SITE CLOSES BOTH READERS, which is why this is an invocation change and not a report: check 1's preload and check 5 own the crux through the SAME `execFileSync`, and it throws before the per-member type check can speak. Verifiably not an artifact change -- no member config uses `extends`, so its rootDir/outDir/include resolve against the config file and not the cwd.",
+            "THE RED WAS TAKEN BEFORE THE CHANGE AND IT IS THE CRUX'S OWN TEXT. Through the REAL fifth check spawned with piped stdio, over a throwaway member holding a type error, stdout was exactly `src/index.ts(1,14): error TS2322: Type 'string' is not assignable to type 'number'.` -- the file and no member. After the change the same run prints `packages/emitter/src/index.ts(1,14)`. AC2 IS THEREFORE MET AT ITS NARROWED READING, and the gap sprint 51 filed as still standing is closed.",
+            "THE OTHER TWO ARMS WERE GREEN BEFORE AND AFTER, which is what makes them arms rather than restatements: the degenerate control -- the OLD invocation, spelled in the test rather than kept in production -- prints `src/index.ts` and does NOT contain the member's name; and the same tree without the error emits byte-identical dist/ either way, so the invocation change is measured not to be an artifact change instead of argued from `extends` being absent.",
+            "NO `extends` ANYWHERE, READ RATHER THAN ASSUMED: grepped across both members' tsconfig.json and tsconfig.build.json and the root's two configs -- not one occurrence.",
+          ],
+        },
+        {
+          test: "The handler enumeration equals the member enumeration BYTE FOR BYTE TODAY, and in a throwaway three-member tree the member declaring no peer on tsudoi is excluded while the two that do are returned in order. Plus the non-empty pair, plus the falsifier that a tsudoi-shaped member is not returned.",
+          implementation:
+            "A `handlerMembers` enumerator beside `declaredMembers`, then a PER-SITE re-read of every caller -- each repointed or left with a written reason. Never applied wholesale.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "fa13f56",
+              message:
+                "feat(workspaces): tell the handlers from the members before the framework becomes one",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE LARGEST RISK IN THE SPRINT AND IT IS CLOSED BEFORE ANYTHING MOVES: ten test files would silently gain tsudoi as a third HANDLER. One of them asserts every member declares a peer on tsudoi, WHICH TSUDOI CANNOT DO FOR ITSELF; another demands a pack-and-install route and a root-README link for a package that is not a handler; another scans a member's src/ for the completion method and would begin scanning tsudoi's own.",
+            "THE ENUMERATION'S NARROWING IS FORCED RATHER THAN CHOSEN, which is the PO's ratification: two of the four facts a member README must state are unstatable by tsudoi about itself.",
+            "THE PREDICATE SPELLS NO PACKAGE NAME, decided while writing it and it is what makes the answer survive the move: a handler is a member that NAMES ANOTHER PACKAGE OF THIS WORKSPACE in one of the fields `buildOrder` reads an edge out of, with the ROOT counted as such a package. Today the members declare the root; tomorrow they declare a sibling; the answer is the same two either way. A filter naming the framework would have been a second home for the published name AND would answer `there are no handlers` -- every loop green and empty -- the day that name changed.",
+            "MEASURED AGAINST THE DEGENERATE IMPLEMENTATION rather than argued: with `handlerMembers` returning every member, 2 pass / 3 fail -- the three throwaway-tree arms redden and the two arms reading THIS repository stay green, correctly, because today the two enumerations are equal by construction. So the file is not satisfied by an author's intention.",
+            "THE SITE COUNT AND THE SPLIT, RECORDED AS A DISPOSITION PER SITE RATHER THAN A NUMBER MOVED. Narrowed to handlers: test/packed-members.test.ts, test/completeness-ruling.test.ts, test/member-resolution.test.ts, test/readme.test.ts, test/optional-peer-premise.test.ts, test/helpers/install.ts. Kept over every member WITH THE REASON AT THE CALL: scripts/typecheck-workspaces.ts (the only thing type-checking an excluded package -- this enumeration may never narrow), buildOrder (a package left out is a package never built), test/build-order.test.ts, test/published-artifacts.test.ts (`no package FROM THIS WORKSPACE` -- the framework is one of them), and BOTH package-shape sites.",
+            "ONE KEPT SITE IS DOING MORE WORK THAN IT LOOKS: test/package-shape.test.ts's `the repo depends on every member package ... at the version each member carries` also asserts the member is NOT one field up. Left over every member, that is where the ruling `the root declares tsudoi in devDependencies and creates no build edge` becomes executable. Narrowing it to handlers would have deleted the assertion.",
+          ],
+        },
+        {
+          test: "A quickstart marker whose token equals a declared member's basename is REFUSED, naming the marker and both directories it would denote; the unperturbed README stays green with its existing arms.",
+          implementation:
+            "The marker's vocabulary changes so that no quickstart token can denote two directories, and the directory a reader is SHOWN is the directory the marker OBEYS.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "bc11c8c",
+              message: "test(readme): refuse a quickstart token that denotes two directories",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "RULED AS A PROPERTY AND NOT AS A SPELLING, because the two marker families use different vocabularies: one is checkout-relative, the other names a SIBLING resolved through the checkout's own basename inside a staged parent. The PO declined to hand over a string they could not verify resolves.",
+            "THE REFUSAL LANDS NOW AND THE VOCABULARY CHANGES IN THE MOVE, AND THAT ORDER IS SATISFIABLE AS A COMMIT ORDER -- which is the distinction sprint 50's retro filed. No member basename collides today, so the guard goes in green; the move CREATES the colliding member, so it must change the marker in the same commit or redden. `guard first` here constrains the commit boundary and can.",
+            "THE COLLIDING MEMBER IS ENUMERATED AND NOT NAMED, so the refusal keeps its subject through every rename; the perturbation rewrites a real marker's token to a real member's basename rather than to a hand-written string.",
+            "AND THE EXISTING MARKER-ONLY REFUSAL GAINED A READING OF WHICH REFUSAL FIRED. Both arms perturb the same attribute, and both messages echo the substituted token -- so `toThrow(token)` alone is satisfied by either. Each now asserts its own message.",
+            "WHAT THE VOCABULARY BECOMES, DECIDED HERE AND EXECUTED IN THE MOVE: quickstart step 1's directory becomes the member inside the checkout, `tsudoi-language-server/packages/tsudoi-language-server`, which is a token no member's basename equals. The reader is SHOWN that directory and the marker OBEYS it. Step 2's `bun install ../tsudoi-language-server/tsudoi.tgz` is untouched, because `bun pm pack` inside a member writes the tarball to the WORKSPACE ROOT.",
+          ],
+        },
+        {
+          test: "Today green and byte-identical. Falsifier in a throwaway where the sentinel is deleted from the LOCATED manifest: both members are reported. Control: a different manifest losing it does not move the reading.",
+          implementation:
+            "The premise locates tsudoi's manifest by WHICH PACKAGE DECLARES THE PUBLISHED NAME rather than by the checkout root.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "0fc7159",
+              message:
+                "test(premise): read the sentinel off the manifest whose edit permits publication",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "PRE-MOVE HALF ONLY. The differential the criterion actually asks for -- deleting the sentinel from the MEMBER's manifest reddens both members AND deleting it from the ROOT's alone does not -- is post-move, and today's implementation produces exactly the opposite pair.",
+            "THE DIFFERENTIAL DID NOT HAVE TO WAIT FOR THE MOVE, and building it in a throwaway is what let the pre-move half be more than a rename: the locator reads a ROOT ARGUMENT, so a workspace shaped like the one this repository is becoming -- published name on a MEMBER, private workspace root -- is constructible today. Both halves of the criterion's pair are asserted there, before the move exists to disarm them.",
+            "MEASURED AGAINST THE DEGENERATE -- `publishingManifest` returning join(root, 'package.json'), which is exactly the reading being replaced: 4 pass / 3 fail. The three new arms ALL redden and the four live ones stay green, and the reddening is the opposite pair the PBI predicted (falsifier silent, control firing).",
+            "A COUNT OTHER THAN ONE IS REFUSED RATHER THAN RESOLVED, added while writing it: a locator that quietly fell back to the root when it found no match would be the old reading wearing the new one's name, and no arm could tell them apart. Its own arm asserts the throw names the published name.",
+          ],
+        },
+        {
+          test: "Measurement only, recorded in the dashboard, no production edit.",
+          implementation:
+            "Five uncited facts, measured before anything is built on them: whether bun links a workspace member for the PLAIN range the handlers actually spell (sprint 51 measured `workspace:*`, which is not what is on disk); what `bun install` does when two packages in one workspace claim one name; whether publishing from inside a member consults anything but that member's manifest; whether bun hoists a REGULAR workspace dependency into the root; and a re-measurement IN THIS TREE that member-to-member resolution works natively, since that reading was taken elsewhere.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "ALL FIVE MEASURED IN THROWAWAY WORKSPACES ON THIS MACHINE, bun 1.3.13, NO PRODUCTION EDIT. Every reading below is an installer's or a publisher's own output, not an exit code read as a colour.",
+            '(1) THE PLAIN RANGE THE HANDLERS ACTUALLY SPELL WORKS, which sprint 51 had measured only for `workspace:*`. A member declaring another member under `peerDependencies: {"@probe/framework": "*"}` with `optional: true` installs at exit 0 with NO warning, and the entry is written INTO THE DEPENDING MEMBER\'S OWN node_modules: `packages/handler/node_modules/@probe/framework -> ../../../framework`. RELATIVE, where `linkRootPackage`\'s is ABSOLUTE -- the dangle-on-moving-the-checkout mode INVERTS rather than disappears, re-measured here rather than carried across.',
+            '(2) TWO PACKAGES CLAIMING ONE NAME HAS TWO ANSWERS AND ONLY ONE OF THEM IS LOUD, which is what settles PO Ruling 2 on measurement rather than on reasoning. TWO MEMBERS: bun REFUSES -- `error: Workspace name "@probe/dup" already exists`, naming both manifests with file and line, nothing installed. THE ROOT AND A MEMBER: bun says NOTHING AT ALL -- install exit 0, no warning -- and a third member\'s specifier resolves SILENTLY TO THE MEMBER. So the state the name guard cannot see is also the state the INSTALLER cannot see, and the ruling that the root takes a distinct private name is confirmed as refusing a state whose whole defect is that nothing reports it.',
+            "(3) `bun publish` RUN INSIDE A MEMBER CONSULTS THAT MEMBER'S OWN MANIFEST AND NOTHING ELSE, which is the citation AC4's mechanism was missing. Member `private: true`, root `private: true`: `error: attempted to publish a private package`, exit 1, before anything is packed. Member's `private` DELETED, root STILL `private: true`: it PACKS (`packed 40B package.json`) and gets as far as `error: missing authentication`. The root's flag does not gate a member publish, so the sentinel had to move onto the member's manifest and a reading keyed on the root would have measured nothing.",
+            "(4) BUN DOES NOT HOIST A REGULAR WORKSPACE DEPENDENCY INTO THE ROOT. A member declaring another member under plain `dependencies` gets the entry in its OWN node_modules and the root's holds only `.bun`. Same for the optional peer in (1). SO THE SECOND ROUTE IS A CONSEQUENCE OF THE ROOT'S OWN DECLARATION AND NEVER OF THE INSTALLER -- note 103's correction is confirmed, and the escape hatch the PO left unmeasured (examples/ becoming a package that declares tsudoi itself) WOULD work, since its entry would land in its own node_modules and not in the root's.",
+            "(5) MEMBER-TO-MEMBER RESOLUTION WORKS NATIVELY, RE-MEASURED ON THIS MACHINE rather than carried from the reading taken elsewhere: (1) and (4) above are that re-measurement, and both entries were FOLLOWED TO THEIR TARGET rather than read as present.",
+          ],
+        },
+        {
+          test: "None new -- its pair is the whole Definition of Done plus every arm landed above. THE FIRST READING IS TAKEN IN THE MOVED-BUT-NOT-YET-INSTALLED TREE and recorded as failure text, with the shapes stated in advance, because that is the state the checkout is IN between two commits and sprint 51 measured that state CRASHING a helper rather than reddening a test.",
+          implementation:
+            "The move, one atomic commit: record the four existing node_modules entries FIRST so the post-install reading can say which route answered; move src/ and the build config into packages/tsudoi-language-server and write its manifest and tsconfig; strip the root to a private workspace root under its new name with tsudoi in devDependencies; DELETE each handler's hand-written entry explicitly and retire the linker; read the pre-install tree; install; follow every entry to its target; rewrite in the same commit everything the move falsifies; then the full Definition of Done.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "e8ddbcc",
+              message:
+                "refactor(workspace): make tsudoi a workspace member acquired by `bun install`",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "EACH HANDLER'S ENTRY MUST BE DELETED BY HAND AND THAT IS THE SILENT HAZARD OF THIS MOVE: those links are ABSOLUTE and point at the checkout root, so after the move they still RESOLVE -- to a directory that is no longer the tsudoi package -- and the linker's own `a directory that resolves is somebody's install` early-return makes it structurally unable to repair them.",
+            "THE ROOT DECLARES TSUDOI IN devDependencies, RULED AND NOT DISCOVERED: the root ships nothing, is private forever, carries no build config after the move so the builder skips it, and already devDepends on both handlers. No production-install route exists anywhere in this repository, so devDependencies are always installed here -- the one fact that would have flipped it. CONSEQUENCE, and it is the redness filed as the derivation earning its keep: the derived order becomes root, tsudoi, then the two handlers, contradicting the sorted order, and the byte-for-byte arm is rewritten to EXACTLY THAT SEQUENCE, never to a set comparison.",
+            "READING A, THE STATE THE NOTE ABOVE PREDICTED, MEASURED BEFORE ANYTHING WAS DELETED: manifests moved, entries untouched. Both handler entries STILL RESOLVED and their target's manifest read `@atusy/tsudoi-workspace` -- a directory that is no longer the tsudoi package. The fifth check exited 1 at the BUILD of packages/tsudoi-completion-path with TS2307 on all three subpaths, and thanks to subtask 1 the diagnostic named `packages/tsudoi-completion-path/src/completion.ts` rather than a bare `src/`. AND THE LINKER PROVED THE OTHER HALF BY ACTING: it early-returned on the stale entry exactly as its own comment says it must, and WROTE A NEW USELESS ONE beside it -- packages/tsudoi-completion-path/node_modules/@atusy/tsudoi-workspace -- because it links whatever the root manifest happens to be called.",
+            "READING B, MOVED AND NOT YET INSTALLED, AND ITS FINDING IS THAT IT IS INDISTINGUISHABLE FROM READING A. No entry at all in either handler; the root's node_modules still holding only the two handlers, RELATIVE and resolving; and the fifth check printing THE SAME SIX LINES as reading A. `an entry that resolves to the wrong package` and `no entry at all` are ONE RED, which is precisely why the criterion asks that the entry be READ AND FOLLOWED rather than counted.",
+            "AND `bun test` IN THAT STATE DID NOT DO WHAT SPRINT 51 PREDICTED, WHICH REFINES THAT PREDICTION RATHER THAN CONFIRMING IT. The preload's throw did NOT stop the run: bun reported `# Unhandled error between tests` and carried on, giving 105 pass / 340 fail / 12 errors across 53 files in 94s. So the state is worse than `nothing loads` -- one cause arrives under a wall of 340 symptoms, and the tsc diagnostic that names it scrolls past at the top.",
+            "READING C, AFTER `bun install`, EVERY ENTRY FOLLOWED TO ITS TARGET AND ITS MANIFEST READ. packages/tsudoi-completion-path/node_modules/@atusy/tsudoi-language-server -> ../../../tsudoi-language-server; the same for hover-wordnet; and node_modules/@atusy/tsudoi-language-server -> ../../packages/tsudoi-language-server at the root, from the root's own devDependency. All three resolve to packages/tsudoi-language-server, whose manifest declares @atusy/tsudoi-language-server. RELATIVE where the retired linker's were ABSOLUTE -- the recorded inversion, confirmed in this tree rather than carried across. AC1 IS SATISFIED BY `bun install` ALONE and `linkRootPackage` is gone.",
+            "THE DERIVED ORDER IS root, packages/tsudoi-language-server, packages/tsudoi-completion-path, packages/tsudoi-hover-wordnet, AND IT NOW CONTRADICTS THE ALPHABET ON THIS REPOSITORY -- read as a value before the arm was rewritten to it. The byte-for-byte arm was rewritten to exactly that sequence, never to a set, and gained `sorted !== derived` on the real tree, which the throwaway arms alone used to carry. It is also where the devDependencies ruling is checked: `dependencies` would order the framework before the root and redden this line, so no separate test asserts the field.",
+            "WHAT `bun pm pack` DOES AFTER THE MOVE, THE FIRST-DAY MEASUREMENT PO RULING 3 ASKED FOR. In the member: exit 0, and THE TARBALL LANDS AT THE WORKSPACE ROOT, which is what keeps the README's `bun install ../tsudoi-language-server/tsudoi.tgz` true with no edit. At the CHECKOUT ROOT -- the muscle-memory route -- exit 0 as well, packing 169 files including this suite and scrum.ts, because the root manifest declares no `files`. Harmless (the root is private for ever) and recorded because it is silent, and because it is why step 1's directory change is load-bearing rather than cosmetic.",
+            "THE SPAWN HELPER'S AMBIGUITY IS CLOSED BY SPLITTING THE NAME RATHER THAN BY REPOINTING IT: `repoRoot` is THE CHECKOUT (where a command runs, whose node_modules is borrowed, which workspace is enumerated) and a new `frameworkRoot` is THE PACKAGE (its manifest, src/, build config, dist/). Six helpers and test files were assigned one or the other by hand. AND ONE STAGED SHAPE IS DELIBERATELY NOT THE CHECKOUT'S: test/helpers/checkout.ts stages the PACKAGE ALONE with its manifest at the copy's root, because the examples there reach tsudoi by SELF-REFERENCE and need no node_modules -- which is exactly what lets those probes hold node_modules away. So the CLI's relative path became a parameter with two named spellings instead of one constant.",
+            "THE GUARD'S `src/` SHAPES ARE A DECISION AND NOT A GLOB REPAIR. .oxlintrc.json's factory exemption now names packages/tsudoi-language-server/src/notifications.ts, and it is NOT widened to `packages/*/src/notifications.ts`: that would hand the same permission to every handler, which ships to strangers who cannot fix it. guard.test.ts's two framework shapes name the package; its `packages/probe/src/index.ts` shape still names none, because that one is about a class. So `a file under packages/ lints exactly as src/ did` now has EXACTLY ONE ASSERTED EXCEPTION.",
+            "ATOMIC BECAUSE THE STATE IS REAL AND IS ENTERED ON PURPOSE: between the first edit and the install, every handler's specifier is answered by the wrong package or by nothing. `never leaves the tree in a state where nothing loads` is achievable at COMMIT granularity only; the bad state is entered once, deliberately, and READ.",
+            "STEP 0, THE PRE-IMAGE, TAKEN BEFORE ANYTHING WAS TOUCHED, so the post-install reading can say WHICH ROUTE ANSWERED rather than report a colour. Four entries, each followed to its target and its package.json read. The ROOT's two are bun's and are RELATIVE: node_modules/@atusy/tsudoi-completion-path -> ../../packages/tsudoi-completion-path and node_modules/@atusy/tsudoi-hover-wordnet -> ../../packages/tsudoi-hover-wordnet, each resolving to the member declaring that name. Each HANDLER's one is `linkRootPackage`'s and is ABSOLUTE: packages/<handler>/node_modules/@atusy/tsudoi-language-server -> /Users/atusy/ghq/github.com/atusy/tsudoi-language-server/ (trailing slash), resolving to the checkout root, whose manifest declares @atusy/tsudoi-language-server. THAT LAST FACT IS THE HAZARD IN ONE LINE: the target is the CHECKOUT ROOT, which after the move is a different package under the same path, so the link goes on resolving and stops being right.",
+          ],
+        },
+        {
+          test: "Deleting the publish sentinel from the MEMBER's manifest reddens both members; deleting it from the ROOT's alone does not.",
+          implementation:
+            "None if the premise was already retargeted; if an edit is needed here, it was located wrongly.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "NO EDIT WAS NEEDED, which is the outcome that says the premise was located rightly a subtask early. MEASURED ON THE REAL TREE, both halves, each restored afterwards. Deleting `private` from packages/tsudoi-language-server/package.json: 5 pass / 2 fail, the offender list naming packages/tsudoi-completion-path AND packages/tsudoi-hover-wordnet by directory, plus the README-agreement arm reddening because the document still says unpublished. Deleting `private` from the ROOT's manifest alone: 7 pass / 0 fail, the reading unmoved. That is exactly the pair the criterion asks for and exactly the opposite of what the pre-move implementation produced.",
+            "AND THE MECHANISM BEHIND IT WAS CITED FIRST RATHER THAN ASSUMED (subtask 5): `bun publish` inside a member consults that member's own manifest and nothing else -- private there refuses before packing, private only at the root does not.",
+          ],
+        },
+        {
+          test: "The entry is READ AND FOLLOWED, not merely present. Then, with the root entry and any member-local copy STASHED, removing a handler's declaration gives the unresolved-module failure naming that handler's own source and the tsudoi subpath; restoring it goes green.",
+          implementation:
+            "The vacuity sweep across the three wholesale node_modules symlinks outside the harness closed last sprint, each of which now hands its tree a RESOLVING tsudoi entry: per site, the mirror treatment or a written reason why the second route cannot answer that site's question.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "5834203",
+              message:
+                "docs(test): say per site why the new route into this checkout answers nothing",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "EVERY CONTROL THAT PERTURBS A MEMBER'S OWN ROUTE STATES IN ADVANCE WHAT A DEGENERATE IMPLEMENTATION PRINTS AND IS RUN ONCE AGAINST A DELIBERATELY BROKEN CONTROL. This is the sprint's second standing refusal and it is not the byte-for-byte one: that protects an EXISTING assertion from being weakened to fit the move; this protects the NEW ones from being unable to fail.",
+            "THE STANDING REFUSAL BOUND SOMETHING REAL, AND IT WAS THE FIRST THING THE MOVE BROKE. test/member-resolution.test.ts's positive arm perturbs a member's own link and expects TS2307; after the move it read `packages/tsudoi-completion-path: ` -- EXIT 0, EMPTY OUTPUT -- because the ROOT's entry answered. The arm was rewritten to ENUMERATE both routes and stash both, and the disarmed reading is KEPT AS ITS OWN ARM rather than as a comment: if the root ever stops declaring tsudoi, that arm reddens and says so, where a comment would go on describing a hazard nobody has.",
+            "AC1'S FALSIFIER RUN AT FULL STRENGTH, BY HAND, AND IT FOUND ONE THING NOBODY HAD PREDICTED. Removing packages/tsudoi-completion-path's peer declaration and re-installing DOES NOT REMOVE THE MEMBER-LOCAL ENTRY -- bun leaves the stale link in place, so the handler's own check still exits 0 with the declaration gone AND with the root entry stashed. Only with the member-local copy stashed TOO does it fail: exit 1, TS2307 naming packages/tsudoi-completion-path/src/completion.ts and each of the three subpaths. Restoring the declaration and re-installing: the relative entry is rewritten and the check exits 0. So `any member-local copy` in the criterion's stash list is not belt-and-braces -- it is the route that answers.",
+            "THE THREE WHOLESALE SYMLINKS, DISPOSITIONED PER SITE. test/helpers/checkout.ts is the only one where the new entry could have answered, and it was MEASURED rather than reasoned about: inside the staged copy `import.meta.resolve` answers THE COPY'S OWN dist/deps/types.js, because package self-reference beats the borrowed entry -- and the discriminating arm runs with no node_modules at all, where there is nothing to disarm it with. test/helpers/install.ts's pack stage: the borrow answers nothing because no file in the package names the package by specifier, and the CONSUMER beside it borrows only @types, which is the one that would have mattered. test/helpers/readme.ts: the borrow goes to the checkout and never to the reader's project, where every step after the pack runs.",
+          ],
+        },
+        {
+          test: "The existing cross-runtime and tarball arms, read as the pair -- the exports arms are relative to the manifest that just moved, and a broken arm reddens the deno route first.",
+          implementation:
+            "The documented pack command's TEXT does not change and its DIRECTORY does; the tarball still lands at the workspace root, so the install line a human follows stays true -- and that non-change is load-bearing prose a reader is owed rather than a coincidence.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE FIVE DEFINITION-OF-DONE CHECKS MUST KEEP WORKING FROM THE CHECKOUT ROOT, for the reason bunfig.toml records. What `bun pm pack` at the checkout root does after the move is a first-day measurement rather than a gate: it is the muscle-memory route, and it is the same mechanism the publish sentinel rests on.",
+            "LANDED IN THE MOVE'S OWN COMMIT, because the README is executed and a marker the move falsified would have reddened there rather than later. The command's TEXT is unchanged -- `bun pm pack --filename tsudoi.tgz` -- and its DIRECTORY is now the member; the reader is SHOWN `tsudoi-language-server/packages/tsudoi-language-server/` and the marker obeys that token, which no member's basename equals. Step 2's `bun install ../tsudoi-language-server/tsudoi.tgz` is untouched.",
+            "AND THE NON-CHANGE IS WRITTEN DOWN AS PROSE A READER IS OWED rather than left as a coincidence: the README now says the tarball does NOT land in that directory, that a member pack writes to the workspace root, and what the same command at the checkout root does instead. That is the handler READMEs' own sentence, re-measured for tsudoi-as-member.",
+            "THE STAGE HAD TO BECOME A WORKSPACE, which the tarball's landing place forces rather than tidiness: the quickstart helper now stages the workspace root's manifest plus packages/tsudoi-language-server/{package.json,tsconfig.build.json,src}, because `bun install ../tsudoi-language-server/tsudoi.tgz` is only true of a tree where the framework really is a member. Staging its three files at the checkout root would have put the tarball in the same place BY ACCIDENT and stopped testing the arrangement the document describes. The `no step runs in the checkout` guard widened from equality to containment, and is still a refusal rather than a later pack failure.",
+            "THE CROSS-RUNTIME AND TARBALL ARMS (AC5) ARE GREEN, which is the reading that says the exports map's arms survived relocating the manifest that carries them -- a broken arm reddens the deno route first, and the deno route is green from a checkout and from an installed tarball alike.",
+          ],
+        },
+        {
+          test: "A named subtask rather than a first-run discovery: the README test builds its expectation from the ROOT manifest's `exports`, which the move deletes -- so it would throw AT MODULE LOAD, taking the comparison and its permanent pair down with it rather than failing an assertion.",
+          implementation: "Repoint it at the manifest that carries the published surface.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "IT THREW EXACTLY AS FILED, WHICH IS WHY IT WAS A SUBTASK: `TypeError: undefined is not an object (evaluating Object.keys(...).exports)` at module load, 0 pass / 1 fail / 1 error for the whole file -- one error where two tests should have spoken. Repointed at the framework's manifest and the file went back to 98 pass.",
+            "AND A SECOND FILE HAD THE SAME SHAPE AND WAS NOT NAMED ANYWHERE: test/package-shape.test.ts reads the root manifest ONCE at module scope and uses it at seventeen sites, some about the PUBLISHED SURFACE and some about the WORKSPACE. Repointing that reader wholesale onto the member -- the obvious fix -- would have carried `workspaces`, the root's devDependency on every member, and the licence pair onto the wrong manifest, silently and green either way. It was SPLIT into two consts and every site assigned by hand, which is subtask 2's per-site discipline applied to a file no refusal names.",
+          ],
+        },
+        {
+          test: "None -- the suite is the pair.",
+          implementation:
+            "The rewritten-not-deleted sweep, each measurement dispositioned rather than swept: the linker's failed-spelling record moves to this dashboard as history because its function is deleted; the absolute-link reading is RE-MEASURED, because bun's link is relative and the dangle mode inverts; bunfig's causal clause and first-failure shape are RE-MEASURED; the two package-shape records lose their subject and are rewritten with the weakening DECLARED; the redundant-covers reading is retired with its reason; the lint override globs and the spawn helper's root ambiguity are DEFECTS and are rewritten; the published-surface note moves with the exports map; CLAUDE.md's build model is rewritten after re-measurement, because whether a fresh checkout's root type check still fails is now an open question.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE C4 RESIDUE IS CARRIED AS A COMMENT AND DELIBERATELY NOT AS A TEST. Root importers read dist when dist is PRESENT; in the ABSENT and PARTIAL states the compiler alone falls through to source and exits 0, and PARTIAL is entered CONCURRENTLY by this suite's own pack tests. A TEST THAT PINNED THE FLIP WOULD BLESS IT -- it would pass while the residue persists, specifying rather than detecting it, and would make the later fix look like a regression. The choosing test the PO gave: does the form FAIL when someone closes the residue? If yes, it is blessing a defect.",
+            "EVERY MEASUREMENT DISPOSITIONED, ONE LINE EACH. `linkRootPackage`'s whole record: MOVED HERE as history, because its function is deleted -- see the readings above, and the note it left behind in test/workspace-members.test.ts where its test used to be. The absolute-link reading: RE-MEASURED and INVERTED -- bun's links are relative, so the failure mode is now `a member directory moves inside the checkout` rather than `the checkout moves`. bunfig.toml's causal clause: RE-MEASURED and REPLACED, because the mechanism it named (a `paths` mapping intercepting a self-reference) no longer exists; its first-failure shape RE-MEASURED and unchanged, with the reason it holds now different. The two package-shape records: REWRITTEN WITH THE WEAKENING DECLARED. member-resolution's `name and paths are redundant covers`: RETIRED IN PLACE with the reason, and replaced by the stronger footing the move gives the same conclusion. The lint override globs and the spawn helper's root ambiguity: DEFECTS, rewritten. The published-surface note: MOVED with the exports map, and joined by two new keys carrying the sentinel's reason and the no-README ruling.",
+            "THE WEAKENING, STATED AS A WEAKENING AND NOT AS A CHANGE OF SUBJECT: `the repo's type check resolves the published subpaths to source` is gone and NOTHING REPLACES IT. The root check now reads dist, like a consumer. That was Dev's ~70% estimate arriving as fact -- an honest target REMOVED, which is what the move buys and what it costs, and the test that carried it says so in its own docstring rather than quietly asserting the new reading.",
+            "AND ITS NEIGHBOUR WENT VACUOUS RATHER THAN RED, WHICH IS THE HARDER ONE TO CATCH: `every specifier mapping this config declares is one the check really matches` compares two empty sets once there are no mappings -- green, permanently, measuring nothing. It was RETIRED AND REPLACED by `no specifier the root check resolves is answered by a mapping`, read off tsc's own trace so a mapping arriving through `extends` is covered, which makes the C4 ruling executable and gives the ROOT the refusal `refuseMemberMappings` already gives every member.",
+            "THE C4 RESIDUE, MEASURED AND WRITTEN IN FOUR PLACES AND PINNED IN NONE. With every dist/ removed, `tsc --noEmit` exits 1 with EXACTLY TWO errors, both at examples/tsudoi.config.ts and both naming HANDLER packages -- and `--traceResolution` shows `@atusy/tsudoi-language-server/types` resolving to packages/tsudoi-language-server/src/types.ts through the `default` arm, silently. With dist PRESENT, bun and deno both answer packages/tsudoi-language-server/dist/deps/types.js, read off `import.meta.resolve`, and tsc answers dist too. So C4's positive reading holds in this tree and the flip is real, undetected, and named in bunfig.toml, test/helpers/build.ts, CLAUDE.md and README.md.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "TSUDOI GETS NO README AS A MEMBER AND THE MEMBER ENUMERATION NARROWS TO HANDLER PACKAGES. A prose-only pointer is REFUSED on this repository's own doctrine -- the document nobody executes is the one that goes stale, and it would be a new liability rather than a closure. WHAT THAT COSTS, FILED RATHER THAN DISCOVERED: a member pack ships a tarball with NO README where today's root pack ships one. It binds only the day tsudoi publishes, and the sentinel travelling to the member manifest forecloses that until a publishing decision reopens it.",
+        "THE ROOT TAKES A DISTINCT PRIVATE NAME, `@atusy/tsudoi-workspace`, AND THE COLLISION IS NOT KEPT-AND-MEASURED. Two packages claiming one name is `one package spelled two ways` in the ONE PLACE the name guard cannot see -- it iterates members and the root is not one -- and its failure mode is SILENCE: last-write-wins, no throw, no reorder. Measuring that green would license a state whose whole defect is that nothing reports it. Dropping `name` is refused for the SAME reason rather than a different one. The string must not be a prefix-extension of the published name, because a recorded boundary exists to refuse exactly that string class.",
+        "THE EXACT STRING IS THE PO'S AND NOT THE STAKEHOLDER'S, stated so the boundary is on the record: it appears in no registry, no consumer's manifest and no executed command block. The stakeholder's ruling -- the directory, and a root with no src/ -- is what all three of this sprint's decisions sit inside.",
+        "IF THE SPRINT MUST SHRINK, THE NAMING REPAIR IS WHAT DROPS AND THE PUBLISH SENTINEL IS WHAT NEVER DOES. The crux itself is already answered, so what remains of the first is a repair whose absence leaves a failure that is LOUD BUT AMBIGUOUS -- the only one of the five whose absence produces nothing green-but-wrong. The sentinel goes green MEASURING NOTHING the moment the manifest moves, so a sprint that ships the move without it ships a test certifying a premise it can no longer see.",
+        "THE `default: ./src/*.ts` ARM'S FATE IS A FOLLOW-UP'S AND NOT THIS SPRINT'S: its recorded costs were measured under the layout this move destroys, and deleting it here would put TWO subject flips in one sprint and make the move's own readings unattributable. UNTIL IT LANDS THE FLIP STANDS UNDETECTED AND THIS SPRINT MUST NOT BE REVIEWED AS THOUGH IT WERE CLOSED.",
+      ],
+    },
     {
       number: 51,
       pbi_id: "PBI-59",
@@ -522,228 +763,34 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 52,
-    pbi_id: "PBI-56",
-    goal: "tsudoi is acquired by `bun install` the same way a stranger's project acquires it, and the CLI still starts and answers under Bun and Deno, from a checkout and from an installed tarball.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "A member whose source carries a type error is built through the real entry point in a SPAWNED child with piped stdio, and the failing run's own output names the member and the file TOGETHER. Arms: the same tree without the error writes the same artifact at the same path with the same bytes, so the invocation change is not an artifact change; and the degenerate control -- the old invocation on the same tree -- prints a bare `src/x.ts` and names no member.",
-        implementation:
-          "The builder runs the compiler from the ROOT with the member's config named relatively, so the compiler's OWN diagnostic carries the member. Not a wrapper that prints the member on another line: the criterion asks for them together, and with three src/ directories a wrapper leaves the joining to the reader.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "e16dfba",
-            message:
-              "feat(workspaces): build from the root so a failing build names whose source it was",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ONE CALL SITE CLOSES BOTH READERS, which is why this is an invocation change and not a report: check 1's preload and check 5 own the crux through the SAME `execFileSync`, and it throws before the per-member type check can speak. Verifiably not an artifact change -- no member config uses `extends`, so its rootDir/outDir/include resolve against the config file and not the cwd.",
-          "THE RED WAS TAKEN BEFORE THE CHANGE AND IT IS THE CRUX'S OWN TEXT. Through the REAL fifth check spawned with piped stdio, over a throwaway member holding a type error, stdout was exactly `src/index.ts(1,14): error TS2322: Type 'string' is not assignable to type 'number'.` -- the file and no member. After the change the same run prints `packages/emitter/src/index.ts(1,14)`. AC2 IS THEREFORE MET AT ITS NARROWED READING, and the gap sprint 51 filed as still standing is closed.",
-          "THE OTHER TWO ARMS WERE GREEN BEFORE AND AFTER, which is what makes them arms rather than restatements: the degenerate control -- the OLD invocation, spelled in the test rather than kept in production -- prints `src/index.ts` and does NOT contain the member's name; and the same tree without the error emits byte-identical dist/ either way, so the invocation change is measured not to be an artifact change instead of argued from `extends` being absent.",
-          "NO `extends` ANYWHERE, READ RATHER THAN ASSUMED: grepped across both members' tsconfig.json and tsconfig.build.json and the root's two configs -- not one occurrence.",
-        ],
-      },
-      {
-        test: "The handler enumeration equals the member enumeration BYTE FOR BYTE TODAY, and in a throwaway three-member tree the member declaring no peer on tsudoi is excluded while the two that do are returned in order. Plus the non-empty pair, plus the falsifier that a tsudoi-shaped member is not returned.",
-        implementation:
-          "A `handlerMembers` enumerator beside `declaredMembers`, then a PER-SITE re-read of every caller -- each repointed or left with a written reason. Never applied wholesale.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "fa13f56",
-            message:
-              "feat(workspaces): tell the handlers from the members before the framework becomes one",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE LARGEST RISK IN THE SPRINT AND IT IS CLOSED BEFORE ANYTHING MOVES: ten test files would silently gain tsudoi as a third HANDLER. One of them asserts every member declares a peer on tsudoi, WHICH TSUDOI CANNOT DO FOR ITSELF; another demands a pack-and-install route and a root-README link for a package that is not a handler; another scans a member's src/ for the completion method and would begin scanning tsudoi's own.",
-          "THE ENUMERATION'S NARROWING IS FORCED RATHER THAN CHOSEN, which is the PO's ratification: two of the four facts a member README must state are unstatable by tsudoi about itself.",
-          "THE PREDICATE SPELLS NO PACKAGE NAME, decided while writing it and it is what makes the answer survive the move: a handler is a member that NAMES ANOTHER PACKAGE OF THIS WORKSPACE in one of the fields `buildOrder` reads an edge out of, with the ROOT counted as such a package. Today the members declare the root; tomorrow they declare a sibling; the answer is the same two either way. A filter naming the framework would have been a second home for the published name AND would answer `there are no handlers` -- every loop green and empty -- the day that name changed.",
-          "MEASURED AGAINST THE DEGENERATE IMPLEMENTATION rather than argued: with `handlerMembers` returning every member, 2 pass / 3 fail -- the three throwaway-tree arms redden and the two arms reading THIS repository stay green, correctly, because today the two enumerations are equal by construction. So the file is not satisfied by an author's intention.",
-          "THE SITE COUNT AND THE SPLIT, RECORDED AS A DISPOSITION PER SITE RATHER THAN A NUMBER MOVED. Narrowed to handlers: test/packed-members.test.ts, test/completeness-ruling.test.ts, test/member-resolution.test.ts, test/readme.test.ts, test/optional-peer-premise.test.ts, test/helpers/install.ts. Kept over every member WITH THE REASON AT THE CALL: scripts/typecheck-workspaces.ts (the only thing type-checking an excluded package -- this enumeration may never narrow), buildOrder (a package left out is a package never built), test/build-order.test.ts, test/published-artifacts.test.ts (`no package FROM THIS WORKSPACE` -- the framework is one of them), and BOTH package-shape sites.",
-          "ONE KEPT SITE IS DOING MORE WORK THAN IT LOOKS: test/package-shape.test.ts's `the repo depends on every member package ... at the version each member carries` also asserts the member is NOT one field up. Left over every member, that is where the ruling `the root declares tsudoi in devDependencies and creates no build edge` becomes executable. Narrowing it to handlers would have deleted the assertion.",
-        ],
-      },
-      {
-        test: "A quickstart marker whose token equals a declared member's basename is REFUSED, naming the marker and both directories it would denote; the unperturbed README stays green with its existing arms.",
-        implementation:
-          "The marker's vocabulary changes so that no quickstart token can denote two directories, and the directory a reader is SHOWN is the directory the marker OBEYS.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "bc11c8c",
-            message: "test(readme): refuse a quickstart token that denotes two directories",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RULED AS A PROPERTY AND NOT AS A SPELLING, because the two marker families use different vocabularies: one is checkout-relative, the other names a SIBLING resolved through the checkout's own basename inside a staged parent. The PO declined to hand over a string they could not verify resolves.",
-          "THE REFUSAL LANDS NOW AND THE VOCABULARY CHANGES IN THE MOVE, AND THAT ORDER IS SATISFIABLE AS A COMMIT ORDER -- which is the distinction sprint 50's retro filed. No member basename collides today, so the guard goes in green; the move CREATES the colliding member, so it must change the marker in the same commit or redden. `guard first` here constrains the commit boundary and can.",
-          "THE COLLIDING MEMBER IS ENUMERATED AND NOT NAMED, so the refusal keeps its subject through every rename; the perturbation rewrites a real marker's token to a real member's basename rather than to a hand-written string.",
-          "AND THE EXISTING MARKER-ONLY REFUSAL GAINED A READING OF WHICH REFUSAL FIRED. Both arms perturb the same attribute, and both messages echo the substituted token -- so `toThrow(token)` alone is satisfied by either. Each now asserts its own message.",
-          "WHAT THE VOCABULARY BECOMES, DECIDED HERE AND EXECUTED IN THE MOVE: quickstart step 1's directory becomes the member inside the checkout, `tsudoi-language-server/packages/tsudoi-language-server`, which is a token no member's basename equals. The reader is SHOWN that directory and the marker OBEYS it. Step 2's `bun install ../tsudoi-language-server/tsudoi.tgz` is untouched, because `bun pm pack` inside a member writes the tarball to the WORKSPACE ROOT.",
-        ],
-      },
-      {
-        test: "Today green and byte-identical. Falsifier in a throwaway where the sentinel is deleted from the LOCATED manifest: both members are reported. Control: a different manifest losing it does not move the reading.",
-        implementation:
-          "The premise locates tsudoi's manifest by WHICH PACKAGE DECLARES THE PUBLISHED NAME rather than by the checkout root.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "0fc7159",
-            message:
-              "test(premise): read the sentinel off the manifest whose edit permits publication",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "PRE-MOVE HALF ONLY. The differential the criterion actually asks for -- deleting the sentinel from the MEMBER's manifest reddens both members AND deleting it from the ROOT's alone does not -- is post-move, and today's implementation produces exactly the opposite pair.",
-          "THE DIFFERENTIAL DID NOT HAVE TO WAIT FOR THE MOVE, and building it in a throwaway is what let the pre-move half be more than a rename: the locator reads a ROOT ARGUMENT, so a workspace shaped like the one this repository is becoming -- published name on a MEMBER, private workspace root -- is constructible today. Both halves of the criterion's pair are asserted there, before the move exists to disarm them.",
-          "MEASURED AGAINST THE DEGENERATE -- `publishingManifest` returning join(root, 'package.json'), which is exactly the reading being replaced: 4 pass / 3 fail. The three new arms ALL redden and the four live ones stay green, and the reddening is the opposite pair the PBI predicted (falsifier silent, control firing).",
-          "A COUNT OTHER THAN ONE IS REFUSED RATHER THAN RESOLVED, added while writing it: a locator that quietly fell back to the root when it found no match would be the old reading wearing the new one's name, and no arm could tell them apart. Its own arm asserts the throw names the published name.",
-        ],
-      },
-      {
-        test: "Measurement only, recorded in the dashboard, no production edit.",
-        implementation:
-          "Five uncited facts, measured before anything is built on them: whether bun links a workspace member for the PLAIN range the handlers actually spell (sprint 51 measured `workspace:*`, which is not what is on disk); what `bun install` does when two packages in one workspace claim one name; whether publishing from inside a member consults anything but that member's manifest; whether bun hoists a REGULAR workspace dependency into the root; and a re-measurement IN THIS TREE that member-to-member resolution works natively, since that reading was taken elsewhere.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "ALL FIVE MEASURED IN THROWAWAY WORKSPACES ON THIS MACHINE, bun 1.3.13, NO PRODUCTION EDIT. Every reading below is an installer's or a publisher's own output, not an exit code read as a colour.",
-          '(1) THE PLAIN RANGE THE HANDLERS ACTUALLY SPELL WORKS, which sprint 51 had measured only for `workspace:*`. A member declaring another member under `peerDependencies: {"@probe/framework": "*"}` with `optional: true` installs at exit 0 with NO warning, and the entry is written INTO THE DEPENDING MEMBER\'S OWN node_modules: `packages/handler/node_modules/@probe/framework -> ../../../framework`. RELATIVE, where `linkRootPackage`\'s is ABSOLUTE -- the dangle-on-moving-the-checkout mode INVERTS rather than disappears, re-measured here rather than carried across.',
-          '(2) TWO PACKAGES CLAIMING ONE NAME HAS TWO ANSWERS AND ONLY ONE OF THEM IS LOUD, which is what settles PO Ruling 2 on measurement rather than on reasoning. TWO MEMBERS: bun REFUSES -- `error: Workspace name "@probe/dup" already exists`, naming both manifests with file and line, nothing installed. THE ROOT AND A MEMBER: bun says NOTHING AT ALL -- install exit 0, no warning -- and a third member\'s specifier resolves SILENTLY TO THE MEMBER. So the state the name guard cannot see is also the state the INSTALLER cannot see, and the ruling that the root takes a distinct private name is confirmed as refusing a state whose whole defect is that nothing reports it.',
-          "(3) `bun publish` RUN INSIDE A MEMBER CONSULTS THAT MEMBER'S OWN MANIFEST AND NOTHING ELSE, which is the citation AC4's mechanism was missing. Member `private: true`, root `private: true`: `error: attempted to publish a private package`, exit 1, before anything is packed. Member's `private` DELETED, root STILL `private: true`: it PACKS (`packed 40B package.json`) and gets as far as `error: missing authentication`. The root's flag does not gate a member publish, so the sentinel had to move onto the member's manifest and a reading keyed on the root would have measured nothing.",
-          "(4) BUN DOES NOT HOIST A REGULAR WORKSPACE DEPENDENCY INTO THE ROOT. A member declaring another member under plain `dependencies` gets the entry in its OWN node_modules and the root's holds only `.bun`. Same for the optional peer in (1). SO THE SECOND ROUTE IS A CONSEQUENCE OF THE ROOT'S OWN DECLARATION AND NEVER OF THE INSTALLER -- note 103's correction is confirmed, and the escape hatch the PO left unmeasured (examples/ becoming a package that declares tsudoi itself) WOULD work, since its entry would land in its own node_modules and not in the root's.",
-          "(5) MEMBER-TO-MEMBER RESOLUTION WORKS NATIVELY, RE-MEASURED ON THIS MACHINE rather than carried from the reading taken elsewhere: (1) and (4) above are that re-measurement, and both entries were FOLLOWED TO THEIR TARGET rather than read as present.",
-        ],
-      },
-      {
-        test: "None new -- its pair is the whole Definition of Done plus every arm landed above. THE FIRST READING IS TAKEN IN THE MOVED-BUT-NOT-YET-INSTALLED TREE and recorded as failure text, with the shapes stated in advance, because that is the state the checkout is IN between two commits and sprint 51 measured that state CRASHING a helper rather than reddening a test.",
-        implementation:
-          "The move, one atomic commit: record the four existing node_modules entries FIRST so the post-install reading can say which route answered; move src/ and the build config into packages/tsudoi-language-server and write its manifest and tsconfig; strip the root to a private workspace root under its new name with tsudoi in devDependencies; DELETE each handler's hand-written entry explicitly and retire the linker; read the pre-install tree; install; follow every entry to its target; rewrite in the same commit everything the move falsifies; then the full Definition of Done.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "e8ddbcc",
-            message:
-              "refactor(workspace): make tsudoi a workspace member acquired by `bun install`",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EACH HANDLER'S ENTRY MUST BE DELETED BY HAND AND THAT IS THE SILENT HAZARD OF THIS MOVE: those links are ABSOLUTE and point at the checkout root, so after the move they still RESOLVE -- to a directory that is no longer the tsudoi package -- and the linker's own `a directory that resolves is somebody's install` early-return makes it structurally unable to repair them.",
-          "THE ROOT DECLARES TSUDOI IN devDependencies, RULED AND NOT DISCOVERED: the root ships nothing, is private forever, carries no build config after the move so the builder skips it, and already devDepends on both handlers. No production-install route exists anywhere in this repository, so devDependencies are always installed here -- the one fact that would have flipped it. CONSEQUENCE, and it is the redness filed as the derivation earning its keep: the derived order becomes root, tsudoi, then the two handlers, contradicting the sorted order, and the byte-for-byte arm is rewritten to EXACTLY THAT SEQUENCE, never to a set comparison.",
-          "READING A, THE STATE THE NOTE ABOVE PREDICTED, MEASURED BEFORE ANYTHING WAS DELETED: manifests moved, entries untouched. Both handler entries STILL RESOLVED and their target's manifest read `@atusy/tsudoi-workspace` -- a directory that is no longer the tsudoi package. The fifth check exited 1 at the BUILD of packages/tsudoi-completion-path with TS2307 on all three subpaths, and thanks to subtask 1 the diagnostic named `packages/tsudoi-completion-path/src/completion.ts` rather than a bare `src/`. AND THE LINKER PROVED THE OTHER HALF BY ACTING: it early-returned on the stale entry exactly as its own comment says it must, and WROTE A NEW USELESS ONE beside it -- packages/tsudoi-completion-path/node_modules/@atusy/tsudoi-workspace -- because it links whatever the root manifest happens to be called.",
-          "READING B, MOVED AND NOT YET INSTALLED, AND ITS FINDING IS THAT IT IS INDISTINGUISHABLE FROM READING A. No entry at all in either handler; the root's node_modules still holding only the two handlers, RELATIVE and resolving; and the fifth check printing THE SAME SIX LINES as reading A. `an entry that resolves to the wrong package` and `no entry at all` are ONE RED, which is precisely why the criterion asks that the entry be READ AND FOLLOWED rather than counted.",
-          "AND `bun test` IN THAT STATE DID NOT DO WHAT SPRINT 51 PREDICTED, WHICH REFINES THAT PREDICTION RATHER THAN CONFIRMING IT. The preload's throw did NOT stop the run: bun reported `# Unhandled error between tests` and carried on, giving 105 pass / 340 fail / 12 errors across 53 files in 94s. So the state is worse than `nothing loads` -- one cause arrives under a wall of 340 symptoms, and the tsc diagnostic that names it scrolls past at the top.",
-          "READING C, AFTER `bun install`, EVERY ENTRY FOLLOWED TO ITS TARGET AND ITS MANIFEST READ. packages/tsudoi-completion-path/node_modules/@atusy/tsudoi-language-server -> ../../../tsudoi-language-server; the same for hover-wordnet; and node_modules/@atusy/tsudoi-language-server -> ../../packages/tsudoi-language-server at the root, from the root's own devDependency. All three resolve to packages/tsudoi-language-server, whose manifest declares @atusy/tsudoi-language-server. RELATIVE where the retired linker's were ABSOLUTE -- the recorded inversion, confirmed in this tree rather than carried across. AC1 IS SATISFIED BY `bun install` ALONE and `linkRootPackage` is gone.",
-          "THE DERIVED ORDER IS root, packages/tsudoi-language-server, packages/tsudoi-completion-path, packages/tsudoi-hover-wordnet, AND IT NOW CONTRADICTS THE ALPHABET ON THIS REPOSITORY -- read as a value before the arm was rewritten to it. The byte-for-byte arm was rewritten to exactly that sequence, never to a set, and gained `sorted !== derived` on the real tree, which the throwaway arms alone used to carry. It is also where the devDependencies ruling is checked: `dependencies` would order the framework before the root and redden this line, so no separate test asserts the field.",
-          "WHAT `bun pm pack` DOES AFTER THE MOVE, THE FIRST-DAY MEASUREMENT PO RULING 3 ASKED FOR. In the member: exit 0, and THE TARBALL LANDS AT THE WORKSPACE ROOT, which is what keeps the README's `bun install ../tsudoi-language-server/tsudoi.tgz` true with no edit. At the CHECKOUT ROOT -- the muscle-memory route -- exit 0 as well, packing 169 files including this suite and scrum.ts, because the root manifest declares no `files`. Harmless (the root is private for ever) and recorded because it is silent, and because it is why step 1's directory change is load-bearing rather than cosmetic.",
-          "THE SPAWN HELPER'S AMBIGUITY IS CLOSED BY SPLITTING THE NAME RATHER THAN BY REPOINTING IT: `repoRoot` is THE CHECKOUT (where a command runs, whose node_modules is borrowed, which workspace is enumerated) and a new `frameworkRoot` is THE PACKAGE (its manifest, src/, build config, dist/). Six helpers and test files were assigned one or the other by hand. AND ONE STAGED SHAPE IS DELIBERATELY NOT THE CHECKOUT'S: test/helpers/checkout.ts stages the PACKAGE ALONE with its manifest at the copy's root, because the examples there reach tsudoi by SELF-REFERENCE and need no node_modules -- which is exactly what lets those probes hold node_modules away. So the CLI's relative path became a parameter with two named spellings instead of one constant.",
-          "THE GUARD'S `src/` SHAPES ARE A DECISION AND NOT A GLOB REPAIR. .oxlintrc.json's factory exemption now names packages/tsudoi-language-server/src/notifications.ts, and it is NOT widened to `packages/*/src/notifications.ts`: that would hand the same permission to every handler, which ships to strangers who cannot fix it. guard.test.ts's two framework shapes name the package; its `packages/probe/src/index.ts` shape still names none, because that one is about a class. So `a file under packages/ lints exactly as src/ did` now has EXACTLY ONE ASSERTED EXCEPTION.",
-          "ATOMIC BECAUSE THE STATE IS REAL AND IS ENTERED ON PURPOSE: between the first edit and the install, every handler's specifier is answered by the wrong package or by nothing. `never leaves the tree in a state where nothing loads` is achievable at COMMIT granularity only; the bad state is entered once, deliberately, and READ.",
-          "STEP 0, THE PRE-IMAGE, TAKEN BEFORE ANYTHING WAS TOUCHED, so the post-install reading can say WHICH ROUTE ANSWERED rather than report a colour. Four entries, each followed to its target and its package.json read. The ROOT's two are bun's and are RELATIVE: node_modules/@atusy/tsudoi-completion-path -> ../../packages/tsudoi-completion-path and node_modules/@atusy/tsudoi-hover-wordnet -> ../../packages/tsudoi-hover-wordnet, each resolving to the member declaring that name. Each HANDLER's one is `linkRootPackage`'s and is ABSOLUTE: packages/<handler>/node_modules/@atusy/tsudoi-language-server -> /Users/atusy/ghq/github.com/atusy/tsudoi-language-server/ (trailing slash), resolving to the checkout root, whose manifest declares @atusy/tsudoi-language-server. THAT LAST FACT IS THE HAZARD IN ONE LINE: the target is the CHECKOUT ROOT, which after the move is a different package under the same path, so the link goes on resolving and stops being right.",
-        ],
-      },
-      {
-        test: "Deleting the publish sentinel from the MEMBER's manifest reddens both members; deleting it from the ROOT's alone does not.",
-        implementation:
-          "None if the premise was already retargeted; if an edit is needed here, it was located wrongly.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "NO EDIT WAS NEEDED, which is the outcome that says the premise was located rightly a subtask early. MEASURED ON THE REAL TREE, both halves, each restored afterwards. Deleting `private` from packages/tsudoi-language-server/package.json: 5 pass / 2 fail, the offender list naming packages/tsudoi-completion-path AND packages/tsudoi-hover-wordnet by directory, plus the README-agreement arm reddening because the document still says unpublished. Deleting `private` from the ROOT's manifest alone: 7 pass / 0 fail, the reading unmoved. That is exactly the pair the criterion asks for and exactly the opposite of what the pre-move implementation produced.",
-          "AND THE MECHANISM BEHIND IT WAS CITED FIRST RATHER THAN ASSUMED (subtask 5): `bun publish` inside a member consults that member's own manifest and nothing else -- private there refuses before packing, private only at the root does not.",
-        ],
-      },
-      {
-        test: "The entry is READ AND FOLLOWED, not merely present. Then, with the root entry and any member-local copy STASHED, removing a handler's declaration gives the unresolved-module failure naming that handler's own source and the tsudoi subpath; restoring it goes green.",
-        implementation:
-          "The vacuity sweep across the three wholesale node_modules symlinks outside the harness closed last sprint, each of which now hands its tree a RESOLVING tsudoi entry: per site, the mirror treatment or a written reason why the second route cannot answer that site's question.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5834203",
-            message:
-              "docs(test): say per site why the new route into this checkout answers nothing",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EVERY CONTROL THAT PERTURBS A MEMBER'S OWN ROUTE STATES IN ADVANCE WHAT A DEGENERATE IMPLEMENTATION PRINTS AND IS RUN ONCE AGAINST A DELIBERATELY BROKEN CONTROL. This is the sprint's second standing refusal and it is not the byte-for-byte one: that protects an EXISTING assertion from being weakened to fit the move; this protects the NEW ones from being unable to fail.",
-          "THE STANDING REFUSAL BOUND SOMETHING REAL, AND IT WAS THE FIRST THING THE MOVE BROKE. test/member-resolution.test.ts's positive arm perturbs a member's own link and expects TS2307; after the move it read `packages/tsudoi-completion-path: ` -- EXIT 0, EMPTY OUTPUT -- because the ROOT's entry answered. The arm was rewritten to ENUMERATE both routes and stash both, and the disarmed reading is KEPT AS ITS OWN ARM rather than as a comment: if the root ever stops declaring tsudoi, that arm reddens and says so, where a comment would go on describing a hazard nobody has.",
-          "AC1'S FALSIFIER RUN AT FULL STRENGTH, BY HAND, AND IT FOUND ONE THING NOBODY HAD PREDICTED. Removing packages/tsudoi-completion-path's peer declaration and re-installing DOES NOT REMOVE THE MEMBER-LOCAL ENTRY -- bun leaves the stale link in place, so the handler's own check still exits 0 with the declaration gone AND with the root entry stashed. Only with the member-local copy stashed TOO does it fail: exit 1, TS2307 naming packages/tsudoi-completion-path/src/completion.ts and each of the three subpaths. Restoring the declaration and re-installing: the relative entry is rewritten and the check exits 0. So `any member-local copy` in the criterion's stash list is not belt-and-braces -- it is the route that answers.",
-          "THE THREE WHOLESALE SYMLINKS, DISPOSITIONED PER SITE. test/helpers/checkout.ts is the only one where the new entry could have answered, and it was MEASURED rather than reasoned about: inside the staged copy `import.meta.resolve` answers THE COPY'S OWN dist/deps/types.js, because package self-reference beats the borrowed entry -- and the discriminating arm runs with no node_modules at all, where there is nothing to disarm it with. test/helpers/install.ts's pack stage: the borrow answers nothing because no file in the package names the package by specifier, and the CONSUMER beside it borrows only @types, which is the one that would have mattered. test/helpers/readme.ts: the borrow goes to the checkout and never to the reader's project, where every step after the pack runs.",
-        ],
-      },
-      {
-        test: "The existing cross-runtime and tarball arms, read as the pair -- the exports arms are relative to the manifest that just moved, and a broken arm reddens the deno route first.",
-        implementation:
-          "The documented pack command's TEXT does not change and its DIRECTORY does; the tarball still lands at the workspace root, so the install line a human follows stays true -- and that non-change is load-bearing prose a reader is owed rather than a coincidence.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE FIVE DEFINITION-OF-DONE CHECKS MUST KEEP WORKING FROM THE CHECKOUT ROOT, for the reason bunfig.toml records. What `bun pm pack` at the checkout root does after the move is a first-day measurement rather than a gate: it is the muscle-memory route, and it is the same mechanism the publish sentinel rests on.",
-          "LANDED IN THE MOVE'S OWN COMMIT, because the README is executed and a marker the move falsified would have reddened there rather than later. The command's TEXT is unchanged -- `bun pm pack --filename tsudoi.tgz` -- and its DIRECTORY is now the member; the reader is SHOWN `tsudoi-language-server/packages/tsudoi-language-server/` and the marker obeys that token, which no member's basename equals. Step 2's `bun install ../tsudoi-language-server/tsudoi.tgz` is untouched.",
-          "AND THE NON-CHANGE IS WRITTEN DOWN AS PROSE A READER IS OWED rather than left as a coincidence: the README now says the tarball does NOT land in that directory, that a member pack writes to the workspace root, and what the same command at the checkout root does instead. That is the handler READMEs' own sentence, re-measured for tsudoi-as-member.",
-          "THE STAGE HAD TO BECOME A WORKSPACE, which the tarball's landing place forces rather than tidiness: the quickstart helper now stages the workspace root's manifest plus packages/tsudoi-language-server/{package.json,tsconfig.build.json,src}, because `bun install ../tsudoi-language-server/tsudoi.tgz` is only true of a tree where the framework really is a member. Staging its three files at the checkout root would have put the tarball in the same place BY ACCIDENT and stopped testing the arrangement the document describes. The `no step runs in the checkout` guard widened from equality to containment, and is still a refusal rather than a later pack failure.",
-          "THE CROSS-RUNTIME AND TARBALL ARMS (AC5) ARE GREEN, which is the reading that says the exports map's arms survived relocating the manifest that carries them -- a broken arm reddens the deno route first, and the deno route is green from a checkout and from an installed tarball alike.",
-        ],
-      },
-      {
-        test: "A named subtask rather than a first-run discovery: the README test builds its expectation from the ROOT manifest's `exports`, which the move deletes -- so it would throw AT MODULE LOAD, taking the comparison and its permanent pair down with it rather than failing an assertion.",
-        implementation: "Repoint it at the manifest that carries the published surface.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "IT THREW EXACTLY AS FILED, WHICH IS WHY IT WAS A SUBTASK: `TypeError: undefined is not an object (evaluating Object.keys(...).exports)` at module load, 0 pass / 1 fail / 1 error for the whole file -- one error where two tests should have spoken. Repointed at the framework's manifest and the file went back to 98 pass.",
-          "AND A SECOND FILE HAD THE SAME SHAPE AND WAS NOT NAMED ANYWHERE: test/package-shape.test.ts reads the root manifest ONCE at module scope and uses it at seventeen sites, some about the PUBLISHED SURFACE and some about the WORKSPACE. Repointing that reader wholesale onto the member -- the obvious fix -- would have carried `workspaces`, the root's devDependency on every member, and the licence pair onto the wrong manifest, silently and green either way. It was SPLIT into two consts and every site assigned by hand, which is subtask 2's per-site discipline applied to a file no refusal names.",
-        ],
-      },
-      {
-        test: "None -- the suite is the pair.",
-        implementation:
-          "The rewritten-not-deleted sweep, each measurement dispositioned rather than swept: the linker's failed-spelling record moves to this dashboard as history because its function is deleted; the absolute-link reading is RE-MEASURED, because bun's link is relative and the dangle mode inverts; bunfig's causal clause and first-failure shape are RE-MEASURED; the two package-shape records lose their subject and are rewritten with the weakening DECLARED; the redundant-covers reading is retired with its reason; the lint override globs and the spawn helper's root ambiguity are DEFECTS and are rewritten; the published-surface note moves with the exports map; CLAUDE.md's build model is rewritten after re-measurement, because whether a fresh checkout's root type check still fails is now an open question.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE C4 RESIDUE IS CARRIED AS A COMMENT AND DELIBERATELY NOT AS A TEST. Root importers read dist when dist is PRESENT; in the ABSENT and PARTIAL states the compiler alone falls through to source and exits 0, and PARTIAL is entered CONCURRENTLY by this suite's own pack tests. A TEST THAT PINNED THE FLIP WOULD BLESS IT -- it would pass while the residue persists, specifying rather than detecting it, and would make the later fix look like a regression. The choosing test the PO gave: does the form FAIL when someone closes the residue? If yes, it is blessing a defect.",
-          "EVERY MEASUREMENT DISPOSITIONED, ONE LINE EACH. `linkRootPackage`'s whole record: MOVED HERE as history, because its function is deleted -- see the readings above, and the note it left behind in test/workspace-members.test.ts where its test used to be. The absolute-link reading: RE-MEASURED and INVERTED -- bun's links are relative, so the failure mode is now `a member directory moves inside the checkout` rather than `the checkout moves`. bunfig.toml's causal clause: RE-MEASURED and REPLACED, because the mechanism it named (a `paths` mapping intercepting a self-reference) no longer exists; its first-failure shape RE-MEASURED and unchanged, with the reason it holds now different. The two package-shape records: REWRITTEN WITH THE WEAKENING DECLARED. member-resolution's `name and paths are redundant covers`: RETIRED IN PLACE with the reason, and replaced by the stronger footing the move gives the same conclusion. The lint override globs and the spawn helper's root ambiguity: DEFECTS, rewritten. The published-surface note: MOVED with the exports map, and joined by two new keys carrying the sentinel's reason and the no-README ruling.",
-          "THE WEAKENING, STATED AS A WEAKENING AND NOT AS A CHANGE OF SUBJECT: `the repo's type check resolves the published subpaths to source` is gone and NOTHING REPLACES IT. The root check now reads dist, like a consumer. That was Dev's ~70% estimate arriving as fact -- an honest target REMOVED, which is what the move buys and what it costs, and the test that carried it says so in its own docstring rather than quietly asserting the new reading.",
-          "AND ITS NEIGHBOUR WENT VACUOUS RATHER THAN RED, WHICH IS THE HARDER ONE TO CATCH: `every specifier mapping this config declares is one the check really matches` compares two empty sets once there are no mappings -- green, permanently, measuring nothing. It was RETIRED AND REPLACED by `no specifier the root check resolves is answered by a mapping`, read off tsc's own trace so a mapping arriving through `extends` is covered, which makes the C4 ruling executable and gives the ROOT the refusal `refuseMemberMappings` already gives every member.",
-          "THE C4 RESIDUE, MEASURED AND WRITTEN IN FOUR PLACES AND PINNED IN NONE. With every dist/ removed, `tsc --noEmit` exits 1 with EXACTLY TWO errors, both at examples/tsudoi.config.ts and both naming HANDLER packages -- and `--traceResolution` shows `@atusy/tsudoi-language-server/types` resolving to packages/tsudoi-language-server/src/types.ts through the `default` arm, silently. With dist PRESENT, bun and deno both answer packages/tsudoi-language-server/dist/deps/types.js, read off `import.meta.resolve`, and tsc answers dist too. So C4's positive reading holds in this tree and the flip is real, undetected, and named in bunfig.toml, test/helpers/build.ts, CLAUDE.md and README.md.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "TSUDOI GETS NO README AS A MEMBER AND THE MEMBER ENUMERATION NARROWS TO HANDLER PACKAGES. A prose-only pointer is REFUSED on this repository's own doctrine -- the document nobody executes is the one that goes stale, and it would be a new liability rather than a closure. WHAT THAT COSTS, FILED RATHER THAN DISCOVERED: a member pack ships a tarball with NO README where today's root pack ships one. It binds only the day tsudoi publishes, and the sentinel travelling to the member manifest forecloses that until a publishing decision reopens it.",
-      "THE ROOT TAKES A DISTINCT PRIVATE NAME, `@atusy/tsudoi-workspace`, AND THE COLLISION IS NOT KEPT-AND-MEASURED. Two packages claiming one name is `one package spelled two ways` in the ONE PLACE the name guard cannot see -- it iterates members and the root is not one -- and its failure mode is SILENCE: last-write-wins, no throw, no reorder. Measuring that green would license a state whose whole defect is that nothing reports it. Dropping `name` is refused for the SAME reason rather than a different one. The string must not be a prefix-extension of the published name, because a recorded boundary exists to refuse exactly that string class.",
-      "THE EXACT STRING IS THE PO'S AND NOT THE STAKEHOLDER'S, stated so the boundary is on the record: it appears in no registry, no consumer's manifest and no executed command block. The stakeholder's ruling -- the directory, and a root with no src/ -- is what all three of this sprint's decisions sit inside.",
-      "IF THE SPRINT MUST SHRINK, THE NAMING REPAIR IS WHAT DROPS AND THE PUBLISH SENTINEL IS WHAT NEVER DOES. The crux itself is already answered, so what remains of the first is a repair whose absence leaves a failure that is LOUD BUT AMBIGUOUS -- the only one of the five whose absence produces nothing green-but-wrong. The sentinel goes green MEASURING NOTHING the moment the manifest moves, so a sprint that ships the move without it ships a test certifying a premise it can no longer see.",
-      "THE `default: ./src/*.ts` ARM'S FATE IS A FOLLOW-UP'S AND NOT THIS SPRINT'S: its recorded costs were measured under the layout this move destroys, and deleting it here would put TWO subject flips in one sprint and make the move's own readings unattributable. UNTIL IT LANDS THE FLIP STANDS UNDETECTED AND THIS SPRINT MUST NOT BE REVIEWED AS THOUGH IT WERE CLOSED.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 52,
+      improvements: [
+        {
+          action:
+            "TWO STATES THAT PRODUCE BYTE-IDENTICAL FAILURE TEXT ARE ONE RED, AND A CONTROL THAT MEANT TO DISTINGUISH THEM MEASURES NOTHING. MEASURED AT THE MOVE: `the entry resolves to the WRONG package` and `there is no entry at all` printed the same thing, so the reading that discriminates them is FOLLOWING THE ENTRY AND READING THE TARGET'S DECLARED NAME -- not that a symlink exists. Filed with the companion finding, also unpredicted: the installer WRITES, IT DOES NOT RECONCILE, so removing a declaration and re-installing leaves the stale link answering, which is why a falsifier had to stash BOTH routes rather than the one it named.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A REFUSAL WRITTEN OVER PACKAGES IS BLIND ONE LEVEL IN, AND IT PASSED OVER THE PROBE THAT PROVED IT. MEASURED: a TypeScript file planted where no compiler program reaches RUNS UNDER THE SUITE AND IS TYPE-CHECKED BY NOTHING, with all five checks exit 0 -- and the guard whose subject is `a package nothing covers` ran and said nothing, because its subject is DIRECTORIES HOLDING A MANIFEST. The move is what made it live: the framework member is now the only member whose config includes just its source.",
+          timing: "product",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "A COMMENT THAT LICENSES A PRESENT-DAY DECISION BY A MECHANISM THE INCREMENT REMOVED IS WORSE THAN A STALE VALUE, BECAUSE IT READS AS CURRENT. The staged-path pin still explains itself by a compiler mapping that NO LONGER EXISTS ANYWHERE IN THIS REPOSITORY -- so the tree's one narrative account of how it resolves its own subpaths is false, and a contributor learns the pre-move story from the file that pins what is published. Distinct from the two stale COUNTS filed beside it: those are values that went out of date, this is a reason that stopped being true. Fifth instance of the class the mechanism-claim item was filed for.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 51,
       improvements: [
