@@ -97,7 +97,7 @@ const scrum: ScrumDashboard = {
           criterion:
             "A CONSUMER OBTAINS THE HOVER HANDLER WITHOUT RECEIVING ITS SOURCE. A throwaway project that has installed `@atusy/tsudoi-language-server` and `@atusy/tsudoi-hover-wordnet` -- both by the README's own route, a tarball packed out of this checkout -- writes a config whose only hover import is the PACKAGE SPECIFIER, and answers a real `textDocument/hover` over the wire. NO BYTE OF THE HANDLER'S SOURCE IS WRITTEN INTO THAT PROJECT, which is what distinguishes this from what test/helpers/install.ts does today.",
           verification:
-            "THE LIFT IS NAMED RATHER THAN IMPLIED, because it is the largest implementation change in this PBI: test/helpers/install.ts today packs ONE tarball from repoRoot/package.json + src/ + tsconfig.build.json and HARDCODES the consumer path at node_modules/@atusy/tsudoi -- which PBI-53 re-spells before this PBI rewrites it. It must pack and install TWO, and the consumer's config must load with the handler resolved out of node_modules. THE PROBE THEN ASSERTS BOTH DIRECTIONS IN ONE MEASUREMENT, per Sprint 6: the hover answers with a definition, AND the consumer's own directory holds no hover-wordnet source. NEGATIVE CONTROL, and it is what stops a green meaning `some other route answered`: omit the handler package from the install and the same test must redden NAMING THE SPECIFIER -- an empty hover, or a hover that still answers, both mean the probe measured the wrong thing.",
+            "THE LIFT IS NAMED RATHER THAN IMPLIED, because it is the largest implementation change in this PBI: test/helpers/install.ts packs ONE tarball from repoRoot/package.json + src/ + tsconfig.build.json and HARDCODES the consumer path, which Sprint 46 re-spelled to node_modules/@atusy/tsudoi-language-server. THAT HARDCODED PATH IS ALSO WHAT PINS THE INSTALLED IDENTITY, measured live rather than asserted, which is why the sibling tarball-filename discovery is decoupled ON PURPOSE and not a hole. It must pack and install TWO, and the consumer's config must load with the handler resolved out of node_modules. THE PROBE THEN ASSERTS BOTH DIRECTIONS IN ONE MEASUREMENT, per Sprint 6: the hover answers with a definition, AND the consumer's own directory holds no hover-wordnet source. NEGATIVE CONTROL, and it is what stops a green meaning `some other route answered`: omit the handler package from the install and the same test must redden NAMING THE SPECIFIER -- an empty hover, or a hover that still answers, both mean the probe measured the wrong thing.",
         },
         {
           criterion:
@@ -152,6 +152,37 @@ const scrum: ScrumDashboard = {
         "THE DEMO CONFIG IS THE HINGE AND IT KEEPS ITS JOB. examples/tsudoi.config.ts is driven end to end by the suite, so the extracted package is consumed BY IT, through the package specifier, and that is what keeps those tests meaning what they meant. A config that imported the member by relative path would leave every criterion above green and measure nothing.",
         "WHAT `revise` OWNS AND WHAT THE CRITERIA OWN, decided rather than left to collide. The stakeholder has ruled that every sprint runs `revise` -- multi-perspective plus independent review, converged, with no PR -- after the developer's work. THE DIVISION: A CRITERION ASSERTS A PROPERTY OF THE PRODUCT THAT A PERTURBATION CAN FALSIFY; `revise` FINDS WHAT NOBODY THOUGHT TO ASSERT. One criterion here was on the wrong side of that line and has been moved: criterion 5 used to ask the executor to report prose sites its own list missed, which is a reviewer's job asked of the author, and the completeness judgement now belongs to revise's independent reviewer working WITHOUT SIGHT OF THE LIST. NO CRITERION MAY BE MET BY ARGUMENT AT REVIEW -- if its only failure mode is `a reviewer would have said so`, it is not a criterion and revise will find it better.",
         "AND THE STANDING INSTRUCTION NEEDS A HOME OUTSIDE THIS PBI, WHICH THE PO CANNOT GIVE IT FROM HERE. `every sprint runs revise` is a stakeholder ruling about the PROCESS, and a ruling that lives in one PBI's notes dies when that PBI closes. definition_of_done cannot honestly carry it either: its checks are `{ name, run }` where `run` is a SHELL COMMAND, and writing a skill name there would put a string in that field which nobody can execute. FLAGGED RATHER THAN FORCED INTO A SHAPE IT DOES NOT FIT -- the DoD should grow it once the invocation has a form that field can carry truthfully.",
+      ],
+    },
+    {
+      id: "PBI-54",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "trust that `tsc --noEmit` is reading the source I just edited and not a built artifact from an earlier state",
+        benefit:
+          "the DoD's type check keeps meaning what Sprint 42 bought it for, instead of silently degrading to a check against dist/ that passes while src/ is broken",
+      },
+      status: "ready",
+      acceptance_criteria: [
+        {
+          criterion:
+            "A `paths` MAPPING THAT NO LONGER REACHES tsudoi IS DETECTED, NOT SILENTLY SURVIVED. MEASURED IN SPRINT 46 AND THIS IS THE WHOLE MOTIVATION: deleting the key reddens test/package-shape.test.ts, but MISSPELLING it leaves `tsc --noEmit` AT EXIT 0, because self-reference through the exports map resolves into the built dist/*.d.ts instead. So the two spellings of one defect have opposite colours, and the dangerous one is the quiet one.",
+          verification:
+            "THE PERTURBATION IS THE MISSPELLING AND NOT THE DELETION, because deletion is already covered and covers nothing new: point the key at a name nothing answers to and the suite must redden NAMING THE MAPPING. AND THE PAIR PER SPRINT 6, since the claim is about WHICH FILE ANSWERED: a probe must distinguish `resolved to src/` from `resolved to dist/` positively, not by the absence of an error -- a stale-or-absent dist/ makes both readings look alike, so the discriminating probe is one where src/ and dist/ DISAGREE.",
+        },
+        {
+          criterion:
+            "test/package-shape.test.ts's `the repo's type check resolves the published subpaths to source` EITHER VERIFIES WHAT ITS NAME CLAIMS OR IS RENAMED TO WHAT IT VERIFIES. Today its assertion is a `toEqual` on the mapping's literal content, which is a real property and a NARROWER one than resolution-to-source. A NAME THAT OVERCLAIMS IS THE SAME DEFECT CLASS AS A FALSE COMMENT, and this project treats those as repairs rather than as taste.",
+          verification:
+            "Whichever is chosen, the discriminating perturbation above must redden it or the name must stop saying `to source`. Both outcomes are acceptable; leaving the name as it is with nothing behind it is the one that is not.",
+        },
+      ],
+      notes: [
+        "FOUND BY SPRINT 46 AND DELIBERATELY NOT FIXED THERE, which is the right call and is recorded so it is not read as an oversight. It is PRE-EXISTING rather than sprint-introduced, and Sprint 45's precedent governs: a separate property does not ride along merely because it touches a file the sprint touched. What Sprint 46 owed was to REPORT it, and it did.",
+        "WHY THIS IS NOT COSMETIC. Sprint 42's retrospective records the stale-dist/ hazard as FORECLOSED by the `paths` mapping -- `tsc --noEmit` no longer reads dist/ at all. THIS MEASUREMENT NARROWS THAT CLAIM: it is foreclosed only while the mapping is spelled correctly, and NOTHING DETECTS A MISSPELLING. An `outcome` recorded as foreclosure that is really a foreclosure-plus-an-unwatched-precondition is exactly the shape this project calls a false proof closing a question.",
+        "THE SPRINT-46 EVIDENCE, so whoever plans this does not re-derive it: `name` and `paths` are REDUNDANT COVERS OF ONE ROUTE. Reverting package.json's `name` alone leaves tsc at EXIT 0; deleting `paths` alone leaves tsc at EXIT 0; only the conjunction reddens, with fourteen TS2307. Neither key is pinned by the type check alone.",
+        "SEQUENCED AFTER PBI-51 AND THE OVERLAP IS NAMED RATHER THAN LEFT TO COLLIDE: PBI-51 adds a root exclusion and a fifth check over the same tsconfig, so whoever plans PBI-51 should say explicitly whether this folds into it or stays separate. THE DEFAULT IS SEPARATE, on the precedent above.",
       ],
     },
     {
