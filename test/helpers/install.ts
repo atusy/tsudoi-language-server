@@ -114,6 +114,90 @@ export function stageEntries(stage: string): readonly string[] {
 }
 
 /**
+ * One package's TARBALL, packed at test time and read back -- what a registry
+ * would receive, rather than what a manifest says it would.
+ *
+ * WHY THE TARBALL AND NOT `files`: `files` is an INSTRUCTION and the tarball is
+ * its result, and the two part company the moment anything writes a file the
+ * instruction happens to admit. A `prepack` that compiles into a directory it
+ * does not clear leaves a renamed or deleted output on disk, and `files:
+ * ["dist"]` packs it -- so a reading taken off the manifest reports the intent
+ * of an edit nobody made.
+ */
+export interface PackedPackage {
+  /** The name the manifest inside the tarball carries. */
+  readonly name: string;
+  /** Every path the archive holds, `package/` stripped, sorted. */
+  readonly entries: readonly string[];
+  /** The unpacked tree, for reading what a packed file actually says. */
+  readonly dir: string;
+  dispose(): void;
+}
+
+/**
+ * Packs `packageRoot` and unpacks the result, so both the file list and the file
+ * CONTENTS can be read off the artifact.
+ *
+ * PACKED FROM WHERE IT LIVES, matching what installConsumer does with the
+ * handler: a staged copy would be a different tree, and the staleness this reader
+ * exists to see is a property of the directory that persists between packs.
+ *
+ * `tar` RATHER THAN A LIBRARY: the archive is what a package manager will read,
+ * and a second implementation of tar is a second thing to be wrong about it.
+ */
+export async function packPackage(packageRoot: string): Promise<PackedPackage> {
+  const stage = mkdtempSync(join(tmpdir(), "tsudoi-tarball-"));
+  const dispose = (): void => rmSync(stage, { recursive: true, force: true });
+  try {
+    const packed = await run("bun", ["pm", "pack", "--destination", stage], packageRoot);
+    if (packed.code !== 0) {
+      fail(`bun pm pack (${packageRoot})`, packed);
+    }
+    // Found rather than spelled, for the reason installConsumer gives: the
+    // filename is the packer's derivation, and the stage is a fresh mkdtemp
+    // holding exactly one .tgz.
+    const tarballName = readdirSync(stage).find((entry) => entry.endsWith(".tgz"));
+    if (tarballName === undefined) {
+      fail(`bun pm pack (${packageRoot})`, {
+        code: packed.code,
+        output: `no .tgz in ${stage}\n${packed.output}`,
+      });
+    }
+    const tarball = join(stage, tarballName);
+    const listed = await run("tar", ["-tzf", tarball], stage);
+    if (listed.code !== 0) {
+      fail(`tar -tzf (${packageRoot})`, listed);
+    }
+    const extracted = await run("tar", ["-xzf", tarball], stage);
+    if (extracted.code !== 0) {
+      fail(`tar -xzf (${packageRoot})`, extracted);
+    }
+    const entries = listed.output
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "" && !line.endsWith("/"))
+      .map((line) => {
+        // THE PREFIX IS REFUSED RATHER THAN STRIPPED WHERE IT IS ABSENT: npm's
+        // archive layout puts everything under `package/`, and an entry outside
+        // it is a shape this reader has no account of -- reporting it as a
+        // top-level file would be inventing one.
+        if (!line.startsWith("package/")) {
+          throw new Error(`${packageRoot} packed ${line}, which is outside the archive's package/`);
+        }
+        return line.slice("package/".length);
+      })
+      .sort();
+    const dir = join(stage, "package");
+    const name = (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string })
+      .name;
+    return { name, entries, dir, dispose };
+  } catch (cause) {
+    dispose();
+    throw cause;
+  }
+}
+
+/**
  * The handler package a consumer installs BESIDE tsudoi, named once here.
  *
  * ITS DIRECTORY IS RESOLVED AND NOT SPELLED, through the workspace link the

@@ -50,16 +50,26 @@ test("the package publishes one entry point, built, with no arm reaching source"
 });
 
 /**
- * `files` IS WHAT KEEPS THE AMBIENT DECLARATION OUT OF THE TARBALL, and the
- * argument written at src/wordnet.d.ts rests entirely on this line.
+ * `files` IS THE INSTRUCTION THAT KEEPS THE AMBIENT DECLARATION OUT, and the
+ * argument written at src/wordnet.d.ts rests on it.
  *
  * `declare module "wordnet"` is a statement about a name in the GLOBAL type
  * space. Shipped, it would declare a third party's module on behalf of everyone
  * who installs this one -- including a project with its own declaration, or a
- * future `@types/wordnet` it would then collide with. Declaration emit does not
- * copy a `.d.ts` INPUT into the output, so dist/ never grows one; this is the
- * other half, and it is the half an edit would reach for first, since adding
- * `src` here is the obvious way to make a source map or a debugger work.
+ * future `@types/wordnet` it would then collide with. Adding `src` here is the
+ * obvious way to make a source map or a debugger work, and it is the edit this
+ * line refuses.
+ *
+ * IT IS AN INSTRUCTION AND NOT A MEASUREMENT, which is the whole of what this
+ * test can and cannot say: `files` describes what SHOULD be collected, and a
+ * file the instruction happens to admit is collected whether anyone meant it to
+ * be. MEASURED with a `dist/wordnet.d.ts` copied in by hand and prepack's clear
+ * removed: the tarball carries the ambient statement and THIS TEST STAYS GREEN.
+ * What reads the artifact is test/packed-members.test.ts at the repository root
+ * -- the exact packed file list, and every packed declaration searched for the
+ * statement -- and it lives there rather than beside this file because a member
+ * test reaching root helpers becomes a new input to the fifth Definition-of-Done
+ * check.
  */
 test("only the built output ships, which is what keeps the ambient declaration internal", () => {
   expect(manifest.files).toEqual(["dist"]);
@@ -111,11 +121,32 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * the source in the checkout at that moment rather than from whatever dist/
  * happened to be lying there.
  *
+ * INTO A CLEARED DIRECTORY, AND THAT IS NOT TIDINESS. `tsc` writes its outputs
+ * and removes nothing, so a source file RENAMED OR DELETED leaves the artifact
+ * it used to emit sitting in dist/ -- and `files: ["dist"]` collects it. What
+ * that ships is not merely stale: a stray `dist/wordnet.d.ts` puts
+ * `declare module "wordnet"` into the GLOBAL TYPE SPACE of every project that
+ * installs this package. MEASURED both ways, with such a file copied in by hand:
+ * without the clear the tarball carries it, with the clear the pack removes it
+ * first, and the `files` assertion above is green in both.
+ *
+ * `rm -rf` AND NOT A BUILD FLAG, because tsc has none that clears an output
+ * directory outside build mode, and a script in another file would lose the bare
+ * -name resolution the next paragraph is about. It is run by bun, which is the
+ * toolchain this repository documents.
+ *
+ * THE ROOT PACKAGE'S OWN prepack DOES NOT CLEAR, and the asymmetry is measured
+ * rather than forgotten: test/helpers/install.ts packs the root from a FRESH
+ * staging directory holding package.json, src/ and tsconfig.build.json alone, so
+ * its dist/ is built into an empty tree every time. This package is packed FROM
+ * WHERE IT LIVES -- deliberately, so no probe has to perturb a copy -- so its
+ * dist/ is the one that persists between packs and the one that needs clearing.
+ *
  * BY BARE NAME, which is what takes the node_modules/.bin resolution: script
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one
  * this workspace declares rather than whatever a machine happens to have. An
  * absolute path here would be someone's laptop.
  */
-test("packing this package builds it first", () => {
-  expect(manifest.scripts).toEqual({ prepack: "tsc -p tsconfig.build.json" });
+test("packing this package builds it first, into a cleared directory", () => {
+  expect(manifest.scripts).toEqual({ prepack: "rm -rf dist && tsc -p tsconfig.build.json" });
 });

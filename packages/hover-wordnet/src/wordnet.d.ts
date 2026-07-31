@@ -8,12 +8,27 @@
  *
  * THIS FILE IS NOT PUBLISHED, AND THAT IS THE WHOLE REASON IT MAY EXIST HERE AT
  * ALL. `declare module "wordnet"` is AMBIENT: it is a statement about a name in
- * the GLOBAL type space, not about this package's own types, so shipping it
- * would declare a third party's module on behalf of everyone who installs this
- * one -- including a project that has its own, better declaration, or a future
- * `@types/wordnet` this would then collide with. `files: ["dist"]` keeps it out
- * of the tarball, and declaration emit does not copy a `.d.ts` INPUT into the
- * output, so nothing carries it there by accident.
+ * the GLOBAL type space, not about this package's own types, so a project that
+ * LOADED it would be told what a third party's module is on our behalf --
+ * including a project that has its own, better declaration, or a future
+ * `@types/wordnet` this would then collide with.
+ *
+ * `LOADED` AND NOT `INSTALLED`, and the distinction is measured rather than
+ * conceded: tsc reads only the files in the PROGRAM, and an unreferenced `.d.ts`
+ * inside node_modules is not one. MEASURED with this file packed into the
+ * tarball two different ways -- as a stray under dist/ and by growing `files` to
+ * `["dist", "src"]` -- a consumer that installs the package and imports `wordnet`
+ * is STILL told nothing about it. So the hazard is smaller than `shipped means
+ * global` and it is not zero: it costs one `types` entry, one triple-slash
+ * reference, or one consumer whose own `include` reaches the file.
+ *
+ * WHAT KEEPS IT OUT, in the order an edit would defeat them: `files: ["dist"]`,
+ * asserted in test/package-shape.test.ts; `prepack` clearing dist/ before it
+ * compiles, so no stray survives the pack; and the packed file list and packed
+ * declarations read off the TARBALL in test/packed-members.test.ts, which is the
+ * only one of the three that observes the artifact rather than an instruction.
+ * Declaration emit cannot carry this statement at all -- a string-named ambient
+ * module does not parse outside a `.d.ts`, MEASURED.
  *
  * WHAT MAKES THAT AFFORDABLE RATHER THAN MERELY DESIRABLE, and it is a
  * constraint on the published surface rather than on this file: no name declared
@@ -21,13 +36,13 @@
  * `MethodHandler<"textDocument/hover">` and `Definition` is reached only inside
  * `define`, which stays internal.
  *
- * MEASURED ON THE EMITTED ARTIFACT RATHER THAN REASONED FROM THE SOURCE, because
- * declaration emit is where this would go wrong and reading src/ cannot see it:
- * neither dist file carries `wordnet` or `declare module` at all, and a consumer
- * compiled with `types: []` and NO `allowImportingTsExtensions` resolves
+ * ASSERTED ON THE ARTIFACT RATHER THAN REASONED FROM THIS FILE, because that is
+ * where it would go wrong and reading src/ cannot see it. Both readings are
+ * TESTS and neither is a note here: the packed declarations carry no
+ * `declare module` (test/packed-members.test.ts), and a consumer resolves
  * `hoverWordnet` to the full `MethodHandler<"textDocument/hover">` -- shown by
  * assigning it to a `number` and reading TS2322, since a green there is equally
- * what `any` produces.
+ * what `any` produces (test/published-artifacts.test.ts).
  *
  * PUBLISH ONE NAME FROM HERE AND THE ARGUMENT INVERTS: the emitted declaration
  * would reference a module the consumer has no declaration for, and the choice

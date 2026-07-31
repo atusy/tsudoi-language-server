@@ -778,3 +778,66 @@ test("the published package depends on no package from this workspace", () => {
   expect(declared).toContain("vscode-languageserver-protocol");
   expect(declared.filter((name) => members.includes(name))).toEqual([]);
 });
+
+/**
+ * THE CONSUMER'S TYPE SPACE DOES NOT MENTION THE DICTIONARY, measured in the one
+ * place the claim is about: a project that installed the handler.
+ *
+ * `wordnet` IS INSTALLED IN THIS CONSUMER AND THAT IS THE POINT. It arrives as
+ * the handler's declared dependency, so the module RESOLVES and the only thing
+ * missing is a declaration. A probe run where the package was absent would redden
+ * for the other reason and say nothing about the type space.
+ *
+ * WHAT THIS CANNOT SEE, AND THE PREMISE IT REFUTES, because a control believed to
+ * catch something it cannot is worse than none. It does NOT detect the handler
+ * SHIPPING its ambient `declare module "wordnet"`. MEASURED, all three routes:
+ * a stray `dist/wordnet.d.ts` collected into the tarball leaves this GREEN;
+ * `files` grown to `["dist", "src"]`, which packs the declaration itself, leaves
+ * this GREEN; and moving the declaration into a `.ts` input so declaration emit
+ * would carry it does not compile at all -- a string-named ambient module is not
+ * parseable outside a `.d.ts`, so emit can never produce one. tsc loads only the
+ * files in the PROGRAM, and an unreferenced `.d.ts` sitting in node_modules is
+ * not one of them. `an ambient declaration that ships lands in every consumer's
+ * global type space` is therefore FALSE AS STATED: it lands there only where
+ * something puts the file in the program.
+ *
+ * SO THE ARTIFACT-SIDE GUARD IS NOT REDUNDANT WITH THIS ONE AND CANNOT BE
+ * REPLACED BY IT: test/packed-members.test.ts reads the tarball, which is where
+ * a stray IS visible. What remains here is the reading that file cannot take --
+ * that nothing else in a real install, hoisted or transitive, supplies the
+ * declaration either.
+ *
+ * THE PAIR IS THE TEST BELOW, and it is separate because the failure above is
+ * satisfied by a consumer where nothing type-checks at all.
+ */
+test("a consumer that installed the handler is still told nothing about wordnet", async () => {
+  const undeclared = await consumer.typeCheck({
+    "wordnet-probe.ts": 'import { lookup } from "wordnet";\nexport const found = lookup;\n',
+  });
+
+  expect(undeclared.code).not.toBe(0);
+  expect(undeclared.output).toContain("wordnet");
+});
+
+/**
+ * THE PAIR, and the `any` half is the one that is easy to leave out: a consumer
+ * where `hoverWordnet` resolved to `any` type-checks exactly as green as one
+ * where it resolves to `MethodHandler<"textDocument/hover">`, so the assignment
+ * to `number` is asserted to be REJECTED. A green there would say the probe
+ * measured nothing.
+ */
+test("the same consumer resolves the handler, and to its real type rather than any", async () => {
+  const resolves = await consumer.typeCheck({
+    "handler-probe.ts":
+      'import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";\nexport const handler = hoverWordnet;\n',
+  });
+  const notAny = await consumer.typeCheck({
+    "handler-any-probe.ts":
+      'import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";\nexport const wrong: number = hoverWordnet;\n',
+  });
+
+  expect(resolves.output).toBe("");
+  expect(resolves.code).toBe(0);
+  expect(notAny.code).not.toBe(0);
+  expect(notAny.output).toContain("TS2322");
+});
