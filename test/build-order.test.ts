@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { rmSync } from "node:fs";
-import { join } from "node:path";
-import { buildOrder, declaredMembers } from "../scripts/workspaces.ts";
+import { mkdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { buildOrder, declaredMembers, prepareWorkspace } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { workspace } from "./helpers/workspace.ts";
 
@@ -246,3 +246,130 @@ test("the same two packages order by the tie-break once the declaration is gone"
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+/**
+ * WHICH FILE THE CONSUMER COMPILED AGAINST, TAKEN AS A VALUE OUT OF ITS OWN
+ * EMITTED DECLARATION.
+ *
+ * AN EXIT CODE CANNOT ANSWER THIS AND THAT IS MEASURED RATHER THAN FEARED: a
+ * consumer whose producer has not been built resolves through the producer's
+ * `default` arm, reads its SOURCE, and EXITS 0. Both orders build, both leave a
+ * dist/ behind, and nothing about either run says which file was read.
+ *
+ * SO THE PRODUCER DECLARES A DIFFERENT LITERAL TYPE IN EACH: its published
+ * artifact is compiled from a directory that says `dist`, its source arm says
+ * `src`, and the consumer re-exports whichever it found. The compiler then
+ * writes the answer into the consumer's own .d.ts, where it is read as a value.
+ *
+ * THE READING IS TAKEN DURING THE ORDERING RATHER THAN AFTER IT, which is what
+ * makes it about the order at all: the consumer's build is itself a step in the
+ * loop, so what it saw is decided by what had been built when its turn came.
+ */
+function consumerReadingItsProducer(
+  consumerNeeds: Record<string, unknown>,
+): Record<string, string> {
+  const emitting = (from: string, declarationsOnly: boolean): string =>
+    JSON.stringify({
+      compilerOptions: {
+        target: "esnext",
+        module: "esnext",
+        moduleResolution: "bundler",
+        declaration: true,
+        emitDeclarationOnly: declarationsOnly,
+        outDir: "dist",
+        rootDir: from,
+        strict: true,
+        skipLibCheck: true,
+        types: [],
+      },
+      include: [from],
+    });
+  return {
+    "package.json": JSON.stringify({ name: "@scope/root", workspaces: ["packages/*"] }),
+    "packages/producer/package.json": JSON.stringify({
+      name: "@scope/producer",
+      type: "module",
+      exports: {
+        ".": {
+          types: "./dist/index.d.ts",
+          import: "./dist/index.js",
+          default: "./src/index.ts",
+        },
+      },
+    }),
+    // THE TWO FILES THE ARMS DISCRIMINATE ON. `built/` is what the producer's
+    // build config compiles, so the artifact and the source arm can disagree --
+    // which is the only way a reader downstream can say which of them answered.
+    "packages/producer/built/index.ts": 'export const MARK: "dist" = "dist";\n',
+    "packages/producer/src/index.ts": 'export const MARK: "src" = "src";\n',
+    "packages/producer/tsconfig.build.json": emitting("built", false),
+    "packages/consumer/package.json": JSON.stringify({
+      name: "@scope/consumer",
+      type: "module",
+      ...consumerNeeds,
+    }),
+    "packages/consumer/src/index.ts":
+      'import { MARK } from "@scope/producer";\nexport const SAW = MARK;\n',
+    "packages/consumer/tsconfig.build.json": emitting("src", true),
+  };
+}
+
+/**
+ * Builds the tree through the REAL entry point, with the consumer able to
+ * resolve the producer before either arm runs.
+ *
+ * THE ROUTE IS IDENTICAL IN BOTH ARMS AND THAT IS WHAT MAKES THE PAIR EXACT: the
+ * node_modules entry is written here rather than by anything under test, so the
+ * only difference between the two runs is the DECLARATION -- and therefore the
+ * order, and therefore which file existed when the consumer was compiled.
+ */
+function whatTheConsumerSaw(files: Record<string, string>): string {
+  const root = workspace(files);
+  try {
+    const link = join(root, "packages", "consumer", "node_modules", "@scope", "producer");
+    mkdirSync(dirname(link), { recursive: true });
+    symlinkSync(join(root, "packages", "producer"), link, "dir");
+
+    prepareWorkspace(root);
+
+    return readFileSync(join(root, "packages", "consumer", "dist", "index.d.ts"), "utf8");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The allowance these two arms need: each spawns the compiler once per package,
+ * where bun's default gives the whole test 5000ms -- a bound that is about the
+ * machine rather than about the order. A control that reports the machine is
+ * worse than a slow one, since its pair then reads as `the consumer compiled
+ * against the wrong file`, which is the one conclusion these arms exist to make
+ * available.
+ */
+const eachArmSpawnsACompilerPerPackage = 120_000;
+
+test(
+  "the consumer compiles against its producer's built artifact",
+  () => {
+    const emitted = whatTheConsumerSaw(
+      consumerReadingItsProducer({ dependencies: { "@scope/producer": "*" } }),
+    );
+
+    expect(emitted).toContain('"dist"');
+  },
+  eachArmSpawnsACompilerPerPackage,
+);
+
+// THE CONTROL, AND IT IS THE SAME TREE MINUS THE DECLARATION. It EXITS 0 like
+// the arm above -- the builder raises nothing, the consumer emits a declaration,
+// the workspace ends up fully built -- and it read the producer's SOURCE, which
+// is the whole reason this file reads a value instead of a colour.
+test(
+  "the same consumer reads source when nothing declares the producer first",
+  () => {
+    const emitted = whatTheConsumerSaw(consumerReadingItsProducer({}));
+
+    expect(emitted).toContain('"src"');
+  },
+  eachArmSpawnsACompilerPerPackage,
+);

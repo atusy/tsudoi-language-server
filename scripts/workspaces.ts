@@ -394,20 +394,30 @@ function build(dir: string): void {
  * into the root program through module resolution, which `exclude` does not
  * stop.
  *
- * THE ROOT IS BUILT FIRST AND THAT ORDER IS LOAD-BEARING: a member resolves
- * `@atusy/tsudoi-language-server/types` through the exports map to
+ * THE ROOT IS STILL BUILT FIRST AND THAT ORDER IS STILL LOAD-BEARING -- BUT IT
+ * IS NO LONGER THIS FUNCTION SAYING SO, AND THE INVERSION IS THE POINT. A member
+ * resolves `@atusy/tsudoi-language-server/types` through the exports map to
  * dist/types.d.ts, so a member compiled against an unbuilt root fails at
- * TS2307 -- an apparatus failure wearing a resolution failure's clothes.
+ * TS2307 -- an apparatus failure wearing a resolution failure's clothes. What
+ * puts the root first is that BOTH MEMBERS DECLARE IT, read out of their
+ * manifests by `buildOrder`. The loop below no longer knows which package is the
+ * root, which is what makes it survive the day the main package becomes a member
+ * like any other.
  *
  * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
  * tsc writes dist/ and THEN exits non-zero, so a failed build leaves a fresh,
  * wrong artifact behind. Callers throw; nothing here cleans up.
  */
 export function prepareWorkspace(root: string): void {
-  build(root);
-  for (const member of declaredMembers(root)) {
-    linkRootPackage(root, member);
-    build(member);
+  for (const dir of buildOrder(root)) {
+    // THE ROOT IS NOT LINKED INTO ITSELF, which is the one asymmetry left here
+    // and is a fact about the ROOT PACKAGE rather than about the order: it is
+    // reached by walking up, so an entry for it under its own node_modules would
+    // answer nothing that is not already answered.
+    if (dir !== root) {
+      linkRootPackage(root, dir);
+    }
+    build(dir);
   }
 }
 
