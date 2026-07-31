@@ -2,10 +2,10 @@ import { execFileSync } from "node:child_process";
 import {
   existsSync,
   globSync,
-  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
   symlinkSync,
 } from "node:fs";
@@ -118,6 +118,21 @@ const toolRoot = fileURLToPath(new URL("../", import.meta.url));
  *
  * Skipped where the member has no node_modules to put it in, which is what lets
  * a throwaway workspace built by a test run through here untouched.
+ *
+ * AN ENTRY THAT RESOLVES TO NOTHING IS REPLACED, AND AN ENTRY THAT RESOLVES IS
+ * NOT. The link written here is ABSOLUTE, so MOVING OR RENAMING THIS CHECKOUT
+ * leaves one dangling in every member -- and `lstatSync` succeeds on a dangling
+ * link, so `something is there` is the wrong question to ask. MEASURED with one
+ * redirected at a path that does not exist: the fifth check reports
+ * `src/hover.ts(31,36): error TS2307` and EVERY RERUN REPORTS IT AGAIN, because
+ * the builder that would fix it is the one skipping. The diagnostic names the
+ * member's SOURCE for a fault that lives in node_modules, so the reader is sent
+ * to the one file that is not wrong.
+ *
+ * A DIRECTORY THAT RESOLVES IS SOMEBODY'S INSTALL and is left alone: the day
+ * tsudoi is published a member may legitimately have a real copy there, and a
+ * builder that overwrote it would substitute this checkout for the version that
+ * member declared, silently.
  */
 function linkRootPackage(root: string, member: string): void {
   const modules = join(member, "node_modules");
@@ -133,12 +148,16 @@ function linkRootPackage(root: string, member: string): void {
     return;
   }
   const target = join(modules, ...name.split("/"));
-  try {
-    lstatSync(target);
-  } catch {
-    mkdirSync(dirname(target), { recursive: true });
-    symlinkSync(root, target, "dir");
+  // `existsSync` FOLLOWS THE LINK, which is the whole distinction: it is false
+  // both for nothing at all and for an entry that resolves to nothing, and those
+  // two want the same treatment. `force` is what makes the second cost no
+  // branch -- there is nothing to remove in the first case and it says so.
+  if (existsSync(target)) {
+    return;
   }
+  mkdirSync(dirname(target), { recursive: true });
+  rmSync(target, { force: true });
+  symlinkSync(root, target, "dir");
 }
 
 /** Compiles one package's published artifact, where one is configured. */

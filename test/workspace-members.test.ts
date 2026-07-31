@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
+import { prepareWorkspace } from "../scripts/workspaces.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 
 /**
@@ -221,6 +222,49 @@ test("a member whose own resolution is broken reddens the fifth check while the 
     expect(fifth.stdout).toContain("packages/late/src/index.ts");
     expect(fifth.stdout).toContain("TS2307");
     expect(fifth.code).toBe(1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * THE LINK THE BUILDER PUTS IN A MEMBER'S node_modules IS ABSOLUTE, so a
+ * checkout that is MOVED OR RENAMED leaves every member pointing at a path that
+ * is no longer there.
+ *
+ * WHY THAT NEEDS A REPAIR RATHER THAN A DIAGNOSTIC: the failure is loud and it
+ * is also PERMANENT. MEASURED on this repository with the link redirected to a
+ * path that does not exist, the fifth check reports
+ * `src/hover.ts(31,36): error TS2307: Cannot find module
+ * '@atusy/tsudoi-language-server/types'` and every rerun reports it again --
+ * a builder that skips whatever it finds cannot be the thing that fixes it. The
+ * diagnostic names the member's SOURCE for a fault that lives in node_modules,
+ * so a reader is sent to the one file that is not wrong.
+ *
+ * A LINK THAT RESOLVES IS STILL LEFT ALONE, and the asymmetry is the whole
+ * decision: a real directory there is somebody's install and not this script's
+ * to overwrite. Only an entry that resolves to NOTHING is replaced, because
+ * nothing is what it currently provides.
+ *
+ * ASSERTED BY WHERE THE LINK LANDS, NOT BY ITS EXISTENCE: `lstatSync` succeeds
+ * on the broken link too, which is exactly how it survived.
+ */
+test("a member's link to a moved checkout is replaced rather than skipped", () => {
+  const root = workspace({
+    "package.json": JSON.stringify({ name: "@probe/root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+  });
+  try {
+    const link = join(root, "packages", "late", "node_modules", "@probe", "root");
+    mkdirSync(dirname(link), { recursive: true });
+    symlinkSync(join(root, "nowhere"), link, "dir");
+
+    prepareWorkspace(root);
+
+    expect(realpathSync(link)).toBe(realpathSync(root));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
