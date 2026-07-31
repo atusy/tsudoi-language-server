@@ -202,6 +202,111 @@ test("a member with no tsconfig.json fails loudly rather than being skipped", as
   expect(result.code).not.toBe(0);
 });
 
+/**
+ * A workspace holding one member, WITH THE DIRECTORY NAME AND THE DECLARED NAME
+ * SUPPLIED SEPARATELY.
+ *
+ * That separation is the whole apparatus: everywhere else in this repository the
+ * two are the same fact, so the only way to observe what happens when they
+ * disagree is to build a tree where they can. The member type-checks and carries
+ * its own tsconfig, so a red from one of these is the name guard's and not
+ * `typeCheckMember` reporting a member it has nothing to check with.
+ */
+function memberNamed(directory: string, declared: string): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    [`packages/${directory}/package.json`]: JSON.stringify({ name: declared }),
+    [`packages/${directory}/tsconfig.json`]: memberTsconfig,
+    [`packages/${directory}/src/index.ts`]: typeChecks,
+  };
+}
+
+/**
+ * A MEMBER'S DIRECTORY IS ITS DECLARED NAME WITH THE SCOPE DROPPED, refused in
+ * both directions and over members as a class.
+ *
+ * WHAT THE TWO DIRECTIONS ARE AND WHY THEY ARE ONE PREDICATE: on disk there is
+ * no such thing as `the side that moved`. `packages/late` declaring `elsewhere`
+ * and `packages/elsewhere` declaring `late` are the same disagreement wearing
+ * different clothes, and the pair below is written so the message is shown
+ * naming THE SIDE THAT WAS NOT TOUCHED in each -- which is what distinguishes a
+ * diagnostic from an echo of the argument it was handed.
+ *
+ * WHAT NOTHING HERE READ BEFORE. test/readme.test.ts already reddens on a bare
+ * directory rename, because it keys the member README path and the install
+ * line's tarball on the directory basename -- but as `the install command does
+ * not name the member's own tarball`, which sends a reader to a document rather
+ * than to the mismatch. The manifest `name` FIELD against that directory was
+ * read by nothing at all.
+ */
+test("a member whose manifest declares a name other than its directory fails loudly", async () => {
+  const result = await checkWorkspace(memberNamed("late", "elsewhere"));
+
+  expect(result.stderr).toContain("packages/late");
+  expect(result.stderr).toContain("`elsewhere`");
+  expect(result.stderr).toContain("unscoped");
+  expect(result.code).not.toBe(0);
+});
+
+// THE SAME STATE STAGED FROM THE OTHER SIDE, and the assertion is on the
+// spelling that was NOT moved: a guard that merely repeated the directory it was
+// iterating would pass the arm above and fail here.
+test("the same disagreement staged from the directory side names the manifest's spelling", async () => {
+  const result = await checkWorkspace(memberNamed("elsewhere", "late"));
+
+  expect(result.stderr).toContain("packages/elsewhere");
+  expect(result.stderr).toContain("`late`");
+  expect(result.stderr).toContain("unscoped");
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR, and it is the arm the fixtures in this file could not already
+// supply: every throwaway member here is UNSCOPED while every real member is
+// SCOPED, so nothing else exercises the stripping. Without it a guard that
+// refused every scoped name would pass both reds above and surface only as a
+// repository-wide failure that reads like the rename's fault.
+test("a member whose scoped name ends in its own directory is left alone", async () => {
+  const result = await checkWorkspace(memberNamed("late", "@scope/late"));
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+// AND THE OTHER HALF OF THE STRIPPING, WHICH IS THE ONE THAT STOPS THE GUARD
+// GOING VACUOUS ON THIS REPOSITORY. `pass anything holding a scope` satisfies
+// the two reds above and the green above, AND leaves both real members -- both
+// scoped -- refused by nothing. MEASURED with exactly that predicate in place:
+// the three arms above stay green and the fifth check on this checkout, whose
+// directories disagreed with its manifests at the time, reported nothing. This
+// is the only arm of the four that reddens it.
+test("a member whose scoped name ends in something else is refused, scope and all", async () => {
+  const result = await checkWorkspace(memberNamed("late", "@scope/elsewhere"));
+
+  expect(result.stderr).toContain("packages/late");
+  expect(result.stderr).toContain("@scope/elsewhere");
+  expect(result.stderr).toContain("`elsewhere`");
+  expect(result.code).not.toBe(0);
+});
+
+// `THERE IS NOTHING TO DISAGREE WITH` IS A DEFENSIBLE READING OF A MEMBER THAT
+// DECLARES NO NAME, and it is the reading that makes `delete the name` the edit
+// which silences this guard rather than tripping it. Refused instead, and pinned
+// here so the choice is a decision rather than an untaken branch.
+test("a member declaring no name is refused rather than passed over", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ version: "0.0.0" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+  });
+
+  expect(result.stderr).toContain("packages/late");
+  expect(result.stderr).toContain("name");
+  expect(result.code).not.toBe(0);
+});
+
 /** The specifier the root maps through `paths` and the member cannot reach. */
 const sharedModule = "shared/thing";
 

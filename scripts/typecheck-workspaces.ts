@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   declaredMembers,
   prepareWorkspace,
+  refuseMemberDirectoriesUnlikeTheUnscopedName,
   refuseMemberMappings,
   refuseUncoveredPackages,
 } from "./workspaces.ts";
@@ -83,6 +84,19 @@ const root = resolve(process.argv[2] ?? process.cwd());
 prepareWorkspace(root);
 const members = declaredMembers(root);
 refuseUncoveredPackages(root, members);
+// HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND
+// IS THE WRONG ONE: that function is also what the `bun test` preload runs, so a
+// refusal wired into it aborts every test run before a single file loads. The
+// reds a rename must be watched producing would then be unobservable, because
+// nothing would get far enough to produce them. A refusal belongs on the check
+// path, beside the two that are already here.
+//
+// BEFORE THE COMPILER IS SPAWNED FOR ANYTHING, because every diagnostic after
+// this point is printed as a path under the directory whose name is in question,
+// and a reader sent to `packages/<one spelling>` by a run that has not yet said
+// the other spelling exists is being sent by the half of the disagreement that
+// happens to be on disk.
+refuseMemberDirectoriesUnlikeTheUnscopedName(root, members);
 // BEFORE ANY MEMBER IS CHECKED, because a mapping makes the check that follows
 // answer the wrong question: a member reaching past its own resolution
 // type-checks GREEN, so running the checks first and the guard afterwards would

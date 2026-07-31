@@ -9,7 +9,7 @@ import {
   statSync,
   symlinkSync,
 } from "node:fs";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -267,6 +267,79 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
           `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`,
         );
       }
+    }
+  }
+}
+
+/**
+ * A package name with any `@scope/` dropped, which is the whole of the relation
+ * below.
+ *
+ * NO BRANCH FOR HAVING A SCOPE, and that is not brevity: an unscoped name holds
+ * no separator, so `indexOf` answers -1 and the slice starts at 0 -- the same
+ * expression reads both shapes. A branch here would be a second place for the
+ * two shapes to be treated differently, which is what the relation is against.
+ */
+function unscopedName(name: string): string {
+  return name.slice(name.indexOf("/") + 1);
+}
+
+/**
+ * Throws when a workspace member's directory is not its declared name with the
+ * scope dropped -- one package spelled two ways, with nothing keeping the two
+ * equal but whoever last edited one of them.
+ *
+ * THE RELATION IS `UNSCOPED` AND THE NAME SAYS SO. `packages/tsudoi-hover-wordnet`
+ * and `@atusy/tsudoi-hover-wordnet` are not the same string and never can be, so
+ * a guard called `member names agree` would state a class wider than anything it
+ * could check -- and Sprint 49's remedy for that is to narrow the NAME rather
+ * than to widen the matcher.
+ *
+ * ONE PREDICATE AND NOT TWO BRANCHES, which is a statement about the fault and
+ * not about the code: `the manifest was edited` and `the directory was moved`
+ * ARE THE SAME STATE ON DISK. Nothing here records which side moved, so a guard
+ * with an arm per direction would be inventing that distinction and then
+ * asserting it. The message therefore names BOTH spellings and offers BOTH
+ * repairs, and the reader is the one who knows which they meant.
+ *
+ * THE VACUOUS IMPLEMENTATION IS THE ONE THAT SKIPS SCOPED NAMES, and it is worth
+ * naming because it is the shape a guard drifts into and because probes do not
+ * catch it: MEASURED with the predicate replaced by `pass anything holding a
+ * scope`, the arms staged from unscoped throwaway members stay GREEN and the
+ * fifth check on this repository -- where BOTH members are scoped -- reported
+ * nothing at all, on the checkout where the two spellings still disagreed. That
+ * is why the arms in test/workspace-members.test.ts include a SCOPED member
+ * whose unscoped segment mismatches, which is the only one of them such an
+ * implementation reddens.
+ *
+ * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION, and it
+ * MUST NOT SPELL THE CONTAINER: a guard naming `packages/` would be invalidated
+ * by the next move of the directory it names, and a guard naming a member would
+ * leave every other member unpinned with nothing saying so.
+ */
+export function refuseMemberDirectoriesUnlikeTheUnscopedName(
+  root: string,
+  members: readonly string[],
+): void {
+  for (const member of members) {
+    const manifestPath = join(member, "package.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+    const name = manifest.name;
+    // A MEMBER DECLARING NO `name` IS REFUSED AND NOT PASSED OVER. `there is no
+    // second spelling to disagree with` is a defensible reading of it, and it is
+    // the reading that leaves `delete the name` as an edit which silences this
+    // guard rather than tripping it. Refusing costs one message and forecloses
+    // that.
+    if (typeof name !== "string") {
+      throw new Error(
+        `${relative(root, manifestPath)} declares no \`name\`, so nothing says what the directory ${relative(root, member)} is the unscoped spelling of.`,
+      );
+    }
+    const unscoped = unscopedName(name);
+    if (unscoped !== basename(member)) {
+      throw new Error(
+        `${relative(root, member)} is declared \`${name}\`, whose unscoped name is \`${unscoped}\` -- one package spelled two ways. Rename the directory to \`${unscoped}\`, or change the \`name\` in ${relative(root, manifestPath)} to match the directory.`,
+      );
     }
   }
 }
