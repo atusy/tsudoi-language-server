@@ -55,6 +55,18 @@ function linkIn(member: string): string {
  */
 async function withRouteBroken<T>(member: string, body: () => Promise<T>): Promise<T> {
   const link = linkIn(member);
+  // REFUSED RATHER THAN REMOVED IF IT IS NOT A LINK, and the case is a real
+  // future rather than a defensive habit: scripts/workspaces.ts leaves alone an
+  // entry that RESOLVES, so the day tsudoi is published a member may hold a real
+  // installed copy there. Deleting that and putting a symlink back in its place
+  // would substitute this checkout for the version the member declared -- and
+  // `readlinkSync` alone would throw EINVAL naming neither the member nor the
+  // reason.
+  if (!lstatSync(link).isSymbolicLink()) {
+    throw new Error(
+      `${relative(repoRoot, member)} resolves tsudoi through a real install rather than the apparatus link, so this perturbation would replace somebody's package`,
+    );
+  }
   const target = readlinkSync(link);
   rmSync(link, { recursive: true, force: true });
   try {
