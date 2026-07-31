@@ -184,9 +184,10 @@ function publishedArm(condition: string): Record<string, string> {
  * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
  * therefore disagree exactly when the published surface has moved: MEASURED in
  * both directions -- a false GREEN beside failures spread BROADLY across the
- * suite, and a false RED against a type the tree does not contain. The mapping
- * makes this repository's own check read source, so a stale dist/ cannot reach
- * it at all.
+ * suite, and a false RED against a type the tree does not contain. A mapping
+ * THAT MATCHES makes this repository's own check read source, and a stale dist/
+ * cannot reach it for as long as one does -- which is a precondition rather than
+ * a foreclosure, and is why the assertions below watch it.
  *
  * tsconfig.build.json GETS NONE, and that is the half this pair exists for.
  * It `include`s src alone, which never imports the bare specifier, so a mapping
