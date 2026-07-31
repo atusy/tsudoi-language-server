@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
+import { runTsc } from "./helpers/typecheck.ts";
 
 /**
  * WHAT scripts/typecheck-workspaces.ts OWES, DRIVEN AGAINST WORKSPACES BUILT
@@ -153,4 +154,74 @@ test("a member with no tsconfig.json fails loudly rather than being skipped", as
 
   expect(result.stderr).toContain("packages/untyped");
   expect(result.code).not.toBe(0);
+});
+
+/** The specifier the root maps through `paths` and the member cannot reach. */
+const sharedModule = "shared/thing";
+
+/**
+ * A workspace where the ROOT can answer a specifier the MEMBER cannot, which is
+ * the exact shape the members' exclusion from the root type check forecloses.
+ *
+ * The root maps `shared/*` through `paths` and USES it from its own src/, so the
+ * mapping is live rather than decorative. The member imports the same specifier
+ * with no mapping of its own and no node_modules to walk to, so its resolution
+ * is broken in the one way a root's `paths` would paper over.
+ */
+function memberReachingPastItsOwnResolution(): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({
+      compilerOptions: {
+        target: "esnext",
+        module: "esnext",
+        moduleResolution: "bundler",
+        noEmit: true,
+        strict: true,
+        types: [],
+        paths: { "shared/*": ["./shared/*.ts"] },
+      },
+      exclude: ["packages"],
+    }),
+    "shared/thing.ts": "export const thing = 1;\n",
+    "src/root.ts": `import { thing } from "${sharedModule}";\nexport const atRoot: number = thing;\n`,
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": `import { thing } from "${sharedModule}";\nexport const inMember: number = thing;\n`,
+  };
+}
+
+/**
+ * WHAT THE WITHDRAWAL IS FOR, AND IT IS NOT A TYPE ERROR.
+ *
+ * Every pair above moves a member's own SOURCE and watches the colour follow. A
+ * broken RESOLUTION is the different failure, and the only one the root check
+ * could ever have answered WRONGLY rather than merely missed: a root that holds
+ * a `paths` mapping resolves a member's specifier through the ROOT'S map and
+ * reports success, so the greener the root the less it means.
+ *
+ * ONE TREE AND TWO COMMANDS, which is what makes this a measurement of the
+ * responsibility MOVING rather than two unrelated readings. The root check is
+ * silent on this workspace -- it excludes the member and has nothing to say --
+ * and the fifth check names the member's own file. A tree where both were red,
+ * or both silent, would leave `the coverage moved` unobserved.
+ *
+ * THE ROOT'S SILENCE IS ASSERTED AS A GREEN AND NOT AS AN ABSENCE OF THE
+ * MEMBER'S NAME: a root that failed to compile at all would also fail to name
+ * it, and would look identical here.
+ */
+test("a member whose own resolution is broken reddens the fifth check while the root check stays green", async () => {
+  const root = workspace(memberReachingPastItsOwnResolution());
+  try {
+    const atRoot = await runTsc(root);
+    const fifth = await runCommand("bun run scripts/typecheck-workspaces.ts", repoRoot, [root]);
+
+    expect(atRoot.output).toBe("");
+    expect(atRoot.code).toBe(0);
+    expect(fifth.stdout).toContain("packages/late/src/index.ts");
+    expect(fifth.stdout).toContain("TS2307");
+    expect(fifth.code).toBe(1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
