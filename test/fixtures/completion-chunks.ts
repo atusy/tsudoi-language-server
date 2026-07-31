@@ -1,6 +1,9 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 // Three distinguishable payloads, so a response that repeated a yield, dropped
 // one, or reordered them cannot be mistaken for the right answer. Japanese

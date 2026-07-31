@@ -1,6 +1,6 @@
 import process from "node:process";
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { Tsudoi, TsudoiConfig } from "../../src/types.ts";
+import type { Tsudoi, TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * Reports, at process exit, what the CONFIG AUTHOR's `tsudoi.documents` holds.

@@ -2,8 +2,25 @@ import { Buffer } from "node:buffer";
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { repoRoot } from "./spawn.ts";
 
-/** Kept relative so sessions run the acceptance criterion's own command form. */
-const cliArg = "src/cli.ts";
+/**
+ * Where the entry point sits RELATIVE TO THE DIRECTORY A SESSION STARTS IN, kept
+ * relative so sessions run the acceptance criterion's own command form.
+ *
+ * IT GAINED A `packages/` PREFIX RATHER THAN LOSING ONE when the framework
+ * became a workspace member: the default cwd is still the CHECKOUT, and the
+ * entry point moved down inside it.
+ *
+ * AND THE PREFIX IS OVERRIDABLE FOR ONE STAGED SHAPE THAT DELIBERATELY IS NOT
+ * THE CHECKOUT'S. test/helpers/checkout.ts stages a copy of the PACKAGE ALONE,
+ * with its manifest at the copy's root, and that is not tidiness either: the
+ * examples there reach tsudoi by PACKAGE SELF-REFERENCE, needing no
+ * node_modules, which is exactly what lets those probes hold node_modules away
+ * and read what deno then cannot find. Nesting the copy the way the checkout
+ * nests it would give those examples no route but node_modules and the probes
+ * would stop discriminating.
+ */
+export const CLI_IN_A_CHECKOUT = "packages/tsudoi-language-server/src/cli.ts";
+export const CLI_BESIDE_ITS_MANIFEST = "src/cli.ts";
 
 /** How to invoke the CLI under one runtime. `-A` must precede the script path. */
 export interface Runtime {
@@ -195,8 +212,18 @@ export class LspSession {
    * copy of the sources and observe what changes -- module resolution is a
    * property of the directory a runtime starts in, and no assertion made
    * inside the repo can tell where a dependency was found.
+   *
+   * `cliArg` travels with `cwd` and is defaulted rather than derived: the two
+   * staged shapes put the entry point in different places, and a helper that
+   * guessed from the cwd would silently pick the wrong one in the copy whose
+   * whole purpose is to be laid out differently.
    */
-  static start(runtime: Runtime, configPath: string, cwd: string = repoRoot): LspSession {
+  static start(
+    runtime: Runtime,
+    configPath: string,
+    cwd: string = repoRoot,
+    cliArg: string = CLI_IN_A_CHECKOUT,
+  ): LspSession {
     const child = spawn(runtime.command, [...runtime.runArgs, cliArg, "--config", configPath], {
       cwd,
       stdio: ["pipe", "pipe", "pipe"],

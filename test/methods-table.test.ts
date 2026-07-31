@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { requestEntries } from "../src/methods.ts";
-import type { Method } from "../src/types.ts";
+import { requestEntries } from "../packages/tsudoi-language-server/src/methods.ts";
+import type { Method } from "../packages/tsudoi-language-server/src/types.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";

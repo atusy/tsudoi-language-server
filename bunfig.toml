@@ -1,11 +1,30 @@
 # THE DEVELOP-TIME BUILD, AND WHY IT IS HERE RATHER THAN IN A SCRIPT.
 #
 # examples/ import `@atusy/tsudoi-language-server/deps/types` for their VALUES,
-# and dist/ is gitignored -- so a clone that has only run `bun install` has no
-# dist/ at all. The arm that needs it is the one that SPAWNS DENO: tsconfig's
-# `paths` intercepts a self-referencing subpath before the exports map, so bun's
-# own loads reach ./src, while deno has no `paths` and takes the map to
-# ./dist/deps/types.js.
+# and every dist/ in this repository is gitignored -- so a clone that has only
+# run `bun install` has none at all. The arm that needs tsudoi's is the one that
+# SPAWNS DENO: deno takes the exports map's `import` arm to ./dist/deps/types.js
+# and fails loudly without it.
+#
+# RE-MEASURED AFTER THE FRAMEWORK BECAME A WORKSPACE MEMBER, because the causal
+# clause this comment used to carry has NO SUBJECT ANY MORE. It said: the root
+# tsconfig's `paths` intercepts a self-referencing subpath before the exports
+# map, so bun's own loads reach ./src while deno takes the map to ./dist. THERE
+# IS NO `paths` MAPPING IN THIS REPOSITORY NOW. What is true instead, measured:
+# bun, deno and tsc alike resolve that subpath through node_modules to the
+# member's manifest, and the map's `import` and `types` arms send all three to
+# dist/ -- so the build below is load-bearing for MORE routes than it was, not
+# fewer.
+#
+# AND WITH dist/ ABSENT THE THREE STOP AGREEING, WHICH IS A NAMED, ACCEPTED
+# RESIDUE AND NOT A THING THIS FILE FIXES. MEASURED on a tree with every dist/
+# removed: the runtimes fail loudly, but tsc alone probes for the file, falls
+# through the map's `default: ./src/*.ts` arm and reads
+# packages/tsudoi-language-server/src/types.ts -- exiting with only the two
+# errors the HANDLER packages produce, whose own maps name no source arm.
+# NOTHING DETECTS THAT FLIP. It is written here because this is the file whose
+# absence produces the state, and closing it is a separate decision about that
+# `default` arm.
 #
 # MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
 # number written here goes stale with nobody editing it -- the suite grows and
@@ -21,7 +40,10 @@
 # failing to load on `@atusy/tsudoi-completion-path`, a workspace member
 # reachable only through the dist/ its own build writes. WHICH failure comes
 # first is what points at the cause; HOW MANY there are is a size that changes
-# whenever anybody adds a test.
+# whenever anybody adds a test. RE-MEASURED after the move and unchanged, which
+# is worth saying because the reason it holds DID change: a handler is still the
+# first to fail, and now for the same reason tsudoi is not -- a handler's
+# exports map has no source arm to fall through to.
 #
 # WHY NOT A `build` SCRIPT: a step a human is trusted to remember reintroduces
 # the very staleness this removes -- src/ edited, dist/ not rebuilt, the suite
@@ -45,8 +67,8 @@
 # The structure is the durable statement and a file count is not: members are
 # added and removed, and the containment that makes them invisible is not. On that one route
 # staleness is merely handled rather than foreclosed,
-# by the comparison in test/package-shape.test.ts between dist/deps/types.js and
-# the names `vscode-languageserver-types` declares -- MEASURED on a tree whose
+# by the comparison in test/package-shape.test.ts between the framework's
+# dist/deps/types.js and the names `vscode-languageserver-types` declares -- MEASURED on a tree whose
 # dist/deps/types.js has been narrowed to `export {}`, that comparison is the
 # failure WRITTEN TO NAME THE BUILD as its cause, where the session tests arrive
 # as `initialize failed` from a server whose config could not load. A COUNT OF

@@ -1,6 +1,9 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 export const partialChunk: CompletionItem[] = [
   { label: "途中経過", detail: "sent as a partial result" },

@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
-import { repoRoot, runCommand } from "./helpers/spawn.ts";
+import { frameworkRoot, repoRoot, runCommand } from "./helpers/spawn.ts";
 import { mirrorInstalledDependencies, runTsc } from "./helpers/typecheck.ts";
 
 /**
@@ -94,15 +94,32 @@ test("the same tree fails once the dist exclusion is removed", async () => {
  * so tsconfig.build.json may not carry a comment either.
  */
 const buildTsconfig = JSON.parse(
-  readFileSync(join(repoRoot, "tsconfig.build.json"), "utf8"),
+  readFileSync(join(frameworkRoot, "tsconfig.build.json"), "utf8"),
 ) as Record<string, unknown>;
 
 /** The settings half of each, which is where every claim below reads from. */
 const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
 const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
 
-/** The shipped manifest's own bytes, read at test time. */
-const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
+/**
+ * TWO MANIFESTS, SPLIT AT THE MOVE AND ASSIGNED PER SITE, because one of them is
+ * the workspace and the other is the package.
+ *
+ * THE WHOLE-FILE REPOINT IS THE EDIT THIS SPLIT EXISTS TO REFUSE. Every claim
+ * below used to read one file; after the move some of them are about the
+ * PUBLISHED SURFACE (the exports map, `files`, `prepack`, the refusal of `main`
+ * and `bin`) and some about the WORKSPACE (its `workspaces` patterns, its
+ * devDependency on every member and the refusal to put one a field up). Moving
+ * the reader wholesale onto the member would carry the second set with it,
+ * silently asserting the workspace's shape against the package's manifest and
+ * green either way -- the same retargeting the byte-for-byte order arm is
+ * forbidden, arriving in a file no refusal names.
+ */
+const workspaceJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as Record<
+  string,
+  unknown
+>;
+const packageJson = JSON.parse(readFileSync(join(frameworkRoot, "package.json"), "utf8")) as Record<
   string,
   unknown
 >;
@@ -176,74 +193,55 @@ function publishedArm(condition: string): Record<string, string> {
 }
 
 /**
- * WHICH OF THE TWO TSCONFIGS MAY CARRY THE MAPPING, and why it is exactly one.
+ * WHERE THE ROOT TYPE CHECK LANDS NOW THAT NO MAPPING EXISTS ANYWHERE, AND THE
+ * WEAKENING IS DECLARED RATHER THAN QUIETLY ABSORBED.
  *
- * `tsc --noEmit` is a DoD check, and without a mapping it resolves the
- * examples' `@atusy/tsudoi-language-server/*` imports through package.json's exports map to
- * dist/ -- THE BUILT ARTIFACT, which only `bun test`'s preload rebuilds. The two
- * therefore disagree exactly when the published surface has moved: MEASURED in
- * both directions -- a false GREEN beside failures spread BROADLY across the
- * suite, and a false RED against a type the tree does not contain. A mapping
- * THAT MATCHES makes this repository's own check read source, and a stale dist/
- * cannot reach it for as long as one does -- which is a precondition rather than
- * a foreclosure, and is why the assertions below watch it.
+ * WHAT THIS TEST USED TO SAY, and it was the stronger claim: the root tsconfig
+ * carried `@atusy/tsudoi-language-server/*` -> ./src/*.ts, so `tsc --noEmit` --
+ * a Definition-of-Done check -- graded THIS REPOSITORY'S OWN SOURCE, and a stale
+ * dist/ could not reach it. THAT SUBJECT IS GONE. The framework is a workspace
+ * member, the mapping was the apparatus that let the root answer for it, and
+ * removing the apparatus is the whole point of the move: the root now resolves
+ * these subpaths the way a stranger's project does -- through node_modules, to
+ * the framework's manifest, to the BUILT ARTIFACT its `types` arm names.
  *
- * tsconfig.build.json GETS NONE, and that is the half this pair exists for.
- * It `include`s src alone, which never imports the bare specifier, so a mapping
- * there would resolve nothing -- and it is the one of the two configs that
- * TRAVELS INTO THE PACKING STAGE, where inheriting it would type-check what we
- * publish against sources we do not ship. What the stage copies is pinned in
+ * SO THIS REPOSITORY'S OWN TYPE CHECK NO LONGER READS ITS OWN SOURCE, AND
+ * NOTHING REPLACES THAT. It is an honest target removed rather than a target
+ * met, and calling it anything else would be the report this record exists to
+ * prevent. What still grades that source is the fifth check, under the member's
+ * own tsconfig, plus the build the preload runs.
+ *
+ * AND THE RESIDUE THAT COMES WITH IT IS NAMED HERE AND DELIBERATELY NOT PINNED.
+ * The `types` arm answers only while dist/ EXISTS. With dist/ absent -- or
+ * half-written, which is the window `rm -rf dist && tsc` passes through -- tsc
+ * alone probes for the file, falls through the map's `default: ./src/*.ts` arm,
+ * READS A DIFFERENT FILE AND EXITS 0. MEASURED during refinement, in both
+ * states. NOTHING DETECTS THAT FLIP and no test here may: an assertion pinning
+ * it would PASS while the residue persisted, specifying it rather than finding
+ * it, and would make the later fix -- deleting the `default` arm -- look like a
+ * regression. The arm below reads the state the suite's own preload guarantees,
+ * and says nothing about the other one.
+ *
+ * tsconfig.build.json GETS NO MAPPING EITHER, and that half is unchanged. It
+ * `include`s src alone, which never imports the bare specifier, so a mapping
+ * there would resolve nothing -- and it is the config that TRAVELS INTO THE
+ * PACKING STAGE, where inheriting one would type-check what we publish against
+ * sources we do not ship. What the stage copies is pinned in
  * test/installed-specifier.test.ts; this is the other half of the same guard.
  *
- * WHAT IS ASSERTED OF THAT CONFIG IS THE ABSENT KEY AND NOT A RESOLUTION, and
- * the stronger-looking probe is DECLINED ON A MEASUREMENT rather than on cost:
- * run its compilerOptions verbatim over a probe under src/ importing all four
- * subpaths and every one answers from ./src/*.ts. `rootDir` TOGETHER WITH
- * `outDir` MAKES tsc REDIRECT A DECLARATION TARGET BACK TO THE INPUT THAT EMITS
- * IT -- the trace reads `Matched 'exports' condition 'types'` naming
- * ./dist/types.d.ts and then answers src/types.ts -- and it fires with dist/
- * ABSENT, which is every clone that has only run `bun install`. Drop either key
- * and the same probe answers ./dist/types.d.ts, measured, which is what pins the
- * cause. So a build config that resolved these subpaths would resolve them TO
- * SOURCE, and the property that actually holds there is about the program's
- * CONTENTS -- src imports no bare specifier, so nothing resolves at all --
- * rather than about its resolver. The name below says the key because the key is
- * what a build config can be held to.
- *
- * WHAT IS ASSERTED IS WHICH FILE ANSWERED, AND NOT HOW THE MAPPING IS SPELLED,
- * because a key that has stopped matching DOES NOT FAIL: the specifier falls
- * through to the exports map and lands in dist/ AT EXIT 0, so the check grades a
- * built artifact against sources nobody compiled it from. MEASURED on this
- * config with the key misspelled, at 38b8709: `tsc --noEmit` exits 0 and prints
- * nothing, and all four subpaths are answered by dist/*.d.ts.
- *
- * AN EQUALITY ON THE MAPPING'S LITERAL CONTENT IS THE CHEAPER ASSERTION AND IT
- * IS NARROWER THAN THE NAME OF THIS TEST: it catches the key being deleted --
- * which is covered anyway, since a deleted key sends the same subpaths to the
- * same artifact -- and it is silent about a key that is present, well-formed and
- * matching nothing. It also spells today's key a second time, so the day the
- * package is renamed there are two places to carry it and one test to tell you
- * which. Both sides here come from `exports` instead, and an arm added there is
- * covered with nothing edited.
- *
- * WHAT AN ARM NOTHING IMPORTS COSTS, named so the next person to add one does
- * not meet it as a mystery: a subpath no file in this program asks for is
- * answered by nothing, which reads here as an empty list against its source and
- * REDDENS. That is the honest colour -- this check verifies the arms it
- * resolves and can say nothing about one it never sees -- and it does not arrive
- * alone. MEASURED, on a fifth arm added to the map: TWO tests redden, this one
- * and the published-surface equality, which is where adding an arm is already a
- * decision rather than a convenience.
+ * BOTH SIDES STILL COME FROM `exports` AND NEITHER FROM ANY MAPPING, so an arm
+ * added there is covered with nothing edited, and a reading cannot follow the
+ * fault it is grading.
  */
-test("the repo's type check resolves the published subpaths to source, and the build config declares no paths mapping", async () => {
-  const sources = publishedArm("default");
+test("the root type check resolves the published subpaths through the exports map, to the built artifact", async () => {
+  const declarations = publishedArm("types");
   const { answers } = await traceResolutions(repoRoot);
   // BOTH SIDES RESOLVED, for the reason the compiler-pinning test below states
   // about its own two: a checkout reached through a link is answered by the path
   // the compiler walked, and an expectation built from the path this file was
   // loaded by is a claim about the same file under another name.
   const answered = Object.fromEntries(
-    Object.keys(sources).map((specifier) => [
+    Object.keys(declarations).map((specifier) => [
       specifier,
       [...(answers.get(specifier) ?? [])].map((file) => realpathSync(file)).sort(),
     ]),
@@ -251,9 +249,9 @@ test("the repo's type check resolves the published subpaths to source, and the b
 
   expect(answered).toEqual(
     Object.fromEntries(
-      Object.entries(sources).map(([specifier, file]) => [
+      Object.entries(declarations).map(([specifier, file]) => [
         specifier,
-        [realpathSync(join(repoRoot, file))],
+        [realpathSync(join(frameworkRoot, file))],
       ]),
     ),
   );
@@ -261,26 +259,35 @@ test("the repo's type check resolves the published subpaths to source, and the b
 });
 
 /**
- * A KEY THAT MATCHES NOTHING IS THE ONE EDIT TO THIS CONFIG NOTHING MAKES A
- * NOISE ABOUT, and this is the half of the pair that names the KEY rather than
- * the file that answered -- a reader of this failure is sent to the spelling,
- * where the fault is, instead of to dist/, where its symptom is.
+ * NO SPECIFIER IN THE ROOT CHECK IS ANSWERED BY A MAPPING AT ALL, which is the
+ * successor to a test whose subject the move destroyed and not a survival of it.
  *
- * OVER THE DECLARED MAPPING AS A CLASS: the expected set IS what the config
- * declares, so a second mapping added tomorrow is covered by this line and a key
- * that reaches nothing is refused whatever it is spelled. MEASURED, at 38b8709:
- * one pattern is declared and thirteen resolutions match it; with that same key
- * misspelled, NOTHING matches any pattern while resolution stays at exit 0.
+ * THE OLD CLAIM WAS `every mapping this config declares is one the check really
+ * matches`, written against a config that declared one -- a key that had stopped
+ * matching DID NOT FAIL, it fell through to the exports map and landed in dist/
+ * at exit 0. With the mapping gone that reading is an empty set against an empty
+ * set: green, permanently, measuring nothing. RETIRED AND REPLACED RATHER THAN
+ * LEFT GREEN, because a vacuous assertion is indistinguishable in a report from
+ * a live one.
  *
- * DELETING THE MAPPING LEAVES THIS GREEN -- an empty set matches an empty set --
- * and that is a division of labour rather than a hole: the resolution assertion
- * above reddens for it, naming dist/. Neither line covers the other, and the
- * failure a reader gets first is the one that names their edit.
+ * WHAT IT IS NOW: the C4 ruling made executable. The framework is acquired the
+ * way a stranger acquires it, and the one edit that would silently take that
+ * back is a `paths` key in this config -- which resolves without node_modules
+ * and without the exports map, and leaves every check in this repository green
+ * over a resolution nobody looked at. The MEMBERS are already refused one by
+ * `refuseMemberMappings`; nothing refused the ROOT one until here.
+ *
+ * READ OFF A REAL COMPILER RUN AND NOT OFF THE CONFIG'S BYTES, deliberately: a
+ * mapping can arrive through `extends`, and a key read out of this file would be
+ * silent about it. `matched` is what tsc itself reports having used.
  */
-test("every specifier mapping this config declares is one the check really matches", async () => {
+test("no specifier the root check resolves is answered by a mapping", async () => {
   const { matched } = await traceResolutions(repoRoot);
 
-  expect([...matched].sort()).toEqual(Object.keys((repoOptions.paths ?? {}) as object).sort());
+  expect([...matched].sort()).toEqual([]);
+  // The pair, and without it the emptiness above is satisfied by a trace that
+  // resolved nothing at all: the same run answered every published subpath.
+  expect(Object.keys((repoOptions.paths ?? {}) as object)).toEqual([]);
 });
 
 /**
@@ -386,7 +393,7 @@ test("with no mapping the same subpaths answer from the built artifact", async (
  */
 test("the members are outside the root type check, and the workspace patterns are what finds them", () => {
   expect(repoTsconfig.exclude).toEqual(["dist", "packages"]);
-  expect(packageJson.workspaces).toEqual(["packages/*"]);
+  expect(workspaceJson.workspaces).toEqual(["packages/*"]);
 });
 
 /**
@@ -420,7 +427,8 @@ test("the members are outside the root type check, and the workspace patterns ar
  * which is why it is accepted rather than guarded.
  */
 test("the repo depends on every member package for its own examples, at the version each member carries", () => {
-  const devDependencies = packageJson.devDependencies as Record<string, string>;
+  // THE WORKSPACE'S MANIFEST, because the subject is what THE ROOT declares.
+  const devDependencies = workspaceJson.devDependencies as Record<string, string>;
   // MEMBERS AND NOT HANDLERS. examples/tsudoi.config.ts imports the framework by
   // specifier too, so the day the framework is a member this loop is what pins
   // the ROOT'S OWN DECLARATION OF IT -- present in devDependencies, at the
@@ -447,7 +455,7 @@ test("the repo depends on every member package for its own examples, at the vers
     }
 
     expect(devDependencies[member.name]).toBe(member.version);
-    expect(packageJson.dependencies).not.toHaveProperty(member.name);
+    expect(workspaceJson.dependencies).not.toHaveProperty(member.name);
   }
 });
 
@@ -468,9 +476,15 @@ test("the repo depends on every member package for its own examples, at the vers
  * of a language-server framework that does not read one; in `devDependencies` it
  * would ship nothing and still be the second declaration.
  */
-test("the dictionary belongs to the handler package, and this manifest declares it nowhere", () => {
+test("the dictionary belongs to the handler package, and neither manifest here declares it", () => {
+  // BOTH MANIFESTS, WHICH THE MOVE MADE NECESSARY RATHER THAN THOROUGH: the two
+  // fields the argument is about now live in DIFFERENT FILES -- shipping it to a
+  // consumer would be the framework's `dependencies`, and declaring it a second
+  // time for the suite's convenience would be the workspace's
+  // `devDependencies`. A reading of either alone would leave the other route
+  // open with nothing saying so.
   const dependencies = (packageJson.dependencies ?? {}) as Record<string, string>;
-  const devDependencies = (packageJson.devDependencies ?? {}) as Record<string, string>;
+  const devDependencies = (workspaceJson.devDependencies ?? {}) as Record<string, string>;
 
   expect(Object.keys(dependencies)).not.toContain("wordnet");
   expect(Object.keys(devDependencies)).not.toContain("wordnet");
@@ -647,7 +661,7 @@ test("packing builds, so a stale dist cannot be published", () => {
  * bunfig.toml, by ruling; what keeps the build OUT of THIS test is narrower and
  * permanent -- a test that repaired the condition it asserts could never fail.
  */
-test("the repo's own dist/ is built, and carries every LSP data value", async () => {
+test("the framework's own dist/ is built, and carries every LSP data value", async () => {
   // THE SOURCE SIDE IS THE DEPENDENCY ITSELF, because src/deps/types.ts is a
   // star and there is no list here to read.
   //
@@ -658,7 +672,9 @@ test("the repo's own dist/ is built, and carries every LSP data value", async ()
   // replacing it with `export { Position }` reddens this, measured, naming the
   // 84 names that went.
   const declared = Object.keys(await import("vscode-languageserver-types")).sort();
-  const built = await import(pathToFileURL(join(repoRoot, "dist", "deps", "types.js")).href).then(
+  const built = await import(
+    pathToFileURL(join(frameworkRoot, "dist", "deps", "types.js")).href
+  ).then(
     (module) => Object.keys(module as Record<string, unknown>).sort(),
     (cause: unknown) => [`dist/deps/types.js could not be loaded: ${String(cause)}`],
   );
@@ -691,7 +707,11 @@ test("the repo's own dist/ is built, and carries every LSP data value", async ()
  * compiler rather than from whatever a later install resolved.
  */
 test("the compiler prepack builds with is pinned by this repo, at a version it declares", async () => {
-  const devDependencies = packageJson.devDependencies as Record<string, string> | undefined;
+  // THE WORKSPACE DECLARES THE COMPILER, and prepack -- which is the FRAMEWORK's
+  // script -- reaches it by walking up to the root node_modules/.bin. The two
+  // manifests are read together here on purpose: a pin asserted on the manifest
+  // that does not carry it would be green and empty.
+  const devDependencies = workspaceJson.devDependencies as Record<string, string> | undefined;
   const declared = devDependencies?.typescript;
   const installed = JSON.parse(
     readFileSync(join(repoRoot, "node_modules", "typescript", "package.json"), "utf8"),
@@ -785,4 +805,5 @@ test("every package this workspace publishes ships the licence it declares", () 
   // publishers at all: the members are real, and so is the field being read.
   expect(declaredMembers(repoRoot).length).toBeGreaterThan(0);
   expect(packageJson.license).toBe("MIT");
+  expect(workspaceJson.license).toBe("MIT");
 });

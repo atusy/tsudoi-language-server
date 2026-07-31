@@ -17,7 +17,7 @@ import {
 } from "./helpers/lsp.ts";
 import { gateOpen, itemsFor } from "./fixtures/completion-workspace-gate.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { fixture, repoRoot } from "./helpers/spawn.ts";
+import { fixture, frameworkRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
 
 const echoConfig = fixture("workspace-folders.ts");
@@ -201,7 +201,7 @@ function changeFolders(
  */
 function exampleSession(runtime: Runtime, cwd: string): LspSession {
   return LspSession.startCommand(
-    `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${demoConfig}`,
+    `${runtime.command} ${runtime.runArgs.join(" ")} ${join(frameworkRoot, "src", "cli.ts")} --config ${demoConfig}`,
     cwd,
   );
 }
@@ -1018,7 +1018,7 @@ for (const runtime of runtimes) {
     test("with no workspace sent, a handler observes an empty list and never cwd", async () => {
       const fixture = tree(["notes/cwd-only.txt"]);
       const session = LspSession.startCommand(
-        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${echoConfig}`,
+        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(frameworkRoot, "src", "cli.ts")} --config ${echoConfig}`,
         fixture.root,
       );
       try {

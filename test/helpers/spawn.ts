@@ -6,8 +6,38 @@ import { fileURLToPath } from "node:url";
 import type { Runtime } from "./lsp.ts";
 
 // import.meta.dir is Bun-only; the URL form works under both runtimes.
+
+/**
+ * THE CHECKOUT -- WHICH IS NO LONGER THE FRAMEWORK'S DIRECTORY, and the two were
+ * one path for fifty sprints, so every use of this name now has to say which of
+ * them it means.
+ *
+ * THIS ONE IS THE CHECKOUT, AND ONLY THAT. What it answers: where a command is
+ * run from (the five Definition-of-Done checks are spelled from here, which is
+ * how bunfig.toml is found at all), whose node_modules a probe borrows, and
+ * which workspace the member enumerators read. It is NOT what stages a copy of
+ * the tsudoi package; the three helpers that do that take `frameworkRoot`.
+ */
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-const cliPath = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
+
+/**
+ * THE TSUDOI PACKAGE'S OWN DIRECTORY: its manifest, its src/, its build config,
+ * its dist/.
+ *
+ * SPELLED ONCE HERE RATHER THAN REDERIVED PER HELPER. Three helpers stage a copy
+ * of this package and each copies exactly the three files it is made of; three
+ * derivations of the path would be three places to get it wrong the day it moves
+ * again, and the failure that produces is a resolution error that reads like the
+ * move broke something.
+ *
+ * DERIVED FROM THIS FILE'S URL AND NOT FROM A WORKSPACE ENUMERATION, which is
+ * not a preference: a helper that needed an installed workspace to locate the
+ * source it is about to stage would fail for the wrong reason in exactly the
+ * uninstalled trees these probes exist to build.
+ */
+const frameworkUrl = new URL("../../packages/tsudoi-language-server/", import.meta.url);
+export const frameworkRoot = fileURLToPath(frameworkUrl);
+const cliPath = fileURLToPath(new URL("src/cli.ts", frameworkUrl));
 
 /** Absolute path of a committed fixture config under test/fixtures. */
 export function fixture(name: string): string {

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { WorkspaceFolder } from "vscode-languageserver-protocol";
-import { createWorkspaceFolders } from "../src/workspace.ts";
+import { createWorkspaceFolders } from "../packages/tsudoi-language-server/src/workspace.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**

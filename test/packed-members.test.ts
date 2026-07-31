@@ -379,12 +379,20 @@ test("no member ships a module naming a directory-qualified repository file its 
  * real half is scripts/workspaces.ts, a file of this repository whose comments
  * cite repository paths on purpose: run against a tarball's dist/, its sentences
  * name files that are not there, which is exactly the condition above.
+ *
+ * THE TOKEN THIS ARM NAMES CHANGED WHEN THE FRAMEWORK BECAME A MEMBER, and the
+ * change is worth recording rather than hiding: it used to be
+ * test/helpers/typecheck.ts, cited inside `linkRootPackage` -- a function that
+ * exists only while the main package is the workspace root, and which the move
+ * retired along with its comment. A TOKEN AND NOT A COUNT IS STILL WHAT IS
+ * ASSERTED: `it found something` is satisfied by a matcher that fires on any
+ * word with a slash in it, which is the degenerate this half exists to refuse.
  */
 test("the pattern that found nothing in the tarballs finds the claims in real prose", () => {
   const root = join(packed[0]?.dir ?? repoRoot, "dist");
   const source = readFileSync(join(repoRoot, "scripts", "workspaces.ts"), "utf8");
 
-  expect(unreachableClaims(root, source)).toContain("test/helpers/typecheck.ts");
+  expect(unreachableClaims(root, source)).toContain("test/build-order.test.ts");
   // The shape rule, both ways: a separator and a source extension make a claim,
   // and a bare prose fragment does not.
   expect(unreachableClaims(root, "see test/package-shape.test.ts for the reason")).toEqual([

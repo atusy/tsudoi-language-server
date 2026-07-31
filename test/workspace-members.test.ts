@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, realpathSync, rmSync, symlinkSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { rmSync } from "node:fs";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
-import { prepareWorkspace } from "../scripts/workspaces.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 import { workspace } from "./helpers/workspace.ts";
 
@@ -599,44 +597,20 @@ test("a member that extends a base carrying no mapping is left alone", async () 
 });
 
 /**
- * THE LINK THE BUILDER PUTS IN A MEMBER'S node_modules IS ABSOLUTE, so a
- * checkout that is MOVED OR RENAMED leaves every member pointing at a path that
- * is no longer there.
+ * THERE IS NO LINKER LEFT TO ASSERT ANYTHING ABOUT, AND THAT ABSENCE IS THE
+ * MOVE'S WHOLE POINT RATHER THAN A DELETION FOR TIDINESS.
  *
- * WHY THAT NEEDS A REPAIR RATHER THAN A DIAGNOSTIC: the failure is loud and it
- * is also PERMANENT. MEASURED on this repository with the link redirected to a
- * path that does not exist, the fifth check reports
- * `src/hover.ts(31,36): error TS2307: Cannot find module
- * '@atusy/tsudoi-language-server/types'` and every rerun reports it again --
- * a builder that skips whatever it finds cannot be the thing that fixes it. The
- * diagnostic names the member's SOURCE for a fault that lives in node_modules,
- * so a reader is sent to the one file that is not wrong.
+ * A test stood here for `linkRootPackage`, which wrote into each member's
+ * node_modules an entry `bun install` would not create -- because the framework
+ * WAS the workspace root, which the `workspaces` globs never match. It carried
+ * one measured claim: that link was ABSOLUTE, so a checkout that was moved or
+ * renamed left every member pointing at a path no longer there, and a builder
+ * that skips whatever resolves could not repair it.
  *
- * A LINK THAT RESOLVES IS STILL LEFT ALONE, and the asymmetry is the whole
- * decision: a real directory there is somebody's install and not this script's
- * to overwrite. Only an entry that resolves to NOTHING is replaced, because
- * nothing is what it currently provides.
- *
- * ASSERTED BY WHERE THE LINK LANDS, NOT BY ITS EXISTENCE: `lstatSync` succeeds
- * on the broken link too, which is exactly how it survived.
+ * THE FRAMEWORK IS A MEMBER NOW AND `bun install` WRITES THOSE ENTRIES ITSELF --
+ * MEASURED, and RELATIVE, so the dangle-on-moving-the-checkout mode INVERTS
+ * rather than disappears: the link survives a move of the checkout and dies if a
+ * member directory moves inside it. The old function's full record is kept in
+ * the sprint 52 dashboard entry, where it is history about a route this
+ * repository no longer has; a test asserting it here would have no subject.
  */
-test("a member's link to a moved checkout is replaced rather than skipped", () => {
-  const root = workspace({
-    "package.json": JSON.stringify({ name: "@probe/root", workspaces: ["packages/*"] }),
-    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
-    "packages/late/package.json": JSON.stringify({ name: "late" }),
-    "packages/late/tsconfig.json": memberTsconfig,
-    "packages/late/src/index.ts": typeChecks,
-  });
-  try {
-    const link = join(root, "packages", "late", "node_modules", "@probe", "root");
-    mkdirSync(dirname(link), { recursive: true });
-    symlinkSync(join(root, "nowhere"), link, "dir");
-
-    prepareWorkspace(root);
-
-    expect(realpathSync(link)).toBe(realpathSync(root));
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});

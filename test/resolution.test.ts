@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import type { InitializeResult } from "vscode-languageserver-protocol";
 import { isolatedCheckout, type IsolatedCheckout } from "./helpers/checkout.ts";
-import { denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import {
+  CLI_BESIDE_ITS_MANIFEST,
+  denoRuntime,
+  initializeParams,
+  LspSession,
+} from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 
 await requireRuntime(denoRuntime);
@@ -52,7 +57,16 @@ interface Handshake {
 
 /** One handshake against the real server, over stdio, in the given checkout. */
 async function handshake(dir: string): Promise<Handshake> {
-  const session = LspSession.start(denoRuntime, "examples/tsudoi.config.ts", dir);
+  // THE COPY IS THE PACKAGE AND NOT THE CHECKOUT, which is what puts the
+  // entry point beside the manifest here: staging it nested would leave the
+  // examples with no route to tsudoi but node_modules, and node_modules is the
+  // one thing these probes hold away.
+  const session = LspSession.start(
+    denoRuntime,
+    "examples/tsudoi.config.ts",
+    dir,
+    CLI_BESIDE_ITS_MANIFEST,
+  );
   try {
     const result = await session.request<InitializeResult>("initialize", initializeParams).then(
       (value) => value,

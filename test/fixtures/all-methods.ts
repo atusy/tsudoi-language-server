@@ -1,6 +1,11 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, Hover, TextEdit } from "vscode-languageserver-protocol";
-import type { Method, MethodHandler, RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  Method,
+  MethodHandler,
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * A config supplying EVERY method the request table declares, with the

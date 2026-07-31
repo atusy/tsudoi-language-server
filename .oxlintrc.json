@@ -124,7 +124,14 @@
       // THE RESIDUAL OF WRITING IT THIS WAY: an override REPLACES the rule's
       // options, so a pattern added at the top level does NOT reach this file,
       // and only `bun` and `bun:*` are pinned here by test.
-      "files": ["src/notifications.ts"],
+      // THE PATH IS THE FRAMEWORK'S OWN AND IS NOT WIDENED TO `packages/*/src/`,
+      // which is the edit the move invites and the wrong one: this exemption is
+      // about ONE MODULE that owns the gate it applies, and a per-package glob
+      // would hand the same permission to every handler -- packages shipped to
+      // strangers who cannot fix them. It names a path because it is about a
+      // file, where the `packages/` shape in guard.test.ts names no package
+      // because that one is about a class.
+      "files": ["packages/tsudoi-language-server/src/notifications.ts"],
       "rules": { "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] }
     }
   ]

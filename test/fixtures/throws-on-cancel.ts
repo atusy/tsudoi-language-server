@@ -1,7 +1,10 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { CompletionParams, Hover, HoverParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 export const hoverEntered = "throws-on-cancel: hover entered";
 export const completionEntered = "throws-on-cancel: completion entered";

@@ -1,0 +1,43 @@
+{
+  "name": "@atusy/tsudoi-language-server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "./deps/protocol": {
+      "types": "./dist/deps/protocol.d.ts",
+      "import": "./dist/deps/protocol.js",
+      "default": "./src/deps/protocol.ts"
+    },
+    "./deps/textdocument": {
+      "types": "./dist/deps/textdocument.d.ts",
+      "import": "./dist/deps/textdocument.js",
+      "default": "./src/deps/textdocument.ts"
+    },
+    "./deps/types": {
+      "types": "./dist/deps/types.d.ts",
+      "import": "./dist/deps/types.js",
+      "default": "./src/deps/types.ts"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./src/types.ts"
+    }
+  },
+  "scripts": {
+    "prepack": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-languageserver-types": "^3.18.0"
+  },
+  "//exports": "SUPERSEDES the note this key carried through sprint 9, which said an installed copy CANNOT run under deno and that main/bin belong elsewhere. That is now false: this package ships COMPILED .js built by prepack, and deno's restriction is on type-STRIPPING under node_modules, not on running .js from there. The published surface is dist/ alone -- src/ is deliberately NOT shipped, so no user can aim a runtime at a .ts entry point under node_modules and hit that error at all. There is still no `main`, no `.` export and no `bin`. The map's three arms and the reason for each, the refusal of `bin`, and why JSR was measured and declined are asserted in test/package-shape.test.ts: package.json cannot carry comments, oxfmt sorts this key to the tail, and a test is the one home for a reason that fails when someone violates it.",
+  "//no-readme": "THIS PACKAGE SHIPS NO README AND THAT IS A RULING RATHER THAN AN OMISSION. A member README exists for the one reader who has only that document -- and this package's reader does not arrive that way: the sole documented route to its tarball IS the root README's quickstart, so they have already read it. Two of the four facts a handler README owes (the peer on tsudoi, the link `bun install` does not create) are unstatable by this package about itself, so test/readme.test.ts enumerates HANDLER packages rather than members. A prose-only pointer is refused on this repository's doctrine that the document nobody executes is the one that goes stale. WHAT IT COSTS, FILED RATHER THAN DISCOVERED: a pack here produces a tarball with no README, which binds only the day this package publishes -- and `private` above forecloses that until a publishing decision reopens it.",
+  "//private": "THIS IS THE MANIFEST WHOSE EDIT PERMITS PUBLICATION, and the key is the machine gate every handler's optional-peer flag is carried under: `bun publish` refuses a private package before `prepack` is even run. MEASURED on bun 1.3.13 that the gate is THIS file's and not the workspace root's -- a publish run inside a member with `private` deleted here packs and reaches authentication while the root still carries the key. test/optional-peer-premise.test.ts LOCATES this manifest by the name it declares, so deleting the key reddens both handlers; the workspace root's own permanent `private: true` cannot stand in for it and is not read."
+}

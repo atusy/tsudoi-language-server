@@ -9,7 +9,7 @@ import type {
 // TYPE-ONLY, so a value has to come from the package that declares it.
 import type { TextDocument as PublishedTextDocument } from "@atusy/tsudoi-language-server/deps/textdocument";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { createDocumentStore } from "../src/documents.ts";
+import { createDocumentStore } from "../packages/tsudoi-language-server/src/documents.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 const uri = "file:///workspace/a.txt";

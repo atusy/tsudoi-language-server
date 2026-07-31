@@ -1,6 +1,9 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /** Distinctive enough that finding it on stderr cannot be a coincidence. */
 export const throwMessage = "completion-throws fixture: 意図的な失敗";

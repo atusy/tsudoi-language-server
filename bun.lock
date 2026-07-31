@@ -4,17 +4,16 @@
   "workspaces": {
     "": {
       "name": "@atusy/tsudoi-language-server",
-      "dependencies": {
-        "vscode-languageserver-protocol": "^3.17.5",
-        "vscode-languageserver-textdocument": "^1.0.12",
-        "vscode-languageserver-types": "^3.18.0",
-      },
       "devDependencies": {
         "@atusy/tsudoi-completion-path": "0.0.0",
         "@atusy/tsudoi-hover-wordnet": "0.0.0",
+        "@atusy/tsudoi-language-server": "0.0.0",
         "@types/bun": "^1.3.0",
         "@types/node": "^24.0.0",
         "typescript": "7.0.2",
+        "vscode-languageserver-protocol": "^3.17.5",
+        "vscode-languageserver-textdocument": "^1.0.12",
+        "vscode-languageserver-types": "^3.18.0",
       },
     },
     "packages/tsudoi-completion-path": {
@@ -47,11 +46,22 @@
         "@atusy/tsudoi-language-server",
       ],
     },
+    "packages/tsudoi-language-server": {
+      "name": "@atusy/tsudoi-language-server",
+      "version": "0.0.0",
+      "dependencies": {
+        "vscode-languageserver-protocol": "^3.17.5",
+        "vscode-languageserver-textdocument": "^1.0.12",
+        "vscode-languageserver-types": "^3.18.0",
+      },
+    },
   },
   "packages": {
     "@atusy/tsudoi-completion-path": ["@atusy/tsudoi-completion-path@workspace:packages/tsudoi-completion-path"],
 
     "@atusy/tsudoi-hover-wordnet": ["@atusy/tsudoi-hover-wordnet@workspace:packages/tsudoi-hover-wordnet"],
+
+    "@atusy/tsudoi-language-server": ["@atusy/tsudoi-language-server@workspace:packages/tsudoi-language-server"],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 

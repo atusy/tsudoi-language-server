@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
-import { repoRoot } from "./spawn.ts";
+import { frameworkRoot, repoRoot } from "./spawn.ts";
 
 export interface TypeCheckResult {
   code: number | null;
@@ -244,12 +244,16 @@ export async function typeCheckProbe(
 ): Promise<TypeCheckResult> {
   const dir = mkdtempSync(join(tmpdir(), "tsudoi-tsc-"));
   try {
+    // THE FRAMEWORK'S MANIFEST AND ITS SOURCE, WHICH ARE NO LONGER THE CHECKOUT
+    // ROOT'S. This probe stages a copy of THE PACKAGE -- its `exports` map is
+    // what answers the specifiers the probes write, and the workspace root's
+    // manifest carries none.
     const packageJson: Record<string, unknown> = JSON.parse(
-      readFileSync(join(repoRoot, "package.json"), "utf8"),
+      readFileSync(join(frameworkRoot, "package.json"), "utf8"),
     ) as Record<string, unknown>;
     editPackage(packageJson);
     writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson, null, 2));
-    symlinkSync(join(repoRoot, "src"), join(dir, "src"), "dir");
+    symlinkSync(join(frameworkRoot, "src"), join(dir, "src"), "dir");
     mirrorInstalledDependencies(dir);
     writeFileSync(
       join(dir, "tsconfig.json"),

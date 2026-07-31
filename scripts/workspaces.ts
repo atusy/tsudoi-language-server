@@ -1,15 +1,6 @@
 import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  globSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  symlinkSync,
-} from "node:fs";
-import { basename, dirname, join, relative, sep } from "node:path";
+import { existsSync, globSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -352,91 +343,6 @@ function excludedDirectories(root: string, entry: string): readonly string[] {
 const toolRoot = fileURLToPath(new URL("../", import.meta.url));
 
 /**
- * Puts the root package under the MEMBER'S OWN node_modules, so the member
- * reaches it by walking up exactly as a stranger's project does.
- *
- * WHY IT HAS TO BE DONE BY HAND, AND IT IS APPARATUS RATHER THAN DESIGN: bun's
- * workspace protocol resolves a member's dependency against the `workspaces`
- * globs, AND THE MAIN PACKAGE IS THE WORKSPACE ROOT, which those globs never
- * match. MEASURED, every spelling: `workspace:*` and `workspace:.` report
- * `Workspace dependency not found`, a plain range and `link:` reach the registry
- * and 404 because nothing here is published, and `file:` -- as a dependency or
- * as a root `override` -- HARDLINKS THE WHOLE CHECKOUT into node_modules/.bun,
- * which is worse than useless: the next `tsc` writes a new inode and the copy
- * silently goes stale.
- *
- * A SYMLINK AND NOT A COPY, for exactly that reason -- the member must resolve
- * the dist/ this repository is building, not a snapshot of it.
- *
- * IN THE MEMBER'S node_modules AND NOT THE ROOT'S, AND THAT IS NOT TIDINESS.
- * MEASURED at the root, and kept because the finding outlives the route it
- * arrived by: test/helpers/typecheck.ts USED TO HAND every throwaway probe the
- * repository's whole node_modules, so an entry there was a SECOND route to this
- * package -- one reaching the repository's real package.json. A probe that
- * DELETED `exports` from its own copy resolved anyway and reported EXIT 0, and
- * the control written to prove the exports map load-bearing measured nothing.
- * THAT HELPER NOW MIRRORS PER PACKAGE and drops whatever leads back into this
- * checkout, so the probes are no longer the reason -- WHAT REMAINS THE REASON is
- * what made a root entry dangerous in the first place: everything that walks up
- * out of this checkout finds it, and only one of those things has been closed. A
- * member's own node_modules is reached by nothing but that member.
- *
- * WHAT THIS IS NOT: a shortcut around the member's own resolution. It creates
- * the node_modules ENTRY and nothing else, so the specifier is answered the way
- * a stranger's is -- by walking the MEMBER'S OWN node_modules, and then by the
- * FRAMEWORK'S manifest, whose `exports` map decides which file a subpath
- * reaches. THE MEMBER'S MANIFEST ANSWERS NOTHING HERE, worth saying because the
- * dependency is declared there and the reading is therefore available: MEASURED
- * with `tsc --traceResolution` on this member, its own package.json is read for
- * the module format and the specifier is never looked up in it. A `paths`
- * mapping would answer WITHOUT either, which `refuseMemberMappings` below
- * refuses rather than leaving merely absent.
- *
- * Skipped where the member has no node_modules to put it in, which is what lets
- * a throwaway workspace built by a test run through here untouched.
- *
- * AN ENTRY THAT RESOLVES TO NOTHING IS REPLACED, AND AN ENTRY THAT RESOLVES IS
- * NOT. The link written here is ABSOLUTE, so MOVING OR RENAMING THIS CHECKOUT
- * leaves one dangling in every member -- and `lstatSync` succeeds on a dangling
- * link, so `something is there` is the wrong question to ask. MEASURED with one
- * redirected at a path that does not exist: the fifth check reports
- * `src/hover.ts(31,36): error TS2307` and EVERY RERUN REPORTS IT AGAIN, because
- * the builder that would fix it is the one skipping. The diagnostic names the
- * member's SOURCE for a fault that lives in node_modules, so the reader is sent
- * to the one file that is not wrong.
- *
- * A DIRECTORY THAT RESOLVES IS SOMEBODY'S INSTALL and is left alone: the day
- * tsudoi is published a member may legitimately have a real copy there, and a
- * builder that overwrote it would substitute this checkout for the version that
- * member declared, silently.
- */
-function linkRootPackage(root: string, member: string): void {
-  const modules = join(member, "node_modules");
-  if (!existsSync(modules)) {
-    return;
-  }
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<
-    string,
-    unknown
-  >;
-  const name = manifest.name;
-  if (typeof name !== "string") {
-    return;
-  }
-  const target = join(modules, ...name.split("/"));
-  // `existsSync` FOLLOWS THE LINK, which is the whole distinction: it is false
-  // both for nothing at all and for an entry that resolves to nothing, and those
-  // two want the same treatment. `force` is what makes the second cost no
-  // branch -- there is nothing to remove in the first case and it says so.
-  if (existsSync(target)) {
-    return;
-  }
-  mkdirSync(dirname(target), { recursive: true });
-  rmSync(target, { force: true });
-  symlinkSync(root, target, "dir");
-}
-
-/**
  * Compiles one package's published artifact, where one is configured.
  *
  * RUN FROM THE WORKSPACE ROOT WITH THE CONFIG NAMED RELATIVELY, which is the
@@ -476,24 +382,33 @@ function build(root: string, dir: string): void {
  * reads: the root package reachable by name, and every published artifact built
  * from current source.
  *
- * THE MEMBERS' dist/ IS NOT OPTIONAL AND NOT A CONVENIENCE. A member publishes
+ * THE HANDLERS' dist/ IS NOT OPTIONAL AND NOT A CONVENIENCE. A handler publishes
  * dist/ and NOT src/ -- deno refuses to type-strip under node_modules -- so its
- * `exports` map names no source arm, and nothing resolves a member by any other
- * route. The root tsconfig deliberately holds no `paths` mapping standing in for
- * one either: the members are EXCLUDED from it precisely so it cannot answer for
- * them, and a mapping added to spare this build would pull member source back
- * into the root program through module resolution, which `exclude` does not
- * stop.
+ * `exports` map names no source arm, and nothing resolves a handler by any other
+ * route. NO `paths` MAPPING STANDS IN FOR THAT BUILD ANYWHERE, and since the
+ * framework moved under packages/ there is not one in this repository at all:
+ * the members are EXCLUDED from the root type check precisely so it cannot
+ * answer for them, and a mapping added to spare this build would pull member
+ * source back into the root program through module resolution, which `exclude`
+ * does not stop.
  *
- * THE ROOT IS STILL BUILT FIRST AND THAT ORDER IS STILL LOAD-BEARING -- BUT IT
- * IS NO LONGER THIS FUNCTION SAYING SO, AND THE INVERSION IS THE POINT. A member
- * resolves `@atusy/tsudoi-language-server/types` through the exports map to
- * dist/types.d.ts, so a member compiled against an unbuilt root fails at
- * TS2307 -- an apparatus failure wearing a resolution failure's clothes. What
- * puts the root first is that BOTH MEMBERS DECLARE IT, read out of their
- * manifests by `buildOrder`. The loop below no longer knows which package is the
- * root, which is what makes it survive the day the main package becomes a member
- * like any other.
+ * THE FRAMEWORK IS BUILT BEFORE THE HANDLERS AND IT IS NOT THIS FUNCTION SAYING
+ * SO. A handler resolves `@atusy/tsudoi-language-server/types` through the
+ * exports map to dist/types.d.ts, so a handler compiled against an unbuilt
+ * framework fails at TS2307 -- an apparatus failure wearing a resolution
+ * failure's clothes. What orders it is that BOTH HANDLERS DECLARE IT, read out
+ * of their manifests by `buildOrder`. The loop knows nothing about which package
+ * is which, which is what let the framework become a member with no edit here.
+ *
+ * NO PACKAGE IS LINKED INTO ANOTHER ANY MORE, AND THAT ABSENCE IS THE STORY THIS
+ * FILE WAS THE LAST HOLDER OF. A `linkRootPackage` stood here writing an entry
+ * bun would not, for one reason: the framework was the WORKSPACE ROOT and the
+ * `workspaces` globs never match it. With the framework a member, `bun install`
+ * writes those entries itself -- MEASURED, into each depending member's own
+ * node_modules and RELATIVE, where the hand-written one was absolute. The
+ * function's whole measured record is kept in the sprint 52 dashboard entry
+ * rather than here: it is the evidence the move was worth making, and it is
+ * about a route this repository no longer has.
  *
  * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
  * tsc writes dist/ and THEN exits non-zero, so a failed build leaves a fresh,
@@ -501,13 +416,6 @@ function build(root: string, dir: string): void {
  */
 export function prepareWorkspace(root: string): void {
   for (const dir of buildOrder(root)) {
-    // THE ROOT IS NOT LINKED INTO ITSELF, which is the one asymmetry left here
-    // and is a fact about the ROOT PACKAGE rather than about the order: it is
-    // reached by walking up, so an entry for it under its own node_modules would
-    // answer nothing that is not already answered.
-    if (dir !== root) {
-      linkRootPackage(root, dir);
-    }
     build(root, dir);
   }
 }

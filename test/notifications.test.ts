@@ -1,22 +1,23 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import {
   type Disposable,
   NotificationType,
   type ProtocolConnection,
   type WorkspaceFolder,
 } from "vscode-languageserver-protocol/node";
-import { createDocumentStore } from "../src/documents.ts";
-import { createLifecycle } from "../src/lifecycle.ts";
-import * as router from "../src/notifications.ts";
+import { createDocumentStore } from "../packages/tsudoi-language-server/src/documents.ts";
+import { createLifecycle } from "../packages/tsudoi-language-server/src/lifecycle.ts";
+import * as router from "../packages/tsudoi-language-server/src/notifications.ts";
 import {
   type NotificationRegistrar,
   registerNotifications,
   type RequestOnlyConnection,
-} from "../src/notifications.ts";
-import { notificationEntries } from "../src/server.ts";
-import { createWorkspaceFolders } from "../src/workspace.ts";
+} from "../packages/tsudoi-language-server/src/notifications.ts";
+import { notificationEntries } from "../packages/tsudoi-language-server/src/server.ts";
+import { createWorkspaceFolders } from "../packages/tsudoi-language-server/src/workspace.ts";
+import { frameworkRoot } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 /**
@@ -177,7 +178,7 @@ function gateCalls(source: string): string[] {
 }
 
 function readSource(name: string): string {
-  return readFileSync(fileURLToPath(new URL(`../src/${name}`, import.meta.url)), "utf8");
+  return readFileSync(join(frameworkRoot, "src", name), "utf8");
 }
 
 // CRITERION 3, read off the file's own bytes the way readme.test.ts reads the

@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { repoRoot } from "./spawn.ts";
+import { frameworkRoot, repoRoot } from "./spawn.ts";
 
 /**
  * A copy of everything a runtime needs to start the server -- and nothing it
@@ -26,8 +26,13 @@ export interface IsolatedCheckout {
 
 export function isolatedCheckout(): IsolatedCheckout {
   const dir = mkdtempSync(join(tmpdir(), "tsudoi-checkout-"));
-  cpSync(join(repoRoot, "package.json"), join(dir, "package.json"));
-  cpSync(join(repoRoot, "src"), join(dir, "src"), { recursive: true });
+  // THE FRAMEWORK'S MANIFEST AND NOT THE WORKSPACE ROOT'S, which is the whole
+  // difference the move made to this helper: the checkout it stages is a copy of
+  // THE PACKAGE, and the root's manifest carries no `exports` map at all, so a
+  // stage built from it would fail at every subpath for a reason that has
+  // nothing to do with what these probes read.
+  cpSync(join(frameworkRoot, "package.json"), join(dir, "package.json"));
+  cpSync(join(frameworkRoot, "src"), join(dir, "src"), { recursive: true });
   // The WHOLE examples directory, not the config alone: the config imports its
   // trailing-whitespace modules by relative specifier, so a checkout carrying
   // one file fails at import with a message about a missing module -- which
@@ -82,7 +87,7 @@ export function isolatedCheckout(): IsolatedCheckout {
   // Copied only when it exists, so a checkout that has never run a build is
   // staged as a checkout that has never run a build. The test that names that
   // condition and what to do about it is in test/package-shape.test.ts.
-  const builtTypes = join(repoRoot, "dist");
+  const builtTypes = join(frameworkRoot, "dist");
   if (existsSync(builtTypes)) {
     cpSync(builtTypes, join(dir, "dist"), { recursive: true });
   }

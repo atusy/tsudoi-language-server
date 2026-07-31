@@ -1,7 +1,7 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { CompletionItem } from "vscode-languageserver-protocol";
-import type { TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /** The config author's cleanup, and the only evidence that it ran at all. */
 export const cleanupMarker = "completion-yields-non-array: released";

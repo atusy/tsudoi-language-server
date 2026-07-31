@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { repoRoot } from "./helpers/spawn.ts";
+import { frameworkRoot } from "./helpers/spawn.ts";
 import { tree, type Tree } from "./helpers/tree.ts";
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
@@ -73,7 +73,7 @@ function startDemo(runtime: (typeof runtimes)[number], cwd: string): LspSession 
   // route `start` runs names the CLI relative to the repo, and the whole point
   // of this fixture is a cwd that is not the repo.
   return LspSession.startCommand(
-    `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${demoConfig}`,
+    `${runtime.command} ${runtime.runArgs.join(" ")} ${join(frameworkRoot, "src", "cli.ts")} --config ${demoConfig}`,
     cwd,
   );
 }

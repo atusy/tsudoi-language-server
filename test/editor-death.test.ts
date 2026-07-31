@@ -148,7 +148,7 @@ async function startRig(runtime: Runtime, stdin: "own" | "third-party"): Promise
       stdin === "own" ? "own" : fifo,
       runtime.command,
       ...runtime.runArgs,
-      "src/cli.ts",
+      "packages/tsudoi-language-server/src/cli.ts",
       "--config",
       demoConfig,
     ],

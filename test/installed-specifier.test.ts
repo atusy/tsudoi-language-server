@@ -82,14 +82,17 @@ test("the example itself, copied into an installed consumer, type-checks unchang
 // specifier, and not passing for any consumer config at all.
 test("the same example spelled with a relative path into src fails in a consumer", async () => {
   const config = example["tsudoi.config.ts"] ?? "";
-  const relative = config.replace('"@atusy/tsudoi-language-server/types"', '"../src/types.ts"');
+  const relative = config.replace(
+    '"@atusy/tsudoi-language-server/types"',
+    '"../packages/tsudoi-language-server/src/types.ts"',
+  );
   expect(relative).not.toBe(config);
 
   const result = await consumer.typeCheck({ ...example, "tsudoi.config.ts": relative });
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("error TS2307");
-  expect(result.output).toContain("../src/types.ts");
+  expect(result.output).toContain("../packages/tsudoi-language-server/src/types.ts");
 });
 
 // SCOPE: this file asserts what the tarball CONTAINS and what type-checks

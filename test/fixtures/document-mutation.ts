@@ -1,5 +1,8 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { MethodHandler, TsudoiConfig } from "../../src/types.ts";
+import type {
+  MethodHandler,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /** The document the session opens, and what it edits the buffer to afterwards. */
 export const documentUri = "file:///workspace/a.txt";

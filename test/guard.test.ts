@@ -60,9 +60,22 @@ interface PathShape {
  * the shapes it carries. Shipped to strangers who cannot fix it, a handler that
  * lost its Bun-freeness is worse than an example a reader can edit.
  */
+/**
+ * WHERE THE FRAMEWORK'S OWN SOURCE LIVES, spelled once and NAMING ITS PACKAGE --
+ * which is the opposite of the member shape below and for a reason.
+ *
+ * The config's factory exemption is keyed to ONE FILE BY PATH, so a probe
+ * anywhere else asserts the RELAXED or the STRICT configuration by accident
+ * rather than by choice. The `packages/probe/...` shape names no package because
+ * its claim is about the class. Since the framework moved under packages/, `a
+ * file under packages/ lints exactly as source does` has EXACTLY ONE ASSERTED
+ * EXCEPTION, and it is this path.
+ */
+const frameworkSrc = "packages/tsudoi-language-server/src";
+
 const pathShapes: readonly PathShape[] = [
-  { path: "src/server.ts", bunModulesExempt: false },
-  { path: "src/notifications.ts", bunModulesExempt: false },
+  { path: `${frameworkSrc}/server.ts`, bunModulesExempt: false },
+  { path: `${frameworkSrc}/notifications.ts`, bunModulesExempt: false },
   { path: "test/probe.test.ts", bunModulesExempt: true },
   { path: "test/helpers/probe.ts", bunModulesExempt: true },
   { path: "test/fixtures/probe.ts", bunModulesExempt: false },
@@ -204,7 +217,7 @@ test("node:url and a package subpath stay unflagged in a file that is itself fla
 });
 
 test('a bare "bun" import is flagged, not only the bun: namespace', async () => {
-  const result = await lintProbe({ "src/server.ts": importsBunModule("bun") });
+  const result = await lintProbe({ [`${frameworkSrc}/server.ts`]: importsBunModule("bun") });
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("no-restricted-imports");
@@ -263,10 +276,10 @@ function reportedAgainst(path: string): RegExp {
 // SUITE green, tsc 0, oxlint 0, with nothing objecting.
 test("importing createProtocolConnection is flagged in src/server.ts", async () => {
   const result = await lintProbe({
-    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
   });
 
-  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
   expect(result.code).toBe(1);
 });
 
@@ -281,12 +294,12 @@ test("importing createProtocolConnection is flagged in src/server.ts", async () 
 // diagnostic is the presence pair, read off the same measurement.
 test("the same import is exempt in src/notifications.ts, in a run where src/server.ts is flagged", async () => {
   const result = await lintProbe({
-    "src/notifications.ts": importsProtocolExport("createProtocolConnection"),
-    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+    [`${frameworkSrc}/notifications.ts`]: importsProtocolExport("createProtocolConnection"),
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
   });
 
-  expect(result.output).not.toMatch(reportedAgainst("src/notifications.ts"));
-  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.output).not.toMatch(reportedAgainst(`${frameworkSrc}/notifications.ts`));
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
   expect(result.code).toBe(1);
 });
 
@@ -309,10 +322,10 @@ test("the same import is exempt in src/notifications.ts, in a run where src/serv
 test("a different export from the same module is unflagged, in a run where the factory is flagged", async () => {
   const result = await lintProbe({
     "src/reader.ts": importsProtocolExport("StreamMessageReader"),
-    "src/server.ts": importsProtocolExport("createProtocolConnection"),
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
   });
 
   expect(result.output).not.toMatch(reportedAgainst("src/reader.ts"));
-  expect(result.output).toMatch(factoryBanAt("src/server.ts"));
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
   expect(result.code).toBe(1);
 });

@@ -5,7 +5,7 @@ import { basename, join, relative } from "node:path";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { declaredMembers, handlerMembers } from "../scripts/workspaces.ts";
-import { repoRoot, runCommand } from "./helpers/spawn.ts";
+import { frameworkRoot, repoRoot, runCommand } from "./helpers/spawn.ts";
 import {
   extractExamplesInstall,
   extractFailureContract,
@@ -850,9 +850,17 @@ for (const fact of facts) {
  * than through the exports map -- which is precisely why it must not be
  * expected to appear there.
  */
+/**
+ * THE SUBJECT IS THE MANIFEST CARRYING THE PUBLISHED SURFACE, WHICH IS NO LONGER
+ * THE CHECKOUT ROOT'S -- and this is the one site the move breaks by THROWING AT
+ * MODULE LOAD rather than by failing an assertion. `Object.keys(undefined)` on a
+ * root that has no `exports` takes this comparison AND its permanent pair down
+ * with it, so the file reports one error where two tests should have spoken.
+ * Named as a subtask rather than found by a first run, for exactly that reason.
+ */
 const publishedExports = Object.keys(
   (
-    JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+    JSON.parse(readFileSync(join(frameworkRoot, "package.json"), "utf8")) as {
       exports: Record<string, unknown>;
     }
   ).exports,

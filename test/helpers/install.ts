@@ -15,7 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handlerMembers } from "../../scripts/workspaces.ts";
 import { LspSession } from "./lsp.ts";
-import { repoRoot } from "./spawn.ts";
+import { frameworkRoot, repoRoot } from "./spawn.ts";
 import {
   consumerCompilerOptions,
   type PackageEdit,
@@ -359,21 +359,31 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     rmSync(consumer, { recursive: true, force: true });
   };
   try {
+    // THE FRAMEWORK'S OWN MANIFEST, WHICH SINCE THE MOVE IS NOT THE CHECKOUT
+    // ROOT'S. The stage is a copy of THE PACKAGE BEING PACKED: the workspace
+    // root's manifest carries no `exports`, no `files` and no `prepack`, so a
+    // stage built from it would pack nothing and publish nothing, with every
+    // consumer assertion below failing about the wrong file.
     const packageJson: Record<string, unknown> = JSON.parse(
-      readFileSync(join(repoRoot, "package.json"), "utf8"),
+      readFileSync(join(frameworkRoot, "package.json"), "utf8"),
     ) as Record<string, unknown>;
     options.editPackage?.(packageJson);
     writeFileSync(join(stage, "package.json"), JSON.stringify(packageJson, null, 2));
-    cpSync(join(repoRoot, "src"), join(stage, "src"), { recursive: true });
+    cpSync(join(frameworkRoot, "src"), join(stage, "src"), { recursive: true });
     options.editSource?.(join(stage, "src"));
-    // tsconfig.build.json AND NOT tsconfig.json, and the omission is the load-
-    // bearing half: the repo's tsconfig.json carries a `paths` mapping that
-    // resolves `@atusy/tsudoi-language-server/*` to src/, and a stage that inherited it would
-    // type-check the thing we publish against sources we do not ship. A FOURTH
-    // COPY ADDED HERE REDDENS `the pack stage receives package.json, src/ and
+    // tsconfig.build.json AND NOT tsconfig.json, and the omission is still the
+    // load-bearing half AFTER THE `paths` MAPPING IS GONE. It used to be that
+    // the checkout's tsconfig.json mapped `@atusy/tsudoi-language-server/*` to
+    // src/ and an inheriting stage would type-check what we publish against
+    // sources we do not ship. THAT MAPPING NO LONGER EXISTS ANYWHERE -- the
+    // framework is a member and resolves through node_modules like a stranger --
+    // and the omission is kept for the reason that survives it: the package's
+    // own tsconfig.json is a NO-EMIT check config, so a stage carrying it would
+    // hand `prepack` a configuration that writes nothing. A FOURTH COPY ADDED
+    // HERE REDDENS `the pack stage receives package.json, src/ and
     // tsconfig.build.json, and nothing else` in
     // test/installed-specifier.test.ts, which names what it found.
-    cpSync(join(repoRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
+    cpSync(join(frameworkRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
     symlinkSync(join(repoRoot, "node_modules"), join(stage, "node_modules"), "dir");
     // Captured HERE rather than after the pack: `bun pm pack` writes the tarball
     // into this same directory, so a reading taken later would see a fifth entry

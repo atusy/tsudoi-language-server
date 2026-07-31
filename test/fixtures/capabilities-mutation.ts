@@ -1,5 +1,8 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { MethodHandler, TsudoiConfig } from "../../src/types.ts";
+import type {
+  MethodHandler,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * What the client DECLARED, so the test and the fixture cannot drift into

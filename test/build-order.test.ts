@@ -17,11 +17,31 @@ import { workspace } from "./helpers/workspace.ts";
  * that drives the real builder.
  */
 
-test("the derived order is the order this repository already builds in", () => {
-  // BYTE-FOR-BYTE TODAY'S CONSTRUCTED ORDER, which is what lets the derivation
-  // land with no behaviour change: the builder ran the root and then looped
-  // `declaredMembers`, so this equality is the whole claim that nothing moved.
-  expect(buildOrder(repoRoot)).toEqual([repoRoot, ...declaredMembers(repoRoot)]);
+test("the derived order is the order this repository must be built in", () => {
+  // BYTE FOR BYTE, AND THIS SEQUENCE IS THE DERIVATION EARNING ITS KEEP. Until
+  // the framework moved under packages/ it read `[repoRoot,
+  // ...declaredMembers(repoRoot)]` -- the order the builder used to construct by
+  // hand -- and the move REDDENED THAT ARM BY CONSTRUCTION, which is why it was
+  // rewritten to the new derived sequence rather than generalised to a set,
+  // retargeted at a tree where the two orders agree, or deleted.
+  //
+  // WHAT DECIDES IT IS TWO DECLARATIONS AND NOTHING ABOUT THE LAYOUT: both
+  // handlers name the framework in a peer they call optional, and the ROOT names
+  // it in `devDependencies`, which is deliberately NOT a build edge. Move that
+  // one declaration up a field and the framework is ordered BEFORE the root and
+  // this line reddens -- so this arm is also where the field ruling is checked,
+  // and no separate test asserts it.
+  expect(buildOrder(repoRoot)).toEqual([
+    repoRoot,
+    join(repoRoot, "packages", "tsudoi-language-server"),
+    join(repoRoot, "packages", "tsudoi-completion-path"),
+    join(repoRoot, "packages", "tsudoi-hover-wordnet"),
+  ]);
+  // AND THE ALPHABET NOW GETS THIS REPOSITORY WRONG, asserted here because it
+  // stopped being true of the throwaway trees alone. The arms below were built
+  // to forbid `sort()` on trees this repository could not supply; it supplies
+  // one now.
+  expect([...buildOrder(repoRoot)].sort()).not.toEqual(buildOrder(repoRoot));
 });
 
 test("every package the workspace declares is ordered exactly once", () => {

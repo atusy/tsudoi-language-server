@@ -20,11 +20,18 @@ import { workspace } from "./helpers/workspace.ts";
  * here, and only the tree holding a framework-shaped member tells them apart.
  */
 
-test("today it is the member enumeration byte for byte", () => {
-  // BEFORE THE FRAMEWORK MOVES, EVERY MEMBER IS A HANDLER -- so this equality is
-  // the claim that introducing the split moved nothing, and it is the reading
-  // that will change on the day the framework becomes a member.
-  expect(handlerMembers(repoRoot)).toEqual(declaredMembers(repoRoot));
+test("the framework is a member of this workspace and is not one of its handlers", () => {
+  // THIS ARM READ `byte for byte equal to the member enumeration` UNTIL THE
+  // FRAMEWORK MOVED UNDER packages/, which is what the split was written a
+  // sprint ahead of. It is rewritten to the new reading rather than relaxed: the
+  // whole value of the enumerator is that these two answers DIFFER here, and an
+  // arm that had been widened to a subset relation would be green on a
+  // `handlerMembers` that had quietly gone back to returning everything.
+  const members = declaredMembers(repoRoot);
+  const framework = join(repoRoot, "packages", "tsudoi-language-server");
+
+  expect(members).toContain(framework);
+  expect(handlerMembers(repoRoot)).toEqual(members.filter((member) => member !== framework));
 });
 
 // The pair, and without it every arm in every file that reads this enumerator is

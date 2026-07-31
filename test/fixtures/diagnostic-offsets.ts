@@ -17,8 +17,8 @@
 // `MethodHandler` supplies them. Add an annotation here and that evidence is
 // gone, and with it the argument that publication is about EXTRACTION rather
 // than about the method.
-import { type TsudoiConfig } from "../../src/types.ts";
-import { DiagnosticSeverity } from "../../src/deps/types.ts";
+import { type TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
+import { DiagnosticSeverity } from "../../packages/tsudoi-language-server/src/deps/types.ts";
 
 /** What this analysis complains about, and what it says about it. */
 export const target = "、";

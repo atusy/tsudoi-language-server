@@ -42,7 +42,7 @@ import { fileURLToPath } from "node:url";
 import type { InitializeResult } from "vscode-languageserver-protocol";
 import { declaredMembers } from "../../scripts/workspaces.ts";
 import { initializeParams, LspSession } from "./lsp.ts";
-import { repoRoot, runCommand } from "./spawn.ts";
+import { frameworkRoot, repoRoot, runCommand } from "./spawn.ts";
 
 /** README.md itself -- the artifact under test, read at call time. */
 export function readReadme(): string {
@@ -329,16 +329,33 @@ export interface QuickstartOutcome {
  * The checkout's directory name is not chosen: it is this repository's own
  * directory name, which is what `git clone` creates. A README that renamed it
  * in the marker would be staged with no checkout, and the pack step would say so.
+ *
+ * A STEP RUNS INSIDE THE CHECKOUT RATHER THAN AT IT, and that widening is the
+ * move arriving here: the pack step now stands in the framework's own directory,
+ * which is a path UNDER the checkout. Widened to containment and not dropped --
+ * a stage with no checkout at all is still refused, and it is still refused by
+ * reading the tokens rather than by the pack step failing later for a reason a
+ * reader would have to work out.
+ *
+ * WHAT IS STAGED IS A WORKSPACE AND NOT A PACKAGE, which the tarball's landing
+ * place forces: `bun pm pack` inside a member writes to the WORKSPACE ROOT, so
+ * the documented `bun install ../tsudoi-language-server/tsudoi.tgz` is only true
+ * of a stage where the framework really is a member of a workspace rooted at the
+ * checkout. Staging the framework's three files at the checkout root instead
+ * would put the tarball in the same place BY ACCIDENT and stop testing the
+ * arrangement the README describes.
  */
 function stageQuickstart(dirs: readonly string[]): { readonly root: string; dispose: () => void } {
   const checkoutName = basename(repoRoot);
   const distinct = [...new Set(dirs)];
-  if (!distinct.includes(checkoutName)) {
+  const insideCheckout = (dir: string): boolean =>
+    dir === checkoutName || dir.startsWith(`${checkoutName}/`);
+  if (!distinct.some(insideCheckout)) {
     throw new Error(
-      `README quickstart: no step runs in ${checkoutName}, so nothing stages the checkout the tarball is built from`,
+      `README quickstart: no step runs in ${checkoutName} or under it, so nothing stages the checkout the tarball is built from`,
     );
   }
-  if (distinct.length < 2) {
+  if (distinct.every(insideCheckout)) {
     throw new Error("README quickstart: every step runs in the checkout; nothing is the reader's");
   }
 
@@ -348,9 +365,15 @@ function stageQuickstart(dirs: readonly string[]): { readonly root: string; disp
       mkdirSync(join(root, dir), { recursive: true });
     }
     const checkout = join(root, checkoutName);
+    // THE WORKSPACE ROOT'S MANIFEST, for its `workspaces` patterns and nothing
+    // else -- it publishes nothing and carries no build config, and the pack
+    // step never stands here.
     cpSync(join(repoRoot, "package.json"), join(checkout, "package.json"));
-    cpSync(join(repoRoot, "tsconfig.build.json"), join(checkout, "tsconfig.build.json"));
-    cpSync(join(repoRoot, "src"), join(checkout, "src"), { recursive: true });
+    const framework = join(checkout, "packages", basename(frameworkRoot));
+    mkdirSync(framework, { recursive: true });
+    cpSync(join(frameworkRoot, "package.json"), join(framework, "package.json"));
+    cpSync(join(frameworkRoot, "tsconfig.build.json"), join(framework, "tsconfig.build.json"));
+    cpSync(join(frameworkRoot, "src"), join(framework, "src"), { recursive: true });
     // `bun install` already run, which the README names as a prerequisite: the
     // prepack build needs vscode-languageserver-protocol's types to compile.
     symlinkSync(join(repoRoot, "node_modules"), join(checkout, "node_modules"), "dir");

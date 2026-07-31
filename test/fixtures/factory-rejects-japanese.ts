@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * One block of Japanese, LONGER THAN ONE PIPE CHUNK so a chunk boundary is

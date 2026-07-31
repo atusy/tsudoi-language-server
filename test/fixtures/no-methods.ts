@@ -1,5 +1,5 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { TsudoiConfig } from "../../src/types.ts";
+import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * A config supplying NO handler for any method the request table declares, so

@@ -1,6 +1,9 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * Says nothing at all: a generator that yields NOTHING.

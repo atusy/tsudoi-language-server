@@ -1,7 +1,10 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
 import process from "node:process";
 import type { CompletionItem, CompletionParams } from "vscode-languageserver-protocol";
-import type { RequestContext, TsudoiConfig } from "../../src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";

@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { repoRoot } from "./helpers/spawn.ts";
+import { frameworkRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
 
 /**
@@ -60,7 +60,7 @@ for (const runtime of runtimes) {
       // point here is a cwd that is NOT the repo. The route is otherwise
       // identical, spelled absolutely.
       const session = LspSession.startCommand(
-        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(repoRoot, "src", "cli.ts")} --config ${demoConfig}`,
+        `${runtime.command} ${runtime.runArgs.join(" ")} ${join(frameworkRoot, "src", "cli.ts")} --config ${demoConfig}`,
         fixture.root,
       );
       try {

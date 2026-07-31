@@ -48,22 +48,29 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
-A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types` and,
-for the protocol's own names, the `deps/` subpaths beside it -- which from inside this repository
-resolve to files under `dist/`, and `dist/` is not committed
--- so `bun test` builds it **automatically**, through a `bunfig.toml` that compiles `src/`
-before any test file is loaded. An edit to `src/` cannot be tested against a `dist/` that
-has moved on without it, because there is no build to forget.
+A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
+and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through
+`node_modules` to files under a `dist/` that is not committed -- so `bun test` builds every
+package **automatically**, through a `bunfig.toml` that compiles them before any test file is
+loaded. An edit to a source file cannot be tested against a `dist/` that has moved on without
+it, because there is no build to forget.
 
 **That build belongs to `bun test`, and one command does not get it.** `tsc --noEmit` on a
 checkout nothing has built reports `TS2307` at `examples/tsudoi.config.ts`, naming
-`@atusy/tsudoi-hover-wordnet` -- the hover handler is a workspace member, and a member is
-reachable only through the `dist/` its own build writes. Run `bun test` first, or
+`@atusy/tsudoi-hover-wordnet` and `@atusy/tsudoi-completion-path` -- each handler is a workspace
+member reachable only through the `dist/` its own build writes. Run `bun test` first, or
 `bun run scripts/typecheck-workspaces.ts`, which builds before it checks; both leave the tree
-in a state `tsc --noEmit` reads. A `paths` mapping standing in for that build is refused
-rather than missing: it would let the root type check answer a member's imports through the
-root's own map and report success for a member whose resolution nobody checked, which is what
-excluding the members from that check exists to make impossible.
+in a state `tsc --noEmit` reads.
+
+**It does not name tsudoi itself, and that is a known gap rather than a sign tsudoi is fine.**
+tsudoi's `exports` map ends in a source arm, so in that same unbuilt state the compiler quietly
+reads its sources instead of the artifact and says nothing -- while both runtimes fail loudly.
+A handler's map has no such arm, which is why only the handlers are named.
+
+No `paths` mapping stands in for any of this, anywhere: tsudoi is a workspace member like the
+handlers, and a mapping would let a type check answer a package's imports without its own
+`node_modules` and without the `exports` map -- reporting success for a resolution nobody
+checked. For members that refusal is enforced by the fifth command above.
 
 Run it **from the repository root**. bun looks for `bunfig.toml` in the directory you are
 standing in and never searches upward, so a `bun test` started anywhere else runs the whole
@@ -77,16 +84,17 @@ Two directories, side by side:
 
 ```text
 parent/
-  tsudoi-language-server/   this repository, checked out
-  my-language-server/       your project
+  tsudoi-language-server/                          this repository, checked out
+    packages/tsudoi-language-server/               the tsudoi package itself
+  my-language-server/                              your project
 ```
 
-Every step says which of the two you are standing in. No command below mentions your own
+Every step says which directory you are standing in. No command below mentions your own
 project's name, so calling it something else changes nothing.
 
-### 1. In `tsudoi-language-server/`, build the tarball
+### 1. In `tsudoi-language-server/packages/tsudoi-language-server/`, build the tarball
 
-<!-- quickstart in=tsudoi-language-server -->
+<!-- quickstart in=tsudoi-language-server/packages/tsudoi-language-server -->
 
 ```sh
 bun pm pack --filename tsudoi.tgz
@@ -94,6 +102,12 @@ bun pm pack --filename tsudoi.tgz
 
 `--filename` is not decoration: without it the tarball is named after the current version, and
 the next command would go stale at the next release.
+
+**The tarball does not land in that directory.** tsudoi is a workspace member, and `bun pm pack`
+run inside a member writes to the workspace root -- so what you get is
+`tsudoi-language-server/tsudoi.tgz`, one directory above `packages/`, which is exactly the path
+the next step installs from. Running the same command at the checkout root instead packs the
+_workspace_, not tsudoi: 169 files including this repository's own tests.
 
 ### 2. In `my-language-server/`, install it
 
