@@ -384,6 +384,10 @@ const scrum: ScrumDashboard = {
         name: "Type check passes",
         run: "tsc --noEmit",
       },
+      {
+        name: "Workspace members type-check under their own configs",
+        run: "bun run scripts/typecheck-workspaces.ts",
+      },
     ],
   },
   sprint: {
@@ -402,12 +406,24 @@ const scrum: ScrumDashboard = {
         implementation:
           "Foreclose first: exclude members from the root tsconfig and add the fifth DoD check, which enumerates members FROM THE WORKSPACE CONFIGURATION and never from a hand-written list.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b262af1",
+            message:
+              "feat(dod): withdraw root tsc from the members and hand them a check of their own",
+            phase: "green",
+          },
+        ],
         notes: [
           "Neither half works alone: without the exclusion the fifth check is shadowed by a root green; without the check, excluding members means nothing checks them.",
           "A member the list forgot would be checked by NOTHING and every command would exit 0. That is why enumeration comes from the workspace configuration.",
           "This lands BEFORE the member exists, so the hazard is unconstructible rather than watched.",
+          "SPRINT 46'S MEASUREMENT RE-TAKEN ON THIS TREE RATHER THAN INHERITED, and it held at the renamed specifier: a planted member at packages/probe/ carrying BOTH a `@atusy/tsudoi-language-server/types` import and a type error gave root tsc EXIT 1 reporting ONLY the type error -- the subpath import produced NO diagnostic. Deleting `paths` turned that exact line into TS2307 while examples/ stayed silent, which is PBI-54's recorded redundancy showing itself in the same run.",
+          "THE PAIR THAT PROVES THE TRANSFER, taken in one measurement with the planted member still present: root `tsc --noEmit` EXIT 0 AND SILENT, `bun run scripts/typecheck-workspaces.ts` EXIT 1 naming packages/probe/src/index.ts on both lines. The responsibility moved rather than two greens showing nothing.",
+          "THE CHECK CLOSES THE GAP ITS OWN ENUMERATION COULD OPEN, which the criterion's `never from a hand-written list` does not by itself reach: `workspaces` IS a list, merely one in another file, so the script also reads the root tsconfig's `exclude` and REFUSES any package.json sitting under an excluded path that the patterns do not declare. Narrowing `workspaces` while leaving `packages` excluded is the one edit that would leave a package covered by nothing, and it now fails loudly naming the directory.",
+          "FIVE ASSERTIONS IN test/workspace-members.test.ts, driven against THROWAWAY WORKSPACES rather than this one, because every state they describe is a state this repository must never be in. All five predicted before running and all five held: a member's type error reported at a member no list names; the same two members green once the error is removed (the pair, since an apparatus failure reddens identically); an undeclared package refused by name; a manifest with no `workspaces` refused rather than reporting nothing to do; a member with no tsconfig.json refused rather than skipped.",
+          "PREDICTED AND OBSERVED: 635 -> 641 tests, 1923 -> 1936 expect() calls, exactly. Root tsc, oxlint, oxfmt and the new fifth check all EXIT 0 unpiped.",
         ],
       },
       {
