@@ -467,7 +467,64 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 48,
+    pbi_id: "PBI-54",
+    status: "in_progress",
+    goal: "A misspelled paths mapping is caught rather than falling through to dist/ at exit 0, so the stale-artifact hazard is foreclosed rather than foreclosed-plus-an-unwatched-precondition.",
+    impediments: [],
+    decisions: [
+      "SPRINT 47'S RETROSPECTIVE BINDS THIS SPRINT'S CRITERIA: a criterion naming a colour must CITE THE MEASUREMENT THAT PRODUCED IT, so an uncited colour is visibly a guess. This PBI's own discriminating perturbation is THE MISSPELLING, NOT THE DELETION -- deletion is already covered and covers nothing new, which is precisely the distinction Sprint 47's criterion 2 got wrong.",
+      "THE CLASS IS NAMED RATHER THAN THE INSTANCE. An outcome recorded as FORECLOSED that is really FORECLOSURE PLUS AN UNWATCHED PRECONDITION is what this PBI corrects: Sprint 42 recorded the stale-dist hazard as foreclosed, and it is foreclosed only while `paths` is spelled correctly.",
+    ],
+    subtasks: [
+      {
+        test: "A misspelled paths key is caught, and the catch names the misspelling rather than a downstream symptom.",
+        implementation:
+          "Close the fall-through: with `paths` misspelled to any name that does not match, resolution reaches the exports map and lands in dist/ at exit 0, so the type check reads a built artifact instead of the source just edited.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Measured at Sprint 47: `name` and `paths` are REDUNDANT COVERS, so deleting either alone leaves tsc green. The misspelling is the discriminating edit.",
+          "The test named `the repo's type check resolves the published subpaths to source` claims more than its assertion verifies -- it defends the mapping's PRESENCE and SPELLING, not the resolution. Fix the claim or the assertion, and say which.",
+        ],
+      },
+      {
+        test: "The guard is written over the property, not over this one spelling.",
+        implementation:
+          "Whatever catches the misspelling must also catch the next mapping key that stops matching, without naming today's key twice.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A guard naming one key leaves the next unpinned and nothing says so -- the same shape as the deno-guard shape over members as a class.",
+        ],
+      },
+      {
+        test: "Sprint 42's recorded foreclosure is corrected in place rather than left standing beside its own counterexample.",
+        implementation:
+          "Repair the record: the hazard is foreclosed only while the precondition holds, and the precondition is now watched.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Sprint 47's retrospective: a record contradicting a measurement is the same class as a comment contradicting a comment.",
+          "Correct it where a reader meets it, and do not narrate the change.",
+        ],
+      },
+      {
+        test: "Review does not open until revise has converged.",
+        implementation: "Run the revise skill without a PR.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The stakeholder's standing instruction. Two sprints of evidence that it finds what the gate and the criteria both miss.",
+        ],
+      },
+    ],
+  },
   retrospectives: [
     {
       sprint: 47,
