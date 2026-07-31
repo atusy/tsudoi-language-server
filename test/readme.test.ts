@@ -332,6 +332,27 @@ const facts: readonly ReadmeFact[] = [
     ],
   },
   {
+    // THE ONE PLACE A CONSUMER-FACING FALSEHOOD CAN BE CORRECTED, and that is
+    // why it is owed here rather than left where it was written.
+    // `peerDependenciesMeta.optional` is in the handler's manifest, which SHIPS;
+    // the account of why it is there is in that package's own test, which
+    // `files: ["dist"]` keeps out of the tarball. So a reader who installs the
+    // handler meets the flag and meets no correction anywhere -- MEASURED: a
+    // project installing the handler alone gets EXIT 0 and no warning from
+    // `bun install`, then `Cannot find module
+    // '@atusy/tsudoi-language-server/deps/types'` at load.
+    //
+    // THE PEER AND THE FLAG ARE ONE ENTRY BECAUSE THEY ARE ONE READING. `peer`
+    // alone tells a reader to install tsudoi; `optional` alone tells them not
+    // to bother. A document carrying either without the other is worse than one
+    // carrying neither.
+    //
+    // THE FAILURE TEXT IS A TOKEN so the correction is findable by someone who
+    // already hit it and is searching for the string in front of them.
+    name: "tsudoi is a peer the handler does not install, and `optional` does not mean otherwise",
+    tokens: [/peer/i, /optional/, /Cannot find module/, /unpublished/i],
+  },
+  {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
     // dependency on a cold cache, and a reader without a network gets a failure
     // the README would otherwise have told them nothing about.
