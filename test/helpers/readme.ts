@@ -37,9 +37,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { InitializeResult } from "vscode-languageserver-protocol";
+import { declaredMembers } from "../../scripts/workspaces.ts";
 import { initializeParams, LspSession } from "./lsp.ts";
 import { repoRoot, runCommand } from "./spawn.ts";
 
@@ -129,6 +130,25 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
     const dir = attrs.get("in");
     if (dir === undefined) {
       throw new Error(`README quickstart: a marked block does not say which directory: ${marker}`);
+    }
+    // ONE TOKEN, ONE DIRECTORY, AND THE TWO MARKER FAMILIES ARE WHY THIS IS
+    // NEEDED AT ALL: a `handler-pack` token is relative to the CHECKOUT, while a
+    // `quickstart` token names a directory beside the reader's own project in a
+    // staged parent. So the same string can denote a workspace member AND a
+    // sibling of the checkout, and NOTHING ELSE HERE WOULD OBJECT -- the marker
+    // stages the sibling, every assertion passes, and the human reading the
+    // heading goes to the member. The prose check below cannot catch it either:
+    // a colliding name is in the prose, which is exactly what makes it
+    // plausible.
+    //
+    // REFUSED RATHER THAN DISAMBIGUATED, because the two readings are both
+    // reasonable and nothing in a marker can say which was meant. What the
+    // author has to do is spell the quickstart's directory so it names one.
+    const collidingMember = declaredMembers(repoRoot).find((member) => basename(member) === dir);
+    if (collidingMember !== undefined) {
+      throw new Error(
+        `README quickstart: the marker \`in=${dir}\` denotes two directories -- the sibling of the reader's own project that this quickstart stages, and ${relative(repoRoot, collidingMember)}, a workspace member of the same name. A reader cannot tell which of them the step means, and the marker silently obeys the first.`,
+      );
     }
     // The directory is stated twice -- in the marker this test obeys and in the
     // prose the reader obeys -- so the two are required to be the same string.

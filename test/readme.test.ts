@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 import { Buffer } from "node:buffer";
 import { existsSync, readFileSync, rmSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative } from "node:path";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { handlerMembers } from "../scripts/workspaces.ts";
+import { declaredMembers, handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import {
   extractExamplesInstall,
@@ -84,6 +84,44 @@ test("a directory named only in a marker is refused", () => {
   const hidden = readme.replaceAll("in=tsudoi-language-server", "in=elsewhere");
 
   expect(() => extractQuickstart(hidden, QUICKSTART_STEPS)).toThrow("elsewhere");
+  // WHICH REFUSAL FIRED, read rather than inferred from the token being echoed:
+  // the arm below perturbs the same attribute and must produce a DIFFERENT
+  // message, and neither is worth anything if both are satisfied by any throw
+  // mentioning the string that was substituted in.
+  expect(() => extractQuickstart(hidden, QUICKSTART_STEPS)).toThrow("no prose a reader sees");
+});
+
+/**
+ * ONE TOKEN MUST NOT DENOTE TWO DIRECTORIES, and this is the arm that makes the
+ * quickstart's vocabulary a property rather than a spelling.
+ *
+ * THE TWO MARKER FAMILIES SPEAK DIFFERENT LANGUAGES: a `handler-pack` token is
+ * relative to the CHECKOUT, a `quickstart` token names a directory beside the
+ * reader's own project in a staged parent. So a quickstart token that happens to
+ * equal a member's directory name is read one way by the harness and the other
+ * way by a human -- AND EVERY ASSERTION IN THIS FILE STAYS GREEN, because the
+ * harness stages the sibling and runs the command there successfully. The prose
+ * check cannot see it either: a colliding name is IN the prose, which is exactly
+ * what makes the collision plausible.
+ *
+ * THE MEMBER IS ENUMERATED AND NOT NAMED, so this arm keeps its subject through
+ * every rename and every package added under packages/.
+ */
+test("a quickstart marker naming a workspace member's directory is refused, naming both", () => {
+  const [member] = declaredMembers(repoRoot);
+  if (member === undefined) {
+    throw new Error("no workspace member for this collision to be about");
+  }
+  const colliding = basename(member);
+  const perturbed = readme.replaceAll("in=my-language-server", `in=${colliding}`);
+
+  // THE MARKER, and then BOTH directories it would denote -- the staged sibling
+  // it silently obeys, and the member a reader would walk to.
+  expect(() => extractQuickstart(perturbed, QUICKSTART_STEPS)).toThrow(`in=${colliding}`);
+  expect(() => extractQuickstart(perturbed, QUICKSTART_STEPS)).toThrow(
+    "sibling of the reader's own project",
+  );
+  expect(() => extractQuickstart(perturbed, QUICKSTART_STEPS)).toThrow(relative(repoRoot, member));
 });
 
 /**
