@@ -9,19 +9,28 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * module, and the reason it must run HERE rather than in a script is written
  * beside that preload.
  *
- * SYNCHRONOUS ON PURPOSE. `examples/completion-path.ts` imports
- * `@atusy/tsudoi-language-server/deps/types` for its VALUES, and
- * test/completion-path.test.ts imports that example STATICALLY. A build that
- * had not finished when the module graph was resolved would be no build at all.
+ * SYNCHRONOUS ON PURPOSE, AND THE REASON IS A MEMBER'S TEST RATHER THAN A ROOT
+ * ONE. The workspace members' own test files statically import
+ * `@atusy/tsudoi-language-server/deps/types` for its VALUES, and from inside a
+ * member that specifier is answered through the exports map at
+ * ./dist/deps/types.js. A build that had not finished when the module graph was
+ * resolved would be no build at all.
  *
  * WHICH ARM NEEDS THIS PACKAGE'S dist/ IS NOT THE ONE THE SUBPATH SUGGESTS, and
  * the difference decides whether this preload can be deleted. tsconfig's `paths`
- * intercepts a self-referencing subpath BEFORE the exports map, so bun's own
- * loads reach ./src and never ./dist. What reaches ./dist/deps/types.js is the
- * arms that SPAWN DENO -- deno has no `paths` and takes the exports map -- so
- * removing dist/ leaves bun green and fails deno at config load with
- * ERR_MODULE_NOT_FOUND. A marker written into dist/ cannot discriminate this
- * under `bun test`: the preload rebuilds over it before any test module loads.
+ * intercepts a self-referencing subpath BEFORE the exports map -- BUT ONLY WHERE
+ * THAT tsconfig IS THE ONE NEAREST THE IMPORTING FILE, which is the half that
+ * makes the paragraph above true. MEASURED, both from the repository root: a
+ * probe under test/ resolves that subpath to ./src/deps/types.ts, and the same
+ * probe inside a member's own test directory resolves it to
+ * ./dist/deps/types.js, because a member's own tsconfig carries no mapping and
+ * is forbidden one. So bun's ROOT
+ * loads reach ./src and never ./dist; its MEMBER loads reach ./dist. What also
+ * reaches ./dist/deps/types.js is the arms that SPAWN DENO -- deno has no
+ * `paths` and takes the exports map -- so removing dist/ fails deno at config
+ * load with ERR_MODULE_NOT_FOUND. A marker written into dist/ cannot
+ * discriminate this under `bun test`: the preload rebuilds over it before any
+ * test module loads.
  *
  * A WORKSPACE MEMBER'S dist/ IS NEEDED BY EVERYTHING INSTEAD, which is the half
  * that argument does not reach: a member ships dist/ and not src/, its `exports`

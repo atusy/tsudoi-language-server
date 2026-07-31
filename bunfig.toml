@@ -7,15 +7,18 @@
 # own loads reach ./src, while deno has no `paths` and takes the map to
 # ./dist/deps/types.js.
 #
-# MEASURED AT SPRINT 40, ON THIS TREE, and re-measured rather than copied
-# because the recorded number had gone stale with nobody editing it: with dist/
-# removed and this file absent, `bun test` gives 47 fail / 362 pass / 2 errors
-# and 409 of 444 tests even RUN. Sprint 25 recorded 30 fail / 299 pass at
-# 9501c68 and that was true then -- the suite has grown by a hundred tests
-# since, so the count moved while the sentence around it did not. What DID
-# survive re-measurement is the diagnosis: the first failure still names
-# dist/types.js imported from examples/completion-path.ts. With this file
-# present and no build run by hand, the same tree gives 444 pass.
+# MEASURED ON THIS TREE, and re-measured rather than copied every time the
+# sentence around it moves, because the recorded number goes stale with nobody
+# editing it: with THIS package's dist/ AND both members' dist/ removed and this
+# file absent, `bun test` gives 87 fail / 603 pass / 2 errors and 690 of 729
+# tests even RUN. With this file present and no build run by hand, the same tree
+# gives 729 pass.
+#
+# THE DIAGNOSIS MOVED WITH THE HANDLERS AND THE NUMBER IS THE LESSER HALF: the
+# first failure names the demo config failing to load on
+# `@atusy/tsudoi-completion-path`, a workspace member reachable only through the
+# dist/ its own build writes. It used to name a subpath of this package,
+# imported from a handler that lived in examples/.
 #
 # WHY NOT A `build` SCRIPT: a step a human is trusted to remember reintroduces
 # the very staleness this removes -- src/ edited, dist/ not rebuilt, the suite
@@ -31,15 +34,21 @@
 # `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>`
 # all preload this ONCE, so the single-file bypass the PBI named does not
 # exist. But bun discovers bunfig.toml relative to the CURRENT WORKING
-# DIRECTORY and does NOT search upward, so `cd test && bun test` RUNS all 681
-# tests with no build at all -- and, measured on a tree whose dist/deps/types.js
-# has been narrowed to `export {}`, 596 of them PASS. On that one route
+# DIRECTORY and does NOT search upward, so `cd test && bun test` runs with no
+# build at all. IT ALSO RUNS A DIFFERENT SUITE, which is a second reason that
+# route is not the suite and is easy to miss: bun discovers test FILES relative
+# to that directory too, so the workspace members' own tests are outside it --
+# MEASURED with a filter matching nothing, 45 files and 680 tests from test/
+# against 49 files and 729 from the root. On that one route
 # staleness is merely handled rather than foreclosed,
 # by the comparison in test/package-shape.test.ts between dist/deps/types.js and
-# the names `vscode-languageserver-types` declares -- the failure among those 85
-# WRITTEN TO NAME THE BUILD as its cause, where the four in test/hover.test.ts
-# arrive as `initialize failed` from a server whose config could not load,
-# measured. That is why the comparison is still there and was NOT deleted under
+# the names `vscode-languageserver-types` declares -- MEASURED on a tree whose
+# dist/deps/types.js has been narrowed to `export {}`, that comparison is the
+# failure WRITTEN TO NAME THE BUILD as its cause, where the session tests arrive
+# as `initialize failed` from a server whose config could not load. A COUNT OF
+# THE OTHERS IS DELIBERATELY NOT CARRIED: it is a size, it moves whenever the
+# suite grows, and what makes the comparison worth keeping is which failure
+# names the cause. That is why the comparison is still there and was NOT deleted under
 # the authorisation the PBI carried. Adding a second bunfig.toml under test/
 # would not close this: the set of directories someone can stand in has no end.
 [test]
