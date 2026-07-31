@@ -36,7 +36,93 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-55",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "go from a package's name to its directory and back without holding a mapping in my head",
+        benefit:
+          "the name in an install line and the name in the tree are one fact, not two kept equal by hand",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A member's directory basename and its manifest `name` are the same fact, refused in BOTH directions, over members as a class enumerated from `workspaces`.",
+          verification:
+            "Three arms, each alone: (a) change one member's manifest `name`, leave its directory -- a Definition-of-Done check fails naming that member and both spellings; (b) rename that member's directory, leave its manifest -- the same check fails; (c) a throwaway third package declared by `workspaces` with a mismatched name is refused WITH NO EDIT to the guard.",
+        },
+        {
+          criterion:
+            "Every documented pack-and-install route still runs and still produces the file its own install line names.",
+          verification:
+            "No new test. test/readme.test.ts derives the expected tarball from the directory basename, so: rename the directories, leave the member READMEs unedited, watch those assertions redden naming the member; then edit and watch green. A control here could never be first to fail (Sprint 9), so none is written.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        'STAKEHOLDER RULING, asked because the reading changes the machinery and not only the spelling: the directory matches the UNSCOPED name -- packages/tsudoi-hover-wordnet, packages/tsudoi-completion-path. `workspaces: ["packages/*"]` is therefore untouched and `declaredMembers` needs no edit. The rejected reading, packages/@atusy/<name>, would move the glob to `packages/*/*` and put an @-prefixed directory into `packagesUnder`/`excludedDirectories`.',
+        "THE PREMISE WAS NARROWED BY READING BEFORE THE CRITERION WAS WRITTEN, and the first draft was wrong: `nothing today asserts the correspondence` is false. test/readme.test.ts keys BOTH the root README's member-README path and each member's install command on the directory BASENAME, so a bare rename already reddens. What nothing reads is the manifest `name` FIELD against that directory, and the guard's class is that narrower relation -- its name must say so.",
+        "THE GUARD MUST NOT SPELL THE CONTAINER. PBI-56 may move it, and a guard naming `packages/` would be invalidated by the next PBI. It reads `declaredMembers`.",
+        "BOUND, so this does not read as repo-wide: while tsudoi itself sits in src/ and is not a declared member, this convention covers two of three packages and says nothing about the main one. Closing that gap is PBI-56's.",
+        "ORDERED FIRST, and not for tidiness: this PBI settles the convention the moved directory must inherit. Doing it second would rename three directories instead of two, and would settle the naming question while the resolution question is still open.",
+      ],
+    },
+    {
+      id: "PBI-56",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "acquire tsudoi by the same mechanism a stranger's project uses, with no hand-written apparatus standing in for `bun install`",
+        benefit:
+          "the resolution this repository's own checks exercise is the resolution a consumer gets",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "In a fresh copy of the checkout where only `bun install` has run -- no repository script, no build -- every package depending on tsudoi has a RESOLVING node_modules entry for it.",
+          verification:
+            "Read the entry in that copy. Falsifier that stops a directory present for some other reason satisfying this: remove the depending package's dependency on tsudoi, re-run `bun install`, and that package's own type check fails at TS2307 naming a tsudoi subpath. The pre-move reading is the discriminator -- no such entry exists today, which is the whole reason `linkRootPackage` exists.",
+        },
+        {
+          criterion:
+            "With dist/ present and built from the PREVIOUS source, a type error introduced in tsudoi's own source reddens the Definition of Done, and the failure names that source file.",
+          verification:
+            "Introduce the error, run the DoD as written, read WHICH check reports it and what it names; remove it and confirm green, so it is not a permanent red. UNMEASURED AND THE CRUX: check 4 owns this today through the root `paths` mapping this PBI removes; check 5 is the candidate successor. IF NO CHECK OWNS IT, THIS CRITERION IS UNMET and the move fails on a stated criterion rather than being argued past at review.",
+        },
+        {
+          criterion:
+            "The order packages are built in is derived from what they depend on, not from the order their directory names sort in.",
+          verification:
+            "Arrange a package set where a dependent sorts before tsudoi, remove every dist/, run the build, require success. Control: the same perturbation against an order-by-sort implementation fails naming the dependent's source. MEASURED BY READING: `prepareWorkspace` builds the root and then loops `declaredMembers`, which returns `[...members].sort()`; with the stakeholder's `packages/tsudoi-language-server`, tsudoi sorts AFTER both handler members. UNMEASURED: what an unbuilt tsudoi actually produces -- TS2307 (loud) or, because tsudoi unlike the members carries a `default: ./src/*.ts` arm, a GREEN build against tsudoi's source (quiet and wrong).",
+        },
+        {
+          criterion:
+            "The edit that permits tsudoi to be published is still the edit that reddens both members' optional-peer premise.",
+          verification:
+            "Make that edit, watch both members redden naming what each says. WHY IT IS A CRITERION: Sprint 49 pinned that premise to `private: true` on the ROOT manifest, measured on the ground that `bun publish` stops before `prepack`. After the move, publishing edits the MEMBER's manifest and the root flag is never touched -- so the pin goes green while measuring nothing, which is Sprint 38's DISARMED outcome and the very defect Sprint 49 filed one sprint ago.",
+        },
+        {
+          criterion:
+            "The CLI starts and the fixtures answer under Bun and Deno, from a checkout and from an installed tarball.",
+          verification:
+            "The suite's existing shape, named here because the move is not accepted on the root's checks alone: this is the product goal's third success metric verbatim. Its own falsifier is that the `exports` map's arms are relative to the manifest carrying them and the move relocates that manifest; a broken arm reddens the deno route first.",
+        },
+      ],
+      status: "refining",
+      notes: [
+        "STAKEHOLDER RULING: the directory is packages/tsudoi-language-server, and the root keeps no src/ -- it becomes a pure workspace root. THE COLLISION THAT COMES WITH IT AND MUST BE CLOSED BY THIS PBI: README quickstart markers spell `in=tsudoi-language-server` to mean the CHECKOUT ROOT, resolved through `basename(repoRoot)`, so after the move one token denotes two directories AND EVERY ASSERTION STAYS GREEN while the prose misleads a human. The marker's spelling is what changes.",
+        "WHY THE MOVE IS WORTH ITS COST: `linkRootPackage` exists SOLELY because the main package is the workspace root, which the `workspaces` globs never match -- the one route where this repository's resolution differs from a stranger's, the exact class this project has spent sprints proving it cannot trust. MEASURED in a throwaway workspace on bun 1.3.13: member->member `workspace:*` resolves natively, writing the symlink into the depending member's node_modules. THAT MEASUREMENT WAS TAKEN ELSEWHERE AND IS NOT THIS TREE'S -- it must be re-measured here before it is built on.",
+        "OPEN, AND REFINEMENT'S JOB TO MEASURE BEFORE ANY CANDIDATE IS NAMED (no citation exists, so measure before building to the colour). Four candidates for tsudoi's develop-time self-resolution once the root `paths` mapping goes: C1 no mapping anywhere -- and then the root check's subject SILENTLY FLIPS with the state of a gitignored directory, via the `default: ./src/*.ts` fall-through; C2 a custom export condition, DISQUALIFIED if bun needs a per-invocation flag, since that flag would leak into README command blocks the suite executes; C3 the root takes the mapping over, pointed into the member -- NOT refused on the recorded reason without adjudication, because tsudoi-as-member has no tsudoi dependency for the root to shadow, and the recorded constraint may be about a root mapping answering a HANDLER member's specifier; C4 = C1 plus a ruling that examples/ SHOULD read dist/ because a consumer does.",
+        'THE PROBE, DESIGNED AND NOT YET RUN: a throwaway workspace mirroring the target layout, discriminating on a VALUE rather than an exit code -- src/types.ts exports MARK="src" and a hand-written, deliberately POISONED dist/ exports MARK="dist", so `resolved to dist` is read positively. Six cells, each on bun AND deno AND tsc --traceResolution: (1) root importer, no mapping, dist present/absent/poisoned; (2) importer INSIDE the member (self-reference), same three; (3) does bun select a custom condition with NO flag, does deno, does tsc under moduleResolution bundler; (4) C3 -- does root `tsc --noEmit` then compile member source, and does check 5 still redden on a member whose own route is broken; (5) an optional peer satisfied by hoisting, with tsudoi only in the ROOT node_modules -- does `workspace:*` even apply to a peer; (6) build order with tsudoi unbuilt. A ONE-RUNTIME RESULT IS NOT THE ANSWER IN A TWO-RUNTIME PROJECT (Sprint 45).',
+        "THE RISK THAT IS GREEN WHILE MEASURING NOTHING, AND IT IS THE ONE NOBODY HAD SEEN: `linkRootPackage`'s comment records, MEASURED, that an entry for this package in the ROOT node_modules hands every throwaway probe a SECOND route to it, because test/helpers/typecheck.ts symlinks the whole root node_modules into each probe -- a probe that DELETES `exports` from its own copy then resolves anyway and reports exit 0. AFTER THE MOVE, `bun install` CREATES EXACTLY THAT ENTRY, BY CONSTRUCTION. Every consumer of typecheck.ts must be enumerated and re-read for vacuity, whichever candidate wins.",
+        "WHAT MUST BE REWRITTEN RATHER THAN DELETED, because the measurement stays true of a different subject: `linkRootPackage`'s whole MEASURED block (it is the EVIDENCE the move is worth doing, and survives as history even when the function does not); bunfig.toml's and package-shape's `bun reaches src, deno reaches dist` -- RE-MEASURED, not reworded; member-resolution's `name and paths are redundant covers`, which has no subject under C1/C4. Also newly false as DEFECTS and not prose: .oxlintrc.json's `src/notifications.ts` and `test/helpers/**` override globs stop matching, and test/helpers/spawn.ts's `repoRoot` becomes ambiguous once repo root and package root are different directories.",
+        "DEV'S ESTIMATES, recorded so acceptance is not argued later: ~100% that some recorded reason needs rewriting (repair, not weakening); ~70% under C1/C4 (~25% C2, ~10% C3) that `this repository's own check reads source` LOSES ITS SUBJECT with no replacement -- an honest TARGET DELIBERATELY REMOVED, but a weakening, and it must be called one; ~50% that a control goes vacuous through the root node_modules entry; ~60% that build order forces new machinery, which is added coverage.",
+        "NOT ONE SPRINT. Dev's sequence: (1) PBI-55 alone; (2) run the six-cell probe and RECORD IT, with no edits; (3) adjudicate C1-C4 with the probe in hand; (4) the move, with build order, the private-flag travel, and the typecheck.ts vacuity sweep as NAMED subtasks rather than incidental repairs.",
+      ],
+    },
+  ],
   completed: [
     {
       number: 49,
