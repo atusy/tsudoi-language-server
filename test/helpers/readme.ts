@@ -503,6 +503,29 @@ export function statesFact(markdown: string, fact: ReadmeFact): boolean {
 }
 
 /**
+ * THE PREMISE UNDER WHICH EVERY HANDLER PACKAGE MAY CALL TSUDOI AN OPTIONAL
+ * PEER, EXPORTED SO THE TWO THINGS THAT DEPEND ON IT READ ONE SPELLING.
+ *
+ * `peerDependenciesMeta.optional` says `this package works without tsudoi`,
+ * which is FALSE -- each handler imports a value from it. What it buys is that
+ * no installer goes looking in a registry for a name nobody has published, and
+ * that purchase EXPIRES the day tsudoi is published, leaving a plain lie with
+ * nothing bought by it.
+ *
+ * THE README IS THE INSTRUMENT BECAUSE IT IS THE SITE THE PUBLISHING EDIT PASSES
+ * THROUGH, and because it is the only durable statement of the premise: a
+ * dashboard entry saying the flag `should` change is read by nobody on
+ * publication day, and this dashboard compacts. test/readme.test.ts requires
+ * this fact to have exactly ONE home in the document, so the section that states
+ * it is the section a publisher rewrites -- and test/optional-peer-premise.test.ts
+ * turns that rewrite into a red across every member.
+ */
+export const UNPUBLISHED: ReadmeFact = {
+  name: "the package is not published",
+  tokens: [/not published/i, /registry/i],
+};
+
+/**
  * The sections that state `fact` -- normally exactly one, and the test that it
  * IS one is the removal half of criterion 3.
  *

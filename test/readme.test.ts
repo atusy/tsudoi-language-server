@@ -24,6 +24,7 @@ import {
   runQuickstart,
   runQuickstartWithBrokenConfig,
   sequenceFor,
+  UNPUBLISHED,
 } from "./helpers/readme.ts";
 
 await requireRuntime(denoRuntime);
@@ -575,10 +576,11 @@ const facts: readonly ReadmeFact[] = [
     name: "protocol names come from the deps subpaths, and tsudoi's own from ./types",
     tokens: [/deps\/protocol/, /deps\/types/, /deps\/textdocument/, /CompletionItemKind/, /value/i],
   },
-  {
-    name: "the package is not published",
-    tokens: [/not published/i, /registry/i],
-  },
+  // SHARED WITH test/optional-peer-premise.test.ts RATHER THAN SPELLED TWICE:
+  // that file turns this fact going FALSE into a red over every handler
+  // package's manifest, and two spellings of one premise would let the two
+  // disagree about which section states it.
+  UNPUBLISHED,
   {
     // WHAT THIS DOCUMENT PROMISES ABOUT ITSELF, owed because the promise is the
     // reason a reader trusts a command here over one in a blog post -- and
