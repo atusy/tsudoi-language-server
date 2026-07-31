@@ -10,8 +10,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, sep } from "node:path";
+import { join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 
@@ -504,4 +505,50 @@ test("the compiler prepack builds with is pinned by this repo, at a version it d
 test("no deno.json is needed at the repo root", () => {
   expect(existsSync(join(repoRoot, "deno.json"))).toBe(false);
   expect(existsSync(join(repoRoot, "deno.jsonc"))).toBe(false);
+});
+
+/**
+ * A PACKAGE THAT DECLARES A LICENCE SHIPS ITS TEXT, AND THAT IS A CLAIM ABOUT
+ * EVERY PACKAGE THIS WORKSPACE PUBLISHES RATHER THAN ABOUT THIS ONE.
+ *
+ * `license: "MIT"` in a manifest is a POINTER, not a grant: MIT's own terms
+ * require the notice and the permission paragraph to travel with the copy, and a
+ * registry page rendering the SPDX id supplies neither. A tarball carrying the
+ * field and no text tells a stranger which licence they were meant to get while
+ * withholding the thing that gives it to them.
+ *
+ * OVER MEMBERS AS A CLASS, AND THE ROOT WITH THEM, on the reasoning the fifth
+ * Definition-of-Done check and the deno guard's member shape already use: the
+ * names come from the workspace configuration, so a package added under
+ * packages/ is covered here with nothing edited, and a claim naming the one
+ * member that exists would go quietly narrow at the second.
+ *
+ * BESIDE THE MANIFEST AND NOT INSIDE `files`, because that is where the packer
+ * looks: MEASURED, `bun pm pack` carries LICENSE and README.md into the tarball
+ * of a package whose `files` names `dist` alone -- read off the main package's
+ * own tarball, which lists `package/LICENSE` under exactly that field. So the
+ * remedy is a FILE and never an entry, and an entry added here in its place
+ * would be the edit this test exists to keep unnecessary.
+ *
+ * NOT THE TEXT'S CONTENTS, deliberately: this asserts that the grant travels,
+ * not which grant it is. Comparing bytes against the root's would forbid a
+ * member from ever carrying a different licence, which is a decision no test of
+ * packaging is entitled to make.
+ */
+test("every package this workspace publishes ships the licence it declares", () => {
+  const publishers = [repoRoot, ...declaredMembers(repoRoot)];
+  const missing = publishers.filter((dir) => {
+    const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+      license?: unknown;
+    };
+    return typeof manifest.license === "string" && !existsSync(join(dir, "LICENSE"));
+  });
+
+  // NAMED rather than counted: a violating package appears in the failure text,
+  // where `0` would only say a number moved.
+  expect(missing.map((dir) => relative(repoRoot, dir))).toEqual([]);
+  // The pair, and it is what stops the green above being a walk that found no
+  // publishers at all: the members are real, and so is the field being read.
+  expect(declaredMembers(repoRoot).length).toBeGreaterThan(0);
+  expect(packageJson.license).toBe("MIT");
 });
