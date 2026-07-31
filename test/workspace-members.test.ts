@@ -356,6 +356,30 @@ test("a member that inherits the mapping through `extends` fails just as loudly"
   expect(result.code).not.toBe(0);
 });
 
+// THE ONE INPUT THE MAPPING GUARD PASSES AND SOMETHING ELSE MUST CATCH.
+// `tsc --showConfig` on an unresolvable `extends` EXITS 0 and omits what it
+// could not read, so the guard sees a configuration with no `paths` and has
+// nothing to say -- which is `no mapping found` reported for a file nobody
+// read. What refuses it is the type check immediately after, and this is where
+// that division of labour is pinned: move either half and this reddens.
+test("a member extending a file that is not there fails, at the check that reads it", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": JSON.stringify({
+      extends: "./nope.json",
+      compilerOptions: mappedMemberOptions,
+      include: ["src"],
+    }),
+    "packages/late/src/index.ts": typeChecks,
+  });
+
+  expect(result.stdout).toContain("TS5083");
+  expect(result.stdout).toContain("nope.json");
+  expect(result.code).toBe(1);
+});
+
 // THE PAIR, and without it the two reds above are satisfied by a guard that
 // refuses every member there is. `extends` IS KEPT rather than dropped, so what
 // distinguishes this workspace from the one above is the MAPPING and not the

@@ -301,10 +301,16 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
  * compiler that will read it rather than by a second implementation that agrees
  * with the compiler only until it does not.
  *
- * A CONFIG tsc CANNOT READ IS LOUD RATHER THAN SKIPPED: `execFileSync` throws on
- * a non-zero exit and the parse below throws on output that is not a
- * configuration, because a guard that answers `no mapping found` for a file it
- * failed to read reports the safe colour for the wrong reason.
+ * A CONFIG tsc CANNOT READ IS LOUD, BUT NOT ALWAYS HERE, and the distinction is
+ * measured rather than assumed because a guard that answers `no mapping found`
+ * for a file it failed to read reports the safe colour for the wrong reason.
+ * `execFileSync` throws on a non-zero exit and the parse below throws on output
+ * that is not a configuration -- but `--showConfig` on an UNRESOLVABLE `extends`
+ * EXITS 0 and simply omits what it could not read, MEASURED, so this function
+ * passes it. What refuses it is `typeCheckMember` immediately after: TS5083
+ * naming the file, exit 1, pinned in test/workspace-members.test.ts. The
+ * loudness is the pair's and not this function's, which is why it is written
+ * here rather than assumed by whoever moves one of them.
  */
 export function refuseMemberMappings(root: string, members: readonly string[]): void {
   for (const member of members) {
