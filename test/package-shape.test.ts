@@ -200,7 +200,7 @@ function publishedArm(condition: string): Record<string, string> {
  * because a key that has stopped matching DOES NOT FAIL: the specifier falls
  * through to the exports map and lands in dist/ AT EXIT 0, so the check grades a
  * built artifact against sources nobody compiled it from. MEASURED on this
- * config with the key misspelled, at 5f7abdd: `tsc --noEmit` exits 0 and prints
+ * config with the key misspelled, at 38b8709: `tsc --noEmit` exits 0 and prints
  * nothing, and all four subpaths are answered by dist/*.d.ts.
  *
  * AN EQUALITY ON THE MAPPING'S LITERAL CONTENT IS THE CHEAPER ASSERTION AND IT
@@ -238,7 +238,7 @@ test("the repo's type check resolves the published subpaths to source, and the b
  *
  * OVER THE DECLARED MAPPING AS A CLASS: the expected set IS what the config
  * declares, so a second mapping added tomorrow is covered by this line and a key
- * that reaches nothing is refused whatever it is spelled. MEASURED, at 5f7abdd:
+ * that reaches nothing is refused whatever it is spelled. MEASURED, at 38b8709:
  * one pattern is declared and thirteen resolutions match it; with that same key
  * misspelled, NOTHING matches any pattern while resolution stays at exit 0.
  *
