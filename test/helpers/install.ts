@@ -13,7 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { declaredMembers } from "../../scripts/workspaces.ts";
+import { handlerMembers } from "../../scripts/workspaces.ts";
 import { LspSession } from "./lsp.ts";
 import { repoRoot } from "./spawn.ts";
 import {
@@ -197,11 +197,17 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
  * never installed.
  *
  * THE DIRECTORY IS THE MEMBER'S OWN AND NOT THE WORKSPACE LINK. Both routes
- * reach the same tree, and `declaredMembers` is the enumerator every other tool
+ * reach the same tree, and the workspace enumerators are what every other tool
  * in this repository reads -- so taking the names from `workspaces` and the
  * directories from a node_modules walk would be two answers to one question.
+ *
+ * HANDLERS AND NOT MEMBERS, WHICH IS THE ONE THING THIS SITE CANNOT GET WRONG
+ * QUIETLY: `beside tsudoi` is in the sentence. The day the framework is a member
+ * too, a member-wide enumeration would install the package under test a SECOND
+ * time as though it were one of the handlers a consumer adds -- a consumer built
+ * to measure the tarball, holding two copies of it by two routes.
  */
-const handlerRoots = declaredMembers(repoRoot).map((dir) => realpathSync(dir));
+const handlerRoots = handlerMembers(repoRoot).map((dir) => realpathSync(dir));
 
 /** The name in a member's own manifest, for saying which package was withheld. */
 function packageNameOf(dir: string): string {

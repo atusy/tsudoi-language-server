@@ -135,6 +135,55 @@ function orderedPackage(dir: string): OrderedPackage {
 }
 
 /**
+ * The members that CONSUME another package of this workspace -- the handler
+ * packages -- recognised by what they DECLARE rather than by a name written
+ * here.
+ *
+ * WHY THE ENUMERATION SPLITS AT ALL, AND IT IS FORCED RATHER THAN CHOSEN. Once
+ * the framework is a member like any other, every caller asking `who are the
+ * members` gets it too -- and several of this repository's callers ask questions
+ * THE FRAMEWORK CANNOT ANSWER ABOUT ITSELF: that it declares a peer on tsudoi,
+ * that its README tells a stranger it needs tsudoi at run time, that its src/
+ * holds a handler for an LSP method, that a consumer installs it BESIDE tsudoi.
+ * Handed the framework, each of those goes green over a package its question
+ * does not apply to, which is the for-want-of-a-subject shape this record keeps
+ * catching.
+ *
+ * NO PACKAGE NAME IS SPELLED HERE, DELIBERATELY. A filter naming the framework
+ * would be a second home for the published name, and it would quietly answer
+ * `there are no handlers` the day that name changed -- every loop below it green
+ * and empty. What is read instead is the SAME DECLARATION `buildOrder` reads an
+ * edge out of, intersected with the packages this workspace holds: a handler is
+ * exactly a member that needs something built here.
+ *
+ * THE ROOT COUNTS AS A PACKAGE OF THIS WORKSPACE THOUGH IT IS NOT A MEMBER,
+ * which is what makes this return the same set before and after the framework
+ * moves under packages/ -- the answer follows the declarations rather than the
+ * layout.
+ *
+ * APPLIED PER SITE AND NEVER WHOLESALE. A caller whose question the framework
+ * CAN answer -- what it publishes, which licence it ships, what order it is
+ * built in, whether it type-checks -- keeps `declaredMembers` and carries the
+ * reason at its own call.
+ */
+export function handlerMembers(root: string): readonly string[] {
+  const members = declaredMembers(root);
+  const named = new Set(
+    [root, ...members].flatMap((dir) => {
+      const name = orderedPackage(dir).name;
+      return name === undefined ? [] : [name];
+    }),
+  );
+  return members.filter((member) => {
+    const node = orderedPackage(member);
+    // `producer !== node.name` is not defensive: a package that declared itself
+    // would otherwise be its own consumer, and the one member this split exists
+    // to exclude is the one every other package names.
+    return node.needs.some((need) => need.producer !== node.name && named.has(need.producer));
+  });
+}
+
+/**
  * Reports the packages that need each other, NAMING THE DECLARATIONS AND NOT
  * ONLY THE PACKAGES.
  *
@@ -222,6 +271,10 @@ function refuseCycle(
  * together with the arm asserting this workspace's order byte for byte.
  */
 export function buildOrder(root: string): readonly string[] {
+  // EVERY MEMBER AND NOT ONLY THE HANDLERS. A package left out of the order is a
+  // package never built, and the framework is the one every other package here
+  // compiles against -- narrowing this to the consumers would leave the producer
+  // unbuilt and hand every one of them a TS2307 for a subpath that is fine.
   const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
   const dirsByName = new Map<string, string>();
   for (const node of nodes) {

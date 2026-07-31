@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { declaredMembers } from "../scripts/workspaces.ts";
+import { handlerMembers } from "../scripts/workspaces.ts";
 import { readReadme, statesFact, UNPUBLISHED } from "./helpers/readme.ts";
 
 import { repoRoot } from "./helpers/spawn.ts";
@@ -50,8 +50,12 @@ import { repoRoot } from "./helpers/spawn.ts";
  * repository's green depend on somebody else's uptime, and would redden for a
  * network fault as loudly as for a broken premise.
  *
- * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION, because
- * two packages now repeat one falsehood and a third would repeat it again.
+ * OVER HANDLER PACKAGES AS A CLASS, ENUMERATED FROM THE WORKSPACE
+ * CONFIGURATION, because two packages now repeat one falsehood and a third would
+ * repeat it again. HANDLERS AND NOT MEMBERS, and the difference is not cosmetic:
+ * the falsehood is `tsudoi is optional to me`, which tsudoi cannot say about
+ * itself -- a member-wide enumeration would report the framework as an offender
+ * for declaring no peer on the package it IS.
  *
  * WHAT THIS CATCHES: any route to publication that goes through THIS manifest,
  * which is every route a publisher standing in this repository can take.
@@ -90,7 +94,7 @@ function tsudoiIsUnpublished(): boolean {
  */
 function disagreeing(unpublished: boolean): string[] {
   const offenders: string[] = [];
-  for (const member of declaredMembers(repoRoot)) {
+  for (const member of handlerMembers(repoRoot)) {
     const manifest = JSON.parse(readFileSync(join(member, "package.json"), "utf8")) as {
       peerDependenciesMeta?: Record<string, { optional?: boolean }>;
     };
@@ -121,7 +125,7 @@ function disagreeing(unpublished: boolean): string[] {
 test("no member's optional-peer flag disagrees with what the root manifest says about publication", () => {
   // The pair: with no members this reading is empty for a reason that has
   // nothing to do with the premise.
-  expect(declaredMembers(repoRoot).length).toBeGreaterThan(0);
+  expect(handlerMembers(repoRoot).length).toBeGreaterThan(0);
   expect(disagreeing(tsudoiIsUnpublished())).toEqual([]);
 });
 
@@ -141,8 +145,8 @@ test("no member's optional-peer flag disagrees with what the root manifest says 
 test("the same reading names every member the moment the manifest permits publication", () => {
   const offenders = disagreeing(false);
 
-  expect(offenders.length).toBe(declaredMembers(repoRoot).length);
-  for (const member of declaredMembers(repoRoot)) {
+  expect(offenders.length).toBe(handlerMembers(repoRoot).length);
+  for (const member of handlerMembers(repoRoot)) {
     expect(offenders.join("\n")).toContain(relative(repoRoot, member));
   }
 });
@@ -174,7 +178,7 @@ test("the root README agrees with the manifest about whether publication is forb
 });
 
 test("every member's own README states the premise the flag is carried under", () => {
-  const members = declaredMembers(repoRoot);
+  const members = handlerMembers(repoRoot);
 
   expect(members.length).toBeGreaterThan(0);
   for (const member of members) {

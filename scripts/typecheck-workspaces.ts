@@ -82,6 +82,11 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // it invents -- TS2307 for a subpath that resolves perfectly well -- is exactly
 // the one this check exists to distinguish.
 prepareWorkspace(root);
+// EVERY MEMBER AND NOT ONLY THE HANDLERS, which is the one enumeration in this
+// repository that may never narrow: this check is the ONLY thing type-checking a
+// package the root program excludes, so a member it skipped would be covered by
+// nothing at all while all five commands exit 0. The guards it runs read the
+// same list for the same reason.
 const members = declaredMembers(root);
 refuseUncoveredPackages(root, members);
 // HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND

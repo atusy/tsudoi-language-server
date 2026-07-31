@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative } from "node:path";
-import { declaredMembers } from "../scripts/workspaces.ts";
+import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 
@@ -102,7 +102,11 @@ async function withRouteBroken<T>(member: string, body: () => Promise<T>): Promi
   }
 }
 
-const members = declaredMembers(repoRoot);
+// HANDLERS AND NOT MEMBERS, because every claim below perturbs A MEMBER'S OWN
+// ROUTE TO TSUDOI and the framework has no route to itself. Handed the
+// framework, `linkIn` would name an entry nothing writes, the loop would break
+// what is already absent, and the arm would redden about apparatus.
+const members = handlerMembers(repoRoot);
 
 // The pair for every loop below: an empty member list would satisfy each of them
 // without a compiler ever running.

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
-import { declaredMembers } from "../scripts/workspaces.ts";
+import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
 /**
@@ -102,7 +102,12 @@ function handlerDirectories(): string[] {
   return [
     "examples",
     join("test", "fixtures"),
-    ...declaredMembers(repoRoot).map((member) => join(relative(repoRoot, member), "src")),
+    // HANDLERS AND NOT MEMBERS. This scan asks of every file whether it declares
+    // a completeness ruling for the completion handler it holds -- a question
+    // about a package that WRITES a handler. The framework's own src/ names the
+    // method because it ROUTES it, and a member-wide enumeration would begin
+    // demanding a handler's ruling from the module that dispatches to handlers.
+    ...handlerMembers(repoRoot).map((member) => join(relative(repoRoot, member), "src")),
   ];
 }
 

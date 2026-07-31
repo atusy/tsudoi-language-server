@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { declaredMembers } from "../scripts/workspaces.ts";
+import { handlerMembers } from "../scripts/workspaces.ts";
 import { packPackage } from "./helpers/install.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
@@ -39,13 +39,21 @@ import { repoRoot } from "./helpers/spawn.ts";
  */
 
 /**
- * Every declared member, packed ONCE for the whole file.
+ * Every handler package, packed ONCE for the whole file.
  *
  * A pack per test would run the member's build three times over for one reading,
  * and each run rewrites the dist/ the rest of this repository resolves through.
+ *
+ * HANDLERS AND NOT MEMBERS, AND THE DECIDING ARM IS THE README ONE BELOW: it
+ * asks what a member's own document owes THE ONE READER WHO CANNOT GET IT
+ * ANYWHERE ELSE, and two of the things it demands -- that the package needs
+ * tsudoi at run time, that the optional flag is not what it reads as -- are
+ * unstatable by the framework about itself. The framework's own tarball is not
+ * left unread: test/published-artifacts.test.ts packs it and installs it into a
+ * consumer, which is where every claim about what IT ships is made.
  */
 const packed = await Promise.all(
-  declaredMembers(repoRoot).map(async (member) => await packPackage(member)),
+  handlerMembers(repoRoot).map(async (member) => await packPackage(member)),
 );
 
 afterAll(() => {

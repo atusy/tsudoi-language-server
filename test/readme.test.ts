@@ -4,7 +4,7 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
 import { denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
-import { declaredMembers } from "../scripts/workspaces.ts";
+import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import {
   extractExamplesInstall,
@@ -96,7 +96,12 @@ test("a directory named only in a marker is refused", () => {
  * sequence are two things kept equal by hand, and the copy nobody executes is
  * the one that goes stale.
  */
-const memberReadmes = declaredMembers(repoRoot).map((member) => ({
+// HANDLERS AND NOT MEMBERS: the framework ships no README of its own, ruled
+// rather than overlooked -- the sole documented route to its tarball IS the root
+// README's quickstart, so its reader has already read the document a member
+// README exists to stand in for, and two of the four facts demanded below are
+// unstatable by the framework about itself.
+const memberReadmes = handlerMembers(repoRoot).map((member) => ({
   name: basename(member),
   markdown: readMemberReadme(member),
 }));

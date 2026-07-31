@@ -419,8 +419,14 @@ test("the members are outside the root type check, and the workspace patterns ar
  * that has never heard of it. The failure is loud -- a 404 at `bun install` --
  * which is why it is accepted rather than guarded.
  */
-test("the repo depends on every handler package for its own examples, at the version each member carries", () => {
+test("the repo depends on every member package for its own examples, at the version each member carries", () => {
   const devDependencies = packageJson.devDependencies as Record<string, string>;
+  // MEMBERS AND NOT HANDLERS. examples/tsudoi.config.ts imports the framework by
+  // specifier too, so the day the framework is a member this loop is what pins
+  // the ROOT'S OWN DECLARATION OF IT -- present in devDependencies, at the
+  // version that member carries, and NOT one field up. That last assertion is
+  // the ruling `devDependencies creates no build edge` made executable, and
+  // narrowing this site to handlers would delete it.
   const members = declaredMembers(repoRoot).map(
     (dir) =>
       JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
@@ -760,6 +766,10 @@ test("no deno.json is needed at the repo root", () => {
  * packaging is entitled to make.
  */
 test("every package this workspace publishes ships the licence it declares", () => {
+  // MEMBERS AND NOT HANDLERS: `every package this workspace publishes` is the
+  // claim, and the framework publishes more than either handler does. A
+  // narrowing here would leave the one package a stranger actually installs
+  // unchecked for the licence it declares.
   const publishers = [repoRoot, ...declaredMembers(repoRoot)];
   const missing = publishers.filter((dir) => {
     const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {

@@ -771,6 +771,12 @@ test("the published package depends on no package from this workspace", () => {
   const published = JSON.parse(readFileSync(join(consumer.packageDir, "package.json"), "utf8")) as {
     dependencies?: Record<string, string>;
   };
+  // MEMBERS AND NOT HANDLERS, deliberately, and it is the sentence being
+  // asserted that decides it: `no package FROM THIS WORKSPACE`. The framework is
+  // one of those packages the day it becomes a member, and its own name in the
+  // list can never match its own dependencies -- so the wider reading costs
+  // nothing and the narrower one would quietly stop asking about a package this
+  // claim covers.
   const members = declaredMembers(repoRoot).map(
     (dir) => (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string }).name,
   );
