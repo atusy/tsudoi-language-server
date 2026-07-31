@@ -236,13 +236,23 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 //
 // THE REPO'S OWN dist/, which is a different artifact from the tarball's:
 // examples/completion-path.ts takes CompletionItemKind -- a VALUE -- from
-// `@atusy/tsudoi-language-server/types`, and from inside this repository package
-// self-reference resolves that subpath through the exports map's `import` arm
-// to ./dist/types.js (MEASURED under bun 1.3.13 and deno 2.9.2, discriminated
-// against the `default` arm by writing a marker export into dist/types.js and
-// seeing it appear). So this repo's dist/ is load-bearing for `bun test` --
-// AND IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than by nothing, which is
-// what keeps that dependency from being a trap for whoever runs the suite.
+// `@atusy/tsudoi-language-server/deps/types`, and THE TWO RUNTIMES ANSWER THAT
+// SUBPATH FROM DIFFERENT FILES. Deno takes the exports map's `import` arm to
+// ./dist/deps/types.js. Bun never reaches the map: the `paths` mapping above
+// intercepts the subpath into ./src/deps/types.ts. MEASURED under bun 1.3.13
+// and deno 2.9.2, in the two arms that discriminate it -- deleting `paths`
+// moves BUN's own resolution onto ./dist/deps/types.js, and removing
+// ./dist/deps/types.js leaves bun loading the example while deno fails NAMING
+// that file. So this repo's dist/ is load-bearing for `bun test` THROUGH ITS
+// DENO-SPAWNING ARMS -- AND IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than
+// by nothing, which is what keeps that dependency from being a trap for whoever
+// runs the suite.
+//
+// A MARKER WRITTEN INTO dist/ CANNOT DISCRIMINATE THIS UNDER `bun test`, which
+// is why neither arm above uses one: the preload recompiles dist/ before any
+// test module is loaded, so a marker put there by hand is overwritten before
+// anything can observe it, and its absence reads as `bun did not use dist/`
+// whether or not that is true.
 //
 // REQUIRED PRESENT WITH THIS VALUE, not `scripts equals exactly this`. The
 // equality would also forbid every OTHER script, which is not a promise this

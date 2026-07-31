@@ -567,10 +567,11 @@ function useNonHoistingLayout(dir: string): void {
  * not` is UNCONSTRUCTIBLE rather than merely unwritten. It needs an undeclared
  * BARE SPECIFIER inside the examples to withhold -- a package the consumer
  * never declares, which the non-hoisting layout would then fail to resolve --
- * and the examples take every protocol name through `@atusy/tsudoi-language-server/types`, so
- * there is nothing left in them to withhold. A control that cannot be built out
- * of anything is a different thing from a control that could be built and was
- * not.
+ * and the examples take every protocol name through this package's own
+ * `deps/protocol` and `deps/types` subpaths rather than through a bare
+ * `vscode-*` specifier, so there is nothing left in them to withhold. A control
+ * that cannot be built out of anything is a different thing from a control that
+ * could be built and was not.
  *
  * WHAT CAN BE BUILT IS THE INVERSE, and it is the test immediately below: the
  * examples type-check under that layout, and a bare protocol import does not.
@@ -608,11 +609,14 @@ test("under the non-hoisting layout the examples type-check, and a bare protocol
 /**
  * THE RUNTIME HALF, and no type check can stand in for it.
  *
- * `CompletionItemKind` is an enum, so the example needs `@atusy/tsudoi-language-server/types`
- * to resolve TO A VALUE at run time. A criterion checked only by tsc would go
- * green against a dist/types.d.ts that declares every published name beside a
- * dist/types.js that re-exports none -- the two are separate files emitted from
- * one source, and only one of them can be observed by running.
+ * `CompletionItemKind` is an enum, so the example needs
+ * `@atusy/tsudoi-language-server/deps/types` to resolve TO A VALUE at run time.
+ * Tsudoi's own `/types` subpath cannot stand in for it and is not what the
+ * example imports: it exports nothing at run time, asserted above. A criterion
+ * checked only by tsc would go green against a dist/deps/types.d.ts that
+ * declares every published name beside a dist/deps/types.js that re-exports
+ * none -- the two are separate files emitted from one source, and only one of
+ * them can be observed by running.
  *
  * IN THE NON-HOISTING LAYOUT, so this is not merely `the example runs`: it is
  * the example running in a tree where the protocol package is NOT reachable
