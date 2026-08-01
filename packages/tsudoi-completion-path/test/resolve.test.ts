@@ -265,9 +265,10 @@ describe("a cancelled highlight does not go on reading the directory", () => {
   /**
    * WHAT THIS ARM CAN AND CANNOT OBSERVE, SAID FIRST BECAUSE IT DECIDES WHETHER
    * IT MEASURES ANYTHING. tsudoi answers a cancelled request -32800 whatever the
-   * handler returned -- it re-reads the abort after the handler settles -- so
-   * the ANSWER is discarded either way and no client-visible difference exists
-   * to assert. What the check buys is that the listing is NOT RUN, and the
+   * handler returned -- it RACES the handler against the abort and re-reads the
+   * abort once that race settles, so a handler that never returns at all is
+   * answered the same way -- so the ANSWER is discarded either way and no
+   * client-visible difference exists to assert. What the check buys is that the listing is NOT RUN, and the
    * returned value is the only handle a test has on that: an implementation
    * that ignored the signal opens the directory and comes back with a `detail`
    * and a block carrying the entries, which is what the green pair below shows

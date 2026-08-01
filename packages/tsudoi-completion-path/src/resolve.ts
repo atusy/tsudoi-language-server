@@ -170,13 +170,17 @@ function detailFor(stats: Stats): string {
  * THE SIGNAL IS READ BETWEEN THE TWO READS, AND WHAT THAT BUYS IS THAT THE WORK
  * IS NOT DONE -- NOT THAT THE ANSWER IS RIGHT. Which of the two it buys was READ
  * off tsudoi rather than assumed, because only one of them was ever available:
- * tsudoi re-reads the abort AFTER a handler settles and answers a cancelled
- * request -32800 whatever the handler produced, so an answer composed after a
- * cancellation is DISCARDED with or without this check, and nothing a config
- * author writes here can change what that client is told. What nothing can take
- * back afterwards is work already done. A user arrowing through a popup
- * supersedes their own highlight by the keystroke, and every superseded one used
- * to go on to open the directory and read it to the end.
+ * tsudoi re-reads the abort and answers a cancelled request -32800 whatever the
+ * handler produced, so an answer composed after a cancellation is DISCARDED with
+ * or without this check, and nothing a config author writes here can change what
+ * that client is told. AND IT IS NOT `AFTER THE HANDLER SETTLES`, WHICH IS WHAT
+ * STOOD HERE AND IS WEAKER THAN THE PROPERTY: tsudoi RACES the handler against
+ * the abort, so a handler that never settles at all is answered -32800 too. The
+ * re-read happens after that race settles, and this handler cannot postpone it
+ * by not returning. What nothing can take back afterwards is work already done.
+ * A user arrowing through a popup supersedes their own highlight by the
+ * keystroke, and every superseded one used to go on to open the directory and
+ * read it to the end.
  *
  * IT IS READ HERE AND ONCE MORE INSIDE THE LISTING, AT TWO SEAMS AND NOT THREE,
  * and which third seam is refused is written at `listingOf` with the measurement
