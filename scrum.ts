@@ -684,9 +684,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "The reasons this change makes false, rewritten where they live: the module's arithmetic paragraph (it is no longer one syscall, and the listing is information the completion never had), its harmlessness paragraph (a forged mark now costs a directory listing, one step nearer `answered with its contents` than a stat was, and the line this handler will not cross is READING A FILE'S BYTES), the package index's count of internal names, the member README's method row and its `no entry's detail is read here`, and the example config's two mentions of the size and date.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ec2eec1",
+            message: "docs(completion-path): rewrite the reasons a directory listing makes false",
+            phase: "green",
+          },
+        ],
         notes: [
+          "EVERY NAMED SITE REWRITTEN, AND ONE MORE FOUND BY READING RATHER THAN BY THE LIST: the package index's SECOND paragraph also described the resolve half as fetching `the size and date`, which is the same falsehood one paragraph above the count that was named. Found by reading the file the count lives in.",
+          "THE COUNT WAS REPAIRED BY NAMING AND NOT BY WRITING THE NEW NUMBER, which is this project's own convention and is worth the line here because the count moved TWICE inside one sprint -- the mark's reader in subtask 1, the composer and the listing type in subtask 2. A number that moves twice in one sprint is a number that will be wrong again.",
+          "THE MEMBER README GAINED A PARAGRAPH RATHER THAN ONLY LOSING A FALSE ONE: what resolving one item now costs is a fact an installing stranger reads nowhere else -- the full listing, the bound on what is rendered, the total, hidden entries shown, and that nothing recurses here either.",
           "THE SIZE REFUSAL SURVIVES AND STRENGTHENS, and saying so is the point: the listing is the honest answer to the question a directory's byte size answered badly. That is the constraint that outlived the mechanism change.",
         ],
       },
