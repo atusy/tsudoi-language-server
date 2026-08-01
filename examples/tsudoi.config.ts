@@ -108,7 +108,8 @@ const config: TsudoiConfigFactory = () => {
           //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE. THIS CONFIG
           //    supplies a `completionItem/resolve` handler, so tsudoi advertises
           //    `resolveProvider` inside `completionProvider` and a client that
-          //    resolves lazily gets the file's size and date when the user
+          //    resolves lazily gets a file's size and date -- or a directory's
+          //    contents -- when the user
           //    highlights an item. It is a fact about this file rather than
           //    about tsudoi -- a config that DROPS that key is advertised no
           //    flag and receives no such request. The same is true of every
@@ -168,7 +169,9 @@ const config: TsudoiConfigFactory = () => {
       // the reason it is here: listing a directory offers what is in it, and
       // asking the disk about every entry is what a large directory cannot
       // afford. This answers that question for the ONE ITEM THE USER
-      // HIGHLIGHTS. It is also the only method here whose params are neither a
+      // HIGHLIGHTS -- a file's size and date, and for a directory the names
+      // inside it, which is a question the completion never asked at all. It is
+      // also the only method here whose params are neither a
       // document nor a position -- it takes the item back and hands it back.
       //
       // IT MAY NOT BE HERE ALONE: a config supplying this key without

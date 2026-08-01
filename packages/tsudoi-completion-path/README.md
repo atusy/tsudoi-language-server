@@ -7,10 +7,10 @@ config, with the item-resolution half in the same package.
 
 **Two methods, which the package name cannot say.**
 
-| method                    | export            | what it does                                                                 |
-| ------------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| `textDocument/completion` | `pathCompletion`  | offers the entries of the one directory the fragment under the cursor names  |
-| `completionItem/resolve`  | `resolvePathStat` | fills in that entry's size and modification date when the user highlights it |
+| method                    | export            | what it does                                                                             |
+| ------------------------- | ----------------- | ---------------------------------------------------------------------------------------- |
+| `textDocument/completion` | `pathCompletion`  | offers the entries of the one directory the fragment under the cursor names              |
+| `completionItem/resolve`  | `resolvePathStat` | when you highlight an entry: a file's size and modification date, a directory's contents |
 
 ```ts
 import { pathCompletion, resolvePathStat } from "@atusy/tsudoi-completion-path";
@@ -30,19 +30,27 @@ export default config;
 ```
 
 **The dependence runs one way**, and that is why they ship together. `pathCompletion` stands on
-its own: register it, leave the resolve half out, and you get the listing — only without the size
-and date on the item you highlight. The resolve half is the one that cannot. It recognises an
+its own: register it, leave the resolve half out, and you get the listing — only with nothing
+added to the item you highlight, neither a file's size and date nor a directory's contents. The
+resolve half is the one that cannot. It recognises an
 item by a mark the completion handler wrote onto it, and that mark is not published — it is an
 agreement between two modules, not a promise to you. tsudoi refuses a config supplying the
 resolve method with no completion handler beside it, so that arrangement is rejected when the
 config loads rather than left to disappoint you at the first request.
 
 The completion **streams**: it yields the listing in batches, so a client that sent a
-`partialResultToken` sees the first entries while the rest is still being read. No entry's
-**detail** is read here — that is exactly the work `resolvePathStat` defers to the one item you
-highlight. Classifying an entry is cheaper but not free: an ordinary file or directory is told
-apart from the directory listing alone, and a **symlink** costs one `stat`, to report the kind of
-what it points at.
+`partialResultToken` sees the first entries while the rest is still being read. Nothing is read
+about an entry's own **contents or metadata** here — that is exactly the work `resolvePathStat`
+defers to the one item you highlight. Classifying an entry is cheaper but not free: an ordinary
+file or directory is told apart from the directory listing alone, and a **symlink** costs one
+`stat`, to report the kind of what it points at.
+
+**What resolving one item costs**, since it is no longer a single `stat`: a directory is also
+listed, in full, and the count you are shown is the whole of it. The names **rendered** are
+bounded — a directory of thousands would otherwise put its whole contents in one popup — and the
+block says how many entries there really are when it shows you fewer. Hidden entries are shown,
+unfiltered, because the completion half offers them too. Nothing recurses here either: one
+listing, one level, no walk.
 
 ## What bounds it
 

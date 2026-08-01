@@ -4,12 +4,20 @@
  * THE SECOND HALF OF THIS PACKAGE, AND THE REASON IT HAS TWO. Work too
  * expensive to do for every item is done for the ONE ITEM THE USER HIGHLIGHTS.
  *
- * THE ARITHMETIC IS THE ARGUMENT. The completion beside this file lists one
- * directory and offers what is in it -- and a directory of a few thousand
- * entries is ordinary. One `stat` per entry to show a size would put a few
- * thousand syscalls on the keystroke that opened the popup; one `stat` per
- * highlighted item puts one syscall on an idle moment. Same information, and the
- * only difference is WHEN it is fetched.
+ * THE ARITHMETIC IS THE ARGUMENT, AND IT IS ABOUT THE KEYSTROKE RATHER THAN
+ * ABOUT ONE CALL. The completion beside this file lists one directory and offers
+ * what is in it -- and a directory of a few thousand entries is ordinary. One
+ * `stat` per entry to show a size would put a few thousand syscalls on the
+ * keystroke that opened the popup; what this file does per HIGHLIGHT is a stat
+ * and, for a directory, one listing -- two reads on an idle moment.
+ *
+ * AND WHAT IT ANSWERS IS NO LONGER ONLY `THE SAME INFORMATION, FETCHED LATER`.
+ * A file's size and date are exactly that. A DIRECTORY'S CONTENTS ARE NOT: the
+ * completion never asked what was inside the entries it offered, so this is a
+ * question that gets asked here or nowhere. The syscall argument does not settle
+ * it either -- one `opendir` is the same order as one `stat` -- and what the
+ * bound below is really about is the PAYLOAD: bytes in one response and lines in
+ * one popup.
  *
  * IT IS PAIRED WITH THE COMPLETION MODULE AND THE IMPORT BELOW IS THE PAIRING.
  * tsudoi keeps NO record of what a completion handler produced -- it is ruled at
@@ -30,13 +38,22 @@
  * WHAT A MAINTAINER MUST NOT CLOSE, and it is a property of any resolve handler
  * rather than of this one: THE ITEM ARRIVES FROM THE CLIENT.
  * `data` is whatever the client sent back, so a mark can be forged, and this
- * handler will then `stat` a path nobody's completion chose. That is harmless
- * here -- a `stat` reveals a size and a date to the user who asked for it, on a
- * machine they are already running the server on -- and it would NOT be harmless
- * in a handler that opened the file, ran a command, or answered with its
- * contents. Nothing is validated below, deliberately: a check would suggest this
- * boundary can be closed, and it cannot be. What decides it is what the handler
- * DOES with the path.
+ * handler will then read a path nobody's completion chose.
+ *
+ * WHAT A FORGED MARK NOW COSTS, RE-STATED BECAUSE IT MOVED: a stat revealed a
+ * size and a date; a listing reveals THE NAMES INSIDE A DIRECTORY, to the user
+ * who asked for it, on a machine they are already running the server on. That is
+ * one step nearer `answered with its contents` than a stat was, and it is worth
+ * saying out loud rather than leaving the old sentence to cover a bigger answer.
+ * THE LINE THIS HANDLER WILL NOT CROSS IS READING A FILE'S BYTES -- and running a
+ * command, or writing anything, is further still.
+ *
+ * Nothing is validated below, deliberately: a check would suggest this boundary
+ * can be closed, and it cannot be. What decides it is what the handler DOES with
+ * the path. The one thing that IS checked -- the source name on the mark -- is
+ * not a repair of this boundary and does not pretend to be: it exists because
+ * the ANSWER is composed here, and a name arriving from a client may not become
+ * text this handler states.
  */
 // `Stats` is declared by node:fs and only the promise-shaped `stat` by
 // node:fs/promises, so the two lines are the runtimes' shape rather than a
