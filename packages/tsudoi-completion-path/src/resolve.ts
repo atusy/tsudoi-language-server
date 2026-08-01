@@ -406,13 +406,7 @@ async function listingOf(
       await handle.close();
       return undefined;
     }
-    const names: string[] = [];
-    let total = 0;
-    for await (const entry of handle) {
-      total += 1;
-      retain(names, entry.name);
-    }
-    return { names, total };
+    return await listingFrom(handle);
   } catch {
     // SWALLOWED HERE AND NOT AT THE HANDLER, which is the whole shape of this
     // subtask: the caller has a `stat` that succeeded, and a rejection reaching
@@ -438,6 +432,42 @@ async function listingOf(
     // of what was read before the failure, which is a number about nothing.
     return undefined;
   }
+}
+
+/**
+ * The drain: every entry counted, and only the ones that would be rendered kept.
+ *
+ * A FUNCTION OF ITS OWN, AND WHAT SEPARATES IT FROM `listingOf` IS WHO CHOOSES
+ * THE ORDER. Above this, the sequence is the FILESYSTEM'S, promised by nothing;
+ * here it is a parameter. THE RETAIN GATE -- `is this name better than the worst
+ * one I kept` -- IS ONLY REACHED ONCE THE KEPT LIST IS FULL, so what it decides
+ * depends on the order names ARRIVE in, and an arm driving the handler could
+ * only ever assert the premise it needed and hope the filesystem met it.
+ * MEASURED, and it is why this seam exists rather than a preference: the arm
+ * that did so passed its own premise on this machine and would have gone vacuous
+ * on any runner whose directory order differed, while the mutant it was written
+ * to catch -- the gate's comparison changed to `localeCompare` -- left the whole
+ * package green before it was added.
+ *
+ * EXPORTED FOR THAT ARM AND FOR NOTHING ELSE, which the package index lists
+ * beside the other names kept out of the published surface. It carries no bound
+ * of its own and takes no options: `entriesShown` stays private below, so a test
+ * driving this reads the count off what it gets back and still spells no number.
+ *
+ * `AsyncIterable` AND NOT `Dir`, because a `Dir` is the one thing a test cannot
+ * construct without a directory -- which is the whole of what this parameter is
+ * for. The entry shape is narrowed to the one field read.
+ */
+export async function listingFrom(
+  entries: AsyncIterable<{ name: string }>,
+): Promise<DirectoryListing> {
+  const names: string[] = [];
+  let total = 0;
+  for await (const entry of entries) {
+    total += 1;
+    retain(names, entry.name);
+  }
+  return { names, total };
 }
 
 /**

@@ -37,11 +37,11 @@
  * (`pathFragments`, `PathFragment`), the root chooser (`sourcesFor`,
  * `PathSource`, `PathSourceName`), the edit builder (`editFor`), the listing
  * (`listingDirectory`, `itemsFrom`), the option bag (`PathCompletionOptions`),
- * the item mark (`PathItemData`, `completedPath`, `completedSource`) and the
- * block the two handlers share (`documentationFor`, `preferredFormat`,
- * `DirectoryListing`) are all reachable from this package's own tests by
- * relative import, so keeping them internal costs no coverage and buys the
- * freedom to change them. The batch size and the listing bound go one further
+ * the item mark (`PathItemData`, `completedPath`, `completedSource`), the block
+ * the two handlers share (`documentationFor`, `preferredFormat`,
+ * `DirectoryListing`) and the resolve half's drain (`listingFrom`) are all
+ * reachable from this package's own tests by relative import, so keeping them
+ * internal costs no coverage and buys the freedom to change them. The batch size and the listing bound go one further
  * and are not exported by their own modules at all -- what they decide is
  * visible on the wire, which is where they are asserted.
  *
