@@ -241,6 +241,27 @@ function fragmentAt(
 export interface PathItemData {
   /** The absolute path the item completes to. */
   readonly pathCompletion: string;
+  /**
+   * Which root offered it, as the item's own documentation spells it.
+   *
+   * IT IS HERE BECAUSE THE RESOLVE HALF REBUILDS THAT BLOCK RATHER THAN
+   * APPENDING TO IT: what comes back from a client is the client's text, so
+   * every fact the answer states has to arrive somewhere the answer may be built
+   * out of. AND IT CANNOT BE DERIVED FROM THE PATH -- one file is reachable from
+   * the document's directory, the working directory, a workspace folder and an
+   * absolute fragment at once, and by resolve time the fragment that chose
+   * between them is gone.
+   *
+   * COSTING NOTHING AT POPUP TIME, which is what makes it affordable on an item
+   * this module produces per entry: the name is already in hand at the source.
+   *
+   * `pathCompletion` STAYS THE GATE AND THIS IS NEVER READ FIRST -- a near-miss
+   * rather than a hypothetical: a fixture in this repository's own resolve suite
+   * stands in for another language server by sending `data` of
+   * `{ source: "some other server", ... }`, under this very key. A handler
+   * keying on `source` would claim that server's items.
+   */
+  readonly source: PathSourceName;
 }
 
 /**
@@ -692,7 +713,7 @@ export async function* itemsFrom(
         // the dirent calls NEITHER -- a symlink -- costs one stat to say what it
         // points at. So the cost is bounded by how many symlinks a directory
         // holds rather than by how many entries.
-        data: { pathCompletion: absolutePath } satisfies PathItemData,
+        data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
         // WHICH EDIT, AND OVER WHAT SPAN, is `editFor` above.
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });

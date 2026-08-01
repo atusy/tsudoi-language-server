@@ -753,6 +753,74 @@ describe("an item names the root that produced it", () => {
   });
 });
 
+describe("an item records the source it was produced under", () => {
+  /**
+   * ASSERTED PER SOURCE ACROSS EVERY NAME THE CLOSED SET HOLDS, and the reason
+   * is the degenerate rather than thoroughness: an implementation that wrote one
+   * hardcoded name onto every item satisfies any single-source reading of this
+   * claim. Four names and not three, MEASURED off `PathSourceName` rather than
+   * counted from the fixture a relative fragment can drive -- `sourcesFor`
+   * answers an absolute fragment with the absolute source ALONE, so the fourth
+   * needs a fragment of its own and cannot ride in the same list.
+   *
+   * WHY THE MARK CARRIES IT AT ALL, which the item's own documentation makes
+   * look redundant: the resolve half REBUILDS that block rather than appending
+   * to it, and the block names the source. What comes back from a client is the
+   * client's text, so the attribution has to arrive somewhere the answer is
+   * allowed to be built out of -- and the source is NOT derivable from the path,
+   * since one file is reachable from the document's directory, the cwd, a
+   * workspace folder and an absolute fragment at once.
+   *
+   * WHOLE-VALUE ON `data`, never a containment: the mark is what one module
+   * writes for another to read, and a test asserting only that the source
+   * appeared would stay green through the day the path stopped.
+   */
+  test("each item's mark names the source that produced it, for every source there is", async () => {
+    const documentTree = tree(["notes/deep.txt"]);
+    const cwdTree = tree(["notes/wide.txt"]);
+    const workspaceTree = tree(["notes/far.txt"]);
+    try {
+      const uri = pathToFileURL(join(documentTree.root, "doc.txt")).href;
+      const relative = only("notes/");
+      const absolute = only("/us");
+      const folders = [{ uri: pathToFileURL(workspaceTree.root).href, name: "ws" }];
+      const sources = [
+        ...sourcesFor(relative, uri, cwdTree.root, folders),
+        ...sourcesFor(absolute, uri, cwdTree.root, folders),
+      ];
+      // The enumeration is asserted as a VALUE, so a source that stopped being
+      // offered reddens here instead of quietly leaving this claim covering
+      // three names while its name says every one.
+      expect(sources.map((source) => source.name)).toEqual([
+        "document",
+        "cwd",
+        "workspace",
+        "absolute",
+      ]);
+
+      for (const source of sources) {
+        const fragment = source.name === "absolute" ? absolute : relative;
+        const items = await fromSource(source, fragment);
+        // Not vacuous: a source that produced nothing satisfies the loop below
+        // without a single mark being read.
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          expect(item.data).toEqual({
+            // The path as THIS TEST computes it from the root and the inserted
+            // text, never as the module reported it.
+            pathCompletion: resolvesTo(source.root, item.insertText ?? ""),
+            source: source.name,
+          });
+        }
+      }
+    } finally {
+      documentTree.dispose();
+      cwdTree.dispose();
+      workspaceTree.dispose();
+    }
+  });
+});
+
 describe("items with identical inserted text collapse to one", () => {
   // The collision built from sources this PBI actually has: the document's
   // parent IS cwd, so two sources list the same directory and produce the same
