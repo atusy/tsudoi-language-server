@@ -281,11 +281,11 @@ describe("a cancelled highlight does not go on reading the directory", () => {
    * how busy the machine is, which is the defect this suite has already had to
    * explain away once.
    *
-   * WHAT IT DOES NOT COVER, and the reason is written at `listingOf`: a
-   * cancellation arriving once the drain has STARTED is not honoured at all,
-   * because abandoning a half-read directory leaks its descriptor on one of the
-   * two runtimes. There is nothing to assert about that here beyond what the
-   * green pair already says.
+   * WHAT IT DOES NOT COVER IS NOW TWO DIFFERENT THINGS AND ONLY ONE OF THEM IS
+   * REFUSED. A cancellation landing while the directory is OPENING is covered by
+   * the arm below this one. A cancellation landing once the drain has STARTED is
+   * not honoured at all, for the reason written at `listingOf`: abandoning a
+   * half-read directory leaks its descriptor on one of the two runtimes.
    */
   test("a resolve cancelled while its stat is pending answers without listing the directory", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt"]);
@@ -309,7 +309,83 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       fixture.dispose();
     }
   });
+
+  /**
+   * A CANCELLATION THAT ARRIVES WHILE THE DIRECTORY IS OPENING, which is the
+   * seam BETWEEN the handler's own check and the first entry being read -- and
+   * it is a seam the arm above cannot reach, because that one's cancellation is
+   * already there when the handler asks.
+   *
+   * THE SIGNAL IS ANSWERED `false` ONCE AND ABORTED IN THE MICROTASK THAT READ
+   * IT, WHICH IS THE WHOLE OF WHAT MAKES THIS ARM DISCRIMINATING. Aborting
+   * SYNCHRONOUSLY inside that first read would leave the cancellation in place
+   * before `opendir` is even called, so an implementation checking the signal one
+   * line EARLIER -- before the open rather than after it -- would pass this arm
+   * unchanged. Queued, the handler runs synchronously into `await opendir`, the
+   * microtask drains at that await, and the cancellation lands while the open is
+   * PENDING: MEASURED in that order on bun 1.3.13 and deno 2.8.3, and it needs no
+   * timer, so it does not depend on how busy the machine is.
+   *
+   * THE PREMISE IS ASSERTED OUT OF THE ANSWER'S OWN `detail`: the stat is spent
+   * and its line is in the answer, which is what says the cancellation landed
+   * AFTER the handler's first check rather than in front of it -- otherwise this
+   * arm would be a second reading of the arm above.
+   *
+   * WHAT IS ASSERTED IS AGAIN A PROXY FOR THE WORK, per the note above: the
+   * answer is discarded by tsudoi either way, and the block is the only handle a
+   * test has on whether the directory was read.
+   */
+  test("a resolve cancelled while its directory is opening answers without reading it", async () => {
+    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+    const path = join(fixture.root, "listed");
+    const item = markedItem(path, "cwd");
+    try {
+      const signal = signalAbortingWhereItIsFirstRead();
+      const cancelled = await resolvePathStat(contextDeclaring(["plaintext"], signal), item);
+
+      expect((cancelled.detail ?? "").split(" · ")[0]).toBe("directory");
+      expect(signal.aborted).toBe(true);
+      expect(blockOf(cancelled)).toBe(`${path}\n\nsource: cwd`);
+
+      // THE SAME PAIR THE ARM ABOVE CARRIES, and for the same reason: without it,
+      // `the directory was not read` and `this fixture has nothing in it` are one
+      // observation.
+      const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
+      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd\n\n2 entries\n\none.txt\ntwo.txt`);
+    } finally {
+      fixture.dispose();
+    }
+  });
 });
+
+/**
+ * A REAL `AbortController` WHOSE SIGNAL ANSWERS ITS FIRST READER BEFORE IT IS
+ * CANCELLED. The cancellation itself is the controller's own -- nothing here
+ * fakes `aborted` into being true -- and what the proxy decides is only WHEN it
+ * happens: in the microtask queued by the first read, so it lands after the
+ * reader has gone on and while the next `await` is pending.
+ *
+ * A PROXY RATHER THAN AN OBJECT SHAPED LIKE A SIGNAL, so everything a handler
+ * might do with a signal other than read this one property still reaches the
+ * real one -- methods bound to it, since an `AbortSignal` method called on
+ * anything else throws.
+ */
+function signalAbortingWhereItIsFirstRead(): AbortSignal {
+  const controller = new AbortController();
+  let reads = 0;
+  return new Proxy(controller.signal, {
+    get(target, property): unknown {
+      if (property === "aborted" && reads++ === 0) {
+        queueMicrotask(() => {
+          controller.abort();
+        });
+        return false;
+      }
+      const value: unknown = Reflect.get(target, property, target);
+      return typeof value === "function" ? (value as () => unknown).bind(target) : value;
+    },
+  });
+}
 
 describe("what the path is decides the answer, and never what the item claims", () => {
   /**

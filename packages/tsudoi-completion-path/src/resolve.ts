@@ -173,13 +173,14 @@ function detailFor(stats: Stats): string {
  * supersedes their own highlight by the keystroke, and every superseded one used
  * to go on to open the directory and read it to the end.
  *
- * IT IS READ ONCE, HERE, AND NOT AGAIN INSIDE THE LISTING, which looks like the
- * cheaper half of the same idea and is refused on a measurement written at
- * `listingOf`: on one of the two runtimes a directory abandoned mid-drain never
- * gives its descriptor back. So the seam that pays is the one BEFORE the handle
- * is opened -- where what is skipped is the whole read rather than the tail of
- * it -- and a cancellation arriving after the drain has begun costs what it
- * always did.
+ * IT IS READ HERE AND ONCE MORE INSIDE THE LISTING, AT TWO SEAMS AND NOT THREE,
+ * and which third seam is refused is written at `listingOf` with the measurement
+ * that refuses it. This one skips the open; the one below it skips the read of a
+ * handle already open, where NO ENTRY HAS BEEN TAKEN YET. A cancellation
+ * arriving after the drain has begun costs what it always did, because
+ * abandoning a directory mid-read never gives its descriptor back on one of the
+ * two runtimes -- and that is a property of the PARTIAL READ, which is exactly
+ * what makes the two seams above safe.
  *
  * THE UNTOUCHED ITEM IS WHAT A CANCELLED RESOLVE ANSWERS, for the reason the
  * gone-path case answers it: nothing this handler decided to state was finished,
@@ -217,7 +218,7 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
         context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
           ?.documentationFormat,
       ),
-      stats.isDirectory() ? await listingOf(path) : undefined,
+      stats.isDirectory() ? await listingOf(path, context.signal) : undefined,
     ),
   };
 };
@@ -277,26 +278,43 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * of one directory leave the process's own open descriptor count unmoved, bun 7
  * -> 7 and deno 21 -> 21.
  *
- * THIS LOOP DOES NOT READ THE REQUEST'S ABORT, AND THAT IS A REFUSAL ON A
- * MEASUREMENT RATHER THAN AN OVERSIGHT -- it is the obvious next edit, so the
- * reading that forecloses it is written here. ON DENO A DIRECTORY THAT HAS BEEN
- * READ FROM AND NOT DRAINED NEVER GIVES ITS DESCRIPTOR BACK, and an explicit
- * `close()` does not change that: 500 listings abandoned after ONE entry take
- * the process from 21 open descriptors to 521, whether the loop is left by
- * `return`, by `break`, or by `break` followed by an awaited `close()`. Opening
- * and closing WITHOUT READING leaks nothing, and draining to the end leaks
- * nothing, so it is the partial read alone. Bun releases in every one of those
- * shapes, 5 -> 5. A highlight that stops a drain would therefore cost one
- * descriptor per cancelled highlight on one runtime, and a user arrowing through
- * a popup makes them by the keystroke: the session dies at the ulimit, which is
- * a worse failure than the drain this would have saved. WHAT IS SAVED INSTEAD is
- * the whole listing, at the seam BEFORE the handle is opened, which is where the
- * handler reads the signal.
+ * THE ABORT IS READ ONCE HERE AND NEVER INSIDE THE LOOP, AND THE LINE BETWEEN
+ * THE TWO IS A MEASUREMENT RATHER THAN A JUDGEMENT: it is whether ANY ENTRY HAS
+ * BEEN READ YET.
  *
- * WHAT WOULD RETIRE THAT REFUSAL: deno releasing the descriptor of a partially
- * read directory. The reading above is the one to take again -- it is 500
- * iterations and a count of the process's own open descriptors -- and it is the
- * whole of what stands between this loop and a cancellation it could honour.
+ * THE SEAM ABOVE IS SAFE. Opening and closing a directory WITHOUT READING FROM
+ * IT releases everything: 500 rounds leave the process's own open descriptor
+ * count unmoved, bun 1.3.13 7 -> 7 and deno 2.8.3 21 -> 21. RE-READ FOR THIS
+ * SHAPE rather than inherited from the reading below it, because the shape below
+ * is the one that leaks and the two differ by one `read()`.
+ *
+ * THE SEAM INSIDE THE LOOP IS NOT. ON DENO A DIRECTORY THAT HAS BEEN READ FROM
+ * AND NOT DRAINED NEVER GIVES ITS DESCRIPTOR BACK, and an explicit `close()`
+ * does not change that: 500 listings abandoned after ONE entry take the process
+ * from 21 to 521, whether the loop is left by `return`, by `break`, or by
+ * `break` followed by an awaited `close()`. Draining to the end leaks nothing,
+ * so it is the partial read alone; bun releases in every shape, 7 -> 7. One
+ * descriptor per cancelled highlight, on a user arrowing through a popup, is a
+ * session that dies at the ulimit -- a worse failure than the drain it saves.
+ *
+ * WHY THE TWO DIFFER, READ OFF DENO'S OWN `Dir` RATHER THAN INFERRED FROM THE
+ * COUNTS: the descriptor is opened LAZILY, by the first `read()` and not by
+ * `opendir`, so a handle nothing has read from has nothing to give back. Once it
+ * exists, `Dir.close()` only marks the facade closed -- its comment says
+ * directories need no closing -- and the inner iterator holding the descriptor
+ * is dropped without being finished, so nothing closes it. That is also what
+ * would RETIRE the refusal: deno closing that iterator. The reading to take
+ * again is the one above, 500 abandoned listings against a count of the
+ * process's own descriptors.
+ *
+ * WHAT THE SEAM ABOVE BUYS IS NOT THE SAME ON BOTH RUNTIMES, and the smaller
+ * half is worth saying because a reader would assume the larger. On bun the
+ * whole read is skipped: bun's `Dir` is a facade over `readdir` and materialises
+ * the directory on the FIRST read, so a handle read from never costs anything.
+ * On deno the directory has ALREADY been read once by then -- `opendir` calls
+ * `Deno.readDirSync` to fail early on a path that is not a directory -- so what
+ * is skipped there is the async drain, which is the expensive half on that
+ * runtime anyway (about 127 ms at five thousand entries, above).
  *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
@@ -326,11 +344,27 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * THE BOUND INSTEAD IS REFUSED: it starves at twenty-five dotfiles rather than
  * twenty, and it is paid for out of the payload this bound exists for.
  */
-async function listingOf(path: string): Promise<DirectoryListing | undefined> {
+async function listingOf(
+  path: string,
+  /**
+   * The request's own abort, READ ONCE INSIDE HERE at the seam described above:
+   * after the handle is in hand and before a single entry has been taken off it.
+   */
+  signal: AbortSignal,
+): Promise<DirectoryListing | undefined> {
   try {
+    const handle = await opendir(path);
+    if (signal.aborted) {
+      // CLOSED EXPLICITLY BECAUSE NOTHING ELSE WILL: the release this module
+      // relies on is EXHAUSTING the iteration, and this handle is never
+      // iterated. The close is inside the try for the reason the open is -- a
+      // rejection here would cost the caller the `detail` it already holds.
+      await handle.close();
+      return undefined;
+    }
     const names: string[] = [];
     let total = 0;
-    for await (const entry of await opendir(path)) {
+    for await (const entry of handle) {
       total += 1;
       retain(names, entry.name);
     }
