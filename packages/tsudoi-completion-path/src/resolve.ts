@@ -190,9 +190,14 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * by TIME, and a highlight that answers differently depending on how busy the
  * machine was is a defect of its own. A hundred thousand entries is UNMEASURED.
  *
- * NAMES ONLY, WHICH IS WHY `readdir` RATHER THAN `opendir`: no entry's kind is
- * asked for, so nothing here costs a stat per child -- and nothing iterates a
- * handle this function must remember to release.
+ * `readdir` RATHER THAN `opendir`, AND THE REASON IS THE HANDLE ALONE. The other
+ * half this used to give -- that no entry's kind is asked for, so nothing costs
+ * a stat per child -- does not tell the two apart: `opendir` classifies from the
+ * dirent the OS already returned and costs no stat per child either, which is
+ * what the completion half beside this file says about its own listing and has a
+ * test behind. What `readdir` buys is that nothing here iterates a handle this
+ * function must remember to release -- which is the whole of what was measured
+ * when the early exit was looked for, and the whole of what is claimed.
  *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
