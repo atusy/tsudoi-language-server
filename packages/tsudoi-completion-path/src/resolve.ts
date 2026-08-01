@@ -272,6 +272,14 @@ async function listingOf(path: string): Promise<DirectoryListing | undefined> {
  * FILE_ATTRIBUTE_HIDDEN -- and reading it is a stat PER ENTRY, which is the
  * exact cost this package exists to refuse and refuses at popup time already. So
  * this stays decidable from the name a listing already handed back.
+ *
+ * ON THE NAME AS THE FILESYSTEM RETURNED IT, AND NEVER ON THE NAME AS IT
+ * RENDERS, which is a live distinction rather than a hypothetical one: the
+ * composer FLATTENS the characters a name may not render with, so a file called
+ * `\n.env` renders with a leading replacement character and would read to a
+ * person as hidden while being grouped as ordinary. Grouping on the rendered
+ * string is refused anyway -- it would let an escaping decision made for the
+ * BLOCK decide the ORDER, and the two answer different questions.
  */
 function byGroupThenName(left: string, right: string): number {
   const leftHidden = left.startsWith(".");
