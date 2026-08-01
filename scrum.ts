@@ -588,10 +588,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "The mark gains the source name, written at the item where it is already in hand and costing nothing at popup time.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "dcd503e",
+            message: "feat(completion-path): mark each item with the source that produced it",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE PREREQUISITE THE REBUILD CREATES: the block carries the absolute path AND the source attribution, and only the first is on the item today -- the source is NOT derivable from the path, since the same file is reachable from the document's directory, the cwd, a workspace folder or an absolute fragment.",
+          "THE PLAN SAID THREE SOURCES AND THE CLOSED SET HOLDS FOUR, MEASURED off `PathSourceName` rather than counted from the fixture: `sourcesFor` answers an ABSOLUTE fragment with the absolute source ALONE, so three is what one relative fragment can drive and four is what the package offers. The arm covers all four and the fourth needed a fragment of its own; the enumeration is asserted as a VALUE so a source that stops being offered reddens rather than quietly narrowing the claim.",
+          "THE RED WAS TAKEN BEFORE THE WIDENING AND IT IS THE MISSING KEY: 0 pass / 1 fail, the diff naming `source` as the one member the item's `data` lacked. Then 40 pass / 0 fail.",
+          "MEASURED AGAINST THE DEGENERATE THE NOTE ABOVE NAMES -- one hardcoded source name (`cwd`) on every item: 39 pass / 1 fail, the new arm alone reddening and every other assertion in the file unmoved. So the arm is not satisfied by an author's intention.",
+          "AND THE FULL SUITE FOUND SOMETHING THE TARGETED RUN COULD NOT: the first Definition-of-Done run came back 767 pass / 1 fail, the failure being the packed-members citation guard -- `@atusy/tsudoi-completion-path: dist/completion.d.ts names test/resolve.test.ts` -- because the new comment cited the root fixture BY PATH and a shipped module may not name a repository file its reader does not have. The citation was rewritten to name the fixture without a path; the guard is live, and this is a second reading of it firing for its own reason.",
           "THE DEGENERATE IS `HARDCODE ONE SOURCE NAME`, which passes against any single-source test -- which is why the arm is per source.",
           "MEASURED, AND IT IS A REASON TO WRITE THE TEST RATHER THAN TO SKIP IT: widening the mark reddens NOTHING today. Nothing asserts the mark an item of ours carries, and the only whole-item equality compares a server-produced item against itself, so both sides move together.",
           "A NEAR-MISS WORTH CARRYING INTO THE COMMENT: `source` is a key another server in this repository's own fixtures already uses under the same field. The gate stays the existing mark -- read first, the source read only after it validates.",
