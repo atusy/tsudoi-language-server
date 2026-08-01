@@ -73,7 +73,14 @@
 // node:fs/promises, so the two lines are the runtimes' shape rather than a
 // preference -- measured, TS2724 names it.
 import type { Stats } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+// `opendir` TAKES NO OPTIONS ARGUMENT HERE, and that is a compatibility reading
+// rather than a style: deno's node:fs rejects `opendir(path, {})` outright --
+// `The "options.bufferSize" property must be of type number. Received undefined`
+// -- where bun accepts it. MEASURED on deno 2.8.3, and a larger bufferSize was
+// measured to buy nothing worth the divergence anyway (5000 entries, deno: 127
+// ms at the default against 92 ms at 1024, against 45 ms for the shape this
+// module gave up; bun: within noise of each other).
+import { opendir, stat } from "node:fs/promises";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import {
   completedPath,
@@ -199,19 +206,45 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * WHAT DOES NOT SHRINK WITH IT IS THE PAYLOAD -- those five thousand names are
  * eighty-five thousand characters in one response and five thousand lines in one
  * popup -- so the bound this listing is rendered under is on entries SHOWN and
- * never on entries read. THE COST IS LINEAR AND A DIRECTORY IS UNBOUNDED, which
- * is ACCEPTED rather than guarded: the only guard available would bound the read
- * by TIME, and a highlight that answers differently depending on how busy the
- * machine was is a defect of its own. A hundred thousand entries is UNMEASURED.
+ * never on entries read.
  *
- * `readdir` RATHER THAN `opendir`, AND THE REASON IS THE HANDLE ALONE. The other
- * half this used to give -- that no entry's kind is asked for, so nothing costs
- * a stat per child -- does not tell the two apart: `opendir` classifies from the
- * dirent the OS already returned and costs no stat per child either, which is
- * what the completion half beside this file says about its own listing and has a
- * test behind. What `readdir` buys is that nothing here iterates a handle this
- * function must remember to release -- which is the whole of what was measured
- * when the early exit was looked for, and the whole of what is claimed.
+ * AND THE BOUND ON WHAT IS SHOWN IS NOW ALSO A BOUND ON WHAT IS HELD, WHICH IT
+ * WAS NOT. The shape this replaced read every name into ONE ARRAY and SORTED it
+ * to keep twenty, so the working set grew with the directory while the payload
+ * did not -- and the sentence that stood here calling that cost LINEAR was
+ * FALSE: a sort is N log N. MEASURED at a hundred thousand entries, which the
+ * old sentence admitted it had never read: the array shape took 888 ms on bun
+ * 1.3.13 and 1289 ms on deno 2.8.3, of which the SORT ALONE was 515 ms and 386
+ * ms -- against 315 ms and 1977 ms for the streaming shape below (macOS/APFS,
+ * mean of 5, machine under load). Only the names still standing in the first
+ * twenty are kept, so what this function holds is twenty strings and one dirent
+ * whatever the directory holds.
+ *
+ * A DIRECTORY IS STILL UNBOUNDED AND THE READ IS STILL NOT GUARDED, which is
+ * unchanged and is still ACCEPTED rather than solved: the only guard available
+ * would bound the read by TIME, and a highlight that answers differently
+ * depending on how busy the machine was is a defect of its own.
+ *
+ * WHAT THE STREAMING SHAPE COSTS, MEASURED AND ACCEPTED RATHER THAN OMITTED:
+ * deno pays per entry for iterating the handle, so the ordinary large directory
+ * -- five thousand entries -- drains in about 127 ms where the array shape took
+ * about 45 ms (bun: about 24 ms against about 18 ms, and at two hundred entries
+ * neither runtime tells the two apart at all). That reading lands on the SAME
+ * ORDER as the 135 ms this module's ruling was made on, so it is inside the
+ * envelope already accepted, and what it buys is the working set above plus the
+ * disappearance of a superlinear term at the tail.
+ *
+ * `opendir` RATHER THAN `readdir`, AND THE REASON IS THE WORKING SET. It was
+ * `readdir` one commit ago on the ground that nothing here then iterated a
+ * handle -- true of that implementation and no longer a reason, because the
+ * handle is exactly what lets every name be COUNTED without every name being
+ * KEPT. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
+ * the completion half beside this file already relies on for its own listing on
+ * both runtimes; nothing here breaks out of the loop, so no other release path
+ * exists to get wrong. READ RATHER THAN TRUSTED TO COMPATIBILITY, because a
+ * descriptor leaked once per highlight is a session that dies at the ulimit:
+ * 2000 resolves of one directory leave the process's own open descriptor count
+ * unmoved, bun 7 -> 7 and deno 21 -> 21.
  *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
@@ -243,8 +276,13 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  */
 async function listingOf(path: string): Promise<DirectoryListing | undefined> {
   try {
-    const names = (await readdir(path)).sort(byGroupThenName);
-    return { names: names.slice(0, entriesShown), total: names.length };
+    const names: string[] = [];
+    let total = 0;
+    for await (const entry of await opendir(path)) {
+      total += 1;
+      retain(names, entry.name);
+    }
+    return { names, total };
   } catch {
     // SWALLOWED HERE AND NOT AT THE HANDLER, which is the whole shape of this
     // subtask: the caller has a `stat` that succeeded, and a rejection reaching
@@ -254,7 +292,44 @@ async function listingOf(path: string): Promise<DirectoryListing | undefined> {
     // rejects ENOTDIR. THE SECOND IS NOT CONSTRUCTED BY ANY TEST: it needs a
     // race between two calls this handler makes back to back, and there is no
     // seam to open between them. It is the same catch either way.
+    //
+    // AND IT COVERS THE ITERATION AS WELL AS THE OPEN, which is new with the
+    // handle: a directory removed while its entries are being read rejects
+    // MID-DRAIN rather than at the call. A partial listing is thrown away rather
+    // than rendered -- the count beside the names would otherwise be the count
+    // of what was read before the failure, which is a number about nothing.
     return undefined;
+  }
+}
+
+/**
+ * Keeps `names` the entries that would be rendered FIRST, and no others.
+ *
+ * WHY THE ORDER IS MAINTAINED AS THE DIRECTORY IS READ rather than sorted at the
+ * end: the sort is what made the working set the whole directory. Holding the
+ * best `entriesShown` costs a comparison against the worst one KEPT for every
+ * entry that does not beat it -- the ordinary case -- and at most that many
+ * comparisons for one that does, so the cost really is linear in the entries, in
+ * the sense the sentence this replaced claimed falsely of a sort.
+ *
+ * THE COMPARATOR IS THE ONE BELOW AND NOT A SECOND SPELLING OF THE ORDER: a
+ * retention rule that disagreed with the render order would drop an entry that
+ * belongs on the wire, and the disagreement would show only on directories big
+ * enough to truncate.
+ *
+ * THE FULL LIST'S LAST NAME IS READ AS THE GATE, and it is `undefined` for
+ * exactly as long as the list is short of the bound -- which is why that read is
+ * the test for both `is it full` and `does this name beat the worst kept one`.
+ */
+function retain(names: string[], name: string): void {
+  const worstKept = names[entriesShown - 1];
+  if (worstKept !== undefined && byGroupThenName(name, worstKept) >= 0) {
+    return;
+  }
+  const at = names.findIndex((kept) => byGroupThenName(name, kept) < 0);
+  names.splice(at === -1 ? names.length : at, 0, name);
+  if (names.length > entriesShown) {
+    names.pop();
   }
 }
 
