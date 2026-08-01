@@ -19,6 +19,9 @@ import {
   cleanupThrowMessage,
   returnedItems as throwsReturnedItems,
 } from "./fixtures/completion-cleanup-yields-then-throws.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const cleanupYields = fixture("completion-cleanup-yields.ts");
 const cleanupYieldsForever = fixture("completion-cleanup-yields-forever.ts");

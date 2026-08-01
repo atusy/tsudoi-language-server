@@ -4,6 +4,9 @@ import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-ch
 import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const completionChunks = fixture("completion-chunks.ts");
 

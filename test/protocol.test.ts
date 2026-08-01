@@ -8,6 +8,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from 
 import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 const snapshotConfig = fixture("snapshot-config.ts");

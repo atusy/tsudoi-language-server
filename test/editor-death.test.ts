@@ -16,6 +16,9 @@ import {
 } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * What happens to tsudoi when the editor that spawned it goes away.

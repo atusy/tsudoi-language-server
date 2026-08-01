@@ -10,6 +10,9 @@ import { extractQuickstart, QUICKSTART_STEPS, readReadme } from "./helpers/readm
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT.

@@ -4,6 +4,9 @@ import { join } from "node:path";
 import { declaredMembers, handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { workspace } from "./helpers/workspace.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHICH MEMBERS ARE HANDLERS, WHICH IS A DIFFERENT QUESTION FROM WHICH

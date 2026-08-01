@@ -11,6 +11,9 @@ import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { fixedEdits } from "./fixtures/formatting-fixed.ts";
 import { replacement } from "./fixtures/formatting-offsets.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const formattingFixed = fixture("formatting-fixed.ts");
 const formattingOffsets = fixture("formatting-offsets.ts");

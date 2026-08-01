@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 import { dirname, join } from "node:path";
 import { lintProbe } from "./helpers/lint.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const lib = 'export const hello = () => "hi";\n';
 

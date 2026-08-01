@@ -8,6 +8,9 @@ import {
   installConsumer,
   stageEntries,
 } from "./helpers/install.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * The stakeholder-facing example's own bytes, read at test time. Not a fixture

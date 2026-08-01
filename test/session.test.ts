@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 import type { InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * THE HELPER ITSELF UNDER TEST, driven through the real server like everything

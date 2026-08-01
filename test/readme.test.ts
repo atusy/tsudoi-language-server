@@ -26,6 +26,9 @@ import {
   sequenceFor,
   UNPUBLISHED,
 } from "./helpers/readme.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 await requireRuntime(denoRuntime);
 

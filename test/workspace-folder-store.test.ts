@@ -2,6 +2,9 @@ import { expect, test } from "bun:test";
 import type { WorkspaceFolder } from "vscode-languageserver-protocol";
 import { createWorkspaceFolders } from "../packages/tsudoi-language-server/src/workspace.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * The store as a config author meets it, built from what a client sent at

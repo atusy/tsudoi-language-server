@@ -6,6 +6,9 @@ import { readReadme, statesFact, UNPUBLISHED } from "./helpers/readme.ts";
 
 import { repoRoot } from "./helpers/spawn.ts";
 import { workspace } from "./helpers/workspace.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * A FALSEHOOD CARRIED FOR A REASON MUST FAIL WHEN ITS REASON DIES, AND THIS IS

@@ -3,6 +3,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type InstalledConsumer, installConsumer } from "./helpers/install.ts";
 import { importsAndUses, publicProtocolNames } from "./helpers/published-names.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * THE ONE THING THAT DEFENDS src/types.ts's BARE SPECIFIER, and it has to be a

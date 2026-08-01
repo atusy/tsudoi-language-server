@@ -13,6 +13,9 @@ import { fixedHover } from "./fixtures/hover-fixed.ts";
 import { recoveredHover as rejectsRecovered, rejectMessage } from "./fixtures/hover-rejects.ts";
 import { recoveredHover as throwsRecovered, throwMessage } from "./fixtures/hover-throws.ts";
 import { fixture } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const hoverFixed = fixture("hover-fixed.ts");
 const hoverAbsent = fixture("hover-absent.ts");

@@ -19,6 +19,9 @@ import { notificationEntries } from "../packages/tsudoi-language-server/src/serv
 import { createWorkspaceFolders } from "../packages/tsudoi-language-server/src/workspace.ts";
 import { frameworkRoot } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * A connection that only remembers what was registered, so a notification can

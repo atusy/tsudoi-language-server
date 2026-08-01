@@ -8,6 +8,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { frameworkRoot } from "./helpers/spawn.ts";
 import { tree, type Tree } from "./helpers/tree.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
 

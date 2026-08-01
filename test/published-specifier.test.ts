@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * What a config author outside this repo writes: no relative path into src/.

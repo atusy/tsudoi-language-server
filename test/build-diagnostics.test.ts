@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { prepareWorkspace } from "../scripts/workspaces.ts";
 import { repoRoot, runCommand } from "./helpers/spawn.ts";
 import { workspace } from "./helpers/workspace.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT A FAILING BUILD SAYS, WHICH IS A DIFFERENT QUESTION FROM WHETHER IT

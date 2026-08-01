@@ -4,6 +4,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from 
 import { requireRuntime } from "./helpers/preflight.ts";
 import { membersMarker, readMarkedLine } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const membersConfig = fixture("document-members-config.ts");
 

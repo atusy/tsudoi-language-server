@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 import { bunRuntime, type Runtime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const absentRuntime: Runtime = {
   name: "tsudoi-absent-runtime",

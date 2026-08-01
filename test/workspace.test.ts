@@ -19,6 +19,9 @@ import { gateOpen, itemsFor } from "./fixtures/completion-workspace-gate.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture, frameworkRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const echoConfig = fixture("workspace-folders.ts");
 const workspaceGate = fixture("completion-workspace-gate.ts");

@@ -14,6 +14,9 @@ import { pathToFileURL } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { frameworkRoot, repoRoot, runCommand } from "./helpers/spawn.ts";
 import { mirrorInstalledDependencies, runTsc } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * Decisions that have to live in package.json and tsconfig.json, asserted

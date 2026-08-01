@@ -4,6 +4,9 @@ import { join, resolve, sep } from "node:path";
 import { handlerMembers } from "../scripts/workspaces.ts";
 import { packPackage } from "./helpers/install.ts";
 import { repoRoot } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT A WORKSPACE MEMBER ACTUALLY SHIPS, READ OFF ITS TARBALL.

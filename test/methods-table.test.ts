@@ -4,6 +4,9 @@ import type { Method } from "../packages/tsudoi-language-server/src/types.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const allMethods = fixture("all-methods.ts");
 const noMethods = fixture("no-methods.ts");

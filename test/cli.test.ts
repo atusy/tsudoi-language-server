@@ -7,6 +7,9 @@ import { getterFailure } from "./fixtures/handler-getter-throws.ts";
 import { bunRuntime, denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { type CliResult, fixture, runCli } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const runtimes = [bunRuntime, denoRuntime];
 

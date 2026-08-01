@@ -21,6 +21,9 @@ import {
   returnedItems as hangsReturnedItems,
 } from "./fixtures/completion-cleanup-hangs.ts";
 import { cleanupMarker as nonArrayCleanupMarker } from "./fixtures/completion-yields-non-array.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const completionCleanup = fixture("completion-cleanup.ts");
 const cleanupThrows = fixture("completion-cleanup-throws.ts");

@@ -10,6 +10,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from 
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { message } from "./fixtures/diagnostic-offsets.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const diagnosticOffsets = fixture("diagnostic-offsets.ts");
 // Supplies hover and NOT diagnostic: a stronger negative than an empty

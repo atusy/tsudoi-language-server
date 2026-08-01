@@ -10,6 +10,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const hoverParams = {
   textDocument: { uri: documentUri },

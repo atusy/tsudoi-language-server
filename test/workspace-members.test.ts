@@ -3,6 +3,9 @@ import { rmSync } from "node:fs";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
 import { workspace } from "./helpers/workspace.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT scripts/typecheck-workspaces.ts OWES, DRIVEN AGAINST WORKSPACES BUILT

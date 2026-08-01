@@ -8,6 +8,9 @@ import {
   cleanupMarker as itemCleanupMarker,
 } from "./fixtures/completion-yields-bare-item.ts";
 import { cleanupMarker as numberCleanupMarker } from "./fixtures/completion-yields-bare-number.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const runtimes = [bunRuntime, denoRuntime];
 

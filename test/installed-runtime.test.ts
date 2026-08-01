@@ -6,6 +6,9 @@ import { exampleSources, type InstalledConsumer, installConsumer } from "./helpe
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { runCommand } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 await requireRuntime(denoRuntime);
 

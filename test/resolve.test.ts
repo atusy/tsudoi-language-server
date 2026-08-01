@@ -10,6 +10,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from 
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { detailPrefix } from "./fixtures/resolve-detail.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const resolveDetail = fixture("resolve-detail.ts");
 /**

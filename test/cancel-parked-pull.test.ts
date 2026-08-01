@@ -23,6 +23,9 @@ import {
   parkedMarker as hoverRejectsParkedMarker,
   rejectDelayMs as hoverRejectDelayMs,
 } from "./fixtures/hover-parks-forever-rejects.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const ignoresSignal = fixture("completion-ignores-signal.ts");
 const ignoresSignalRejects = fixture("completion-ignores-signal-rejects.ts");

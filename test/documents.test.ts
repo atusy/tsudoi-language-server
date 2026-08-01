@@ -11,6 +11,9 @@ import type { TextDocument as PublishedTextDocument } from "@atusy/tsudoi-langua
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { createDocumentStore } from "../packages/tsudoi-language-server/src/documents.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const uri = "file:///workspace/a.txt";
 const otherUri = "file:///workspace/b.txt";

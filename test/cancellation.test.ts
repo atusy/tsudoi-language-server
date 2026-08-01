@@ -31,6 +31,9 @@ import {
   throwMessage as cancelledThrowMessage,
 } from "./fixtures/throws-on-cancel.ts";
 import { throwMessage as uncancelledThrowMessage } from "./fixtures/hover-throws.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 const hoverCancellable = fixture("hover-cancellable.ts");
 const completionCancel = fixture("completion-cancel.ts");

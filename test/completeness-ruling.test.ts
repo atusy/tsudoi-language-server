@@ -3,6 +3,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * EVERY COMPLETION HANDLER IN THIS REPOSITORY HAS RULED ON WHETHER ITS ANSWER IS

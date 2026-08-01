@@ -4,6 +4,9 @@ import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { repoRoot } from "./helpers/spawn.ts";
 import { mirrorInstalledDependencies, typeCheckProbe } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT A THROWAWAY PROBE IS ALLOWED TO REACH, ASSERTED AT THE HARNESS THAT HANDS

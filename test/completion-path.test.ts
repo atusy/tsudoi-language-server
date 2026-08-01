@@ -6,6 +6,9 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers
 import { requireRuntime } from "./helpers/preflight.ts";
 import { frameworkRoot } from "./helpers/spawn.ts";
 import { tree } from "./helpers/tree.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * WHAT A CLIENT RECEIVES FROM AN INSTALLED PATH COMPLETION, which is the only

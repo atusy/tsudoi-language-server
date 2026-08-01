@@ -26,6 +26,9 @@ import {
 } from "./fixtures/completion-gate.ts";
 import { partialChunk } from "./fixtures/completion-null-after-yield.ts";
 import { recoveredItems, sentBeforeThrow, throwMessage } from "./fixtures/completion-throws.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 const completionChunks = fixture("completion-chunks.ts");
 const completionGate = fixture("completion-gate.ts");
 const nullAfterYield = fixture("completion-null-after-yield.ts");

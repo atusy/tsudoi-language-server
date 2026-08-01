@@ -12,6 +12,9 @@ import {
 import { exampleSources, installConsumer } from "./helpers/install.ts";
 import { initializeParams, LspSession } from "./helpers/lsp.ts";
 import { runCommand } from "./helpers/spawn.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * A CONFIG AUTHOR GETS THE HANDLER PACKAGES BY INSTALLING THEM, NOT BY COPYING

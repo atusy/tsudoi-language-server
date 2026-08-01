@@ -14,6 +14,9 @@ import { join, relative } from "node:path";
 import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { runTsc } from "./helpers/typecheck.ts";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+
+applySuiteDeadline();
 
 /**
  * EVERY MEMBER REACHES tsudoi BY ITS OWN ROUTE, PROVEN BY BREAKING THAT ROUTE
