@@ -299,11 +299,15 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * exactly the distinction that made the earlier sentence wrong; `heapUsed` after
  * a forced collection, with the handles still alive, is what separates them.)
  *
- * SO WHAT THE STREAMING SHAPE RETIRED IS THIS FUNCTION'S OWN ARRAY AND THE SORT
- * OVER IT -- the superlinear term, and the payload -- AND NOT THE RUNTIME'S OWN
- * FULL READ, which no shape reachable from here avoids: bun retains it behind
- * the handle and deno pays for it and throws it away, and neither is this
- * function's to decline. `bufferSize` is
+ * SO WHAT THE STREAMING SHAPE RETIRED IS THIS FUNCTION'S OWN ARRAY AND THE
+ * O(N log N) SORT OVER IT, AND NOTHING ELSE. IT DID NOT RETIRE THE PAYLOAD, and
+ * a sentence here said it did: the array shape already rendered the first twenty
+ * names and no more -- the bound on what is SHOWN is a commit older than the
+ * streaming, and the two are separate decisions that this paragraph ran
+ * together. What streaming changed is what is HELD while the names are counted.
+ * NOR DID IT RETIRE THE RUNTIME'S OWN FULL READ, which no shape reachable from
+ * here avoids: bun retains it behind the handle and deno pays for it and throws
+ * it away, and neither is this function's to decline. `bufferSize` is
  * not the edit that would, though it is the one a reader reaches for: deno's
  * `opendir` defaults it to 32 and validates it, and its `Dir` then never uses it
  * for anything at all. THAT DEFAULT IS WHAT A CALL PASSING NO OPTIONS GETS,
