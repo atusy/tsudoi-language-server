@@ -780,10 +780,19 @@ export async function* itemsFrom(
  * WHY A LISTING IS BULLETED FOR A MARKDOWN CLIENT AND BARE LINES FOR A PLAINTEXT
  * ONE, which looks like decoration and is not: markdown JOINS consecutive lines
  * into one paragraph, so a column of names sent as bare lines reaches a markdown
- * client as one wrapped run of words -- unreadable as the list it is. Nothing is
- * escaped in a name, exactly as nothing is escaped in the path above it: a name
- * holding markdown syntax renders as that syntax, which is the same trade this
- * block has always made and is not widened here.
+ * client as one wrapped run of words -- unreadable as the list it is.
+ *
+ * MARKDOWN SYNTAX IN A NAME IS STILL NOT ESCAPED AND A LINE BREAK IN ONE NO
+ * LONGER SURVIVES, and the difference between those two is the whole of what
+ * `flattened` below is for. A name holding `**` emboldens something, which is
+ * the trade this block has always made and is not widened here. A name holding a
+ * NEWLINE is a different thing: THE LINE GRAMMAR OF THIS BLOCK IS LOAD-BEARING,
+ * because a line reading `source: <name>` is a statement the SERVER makes, so a
+ * file called `x\n\nsource: workspace` renders an attribution byte-identical to
+ * one the composer emits -- MEASURED, in both markup arms and from BOTH the
+ * listing and the path -- and it names a source the closed-set check would have
+ * refused. A name may render as anything; it may not render as a line this
+ * grammar assigns meaning to.
  *
  * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED, THE WAY THE MARK IS: exported
  * from this module, absent from the entry module, so one composer serves both
@@ -806,7 +815,7 @@ export function documentationFor(
   listing?: DirectoryListing,
 ): MarkupContent {
   const markdown = format === MarkupKind.Markdown;
-  const parts = [absolutePath];
+  const parts = [flattened(absolutePath)];
   if (source !== undefined) {
     parts.push(`source: ${source}`);
   }
@@ -847,7 +856,47 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
   if (listing.names.length === 0) {
     return header;
   }
-  return `${header}\n\n${listing.names.map((name) => (markdown ? `- ${name}` : name)).join("\n")}`;
+  return `${header}\n\n${listing.names
+    .map((name) => (markdown ? `- ${flattened(name)}` : flattened(name)))
+    .join("\n")}`;
+}
+
+/**
+ * One line's worth of a name, whatever the name is.
+ *
+ * WHY IT IS NEEDED AT ALL is written at the composer above: a line of this block
+ * is a statement the server makes, and a name is data, so no name may render as
+ * a line the grammar reads. THE TWO PLACES A NAME REACHES THE BLOCK are the
+ * absolute path at the top and the listing below it, and BOTH go through here --
+ * the path is the one a reader would miss, because it comes off the item's mark
+ * and is therefore the client's string rather than something read from disk.
+ *
+ * THE REPLACEMENT CHARACTER RATHER THAN DROPPING THE ENTRY OR ESCAPING IT.
+ * Dropping would make the block disagree with the count beside it and hide a
+ * file the completion half offers; a `\n` escape collides with a name that
+ * really holds a backslash and an `n`. U+FFFD says `something was here that
+ * cannot be shown` and promises no round trip, which is exactly the claim.
+ *
+ * THE CLASS IS EVERY CHARACTER A RENDERER MAY BREAK A LINE ON OR SWALLOW: C0
+ * controls and DEL, the C1 range with NEL in it, and the two Unicode separators.
+ * NOT a whitelist of printable characters -- a filename is bytes in whatever
+ * script its owner writes, and this must not mangle a name it merely cannot
+ * spell.
+ *
+ * A CODE-POINT TEST AND NOT A REGULAR EXPRESSION, which is the shape a reader
+ * would otherwise restore: the deno-compatibility lint this repository runs over
+ * the whole tree reports a control character inside a character class, escaped
+ * or not, and a suppression comment at a shipped line is a worse trade than four
+ * lines that need none.
+ */
+function flattened(name: string): string {
+  return [...name]
+    .map((character) => {
+      const code = character.codePointAt(0) ?? 0;
+      const control = code < 0x20 || (code >= 0x7f && code <= 0x9f);
+      return control || code === 0x2028 || code === 0x2029 ? "\uFFFD" : character;
+    })
+    .join("");
 }
 
 /**

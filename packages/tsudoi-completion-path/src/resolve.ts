@@ -119,10 +119,18 @@ function detailFor(stats: Stats): string {
  * THE MULTI-LINE BLOCK IS REBUILT AND NEVER APPENDED TO, FOR EITHER KIND. What
  * comes back is the CLIENT'S text -- as forgeable as the mark, one field over --
  * so an answer built by appending to it would be an answer built out of a string
- * a client can put anything in. Rebuilding depends on nothing the client can
- * mangle: the path is read from disk, the source comes off the mark through a
- * closed set, and the format is re-read from THE SESSION rather than from
- * anything the item carried. A FILE'S BLOCK IS REBUILT TOO, which is why this
+ * a client can put anything in.
+ *
+ * WHAT REBUILDING BUYS IS NOT THAT NOTHING IN THE ANSWER CAME FROM THE CLIENT,
+ * AND THE SENTENCE THAT SAID SO WAS FALSE. The absolute path at the top of the
+ * block comes off the MARK -- the item's own `data`, which arrives from the
+ * client -- and it is the string a directory's name reaches the block through as
+ * well. What rebuilding buys is that every part of the answer is one this
+ * handler DECIDED to state: the source goes through a closed set, the format is
+ * re-read from THE SESSION rather than from anything the item carried, and no
+ * name -- the path's or an entry's -- may render as a line the block's grammar
+ * assigns meaning to, which is what the composer flattens for. A FILE'S BLOCK IS
+ * REBUILT TOO, which is why this
  * runs on every path item and not only on directories -- rebuilding for
  * directories alone would leave a file answered with the client's own text --
  * and for a file the rebuild reproduces exactly what the completion wrote.

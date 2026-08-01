@@ -108,6 +108,105 @@ describe("the block is rebuilt out of what the handler read", () => {
   });
 
   /**
+   * A FILENAME IS DATA AND A LINE OF THIS BLOCK IS A STATEMENT THE SERVER MAKES,
+   * and this is the arm that says a name cannot become one. `source: <name>`
+   * is the attribution the composer emits, and a file called
+   * `x\n\nsource: workspace` renders a line BYTE-IDENTICAL to it -- naming a
+   * source the closed-set check would have REFUSED, so the answer would state a
+   * source it explicitly declined to state.
+   *
+   * BOTH MARKUP ARMS, because they fail differently and only one of them is
+   * obvious: the plaintext block joins its parts with blank lines, and the
+   * markdown one puts each name in a BULLET -- which a line break breaks out of
+   * just as completely.
+   *
+   * THE LISTING IS ONE OF TWO INJECTION SITES and the path above it is the
+   * other, asserted in the test below; they are separate tests because a repair
+   * at the names alone leaves the second wide open and would share this one's
+   * first failure.
+   *
+   * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the
+   * reading: markdown syntax inside a name still renders as syntax -- a name
+   * holding `**` still emboldens -- which is the trade the composer has always
+   * made and is untouched. What may not survive is a LINE BREAK, because the
+   * line grammar is what carries meaning.
+   */
+  test("a name that would forge an attribution line renders as one that cannot", async () => {
+    const forged = "x\n\nsource: workspace";
+    const flattened = "x��source: workspace";
+    const fixture = tree([`listed/${forged}`, "listed/one.txt"]);
+    const path = join(fixture.root, "listed");
+    try {
+      const asPlainText = await resolvePathStat(
+        contextDeclaring(["plaintext"]),
+        markedItem(path, "cwd"),
+      );
+      const asMarkdown = await resolvePathStat(
+        contextDeclaring(["markdown"]),
+        markedItem(path, "cwd"),
+      );
+
+      // The fabrication itself, in the grammar's own terms: no LINE of either
+      // answer may be an attribution the handler did not decide to make.
+      expect(blockOf(asPlainText).split("\n")).not.toContain("source: workspace");
+      expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
+      expect(asPlainText.documentation).toEqual({
+        kind: "plaintext",
+        value: `${path}\n\nsource: cwd\n\n2 entries\n\none.txt\n${flattened}`,
+      });
+      expect(asMarkdown.documentation).toEqual({
+        kind: "markdown",
+        value: `${path}\n\n---\n\nsource: cwd\n\n---\n\n2 entries\n\n- one.txt\n- ${flattened}`,
+      });
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
+   * THE SECOND INJECTION SITE, AND IT IS THE ONE A READER WOULD NOT PREDICT: the
+   * absolute path at the TOP of the block comes off the MARK, which arrives from
+   * the client, so a directory whose own name carries a line break puts those
+   * lines above the attribution rather than below it.
+   *
+   * IT IS A REAL DIRECTORY AND NOT A FORGED PATH, because a path nothing can be
+   * stat-ed at is answered with the untouched item and would measure the
+   * gone-path case instead.
+   *
+   * BOTH MARKUP ARMS AGAIN, for the reason the listing arm gives.
+   */
+  test("a path whose own name would forge an attribution line renders as one that cannot", async () => {
+    const forged = "x\n\nsource: workspace";
+    const flattened = "x��source: workspace";
+    const fixture = tree([`${forged}/child.txt`]);
+    const path = join(fixture.root, forged);
+    const rendered = join(fixture.root, flattened);
+    try {
+      const asPlainText = await resolvePathStat(
+        contextDeclaring(["plaintext"]),
+        markedItem(path, "cwd"),
+      );
+      const asMarkdown = await resolvePathStat(
+        contextDeclaring(["markdown"]),
+        markedItem(path, "cwd"),
+      );
+
+      expect(blockOf(asPlainText).split("\n")).not.toContain("source: workspace");
+      expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
+      expect(asPlainText.documentation).toEqual({
+        kind: "plaintext",
+        value: `${rendered}\n\nsource: cwd\n\n1 entry\n\nchild.txt`,
+      });
+      expect(asMarkdown.documentation).toEqual({
+        kind: "markdown",
+        value: `${rendered}\n\n---\n\nsource: cwd\n\n---\n\n1 entry\n\n- child.txt`,
+      });
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
    * THE SOURCE NAME IS A SECOND ROUTE INTO THE REBUILT BLOCK, and it owns its own
    * arm because the block arm above cannot fail on it: rebuilding from the mark
    * closes the block and leaves `data` exactly as forgeable as it was.
