@@ -273,21 +273,37 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * twenty are kept, so what this function holds is twenty strings and one dirent
  * whatever the directory holds.
  *
- * THE PROCESS HOLDS A WHOLE DIRECTORY EITHER WAY, AND A SENTENCE THAT STOPPED AT
- * `twenty strings and one dirent` SAID OTHERWISE. Both runtimes materialise the
- * directory BEHIND the handle, by different routes -- READ IN THEIR OWN `Dir`
- * IMPLEMENTATIONS AND THEN MEASURED at a hundred thousand entries (macOS/APFS,
- * resident set, warmed). Bun's is a facade over `readdir` with file types and
+ * THE PROCESS ALLOCATES A WHOLE DIRECTORY EITHER WAY, AND A SENTENCE THAT
+ * STOPPED AT `twenty strings and one dirent` SAID OTHERWISE. But `MATERIALISE
+ * BEHIND THE HANDLE` IS BUN'S SHAPE AND ONLY BUN'S, and the sentence that
+ * claimed it of both was reading a resident set that cannot tell allocation
+ * from retention -- which it said in its own parenthesis and then ignored.
+ *
+ * BUN RETAINS. Its `Dir` is a facade over `readdir` with file types and
  * materialises on the FIRST read: 30 MB at the open and 61 MB once ONE entry has
- * been taken. Deno reads the whole directory SYNCHRONOUSLY inside `opendir`, to
- * fail early on a path that is not one, and only then streams entries from an op
- * one at a time: 57 MB before, 119 MB at the open, unmoved by the first entry.
- * (Resident set says where the ALLOCATION happens and never what stays; when a
- * collector gives it back is not a thing this reading can separate.)
+ * been taken, at a hundred thousand entries (macOS/APFS, warmed).
+ *
+ * DENO DOES NOT, AND THE ALLOCATION AT ITS OPEN IS TRANSIENT. Its `opendir`
+ * calls `Deno.readDirSync(path)` and DISCARDS THE RESULT -- the source's own
+ * comment on the line is `Throws if path is invalid` -- then builds `new
+ * Dir(path)`, which stores the path and nothing else; the entries come later
+ * from a SEPARATE async op the first `read()` starts. So the whole directory is
+ * read and thrown away at the open, which is where the 37 ms and the 57 -> 119
+ * MB come from and why they are real, and the handle holds none of it. READ IN
+ * DENO'S OWN SOURCE and then measured two ways rather than argued: sixteen
+ * unread handles on one hundred-thousand-entry directory leave `heapUsed`
+ * unmoved at 6 MB after a forced collection, and their resident set plateaus at
+ * 206 MB where sixteen retained copies would be near 600.
+ *
+ * (Resident set says where the ALLOCATION happens and never what stays, which is
+ * exactly the distinction that made the earlier sentence wrong; `heapUsed` after
+ * a forced collection, with the handles still alive, is what separates them.)
  *
  * SO WHAT THE STREAMING SHAPE RETIRED IS THIS FUNCTION'S OWN ARRAY AND THE SORT
- * OVER IT -- the superlinear term, and the payload -- AND NOT THE RUNTIME'S
- * MATERIALISATION, which no shape reachable from here avoids. `bufferSize` is
+ * OVER IT -- the superlinear term, and the payload -- AND NOT THE RUNTIME'S OWN
+ * FULL READ, which no shape reachable from here avoids: bun retains it behind
+ * the handle and deno pays for it and throws it away, and neither is this
+ * function's to decline. `bufferSize` is
  * not the edit that would, though it is the one a reader reaches for: deno's
  * `opendir` defaults it to 32 and validates it, and its `Dir` then never uses it
  * for anything at all. THAT DEFAULT IS WHAT A CALL PASSING NO OPTIONS GETS,
@@ -313,8 +329,9 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * SET. It was `readdir` one commit ago on the ground that nothing here then
  * iterated a handle -- true of that implementation and no longer a reason,
  * because the handle is what lets every name be COUNTED without THIS FUNCTION
- * keeping every name. It does not stop the runtime beneath it from keeping them,
- * which is measured above and is why the reason is written this narrowly. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
+ * keeping every name. It does not stop the runtime beneath it from READING them
+ * all -- nor, on bun, from keeping them -- which is measured above and is why
+ * the reason is written this narrowly. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
  * the completion half beside this file already relies on for its own listing on
  * both runtimes. READ RATHER THAN TRUSTED TO COMPATIBILITY, because a descriptor
  * leaked once per highlight is a session that dies at the ulimit: 2000 resolves
