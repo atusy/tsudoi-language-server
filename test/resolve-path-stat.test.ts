@@ -67,14 +67,30 @@ const prefix = "sample";
  * load-bearing: writing into a directory bumps its mtime, and the expected
  * detail string below carries that stamp.
  *
- * ONE OF THEM IS HIDDEN, because `hidden entries are shown` is a ruling with no
- * witness unless a fixture holds one. THREE NAMES WHOSE THREE ORDERS DIFFER --
- * created `beta.txt`, `.hidden`, `alpha`, rendered `alpha`, `beta.txt`,
- * `.hidden` -- so an answer that echoed creation order, or whatever order the
- * filesystem keeps, cannot pass the whole-value assertion by coincidence. AND
- * THE HIDDEN ONE COMES LAST RATHER THAN FIRST, which is the whole of what the
- * order ruling changed: a plain code-unit sort puts `.hidden` in front, and this
- * is the wire's witness that it does not.
+ * TWO OF THEM ARE HIDDEN, because `hidden entries are shown` is a ruling with no
+ * witness unless a fixture holds one. NAMES WHOSE CREATION ORDER, FILESYSTEM
+ * ORDER AND RENDERED ORDER ALL DIFFER, so an answer that echoed any of the first
+ * two cannot pass the whole-value assertion by coincidence. AND THE HIDDEN ONES
+ * COME LAST RATHER THAN FIRST, which is the whole of what the order ruling
+ * changed: a plain code-unit sort puts them in front, and this is the wire's
+ * witness that it does not.
+ *
+ * EACH GROUP HOLDS AN UPPERCASE NAME AND A LOWERCASE ONE, AND THAT PAIR IS THE
+ * ONLY THING HERE THAT CAN TELL THE RULED ORDER FROM THE REFUSED ONE. MEASURED
+ * by the sprint's second reviewer: with every name lowercase ASCII, replacing
+ * the comparator with `localeCompare` left every ordering assertion in the tree
+ * GREEN, so `sorted by code unit, NEVER by locale` had no witness at all. `Z` is
+ * 0x5A and `a` is 0x61, so code units order `Zeta.txt` before `alpha` where
+ * every collator orders it after -- READ ON BOTH RUNTIMES rather than assumed
+ * from ICU, since a runtime built without it would fall back to code units and
+ * make the refused implementation indistinguishable: `"Z".localeCompare("a")` is
+ * 1 under bun 1.3.13 (default locale en-US) and under deno 2.8.3 (ja-JP), and
+ * the two DEFAULT LOCALES DIFFERING is itself the argument -- the same directory
+ * would read differently depending on the machine the server happens to run on.
+ *
+ * THE HIDDEN GROUP NEEDS ITS OWN PAIR: the comparator answers on the group key
+ * first and reaches the name key only WITHIN a group, so a discriminating pair
+ * among the ordinary entries alone leaves the hidden branch unwitnessed.
  */
 function sampleTree(): Tree {
   const fixture = tree([
@@ -82,6 +98,8 @@ function sampleTree(): Tree {
     "sample-dir/beta.txt",
     "sample-dir/.hidden",
     "sample-dir/alpha/",
+    "sample-dir/Zeta.txt",
+    "sample-dir/.Zed",
   ]);
   writeFileSync(join(fixture.root, "sample.txt"), fileText);
   // Access time as well, because `utimes` takes both and there is no arm that
@@ -114,17 +132,23 @@ function fileBlock(root: string): string {
  * this directory exists and two cannot disagree.
  *
  * NAMES ALONE, AND `alpha` BEING A DIRECTORY IS WHAT MAKES THAT A DECISION
- * RATHER THAN AN ACCIDENT: the three children are a dotfile, a file and a
- * directory, and all three come back spelled the same way. Marking the kind
- * would cost a read per child, which is the exact work this package refuses at
- * popup time and has no better claim to at highlight time.
+ * RATHER THAN AN ACCIDENT: the children are dotfiles, files and a directory, and
+ * all of them come back spelled the same way. Marking the kind would cost a read
+ * per child, which is the exact work this package refuses at popup time and has
+ * no better claim to at highlight time.
  *
- * THE ORDINARY ENTRIES FIRST AND THE DOTFILE AFTER THEM, which is a rendering
- * order and not a membership claim: all three are here, and the count above them
- * counts all three.
+ * THE ORDINARY ENTRIES FIRST AND THE DOTFILES AFTER THEM, which is a rendering
+ * order and not a membership claim: all of them are here, and the count above
+ * them counts all of them.
+ *
+ * WITHIN EACH GROUP THE UPPERCASE NAME COMES FIRST, and that is the whole value
+ * this string carries that a locale-ordered answer cannot produce: a collator
+ * would read back `alpha, beta.txt, Zeta.txt` and `.hidden, .Zed`. Written out
+ * rather than sorted here, or a mistake in the comparator would be reproduced by
+ * the expectation.
  */
 function directoryBlock(root: string): string {
-  return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\nalpha\nbeta.txt\n.hidden`;
+  return `${join(root, "sample-dir")}\n\nsource: document\n\n5 entries\n\nZeta.txt\nalpha\nbeta.txt\n.Zed\n.hidden`;
 }
 
 /**
