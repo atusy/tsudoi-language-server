@@ -230,7 +230,10 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * bun 1.3.13 and 135 ms on deno 2.8.3 (macOS/APFS, mean of 5), against the ~1.1 s
  * of per-entry stats this package exists to refuse and against a completion half
  * that ALREADY drains an entire directory on every keystroke to filter it. A
- * drain once per HIGHLIGHT cannot be the expensive thing here.
+ * drain once per HIGHLIGHT cannot be the expensive thing here. THOSE TWO NUMBERS
+ * ARE THE RULING'S PROVENANCE AND NOT THIS SHAPE'S COST -- they were read off the
+ * `readdir` this function no longer uses, and what the shape below measures is
+ * further down.
  *
  * WHAT DOES NOT SHRINK WITH IT IS THE PAYLOAD -- those five thousand names are
  * eighty-five thousand characters in one response and five thousand lines in one
