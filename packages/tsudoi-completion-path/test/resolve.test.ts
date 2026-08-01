@@ -261,6 +261,56 @@ describe("the block is rebuilt out of what the handler read", () => {
   });
 });
 
+describe("a cancelled highlight does not go on reading the directory", () => {
+  /**
+   * WHAT THIS ARM CAN AND CANNOT OBSERVE, SAID FIRST BECAUSE IT DECIDES WHETHER
+   * IT MEASURES ANYTHING. tsudoi answers a cancelled request -32800 whatever the
+   * handler returned -- it re-reads the abort after the handler settles -- so
+   * the ANSWER is discarded either way and no client-visible difference exists
+   * to assert. What the check buys is that the listing is NOT RUN, and the
+   * returned value is the only handle a test has on that: an implementation
+   * that ignored the signal opens the directory and comes back with a `detail`
+   * and a block carrying the entries, which is what the green pair below shows
+   * this fixture really produces. So the arm is a PROXY for the work, stated as
+   * one rather than dressed up as an assertion about what a user sees.
+   *
+   * THE CANCELLATION LANDS WHILE THE STAT IS PENDING, WITH NO TIMER: the handler
+   * runs synchronously up to its first `await`, so aborting immediately after
+   * the call -- before the returned promise is awaited -- puts the abort inside
+   * the stat every time. A `setTimeout` would make this arm's meaning depend on
+   * how busy the machine is, which is the defect this suite has already had to
+   * explain away once.
+   *
+   * WHAT IT DOES NOT COVER, and the reason is written at `listingOf`: a
+   * cancellation arriving once the drain has STARTED is not honoured at all,
+   * because abandoning a half-read directory leaks its descriptor on one of the
+   * two runtimes. There is nothing to assert about that here beyond what the
+   * green pair already says.
+   */
+  test("a resolve cancelled while its stat is pending answers without listing the directory", async () => {
+    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+    const path = join(fixture.root, "listed");
+    const item = markedItem(path, "cwd");
+    try {
+      const controller = new AbortController();
+      const pending = resolvePathStat(contextDeclaring(["plaintext"], controller.signal), item);
+      controller.abort();
+      const cancelled = await pending;
+
+      expect(cancelled).toEqual(item);
+      expect(cancelled.detail).toBeUndefined();
+
+      // THE PAIR, AND IT IS WHAT SEPARATES `THE LISTING WAS SKIPPED` FROM `THIS
+      // FIXTURE HAS NOTHING TO SHOW`: the same item, the same directory, an
+      // uncancelled session.
+      const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
+      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd\n\n2 entries\n\none.txt\ntwo.txt`);
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 describe("what the path is decides the answer, and never what the item claims", () => {
   /**
    * THE RULING HAD NO WITNESS, WHICH IS WHY THIS ARM EXISTS. `the branch is

@@ -161,6 +161,29 @@ function detailFor(stats: Stats): string {
  * ordinary posix permission, MEASURED biting under both runtimes -- would then be
  * answered with the bare item, throwing away a detail that was already in hand.
  * A failed listing costs the user the listing and nothing else.
+ *
+ * THE SIGNAL IS READ BETWEEN THE TWO READS, AND WHAT THAT BUYS IS THAT THE WORK
+ * IS NOT DONE -- NOT THAT THE ANSWER IS RIGHT. Which of the two it buys was READ
+ * off tsudoi rather than assumed, because only one of them was ever available:
+ * tsudoi re-reads the abort AFTER a handler settles and answers a cancelled
+ * request -32800 whatever the handler produced, so an answer composed after a
+ * cancellation is DISCARDED with or without this check, and nothing a config
+ * author writes here can change what that client is told. What nothing can take
+ * back afterwards is work already done. A user arrowing through a popup
+ * supersedes their own highlight by the keystroke, and every superseded one used
+ * to go on to open the directory and read it to the end.
+ *
+ * IT IS READ ONCE, HERE, AND NOT AGAIN INSIDE THE LISTING, which looks like the
+ * cheaper half of the same idea and is refused on a measurement written at
+ * `listingOf`: on one of the two runtimes a directory abandoned mid-drain never
+ * gives its descriptor back. So the seam that pays is the one BEFORE the handle
+ * is opened -- where what is skipped is the whole read rather than the tail of
+ * it -- and a cancellation arriving after the drain has begun costs what it
+ * always did.
+ *
+ * THE UNTOUCHED ITEM IS WHAT A CANCELLED RESOLVE ANSWERS, for the reason the
+ * gone-path case answers it: nothing this handler decided to state was finished,
+ * and the item the client holds is the one thing that is certainly not wrong.
  */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
@@ -173,6 +196,12 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
   } catch {
     // NOTHING WAS READ, so there is nothing to answer out of and the item goes
     // back as it came -- which is what the untouched-item cases require.
+    return item;
+  }
+  if (context.signal.aborted) {
+    // THE STAT IS SPENT AND THE LISTING IS THE UNBOUNDED READ, so this is the
+    // seam where a cancellation is worth anything at all -- the whole reason
+    // the two reads are not one expression.
     return item;
   }
   return {
@@ -240,11 +269,31 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * handle is exactly what lets every name be COUNTED without every name being
  * KEPT. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
  * the completion half beside this file already relies on for its own listing on
- * both runtimes; nothing here breaks out of the loop, so no other release path
- * exists to get wrong. READ RATHER THAN TRUSTED TO COMPATIBILITY, because a
- * descriptor leaked once per highlight is a session that dies at the ulimit:
- * 2000 resolves of one directory leave the process's own open descriptor count
- * unmoved, bun 7 -> 7 and deno 21 -> 21.
+ * both runtimes. READ RATHER THAN TRUSTED TO COMPATIBILITY, because a descriptor
+ * leaked once per highlight is a session that dies at the ulimit: 2000 resolves
+ * of one directory leave the process's own open descriptor count unmoved, bun 7
+ * -> 7 and deno 21 -> 21.
+ *
+ * THIS LOOP DOES NOT READ THE REQUEST'S ABORT, AND THAT IS A REFUSAL ON A
+ * MEASUREMENT RATHER THAN AN OVERSIGHT -- it is the obvious next edit, so the
+ * reading that forecloses it is written here. ON DENO A DIRECTORY THAT HAS BEEN
+ * READ FROM AND NOT DRAINED NEVER GIVES ITS DESCRIPTOR BACK, and an explicit
+ * `close()` does not change that: 500 listings abandoned after ONE entry take
+ * the process from 21 open descriptors to 521, whether the loop is left by
+ * `return`, by `break`, or by `break` followed by an awaited `close()`. Opening
+ * and closing WITHOUT READING leaks nothing, and draining to the end leaks
+ * nothing, so it is the partial read alone. Bun releases in every one of those
+ * shapes, 5 -> 5. A highlight that stops a drain would therefore cost one
+ * descriptor per cancelled highlight on one runtime, and a user arrowing through
+ * a popup makes them by the keystroke: the session dies at the ulimit, which is
+ * a worse failure than the drain this would have saved. WHAT IS SAVED INSTEAD is
+ * the whole listing, at the seam BEFORE the handle is opened, which is where the
+ * handler reads the signal.
+ *
+ * WHAT WOULD RETIRE THAT REFUSAL: deno releasing the descriptor of a partially
+ * read directory. The reading above is the one to take again -- it is 500
+ * iterations and a count of the process's own open descriptors -- and it is the
+ * whole of what stands between this loop and a cancellation it could honour.
  *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
