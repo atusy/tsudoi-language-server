@@ -400,6 +400,52 @@ function listingSection(block: string): { header: string; names: string[] } {
 
 describe("what one directory renders does not grow with what it holds", () => {
   /**
+   * THE BOUND AS A VALUE, AND IT IS THE ONE THING EVERY OTHER ARM IN THIS FILE
+   * TAKES FROM THE IMPLEMENTATION INSTEAD OF STATING. MEASURED by the sprint's
+   * second reviewer: moving the bound from twenty to nineteen left the arms
+   * below, the hidden-entry arm and the wire arm ALL GREEN, because each of them
+   * reads the count off an over-bound answer and compares everything else
+   * against that. A suite that infers the number from the implementation agrees
+   * with the implementation whatever it says, which is this project's own
+   * definition of measuring nothing.
+   *
+   * READ OFF THE ANSWER AND IMPORTED FROM NOWHERE, which is the whole of the
+   * standing ruling and is not loosened by spelling the number here: what
+   * `entriesShown` decides is visible as the number of names one resolved
+   * directory carries, so THIS is the wire reading, and a test importing the
+   * constant would be the thing refused -- it would agree with itself after any
+   * edit. AN EARLIER DECISION IS RETIRED BY MEASUREMENT RATHER THAN QUIETLY
+   * DROPPED: the number was deliberately `spelled in no test`, and that is
+   * exactly what left it pinned by nothing.
+   *
+   * THE OTHER ARMS ARE NOT REWRITTEN TO SPELL IT, deliberately: they assert
+   * relations -- two directories agreeing, the edge announcing no truncation --
+   * that are worth stating independently of the value, and pinning one number in
+   * six places is how a legitimate change to it becomes a six-file edit.
+   */
+  test("a directory far past the bound renders twenty names and no more", async () => {
+    const many = entryNames("f", 25);
+    const fixture = tree(many.map((name) => `many/${name}`));
+    try {
+      const section = listingSection(
+        blockOf(
+          await resolvePathStat(
+            contextDeclaring(["plaintext"]),
+            markedItem(join(fixture.root, "many"), "cwd"),
+          ),
+        ),
+      );
+
+      expect(section.names.length).toBe(20);
+      // And the number the USER is told is the same number, so a bound that
+      // moved without the announcement moving reddens here too.
+      expect(section.header).toBe("25 entries, first 20 shown");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
    * THE BOUND IS READ OFF THE ANSWER AND NEVER IMPORTED, for the reason written
    * at the batch size in the completion half: a test that imports the number
    * agrees only with itself, where one reading what was rendered disagrees
