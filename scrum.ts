@@ -744,12 +744,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "A preload of its own that exports the number and sets the default at import time, added as a second entry beside the build preload.",
         type: "behavioral",
-        status: "pending",
+        status: "red",
         commits: [],
         notes: [
           "ITS OWN FILE AND NOT THE BUILD PRELOAD, for a reason stronger than tidiness: the build preload THROWS on a failed compile, so the timeout policy would die with a build failure -- and this subtask's arms must preload the REAL module at an unambiguous value in a throwaway tree, which is impossible if the call is welded to a module that compiles the whole workspace on import.",
           "TWO DEGENERATES, STATED IN ADVANCE: a module that exports the constant and sets nothing (the over arms pass under bun's own default and must redden), and a module that sets the default but ignores the override (the same arms redden, and this is the one that catches a misspelt variable name).",
           "MEASURED PREMISE THAT WIDENS THE ONE IN THE PBI: the record measured that a preload beats the command-line flag. It is now also measured that A PER-TEST THIRD ARGUMENT BEATS THE PRELOAD -- so every file that sets its own deadline survives a raised default untouched, which is what the item's own exclusion rests on.",
+          "STOPPED HERE, AND THE REASON IS A MEASURED PROPERTY OF bun THAT DEFEATS THE MECHANISM THIS ITEM RULED ON. `setDefaultTimeout` CALLED FROM A PRELOAD APPLIES TO THE FIRST TEST FILE ONLY; every file after it runs at bun's built-in 5000ms. MEASURED on bun 1.3.13 / macOS in a throwaway tree of THREE files, each holding one test that sleeps 6000ms, with a preload setting 20_000 and NOTHING ELSE in the tree: 1 pass / 2 fail, the first file passing and the other two failing at 5002ms with `this test timed out after 5000ms`. It is not the third-argument interaction the note above describes -- no file in that tree carries a third argument -- and adding one only moves which files are affected.",
+          "THE THREE REPAIRS THAT WERE TRIED AND FAILED, so the next attempt does not spend the readings again: `beforeAll`, `beforeEach` and `afterAll` registered IN THE PRELOAD, each calling `setDefaultTimeout` again, all read 1 pass / 2 fail unchanged. A hook cannot reach it because a test captures its deadline when it is REGISTERED, which is module-evaluation time for its file.",
+          "AND THE FLAG THIS SPRINT SET OUT TO RETIRE IS THE ONE MECHANISM THAT SURVIVES, which inverts the item's premise rather than qualifying it. MEASURED in the same tree: `bun test --timeout 9000` reads 3 pass / 0 fail, INCLUDING with a fourth file carrying a per-test third argument -- so the reset restores the COMMAND-LINE value when one was given and bun's 5000ms when none was. `[test] timeout` in bunfig.toml was RE-MEASURED and is still ignored, and `bun test --help` on 1.3.13 documents no environment variable for it. The record's `a preload BEATS --timeout` is TRUE AND NARROWER THAN IT READS: measured again here at preload 3000 against flag 9000, the preload wins -- IN THE FIRST FILE.",
+          "WHY NOTHING WAS LANDED, WHICH IS THE HALF THAT MATTERS MOST: the arms written for this subtask ALL PASSED. They spawn a throwaway suite of ONE file, which is exactly the case the defect spares, so a green here would have certified a policy that does not reach the suite it is for -- this project's own disarmed-control shape. The module, its arms and the bunfig patch are preserved outside the repository; the working tree is back at the previous commit and the Definition of Done is green.",
         ],
       },
       {
@@ -796,7 +800,23 @@ const scrum: ScrumDashboard = {
         ],
       },
     ],
-    impediments: [],
+    impediments: [
+      {
+        description:
+          "THE MECHANISM THIS SPRINT RULED ON DOES NOT REACH THE SUITE IT IS FOR. `setDefaultTimeout` called from a preload applies to the FIRST TEST FILE ONLY; every file after it runs at bun's built-in 5000ms. MEASURED on bun 1.3.13 / macOS in a throwaway tree of THREE files, one test each sleeping 6000ms, preload setting 20_000, nothing else in the tree: 1 pass / 2 fail, the two later files failing at 5002ms with `this test timed out after 5000ms`. This is NOT the third-argument interaction the plan already knew about -- no file in that tree carries a third argument.",
+        impact:
+          "The Sprint Goal is unreachable as ruled. `bun test` from the root runs 55 files, so 54 of them would keep bun's 5000ms while every check reported green -- and the arms written for subtask 2 ALL PASSED, because they spawn a throwaway suite of ONE file, which is exactly the case the defect spares. Landing it would have shipped a control certifying a policy it cannot see.",
+        request:
+          "Choose the mechanism. (1) THE FLAG STAYS AND THE DEFINITION OF DONE CARRIES IT -- `bun test --timeout 25000` as the first check: MEASURED durable, 3 pass / 0 fail across three files, and it survives a fourth file that sets its own deadlines, because the per-file reset restores the COMMAND-LINE value when one was given. It contradicts this sprint's `runnable without editing a tracked file` -- scrum.ts's own check list is that file -- and it retires nothing. (2) THE POLICY BECOMES A CALL EVERY TEST FILE MAKES -- one exported function, one line at the top of each test file, enforced by a sweep that reddens when a file lacks it. Durable, no flag, and it is the shape the PO refused ONE SIZE DOWN (a third argument on twenty test calls inside one file); whether that refusal reaches a one-line-per-FILE version is the PO's call. (3) NEITHER, and PBI-58 returns to the backlog with the bun behaviour recorded.",
+        status: "waiting_human",
+        notes: [
+          "THREE REPAIRS TRIED AND FAILED, so the next attempt does not spend the readings again: `beforeAll`, `beforeEach` and `afterAll` registered IN THE PRELOAD, each calling `setDefaultTimeout` again, all read 1 pass / 2 fail unchanged. A hook cannot reach it because a test captures its deadline when it is REGISTERED, which is module-evaluation time for its file.",
+          "NO FOURTH MECHANISM EXISTS ON 1.3.13, checked rather than assumed: `[test] timeout` in bunfig.toml was RE-MEASURED and is still ignored (1 pass / 1 fail at 5000ms with the key set to 20_000), and `bun test --help` documents no environment variable for the default.",
+          "THE RECORD'S `A PRELOAD BEATS --timeout` IS TRUE AND NARROWER THAN IT READS, re-measured here rather than inherited: preload 3000 against flag 9000, the preload wins -- IN THE FIRST FILE. Every sentence this project has written about that precedence needs the file scope added to it.",
+          "NOTHING WAS LANDED AND THE WORK IS NOT LOST. The module, its five arms and the bunfig patch are preserved outside the repository; the working tree is back at the subtask-1 commit and the whole Definition of Done is green there.",
+        ],
+      },
+    ],
     decisions: [
       "THE ORDER PUTS THIS SECOND OF THE REMAINING NINE, AND THE REASON IS THIS SESSION'S OWN COST: five separate runs have been spent by hand deciding whether a red belonged to the machine or to the code, and every later sprint's readings inherit that ambiguity.",
       "THE POLICY IS THE PO'S AND THE VALUE IS THE DEVELOPER'S: this ceiling is a HANG-CATCHER, NOT A PERFORMANCE BUDGET, and it may not become somewhere slow code hides. The number is accepted when both bounds are named.",
