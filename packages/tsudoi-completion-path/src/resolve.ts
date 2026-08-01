@@ -326,8 +326,18 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * about 45 ms (bun: about 24 ms against about 18 ms, and at two hundred entries
  * neither runtime tells the two apart at all). That reading lands on the SAME
  * ORDER as the 135 ms this module's ruling was made on, so it is inside the
- * envelope already accepted, and what it buys is this function's own working set
- * above plus the disappearance of a superlinear term at the tail.
+ * envelope already accepted.
+ *
+ * WHAT IT BUYS IS NOT THE SAME TRADE ON THE TWO RUNTIMES, AND THE SENTENCE THAT
+ * STOOD HERE NAMED ONLY THE BETTER HALF. On bun it buys both: this function's
+ * working set, and a superlinear term gone at the tail -- 888 ms down to 315 ms
+ * at a hundred thousand entries. ON DENO IT BUYS THE WORKING SET AND THE TAIL
+ * GETS WORSE: 1289 ms up to 1977 ms at the same size, on top of the 45 -> 127 ms
+ * at five thousand. Streaming is slower on deno at EVERY size these readings
+ * cover, including the one this shape was adopted for, and the sort disappearing
+ * does not buy it back there. What is bought on that runtime is that a highlight
+ * on a directory of any size makes THIS function hold twenty names, and the
+ * price is paid in time at the tail rather than saved there.
  *
  * `opendir` RATHER THAN `readdir`, AND THE REASON IS THIS FUNCTION'S WORKING
  * SET. It was `readdir` one commit ago on the ground that nothing here then
