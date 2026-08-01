@@ -577,7 +577,90 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 53,
+    pbi_id: "PBI-65",
+    goal: "Highlighting a directory in the path completion shows what is inside it, bounded, without costing the detail a failed listing would have thrown away.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The item records the source it was produced under, asserted PER SOURCE across all three the package offers, not once.",
+        implementation:
+          "The mark gains the source name, written at the item where it is already in hand and costing nothing at popup time.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PREREQUISITE THE REBUILD CREATES: the block carries the absolute path AND the source attribution, and only the first is on the item today -- the source is NOT derivable from the path, since the same file is reachable from the document's directory, the cwd, a workspace folder or an absolute fragment.",
+          "THE DEGENERATE IS `HARDCODE ONE SOURCE NAME`, which passes against any single-source test -- which is why the arm is per source.",
+          "MEASURED, AND IT IS A REASON TO WRITE THE TEST RATHER THAN TO SKIP IT: widening the mark reddens NOTHING today. Nothing asserts the mark an item of ours carries, and the only whole-item equality compares a server-produced item against itself, so both sides move together.",
+          "A NEAR-MISS WORTH CARRYING INTO THE COMMENT: `source` is a key another server in this repository's own fixtures already uses under the same field. The gate stays the existing mark -- read first, the source read only after it validates.",
+        ],
+      },
+      {
+        test: "A directory item's block carries the names inside it, whole-value; a file item's block comes back byte-identical to what completion wrote, asserted in a session where the directory's demonstrably changed; and AN ITEM WHOSE BLOCK WAS TAMPERED WITH is answered with our rebuilt block and none of the tampered text.",
+        implementation:
+          "Rebuild the block for BOTH kinds, sharing completion's composer the way the two modules already share the mark -- exported from that module, absent from the package's published surface. Names sorted by code unit. Format re-read from the session the handler is handed, so the context parameter stops being discarded.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE TAMPERING ARM IS THE DISCRIMINATOR THAT MAKES THE RULING MEASURABLE RATHER THAN A PREFERENCE: under the rejected append proposal that test cannot pass. AND IT CLOSES A GAP THAT WAS FILED AS UNCOVERABLE -- under append, `a client that strips the block before sending it back` was unobservable, because the fake editor returns what it got; under rebuild the client's copy is never read, so stripped and tampered are both ordinary cases.",
+          "THE SORT IS TESTABILITY BEFORE IT IS TASTE: directory order is the filesystem's own bookkeeping, promised by nothing, so an unsorted block makes the same directory read differently on two machines and NEITHER a whole-value assertion NOR `the first N are these` can be written against it. BY CODE UNIT AND NEVER BY LOCALE, for the reason the module already gives about ISO dates.",
+          "TWO DEGENERATES, WRITTEN AND RUN BEFORE THE ARMS ARE BELIEVED: `append to every item` passes the directory arm and fails the file arm; `set the block TO the listing` passes any containment spelling and fails whole-value equality -- and that second one IS the replace hazard, which is why the assertion is whole-value and the existing wire equality is EXTENDED rather than loosened to a partial match.",
+          "THE FIXTURE DEFECT IS FIXED HERE OR THE ARM MEASURES NOTHING: the shared fixture's directory is created EMPTY, so `an empty listing` and `no listing at all` produce the same bytes. Children are added BEFORE the fixture's timestamp fixing, because writing into a directory bumps its mtime and the expected detail string carries that timestamp. One child is HIDDEN, because the ruling that hidden entries are shown has no witness otherwise -- and the helper's blanket refusal of dotfiles NARROWS rather than stands, since it exists because this behaviour was undecided.",
+        ],
+      },
+      {
+        test: "A directory far past the bound returns a bounded number of names AND the exact total; one under the bound shows every entry and announces no truncation; a directory of exactly the bound announces none either; and an empty directory is answered rather than left unhandled.",
+        implementation:
+          "The whole directory is read; the bound is on what is rendered. The count goes IN THE BLOCK and never on the one-line detail.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TWO FIXTURES WITH DIFFERENT OVERFLOW COUNTS IN ONE MEASUREMENT, because `a hardcoded more` passes with one.",
+          "THE BOUND IS PINNED BY READING THE WIRE AND NEVER BY IMPORTING THE CONSTANT, for the reason already written at the batch size beside it: a test that imports the number agrees only with itself.",
+          "THE COUNT GOES WHERE THE LISTING IS SO EXACTLY ONE NUMBER ABOUT A DIRECTORY EXISTS AND TWO CANNOT DISAGREE. That is also what keeps the size-refusal pin unmoved, and it is not a reversal of it: a count of children is what the directory ENTRY's byte size failed to be.",
+          "FIRST EARLY EXIT FROM A DIRECTORY ITERATION IN THIS TREE, so whether the handle is released is READ ON BOTH RUNTIMES rather than trusted to compatibility. UNMEASURED.",
+        ],
+      },
+      {
+        test: "A path that can be stat-ed and not listed is answered WITH its one-line detail and WITHOUT a listing, stderr empty, paired in the same session with a listable directory whose block does appear. THE ARM ESTABLISHES ITS OWN PREMISE FIRST -- it asserts the listing really rejects in that staged tree, so a runner where the permission does not bite reddens rather than passes vacuously.",
+        implementation:
+          "The failure handling splits: a failed listing must not throw away a detail that was already in hand.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE DEGENERATE IS THE OBVIOUS IMPLEMENTATION: one try around both reads, which answers with the bare item and loses the detail the successful stat produced. That is the red this subtask exists for.",
+          "THE EXISTING DELETION TEST DOES NOT COVER THIS AND ITS NAME SUGGESTS IT DOES: it stages a FILE, so it exercises the stat rejection alone.",
+          "UNMEASURED AND THE FIRST TASK MEASURES IT: that a directory can be stat-able and unlistable is standard posix and has not been read on these two runtimes. If the staging cannot be made to bite, THE STAGING CHANGES AND THE PROPERTY DOES NOT.",
+        ],
+      },
+      {
+        test: "None -- prose, and the suite is the pair for the command blocks it does not touch.",
+        implementation:
+          "The reasons this change makes false, rewritten where they live: the module's arithmetic paragraph (it is no longer one syscall, and the listing is information the completion never had), its harmlessness paragraph (a forged mark now costs a directory listing, one step nearer `answered with its contents` than a stat was, and the line this handler will not cross is READING A FILE'S BYTES), the package index's count of internal names, the member README's method row and its `no entry's detail is read here`, and the example config's two mentions of the size and date.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE SIZE REFUSAL SURVIVES AND STRENGTHENS, and saying so is the point: the listing is the honest answer to the question a directory's byte size answered badly. That is the constraint that outlived the mechanism change.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE COMPOSITION IS A REBUILD AND NOT AN APPEND, AND THE DEVELOPER WITHDREW THEIR OWN PROPOSAL ON THE REASON RATHER THAN ON AUTHORITY: they weighed line count and composer drift, the PO weighed PROVENANCE, and a string the client can put anything in is not a smaller trust surface than the mark -- it is the same surface, one field away. The duplication objection dissolved on reading: the two modules already share the mark by a relative import, and the package's published surface names only its entry point, so one composer serves both callers without publishing anything.",
+      "THE REBUILD FIRES FOR BOTH KINDS. Rebuilding for directories alone would leave a FILE answered with the client's own text, which is the thing the ruling refuses.",
+      "AN EARLIER PO RULING IS RETIRED BY MEASUREMENT AND THE RETIREMENT IS RECORDED RATHER THAN QUIETLY REPLACED: `no total, because a total is the walk`. MEASURED on one directory of five thousand entries, names only -- the whole drain is 51 ms on bun and 135 ms on deno, against one stat at 0.225 / 0.298 ms, and against the ~1.1 s per KEYSTROKE that this module exists to refuse. And the completion half beside it ALREADY drains the entire directory on every keystroke to filter by prefix, so a full drain once per HIGHLIGHT cannot be the expensive thing in this package. WHAT DOES NOT SHRINK IS THE PAYLOAD: those names are eighty-five thousand characters where the first twenty are three hundred, which is what the bound is actually about.",
+      "THE COST IS LINEAR AND DIRECTORIES ARE UNBOUNDED, ACCEPTED RATHER THAN GUARDED: five thousand was measured and a hundred thousand was not, and the only guard available would bound the READ BY TIME -- which makes a highlight answer differently depending on how busy the machine was, the exact defect the next PBI in this backlog was filed for.",
+      "HIDDEN ENTRIES ARE SHOWN, RULED NOW BECAUSE IT WAS UNRULED RATHER THAN DECIDED. The deciding fact is inside this package: the completion half already offers dotfiles, so a block that hid them would make the two halves of ONE package disagree about ONE directory -- the popup offering a hidden file while the block describing its parent says it is not there.",
+      "THE STAKEHOLDER'S `kind` NAMES THE CASE AND IS NOT A DIRECTIVE TO READ THE ITEM'S OWN `kind` FIELD: that field is client-supplied, forgeable, and stale by resolve time. The branch stays on a FRESH stat, which is where the detail line takes it today.",
+      "THE `revise` SKILL RUNS AFTER THE DEVELOPER'S WORK AND BEFORE SPRINT REVIEW, WITH NO PR -- the stakeholder's standing instruction, now recorded at the head of this dashboard rather than as a retrospective improvement.",
+    ],
+  },
   retrospectives: [],
 };
 
