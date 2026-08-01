@@ -716,7 +716,90 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 54,
+    pbi_id: "PBI-58",
+    goal: "A red in the first Definition-of-Done check means tsudoi is wrong, because the suite's time limit is a number this project chose and can be read -- with the tests that still set their own deadlines named as a measured remainder rather than left to be found.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- a READING, and it is first because its own instrument dies in the next subtask.",
+        implementation:
+          "Run the suite from the root with the flag that still works today, unpiped, and record the load average, the per-test durations of the tests carrying NO explicit deadline, and the durations of the gated tests in the files that set their own. This reading decides the number below and decides whether the re-derivation subtask exists at all.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE FLAG IS THE ONLY WAY TO GET HONEST DURATIONS FOR SLOW TESTS TODAY, and the moment the preload lands it does nothing -- so this reading cannot be taken later.",
+        ],
+      },
+      {
+        test: "In a throwaway tree that preloads THIS REPOSITORY'S REAL module with a small override in the child env, a test sleeping past it fails naming the timeout and one under it passes -- under EACH of the four invocation forms the contract names. Both arms set the variable explicitly, because an arm that relies on its ABSENCE silently agrees with a developer who left it set in their shell.",
+        implementation:
+          "A preload of its own that exports the number and sets the default at import time, added as a second entry beside the build preload.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ITS OWN FILE AND NOT THE BUILD PRELOAD, for a reason stronger than tidiness: the build preload THROWS on a failed compile, so the timeout policy would die with a build failure -- and this subtask's arms must preload the REAL module at an unambiguous value in a throwaway tree, which is impossible if the call is welded to a module that compiles the whole workspace on import.",
+          "TWO DEGENERATES, STATED IN ADVANCE: a module that exports the constant and sets nothing (the over arms pass under bun's own default and must redden), and a module that sets the default but ignores the override (the same arms redden, and this is the one that catches a misspelt variable name).",
+          "MEASURED PREMISE THAT WIDENS THE ONE IN THE PBI: the record measured that a preload beats the command-line flag. It is now also measured that A PER-TEST THIRD ARGUMENT BEATS THE PRELOAD -- so every file that sets its own deadline survives a raised default untouched, which is what the item's own exclusion rests on.",
+        ],
+      },
+      {
+        test: "A malformed override does not run the suite: it exits non-zero naming the variable, paired with a well-formed value running normally.",
+        implementation: "The module refuses anything that is not a positive integer.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          'THIS IS LOAD-BEARING RATHER THAN DEFENSIVE, AND THE MEASUREMENT IS WHY: setting the default to NaN or to zero DISABLES THE DEADLINE ENTIRELY rather than falling back -- measured with a sleep that bun\'s own default would fail, both `abc` and an EMPTY STRING gave a pass at exit 0. `Number("") === 0`, so a set-but-empty variable switches every deadline in the suite off WHILE THE RUN REPORTS GREEN. That is the silent-key class this project has met before.',
+        ],
+      },
+      {
+        test: "The number is greater than the largest deadline a helper sets that is reachable from a test carrying no explicit deadline, paired with a reading that the enumeration behind that floor found something rather than nothing.",
+        implementation: "Set the number from the first subtask's reading, inside the bounds below.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHAT MAKES IT A DECISION RATHER THAN A GUESS IS A FLOOR AND A CEILING BOTH READ FROM THIS TREE. THE FLOOR IS NOT `THE QUICKSTART NEEDS TWENTY SECONDS`: it is that a helper's own handshake deadline is UNREACHABLE TODAY -- the test dies at the default first and names nothing -- so which deadline arrives first decides whether the failure names its cause. THE CEILING is what a genuine hang costs at the proposed value times the tests that would park, which nobody has computed; without it the number is half-argued.",
+          "THE PIN IS A RELATION AND NOT A LITERAL, and the degenerate says why: an equality against the chosen number is green against any tree, including one where a helper's deadline was later raised past it. Importing the constant is right HERE and wrong elsewhere in this project -- the alternative is asserting a duration, which is asserting a property OF THE MACHINE, the exact defect this item removes.",
+        ],
+      },
+      {
+        test: "CONDITIONAL, and the condition is stated in advance: if the first subtask's reading shows any gated test running within about twice its own deadline, the values in those files are re-derived here. If it shows three times the headroom or more, THIS SUBTASK DOES NOT EXIST and collapses into the comment repair.",
+        implementation: "One constant per file, never a third argument per test.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PBI NAMES TWO FILES THAT SET THEIR OWN DEADLINES AND THERE ARE SEVEN. That is the PO's ruling in scope: the sprint delivers the suite default only, and the residual is recorded as a NAMED, MEASURED REMAINDER -- the files, the values, and why each is not covered -- BEFORE Review rather than discovered at it. A green that seven files contradict is the shape this project keeps catching.",
+          "AND THE REMAINDER HAS A HISTORY: the run this project cites as `739 of 741` was taken with those seven still load-killable, and ITS TWO RESIDUAL FAILURES WERE NEVER IDENTIFIED. Identifying them is a precondition, not a nicety -- if they are self-timed tests, this criterion cannot honestly read green without the remainder written down.",
+        ],
+      },
+      {
+        test: "None -- prose.",
+        implementation:
+          "The comments whose reason this change kills: the refusal in the workspace-member suite that declined to fix twenty tests' exposure BECAUSE a suite-wide default was not an option; six comments claiming a value is below the runtime's default, which are false today and become true again; and the preload paragraph whose `this path` loses its referent once the array holds two entries.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A COMMENT THAT BECOMES ACCIDENTALLY TRUE IS NOT THE SAME AS ONE THAT WAS WRITTEN CORRECTLY, so the six are re-read and repaired either way.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE ORDER PUTS THIS SECOND OF THE REMAINING NINE, AND THE REASON IS THIS SESSION'S OWN COST: five separate runs have been spent by hand deciding whether a red belonged to the machine or to the code, and every later sprint's readings inherit that ambiguity.",
+      "THE POLICY IS THE PO'S AND THE VALUE IS THE DEVELOPER'S: this ceiling is a HANG-CATCHER, NOT A PERFORMANCE BUDGET, and it may not become somewhere slow code hides. The number is accepted when both bounds are named.",
+      "WHAT REPLACES THE FLAG MUST BE RUNNABLE WITHOUT EDITING A TRACKED FILE, and `the machine is quieter now` is not a mechanism. The environment override is not a knob for its own sake -- IT IS THE SEAM THAT MAKES THE CRITERION VERIFIABLE, since without it the throwaway tree must either preload a re-implementation (no shared subject, so deleting the real call would redden nothing) or preload the real module at half a minute per arm.",
+      "THE OBJECTION TO ENV KNOBS IS ANSWERED RATHER THAN IGNORED: a key that stops matching stops applying, silently. Here a typo in the variable's spelling INSIDE THE MODULE makes the over arms pass, so the suite exercises the spelling on every run; what remains is the malformed VALUE, which its own subtask closes and which is measured to be real.",
+      "THE PO REFUSES, EVERY CHECK GREEN, A NUMBER LARGE ENOUGH THAT THE SUITE CAN NO LONGER FAIL FAST ON A REAL HANG -- a regression green runs cannot detect, because it only appears the day something deadlocks. Also refused in the same breath: a third argument on twenty test calls, which one file already weighed and declined, and which recreates the unchosen-number problem twenty times over.",
+      "ONE THING IS THE STAKEHOLDER'S AND IS ROUTED RATHER THAN DECIDED: recording, where a reader meets it, that the command-line flag does nothing once the preload sets the default. That retires the idiom this session used through four sprints to tell a machine's red from the code's.",
+    ],
+  },
   retrospectives: [],
 };
 
