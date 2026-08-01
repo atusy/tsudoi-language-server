@@ -14,10 +14,15 @@
  * AND WHAT IT ANSWERS IS NO LONGER ONLY `THE SAME INFORMATION, FETCHED LATER`.
  * A file's size and date are exactly that. A DIRECTORY'S CONTENTS ARE NOT: the
  * completion never asked what was inside the entries it offered, so this is a
- * question that gets asked here or nowhere. The syscall argument does not settle
- * it either -- one `opendir` is the same order as one `stat` -- and what the
- * bound below is really about is the PAYLOAD: bytes in one response and lines in
- * one popup.
+ * question that gets asked here or nowhere. THE SYSCALL ARGUMENT DOES NOT SETTLE
+ * IT EITHER, AND NOT FOR THE REASON WRITTEN HERE BEFORE: `one opendir is the
+ * same order as one stat` is false where it matters. MEASURED on five thousand
+ * entries -- deno 2.8.3 pays 37 ms for the OPEN ALONE, before an entry is read,
+ * against 0.088 ms for a stat, because its `opendir` reads the whole directory
+ * synchronously (see the listing below); bun 1.3.13's open is lazy and costs
+ * 0.004 ms against 0.053 ms. What settles it is the arithmetic per HIGHLIGHT
+ * rather than per keystroke, below, and what the bound is really about is the
+ * PAYLOAD: bytes in one response and lines in one popup.
  *
  * IT IS PAIRED WITH THE COMPLETION MODULE AND THE IMPORT BELOW IS THE PAIRING.
  * tsudoi keeps NO record of what a completion handler produced -- it is ruled at
@@ -241,8 +246,10 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * popup -- so the bound this listing is rendered under is on entries SHOWN and
  * never on entries read.
  *
- * AND THE BOUND ON WHAT IS SHOWN IS NOW ALSO A BOUND ON WHAT IS HELD, WHICH IT
- * WAS NOT. The shape this replaced read every name into ONE ARRAY and SORTED it
+ * AND THE BOUND ON WHAT IS SHOWN IS NOW ALSO A BOUND ON WHAT THIS FUNCTION
+ * HOLDS, WHICH IT WAS NOT -- ON WHAT THIS FUNCTION HOLDS AND NOTHING WIDER, per
+ * the paragraph after this one. The shape this replaced read every name into ONE
+ * ARRAY and SORTED it
  * to keep twenty, so the working set grew with the directory while the payload
  * did not -- and the sentence that stood here calling that cost LINEAR was
  * FALSE: a sort is N log N. MEASURED at a hundred thousand entries, which the
@@ -252,6 +259,28 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * mean of 5, machine under load). Only the names still standing in the first
  * twenty are kept, so what this function holds is twenty strings and one dirent
  * whatever the directory holds.
+ *
+ * THE PROCESS HOLDS A WHOLE DIRECTORY EITHER WAY, AND A SENTENCE THAT STOPPED AT
+ * `twenty strings and one dirent` SAID OTHERWISE. Both runtimes materialise the
+ * directory BEHIND the handle, by different routes -- READ IN THEIR OWN `Dir`
+ * IMPLEMENTATIONS AND THEN MEASURED at a hundred thousand entries (macOS/APFS,
+ * resident set, warmed). Bun's is a facade over `readdir` with file types and
+ * materialises on the FIRST read: 30 MB at the open and 61 MB once ONE entry has
+ * been taken. Deno reads the whole directory SYNCHRONOUSLY inside `opendir`, to
+ * fail early on a path that is not one, and only then streams entries from an op
+ * one at a time: 57 MB before, 119 MB at the open, unmoved by the first entry.
+ * (Resident set says where the ALLOCATION happens and never what stays; when a
+ * collector gives it back is not a thing this reading can separate.)
+ *
+ * SO WHAT THE STREAMING SHAPE RETIRED IS THIS FUNCTION'S OWN ARRAY AND THE SORT
+ * OVER IT -- the superlinear term, and the payload -- AND NOT THE RUNTIME'S
+ * MATERIALISATION, which no shape reachable from here avoids. `bufferSize` is
+ * not the edit that would, though it is the one a reader reaches for: deno's
+ * `opendir` defaults it to 32 and validates it, and its `Dir` then never uses it
+ * for anything at all. THAT DEFAULT IS WHAT A CALL PASSING NO OPTIONS GETS,
+ * WHICH IS THIS MODULE'S CALL, and it is the same validation the import comment
+ * above measures REJECTING an explicit `{}` -- one rule, seen from its two
+ * sides, rather than two readings that disagree.
  *
  * A DIRECTORY IS STILL UNBOUNDED AND THE READ IS STILL NOT GUARDED, which is
  * unchanged and is still ACCEPTED rather than solved: the only guard available
@@ -264,14 +293,15 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * about 45 ms (bun: about 24 ms against about 18 ms, and at two hundred entries
  * neither runtime tells the two apart at all). That reading lands on the SAME
  * ORDER as the 135 ms this module's ruling was made on, so it is inside the
- * envelope already accepted, and what it buys is the working set above plus the
- * disappearance of a superlinear term at the tail.
+ * envelope already accepted, and what it buys is this function's own working set
+ * above plus the disappearance of a superlinear term at the tail.
  *
- * `opendir` RATHER THAN `readdir`, AND THE REASON IS THE WORKING SET. It was
- * `readdir` one commit ago on the ground that nothing here then iterated a
- * handle -- true of that implementation and no longer a reason, because the
- * handle is exactly what lets every name be COUNTED without every name being
- * KEPT. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
+ * `opendir` RATHER THAN `readdir`, AND THE REASON IS THIS FUNCTION'S WORKING
+ * SET. It was `readdir` one commit ago on the ground that nothing here then
+ * iterated a handle -- true of that implementation and no longer a reason,
+ * because the handle is what lets every name be COUNTED without THIS FUNCTION
+ * keeping every name. It does not stop the runtime beneath it from keeping them,
+ * which is measured above and is why the reason is written this narrowly. THE HANDLE IS RELEASED BY EXHAUSTING THE ITERATION, which is the release
  * the completion half beside this file already relies on for its own listing on
  * both runtimes. READ RATHER THAN TRUSTED TO COMPATIBILITY, because a descriptor
  * leaked once per highlight is a session that dies at the ulimit: 2000 resolves
@@ -392,7 +422,8 @@ async function listingOf(
  * Keeps `names` the entries that would be rendered FIRST, and no others.
  *
  * WHY THE ORDER IS MAINTAINED AS THE DIRECTORY IS READ rather than sorted at the
- * end: the sort is what made the working set the whole directory. Holding the
+ * end: the sort is what made THIS MODULE'S working set the whole directory --
+ * the runtime's own is the listing's business and is measured there. Holding the
  * best `entriesShown` costs a comparison against the worst one KEPT for every
  * entry that does not beat it -- the ordinary case -- and at most that many
  * comparisons for one that does, so the cost really is linear in the entries, in
