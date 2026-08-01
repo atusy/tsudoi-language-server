@@ -48,6 +48,20 @@
  * THE LINE THIS HANDLER WILL NOT CROSS IS READING A FILE'S BYTES -- and running a
  * command, or writing anything, is further still.
  *
+ * AND A MARK THAT COLLIDES COSTS MORE THAN IT DID, WHICH IS A CHANGE IN BLAST
+ * RADIUS RATHER THAN IN LIKELIHOOD. An item ANOTHER server produced, whose `data`
+ * happens to carry this key, used to lose its one-line `detail` to a size and a
+ * date it did not ask for; now its multi-line block is REPLACED, so that
+ * server's user is shown documentation about a path nobody's completion offered
+ * them. RECORDED RATHER THAN GUARDED, and the gate stays the path alone:
+ * `pathCompletion` is an identity that collides with nothing observed anywhere,
+ * while requiring the SOURCE to check out as well would rest a second
+ * coincidence on the one key demonstrably shared -- a fixture in this
+ * repository's own suite stands in for another server by writing `source` under
+ * `data`. The wider gate would also answer an item with a valid path and an
+ * invalid source by handing it straight back, which is exactly the arm that
+ * shows the attribution being DROPPED rather than echoed.
+ *
  * Nothing is validated below, deliberately: a check would suggest this boundary
  * can be closed, and it cannot be. What decides it is what the handler DOES with
  * the path. The one thing that IS checked -- the source name on the mark -- is
