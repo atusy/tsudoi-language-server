@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 // THE ARRIVAL ORDER IS READ WITH THE SAME CALL THE MODULE READS IT WITH, so the
 // premise the retain arm asserts is the order that module really meets.
 import { opendir } from "node:fs/promises";
@@ -401,6 +401,88 @@ function signalAbortingWhereItIsFirstRead(): AbortSignal {
         queueMicrotask(() => {
           controller.abort();
         });
+        return false;
+      }
+      const value: unknown = Reflect.get(target, property, target);
+      return typeof value === "function" ? (value as () => unknown).bind(target) : value;
+    },
+  });
+}
+
+describe("a path that stops being a directory between the two reads", () => {
+  /**
+   * THE CASE THE CATCH IN `listingOf` SAID NO TEST COULD CONSTRUCT, and the
+   * sentence saying so named the wrong reason: `it needs a race between two
+   * calls this handler makes back to back, and there is no seam to open between
+   * them`. There is one, and this sprint built it. The abort is READ between the
+   * stat and the open, the signal is the CALLER'S, and a getter is arbitrary
+   * synchronous code running at exactly that point -- so the swap needs no race,
+   * no timer and no second thread, and lands identically on every run.
+   *
+   * THE STAT SNAPSHOT IS WHAT MAKES IT AN ENOTDIR RATHER THAN A SECOND
+   * GONE-PATH CASE: `stat` has already resolved and already said `directory`, so
+   * the handler goes on to open a path that is now a FILE. Both premises are
+   * asserted, because either alone would let this pass vacuously -- the `detail`
+   * line says the snapshot predates the swap, and a fresh `statSync` says the
+   * swap really happened.
+   *
+   * WHERE THE REJECTION SURFACES DIFFERS BY RUNTIME AND BOTH WERE MEASURED,
+   * because this file runs under bun alone and the answer would otherwise be
+   * bun's shape wearing a general name. bun 1.3.13: `opendir` RESOLVES on a
+   * regular file -- its handle is lazy -- and the first read rejects
+   * `ENOTDIR: not a directory, scandir`. deno 2.8.3: `opendir` rejects AT THE
+   * CALL with `ENOTDIR: not a directory, opendir`, because it reads the
+   * directory synchronously to fail early. One catch covers both, which is what
+   * that comment gets right.
+   *
+   * A SEPARATE PROXY FROM THE CANCELLATION ONE, deliberately: sharing one would
+   * tie what this arm constructs to whatever the cancellation seam is later
+   * ruled to be, and the two use the same getter for opposite purposes.
+   */
+  test("a directory replaced by a file after the stat keeps its detail and renders no listing", async () => {
+    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+    const path = join(fixture.root, "listed");
+    try {
+      const answered = await resolvePathStat(
+        contextDeclaring(["plaintext"], signalReplacingTheDirectoryWhereItIsFirstRead(path)),
+        markedItem(path, "cwd"),
+      );
+
+      // The snapshot the answer was composed from still says `directory` -- so
+      // the swap landed AFTER the stat, which is the whole construction.
+      expect((answered.detail ?? "").split(" · ")[0]).toBe("directory");
+      // And the swap really happened, read off the filesystem rather than off
+      // the getter's intention.
+      expect(statSync(path).isFile()).toBe(true);
+      // The detail survives and the listing does not, which is the split this
+      // catch exists for: a failed listing costs the listing alone.
+      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd`);
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+/**
+ * A LIVE SIGNAL, NEVER CANCELLED, WHOSE FIRST READER PAYS FOR THE READ by having
+ * the directory swapped for a file underneath it. Nothing here fakes `aborted`:
+ * the controller is real and is left alone, so the handler sees exactly the
+ * `false` it would have seen, and every later read answers the real signal.
+ *
+ * THE FIRST READ IS THE ONE BETWEEN THE STAT AND THE OPEN, which is what puts
+ * the swap in the window the catch's comment said had no seam in it.
+ *
+ * A PROXY RATHER THAN AN OBJECT SHAPED LIKE A SIGNAL, for the reason the
+ * cancellation proxy above gives.
+ */
+function signalReplacingTheDirectoryWhereItIsFirstRead(path: string): AbortSignal {
+  const controller = new AbortController();
+  let reads = 0;
+  return new Proxy(controller.signal, {
+    get(target, property): unknown {
+      if (property === "aborted" && reads++ === 0) {
+        rmSync(path, { recursive: true });
+        writeFileSync(path, "");
         return false;
       }
       const value: unknown = Reflect.get(target, property, target);

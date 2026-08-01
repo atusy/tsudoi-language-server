@@ -419,9 +419,17 @@ async function listingOf(
     // it would cost the user that line as well as this listing. Every reason a
     // listing rejects lands here -- a directory the process may not read, and
     // the path that STOPPED BEING A DIRECTORY between the two syscalls, which
-    // rejects ENOTDIR. THE SECOND IS NOT CONSTRUCTED BY ANY TEST: it needs a
-    // race between two calls this handler makes back to back, and there is no
-    // seam to open between them. It is the same catch either way.
+    // rejects ENOTDIR. BOTH ARE CONSTRUCTED BY TESTS NOW, AND THE SENTENCE THAT
+    // STOOD HERE WAS WRONG ABOUT WHY THE SECOND COULD NOT BE: it said there was
+    // no seam between the two calls. The SIGNAL READ between them is one -- it
+    // is the caller's own object, so a getter runs arbitrary code at exactly
+    // that point and swaps the directory for a file with no race and no timer.
+    // WHERE THE REJECTION LANDS DIFFERS BY RUNTIME, MEASURED: deno 2.8.3 rejects
+    // AT THE OPEN (`not a directory, opendir`), since it reads the directory
+    // synchronously to fail early; bun 1.3.13's open is lazy and resolves, so
+    // its rejection arrives at the FIRST READ (`not a directory, scandir`). It
+    // is the same catch either way, which is what makes that difference cost
+    // this module nothing.
     //
     // AND IT COVERS THE ITERATION AS WELL AS THE OPEN, which is new with the
     // handle: a directory removed while its entries are being read rejects
