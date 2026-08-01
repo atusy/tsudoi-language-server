@@ -56,6 +56,14 @@ async function typeCheckWith(
  * reasons and the file holds only the setting. The next person to reach for a
  * comment there should read this instead of discovering it as a red.
  *
+ * AND A MISSPELLED KEY IN EITHER CONFIG IS LOUD, WHICH IS WHY NOTHING HERE
+ * GUARDS AGAINST ONE. MEASURED: `types` misspelled gives TS5023 and exit 2 --
+ * the compiler refuses an unknown compiler option rather than silently applying
+ * nothing. That reading is the reason this file asserts the keys it does by
+ * EFFECT and not by spelling: the keys worth pinning are the ones whose failure
+ * to match would be SILENT, and in this repository the only such key ever found
+ * was the root `paths` mapping, which no longer exists.
+ *
  * REPLACING THE READER WOULD LIFT THE CONSTRAINT and is not proposed: a JSONC
  * parser here would let the two configs carry their own reasons, and it would
  * also make this file's readings differ from what any other JSON consumer of

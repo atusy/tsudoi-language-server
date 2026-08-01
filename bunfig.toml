@@ -54,6 +54,12 @@
 # a config, and a top-level preload would build once per spawned process and
 # make every one of them depend on the compiler.
 #
+# AND NOTHING ASSERTS THAT THIS PATH RESOLVES, DELIBERATELY, BECAUSE THE FAILURE
+# IS LOUD. MEASURED: a `preload` naming a file that does not exist exits 1 -- bun
+# refuses to run the suite rather than running it unbuilt. A key whose failure to
+# match is silent is worth pinning and this one is not, which is the same reading
+# that decides which config keys elsewhere in this repository carry guards.
+#
 # WHAT THIS DOES NOT REACH, AND IT IS WHY STALENESS IS HANDLED HERE RATHER
 # THAN IMPOSSIBLE. Measured across every invocation form:
 # `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>`

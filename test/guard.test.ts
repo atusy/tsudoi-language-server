@@ -88,6 +88,14 @@ function siblingLib(path: string): string {
   return join(dirname(path), "lib.ts");
 }
 
+// WHAT THIS FILE PINS AND WHAT THE TOOL PINS FOR ITSELF, so the next person does
+// not add a spelling guard the linter already is. MEASURED: an unknown RULE NAME
+// in .oxlintrc.json is refused -- `Rule not found`, exit 1 -- so a rule that
+// stopped applying because somebody misspelled it can never be silent. The
+// OVERRIDE GLOBS are the opposite: a glob that matches nothing applies nothing
+// and says nothing, which is why every shape above is pinned BY EFFECT, through
+// a real lint run over a real probe, rather than by reading the config's text.
+
 // RULE 1, import/extensions. Deno resolves no extensions, so a relative import
 // that omits .ts runs under bun and dies under deno -- the single most likely
 // way this codebase loses its second runtime.

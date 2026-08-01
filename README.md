@@ -107,7 +107,8 @@ the next command would go stale at the next release.
 run inside a member writes to the workspace root -- so what you get is
 `tsudoi-language-server/tsudoi.tgz`, one directory above `packages/`, which is exactly the path
 the next step installs from. Running the same command at the checkout root instead packs the
-_workspace_, not tsudoi: 169 files including this repository's own tests.
+_workspace_, not tsudoi: every tracked file, this repository's own tests included, because the
+workspace root's manifest declares no `files`.
 
 ### 2. In `my-language-server/`, install it
 
