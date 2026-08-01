@@ -320,12 +320,20 @@ for (const runtime of runtimes) {
      * item is compared in: the answer REPLACES the item in the client's list, so
      * an answer that is not the item drops the entry they are looking at.
      *
-     * BOTH KINDS IN ONE SESSION, which is what makes the file half mean
-     * anything. `the file's block is unchanged` is satisfied by a server that
-     * writes no block at all, and by one that was never asked -- so the
-     * directory's block is observed CHANGING first, in this session, and only
-     * then does the file's byte-identity say that a rebuild ran and produced
-     * exactly what completion had already produced.
+     * BOTH KINDS IN ONE SESSION, AND WHAT THE PAIRING DOES AND DOES NOT
+     * ESTABLISH IS WRITTEN OUT HERE BECAUSE THE OBVIOUS READING OF IT IS FALSE.
+     * The directory's block is observed CHANGING first, and what that buys is
+     * liveness: `the file came back with the block it went out with` is
+     * otherwise satisfied by a server that writes no block at all, and by one
+     * that was never asked.
+     *
+     * IT DOES NOT ESTABLISH THAT A REBUILD RAN FOR THE FILE -- MEASURED, against
+     * the implementation that would get this wrong: rebuild for directories
+     * alone and PASS A FILE'S BLOCK THROUGH, and this arm stays GREEN on both
+     * runtimes, because a passthrough is byte-identical too. WHAT ESTABLISHES
+     * THE REBUILD IS THE TAMPERING ARM BELOW, where the text that came back and
+     * the text a rebuild produces differ and only a rebuild can answer with the
+     * second; the same degenerate reddens it, and it alone.
      *
      * WHOLE-VALUE ON THE NAMES, never a containment: sorted by code unit is the
      * only reading a `toEqual` can be written against at all, and a containment
