@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { rmSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
@@ -122,6 +123,34 @@ const crowd = Array.from({ length: 30 }, (_, index) => `c${String(index).padStar
 
 function crowdedTree(): Tree {
   return tree(crowd.map((name) => `sample-crowd/${name}`));
+}
+
+/**
+ * A tree holding one directory this process may stat and may not list, beside
+ * one it may do both to.
+ *
+ * MEASURED BEFORE IT WAS RELIED ON, on this machine and under both runtimes:
+ * uid 501, mode 0 on the directory, `stat` resolving and reporting a directory
+ * while `readdir` rejects EACCES -- bun 1.3.13 and deno 2.8.3 alike. The arm
+ * that uses this asserts the rejection again at run time, so a runner where the
+ * permission does NOT bite -- one running as root -- reddens rather than passing
+ * while measuring nothing.
+ *
+ * THE MODE IS RESTORED BEFORE THE TREE IS REMOVED, or the removal fails on the
+ * directory it cannot descend into and takes the temp tree with it.
+ */
+function lockedTree(): Tree {
+  const fixture = tree(["sample-locked/inside.txt", "sample-open/visible.txt"]);
+  const locked = join(fixture.root, "sample-locked");
+  utimesSync(locked, mtime, mtime);
+  chmodSync(locked, 0o000);
+  return {
+    root: fixture.root,
+    dispose: (): void => {
+      chmodSync(locked, 0o700);
+      fixture.dispose();
+    },
+  };
 }
 
 /** The listing part of a block: its header line, and the names under it. */
@@ -449,6 +478,73 @@ for (const runtime of runtimes) {
         );
 
         expect(answered).toEqual(foreignItem);
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    /**
+     * A LISTING THAT FAILS MUST NOT COST THE ITEM THE DETAIL ALREADY IN HAND,
+     * and the degenerate is the obvious implementation: one `try` around both
+     * reads answers with the bare item and throws away a `stat` that succeeded.
+     *
+     * THE ARM ESTABLISHES ITS OWN PREMISE BEFORE IT ASSERTS ANYTHING. That a
+     * directory can be stat-able and unlistable is standard posix, and on a
+     * runner where the permission does not bite -- one running as root -- every
+     * assertion below would pass while measuring the ordinary directory case. So
+     * the rejection is READ HERE, in this tree, first.
+     *
+     * PAIRED IN ONE SESSION WITH A LISTABLE DIRECTORY, because `no listing in the
+     * block` is also what a server that never listed anything produces.
+     *
+     * THE EXISTING DELETION TEST DOES NOT COVER THIS AND ITS NAME SUGGESTS IT
+     * DOES: it stages a FILE, so it exercises the `stat` rejection alone.
+     */
+    test("a directory that cannot be listed keeps the detail its stat produced", async () => {
+      const fixture = lockedTree();
+      const session = startDemo(runtime, fixture.root);
+      try {
+        const locked = join(fixture.root, "sample-locked");
+        let listingRejected = false;
+        try {
+          await readdir(locked);
+        } catch {
+          listingRejected = true;
+        }
+        expect(listingRejected).toBe(true);
+
+        const items = await completedItems(session, fixture.root);
+        const lockedItem = itemFor(items, "sample-locked");
+        const openItem = itemFor(items, "sample-open");
+
+        const answeredOpen = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          openItem,
+        );
+        const answeredLocked = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          lockedItem,
+        );
+
+        // The listable one first: it says a listing is reaching the block in
+        // this session at all.
+        expect(answeredOpen.documentation).toEqual({
+          kind: "plaintext",
+          value: `${join(fixture.root, "sample-open")}\n\nsource: document\n\n1 entry\n\nvisible.txt`,
+        });
+        // And the unlistable one is answered with the line the stat produced,
+        // and with a block carrying no listing -- never with the item as it
+        // arrived.
+        expect(answeredLocked).toEqual({
+          ...lockedItem,
+          detail: directoryDetail,
+          documentation: { kind: "plaintext", value: `${locked}\n\nsource: document` },
+        });
+        // Nor was the failure narrated: a handler that logged every unreadable
+        // directory would put a line in the editor's log for each one a user
+        // scrolls past.
+        expect(session.stderr).toBe("");
       } finally {
         session.dispose();
         fixture.dispose();

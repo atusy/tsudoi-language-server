@@ -109,33 +109,42 @@ function detailFor(stats: Stats): string {
  * runs on every path item and not only on directories -- rebuilding for
  * directories alone would leave a file answered with the client's own text --
  * and for a file the rebuild reproduces exactly what the completion wrote.
+ *
+ * THE TWO READS FAIL SEPARATELY, AND ONE `try` AROUND BOTH IS THE MISTAKE THIS
+ * SHAPE EXISTS TO REFUSE: a path that can be stat-ed and NOT listed -- an
+ * ordinary posix permission, MEASURED biting under both runtimes -- would then be
+ * answered with the bare item, throwing away a detail that was already in hand.
+ * A failed listing costs the user the listing and nothing else.
  */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
   if (path === undefined) {
     return item;
   }
+  let stats: Stats;
   try {
-    const stats = await stat(path);
-    return {
-      ...item,
-      detail: detailFor(stats),
-      documentation: documentationFor(
-        path,
-        completedSource(item),
-        // READ FROM THE SESSION THE HANDLER WAS HANDED, per request, for the
-        // reason the completion half reads it per request: the block is composed
-        // here, so it is composed for the client that asked for it.
-        preferredFormat(
-          context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
-            ?.documentationFormat,
-        ),
-        stats.isDirectory() ? await listingOf(path) : undefined,
-      ),
-    };
+    stats = await stat(path);
   } catch {
+    // NOTHING WAS READ, so there is nothing to answer out of and the item goes
+    // back as it came -- which is what the untouched-item cases require.
     return item;
   }
+  return {
+    ...item,
+    detail: detailFor(stats),
+    documentation: documentationFor(
+      path,
+      completedSource(item),
+      // READ FROM THE SESSION THE HANDLER WAS HANDED, per request, for the
+      // reason the completion half reads it per request: the block is composed
+      // here, so it is composed for the client that asked for it.
+      preferredFormat(
+        context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
+          ?.documentationFormat,
+      ),
+      stats.isDirectory() ? await listingOf(path) : undefined,
+    ),
+  };
 };
 
 /**
@@ -167,9 +176,21 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * is refused for the reason the ISO date beside it is: this string is built by a
  * server and read by a person who may be anywhere.
  */
-async function listingOf(path: string): Promise<DirectoryListing> {
-  const names = (await readdir(path)).sort();
-  return { names: names.slice(0, entriesShown), total: names.length };
+async function listingOf(path: string): Promise<DirectoryListing | undefined> {
+  try {
+    const names = (await readdir(path)).sort();
+    return { names: names.slice(0, entriesShown), total: names.length };
+  } catch {
+    // SWALLOWED HERE AND NOT AT THE HANDLER, which is the whole shape of this
+    // subtask: the caller has a `stat` that succeeded, and a rejection reaching
+    // it would cost the user that line as well as this listing. Every reason a
+    // listing rejects lands here -- a directory the process may not read, and
+    // the path that STOPPED BEING A DIRECTORY between the two syscalls, which
+    // rejects ENOTDIR. THE SECOND IS NOT CONSTRUCTED BY ANY TEST: it needs a
+    // race between two calls this handler makes back to back, and there is no
+    // seam to open between them. It is the same catch either way.
+    return undefined;
+  }
 }
 
 /**
