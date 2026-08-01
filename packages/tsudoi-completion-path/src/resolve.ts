@@ -42,9 +42,15 @@
 // node:fs/promises, so the two lines are the runtimes' shape rather than a
 // preference -- measured, TS2724 names it.
 import type { Stats } from "node:fs";
-import { stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
-import { completedPath } from "./completion.ts";
+import {
+  completedPath,
+  completedSource,
+  documentationFor,
+  preferredFormat,
+  type DirectoryListing,
+} from "./completion.ts";
 
 /**
  * What one line of `detail` says about a path.
@@ -92,15 +98,76 @@ function detailFor(stats: Stats): string {
  *
  * A COPY RATHER THAN A MUTATION, because the item is the request's params and a
  * handler that edits them in place is writing into somebody else's object.
+ *
+ * THE MULTI-LINE BLOCK IS REBUILT AND NEVER APPENDED TO, FOR EITHER KIND. What
+ * comes back is the CLIENT'S text -- as forgeable as the mark, one field over --
+ * so an answer built by appending to it would be an answer built out of a string
+ * a client can put anything in. Rebuilding depends on nothing the client can
+ * mangle: the path is read from disk, the source comes off the mark through a
+ * closed set, and the format is re-read from THE SESSION rather than from
+ * anything the item carried. A FILE'S BLOCK IS REBUILT TOO, which is why this
+ * runs on every path item and not only on directories -- rebuilding for
+ * directories alone would leave a file answered with the client's own text --
+ * and for a file the rebuild reproduces exactly what the completion wrote.
  */
-export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (_context, item) => {
+export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
   if (path === undefined) {
     return item;
   }
   try {
-    return { ...item, detail: detailFor(await stat(path)) };
+    const stats = await stat(path);
+    return {
+      ...item,
+      detail: detailFor(stats),
+      documentation: documentationFor(
+        path,
+        completedSource(item),
+        // READ FROM THE SESSION THE HANDLER WAS HANDED, per request, for the
+        // reason the completion half reads it per request: the block is composed
+        // here, so it is composed for the client that asked for it.
+        preferredFormat(
+          context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
+            ?.documentationFormat,
+        ),
+        stats.isDirectory() ? await listingOf(path) : undefined,
+      ),
+    };
   } catch {
     return item;
   }
 };
+
+/**
+ * What one directory holds, ready to be rendered.
+ *
+ * THE WHOLE DIRECTORY IS READ, ON PURPOSE, and the cost was MEASURED rather than
+ * feared: one directory of five thousand entries, names only, drains in 51 ms on
+ * bun 1.3.13 and 135 ms on deno 2.8.3 (macOS/APFS, mean of 5), against the ~1.1 s
+ * of per-entry stats this package exists to refuse and against a completion half
+ * that ALREADY drains an entire directory on every keystroke to filter it. A
+ * drain once per HIGHLIGHT cannot be the expensive thing here.
+ *
+ * WHAT DOES NOT SHRINK WITH IT IS THE PAYLOAD -- those five thousand names are
+ * eighty-five thousand characters in one response and five thousand lines in one
+ * popup -- so the bound this listing is rendered under is on entries SHOWN and
+ * never on entries read. THE COST IS LINEAR AND A DIRECTORY IS UNBOUNDED, which
+ * is ACCEPTED rather than guarded: the only guard available would bound the read
+ * by TIME, and a highlight that answers differently depending on how busy the
+ * machine was is a defect of its own. A hundred thousand entries is UNMEASURED.
+ *
+ * NAMES ONLY, WHICH IS WHY `readdir` RATHER THAN `opendir`: no entry's kind is
+ * asked for, so nothing here costs a stat per child -- and nothing iterates a
+ * handle this function must remember to release.
+ *
+ * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
+ * rather than taste: a directory's own order is the filesystem's bookkeeping,
+ * promised by nothing, so an unsorted block reads differently on two machines
+ * and no whole-value assertion can be written against it at all. `localeCompare`
+ * is refused for the reason the ISO date beside it is: this string is built by a
+ * server and read by a person who may be anywhere.
+ */
+async function listingOf(path: string): Promise<DirectoryListing> {
+  const names = (await readdir(path)).sort();
+  return { names, total: names.length };
+}

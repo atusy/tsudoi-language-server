@@ -283,6 +283,35 @@ export function completedPath(item: CompletionItem): string | undefined {
 }
 
 /**
+ * The source THIS MODULE recorded on an item, or undefined when the mark names
+ * none this module offers.
+ *
+ * READ AFTER `completedPath` AND NEVER INSTEAD OF IT: `source` is a plausible
+ * key for any server to put on its own items -- one in this repository's suite
+ * already does -- so the path is the gate and this is only ever the second
+ * question.
+ *
+ * CHECKED AGAINST THE CLOSED SET RATHER THAN TAKEN AS A STRING, which is the one
+ * validation in this pair and it is not a change of position about forgery. The
+ * path is still taken as sent, deliberately, for the reason written at the
+ * resolve handler. What this refuses is narrower and is about the ANSWER: the
+ * block is REBUILT from what the handler knows, so a name arriving from a client
+ * must not become text the block states. An unknown one is dropped and the
+ * attribution goes with it.
+ */
+export function completedSource(item: CompletionItem): PathSourceName | undefined {
+  const data: unknown = item.data;
+  if (typeof data !== "object" || data === null) {
+    return undefined;
+  }
+  const source: unknown = (data as { source?: unknown }).source;
+  return sourceNames.find((name) => name === source);
+}
+
+/** Every name a `PathSource` may carry, as a value the mark reader can check. */
+const sourceNames: readonly PathSourceName[] = ["document", "cwd", "workspace", "absolute"];
+
+/**
  * How many items leave in one message. Batching survives the per-segment rule
  * because no walk is needed for one directory to be too large to hand over at
  * once. The value is a judgement: small enough that the first batch arrives
@@ -699,7 +728,7 @@ export async function* itemsFrom(
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
         label: insertText,
-        documentation: documentationFor(absolutePath, source, documentationFormat),
+        documentation: documentationFor(absolutePath, source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
         // WHAT MAKES THIS ITEM RESOLVABLE. No DETAIL is read here -- a size and a
@@ -741,25 +770,77 @@ export async function* itemsFrom(
  * is the protocol's one-line field. A client showing `detail` inline would run
  * the parts together.
  *
- * THE RULE IS THE ONLY MARKDOWN IN IT, AND IT IS DROPPED RATHER THAN DOWNGRADED
- * for a client that takes plaintext: `---` reaches such a client as three
- * literal hyphens on a line of their own, which is a stray line of punctuation
- * rather than a separator. The blank line between the two parts already
- * separates them, so plaintext loses the rule and nothing else.
+ * THE RULE IS THE ONLY MARKDOWN IN IT ASIDE FROM A LISTING'S BULLETS, AND BOTH
+ * ARE DROPPED RATHER THAN DOWNGRADED for a client that takes plaintext: `---`
+ * reaches such a client as three literal hyphens on a line of their own, which
+ * is a stray line of punctuation rather than a separator. The blank line between
+ * the parts already separates them, so plaintext loses the rule and nothing
+ * else.
+ *
+ * WHY A LISTING IS BULLETED FOR A MARKDOWN CLIENT AND BARE LINES FOR A PLAINTEXT
+ * ONE, which looks like decoration and is not: markdown JOINS consecutive lines
+ * into one paragraph, so a column of names sent as bare lines reaches a markdown
+ * client as one wrapped run of words -- unreadable as the list it is. Nothing is
+ * escaped in a name, exactly as nothing is escaped in the path above it: a name
+ * holding markdown syntax renders as that syntax, which is the same trade this
+ * block has always made and is not widened here.
+ *
+ * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED, THE WAY THE MARK IS: exported
+ * from this module, absent from the entry module, so one composer serves both
+ * callers and nothing about the block becomes a promise to a stranger. The
+ * resolve half REBUILDS this block rather than appending to what came back, so
+ * the two must agree byte for byte about an item nothing was learned about --
+ * which two spellings of one string cannot be relied on to do.
+ *
+ * THE SOURCE ARRIVES AS A NAME AND NOT AS A `PathSource`, because the resolve
+ * half has only the name: the root that produced the item is the completion's
+ * own business and is gone by the time the item comes back. `undefined` is the
+ * item whose mark named no source this module offers -- a forged one -- and the
+ * attribution is then omitted rather than echoed, because the answer may not be
+ * assembled out of text a client supplied.
  */
-function documentationFor(
+export function documentationFor(
   absolutePath: string,
-  source: PathSource,
+  source: PathSourceName | undefined,
   format: MarkupKind,
+  listing?: DirectoryListing,
 ): MarkupContent {
-  const attribution = `source: ${source.name}`;
-  return {
-    kind: format,
-    value:
-      format === MarkupKind.Markdown
-        ? `${absolutePath}\n\n---\n\n${attribution}`
-        : `${absolutePath}\n\n${attribution}`,
-  };
+  const markdown = format === MarkupKind.Markdown;
+  const parts = [absolutePath];
+  if (source !== undefined) {
+    parts.push(`source: ${source}`);
+  }
+  if (listing !== undefined) {
+    parts.push(listingText(listing, markdown));
+  }
+  return { kind: format, value: parts.join(markdown ? "\n\n---\n\n" : "\n\n") };
+}
+
+/** What one resolved directory's entries look like in the block. */
+export interface DirectoryListing {
+  /** The names to render, in the order they are rendered. */
+  readonly names: readonly string[];
+  /** How many entries the directory holds, which may exceed `names`. */
+  readonly total: number;
+}
+
+/**
+ * A directory's listing as the block carries it: how many entries there are, and
+ * then their names.
+ *
+ * THE COUNT IS HERE AND NEVER ON `detail`, so exactly one number about a
+ * directory exists and two cannot disagree. It is also what keeps an EMPTY
+ * directory distinguishable from a path nothing was listed for: with names
+ * alone, `the directory holds nothing` and `no listing was taken at all` produce
+ * the same bytes, which is the defect this project has already measured once in
+ * a fixture and will not ship in the answer.
+ */
+function listingText(listing: DirectoryListing, markdown: boolean): string {
+  const header = `${String(listing.total)} ${listing.total === 1 ? "entry" : "entries"}`;
+  if (listing.names.length === 0) {
+    return header;
+  }
+  return `${header}\n\n${listing.names.map((name) => (markdown ? `- ${name}` : name)).join("\n")}`;
 }
 
 /**
@@ -792,8 +873,14 @@ function documentationFor(
  * where both of these functions deliberately sit. The direction that WOULD be
  * sound, a helper published by tsudoi itself, is a decision nobody has asked for
  * and is not made here.
+ *
+ * EXPORTED FOR THE RESOLVE HALF AND NOT FOR ANYONE ELSE, on the composer's own
+ * reason: that half re-reads the format FROM THE SESSION rather than trusting
+ * anything the item carried back, so both halves have to negotiate it the same
+ * way -- and a second spelling of `the first producible kind the client named`
+ * is a second answer waiting to differ.
  */
-function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
+export function preferredFormat(declared: readonly MarkupKind[] | undefined): MarkupKind {
   const preference = Array.isArray(declared) ? declared : [];
   return preference.find((kind) => producible.includes(kind)) ?? MarkupKind.PlainText;
 }

@@ -56,15 +56,61 @@ const prefix = "sample";
  * A tree holding one file and one directory whose names share `prefix`, so ONE
  * completion request produces both items and the two answers are about the same
  * listing at the same moment.
+ *
+ * THE DIRECTORY HOLDS CHILDREN AND IT USED TO BE EMPTY, which is a defect
+ * repaired rather than a fixture enriched: with nothing inside it, `an empty
+ * listing` and `no listing at all` produce THE SAME BYTES, so an arm asserting
+ * that a directory's entries reach the client would have measured nothing.
+ *
+ * THEY ARE CREATED BEFORE THE TIMESTAMPS ARE FIXED, and the order is
+ * load-bearing: writing into a directory bumps its mtime, and the expected
+ * detail string below carries that stamp.
+ *
+ * ONE OF THEM IS HIDDEN, because `hidden entries are shown` is a ruling with no
+ * witness unless a fixture holds one. THREE NAMES WHOSE THREE ORDERS DIFFER --
+ * created `beta.txt`, `.hidden`, `alpha`, sorted `.hidden`, `alpha`, `beta.txt`
+ * -- so an answer that echoed creation order, or whatever order the filesystem
+ * keeps, cannot pass the whole-value assertion by coincidence.
  */
 function sampleTree(): Tree {
-  const fixture = tree(["sample.txt", "sample-dir/"]);
+  const fixture = tree([
+    "sample.txt",
+    "sample-dir/beta.txt",
+    "sample-dir/.hidden",
+    "sample-dir/alpha/",
+  ]);
   writeFileSync(join(fixture.root, "sample.txt"), fileText);
   // Access time as well, because `utimes` takes both and there is no arm that
   // sets one; nothing here reads atime.
   utimesSync(join(fixture.root, "sample.txt"), mtime, mtime);
   utimesSync(join(fixture.root, "sample-dir"), mtime, mtime);
   return fixture;
+}
+
+/**
+ * The multi-line block the answer must carry for the FILE item, WRITTEN OUT
+ * rather than composed from the module's own parts.
+ *
+ * PLAINTEXT BECAUSE THE SESSION DECLARED NOTHING: this suite's initialize params
+ * carry no capabilities at all, so the client named no documentation format and
+ * a server that sent markdown would be sending syntax nobody said they render.
+ *
+ * `source: document` AND NOT `cwd`, though both roots are this fixture: items
+ * dedup by inserted text and the document's own directory is asked first, so the
+ * survivor is the document's.
+ */
+function fileBlock(root: string): string {
+  return `${join(root, "sample.txt")}\n\nsource: document`;
+}
+
+/**
+ * And for the DIRECTORY item: the same two facts, plus what is inside it.
+ *
+ * THE COUNT IS IN THE BLOCK AND NOT ON `detail`, so exactly one number about
+ * this directory exists and two cannot disagree.
+ */
+function directoryBlock(root: string): string {
+  return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\n.hidden\nalpha\nbeta.txt`;
 }
 
 /** The demo config, started with its working directory INSIDE the fixture. */
@@ -174,7 +220,13 @@ for (const runtime of runtimes) {
      * a directory's `size` is the size of its directory entry, which is the
      * filesystem's business -- 64 on one machine and 4096 on the next for the
      * same two children -- and reporting it would put a number in front of a user
-     * that means nothing about the files inside.
+     * that means nothing about the files inside. THE LISTING BELOW IS WHAT MAKES
+     * THAT REFUSAL AFFORDABLE and does not reverse it: a count of children is
+     * what the directory ENTRY's byte size failed to be.
+     *
+     * THE LINE ALONE IS THIS TEST'S SUBJECT, and the whole answer is compared in
+     * the listing test below rather than here: two tests asserting one deep
+     * equality would mean the second could never be the first thing to fail.
      */
     test("a directory item comes back saying it is a directory, and carrying no size", async () => {
       const fixture = sampleTree();
@@ -185,7 +237,117 @@ for (const runtime of runtimes) {
 
         const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
 
-        expect(resolved).toEqual({ ...item, detail: directoryDetail });
+        expect(resolved.detail).toBe(directoryDetail);
+        // The mistake the refusal names, spelled out: a size on this line reddens
+        // here rather than being caught by a reader.
+        expect(resolved.detail).not.toContain("bytes");
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    /**
+     * WHAT THE USER HIGHLIGHTED A DIRECTORY TO FIND OUT, and the arm the whole
+     * item is compared in: the answer REPLACES the item in the client's list, so
+     * an answer that is not the item drops the entry they are looking at.
+     *
+     * BOTH KINDS IN ONE SESSION, which is what makes the file half mean
+     * anything. `the file's block is unchanged` is satisfied by a server that
+     * writes no block at all, and by one that was never asked -- so the
+     * directory's block is observed CHANGING first, in this session, and only
+     * then does the file's byte-identity say that a rebuild ran and produced
+     * exactly what completion had already produced.
+     *
+     * WHOLE-VALUE ON THE NAMES, never a containment: sorted by code unit is the
+     * only reading a `toEqual` can be written against at all, and a containment
+     * spelling would pass against an answer that had REPLACED the block with the
+     * listing -- losing the path and the attribution the user still needs.
+     *
+     * HIDDEN ENTRIES ARE IN IT, UNFILTERED: the completion half already offers
+     * dotfiles, so a block that hid them would make the two halves of one package
+     * disagree about one directory.
+     */
+    test("a directory item's block carries what is inside it, while a file item's block is unmoved", async () => {
+      const fixture = sampleTree();
+      const session = startDemo(runtime, fixture.root);
+      try {
+        const items = await completedItems(session, fixture.root);
+        const directory = itemFor(items, "sample-dir");
+        const file = itemFor(items, "sample.txt");
+        // What completion put there, before anything resolves: the block the
+        // file's answer must come back byte-identical to.
+        expect(file.documentation).toEqual({ kind: "plaintext", value: fileBlock(fixture.root) });
+
+        const resolvedDirectory = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          directory,
+        );
+        const resolvedFile = await session.request<CompletionItem>("completionItem/resolve", file);
+
+        expect(resolvedDirectory).toEqual({
+          ...directory,
+          detail: directoryDetail,
+          documentation: { kind: "plaintext", value: directoryBlock(fixture.root) },
+        });
+        expect(resolvedFile).toEqual({ ...file, detail: fileDetail });
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    /**
+     * THE BLOCK ARRIVES FROM THE CLIENT EXACTLY AS THE MARK DOES, and this is the
+     * arm that says the answer is not assembled out of it. A resolve request
+     * carries whatever the client chose to send back -- an editor that rewrote
+     * the block, a middleware that mangled it, a client that stripped it
+     * entirely -- and the answer is decided by the path and the session instead.
+     *
+     * BOTH KINDS ARE ARMS, and the file is the one that matters: a rebuild firing
+     * only for directories would answer a FILE with the client's own text, which
+     * is exactly what this refuses. The two forgeries differ so neither arm can
+     * be satisfied by the other's expectation.
+     *
+     * IT IS ALSO THE DISCRIMINATOR FOR THE RULING ITSELF: under an implementation
+     * that APPENDED a listing to what came back, this cannot pass.
+     *
+     * WHAT IT DOES NOT CLOSE, said plainly because the shape invites the reading:
+     * the mark stays forgeable and unvalidated, for the reason written at the
+     * handler. What is fixed is narrower -- the ANSWER is built from what the
+     * handler read, not from what it was sent.
+     */
+    test("an item whose block was tampered with is answered with a rebuilt one, for either kind", async () => {
+      const fixture = sampleTree();
+      const session = startDemo(runtime, fixture.root);
+      try {
+        const items = await completedItems(session, fixture.root);
+        const forgedDirectory = {
+          ...itemFor(items, "sample-dir"),
+          documentation: { kind: "plaintext", value: "偽の説明 forged-directory-text" },
+        };
+        // A DIFFERENT SHAPE ON THIS ONE: `documentation` may be a bare string,
+        // so the item that arrives is not even guaranteed to be an object.
+        const forgedFile = { ...itemFor(items, "sample.txt"), documentation: "forged-file-text" };
+
+        const answeredDirectory = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          forgedDirectory,
+        );
+        const answeredFile = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          forgedFile,
+        );
+
+        expect(answeredDirectory.documentation).toEqual({
+          kind: "plaintext",
+          value: directoryBlock(fixture.root),
+        });
+        expect(answeredFile.documentation).toEqual({
+          kind: "plaintext",
+          value: fileBlock(fixture.root),
+        });
+        expect(JSON.stringify([answeredDirectory, answeredFile])).not.toContain("forged");
       } finally {
         session.dispose();
         fixture.dispose();
