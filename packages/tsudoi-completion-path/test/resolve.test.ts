@@ -2,7 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import type { CompletionItem, MarkupKind } from "@atusy/tsudoi-language-server/deps/types";
+// `CompletionItemKind` IS A VALUE and the rest are types: the arm that hands the
+// handler a kind it must ignore spells that kind by the protocol's own name
+// rather than by its number.
+import {
+  type CompletionItem,
+  CompletionItemKind,
+  type MarkupKind,
+} from "@atusy/tsudoi-language-server/deps/types";
 import { tree } from "./helpers/tree.ts";
 // RELATIVE, INTO src/, for the reason the completion suite beside this file
 // gives: the package publishes two names and everything else these arms reach
@@ -45,7 +52,19 @@ function contextDeclaring(
   };
 }
 
-/** An item marked the way this package's completion half marks its own. */
+/**
+ * An item carrying THIS PACKAGE'S MARK AND NOTHING ELSE THAT MATTERS -- a label,
+ * the `data` the completion half writes, and a block when an arm supplies one.
+ *
+ * WHAT IT DELIBERATELY OMITS, AND THE OMISSION IS THE POINT RATHER THAN A
+ * SHORTCUT: a real completed item also carries `kind`, `insertText` and
+ * `textEdit`, and none of them may decide anything this handler answers. `kind`
+ * is the one with teeth -- it is the client's copy of a classification taken at
+ * popup time, so an implementation reading it would answer from a stale,
+ * forgeable field. An arm that cares what `kind` says SETS IT ITSELF, which is
+ * what makes the disagreement between the claim and the path deliberate instead
+ * of incidental.
+ */
 function markedItem(path: string, source: string, documentation?: unknown): CompletionItem {
   return {
     label: path,
@@ -236,6 +255,73 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(blockOf(answered)).not.toContain("<script>");
       expect(answered.detail ?? "").not.toContain("<script>");
       expect(answered.data).toEqual({ pathCompletion: path, source: "<script>alert(1)</script>" });
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+describe("what the path is decides the answer, and never what the item claims", () => {
+  /**
+   * THE RULING HAD NO WITNESS, WHICH IS WHY THIS ARM EXISTS. `the branch is
+   * taken from a FRESH stat` is written at the handler and was asserted by
+   * nothing: MEASURED, replacing that branch with `item.kind === 19` left this
+   * file green on both runtimes, and a sharpened hybrid -- the item's `kind`
+   * when it has one, the stat when it does not -- was green ACROSS THE WHOLE
+   * TREE. Every other arm hands the handler an item with no `kind` at all, so
+   * nothing anywhere could tell the two implementations apart.
+   *
+   * WHY AN ITEM'S OWN `kind` MAY NEVER DECIDE THIS: it is the client's copy of a
+   * classification made when the popup opened, so it is forgeable like the rest
+   * of the item and stale besides -- the path may have been replaced by one of
+   * the other kind in between, which is the same window the deletion arm is
+   * about.
+   *
+   * TWO TESTS AND NOT TWO ASSERTIONS, because the two directions FAIL IN
+   * DIFFERENT FIELDS and the wrong implementation trips the first one first: a
+   * `kind`-driven answer asked to list a FILE gets a rejection and quietly drops
+   * the listing, so that arm's whole visible defect is on `detail`, while the
+   * DIRECTORY arm's is the listing going missing. Sharing one test would mean
+   * the second could never be observed.
+   */
+  test("a file whose item claims to be a folder is still answered as a file", async () => {
+    const fixture = tree(["plain.txt"]);
+    const file = join(fixture.root, "plain.txt");
+    try {
+      const answered = await resolvePathStat(contextDeclaring(["plaintext"]), {
+        ...markedItem(file, "cwd"),
+        kind: CompletionItemKind.Folder,
+      });
+
+      // The classifying word off the detail line, which is where this direction
+      // shows: the block a `kind`-driven answer produces here looks correct,
+      // because listing a file rejects and the listing is dropped.
+      expect((answered.detail ?? "").split(" · ")[0]).toBe("file");
+      expect(blockOf(answered)).toBe(`${file}\n\nsource: cwd`);
+      // The claim itself comes back untouched: the answer REPLACES the item the
+      // client holds, so correcting its `kind` is not this handler's business --
+      // refusing to be decided by it is.
+      expect(answered.kind).toBe(CompletionItemKind.Folder);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  test("a directory whose item claims to be a file still comes back with its listing", async () => {
+    const fixture = tree(["dir/one.txt"]);
+    const directory = join(fixture.root, "dir");
+    try {
+      const answered = await resolvePathStat(contextDeclaring(["plaintext"]), {
+        ...markedItem(directory, "cwd"),
+        kind: CompletionItemKind.File,
+      });
+
+      // THE LISTING FIRST, because it is what this direction costs the user: a
+      // `kind`-driven answer never asks what is inside, which is the whole
+      // reason the listing exists.
+      expect(blockOf(answered)).toBe(`${directory}\n\nsource: cwd\n\n1 entry\n\none.txt`);
+      expect((answered.detail ?? "").split(" · ")[0]).toBe("directory");
+      expect(answered.kind).toBe(CompletionItemKind.File);
     } finally {
       fixture.dispose();
     }
