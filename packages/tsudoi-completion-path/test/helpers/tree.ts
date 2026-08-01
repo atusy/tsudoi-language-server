@@ -3,11 +3,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 /**
- * A throwaway directory tree, WITH NO DOTFILES IN IT.
+ * A throwaway directory tree, WITH NO DOTFILE IN IT THAT A CALLER DID NOT ASK
+ * FOR.
  *
- * Hidden-entry behaviour is UNRULED -- the stakeholder did not ask -- and a
- * fixture that happened to contain one would pin a decision nobody made. The
- * same rule is why nothing here is named `./x` or `../x`.
+ * THE BLANKET REFUSAL IS NARROWED RATHER THAN DROPPED, AND THE REASON IT STOOD
+ * HAS EXPIRED RATHER THAN BEEN OVERRULED. It said hidden-entry behaviour was
+ * UNRULED, so a fixture that HAPPENED to hold one would pin a decision nobody
+ * made. It is ruled now -- a resolved directory's listing SHOWS them,
+ * unfiltered, AFTER the ordinary entries -- and a ruling whose witness no
+ * fixture may hold is a ruling nothing can falsify. So a caller that names a
+ * dotfile is asserting something, and bulk staging here adds none. The `./x`
+ * and `../x` rule is untouched.
  *
  * realpathSync is not cosmetic: on macOS the system temp directory lives under
  * /var, which IS a symlink to /private/var, and a child process started with
@@ -18,9 +24,10 @@ import { join } from "node:path";
  * OVERSIGHT. A member that reached up into the root's test helpers would stop
  * being checkable out on its own, and the file it reached for would become an
  * input to the type check that covers this package -- so a root helper's edit
- * would decide whether this package compiles. Thirty-nine lines is what that
- * independence costs, and the two are free to diverge: nothing here is shared
- * with the root's copy but the idea.
+ * would decide whether this package compiles. That independence costs one small
+ * file, NAMED RATHER THAN COUNTED because a line count falsifies itself the day
+ * a line is added, and the two are free to diverge: nothing here is shared with
+ * the root's copy but the idea.
  */
 export interface Tree {
   readonly root: string;
