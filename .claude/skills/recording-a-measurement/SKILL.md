@@ -63,6 +63,32 @@ revert, read `dist/`.
 
 ## Labelling it
 
+**A MEASURED claim names WHOSE cost it is, at what SIZE, on which RUNTIME, and
+what its instrument CANNOT SEPARATE.** Without those four the label warrants the
+number and reads as a warrant for the sentence. _(sprint 53)_ MEASURED, and the
+evidence is four wrong sentences in a row about one subject, three of them
+carrying this label: "the cost is linear" — true of the per-entry comparison,
+false of the sort beside it; "nothing of the directory's size is held or
+compared" — true of one function, false of the process; a reviewer's "a
+thirty-two entry buffer" — a real API default attributed to a code path that
+never reads it; "what it buys is the disappearance of a superlinear term" —
+true on one runtime, while on the other the tail got slower.
+
+**THE NUMBERS WERE RIGHT EVERY TIME AND THE SUBJECT WAS WRONG EVERY TIME, WHICH
+IS WHY RE-MEASURING DOES NOT CATCH IT.** Take the reading again, at any size, on
+either runtime, confirm it — and the sentence is still false. The exemplar the
+repair produced, which is the form to copy: _resident set says where the
+ALLOCATION happens and never what stays; when a collector gives it back is not a
+thing this reading can separate._
+
+**AND THE SCOPE YOU DRAW ACROSS SEVERAL CORRECT READINGS IS A CLAIM TOO.**
+_(sprint 53)_ A cancellation checkpoint was refused on a complete measurement
+whose sentences were each correctly scoped — and the conclusion drawn across
+them ("two seams exist, and never again") outran them, while the datum that
+licensed the seam that later landed was already inside the refusal's own
+reading. Enumerating the cases is where a measured refusal goes wrong, not the
+numbers.
+
 **Say whether a claim was MEASURED or REASONED, and never state a consequence
 without checking it against the remedy it justifies.** _(sprint 8)_ **A measured
 claim records what would let it be RE-RUN, not only its conclusion**: for a
