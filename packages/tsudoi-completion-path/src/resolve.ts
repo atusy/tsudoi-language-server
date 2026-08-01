@@ -191,9 +191,18 @@ function detailFor(stats: Stats): string {
  * two runtimes -- and that is a property of the PARTIAL READ, which is exactly
  * what makes the two seams above safe.
  *
- * THE UNTOUCHED ITEM IS WHAT A CANCELLED RESOLVE ANSWERS, for the reason the
- * gone-path case answers it: nothing this handler decided to state was finished,
- * and the item the client holds is the one thing that is certainly not wrong.
+ * THE UNTOUCHED ITEM IS WHAT A RESOLVE CANCELLED AT THE FIRST OF THOSE TWO
+ * SEAMS ANSWERS, AND ONLY THAT ONE -- the sentence that said `a cancelled
+ * resolve` covered both and was false at the second. At the checkpoint above,
+ * nothing this handler decided to state was finished, so the item the client
+ * holds goes back exactly as it came, for the reason the gone-path case answers
+ * it. At the seam inside the listing the stat is already SPENT: the answer
+ * carries the directory's own `detail` line and a rebuilt block, and what it
+ * lacks is the listing alone. Which is the same answer a directory that could
+ * not be LISTED gets, and deliberately so -- the split between the two reads
+ * exists precisely so that a listing that does not happen costs the listing and
+ * nothing else, whether the reason is a permission, an ENOTDIR or a
+ * cancellation.
  */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
