@@ -77,28 +77,95 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-60",
+      id: "PBI-65",
       story: {
-        role: "tsudoi maintainer",
+        role: "editor user",
         capability:
-          "learn from a diagnostic, rather than from a green run, that the artifact a check read was not there",
+          "see what is INSIDE a directory the path completion offered me, at the moment I highlight it",
         benefit:
-          "the file a check graded is the file I think it graded, in every state the build passes through",
+          "I choose the next segment from what the directory actually holds, without leaving the popup to go and look",
       },
       acceptance_criteria: [
         {
           criterion:
-            "With a package's published artifact ABSENT, and with it PARTIAL, what reads it says so by naming a file rather than exiting 0 against a different one.",
+            "A resolved item whose path is a DIRECTORY carries the names of entries inside it, reaching the client in the item's multi-line block and not on the one-line `detail`; an item whose path is a FILE carries no such listing; and neither answer loses what the completion already put on the item -- the absolute path and the source attribution.",
           verification:
-            "Both states staged -- absent, and the partial window the pack step passes through -- and the reading taken on both runtimes AND the compiler, because it is the compiler alone that probes for existence and falls through. STARTING EVIDENCE, MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS FROM BEFORE IT: with every dist/ removed the root check exits 1 with exactly two errors, both at examples/tsudoi.config.ts and both naming HANDLER packages, while the trace shows tsudoi's own subpath falling SILENTLY through the `default: ./src/*.ts` arm. THE RECORDED COSTS OF DELETING THAT ARM WERE MEASURED UNDER THE LAYOUT THE MOVE DESTROYED and must be re-measured rather than quoted: the two importers that broke reached tsudoi through a mapping that no longer exists and now reach it through node_modules, so the cost may simply have evaporated.",
+            "Read from the item the handler RETURNS and never from an internal function, because the resolve answer REPLACES the item in the client's list -- an answer that is not the item drops the entry the user is looking at, which is written at `resolvePathStat` today. Four arms, each a perturbation with its green pair: a directory whose entries do not appear reddens; a file that gains a listing reddens; an answer whose block has lost the absolute path reddens; an answer whose block has lost the source attribution reddens. STARTING GROUND, MEASURED: `resolvePathStat` is exercised by NO behavioural test anywhere in the tree -- grepped, it occurs in the package README, the two src modules, examples/tsudoi.config.ts, and test/published-artifacts.test.ts, where both probes are TYPE-LEVEL (an import-and-assign pair asserting TS2322). So there is no red available for any of this until a harness exists, and building one is the first work rather than a risk.",
+        },
+        {
+          criterion:
+            "Whenever the handler answers from disk -- for a FILE as much as for a DIRECTORY -- what the answer says about the path is decided by the path and by the session, not by what the client sent back: an item arriving with its multi-line block replaced by text no completion produced is answered with a block that does not carry that text.",
+          verification:
+            "Forge the block on the item handed to the handler -- the item ARRIVES FROM THE CLIENT and nothing is validated, deliberately, which is written at `resolvePathStat` -- and require the answer to carry the absolute path and the attribution and NOT the forged text; BOTH KINDS ARE ARMS, since a rebuild that fired only for directories would leave a file answered with the client's own text. Paired with the unforged item green. AND THE MARKUP ARM: with the client's declared documentation formats naming plaintext only, the answer carries no markdown syntax, and with markdown declared it may; measured through the session the handler is handed rather than through anything carried on the item. THE UNTOUCHED-ITEM ANSWERS OF THE FOURTH CRITERION ARE OUTSIDE THIS ONE BY CONSTRUCTION and stay outside it: nothing was read there, so there is nothing to build an answer out of, and handing back what arrived is the behaviour that criterion requires. THIS CRITERION DOES NOT CLOSE THE FORGERY BOUNDARY AND MUST NOT BE READ AS CLOSING IT: the mark itself stays forgeable and unvalidated for the reason already written there. What it fixes is narrower -- the ANSWER is not assembled out of client-supplied text.",
+        },
+        {
+          criterion:
+            "The number of entry names one resolved directory puts on the wire does not grow with the number of entries the directory holds; an answer that shows fewer than all of them states EXACTLY how many the directory holds; and the names it shows are the same names in the same order on any machine holding the same directory.",
+          verification:
+            "Stage a directory holding entries far past the bound and count what the returned item carries; pair with one under the bound, which shows every entry and announces no truncation. The bound is a judgement value pinned by READING THE WIRE and never by importing the constant, for the reason written at `batchSize` in completion.ts: a test that imports the number agrees with itself. The exact total is what makes the truncated arm assertable as a VALUE rather than as a shape. The order arm is falsified by the listing order itself: entries staged so that creation order, filesystem order and sorted order differ must come back sorted, and the assertion is whole-value equality on the names -- which is unwritable at all against an unsorted block.",
+        },
+        {
+          criterion:
+            "A listing that fails does not cost the item the detail that was already read: a path that can be stat-ed but not listed is answered with its one-line detail present, and is not answered with the untouched item.",
+          verification:
+            "Stage a directory the process can stat and cannot read, and THE ARM MUST ESTABLISH ITS OWN PREMISE BEFORE IT ASSERTS ANYTHING -- assert that the listing really rejects in that staged tree, so a machine where the permission does not bite (a runner as root) REDDENS rather than passes vacuously. UNMEASURED, and the first task measures it: that a directory can be stat-able and unlistable is standard posix and has not been read on these two runtimes; if the staging cannot be made to bite, the STAGING changes and the property does not. The other two arms keep today's outcome and are green-before: a path that vanished between completion and resolve is answered with the untouched item, nothing thrown and nothing on stderr; and a path that was a directory at the stat and is not one at the listing does not escape either.",
+        },
+        {
+          criterion:
+            "A resolved FILE still carries its size and its modification date on one line, and a resolved DIRECTORY still carries no byte size.",
+          verification:
+            "A pin rather than new behaviour, and it exists because of the hole the first criterion measured -- the same grep: no behavioural test names `resolvePathStat`, so both halves of `detailFor` are defended today by a comment alone. Falsifier for the second half is the mistake the comment refuses -- an implementation that puts the directory's own `size` on the line must redden, since that number is the directory ENTRY's size, filesystem-dependent, and says nothing about what is inside.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "WHERE THE LISTING GOES, RULED: the multi-line block, REBUILT rather than appended to, and `detail` keeps its one line. Two reasons, and the second is the one a reader would not re-derive. The block is where a list of names can be read at all -- `detail` is the protocol's one-line field and a client shows it inline beside the label. AND THE INCOMING BLOCK IS THE CLIENT'S TEXT, exactly as `data` is: appending would build the answer out of a string a client can put anything in. Rebuilding depends on nothing the client can mangle -- which is what the second criterion asserts.",
+        "REBUILDING FORCES THE MARK TO WIDEN, AND THAT IS THIS ITEM'S ONE STRUCTURAL CHANGE. The block carries TWO facts and only one of them is in `PathItemData`: the absolute path is, the SOURCE NAME is not, and it is not derivable from the path -- the same file can be reached from the document's directory, the cwd, a workspace folder or an absolute fragment. So `PathItemData` gains the source name, written at the item where it is already in hand and costing nothing at popup time. IT COSTS NO COMPATIBILITY, which is the whole point of the mark being unpublished and the two halves shipping as one package -- both stated at `PathItemData` today. It does not move the forgery boundary either: a forged source name describes a source the answer names wrongly, in the same class as a forged path, and what decides safety remains what the handler DOES with the path -- still nothing but read it.",
+        "THE REBUILD IS FOR BOTH KINDS, AND IT IS A WIDER CHANGE THAN `DIRECTORIES GET A LISTING` -- said out loud here so it does not arrive as a surprise at review. Resolve now writes the block on EVERY path item, a file's included, where today it writes `detail` and passes the block through untouched. One code path rather than two, and a file's block is simply the two facts it already carried; the alternative -- rebuilding for directories alone -- leaves a file answered with whatever text the client sent back, which is the thing the second criterion refuses.",
+        "THE MARKUP FORMAT IS RE-READ FROM THE SESSION AND NOT CARRIED ON THE ITEM, for the same reason the block is rebuilt. MEASURED, by reading the type rather than assuming it: `MethodHandler` hands every handler a `RequestContext` of `{ signal, tsudoi }` (packages/tsudoi-language-server/src/types.ts), so `clientCapabilities` is reachable from the resolve handler -- which today writes its context parameter as `_context` and discards it.",
+        "HOW THE TWO MODULES SHARE THE BUILDER: the way they already share the mark -- exported from completion.ts, absent from index.ts. `documentationFor` and `preferredFormat` are module-private there now. The precedent is written at `PathItemData`, and it is cited so nobody invents a second sharing scheme or, worse, publishes these.",
+        "THE MODULE'S EXISTING ARITHMETIC DOES NOT JUSTIFY THIS WORK, AND AN EXECUTOR WHO READS IT WILL CONCLUDE THAT IT DOES. That argument is about SYSCALLS PER KEYSTROKE: thousands of stats at popup time against one stat on an idle moment. One `opendir` for the one highlighted item is the same order as that one stat, so the syscall argument carries and settles nothing. WHAT IS UNBOUNDED IS THE PAYLOAD -- bytes in one response and lines in one popup -- and a directory of a few thousand entries is ordinary, which is the module's own premise. That is why the third criterion bounds entries rendered rather than calls made.",
+        "THE WHOLE DIRECTORY IS READ, ON PURPOSE, AND THE BOUND IS ON THE PAYLOAD ALONE. AN EARLIER RULING OF MINE IS RETIRED HERE AND SAID SO RATHER THAN QUIETLY DROPPED: I refused a total on the ground that `a total is the walk`, and the walk was then MEASURED and is not the cost I priced it at. macOS/APFS, 5000 empty files, names only, mean of 5 drains: bun 1.3.13 51.3 ms and deno 2.8.3 135.1 ms for the whole directory, against one stat at 0.225 / 0.298 ms. Two comparisons decide it. The work this module already refuses -- one stat per entry at popup time -- is ~1.1 s on bun for that same directory, a LOWER bound, so a 51 ms drain once per HIGHLIGHT is two orders off the thing the module exists to avoid. And `itemsFrom` beside it ALREADY drains the entire directory on EVERY KEYSTROKE to filter by prefix, so a full drain on one idle highlight cannot be the expensive thing in this package. WHAT DOES NOT SHRINK IS THE PAYLOAD: those 5000 names are 84,999 characters and the first 20 are 339, which is the ratio the bound is actually about.",
+        "THE COST IS LINEAR AND THE DIRECTORY IS UNBOUNDED, WHICH IS THE PART THE MEASUREMENT DOES NOT COVER: 5000 entries was measured, 100k was not, and the drain scales with it. It is accepted rather than guarded, because the alternative guard would have to bound the read by TIME and a highlight that answers differently depending on how busy the machine was is the defect PBI-58 was filed for. UNMEASURED at the tail, and named so.",
+        "THE LISTING IS SORTED, AND THE REASON IS TESTABILITY BEFORE IT IS TASTE. `readdir` order is the filesystem's own bookkeeping, promised by nothing, so an unsorted block makes the same directory read differently on two machines and NEITHER a whole-value assertion NOR `the first N are these` can be written against it -- a criterion nothing can falsify is the thing this project refuses to record. Under the full read the sort costs one sort on names already in memory. BY CODE UNIT AND NEVER BY LOCALE, for the reason the module already gives about ISO dates: this string is built by a server and read by a person who may be anywhere, and `localeCompare` would order it for whichever machine the server happens to run on.",
+        "THE COUNT GOES WHERE THE LISTING IS AND NOT ON THE DETAIL LINE, so exactly one number about a directory exists and two cannot disagree. That keeps the fifth criterion's pin unmoved, and it is still not a reversal of the size refusal beside it: a count of children is what the directory ENTRY's byte size failed to be.",
+        "WHAT A FILE GETS IS ALREADY WHAT WAS ASKED FOR. The stakeholder said `information about the file`; the handler gives size and modification date today. Nothing is invented on top -- mime type, permissions, a line count are each another read for a question nobody asked. The fifth criterion is therefore a PIN AND NOT A FEATURE, and it is worth a criterion only because of the measured hole: both branches of `detailFor` are asserted by nothing today.",
+        "THE STAKEHOLDER'S `kind` NAMES THE CASE AND IS NOT A DIRECTIVE TO READ `item.kind`. That field is on the incoming item and an executor will reach for it: it is client-supplied, forgeable, and stale by the time it comes back. The branch stays on a FRESH stat, which is where `detailFor` takes it today.",
+        "HIDDEN ENTRIES ARE SHOWN, UNFILTERED, AND IT IS RULED HERE BECAUSE IT WAS UNRULED RATHER THAN DECIDED. The deciding fact is inside this package: `itemsFrom` filters a listing by the fragment's trailing name ALONE and offers dotfiles already, so a resolve block that hid them would make the two halves of ONE package disagree about ONE directory -- the popup offering `.env` while the block describing its parent says it is not there. The user asked about a directory; a listing that answers about a subset of it misreports the thing they asked about. THE FIXTURE HELPER'S BLANKET REFUSAL OF DOTFILES NARROWS RATHER THAN STANDS: it exists because this behaviour was undecided, and a property that hidden entries appear has NO WITNESS unless a fixture holds one.",
+        "THE SHARED FIXTURE HAS A DEFECT THAT WOULD HAVE MADE AN ARM MEASURE NOTHING, found by the Developer and recorded because the arm looks green either way: its directory is created EMPTY, so `an empty listing` and `no listing at all` produce the same bytes. It gains children, and they are created BEFORE the fixture's `utimesSync` -- writing into a directory bumps its mtime, and the expected detail string carries that timestamp.",
+        "A SYMLINK LISTS ITS TARGET, because `stat` follows -- consistent with `entryKind`, which already reports what a symlink points at rather than that it is one. CYCLES DO NOT ARISE, and the argument is already in `itemsFrom` and is cited rather than restated weaker: a cycle needs traversal and one listing cannot traverse. Nothing recurses here either.",
+        "`resolveSupport` IS RULED AND THE RULING IS `NOT GATED`, written down because this module gates its two other client-facing decisions on declared capabilities and calls an ungated send `a SPECIFICATION VIOLATION rather than a generosity`, so a third such decision left unruled reads as an oversight. THE FIELD IS READ RATHER THAN RECALLED: `textDocument.completion.completionItem.resolveSupport` is `{ properties: string[] }` -- `Indicates which properties a client can resolve lazily on a completion item. Before version 3.16.0 only the predefined properties documentation and details could be resolved lazily.` -- in the installed protocol package at node_modules/vscode-languageserver-protocol/lib/common/protocol.d.ts. TWO REASONS IT IS NOT A GATE HERE. The block is one of the two properties that were resolvable BEFORE the declaration existed, so unlike `InsertReplaceEdit` it is not a shape a client can fail to parse. And the completion module ALREADY sends the block eagerly, so a client that ignores what it did not list keeps exactly what it had and loses only the listing -- degraded, where the insert-replace mistake is broken. UNMEASURED, and marked so: whether any real client drops a documentation it did not name has not been read against one.",
+        "THE MEMBER README GOES STALE IN TWO PLACES AND BOTH ARE NAMED, because this repository has an open item for exactly this class: the method table's row for `resolvePathStat` says it `fills in that entry's size and modification date`, and the paragraph below says the completion half leaves you `only without the size and date` and that `No entry's detail is read here`. Both are prose, both are pinned by nothing, and both become incomplete the day a directory gets a listing.",
+        "FD RELEASE ON AN EARLY EXIT IS A MEASUREMENT AND NOT AN ASSUMPTION. Nothing in this tree breaks out of a directory iteration today -- `itemsFrom` runs its listing to exhaustion -- so the bound introduces the first early exit, and whether the handle is released then is read on BOTH runtimes rather than trusted to node compatibility. UNMEASURED.",
+        "SCOPE: one module, one behaviour, one sprint. Out of scope and refused in advance so the sprint does not grow: gating on `resolveSupport`; anything further on the file line; and recursion of any kind, which would bring unbounded walks, depth and symlink cycles back at once.",
+      ],
+    },
+
+    {
+      id: "PBI-58",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read the first Definition-of-Done check as a statement about the code rather than about the machine it ran on",
+        benefit:
+          "a red means something is wrong with tsudoi, which is the only thing that makes running it worth the time",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A test that would pass is not failed by how busy the machine is, for every invocation form the contract names.",
+          verification:
+            "Both directions in a throwaway spawn, at values small enough to be unambiguous: a test that sleeps past the limit fails, and the same test under the limit passes. The number is a policy choice and is pinned by reading the constant, not by asserting a duration.",
         },
       ],
       status: "draft",
       notes: [
-        "THIS IS THE RESIDUE SPRINT 52 SHIPPED OPEN AND SAID SO. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable. IT IS CARRIED AS PROSE IN FOUR PLACES AND PINNED BY NOTHING, DELIBERATELY: a test that pinned the flip would PASS WHILE THE RESIDUE PERSISTS, specifying rather than detecting it, and would make this PBI look like a regression.",
-        "THE DECIDING MEASUREMENT, so this does not become a deletion looking for a justification: it lands if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted. Otherwise the residue stays named.",
+        "THE PROPERTY, MEASURED AT SPRINT 50'S REVIEW AND NOT PREDICTED: the suite spawns compilers, servers and package managers, and bun's default gives each test 5000ms. On a machine at load 100-160 the first check read 700 pass / 17 fail with EVERY FAILURE A TIMEOUT AND NONE AN ASSERTION; the same suite at `--timeout 30000` read 739 of 741. Nobody chose 5000ms for a suite of this shape; it is a default nobody edited.",
+        "NO REMEDY IS NAMED IN THE CRITERION, deliberately, because a criterion that names its own fix hands the executor a way to satisfy the letter. Recorded as measured rather than as the fix: `[test] timeout` in bunfig.toml is IGNORED on bun 1.3.13, and `--timeout` does not override a deadline a test sets for itself.",
+        "TWO THINGS THE EXECUTOR MUST BE TOLD RATHER THAN LEFT TO DISCOVER. MEASURED on bun 1.3.13: `setDefaultTimeout` called from a preload BEATS `--timeout` on the command line -- so whatever lands here RETIRES the `--timeout 30000` idiom this project used all through sprint 50 to tell a machine's red from a code's, and the replacement must be named when it does. And `hangTimeoutMs = 4000` in test/protocol.test.ts and test/session.test.ts is a deadline those files set for THEMSELVES, explicitly outside this item.",
       ],
     },
+
     {
       id: "PBI-61",
       story: {
@@ -120,6 +187,7 @@ const scrum: ScrumDashboard = {
         "THE MOVE CREATED THE ASYMMETRY THAT MAKES IT LIVE: the framework member is the only member whose config includes just its source, because it is the only one with no tests of its own, so anything added to it outside that directory is run by the suite and graded by nobody.",
       ],
     },
+
     {
       id: "PBI-64",
       story: {
@@ -144,6 +212,31 @@ const scrum: ScrumDashboard = {
         "FOUND BY TRIAGING THE RETROSPECTIVE RECORD RATHER THAN BY A RED, and that is worth recording: the improvement being retired claimed this remedy existed, and reading for its mechanism before marking it done is what found that it does not.",
       ],
     },
+
+    {
+      id: "PBI-57",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "trust that a citation inside a comment still refers to something that exists",
+        benefit:
+          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
+          verification:
+            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
+        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
+        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
+      ],
+    },
+
     {
       id: "PBI-62",
       story: {
@@ -168,6 +261,7 @@ const scrum: ScrumDashboard = {
         "THE GENERALISATION IS REFUSED IN ADVANCE: no guard that every exclude entry matches something on disk. An unmatched pattern is legitimate configuration, such a guard would redden correct files, and this instance was caught by the layer meant to catch it -- filed by its executor rather than shipped.",
       ],
     },
+
     {
       id: "PBI-63",
       story: {
@@ -196,51 +290,28 @@ const scrum: ScrumDashboard = {
         "RANKED LOW ON THE FIRST CRITERION AND NOT ON THE SECOND: the root is private for ever and the artifact is local, but the entry-name reading is the discrimination the move showed missing.",
       ],
     },
+
     {
-      id: "PBI-57",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust that a citation inside a comment still refers to something that exists",
-        benefit:
-          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
-          verification:
-            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
-        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
-        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
-      ],
-    },
-    {
-      id: "PBI-58",
+      id: "PBI-60",
       story: {
         role: "tsudoi maintainer",
         capability:
-          "read the first Definition-of-Done check as a statement about the code rather than about the machine it ran on",
+          "learn from a diagnostic, rather than from a green run, that the artifact a check read was not there",
         benefit:
-          "a red means something is wrong with tsudoi, which is the only thing that makes running it worth the time",
+          "the file a check graded is the file I think it graded, in every state the build passes through",
       },
       acceptance_criteria: [
         {
           criterion:
-            "A test that would pass is not failed by how busy the machine is, for every invocation form the contract names.",
+            "With a package's published artifact ABSENT, and with it PARTIAL, what reads it says so by naming a file rather than exiting 0 against a different one.",
           verification:
-            "Both directions in a throwaway spawn, at values small enough to be unambiguous: a test that sleeps past the limit fails, and the same test under the limit passes. The number is a policy choice and is pinned by reading the constant, not by asserting a duration.",
+            "Both states staged -- absent, and the partial window the pack step passes through -- and the reading taken on both runtimes AND the compiler, because it is the compiler alone that probes for existence and falls through. STARTING EVIDENCE, MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS FROM BEFORE IT: with every dist/ removed the root check exits 1 with exactly two errors, both at examples/tsudoi.config.ts and both naming HANDLER packages, while the trace shows tsudoi's own subpath falling SILENTLY through the `default: ./src/*.ts` arm. THE RECORDED COSTS OF DELETING THAT ARM WERE MEASURED UNDER THE LAYOUT THE MOVE DESTROYED and must be re-measured rather than quoted: the two importers that broke reached tsudoi through a mapping that no longer exists and now reach it through node_modules, so the cost may simply have evaporated.",
         },
       ],
       status: "draft",
       notes: [
-        "THE PROPERTY, MEASURED AT SPRINT 50'S REVIEW AND NOT PREDICTED: the suite spawns compilers, servers and package managers, and bun's default gives each test 5000ms. On a machine at load 100-160 the first check read 700 pass / 17 fail with EVERY FAILURE A TIMEOUT AND NONE AN ASSERTION; the same suite at `--timeout 30000` read 739 of 741. Nobody chose 5000ms for a suite of this shape; it is a default nobody edited.",
-        "NO REMEDY IS NAMED IN THE CRITERION, deliberately, because a criterion that names its own fix hands the executor a way to satisfy the letter. Recorded as measured rather than as the fix: `[test] timeout` in bunfig.toml is IGNORED on bun 1.3.13, and `--timeout` does not override a deadline a test sets for itself.",
-        "TWO THINGS THE EXECUTOR MUST BE TOLD RATHER THAN LEFT TO DISCOVER. MEASURED on bun 1.3.13: `setDefaultTimeout` called from a preload BEATS `--timeout` on the command line -- so whatever lands here RETIRES the `--timeout 30000` idiom this project used all through sprint 50 to tell a machine's red from a code's, and the replacement must be named when it does. And `hangTimeoutMs = 4000` in test/protocol.test.ts and test/session.test.ts is a deadline those files set for THEMSELVES, explicitly outside this item.",
+        "THIS IS THE RESIDUE SPRINT 52 SHIPPED OPEN AND SAID SO. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable. IT IS CARRIED AS PROSE IN FOUR PLACES AND PINNED BY NOTHING, DELIBERATELY: a test that pinned the flip would PASS WHILE THE RESIDUE PERSISTS, specifying rather than detecting it, and would make this PBI look like a regression.",
+        "THE DECIDING MEASUREMENT, so this does not become a deletion looking for a justification: it lands if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted. Otherwise the residue stays named.",
       ],
     },
   ],
