@@ -308,8 +308,26 @@ export function completedSource(item: CompletionItem): PathSourceName | undefine
   return sourceNames.find((name) => name === source);
 }
 
-/** Every name a `PathSource` may carry, as a value the mark reader can check. */
-const sourceNames: readonly PathSourceName[] = ["document", "cwd", "workspace", "absolute"];
+/**
+ * Every name a `PathSource` may carry, as a value the mark reader can check --
+ * AND THE ONE PLACE THE SET IS WRITTEN DOWN, which is why the type below is
+ * derived from this rather than declared beside it.
+ *
+ * WHAT THE ANNOTATION USED TO PERMIT, MEASURED RATHER THAN FEARED: written
+ * `readonly PathSourceName[]` with the union spelled out separately, this list
+ * was a SUBSET of the union, so DROPPING A MEMBER type-checked -- root `tsc`, the
+ * per-member check and this package's whole suite all green -- while every item
+ * legitimately marked with the dropped name silently lost its attribution at
+ * resolve time. Nothing reads this list but the mark reader, so nothing was
+ * there to disagree.
+ *
+ * DERIVED, THE DRIFT IS UNCONSTRUCTIBLE RATHER THAN DETECTED: a name removed
+ * here leaves the union, and the call sites that build a `PathSource` spell
+ * these names as literals -- so the compiler refuses the edit at the source that
+ * would stop being nameable. Adding a source is still a decision made here, and
+ * it is now the only edit that can make one.
+ */
+const sourceNames = ["document", "cwd", "workspace", "absolute"] as const;
 
 /**
  * How many items leave in one message. Batching survives the per-segment rule
@@ -328,9 +346,14 @@ const batchSize = 100;
 /**
  * What produced an item. A CLOSED set: a free `string` lets a fifth kind of
  * root be invented at one call site and spelled differently at the next.
- * Adding a source is a decision made here.
+ *
+ * READ OFF `sourceNames` AND NOT SPELLED AGAIN HERE, which is where the reason
+ * for the closed set now lives: two spellings of one set is a set that can drift
+ * silently, and it did -- the list was typed as a SUBSET of a union written out
+ * separately, so a member could be dropped from the list with nothing anywhere
+ * refusing it.
  */
-export type PathSourceName = "document" | "cwd" | "workspace" | "absolute";
+export type PathSourceName = (typeof sourceNames)[number];
 
 /** Where one class of item comes from, and how the user is told which. */
 export interface PathSource {
