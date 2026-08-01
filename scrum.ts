@@ -612,9 +612,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Rebuild the block for BOTH kinds, sharing completion's composer the way the two modules already share the mark -- exported from that module, absent from the package's published surface. Names sorted by code unit. Format re-read from the session the handler is handed, so the context parameter stops being discarded.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "14fed16",
+            message: "feat(completion-path): answer a highlighted directory with what is inside it",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE RED WAS TAKEN ON THE UNIT ARMS FIRST -- 0 pass / 2 fail, the answer carrying no block at all -- and the wire arms followed the implementation to 12 pass / 0 fail across both runtimes.",
+          "BOTH DEGENERATES WRITTEN AND RUN, AND THE FIRST ONE CONFIRMS THE NOTE BELOW RATHER THAN MERELY REDDENING. `append to every item`: 10 pass / 4 fail -- the tampering arm reddens on BOTH runtimes and both unit arms redden, while `a directory's block carries what is inside it` STAYS GREEN, because appending to an UNTAMPERED block produces byte-for-byte what rebuilding produces. So the tampering arm is not a belt-and-braces extra; it is the only thing that tells the two implementations apart. `set the block TO the listing`: 8 pass / 6 fail -- the listing arm reddens too, on the whole-value equality, which is what a containment spelling would have missed.",
+          "THE COMPOSER'S OWN SHAPE, DECIDED WHILE WRITING IT AND WORTH THE LINE: a markdown client gets the names as BULLETS and a plaintext client as bare lines, because markdown JOINS consecutive lines into one paragraph -- a column of names sent as bare lines reaches a markdown client as one wrapped run of words. Nothing in a name is escaped, exactly as nothing in the path above it is; that trade is the block's own and is not widened here.",
+          "A SECOND FORGERY ROUTE WAS FOUND WHILE REBUILDING AND IT OWNS ITS OWN ARM: the SOURCE NAME also arrives on the item, so a rebuild that echoed it would put client text back in the block one field over from the one just closed. It is checked against the closed set and DROPPED when it names none -- the path is still taken as sent, deliberately, so this moves no boundary.",
           "THE TAMPERING ARM IS THE DISCRIMINATOR THAT MAKES THE RULING MEASURABLE RATHER THAN A PREFERENCE: under the rejected append proposal that test cannot pass. AND IT CLOSES A GAP THAT WAS FILED AS UNCOVERABLE -- under append, `a client that strips the block before sending it back` was unobservable, because the fake editor returns what it got; under rebuild the client's copy is never read, so stripped and tampered are both ordinary cases.",
           "THE SORT IS TESTABILITY BEFORE IT IS TASTE: directory order is the filesystem's own bookkeeping, promised by nothing, so an unsorted block makes the same directory read differently on two machines and NEITHER a whole-value assertion NOR `the first N are these` can be written against it. BY CODE UNIT AND NEVER BY LOCALE, for the reason the module already gives about ISO dates.",
           "TWO DEGENERATES, WRITTEN AND RUN BEFORE THE ARMS ARE BELIEVED: `append to every item` passes the directory arm and fails the file arm; `set the block TO the listing` passes any containment spelling and fails whole-value equality -- and that second one IS the replace hazard, which is why the assertion is whole-value and the existing wire equality is EXTENDED rather than loosened to a partial match.",
