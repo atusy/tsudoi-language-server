@@ -636,9 +636,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "The whole directory is read; the bound is on what is rendered. The count goes IN THE BLOCK and never on the one-line detail.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "4234be0",
+            message: "feat(completion-path): bound the names one resolved directory renders",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE NUMBER IS TWENTY AND IT IS THE EXECUTOR'S, NOT A RULING BEING FOLLOWED: nothing in this record named one -- the PBI measured that twenty names are three hundred characters where five thousand are eighty-five thousand, which is a RATIO illustrating the payload argument rather than a value. Chosen as the judgement the criterion asks for, and spelled in no test.",
+          "THE RED, AND WHAT IT SAYS ABOUT THE SECOND ARM: 3 pass / 1 fail before the bound existed -- the overflow arm reddening with 25 names rendered where fewer were required. The at-or-under arm was GREEN before, correctly and vacuously: its edge fixture is staged from the count just read, so with no bound it staged and compared forty. It becomes load-bearing only once a bound exists, which is why the overflow arm is the one this subtask's red is taken on.",
+          "TWO DEGENERATES, EACH RUN AND EACH 15 pass / 3 fail. (1) The total reporting what was RENDERED -- the bound moved onto the READ, which is the implementation the ruling refuses: both wire arms and the overflow arm redden. (2) A truncation announcement carrying a HARDCODED total (`25 entries, first 20 shown`): the 25-entry fixture passes it and the 47-entry one does not, which is exactly what one fixture could not have measured.",
+          "THE EARLY-EXIT MEASUREMENT HAS NO SUBJECT AND THAT IS THE FINDING, not an omission: the ruling that the whole directory is read leaves nothing to exit early FROM. `readdir` is used rather than `opendir` -- names only, no per-entry kind -- so no handle is iterated at all. PROBED ANYWAY ON BOTH RUNTIMES rather than argued: 2000 bounded listings of a 200-entry directory leave the process's open descriptor count unmoved, bun 1.3.13 5 -> 5 and deno 2.8.3 21 -> 21.",
           "TWO FIXTURES WITH DIFFERENT OVERFLOW COUNTS IN ONE MEASUREMENT, because `a hardcoded more` passes with one.",
           "THE BOUND IS PINNED BY READING THE WIRE AND NEVER BY IMPORTING THE CONSTANT, for the reason already written at the batch size beside it: a test that imports the number agrees only with itself.",
           "THE COUNT GOES WHERE THE LISTING IS SO EXACTLY ONE NUMBER ABOUT A DIRECTORY EXISTS AND TWO CANNOT DISAGREE. That is also what keeps the size-refusal pin unmoved, and it is not a reversal of it: a count of children is what the directory ENTRY's byte size failed to be.",
