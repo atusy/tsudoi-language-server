@@ -109,6 +109,12 @@ function fileBlock(root: string): string {
  *
  * THE COUNT IS IN THE BLOCK AND NOT ON `detail`, so exactly one number about
  * this directory exists and two cannot disagree.
+ *
+ * NAMES ALONE, AND `alpha` BEING A DIRECTORY IS WHAT MAKES THAT A DECISION
+ * RATHER THAN AN ACCIDENT: the three children are a dotfile, a file and a
+ * directory, and all three come back spelled the same way. Marking the kind
+ * would cost a read per child, which is the exact work this package refuses at
+ * popup time and has no better claim to at highlight time.
  */
 function directoryBlock(root: string): string {
   return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\n.hidden\nalpha\nbeta.txt`;
@@ -153,10 +159,19 @@ function lockedTree(): Tree {
   };
 }
 
-/** The listing part of a block: its header line, and the names under it. */
+/**
+ * The listing part of a block: its header line, and the names under it.
+ *
+ * THE SAME READER EXISTS IN THIS PACKAGE'S OWN SUITE and the duplication is the
+ * one that copy already carries its reason for -- a member reaching into the
+ * root's helpers stops being checkable on its own. WHAT THE TWO MUST NOT DO IS
+ * DISAGREE: an absent names part is NO names here, not one empty name, which is
+ * how the empty-directory answer reads. That case is asserted there rather than
+ * here, and this spelling is written to match it rather than to be reached.
+ */
 function listingSection(block: string): { header: string; names: string[] } {
-  const [header = "", names = ""] = block.split("\n\n").slice(2);
-  return { header, names: names.split("\n") };
+  const [header = "", names] = block.split("\n\n").slice(2);
+  return { header, names: names === undefined ? [] : names.split("\n") };
 }
 
 /** The demo config, started with its working directory INSIDE the fixture. */
