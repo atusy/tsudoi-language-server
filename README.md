@@ -383,8 +383,12 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   **The second one answers two methods and its name says one**, which is worth reading before
   you go looking for a third package: path completion offers a directory's entries without
   reading the detail of any of them — only a symlink costs a `stat`, to classify it — and the
-  item resolution fetches the detail for the one item you highlight. They ship together because the resolution recognises an item by a mark the
-  completion wrote onto it — unpublished, so that the two can keep changing how they agree.
+  item resolution answers for the one item you highlight. **Not the same information fetched
+  later**, which is the half the pairing is easy to misread as: a file's size and date are, but
+  a directory comes back with the **names inside it**, and the completion never asked what was
+  inside the entries it offered. They ship together because the resolution recognises an item by
+  a mark the completion wrote onto it — unpublished, so that the two can keep changing how they
+  agree.
 
 - **No protocol package is named** by any of them, and that is what tsudoi re-exporting its own
   dependencies buys: the copied modules and the installed packages alike name protocol types
