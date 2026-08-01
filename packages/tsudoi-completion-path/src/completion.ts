@@ -836,7 +836,14 @@ export interface DirectoryListing {
  * a fixture and will not ship in the answer.
  */
 function listingText(listing: DirectoryListing, markdown: boolean): string {
-  const header = `${String(listing.total)} ${listing.total === 1 ? "entry" : "entries"}`;
+  const entries = `${String(listing.total)} ${listing.total === 1 ? "entry" : "entries"}`;
+  // THE TOTAL IS WHAT THE DIRECTORY HOLDS AND NEVER WHAT WAS RENDERED, which is
+  // the whole point of stating it: `first 20 shown` beside `20 entries` would
+  // tell the user nothing they could not already count.
+  const header =
+    listing.names.length < listing.total
+      ? `${entries}, first ${String(listing.names.length)} shown`
+      : entries;
   if (listing.names.length === 0) {
     return header;
   }

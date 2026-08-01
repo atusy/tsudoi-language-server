@@ -169,5 +169,21 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  */
 async function listingOf(path: string): Promise<DirectoryListing> {
   const names = (await readdir(path)).sort();
-  return { names, total: names.length };
+  return { names: names.slice(0, entriesShown), total: names.length };
 }
+
+/**
+ * How many of a directory's entries one answer RENDERS. A judgement value, and
+ * the payload is what it is about: five thousand names are eighty-five thousand
+ * characters in one response where the first twenty are three hundred, and a
+ * popup is read by a person rather than parsed.
+ *
+ * A BOUND ON THE RENDERING AND NEVER ON THE READ, which is the distinction the
+ * whole directory being drained rests on: the answer states how many entries
+ * there really are, and it can only do that by having counted them.
+ *
+ * NOT EXPORTED, AS THE BATCH SIZE BESIDE IT IS NOT: what it decides is visible on
+ * the wire -- as the number of names one resolved directory carries -- so a test
+ * importing it would agree only with itself.
+ */
+const entriesShown = 20;

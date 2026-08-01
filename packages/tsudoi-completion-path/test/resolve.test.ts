@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import type { CompletionItem, MarkupKind } from "@atusy/tsudoi-language-server/deps/types";
@@ -136,6 +137,137 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(blockOf(answered)).not.toContain("<script>");
       expect(answered.detail ?? "").not.toContain("<script>");
       expect(answered.data).toEqual({ pathCompletion: path, source: "<script>alert(1)</script>" });
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+/**
+ * `count` entry names under `prefix`, ZERO-PADDED so that the order this test
+ * writes them in, the order it expects them back in and the order a code-unit
+ * sort produces are the same list -- which is what lets an expectation be
+ * sliced rather than re-sorted.
+ */
+function entryNames(prefix: string, count: number): string[] {
+  return Array.from(
+    { length: count },
+    (_, index) => `${prefix}${String(index).padStart(3, "0")}.txt`,
+  );
+}
+
+/** The listing part of a block: its header line, and the names under it. */
+function listingSection(block: string): { header: string; names: string[] } {
+  const parts = block.split("\n\n");
+  const [header = "", names] = parts.slice(2);
+  return { header, names: names === undefined ? [] : names.split("\n") };
+}
+
+describe("what one directory renders does not grow with what it holds", () => {
+  /**
+   * THE BOUND IS READ OFF THE ANSWER AND NEVER IMPORTED, for the reason written
+   * at the batch size in the completion half: a test that imports the number
+   * agrees only with itself, where one reading what was rendered disagrees
+   * loudly the day the number moves. Nothing below spells it.
+   *
+   * TWO DIRECTORIES WITH DIFFERENT OVERFLOWS IN ONE MEASUREMENT, because
+   * `a hardcoded more` passes against one: the claim is that the SAME count of
+   * names comes back from two directories holding different numbers of entries,
+   * which one fixture cannot state.
+   *
+   * THE EXACT TOTAL IS ASSERTED AS A VALUE, which is what makes the truncated
+   * answer more than a shape -- the user is told how many entries the directory
+   * really holds, and 25 and 47 cannot both be satisfied by one constant.
+   *
+   * THE NAMES ARE COMPARED WHOLE, so an answer that took a bounded but ARBITRARY
+   * slice -- whatever order the filesystem handed back -- fails here rather than
+   * looking right on the machine it was written on.
+   */
+  test("two directories past the bound render the same number of names, each stating its own total", async () => {
+    const many = entryNames("f", 25);
+    const more = entryNames("e", 47);
+    const fixture = tree([
+      ...many.map((name) => `many/${name}`),
+      ...more.map((name) => `more/${name}`),
+    ]);
+    try {
+      const context = contextDeclaring(["plaintext"]);
+      const manySection = listingSection(
+        blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "many"), "cwd"))),
+      );
+      const moreSection = listingSection(
+        blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "more"), "cwd"))),
+      );
+
+      const shown = manySection.names.length;
+      // The pair for the bound: a listing that rendered NOTHING would satisfy
+      // every equality below, and one that rendered everything is the state this
+      // test exists to refuse.
+      expect(shown).toBeGreaterThan(0);
+      expect(shown).toBeLessThan(many.length);
+      expect(moreSection.names.length).toBe(shown);
+
+      expect(manySection.names).toEqual(many.slice(0, shown));
+      expect(moreSection.names).toEqual(more.slice(0, shown));
+      expect(manySection.header).toBe(`25 entries, first ${String(shown)} shown`);
+      expect(moreSection.header).toBe(`47 entries, first ${String(shown)} shown`);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
+   * THE OTHER SIDE OF THE BOUND, AND THE EDGE ITSELF. A directory holding
+   * EXACTLY the bound must announce no truncation, which is the off-by-one an
+   * implementation writing `<=` where it meant `<` gets wrong -- and it is
+   * staged by reading the bound off an over-bound answer first, so no number is
+   * spelled here either.
+   *
+   * AND AN EMPTY DIRECTORY IS ANSWERED RATHER THAN LEFT TO LOOK LIKE A FILE: with
+   * names alone, `this directory holds nothing` and `nothing was listed` produce
+   * THE SAME BYTES, so the count line is what tells the user which they are
+   * reading. The file beside it is the pair that makes that assertion mean
+   * something.
+   */
+  test("a directory at or under the bound shows every entry, and an empty one says so", async () => {
+    const overflow = entryNames("h", 40);
+    const fixture = tree([
+      ...overflow.map((name) => `over/${name}`),
+      "under/one.txt",
+      "under/two.txt",
+      "empty/",
+      "plain.txt",
+    ]);
+    try {
+      const context = contextDeclaring(["plaintext"]);
+      const sectionOf = async (name: string): Promise<{ header: string; names: string[] }> =>
+        listingSection(
+          blockOf(await resolvePathStat(context, markedItem(join(fixture.root, name), "cwd"))),
+        );
+      const shown = (await sectionOf("over")).names.length;
+      // Staged from what was just read, so the edge is the module's own bound
+      // rather than a number this file believes it to be.
+      const edge = entryNames("i", shown);
+      mkdirSync(join(fixture.root, "edge"));
+      for (const name of edge) {
+        writeFileSync(join(fixture.root, "edge", name), "");
+      }
+
+      expect(await sectionOf("edge")).toEqual({ header: `${String(shown)} entries`, names: edge });
+      expect(await sectionOf("under")).toEqual({
+        header: "2 entries",
+        names: ["one.txt", "two.txt"],
+      });
+      expect(await sectionOf("empty")).toEqual({ header: "0 entries", names: [] });
+
+      // The pair: a FILE's answer carries no listing section at all, so `0
+      // entries` is a statement about a directory rather than the shape every
+      // answer happens to have.
+      const file = await resolvePathStat(
+        context,
+        markedItem(join(fixture.root, "plain.txt"), "cwd"),
+      );
+      expect(blockOf(file)).toBe(`${join(fixture.root, "plain.txt")}\n\nsource: cwd`);
     } finally {
       fixture.dispose();
     }

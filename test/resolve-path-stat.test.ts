@@ -113,6 +113,23 @@ function directoryBlock(root: string): string {
   return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\n.hidden\nalpha\nbeta.txt`;
 }
 
+/**
+ * A tree whose one directory holds far more entries than any answer renders,
+ * with the names ZERO-PADDED so that creation order, expected order and a
+ * code-unit sort are the same list.
+ */
+const crowd = Array.from({ length: 30 }, (_, index) => `c${String(index).padStart(3, "0")}.txt`);
+
+function crowdedTree(): Tree {
+  return tree(crowd.map((name) => `sample-crowd/${name}`));
+}
+
+/** The listing part of a block: its header line, and the names under it. */
+function listingSection(block: string): { header: string; names: string[] } {
+  const [header = "", names = ""] = block.split("\n\n").slice(2);
+  return { header, names: names.split("\n") };
+}
+
 /** The demo config, started with its working directory INSIDE the fixture. */
 function startDemo(runtime: (typeof runtimes)[number], cwd: string): LspSession {
   // startCommand rather than start, for test/completion-path.test.ts's reason: the
@@ -291,6 +308,52 @@ for (const runtime of runtimes) {
           documentation: { kind: "plaintext", value: directoryBlock(fixture.root) },
         });
         expect(resolvedFile).toEqual({ ...file, detail: fileDetail });
+      } finally {
+        session.dispose();
+        fixture.dispose();
+      }
+    });
+
+    /**
+     * WHAT A LARGE DIRECTORY PUTS ON THE WIRE, READ OFF THE WIRE. The bound is a
+     * judgement value and this test does not spell it: it counts the names that
+     * reached the client and requires them to be fewer than the directory holds,
+     * for the reason the batch size beside it is read this way -- a test that
+     * imported the number would agree only with itself.
+     *
+     * THE EXACT TOTAL IS WHAT MAKES THE TRUNCATION HONEST, and it is asserted as
+     * a VALUE: the user is told how many entries there really are, which is the
+     * one number this answer carries that they cannot count for themselves.
+     *
+     * THE OTHER SIDE OF THE BOUND -- exactly the bound, under it, and empty --
+     * is asserted in this package's own suite, where the edge can be STAGED from
+     * the count just read rather than from a number a test believes.
+     */
+    test("a directory holding far more entries than fit renders a bounded prefix and states its total", async () => {
+      const fixture = crowdedTree();
+      const session = startDemo(runtime, fixture.root);
+      try {
+        const item = itemFor(await completedItems(session, fixture.root), "sample-crowd");
+
+        const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
+
+        const section = listingSection(
+          typeof resolved.documentation === "string" ? "" : (resolved.documentation?.value ?? ""),
+        );
+        // The pair for the bound: an answer carrying no names at all satisfies
+        // every equality below.
+        expect(section.names.length).toBeGreaterThan(0);
+        expect(section.names.length).toBeLessThan(crowd.length);
+        expect(section.header).toBe(`30 entries, first ${String(section.names.length)} shown`);
+        // Sorted, and the FIRST of them: what a client receives is the same
+        // names in the same order on any machine holding this directory.
+        expect(section.names).toEqual(crowd.slice(0, section.names.length));
+        // And the two facts the block carried before are still in front of the
+        // listing rather than displaced by it.
+        expect(resolved.documentation).toEqual({
+          kind: "plaintext",
+          value: `${join(fixture.root, "sample-crowd")}\n\nsource: document\n\n${section.header}\n\n${section.names.join("\n")}`,
+        });
       } finally {
         session.dispose();
         fixture.dispose();
