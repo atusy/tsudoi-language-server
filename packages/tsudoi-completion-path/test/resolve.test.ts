@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
+// THE ARRIVAL ORDER IS READ WITH THE SAME CALL THE MODULE READS IT WITH, so the
+// premise the retain arm asserts is the order that module really meets.
+import { opendir } from "node:fs/promises";
 import { join } from "node:path";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 // `CompletionItemKind` IS A VALUE and the rest are types: the arm that hands the
@@ -618,6 +621,75 @@ describe("what one directory renders does not grow with what it holds", () => {
       expect(await sectionOf("mixed")).toEqual({
         header: `${String(ordinary.length + dotfiles.length)} entries, first ${String(shown)} shown`,
         names: [...ordinary, ...dotfiles.slice(0, shown - ordinary.length)],
+      });
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
+   * THE COMPARISON THE RETAIN PATH MAKES WHEN THE LIST IS ALREADY FULL -- `is
+   * this name better than the worst one I kept` -- AND NOTHING ELSE IN THIS TREE
+   * REACHED IT WITH NAMES THAT CAN TELL CODE UNITS FROM A COLLATOR. MEASURED by
+   * the sprint's second reviewer and REPRODUCED before this arm was written: with
+   * ONLY that comparison changed to `localeCompare`, this file and the wire file
+   * read 28 pass / 0 fail. The ordering fixture that gained its case pair earlier
+   * in this sprint holds FIVE entries, so the list is never full while it is read
+   * and the gate's `worst kept` is `undefined` throughout -- the pair witnesses
+   * the RENDER order and reaches the RETENTION rule not at all.
+   *
+   * WHAT THIS FIXTURE ADDS IS AN OVER-BOUND DIRECTORY WHOSE ARRIVAL ORDER IS NOT
+   * ITS RENDERED ORDER. The uppercase names belong in the answer and the
+   * lowercase ones do not -- `Z` is 0x5A and `a` is 0x61 -- while every collator
+   * orders them the other way round, so an uppercase name arriving once the list
+   * is full is one the ruled order must let REPLACE the worst kept and a
+   * locale-ordered gate REJECTS.
+   *
+   * THE PREMISE IS READ OFF THE DIRECTORY'S OWN ARRIVAL ORDER RATHER THAN
+   * ASSUMED, and it is two conditions because either alone measures nothing: a
+   * lowercase name inside the first `shown` arrivals -- which is what makes the
+   * worst kept a lowercase name at the moment the list fills -- and an uppercase
+   * name arriving after them, which is the one the gate then decides about. A
+   * FILESYSTEM HANDING ENTRIES BACK IN NAME ORDER WOULD SATISFY NEITHER and would
+   * make this arm vacuous, so it reddens saying so instead. Directory order is
+   * the filesystem's own bookkeeping and is promised by nothing, which is the
+   * reason this suite sorts at all; here it is the thing being relied on, so it
+   * is asserted where it is relied on.
+   *
+   * MORE UPPERCASE NAMES THAN THE BOUND, so the premise cannot hold while the
+   * gate stays unreached: with the bound's worth of them already kept, every
+   * further one still arrives at a full list.
+   */
+  test("a name arriving after the bound is full replaces the worst kept by code unit", async () => {
+    const ordinary = entryNames("f", 25);
+    const upper = entryNames("Z", 25);
+    const lower = entryNames("a", 20);
+    const fixture = tree([
+      ...ordinary.map((name) => `plain/${name}`),
+      // Written lowercase-first, which is what a filesystem MAY hand back and
+      // never what it must -- hence the premise assertion below.
+      ...lower.map((name) => `mixed/${name}`),
+      ...upper.map((name) => `mixed/${name}`),
+    ]);
+    try {
+      const context = contextDeclaring(["plaintext"]);
+      const sectionOf = async (name: string): Promise<{ header: string; names: string[] }> =>
+        listingSection(
+          blockOf(await resolvePathStat(context, markedItem(join(fixture.root, name), "cwd"))),
+        );
+      // Off a directory of ordinary names, as every other arm here reads it.
+      const shown = (await sectionOf("plain")).names.length;
+
+      const arrival: string[] = [];
+      for await (const entry of await opendir(join(fixture.root, "mixed"))) {
+        arrival.push(entry.name);
+      }
+      expect(arrival.slice(0, shown).some((name) => name.startsWith("a"))).toBe(true);
+      expect(arrival.slice(shown).some((name) => name.startsWith("Z"))).toBe(true);
+
+      expect(await sectionOf("mixed")).toEqual({
+        header: `${String(upper.length + lower.length)} entries, first ${String(shown)} shown`,
+        names: upper.slice(0, shown),
       });
     } finally {
       fixture.dispose();
