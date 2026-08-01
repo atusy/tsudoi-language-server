@@ -285,10 +285,12 @@ describe("a cancelled highlight does not go on reading the directory", () => {
    * explain away once.
    *
    * WHAT IT DOES NOT COVER IS NOW TWO DIFFERENT THINGS AND ONLY ONE OF THEM IS
-   * REFUSED. A cancellation landing while the directory is OPENING is covered by
-   * the arm below this one. A cancellation landing once the drain has STARTED is
-   * not honoured at all, for the reason written at `listingOf`: abandoning a
-   * half-read directory leaks its descriptor on one of the two runtimes.
+   * REFUSED. A cancellation landing between the OPEN and the first entry is
+   * covered by the arm below this one -- and that is a narrower seam than
+   * `while the directory is opening`, for the measurement written there. A
+   * cancellation landing once the drain has STARTED is not honoured at all, for
+   * the reason written at `listingOf`: abandoning a half-read directory leaks
+   * its descriptor on one of the two runtimes.
    */
   test("a resolve cancelled while its stat is pending answers without listing the directory", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt"]);
@@ -314,19 +316,32 @@ describe("a cancelled highlight does not go on reading the directory", () => {
   });
 
   /**
-   * A CANCELLATION THAT ARRIVES WHILE THE DIRECTORY IS OPENING, which is the
-   * seam BETWEEN the handler's own check and the first entry being read -- and
-   * it is a seam the arm above cannot reach, because that one's cancellation is
-   * already there when the handler asks.
+   * A CANCELLATION THAT LANDS AFTER THE OPEN AND BEFORE THE FIRST ENTRY, which
+   * is the seam the checkpoint inside `listingOf` guards -- and it is a seam the
+   * arm above cannot reach, because that one's cancellation is already there
+   * when the handler asks.
+   *
+   * THE NAME THIS ARM USED TO CARRY WAS `while its directory is opening` AND
+   * THAT IS WIDER THAN WHAT IT ESTABLISHES. MEASURED on both runtimes, on a
+   * directory of a hundred thousand entries so a lazy open and an eager one
+   * differ by most of a second: `await opendir` yields exactly ONE MICROTASK
+   * turn and NO macrotask turn -- deno takes 777-859 ms inside the call and a
+   * `setTimeout(0)` queued before it has still not fired when the continuation
+   * runs, bun takes 0-5 ms and reads the same. So the promise `opendir` hands
+   * back is ALREADY FULFILLED, and this arm's abort lands in that one microtask
+   * turn: after the open produced its handle -- after deno has already read the
+   * whole directory synchronously -- and before the continuation that would take
+   * an entry off it. WHAT IS THEREFORE NOT COVERED, and it is the honest half:
+   * a cancellation the EVENT LOOP delivers cannot land in that window at all,
+   * because the window contains no macrotask turn. What the checkpoint skips is
+   * the drain, for an abort that becomes true within those microtasks.
    *
    * THE SIGNAL IS ANSWERED `false` ONCE AND ABORTED IN THE MICROTASK THAT READ
    * IT, WHICH IS THE WHOLE OF WHAT MAKES THIS ARM DISCRIMINATING. Aborting
    * SYNCHRONOUSLY inside that first read would leave the cancellation in place
    * before `opendir` is even called, so an implementation checking the signal one
    * line EARLIER -- before the open rather than after it -- would pass this arm
-   * unchanged. Queued, the handler runs synchronously into `await opendir`, the
-   * microtask drains at that await, and the cancellation lands while the open is
-   * PENDING: MEASURED in that order on bun 1.3.13 and deno 2.8.3, and it needs no
+   * unchanged. Queued, it lands where the paragraph above says, and it needs no
    * timer, so it does not depend on how busy the machine is.
    *
    * THE PREMISE IS ASSERTED OUT OF THE ANSWER'S OWN `detail`: the stat is spent
@@ -338,7 +353,7 @@ describe("a cancelled highlight does not go on reading the directory", () => {
    * answer is discarded by tsudoi either way, and the block is the only handle a
    * test has on whether the directory was read.
    */
-  test("a resolve cancelled while its directory is opening answers without reading it", async () => {
+  test("a resolve cancelled between the open and the first entry answers without reading it", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt"]);
     const path = join(fixture.root, "listed");
     const item = markedItem(path, "cwd");
@@ -366,7 +381,11 @@ describe("a cancelled highlight does not go on reading the directory", () => {
  * CANCELLED. The cancellation itself is the controller's own -- nothing here
  * fakes `aborted` into being true -- and what the proxy decides is only WHEN it
  * happens: in the microtask queued by the first read, so it lands after the
- * reader has gone on and while the next `await` is pending.
+ * reader has gone on and before the continuation of the next `await`. WHICH IS
+ * NOT THE SAME AS `while that await is pending`, and the arm above measures the
+ * difference: `await opendir` yields one microtask turn and no macrotask turn on
+ * either runtime, so what this proxy reaches is a window the event loop never
+ * gets into.
  *
  * A PROXY RATHER THAN AN OBJECT SHAPED LIKE A SIGNAL, so everything a handler
  * might do with a signal other than read this one property still reaches the

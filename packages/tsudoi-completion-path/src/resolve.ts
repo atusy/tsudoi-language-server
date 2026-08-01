@@ -346,6 +346,20 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * is skipped there is the async drain, which is the expensive half on that
  * runtime anyway (about 127 ms at five thousand entries, above).
  *
+ * AND WHAT CAN REACH THAT SEAM IS NARROWER THAN `a cancellation arriving while
+ * the directory opens`, MEASURED AT A HUNDRED THOUSAND ENTRIES so a lazy open
+ * and an eager one differ by most of a second: `await opendir` yields exactly
+ * ONE MICROTASK turn and NO macrotask turn on either runtime -- deno spends
+ * 777-859 ms INSIDE the call and a `setTimeout(0)` queued before it has still
+ * not fired when the continuation runs; bun spends 0-5 ms and reads the same.
+ * The promise is already fulfilled when it is awaited. So a cancellation the
+ * EVENT LOOP delivers cannot land between the check above and this one at all;
+ * what this check catches is an abort that becomes true inside that microtask
+ * window, which is what the arm covering it constructs. KEPT RATHER THAN
+ * REMOVED because it is one boolean read against a drain, and because the
+ * measurement that makes it narrow is the runtimes' current shape rather than
+ * anything the protocol promises.
+ *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
  * promised by nothing, so an unsorted block reads differently on two machines
