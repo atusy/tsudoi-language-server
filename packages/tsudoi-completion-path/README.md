@@ -49,7 +49,10 @@ file or directory is told apart from the directory listing alone, and a **symlin
 listed, in full, and the count you are shown is the whole of it. The names **rendered** are
 bounded — a directory of thousands would otherwise put its whole contents in one popup — and the
 block says how many entries there really are when it shows you fewer. Hidden entries are shown,
-unfiltered, because the completion half offers them too. Nothing recurses here either: one
+unfiltered, because the completion half offers them too — **after the ordinary ones**, since
+`.` sorts before every letter and a directory holding as many dotfiles as the bound would
+otherwise show you nothing else. The trade is stated rather than hidden: in a directory with more
+ordinary entries than fit, the dotfiles are what you do not see. Nothing recurses here either: one
 listing, one level, no walk.
 
 ## What bounds it

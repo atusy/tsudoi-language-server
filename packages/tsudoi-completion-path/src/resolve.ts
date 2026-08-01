@@ -192,10 +192,31 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * and no whole-value assertion can be written against it at all. `localeCompare`
  * is refused for the reason the ISO date beside it is: this string is built by a
  * server and read by a person who may be anywhere.
+ *
+ * ORDINARY ENTRIES BEFORE HIDDEN ONES, WHICH IS THE BOUND'S DOING AND NOT
+ * TASTE'S EITHER. `.` sorts before every alphanumeric, so under one flat
+ * code-unit sort a directory holding as many dotfiles as the bound renders
+ * NOTHING BUT DOTFILES -- MEASURED, and the directory it happens to is a project
+ * root, which is the one a user is likeliest to highlight. The order key is
+ * therefore (hidden, name) and the locale refusal is untouched: still code
+ * units, still the same answer on every machine.
+ *
+ * MEMBERSHIP IS EXACTLY WHERE IT WAS. Hidden entries are still SHOWN and still
+ * COUNTED -- the ruling they were shown under is about whether `.env` is in a
+ * directory, which the completion half beside this file answers `yes` to, and
+ * only the rendering order moved.
+ *
+ * THE COST IS THE MIRROR OF THE DEFECT AND IS ACCEPTED RATHER THAN SOLVED:
+ * DOTFILES ARE NOW THE SYSTEMATICALLY TRUNCATED CLASS where ordinary entries
+ * were, so a directory of thirty ordinary entries and five dotfiles renders no
+ * dotfile at all. A user asking what is in a directory is asking about the
+ * ordinary entries first, and the total still says the rest are there. RAISING
+ * THE BOUND INSTEAD IS REFUSED: it starves at twenty-five dotfiles rather than
+ * twenty, and it is paid for out of the payload this bound exists for.
  */
 async function listingOf(path: string): Promise<DirectoryListing | undefined> {
   try {
-    const names = (await readdir(path)).sort();
+    const names = (await readdir(path)).sort(byGroupThenName);
     return { names: names.slice(0, entriesShown), total: names.length };
   } catch {
     // SWALLOWED HERE AND NOT AT THE HANDLER, which is the whole shape of this
@@ -208,6 +229,29 @@ async function listingOf(path: string): Promise<DirectoryListing | undefined> {
     // seam to open between them. It is the same catch either way.
     return undefined;
   }
+}
+
+/**
+ * The render order: the ordinary entries, then the hidden ones, each group by
+ * code unit.
+ *
+ * WRITTEN OUT RATHER THAN `localeCompare` OR A COLLATOR, per the refusal at the
+ * caller, and `<` on two strings IS the code-unit comparison the default sort
+ * performs -- so the second key is what the default sort was, not a spelling of
+ * it that could differ.
+ *
+ * HIDDEN IS A LEADING `.` AND NOTHING ELSE, WHICH IS A DECISION AND NOT AN
+ * APPROXIMATION. The other reading of hidden is a platform attribute -- Windows'
+ * FILE_ATTRIBUTE_HIDDEN -- and reading it is a stat PER ENTRY, which is the
+ * exact cost this package exists to refuse and refuses at popup time already. So
+ * this stays decidable from the name a listing already handed back.
+ */
+function byGroupThenName(left: string, right: string): number {
+  const leftHidden = left.startsWith(".");
+  if (leftHidden !== right.startsWith(".")) {
+    return leftHidden ? 1 : -1;
+  }
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 /**

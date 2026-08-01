@@ -217,6 +217,57 @@ describe("what one directory renders does not grow with what it holds", () => {
   });
 
   /**
+   * WHAT THE BOUND RENDERS WHEN THE DIRECTORY IS MOSTLY DOTFILES, AND IT IS THE
+   * ARM THE ORDER RULING EXISTS FOR. `.` sorts before every alphanumeric, so
+   * under a plain sort a directory holding more dotfiles than the bound renders
+   * NOTHING BUT DOTFILES -- a project root, the directory a user is likeliest to
+   * highlight, reads back as all noise.
+   *
+   * THE BOUND IS READ OFF A DIRECTORY HOLDING NO DOTFILE AT ALL and never
+   * spelled, and it is read off a DIFFERENT directory on purpose: taken from
+   * this one's own answer, an implementation that FILTERED dotfiles out would
+   * satisfy every equality below with a shorter list, since the expectation
+   * would shrink with it.
+   *
+   * THE FIXTURE'S OWN PREMISE IS ASSERTED FIRST -- more dotfiles than the bound,
+   * and fewer ordinary entries than it -- so a bound moved past 25 reddens here
+   * saying the fixture no longer starves it, rather than passing while measuring
+   * an ordinary directory.
+   *
+   * TWO REDS AND NOT ONE: a plain sort fails on the NAMES, and filtering the
+   * dotfiles out fails on the HEADER as well, because the total still counts
+   * them -- membership is exactly where the ruling left it and only the order
+   * moved.
+   */
+  test("a directory whose dotfiles outnumber the bound still renders its ordinary entries", async () => {
+    const crowd = entryNames("c", 40);
+    const ordinary = entryNames("o", 5);
+    const dotfiles = entryNames(".d", 25);
+    const fixture = tree([
+      ...crowd.map((name) => `crowd/${name}`),
+      ...ordinary.map((name) => `mixed/${name}`),
+      ...dotfiles.map((name) => `mixed/${name}`),
+    ]);
+    try {
+      const context = contextDeclaring(["plaintext"]);
+      const sectionOf = async (name: string): Promise<{ header: string; names: string[] }> =>
+        listingSection(
+          blockOf(await resolvePathStat(context, markedItem(join(fixture.root, name), "cwd"))),
+        );
+      const shown = (await sectionOf("crowd")).names.length;
+      expect(dotfiles.length).toBeGreaterThan(shown);
+      expect(shown).toBeGreaterThan(ordinary.length);
+
+      expect(await sectionOf("mixed")).toEqual({
+        header: `${String(ordinary.length + dotfiles.length)} entries, first ${String(shown)} shown`,
+        names: [...ordinary, ...dotfiles.slice(0, shown - ordinary.length)],
+      });
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  /**
    * THE OTHER SIDE OF THE BOUND, AND THE EDGE ITSELF. A directory holding
    * EXACTLY the bound must announce no truncation, which is the off-by-one an
    * implementation writing `<=` where it meant `<` gets wrong -- and it is

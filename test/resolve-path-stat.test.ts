@@ -69,9 +69,12 @@ const prefix = "sample";
  *
  * ONE OF THEM IS HIDDEN, because `hidden entries are shown` is a ruling with no
  * witness unless a fixture holds one. THREE NAMES WHOSE THREE ORDERS DIFFER --
- * created `beta.txt`, `.hidden`, `alpha`, sorted `.hidden`, `alpha`, `beta.txt`
- * -- so an answer that echoed creation order, or whatever order the filesystem
- * keeps, cannot pass the whole-value assertion by coincidence.
+ * created `beta.txt`, `.hidden`, `alpha`, rendered `alpha`, `beta.txt`,
+ * `.hidden` -- so an answer that echoed creation order, or whatever order the
+ * filesystem keeps, cannot pass the whole-value assertion by coincidence. AND
+ * THE HIDDEN ONE COMES LAST RATHER THAN FIRST, which is the whole of what the
+ * order ruling changed: a plain code-unit sort puts `.hidden` in front, and this
+ * is the wire's witness that it does not.
  */
 function sampleTree(): Tree {
   const fixture = tree([
@@ -115,9 +118,13 @@ function fileBlock(root: string): string {
  * directory, and all three come back spelled the same way. Marking the kind
  * would cost a read per child, which is the exact work this package refuses at
  * popup time and has no better claim to at highlight time.
+ *
+ * THE ORDINARY ENTRIES FIRST AND THE DOTFILE AFTER THEM, which is a rendering
+ * order and not a membership claim: all three are here, and the count above them
+ * counts all three.
  */
 function directoryBlock(root: string): string {
-  return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\n.hidden\nalpha\nbeta.txt`;
+  return `${join(root, "sample-dir")}\n\nsource: document\n\n3 entries\n\nalpha\nbeta.txt\n.hidden`;
 }
 
 /**
@@ -325,9 +332,14 @@ for (const runtime of runtimes) {
      * spelling would pass against an answer that had REPLACED the block with the
      * listing -- losing the path and the attribution the user still needs.
      *
-     * HIDDEN ENTRIES ARE IN IT, UNFILTERED: the completion half already offers
-     * dotfiles, so a block that hid them would make the two halves of one package
-     * disagree about one directory.
+     * HIDDEN ENTRIES ARE IN IT, UNFILTERED AND LAST: the completion half already
+     * offers dotfiles, so a block that hid them would make the two halves of one
+     * package disagree about one directory -- and they are rendered after the
+     * ordinary entries because the BOUND's slice is order-dependent, which this
+     * three-entry directory is too small to show. THIS ARM IS THE MEMBERSHIP
+     * WITNESS and the starvation the order exists to refuse is pinned in this
+     * package's own suite, where a directory can hold more dotfiles than the
+     * bound.
      */
     test("a directory item's block carries what is inside it, while a file item's block is unmoved", async () => {
       const fixture = sampleTree();
