@@ -660,9 +660,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "The failure handling splits: a failed listing must not throw away a detail that was already in hand.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "fa5e5d7",
+            message: "fix(completion-path): keep the detail a stat produced when the listing fails",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE PREMISE IS MEASURED AND IT BITES, on both runtimes and before the arm was written: uid 501, the directory at mode 0, `stat` RESOLVING and reporting a directory while `readdir` REJECTS EACCES -- bun 1.3.13 and deno 2.8.3, identical readings. So the staging did not have to change and the property is asserted as written.",
+          "THE RED IS THE DEGENERATE ITSELF, WHICH IS WHY NO SEPARATE DEGENERATE RUN WAS NEEDED: the implementation standing before this subtask WAS one try around both reads, and against it the new arm read 14 pass / 2 fail on the file -- the answer carrying no `detail` at all, on both runtimes. After the split, 64 pass / 0 fail across this package's suite and the wire file.",
+          "THE ARM RE-ASSERTS THE REJECTION IN ITS OWN TREE, so a runner as root reddens instead of measuring the ordinary directory case; and the mode is restored before the fixture is removed, or the removal fails on the directory it cannot descend into.",
+          "ENOTDIR IS NOT CONSTRUCTED AND IS SAID SO AT THE CATCH: `a path that was a directory at the stat and is not one at the listing` needs a RACE between two calls made back to back, and this handler offers no seam to open between them. It lands in the same catch as the permission case, which IS exercised.",
+          "THE STANDING RE-RUN, TAKEN AFTER THIS SUBTASK RESTRUCTURED THE HANDLER BODY: subtask 2's `append to every item` degenerate still reddens the tampering arms on both runtimes -- no control was disarmed by the split. It now reddens FAR MORE than the 4 it did when it was first run, and the MECHANISM was read rather than the prediction widened: subtask 3's arms drive items carrying NO incoming block, so an appending implementation composes a block with no path and no attribution in it. More arms, not a different failure.",
           "THE DEGENERATE IS THE OBVIOUS IMPLEMENTATION: one try around both reads, which answers with the bare item and loses the detail the successful stat produced. That is the red this subtask exists for.",
           "THE EXISTING DELETION TEST DOES NOT COVER THIS AND ITS NAME SUGGESTS IT DOES: it stages a FILE, so it exercises the stat rejection alone.",
           "UNMEASURED AND THE FIRST TASK MEASURES IT: that a directory can be stat-able and unlistable is standard posix and has not been read on these two runtimes. If the staging cannot be made to bite, THE STAGING CHANGES AND THE PROPERTY DOES NOT.",
