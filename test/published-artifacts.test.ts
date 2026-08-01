@@ -929,6 +929,61 @@ test("the mark the two handlers share cannot be named by a consumer, by either r
 });
 
 /**
+ * THE WHOLE OF WHAT A CONSUMER MAY NAME, AS A VALUE, AND IT IS WHOLE RATHER THAN
+ * NAME-BY-NAME FOR THE REASON THE EXPORTS MAP IS ASSERTED WHOLE: what the entry
+ * module re-exports is a decision about what strangers may depend on, so a name
+ * ARRIVING there is the event worth reddening on, and a probe that asks about
+ * one name at a time can only ever refuse the names somebody thought to list.
+ *
+ * IT WAS THE MISSING HALF, MEASURED WITH A NEGATIVE CONTROL: appending an export
+ * of the shared BLOCK COMPOSER to the entry module left package-shape,
+ * published-artifacts and packed-members at 40 pass / 0 fail, while appending
+ * the mark reader reddened the probe below -- so the probe was live and the
+ * names this sprint newly shared between the two handlers had simply never been
+ * added to it. `documentationFor` and `preferredFormat` are exported from the
+ * completion module so the resolve half can rebuild one block rather than
+ * spelling a second, and publishing either would make how the two agree a
+ * compatibility question with a stranger, exactly as the mark would.
+ *
+ * IT ALSO PINS `two names for two methods`, which the entry module states as
+ * prose and nothing asserted.
+ *
+ * WHAT IT CANNOT SEE IS A TYPE, BY CONSTRUCTION -- a module namespace object
+ * carries runtime exports alone -- which is why the type-only member of the same
+ * shared surface has the test below rather than an assertion here.
+ */
+test("the path package's published values are exactly its two handlers", async () => {
+  const published = await runtimeKeysOf(pathPackage, "path-surface.js");
+
+  expect(published.sort()).toEqual(["pathCompletion", "resolvePathStat"]);
+});
+
+/**
+ * THE TYPE-ONLY MEMBER OF THE SHARED SURFACE, AND IT NEEDS ITS OWN INSTRUMENT
+ * RATHER THAN ITS OWN ASSERTION.
+ *
+ * `DirectoryListing` is what the resolve half hands the composer -- the names to
+ * render and how many entries there really are -- and it is as much an agreement
+ * between two modules as the mark is. It leaves NO runtime trace, so the
+ * whole-value reading above is blind to it: `export type { DirectoryListing }`
+ * appended to the entry module leaves that test green and reddens this one,
+ * which is the pair that says the two are not redundant.
+ *
+ * THE ENTRY-POINT ROUTE ALONE, deliberately. The other route -- naming the file
+ * inside dist/ directly -- is refused by the `exports` map for every internal
+ * name at once, and that hazard already owns the test above it; asserting it
+ * again here would give two tests one first failure.
+ */
+test("the listing type the two handlers share cannot be named by a consumer", async () => {
+  const throughEntryPoint = await consumer.typeCheck({
+    "listing-probe.ts": `import type { DirectoryListing } from "${pathPackage}";\nexport type Listing = DirectoryListing;\n`,
+  });
+
+  expect(throughEntryPoint.code).not.toBe(0);
+  expect(throughEntryPoint.output).toContain("DirectoryListing");
+});
+
+/**
  * THE OPTION BAG IS INTERNAL AND A CONSUMER LOSES NOTHING BY IT, MEASURED RATHER
  * THAN ARGUED -- because this is the one classification where withholding a name
  * could have taken a capability away with it.

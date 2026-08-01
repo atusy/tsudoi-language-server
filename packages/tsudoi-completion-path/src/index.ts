@@ -7,6 +7,13 @@
  * exports are incidental, because a reader copies the file and edits it; a
  * package's are a promise to a stranger who cannot.
  *
+ * AND AN ASSERTION BACKS THAT COUNT NOW, which is worth saying because it did
+ * not: the repository's published-artifacts suite reads the INSTALLED package's
+ * runtime exports and compares them WHOLE against these two names, so a third
+ * name appended here reddens rather than shipping. The type-only names the two
+ * handlers share leave no runtime trace and have their own probe beside it --
+ * measured, because the whole-value reading is blind to them by construction.
+ *
  * TWO HANDLERS AND NOT ONE, AND THE PACKAGE NAME CANNOT SAY SO, which is why it
  * is said here and in the README. `pathCompletion` offers a directory's entries
  * and reads the DETAIL of none of them -- an ordinary file or directory is
