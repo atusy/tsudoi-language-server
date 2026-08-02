@@ -48,6 +48,14 @@ Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **de
 PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
 runtimes" is a promise the suite must not be able to stop checking quietly.
 
+**To verify a change, run `bun run scripts/definition-of-done.ts`.** It takes every check this
+project's dashboard declares, in the order declared, and prints each one's own exit status
+beside the command that produced it -- so a failure cannot be missed by reading the part of the
+output that happened to be on screen, which is how four commits were once taken on a red tree.
+Running one check by hand is debugging; this is verification. It is named here rather than
+shown as a runnable block on purpose: every block in this file is extracted and executed by the
+suite, and this command runs the suite.
+
 A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
 and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through
 `node_modules` to files under a `dist/` that is not committed -- so `bun test` builds every
