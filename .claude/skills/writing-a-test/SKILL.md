@@ -76,6 +76,30 @@ itself a property of matching.** _(sprint 48)_
 
 ## Assertions
 
+**CAN THE PROPERTY BE VIOLATED BY MOVING CODE WITHOUT CHANGING ANY VALUE? If it
+can, and your arm does not redden on the move, YOUR ARM ASSERTS `WHAT` WHERE THE
+PROPERTY IS `WHEN`.** _(sprint 54)_ Apply it in seconds, before the arm is
+believed. MEASURED, four instances in one sprint, each green while the property
+it defended was violated:
+
+- A spy read the VALUE handed to the runtime and not its ordinal among the
+  registrations, so a file that applied the right value and then re-applied the
+  old one passed.
+- A sweep read the call's COLUMN — typography — where the property was its
+  POSITION relative to the first registration, so a call moved BELOW the tests it
+  was supposed to govern passed.
+- A module's environment read had a time (import, not call) that nobody had
+  written down and nothing asserted, because every arm set the variable before
+  the process started, where the two times are one reading.
+- And the sprint's own worst: a pin read the EXPORTED constant rather than the
+  value the runtime actually received. A one-token edit to the shipped branch
+  left the whole suite green — 809 pass, all five checks — while an ungated test
+  ran at a deadline lower than the helper deadline it could reach.
+
+The last one generalises the rest: **a second expression standing beside the
+call is not the call.** If the arm reads anything other than what the code under
+test HANDS OVER, name what could differ between them and check that too.
+
 **Every assertion that something is ABSENT ships with a PAIRED assertion,
 permanent in the suite, that the same measurement observes it when present.**
 _(sprint 6)_ The shape this tree uses: `expect(offenders).toEqual([])` beside

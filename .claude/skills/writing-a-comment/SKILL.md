@@ -96,6 +96,18 @@ run, and the document's own promise about itself goes false at that moment. If
 you add a command to a README, add its marker or state in the document that the
 command is never run.
 
+## Commit boundaries a comment decides
+
+**WHEN FIX A'S COMMENT DESCRIBES THE STATE FIX B CREATES, A AND B ARE ONE
+COMMIT.** _(sprint 54)_ This is a rule about commit boundaries and not about
+care, because `be more careful` has four prior instances against it. MEASURED:
+one-commit-per-finding, with the fixes ordered for cheapness, shipped a comment
+claiming a pair the code did not have until the next commit — the FIFTH instance
+of a comment asserting a mechanism the code denies, and the first whose cause
+was the commit boundary rather than the author's attention. It was seen when
+written and recorded rather than left, which is the behaviour to keep; the rule
+is what stops it needing to be seen.
+
 ## Where a reason belongs — the Lifetime Rule
 
 _(sprints 9, 40)_ A decision whose violation would be a CODE EDIT belongs in a
