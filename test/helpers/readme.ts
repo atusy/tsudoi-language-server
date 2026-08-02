@@ -391,8 +391,20 @@ function stageQuickstart(dirs: readonly string[]): { readonly root: string; disp
   }
 }
 
-/** Long enough that a slow machine is not a failure, short enough to fail rather than hang. */
-const handshakeTimeoutMs = 20_000;
+/**
+ * Long enough that a slow machine is not a failure, short enough to fail rather
+ * than hang.
+ *
+ * EXPORTED FOR ONE READER, and it is not a caller: it is THE FLOOR the suite's
+ * own deadline is pinned above, in test/suite-deadline.test.ts. This is the
+ * largest deadline any helper sets that a test carrying NO explicit deadline can
+ * reach -- `the README's quickstart brings up a server under bun|deno` -- so if
+ * the suite default ever fell below it, this deadline would become unreachable
+ * again and the failure would stop naming which command never answered. The pin
+ * is a relation between two imported constants precisely so that RAISING THIS
+ * ONE is what reddens.
+ */
+export const handshakeTimeoutMs = 20_000;
 
 async function shakeHands(
   command: string,

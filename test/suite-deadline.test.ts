@@ -13,7 +13,8 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
-import { applySuiteDeadline } from "./helpers/deadline.ts";
+import { applySuiteDeadline, suiteDeadlineMs } from "./helpers/deadline.ts";
+import { handshakeTimeoutMs } from "./helpers/readme.ts";
 
 applySuiteDeadline();
 
@@ -372,6 +373,77 @@ test("a well-formed override runs the suite normally", async () => {
   } finally {
     tree.dispose();
   }
+});
+
+/**
+ * THE PIN, AND IT IS A RELATION BETWEEN TWO IMPORTED CONSTANTS RATHER THAN AN
+ * EQUALITY AGAINST A LITERAL. `expect(suiteDeadlineMs).toBe(25_000)` would be
+ * green against ANY tree, including one where a helper's deadline had since been
+ * raised past it -- it would pin the typing rather than the property. The
+ * alternative it also refuses is asserting a DURATION, which is asserting a
+ * property of the machine, the exact defect this whole item removes.
+ *
+ * WHAT IT DEFENDS: under bun's 5000ms default the quickstart test dies before
+ * `shakeHands` can speak, so a broken documented command reports `this test
+ * timed out` instead of naming the command that never answered. Which deadline
+ * arrives first is what decides whether a failure names its cause.
+ *
+ * DEGENERATE, STATED IN ADVANCE AND RUN: `handshakeTimeoutMs` raised to 30_000
+ * with nothing else touched -- this arm reddens, and the equality form would not
+ * have.
+ */
+test("the suite's deadline outlives the largest helper deadline an ungated test can reach", () => {
+  expect(suiteDeadlineMs).toBeGreaterThan(handshakeTimeoutMs);
+});
+
+/**
+ * Every deadline written in a helper, read as text so that adding one is what
+ * moves this rather than remembering to.
+ */
+const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
+  .filter((name) => name.endsWith(".ts") && name !== "deadline.ts")
+  .flatMap((name) => {
+    const source = readFileSync(join(repoRoot, "test", "helpers", name), "utf8");
+    return [...source.matchAll(/(?<![\w.])(\d[\d_]{3,})(?![\w.])/g)].map((match) => ({
+      file: name,
+      ms: Number(match[1]!.replaceAll("_", "")),
+    }));
+  });
+
+/**
+ * THE PAIR THE PIN CANNOT DO WITHOUT: `25_000 > 20_000` is true of a tree where
+ * nothing reaches that helper at all, and true of a tree where a BIGGER helper
+ * deadline was added last week. This arm is what makes the constant above the
+ * right subject -- it reads every deadline the helpers hold and requires the
+ * pinned one to be the largest.
+ *
+ * ONE EXCEPTION, NAMED WITH ITS REASON RATHER THAN FILTERED SILENTLY:
+ * test/helpers/fake-editor.ts sets 30_000, and it is excluded because it is not
+ * a deadline a test carrying no explicit one can reach -- the only tests that
+ * start that rig, the two in test/editor-death.test.ts, set 20_000 for
+ * THEMSELVES and so fire first. It is also a leak bound on a spawned child
+ * rather than a diagnostic, so arriving second costs a reader nothing. THE DAY
+ * SOMETHING ELSE REACHES IT, this exception is what has to be argued again.
+ *
+ * `deadline.ts` IS EXCLUDED TOO, and for a different reason: it is the file that
+ * DECLARES the number under test, so including it would compare the constant
+ * with itself.
+ *
+ * DEGENERATE, STATED IN ADVANCE AND RUN: a new helper deadline of 26_000 added
+ * to test/helpers/lsp.ts -- this arm reddens naming the file, and the pin above
+ * stays green, which is exactly the split the two arms exist for.
+ */
+test("the pinned floor is the largest deadline the helpers hold", () => {
+  const reachable = helperDeadlines.filter((found) => found.file !== "fake-editor.ts");
+  const larger = reachable.filter((found) => found.ms > handshakeTimeoutMs);
+
+  expect(larger).toEqual([]);
+  // THE PAIR FOR THAT EMPTY LIST: a reader that opened nothing and a tree with
+  // no helper deadlines are the same observation without it.
+  expect(reachable.map((found) => found.ms)).toContain(handshakeTimeoutMs);
+  // AND THE NAMED EXCEPTION IS ASSERTED TO STILL BE THERE, so the filter above
+  // cannot quietly become a filter over nothing.
+  expect(helperDeadlines.filter((found) => found.file === "fake-editor.ts")).not.toEqual([]);
 });
 
 /** Every test file the sweep is about: the ROOT suite, which is what spawns. */
