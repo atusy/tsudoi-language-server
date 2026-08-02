@@ -931,9 +931,19 @@ const scrum: ScrumDashboard = {
         test: "Whole-value equality on the invocation log against the dashboard's declared ORDER and arity; the per-check report of a FAILING run carries each check's name, its command as run, and its own exit; and a dashboard with a different set of checks changes what runs WITH NO EDIT TO THE RUNNER.",
         implementation: "Per-check report lines; output captured and echoed.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5231fbe",
+            message:
+              "test(dod): read the invocation log as a sequence, and require a sixth check to run",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BORN GREEN, DECLARED AS SUCH BEFORE THE RUN AND NOT DISCOVERED AFTERWARDS: the per-check report lines landed in the first subtask, because its own arms needed the words `[FAILED] alpha` and `[PASSED] gamma` to exist. 7 pass / 0 fail on the first execution, which is worth nothing by itself -- ALL THE EVIDENCE FOR THESE THREE ARMS COMES FROM THE DEGENERATES, and that is the reason they were run before the arms were believed.",
+          "THREE DEGENERATES, EACH PREDICTED IN WRITING AND EACH REDDENING EXACTLY WHAT WAS PREDICTED. Checks SORTED by name before running -- a move that changes no value -- 5 pass / 2 fail, the sequence arm and the six-check arm; the runner EXITING INSIDE ITS LOOP at the first red, 4 pass / 3 fail, every one of them an arm about what is reported AFTER a failure; and the runner ASSUMING THE LIST IS FIVE LONG, 6 pass / 1 fail, the six-check arm alone. The third is the product owner's refusal in its cheapest form and no other arm in the file can see it.",
+          "THE SUITE AFTER THIS SUBTASK: 854 pass / 0 fail across 57 files, all five checks read individually and each exit 0.",
           "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
           "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
           "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
