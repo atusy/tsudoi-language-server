@@ -330,7 +330,12 @@ test("a SIXTH check on the dashboard runs, with no edit to the runner", async ()
   }
 });
 
-test("a check that never started is non-green and is not a check that ran and failed", async () => {
+// THE NAME SAYS WHAT THIS MEASURES AND NOT WHAT THE TREE HAPPENS TO PROVE. It
+// said `is non-green and is not a check that ran and failed` while the colour it
+// read belonged to the failing check beside it -- the arm-name overclaim this
+// record has already filed once, in the sprint whose whole subject is arms that
+// claim more than they hold. The gating half has its own arm below.
+test("a check that never started is REPORTED APART from one that ran and failed", async () => {
   const tree = stageTree();
   tree.declare([
     { name: "absent", run: tree.missingBinary() },
