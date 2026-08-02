@@ -715,6 +715,18 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * one: a needle that stopped matching anything and a tree with no offenders are
  * the same green.
  *
+ * AND THE ONE FILE IT CANNOT READ IS THIS ONE, MEASURED AFTER THE ANCHOR LANDED
+ * AND NAMED RATHER THAN PATCHED: the child sources this file generates put the
+ * call at column 0 INSIDE TEMPLATE LITERALS, and the module path appears in the
+ * import needle's shape too, so both halves match text that is not this file's
+ * own call. With line 19 commented out the sweep stays green. IT IS TOLERABLE
+ * ONLY BECAUSE THIS FILE ANNOUNCES ITSELF LOUDLY: the same run reads 21 pass / 1
+ * fail, `the deadline is raised past bun's own default` dying at 5002ms, because
+ * that arm waits 5.5s on a child and cannot survive bun's own default. The one
+ * file whose call the sweep cannot verify is the one file that fails without it.
+ * A test-only heuristic for `not inside a template literal` would buy the reading
+ * back at the price of a matcher nobody has measured.
+ *
  * THE PAIR HERE IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS, said plainly
  * because the sentence that stood here claimed more: an offender list that is
  * empty and a sweep that opened nothing are the same green without it, and a
