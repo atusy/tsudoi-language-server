@@ -167,6 +167,42 @@ test("a run in which every check passes is the only green", async () => {
   expect(report(result)).toContain("Definition of Done: PASSED");
 });
 
+test("the VERDICT WORD is the run's own, in BOTH directions", async () => {
+  // THE SUMMARY LINE IS THE LINE A READER GREPS, and until this arm existed it
+  // could say anything. MEASURED: the word hardwired to `PASSED` -- per-check
+  // lines and the exit code left alone -- and this file read 12 pass / 0 fail,
+  // because `Definition of Done: FAILED` was asserted NOWHERE in it. That is the
+  // recorded defect itself, a reader taking a grep for the run's status, arriving
+  // inside the instrument built to retire it.
+  //
+  // BOTH DIRECTIONS IN ONE ARM, AND THE PAIR IS THE POINT: `contains PASSED on a
+  // green run` is satisfied by a constant, and so is `contains FAILED on a red
+  // one`. Only the two together make the word a function of the run. Two trees
+  // rather than two dashboards, so neither run can influence the other's report.
+  //
+  // THE EXIT CODE IS DELIBERATELY NOT READ HERE: it is what every other arm in
+  // this file reads, and it is exactly the reading this hazard slips past.
+  const green = stageTree();
+  green.declare([
+    { name: "alpha", run: green.logged("alpha", 0) },
+    { name: "beta", run: green.logged("beta", 0) },
+  ]);
+  const passing = await green.run();
+  const red = stageTree();
+  red.declare([
+    { name: "alpha", run: red.logged("alpha", 1) },
+    { name: "beta", run: red.logged("beta", 0) },
+  ]);
+  const failing = await red.run();
+  expect(report(passing)).toContain("Definition of Done: PASSED");
+  expect(report(passing)).not.toContain("Definition of Done: FAILED");
+  // THE WHOLE STRING AND NEVER THE BARE WORD: a failing report carries
+  // `[FAILED] alpha` on a per-check line, so `FAILED` alone is present in it
+  // whatever the summary says.
+  expect(report(failing)).toContain("Definition of Done: FAILED");
+  expect(report(failing)).not.toContain("Definition of Done: PASSED");
+});
+
 test("a failure in the FIRST check survives a passing LAST one", async () => {
   const tree = stageTree();
   tree.declare([
