@@ -23,13 +23,21 @@ applySuiteDeadline();
  * matters here -- these trees are built so that something is uncovered, which
  * every tree over there is written to avoid.
  *
- * THE PROPERTY IS A `WHERE` PROPERTY END TO END, and that decides the shape of
- * every arm below: each violation is a MOVE with no value changed -- a file
- * dragged out of an included directory, an `include` narrowed, a file added
- * under a path no glob reaches. So no arm reads a tsconfig's `include` array or
- * pins that a member includes `src`; an arm doing that would assert WHAT where
- * the property is WHERE, and would stay green through the move it exists to
- * catch.
+ * THE PROPERTY IS A `WHERE` PROPERTY AND SO IS ALMOST EVERY ARM, which decides
+ * their shape: each violation is a MOVE with no value changed -- a file dragged
+ * out of an included directory, an `include` narrowed, a file added under a path
+ * no glob reaches. So no arm reads a tsconfig's `include` array or pins that a
+ * member includes `src`; an arm doing that would assert WHAT where the property
+ * is WHERE, and would stay green through the move it exists to catch.
+ *
+ * THE EXCEPTION IS NAMED RATHER THAN LEFT FOR A READER TO FIND, AND IT IS FORCED
+ * BY WHAT IT MEASURES: the declaration-file arms flip `skipLibCheck`, which is a
+ * compiler-option VALUE and not a location, and they can be nothing else.
+ * Whether a `.d.ts` is in the subject at all is READ from what the programs
+ * report, so that setting IS their subject -- an arm moving a file instead would
+ * pin the exclusion by the file's NAME, which is the reading that ruling exists
+ * to refuse. The sentence above said `end to end` while three arms below
+ * contradicted it.
  *
  * AND EVERY ARM SPAWNS THE CHECK RATHER THAN CALLING THE FUNCTION. The refusal's
  * two readers are private to scripts/workspaces.ts on purpose, so what is
@@ -587,6 +595,20 @@ test("a declaration file no program includes is left alone while lib checking is
 
 test("the same declaration file is reported once a program stops skipping lib checking", async () => {
   const result = await checkWorkspace(declarationNoProgramIncludes({ root: false, member: true }));
+
+  expect(result.stderr).toContain(join("packages", "late", "types", "legacy.d.ts"));
+  expect(result.code).not.toBe(0);
+});
+
+// AND THE OTHER PROGRAM STOPS SKIPPING, WHICH IS THE HALF THE MIXED TREE ABOVE
+// COULD NOT MEASURE. The pair above flips the ROOT and leaves the member
+// skipping, so an implementation reading ONLY THE ROOT's setting -- which is the
+// one config every tree here is guaranteed to have -- satisfies both of them:
+// MEASURED with exactly that reader in place, 44 pass / 0 fail across this file
+// and test/workspace-members.test.ts. `ANY program stops` is what the exclusion
+// claims, so the member must be able to withdraw it alone.
+test("the same declaration file is reported when it is the MEMBER that stops skipping", async () => {
+  const result = await checkWorkspace(declarationNoProgramIncludes({ root: true, member: false }));
 
   expect(result.stderr).toContain(join("packages", "late", "types", "legacy.d.ts"));
   expect(result.code).not.toBe(0);
