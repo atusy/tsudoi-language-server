@@ -976,11 +976,14 @@ const scrum: ScrumDashboard = {
         test: "Two plant sites uncovered by DIFFERENT mechanisms, so no single configuration edit can reach both: one inside the framework member outside its source directory, one under a dot directory. Both red planted, both green removed, and the report-everything degenerate refuted by the unplanted run.",
         implementation: "None -- this is the close the PO will accept and nothing else.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "THE OUTCOME THIS FORECLOSES, REFUSED EVEN WITH EVERY CHECK GREEN: the witness turned green by widening a config's include until it reaches the plant, with no refusal that reddens the NEXT file planted elsewhere. That satisfies the criterion in letter and leaves the property unenforced.",
           "THE SECOND SITE IS A PREDICTION AND NOT A FACT: the wildcard expansion is believed to skip names beginning with a dot, and it must be ESTABLISHED by planting and reading the file list. If it turns out covered, a second mechanism is found before the pair is believed.",
+          "THE PREDICTION HELD, ESTABLISHED BY PLANTING AND NOT BY READING THE GLOB. Five runs of the fifth check, every colour and every sentence predicted in writing beforehand and every prediction met. UNPLANTED: exit 0, ZERO BYTES of output -- which is what refutes the report-everything implementation, since 151 candidates were examined to produce it. SITE 1 ALONE (`packages/tsudoi-language-server/probe-uncovered.ts`, inside the framework member and outside its source): exit 1, naming that file and nothing else. SITE 2 ALONE (`.claude/probe-uncovered.ts`, under a dot directory): exit 1, naming that file and nothing else. BOTH: exit 1, naming exactly the two. REMOVED: exit 0, zero bytes, and `git status --porcelain` empty.",
+          "THE TWO MECHANISMS ARE INDEPENDENT, MEASURED RATHER THAN ARGUED: with the ROOT config's include widened to `[**/*, .claude/**/*]` and both files planted, site 2 became covered and SITE 1 WAS STILL REPORTED -- one configuration edit cannot reach both. The reason each is out of the other's reach: the root excludes `packages`, so no root include can name a file inside a member; and site 2 sits above every member directory, which a member's include cannot name without escaping the member. The tracked config was preserved outside the repository before the edit and restored byte for byte.",
+          "WHAT THE PAIR DOES NOT ESTABLISH, SAID HERE SO NOBODY READS IT AS MORE: both readings are of one machine's checkout with the artifacts present, which is the state the Definition of Done establishes and the state the sprint ruled every reading is taken in. With them absent the root program falls through its source arm and reads a different tree.",
         ],
       },
       {
