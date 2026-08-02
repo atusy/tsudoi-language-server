@@ -102,6 +102,54 @@ const scrum: ScrumDashboard = {
     },
 
     {
+      id: "PBI-68",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read a park in a file that sets its own deadline as a wait that never completed, rather than as a number a busy machine tripped",
+        benefit:
+          "the eight files the suite deadline deliberately does not cover stop being the place a red still means the machine",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A park in a file that sets its own deadline fails naming the wait that never completed, without a wall-clock number a busy machine can trip.",
+          verification:
+            "NO MECHANISM IS NAMED HERE, deliberately: naming one is how a criterion gets satisfied in letter. Both branches have measured evidence already and refinement decides between them -- two arms of one file died at 4008ms against that file's own 4000 at load 100-160, while every gated test in the tree read 12.8x headroom or better at load 3-9.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE HONEST ALTERNATIVE IS IN THE ITEM RATHER THAN OUTSIDE IT, because it may be the right outcome: ACCEPT THE EXPOSURE PERMANENTLY AND RECORD IT AS A DECISION. Each of the eight sets a deadline BELOW the ambient one on purpose, so that a park fails BY NAME in the file that owns it -- that is a property worth keeping, and a wall-clock number is how it is currently bought.",
+        "THE EIGHT, ENUMERATED BY READING CALL SITES RATHER THAN BY GREPPING A WORD: protocol 4000, session 4000, completion 4000, cancel-parked-pull 6000, cancellation 6000, cleanup-drain 6000, cleanup 6000 and a second constant at 18000, and editor-death 20_000 -- THE LAST JOINED THIS CLASS BY SPRINT 54'S OWN CHOICE OF NUMBER, and its slowest arm has the least headroom in the tree.",
+        "AND THE TIGHTEST MARGIN IN THE TREE IS NOW THE FILE THAT MEASURES THE DEADLINE, at about four and a half times, refused its own allowance ON A PO RULING: an allowance there would exempt the file that measures the deadline from the deadline.",
+      ],
+    },
+    {
+      id: "PBI-69",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "read the whole Definition of Done from one run rather than from five",
+        benefit:
+          "a check that failed cannot be missed by reading the part of the output that happened to be on screen",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "Running the Definition of Done reports every check's own exit status and fails when any one of them fails.",
+          verification:
+            "Stage each check failing in turn and require the run to fail naming that check, paired with the unstaged tree passing. THE PAIR IS NOT OPTIONAL HERE: a runner that always fails satisfies the first half.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AGAINST A DEFECT WITH FOUR RECORDED OCCURRENCES ACROSS TWO PEOPLE, ONE OF WHICH PERSISTED NINE SPRINTS, AND A FIFTH IN SPRINT 54: four commits were taken while one check was red, because its reader grepped the HEAD of a wrapper's output rather than every exit code. THE SKILL THAT FORBIDS EXACTLY THIS EXISTS, is specific, is measured, carries its own recidivism count, and matched on description -- and the defect happened anyway.",
+        "WHAT THAT TAUGHT, AND IT IS THE ARGUMENT FOR MECHANISING RATHER THAN RE-STATING: the same rule FIRED in the same session when it was attached to the ACTIVITY being executed (the review round's own procedure prints the exits because the round says so) and did NOT fire when it sat in a skill matched on a description the actor did not construe themselves as doing -- at commit time you are committing, not reporting an exit code. A SKILL BUYS VOCABULARY AND RECALL, NOT COMPLIANCE UNDER LOAD.",
+        "IT IS WORTH MORE THAN THE DEFECT THAT PROMPTED IT, which is what earns it a slot: warnings do not move the linter's exit code, so five exit codes is not even the full reading -- the warning count is part of it, and a warning nobody introduced on purpose is one a later reader has to decide about.",
+        "IT CHANGES TRACKED FILES AND INHERITS THIS PROJECT'S OWN SYNC OBLIGATION between the dashboard's list of checks and the documentation's Commands section. That obligation is written into the work rather than left to be discovered.",
+      ],
+    },
+    {
       id: "PBI-66",
       story: {
         role: "tsudoi maintainer",
@@ -216,6 +264,7 @@ const scrum: ScrumDashboard = {
         "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
         "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
         "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
+        "WIDENED BY SPRINT 54: THE UNCOVERED CLASS LIVES IN ARMS AND NOT ONLY IN COMMENTS, and in arms it is worse. This item's own text says the ordering-and-causality class stays uncovered and reasons about COMMENTS asserting a mechanism the code denies. Sprint 54 produced FOUR ARMS THAT WERE GREEN WHILE THE ORDERING THEY DEFENDED WAS VIOLATED -- a spy reading the value handed over and not its ordinal among the registrations, a sweep reading a call's COLUMN where the property was its POSITION relative to the first registration, an environment read whose TIME nobody had written down, and a pin reading the exported constant rather than the value the runtime received. That is the disarmed-control shape one level above what this item was filed against, and it is a different statement from the comment half -- folding them blunts both.",
       ],
     },
 
