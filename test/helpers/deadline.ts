@@ -46,11 +46,18 @@ import { setDefaultTimeout } from "bun:test";
  * test that waits on it, each for the full default. The largest single-subject
  * park in this tree is test/workspace.test.ts: 44 tests, every one of them
  * driving a live server, none carrying its own deadline -- 18m20s at this value
- * against 3m40s under bun's default. The whole-suite bound is 792 x the default:
- * 5h30m against 1h06m, on a run that is 38-83s when it is green. THE
- * MULTIPLIER IS THE THING TO WEIGH, AND IT IS 5x. It is accepted because the
- * alternative is a value below the floor, which leaves the whole class this
- * exists to remove.
+ * against 3m40s under bun's default; a count of one file's arms, re-read since,
+ * and it is as perishable as the one below turned out to be. The whole-suite
+ * bound is EVERY TEST IN THE SUITE parked for the full default, WHICH IS WHY THE
+ * MULTIPLIER AND NOT THE PRODUCT IS THE THING TO WEIGH, AND IT IS 5x. It is
+ * accepted because the alternative is a value below the floor, which leaves the
+ * whole class this exists to remove.
+ *
+ * THE PRODUCT USED TO BE WRITTEN HERE AS A NUMBER AND IT WENT STALE INSIDE THE
+ * COMMIT THAT WROTE IT: `792 x the default`, taken before this sprint's own arms
+ * were added, landed on a tree that already ran more than that. This project
+ * refuses counts for exactly that reason, and this one did not survive its own
+ * increment.
  */
 export const suiteDeadlineMs = 25_000;
 
