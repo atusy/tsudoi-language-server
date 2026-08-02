@@ -1000,9 +1000,14 @@ const scrum: ScrumDashboard = {
         implementation:
           "Whatever repair a staging reveals; predicted none. Stagings are ADDED UNTRACKED FILES so nothing tracked is edited and cleanliness is verifiable.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "NO COMMIT OF ITS OWN AND THAT IS THE RESULT, NOT AN OMISSION: the predicted repair was none, and none was revealed. What this subtask produced is seven readings, each with its prediction written in a file before the run.",
+          "THE FIVE STAGINGS, EACH AN ADDED UNTRACKED FILE, EACH READ THROUGH THE RUNNER ITSELF. A failing test file -> `[FAILED] Tests pass -- exit 1` with the other four `[PASSED]`, which is THE RECORDED DEFECT'S OWN SHAPE now printed: the red is first and the last check passes. `Bun.file(...)` at the root -> `[FAILED] Lint passes -- exit 1`, error severity because the linter's exit code does not move on warnings. Extra spaces around an `=` -> `[FAILED] Format check passes -- exit 1`. A root-level `const wrong: number = \"no\"` -> `[FAILED] Type check passes`. And the unstaged pair, run before all of them: exit 0, five `[PASSED]`, `warnings: 1`.",
+          "PREDICTION MISSED, RECORDED RATHER THAN QUIETLY CORRECTED: the type-check staging was predicted to report `exit 2` and reported `exit 1`. The number was wrong, the property was not -- the report carries the check's OWN status rather than a normalised one -- and the miss was visible only because the prediction was written down first.",
+          "AND THE PLAN'S OWN CLAIM ABOUT THE FIFTH STAGING IS FALSE ON THIS TREE, MEASURED: an untracked file under a dot directory was planned as the CLEAN single-check staging, and it reddens TWO checks -- `[FAILED] Tests pass` beside `[FAILED] Workspace members type-check`, 858 pass / 1 fail, the failing arm being `this repository holds no TypeScript file that no program includes` in test/uncovered-files.test.ts, which SPAWNS THE FIFTH CHECK OVER THIS CHECKOUT and requires its stderr empty. THE STRONGER STATEMENT THAT REPLACES IT: the fifth check cannot be staged alone at all here, whatever the staging, because an arm of the first check IS the fifth check over this repository. Both checks are named in one report, which is the property under test.",
+          "THE SIXTH STAGING EXISTS TO MOVE NO EXIT CODE, and it did not: a generator with no `yield` gives exit 0, verdict PASSED, `warnings: 2`. That is the whole reason the count is reported beside the exits rather than folded into them.",
           "ONE OF THE FIVE DOES NOT ISOLATE AND THE RECORD MUST SAY WHY: a type error inside a member breaks the preparation the first check runs, so the first check dies with the fifth. The clean single-check staging is an untracked source file under a directory no configuration includes -- which fires the guard whose own stated reason is that without it all five commands exit 0.",
           "THE LINTER'S STAGING MUST BE ERROR-LEVEL, because its exit code does not move on warnings; a second warning-shaped staging exists precisely to move NO exit code.",
         ],
