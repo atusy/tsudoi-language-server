@@ -784,12 +784,23 @@ function readProgram(root: string, config: string): Program {
  * the other way, reddening until the new config is added, which is loud and
  * self-correcting.
  *
- * TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT. A path under a program's own
- * output directory is a file the compiler WROTE, and this check BUILDS before it
- * reads: without it every throwaway tree that builds reddens, since a throwaway
- * carries no ignore file and its emitted declaration is untracked and in no
- * program's roots. A path under an installed-dependency directory will never be
- * ours to check, for the reason already recorded beside the package walker.
+ * TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT. An UNTRACKED path under a
+ * program's own output directory is a file the compiler WROTE, and this check
+ * BUILDS before it reads: without it every throwaway tree that builds reddens,
+ * since a throwaway carries no ignore file and its emitted declaration is
+ * untracked and in no program's roots. A path under an installed-dependency
+ * directory will never be ours to check, for the reason already recorded beside
+ * the package walker.
+ *
+ * `UNTRACKED` IS THE WHOLE OF THE FIRST ONE'S CLAIM AND IT SHIPPED WITHOUT IT,
+ * which made this an exemption list with no name in it -- any path under any
+ * DECLARED output directory, whether or not that program emits and whether or
+ * not a compiler wrote the file. MEASURED, with a member check config carrying
+ * `noEmit` and `outDir: "../../vendor"`: a tracked `vendor/probe.ts` in no
+ * program's list went unreported, and reporting resumed the moment the `outDir`
+ * was deleted -- so one config key silently excused a directory. A compiler-
+ * written artifact is never in the index, so the index is what separates the two
+ * and no reader has to trust the key.
  *
  * DECLARATION FILES ARE THE ONE EXCLUSION AND IT IS READ, NOT NAMED. With
  * library checking skipped -- which every config here sets -- a `.d.ts` is in a
@@ -834,6 +845,7 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     "-z",
   ]);
   const installed = (path: string): boolean => path.split("/").includes("node_modules");
+  const inTheIndex = new Set(tracked);
   const programs = tracked
     .filter((path) => configFile.test(basename(path)) && !installed(path))
     .map((config) => readProgram(root, config));
@@ -850,7 +862,13 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
       return false;
     }
     const absolute = join(root, path);
-    if (written.some((outDir) => absolute.startsWith(outDir + sep))) {
+    // ONLY WHILE NOBODY COMMITTED IT, which is the difference between a
+    // subtraction and an exemption list: what this excuses is a file the
+    // COMPILER WROTE, and a compiler-written artifact is never in the index. A
+    // path that IS in the index is somebody's file whatever directory it sits
+    // in, and excusing it would let one `outDir` -- on a program that need not
+    // even emit -- silence a whole directory with no name written anywhere.
+    if (!inTheIndex.has(path) && written.some((outDir) => absolute.startsWith(outDir + sep))) {
       return false;
     }
     return !covered.has(absolute);

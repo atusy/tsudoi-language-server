@@ -409,6 +409,36 @@ test("a member's emitted declaration is not reported as uncovered", async () => 
 });
 
 /**
+ * THE OTHER HALF OF THAT SUBTRACTION, WITHOUT WHICH IT IS AN EXEMPTION LIST: a
+ * file somebody WROTE and committed under the same output directory.
+ *
+ * `THE COMPILER WROTE IT` IS THE CLAIM, AND THE INDEX IS WHAT CHECKS IT. Excusing
+ * every path under a declared `outDir` excuses a directory rather than an
+ * artifact -- for a program that need not emit at all, and for a hand-written
+ * file the compiler has never touched. MEASURED on the shipped subtraction, in a
+ * tree whose member check config carried `noEmit` beside `outDir: "../../vendor"`
+ * and a committed `vendor/probe.ts` in no program's list: exit 0 and zero bytes,
+ * and exit 1 naming that file the moment the `outDir` was deleted. One config
+ * key, one silenced directory, in a check whose message says there is no list to
+ * exempt a file from it.
+ *
+ * BOTH READINGS COME OFF ONE RUN, which is what makes this a discriminator and
+ * not a second copy of the arm above: the emitted declaration in the same
+ * directory must STAY unreported, so an implementation that repairs this by
+ * dropping the subtraction reddens on the second assertion.
+ */
+test("a committed file under a program's output directory is reported, the emitted one not", async () => {
+  const result = await checkWorkspace({
+    ...memberEmittingItsDeclaration(),
+    [join("packages", "emitter", "dist", "shim.ts")]: probe,
+  });
+
+  expect(result.stderr).toContain(join("packages", "emitter", "dist", "shim.ts"));
+  expect(result.stderr).not.toContain(join("packages", "emitter", "dist", "index.d.ts"));
+  expect(result.code).not.toBe(0);
+});
+
+/**
  * WHETHER A DECLARATION FILE IS IN THE SUBJECT AT ALL, READ FROM THE PROGRAMS'
  * OWN REPORTED SETTING AND NOT FROM ITS NAME.
  *
