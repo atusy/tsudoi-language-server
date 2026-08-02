@@ -918,7 +918,84 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 55,
+    pbi_id: "PBI-61",
+    goal: "Every TypeScript file this checkout owns is in some compiler's program, decided by reading the compilers' own file lists -- so the planted file that runs under `bun test` and is graded by nobody comes back red.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "The existing arms of the five files that build throwaway workspaces, unchanged.",
+        implementation:
+          "The throwaway-workspace helper initialises a repository in the tree it makes, because the guard's subject is a CHECKOUT and two kinds of throwaway is what rots.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ITS OWN INCREMENT SO THE HELPER EDIT IS NOT DISCOVERED MID-RED. Nineteen call sites across five files need no edit; TWO of those files spawn the fifth check over these trees, not one. Blast radius read rather than assumed: a repository directory is a dot directory, which no default include reaches, and the package walker skips it for want of a manifest.",
+        ],
+      },
+      {
+        test: "Eight arms, each a spawn of the fifth check over a throwaway tree, each paired with the same tree unplanted going green: a file beside a member whose config includes only its source; a file at a root whose config declares no include; a file reached only by an import; a member split across a check config and a build config, which stays GREEN and which a literal-name reader reports; this repository itself, offenders empty beside a non-empty candidate set; a personal ignore file not shrinking the subject; a root that is not a checkout, refused for want of an enumerator; a program whose include matches nothing contributing zero rather than aborting; and an emitted declaration not reported.",
+        implementation:
+          "A refusal in the workspace script, called LAST among the refusals in the fifth check and before any member is checked -- never from the shared preparation, which the test preload also runs.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE READER IS THE COMPILER'S OWN FILE LIST WITH RESOLUTION OFF -- the program's ROOT files, what the includes matched, and not the import closure. MEASURED, and it is why the JSON globs are not the reader: a default include does NOT reach a dot directory or a dot file, so a reimplementation of the glob says the opposite of what the compiler does. Cross-validated with a second instrument, and the first spelling of that second instrument CARRIED THE DEFECT IT WAS HUNTING -- a prefix match that missed `default` and reported every file in the program.",
+          "THE CANDIDATE SET IS TRACKED AND UNTRACKED BUT NOT IGNORED, because the moment this item is about is a file just ADDED: reading tracked files alone leaves the guard reddening one run AFTER the bad commit. The two standing exclusions come free and are read rather than restated -- the ignore file already names the installed strangers and every built artifact, for its own reasons, in a file edited elsewhere.",
+          "A PERSONAL IGNORE FILE MUST NOT SHRINK THE SUBJECT, measured on this machine: the global ignore here hides a file that is tracked-and-visible elsewhere, so a candidate set honouring it differs per developer. RESIDUE, named: a per-checkout exclude file cannot be neutralised the same way.",
+          "PROGRAMS ARE ENUMERATED FROM TRACKED FILES ALONE AND THE ASYMMETRY IS DELIBERATE: a program is part of the declared verification surface and must be COMMITTED to count, while a candidate is a hazard the moment it exists. A stray uncommitted config claiming the whole tree would otherwise mark everything covered -- a silent permanent green. The other direction fails loudly and self-corrects.",
+          "TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT AND EACH OWNING AN ARM: anything under a program's own output directory, read per program from the effective configuration -- without it the guard is RED ON EVERY EXISTING THROWAWAY THAT BUILDS, since a throwaway carries no ignore file and its emitted declaration is untracked and in no program's roots; and anything under an installed-dependency directory, for the reason already recorded beside the package walker.",
+          "A PROGRAM WHOSE INCLUDE MATCHES NOTHING MUST CONTRIBUTE ZERO RATHER THAN ABORT: measured, the compiler prints TS18003 and EXITS 1 on that shape, and both spawner files stage exactly it -- so without this arm about twenty existing arms break. The second half of the same arm is the opposite fault: a tracked config the compiler cannot read at all must be refused BY NAME, staged at a third config so neither existing refusal owns the red first.",
+          "THE DEGENERATE THAT MATTERS IS NOT `REPORTS NOTHING`: it is `finds programs by the literal name`, which is green on this repository AND on every other planted arm, because no tracked file here is covered only by a build config. The split-member arm exists to give that degenerate a subject.",
+        ],
+      },
+      {
+        test: "Two plant sites uncovered by DIFFERENT mechanisms, so no single configuration edit can reach both: one inside the framework member outside its source directory, one under a dot directory. Both red planted, both green removed, and the report-everything degenerate refuted by the unplanted run.",
+        implementation: "None -- this is the close the PO will accept and nothing else.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE OUTCOME THIS FORECLOSES, REFUSED EVEN WITH EVERY CHECK GREEN: the witness turned green by widening a config's include until it reaches the plant, with no refusal that reddens the NEXT file planted elsewhere. That satisfies the criterion in letter and leaves the property unenforced.",
+          "THE SECOND SITE IS A PREDICTION AND NOT A FACT: the wildcard expansion is believed to skip names beginning with a dot, and it must be ESTABLISHED by planting and reading the file list. If it turns out covered, a second mechanism is found before the pair is believed.",
+        ],
+      },
+      {
+        test: "The existing package-shaped arms stay red for the same states and with the same sentence.",
+        implementation:
+          "The JSON-glob reader stops DECIDING coverage and becomes a diagnostic refinement over a fault the faithful reader already found: given an uncovered file whose directory holds a manifest the root excludes and the workspace does not declare, say the package sentence instead of many file sentences.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE RULING AND ITS REASON: that reader is the UNFAITHFUL one this item was filed against -- it is why the planted probe ran under it and it said nothing. Leaving it deciding alongside the compiler's file list gives this repository TWO ANSWERS TO ONE QUESTION that can disagree with everything green, which is the disarmed-control shape this record keeps catching. ONE DECIDER.",
+          "THE CONDITION THE PO WILL READ FOR: a run that answers one missing workspace entry with a wall of file sentences is a REGRESSION they refuse. The package-shaped fault keeps the package-shaped message and the repair it names.",
+        ],
+      },
+      {
+        test: "None new -- the citation guard and the README extraction are the pair.",
+        implementation:
+          "The reasons this change makes false or narrower: the package refusal's own superlative, which was ALREADY narrower than it read; the same sentence repeated in its test; the fifth check's header, which enumerates what that check owes and must name a fourth refusal without copying the ordering reasons of the other three; and the documentation, which gains an external tool among the prerequisites.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE SUBJECT IS NON-IGNORED, NON-DECLARATION TYPESCRIPT, AND THE SECOND HALF IS THE ONE EXCLUSION -- ruled as a property that can be READ rather than as a name. Declaration files are in a program's file list and checked by NOTHING, because every config here skips library checking; membership is therefore the WRONG predicate for them. THE EXCLUSION MUST BE READ FROM THE PROGRAM'S OWN REPORTED SETTING, so that flipping that setting off makes declaration files RE-ENTER the subject. A guard that stays quiet there has a NAME in it, not a property.",
+      "OVER EVERYTHING ELSE THE EXCLUSION SET IS EMPTY TODAY AND SHIPS EMPTY. MEASURED: every candidate in this checkout is matched by an include of at least one program. NO EXEMPTION FACILITY IS BUILT -- a facility with no user is where a name gets appended later with no review. If a file genuinely needs one, that comes back to the PO before the sprint closes; and if a facility ships anyway, AN EXCLUSION EXCUSING ZERO FILES MUST ITSELF REDDEN.",
+      "PRICED NOW RATHER THAN DISCOVERED AS A FLAKE: a stray non-ignored source file left behind by a test reddens this check, and two tests describe leaving untracked files behind. THAT COLOUR IS CORRECT -- a stray file nothing type-checks IS the fault this item names -- and it is ruled rather than tolerated.",
+      "EVERY READING IS TAKEN IN THE STATE THE DEFINITION OF DONE ESTABLISHES, artifacts present. With them absent the root program falls through its source arm and its file list holds MEMBER SOURCE, so the same guard reads a different tree and the measurement does not reproduce.",
+      "WHAT THE INSTRUMENT CANNOT SEPARATE, AND THE GUARD IS NAMED FOR THE HALF IT HAS: `included in a program` is not `type-checked`. Measured -- a declaration file carrying two errors exits 0 with library checking skipped and exits 1 naming both without it.",
+      "A SECOND RESIDUE, MEASURED AND NAMED RATHER THAN FIXED: the test runner DISCOVERS a test file under an ignored directory, so a source file there runs, is type-checked by nothing, and this guard will not see it. Widening the subject to ignored files brings back every installed stranger and every built artifact -- and that directory exists to hold what this repository does not account for.",
+      "A FILE COVERED BY TWO PROGRAMS STAYS GREEN WHEN ONE STOPS COVERING IT. Disclosed: the framework's source is in both its check and its build configuration, so narrowing one alone reddens nothing. The guard defends `some program includes it`, not per-program coverage.",
+    ],
+  },
   retrospectives: [],
 };
 
