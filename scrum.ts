@@ -900,7 +900,96 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 56,
+    pbi_id: "PBI-69",
+    goal: "No commit is taken on a Definition of Done whose red was off screen: verifying a change is ONE command, it names every check's own result, and it is the only form this project documents.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "In a throwaway tree carrying its own dashboard whose checks log their own names: all pass -> exit 0; THE FIRST FAILS AND THE LAST PASSES -> non-zero, naming the failing check, with the last check's own pass still reported; two fail -> both named; an EMPTY list of checks -> refused rather than green.",
+        implementation:
+          "A script beside the workspace one, reading the checks by EXECUTING the dashboard and parsing the JSON it already prints, looping all of them without stopping at the first failure.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE FIRST-FAILS-LAST-PASSES ARM IS THE RECORDED DEFECT VERBATIM: a runner reading the last command's status passes an arm that fails the LAST check, and this project's five occurrences are all that shape.",
+          "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. The dashboard's `run` stays an executable shell command.",
+        ],
+      },
+      {
+        test: "Whole-value equality on the invocation log against the dashboard's declared ORDER and arity; the per-check report of a FAILING run carries each check's name, its command as run, and its own exit; and a dashboard with a different set of checks changes what runs WITH NO EDIT TO THE RUNNER.",
+        implementation: "Per-check report lines; output captured and echoed.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
+          "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
+          "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
+        ],
+      },
+      {
+        test: "A check naming a binary that does not exist is NON-GREEN and distinguishable in the report from one that ran and failed; and the runner invoked FROM A SUBDIRECTORY produces the same reading as from the root.",
+        implementation:
+          "Spawn-error handling; the root taken from the argument or from the script's own location, never from the working directory.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "UNRUNNABLE IS NOT PASSED, AND TODAY THIS MACHINE IS THE WITNESS: two of the five tools are absent from PATH here, so a runner treating a spawn error as anything but non-green would ship green over two checks that never ran.",
+          "THE WORKING DIRECTORY IS A HAZARD AND NOT A DETAIL: the first check finds its configuration only in the current directory, so a runner inheriting a subdirectory would report five greens over a suite that built nothing.",
+        ],
+      },
+      {
+        test: "A planted warning -> count one, exit 0, the count present in the verdict; an error-only tree -> zero warnings beside a failure; a clean tree -> zero.",
+        implementation:
+          "The warning count read from the same invocation whose exit was read, printed in the same summary as the exits.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A SECOND CRITERION AND NOT A CLAUSE OF THE FIRST, on this project's own rule that a hazard owns a test whose FIRST assertion it is: folded in, the exit-code assertions fire first and the warning reading could never be the thing that fails. The perturbation differs too -- planting a warning moves no exit code.",
+          "REPORTED AND NOT GATING, RULED: this tree carries ONE deliberate warning whose fixture records a refusal to silence it, so failing on warnings would overturn a decision by way of a tooling change -- and an instrument red on every green tree retires itself.",
+          "THE COUNT IS A PARSE, SO IT SHIPS WITH ITS PAIR. MEASURED on the installed linter, in a pipe and under a terminal alike: one line per diagnostic, no summary line -- so the count comes from lines, and re-measuring on a version bump is the maintenance this buys.",
+        ],
+      },
+      {
+        test: "The five real checks staged failing IN TURN, with predictions written before each run, and the paired unstaged green.",
+        implementation:
+          "Whatever repair a staging reveals; predicted none. Stagings are ADDED UNTRACKED FILES so nothing tracked is edited and cleanliness is verifiable.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ONE OF THE FIVE DOES NOT ISOLATE AND THE RECORD MUST SAY WHY: a type error inside a member breaks the preparation the first check runs, so the first check dies with the fifth. The clean single-check staging is an untracked source file under a directory no configuration includes -- which fires the guard whose own stated reason is that without it all five commands exit 0.",
+          "THE LINTER'S STAGING MUST BE ERROR-LEVEL, because its exit code does not move on warnings; a second warning-shaped staging exists precisely to move NO exit code.",
+        ],
+      },
+      {
+        test: "None -- prose and the round's own procedure.",
+        implementation:
+          "The documentation's Commands section names the one form, with running a single check labelled DEBUGGING so it cannot be read as verification; and the filing bar lands in this dashboard's header where the round's standing instruction already lives.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NO FENCED BLOCK IS ADDED TO THE README: its command blocks are extracted and executed by the suite, and the runner runs the suite -- it would run itself. The commands appear there as prose today, which is what makes prose the safe carrier.",
+          "THE DOCUMENTATION ENDPOINT IS DELIVERY AND NOT THE MECHANISM, and the record says so rather than letting a later reader find it: that file is untracked in this repository, so one end of the sync obligation is a file no fresh checkout has and no check can grade.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "EXISTENCE IS NOT ENOUGH AND THE ITEM'S OWN FILING SAYS WHY: the skill forbidding this defect exists, is specific, is measured, carries its own recidivism count, and matched on description -- and the defect happened anyway. A RUNNER THAT MUST BE REMEMBERED IS THAT SKILL WITH AN EXIT CODE. What must become unavailable is the alternate SPELLING: after this sprint, `run the Definition of Done` has ONE form everywhere this project says how to verify a change, the five survive as the runner's DATA in one tracked enumeration, and running a single check by hand is labelled DEBUGGING where it appears.",
+      "A COMMIT HOOK IS REFUSED AS THE UNAVAILABILITY: untracked, per-clone, and undone by a flag -- and the whole Definition of Done at every commit is slow enough that the flag would be used. UNAVAILABILITY A FLAG UNDOES IS A RESTATEMENT IN A MECHANISM'S CLOTHES.",
+      "THE RESIDUE IS NAMED IN ADVANCE RATHER THAN DISCOVERED: an actor who types the five commands out of habit is NOT COVERED. A sixth occurrence arriving by that route is a new item against the commit moment, not a regression of this one.",
+      "THE DUPLICATED ENUMERATION IS REFUSED EVEN ON AN ALL-GREEN RUN, and the developer's design discharges it structurally rather than by assertion: the runner obtains its list by EXECUTING the dashboard, so there is no second list to drift. The alternative -- the runner holds the list and a test asserts equality -- satisfies the property equally, and whichever is taken, the choice and its cost are stated.",
+      "MEASURED AT PLANNING SO IT IS NOT MET AT RED: running the checks through one script does NOT change what any of them sees. The wrapper does not prepend the local binary directory to a child's path, so tool resolution is identical bare and wrapped; and the linter's output format is identical through a pipe and under a terminal.",
+      "THE FILING BAR FOR THE REVIEW ROUND LANDS THIS SPRINT, in this dashboard's header beside the round's standing instruction -- NOT in a skill, which is the delivery that failed, and NOT in the round's own skill file, which lives outside this repository and would be invisible to this project's review of its own records. A finding recorded as PRE-EXISTING names both commits and the byte-identity result at the sprint's base, or it is this sprint's to repair; it names the item it is filed into, or it is not filed; and PREDATING IS NOT ITSELF A LICENCE -- a finding inside the sprint's own subject is repaired here even when it predates.",
+    ],
+  },
   retrospectives: [],
 };
 
