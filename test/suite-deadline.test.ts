@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import {
-  existsSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -527,10 +526,72 @@ test("the pinned floor is the largest deadline the helpers hold", () => {
   expect(helperDeadlines.filter((found) => found.file === "fake-editor.ts")).not.toEqual([]);
 });
 
-/** Every test file the sweep is about: the ROOT suite, which is what spawns. */
-const rootTestFiles = readdirSync(join(repoRoot, "test"))
-  .filter((name) => name.endsWith(".test.ts"))
-  .sort();
+/**
+ * THE NAMING FORMS bun ACTUALLY RUNS, MEASURED ON 1.3.13 RATHER THAN READ OFF A
+ * DOCUMENT: in a throwaway tree `a.test.ts`, `b.spec.ts`, `c_test.ts`,
+ * `d_spec.ts` and `e.test.js` each ran; `f.testx.ts` did not. The sweep's
+ * subject is therefore wider than `.test.ts`, which is all this tree happens to
+ * hold today -- a file named any of the other four ways would be RUN by the
+ * suite and, under the old filter, swept by nothing.
+ */
+const testFileNames = /(?:\.|_)(?:test|spec)\.[cm]?[jt]sx?$/;
+
+/**
+ * EVERY TEST FILE THE ROOT `bun test` REACHES, WALKED RATHER THAN LISTED, AND
+ * THE RECURSION IS THE WHOLE POINT: bun DISCOVERS TEST FILES RECURSIVELY --
+ * MEASURED in a throwaway tree, where a probe in `sub/deep/` ran beside the one
+ * at the root. Both enumerations here used to be a single `readdirSync` of one
+ * directory, so a `.test.ts` under test/fixtures/, under scripts/, or under a
+ * package's src/ WAS RUN BY THE SUITE at bun's 5000ms and was invisible to both
+ * of them -- a correct-but-slow test dropped there is killed reporting the
+ * machine, which is the class this file exists to remove.
+ *
+ * THE PRUNE IS bun'S OWN, MEASURED IN THE SAME TREE rather than chosen: probes
+ * under `node_modules/` and under a DOT-DIRECTORY did not run, and probes under
+ * `dist/` and under `__ignored/` DID -- gitignored is not a thing bun's walk
+ * knows. So the walk skips exactly what bun skips, and a scratch test file in an
+ * ignored directory is swept because it is also RUN.
+ *
+ * WHAT THE PRUNE COSTS, NAMED WHERE IT HAPPENS BECAUSE IT IS THE SAME CLASS THE
+ * ARMS BELOW GUARD: this is a filter, and a filter that stops matching stops
+ * finding. It is one of the two enumerations the cross-check arm pairs against a
+ * second mechanism.
+ */
+function discoverTestFiles(dir: string): readonly string[] {
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      if (entry.name.startsWith(".") || entry.name === "node_modules") {
+        return [];
+      }
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        return discoverTestFiles(full);
+      }
+      return testFileNames.test(entry.name) ? [relative(repoRoot, full)] : [];
+    })
+    .sort();
+}
+
+const everyTestFile = discoverTestFiles(repoRoot);
+
+/**
+ * The partition, and it is BY PATH rather than by two separate walks: a file is
+ * a member's if it lies under a declared member directory, and the root suite is
+ * everything else. `declaredMembers` AND NOT A GLOB, so a package added under
+ * packages/ moves to the right side with no edit here -- and NOT
+ * `handlerMembers`, because the question is `which suites are outside the root
+ * sweep`, which is true of every member whatever it declares.
+ */
+const memberDirectories = declaredMembers(repoRoot).map(
+  (member) => `${relative(repoRoot, member)}/`,
+);
+
+function insideAMember(path: string): boolean {
+  return memberDirectories.some((dir) => path.startsWith(dir));
+}
+
+/** The ROOT suite, which is what spawns. */
+const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
 
 /**
  * THE SWEEP THAT CLOSES THE HOLE THE PER-FILE CALL OPENS, and it is the reason
@@ -539,7 +600,7 @@ const rootTestFiles = readdirSync(join(repoRoot, "test"))
  * hole is silent -- three calling files plus one that does not call read 3 pass
  * / 1 fail, the fourth dying at 5000ms while nothing else moved.
  *
- * TEXT AND NOT BEHAVIOUR, WITH THE LIMIT NAMED: bun exposes no way to read the
+ * TEXT AND NOT BEHAVIOUR, WITH THE LIMITS NAMED: bun exposes no way to read the
  * deadline currently in force, and the honest behavioural instrument -- spawning
  * `bun test <file>` once per file at a tiny override -- costs a spawn per file
  * on every run. So this reads source, and what it CANNOT see is a file that
@@ -547,18 +608,24 @@ const rootTestFiles = readdirSync(join(repoRoot, "test"))
  * where it would run too late. A rot detector, not a barrier, which is the same
  * ruling `.oxlintrc.json` carries for its own guards.
  *
+ * THE THIRD LIMIT USED TO BE THE ENUMERATION ITSELF AND IS NOT ANY MORE, said
+ * here because the two above read as a complete list and were not one: this
+ * walked one directory while bun walks the tree, so a file in a subdirectory was
+ * run by the suite and named by nobody. It is now the same walk bun does, with
+ * bun's own prune, both measured at `discoverTestFiles`.
+ *
+ * THE IMPORT NEEDLE CARRIES NO LEADING `./` FOR THE SAME REASON: a swept file
+ * one directory down spells the same import `../helpers/deadline.ts`, and a
+ * needle anchored to the root suite's depth would have quietly excused it.
+ *
  * THE PAIR IS PERMANENT AND IT IS NOT `THE LIST IS NON-EMPTY` ALONE: an
  * enumeration that found nothing and an enumeration where everything passes look
- * identical in a green. The count is asserted against the directory listing that
- * produced it, so a filter that stopped matching reddens here rather than
- * reporting success.
+ * identical in a green.
  */
 test("every root test file sets the suite's deadline", () => {
-  const missing = rootTestFiles.filter((name) => {
-    const source = readFileSync(join(repoRoot, "test", name), "utf8");
-    return !(
-      source.includes('from "./helpers/deadline.ts"') && source.includes("applySuiteDeadline();")
-    );
+  const missing = rootTestFiles.filter((path) => {
+    const source = readFileSync(join(repoRoot, path), "utf8");
+    return !(source.includes('helpers/deadline.ts"') && source.includes("applySuiteDeadline();"));
   });
 
   expect(missing).toEqual([]);
@@ -568,22 +635,13 @@ test("every root test file sets the suite's deadline", () => {
 /**
  * The members' own suites, which the sweep above deliberately does not reach.
  *
- * `declaredMembers` AND NOT A GLOB, so a package added under packages/ is
- * covered with no edit here -- and NOT `handlerMembers`, because the question is
- * `which suites are outside the root walk`, which is true of every member
- * whatever it declares. tsudoi's own member directory holds no test/ today; the
- * pair below is what keeps that from reading as a clean result.
+ * ANYWHERE UNDER THE MEMBER AND NOT `<member>/test` ALONE: that directory is a
+ * convention and bun's walk is not bound by it, so a test file beside a
+ * package's `src/` used to satisfy neither enumeration while the root `bun test`
+ * ran it. tsudoi's own member directory holds no test file today; the pair below
+ * is what keeps that from reading as a clean result.
  */
-const memberTestFiles = declaredMembers(repoRoot)
-  .flatMap((member) => {
-    const dir = join(member, "test");
-    return existsSync(dir)
-      ? readdirSync(dir, { withFileTypes: true })
-          .filter((entry) => entry.isFile() && entry.name.endsWith(".test.ts"))
-          .map((entry) => relative(repoRoot, join(dir, entry.name)))
-      : [];
-  })
-  .sort();
+const memberTestFiles = everyTestFile.filter(insideAMember);
 
 /**
  * The routes by which a test in this repository starts a process. Read as text,
