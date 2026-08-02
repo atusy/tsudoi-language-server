@@ -911,11 +911,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "A script beside the workspace one, reading the checks by EXECUTING the dashboard and parsing the JSON it already prints, looping all of them without stopping at the first failure.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7f0324a",
+            message: "feat(scripts): one command that takes every check and reports each one",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE FIRST-FAILS-LAST-PASSES ARM IS THE RECORDED DEFECT VERBATIM: a runner reading the last command's status passes an arm that fails the LAST check, and this project's five occurrences are all that shape.",
           "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. The dashboard's `run` stays an executable shell command.",
+          "THE INPUT CONTRACT WAS MEASURED BEFORE A LINE WAS WRITTEN, because every arm here rests on it: `bun run scrum.ts` at this sprint's base exits 0, writes ZERO BYTES to stderr, and its stdout parses as JSON whose `definition_of_done.checks` is the five pairs. A runner built on an unmeasured premise about the file it reads would have been this project's own recorded shape.",
+          "RED THEN GREEN, AND THE RED IS THE HALF WORTH RECORDING: with no runner in the tree, 0 pass / 4 fail -- and the EMPTY-LIST arm failed on its TEXT rather than on its colour, which is the only reason it measures anything. Everything that goes wrong here exits non-zero, a runner that does not exist included, so an arm reading the colour alone would have been born green. After the implementation, 4 pass / 0 fail, and the whole suite 851 pass / 0 fail across 57 files against a base of 847 across 56.",
+          "TWO DEGENERATES, PREDICTED IN WRITING BEFORE EACH RUN AND BOTH BEHAVING AS PREDICTED. THE RECORDED DEFECT ITSELF -- verdict and report taken from the LAST result alone -- gives 2 pass / 2 fail: the two positional arms red, the all-pass arm green, which is exactly why an all-pass arm certifies nothing here. AND AN EMPTY LIST RUN AS WRITTEN rather than refused gives 3 pass / 1 fail. Neither degenerate is reachable from the other's arms, which is what earns them both.",
         ],
       },
       {
