@@ -954,9 +954,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Spawn-error handling; the root taken from the argument or from the script's own location, never from the working directory.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "996dfcc",
+            message: "test(dod): separate a check that never started from one that ran and said no",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BOTH ARMS BORN GREEN AND DECLARED SO BEFORE THE RUN -- 9 pass / 0 fail -- because the spawn-error handling and the location-derived root were written in the first subtask. FOUR DEGENERATES CARRY THE EVIDENCE INSTEAD, each predicted and each reddening one arm and no other: a spawn error COUNTED AS A PASS, 8 pass / 1 fail; a check that never started PRINTED AS ONE THAT RAN AND FAILED -- byte-identical text, the state this project has already been caught reading as one red -- 8 pass / 1 fail; the root taken FROM THE WORKING DIRECTORY, 8 pass / 1 fail; and the checks handed the WORKING DIRECTORY INSTEAD OF THE ROOT, 8 pass / 1 fail.",
+          "THE FOURTH DEGENERATE IS THE ONE THAT SHAPED THE ARM, and it is invisible to every exit code in the file: handing the checks a subdirectory changes no status and no report line. It is separated only by a check that RECORDS THE DIRECTORY IT RAN IN, compared whole between the run from the root and the run from below it -- which is why one check in that tree records where it ran rather than its name.",
+          "THE SUBDIRECTORY ARM RUNS A BYTE COPY OF THE RUNNER INSIDE THE THROWAWAY, and the reason is worth keeping: with no argument the shipped runner takes THIS repository's Definition of Done, so the arm measuring the argument-free route cannot use the shipped path without running `bun test` inside `bun test`.",
+          "THE SUITE AFTER THIS SUBTASK: 856 pass / 0 fail across 57 files, five exits read individually, all 0.",
           "UNRUNNABLE IS NOT PASSED, AND TODAY THIS MACHINE IS THE WITNESS: two of the five tools are absent from PATH here, so a runner treating a spawn error as anything but non-green would ship green over two checks that never ran.",
           "THE WORKING DIRECTORY IS A HAZARD AND NOT A DETAIL: the first check finds its configuration only in the current directory, so a runner inheriting a subdirectory would report five greens over a suite that built nothing.",
         ],
