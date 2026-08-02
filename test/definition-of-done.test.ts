@@ -281,6 +281,63 @@ test("the same run taken from a SUBDIRECTORY reads the same, checks included", a
   expect(tree.invocations()).toEqual([...afterRoot, ...afterRoot]);
 });
 
+/**
+ * A tree whose one check is THE LINTER ITSELF, over one planted source file.
+ *
+ * THE REAL LINTER AND NOT A SCRIPT PRINTING A WARNING-SHAPED LINE, because the
+ * count is a PARSE and its subject is that program's output format. An arm
+ * echoing the shape this repository's runner looks for would assert the runner
+ * against itself and would survive the linter changing its mind about how a
+ * diagnostic is printed -- which is the day this needs to fail.
+ *
+ * The configuration is COPIED rather than re-declared, so these arms track the
+ * file that actually ships, exactly as test/helpers/lint.ts does for its probes.
+ */
+function stageLinted(source: string): Tree {
+  const tree = stageTree();
+  copyFileSync(join(repoRoot, ".oxlintrc.json"), join(tree.root, ".oxlintrc.json"));
+  writeFileSync(join(tree.root, "planted.ts"), source);
+  tree.declare([{ name: "Lint passes", run: "oxlint" }]);
+  return tree;
+}
+
+/** A generator with no `yield`: warning severity, and the exit code does not move. */
+const warns = "export function* nothing() {\n  return 1;\n}\n";
+
+/** A bare specifier where the guard requires an extension: error severity. */
+const errors = 'import { thing } from "./other";\nexport const used = thing;\n';
+
+test("a warning is counted and reported, and does NOT gate the run", async () => {
+  const tree = stageLinted(warns);
+  const result = await tree.run();
+  // GREEN BESIDE A COUNT, WHICH IS THE RULING AND NOT AN OVERSIGHT: this
+  // repository carries one deliberate warning whose fixture records a refusal to
+  // silence it, so a runner failing on warnings would overturn a decision by way
+  // of a tooling change -- and an instrument red on every green tree retires
+  // itself.
+  expect(result.code).toBe(0);
+  expect(report(result)).toContain("warnings: 1");
+  expect(report(result)).toContain("Definition of Done: PASSED");
+});
+
+test("an error is not a warning: the count is 0 beside the failure", async () => {
+  const tree = stageLinted(errors);
+  const result = await tree.run();
+  expect(result.code).not.toBe(0);
+  // THE PAIR THAT SEPARATES A COUNT FROM A DIAGNOSTIC COUNT. A runner counting
+  // every line the linter prints reports one here and passes the arm above, so
+  // this is the arm that reads the severity rather than the volume.
+  expect(report(result)).toContain("warnings: 0");
+  expect(report(result)).toContain("[FAILED] Lint passes -- exit 1");
+});
+
+test("a tree with nothing to say counts no warnings", async () => {
+  const tree = stageLinted("export const fine = 1;\n");
+  const result = await tree.run();
+  expect(result.code).toBe(0);
+  expect(report(result)).toContain("warnings: 0");
+});
+
 test("a dashboard listing no checks is refused rather than reported green", async () => {
   const tree = stageTree();
   tree.declare([]);
