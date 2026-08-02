@@ -1014,9 +1014,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "The reasons this change makes false or narrower: the package refusal's own superlative, which was ALREADY narrower than it read; the same sentence repeated in its test; the fifth check's header, which enumerates what that check owes and must name a fourth refusal without copying the ordering reasons of the other three; and the documentation, which gains an external tool among the prerequisites.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "55fa622",
+            message: "docs(workspaces): name what the fifth check now owes, and the tool it needs",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE FIRST TWO REPAIRS LANDED IN SUBTASK 4 AND NOT HERE, BY THE COMMIT-BOUNDARY RULE: the package refusal's superlative and the sentence repeated in its test both describe the state the demotion creates, and a commit whose comment claims a mechanism the next commit introduces is the shape that rule was filed against. What was left for this subtask is the check's header and the documentation.",
+          "IT IS A THIRD REFUSAL AND NOT A FOURTH, which is what the demotion cost the plan's own sentence: the package refusal stopped being a separate call and became a refinement inside the new one.",
+          "A REASON THIS SPRINT MADE FALSE, FOUND ON THE SECOND PASS AND NOT THE FIRST: the exclusion reader dropped matches beginning inside node_modules because REPORTING such a package would be a permanent red about somebody else's file. After the demotion it reports nothing at all, so the filter's effect became unobservable and its stated consequence untrue -- the fifth instance of a comment licensed by a mechanism the increment removed. The filter went with the reason, and the subtraction that keeps the property true sits beside the candidates where an arm measures it.",
+          "THE DOCUMENTATION HALF IS UNMET ON THIS MACHINE, RECORDED AS UNMET RATHER THAN AS MET DIFFERENTLY: `CLAUDE.md` is NOT TRACKED in this repository and is hidden by this machine's own global ignore (`git ls-files CLAUDE.md` empty; `git check-ignore -v` names `~/.config/git/ignore:31`), so the prerequisite paragraph was written to the working tree and CANNOT BE COMMITTED from here. The same facts have a trackable carrier and it is committed: the fifth check's own header now says it needs git and why, which is where a reader of the code meets it.",
+          "THE ONE READING THE PLAN LEFT REASONED IS NOW MEASURED: the file lists do not depend on the built artifacts. With every `dist/` removed, all seven programs' non-library file lists are BYTE-IDENTICAL to the same lists with the artifacts present, and the whole fifth check exits 0 silently -- which it would, since it builds before it reads.",
+        ],
       },
     ],
     impediments: [],
