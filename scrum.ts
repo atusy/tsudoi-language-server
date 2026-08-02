@@ -958,11 +958,17 @@ const scrum: ScrumDashboard = {
               "test(dod): read the invocation log as a sequence, and require a sixth check to run",
             phase: "green",
           },
+          {
+            hash: "c64fcc3",
+            message: "test(dod): require each check's own diagnostic to reach the reader",
+            phase: "green",
+          },
         ],
         notes: [
           "BORN GREEN, DECLARED AS SUCH BEFORE THE RUN AND NOT DISCOVERED AFTERWARDS: the per-check report lines landed in the first subtask, because its own arms needed the words `[FAILED] alpha` and `[PASSED] gamma` to exist. 7 pass / 0 fail on the first execution, which is worth nothing by itself -- ALL THE EVIDENCE FOR THESE THREE ARMS COMES FROM THE DEGENERATES, and that is the reason they were run before the arms were believed.",
           "THREE DEGENERATES, EACH PREDICTED IN WRITING AND EACH REDDENING EXACTLY WHAT WAS PREDICTED. Checks SORTED by name before running -- a move that changes no value -- 5 pass / 2 fail, the sequence arm and the six-check arm; the runner EXITING INSIDE ITS LOOP at the first red, 4 pass / 3 fail, every one of them an arm about what is reported AFTER a failure; and the runner ASSUMING THE LIST IS FIVE LONG, 6 pass / 1 fail, the six-check arm alone. The third is the product owner's refusal in its cheapest form and no other arm in the file can see it.",
           "THE SUITE AFTER THIS SUBTASK: 854 pass / 0 fail across 57 files, all five checks read individually and each exit 0.",
+          "`CAPTURED AND ECHOED` WAS HALF ASSERTED AND THE MISSING HALF WAS FOUND BY REVIEW, NOT BY A RED. Twelve arms proved CAPTURED -- the warning count is a parse of the captured bytes -- and NOT ONE proved ECHOED: they all read what the RUNNER writes, so a runner swallowing every check's own output satisfied all of them, including the two-run report equality, which holds when both runs echo nothing. MEASURED as a fourth degenerate for this subtask: deleting the two writes that tee a child's streams leaves 11 pass / 1 fail once the arm exists, and left 12 pass / 0 fail before it. The arm lives in the error-lint tree because the subject was already there, and what it reads is the linter's own diagnostic line rather than anything this runner composes.",
           "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
           "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
           "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
@@ -1038,8 +1044,16 @@ const scrum: ScrumDashboard = {
           "The documentation's Commands section names the one form, with running a single check labelled DEBUGGING so it cannot be read as verification; and the filing bar lands in this dashboard's header where the round's standing instruction already lives.",
         type: "structural",
         status: "completed",
-        commits: [],
+        commits: [
+          {
+            hash: "c4ba6f4",
+            message:
+              "docs(scrum): file the review round's bar in the header, and say at the site that the checks are data",
+            phase: "green",
+          },
+        ],
         notes: [
+          "README.md IS DELIBERATELY UNTOUCHED AND THE READING IS RECORDED RATHER THAN LEFT TO BE RE-DERIVED AT REVIEW: it names three of the five checks in prose and tells a reader to run `bun test` or the fifth check FIRST, which is build-model guidance about what makes `tsc --noEmit` readable on a fresh checkout -- not a second spelling of how to verify a change. The ruling forbids a fenced block there anyway, since that document's blocks are extracted and executed and the runner runs the suite.",
           "NO ARM, THEREFORE NO DEGENERATE, SAID RATHER THAN INVENTED: this subtask is prose, and a degenerate run against prose would be theatre. What it can be held to instead is where the words landed and what grades them.",
           "THE COMMANDS SECTION NOW OPENS WITH THE ONE FORM and carries the five under a DEBUGGING heading that says in its own words that running them by hand is not verifying a change. THE SYNC OBLIGATION IS NAMED AT THE OTHER END TOO, and it MOVED rather than disappearing: the runner reads `definition_of_done.checks` at run time, so a check added there costs no edit anywhere; what still has to be kept by hand is the DEBUGGING list, which nothing executes and which sits in a file this repository does not track.",
           "THE FILING BAR LANDED VERBATIM IN THE HEADER BESIDE THE ROUND'S STANDING INSTRUCTION, and the dashboard's `definition_of_done` now carries a comment AT THE SITE saying the list is the runner's data and that the runner is not added here as a sixth entry -- which is where that edit would be made, and the only place a reader meets the five without meeting the runner.",
