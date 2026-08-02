@@ -795,6 +795,40 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * INDENTED call, which narrows the second blind spot above rather than widening
  * anything: a call inside a function body no longer satisfies this sweep.
  *
+ * BUT COLUMN 0 IS A CLAIM ABOUT TYPOGRAPHY AND THE PROPERTY IS ABOUT ORDER, AND
+ * THE GAP BETWEEN THE TWO WAS MEASURED: the call moved from the top of
+ * test/hover.test.ts to the BOTTOM, still at column 0 and still on its own line,
+ * left every arm in this file GREEN -- while every test that file registered
+ * above it carried bun's own 5000ms. A deadline set after the registrations reaches
+ * nothing, so the sweep now asks where the call is RELATIVE TO the first
+ * `test(` or `describe(` in the file rather than where it is on its line.
+ *
+ * THE COLUMN-0 ANCHOR IS KEPT UNDER THE NEW RULE RATHER THAN REPLACED BY IT, AND
+ * THE COST OF DROPPING IT IS WHY: without it `// applySuiteDeadline();` matches
+ * again, which is the hole measured two paragraphs up, and so does a call inside
+ * a function body. Both are text that precedes the first registration perfectly
+ * well. WHAT THE ANCHOR STILL COSTS IS NAMED INSTEAD OF DENIED: a file that
+ * WRAPPED the call across lines would be reported as missing it. No file does,
+ * the formatter keeps it one line, and the failure names the file -- the loud
+ * direction, which is the same ruling the numeral scan above is kept under.
+ *
+ * `test(` AND `describe(` MATCH ONLY AS CALLS, WHICH COST A READING TO GET RIGHT:
+ * a needle allowing a following `.` matched THE ENGLISH WORD ENDING A SENTENCE --
+ * `the margin this value buys is five times what the sentence used to describe.`
+ * in test/protocol.test.ts and `nowhere in an ASCII test.` in test/sync.test.ts
+ * -- which in a codebase whose headers are this long is a spurious red waiting
+ * for the day someone writes it ABOVE the call. The lookbehind is what keeps
+ * `regex.test(source)`, which this very file uses, from counting as one.
+ *
+ * A FILE WITH NO REGISTRATION AT ALL IS AN OFFENDER AND NOT A PASS, deliberately:
+ * an ordering rule whose anchor is missing decides nothing, and a rule that
+ * decides nothing while reporting success is the disarmed-control shape this
+ * sprint has already shipped three times. Every root test file has one today --
+ * enumerated, not assumed -- and in a large minority of them it is INDENTED,
+ * because `describe(runtime.name, ...)` inside a loop over the two runtimes is
+ * this suite's commonest shape. That is why the registration needle carries no
+ * column anchor of its own, where the call's needle does.
+ *
  * THE LEFTOVER IMPORT IS FLAGGED BY NOTHING AND THAT IS LEFT STANDING: oxlint's
  * rule set here is a deno-compatibility guard and carries no unused-binding rule,
  * so the only thing that reddens is this arm. It is enough, because the import
@@ -809,12 +843,20 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * call at column 0 INSIDE TEMPLATE LITERALS, and the module path appears in the
  * import needle's shape too, so both halves match text that is not this file's
  * own call. With line 19 commented out the sweep stays green. IT IS TOLERABLE
- * ONLY BECAUSE THIS FILE ANNOUNCES ITSELF LOUDLY: the same run reads 21 pass / 1
- * fail, `the deadline is raised past bun's own default` dying at 5002ms, because
+ * ONLY BECAUSE THIS FILE ANNOUNCES ITSELF LOUDLY: the same run fails on `the
+ * deadline is raised past bun's own default`, dying at 5002ms, because
  * that arm waits 5.5s on a child and cannot survive bun's own default. The one
  * file whose call the sweep cannot verify is the one file that fails without it.
  * A test-only heuristic for `not inside a template literal` would buy the reading
  * back at the price of a matcher nobody has measured.
+ *
+ * THE ORDERING RULE DOES NOT REPAIR THAT AND IS RE-MEASURED RATHER THAN ASSUMED
+ * TO INHERIT IT: the first generated call sits at column 0 in `callingPair`'s
+ * template ABOVE the first generated `test(` in the same template, so with line
+ * 19 commented out the sweep still reads this file as compliant -- green, on
+ * text belonging to a child suite that does not exist yet. Its shape is
+ * unchanged and so is the reason it is accepted; only the rule that fails to
+ * see it is new.
  *
  * THE PAIR HERE IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS, said plainly
  * because the sentence that stood here claimed more: an offender list that is
@@ -824,11 +866,18 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * above, where this enumeration must agree with one built by another mechanism.
  */
 const callsTheModule = /^applySuiteDeadline\(\);$/m;
+const registersATest = /(?<![\w$.])(?:test|describe)\s*\(/;
 
-test("every root test file sets the suite's deadline", () => {
+function callPrecedesEveryRegistration(source: string): boolean {
+  const call = source.search(callsTheModule);
+  const firstRegistration = source.search(registersATest);
+  return call >= 0 && firstRegistration >= 0 && call < firstRegistration;
+}
+
+test("every root test file sets the suite's deadline before it registers a test", () => {
   const missing = rootTestFiles.filter((path) => {
     const source = readFileSync(join(repoRoot, path), "utf8");
-    return !(source.includes('helpers/deadline.ts"') && callsTheModule.test(source));
+    return !(source.includes('helpers/deadline.ts"') && callPrecedesEveryRegistration(source));
   });
 
   expect(missing).toEqual([]);
@@ -836,27 +885,45 @@ test("every root test file sets the suite's deadline", () => {
 });
 
 /**
- * THE THREE SHAPES THAT DECIDE WHETHER THE SWEEP ABOVE IS A SWEEP: the call it
- * accepts, and the two that used to pass it while the file ran at bun's own
- * default. Written as a pair rather than as a comment because `no file is
- * missing the call` is what a needle matching everything also says.
+ * THE SHAPES THAT DECIDE WHETHER THE SWEEP ABOVE IS A SWEEP: the call it accepts,
+ * and the four that used to pass it -- or would pass a looser needle -- while the
+ * file ran at bun's own default. Written as a pair rather than as a comment
+ * because `no file is missing the call` is what a needle matching everything also
+ * says, and `no file calls late` is what a needle finding no registration says.
+ *
+ * THE FOURTH IS THIS ROUND'S, AND ITS SUBJECT IS A FILE THAT DOES EVERYTHING THE
+ * OLD RULE ASKED: imports the module, calls it at column 0, on its own line, at
+ * top level -- below its first `test(`, where the deadline it sets reaches no
+ * test the file registered. THE FIFTH IS THE ANCHOR'S OWN VACUITY, which no
+ * degenerate in the tree could have shown, since every root test file has a
+ * registration to anchor against.
  */
-test("the sweep's needle takes the call and refuses one that has been commented out", () => {
+test("the sweep's needle takes the call, and refuses one that is commented out, buried or late", () => {
+  const importLine = 'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\n';
+
   expect(
-    callsTheModule.test(
-      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\napplySuiteDeadline();\n',
-    ),
+    callPrecedesEveryRegistration(`${importLine}applySuiteDeadline();\n\ntest("t", () => {});\n`),
   ).toBe(true);
   expect(
-    callsTheModule.test(
-      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\n// applySuiteDeadline();\n',
+    callPrecedesEveryRegistration(
+      `${importLine}// applySuiteDeadline();\n\ntest("t", () => {});\n`,
     ),
   ).toBe(false);
   expect(
-    callsTheModule.test(
-      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\ntest("t", () => {\n  applySuiteDeadline();\n});\n',
-    ),
+    callPrecedesEveryRegistration(`${importLine}test("t", () => {\n  applySuiteDeadline();\n});\n`),
   ).toBe(false);
+  expect(
+    callPrecedesEveryRegistration(`${importLine}test("t", () => {});\n\napplySuiteDeadline();\n`),
+  ).toBe(false);
+  expect(callPrecedesEveryRegistration(`${importLine}applySuiteDeadline();\n`)).toBe(false);
+  // AND THE ENGLISH THAT IS NOT A REGISTRATION, both halves of it: a sentence
+  // ending in the word, and the method call this file itself makes. Either one
+  // counted as a registration would report a compliant file as late.
+  expect(
+    callPrecedesEveryRegistration(
+      `${importLine}// a claim about this test.\nconst hit = /x/.test(source);\n\napplySuiteDeadline();\n\ndescribe("d", () => {});\n`,
+    ),
+  ).toBe(true);
 });
 
 /**
