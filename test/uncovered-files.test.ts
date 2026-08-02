@@ -887,6 +887,11 @@ test("a file covered only by a referenced project is reported WITH the reference
   expect(result.stderr).toContain(join("lib", "x.ts"));
   expect(result.stderr).toContain(join("lib", "project.json"));
   expect(result.stderr).toContain("RENAME");
+  // BOTH REPAIRS, BECAUSE THE RULE HAS TWO HALVES AND THE FIRST SPELLING NAMED
+  // ONE: a program counts only while it is TRACKED and named, so a reference to
+  // an untracked `lib/tsconfig.json` fires this same sentence -- and a reader
+  // told to rename it would be renaming a file whose name is already right.
+  expect(result.stderr).toContain("COMMIT");
   expect(result.code).not.toBe(0);
 });
 

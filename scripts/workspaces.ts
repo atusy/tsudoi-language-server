@@ -1126,7 +1126,7 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
   if (unreachable.length > 0) {
     const one = unreachable.length === 1;
     message.push(
-      `${unreachable.map((reference) => relative(root, reference)).join(", ")} ${one ? "is declared as a project reference and is" : "are declared as project references and are"} enumerated here by nothing -- a program counts only while it is TRACKED and named \`tsconfig*.json\`, and a referenced project's files never enter its parent's list. If anything named above is covered only by ${one ? "that project" : "one of those projects"}, RENAME the config rather than widening an \`include\`.`,
+      `${unreachable.map((reference) => relative(root, reference)).join(", ")} ${one ? "is declared as a project reference and is" : "are declared as project references and are"} enumerated here by nothing -- a program counts only while it is TRACKED and named \`tsconfig*.json\`, and a referenced project's files never enter its parent's list. If anything named above is covered only by ${one ? "that project" : "one of those projects"}, RENAME the config so this enumeration finds it, or COMMIT it if the name is already right -- either way, not by widening an \`include\`.`,
     );
   }
   throw new Error(message.join("\n"));
