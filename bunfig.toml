@@ -95,14 +95,25 @@
 # through four sprints to tell a machine's red from the code's; the knob that
 # still works is TSUDOI_TEST_TIMEOUT_MS.
 #
+# WHAT `EVERY SWEPT FILE` LEAVES OUT, SAID HERE IN PLAIN WORDS BECAUSE THE
+# PARAGRAPH ABOVE READS LIKE A CLAIM ABOUT THE WHOLE RUN AND IS NOT ONE: NO
+# SINGLE NUMBER GOVERNS `bun test`. The root run also executes every workspace
+# member's own tests, which live under packages/ and are outside the sweep. NOT
+# ONE OF THEM CALLS THAT FUNCTION, SO EVERY ONE OF THEM RUNS AT BUN'S OWN
+# BUILT-IN 5000ms -- or at whatever `--timeout` says, when one is given. The
+# number in test/helpers/deadline.ts is the ROOT suite's deadline and not this
+# command's. A member file that ever wanted the project's number would have to
+# call for itself like a root file does, and the day one does, the sweep's
+# exclusion of the members has to be argued again -- which is what the arm
+# `no member's own test spawns` in test/suite-deadline.test.ts exists to force.
+#
 # AND `NO LONGER DOES ANYTHING` IS WHAT THIS SAID UNTIL IT WAS MEASURED, three
-# lines above its own narrow form. THE FLAG STILL BINDS THE WORKSPACE MEMBERS'
-# OWN SUITES, which the root `bun test` runs -- they live under packages/, they
-# call nothing, and the sweep in test/suite-deadline.test.ts excludes them with
-# its reason. MEASURED: `bun test packages/tsudoi-completion-path/test/resolve.test.ts
-# --timeout 1` exits 1, 9 pass / 5 fail, five arms reporting `this test timed out
-# after 1ms`. So the flag is a knob over exactly the files nothing else covers,
-# which is the opposite of the reading the retired sentence invited.
+# lines above its own narrow form. THE FLAG STILL BINDS THOSE MEMBER SUITES, and
+# nothing else does. RE-MEASURED rather than carried: `bun test
+# packages/tsudoi-completion-path/test/resolve.test.ts --timeout 1` exits 1,
+# 9 pass / 5 fail, five arms reporting `this test timed out after 1ms`. So the
+# flag is a knob over exactly the files nothing else covers, which is the
+# opposite of the reading the retired sentence invited.
 #
 # AND IT IS NOT A SECOND PRELOAD ENTRY, WHICH IS THE OBVIOUS PLACE TO PUT IT AND
 # THE ONE THAT DOES NOT WORK. MEASURED on bun 1.3.13: `setDefaultTimeout` called
