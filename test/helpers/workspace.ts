@@ -39,6 +39,23 @@ import { dirname, join } from "node:path";
  * this can go without an identity: a commit needs `user.email`, which is the
  * machine's and not this suite's to require.
  *
+ * AND STAGED UNDER THE SAME OVERRIDE THE CHECK ITSELF USES, because a helper
+ * honouring a PERSONAL ignore file makes every arm built here machine-dependent
+ * in the one direction nobody would look: programs come from tracked files, so a
+ * developer whose global ignore happens to match a fixture path loses a program
+ * and reddens arms nobody else can reproduce. MEASURED on this machine, whose
+ * global ignore names `node_modules`: a tree holding
+ * `packages/declared/node_modules/stranger/{package.json,index.ts}` staged
+ * NEITHER file without the override and both with it. That arm passes today only
+ * because the check subtracts installed dependencies anyway, which is a second
+ * mechanism standing in for this one.
+ *
+ * NOT `--force`, WHICH WOULD REACH TOO FAR: a fixture may plant a `.gitignore`
+ * of its own -- one does, to make an emitted artifact ignored the way a real
+ * checkout has it -- and that file is part of the state under test. The override
+ * neutralises the machine's file and leaves the tree's own in effect; MEASURED,
+ * a tree ignoring `dist/` still stages neither its `dist/` nor anything in it.
+ *
  * A TEST THAT WANTS AN UNTRACKED FILE WRITES IT AFTER THIS RETURNS, and that is
  * the story the guard is about rather than an inconvenience -- a file just
  * added is untracked, and an arm staging its plant through this helper measures
@@ -55,6 +72,9 @@ export function workspace(files: Record<string, string>): string {
   // branch name on a machine that has not chosen one, and a caller collecting a
   // spawned command's streams would find it in the bytes it is asserting on.
   execFileSync("git", ["init", "-q"], { cwd: root, stdio: "pipe" });
-  execFileSync("git", ["add", "-A"], { cwd: root, stdio: "pipe" });
+  execFileSync("git", ["-c", "core.excludesFile=/dev/null", "add", "-A"], {
+    cwd: root,
+    stdio: "pipe",
+  });
   return root;
 }
