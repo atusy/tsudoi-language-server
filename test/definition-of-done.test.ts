@@ -365,6 +365,48 @@ test("a check that never started GATES the run, with every other check green", a
   expect(tree.invocations()).toEqual(["alpha", "gamma"]);
 });
 
+test("a `run` this runner cannot execute FAITHFULLY is refused, never misread", async () => {
+  const tree = stageTree();
+  tree.declare([
+    // THE CASE VERBATIM, AND IT IS A MEASUREMENT AND NOT AN ILLUSTRATION: split
+    // on spaces, this spawns `true` WITH THE ARGUMENTS `&&` AND `false`, which
+    // exits 0 -- so it was REPORTED PASSED, where the shell every reader has in
+    // mind runs `false` and fails. A wrong colour on a check nobody can see is
+    // strictly worse than a red, and it is what this whole runner exists against.
+    { name: "conjunction", run: "true && false" },
+    // THE OTHER THREE MISREADINGS, ONE EACH: a redirection becomes two
+    // arguments, a quoted argument becomes two, and a glob is never expanded.
+    { name: "redirection", run: `true > ${join(tree.root, "written")}` },
+    { name: "quoted", run: `${tree.logged("q", 0)} "one two"` },
+    // A COMMAND THAT NAMES NO PROGRAM: refused for the same reason and reported
+    // the same way, which is the branch nothing else in this file reaches.
+    { name: "empty", run: "   " },
+    // THE POSITIVE CONTROL, AND WITHOUT IT AN OVER-BROAD REFUSAL SHIPS GREEN:
+    // every other `run` in this file is a bare path or `path name exit`, so a
+    // predicate that also refused flags or a `.` argument would redden
+    // `oxfmt --check .` in the real Definition of Done AND NOTHING HERE. This one
+    // carries both and must still run.
+    { name: "flagged", run: `${tree.logged("flagged", 0)} --check .` },
+    { name: "alpha", run: tree.logged("alpha", 0) },
+  ]);
+  const result = await tree.run();
+  expect(result.code).not.toBe(0);
+  expect(report(result)).toContain("Definition of Done: FAILED");
+  // THE REASON AND NOT ONLY THE WORD: a refusal a reader cannot act on sends
+  // them back to running the check by hand, which is the habit this replaces.
+  expect(report(result)).toMatch(/\[REFUSED] conjunction -- not run: [^\n]*shell/);
+  expect(report(result)).toContain("[REFUSED] redirection -- not run:");
+  expect(report(result)).toContain("[REFUSED] quoted -- not run:");
+  expect(report(result)).toContain("[REFUSED] empty -- not run:");
+  expect(report(result)).not.toContain("[PASSED] conjunction");
+  expect(report(result)).toContain("[PASSED] flagged -- exit 0");
+  expect(report(result)).toContain("[PASSED] alpha -- exit 0");
+  // AND NOTHING WAS RUN ON THEIR ACCOUNT. Whole-value: the refused four left no
+  // trace, the control ran with its flag, and the checks after them still ran --
+  // a refusal is reported, not an abort.
+  expect(tree.invocations()).toEqual(["flagged", "alpha"]);
+});
+
 test("the same run taken from a SUBDIRECTORY reads the same, checks included", async () => {
   const tree = stageTree();
   tree.declare([

@@ -17,9 +17,9 @@ import { fileURLToPath } from "node:url";
  * that is not another sentence: it is an exit code.
  *
  * IT IS NOT A SIXTH CHECK AND DOES NOT REPLACE THE FIVE. A check that runs every
- * check would run itself, unbounded; and the five are the list this reads. The
- * dashboard's `run` stays an executable shell command, which is what keeps
- * `bun test` a thing a maintainer can still type when debugging one of them.
+ * check would run itself, unbounded; and the five are the list this reads. Every
+ * `run` stays a line a maintainer can type at a prompt when debugging one of
+ * them, which is what keeps that list honest as documentation.
  *
  * THE LIST IS OBTAINED BY EXECUTING THE DASHBOARD AND PARSING THE JSON IT
  * PRINTS, AND THAT IS THE LOAD-BEARING DECISION HERE. A copy of the five in this
@@ -44,6 +44,21 @@ import { fileURLToPath } from "node:url";
  * absent from PATH, and a runner treating that as anything but non-green would
  * have shipped green over two checks that never ran.
  *
+ * SO `run` IS A COMMAND LINE THIS RUNNER SPAWNS -- A PROGRAM AND ITS
+ * SPACE-SEPARATED ARGUMENTS -- AND NOT A SHELL COMMAND, AND ONE IT CANNOT
+ * EXECUTE FAITHFULLY IS REFUSED RATHER THAN MISREAD. That is the price of the
+ * paragraph above, and it was being paid silently: MEASURED, `true && false`
+ * split on spaces ran `true` with the arguments `&&` and `false` and WAS
+ * REPORTED PASSED, where the shell every reader has in mind runs `false` and
+ * fails. Redirections, quoted arguments and globs were misread the same way. Of
+ * the three available answers -- run it through a shell and lose the missing
+ * binary; keep spawning and misread; refuse -- only refusing gives up neither
+ * reading, and a silently misread command is the worst outcome an instrument
+ * that exists to make failure loud can produce. WHAT IT COSTS, STATED RATHER
+ * THAN DISCOVERED: a Definition of Done wanting a pipeline puts it in a script
+ * and names the script, which is also a thing a maintainer can run by hand. The
+ * five declared today carry no shell syntax at all.
+ *
  * NOTHING HERE TOUCHES THE ENVIRONMENT OR RESOLVES A BINARY ITSELF. The
  * dashboard says `tsc --noEmit`, so `tsc` is what is spawned, found the way the
  * reader's own shell would find it -- measured at planning: running the checks
@@ -64,16 +79,54 @@ interface Check {
   run: string;
 }
 
-type Outcome = "passed" | "failed" | "unrunnable";
+/**
+ * The four states a check can be in, and they are four rather than two because
+ * WHAT A READER MUST DO NEXT DIFFERS: fix the code, install a tool, or fix the
+ * dashboard. `refused` is this runner's own decision and the other three are
+ * the machine's.
+ */
+type Outcome = "passed" | "failed" | "unrunnable" | "refused";
 
 interface CheckResult {
   check: Check;
   outcome: Outcome;
-  /** The check's own exit code, and null when it never started. */
+  /** The check's own exit code, and null when it never ran. */
   exit: number | null;
-  /** Why it never started, and null when it did. */
+  /** Why it never ran -- absent binary or refusal -- and null when it did. */
   reason: string | null;
   warnings: number;
+}
+
+/**
+ * A character that means something to a shell and nothing to this runner.
+ *
+ * WHY REFUSING IS RIGHT HERE AND NOT MERELY SAFE: everything on this list is
+ * SILENTLY MISREAD by a runner that splits on spaces, and a misreading has no
+ * colour of its own -- `true && false` reported PASSED. The list is deliberately
+ * wide, because the failure it prevents is invisible and the failure it causes
+ * is a named red naming the character. `*` and `?` are on it although this
+ * runner never expands them: a `run` carrying either means its author expected
+ * an expansion, and handing the glob through unexpanded is the same misreading
+ * one character smaller.
+ */
+const shellSyntax = /[|&;<>()$`\\"'*?[\]{}~#!\n\r\t]/;
+
+/** A command this runner can spawn, or the reason it will not try. */
+type Command = { words: [string, ...string[]]; refusal: null } | { words: null; refusal: string };
+
+function readCommand(run: string): Command {
+  const syntax = shellSyntax.exec(run);
+  if (syntax !== null) {
+    return {
+      words: null,
+      refusal: `it carries the shell syntax \`${syntax[0] === "\n" ? "\\n" : syntax[0]}\`, and this runner spawns the program directly instead of through a shell, so it would be misread rather than executed -- put it in a script and name the script`,
+    };
+  }
+  const [program, ...args] = run.split(" ").filter((word) => word !== "");
+  if (program === undefined) {
+    return { words: null, refusal: "it names no program at all" };
+  }
+  return { words: [program, ...args], refusal: null };
 }
 
 /**
@@ -143,17 +196,18 @@ function readChecks(root: string): Check[] {
  */
 function runCheck(root: string, check: Check): Promise<CheckResult> {
   return new Promise((settle) => {
-    const [program, ...args] = check.run.split(" ").filter((word) => word !== "");
-    if (program === undefined) {
+    const command = readCommand(check.run);
+    if (command.words === null) {
       settle({
         check,
-        outcome: "unrunnable",
+        outcome: "refused",
         exit: null,
-        reason: "the command is empty",
+        reason: command.refusal,
         warnings: 0,
       });
       return;
     }
+    const [program, ...args] = command.words;
     const child = spawn(program, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     child.stdout.on("data", (chunk: Buffer) => {
@@ -204,14 +258,24 @@ function runCheck(root: string, check: Check): Promise<CheckResult> {
  * cannot be audited by its reader, which is the same rule this project applies
  * to a hand-run measurement.
  */
+function verdict(result: CheckResult): string {
+  switch (result.outcome) {
+    case "passed":
+      return `[PASSED] ${result.check.name} -- exit ${result.exit}`;
+    case "failed":
+      return `[FAILED] ${result.check.name} -- exit ${result.exit}`;
+    // NEVER STARTED AND NOT RUN ARE PRINTED DIFFERENTLY BECAUSE THE READER'S
+    // NEXT MOVE DIFFERS: one is a tool to install, the other is a dashboard
+    // entry to rewrite. Two states printing the same text are one state.
+    case "unrunnable":
+      return `[UNRUNNABLE] ${result.check.name} -- never started: ${result.reason}`;
+    case "refused":
+      return `[REFUSED] ${result.check.name} -- not run: ${result.reason}`;
+  }
+}
+
 function line(result: CheckResult): string {
-  const status =
-    result.outcome === "passed"
-      ? `[PASSED] ${result.check.name} -- exit ${result.exit}`
-      : result.outcome === "failed"
-        ? `[FAILED] ${result.check.name} -- exit ${result.exit}`
-        : `[UNRUNNABLE] ${result.check.name} -- never started: ${result.reason}`;
-  return `  ${status} -- $ ${result.check.run}`;
+  return `  ${verdict(result)} -- $ ${result.check.run}`;
 }
 
 const root = resolve(process.argv[2] ?? fileURLToPath(new URL("../", import.meta.url)));
