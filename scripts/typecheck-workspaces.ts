@@ -8,6 +8,7 @@ import {
   prepareWorkspace,
   refuseMemberDirectoriesUnlikeTheUnscopedName,
   refuseMemberMappings,
+  refuseUncoveredFiles,
   refuseUncoveredPackages,
 } from "./workspaces.ts";
 
@@ -110,6 +111,23 @@ refuseMemberDirectoriesUnlikeTheUnscopedName(root, members);
 // type-checks GREEN, so running the checks first and the guard afterwards would
 // print a success no reader would then go back and disbelieve.
 refuseMemberMappings(root, members);
+// LAST AMONG THE REFUSALS, AND ITS REASON IS NOT THE OTHERS'. The three above
+// are questions about the workspace's own DECLARATIONS -- who the members are,
+// what each is called, how each resolves -- and this one is a question about the
+// TREE, which is only worth asking once those answers are believed. It is also
+// the widest: the three above name one manifest each, where this one can name
+// many files, and a run that printed the list first would bury a one-line fault
+// about a declaration underneath it.
+//
+// STILL NOT IN `prepareWorkspace`, for the reason already recorded beside the
+// name guard: that function is what the `bun test` preload runs, so a refusal
+// wired into it would abort every test run before a file loaded -- and the reds
+// this one must be watched producing would become unobservable.
+//
+// AND BEFORE ANY MEMBER IS CHECKED, because a member that type-checks green
+// says nothing about the files its config never looked at: printing that green
+// first would leave a reader disbelieving the refusal that follows it.
+refuseUncoveredFiles(root);
 let failed = false;
 for (const member of members) {
   if (!typeCheckMember(root, member)) {

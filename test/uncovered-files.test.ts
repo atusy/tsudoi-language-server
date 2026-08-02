@@ -1,0 +1,535 @@
+import { expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import process from "node:process";
+import { applySuiteDeadline } from "./helpers/deadline.ts";
+import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
+import { workspace } from "./helpers/workspace.ts";
+
+applySuiteDeadline();
+
+/**
+ * EVERY TYPESCRIPT FILE THIS CHECKOUT OWNS IS IN SOME COMPILER'S PROGRAM, driven
+ * against checkouts built here rather than against this one.
+ *
+ * WHY THIS IS NOT IN test/workspace-members.test.ts, WHICH SPAWNS THE SAME
+ * COMMAND: that file's subject is WHICH PACKAGES the fifth check reaches and
+ * what it says about each -- a member's own type error, a directory no list
+ * names, a mapping one directory down. This one's subject is a FILE, and the
+ * question is asked of the whole checkout rather than per member: the offender
+ * the arms below plant is usually in no member at all. Sharing a file would mean
+ * one header trying to say both, and the fixtures differ in the one respect that
+ * matters here -- these trees are built so that something is uncovered, which
+ * every tree over there is written to avoid.
+ *
+ * THE PROPERTY IS A `WHERE` PROPERTY END TO END, and that decides the shape of
+ * every arm below: each violation is a MOVE with no value changed -- a file
+ * dragged out of an included directory, an `include` narrowed, a file added
+ * under a path no glob reaches. So no arm reads a tsconfig's `include` array or
+ * pins that a member includes `src`; an arm doing that would assert WHAT where
+ * the property is WHERE, and would stay green through the move it exists to
+ * catch.
+ *
+ * AND EVERY ARM SPAWNS THE CHECK RATHER THAN CALLING THE FUNCTION. The refusal's
+ * two readers are private to scripts/workspaces.ts on purpose, so what is
+ * measured here is the exit code and the bytes a reader actually gets. The
+ * consequence is taken deliberately: on a GREEN run the guard says nothing at
+ * all, so no arm can read which programs it found -- that is asserted instead by
+ * a tree where a narrower reader must go red.
+ */
+
+/** A source file that type-checks, so a red from an arm is never its compiler's. */
+const typeChecks = "export const fine: number = 1;\n";
+
+/** What gets planted: it type-checks too, so only its LOCATION can be the fault. */
+const probe = "export const probe = 1;\n";
+
+/**
+ * A program's options, carrying NO `paths`, NO `types` -- and NO `skipLibCheck`.
+ *
+ * THE LAST ABSENCE IS LOAD-BEARING RATHER THAN COPIED. Declaration files leave
+ * the subject only where the programs themselves report that they skip checking
+ * them, so a tree built from these options is one in which a `.d.ts` IS in the
+ * subject -- which is what gives the emitted-declaration arm a subject and what
+ * the pair further down flips on purpose.
+ */
+const programOptions = {
+  target: "esnext",
+  module: "esnext",
+  moduleResolution: "bundler",
+  noEmit: true,
+  strict: true,
+  types: [],
+};
+
+/** A member's own check config: its source directory and nothing else. */
+const memberTsconfig = JSON.stringify({ compilerOptions: programOptions, include: ["src"] });
+
+/** A member's BUILD config, which emits a declaration beside a JavaScript file. */
+const memberBuildTsconfig = JSON.stringify({
+  compilerOptions: {
+    ...programOptions,
+    declaration: true,
+    outDir: "dist",
+    rootDir: "src",
+    noEmit: false,
+  },
+  include: ["src"],
+});
+
+/** Runs the fifth Definition-of-Done check over a root that already exists. */
+function check(root: string): Promise<CliResult> {
+  return runCommand("bun run scripts/typecheck-workspaces.ts", repoRoot, [root]);
+}
+
+/** Runs it over a throwaway checkout built from CONTENT, and disposes of it. */
+async function checkWorkspace(files: Record<string, string>): Promise<CliResult> {
+  const root = workspace(files);
+  try {
+    return await check(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/**
+ * THE ASYMMETRY THIS REPOSITORY LIVES WITH, STAGED AS A THROWAWAY: a member
+ * whose config reaches its source directory and nothing else, so anything
+ * dropped BESIDE that directory is run by whatever runs it and graded by
+ * nobody.
+ */
+function memberIncludingOnlyItsSource(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+    ...extra,
+  };
+}
+
+/** Where the arms below plant, inside the member and outside its source. */
+const besideTheSource = join("packages", "late", "probe.ts");
+
+test("a file beside a member whose config includes only its source is reported", async () => {
+  const result = await checkWorkspace(memberIncludingOnlyItsSource({ [besideTheSource]: probe }));
+
+  expect(result.stderr).toContain(besideTheSource);
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR FOR THE TWO ARMS ABOVE AND BELOW, and it carries what a bare `exit 1`
+// cannot: a check that failed for an apparatus reason -- no compiler, no
+// enumerator, a root it could not read -- reddens identically. Only the same
+// tree with the plant removed going green says the red came from the location of
+// one file.
+test("the same member with nothing beside its source passes", async () => {
+  const result = await checkWorkspace(memberIncludingOnlyItsSource());
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+// THE STORY'S OWN MOMENT, WHICH IS A FILE THAT HAS JUST BEEN ADDED: it is
+// written after the throwaway is staged, so no index anywhere mentions it. A
+// candidate enumeration reading tracked files alone reddens ONE RUN AFTER the
+// commit that introduced the hazard, which is the shape this arm exists to
+// foreclose -- and the arm above cannot catch it, because everything the
+// workspace helper writes is staged.
+test("a file that has only just been added, and no index mentions, is reported", async () => {
+  const root = workspace(memberIncludingOnlyItsSource());
+  try {
+    writeFileSync(join(root, besideTheSource), probe);
+
+    const result = await check(root);
+
+    expect(result.stderr).toContain(besideTheSource);
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A CANDIDATE SET THAT HONOURS A PERSON'S IGNORE FILE DIFFERS PER DEVELOPER, and
+ * this is the arm that would otherwise measure nothing: an implementation that
+ * simply fails to consult the personal ignore file passes it, and so does the
+ * one that consults it -- unless the file is PROVED to be in effect on the run
+ * that just happened.
+ *
+ * SO THE CONTROL IS RUN FIRST AND IN THE SAME ENVIRONMENT: git's own enumeration
+ * of untracked files, asked exactly as the guard's would ask it WITHOUT the
+ * override, must not mention the plant. Only then does the guard reporting it
+ * mean the override did the work.
+ *
+ * MEASURED ON THIS MACHINE, which is why this arm exists at all rather than
+ * being a hypothetical: the personal ignore file here hides a file that is
+ * tracked and visible in every other checkout of this repository.
+ *
+ * THE CONFIGURATION IS HANDED TO BOTH CHILDREN EXPLICITLY, not left in this
+ * process for them to inherit -- MEASURED on bun 1.3.13: a child spawned after
+ * `process.env` is written does not see the change. Inheriting would have left
+ * this arm asserting against an environment the check never received, which is
+ * the same green as an arm with no subject at all.
+ */
+test("a personal ignore file does not shrink the subject", async () => {
+  const root = workspace(memberIncludingOnlyItsSource());
+  try {
+    writeFileSync(join(root, besideTheSource), probe);
+    writeFileSync(join(root, "personal-ignore"), "probe.ts\n");
+    writeFileSync(
+      join(root, "personal-gitconfig"),
+      `[core]\n\texcludesFile = ${join(root, "personal-ignore")}\n`,
+    );
+    const env = { ...process.env, GIT_CONFIG_GLOBAL: join(root, "personal-gitconfig") };
+    const honoured = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
+      cwd: root,
+      encoding: "utf8",
+      env,
+    });
+
+    const result = await runCommand(
+      "bun run scripts/typecheck-workspaces.ts",
+      repoRoot,
+      [root],
+      env,
+    );
+
+    expect(honoured.stdout).not.toContain("probe.ts");
+    expect(result.stderr).toContain(besideTheSource);
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A ROOT WHOSE CONFIG DECLARES NO `include` AT ALL, which is the arm that
+ * decides WHICH READER answers `is this file in the program`.
+ *
+ * MEASURED, AND IT IS WHY THE JSON GLOBS ARE NOT THE READER: the default include
+ * a compiler applies to a config with no `include` does NOT reach a directory
+ * whose name begins with a dot. A hand-written expansion of that wildcard says
+ * the opposite, calls the plant covered, and this arm is the only one that
+ * notices.
+ */
+function rootDeclaringNoInclude(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ compilerOptions: programOptions }),
+    "src/root.ts": typeChecks,
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+    ...extra,
+  };
+}
+
+/** Where that arm plants: a directory the default include cannot see. */
+const underADotDirectory = join(".tooling", "probe.ts");
+
+test("a file under a dot directory is reported, where the default include does not reach", async () => {
+  const result = await checkWorkspace(rootDeclaringNoInclude({ [underADotDirectory]: probe }));
+
+  expect(result.stderr).toContain(underADotDirectory);
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR, and it is what makes the arm above about the DOT rather than about
+// the tree: the same root, the same member, the same absence of an `include` --
+// and the check is silent. A guard reporting everything it enumerated would fail
+// here and pass above.
+test("the same root with nothing under a dot directory passes", async () => {
+  const result = await checkWorkspace(rootDeclaringNoInclude());
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * A FILE NO `include` REACHES AND AN IMPORT DOES, which is the arm the
+ * closure-reading implementation fails.
+ *
+ * WHY BEING IMPORTED IS NOT COVERAGE, STATED AS A REFUSAL RATHER THAN AN
+ * OVERSIGHT: such a file is checked for exactly as long as somebody imports it,
+ * and the day that import is deleted it stops being checked with nothing said.
+ * The durable property is that a program's own inputs reach the file, so the
+ * reader takes the program's ROOT FILES and not what resolution dragged in
+ * behind them. The cost is named: this arm reports a file that tsc really is
+ * checking today.
+ */
+function memberImporting(directory: string, specifier: string): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": `import { probe } from "${specifier}";\nexport const used: number = probe;\n`,
+    [join("packages", "late", directory, "probe.ts")]: "export const probe: number = 1;\n",
+  };
+}
+
+test("a file reached only by an import is reported", async () => {
+  const result = await checkWorkspace(memberImporting("unreached", "../unreached/probe"));
+
+  expect(result.stderr).toContain(join("packages", "late", "unreached", "probe.ts"));
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR IS THE SAME FILE MOVED UNDER THE INCLUDED PATH, which is the whole
+// property in one edit: nothing about the file's CONTENT changes between these
+// two runs, and the colour follows where it sits.
+test("the same file moved under the included path passes", async () => {
+  const result = await checkWorkspace(memberImporting(join("src", "reached"), "./reached/probe"));
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * A MEMBER SPLIT ACROSS TWO CONFIGS, WHICH MUST STAY GREEN -- and it is here for
+ * ONE degenerate implementation, the one that is green on this repository and on
+ * every other arm in this file: A READER THAT FINDS PROGRAMS BY THE LITERAL NAME
+ * `tsconfig.json`.
+ *
+ * NO TRACKED FILE IN THIS CHECKOUT IS COVERED ONLY BY A BUILD CONFIG, so nothing
+ * that exists gives that implementation a subject; this tree is built to be the
+ * subject. `src/only-in-build.ts` is reached by the BUILD config alone, and a
+ * reader that skipped it would report a file that is compiled and published.
+ *
+ * THE EMITTED ARTIFACT IS IGNORED HERE, deliberately and by a `.gitignore` this
+ * tree carries: that is the shape of a real checkout, and it keeps this arm's
+ * red owned by the split rather than shared with the emitted-declaration arm
+ * below, whose tree carries no such file.
+ */
+function memberSplitAcrossTwoConfigs(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    ".gitignore": "dist/\n",
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": JSON.stringify({
+      compilerOptions: programOptions,
+      include: ["test"],
+    }),
+    "packages/late/tsconfig.build.json": memberBuildTsconfig,
+    "packages/late/src/only-in-build.ts": typeChecks,
+    "packages/late/test/thing.ts": typeChecks,
+    ...extra,
+  };
+}
+
+test("a member split across a check config and a build config passes", async () => {
+  const result = await checkWorkspace(memberSplitAcrossTwoConfigs());
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+// THE PLANTED PAIR FOR THE ARM ABOVE, without which that green is satisfied by a
+// guard that reports nothing at all on a tree holding two configs.
+test("the same split member with a file outside both configs is reported", async () => {
+  const result = await checkWorkspace(memberSplitAcrossTwoConfigs({ [besideTheSource]: probe }));
+
+  expect(result.stderr).toContain(besideTheSource);
+  expect(result.code).not.toBe(0);
+});
+
+/**
+ * A MEMBER THAT EMITS A DECLARATION, AND NO `.gitignore` TO HIDE IT -- so the
+ * emitted `dist/index.d.ts` is untracked, unignored, and in no program's inputs.
+ *
+ * A FILE THE COMPILER WROTE IS NOT A FILE THE COMPILER MUST INCLUDE, which is
+ * the whole of the subtraction this arm defends: the check BUILDS before it
+ * reads, so without it every throwaway tree that builds would redden -- and the
+ * emitted declaration would be reported to a reader who cannot act on it.
+ * MEASURED with the subtraction removed: this arm reports
+ * packages/emitter/dist/index.d.ts.
+ *
+ * ON THIS REPOSITORY THE SUBTRACTION IS A NO-OP, since every `dist/` here is
+ * ignored -- which is exactly why it is defended by a throwaway rather than by a
+ * comment.
+ */
+function memberEmittingItsDeclaration(): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/emitter/package.json": JSON.stringify({ name: "emitter" }),
+    "packages/emitter/tsconfig.json": memberTsconfig,
+    "packages/emitter/tsconfig.build.json": memberBuildTsconfig,
+    "packages/emitter/src/index.ts": typeChecks,
+  };
+}
+
+test("a member's emitted declaration is not reported as uncovered", async () => {
+  const result = await checkWorkspace(memberEmittingItsDeclaration());
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * WHETHER A DECLARATION FILE IS IN THE SUBJECT AT ALL, READ FROM THE PROGRAMS'
+ * OWN REPORTED SETTING AND NOT FROM ITS NAME.
+ *
+ * WHY `.d.ts` IS THE ONE EXCLUSION: with library checking skipped -- which every
+ * config in this repository sets -- a declaration file is IN a program's inputs
+ * and its body is checked by nothing, so membership is the wrong question to ask
+ * about it. MEASURED: a local `.d.ts` carrying two errors gives exit 0 with the
+ * setting on and exit 1 naming both with it off.
+ *
+ * SO THE EXCLUSION IS CONDITIONAL, AND THE PAIR IS THE POINT: flip the setting
+ * off and the same file RE-ENTERS the subject. A guard that simply never
+ * mentions a `.d.ts` has a NAME in it where this has a property.
+ */
+function declarationNoProgramIncludes(skipsLibCheck: boolean): Record<string, string> {
+  const options = skipsLibCheck ? { ...programOptions, skipLibCheck: true } : programOptions;
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ compilerOptions: options, exclude: ["packages"] }),
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": JSON.stringify({ compilerOptions: options, include: ["src"] }),
+    "packages/late/src/index.ts": typeChecks,
+    [join("packages", "late", "types", "legacy.d.ts")]: "declare const legacy: number;\n",
+  };
+}
+
+test("a declaration file no program includes is left alone while lib checking is skipped", async () => {
+  const result = await checkWorkspace(declarationNoProgramIncludes(true));
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+test("the same declaration file is reported once a program stops skipping lib checking", async () => {
+  const result = await checkWorkspace(declarationNoProgramIncludes(false));
+
+  expect(result.stderr).toContain(join("packages", "late", "types", "legacy.d.ts"));
+  expect(result.code).not.toBe(0);
+});
+
+/**
+ * A CONFIG THAT IS NEITHER THE ROOT'S NOR ANY MEMBER'S, which is what makes
+ * `every tracked config is a program` a property rather than a description of
+ * this repository's layout.
+ *
+ * AND THE OTHER HALF THE PAIR MEASURES: the root program in this tree matches
+ * NOTHING -- it excludes both directories that hold TypeScript -- and the
+ * compiler answers that with a diagnostic and a NON-ZERO EXIT. A reader that
+ * treated a failed run as a reason to abort would redden here and in about
+ * twenty existing arms; one that treated it as `this config covers everything`
+ * would go green with the plant. It contributes zero.
+ */
+function configOutsideEveryMember(): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages", "tools"] }),
+    "tools/tsconfig.json": JSON.stringify({ compilerOptions: programOptions, include: ["src"] }),
+    "tools/src/only-here.ts": typeChecks,
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+  };
+}
+
+test("a config outside the root and outside every member still covers its own files", async () => {
+  const result = await checkWorkspace(configOutsideEveryMember());
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * THE SAME TREE WITH THAT CONFIG GONE FROM THE WORKTREE AND STILL IN THE INDEX,
+ * which is the one shape where `the compiler could not read this` and `this
+ * program covers nothing` are the same observation.
+ *
+ * IT MUST BE REFUSED BY NAME. Swallowing the failure and calling the program
+ * empty is not merely quieter -- it is LOUDER AND WRONG: every file that config
+ * covered becomes an offender, and the run answers a broken config with a list
+ * of innocent sources. So the second assertion is the load-bearing one.
+ */
+test("a tracked config the compiler cannot read is refused by name", async () => {
+  const root = workspace(configOutsideEveryMember());
+  try {
+    unlinkSync(join(root, "tools", "tsconfig.json"));
+
+    const result = await check(root);
+
+    expect(result.stderr).toContain(join("tools", "tsconfig.json"));
+    expect(result.stderr).not.toContain("only-here.ts");
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * A ROOT THAT IS NOT A CHECKOUT AT ALL.
+ *
+ * `I FOUND NO FILES` AND `I WAS GIVEN NO WAY TO FIND THEM` MUST NOT PRINT THE
+ * SAME THING -- the asymmetry `declaredMembers` already keeps for `workspaces`,
+ * applied to the enumerator this refusal depends on. An implementation that read
+ * a failed enumeration as an empty one would exit 0 over a tree where nothing
+ * was inspected, which is the quietest possible way for this check to stop
+ * meaning anything.
+ */
+test("a root that is not a checkout is refused rather than read as holding nothing", async () => {
+  const root = workspace(memberIncludingOnlyItsSource());
+  try {
+    rmSync(join(root, ".git"), { recursive: true, force: true });
+
+    const result = await check(root);
+
+    expect(result.stderr).toContain(root);
+    expect(result.stderr).toContain("git");
+    // NOT A FILE REPORT: the same tree with its repository intact is green, so
+    // anything named here would be a file this guard invented.
+    expect(result.stderr).not.toContain(join("src", "index.ts"));
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * The allowance this one arm needs, MEASURED rather than guessed: it is the only
+ * arm whose root is THIS repository, so it pays for a full build of three
+ * packages before the refusal it is about can speak.
+ *
+ * A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE, which
+ * test/workspace-members.test.ts already records at length: were this to time
+ * out under load, it would read as `the guard refused this repository`, the one
+ * conclusion it exists to make unavailable.
+ */
+const oneArmBuildsThisWholeRepository = 120_000;
+
+/**
+ * THIS REPOSITORY HAS NO SUCH FILE, and this is the weakest arm here -- kept for
+ * what it pairs with rather than for its own colour.
+ *
+ * WHAT IT CANNOT SAY, stated because an empty answer and a reader that opened
+ * nothing are the same observation: nothing in a green run reports how many
+ * files were examined. What stands behind it is the SAME MEASUREMENT reddening
+ * on other roots -- every planted arm above is this command reading a checkout
+ * with one file out of place -- and the arm below it, which makes a failure to
+ * enumerate loud instead of empty. The reading on THIS root, taken by hand and
+ * recorded in the sprint: two files planted at two sites uncovered by different
+ * mechanisms, both reported, both green when removed.
+ *
+ * BY SPRINT 9'S RULE ITS EMPTINESS CAN NEVER BE THE FIRST THING TO FAIL: were a
+ * file here uncovered, this arm and the fifth check itself would redden
+ * together, and the check names the file.
+ */
+test(
+  "this repository holds no TypeScript file that no program includes",
+  async () => {
+    const result = await check(repoRoot);
+
+    expect(result.stderr).toBe("");
+    expect(result.code).toBe(0);
+  },
+  oneArmBuildsThisWholeRepository,
+);

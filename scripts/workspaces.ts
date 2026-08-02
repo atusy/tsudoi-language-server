@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, globSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, relative, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -342,6 +342,9 @@ function excludedDirectories(root: string, entry: string): readonly string[] {
 /** The checkout these scripts ship in, which is where their compiler is found. */
 const toolRoot = fileURLToPath(new URL("../", import.meta.url));
 
+/** The compiler this repository declares, reached without asking PATH. */
+const compiler = join(toolRoot, "node_modules", ".bin", "tsc");
+
 /**
  * Compiles one package's published artifact, where one is configured.
  *
@@ -604,4 +607,227 @@ export function refuseMemberMappings(root: string, members: readonly string[]): 
       );
     }
   }
+}
+
+/**
+ * What one enumeration of the checkout reports, as paths relative to the root.
+ *
+ * A FAILED ENUMERATION IS NOT AN EMPTY ONE, which is the same asymmetry
+ * `declaredMembers` keeps for `workspaces` and matters more here: this is the
+ * only thing that can tell a source somebody wrote from an installed stranger or
+ * a built artifact, so a root where it cannot run is a root where the refusal
+ * below inspects nothing AND SAYS NOTHING. `I found no files` and `I was given
+ * no way to find them` would then be the same exit 0.
+ *
+ * THE SEPARATOR IS A NUL BECAUSE THE ALTERNATIVE IS SILENT: git QUOTES a path
+ * holding a newline or a non-ASCII byte when it writes newline-separated output,
+ * and a quoted path matches no file on disk -- so such a file would be enumerated
+ * as a candidate, matched against nothing, and reported as uncovered forever.
+ */
+function checkoutPaths(root: string, args: readonly string[]): readonly string[] {
+  const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  if (result.error !== undefined || result.status !== 0) {
+    throw new Error(
+      `${root} could not be enumerated as a checkout -- \`git ${args.join(" ")}\` did not answer (${result.error?.message ?? result.stderr.trim()}). Nothing here can say which TypeScript files this tree owns, which is not the same as its owning none.`,
+    );
+  }
+  return result.stdout.split("\0").filter((one) => one.length > 0);
+}
+
+/** TypeScript somebody wrote, which is what this refusal is about. */
+const typeScriptFile = /\.(?:[cm]?ts|tsx)$/;
+
+/** The one shape excluded from that, and only while the programs say to. */
+const declarationFile = /\.d\.[cm]?ts$/;
+
+/** A tsconfig, wherever it sits and whatever suffix its author gave it. */
+const configFile = /^tsconfig[^/]*\.json$/;
+
+/** One compiler program as this refusal reads it. */
+interface Program {
+  /** Its config, relative to the root, which is what a message can name. */
+  readonly config: string;
+  /** The files its own `files`, `include` or default include matched. */
+  readonly roots: readonly string[];
+  /** Where it WRITES, if it writes. */
+  readonly outDir: string | undefined;
+  /** Whether it reports that it skips checking declaration bodies. */
+  readonly skipsLibCheck: boolean;
+}
+
+/**
+ * Reads one program the way the compiler reads it.
+ *
+ * `--noResolve` IS THE WHOLE READING AND NOT AN OPTIMISATION: without it the
+ * list is the IMPORT CLOSURE, and a file that no `include` reaches is reported
+ * as covered for exactly as long as somebody imports it. The day that import
+ * goes, the file stops being checked and nothing says so. What is durable is
+ * that a program's own inputs reach the file, so the roots are the answer.
+ *
+ * AND THE FILE LIST RATHER THAN THE JSON GLOBS, MEASURED: the default include
+ * does NOT reach a directory or a file whose name begins with a dot, so a
+ * hand-written expansion of that wildcard says the opposite of what the compiler
+ * does -- for a file nothing else in this repository would notice either.
+ *
+ * THE EXIT CODE IS DELIBERATELY NOT THE DISCRIMINATOR, and each half of that is
+ * measured on tsc 7.0.2: a config whose include matches NOTHING prints TS18003
+ * and EXITS 1 while still reporting the default library -- a shape both files
+ * that spawn this check stage in about twenty trees -- and a config with an
+ * unresolvable `extends` prints TS5083 and EXITS 1 while still reporting its own
+ * roots, which the type check right after this one refuses by name. A reader
+ * keyed to the exit would abort on two configs the compiler read fine. What
+ * decides instead is whether the compiler could READ THE CONFIG AT ALL, asked of
+ * the reader that answers it: `--showConfig` exits 1 with TS5058 for a config it
+ * cannot open, and exits 0 -- MEASURED -- even for one whose JSON is malformed,
+ * which it recovers from as an empty configuration.
+ */
+function readProgram(root: string, config: string): Program {
+  const absolute = join(root, config);
+  const shown = spawnSync(compiler, ["-p", absolute, "--showConfig"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  if (shown.status !== 0) {
+    // BY NAME, AND THE ALTERNATIVE IS LOUDER AND WRONG: a program treated as
+    // covering nothing turns every file it did cover into an offender, so a run
+    // answers one broken config with a list of innocent sources.
+    throw new Error(
+      `${config} is tracked here and the compiler cannot read it, so nothing can say which files it covers:\n${shown.stdout}${shown.stderr}`,
+    );
+  }
+  const effective = JSON.parse(shown.stdout) as {
+    compilerOptions?: { outDir?: unknown; skipLibCheck?: unknown };
+  };
+  const outDir = effective.compilerOptions?.outDir;
+  const listed = spawnSync(compiler, ["-p", absolute, "--listFilesOnly", "--noResolve"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  return {
+    config,
+    // A DIAGNOSTIC IS NOT A PATH: the same stream carries both, so what is taken
+    // is what looks like an absolute path to a TypeScript file. A diagnostic
+    // about a config carries the config's name and a position, so it ends in
+    // neither.
+    roots: listed.stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => isAbsolute(line) && typeScriptFile.test(line)),
+    // RESOLVED AGAINST THE CONFIG AND NOT THE ROOT, which is what `outDir` means
+    // and what `prepareWorkspace` already relies on: no build config here uses
+    // `extends`, so a relative output directory is relative to the file holding
+    // it.
+    outDir: typeof outDir === "string" ? resolve(dirname(absolute), outDir) : undefined,
+    skipsLibCheck: effective.compilerOptions?.skipLibCheck === true,
+  };
+}
+
+/**
+ * Throws when a TypeScript file this checkout owns is in no compiler's program
+ * -- the state in which a file is edited, run, and graded by nothing, while
+ * every command in the Definition of Done exits 0.
+ *
+ * THE COMPILERS' OWN FILE LISTS ARE THE ONE DECIDER. Two readers answering `is
+ * this file covered` is two answers to one question that can disagree with
+ * everything green, and the JSON-glob reader is the unfaithful one: it walks
+ * directories holding a manifest, so it ran straight over the file this refusal
+ * was filed for and said nothing.
+ *
+ * THE SUBJECT IS TRACKED AND UNTRACKED BUT NOT IGNORED, because the moment this
+ * exists for is a file JUST ADDED: reading the index alone would leave the
+ * refusal reddening one run AFTER the commit that introduced the hazard. The two
+ * standing exclusions come free and are READ rather than restated -- the ignore
+ * file already names the installed strangers and every built artifact, in a file
+ * edited elsewhere for its own reasons.
+ *
+ * A PERSONAL IGNORE FILE MUST NOT SHRINK IT, measured: a global ignore can hide
+ * a file that is tracked and visible in every other checkout, so a subject that
+ * honoured one would differ per developer. RESIDUE, NAMED RATHER THAN FIXED: a
+ * per-checkout `info/exclude` cannot be neutralised the same way, and a file
+ * under an ignored directory is not seen at all -- which this repository has one
+ * of, deliberately, to hold what it does not account for.
+ *
+ * PROGRAMS ARE ENUMERATED FROM TRACKED FILES ALONE AND THE ASYMMETRY IS THE
+ * POINT: a program is part of the declared verification surface and must be
+ * COMMITTED to count, where a candidate is a hazard the moment it exists. Taking
+ * untracked configs too would let a stray `tsconfig.tmp.json` claiming the whole
+ * tree mark everything covered -- a silent, permanent green. Tracked-only fails
+ * the other way, reddening until the new config is added, which is loud and
+ * self-correcting.
+ *
+ * TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT. A path under a program's own
+ * output directory is a file the compiler WROTE, and this check BUILDS before it
+ * reads: without it every throwaway tree that builds reddens, since a throwaway
+ * carries no ignore file and its emitted declaration is untracked and in no
+ * program's roots. A path under an installed-dependency directory will never be
+ * ours to check, for the reason already recorded beside the package walker.
+ *
+ * DECLARATION FILES ARE THE ONE EXCLUSION AND IT IS READ, NOT NAMED. With
+ * library checking skipped -- which every config here sets -- a `.d.ts` is in a
+ * program's inputs and its body is checked by NOTHING, so membership is the
+ * wrong question to ask about it; MEASURED, one carrying two errors exits 0 with
+ * the setting on and exits 1 naming both with it off. So the exclusion is read
+ * from the programs' own reported setting and lapses the moment any of them
+ * stops skipping. WHAT THIS CANNOT SEPARATE, and the guard is named for the half
+ * it has: `included in a program` is not `type-checked`.
+ *
+ * NO EXEMPTION LIST, AND SHIPPING WITHOUT ONE IS A DECISION. MEASURED: every
+ * candidate in this checkout is matched by an include of at least one program,
+ * so a list would ship with no member -- and a facility with no user is where a
+ * name is appended later with no review. The day a file genuinely needs to be
+ * uncovered, the repair is to widen the program that ought to hold it, and this
+ * refusal is what forces that conversation.
+ *
+ * WHAT IT DOES NOT DEFEND, DISCLOSED: a file covered by TWO programs stays green
+ * when one stops covering it. The framework's source is in both its check config
+ * and its build config, so narrowing one alone reddens nothing here. The
+ * property is `some program includes it`, not per-program coverage.
+ */
+export function refuseUncoveredFiles(root: string): void {
+  const tracked = checkoutPaths(root, ["ls-files", "-z"]);
+  const visible = checkoutPaths(root, [
+    // NOT DECORATION: this machine's own global ignore hides a file that is
+    // tracked in every checkout of this repository, and `--exclude-standard`
+    // would honour it.
+    "-c",
+    "core.excludesFile=/dev/null",
+    "ls-files",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "-z",
+  ]);
+  const installed = (path: string): boolean => path.split("/").includes("node_modules");
+  const programs = tracked
+    .filter((path) => configFile.test(basename(path)) && !installed(path))
+    .map((config) => readProgram(root, config));
+  const covered = new Set(programs.flatMap((program) => program.roots));
+  const written = programs.flatMap((program) =>
+    program.outDir === undefined ? [] : [program.outDir],
+  );
+  const declarationsAreCheckedByNothing = programs.every((program) => program.skipsLibCheck);
+  const offenders = visible.filter((path) => {
+    if (!typeScriptFile.test(path) || installed(path)) {
+      return false;
+    }
+    if (declarationsAreCheckedByNothing && declarationFile.test(path)) {
+      return false;
+    }
+    const absolute = join(root, path);
+    if (written.some((outDir) => absolute.startsWith(outDir + sep))) {
+      return false;
+    }
+    return !covered.has(absolute);
+  });
+  if (offenders.length === 0) {
+    return;
+  }
+  // EVERY OFFENDER AND NOT THE FIRST, which is the opposite of the choice
+  // `refuseMemberDirectoriesUnlikeTheUnscopedName` makes and for the reason that
+  // separates them: there the fault is one manifest and the rest are correct,
+  // where a directory nothing includes usually holds several files and a reader
+  // told about one of them would fix it and meet the next on the following run.
+  throw new Error(
+    `${offenders.join(", ")} ${offenders.length === 1 ? "is a TypeScript file" : "are TypeScript files"} in this checkout that no tsconfig includes, so nothing type-checks ${offenders.length === 1 ? "it" : "them"}. Widen the \`include\` of the program that ought to hold what is named here -- there is deliberately no list to exempt a file from this check.`,
+  );
 }

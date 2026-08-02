@@ -89,11 +89,20 @@ export function runCli(runtime: Runtime, args: readonly string[]): Promise<CliRe
  * same reason LspSession.startCommand takes one: a route a reader is told to
  * follow and a route a test executes must be the same bytes, not two things
  * kept equal by hand.
+ *
+ * THE ENVIRONMENT IS HANDED OVER EXPLICITLY OR NOT AT ALL, and the parameter
+ * exists because the obvious alternative DOES NOT WORK HERE -- MEASURED on bun
+ * 1.3.13: a child spawned after `process.env.X = ...` is set does not see `X`,
+ * where the same call with `env` passed does. A caller whose subject IS the
+ * environment (a per-person git configuration, say) would otherwise be asserting
+ * against a variable the child never received, and would pass for want of a
+ * subject.
  */
 export function runCommand(
   command: string,
   cwd: string,
   args: readonly string[] = [],
+  env?: Record<string, string | undefined>,
 ): Promise<CliResult> {
   return new Promise((resolve, reject) => {
     const [program, ...commandArgs] = command.split(" ");
@@ -103,6 +112,7 @@ export function runCommand(
     }
     const child = spawn(program, [...commandArgs, ...args], {
       cwd,
+      env,
       stdio: ["pipe", "pipe", "pipe"],
     });
     // Kept whole and undecoded until close. Decoding each chunk as it arrives
