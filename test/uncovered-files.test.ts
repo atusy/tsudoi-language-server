@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import process from "node:process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
@@ -899,6 +900,113 @@ test("the same tree passes once the referenced config is named so the enumeratio
 
   expect(result.stderr).toBe("");
   expect(result.code).toBe(0);
+});
+
+/**
+ * A REAL SUBMODULE, MOUNTED INTO A THROWAWAY, WHICH IS THE ONE CLASS OF FILE
+ * THIS SUBJECT DELIBERATELY DOES NOT REACH.
+ *
+ * `git submodule add` NEEDS THREE THINGS THIS SUITE OTHERWISE AVOIDS, and each
+ * is passed on the command line rather than left to the machine: a LOCAL
+ * transport, which git refuses by default; an IDENTITY, because the donor needs
+ * a commit and the workspace helper deliberately stops at `add`; and the same
+ * ignore-file override every other staging here uses.
+ *
+ * THE DONOR IS ITS OWN CHECKOUT AND IS DISPOSED OF WITH THE TREE, which is what
+ * makes this a submodule rather than a directory: the file under test lives in
+ * ANOTHER REPOSITORY'S history, at a commit the outer tree pins.
+ *
+ * THE MOUNT POINT IS RELATIVE AND THAT IS NOT STYLE, MEASURED: this machine's
+ * temporary directory is reached through `/var`, which is a symbolic link, and
+ * `git submodule add` REFUSES an absolute path holding one -- `expected '/var'
+ * in submodule path ... not to be a symbolic link`. Relative to the root it is
+ * spawned in, the question never arises.
+ */
+function withSubmodule(root: string, at: string, files: Record<string, string>): void {
+  const donor = mkdtempSync(join(tmpdir(), "tsudoi-submodule-"));
+  const identity = ["-c", "user.email=suite@example.invalid", "-c", "user.name=suite"];
+  for (const [path, contents] of Object.entries(files)) {
+    mkdirSync(dirname(join(donor, path)), { recursive: true });
+    writeFileSync(join(donor, path), contents);
+  }
+  execFileSync("git", ["init", "-q"], { cwd: donor, stdio: "pipe" });
+  execFileSync("git", [...identity, "add", "-A"], { cwd: donor, stdio: "pipe" });
+  execFileSync("git", [...identity, "commit", "-qm", "donor"], { cwd: donor, stdio: "pipe" });
+  execFileSync(
+    "git",
+    [
+      "-c",
+      "protocol.file.allow=always",
+      "-c",
+      "core.excludesFile=/dev/null",
+      ...identity,
+      "submodule",
+      "add",
+      "-q",
+      donor,
+      at,
+    ],
+    { cwd: root, stdio: "pipe" },
+  );
+  rmSync(donor, { recursive: true, force: true });
+}
+
+/**
+ * A SUBMODULE'S TYPESCRIPT IS NOT THIS CHECKOUT'S TO GRADE, and the ruling is
+ * pinned here in both directions rather than left as the enumerator's accident.
+ *
+ * MEASURED, AND IT IS WHAT DECIDES THE RULING: `git ls-files --recurse-submodules`
+ * works and the same flag WITH `--others` is REFUSED -- exit 128, `unsupported
+ * mode` -- so recursing could only ever reach a submodule's TRACKED files. That
+ * is one subject with two rules, and the half it would lose inside a submodule
+ * is a file JUST ADDED, which is the moment this whole refusal exists for.
+ * Substantively: no `include` in this tree can be widened to cover somebody
+ * else's history, so the report would be a permanent red nothing here repairs.
+ *
+ * TWO RUNS OVER ONE TREE, AND THE SECOND IS WHAT MAKES THE FIRST MEAN ANYTHING.
+ * A green over a tree with a submodule is satisfied by a check that examined
+ * nothing at all, so the SAME FILE CONTENT is then written one directory up,
+ * OUTSIDE the submodule -- and that run is red naming it. Nothing about the file
+ * changes between the runs; only which repository holds it does, which is the
+ * `where` property this file is built on, one boundary further out than
+ * anywhere else here.
+ *
+ * AND THE SECOND RUN ASSERTS THE SENTENCE, not only the colour: a reader handed
+ * a file list takes it for the whole answer, and inside a submodule it is not
+ * the answer at all. That is the half that stops this ruling from being a silent
+ * exclusion.
+ */
+test("a submodule's TypeScript is outside the subject, and the refusal says so", async () => {
+  const root = workspace(memberIncludingOnlyItsSource());
+  // MOUNTED WHERE A PLANT IS ALREADY KNOWN TO BE UNCOVERED, which the first
+  // spelling of this arm got wrong: at the tree's top the ROOT program's default
+  // include reaches everything outside `packages`, so the control plant was
+  // covered and the run was silent for a reason that had nothing to do with
+  // submodules. Inside the member, one directory beside its `src`, both sites
+  // are in no program's list -- so the only thing separating them is which
+  // repository holds them.
+  const vendor = join("packages", "late", "vendor");
+  const inside = join(vendor, "pkg", "probe.ts");
+  const outside = join(vendor, "probe.ts");
+  try {
+    withSubmodule(root, join(vendor, "pkg"), { "probe.ts": probe });
+
+    const submoduleOnly = await check(root);
+
+    mkdirSync(join(root, vendor), { recursive: true });
+    writeFileSync(join(root, outside), probe);
+    const alsoOutside = await check(root);
+
+    expect(submoduleOnly.stderr).toBe("");
+    expect(submoduleOnly.code).toBe(0);
+    expect(alsoOutside.stderr).toContain(outside);
+    expect(alsoOutside.stderr).not.toContain(inside);
+    expect(alsoOutside.stderr).toContain(join(vendor, "pkg"));
+    expect(alsoOutside.stderr).toContain("submodule");
+    expect(alsoOutside.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 /**

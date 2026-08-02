@@ -682,6 +682,25 @@ function checkoutPaths(root: string, args: readonly string[]): readonly string[]
   return result.stdout.split("\0").filter((one) => one.length > 0);
 }
 
+/**
+ * The submodules this checkout mounts, which is where its subject STOPS.
+ *
+ * READ AS THE MODE AND NOT AS A DIRECTORY THAT LOOKS ODD: a submodule is one
+ * index entry at mode 160000, and asking git for the mode is the only reading
+ * that cannot be fooled by a tracked symlink or by a name.
+ *
+ * IT IS ASKED ONLY WHEN SOMETHING IS ALREADY BEING REPORTED, at the one call
+ * below: a green run pays no spawn for a sentence it would not print.
+ */
+function submodules(root: string): readonly string[] {
+  return checkoutPaths(root, ["ls-files", "--stage", "-z"])
+    .filter((entry) => entry.startsWith("160000 "))
+    .flatMap((entry) => {
+      const at = entry.indexOf("\t");
+      return at === -1 ? [] : [entry.slice(at + 1)];
+    });
+}
+
 /** TypeScript somebody wrote, which is what this refusal is about. */
 const typeScriptFile = /\.(?:[cm]?ts|tsx)$/;
 
@@ -847,6 +866,37 @@ function foldsCase(root: string): boolean {
  * edited elsewhere for its own reasons. AND IT IS WHAT IS ON DISK: an index
  * entry outlives the file, so a candidate set that did not ask would name a path
  * that is not there. That arm and its reason sit beside the filter.
+ *
+ * AND IT STOPS AT A SUBMODULE, WHICH IS A RULING AND NOT THE ENUMERATOR'S
+ * ACCIDENT. MEASURED on a checkout with a real submodule at `vendor/pkg` holding
+ * `vendor/pkg/probe.ts`: both calls below report the GITLINK PATH ALONE, and
+ * `--others` does not descend either, so a file inside a submodule -- tracked
+ * there or just written -- is invisible to this refusal and this check exits 0
+ * over it.
+ *
+ * IT IS RULED THAT WAY RATHER THAN REPAIRED, AND THE DECIDING FACT IS THE
+ * ENUMERATOR'S: `git ls-files --recurse-submodules` WORKS, and the same flag
+ * WITH `--others` IS REFUSED -- measured, exit 128, `unsupported mode`. So
+ * recursing could only ever reach a submodule's TRACKED files, leaving one
+ * subject with two rules: tracked-and-untracked outside a submodule, tracked
+ * only inside it. The moment this whole refusal exists for is a file JUST ADDED,
+ * and that is exactly the half a recursing subject would silently lose.
+ * SUBSTANTIVELY: a submodule is somebody else's history at a commit this
+ * checkout pins. No `include` here can be widened to cover it and no commit here
+ * can move it, so a report about it would be a permanent red on a file no edit
+ * in this tree repairs -- the reason already recorded beside the installed
+ * strangers, arriving for a second class of file. Its own checkout grades it.
+ *
+ * SO THE REFUSAL SAYS SO WHEN IT SPEAKS AT ALL, because a subject that silently
+ * excludes a whole class of file is the shape this refusal was built to close: a
+ * run that reports anything, in a tree that mounts a submodule, names the
+ * submodule and says its files were never candidates. It can also say that
+ * nothing it named is inside one, which follows from the measurement above
+ * rather than from a filter.
+ *
+ * A LINKED WORKTREE USED AS THE ROOT IS ENUMERATED NORMALLY and needs no arm:
+ * its `.git` is a file rather than a directory, which changes nothing about what
+ * `ls-files` answers.
  *
  * A PERSONAL IGNORE FILE MUST NOT SHRINK IT, measured: a global ignore can hide
  * a file that is tracked and visible in every other checkout, so a subject that
@@ -1051,6 +1101,18 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
         .filter((reference) => !enumerated.has(spelling(reference))),
     ),
   ];
+  // AND THE OTHER BOUNDARY OF THE SUBJECT, SAID ONLY WHERE THERE IS ONE TO SAY
+  // IT ABOUT. A reader handed a file list reasonably takes it for the whole
+  // answer, and inside a submodule it is not the answer at all -- nothing there
+  // was ever a candidate. Asked here rather than beside the enumeration so a
+  // green run pays no spawn for it.
+  const mounted = submodules(root);
+  if (mounted.length > 0) {
+    const one = mounted.length === 1;
+    message.push(
+      `${mounted.join(", ")} ${one ? "is a submodule" : "are submodules"} of this checkout and ${one ? "its files were" : "their files were"} never candidates here -- a submodule is somebody else's history at a commit this tree pins, graded by its own checkout, and no \`include\` here could be widened to reach it. Nothing named above is inside ${one ? "it" : "them"}.`,
+    );
+  }
   if (unreachable.length > 0) {
     const one = unreachable.length === 1;
     message.push(
