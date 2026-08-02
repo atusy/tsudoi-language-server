@@ -661,6 +661,24 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * one directory down spells the same import `../helpers/deadline.ts`, and a
  * needle anchored to the root suite's depth would have quietly excused it.
  *
+ * THE CALL IS MATCHED AS A WHOLE LINE AND THE SUBSTRING FORM WAS A HOLE, MEASURED
+ * BEFORE IT WAS CLOSED: commenting the call out in one root test file while
+ * leaving the import in place read 17 pass / 0 fail here and exit 0 on all five
+ * checks, with that file silently back at bun's 5000ms. Neither disclosed blind
+ * spot covered it -- the function was imported under its own name and called at
+ * top level, in the eyes of a substring search. The anchor also refuses an
+ * INDENTED call, which narrows the second blind spot above rather than widening
+ * anything: a call inside a function body no longer satisfies this sweep.
+ *
+ * THE LEFTOVER IMPORT IS FLAGGED BY NOTHING AND THAT IS LEFT STANDING: oxlint's
+ * rule set here is a deno-compatibility guard and carries no unused-binding rule,
+ * so the only thing that reddens is this arm. It is enough, because the import
+ * was never the subject -- the call is.
+ *
+ * THE MATCHER HAS ITS OWN PAIR, one test below, for the reason `spawnsIn` has
+ * one: a needle that stopped matching anything and a tree with no offenders are
+ * the same green.
+ *
  * THE PAIR HERE IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS, said plainly
  * because the sentence that stood here claimed more: an offender list that is
  * empty and a sweep that opened nothing are the same green without it, and a
@@ -668,14 +686,40 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * WHAT MAKES THE SUBJECT LIST TRUSTWORTHY IS A DIFFERENT ARM -- the cross-check
  * above, where this enumeration must agree with one built by another mechanism.
  */
+const callsTheModule = /^applySuiteDeadline\(\);$/m;
+
 test("every root test file sets the suite's deadline", () => {
   const missing = rootTestFiles.filter((path) => {
     const source = readFileSync(join(repoRoot, path), "utf8");
-    return !(source.includes('helpers/deadline.ts"') && source.includes("applySuiteDeadline();"));
+    return !(source.includes('helpers/deadline.ts"') && callsTheModule.test(source));
   });
 
   expect(missing).toEqual([]);
   expect(rootTestFiles.length).toBeGreaterThan(0);
+});
+
+/**
+ * THE THREE SHAPES THAT DECIDE WHETHER THE SWEEP ABOVE IS A SWEEP: the call it
+ * accepts, and the two that used to pass it while the file ran at bun's own
+ * default. Written as a pair rather than as a comment because `no file is
+ * missing the call` is what a needle matching everything also says.
+ */
+test("the sweep's needle takes the call and refuses one that has been commented out", () => {
+  expect(
+    callsTheModule.test(
+      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\napplySuiteDeadline();\n',
+    ),
+  ).toBe(true);
+  expect(
+    callsTheModule.test(
+      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\n// applySuiteDeadline();\n',
+    ),
+  ).toBe(false);
+  expect(
+    callsTheModule.test(
+      'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\ntest("t", () => {\n  applySuiteDeadline();\n});\n',
+    ),
+  ).toBe(false);
 });
 
 /**
