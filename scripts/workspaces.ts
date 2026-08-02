@@ -1109,8 +1109,18 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
   const mounted = submodules(root);
   if (mounted.length > 0) {
     const one = mounted.length === 1;
+    // THE LAST CLAUSE IS DERIVED AND NOT ASSERTED, which is the difference
+    // between a sentence that is true and one that was true when it was
+    // measured. `nothing named above is inside one` is a claim about what git
+    // does at a gitlink, and it holds on git 2.54 for an INITIALISED submodule
+    // and for a DEINITIALISED one alike -- measured, `--others` descends into
+    // neither. Reading it off the offenders instead costs one pass and cannot go
+    // stale behind a version of git nobody here has run.
+    const named = offenders.some((offender) =>
+      mounted.some((at) => offender === at || offender.startsWith(`${at}/`)),
+    );
     message.push(
-      `${mounted.join(", ")} ${one ? "is a submodule" : "are submodules"} of this checkout and ${one ? "its files were" : "their files were"} never candidates here -- a submodule is somebody else's history at a commit this tree pins, graded by its own checkout, and no \`include\` here could be widened to reach it. Nothing named above is inside ${one ? "it" : "them"}.`,
+      `${mounted.join(", ")} ${one ? "is a submodule" : "are submodules"} of this checkout and ${one ? "its files were" : "their files were"} never candidates here -- a submodule is somebody else's history at a commit this tree pins, graded by its own checkout, and no \`include\` here could be widened to reach it.${named ? "" : ` Nothing named above is inside ${one ? "it" : "them"}.`}`,
     );
   }
   if (unreachable.length > 0) {
