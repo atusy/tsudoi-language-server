@@ -384,7 +384,21 @@ function stageLinted(source: string): Tree {
   const tree = stageTree();
   copyFileSync(join(repoRoot, ".oxlintrc.json"), join(tree.root, ".oxlintrc.json"));
   writeFileSync(join(tree.root, "planted.ts"), source);
-  tree.declare([{ name: "Lint passes", run: "oxlint" }]);
+  // THE LINTER IS SANDWICHED BETWEEN TWO CHECKS THAT SAY NOTHING, AND THE COUNT
+  // IS STILL ONE -- which is the only reason the count is readable as a SUM. A
+  // tree declaring the linter ALONE makes the first result, the last result and
+  // the total extensionally equal, so every weaker reading passes. MEASURED with
+  // that one-check tree: the total replaced by the FIRST result's count, 12 pass
+  // / 0 fail; and in the real dashboard the linter is the SECOND of five, so
+  // that runner ships `warnings: 0` over a linter that emitted one. The LAST
+  // reading is sandwiched for the same money, and it is this project's signature
+  // defect -- five recorded occurrences of the last command's status read as the
+  // run's.
+  tree.declare([
+    { name: "before", run: tree.logged("before", 0) },
+    { name: "Lint passes", run: "oxlint" },
+    { name: "after", run: tree.logged("after", 0) },
+  ]);
   return tree;
 }
 
