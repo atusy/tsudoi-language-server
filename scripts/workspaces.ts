@@ -321,19 +321,22 @@ function packagesUnder(dir: string): readonly string[] {
  * Every package directory one `exclude` entry covers, the entry read as the
  * PATTERN tsconfig defines it to be.
  *
- * node_modules IS DROPPED FROM THE MATCHES AND NOT ONLY FROM THE WALK, which
- * `packages/**` is what makes necessary: that pattern matches straight INTO a
- * member's installed dependencies, and a match that starts there hands
- * `packagesUnder` a directory whose own package.json belongs to a stranger. Such
- * a package is uncovered by this repository's type checking and always will be,
- * so reporting it would be a permanent red about somebody else's file.
+ * A MATCH THAT STARTS INSIDE node_modules IS NO LONGER DROPPED HERE, AND THAT IS
+ * A CONSEQUENCE THAT MOVED RATHER THAN A GUARD DELETED. `packages/**` matches
+ * straight into a member's installed dependencies, and a match beginning there
+ * hands `packagesUnder` a directory whose package.json belongs to a stranger --
+ * which used to be a permanent red about somebody else's file, because this
+ * reader REPORTED what it found. It no longer reports anything: it refines a
+ * fault the compilers' file lists found, and no file under an installed
+ * dependency can be one of those. So a stranger's directory in this list is
+ * scanned for an offender, never holds one, and is never named. The subtraction
+ * that keeps that true lives beside the candidates, where an arm in
+ * test/workspace-members.test.ts measures it; a second copy here would be an
+ * unobservable branch carrying the reason its own removal made false.
  */
 function excludedDirectories(root: string, entry: string): readonly string[] {
   const found: string[] = [];
   for (const match of globSync(entry, { cwd: root })) {
-    if (match.split(sep).includes("node_modules")) {
-      continue;
-    }
     found.push(...packagesUnder(join(root, match)));
   }
   return found;
@@ -374,7 +377,7 @@ function build(root: string, dir: string): void {
   if (!existsSync(config)) {
     return;
   }
-  execFileSync(join(toolRoot, "node_modules", ".bin", "tsc"), ["-p", relative(root, config)], {
+  execFileSync(compiler, ["-p", relative(root, config)], {
     cwd: root,
     stdio: "inherit",
   });
@@ -612,11 +615,7 @@ export function refuseMemberMappings(root: string, members: readonly string[]): 
     if (!existsSync(config)) {
       continue;
     }
-    const shown = execFileSync(join(toolRoot, "node_modules", ".bin", "tsc"), [
-      "-p",
-      config,
-      "--showConfig",
-    ]).toString("utf8");
+    const shown = execFileSync(compiler, ["-p", config, "--showConfig"]).toString("utf8");
     let effective: { compilerOptions?: Record<string, unknown> };
     try {
       effective = JSON.parse(shown) as { compilerOptions?: Record<string, unknown> };

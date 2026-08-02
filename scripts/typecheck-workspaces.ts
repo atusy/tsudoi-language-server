@@ -34,9 +34,24 @@ import {
  * EFFECTIVE configuration, so a mapping arriving through `extends` is refused
  * too.
  *
+ * AND NEITHER HALF SAYS ANYTHING ABOUT A FILE NO PROGRAM READS. Between them
+ * they cover every file some config INCLUDES and are silent about the rest, so a
+ * file dropped beside a member's source -- or under a directory whose name
+ * begins with a dot, where no default include reaches -- is run by whatever runs
+ * it and graded by nobody, with all five commands exit 0. `refuseUncoveredFiles`
+ * refuses that, deciding membership by reading THE COMPILERS' OWN FILE LISTS
+ * rather than the globs in the JSON, and keeping the package-shaped sentence for
+ * the package-shaped case.
+ *
+ * IT NEEDS `git` THE WAY THE REST OF THIS NEEDS `tsc`, and for one reason: git is
+ * what can tell a source somebody wrote from an installed stranger or a built
+ * artifact. A root it cannot enumerate is refused rather than read as owning
+ * nothing.
+ *
  * ENUMERATED FROM `workspaces` by scripts/workspaces.ts, which the build shares,
  * so adding a package under `packages/` costs no edit here.
- * test/workspace-members.test.ts drives that by construction.
+ * test/workspace-members.test.ts drives that by construction, and
+ * test/uncovered-files.test.ts drives the file refusal the same way.
  *
  * WHAT IS RUN IS `tsc`, NOT A REIMPLEMENTATION OF ONE, and the binary is reached
  * through node_modules/.bin rather than by bare name: nothing here is a package
