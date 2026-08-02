@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
@@ -329,6 +329,66 @@ test("a directory whose name merely begins with node_modules is not read as inst
 
   expect(result.stderr).toContain(ours);
   expect(result.code).not.toBe(0);
+});
+
+/**
+ * A CONFIG THAT NAMES A TRACKED FILE IN ANOTHER CASE, which is the second way
+ * this check can print a FALSE RED and the only arm here whose correct colour is
+ * a property of the MACHINE.
+ *
+ * WHAT THE TWO SIDES ARE: the compiler answers with the spelling ITS CONFIG
+ * used, git answers with the spelling THE INDEX holds, and the comparison is
+ * string equality. MEASURED on this machine's filesystem, which folds case: tsc
+ * exits 0 and lists `src/foo.ts` -- it is compiling the file -- while the check
+ * reported `src/Foo.ts` as covered by nothing and named widening an `include`
+ * that already reaches it.
+ *
+ * SO THE ARM ASSERTS THE MACHINE FIRST AND THE COLOUR SECOND, and the branch is
+ * the honest shape rather than a convenience. Where case is SIGNIFICANT these
+ * are two files, one of them genuinely covered by nothing, and the red is
+ * CORRECT -- an arm hard-coded to the green would be demanding the bug on every
+ * such machine, and one that skipped there would be vacuous on the majority of
+ * CI. The probe is the same read-only question the check asks, so the two cannot
+ * disagree about which filesystem this is.
+ *
+ * THE CONTROL IS THE SAME TREE SPELLED CONSISTENTLY, and it is what says a green
+ * above came from the fold rather than from a tree nothing looked at.
+ */
+function rootNamingOneFile(named: string, onDisk: string): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({ compilerOptions: programOptions, files: [named] }),
+    [onDisk]: typeChecks,
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+  };
+}
+
+test("a tracked file its config names in another case is judged by what the filesystem does", async () => {
+  const root = workspace(rootNamingOneFile("src/foo.ts", join("src", "Foo.ts")));
+  const control = workspace(rootNamingOneFile("src/Foo.ts", join("src", "Foo.ts")));
+  try {
+    const folded = existsSync(join(root, "PACKAGE.JSON"));
+    const mismatched = await check(root);
+    const spelledAlike = await check(control);
+
+    if (folded) {
+      // ONE FILE UNDER TWO SPELLINGS, AND THE COMPILER IS READING IT.
+      expect(mismatched.stderr).toBe("");
+      expect(mismatched.code).toBe(0);
+    } else {
+      // TWO FILES, AND THE ONE ON DISK IS IN NO PROGRAM. The fold must not
+      // reach here, or a correct red goes green exactly where case matters.
+      expect(mismatched.stderr).toContain(join("src", "Foo.ts"));
+      expect(mismatched.code).not.toBe(0);
+    }
+    expect(spelledAlike.stderr).toBe("");
+    expect(spelledAlike.code).toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(control, { recursive: true, force: true });
+  }
 });
 
 /**

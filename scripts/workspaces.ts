@@ -776,6 +776,39 @@ function readProgram(root: string, config: string): Program {
 }
 
 /**
+ * Whether this filesystem tells `Foo.ts` and `foo.ts` apart, ASKED OF THE TREE
+ * BEING GRADED rather than read off the platform's name.
+ *
+ * WHY IT IS ASKED AT ALL: the compiler answers with the spelling ITS CONFIG
+ * used and git answers with the spelling THE INDEX holds, and where the
+ * filesystem folds case those two strings can denote ONE FILE and compare
+ * unequal. MEASURED on this machine, whose checkout and whose temporary
+ * directory both fold: a tracked `src/Foo.ts` under a config naming
+ * `src/foo.ts` is compiled -- tsc exits 0 and lists `src/foo.ts` -- and was
+ * reported as covered by nothing, with the repair named being to widen an
+ * `include` that is already reaching the file. A FALSE RED, and the one thing
+ * this check must never produce.
+ *
+ * FOLDING UNCONDITIONALLY IS THE FIX THAT BREAKS THE OTHER FILESYSTEM: where
+ * case IS significant those two spellings are TWO FILES, one of them covered by
+ * nothing, and a fold would turn a correct red green -- silently, and only on
+ * the machines where it matters. So the fold is gated on the answer here.
+ *
+ * A READ-ONLY PROBE, AND IT WRITES NOTHING INTO THE TREE IT IS GRADING: a
+ * candidate set that depended on a file this check had just created would be
+ * measuring its own footprint. What is probed is the root's `package.json`,
+ * asked for in a spelling no repository ships -- the fifth check has already
+ * refused a root without one, so there is no case where this asks about a file
+ * that is not there. THE ONE FALSE ANSWER IT CAN GIVE IS NAMED: a case-sensitive
+ * checkout that really does hold a file called `PACKAGE.JSON` beside its
+ * manifest would be read as folding, which costs this check the ability to
+ * separate two spellings of one name in that tree alone.
+ */
+function foldsCase(root: string): boolean {
+  return existsSync(join(root, "PACKAGE.JSON"));
+}
+
+/**
  * Throws when a TypeScript file this checkout owns is in no compiler's program
  * -- the state in which a file is edited, run, and graded by nothing, while
  * every command in the Definition of Done exits 0.
@@ -883,11 +916,21 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     "-z",
   ]);
   const installed = (path: string): boolean => path.split("/").includes("node_modules");
+  // BOTH SIDES THROUGH ONE FUNCTION, WHICH IS THE HALF A FIX HERE GETS WRONG:
+  // the compiler's strings and the joined index paths agree today only because
+  // both are built from the same root, so canonicalising the candidate alone
+  // would move every prefix and redden the whole file. And it is the COVERAGE
+  // COMPARISON ONLY -- the two subtractions match paths for their own reasons
+  // and are left spelling-exact, since `Node_Modules` is not a directory
+  // anybody installed into.
+  const spelling: (path: string) => string = foldsCase(root)
+    ? (path) => path.toLowerCase()
+    : (path) => path;
   const inTheIndex = new Set(tracked);
   const programs = tracked
     .filter((path) => configFile.test(basename(path)) && !installed(path))
     .map((config) => readProgram(root, config));
-  const covered = new Set(programs.flatMap((program) => program.roots));
+  const covered = new Set(programs.flatMap((program) => program.roots).map(spelling));
   const written = programs.flatMap((program) =>
     program.outDir === undefined ? [] : [program.outDir],
   );
@@ -930,7 +973,7 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     if (!inTheIndex.has(path) && written.some((outDir) => absolute.startsWith(outDir + sep))) {
       return false;
     }
-    return !covered.has(absolute);
+    return !covered.has(spelling(absolute));
   });
   if (offenders.length === 0) {
     return;
