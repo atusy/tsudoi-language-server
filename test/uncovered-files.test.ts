@@ -450,8 +450,16 @@ test("a config outside the root and outside every member still covers its own fi
  * empty is not merely quieter -- it is LOUDER AND WRONG: every file that config
  * covered becomes an offender, and the run answers a broken config with a list
  * of innocent sources. So the second assertion is the load-bearing one.
+ *
+ * THE NAME NO LONGER SAYS `TRACKED`, AND THAT IS THE REPAIR RATHER THAN A LOSS.
+ * Being in the index is how this tree REACHES the state and is not what the arm
+ * measures: unlinking the file leaves the entry, so nothing here separates an
+ * unreadable TRACKED config from an unreadable untracked one, and the arm is
+ * green under a reader that never asked. What defends the tracked-only
+ * enumeration is the stray-config arm below, where an unstaged config is the
+ * whole subject.
  */
-test("a tracked config the compiler cannot read is refused by name", async () => {
+test("a config the compiler cannot read is refused by name, not read as covering nothing", async () => {
   const root = workspace(configOutsideEveryMember());
   try {
     unlinkSync(join(root, "tools", "tsconfig.json"));
