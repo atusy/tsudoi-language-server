@@ -443,10 +443,15 @@ test("a member's emitted declaration is not reported as uncovered", async () => 
  * THE OTHER HALF OF THAT SUBTRACTION, WITHOUT WHICH IT IS AN EXEMPTION LIST: a
  * file somebody WROTE and committed under the same output directory.
  *
- * `THE COMPILER WROTE IT` IS THE CLAIM, AND THE INDEX IS WHAT CHECKS IT. Excusing
- * every path under a declared `outDir` excuses a directory rather than an
- * artifact -- for a program that need not emit at all, and for a hand-written
- * file the compiler has never touched. MEASURED on the shipped subtraction, in a
+ * THE INDEX RULES `THE COMPILER WROTE IT` OUT, WHICH IS THE ONE DIRECTION IT CAN
+ * AND THE ONE THIS ARM MEASURES: no artifact is ever committed, so a committed
+ * file under an output directory is somebody's whatever that directory is
+ * called. The converse is neither checked nor true -- an untracked hand-written
+ * file there is subtracted like an emitted one, and the arm above cannot tell
+ * them apart either. Excusing every path under a declared `outDir` excuses a
+ * directory rather than an artifact -- for a program that need not emit at all,
+ * and for a hand-written file the compiler has never touched, COMMITTED OR NOT.
+ * MEASURED on the shipped subtraction, in a
  * tree whose member check config carried `noEmit` beside `outDir: "../../vendor"`
  * and a committed `vendor/probe.ts` in no program's list: exit 0 and zero bytes,
  * and exit 1 naming that file the moment the `outDir` was deleted. One config

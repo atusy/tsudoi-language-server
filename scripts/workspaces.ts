@@ -809,8 +809,8 @@ function readProgram(root: string, config: string): Program {
  * self-correcting.
  *
  * TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT. An UNTRACKED path under a
- * program's own output directory is a file the compiler WROTE, and this check
- * BUILDS before it reads: without it every throwaway tree that builds reddens,
+ * program's own output directory is left alone, because this check BUILDS
+ * before it reads: without that, every throwaway tree that builds reddens,
  * since a throwaway carries no ignore file and its emitted declaration is
  * untracked and in no program's roots. A path under an installed-dependency
  * directory will never be ours to check, for the reason already recorded beside
@@ -822,9 +822,18 @@ function readProgram(root: string, config: string): Program {
  * not a compiler wrote the file. MEASURED, with a member check config carrying
  * `noEmit` and `outDir: "../../vendor"`: a tracked `vendor/probe.ts` in no
  * program's list went unreported, and reporting resumed the moment the `outDir`
- * was deleted -- so one config key silently excused a directory. A compiler-
- * written artifact is never in the index, so the index is what separates the two
- * and no reader has to trust the key.
+ * was deleted -- so one config key silently excused a directory.
+ *
+ * AND THE INDEX BUYS ONE DIRECTION RATHER THAN AN IDENTITY, which the repair's
+ * own first spelling asserted and this one does not. A compiler-written artifact
+ * is never committed, so BEING IN THE INDEX rules that reading out -- and
+ * nothing here reads the other way, because nothing in a tree can: an untracked
+ * HAND-WRITTEN file under a declared output directory is subtracted exactly like
+ * an emitted one. WHAT THE SUBTRACTION ACTUALLY BUYS is therefore that no
+ * COMMITTED file is ever excused by an `outDir`, which is the half that was
+ * going wrong; the residue is a file somebody wrote there and has not committed,
+ * and it self-corrects the moment they do. Asserting the converse would be the
+ * same overclaim, one sentence smaller, that this repair was written to retire.
  *
  * DECLARATION FILES ARE THE ONE EXCLUSION AND IT IS READ, NOT NAMED. With
  * library checking skipped -- which every config here sets -- a `.d.ts` is in a
@@ -890,11 +899,13 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     }
     const absolute = join(root, path);
     // ONLY WHILE NOBODY COMMITTED IT, which is the difference between a
-    // subtraction and an exemption list: what this excuses is a file the
-    // COMPILER WROTE, and a compiler-written artifact is never in the index. A
-    // path that IS in the index is somebody's file whatever directory it sits
-    // in, and excusing it would let one `outDir` -- on a program that need not
-    // even emit -- silence a whole directory with no name written anywhere.
+    // subtraction and an exemption list: a compiler-written artifact is never in
+    // the index, so a path that IS in the index is somebody's file whatever
+    // directory it sits in, and excusing it would let one `outDir` -- on a
+    // program that need not even emit -- silence a whole directory with no name
+    // written anywhere. THE TEST READS ONLY THAT WAY: untracked here does not
+    // make a file one the compiler wrote, and a hand-written one nobody has
+    // committed is subtracted with the artifacts.
     if (!inTheIndex.has(path) && written.some((outDir) => absolute.startsWith(outDir + sep))) {
       return false;
     }
