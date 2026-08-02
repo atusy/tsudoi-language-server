@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
@@ -461,6 +461,51 @@ test("a tracked config the compiler cannot read is refused by name", async () =>
     expect(result.stderr).toContain(join("tools", "tsconfig.json"));
     expect(result.stderr).not.toContain("only-here.ts");
     expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
+ * THE HAZARD THE TRACKED-ONLY PROGRAM ENUMERATION EXISTS FOR, WHICH NOTHING
+ * PLANTED UNTIL NOW: a stray uncommitted config claiming the whole tree. Taking
+ * untracked configs as programs would let one mark every file covered -- a
+ * silent, permanent green that nobody has to write down and nobody can see.
+ *
+ * TWO RUNS OVER ONE TREE, AND THE SECOND IS WHAT MAKES THE FIRST MEAN ANYTHING.
+ * `the plant is reported` is satisfied by a config that could never have covered
+ * it -- a typo in the include, a config the compiler could not read -- so the
+ * same config is then STAGED and nothing else moves. It goes green, which is the
+ * proof that what the first run refused was the config's not being committed and
+ * not the config's contents.
+ *
+ * THE PLANT STAYS UNTRACKED THROUGHOUT, so the second run is also the asymmetry
+ * itself in one reading: an untracked CANDIDATE is a hazard the moment it exists,
+ * where an untracked PROGRAM counts for nothing until somebody commits it.
+ */
+test("a config that is not staged does not mark the tree covered", async () => {
+  const root = workspace(memberIncludingOnlyItsSource());
+  try {
+    writeFileSync(join(root, besideTheSource), probe);
+    writeFileSync(
+      join(root, "tsconfig.stray.json"),
+      JSON.stringify({ compilerOptions: programOptions, include: ["**/*"] }),
+    );
+
+    const stray = await check(root);
+    // THE SAME OVERRIDE THE HELPER STAGES UNDER, for the same reason: a personal
+    // ignore file matching this name would leave the control silently unstaged
+    // and the run below green for the reason it is meant to refute.
+    execFileSync("git", ["-c", "core.excludesFile=/dev/null", "add", "tsconfig.stray.json"], {
+      cwd: root,
+      stdio: "pipe",
+    });
+    const committed = await check(root);
+
+    expect(stray.stderr).toContain(besideTheSource);
+    expect(stray.code).not.toBe(0);
+    expect(committed.stderr).toBe("");
+    expect(committed.code).toBe(0);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
