@@ -745,7 +745,14 @@ const scrum: ScrumDashboard = {
           "A module of its own exporting the number and a function that sets the default; one call at the top of each root test file; a sweep that reddens when a file lacks it.",
         type: "behavioral",
         status: "completed",
-        commits: ["2035fb8"],
+        commits: [
+          {
+            hash: "2035fb8",
+            message:
+              "feat(test): let every root test file choose the suite's deadline, not the machine",
+            phase: "green",
+          },
+        ],
         notes: [
           "ITS OWN FILE AND NOT THE BUILD PRELOAD, for a reason stronger than tidiness: the build preload THROWS on a failed compile, so the timeout policy would die with a build failure -- and this subtask's arms must preload the REAL module at an unambiguous value in a throwaway tree, which is impossible if the call is welded to a module that compiles the whole workspace on import.",
           "TWO DEGENERATES, STATED IN ADVANCE: a module that exports the constant and sets nothing (the over arms pass under bun's own default and must redden), and a module that sets the default but ignores the override (the same arms redden, and this is the one that catches a misspelt variable name).",
@@ -767,28 +774,50 @@ const scrum: ScrumDashboard = {
         test: "A malformed override does not run the suite: it exits non-zero naming the variable, paired with a well-formed value running normally.",
         implementation: "The module refuses anything that is not a positive integer.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "52e6ed6",
+            message:
+              "test(deadline): make a malformed override refuse the run instead of disabling it",
+            phase: "green",
+          },
+        ],
         notes: [
           'THIS IS LOAD-BEARING RATHER THAN DEFENSIVE, AND THE MEASUREMENT IS WHY: setting the default to NaN or to zero DISABLES THE DEADLINE ENTIRELY rather than falling back -- measured with a sleep that bun\'s own default would fail, both `abc` and an EMPTY STRING gave a pass at exit 0. `Number("") === 0`, so a set-but-empty variable switches every deadline in the suite off WHILE THE RUN REPORTS GREEN. That is the silent-key class this project has met before.',
+          "THE SHAPES WERE RE-MEASURED HERE RATHER THAN INHERITED, and the list came back WIDER THAN THE PLAN\'S. Against a 6000ms sleep -- one bun\'s own 5000ms default fails -- the empty string, a BLANK, `abc`, `0` and `-5` each ran 1 pass at exit 0: a NaN or non-positive default disables the deadline outright. `1.5` is the shape nobody anticipated and it fails the OTHER way, truncating to 1ms so that everything dies. One rule -- a positive integer -- covers both directions, which is why the arms are one loop and not two.",
+          "THE REFUSAL IS WRITTEN TO stderr AND exit 1 RATHER THAN THROWN, measured: a throw from a module a test file imports is reported as `Unhandled error between tests` and COUNTED AS A FAILING TEST, so the one thing a reader needs -- that no test ran, and why -- arrives dressed as a test result. The shape used instead is tsudoi\'s own failure contract.",
+          "THE ARMS RUN IN A TREE WHOSE THREE TESTS EACH SLEEP 6000ms, so the degenerate does not merely fail, it PRINTS THE SILENT GREEN: with the validation deleted, five of the six values read `3 pass / 0 fail` at exit 0 on tests bun\'s own default could not have passed, and `1.5` read `0 pass / 3 fail` at 1ms. Every arm reddens, 9 pass / 6 fail in that file.",
+          "AND EACH ARM ASSERTS THAT NO TEST RAN, which is the half a `refuses` assertion is usually missing: an exit 1 is also what a suite that ran and failed produces. Its pair is a well-formed value running the same tree normally, permanent, because every refusal arm alone is satisfied by a module that refuses EVERYTHING.",
         ],
       },
       {
         test: "The number is greater than the largest deadline a helper sets that is reachable from a test carrying no explicit deadline, paired with a reading that the enumeration behind that floor found something rather than nothing.",
         implementation: "Set the number from the first subtask's reading, inside the bounds below.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "954664c",
+            message:
+              "test(deadline): pin the number as a relation to the floor it was chosen above",
+            phase: "green",
+          },
+        ],
         notes: [
           "WHAT MAKES IT A DECISION RATHER THAN A GUESS IS A FLOOR AND A CEILING BOTH READ FROM THIS TREE. THE FLOOR IS NOT `THE QUICKSTART NEEDS TWENTY SECONDS`: it is that a helper's own handshake deadline is UNREACHABLE TODAY -- the test dies at the default first and names nothing -- so which deadline arrives first decides whether the failure names its cause. THE CEILING is what a genuine hang costs at the proposed value times the tests that would park, which nobody has computed; without it the number is half-argued.",
           "THE PIN IS A RELATION AND NOT A LITERAL, and the degenerate says why: an equality against the chosen number is green against any tree, including one where a helper's deadline was later raised past it. Importing the constant is right HERE and wrong elsewhere in this project -- the alternative is asserting a duration, which is asserting a property OF THE MACHINE, the exact defect this item removes.",
+          "THE NUMBER IS 25_000 AND BOTH BOUNDS ARE NAMED. FLOOR 20_000: `handshakeTimeoutMs` in test/helpers/readme.ts, the largest deadline a HELPER sets that a test carrying no explicit one can reach -- `the README\'s quickstart brings up a server under bun|deno`. Under bun\'s 5000ms that helper deadline was unreachable, so a broken documented command reported `this test timed out` instead of naming the command that never answered. THE MARGIN OVER IT IS DERIVED RATHER THAN ROUNDED: the same test packs and installs before reaching that handshake, 142ms (bun) and 160ms (deno) whole at load 3, and this tree has WITNESSED 21x inflation, so about 3.4s sits in front of the handshake at the worst load recorded here and anything below about 23_500 would still kill the test before its helper spoke.",
+          "AND IT IS DELIBERATELY NOT 30_000, the number the retired flag carried and the one easiest to inherit: 30_000 is test/helpers/fake-editor.ts\'s own self-exit, so the two deadlines would coincide. That timer is reachable only from the two rig tests in test/editor-death.test.ts, which set 20_000 for themselves and fire first -- but a coincidence nobody chose is how 5000ms got here.",
+          "CEILING, COMPUTED RATHER THAN LEFT HALF-ARGUED: bun runs this suite in ONE process, file after file, so a hung subject parks every test waiting on it for the full default. The largest single-subject park is test/workspace.test.ts -- 44 tests, every one driving a live server, none carrying its own deadline -- 18m20s at this value against 3m40s under bun\'s. The whole-suite bound is 809 x the default. THE MULTIPLIER IS THE THING TO WEIGH AND IT IS 5x; it is accepted because the alternative is a value below the floor, which leaves the whole class the item exists to remove.",
+          "TWO ARMS AND TWO DEGENERATES, EACH STATED IN ADVANCE AND RUN. The pin: raising `handshakeTimeoutMs` to 30_000 with nothing else touched reddens it, `Expected: > 30000, Received: 25000` -- where an equality against 25_000 would have stayed green. Its pair reads every deadline the helpers hold and requires the pinned one to be the largest: adding a 26_000 default to test/helpers/lsp.ts reddens THAT arm naming the file while the pin stays green, which is exactly the split the two exist for.",
         ],
       },
       {
         test: "CONDITIONAL, and the condition is stated in advance: if the first subtask's reading shows any gated test running within about twice its own deadline, the values in those files are re-derived here. If it shows three times the headroom or more, THIS SUBTASK DOES NOT EXIST and collapses into the comment repair.",
         implementation: "One constant per file, never a third argument per test.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "THE PBI NAMES TWO FILES THAT SET THEIR OWN DEADLINES AND THERE ARE SEVEN. That is the PO's ruling in scope: the sprint delivers the suite default only, and the residual is recorded as a NAMED, MEASURED REMAINDER -- the files, the values, and why each is not covered -- BEFORE Review rather than discovered at it. A green that seven files contradict is the shape this project keeps catching.",
@@ -801,14 +830,23 @@ const scrum: ScrumDashboard = {
       {
         test: "None -- prose.",
         implementation:
-          "The comments whose reason this change kills: the refusal in the workspace-member suite that declined to fix twenty tests' exposure BECAUSE a suite-wide default was not an option; six comments claiming a value is below the runtime's default, which are false today and become true again; and the preload paragraph whose `this path` loses its referent once the array holds two entries.",
+          "The comments whose reason this change kills: the refusal in the workspace-member suite that declined to fix twenty tests' exposure BECAUSE a suite-wide default was not an option; the comments claiming a value is below the runtime's default; and the two sites asserting that bun's 5000ms is what applies. The bunfig `this path` half was STRUCK by the PO under route 3, since the preload array stays at one entry.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "2c9f634",
+            message: "docs(test): retire the comments whose reason this sprint spent",
+            phase: "green",
+          },
+        ],
         notes: [
           "A COMMENT THAT BECOMES ACCIDENTALLY TRUE IS NOT THE SAME AS ONE THAT WAS WRITTEN CORRECTLY, so the six are re-read and repaired either way.",
           "THE PLAN SAYS SIX AND THE TREE HOLDS SEVEN, enumerated before any of them was edited: test/protocol.test.ts:21, test/session.test.ts:22, test/completion.test.ts:76, test/cancel-parked-pull.test.ts:70, test/cleanup-drain.test.ts:71, test/cleanup.test.ts:84 and test/cancellation.test.ts:86. THREE ARE TRUE TODAY (the 4000s) AND FOUR ARE ALREADY FALSE (the 6000s, against bun's 5000ms), which is a repair this sprint owes whatever mechanism it lands on -- the four are false NOW, not merely about to be.",
           "AND TWO MORE SITES ARE IN THE SAME CLASS WITHOUT USING THE SAME WORDS, so they are named rather than folded in silently: test/build-order.test.ts's allowance says `bun's default gives the whole test 5000ms`, and test/workspace-members.test.ts's says `bun's default is 5000ms, which is not a meaningful bound on a tsc invocation at all`. Both assert what applies to THOSE tests, and both stop being true the day any suite-wide default lands.",
+          "ALL NINE SITES WERE REPAIRED AND THE TWO CLASSES ARE KEPT APART, because only one of them is a stale value. Seven said `below bun test\'s default`; the four 6000ms ones were FALSE ALREADY -- above bun\'s 5000, so a park died at the ambient deadline and the file\'s own constant never fired -- and the words never changed, which is why nothing caught it. They now name the deadline their own file sets. The two remaining sites keep their allowance, because 120_000 was never chosen against 5000 in particular.",
+          "THE REFUSAL IS RECORDED AS SPENT RATHER THAN DELETED, which is the difference between a reader learning what it bought and a reader finding nothing. It declined twenty tests\' exposure on two grounds and the SECOND is gone: a suite-wide default is available, chosen rather than inherited. The twenty call sites were never edited and never need to be, which is the outcome the refusal was holding out for.",
+          "THE STAKEHOLDER-ROUTED ITEM LANDED IN TWO PLACES A READER ACTUALLY MEETS: test/helpers/deadline.ts, where the number is, and bunfig.toml, which is where someone looks for how this suite runs and where they would otherwise find no mention that the limit is set elsewhere. Both record that `--timeout` is INERT for every swept file, with the both-directions reading rather than the assertion alone.",
         ],
       },
     ],
@@ -845,6 +883,7 @@ const scrum: ScrumDashboard = {
       "AND ROUTE 1 WAS REFUSED ON ITS OWN NUMBERS RATHER THAN ON PREFERENCE: if the preload re-runs per file, `prepareWorkspace` re-spawns tsc per package, unguarded and non-incremental, and fifty-odd files times those spawns cannot be +12.5s. THE MEASUREMENT DOES NOT RECONCILE, and a route whose own measurement does not reconcile is not the route to hang the first check on. Either the preload does not re-run on this repository the way the marker file showed in a throwaway tree, or the 797 pass has a cause nobody has named -- LEFT OPEN AND NOT BUILT ON.",
       "THE SHAPE THE PO REFUSED ONE SIZE DOWN IS DISTINGUISHED FROM THIS ONE, so the refusal is not read as overruled: that was TWENTY UNCHOSEN NUMBERS AT TWENTY CALL SITES INSIDE ONE FILE. This is ONE number in ONE module with its floor and ceiling beside it, invoked mechanically, and the per-file line CARRIES NO VALUE AND MAKES NO CHOICE. The hole it opens -- a new file silently omitting the call -- is closed by a sweep, which is the refusal shape scripts/workspaces.ts already builds twice over.",
       "AND A STANDING RULE CAME OUT OF THE STOP: every arm in this sprint runs in a tree of AT LEAST THREE FILES. A single-file throwaway is exactly the case the preload defect spares, and it is what produced a false 5 pass that was nearly committed.",
+      "DISCLOSED RATHER THAN QUIETLY FIXED: FOUR COMMITS WENT IN WHILE THE FOURTH CHECK WAS RED. c3e46de, 52e6ed6, 954664c and 2c9f634 were each taken after a full Definition-of-Done run in which `tsc --noEmit` exited 1, and the executor read only the head of that run\'s output and saw the first three checks green. THE CAUSE WAS ONE LINE OF THIS FILE and nothing in the deliverable: a subtask\'s `commits` was written as `[\"2035fb8\"]` where the schema wants a `Commit` object, so `TS2322` at scrum.ts. Every other check was green on every one of those runs, and the suite passed at 800, 807 and 809. IT IS RECORDED BECAUSE THE RULE IS `COMMIT ONLY ON GREEN` AND NOT `COMMIT ONLY WHEN THE INTERESTING CHECKS ARE GREEN` -- and because the instrument that hid it was a habit, grepping the head of a wrapper\'s output, which is the same shape as reading `$?` from the last command in a pipe.",
     ],
   },
   retrospectives: [],
