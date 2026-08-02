@@ -892,9 +892,19 @@ const scrum: ScrumDashboard = {
   // below out of the JSON it prints, so an entry added here runs with no edit
   // anywhere else -- which is the whole point, and the reason a copy of this
   // list may not be written into the runner. WHAT THIS FIELD MUST STAY: `run`
-  // is an executable shell command, so nothing a command cannot verify belongs
-  // in it, and the runner is NOT added here as a sixth entry -- a check that
-  // runs every check would run itself, unbounded.
+  // is A COMMAND LINE THE RUNNER SPAWNS -- a program and its space-separated
+  // arguments -- so nothing a command cannot verify belongs in it, and the
+  // runner is NOT added here as a sixth entry: a check that runs every check
+  // would run itself, unbounded.
+  //
+  // AND IT IS NOT A SHELL COMMAND, WHICH THIS COMMENT CALLED IT UNTIL A
+  // REVIEWER MEASURED THE DIFFERENCE: `run: "true && false"` spawned `true`
+  // with the arguments `&&` and `false` and REPORTED PASSED. No shell is
+  // involved, deliberately -- through one, a missing binary arrives as exit 127
+  // and cannot be told from a check that ran and said no -- so a `run` carrying
+  // a pipe, a redirection, a quoted argument, a glob or an operator is now
+  // REFUSED and reported non-green rather than misread. A check needing any of
+  // those goes in a script, and the script is what is named here.
   definition_of_done: {
     checks: [
       {
@@ -937,13 +947,32 @@ const scrum: ScrumDashboard = {
             message: "feat(scripts): one command that takes every check and reports each one",
             phase: "green",
           },
+          {
+            hash: "e3d6685",
+            message: "test(dod): make the throwaway dashboard compute what it prints",
+            phase: "green",
+          },
+          {
+            hash: "ed797e2",
+            message: "test(dod): make the summary word a function of the run, both directions",
+            phase: "green",
+          },
+          {
+            hash: "be27ff9",
+            message: "feat(scripts): refuse a `run` this runner cannot execute faithfully",
+            phase: "green",
+          },
         ],
         notes: [
           "THE FIRST-FAILS-LAST-PASSES ARM IS THE RECORDED DEFECT VERBATIM: a runner reading the last command's status passes an arm that fails the LAST check, and this project's five occurrences are all that shape.",
-          "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. The dashboard's `run` stays an executable shell command.",
+          "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. AMENDED IN THE REVIEW ROUND RATHER THAN LEFT STANDING, because it is a present-tense design claim and it became false: this said `the dashboard's run stays an executable shell command`, and the runner never ran one. It is a COMMAND LINE the runner spawns, and one it cannot execute faithfully is refused; the property this sentence was reaching for -- every `run` is still a line a maintainer can type at a prompt -- survives the correction intact.",
           "THE INPUT CONTRACT WAS MEASURED BEFORE A LINE WAS WRITTEN, because every arm here rests on it: `bun run scrum.ts` at this sprint's base exits 0, writes ZERO BYTES to stderr, and its stdout parses as JSON whose `definition_of_done.checks` is the five pairs. A runner built on an unmeasured premise about the file it reads would have been this project's own recorded shape.",
           "RED THEN GREEN, AND THE RED IS THE HALF WORTH RECORDING: with no runner in the tree, 0 pass / 4 fail -- and the EMPTY-LIST arm failed on its TEXT rather than on its colour, which is the only reason it measures anything. Everything that goes wrong here exits non-zero, a runner that does not exist included, so an arm reading the colour alone would have been born green. After the implementation, 4 pass / 0 fail, and the whole suite 851 pass / 0 fail across 57 files against a base of 847 across 56.",
           "TWO DEGENERATES, PREDICTED IN WRITING BEFORE EACH RUN AND BOTH BEHAVING AS PREDICTED. THE RECORDED DEFECT ITSELF -- verdict and report taken from the LAST result alone -- gives 2 pass / 2 fail: the two positional arms red, the all-pass arm green, which is exactly why an all-pass arm certifies nothing here. AND AN EMPTY LIST RUN AS WRITTEN rather than refused gives 3 pass / 1 fail. Neither degenerate is reachable from the other's arms, which is what earns them both.",
+          "REVIEW ROUND, FINDING 1, AND IT IS THIS PROJECT'S OWN DEFECT ARRIVING INSIDE THE INSTRUMENT BUILT TO RETIRE IT: THE SUMMARY HEADLINE COULD LIE WITH EVERY ARM GREEN. MEASURED -- the verdict word hardwired to `PASSED`, per-check lines and exit code untouched -- 12 pass / 0 fail, because `Definition of Done: FAILED` was asserted NOWHERE IN THE FILE. The only summary arm asserted one direction, which a constant satisfies. The header of that very runner says the five recorded occurrences were a reader taking a grep for the run's status, and the summary line is the line a reader greps. One arm now runs two trees and asserts both directions with the WHOLE string, never the bare word, since a failing report carries `[FAILED] alpha` whatever the summary says. DEGENERATES RE-RUN: hardwired PASSED, 12 pass / 1 fail, this arm alone; hardwired FAILED, 10 pass / 3 fail. Commit ed797e2.",
+          "FINDING 6, A FIXTURE-DESIGN WEAKNESS AGAINST THIS FILE'S OWN LOAD-BEARING CLAIM: the runner's header calls EXECUTING the dashboard the decision everything rests on, and the fixture could not hold it. The throwaway dashboard wrote its object INLINED, so its text WAS its output and any means of obtaining the JSON passed -- MEASURED, a runner slicing the file from its first brace to its last, never running it, left 12 pass / 0 fail. Severity is bounded and stated: against the real dashboard, a TypeScript program, that runner exits 1, so nothing shipped wrong; the arm simply did not hold the claim. The fixture now declares its pairs FLAT and assembles the shape at run time, so no substring of it is the JSON it prints. DEGENERATE RE-RUN: 0 pass / 12 fail. Commit e3d6685.",
+          'FINDING 4, FROM CODEX, THE ONLY ONE OF THE SIX THAT MOVED THE PRODUCT: `run` WAS DOCUMENTED AS A SHELL COMMAND AND WAS NEVER RUN AS ONE. MEASURED here as filed -- `run: "true && false"` split on spaces spawns `true` with the arguments `&&` and `false`, exits 0, and printed `[PASSED] conjunction -- exit 0 -- $ true && false`, where a shell runs `false` and fails; redirections, quoted arguments and globs misread the same way, in silence. The direct spawn was taken deliberately and the reasoning holds -- through a shell a missing binary arrives as exit 127 and cannot be told from a check that ran and said no -- but the price was being paid where no reader met it, least of all at the dashboard field calling it a shell command. OF THE THREE ANSWERS, refusing is the only one that gives up neither reading, and a misread command has no colour at all. `REFUSED` is its own verdict beside `UNRUNNABLE` because the reader\'s next move differs: rewrite the entry, not install a tool. THE ARM CARRIES A POSITIVE CONTROL, without which an over-broad predicate ships green -- no other `run` in that file carries a flag or a `.` argument, so a predicate refusing those would redden `oxfmt --check .` in the real Definition of Done and NOTHING in the suite. DEGENERATE RE-RUN, the predicate never firing: 14 pass / 1 fail. Commit be27ff9.',
+          "DISCLOSED IN ADVANCE RATHER THAN LEFT FOR THE NEXT REVIEWER, AND IT IS THE CLASS THIS RECORD HAS NOW FILED FIVE TIMES: be27ff9 SHIPPED WITH THIS DASHBOARD'S OWN FIELD COMMENT STILL CALLING `run` A SHELL COMMAND, FOR EXACTLY ONE COMMIT. The cause is the standing rule that scrum.ts moves alone in its own commits, which cannot be met in the same breath as a code change that falsifies a comment living here; the alternative was folding the dashboard into the feature commit. It was seen when written, not found afterwards, and the very next commit is the correction.",
         ],
       },
       {
@@ -986,6 +1015,11 @@ const scrum: ScrumDashboard = {
             message: "test(dod): separate a check that never started from one that ran and said no",
             phase: "green",
           },
+          {
+            hash: "1212c4a",
+            message: "test(dod): put one missing binary in a tree of passes, so it gates alone",
+            phase: "green",
+          },
         ],
         notes: [
           "BOTH ARMS BORN GREEN AND DECLARED SO BEFORE THE RUN -- 9 pass / 0 fail -- because the spawn-error handling and the location-derived root were written in the first subtask. FOUR DEGENERATES CARRY THE EVIDENCE INSTEAD, each predicted and each reddening one arm and no other: a spawn error COUNTED AS A PASS, 8 pass / 1 fail; a check that never started PRINTED AS ONE THAT RAN AND FAILED -- byte-identical text, the state this project has already been caught reading as one red -- 8 pass / 1 fail; the root taken FROM THE WORKING DIRECTORY, 8 pass / 1 fail; and the checks handed the WORKING DIRECTORY INSTEAD OF THE ROOT, 8 pass / 1 fail.",
@@ -994,6 +1028,7 @@ const scrum: ScrumDashboard = {
           "THE SUITE AFTER THIS SUBTASK: 856 pass / 0 fail across 57 files, five exits read individually, all 0.",
           "UNRUNNABLE IS NOT PASSED, AND TODAY THIS MACHINE IS THE WITNESS: two of the five tools are absent from PATH here, so a runner treating a spawn error as anything but non-green would ship green over two checks that never ran.",
           "THE WORKING DIRECTORY IS A HAZARD AND NOT A DETAIL: the first check finds its configuration only in the current directory, so a runner inheriting a subdirectory would report five greens over a suite that built nothing.",
+          "REVIEW ROUND, FINDING 2, AND THIS MACHINE IS THE LIVE WITNESS FOR IT: AN UNRUNNABLE CHECK DID NOT HAVE TO GATE THE RUN. MEASURED -- the gate narrowed from `the outcome is not passed` to `the outcome is failed`, with outcome, reason and every byte of the report unchanged -- 12 pass / 0 fail in the file AND 859 pass / 0 fail across the whole suite. The arm named for it carried its non-green half on a DIFFERENT check in the same tree, one that ran and said no, so it measured the DISTINGUISHABILITY half and never the gating half: two hazards in one test, one of them unmeasured. IT IS NOT THE DEGENERATE ALREADY RECORDED ONE ENTRY ABOVE -- a spawn error counted as a pass flips the outcome and reddens the report text; this one moves the exit code alone. `oxfmt` and `tsc` are absent from this machine's own PATH, so under that narrowing the runner would ship exit 0 today over two checks that never ran. The repair is a tree whose SOLE non-pass is the missing binary, with every other check's pass asserted so the colour is attributable. DEGENERATE RE-RUN: 13 pass / 1 fail, the new arm alone. Commit 1212c4a.",
         ],
       },
       {
@@ -1009,6 +1044,16 @@ const scrum: ScrumDashboard = {
               "test(dod): read the warning count off the real linter, and require it not to gate",
             phase: "green",
           },
+          {
+            hash: "97d5665",
+            message: "test(dod): sandwich the linter, so the warning count is read as a sum",
+            phase: "green",
+          },
+          {
+            hash: "d30f5c1",
+            message: "test(dod): give the linter's run an identity, so two readings are one run",
+            phase: "green",
+          },
         ],
         notes: [
           "THE ARMS RUN THE LINTER RATHER THAN ECHOING THE SHAPE THE PARSE LOOKS FOR, and that is a choice with a cost: an arm printing `path:line:col: warning ...` itself would assert the runner against its own regular expression and would stay green the day oxlint changes how a diagnostic is printed -- which is the day this must fail. What is planted instead is SOURCE: a generator with no `yield` for the warning, a missing file extension for the error, both measured before the arms were authored (warning tree exit 0 with one line, error tree exit 1 with one line, clean tree silent).",
@@ -1018,6 +1063,8 @@ const scrum: ScrumDashboard = {
           "A SECOND CRITERION AND NOT A CLAUSE OF THE FIRST, on this project's own rule that a hazard owns a test whose FIRST assertion it is: folded in, the exit-code assertions fire first and the warning reading could never be the thing that fails. The perturbation differs too -- planting a warning moves no exit code.",
           "REPORTED AND NOT GATING, RULED: this tree carries ONE deliberate warning whose fixture records a refusal to silence it, so failing on warnings would overturn a decision by way of a tooling change -- and an instrument red on every green tree retires itself.",
           "THE COUNT IS A PARSE, SO IT SHIPS WITH ITS PAIR. MEASURED on the installed linter, in a pipe and under a terminal alike: one line per diagnostic, no summary line -- so the count comes from lines, and re-measuring on a version bump is the maintenance this buys.",
+          "REVIEW ROUND, FINDING 3 -- THE COUNT COULD COME FROM THE FIRST CHECK ALONE AND EVERY ARM STAYED GREEN, because the linted tree declared the linter ALONE. With one check the first result, the last result and the total are extensionally equal, so every weaker reading of the aggregate is satisfied: MEASURED, the sum replaced by the FIRST result's count, 12 pass / 0 fail. IN THE REAL DASHBOARD THE LINTER IS THE SECOND OF FIVE, so that runner ships `warnings: 0` over a linter that emitted one, and this record's own claim that the count aggregates over all five had no arm behind it. One silent check before the linter and one after, the count still one. THE LAST READING WAS BOUGHT IN THE SAME MOVE and is worth its half -- five recorded occurrences here are the LAST command's status read as the run's. DEGENERATES RE-RUN: first-only, 13 pass / 1 fail; last-only, 13 pass / 1 fail. Commit 97d5665.",
+          "FINDING 5, FROM CODEX, AND IT IS AN IDENTITY PROBLEM RATHER THAN A VALUE ONE: the arm read an EXIT CODE and a WARNING COUNT off the linter and could not say they came from the same invocation of it. A runner spawning each check twice, taking the exit from the first run and the warnings from the second, prints exactly what was asserted -- the fixture is deterministic, so the second run's bytes are the first run's bytes. MEASURED with the bare `oxlint`: that runner left ALL THREE linted arms green, 9 pass / 5 fail with every red elsewhere in the file. The linter now runs through a wrapper that records its invocation and then `exec`s it, so the exit code and every parsed byte stay the real program's, and the log is asserted WHOLE. ARITY IS WHAT CARRIES IT: one entry is one invocation, so two readings cannot be two runs -- no nonce is needed and none was built. DEGENERATE RE-RUN: 7 pass / 7 fail, the two linted arms joining. Commit d30f5c1.",
         ],
       },
       {
@@ -1070,6 +1117,8 @@ const scrum: ScrumDashboard = {
       "THE RESIDUE IS NAMED IN ADVANCE RATHER THAN DISCOVERED: an actor who types the five commands out of habit is NOT COVERED. A sixth occurrence arriving by that route is a new item against the commit moment, not a regression of this one.",
       "THE DUPLICATED ENUMERATION IS REFUSED EVEN ON AN ALL-GREEN RUN, and the developer's design discharges it structurally rather than by assertion: the runner obtains its list by EXECUTING the dashboard, so there is no second list to drift. The alternative -- the runner holds the list and a test asserts equality -- satisfies the property equally, and whichever is taken, the choice and its cost are stated.",
       "MEASURED AT PLANNING SO IT IS NOT MET AT RED: running the checks through one script does NOT change what any of them sees. The wrapper does not prepend the local binary directory to a child's path, so tool resolution is identical bare and wrapped; and the linter's output format is identical through a pipe and under a terminal.",
+      "THE REVIEW ROUND'S SIX FINDINGS SHARE ONE SUBJECT AND IT IS THE INSTRUMENT ITSELF: THREE OF THEM ARE THIS PROJECT'S RECORDED DEFECT LIVING INSIDE THE MACHINE BUILT TO ELIMINATE IT -- a summary headline that could read PASSED over a failing run, an unrunnable check that did not have to gate, and a warning count taken from ONE check and printed over five. Every one of them was green while the property it defends was violated, and none was findable by reading. THE STANDING RULE THIS LEAVES IS MECHANICAL AND APPLIES TO ANY ARM OVER A REPORT: an arm over a SUMMARY asserts BOTH DIRECTIONS, since one direction is satisfied by a constant; an arm over a GATE stands in a tree where NOTHING ELSE IS RED, or the colour it reads belongs to something else; an arm over an AGGREGATE stands where the aggregate DIFFERS FROM EVERY ELEMENT, or first, last and total are one value. That is the previous round's `test data that cannot discriminate` specialised to the three shapes a report has.",
+      "AND THE ROUND WAS TAKEN WITH THE THING THIS SPRINT BUILT, WHICH IS THE FIRST TIME A RED HERE WAS CAUGHT BY A MACHINE RATHER THAN BY A READER'S DISCIPLINE: every fix was taken on `bun run scripts/definition-of-done.ts`, and TWICE it printed `[FAILED] Format check passes -- exit 1` beside four `[PASSED]` lines: once over a type declaration the formatter wanted on one line, once over a quotation mark inside one of these notes. Under the habit this sprint exists to retire -- five commands typed by hand, the last one read -- both of those commits go in red, and the second is this dashboard itself, which is where four of the five recorded occurrences came from. Each was fixed and the whole run repeated before committing. THE SUITE WENT 859 -> 862 ACROSS THE SIX FIXES and no check was red at any commit.",
       "THE FILING BAR FOR THE REVIEW ROUND LANDS THIS SPRINT, in this dashboard's header beside the round's standing instruction -- NOT in a skill, which is the delivery that failed, and NOT in the round's own skill file, which lives outside this repository and would be invisible to this project's review of its own records. A finding recorded as PRE-EXISTING names both commits and the byte-identity result at the sprint's base, or it is this sprint's to repair; it names the item it is filed into, or it is not filed; and PREDATING IS NOT ITSELF A LICENCE -- a finding inside the sprint's own subject is repaired here even when it predates.",
     ],
   },
