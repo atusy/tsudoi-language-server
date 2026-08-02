@@ -501,15 +501,20 @@ test("the suite's deadline outlives the largest helper deadline an ungated test 
  * blind spots nobody has measured. A rot detector, not a barrier -- the same
  * ruling `.oxlintrc.json` carries for its own guards.
  */
+function numeralsIn(source: string): readonly number[] {
+  return [...source.matchAll(/(?<![\w.])(\d[\d_]{3,})(?![\w.])/g)].map((match) =>
+    Number(match[1]!.replaceAll("_", "")),
+  );
+}
+
 const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
   .filter((name) => name.endsWith(".ts") && name !== "deadline.ts")
-  .flatMap((name) => {
-    const source = readFileSync(join(repoRoot, "test", "helpers", name), "utf8");
-    return [...source.matchAll(/(?<![\w.])(\d[\d_]{3,})(?![\w.])/g)].map((match) => ({
+  .flatMap((name) =>
+    numeralsIn(readFileSync(join(repoRoot, "test", "helpers", name), "utf8")).map((ms) => ({
       file: name,
-      ms: Number(match[1]!.replaceAll("_", "")),
-    }));
-  });
+      ms,
+    })),
+  );
 
 /**
  * THE PAIR THE PIN CANNOT DO WITHOUT: `25_000 > 20_000` is true of a tree where
@@ -528,6 +533,14 @@ const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
  * THEMSELVES and so fire first. It is also a leak bound on a spawned child
  * rather than a diagnostic, so arriving second costs a reader nothing. THE DAY
  * SOMETHING ELSE REACHES IT, this exception is what has to be argued again.
+ *
+ * AND THAT WHOLE ARGUMENT RESTS ON A NUMBER NOTHING PINNED, WHICH IS THE ONE
+ * ARRIVING SECOND. MEASURED: the rig's self-exit changed from 30_000 to 3_000
+ * read 17 pass / 0 fail -- the exclusion still standing, its premise inverted,
+ * and the timer now firing FIRST and killing the two rig tests with a message
+ * about a child process rather than about the server they are watching. It is
+ * pinned two arms below, where the root enumeration this file needs for it
+ * exists.
  *
  * `deadline.ts` IS EXCLUDED TOO, and for a different reason: it is the file that
  * DECLARES the number under test, so including it would compare the constant
@@ -743,6 +756,70 @@ test("the sweep's needle takes the call and refuses one that has been commented 
       'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\ntest("t", () => {\n  applySuiteDeadline();\n});\n',
     ),
   ).toBe(false);
+});
+
+/**
+ * The files that start the fake editor, read with the needle a reference to it
+ * must carry. A rot detector like every text arm here: prose ending in that same
+ * quoted path would count as a reacher, which is the loud direction.
+ *
+ * THIS FILE IS EXCLUDED AND IT LEARNED WHY BY READING ITSELF -- the arm went red
+ * on its own source the first time it ran, because the file that SPELLS the
+ * needle contains it. The same shape as the helper scan dropping deadline.ts,
+ * and safe for the same reason: this file starts no rig.
+ */
+const thisFile = relative(repoRoot, fileURLToPath(import.meta.url));
+
+const rigReachers = rootTestFiles.filter(
+  (path) =>
+    path !== thisFile &&
+    readFileSync(join(repoRoot, path), "utf8").includes('helpers/fake-editor.ts"'),
+);
+
+/**
+ * THE NUMBER THE HELPER ARM'S EXCLUSION IS MADE OF, PINNED AT LAST. The scan
+ * above drops test/helpers/fake-editor.ts on an argument with two halves -- the
+ * rig's timer is LARGE ENOUGH that the deadline of the file reaching it fires
+ * first, and only one file reaches it -- and the number that argument turns on
+ * was stated as fact in three places' prose and asserted nowhere. MEASURED: the
+ * self-exit changed from 30_000 to 3_000 read 20 pass / 0 fail in this file, the
+ * exclusion still standing with its premise inverted.
+ *
+ * IT IS PINNED AGAINST THE SUITE'S OWN DEADLINE FIRST, and that is the assertion
+ * that survives the file below dropping its own: an ungated test that reached
+ * this rig would run at `suiteDeadlineMs`, so the rig arriving second means
+ * outliving THAT, whatever any file sets for itself.
+ *
+ * AND AGAINST THE REACHING FILE'S LARGEST NUMERAL SECOND, which is a PROXY and
+ * says so: it is the same numeral scan, so what it compares is the biggest number
+ * that file writes rather than the deadline it sets. On today's tree the two are
+ * the same value, and the day they part this arm reddens rather than going quiet.
+ */
+test("the excluded rig timer outlives every deadline that can reach it", () => {
+  const rig = helperDeadlines
+    .filter((found) => found.file === "fake-editor.ts")
+    .map((found) => found.ms);
+  const reacherNumerals = rigReachers.flatMap((path) =>
+    numeralsIn(readFileSync(join(repoRoot, path), "utf8")),
+  );
+
+  // THE PAIR FOR BOTH COMPARISONS: `Math.min()` of nothing is Infinity, which
+  // outlives everything and measures nothing.
+  expect(rig).not.toEqual([]);
+  expect(reacherNumerals).not.toEqual([]);
+  expect(Math.min(...rig)).toBeGreaterThan(suiteDeadlineMs);
+  expect(Math.min(...rig)).toBeGreaterThan(Math.max(...reacherNumerals));
+});
+
+/**
+ * THE EXCLUSION'S OTHER HALF, ITS OWN ARM BECAUSE IT IS ITS OWN HAZARD: `the only
+ * tests that start that rig` is a claim about the whole root suite, and the day a
+ * second file reaches for the fake editor the paragraph above has to be argued
+ * again. Written as a test so that whoever writes that file is told, rather than
+ * left to find the exception years later.
+ */
+test("only the rig's own file reaches the fake editor", () => {
+  expect(rigReachers).toEqual(["test/editor-death.test.ts"]);
 });
 
 /**
