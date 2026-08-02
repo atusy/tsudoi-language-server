@@ -45,6 +45,17 @@
 // criterion asserts a product property a perturbation can falsify;
 // `revise` finds what nobody thought to assert. NO CRITERION MAY BE MET
 // BY ARGUMENT AT REVIEW.
+//
+// THE FILING BAR FOR THAT ROUND, WHICH QUALIFIES THE INSTRUCTION ABOVE
+// RATHER THAN STANDING ON ITS OWN. It is HERE and not in a skill --
+// delivery by skill is the thing this project has measured failing under
+// load -- and not in the round's own skill file, which lives outside this
+// repository and would be invisible to this project's review of its own
+// records. A FINDING RECORDED AS PRE-EXISTING NAMES BOTH COMMITS AND THE
+// BYTE-IDENTITY RESULT AT THE SPRINT'S BASE, OR IT IS THIS SPRINT'S TO
+// REPAIR. IT NAMES THE ITEM IT IS FILED INTO, OR IT IS NOT FILED. AND
+// PREDATING IS NOT ITSELF A LICENCE: a finding inside the sprint's own
+// subject is repaired here even when it predates.
 // ============================================================
 
 const userStoryRoles = [
@@ -876,6 +887,14 @@ const scrum: ScrumDashboard = {
       ],
     },
   ],
+  // THIS LIST IS DATA, AND `bun run scripts/definition-of-done.ts` IS THE ONE
+  // FORM FOR TAKING IT. That runner EXECUTES this file and reads the checks
+  // below out of the JSON it prints, so an entry added here runs with no edit
+  // anywhere else -- which is the whole point, and the reason a copy of this
+  // list may not be written into the runner. WHAT THIS FIELD MUST STAY: `run`
+  // is an executable shell command, so nothing a command cannot verify belongs
+  // in it, and the runner is NOT added here as a sixth entry -- a check that
+  // runs every check would run itself, unbounded.
   definition_of_done: {
     checks: [
       {
@@ -1017,9 +1036,13 @@ const scrum: ScrumDashboard = {
         implementation:
           "The documentation's Commands section names the one form, with running a single check labelled DEBUGGING so it cannot be read as verification; and the filing bar lands in this dashboard's header where the round's standing instruction already lives.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "NO ARM, THEREFORE NO DEGENERATE, SAID RATHER THAN INVENTED: this subtask is prose, and a degenerate run against prose would be theatre. What it can be held to instead is where the words landed and what grades them.",
+          "THE COMMANDS SECTION NOW OPENS WITH THE ONE FORM and carries the five under a DEBUGGING heading that says in its own words that running them by hand is not verifying a change. THE SYNC OBLIGATION IS NAMED AT THE OTHER END TOO, and it MOVED rather than disappearing: the runner reads `definition_of_done.checks` at run time, so a check added there costs no edit anywhere; what still has to be kept by hand is the DEBUGGING list, which nothing executes and which sits in a file this repository does not track.",
+          "THE FILING BAR LANDED VERBATIM IN THE HEADER BESIDE THE ROUND'S STANDING INSTRUCTION, and the dashboard's `definition_of_done` now carries a comment AT THE SITE saying the list is the runner's data and that the runner is not added here as a sixth entry -- which is where that edit would be made, and the only place a reader meets the five without meeting the runner.",
+          "READ AGAINST THIS PROJECT'S OWN CONVENTION BEFORE IT LANDED: no fenced block was added to README.md, whose blocks are extracted and executed; the two blocks added are in the untracked guidance file, which the extraction does not read -- checked, nothing under test/ or scripts/ names that file at all.",
           "NO FENCED BLOCK IS ADDED TO THE README: its command blocks are extracted and executed by the suite, and the runner runs the suite -- it would run itself. The commands appear there as prose today, which is what makes prose the safe carrier.",
           "THE DOCUMENTATION ENDPOINT IS DELIVERY AND NOT THE MECHANISM, and the record says so rather than letting a later reader find it: that file is untracked in this repository, so one end of the sync obligation is a file no fresh checkout has and no check can grade.",
         ],
