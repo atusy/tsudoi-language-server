@@ -421,28 +421,46 @@ test("a member's emitted declaration is not reported as uncovered", async () => 
  * SO THE EXCLUSION IS CONDITIONAL, AND THE PAIR IS THE POINT: flip the setting
  * off and the same file RE-ENTERS the subject. A guard that simply never
  * mentions a `.d.ts` has a NAME in it where this has a property.
+ *
+ * THE TWO PROGRAMS ARE SET SEPARATELY, AND THAT IS WHAT MAKES THE PAIR MEAN
+ * `ONCE ONE OF THEM STOPS`. One options object fed to both builds only all-on
+ * and all-off trees, and on those `every program skips` and `some program skips`
+ * are the same reading -- MEASURED: with the condition weakened to `some`,
+ * nothing in this file or in the suite reddened. The tree below is therefore
+ * MIXED, with the ROOT the one that stops skipping, so the two runs differ by
+ * exactly one flag on exactly one config and the weaker reading goes silent.
  */
-function declarationNoProgramIncludes(skipsLibCheck: boolean): Record<string, string> {
-  const options = skipsLibCheck ? { ...programOptions, skipLibCheck: true } : programOptions;
+function declarationNoProgramIncludes(skipping: {
+  readonly root: boolean;
+  readonly member: boolean;
+}): Record<string, string> {
+  const optionsFor = (skips: boolean) =>
+    skips ? { ...programOptions, skipLibCheck: true } : programOptions;
   return {
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
-    "tsconfig.json": JSON.stringify({ compilerOptions: options, exclude: ["packages"] }),
+    "tsconfig.json": JSON.stringify({
+      compilerOptions: optionsFor(skipping.root),
+      exclude: ["packages"],
+    }),
     "packages/late/package.json": JSON.stringify({ name: "late" }),
-    "packages/late/tsconfig.json": JSON.stringify({ compilerOptions: options, include: ["src"] }),
+    "packages/late/tsconfig.json": JSON.stringify({
+      compilerOptions: optionsFor(skipping.member),
+      include: ["src"],
+    }),
     "packages/late/src/index.ts": typeChecks,
     [join("packages", "late", "types", "legacy.d.ts")]: "declare const legacy: number;\n",
   };
 }
 
 test("a declaration file no program includes is left alone while lib checking is skipped", async () => {
-  const result = await checkWorkspace(declarationNoProgramIncludes(true));
+  const result = await checkWorkspace(declarationNoProgramIncludes({ root: true, member: true }));
 
   expect(result.stderr).toBe("");
   expect(result.code).toBe(0);
 });
 
 test("the same declaration file is reported once a program stops skipping lib checking", async () => {
-  const result = await checkWorkspace(declarationNoProgramIncludes(false));
+  const result = await checkWorkspace(declarationNoProgramIncludes({ root: false, member: true }));
 
   expect(result.stderr).toContain(join("packages", "late", "types", "legacy.d.ts"));
   expect(result.code).not.toBe(0);
