@@ -85,8 +85,8 @@
 # would not close this: the set of directories someone can stand in has no end.
 #
 # ONE THING A READER STANDING HERE NEEDS AND WILL NOT FIND HERE: THE SUITE'S TIME
-# LIMIT IS NOT SET IN THIS FILE, AND `bun test --timeout N` NO LONGER DOES
-# ANYTHING. It is set per file by `applySuiteDeadline()` from
+# LIMIT IS NOT SET IN THIS FILE, AND `bun test --timeout N` NO LONGER REACHES ANY
+# FILE THAT CALLS FOR ITSELF. It is set per file by `applySuiteDeadline()` from
 # test/helpers/deadline.ts, where the number and both of its bounds are written.
 # THE FLAG IS INERT FOR EVERY SWEPT FILE, MEASURED IN BOTH DIRECTIONS: a file
 # calling that function with 20_000 passes a 6000ms test under `--timeout 3000`,
@@ -94,6 +94,15 @@
 # `--timeout 30000`. That retires the `--timeout 30000` idiom this project used
 # through four sprints to tell a machine's red from the code's; the knob that
 # still works is TSUDOI_TEST_TIMEOUT_MS.
+#
+# AND `NO LONGER DOES ANYTHING` IS WHAT THIS SAID UNTIL IT WAS MEASURED, three
+# lines above its own narrow form. THE FLAG STILL BINDS THE WORKSPACE MEMBERS'
+# OWN SUITES, which the root `bun test` runs -- they live under packages/, they
+# call nothing, and the sweep in test/suite-deadline.test.ts excludes them with
+# its reason. MEASURED: `bun test packages/tsudoi-completion-path/test/resolve.test.ts
+# --timeout 1` exits 1, 9 pass / 5 fail, five arms reporting `this test timed out
+# after 1ms`. So the flag is a knob over exactly the files nothing else covers,
+# which is the opposite of the reading the retired sentence invited.
 #
 # AND IT IS NOT A SECOND PRELOAD ENTRY, WHICH IS THE OBVIOUS PLACE TO PUT IT AND
 # THE ONE THAT DOES NOT WORK. MEASURED on bun 1.3.13: `setDefaultTimeout` called
