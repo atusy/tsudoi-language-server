@@ -633,8 +633,10 @@ test("a config outside the root and outside every member still covers its own fi
  * measures: unlinking the file leaves the entry, so nothing here separates an
  * unreadable TRACKED config from an unreadable untracked one, and the arm is
  * green under a reader that never asked. What defends the tracked-only
- * enumeration is the stray-config arm below, where an unstaged config is the
- * whole subject.
+ * enumeration is `a config that is not staged does not mark the tree covered`,
+ * where an unstaged config is the whole subject -- CITED BY NAME AND NOT BY
+ * DIRECTION, since a reorder would silently falsify `below` and no grep for a
+ * claim's words would find it.
  */
 test("a config the compiler cannot read is refused by name, not read as covering nothing", async () => {
   const root = workspace(configOutsideEveryMember());
