@@ -77,6 +77,53 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-70",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "trust that an arm defending a predicate would notice the predicate being weakened",
+        benefit:
+          "a green arm means the fixture could have told the difference, not that the author believed it could",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "An arm defending a predicate carries a recorded perturbation to the ADJACENT WEAKER READING of that predicate, and that perturbation reddens it.",
+          verification:
+            "The procedure is the criterion: take an arm, weaken its predicate by one step, run it. STARTING EVIDENCE, THREE INSTANCES MEASURED IN ONE SPRINT, each with the fixture change that separated the readings: an output directory whose declared value EQUALLED the string being matched; ONE options object handed to two programs, so `every` and `some` were extensionally equal across every tree that fixture could build; and an arm whose name said `tracked` while the fixture left the entry in the index.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "A DIFFERENT FINDING FROM THE ONE FILED ONE SPRINT EARLIER, and the test for that is that the REPAIRS ARE OPPOSITE. The earlier class read the WRONG QUANTITY -- a value where the property was an ordinal, a column where it was a position -- and its repair is to read a different quantity. THIS class reads the RIGHT quantity against a subject that CANNOT DISCRIMINATE: the shipped predicate and its adjacent weaker reading have identical truth values over the fixture's entire range. The instrument is fine; the data has no case that separates the readings, and the repair is to build a tree in which they differ.",
+        "IT IS MECHANICALLY FINDABLE IN A WAY THE EARLIER CLASS IS NOT, which is why it is filed as a PROCEDURE and not as three instances: perturb the predicate to its adjacent weaker reading and require the arm to redden. That procedure found all three, in one sprint, in code that had already been reviewed.",
+        "DELIBERATELY NOT FOLDED INTO THE CITATION ITEM: this is not an ordering-or-causality claim at all. It is a property of TEST DATA, and its remedy is something a sprint can run.",
+      ],
+    },
+    {
+      id: "PBI-71",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "put a scratch file where this repository says to put scratch files without it running in the suite ungraded",
+        benefit:
+          "the one directory kept for what is not accounted for stops being a hole in the accounting",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A TypeScript file under the directory this repository ignores is either not run by the suite, or is graded by something.",
+          verification:
+            "STARTING EVIDENCE, MEASURED: the test runner DISCOVERS a test file under an ignored directory -- a throwaway checkout ignoring one, holding one file inside it and one outside, ran BOTH. So such a file runs, is type-checked by nothing, and the refusal that closed this class everywhere else cannot see it.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WIDENING THE SUBJECT TO IGNORED FILES IS REFUSED IN ADVANCE, and the refusal is the point of filing this separately rather than as a gap in the guard: it would bring back every installed stranger and every built artifact, which the ignore file excludes for its own good reasons. WHAT IS OWED IS A DIFFERENT DISCRIMINATOR, NOT A LOOSER RULE.",
+        "AND THE ITEM IS FILED BECAUSE DISCLOSED AND COVERED ARE DIFFERENT STATES. The residue was named as a decision before its sprint closed rather than discovered at review, which is the standard; it is filed so the naming does not come to be read as the covering.",
+      ],
+    },
+    {
       id: "PBI-68",
       story: {
         role: "tsudoi maintainer",
@@ -264,6 +311,9 @@ const scrum: ScrumDashboard = {
       notes: [
         "THE COUNT SITE THIS PBI WAS FILED WITH IS ALREADY CLOSED, and how it closed is the argument for the rest: adding four skill files moved the documented number, and it was repaired BY NAMING rather than by writing the new number -- which is the convention this project holds and the reason the count was a defect rather than a typo.",
         "SEPARATED FROM STALE-VALUE REPAIRS BY WHAT MAKES THEM WRONG: an excluded directory that matches nothing is a VALUE that went stale, while the pin's licence is a MECHANISM CLAIM that is now false -- which is the class this project has filed five instances of and has no check for.",
+        "SAME-SPRINT FALSITY IS A NAMED SUBCASE AND IT IS THE HARDER ONE. Every instance filed here so far has an innocent story -- the mechanism was removed AFTER the sentence was written -- and that story licenses reading the prose as once-true. SPRINT 55 PRODUCED ONE WITH NO SUCH STORY: a function's docstring said `NO EXEMPTION LIST, AND SHIPPING WITHOUT ONE IS A DECISION` while the function shipped one, and the sentence and the code it misdescribes were written BY THE SAME AUTHOR IN THE SAME SPRINT. The prose was never read against the implementation even once.",
+        "AND THE CLASS RECURRED INSIDE ITS OWN REPAIR, which is what makes it structural rather than a lapse. The corrected subtraction reads `not in the index AND under a declared output directory`, and the sound direction is the one the code takes: in the index implies not compiler-written. THE DOCSTRING ABOVE IT ASSERTS THE CONVERSE AS AN IDENTITY -- `an untracked path under a program's own output directory IS a file the compiler WROTE`. It is not: an untracked file a person dropped there is excused, and nothing in the tree names that. It does not bite in this checkout because every build output is ignored and never reaches candidacy; in a throwaway with no ignore file it would.",
+        "WHAT THIS SAYS ABOUT WHERE THIS PROJECT'S PROSE SITS RELATIVE TO ITS CODE, and it is the reason this item matters more than tidiness: THE SUPERLATIVES ARE THE STRONGEST CLAIMS IN THE TREE AND THE ONLY ONES WITH NO ENFORCEMENT AT ALL. A false superlative is not a documentation defect -- it is a specification with no compiler, read by the next contributor as settled. AND READING THEM DOES NOT FIND THEM: every finding that mattered this sprint came from applying a degenerate to shipped code, not from a careful re-read.",
         "THE GENERALISATION IS REFUSED IN ADVANCE: no guard that every exclude entry matches something on disk. An unmatched pattern is legitimate configuration, such a guard would redden correct files, and this instance was caught by the layer meant to catch it -- filed by its executor rather than shipped.",
       ],
     },
