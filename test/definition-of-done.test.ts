@@ -118,9 +118,26 @@ function stageTree(): Tree {
       // THE DASHBOARD IS EXECUTED AND ITS JSON PARSED, so a throwaway one need
       // only print the same shape -- which is the whole reason the runner cannot
       // hold a list of its own.
+      //
+      // IT COMPUTES THE SHAPE INSTEAD OF SPELLING IT, AND THAT IS WHAT MAKES
+      // `EXECUTED` MEASURABLE HERE. A fixture that wrote the object out inline
+      // has its OUTPUT SITTING IN ITS TEXT, so every arm in this file is
+      // satisfied by any means of obtaining that JSON -- MEASURED: a runner
+      // slicing the file from its first brace to its last, never running it,
+      // left this file 12 pass / 0 fail while dying on the real dashboard, which
+      // is a TypeScript program. The pairs below are declared FLAT and the
+      // `{ definition_of_done: { checks } }` shape is assembled at run time, so
+      // NO SUBSTRING OF THIS FILE IS THE JSON IT PRINTS.
+      const pairs = checks.map((check) => [check.name, check.run]);
       writeFileSync(
         join(root, "scrum.ts"),
-        `console.log(JSON.stringify(${JSON.stringify({ definition_of_done: { checks } })}));\n`,
+        [
+          `const declared = ${JSON.stringify(pairs)};`,
+          "const checks = [];",
+          "for (const [name, run] of declared) checks.push({ name, run });",
+          "console.log(JSON.stringify({ definition_of_done: { checks } }));",
+          "",
+        ].join("\n"),
       );
     },
     invocations: () =>
