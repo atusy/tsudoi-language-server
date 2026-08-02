@@ -295,10 +295,10 @@ test("a check that never started is non-green and is not a check that ran and fa
     { name: "gamma", run: tree.logged("gamma", 0) },
   ]);
   const result = await tree.run();
-  // THIS MACHINE IS THE WITNESS AND NOT A HYPOTHETICAL: two of the five tools
-  // were absent from PATH where this was written, so a runner treating a spawn
-  // error as anything but non-green would have shipped green over two checks
-  // that never ran.
+  // THE COLOUR HERE IS NOT THIS ARM'S EVIDENCE AND THE NEXT ARM HOLDS THAT HALF:
+  // `beta` ran and failed in this same tree, so the run is red whether or not a
+  // check that never started gates anything. What this arm measures is the
+  // DIFFERENCE between the two, which is why both are present.
   expect(result.code).not.toBe(0);
   // TWO STATES THAT PRINT THE SAME TEXT ARE ONE RED, so what is asserted is the
   // DIFFERENCE: the one that never started carries no exit code of its own and
@@ -310,6 +310,40 @@ test("a check that never started is non-green and is not a check that ran and fa
   // AND IT DID NOT SILENTLY RUN SOMETHING ELSE: the checks after it still ran,
   // which is what distinguishes a reported non-start from an aborted run.
   expect(tree.invocations()).toEqual(["beta", "gamma"]);
+});
+
+test("a check that never started GATES the run, with every other check green", async () => {
+  const tree = stageTree();
+  // THE SOLE NON-PASS IN THIS TREE IS THE BINARY THAT IS NOT THERE, and that is
+  // the whole design: the arm above cannot say it, because a check that RAN AND
+  // FAILED sits beside the missing one and reddens the run on its own.
+  //
+  // MEASURED: the gate narrowed from `the outcome is not passed` to `the outcome
+  // is failed` -- outcome, reason and every byte of the report unchanged -- left
+  // this file 12 pass / 0 fail AND THE WHOLE SUITE 859 pass / 0 fail. IT IS NOT
+  // THE DEGENERATE ALREADY RECORDED, a spawn error counted as a pass: that one
+  // flips the outcome, so the report reddens and the distinguishability arm sees
+  // it. This one leaves the text alone and only the exit code moves, so nothing
+  // but a tree of passes around one missing binary can detect it.
+  //
+  // AND THIS MACHINE IS THE LIVE WITNESS RATHER THAN A HYPOTHETICAL: `oxfmt` and
+  // `tsc` are not on this machine's own PATH, so under that narrowing the runner
+  // ships exit 0 today over two of the five checks that never ran.
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "absent", run: tree.missingBinary() },
+    { name: "gamma", run: tree.logged("gamma", 0) },
+  ]);
+  const result = await tree.run();
+  expect(result.code).not.toBe(0);
+  expect(report(result)).toContain("Definition of Done: FAILED");
+  expect(report(result)).toContain("[UNRUNNABLE] absent -- never started:");
+  // THE CONTROL THAT MAKES THE COLOUR ATTRIBUTABLE: every other check in the
+  // tree reported a pass, so the one thing left holding the run red is the check
+  // that never started.
+  expect(report(result)).toContain("[PASSED] alpha -- exit 0");
+  expect(report(result)).toContain("[PASSED] gamma -- exit 0");
+  expect(tree.invocations()).toEqual(["alpha", "gamma"]);
 });
 
 test("the same run taken from a SUBDIRECTORY reads the same, checks included", async () => {
