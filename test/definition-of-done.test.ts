@@ -47,8 +47,16 @@ interface Check {
 /** A throwaway checkout carrying its own dashboard, and the runner's view of it. */
 interface Tree {
   root: string;
-  /** A command that records its own invocation and then exits with `exit`. */
-  logged: (name: string, exit: number) => string;
+  /**
+   * A command that records its own invocation and then exits with `exit`,
+   * optionally pausing that many seconds BEFORE it records itself.
+   *
+   * THE PAUSE IS AN INSTRUMENT AND NOT A DELAY: it is the only thing that makes
+   * a log ORDER read as an order rather than as a coincidence, since three
+   * commands that each take milliseconds tend to finish in the order they were
+   * started even when nothing made them.
+   */
+  logged: (name: string, exit: number, pauseSeconds?: number) => string;
   /**
    * A command that records its own invocation under `name` and then BECOMES the
    * program given, whose exit code and output bytes are then its own.
@@ -103,7 +111,10 @@ function stageTree(): Tree {
   // shape: it spawns the program named in `run` directly, so that a command
   // naming no binary arrives as a spawn error rather than as a shell's 127.
   // Quoting a one-liner into that has nowhere to go.
-  writeFileSync(logger, `#!/bin/sh\nprintf '%s\\n' "$1" >> ${log}\nexit "$2"\n`);
+  writeFileSync(
+    logger,
+    `#!/bin/sh\n[ -n "$3" ] && sleep "$3"\nprintf '%s\\n' "$1" >> ${log}\nexit "$2"\n`,
+  );
   chmodSync(logger, 0o755);
   // THE DIRECTORY A CHECK IS RUN IN IS RECORDED THE SAME WAY ITS NAME IS,
   // because that is the half of "the same reading" no exit code carries: the
@@ -121,7 +132,8 @@ function stageTree(): Tree {
   copyFileSync(runner, standalone);
   return {
     root,
-    logged: (name, exit) => `${logger} ${name} ${exit}`,
+    logged: (name, exit, pauseSeconds) =>
+      `${logger} ${name} ${exit}${pauseSeconds === undefined ? "" : ` ${pauseSeconds}`}`,
     wrapping: (name, program) => {
       const wrapper = join(root, `wrapping-${name}`);
       // `exec`, SO THE WRAPPER STOPS EXISTING THE MOMENT THE REAL PROGRAM STARTS:
@@ -258,8 +270,20 @@ test("what ran is the dashboard's list, as a SEQUENCE and not as a set", async (
   // the first real check builds every artifact the fourth reads -- and `all of
   // them ran` is MEMBERSHIP where the property is ORDER: a runner sorting the
   // list, or reversing it, changes no value and would pass a set-shaped arm.
+  //
+  // AND THE FIRST CHECK PAUSES BEFORE IT RECORDS ITSELF, WHICH IS WHAT MAKES
+  // THIS ARM'S NAME TRUE. Three commands that each take milliseconds tend to
+  // finish in the order they were STARTED even when nothing sequenced them, so
+  // the log alone could not tell order from coincidence. MEASURED against a
+  // runner starting every check at once, and the rate itself is evidence: this
+  // arm -- the one NAMED for the property -- reddened on 3 of 5 runs for the
+  // reviewer who found it and on 4 of 5 when re-run here, while the FILE
+  // reddened on 5 of 5 both times, its detection carried by arms named for
+  // something else. A pause on the FIRST check puts that check's entry LAST
+  // under any parallel execution: 5 of 5, and a flake that reads as a race
+  // becomes a reading of the property.
   tree.declare([
-    { name: "gamma", run: tree.logged("gamma", 0) },
+    { name: "gamma", run: tree.logged("gamma", 0, 0.3) },
     { name: "alpha", run: tree.logged("alpha", 0) },
     { name: "beta", run: tree.logged("beta", 0) },
   ]);
