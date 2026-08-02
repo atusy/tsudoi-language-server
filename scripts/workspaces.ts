@@ -701,6 +701,8 @@ interface Program {
   readonly outDir: string | undefined;
   /** Whether it reports that it skips checking declaration bodies. */
   readonly skipsLibCheck: boolean;
+  /** The configs it declares as project references, as absolute paths. */
+  readonly references: readonly string[];
 }
 
 /**
@@ -750,8 +752,18 @@ function readProgram(root: string, config: string): Program {
   }
   const effective = JSON.parse(shown.stdout) as {
     compilerOptions?: { outDir?: unknown; skipLibCheck?: unknown };
+    references?: unknown;
   };
   const outDir = effective.compilerOptions?.outDir;
+  // REPORTED RATHER THAN RE-READ FROM THE FILE, MEASURED: `--showConfig` echoes
+  // `references` with the path as the author wrote it, so the same reader that
+  // answers every other question here answers this one.
+  //
+  // A REFERENCE MAY NAME A DIRECTORY, which tsconfig defines as the
+  // `tsconfig.json` inside it. Both spellings are resolved to the config a
+  // reader would have to open, because what the caller compares them against is
+  // the list of configs this check enumerated.
+  const references = Array.isArray(effective.references) ? effective.references : [];
   const listed = spawnSync(compiler, ["-p", absolute, "--listFilesOnly", "--noResolve"], {
     cwd: root,
     encoding: "utf8",
@@ -772,6 +784,14 @@ function readProgram(root: string, config: string): Program {
     // it.
     outDir: typeof outDir === "string" ? resolve(dirname(absolute), outDir) : undefined,
     skipsLibCheck: effective.compilerOptions?.skipLibCheck === true,
+    references: references.flatMap((reference) => {
+      const path = (reference as { path?: unknown }).path;
+      if (typeof path !== "string") {
+        return [];
+      }
+      const target = resolve(dirname(absolute), path);
+      return [target.endsWith(".json") ? target : join(target, "tsconfig.json")];
+    }),
   };
 }
 
@@ -878,6 +898,28 @@ function foldsCase(root: string): boolean {
  * from the programs' own reported setting and lapses the moment any of them
  * stops skipping. WHAT THIS CANNOT SEPARATE, and the guard is named for the half
  * it has: `included in a program` is not `type-checked`.
+ *
+ * PROJECT REFERENCES ARE NOT FOLLOWED, AND THAT IS A RULING WITH A MEASUREMENT
+ * UNDER IT. Programs are read ONE AT A TIME and never as a build graph, so a
+ * referenced project's files do not enter its parent's list -- a root config
+ * referencing `lib/project.json` leaves `lib/x.ts` reported, and that config's
+ * own name fails the `tsconfig*.json` filter, so nothing enumerates it either.
+ * WHAT DECIDES IT IS WHO ACTUALLY CHECKS THE FILE: MEASURED, `tsc -p` on the
+ * PARENT -- which is the form the root check and every member check take --
+ * reports NOTHING about a type error in the referenced project's source, where
+ * `-p` on the referenced config and `tsc -b` on the parent each name it. So
+ * following the reference would mark covered a file NO COMMAND IN THE DEFINITION
+ * OF DONE READS, which is a false green about the exact state this refusal
+ * exists for; and it would admit as a coverage source a config that need not be
+ * tracked, which is the stray-config hazard arriving by another door.
+ *
+ * SO A REFERENCED CONFIG MUST BE ENUMERATED IN ITS OWN RIGHT -- tracked, and
+ * named `tsconfig*.json`. One already named that way is covered today because it
+ * is independently enumerated, which was luck and is hereby the rule. AND THE
+ * REFUSAL SAYS SO WHERE IT WOULD OTHERWISE MISLEAD: a run that names files while
+ * some enumerated program declares a reference nothing here reaches names that
+ * reference too, and the RENAME, because `widen an include` is the wrong repair
+ * for a file another project already holds.
  *
  * NO EXEMPTION LIST, AND SHIPPING WITHOUT ONE IS A DECISION. MEASURED: every
  * candidate in this checkout is matched by an include of at least one program,
@@ -994,6 +1036,25 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
   if (rest.length > 0) {
     message.push(
       `${rest.join(", ")} ${rest.length === 1 ? "is a TypeScript file" : "are TypeScript files"} in this checkout that no tsconfig includes, so nothing type-checks ${rest.length === 1 ? "it" : "them"}. Widen the \`include\` of the program that ought to hold what is named here -- there is deliberately no list to exempt a file from this check.`,
+    );
+  }
+  // AND THE ONE QUALIFICATION THIS CHECK OWES ITS OWN REPAIR. Everything above
+  // tells a reader to widen an `include`, which is the WRONG edit for a file
+  // some other project already covers -- and a project this enumeration cannot
+  // see is exactly what a reference to a config named anything else is. Named
+  // here rather than followed, for the ruling recorded above.
+  const enumerated = new Set(programs.map((program) => spelling(join(root, program.config))));
+  const unreachable = [
+    ...new Set(
+      programs
+        .flatMap((program) => program.references)
+        .filter((reference) => !enumerated.has(spelling(reference))),
+    ),
+  ];
+  if (unreachable.length > 0) {
+    const one = unreachable.length === 1;
+    message.push(
+      `${unreachable.map((reference) => relative(root, reference)).join(", ")} ${one ? "is declared as a project reference and is" : "are declared as project references and are"} enumerated here by nothing -- a program counts only while it is TRACKED and named \`tsconfig*.json\`, and a referenced project's files never enter its parent's list. If anything named above is covered only by ${one ? "that project" : "one of those projects"}, RENAME the config rather than widening an \`include\`.`,
     );
   }
   throw new Error(message.join("\n"));

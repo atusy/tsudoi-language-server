@@ -835,6 +835,73 @@ test("a config that is not staged does not mark the tree covered", async () => {
 });
 
 /**
+ * A PROJECT REFERENCE, WHICH THIS CHECK DELIBERATELY DOES NOT FOLLOW -- so the
+ * arm below is about the SENTENCE and not only about the colour.
+ *
+ * WHAT THE STATE IS: programs are read one at a time and never as a build graph,
+ * so `lib/x.ts` is in the referenced project's list and in nobody else's, and
+ * `lib/project.json` fails the `tsconfig*.json` name filter, so nothing
+ * enumerates it either. The file is reported, which is TRUE, and the repair the
+ * report names -- widen an `include` -- IS WRONG: the file is already in a
+ * program.
+ *
+ * WHY THE REFERENCE IS NOT FOLLOWED, MEASURED RATHER THAN PREFERRED: `tsc -p` on
+ * the PARENT, which is the form the root check and every member check take,
+ * reports NOTHING about a type error in `lib/x.ts` -- only `-p` on the
+ * referenced config, or `tsc -b` on the parent, names it. Following the
+ * reference would therefore mark covered a file no command in the Definition of
+ * Done reads.
+ *
+ * SO THE ARM ASSERTS BOTH SENTENCES. Naming the file alone is what the check
+ * already did; naming `lib/project.json` and the RENAME is the part that stops a
+ * reader widening the wrong include.
+ *
+ * THIS REPOSITORY USES NO REFERENCES TODAY, so the tree is a throwaway end to
+ * end -- which is the same reason every other arm here builds its own.
+ */
+function rootReferencing(referenced: string): Record<string, string> {
+  return {
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
+    "tsconfig.json": JSON.stringify({
+      compilerOptions: programOptions,
+      include: ["src"],
+      exclude: ["packages"],
+      references: [{ path: `./lib/${referenced}` }],
+    }),
+    [join("lib", referenced)]: JSON.stringify({
+      compilerOptions: { ...programOptions, composite: true, noEmit: false, outDir: "out" },
+      include: ["."],
+    }),
+    "src/root.ts": typeChecks,
+    "lib/x.ts": typeChecks,
+    "packages/late/package.json": JSON.stringify({ name: "late" }),
+    "packages/late/tsconfig.json": memberTsconfig,
+    "packages/late/src/index.ts": typeChecks,
+  };
+}
+
+test("a file covered only by a referenced project is reported WITH the reference named", async () => {
+  const result = await checkWorkspace(rootReferencing("project.json"));
+
+  expect(result.stderr).toContain(join("lib", "x.ts"));
+  expect(result.stderr).toContain(join("lib", "project.json"));
+  expect(result.stderr).toContain("RENAME");
+  expect(result.code).not.toBe(0);
+});
+
+// THE PAIR, AND IT IS THE RULING MADE INTO AN EDIT: the same tree with the
+// referenced config RENAMED so the enumeration finds it, and nothing else moved
+// -- not the reference, not a single `include`. A config named `tsconfig.json`
+// was covered before this arm only because it is independently enumerated, which
+// was luck; this is where that becomes the rule a reader is pointed at.
+test("the same tree passes once the referenced config is named so the enumeration finds it", async () => {
+  const result = await checkWorkspace(rootReferencing("tsconfig.json"));
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
  * A ROOT THAT IS NOT A CHECKOUT AT ALL.
  *
  * `I FOUND NO FILES` AND `I WAS GIVEN NO WAY TO FIND THEM` MUST NOT PRINT THE
