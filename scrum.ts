@@ -992,6 +992,11 @@ const scrum: ScrumDashboard = {
             message: "test(dod): require each check's own diagnostic to reach the reader",
             phase: "green",
           },
+          {
+            hash: "50d5664",
+            message: "test(dod): pause the first check, so the order arm reads order",
+            phase: "green",
+          },
         ],
         notes: [
           "BORN GREEN, DECLARED AS SUCH BEFORE THE RUN AND NOT DISCOVERED AFTERWARDS: the per-check report lines landed in the first subtask, because its own arms needed the words `[FAILED] alpha` and `[PASSED] gamma` to exist. 7 pass / 0 fail on the first execution, which is worth nothing by itself -- ALL THE EVIDENCE FOR THESE THREE ARMS COMES FROM THE DEGENERATES, and that is the reason they were run before the arms were believed.",
@@ -1001,6 +1006,7 @@ const scrum: ScrumDashboard = {
           "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
           "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
           "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
+          "REVIEW ROUND, THE OBSERVATION THAT CAME WITH THE SIX AND WAS ROUTED FOR A DECISION RATHER THAN FILED AS A HOLE -- TAKEN, BECAUSE THE RATE IS ITSELF THE EVIDENCE. Three commands that each take milliseconds tend to finish in the order they were STARTED even when nothing sequenced them, so this arm's log could not separate order from coincidence: MEASURED against a runner starting every check at once, the arm NAMED for the property reddened on 3 of 5 runs for the reviewer and on 4 of 5 re-run here, while the FILE reddened 5 of 5 both times -- its detection carried by the first-fails-last-passes arm and the six-check arm, neither of which is about order. A PAUSE ON THE FIRST CHECK puts that entry LAST under any parallel execution: same degenerate, same five runs, 5 of 5. AN ARM THAT USUALLY REDDENS IS A FLAKE IN THE OTHER DIRECTION, and the order it defends is not cosmetic -- the first real check builds every artifact the fourth reads. Commit 50d5664.",
         ],
       },
       {
