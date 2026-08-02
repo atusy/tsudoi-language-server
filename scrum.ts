@@ -949,9 +949,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "A refusal in the workspace script, called LAST among the refusals in the fifth check and before any member is checked -- never from the shared preparation, which the test preload also runs.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7447665",
+            message: "feat(workspaces): refuse a TypeScript file no compiler's program includes",
+            phase: "green",
+          },
+        ],
         notes: [
+          "SEVENTEEN ARMS LANDED IN ONE NEW FILE, RED BEFORE GREEN AND THE COLOURS PREDICTED IN WRITING: 9 fail / 8 pass with no implementation, exactly the arms predicted, then 17 pass. The whole Definition of Done afterwards: 832 pass / 0 fail across 56 FILES against a baseline of 815 across 55, and 0/0/0/0/0.",
+          "TEN DEGENERATE IMPLEMENTATIONS RUN RATHER THAN ARGUED, each applied to the shipped function with a guard refusing to read a perturbation that did not apply. Reports-nothing: 7 planted arms red. Candidate set empty: the same 7. Program set empty: 18. THE DANGEROUS ONE, programs found by the literal name `tsconfig.json`: 2 -- the split member and the emitted declaration, which is the only degenerate the split-member arm was built for. Import closure instead of roots: 1, the import arm alone. Default include expanded by hand: 7, including the dot-directory arm. No output-directory subtraction: 1, naming `packages/emitter/dist/index.d.ts`. Swallowing a compiler failure: 1. Declarations excluded by NAME: 1. Aborting on a non-zero exit: 20 -- the plan's `about twenty` measured.",
+          "THE EXIT CODE IS NOT THE DISCRIMINATOR AND THE PLAN'S TS18003 RULE WAS TOO NARROW, found by measuring: an unresolvable `extends` ALSO exits 1 (TS5083) while still listing the program's own roots, and refusing on it would have taken the red away from the type check that names TS5083 -- a division of labour pinned by an existing arm. What decides is whether the config could be READ, asked of `--showConfig`, which exits 1 with TS5058 for a config it cannot open. MEASURED AND SURPRISING: `--showConfig` exits 0 on MALFORMED JSON, recovering it as an empty configuration, so it is not a syntax oracle. The unreadable-config arm is therefore staged as a config that is tracked and gone from the worktree.",
+          "THE ARM THE PLAN DID NOT HAVE, AND THIS SPRINT'S OWN CHANGE CREATED THE NEED: with the helper staging everything it writes, `--others` and the personal-ignore override had NO SUBJECT anywhere in the suite -- delete either and nothing reddens. Two arms now plant AFTER the tree is staged. The ignore arm also carries a control proving the ignore file was in effect on the run that just happened, without which it passes whether or not the override exists.",
+          "A HELPER DEFECT MEASURED WHILE BUILDING THAT ARM: on bun 1.3.13 a child spawned after `process.env.X` is written DOES NOT SEE `X`, where the same call with `env` passed does. An arm relying on inheritance would have asserted against an environment the check never received. The command runner now takes an environment explicitly.",
           "THE READER IS THE COMPILER'S OWN FILE LIST WITH RESOLUTION OFF -- the program's ROOT files, what the includes matched, and not the import closure. MEASURED, and it is why the JSON globs are not the reader: a default include does NOT reach a dot directory or a dot file, so a reimplementation of the glob says the opposite of what the compiler does. Cross-validated with a second instrument, and the first spelling of that second instrument CARRIED THE DEFECT IT WAS HUNTING -- a prefix match that missed `default` and reported every file in the program.",
           "THE CANDIDATE SET IS TRACKED AND UNTRACKED BUT NOT IGNORED, because the moment this item is about is a file just ADDED: reading tracked files alone leaves the guard reddening one run AFTER the bad commit. The two standing exclusions come free and are read rather than restated -- the ignore file already names the installed strangers and every built artifact, for its own reasons, in a file edited elsewhere.",
           "A PERSONAL IGNORE FILE MUST NOT SHRINK THE SUBJECT, measured on this machine: the global ignore here hides a file that is tracked-and-visible elsewhere, so a candidate set honouring it differs per developer. RESIDUE, named: a per-checkout exclude file cannot be neutralised the same way.",
