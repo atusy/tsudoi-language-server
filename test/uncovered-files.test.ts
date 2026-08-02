@@ -254,6 +254,27 @@ test("a personal ignore file does not shrink the subject", async () => {
 });
 
 /**
+ * THE FIRST OF THE TWO SUBTRACTIONS' BOUNDARIES: a directory whose name merely
+ * BEGINS with `node_modules`, which nobody installed and this checkout owns.
+ *
+ * BOTH SUBTRACTIONS ARE MATCHES AGAINST A PATH AND SO BOTH CAN BE WIDENED BY ONE
+ * TOKEN, which is the class this arm and the one below the emitter cover -- and
+ * MEASURED, both widenings applied AT ONCE left this file and the suite green,
+ * so neither had a subject anywhere. Here the segment split becomes a substring
+ * test and the stranger filter starts swallowing a directory somebody wrote.
+ *
+ * IT PAIRS WITH THE UNPLANTED MEMBER TREE ABOVE, which is the same fixture with
+ * nothing dropped into it and is silent.
+ */
+test("a directory whose name merely begins with node_modules is not read as installed", async () => {
+  const ours = join("packages", "late", "node_modules_local", "x.ts");
+  const result = await checkWorkspace(memberIncludingOnlyItsSource({ [ours]: probe }));
+
+  expect(result.stderr).toContain(ours);
+  expect(result.code).not.toBe(0);
+});
+
+/**
  * A ROOT WHOSE CONFIG DECLARES NO `include` AT ALL, which is the arm that
  * decides WHICH READER answers `is this file in the program`.
  *
@@ -464,6 +485,33 @@ test("a committed file under a program's output directory is reported, the emitt
  * program's roots -- and the only difference is that one directory is in a
  * program's reported configuration and the other is a name.
  */
+/**
+ * THE SECOND BOUNDARY, AND IT IS THE SAME ONE-TOKEN WIDENING: a SIBLING whose
+ * name begins with the output directory's, which the prefix reaches the moment
+ * the separator comes off. `out` and `outbox` share five characters and nothing
+ * else -- one is a program's reported output, the other is somebody's source.
+ *
+ * UNTRACKED FOR THE REASON THE `dist` ARM BELOW IS: a committed file under an
+ * output directory is refused for the index rather than for the path, so a
+ * tracked plant here could not tell the two boundaries apart.
+ */
+test("a sibling of the output directory whose name merely extends it is reported", async () => {
+  const root = workspace(memberEmittingItsDeclaration());
+  const sibling = join("packages", "emitter", "outbox", "y.ts");
+  try {
+    mkdirSync(join(root, "packages", "emitter", "outbox"), { recursive: true });
+    writeFileSync(join(root, sibling), probe);
+
+    const result = await check(root);
+
+    expect(result.stderr).toContain(sibling);
+    expect(result.stderr).not.toContain(join("packages", "emitter", "out", "index.d.ts"));
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("a file under a directory merely named dist, which no program writes, is reported", async () => {
   const root = workspace(memberEmittingItsDeclaration());
   const decoy = join("packages", "emitter", "dist", "decoy.ts");
