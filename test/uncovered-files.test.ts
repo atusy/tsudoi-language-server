@@ -45,6 +45,9 @@ const typeChecks = "export const fine: number = 1;\n";
 /** What gets planted: it type-checks too, so only its LOCATION can be the fault. */
 const probe = "export const probe = 1;\n";
 
+/** A member's source that does NOT type-check, for the one arm about ordering. */
+const typeError = 'export const wrong: number = "no";\n';
+
 /**
  * A program's options, carrying NO `paths`, NO `types` -- and NO `skipLibCheck`.
  *
@@ -130,6 +133,41 @@ test("the same member with nothing beside its source passes", async () => {
 
   expect(result.stderr).toBe("");
   expect(result.code).toBe(0);
+});
+
+/**
+ * THE ORDERING CLAIM'S SUBJECT, WHICH IT DID NOT HAVE: the refusal runs BEFORE
+ * ANY MEMBER IS CHECKED, and until this arm no tree anywhere paired an uncovered
+ * file with a member type error -- so moving the call below the type-check loop
+ * left every arm in this file and the whole suite green.
+ *
+ * WHY THE ORDER IS WORTH AN ARM RATHER THAN A COMMENT: a member that type-checks
+ * says nothing about the files its config never looked at, so a run that prints
+ * member diagnostics first invites a reader to believe the compiler's verdict
+ * and disbelieve the refusal underneath it. Here the member's verdict is a
+ * FAILURE, which is the harder half -- exit 1 either way, and only WHOSE bytes
+ * come back tells the two runs apart.
+ *
+ * THE TWO STREAMS ARE THE INSTRUMENT AND THEY DO NOT MIX: the refusal is thrown,
+ * so it lands on stderr, while `tsc` prints its diagnostics on stdout through
+ * the inherited handles. An empty stdout is therefore `no member was reached`,
+ * and the pair below proves that stdout is not empty for want of a diagnostic.
+ */
+test("no member's diagnostics are printed before an uncovered file is refused", async () => {
+  const source = join("packages", "late", "src", "index.ts");
+  const planted = await checkWorkspace(
+    memberIncludingOnlyItsSource({ [source]: typeError, [besideTheSource]: probe }),
+  );
+  const unplanted = await checkWorkspace(memberIncludingOnlyItsSource({ [source]: typeError }));
+
+  expect(planted.stdout).toBe("");
+  expect(planted.stderr).toContain(besideTheSource);
+  expect(planted.code).not.toBe(0);
+  // THE PAIR, WITHOUT WHICH THE EMPTY STDOUT ABOVE IS UNREADABLE: a member whose
+  // error never prints and a member with no error are the same silence.
+  expect(unplanted.stdout).toContain("TS2322");
+  expect(unplanted.stdout).toContain(source);
+  expect(unplanted.code).not.toBe(0);
 });
 
 // THE STORY'S OWN MOMENT, WHICH IS A FILE THAT HAS JUST BEEN ADDED: it is
