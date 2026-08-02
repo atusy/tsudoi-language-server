@@ -423,6 +423,33 @@ test("a well-formed override runs the suite normally", async () => {
  * interception ever stops working, `args` is EMPTY, and an empty offender list
  * would pass. It reddens on the emptiness instead, so this arm fails in both
  * directions -- a wrong value and a spy that saw nothing.
+ *
+ * WHAT `NO RECORDED CALL CARRIED ANYTHING ELSE` DOES NOT SAY IS *WHEN*, AND THE
+ * TWO HALVES WERE SEPARATED BY MEASUREMENT RATHER THAN BY ARGUMENT. A stray
+ * SECOND call carrying a different value is already caught wherever it lands:
+ * with `setDefaultTimeout(5000)` added to each child AFTER its registration this
+ * arm read 0 pass / 3 fail, the offender list printing 5000 in every file. What
+ * was NOT caught is the same stray carrying the RIGHT value -- or, the shape
+ * that matters, THE ONE CALL MOVED BELOW THE REGISTRATION: every recorded value
+ * is still the constant, so the filter is satisfied while the test registered
+ * above it captured bun's own 5000ms. MEASURED: 1 pass / 0 fail, green. It is
+ * the sweep's own hole one layer down, and it is why the two assertions below
+ * are about ORDER rather than about values.
+ *
+ * THE ORDER IS READABLE BECAUSE bun INTERLEAVES, MEASURED IN THIS TREE RATHER
+ * THAN ASSUMED FROM THE ACCUMULATION NOTE ABOVE: a file is evaluated, ITS TESTS
+ * RUN, and only then is the next file evaluated -- with the stray above placed
+ * after each registration the three files read one, two and three strays rather
+ * than three each. So at the moment a file's body runs, THE LAST RECORDED CALL
+ * IS THAT FILE'S OWN, which is what makes a per-file reading possible off a spy
+ * the whole run shares. The day bun evaluates every file before running
+ * anything, the count assertion reddens rather than going quiet.
+ *
+ * AND THE LAST-CALL ASSERTION IS IMPLIED BY THE FILTER ON TODAY'S ASSERTION SET,
+ * said plainly rather than sold as new coverage: what it adds is a NAME for the
+ * property a deadline actually has -- the value IN FORCE when this file's tests
+ * were registered -- so a later arm that legitimately admits a second value
+ * cannot quietly drop it. THE COUNT ASSERTION IS THE ONE THAT MOVED THE READING.
  */
 test("with no override in the environment, bun is handed the exported constant", async () => {
   const tree = throwawayTree(
@@ -438,7 +465,14 @@ test("${tag} hands bun the exported constant", () => {
 
   expect(args.filter((ms) => ms !== suiteDeadlineMs)).toEqual([]);
   expect(args.length).toBeGreaterThan(0);
+  expect(args[args.length - 1]).toBe(suiteDeadlineMs);
+  expect(spy.mock.calls.length).toBe(callsWhenRegistered);
 });
+
+// BELOW THE REGISTRATION ON PURPOSE: this is the count as the test above saw
+// the world, so anything setting a deadline after this line is a call the
+// registered test never got.
+const callsWhenRegistered = spy.mock.calls.length;
 `,
   );
   try {
