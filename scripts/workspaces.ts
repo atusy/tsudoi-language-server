@@ -694,16 +694,21 @@ interface Program {
  * does -- for a file nothing else in this repository would notice either.
  *
  * THE EXIT CODE IS DELIBERATELY NOT THE DISCRIMINATOR, and each half of that is
- * measured on tsc 7.0.2: a config whose include matches NOTHING prints TS18003
- * and EXITS 1 while still reporting the default library -- a shape both files
- * that spawn this check stage in about twenty trees -- and a config with an
- * unresolvable `extends` prints TS5083 and EXITS 1 while still reporting its own
- * roots, which the type check right after this one refuses by name. A reader
- * keyed to the exit would abort on two configs the compiler read fine. What
- * decides instead is whether the compiler could READ THE CONFIG AT ALL, asked of
- * the reader that answers it: `--showConfig` exits 1 with TS5058 for a config it
- * cannot open, and exits 0 -- MEASURED -- even for one whose JSON is malformed,
- * which it recovers from as an empty configuration.
+ * measured on tsc 7.0.2 -- BUT THE TWO HALVES DO NOT PRINT THE SAME THING, which
+ * the first spelling of this paragraph claimed and a re-measurement refuted. A
+ * config whose include matches NOTHING exits 1 with ONE LINE on stdout: the
+ * TS18003 diagnostic, and no file at all -- not its own roots, which it has none
+ * of, and not the default library either. A config with an unresolvable `extends`
+ * exits 1 AND STILL LISTS the default library and its own roots, which the type
+ * check right after this one refuses by name. So the two failures cost different
+ * things to a reader keyed to the exit: the first has nothing to lose and both
+ * files that spawn this check stage it in about twenty trees, while the second
+ * would have its real roots thrown away. Aborting on either would abort on a
+ * config the compiler read fine. What decides instead is whether the compiler
+ * could READ THE CONFIG AT ALL, asked of the reader that answers it:
+ * `--showConfig` exits 1 with TS5058 for a config it cannot open, and exits 0 --
+ * MEASURED -- even for one whose JSON is malformed, which it recovers from as an
+ * empty configuration.
  */
 function readProgram(root: string, config: string): Program {
   const absolute = join(root, config);
