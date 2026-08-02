@@ -141,6 +141,60 @@ test("two failing checks are both named", async () => {
   expect(report(result)).toContain("[FAILED] gamma");
 });
 
+test("what ran is the dashboard's list, as a SEQUENCE and not as a set", async () => {
+  const tree = stageTree();
+  // DECLARED OUT OF ALPHABETICAL ORDER ON PURPOSE. Order here is load-bearing --
+  // the first real check builds every artifact the fourth reads -- and `all of
+  // them ran` is MEMBERSHIP where the property is ORDER: a runner sorting the
+  // list, or reversing it, changes no value and would pass a set-shaped arm.
+  tree.declare([
+    { name: "gamma", run: tree.logged("gamma", 0) },
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "beta", run: tree.logged("beta", 0) },
+  ]);
+  const result = await tree.run();
+  expect(result.code).toBe(0);
+  // WHOLE-VALUE, WHICH IS ALSO THE ARITY ASSERTION: a check run twice, or one
+  // skipped, is a different value and not a different subset.
+  expect(tree.invocations()).toEqual(["gamma", "alpha", "beta"]);
+});
+
+test("a FAILING run reports each check's name, its command as run, and its own exit", async () => {
+  const tree = stageTree();
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 3) },
+    { name: "beta", run: tree.logged("beta", 0) },
+  ]);
+  const result = await tree.run();
+  expect(result.code).not.toBe(0);
+  // THE WHOLE LINE AND NOT THE VERDICT WORD. A report carrying only a colour
+  // cannot be audited by its reader, which is the rule this project already
+  // applies to a hand-run exit code; and the check's OWN exit is what separates
+  // `it failed` from `the run failed`.
+  expect(report(result)).toContain(`[FAILED] alpha -- exit 3 -- $ ${tree.logged("alpha", 3)}`);
+  // AND THE CHECK AFTER THE RED, which is what a runner exiting inside its loop
+  // loses: moving its exit earlier changes no value, so nothing but the report
+  // text of a failing run can see it.
+  expect(report(result)).toContain(`[PASSED] beta -- exit 0 -- $ ${tree.logged("beta", 0)}`);
+});
+
+test("a SIXTH check on the dashboard runs, with no edit to the runner", async () => {
+  const tree = stageTree();
+  // SIX, BECAUSE FIVE IS THE NUMBER A RUNNER HOLDING ITS OWN COPY WOULD HOLD.
+  // This is the product owner's refusal made measurable: a green run that never
+  // executed a check the dashboard lists is green and silent, and lets the
+  // Definition of Done shrink unnoticed. Nothing in the runner is edited between
+  // this arm and the three-check arms above -- only the dashboard differs.
+  const names = ["one", "two", "three", "four", "five", "six"];
+  tree.declare(names.map((name) => ({ name, run: tree.logged(name, 0) })));
+  const result = await tree.run();
+  expect(result.code).toBe(0);
+  expect(tree.invocations()).toEqual(names);
+  for (const name of names) {
+    expect(report(result)).toContain(`[PASSED] ${name} -- exit 0`);
+  }
+});
+
 test("a dashboard listing no checks is refused rather than reported green", async () => {
   const tree = stageTree();
   tree.declare([]);
