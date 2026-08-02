@@ -70,9 +70,16 @@ function openGate(session: LspSession): void {
 }
 
 /**
- * A test's own timeout, below `bun test`'s default, so a request that is never
- * answered fails BY NAME rather than stalling the suite with no diagnostic.
- * That is the failure this whole file is about, so the margin matters.
+ * A test's own timeout, below the deadline this file's own
+ * `applySuiteDeadline()` sets, so a request that is never answered fails BY NAME
+ * rather than stalling the suite with no diagnostic. That is the failure this
+ * whole file is about, so the margin matters.
+ *
+ * THE OLD SENTENCE SAID `BELOW bun test's DEFAULT` AND WAS FALSE WHERE IT
+ * MATTERED: 6000 is ABOVE bun's 5000, so a park here died at the ambient
+ * deadline first and this constant never fired. It is true again only because
+ * the suite now sets 25_000 -- which is the shape a comment goes wrong in
+ * without anything detecting it, since the words never changed.
  */
 const gatedTimeoutMs = 6000;
 

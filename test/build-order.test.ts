@@ -371,11 +371,17 @@ function whatTheConsumerSaw(files: Record<string, string>): string {
 
 /**
  * The allowance these two arms need: each spawns the compiler once per package,
- * where bun's default gives the whole test 5000ms -- a bound that is about the
- * machine rather than about the order. A control that reports the machine is
- * worse than a slow one, since its pair then reads as `the consumer compiled
- * against the wrong file`, which is the one conclusion these arms exist to make
- * available.
+ * where the suite's own deadline gives the whole test 25_000ms -- a bound that
+ * is about the machine rather than about the order. A control that reports the
+ * machine is worse than a slow one, since its pair then reads as `the consumer
+ * compiled against the wrong file`, which is the one conclusion these arms exist
+ * to make available.
+ *
+ * IT SAID 5000ms UNTIL THE SUITE CHOSE ITS OWN NUMBER, and the allowance stays
+ * because the argument for it never depended on which ambient default was in
+ * force: what it answers is that a compiler spawn's duration is a property of
+ * the hardware, and five times more headroom does not make it one of the build
+ * order.
  */
 const eachArmSpawnsACompilerPerPackage = 120_000;
 

@@ -22,10 +22,15 @@ const runtimes = [bunRuntime, denoRuntime];
 await Promise.all(runtimes.map(requireRuntime));
 
 /**
- * WELL BELOW `bun test`'s default, and load-bearing. The failure this test
+ * WELL BELOW THE SUITE'S OWN DEADLINE, and load-bearing. The failure this test
  * defends against IS a hang: with the settle-on-registration removed, the
  * request below waits forever. It has to fail as a timeout naming THIS test
  * rather than as a stall that the next file is blamed for.
+ *
+ * `THE SUITE'S OWN` AND NO LONGER `bun test's`: the ambient deadline is set by
+ * this file's `applySuiteDeadline()` and is 25_000, so `well below` now means
+ * six times over rather than a fifth under. The word was accurate before and
+ * would have gone on reading accurately while describing the wrong number.
  */
 const hangTimeoutMs = 4000;
 

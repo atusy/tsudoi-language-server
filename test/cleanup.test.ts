@@ -84,7 +84,16 @@ function openGate(session: LspSession): void {
   });
 }
 
-/** A test's own timeout, below `bun test`'s default, so a park fails by name. */
+/**
+ * A test's own timeout, below the deadline this file's own
+ * `applySuiteDeadline()` sets, so a park fails by name.
+ *
+ * IT SAID `BELOW bun test's DEFAULT` AND THAT WAS FALSE: 6000 is ABOVE bun's
+ * 5000, so a park died at the ambient deadline first and this constant never
+ * fired. True again only because the suite now sets 25_000 -- WHICH THE
+ * eighteen-second CONSTANT BELOW ALSO NEEDED, having been above bun's default
+ * by more than three times.
+ */
 const gatedTimeoutMs = 6000;
 
 /** Three sessions in one test, so the same margin per session as the others. */

@@ -76,8 +76,14 @@ function didOpen(session: LspSession, text: string): void {
 }
 
 /**
- * A test's own timeout, below `bun test`'s default: a gate that never opens
- * must fail this one test by name rather than stall the suite.
+ * A test's own timeout, below the deadline this file's own
+ * `applySuiteDeadline()` sets: a gate that never opens must fail this one test
+ * by name rather than stall the suite.
+ *
+ * IT NAMED `bun test`'s DEFAULT UNTIL THE SUITE CHOSE ITS OWN, and the number
+ * behind the phrase went from 5000 to 25_000 without a word of it changing --
+ * which is why the subject is spelled out here rather than left to a reader to
+ * infer from whichever default happens to be in force.
  */
 const gatedTimeoutMs = 4000;
 

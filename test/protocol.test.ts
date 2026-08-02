@@ -21,9 +21,17 @@ const runtimes = [bunRuntime, denoRuntime];
 await Promise.all(runtimes.map(requireRuntime));
 
 /**
- * Below `bun test`'s default, so a lifecycle gate that swallowed the message it
- * was supposed to let through fails THIS test by name as a timeout rather than
- * stalling the whole suite with no diagnostic.
+ * Below the deadline this file's own `applySuiteDeadline()` sets, so a lifecycle
+ * gate that swallowed the message it was supposed to let through fails THIS test
+ * by name as a timeout rather than stalling the whole suite with no diagnostic.
+ *
+ * IT USED TO SAY `BELOW bun test's DEFAULT` AND THE SUBJECT HAS MOVED: the
+ * ambient deadline is now this project's own 25_000 rather than bun's 5000, so
+ * the margin this value buys is five times what the sentence used to describe.
+ * AND THIS FILE IS WHERE THAT MATTERED MOST: at load 100-160 two of these arms
+ * failed at 4008ms against this very constant while the rest of the suite was
+ * being killed at 5000ms, which is the reading that made the ambient default a
+ * backlog item.
  */
 const hangTimeoutMs = 4000;
 

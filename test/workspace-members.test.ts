@@ -301,25 +301,29 @@ test("a member declaring no name is refused rather than passed over", async () =
  * The allowance the two arms below need, because they build and type-check
  * THREE members where every other test in this file builds two.
  *
- * A MEASUREMENT AND NOT A PRECAUTION: bun's default is 5000ms, which is not a
- * meaningful bound on a tsc invocation at all. MEASURED in a full-suite run on a
- * machine at load average ~76, `the same three members pass once the third
- * agrees with its directory` failed at 5006ms with `this test timed out after
- * 5000ms`, while the same test alone on the same machine finished well inside
- * it. A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE, because its
- * pair then reads as `the guard refused a workspace it should have passed` --
- * the one conclusion this file exists to make unavailable.
+ * A MEASUREMENT AND NOT A PRECAUTION, AND IT WAS TAKEN AGAINST A DEFAULT THAT NO
+ * LONGER APPLIES: when bun's own 5000ms was the ambient bound -- not a meaningful
+ * bound on a tsc invocation at all -- a full-suite run at load average ~76 had
+ * `the same three members pass once the third agrees with its directory` failing
+ * at 5006ms with `this test timed out after 5000ms`, while the same test alone on
+ * the same machine finished well inside it. A CONTROL THAT REPORTS THE MACHINE IS
+ * WORSE THAN A SLOW ONE, because its pair then reads as `the guard refused a
+ * workspace it should have passed` -- the one conclusion this file exists to make
+ * unavailable. The ambient bound is now this suite's own 25_000; the allowance
+ * stays because these two arms build one member more than anything else here, and
+ * because 120_000 was never chosen against 5000 in particular.
  *
- * THE OTHER TESTS HERE HAVE THE SAME EXPOSURE AND ARE DELIBERATELY LEFT ALONE.
- * MEASURED at load average ~59, with nothing in this repository changed: the two
- * two-member arms BOTH timed out at ~5002ms and both passed alone moments later,
- * so this is the file's condition rather than these arms'. It is not fixed here
- * because the remedy for the file is a third argument on twenty `test` calls,
- * which pushes every one of them past the formatter width and re-indents twenty
- * unrelated bodies -- and because `[test] timeout` in bunfig.toml is NOT an
- * option: MEASURED on bun 1.3.13, that key is ignored and the default still
- * applies. Left for whoever weighs that, with the measurement rather than
- * without it.
+ * THE REFUSAL THAT USED TO STAND HERE IS SPENT, AND THAT IS THE POINT OF SAYING
+ * SO RATHER THAN DELETING IT. It read: the other tests in this file have the same
+ * exposure -- MEASURED at load ~59, the two two-member arms both timed out at
+ * ~5002ms and both passed alone moments later -- and are left alone BECAUSE the
+ * remedy would be a third argument on twenty `test` calls, and because a
+ * suite-wide default was not available: `[test] timeout` in bunfig.toml is
+ * ignored on bun 1.3.13, measured. THE SECOND HALF OF THAT REASON IS GONE. A
+ * suite-wide default exists, it is chosen rather than inherited, and every test in
+ * this file gets it from the `applySuiteDeadline()` call at the top. The twenty
+ * call sites were never edited and never need to be, which is the outcome the
+ * refusal was holding out for.
  */
 const threeMembersBuildOneMore = 120_000;
 

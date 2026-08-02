@@ -83,5 +83,27 @@
 # names the cause. That is why the comparison is still there and was NOT deleted under
 # the authorisation the PBI carried. Adding a second bunfig.toml under test/
 # would not close this: the set of directories someone can stand in has no end.
+#
+# ONE THING A READER STANDING HERE NEEDS AND WILL NOT FIND HERE: THE SUITE'S TIME
+# LIMIT IS NOT SET IN THIS FILE, AND `bun test --timeout N` NO LONGER DOES
+# ANYTHING. It is set per file by `applySuiteDeadline()` from
+# test/helpers/deadline.ts, where the number and both of its bounds are written.
+# THE FLAG IS INERT FOR EVERY SWEPT FILE, MEASURED IN BOTH DIRECTIONS: a file
+# calling that function with 20_000 passes a 6000ms test under `--timeout 3000`,
+# and the same file calling it with 2000 FAILS the same test at 2002ms under
+# `--timeout 30000`. That retires the `--timeout 30000` idiom this project used
+# through four sprints to tell a machine's red from the code's; the knob that
+# still works is TSUDOI_TEST_TIMEOUT_MS.
+#
+# AND IT IS NOT A SECOND PRELOAD ENTRY, WHICH IS THE OBVIOUS PLACE TO PUT IT AND
+# THE ONE THAT DOES NOT WORK. MEASURED on bun 1.3.13: `setDefaultTimeout` called
+# from a preload reaches THE FIRST TEST FILE EVALUATED AND NOTHING AFTER IT --
+# three files, one 6000ms sleep each, a preload setting 20_000 and nothing else
+# in the tree, 1 pass / 2 fail with the later two at `timed out after 5000ms`.
+# `beforeAll`, `beforeEach` and `afterAll` registered in the preload all leave
+# that reading unchanged, because a test captures its deadline when it is
+# REGISTERED, which is module-evaluation time for its own file. `[test] timeout`
+# here is ignored outright, which is the same silent-key shape recorded above for
+# a preload path that does not resolve -- except that this one is silent.
 [test]
 preload = ["./test/helpers/build.ts"]
