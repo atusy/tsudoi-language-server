@@ -976,9 +976,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "The warning count read from the same invocation whose exit was read, printed in the same summary as the exits.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "ea63b6a",
+            message:
+              "test(dod): read the warning count off the real linter, and require it not to gate",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE ARMS RUN THE LINTER RATHER THAN ECHOING THE SHAPE THE PARSE LOOKS FOR, and that is a choice with a cost: an arm printing `path:line:col: warning ...` itself would assert the runner against its own regular expression and would stay green the day oxlint changes how a diagnostic is printed -- which is the day this must fail. What is planted instead is SOURCE: a generator with no `yield` for the warning, a missing file extension for the error, both measured before the arms were authored (warning tree exit 0 with one line, error tree exit 1 with one line, clean tree silent).",
+          "MEASURED IN THE STAGED TREE AND NOT ONLY IN THIS REPOSITORY: the count over a tree carrying the planted file, a dashboard, two shell probes and a copy of the runner is exactly 1 -- nothing else in a throwaway contributes a diagnostic -- and 0 in the error tree. The reading over this repository's own five checks at the sprint's base was 1, the deliberate fixture warning.",
+          "BORN GREEN, DECLARED IN ADVANCE -- 12 pass / 0 fail -- WITH THREE DEGENERATES, each predicted and each reddening one arm: the count HARDWIRED TO ZERO, 11 pass / 1 fail; EVERY DIAGNOSTIC COUNTED with severity ignored, 11 pass / 1 fail on the error tree alone, which is the arm that reads severity rather than volume; and WARNINGS GATING THE RUN, 11 pass / 1 fail, the ruling made falsifiable.",
+          "THE SUITE AFTER THIS SUBTASK: 859 pass / 0 fail across 57 files, five exits read individually, all 0.",
           "A SECOND CRITERION AND NOT A CLAUSE OF THE FIRST, on this project's own rule that a hazard owns a test whose FIRST assertion it is: folded in, the exit-code assertions fire first and the warning reading could never be the thing that fails. The perturbation differs too -- planting a warning moves no exit code.",
           "REPORTED AND NOT GATING, RULED: this tree carries ONE deliberate warning whose fixture records a refusal to silence it, so failing on warnings would overturn a decision by way of a tooling change -- and an instrument red on every green tree retires itself.",
           "THE COUNT IS A PARSE, SO IT SHIPS WITH ITS PAIR. MEASURED on the installed linter, in a pipe and under a terminal alike: one line per diagnostic, no summary line -- so the count comes from lines, and re-measuring on a version bump is the maintenance this buys.",
