@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
@@ -69,12 +69,22 @@ const programOptions = {
 /** A member's own check config: its source directory and nothing else. */
 const memberTsconfig = JSON.stringify({ compilerOptions: programOptions, include: ["src"] });
 
-/** A member's BUILD config, which emits a declaration beside a JavaScript file. */
+/**
+ * A member's BUILD config, which emits a declaration beside a JavaScript file.
+ *
+ * ITS OUTPUT DIRECTORY IS DELIBERATELY NOT CALLED `dist`, and that is the arms'
+ * only defence against a reader that knows the WORD rather than the SETTING.
+ * MEASURED while it was: with the subtraction replaced by `any path segment
+ * equal to dist`, this file and the whole suite stayed green, because the one
+ * fixture that emitted anything spelled its `outDir` `dist` and no tree held a
+ * `dist` that no program wrote. `out` is a name nothing in the check knows, so
+ * a reader not reading the reported configuration cannot find it.
+ */
 const memberBuildTsconfig = JSON.stringify({
   compilerOptions: {
     ...programOptions,
     declaration: true,
-    outDir: "dist",
+    outDir: "out",
     rootDir: "src",
     noEmit: false,
   },
@@ -346,7 +356,7 @@ function memberSplitAcrossTwoConfigs(extra: Record<string, string> = {}): Record
   return {
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
     "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
-    ".gitignore": "dist/\n",
+    ".gitignore": "out/\n",
     "packages/late/package.json": JSON.stringify({ name: "late" }),
     "packages/late/tsconfig.json": JSON.stringify({
       compilerOptions: programOptions,
@@ -377,14 +387,14 @@ test("the same split member with a file outside both configs is reported", async
 
 /**
  * A MEMBER THAT EMITS A DECLARATION, AND NO `.gitignore` TO HIDE IT -- so the
- * emitted `dist/index.d.ts` is untracked, unignored, and in no program's inputs.
+ * emitted `out/index.d.ts` is untracked, unignored, and in no program's inputs.
  *
  * A FILE THE COMPILER WROTE IS NOT A FILE THE COMPILER MUST INCLUDE, which is
  * the whole of the subtraction this arm defends: the check BUILDS before it
  * reads, so without it every throwaway tree that builds would redden -- and the
  * emitted declaration would be reported to a reader who cannot act on it.
  * MEASURED with the subtraction removed: this arm reports
- * packages/emitter/dist/index.d.ts.
+ * packages/emitter/out/index.d.ts.
  *
  * ON THIS REPOSITORY THE SUBTRACTION IS A NO-OP, since every `dist/` here is
  * ignored -- which is exactly why it is defended by a throwaway rather than by a
@@ -430,12 +440,45 @@ test("a member's emitted declaration is not reported as uncovered", async () => 
 test("a committed file under a program's output directory is reported, the emitted one not", async () => {
   const result = await checkWorkspace({
     ...memberEmittingItsDeclaration(),
-    [join("packages", "emitter", "dist", "shim.ts")]: probe,
+    [join("packages", "emitter", "out", "shim.ts")]: probe,
   });
 
-  expect(result.stderr).toContain(join("packages", "emitter", "dist", "shim.ts"));
-  expect(result.stderr).not.toContain(join("packages", "emitter", "dist", "index.d.ts"));
+  expect(result.stderr).toContain(join("packages", "emitter", "out", "shim.ts"));
+  expect(result.stderr).not.toContain(join("packages", "emitter", "out", "index.d.ts"));
   expect(result.code).not.toBe(0);
+});
+
+/**
+ * A DIRECTORY MERELY CALLED `dist`, WHICH NO PROGRAM IN THIS TREE WRITES -- the
+ * other side of the same question, and the one that says the subtraction reads a
+ * SETTING rather than a name everyone happens to use.
+ *
+ * THE PLANT IS UNTRACKED ON PURPOSE, which is what keeps this arm's subject its
+ * own: a committed file under an output directory is already refused one arm
+ * above, for the index rather than for the path, so a tracked plant here would
+ * be reported whatever the directory is called and would measure nothing new.
+ * Untracked, it is exempt exactly when a reader thinks `dist` means output.
+ *
+ * IT IS A `WHERE` PROPERTY LIKE THE REST: nothing about the file changes between
+ * this arm and the emitted declaration beside it -- both untracked, both in no
+ * program's roots -- and the only difference is that one directory is in a
+ * program's reported configuration and the other is a name.
+ */
+test("a file under a directory merely named dist, which no program writes, is reported", async () => {
+  const root = workspace(memberEmittingItsDeclaration());
+  const decoy = join("packages", "emitter", "dist", "decoy.ts");
+  try {
+    mkdirSync(join(root, "packages", "emitter", "dist"), { recursive: true });
+    writeFileSync(join(root, decoy), probe);
+
+    const result = await check(root);
+
+    expect(result.stderr).toContain(decoy);
+    expect(result.stderr).not.toContain(join("packages", "emitter", "out", "index.d.ts"));
+    expect(result.code).not.toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 /**
