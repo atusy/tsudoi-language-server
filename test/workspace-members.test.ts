@@ -132,6 +132,43 @@ test("a package the workspace patterns do not declare fails loudly", async () =>
 });
 
 /**
+ * THE SAME UNDECLARED PACKAGE WITH AN UNRELATED FILE UNCOVERED ELSEWHERE, which
+ * is the run where the two sentences must both appear.
+ *
+ * WHAT IT REPLACES THE PACKAGE SENTENCE FOR IS THE FILES IT SPEAKS FOR, and that
+ * is the whole of it: `tools/elsewhere.ts` is in no package any `workspaces`
+ * entry would have covered, so declaring the member repairs nothing about it.
+ * MEASURED before this arm, on exactly this tree: the run printed the package
+ * sentence ALONE and the second file was never named -- so a reader would have
+ * fixed the package and met the other file on the following run, which is the
+ * outcome the file-list message one line down exists to prevent.
+ *
+ * AND IT IS NOT REPAIRED BY DEMANDING THAT EVERY OFFENDER BE IN A PACKAGE: that
+ * would answer ONE missing entry with a wall of file sentences the moment
+ * anything else were uncovered too, which is the regression the package sentence
+ * was kept for. The arm above is the other half and still passes -- there the
+ * only offender is inside the package, and only the package sentence prints.
+ */
+test("an offender outside the undeclared package is named beside the package sentence", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages", "tools"] }),
+    "packages/declared/package.json": JSON.stringify({ name: "declared" }),
+    "packages/declared/tsconfig.json": memberTsconfig,
+    "packages/declared/src/index.ts": typeChecks,
+    "packages/forgotten/package.json": JSON.stringify({ name: "forgotten" }),
+    "packages/forgotten/src/index.ts": typeChecks,
+    "tools/elsewhere.ts": typeChecks,
+  });
+
+  expect(result.stderr).toContain("tools/elsewhere.ts");
+  expect(result.stderr).toContain("packages/forgotten");
+  expect(result.stderr).toContain("workspaces");
+  expect(result.stderr).not.toContain("packages/forgotten/src/index.ts");
+  expect(result.code).not.toBe(0);
+});
+
+/**
  * THE NARROWING THE ONE-DECIDER RULING COSTS, PINNED SO THAT IT IS A DECISION
  * AND NOT A LOSS: this package is excluded from the root program and declared by
  * no pattern, exactly like the ones above, and it holds NO TypeScript -- so

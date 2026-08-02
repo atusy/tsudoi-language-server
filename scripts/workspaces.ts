@@ -431,6 +431,20 @@ export function prepareWorkspace(root: string): void {
  * what is really wrong is that a package sits somewhere the root type check
  * excludes and the workspace configuration does not declare.
  *
+ * IT SPEAKS FOR THE FILES INSIDE SUCH A PACKAGE AND FOR NO OTHERS, which is why
+ * it hands back WHICH offenders it accounted for instead of a bare sentence. The
+ * first spelling returned as soon as one offender sat inside one undeclared
+ * package and the caller then threw the rest away -- MEASURED, a tree holding
+ * `packages/forgotten/src/index.ts` AND `tools/elsewhere.ts` printed the package
+ * sentence alone and never named the second file. That is the outcome the file
+ * list exists to prevent one line below: a reader told about one offender fixes
+ * it and meets the next on the following run.
+ *
+ * IT DOES NOT REQUIRE THAT EVERY OFFENDER BE IN A PACKAGE, and that refusal is
+ * what keeps the demotion's promise: gating on all of them would answer ONE
+ * missing `workspaces` entry with a wall of file sentences the moment anything
+ * else were uncovered too, which is the regression the message was kept for.
+ *
  * IT REFINES A FAULT AND NO LONGER DECIDES ONE, which is the ruling and not a
  * tidy-up. Deciding coverage by walking directories that hold a manifest is the
  * UNFAITHFUL reading -- it is why a file planted one level inside a declared
@@ -462,34 +476,44 @@ export function prepareWorkspace(root: string): void {
  * red on a correct file. THE SAME ENUMERATOR `workspaces` IS READ WITH, so the
  * two keys this function compares cannot be interpreted differently.
  */
-function packageShapedFault(
+function packageShapedFaults(
   root: string,
   members: readonly string[],
   offenders: readonly string[],
-): string | undefined {
+): { readonly sentences: readonly string[]; readonly explained: ReadonlySet<string> } {
   const tsconfigPath = join(root, "tsconfig.json");
   const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as Record<string, unknown>;
   const excluded = Array.isArray(tsconfig.exclude) ? tsconfig.exclude : [];
   const declared = new Set(members);
+  const seen = new Set<string>();
+  const sentences: string[] = [];
+  const explained = new Set<string>();
   for (const entry of excluded) {
     if (typeof entry !== "string") {
       continue;
     }
     for (const found of excludedDirectories(root, entry)) {
-      if (declared.has(found)) {
+      if (declared.has(found) || seen.has(found)) {
         continue;
       }
+      seen.add(found);
       // ONE OF THE UNCOVERED FILES MUST BE INSIDE IT. An undeclared package the
       // file lists had nothing to say about is not a fault this reader is
       // allowed to invent -- that is exactly the second opinion the ruling
       // withdrew.
-      if (!offenders.some((offender) => join(root, offender).startsWith(found + sep))) {
+      const inside = offenders.filter((offender) => join(root, offender).startsWith(found + sep));
+      if (inside.length === 0) {
         continue;
       }
-      return `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`;
+      for (const offender of inside) {
+        explained.add(offender);
+      }
+      sentences.push(
+        `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`,
+      );
     }
   }
-  return undefined;
+  return { sentences, explained };
 }
 
 /**
@@ -823,12 +847,15 @@ function readProgram(root: string, config: string): Program {
  * and its build config, so narrowing one alone reddens nothing here. The
  * property is `some program includes it`, not per-program coverage.
  *
- * AND THE FAULT IT REPORTS IS NOT ALWAYS THE FAULT TO FIX: where the uncovered
- * files sit inside a package the root excludes and `workspaces` does not
- * declare, the package-shaped sentence is printed instead of theirs. Widening an
+ * AND THE FAULT IT REPORTS IS NOT ALWAYS THE FAULT TO FIX: an uncovered file
+ * inside a package the root excludes and `workspaces` does not declare is
+ * answered by the package-shaped sentence instead of its own. Widening an
  * `include` is the wrong repair for a member nobody declared, and a missing
  * workspace entry answered with a wall of file sentences is a regression on the
- * message this check used to give.
+ * message this check used to give. THE SUBSTITUTION IS PER FILE AND NOT PER RUN:
+ * an offender that no `workspaces` entry would have covered is still named
+ * beside the package sentence, because fixing the package would not have fixed
+ * it.
  */
 export function refuseUncoveredFiles(root: string, members: readonly string[]): void {
   const tracked = checkoutPaths(root, ["ls-files", "-z"]);
@@ -876,16 +903,23 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
   if (offenders.length === 0) {
     return;
   }
-  const packaged = packageShapedFault(root, members, offenders);
-  if (packaged !== undefined) {
-    throw new Error(packaged);
-  }
+  const { sentences, explained } = packageShapedFaults(root, members, offenders);
   // EVERY OFFENDER AND NOT THE FIRST, which is the opposite of the choice
   // `refuseMemberDirectoriesUnlikeTheUnscopedName` makes and for the reason that
   // separates them: there the fault is one manifest and the rest are correct,
   // where a directory nothing includes usually holds several files and a reader
   // told about one of them would fix it and meet the next on the following run.
-  throw new Error(
-    `${offenders.join(", ")} ${offenders.length === 1 ? "is a TypeScript file" : "are TypeScript files"} in this checkout that no tsconfig includes, so nothing type-checks ${offenders.length === 1 ? "it" : "them"}. Widen the \`include\` of the program that ought to hold what is named here -- there is deliberately no list to exempt a file from this check.`,
-  );
+  //
+  // AND THAT IS WHY A PACKAGE SENTENCE DOES NOT END THE MESSAGE. It replaces the
+  // files it SPEAKS FOR and nothing else; an offender somewhere no `workspaces`
+  // entry would have covered is still named, in the same run, because fixing the
+  // package would not have fixed it.
+  const rest = offenders.filter((offender) => !explained.has(offender));
+  const message = [...sentences];
+  if (rest.length > 0) {
+    message.push(
+      `${rest.join(", ")} ${rest.length === 1 ? "is a TypeScript file" : "are TypeScript files"} in this checkout that no tsconfig includes, so nothing type-checks ${rest.length === 1 ? "it" : "them"}. Widen the \`include\` of the program that ought to hold what is named here -- there is deliberately no list to exempt a file from this check.`,
+    );
+  }
+  throw new Error(message.join("\n"));
 }

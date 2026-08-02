@@ -135,8 +135,10 @@ refuseMemberMappings(root, members);
 // AND IT IS WHERE THE UNCOVERED-PACKAGE REFUSAL WENT. That guard used to stand
 // above, deciding coverage by walking directories that hold a manifest -- the
 // reading that ran over the file this one was built for. It is now a REFINEMENT
-// inside this call: the same sentence for the same state, printed instead of the
-// file list when the uncovered files sit in a package nobody declared.
+// inside this call: the same sentence, printed in place of the files it SPEAKS
+// FOR -- the ones inside a package nobody declared -- and beside the file list
+// for any offender it does not speak for, whose repair the package sentence
+// would not have been.
 //
 // STILL NOT IN `prepareWorkspace`, for the reason already recorded beside the
 // name guard: that function is what the `bun test` preload runs, so a refusal
