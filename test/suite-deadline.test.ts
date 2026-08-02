@@ -102,19 +102,31 @@ interface Run {
 }
 
 /**
- * `bun test` in `cwd`, with the override SET EXPLICITLY.
+ * `bun test` in `cwd`, with the override PINNED EXPLICITLY -- set to a value, or
+ * `null` for REMOVED FROM THE CHILD'S ENVIRONMENT.
  *
- * EVERY ARM SETS IT, INCLUDING THE ONES THAT WOULD BE HAPPY WITH THE DEFAULT.
+ * EVERY ARM PINS IT, INCLUDING THE ONES THAT WOULD BE HAPPY WITH THE DEFAULT.
  * An arm relying on the variable's ABSENCE agrees silently with a developer who
- * left it set in their shell, and this process's own environment is inherited
- * by the child.
+ * left it set in their shell, and this process's own environment is inherited by
+ * the child.
+ *
+ * `null` IS NOT THAT ABSENCE AND THE DIFFERENCE IS THE WHOLE OF THE NO-OVERRIDE
+ * ARM'S STANDING: the key is DELETED from the inherited copy, so the child meets
+ * the unset state whatever the developer's shell holds. Omitting the key from
+ * the object below would not do it -- `process.env` is spread in first.
  */
-function runBunTest(cwd: string, args: readonly string[], overrideMs: string): Promise<Run> {
+function runBunTest(cwd: string, args: readonly string[], overrideMs: string | null): Promise<Run> {
+  const env = { ...process.env };
+  if (overrideMs === null) {
+    delete env["TSUDOI_TEST_TIMEOUT_MS"];
+  } else {
+    env["TSUDOI_TEST_TIMEOUT_MS"] = overrideMs;
+  }
   return new Promise((resolve, reject) => {
     const child = spawn("bun", ["test", ...args], {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, TSUDOI_TEST_TIMEOUT_MS: overrideMs },
+      env,
     });
     const chunks: Buffer[] = [];
     child.stdout.on("data", () => {});
@@ -376,6 +388,71 @@ test("a well-formed override runs the suite normally", async () => {
 });
 
 /**
+ * THE ARM WITHOUT WHICH THE PIN BELOW PINS NOTHING, AND THE HOLE IT CLOSES WAS
+ * MEASURED RATHER THAN FEARED: with the module's no-override branch changed from
+ * `suiteDeadlineMs` to a literal `10_000` and the constant left exported at
+ * 25_000, the whole suite read 809 pass / 0 fail and all five Definition-of-Done
+ * checks exited 0. EVERY OTHER ARM IN THIS FILE PINS THE OVERRIDE, deliberately
+ * and for the reason written at `runBunTest`, so THE NO-OVERRIDE BRANCH IS
+ * EXECUTED BY NOTHING -- and the pin below reads the EXPORTED constant, which the
+ * degenerate does not touch. Under it the property the pin defends is actually
+ * violated: an ungated test runs at 10_000 while the handshake deadline it can
+ * reach is 20_000.
+ *
+ * SO THE SUBJECT HERE IS THE ARGUMENT `setDefaultTimeout` RECEIVES, not a
+ * constant beside it. Nothing in JavaScript short of intercepting the callee can
+ * see that: a returned value, a recorded copy, an exported resolution are all
+ * defeated by the same one-token edit, because each of them is a SECOND
+ * expression that the edit leaves alone.
+ *
+ * THE INTERCEPTION IS `spyOn` ON THE `bun:test` NAMESPACE, AND THAT IT REACHES
+ * ANOTHER MODULE'S ALREADY-BOUND IMPORT IS MEASURED, not assumed from ESM's live
+ * bindings: bun 1.3.13, a module importing `setDefaultTimeout` by name and called
+ * after the spy is installed, `spy.mock.calls` reads `[[25000]]`. IT ALSO CALLS
+ * THROUGH -- the same tree passes a 6000ms test, one bun's own 5000ms default
+ * would fail -- so this arm reads the argument WITHOUT disabling the effect.
+ *
+ * THE COUNTS ACCUMULATE ACROSS FILES AND THE ASSERTION IS WRITTEN FOR IT.
+ * MEASURED in the three-file tree: bun hands back THE SAME SPY on a second
+ * `spyOn` of a property already spied, so the file bun evaluates last sees three
+ * calls and the first sees one. Asserting `[[suiteDeadlineMs]]` would therefore
+ * redden on two of the three files in a correct tree. What is asserted instead is
+ * that NO recorded call carried anything else, with the non-empty pair beside it.
+ *
+ * AND THE PAIR IS WHAT MAKES THE INSTRUMENT SAFE RATHER THAN TIDY: if the
+ * interception ever stops working, `args` is EMPTY, and an empty offender list
+ * would pass. It reddens on the emptiness instead, so this arm fails in both
+ * directions -- a wrong value and a spy that saw nothing.
+ */
+test("with no override in the environment, bun is handed the exported constant", async () => {
+  const tree = throwawayTree(
+    (tag) => `import { expect, spyOn, test } from "bun:test";
+import * as bunTest from "bun:test";
+import { applySuiteDeadline, suiteDeadlineMs } from ${JSON.stringify(deadlineModule)};
+
+const spy = spyOn(bunTest, "setDefaultTimeout");
+applySuiteDeadline();
+
+test("${tag} hands bun the exported constant", () => {
+  const args = spy.mock.calls.map((call) => call[0]);
+
+  expect(args.filter((ms) => ms !== suiteDeadlineMs)).toEqual([]);
+  expect(args.length).toBeGreaterThan(0);
+});
+`,
+  );
+  try {
+    const run = await runBunTest(tree.root, [], null);
+
+    expect(run.stderr).toContain(" 3 pass");
+    expect(run.stderr).toContain(" 0 fail");
+    expect(run.code).toBe(0);
+  } finally {
+    tree.dispose();
+  }
+});
+
+/**
  * THE PIN, AND IT IS A RELATION BETWEEN TWO IMPORTED CONSTANTS RATHER THAN AN
  * EQUALITY AGAINST A LITERAL. `expect(suiteDeadlineMs).toBe(25_000)` would be
  * green against ANY tree, including one where a helper's deadline had since been
@@ -387,6 +464,10 @@ test("a well-formed override runs the suite normally", async () => {
  * `shakeHands` can speak, so a broken documented command reports `this test
  * timed out` instead of naming the command that never answered. Which deadline
  * arrives first is what decides whether a failure names its cause.
+ *
+ * AND WHAT MAKES THE CONSTANT IT READS THE RIGHT SUBJECT IS THE ARM ABOVE, which
+ * is the half this file shipped without: on its own, this compares two numbers
+ * that a suite running at a THIRD one would leave green.
  *
  * DEGENERATE, STATED IN ADVANCE AND RUN: `handshakeTimeoutMs` raised to 30_000
  * with nothing else touched -- this arm reddens, and the equality form would not
