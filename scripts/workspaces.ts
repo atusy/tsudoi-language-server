@@ -1011,10 +1011,18 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
   // BOTH SIDES THROUGH ONE FUNCTION, WHICH IS THE HALF A FIX HERE GETS WRONG:
   // the compiler's strings and the joined index paths agree today only because
   // both are built from the same root, so canonicalising the candidate alone
-  // would move every prefix and redden the whole file. And it is the COVERAGE
-  // COMPARISON ONLY -- the two subtractions match paths for their own reasons
-  // and are left spelling-exact, since `Node_Modules` is not a directory
-  // anybody installed into.
+  // would move every prefix and redden the whole file.
+  //
+  // AND IT REACHES EVERY COMPARISON WITH TWO PRODUCERS, WHICH IS THE LINE AND
+  // NOT `the coverage one`. Two spellings can only disagree where two things
+  // produced them: the compiler's file list against the index, and the
+  // compiler's reported `outDir` against the index. MEASURED on the second,
+  // which the first spelling of this reason left out -- a build config carrying
+  // `outDir: "Out"` over a directory already on disk as `out` emits into `out`,
+  // and its declaration was reported as covered by nothing: the same false red,
+  // in the same function. What is left spelling-exact is every comparison with
+  // ONE producer -- the installed filter and the suffix tests match a git path
+  // against a literal written here, and a literal cannot be spelled two ways.
   const spelling: (path: string) => string = foldsCase(root)
     ? (path) => path.toLowerCase()
     : (path) => path;
@@ -1062,7 +1070,10 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     // written anywhere. THE TEST READS ONLY THAT WAY: untracked here does not
     // make a file one the compiler wrote, and a hand-written one nobody has
     // committed is subtracted with the artifacts.
-    if (!inTheIndex.has(path) && written.some((outDir) => absolute.startsWith(outDir + sep))) {
+    if (
+      !inTheIndex.has(path) &&
+      written.some((outDir) => spelling(absolute).startsWith(spelling(outDir) + sep))
+    ) {
       return false;
     }
     return !covered.has(spelling(absolute));

@@ -635,6 +635,46 @@ test("a sibling of the output directory whose name merely extends it is reported
   }
 });
 
+/**
+ * THE OUTPUT DIRECTORY SPELLED IN ANOTHER CASE THAN THE DIRECTORY ON DISK, which
+ * is the SECOND comparison in this check that takes its two strings from two
+ * different producers -- the compiler's reported `outDir` and the index.
+ *
+ * MEASURED before the fold reached it, on this tree: the build config says
+ * `outDir: "Out"`, the directory is already on disk as `out`, tsc emits into
+ * `out`, and `packages/emitter/out/index.d.ts` was reported as covered by
+ * nothing. The same false red as the case arm above, one subtraction over.
+ *
+ * ITS SUBJECT EXISTS ONLY WHERE THE FILESYSTEM FOLDS, and it needs no branch for
+ * that: where case is significant, `Out` is a directory of its own, the emitted
+ * file lands inside it, and the prefix matches. Green either way after the fix,
+ * red only here before it -- so on a case-sensitive machine this is a control
+ * and not a discriminator, which is worth saying rather than leaving a reader to
+ * infer it from a passing arm.
+ */
+test("an output directory spelled in another case still subtracts what the compiler wrote", async () => {
+  const result = await checkWorkspace({
+    ...memberEmittingItsDeclaration(),
+    "packages/emitter/tsconfig.build.json": JSON.stringify({
+      compilerOptions: {
+        ...programOptions,
+        declaration: true,
+        outDir: "Out",
+        rootDir: "src",
+        noEmit: false,
+      },
+      include: ["src"],
+    }),
+    // THE DIRECTORY IS PUT ON DISK IN THE OTHER SPELLING BEFORE ANYTHING BUILDS,
+    // which is the whole of the setup: tsc creates the directory it is told to
+    // unless one is already there under a name this filesystem calls the same.
+    [join("packages", "emitter", "out", "keep.txt")]: "keep\n",
+  });
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
+});
+
 test("a file under a directory merely named dist, which no program writes, is reported", async () => {
   const root = workspace(memberEmittingItsDeclaration());
   const decoy = join("packages", "emitter", "dist", "decoy.ts");
