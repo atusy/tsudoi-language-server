@@ -487,6 +487,61 @@ const callsWhenRegistered = spy.mock.calls.length;
 });
 
 /**
+ * WHEN THE OVERRIDE IS READ, WHICH IS A SECOND QUESTION FROM WHAT IT IS READ AS
+ * -- AND NO OTHER ARM IN THIS FILE CAN ASK IT. Every one of them pins the
+ * variable in the CHILD'S ENVIRONMENT before that process starts, so an
+ * import-time read and a call-time read produce the same reading everywhere
+ * else here; the seam is exercised constantly and its TIMING by nothing.
+ *
+ * THE MUTATION IS REACHABLE ONLY BECAUSE ESM HOISTS: the assignment below is
+ * written after the imports and RUNS after them too, so the module has already
+ * been evaluated -- and evaluated ONCE for the whole child, since the registry
+ * is per process. That is what makes `300 in all three files` the discriminating
+ * reading rather than an accident of which file bun reached first.
+ *
+ * DEGENERATE, STATED IN ADVANCE AND RUN, AND IT IS THE FIX A TIDIER WOULD MAKE:
+ * the environment read moved INSIDE `applySuiteDeadline`, which looks like
+ * localising a constant and is a behaviour change. This arm reads 777 in all
+ * three files and reddens; before it existed the same module left every arm of
+ * this file green, so the flip was undetectable by anything the suite ran.
+ *
+ * IT ALSO GUARDS THE REFUSAL RATHER THAN ONLY THE VALUE: the malformed-value
+ * check in that module runs at module scope, so a per-call read would accept
+ * anything assigned afterwards -- the silent-disable class arriving by the one
+ * route its own subtask cannot see.
+ */
+test("the override is read once at import, not again at every call", async () => {
+  const frozenMs = 300;
+  const mutatedMs = 777;
+  const tree = throwawayTree(
+    (tag) => `import { expect, spyOn, test } from "bun:test";
+import * as bunTest from "bun:test";
+import { applySuiteDeadline } from ${JSON.stringify(deadlineModule)};
+
+const spy = spyOn(bunTest, "setDefaultTimeout");
+process.env["TSUDOI_TEST_TIMEOUT_MS"] = "${mutatedMs}";
+applySuiteDeadline();
+
+test("${tag} is handed the value the import saw", () => {
+  const args = spy.mock.calls.map((call) => call[0]);
+
+  expect(args.filter((ms) => ms !== ${frozenMs})).toEqual([]);
+  expect(args.length).toBeGreaterThan(0);
+});
+`,
+  );
+  try {
+    const run = await runBunTest(tree.root, [], String(frozenMs));
+
+    expect(run.stderr).toContain(" 3 pass");
+    expect(run.stderr).toContain(" 0 fail");
+    expect(run.code).toBe(0);
+  } finally {
+    tree.dispose();
+  }
+});
+
+/**
  * THE PIN, AND IT IS A RELATION BETWEEN TWO IMPORTED CONSTANTS RATHER THAN AN
  * EQUALITY AGAINST A LITERAL. `expect(suiteDeadlineMs).toBe(25_000)` would be
  * green against ANY tree, including one where a helper's deadline had since been

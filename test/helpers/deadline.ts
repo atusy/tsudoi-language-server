@@ -78,6 +78,29 @@ export const suiteDeadlineMs = 25_000;
  */
 const overrideName = "TSUDOI_TEST_TIMEOUT_MS";
 
+/**
+ * READ ONCE PER PROCESS, AT IMPORT, AND THE FREEZE IS A DECISION RATHER THAN
+ * THE ACCIDENTAL SHAPE OF THE CODE. `applySuiteDeadline` below closes over this
+ * constant, so every file in a run is handed the value the FIRST evaluation of
+ * this module saw -- one read for the run, not one per call site.
+ *
+ * MEASURED IN BOTH DIRECTIONS, BECAUSE NOTHING ELSE IN THIS REPOSITORY CAN TELL
+ * THE TWO APART. Every arm in test/suite-deadline.test.ts pins the variable in
+ * the CHILD'S ENVIRONMENT before that process starts, and there an import-time
+ * read and a call-time read are the same reading. In a three-file tree spawned
+ * with the override at 300, each file assigning `process.env` 777 AFTER its
+ * imports and then calling, bun is handed 300 in all three; with the read moved
+ * INSIDE the function the same tree hands it 777 in all three -- and every arm
+ * of this file's own suite stayed green against that module, which is why the
+ * flip now has an arm of its own rather than a sentence.
+ *
+ * WHY THE FREEZE AND NOT THE LIVE READ. The refusal below runs ONCE, here, on
+ * the ground that a malformed value is a fact about the RUN; a per-call read
+ * would let a value assigned after this module loads walk straight past it, so
+ * the silent-disable class this file exists to close would re-enter through the
+ * door the fix left open. And a deadline that can differ between two files of
+ * one run is a deadline no reader can predict from anything they can see.
+ */
 const raw = process.env[overrideName];
 const deadlineMs = raw === undefined ? suiteDeadlineMs : Number(raw);
 
