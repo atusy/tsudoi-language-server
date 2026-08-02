@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import {
+  globSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -9,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { declaredMembers } from "../scripts/workspaces.ts";
 import { applySuiteDeadline, suiteDeadlineMs } from "./helpers/deadline.ts";
@@ -575,6 +576,48 @@ function discoverTestFiles(dir: string): readonly string[] {
 const everyTestFile = discoverTestFiles(repoRoot);
 
 /**
+ * THE PAIR NEITHER SWEEP CAN SUPPLY FOR ITSELF, AND THE HOLE IT CLOSES WAS
+ * MEASURED: with the walk's filter narrowed to ONE filename, the two sweeps read
+ * 17 pass / 0 fail -- one file of the tree enumerated, and success reported --
+ * and a real escapee added on top of that, a root test file stripped of its
+ * import and its call, left the whole Definition of Done green. `expect(list).
+ * toEqual([])` beside `expect(subjects.length).toBeGreaterThan(0)` cannot see it:
+ * ONE subject is non-empty, so the pair is satisfied by an enumeration that found
+ * almost nothing.
+ *
+ * A SECOND MECHANISM AND NOT A SECOND READING OF THE FIRST, which is what the
+ * failed sentence here used to claim -- `the count is asserted against the
+ * directory listing that produced it` is `list.length === list.length`, and no
+ * edit to the filter can make that false. `globSync` walks by PATTERN where
+ * `discoverTestFiles` walks by hand, and the two prunes are spelled separately
+ * BELOW AND ABOVE ON PURPOSE: one edit cannot narrow both.
+ *
+ * `node:fs` AND NOT `Bun.Glob`: `.oxlintrc.json` bans the `Bun` global with no
+ * exemption anywhere, deliberately, and a test file is not where that is spent.
+ * `globSync` is the same enumeration scripts/workspaces.ts reads members with.
+ *
+ * WHAT IT STILL CANNOT SEE, NAMED BECAUSE THE PATTERN IS NARROWER THAN THE WALK:
+ * the four other naming forms bun runs. `**\/*.test.ts` is every test file in
+ * this tree today, so the equality binds today's tree exactly; the day a
+ * `*.spec.ts` lands, the walk finds it and this arm does not -- it reddens on the
+ * disagreement rather than passing, which is the direction that costs nothing to
+ * be wrong in.
+ */
+test("the walk both sweeps read agrees with a second enumeration", () => {
+  const globbed = globSync("**/*.test.ts", { cwd: repoRoot })
+    .filter(
+      (path) =>
+        !path.split(sep).some((segment) => segment === "node_modules" || segment.startsWith(".")),
+    )
+    .sort();
+
+  expect(everyTestFile.filter((path) => path.endsWith(".test.ts"))).toEqual(globbed);
+  // THE PAIR FOR AN EQUALITY OF TWO LISTS: two enumerations that both found
+  // nothing agree perfectly.
+  expect(globbed.length).toBeGreaterThan(0);
+});
+
+/**
  * The partition, and it is BY PATH rather than by two separate walks: a file is
  * a member's if it lies under a declared member directory, and the root suite is
  * everything else. `declaredMembers` AND NOT A GLOB, so a package added under
@@ -618,9 +661,12 @@ const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
  * one directory down spells the same import `../helpers/deadline.ts`, and a
  * needle anchored to the root suite's depth would have quietly excused it.
  *
- * THE PAIR IS PERMANENT AND IT IS NOT `THE LIST IS NON-EMPTY` ALONE: an
- * enumeration that found nothing and an enumeration where everything passes look
- * identical in a green.
+ * THE PAIR HERE IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS, said plainly
+ * because the sentence that stood here claimed more: an offender list that is
+ * empty and a sweep that opened nothing are the same green without it, and a
+ * sweep over ONE file satisfies it just as well as a sweep over all of them.
+ * WHAT MAKES THE SUBJECT LIST TRUSTWORTHY IS A DIFFERENT ARM -- the cross-check
+ * above, where this enumeration must agree with one built by another mechanism.
  */
 test("every root test file sets the suite's deadline", () => {
   const missing = rootTestFiles.filter((path) => {
@@ -639,7 +685,9 @@ test("every root test file sets the suite's deadline", () => {
  * convention and bun's walk is not bound by it, so a test file beside a
  * package's `src/` used to satisfy neither enumeration while the root `bun test`
  * ran it. tsudoi's own member directory holds no test file today; the pair below
- * is what keeps that from reading as a clean result.
+ * is what keeps that from reading as a clean result -- and it is the same
+ * non-emptiness with the same limit, so what stands behind THIS list too is the
+ * cross-check arm.
  */
 const memberTestFiles = everyTestFile.filter(insideAMember);
 
