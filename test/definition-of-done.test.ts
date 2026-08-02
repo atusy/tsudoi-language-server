@@ -329,6 +329,12 @@ test("an error is not a warning: the count is 0 beside the failure", async () =>
   // this is the arm that reads the severity rather than the volume.
   expect(report(result)).toContain("warnings: 0");
   expect(report(result)).toContain("[FAILED] Lint passes -- exit 1");
+  // AND THE DIAGNOSTIC ITSELF REACHES THE READER, which every other arm in this
+  // file would survive the loss of: they read the summary and the count, both
+  // written by the runner, and a runner that swallowed each check's own output
+  // would satisfy all of them. It would also return a maintainer to running the
+  // five by hand to find out WHAT broke, which is the habit this replaces.
+  expect(report(result)).toContain("planted.ts:1:1: error");
 });
 
 test("a tree with nothing to say counts no warnings", async () => {
