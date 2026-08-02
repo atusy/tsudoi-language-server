@@ -284,6 +284,96 @@ test("${tag} runs beside it", () => {
   }
 });
 
+/**
+ * The values that reach `setDefaultTimeout` as NaN, as zero or as a fraction,
+ * and what each is called in the failure this file produces.
+ *
+ * EVERY ONE OF THEM WAS MEASURED AGAINST A 6000ms SLEEP -- one bun's own 5000ms
+ * default fails -- BEFORE THE REFUSAL EXISTED, and that is why this is not
+ * defensive coding: `""`, `"abc"`, `"0"` and `"-5"` each ran 1 pass at exit 0,
+ * because a NaN or non-positive default DISABLES THE DEADLINE ENTIRELY rather
+ * than falling back. `Number("") === 0`, so a set-but-empty variable switches
+ * every deadline in this suite off while the run reports green.
+ *
+ * `"1.5"` IS THE ONE THE RECORD DID NOT ANTICIPATE and it fails the other way,
+ * truncating to 1ms so that EVERYTHING dies. One rule -- a positive integer --
+ * covers both directions, which is why the arms below are one loop and not two.
+ */
+const malformedOverrides = [
+  { label: "the empty string", value: "" },
+  { label: "a blank", value: " " },
+  { label: "a word", value: "abc" },
+  { label: "zero", value: "0" },
+  { label: "a negative", value: "-5" },
+  { label: "a fraction", value: "1.5" },
+] as const;
+
+/**
+ * THE TREE THESE ARMS NEVER GET TO RUN, and its shape is the assertion's whole
+ * point: three files whose tests sleep 6000ms, so that a module which ACCEPTED
+ * the malformed value would report three passes at exit 0 -- three tests that
+ * bun's own default could not have passed, green, with the deadline switched
+ * off. That is the silent green the refusal exists to make impossible, and it is
+ * what the degenerate below actually printed.
+ *
+ * DEGENERATE, STATED IN ADVANCE AND RUN: the validation deleted, so the module
+ * takes `Number(raw)` as it comes. Every arm below reddens -- exit 0 where 1 is
+ * required, no message, and ` 3 pass` where nothing should have run.
+ */
+function refusalTree(): { readonly root: string; dispose(): void } {
+  return throwawayTree(
+    (tag) => `import { expect, test } from "bun:test";
+import { applySuiteDeadline } from ${JSON.stringify(deadlineModule)};
+
+applySuiteDeadline();
+
+test("${tag} sleeps past bun's own default", async () => {
+  await new Promise((resolve) => setTimeout(resolve, 6000));
+  expect(1).toBe(1);
+});
+`,
+  );
+}
+
+for (const malformed of malformedOverrides) {
+  test(`${malformed.label} in the override refuses the run rather than disabling it`, async () => {
+    const tree = refusalTree();
+    try {
+      const run = await runBunTest(tree.root, [], malformed.value);
+
+      expect(run.stderr).toContain(
+        `tsudoi: TSUDOI_TEST_TIMEOUT_MS must be a positive integer of milliseconds; got ${JSON.stringify(
+          malformed.value,
+        )}`,
+      );
+      // NO TEST RAN, which is the half a `refuses` assertion is usually missing:
+      // an exit 1 is also what a suite that ran and failed produces.
+      expect(run.stderr).not.toContain(" pass");
+      expect(run.code).toBe(1);
+    } finally {
+      tree.dispose();
+    }
+  });
+}
+
+/**
+ * THE PAIR, PERMANENT: without it every arm above is satisfied by a module that
+ * refuses EVERYTHING, which would fail the suite it is meant to protect and
+ * would look identical in this file.
+ */
+test("a well-formed override runs the suite normally", async () => {
+  const tree = throwawayTree((tag) => callingPair(tag, 100));
+  try {
+    const run = await runBunTest(tree.root, [], "20000");
+
+    expect(run.stderr).toContain(" 6 pass");
+    expect(run.stderr).toContain(" 0 fail");
+    expect(run.code).toBe(0);
+  } finally {
+    tree.dispose();
+  }
+});
+
 /** Every test file the sweep is about: the ROOT suite, which is what spawns. */
 const rootTestFiles = readdirSync(join(repoRoot, "test"))
   .filter((name) => name.endsWith(".test.ts"))
