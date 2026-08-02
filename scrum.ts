@@ -927,12 +927,21 @@ const scrum: ScrumDashboard = {
       {
         test: "The existing arms of the five files that build throwaway workspaces, unchanged.",
         implementation:
-          "The throwaway-workspace helper initialises a repository in the tree it makes, because the guard's subject is a CHECKOUT and two kinds of throwaway is what rots.",
+          "The throwaway-workspace helper initialises a repository in the tree it makes AND STAGES IT, because the guard's subject is a CHECKOUT and two kinds of throwaway is what rots.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "29e98e5",
+            message: "test(workspace): make every throwaway a checkout, staged",
+            phase: "green",
+          },
+        ],
         notes: [
           "ITS OWN INCREMENT SO THE HELPER EDIT IS NOT DISCOVERED MID-RED. Nineteen call sites across five files need no edit; TWO of those files spawn the fifth check over these trees, not one. Blast radius read rather than assumed: a repository directory is a dot directory, which no default include reaches, and the package walker skips it for want of a manifest.",
+          "THE PLAN WAS WRONG ABOUT `add` AND THE CORRECTION INVERTS EVERY PAIR: it recorded that `--others` needs only an initialised repository, which is true of the CANDIDATES and false of the PROGRAMS -- those are enumerated from TRACKED files, and a repository with nothing staged tracks nothing. Unstaged, every throwaway would have had zero programs, every file in it uncovered, and the unplanted half of every pair red. Staging is also as far as this goes without an identity, which a commit would need.",
+          "MEASURED AFTER THE EDIT, THE WHOLE DEFINITION OF DONE: 815 pass / 0 fail across 55 FILES -- the same count as the baseline and not only the same colour -- and 0/0/0/0/0 across the five checks.",
+          "WHAT IT BUYS THE ARMS, AND IT IS NOT ONLY THE GUARD BEING RUNNABLE: a test that wants the story's own moment -- a file JUST ADDED, which is untracked -- now writes it AFTER this helper returns. Staged through the helper, such an arm would measure the `--cached` half only.",
         ],
       },
       {
