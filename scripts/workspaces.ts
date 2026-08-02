@@ -791,7 +791,9 @@ function readProgram(root: string, config: string): Program {
  * refusal reddening one run AFTER the commit that introduced the hazard. The two
  * standing exclusions come free and are READ rather than restated -- the ignore
  * file already names the installed strangers and every built artifact, in a file
- * edited elsewhere for its own reasons.
+ * edited elsewhere for its own reasons. AND IT IS WHAT IS ON DISK: an index
+ * entry outlives the file, so a candidate set that did not ask would name a path
+ * that is not there. That arm and its reason sit beside the filter.
  *
  * A PERSONAL IGNORE FILE MUST NOT SHRINK IT, measured: a global ignore can hide
  * a file that is tracked and visible in every other checkout, so a subject that
@@ -894,10 +896,29 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     if (!typeScriptFile.test(path) || installed(path)) {
       return false;
     }
+    const absolute = join(root, path);
+    // GONE FROM THE WORKTREE AND STILL IN THE INDEX, WHICH IS A FALSE RED AND NOT
+    // A MISSED ONE. `--cached` reports a path whose file has been deleted, and no
+    // compiler's list can hold a file that is not on disk -- so the deletion
+    // alone made an offender, and the run names a path that does not exist and
+    // sends its reader to widen an `include` for it. Nothing here is unchecked:
+    // a file that is not there is run by nothing and graded by nothing, and the
+    // index agrees again the moment the deletion is committed.
+    //
+    // ITS OWN ARM AND NOT THE CONFIG ONE, which is the neighbouring state and a
+    // different answer: a tracked config gone from the worktree is refused BY
+    // NAME, because a program nobody can read turns every file it covered into
+    // an offender. There the absence is the fault; here it is the repair.
+    //
+    // A DANGLING SYMLINK GOES WITH THEM, disclosed rather than branched on:
+    // `existsSync` follows the link, so a `.ts` link pointing at nothing is
+    // dropped too. It is not a file any compiler could read either.
+    if (!existsSync(absolute)) {
+      return false;
+    }
     if (declarationsAreCheckedByNothing && declarationFile.test(path)) {
       return false;
     }
-    const absolute = join(root, path);
     // ONLY WHILE NOBODY COMMITTED IT, which is the difference between a
     // subtraction and an exemption list: a compiler-written artifact is never in
     // the index, so a path that IS in the index is somebody's file whatever

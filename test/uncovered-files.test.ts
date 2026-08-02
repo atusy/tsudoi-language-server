@@ -209,6 +209,55 @@ test("a file that has only just been added, and no index mentions, is reported",
 });
 
 /**
+ * THE ONE STATE WHERE THIS CHECK CAN NAME A FILE THAT DOES NOT EXIST, which is
+ * the opposite fault to every other arm here: a FALSE RED rather than a missed
+ * one.
+ *
+ * `--cached` REPORTS A PATH WHOSE FILE HAS BEEN DELETED, and no compiler's list
+ * can hold a file that is not on disk -- so the deletion ALONE turns a candidate
+ * into an offender, and the reader is told to widen an `include` for a path they
+ * cannot open. MEASURED before the arm, on this tree: exit 1 naming
+ * `packages/late/probe.ts`, with nothing at that path.
+ *
+ * TWO RUNS OVER ONE TREE, AND THE FIRST IS WHAT MAKES THE SECOND MEAN ANYTHING.
+ * A green over a tree with the file gone is satisfied by a check that never
+ * looked at that path at all -- so the same file is first shown BEING an
+ * offender, and only then deleted. Nothing else moves between the runs.
+ *
+ * AND THE INDEX ENTRY IS ASSERTED TO SURVIVE THE DELETION, because that entry is
+ * the whole hazard: were the deletion staged as well, the path would leave the
+ * candidate set for a reason that has nothing to do with this arm and the green
+ * below would be free.
+ *
+ * NOT THE DELETED-CONFIG ARM'S STATE, WHICH IS THE NEIGHBOUR AND THE OPPOSITE
+ * ANSWER: a tracked config gone from the worktree is refused BY NAME, since a
+ * program nobody can read turns every file it covered into an offender. There
+ * the absence is the fault; here it is the repair, and both are staged the same
+ * way, one directory apart.
+ */
+test("a file deleted from the worktree, with its index entry left behind, is not reported", async () => {
+  const root = workspace(memberIncludingOnlyItsSource({ [besideTheSource]: probe }));
+  try {
+    const before = await check(root);
+
+    unlinkSync(join(root, besideTheSource));
+    const staged = execFileSync("git", ["ls-files", "--cached"], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    const after = await check(root);
+
+    expect(before.stderr).toContain(besideTheSource);
+    expect(before.code).not.toBe(0);
+    expect(staged).toContain("probe.ts");
+    expect(after.stderr).toBe("");
+    expect(after.code).toBe(0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/**
  * A CANDIDATE SET THAT HONOURS A PERSON'S IGNORE FILE DIFFERS PER DEVELOPER, and
  * this is the arm that would otherwise measure nothing: an implementation that
  * simply fails to consult the personal ignore file passes it, and so does the
