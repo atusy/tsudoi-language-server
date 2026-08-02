@@ -991,9 +991,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "The JSON-glob reader stops DECIDING coverage and becomes a diagnostic refinement over a fault the faithful reader already found: given an uncovered file whose directory holds a manifest the root excludes and the workspace does not declare, say the package sentence instead of many file sentences.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "109d1e3",
+            message:
+              "refactor(workspaces): leave one decider, and keep the package-shaped sentence",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE RED THIS WAS WRITTEN AGAINST IS THE NARROWING ITSELF, and pinning it is what makes it a decision: an undeclared package holding NO TypeScript is no longer refused, because nothing about it is unchecked. One arm red before, green after; the whole Definition of Done after: 833 pass / 0 fail across 56 files, 0/0/0/0/0.",
+          "TWO EXISTING ARMS COULD NOT TELL THE TWO SENTENCES APART, and only one of them was found by reading. The glob-form arm was found VACUOUS BY THE PERTURBATION: with the refinement disabled it stayed GREEN while the run printed the wrong repair, because it asserted only the directory name -- which the file sentence contains too. The prediction said both would redden and one did, which is the whole reason the perturbation was run before the arms were believed.",
+          "THE NODE_MODULES ARM HAD LOST ITS SUBJECT IN THE SAME MOVE: a stranger package holding only a manifest reddens nothing once coverage is decided by file lists, so that arm was green for a reason unrelated to its hazard. It now ships a source file, and the perturbation reproduces: with the installed-dependency subtraction removed, exit 1 naming `packages/declared/node_modules/stranger/index.ts`.",
+          "THE STANDING RE-RUN, AFTER THE DEMOTION: the literal-name degenerate still reddens exactly the two arms it reddened before, so nothing was disarmed by the move.",
           "THE RULING AND ITS REASON: that reader is the UNFAITHFUL one this item was filed against -- it is why the planted probe ran under it and it said nothing. Leaving it deciding alongside the compiler's file list gives this repository TWO ANSWERS TO ONE QUESTION that can disagree with everything green, which is the disarmed-control shape this record keeps catching. ONE DECIDER.",
           "THE CONDITION THE PO WILL READ FOR: a run that answers one missing workspace entry with a wall of file sentences is a REGRESSION they refuse. The package-shaped fault keeps the package-shaped message and the repair it names.",
         ],
