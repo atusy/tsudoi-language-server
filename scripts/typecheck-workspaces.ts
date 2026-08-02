@@ -140,6 +140,15 @@ refuseMemberMappings(root, members);
 // for any offender it does not speak for, whose repair the package sentence
 // would not have been.
 //
+// THE MOVE COST A STATE AND NOT ONLY A CALL, WHICH BELONGS HERE RATHER THAN
+// ONLY IN THE FUNCTION IT MADE PRIVATE: what is refused NARROWED. An undeclared
+// package holding NO TypeScript used to be reported by the walker and is now
+// left alone, because the file lists find nothing there to refine and this
+// check is not allowed a second opinion about coverage. The narrowing is a
+// ruling -- nothing about such a package is unchecked -- and it is pinned as
+// one in test/workspace-members.test.ts, but a reader meets the ordering story
+// here and would otherwise read `the same sentence` as `the same states`.
+//
 // STILL NOT IN `prepareWorkspace`, for the reason already recorded beside the
 // name guard: that function is what the `bun test` preload runs, so a refusal
 // wired into it would abort every test run before a file loaded -- and the reds
