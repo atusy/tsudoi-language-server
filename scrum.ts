@@ -77,77 +77,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-70",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "trust that an arm defending a predicate would notice the predicate being weakened",
-        benefit:
-          "a green arm means the fixture could have told the difference, not that the author believed it could",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "An arm defending a predicate carries a recorded perturbation to the ADJACENT WEAKER READING of that predicate, and that perturbation reddens it.",
-          verification:
-            "The procedure is the criterion: take an arm, weaken its predicate by one step, run it. STARTING EVIDENCE, THREE INSTANCES MEASURED IN ONE SPRINT, each with the fixture change that separated the readings: an output directory whose declared value EQUALLED the string being matched; ONE options object handed to two programs, so `every` and `some` were extensionally equal across every tree that fixture could build; and an arm whose name said `tracked` while the fixture left the entry in the index.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "A DIFFERENT FINDING FROM THE ONE FILED ONE SPRINT EARLIER, and the test for that is that the REPAIRS ARE OPPOSITE. The earlier class read the WRONG QUANTITY -- a value where the property was an ordinal, a column where it was a position -- and its repair is to read a different quantity. THIS class reads the RIGHT quantity against a subject that CANNOT DISCRIMINATE: the shipped predicate and its adjacent weaker reading have identical truth values over the fixture's entire range. The instrument is fine; the data has no case that separates the readings, and the repair is to build a tree in which they differ.",
-        "IT IS MECHANICALLY FINDABLE IN A WAY THE EARLIER CLASS IS NOT, which is why it is filed as a PROCEDURE and not as three instances: perturb the predicate to its adjacent weaker reading and require the arm to redden. That procedure found all three, in one sprint, in code that had already been reviewed.",
-        "DELIBERATELY NOT FOLDED INTO THE CITATION ITEM: this is not an ordering-or-causality claim at all. It is a property of TEST DATA, and its remedy is something a sprint can run.",
-      ],
-    },
-    {
-      id: "PBI-71",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "put a scratch file where this repository says to put scratch files without it running in the suite ungraded",
-        benefit:
-          "the one directory kept for what is not accounted for stops being a hole in the accounting",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A TypeScript file under the directory this repository ignores is either not run by the suite, or is graded by something.",
-          verification:
-            "STARTING EVIDENCE, MEASURED: the test runner DISCOVERS a test file under an ignored directory -- a throwaway checkout ignoring one, holding one file inside it and one outside, ran BOTH. So such a file runs, is type-checked by nothing, and the refusal that closed this class everywhere else cannot see it.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WIDENING THE SUBJECT TO IGNORED FILES IS REFUSED IN ADVANCE, and the refusal is the point of filing this separately rather than as a gap in the guard: it would bring back every installed stranger and every built artifact, which the ignore file excludes for its own good reasons. WHAT IS OWED IS A DIFFERENT DISCRIMINATOR, NOT A LOOSER RULE.",
-        "AND THE ITEM IS FILED BECAUSE DISCLOSED AND COVERED ARE DIFFERENT STATES. The residue was named as a decision before its sprint closed rather than discovered at review, which is the standard; it is filed so the naming does not come to be read as the covering.",
-      ],
-    },
-    {
-      id: "PBI-68",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read a park in a file that sets its own deadline as a wait that never completed, rather than as a number a busy machine tripped",
-        benefit:
-          "the eight files the suite deadline deliberately does not cover stop being the place a red still means the machine",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A park in a file that sets its own deadline fails naming the wait that never completed, without a wall-clock number a busy machine can trip.",
-          verification:
-            "NO MECHANISM IS NAMED HERE, deliberately: naming one is how a criterion gets satisfied in letter. Both branches have measured evidence already and refinement decides between them -- two arms of one file died at 4008ms against that file's own 4000 at load 100-160, while every gated test in the tree read 12.8x headroom or better at load 3-9.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "THE HONEST ALTERNATIVE IS IN THE ITEM RATHER THAN OUTSIDE IT, because it may be the right outcome: ACCEPT THE EXPOSURE PERMANENTLY AND RECORD IT AS A DECISION. Each of the eight sets a deadline BELOW the ambient one on purpose, so that a park fails BY NAME in the file that owns it -- that is a property worth keeping, and a wall-clock number is how it is currently bought.",
-        "THE EIGHT, ENUMERATED BY READING CALL SITES RATHER THAN BY GREPPING A WORD: protocol 4000, session 4000, completion 4000, cancel-parked-pull 6000, cancellation 6000, cleanup-drain 6000, cleanup 6000 and a second constant at 18000, and editor-death 20_000 -- THE LAST JOINED THIS CLASS BY SPRINT 54'S OWN CHOICE OF NUMBER, and its slowest arm has the least headroom in the tree.",
-        "AND THE TIGHTEST MARGIN IN THE TREE IS NOW THE FILE THAT MEASURES THE DEADLINE, at about four and a half times, refused its own allowance ON A PO RULING: an allowance there would exempt the file that measures the deadline from the deadline.",
-      ],
-    },
-    {
       id: "PBI-69",
       story: {
         role: "tsudoi maintainer",
@@ -171,31 +100,56 @@ const scrum: ScrumDashboard = {
         "IT CHANGES TRACKED FILES AND INHERITS THIS PROJECT'S OWN SYNC OBLIGATION between the dashboard's list of checks and the documentation's Commands section. That obligation is written into the work rather than left to be discovered.",
       ],
     },
+
     {
-      id: "PBI-66",
+      id: "PBI-70",
       story: {
         role: "tsudoi maintainer",
         capability:
-          "read a claim labelled MEASURED and know what it was measured ABOUT, not only that a number was taken",
+          "trust that an arm defending a predicate would notice the predicate being weakened",
         benefit:
-          "the label keeps meaning that the sentence was checked, instead of meaning that some number was",
+          "a green arm means the fixture could have told the difference, not that the author believed it could",
       },
       acceptance_criteria: [
         {
           criterion:
-            "A claim carrying the MEASURED label states whose cost it is, at what size, on which runtime, and what its instrument cannot separate.",
+            "EVERY ARM A SPRINT TOUCHES carries a recorded perturbation to the ADJACENT WEAKER READING of the predicate it defends, and that perturbation reddens it.",
           verification:
-            "STAGED, because every such claim in the tree will have been repaired by the time this is written and an instrument whose witness cannot fail measures nothing: plant a labelled claim missing each of the four in turn and require each to be reported naming the claim. Pair with the same tree unplanted going green.",
+            "The procedure is the criterion: take an arm, weaken its predicate by one step, run it. SCOPED TO WHAT A SPRINT TOUCHES BY A PO RULING -- the same procedure over the whole corpus is a programme and not a sprint, and this half is the half that stops the bleeding. STARTING EVIDENCE, THREE INSTANCES MEASURED IN ONE SPRINT, each with the fixture change that separated the readings: an output directory whose declared value EQUALLED the string being matched; ONE options object handed to two programs, so `every` and `some` were extensionally equal across every tree that fixture could build; and an arm whose name said `tracked` while the fixture left the entry in the index.",
         },
       ],
       status: "draft",
       notes: [
-        "FILED OUT OF SPRINT 53, WHERE ONE PARAGRAPH NEEDED THREE CORRECTIONS AND EACH CORRECTION INTRODUCED THE NEXT ERROR. Four sentences in sequence: `the cost is linear` (true of the per-entry comparison, false of the sort beside it); `nothing of the directory's size is held or compared` (true of one function, false of the process); a reviewer's `a thirty-two entry buffer` (a real API default attributed to a code path that never reads it); and `what it buys is the disappearance of a superlinear term` (true on bun, and on deno the tail got slower).",
-        "THE NUMBERS WERE NEVER WRONG AND THE SUBJECT OF THE SENTENCE WAS WRONG FOUR TIMES, which is what makes this its own item: A SUBJECT ERROR IS INVISIBLE TO RE-MEASUREMENT. Take the reading again, at any size, on either runtime, confirm it, and the sentence stays false. THREE OF THE FOUR CARRIED THE `MEASURED` LABEL -- so in this codebase that label currently warrants the NUMBER and reads as a warrant for the SENTENCE.",
-        "THE FORM THIS ASKS FOR ALREADY EXISTS IN THE TREE, produced by the last of those repairs, and it is the exemplar rather than an invention: a reading that says where the allocation happens and never what stays, and that names what it cannot separate.",
-        "DELIBERATELY NOT FOLDED INTO THE CITATION CHECK: that item's own text warns that being read as coverage of a class it was not filed for is how it becomes worse than nothing, and `the subject of this sentence exceeds its measurement` is not a referent that resolves or fails to.",
+        "A DIFFERENT FINDING FROM THE ONE FILED ONE SPRINT EARLIER, and the test for that is that the REPAIRS ARE OPPOSITE. The earlier class read the WRONG QUANTITY -- a value where the property was an ordinal, a column where it was a position -- and its repair is to read a different quantity. THIS class reads the RIGHT quantity against a subject that CANNOT DISCRIMINATE: the shipped predicate and its adjacent weaker reading have identical truth values over the fixture's entire range. The instrument is fine; the data has no case that separates the readings, and the repair is to build a tree in which they differ.",
+        "IT IS MECHANICALLY FINDABLE IN A WAY THE EARLIER CLASS IS NOT, which is why it is filed as a PROCEDURE and not as three instances: perturb the predicate to its adjacent weaker reading and require the arm to redden. That procedure found all three, in one sprint, in code that had already been reviewed.",
+        "DELIBERATELY NOT FOLDED INTO THE CITATION ITEM: this is not an ordering-or-causality claim at all. It is a property of TEST DATA, and its remedy is something a sprint can run.",
       ],
     },
+
+    {
+      id: "PBI-60",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "learn from a diagnostic, rather than from a green run, that the artifact a check read was not there",
+        benefit:
+          "the file a check graded is the file I think it graded, in every state the build passes through",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "With a package's published artifact ABSENT, and with it PARTIAL, what reads it says so by naming a file rather than exiting 0 against a different one.",
+          verification:
+            "Both states staged -- absent, and the partial window the pack step passes through -- and the reading taken on both runtimes AND the compiler, because it is the compiler alone that probes for existence and falls through. STARTING EVIDENCE, MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS FROM BEFORE IT: with every dist/ removed the root check exits 1 with exactly two errors, both at examples/tsudoi.config.ts and both naming HANDLER packages, while the trace shows tsudoi's own subpath falling SILENTLY through the `default: ./src/*.ts` arm. THE RECORDED COSTS OF DELETING THAT ARM WERE MEASURED UNDER THE LAYOUT THE MOVE DESTROYED and must be re-measured rather than quoted: the two importers that broke reached tsudoi through a mapping that no longer exists and now reach it through node_modules, so the cost may simply have evaporated.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THIS IS THE RESIDUE SPRINT 52 SHIPPED OPEN AND SAID SO. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable. IT IS CARRIED AS PROSE IN FOUR PLACES AND PINNED BY NOTHING, DELIBERATELY: a test that pinned the flip would PASS WHILE THE RESIDUE PERSISTS, specifying rather than detecting it, and would make this PBI look like a regression.",
+        "THE DECIDING MEASUREMENT, so this does not become a deletion looking for a justification: it lands if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted. Otherwise the residue stays named.",
+      ],
+    },
+
     {
       id: "PBI-67",
       story: {
@@ -216,27 +170,6 @@ const scrum: ScrumDashboard = {
       notes: [
         "THE DECISION IS NOT WRONG AND ITS JUSTIFICATION IS THINNER THAN WHEN IT WAS MADE, which is why this is a re-decision rather than a defect. Streaming was adopted to bound a working set, on a measurement that had not yet established what each runtime holds; the reading afterwards showed deno's allocation at the open is transient, so on that runtime the shape buys less than it was adopted for and costs time at the size that matters most.",
         "IT SITS INSIDE THE ENVELOPE THE ORIGINAL RULING WAS MADE ON and is recorded in the module, so nothing is broken and no criterion is unmet. What is owed is a decision taken with the complete reading rather than a comment that reads as settled.",
-      ],
-    },
-    {
-      id: "PBI-61",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "add a file without discovering later that nothing type-checks it",
-        benefit: "a green run means what it says for every file in the tree, not for most of them",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A TypeScript file in the checkout that no compiler program includes is refused, over files as a class.",
-          verification:
-            "The standing pair, and its shape is already measured: a file planted outside any program's reach runs under `bun test` AND IS TYPE-CHECKED BY NOTHING, with all five checks exit 0 -- planted and removed to establish it. The faithful reader is likely the compiler's own file list, because tsc's directory expansion and default excludes decide membership rather than the JSON globs a reader sees.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "A WIDENING OF A REFUSAL THAT ALREADY EXISTS AND NOT A SECOND COVERAGE GUARD: the existing one reasons about DIRECTORIES HOLDING A MANIFEST that the root excludes and the workspace does not declare, so it is blind one level in -- IT RAN OVER THE PLANTED PROBE AND PASSED.",
-        "THE MOVE CREATED THE ASYMMETRY THAT MAKES IT LIVE: the framework member is the only member whose config includes just its source, because it is the only one with no tests of its own, so anything added to it outside that directory is run by the suite and graded by nobody.",
       ],
     },
 
@@ -262,31 +195,6 @@ const scrum: ScrumDashboard = {
         "THE FIRST THING THE EXECUTOR MEETS IS NOT A BUG: one extractor in test/helpers/readme.ts says of itself `NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all are and a reader would otherwise assume it`, and gives its reason. A property that forces EVERY block to be executed would delete a considered decision. WHAT THE CRITERION REFUSES IS A BLOCK THAT IS UNREACHED AND UNACCOUNTED FOR; how an account is expressed is this item's work and is deliberately not named here.",
         "THE PROSE CLAIM IS PART OF THE SUBJECT: claimed in the project's own documentation and asserted by nothing is a COVERAGE CLAIM TAKEN ON RECOLLECTION, which is what makes this a defect rather than a gap.",
         "FOUND BY TRIAGING THE RETROSPECTIVE RECORD RATHER THAN BY A RED, and that is worth recording: the improvement being retired claimed this remedy existed, and reading for its mechanism before marking it done is what found that it does not.",
-      ],
-    },
-
-    {
-      id: "PBI-57",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust that a citation inside a comment still refers to something that exists",
-        benefit:
-          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
-          verification:
-            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
-        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
-        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
-        "WIDENED BY SPRINT 54: THE UNCOVERED CLASS LIVES IN ARMS AND NOT ONLY IN COMMENTS, and in arms it is worse. This item's own text says the ordering-and-causality class stays uncovered and reasons about COMMENTS asserting a mechanism the code denies. Sprint 54 produced FOUR ARMS THAT WERE GREEN WHILE THE ORDERING THEY DEFENDED WAS VIOLATED -- a spy reading the value handed over and not its ordinal among the registrations, a sweep reading a call's COLUMN where the property was its POSITION relative to the first registration, an environment read whose TIME nobody had written down, and a pin reading the exported constant rather than the value the runtime received. That is the disarmed-control shape one level above what this item was filed against, and it is a different statement from the comment half -- folding them blunts both.",
       ],
     },
 
@@ -319,6 +227,106 @@ const scrum: ScrumDashboard = {
     },
 
     {
+      id: "PBI-71",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "put a scratch file where this repository says to put scratch files without it running in the suite ungraded",
+        benefit:
+          "the one directory kept for what is not accounted for stops being a hole in the accounting",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A TypeScript file under the directory this repository ignores is either not run by the suite, or is graded by something.",
+          verification:
+            "STARTING EVIDENCE, MEASURED: the test runner DISCOVERS a test file under an ignored directory -- a throwaway checkout ignoring one, holding one file inside it and one outside, ran BOTH. So such a file runs, is type-checked by nothing, and the refusal that closed this class everywhere else cannot see it.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WIDENING THE SUBJECT TO IGNORED FILES IS REFUSED IN ADVANCE, and the refusal is the point of filing this separately rather than as a gap in the guard: it would bring back every installed stranger and every built artifact, which the ignore file excludes for its own good reasons. WHAT IS OWED IS A DIFFERENT DISCRIMINATOR, NOT A LOOSER RULE.",
+        "AND THE ITEM IS FILED BECAUSE DISCLOSED AND COVERED ARE DIFFERENT STATES. The residue was named as a decision before its sprint closed rather than discovered at review, which is the standard; it is filed so the naming does not come to be read as the covering.",
+      ],
+    },
+
+    {
+      id: "PBI-57",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "trust that a citation inside a comment still refers to something that exists",
+        benefit:
+          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
+          verification:
+            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
+        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
+        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
+        "WIDENED BY SPRINT 54: THE UNCOVERED CLASS LIVES IN ARMS AND NOT ONLY IN COMMENTS, and in arms it is worse. This item's own text says the ordering-and-causality class stays uncovered and reasons about COMMENTS asserting a mechanism the code denies. Sprint 54 produced FOUR ARMS THAT WERE GREEN WHILE THE ORDERING THEY DEFENDED WAS VIOLATED -- a spy reading the value handed over and not its ordinal among the registrations, a sweep reading a call's COLUMN where the property was its POSITION relative to the first registration, an environment read whose TIME nobody had written down, and a pin reading the exported constant rather than the value the runtime received. That is the disarmed-control shape one level above what this item was filed against, and it is a different statement from the comment half -- folding them blunts both.",
+      ],
+    },
+
+    {
+      id: "PBI-66",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read a claim labelled MEASURED and know what it was measured ABOUT, not only that a number was taken",
+        benefit:
+          "the label keeps meaning that the sentence was checked, instead of meaning that some number was",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A claim carrying the MEASURED label states whose cost it is, at what size, on which runtime, and what its instrument cannot separate.",
+          verification:
+            "STAGED, because every such claim in the tree will have been repaired by the time this is written and an instrument whose witness cannot fail measures nothing: plant a labelled claim missing each of the four in turn and require each to be reported naming the claim. Pair with the same tree unplanted going green.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED OUT OF SPRINT 53, WHERE ONE PARAGRAPH NEEDED THREE CORRECTIONS AND EACH CORRECTION INTRODUCED THE NEXT ERROR. Four sentences in sequence: `the cost is linear` (true of the per-entry comparison, false of the sort beside it); `nothing of the directory's size is held or compared` (true of one function, false of the process); a reviewer's `a thirty-two entry buffer` (a real API default attributed to a code path that never reads it); and `what it buys is the disappearance of a superlinear term` (true on bun, and on deno the tail got slower).",
+        "THE NUMBERS WERE NEVER WRONG AND THE SUBJECT OF THE SENTENCE WAS WRONG FOUR TIMES, which is what makes this its own item: A SUBJECT ERROR IS INVISIBLE TO RE-MEASUREMENT. Take the reading again, at any size, on either runtime, confirm it, and the sentence stays false. THREE OF THE FOUR CARRIED THE `MEASURED` LABEL -- so in this codebase that label currently warrants the NUMBER and reads as a warrant for the SENTENCE.",
+        "THE FORM THIS ASKS FOR ALREADY EXISTS IN THE TREE, produced by the last of those repairs, and it is the exemplar rather than an invention: a reading that says where the allocation happens and never what stays, and that names what it cannot separate.",
+        "DELIBERATELY NOT FOLDED INTO THE CITATION CHECK: that item's own text warns that being read as coverage of a class it was not filed for is how it becomes worse than nothing, and `the subject of this sentence exceeds its measurement` is not a referent that resolves or fails to.",
+      ],
+    },
+
+    {
+      id: "PBI-68",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read a park in a file that sets its own deadline as a wait that never completed, rather than as a number a busy machine tripped",
+        benefit:
+          "the eight files the suite deadline deliberately does not cover stop being the place a red still means the machine",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A park in a file that sets its own deadline fails naming the wait that never completed, without a wall-clock number a busy machine can trip.",
+          verification:
+            "NO MECHANISM IS NAMED HERE, deliberately: naming one is how a criterion gets satisfied in letter. Both branches have measured evidence already and refinement decides between them -- two arms of one file died at 4008ms against that file's own 4000 at load 100-160, while every gated test in the tree read 12.8x headroom or better at load 3-9.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE HONEST ALTERNATIVE IS IN THE ITEM RATHER THAN OUTSIDE IT, because it may be the right outcome: ACCEPT THE EXPOSURE PERMANENTLY AND RECORD IT AS A DECISION. Each of the eight sets a deadline BELOW the ambient one on purpose, so that a park fails BY NAME in the file that owns it -- that is a property worth keeping, and a wall-clock number is how it is currently bought.",
+        "THE EIGHT, ENUMERATED BY READING CALL SITES RATHER THAN BY GREPPING A WORD: protocol 4000, session 4000, completion 4000, cancel-parked-pull 6000, cancellation 6000, cleanup-drain 6000, cleanup 6000 and a second constant at 18000, and editor-death 20_000 -- THE LAST JOINED THIS CLASS BY SPRINT 54'S OWN CHOICE OF NUMBER, and its slowest arm has the least headroom in the tree.",
+        "AND THE TIGHTEST MARGIN IN THE TREE IS NOW THE FILE THAT MEASURES THE DEADLINE, at about four and a half times, refused its own allowance ON A PO RULING: an allowance there would exempt the file that measures the deadline from the deadline.",
+      ],
+    },
+
+    {
       id: "PBI-63",
       story: {
         role: "tsudoi maintainer",
@@ -346,28 +354,26 @@ const scrum: ScrumDashboard = {
         "RANKED LOW ON THE FIRST CRITERION AND NOT ON THE SECOND: the root is private for ever and the artifact is local, but the entry-name reading is the discrimination the move showed missing.",
       ],
     },
-
     {
-      id: "PBI-60",
+      id: "PBI-70b",
       story: {
         role: "tsudoi maintainer",
         capability:
-          "learn from a diagnostic, rather than from a green run, that the artifact a check read was not there",
-        benefit:
-          "the file a check graded is the file I think it graded, in every state the build passes through",
+          "know which of the arms already in this suite would notice their own predicate being weakened",
+        benefit: "the greens inherited from before the rule are worth what the new ones are worth",
       },
       acceptance_criteria: [
         {
           criterion:
-            "With a package's published artifact ABSENT, and with it PARTIAL, what reads it says so by naming a file rather than exiting 0 against a different one.",
+            "Each arm in the existing corpus either carries a recorded perturbation to the adjacent weaker reading of its predicate, or is recorded as one that does not.",
           verification:
-            "Both states staged -- absent, and the partial window the pack step passes through -- and the reading taken on both runtimes AND the compiler, because it is the compiler alone that probes for existence and falls through. STARTING EVIDENCE, MEASURED AFTER THE MOVE AND NOT CARRIED ACROSS FROM BEFORE IT: with every dist/ removed the root check exits 1 with exactly two errors, both at examples/tsudoi.config.ts and both naming HANDLER packages, while the trace shows tsudoi's own subpath falling SILENTLY through the `default: ./src/*.ts` arm. THE RECORDED COSTS OF DELETING THAT ARM WERE MEASURED UNDER THE LAYOUT THE MOVE DESTROYED and must be re-measured rather than quoted: the two importers that broke reached tsudoi through a mapping that no longer exists and now reach it through node_modules, so the cost may simply have evaporated.",
+            "The same procedure as the going-forward item, applied to what was already there. THE SCALE IS THE POINT AND IS WHY THIS IS SEPARATE: this suite holds hundreds of arms, and the value of the sweep DECAYS as the going-forward rule ages.",
         },
       ],
       status: "draft",
       notes: [
-        "THIS IS THE RESIDUE SPRINT 52 SHIPPED OPEN AND SAID SO. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable. IT IS CARRIED AS PROSE IN FOUR PLACES AND PINNED BY NOTHING, DELIBERATELY: a test that pinned the flip would PASS WHILE THE RESIDUE PERSISTS, specifying rather than detecting it, and would make this PBI look like a regression.",
-        "THE DECIDING MEASUREMENT, so this does not become a deletion looking for a justification: it lands if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted. Otherwise the residue stays named.",
+        "RANKED LAST AND CARRYING ITS OWN CLOSURE CONDITION, WHICH IS THE POINT OF FILING IT RATHER THAN LEAVING IT IMPLIED: IT MAY CLOSE AS A RECORDED DECISION THAT GOING-FORWARD-ONLY SUFFICES. A backlog item that can only be closed by doing it is how a programme becomes unbounded.",
+        "NO RISK-RANKED COHORT IS PROMISED HERE, because nothing in the tree specifies one and inventing a ranking at filing time is the shape where a criterion gets satisfied by whichever subset was chosen.",
       ],
     },
   ],
