@@ -91,31 +91,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-69",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "read the whole Definition of Done from one run rather than from five",
-        benefit:
-          "a check that failed cannot be missed by reading the part of the output that happened to be on screen",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "Running the Definition of Done reports every check's own exit status and fails when any one of them fails.",
-          verification:
-            "Stage each check failing in turn and require the run to fail naming that check, paired with the unstaged tree passing. THE PAIR IS NOT OPTIONAL HERE: a runner that always fails satisfies the first half.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FILED AGAINST A DEFECT WITH FOUR RECORDED OCCURRENCES ACROSS TWO PEOPLE, ONE OF WHICH PERSISTED NINE SPRINTS, AND A FIFTH IN SPRINT 54: four commits were taken while one check was red, because its reader grepped the HEAD of a wrapper's output rather than every exit code. THE SKILL THAT FORBIDS EXACTLY THIS EXISTS, is specific, is measured, carries its own recidivism count, and matched on description -- and the defect happened anyway.",
-        "WHAT THAT TAUGHT, AND IT IS THE ARGUMENT FOR MECHANISING RATHER THAN RE-STATING: the same rule FIRED in the same session when it was attached to the ACTIVITY being executed (the review round's own procedure prints the exits because the round says so) and did NOT fire when it sat in a skill matched on a description the actor did not construe themselves as doing -- at commit time you are committing, not reporting an exit code. A SKILL BUYS VOCABULARY AND RECALL, NOT COMPLIANCE UNDER LOAD.",
-        "IT IS WORTH MORE THAN THE DEFECT THAT PROMPTED IT, which is what earns it a slot: warnings do not move the linter's exit code, so five exit codes is not even the full reading -- the warning count is part of it, and a warning nobody introduced on purpose is one a later reader has to decide about.",
-        "IT CHANGES TRACKED FILES AND INHERITS THIS PROJECT'S OWN SYNC OBLIGATION between the dashboard's list of checks and the documentation's Commands section. That obligation is written into the work rather than left to be discovered.",
-      ],
-    },
-
-    {
       id: "PBI-70",
       story: {
         role: "tsudoi maintainer",
@@ -370,6 +345,7 @@ const scrum: ScrumDashboard = {
         "RANKED LOW ON THE FIRST CRITERION AND NOT ON THE SECOND: the root is private for ever and the artifact is local, but the entry-name reading is the discrimination the move showed missing.",
       ],
     },
+
     {
       id: "PBI-70b",
       story: {
@@ -394,6 +370,206 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 56,
+      pbi_id: "PBI-69",
+      goal: "No commit is taken on a Definition of Done whose red was off screen: verifying a change is ONE command, it names every check's own result, and it is the only form this project documents.",
+      status: "done",
+      subtasks: [
+        {
+          test: "In a throwaway tree carrying its own dashboard whose checks log their own names: all pass -> exit 0; THE FIRST FAILS AND THE LAST PASSES -> non-zero, naming the failing check, with the last check's own pass still reported; two fail -> both named; an EMPTY list of checks -> refused rather than green.",
+          implementation:
+            "A script beside the workspace one, reading the checks by EXECUTING the dashboard and parsing the JSON it already prints, looping all of them without stopping at the first failure.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "7f0324a",
+              message: "feat(scripts): one command that takes every check and reports each one",
+              phase: "green",
+            },
+            {
+              hash: "e3d6685",
+              message: "test(dod): make the throwaway dashboard compute what it prints",
+              phase: "green",
+            },
+            {
+              hash: "ed797e2",
+              message: "test(dod): make the summary word a function of the run, both directions",
+              phase: "green",
+            },
+            {
+              hash: "be27ff9",
+              message: "feat(scripts): refuse a `run` this runner cannot execute faithfully",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE FIRST-FAILS-LAST-PASSES ARM IS THE RECORDED DEFECT VERBATIM: a runner reading the last command's status passes an arm that fails the LAST check, and this project's five occurrences are all that shape.",
+            "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. AMENDED IN THE REVIEW ROUND RATHER THAN LEFT STANDING, because it is a present-tense design claim and it became false: this said `the dashboard's run stays an executable shell command`, and the runner never ran one. It is a COMMAND LINE the runner spawns, and one it cannot execute faithfully is refused; the property this sentence was reaching for -- every `run` is still a line a maintainer can type at a prompt -- survives the correction intact.",
+            "THE INPUT CONTRACT WAS MEASURED BEFORE A LINE WAS WRITTEN, because every arm here rests on it: `bun run scrum.ts` at this sprint's base exits 0, writes ZERO BYTES to stderr, and its stdout parses as JSON whose `definition_of_done.checks` is the five pairs. A runner built on an unmeasured premise about the file it reads would have been this project's own recorded shape.",
+            "RED THEN GREEN, AND THE RED IS THE HALF WORTH RECORDING: with no runner in the tree, 0 pass / 4 fail -- and the EMPTY-LIST arm failed on its TEXT rather than on its colour, which is the only reason it measures anything. Everything that goes wrong here exits non-zero, a runner that does not exist included, so an arm reading the colour alone would have been born green. After the implementation, 4 pass / 0 fail, and the whole suite 851 pass / 0 fail across 57 files against a base of 847 across 56.",
+            "TWO DEGENERATES, PREDICTED IN WRITING BEFORE EACH RUN AND BOTH BEHAVING AS PREDICTED. THE RECORDED DEFECT ITSELF -- verdict and report taken from the LAST result alone -- gives 2 pass / 2 fail: the two positional arms red, the all-pass arm green, which is exactly why an all-pass arm certifies nothing here. AND AN EMPTY LIST RUN AS WRITTEN rather than refused gives 3 pass / 1 fail. Neither degenerate is reachable from the other's arms, which is what earns them both.",
+            "REVIEW ROUND, FINDING 1, AND IT IS THIS PROJECT'S OWN DEFECT ARRIVING INSIDE THE INSTRUMENT BUILT TO RETIRE IT: THE SUMMARY HEADLINE COULD LIE WITH EVERY ARM GREEN. MEASURED -- the verdict word hardwired to `PASSED`, per-check lines and exit code untouched -- 12 pass / 0 fail, because `Definition of Done: FAILED` was asserted NOWHERE IN THE FILE. The only summary arm asserted one direction, which a constant satisfies. The header of that very runner says the five recorded occurrences were a reader taking a grep for the run's status, and the summary line is the line a reader greps. One arm now runs two trees and asserts both directions with the WHOLE string, never the bare word, since a failing report carries `[FAILED] alpha` whatever the summary says. DEGENERATES RE-RUN: hardwired PASSED, 12 pass / 1 fail, this arm alone; hardwired FAILED, 10 pass / 3 fail. Commit ed797e2.",
+            "FINDING 6, A FIXTURE-DESIGN WEAKNESS AGAINST THIS FILE'S OWN LOAD-BEARING CLAIM: the runner's header calls EXECUTING the dashboard the decision everything rests on, and the fixture could not hold it. The throwaway dashboard wrote its object INLINED, so its text WAS its output and any means of obtaining the JSON passed -- MEASURED, a runner slicing the file from its first brace to its last, never running it, left 12 pass / 0 fail. Severity is bounded and stated: against the real dashboard, a TypeScript program, that runner exits 1, so nothing shipped wrong; the arm simply did not hold the claim. The fixture now declares its pairs FLAT and assembles the shape at run time, so no substring of it is the JSON it prints. DEGENERATE RE-RUN: 0 pass / 12 fail. Commit e3d6685.",
+            'FINDING 4, FROM CODEX, THE ONLY ONE OF THE SIX THAT MOVED THE PRODUCT: `run` WAS DOCUMENTED AS A SHELL COMMAND AND WAS NEVER RUN AS ONE. MEASURED here as filed -- `run: "true && false"` split on spaces spawns `true` with the arguments `&&` and `false`, exits 0, and printed `[PASSED] conjunction -- exit 0 -- $ true && false`, where a shell runs `false` and fails; redirections, quoted arguments and globs misread the same way, in silence. The direct spawn was taken deliberately and the reasoning holds -- through a shell a missing binary arrives as exit 127 and cannot be told from a check that ran and said no -- but the price was being paid where no reader met it, least of all at the dashboard field calling it a shell command. OF THE THREE ANSWERS, refusing is the only one that gives up neither reading, and a misread command has no colour at all. `REFUSED` is its own verdict beside `UNRUNNABLE` because the reader\'s next move differs: rewrite the entry, not install a tool. THE ARM CARRIES A POSITIVE CONTROL, without which an over-broad predicate ships green -- no other `run` in that file carries a flag or a `.` argument, so a predicate refusing those would redden `oxfmt --check .` in the real Definition of Done and NOTHING in the suite. DEGENERATE RE-RUN, the predicate never firing: 14 pass / 1 fail. Commit be27ff9.',
+            "DISCLOSED IN ADVANCE RATHER THAN LEFT FOR THE NEXT REVIEWER, AND IT IS THE CLASS THIS RECORD HAS NOW FILED FIVE TIMES: be27ff9 SHIPPED WITH THIS DASHBOARD'S OWN FIELD COMMENT STILL CALLING `run` A SHELL COMMAND, FOR EXACTLY ONE COMMIT. The cause is the standing rule that scrum.ts moves alone in its own commits, which cannot be met in the same breath as a code change that falsifies a comment living here; the alternative was folding the dashboard into the feature commit. It was seen when written, not found afterwards, and the very next commit is the correction.",
+          ],
+        },
+        {
+          test: "Whole-value equality on the invocation log against the dashboard's declared ORDER and arity; the per-check report of a FAILING run carries each check's name, its command as run, and its own exit; and a dashboard with a different set of checks changes what runs WITH NO EDIT TO THE RUNNER.",
+          implementation: "Per-check report lines; output captured and echoed.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "5231fbe",
+              message:
+                "test(dod): read the invocation log as a sequence, and require a sixth check to run",
+              phase: "green",
+            },
+            {
+              hash: "c64fcc3",
+              message: "test(dod): require each check's own diagnostic to reach the reader",
+              phase: "green",
+            },
+            {
+              hash: "50d5664",
+              message: "test(dod): pause the first check, so the order arm reads order",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "BORN GREEN, DECLARED AS SUCH BEFORE THE RUN AND NOT DISCOVERED AFTERWARDS: the per-check report lines landed in the first subtask, because its own arms needed the words `[FAILED] alpha` and `[PASSED] gamma` to exist. 7 pass / 0 fail on the first execution, which is worth nothing by itself -- ALL THE EVIDENCE FOR THESE THREE ARMS COMES FROM THE DEGENERATES, and that is the reason they were run before the arms were believed.",
+            "THREE DEGENERATES, EACH PREDICTED IN WRITING AND EACH REDDENING EXACTLY WHAT WAS PREDICTED. Checks SORTED by name before running -- a move that changes no value -- 5 pass / 2 fail, the sequence arm and the six-check arm; the runner EXITING INSIDE ITS LOOP at the first red, 4 pass / 3 fail, every one of them an arm about what is reported AFTER a failure; and the runner ASSUMING THE LIST IS FIVE LONG, 6 pass / 1 fail, the six-check arm alone. The third is the product owner's refusal in its cheapest form and no other arm in the file can see it.",
+            "THE SUITE AFTER THIS SUBTASK: 854 pass / 0 fail across 57 files, all five checks read individually and each exit 0.",
+            "`CAPTURED AND ECHOED` WAS HALF ASSERTED AND THE MISSING HALF WAS FOUND BY REVIEW, NOT BY A RED. Twelve arms proved CAPTURED -- the warning count is a parse of the captured bytes -- and NOT ONE proved ECHOED: they all read what the RUNNER writes, so a runner swallowing every check's own output satisfied all of them, including the two-run report equality, which holds when both runs echo nothing. MEASURED as a fourth degenerate for this subtask: deleting the two writes that tee a child's streams leaves 11 pass / 1 fail once the arm exists, and left 12 pass / 0 fail before it. The arm lives in the error-lint tree because the subject was already there, and what it reads is the linter's own diagnostic line rather than anything this runner composes.",
+            "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
+            "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
+            "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
+            "REVIEW ROUND, THE OBSERVATION THAT CAME WITH THE SIX AND WAS ROUTED FOR A DECISION RATHER THAN FILED AS A HOLE -- TAKEN, BECAUSE THE RATE IS ITSELF THE EVIDENCE. Three commands that each take milliseconds tend to finish in the order they were STARTED even when nothing sequenced them, so this arm's log could not separate order from coincidence: MEASURED against a runner starting every check at once, the arm NAMED for the property reddened on 3 of 5 runs for the reviewer and on 4 of 5 re-run here, while the FILE reddened 5 of 5 both times -- its detection carried by the first-fails-last-passes arm and the six-check arm, neither of which is about order. A PAUSE ON THE FIRST CHECK puts that entry LAST under any parallel execution: same degenerate, same five runs, 5 of 5. AN ARM THAT USUALLY REDDENS IS A FLAKE IN THE OTHER DIRECTION, and the order it defends is not cosmetic -- the first real check builds every artifact the fourth reads. Commit 50d5664.",
+          ],
+        },
+        {
+          test: "A check naming a binary that does not exist is NON-GREEN and distinguishable in the report from one that ran and failed; and the runner invoked FROM A SUBDIRECTORY produces the same reading as from the root.",
+          implementation:
+            "Spawn-error handling; the root taken from the argument or from the script's own location, never from the working directory.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "996dfcc",
+              message:
+                "test(dod): separate a check that never started from one that ran and said no",
+              phase: "green",
+            },
+            {
+              hash: "1212c4a",
+              message: "test(dod): put one missing binary in a tree of passes, so it gates alone",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "BOTH ARMS BORN GREEN AND DECLARED SO BEFORE THE RUN -- 9 pass / 0 fail -- because the spawn-error handling and the location-derived root were written in the first subtask. FOUR DEGENERATES CARRY THE EVIDENCE INSTEAD, each predicted and each reddening one arm and no other: a spawn error COUNTED AS A PASS, 8 pass / 1 fail; a check that never started PRINTED AS ONE THAT RAN AND FAILED -- byte-identical text, the state this project has already been caught reading as one red -- 8 pass / 1 fail; the root taken FROM THE WORKING DIRECTORY, 8 pass / 1 fail; and the checks handed the WORKING DIRECTORY INSTEAD OF THE ROOT, 8 pass / 1 fail.",
+            "THE FOURTH DEGENERATE IS THE ONE THAT SHAPED THE ARM, and it is invisible to every exit code in the file: handing the checks a subdirectory changes no status and no report line. It is separated only by a check that RECORDS THE DIRECTORY IT RAN IN, compared whole between the run from the root and the run from below it -- which is why one check in that tree records where it ran rather than its name.",
+            "THE SUBDIRECTORY ARM RUNS A BYTE COPY OF THE RUNNER INSIDE THE THROWAWAY, and the reason is worth keeping: with no argument the shipped runner takes THIS repository's Definition of Done, so the arm measuring the argument-free route cannot use the shipped path without running `bun test` inside `bun test`.",
+            "THE SUITE AFTER THIS SUBTASK: 856 pass / 0 fail across 57 files, five exits read individually, all 0.",
+            "UNRUNNABLE IS NOT PASSED, AND TODAY THIS MACHINE IS THE WITNESS: two of the five tools are absent from PATH here, so a runner treating a spawn error as anything but non-green would ship green over two checks that never ran.",
+            "THE WORKING DIRECTORY IS A HAZARD AND NOT A DETAIL: the first check finds its configuration only in the current directory, so a runner inheriting a subdirectory would report five greens over a suite that built nothing.",
+            "REVIEW ROUND, FINDING 2, AND THIS MACHINE IS THE LIVE WITNESS FOR IT: AN UNRUNNABLE CHECK DID NOT HAVE TO GATE THE RUN. MEASURED -- the gate narrowed from `the outcome is not passed` to `the outcome is failed`, with outcome, reason and every byte of the report unchanged -- 12 pass / 0 fail in the file AND 859 pass / 0 fail across the whole suite. The arm named for it carried its non-green half on a DIFFERENT check in the same tree, one that ran and said no, so it measured the DISTINGUISHABILITY half and never the gating half: two hazards in one test, one of them unmeasured. IT IS NOT THE DEGENERATE ALREADY RECORDED ONE ENTRY ABOVE -- a spawn error counted as a pass flips the outcome and reddens the report text; this one moves the exit code alone. `oxfmt` and `tsc` are absent from this machine's own PATH, so under that narrowing the runner would ship exit 0 today over two checks that never ran. The repair is a tree whose SOLE non-pass is the missing binary, with every other check's pass asserted so the colour is attributable. DEGENERATE RE-RUN: 13 pass / 1 fail, the new arm alone. Commit 1212c4a.",
+          ],
+        },
+        {
+          test: "A planted warning -> count one, exit 0, the count present in the verdict; an error-only tree -> zero warnings beside a failure; a clean tree -> zero.",
+          implementation:
+            "The warning count read from the same invocation whose exit was read, printed in the same summary as the exits.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "ea63b6a",
+              message:
+                "test(dod): read the warning count off the real linter, and require it not to gate",
+              phase: "green",
+            },
+            {
+              hash: "97d5665",
+              message: "test(dod): sandwich the linter, so the warning count is read as a sum",
+              phase: "green",
+            },
+            {
+              hash: "d30f5c1",
+              message: "test(dod): give the linter's run an identity, so two readings are one run",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE ARMS RUN THE LINTER RATHER THAN ECHOING THE SHAPE THE PARSE LOOKS FOR, and that is a choice with a cost: an arm printing `path:line:col: warning ...` itself would assert the runner against its own regular expression and would stay green the day oxlint changes how a diagnostic is printed -- which is the day this must fail. What is planted instead is SOURCE: a generator with no `yield` for the warning, a missing file extension for the error, both measured before the arms were authored (warning tree exit 0 with one line, error tree exit 1 with one line, clean tree silent).",
+            "MEASURED IN THE STAGED TREE AND NOT ONLY IN THIS REPOSITORY: the count over a tree carrying the planted file, a dashboard, two shell probes and a copy of the runner is exactly 1 -- nothing else in a throwaway contributes a diagnostic -- and 0 in the error tree. The reading over this repository's own five checks at the sprint's base was 1, the deliberate fixture warning.",
+            "BORN GREEN, DECLARED IN ADVANCE -- 12 pass / 0 fail -- WITH THREE DEGENERATES, each predicted and each reddening one arm: the count HARDWIRED TO ZERO, 11 pass / 1 fail; EVERY DIAGNOSTIC COUNTED with severity ignored, 11 pass / 1 fail on the error tree alone, which is the arm that reads severity rather than volume; and WARNINGS GATING THE RUN, 11 pass / 1 fail, the ruling made falsifiable.",
+            "THE SUITE AFTER THIS SUBTASK: 859 pass / 0 fail across 57 files, five exits read individually, all 0.",
+            "A SECOND CRITERION AND NOT A CLAUSE OF THE FIRST, on this project's own rule that a hazard owns a test whose FIRST assertion it is: folded in, the exit-code assertions fire first and the warning reading could never be the thing that fails. The perturbation differs too -- planting a warning moves no exit code.",
+            "REPORTED AND NOT GATING, RULED: this tree carries ONE deliberate warning whose fixture records a refusal to silence it, so failing on warnings would overturn a decision by way of a tooling change -- and an instrument red on every green tree retires itself.",
+            "THE COUNT IS A PARSE, SO IT SHIPS WITH ITS PAIR. MEASURED on the installed linter, in a pipe and under a terminal alike: one line per diagnostic, no summary line -- so the count comes from lines, and re-measuring on a version bump is the maintenance this buys.",
+            "REVIEW ROUND, FINDING 3 -- THE COUNT COULD COME FROM THE FIRST CHECK ALONE AND EVERY ARM STAYED GREEN, because the linted tree declared the linter ALONE. With one check the first result, the last result and the total are extensionally equal, so every weaker reading of the aggregate is satisfied: MEASURED, the sum replaced by the FIRST result's count, 12 pass / 0 fail. IN THE REAL DASHBOARD THE LINTER IS THE SECOND OF FIVE, so that runner ships `warnings: 0` over a linter that emitted one, and this record's own claim that the count aggregates over all five had no arm behind it. One silent check before the linter and one after, the count still one. THE LAST READING WAS BOUGHT IN THE SAME MOVE and is worth its half -- five recorded occurrences here are the LAST command's status read as the run's. DEGENERATES RE-RUN: first-only, 13 pass / 1 fail; last-only, 13 pass / 1 fail. Commit 97d5665.",
+            "FINDING 5, FROM CODEX, AND IT IS AN IDENTITY PROBLEM RATHER THAN A VALUE ONE: the arm read an EXIT CODE and a WARNING COUNT off the linter and could not say they came from the same invocation of it. A runner spawning each check twice, taking the exit from the first run and the warnings from the second, prints exactly what was asserted -- the fixture is deterministic, so the second run's bytes are the first run's bytes. MEASURED with the bare `oxlint`: that runner left ALL THREE linted arms green, 9 pass / 5 fail with every red elsewhere in the file. The linter now runs through a wrapper that records its invocation and then `exec`s it, so the exit code and every parsed byte stay the real program's, and the log is asserted WHOLE. ARITY IS WHAT CARRIES IT: one entry is one invocation, so two readings cannot be two runs -- no nonce is needed and none was built. DEGENERATE RE-RUN: 7 pass / 7 fail, the two linted arms joining. Commit d30f5c1.",
+          ],
+        },
+        {
+          test: "The five real checks staged failing IN TURN, with predictions written before each run, and the paired unstaged green.",
+          implementation:
+            "Whatever repair a staging reveals; predicted none. Stagings are ADDED UNTRACKED FILES so nothing tracked is edited and cleanliness is verifiable.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "NO COMMIT OF ITS OWN AND THAT IS THE RESULT, NOT AN OMISSION: the predicted repair was none, and none was revealed. What this subtask produced is seven readings, each with its prediction written in a file before the run.",
+            "THE FIVE STAGINGS, EACH AN ADDED UNTRACKED FILE, EACH READ THROUGH THE RUNNER ITSELF. A failing test file -> `[FAILED] Tests pass -- exit 1` with the other four `[PASSED]`, which is THE RECORDED DEFECT'S OWN SHAPE now printed: the red is first and the last check passes. `Bun.file(...)` at the root -> `[FAILED] Lint passes -- exit 1`, error severity because the linter's exit code does not move on warnings. Extra spaces around an `=` -> `[FAILED] Format check passes -- exit 1`. A root-level `const wrong: number = \"no\"` -> `[FAILED] Type check passes`. And the unstaged pair, run before all of them: exit 0, five `[PASSED]`, `warnings: 1`.",
+            "PREDICTION MISSED, RECORDED RATHER THAN QUIETLY CORRECTED: the type-check staging was predicted to report `exit 2` and reported `exit 1`. The number was wrong, the property was not -- the report carries the check's OWN status rather than a normalised one -- and the miss was visible only because the prediction was written down first.",
+            "AND THE PLAN'S OWN CLAIM ABOUT THE FIFTH STAGING IS FALSE ON THIS TREE, MEASURED: an untracked file under a dot directory was planned as the CLEAN single-check staging, and it reddens TWO checks -- `[FAILED] Tests pass` beside `[FAILED] Workspace members type-check`, 858 pass / 1 fail, the failing arm being `this repository holds no TypeScript file that no program includes` in test/uncovered-files.test.ts, which SPAWNS THE FIFTH CHECK OVER THIS CHECKOUT and requires its stderr empty. THE STRONGER STATEMENT THAT REPLACES IT: the fifth check cannot be staged alone at all here, whatever the staging, because an arm of the first check IS the fifth check over this repository. Both checks are named in one report, which is the property under test.",
+            "THE STANDING RE-RUN CAME FOR FREE AND IS REPORTED AS ONE, because the question `which perturbation still has a target here` has an answer this sprint rather than the usual none: the dot-directory staging IS sprint 55's own perturbation -- a TypeScript file in this checkout that no program includes -- re-run against this sprint's tree. It reddened as recorded, and the two checks it reddens are named in one report, which is this increment's subject. REPRODUCED AND NOT INDEPENDENT: the verifier is the author.",
+            "THE SIXTH STAGING EXISTS TO MOVE NO EXIT CODE, and it did not: a generator with no `yield` gives exit 0, verdict PASSED, `warnings: 2`. That is the whole reason the count is reported beside the exits rather than folded into them.",
+            "ONE OF THE FIVE DOES NOT ISOLATE AND THE RECORD MUST SAY WHY: a type error inside a member breaks the preparation the first check runs, so the first check dies with the fifth. The clean single-check staging is an untracked source file under a directory no configuration includes -- which fires the guard whose own stated reason is that without it all five commands exit 0.",
+            "THE LINTER'S STAGING MUST BE ERROR-LEVEL, because its exit code does not move on warnings; a second warning-shaped staging exists precisely to move NO exit code.",
+          ],
+        },
+        {
+          test: "None -- prose and the round's own procedure.",
+          implementation:
+            "The documentation's Commands section names the one form, with running a single check labelled DEBUGGING so it cannot be read as verification; and the filing bar lands in this dashboard's header where the round's standing instruction already lives.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "c4ba6f4",
+              message:
+                "docs(scrum): file the review round's bar in the header, and say at the site that the checks are data",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "README.md IS DELIBERATELY UNTOUCHED AND THE READING IS RECORDED RATHER THAN LEFT TO BE RE-DERIVED AT REVIEW: it names three of the five checks in prose and tells a reader to run `bun test` or the fifth check FIRST, which is build-model guidance about what makes `tsc --noEmit` readable on a fresh checkout -- not a second spelling of how to verify a change. The ruling forbids a fenced block there anyway, since that document's blocks are extracted and executed and the runner runs the suite.",
+            "NO ARM, THEREFORE NO DEGENERATE, SAID RATHER THAN INVENTED: this subtask is prose, and a degenerate run against prose would be theatre. What it can be held to instead is where the words landed and what grades them.",
+            "THE COMMANDS SECTION NOW OPENS WITH THE ONE FORM and carries the five under a DEBUGGING heading that says in its own words that running them by hand is not verifying a change. THE SYNC OBLIGATION IS NAMED AT THE OTHER END TOO, and it MOVED rather than disappearing: the runner reads `definition_of_done.checks` at run time, so a check added there costs no edit anywhere; what still has to be kept by hand is the DEBUGGING list, which nothing executes and which sits in a file this repository does not track.",
+            "THE FILING BAR LANDED VERBATIM IN THE HEADER BESIDE THE ROUND'S STANDING INSTRUCTION, and the dashboard's `definition_of_done` now carries a comment AT THE SITE saying the list is the runner's data and that the runner is not added here as a sixth entry -- which is where that edit would be made, and the only place a reader meets the five without meeting the runner.",
+            "READ AGAINST THIS PROJECT'S OWN CONVENTION BEFORE IT LANDED: no fenced block was added to README.md, whose blocks are extracted and executed; the two blocks added are in the untracked guidance file, which the extraction does not read -- checked, nothing under test/ or scripts/ names that file at all.",
+            "NO FENCED BLOCK IS ADDED TO THE README: its command blocks are extracted and executed by the suite, and the runner runs the suite -- it would run itself. The commands appear there as prose today, which is what makes prose the safe carrier.",
+            "THE DOCUMENTATION ENDPOINT IS DELIVERY AND NOT THE MECHANISM, and the record says so rather than letting a later reader find it: that file is untracked in this repository, so one end of the sync obligation is a file no fresh checkout has and no check can grade.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "EXISTENCE IS NOT ENOUGH AND THE ITEM'S OWN FILING SAYS WHY: the skill forbidding this defect exists, is specific, is measured, carries its own recidivism count, and matched on description -- and the defect happened anyway. A RUNNER THAT MUST BE REMEMBERED IS THAT SKILL WITH AN EXIT CODE. What must become unavailable is the alternate SPELLING: after this sprint, `run the Definition of Done` has ONE form everywhere this project says how to verify a change, the five survive as the runner's DATA in one tracked enumeration, and running a single check by hand is labelled DEBUGGING where it appears.",
+        "A COMMIT HOOK IS REFUSED AS THE UNAVAILABILITY: untracked, per-clone, and undone by a flag -- and the whole Definition of Done at every commit is slow enough that the flag would be used. UNAVAILABILITY A FLAG UNDOES IS A RESTATEMENT IN A MECHANISM'S CLOTHES.",
+        "THE RESIDUE IS NAMED IN ADVANCE RATHER THAN DISCOVERED: an actor who types the five commands out of habit is NOT COVERED, and the runner cannot make that route unavailable. FILING IT ON RECURRENCE WAS ITSELF A REFUSAL TO FILE, so it is ruled here instead: NOT FILED, DELIBERATELY. A route that requires a person to choose the longer way is not closable by anything this repository can build short of a commit hook, and the hook is refused above for reasons that have not changed. What CAN be closed was: the alternate spelling of the LIST, which is now structurally unavailable. If a sixth occurrence arrives by the habit route, the item it justifies is about the commit moment and not about this runner.",
+        "THE DUPLICATED ENUMERATION IS REFUSED EVEN ON AN ALL-GREEN RUN, and the developer's design discharges it structurally rather than by assertion: the runner obtains its list by EXECUTING the dashboard, so there is no second list to drift. The alternative -- the runner holds the list and a test asserts equality -- satisfies the property equally, and whichever is taken, the choice and its cost are stated.",
+        "MEASURED AT PLANNING SO IT IS NOT MET AT RED: running the checks through one script does NOT change what any of them sees. The wrapper does not prepend the local binary directory to a child's path, so tool resolution is identical bare and wrapped; and the linter's output format is identical through a pipe and under a terminal.",
+        "THE REVIEW ROUND'S SIX FINDINGS SHARE ONE SUBJECT AND IT IS THE INSTRUMENT ITSELF: THREE OF THEM ARE THIS PROJECT'S RECORDED DEFECT LIVING INSIDE THE MACHINE BUILT TO ELIMINATE IT -- a summary headline that could read PASSED over a failing run, an unrunnable check that did not have to gate, and a warning count taken from ONE check and printed over five. Every one of them was green while the property it defends was violated, and none was findable by reading. THE STANDING RULE THIS LEAVES IS MECHANICAL AND APPLIES TO ANY ARM OVER A REPORT: an arm over a SUMMARY asserts BOTH DIRECTIONS, since one direction is satisfied by a constant; an arm over a GATE stands in a tree where NOTHING ELSE IS RED, or the colour it reads belongs to something else; an arm over an AGGREGATE stands where the aggregate DIFFERS FROM EVERY ELEMENT, or first, last and total are one value. That is the previous round's `test data that cannot discriminate` specialised to the three shapes a report has.",
+        "AND THE ROUND WAS TAKEN WITH THE THING THIS SPRINT BUILT, WHICH IS THE POINT OF HAVING BUILT IT: every fix was taken on `bun run scripts/definition-of-done.ts`, and TWICE it printed `[FAILED] Format check passes -- exit 1` beside four `[PASSED]` lines: once over a type declaration the formatter wanted on one line, once over a quotation mark inside one of these notes. Under the habit this sprint exists to retire -- five commands typed by hand, the last one read -- both of those commits go in red, and the second is this dashboard itself, which is where four of the five recorded occurrences came from. Each was fixed and the whole run repeated before committing. THE SUITE WENT 859 -> 862 ACROSS THE SIX FIXES and no check was red at any commit.",
+        "THE FILING BAR FOR THE REVIEW ROUND LANDS THIS SPRINT, in this dashboard's header beside the round's standing instruction -- NOT in a skill, which is the delivery that failed, and NOT in the round's own skill file, which lives outside this repository and would be invisible to this project's review of its own records. A finding recorded as PRE-EXISTING names both commits and the byte-identity result at the sprint's base, or it is this sprint's to repair; it names the item it is filed into, or it is not filed; and PREDATING IS NOT ITSELF A LICENCE -- a finding inside the sprint's own subject is repaired here even when it predates.",
+      ],
+    },
     {
       number: 55,
       pbi_id: "PBI-61",
@@ -734,163 +910,6 @@ const scrum: ScrumDashboard = {
         "DISCLOSED RATHER THAN QUIETLY FIXED: FOUR COMMITS WENT IN WHILE THE FOURTH CHECK WAS RED. c3e46de, 52e6ed6, 954664c and 2c9f634 were each taken after a full Definition-of-Done run in which `tsc --noEmit` exited 1, and the executor read only the head of that run's output and saw the first three checks green. THE CAUSE WAS ONE LINE OF THIS FILE and nothing in the deliverable: a subtask's `commits` was written as `[\"2035fb8\"]` where the schema wants a `Commit` object, so `TS2322` at scrum.ts. Every other check was green on every one of those runs, and the suite passed at 800, 807 and 809. IT IS RECORDED BECAUSE THE RULE IS `COMMIT ONLY ON GREEN` AND NOT `COMMIT ONLY WHEN THE INTERESTING CHECKS ARE GREEN` -- and because the instrument that hid it was a habit, grepping the head of a wrapper's output, which is the same shape as reading `$?` from the last command in a pipe.",
       ],
     },
-    {
-      number: 53,
-      pbi_id: "PBI-65",
-      goal: "Highlighting a directory in the path completion shows what is inside it, bounded, without costing the detail a failed listing would have thrown away.",
-      status: "done",
-      subtasks: [
-        {
-          test: "The item records the source it was produced under, asserted PER SOURCE across all three the package offers, not once.",
-          implementation:
-            "The mark gains the source name, written at the item where it is already in hand and costing nothing at popup time.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "dcd503e",
-              message: "feat(completion-path): mark each item with the source that produced it",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE PREREQUISITE THE REBUILD CREATES: the block carries the absolute path AND the source attribution, and only the first is on the item today -- the source is NOT derivable from the path, since the same file is reachable from the document's directory, the cwd, a workspace folder or an absolute fragment.",
-            "THE PLAN SAID THREE SOURCES AND THE CLOSED SET HOLDS FOUR, MEASURED off `PathSourceName` rather than counted from the fixture: `sourcesFor` answers an ABSOLUTE fragment with the absolute source ALONE, so three is what one relative fragment can drive and four is what the package offers. The arm covers all four and the fourth needed a fragment of its own; the enumeration is asserted as a VALUE so a source that stops being offered reddens rather than quietly narrowing the claim.",
-            "THE RED WAS TAKEN BEFORE THE WIDENING AND IT IS THE MISSING KEY: 0 pass / 1 fail, the diff naming `source` as the one member the item's `data` lacked. Then 40 pass / 0 fail.",
-            "MEASURED AGAINST THE DEGENERATE THE NOTE ABOVE NAMES -- one hardcoded source name (`cwd`) on every item: 39 pass / 1 fail, the new arm alone reddening and every other assertion in the file unmoved. So the arm is not satisfied by an author's intention.",
-            "AND THE FULL SUITE FOUND SOMETHING THE TARGETED RUN COULD NOT: the first Definition-of-Done run came back 767 pass / 1 fail, the failure being the packed-members citation guard -- `@atusy/tsudoi-completion-path: dist/completion.d.ts names test/resolve.test.ts` -- because the new comment cited the root fixture BY PATH and a shipped module may not name a repository file its reader does not have. The citation was rewritten to name the fixture without a path; the guard is live, and this is a second reading of it firing for its own reason.",
-            "THE DEGENERATE IS `HARDCODE ONE SOURCE NAME`, which passes against any single-source test -- which is why the arm is per source.",
-            "MEASURED, AND IT IS A REASON TO WRITE THE TEST RATHER THAN TO SKIP IT: widening the mark reddens NOTHING today. Nothing asserts the mark an item of ours carries, and the only whole-item equality compares a server-produced item against itself, so both sides move together.",
-            "A NEAR-MISS WORTH CARRYING INTO THE COMMENT: `source` is a key another server in this repository's own fixtures already uses under the same field. The gate stays the existing mark -- read first, the source read only after it validates.",
-          ],
-        },
-        {
-          test: "A directory item's block carries the names inside it, whole-value; a file item's block comes back byte-identical to what completion wrote, asserted in a session where the directory's demonstrably changed; and AN ITEM WHOSE BLOCK WAS TAMPERED WITH is answered with our rebuilt block and none of the tampered text.",
-          implementation:
-            "Rebuild the block for BOTH kinds, sharing completion's composer the way the two modules already share the mark -- exported from that module, absent from the package's published surface. Names sorted by code unit. Format re-read from the session the handler is handed, so the context parameter stops being discarded.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "14fed16",
-              message:
-                "feat(completion-path): answer a highlighted directory with what is inside it",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE RED WAS TAKEN ON THE UNIT ARMS FIRST -- 0 pass / 2 fail, the answer carrying no block at all -- and the wire arms followed the implementation to 12 pass / 0 fail across both runtimes.",
-            "BOTH DEGENERATES WRITTEN AND RUN, AND THE FIRST ONE CONFIRMS THE NOTE BELOW RATHER THAN MERELY REDDENING. `append to every item`: 10 pass / 4 fail -- the tampering arm reddens on BOTH runtimes and both unit arms redden, while `a directory's block carries what is inside it` STAYS GREEN, because appending to an UNTAMPERED block produces byte-for-byte what rebuilding produces. So the tampering arm is not a belt-and-braces extra; it is the only thing that tells the two implementations apart. `set the block TO the listing`: 8 pass / 6 fail -- the listing arm reddens too, on the whole-value equality, which is what a containment spelling would have missed.",
-            "THE COMPOSER'S OWN SHAPE, DECIDED WHILE WRITING IT AND WORTH THE LINE: a markdown client gets the names as BULLETS and a plaintext client as bare lines, because markdown JOINS consecutive lines into one paragraph -- a column of names sent as bare lines reaches a markdown client as one wrapped run of words. Nothing in a name is escaped, exactly as nothing in the path above it is; that trade is the block's own and is not widened here.",
-            "A SECOND FORGERY ROUTE WAS FOUND WHILE REBUILDING AND IT OWNS ITS OWN ARM: the SOURCE NAME also arrives on the item, so a rebuild that echoed it would put client text back in the block one field over from the one just closed. It is checked against the closed set and DROPPED when it names none -- the path is still taken as sent, deliberately, so this moves no boundary.",
-            "THE TAMPERING ARM IS THE DISCRIMINATOR THAT MAKES THE RULING MEASURABLE RATHER THAN A PREFERENCE: under the rejected append proposal that test cannot pass. AND IT CLOSES A GAP THAT WAS FILED AS UNCOVERABLE -- under append, `a client that strips the block before sending it back` was unobservable, because the fake editor returns what it got; under rebuild the client's copy is never read, so stripped and tampered are both ordinary cases.",
-            "THE SORT IS TESTABILITY BEFORE IT IS TASTE: directory order is the filesystem's own bookkeeping, promised by nothing, so an unsorted block makes the same directory read differently on two machines and NEITHER a whole-value assertion NOR `the first N are these` can be written against it. BY CODE UNIT AND NEVER BY LOCALE, for the reason the module already gives about ISO dates.",
-            "TWO DEGENERATES, WRITTEN AND RUN BEFORE THE ARMS ARE BELIEVED: `append to every item` passes the directory arm and fails the file arm; `set the block TO the listing` passes any containment spelling and fails whole-value equality -- and that second one IS the replace hazard, which is why the assertion is whole-value and the existing wire equality is EXTENDED rather than loosened to a partial match.",
-            "REVISE STAGE 2 (codex): `BY CODE UNIT AND NEVER BY LOCALE` HAD NO WITNESS, and the note above stating it was the whole of its defence. MEASURED by that reviewer and REPRODUCED before anything was changed -- with the comparator's name key replaced by `localeCompare`, the wire file and the member file read 27 pass / 0 fail, because every name within a group was compatible lowercase ASCII and the two orders agree on those. The shared fixture gains a case pair in EACH group (`Zeta.txt` beside `alpha` and `beta.txt`, `.Zed` beside `.hidden`): code units render the uppercase name first and every collator renders it last. THE HIDDEN GROUP NEEDS ITS OWN PAIR because the comparator answers on the group key first and reaches the name key only within a group. BOTH RUNTIMES READ RATHER THAN ASSUMED FROM ICU, since a runtime built without it would fall back to code units and make the refused implementation indistinguishable: `Z`.localeCompare(`a`) is 1 under bun 1.3.13 and deno 2.8.3 -- whose DEFAULT LOCALES DIFFER, en-US and ja-JP, which is the ruling's own argument standing in front of it. The same degenerate now reddens 4 arms, two on each runtime. Commit acd8bd5.",
-            "THE FIXTURE DEFECT IS FIXED HERE OR THE ARM MEASURES NOTHING: the shared fixture's directory is created EMPTY, so `an empty listing` and `no listing at all` produce the same bytes. Children are added BEFORE the fixture's timestamp fixing, because writing into a directory bumps its mtime and the expected detail string carries that timestamp. One child is HIDDEN, because the ruling that hidden entries are shown has no witness otherwise -- and the helper's blanket refusal of dotfiles NARROWS rather than stands, since it exists because this behaviour was undecided.",
-          ],
-        },
-        {
-          test: "A directory far past the bound returns a bounded number of names AND the exact total; one under the bound shows every entry and announces no truncation; a directory of exactly the bound announces none either; and an empty directory is answered rather than left unhandled.",
-          implementation:
-            "The whole directory is read; the bound is on what is rendered. The count goes IN THE BLOCK and never on the one-line detail.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "4234be0",
-              message: "feat(completion-path): bound the names one resolved directory renders",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE NUMBER IS TWENTY AND IT IS THE EXECUTOR'S, NOT A RULING BEING FOLLOWED: nothing in this record named one -- the PBI measured that twenty names are three hundred characters where five thousand are eighty-five thousand, which is a RATIO illustrating the payload argument rather than a value. Chosen as the judgement the criterion asks for, and spelled in no test.",
-            "THE RED, AND WHAT IT SAYS ABOUT THE SECOND ARM: 3 pass / 1 fail before the bound existed -- the overflow arm reddening with 25 names rendered where fewer were required. The at-or-under arm was GREEN before, correctly and vacuously: its edge fixture is staged from the count just read, so with no bound it staged and compared forty. It becomes load-bearing only once a bound exists, which is why the overflow arm is the one this subtask's red is taken on.",
-            "TWO DEGENERATES, EACH RUN AND EACH 15 pass / 3 fail. (1) The total reporting what was RENDERED -- the bound moved onto the READ, which is the implementation the ruling refuses: both wire arms and the overflow arm redden. (2) A truncation announcement carrying a HARDCODED total (`25 entries, first 20 shown`): the 25-entry fixture passes it and the 47-entry one does not, which is exactly what one fixture could not have measured.",
-            "THE EARLY-EXIT MEASUREMENT HAS NO SUBJECT AND THAT IS THE FINDING, not an omission: the ruling that the whole directory is read leaves nothing to exit early FROM. `readdir` is used rather than `opendir` -- names only, no per-entry kind -- so no handle is iterated at all. PROBED ANYWAY ON BOTH RUNTIMES rather than argued: 2000 bounded listings of a 200-entry directory leave the process's open descriptor count unmoved, bun 1.3.13 5 -> 5 and deno 2.8.3 21 -> 21.",
-            "TWO FIXTURES WITH DIFFERENT OVERFLOW COUNTS IN ONE MEASUREMENT, because `a hardcoded more` passes with one.",
-            "THE BOUND IS PINNED BY READING THE WIRE AND NEVER BY IMPORTING THE CONSTANT, for the reason already written at the batch size beside it: a test that imports the number agrees only with itself.",
-            "THE COUNT GOES WHERE THE LISTING IS SO EXACTLY ONE NUMBER ABOUT A DIRECTORY EXISTS AND TWO CANNOT DISAGREE. That is also what keeps the size-refusal pin unmoved, and it is not a reversal of it: a count of children is what the directory ENTRY's byte size failed to be.",
-            "FIRST EARLY EXIT FROM A DIRECTORY ITERATION IN THIS TREE, so whether the handle is released is READ ON BOTH RUNTIMES rather than trusted to compatibility. UNMEASURED.",
-            "REVISE STAGE 2 (codex), AND THE TWO NOTES ABOVE ABOUT `readdir` AND ABOUT THE COST ARE RETIRED BY IT RATHER THAN LEFT STANDING: the rendered bound bounded the PAYLOAD and not the WORKING SET -- every name was read into one array and SORTED to keep twenty -- and the sentence at that code calling the cost LINEAR was false, since a sort is N log N. MEASURED before choosing between streaming and keeping the array, at the size where it shows (100k entries, macOS/APFS, mean of 5, machine under load): the array shape 888 ms on bun 1.3.13 and 1289 ms on deno 2.8.3, OF WHICH THE SORT ALONE 515 ms and 386 ms, against 315 ms and 1977 ms for streaming the handle and retaining only the best twenty. The listing now streams through `opendir`, so what it holds is twenty names and one dirent whatever the directory holds. THE deno COST IS ACCEPTED WITH ITS SHAPE WRITTEN DOWN: at five thousand entries streaming drains in about 127 ms where the array took about 45 ms (bun about 24 against about 18, and at two hundred entries neither runtime tells them apart) -- the same order as the 135 ms this sprint's whole-directory ruling was made on. The descriptor probe was RE-RUN for the new shape rather than inherited: 2000 resolves leave the count unmoved, bun 7 -> 7 and deno 21 -> 21. Commit c3a1a7b.",
-            "AND THE EARLY-EXIT MEASUREMENT HAS A SUBJECT NOW -- the cancellation check of commit a1b77eb would have been it -- AND ITS ANSWER IS A REFUSAL: on deno a directory that has been READ FROM and not drained NEVER gives its descriptor back, 500 listings abandoned after one entry taking the process from 21 open descriptors to 521, whether the loop is left by `return`, by `break`, or by `break` followed by an awaited `close()`. Opening and closing without reading leaks nothing and a full drain leaks nothing, so it is the PARTIAL READ alone; bun releases in every one of those shapes, 5 -> 5. One descriptor per cancelled highlight is a session that dies at the ulimit, which is worse than the drain it would save, so the abort is read at the seam BEFORE the handle is opened and the drain once begun runs to exhaustion. WHAT RETIRES THE REFUSAL IS NAMED at the code: deno releasing that descriptor.",
-            "REVISE STAGE 2 ROUND 2 (codex): THE RETAIN GATE -- `is this name better than the worst one I kept` -- WAS DECIDED BY NOTHING ANYWHERE, and the case pairs this sprint added witness the RENDER order rather than the RETENTION rule. That fixture holds five entries, so the kept list is never full while it is read and `worstKept` is `undefined` throughout. REPRODUCED BEFORE THE ARM WAS WRITTEN: with ONLY the retain comparison changed to `localeCompare`, leaving the group key and the render order alone, the member file and the wire file read 28 pass / 0 fail. THE NEW ARM IS AN OVER-BOUND DIRECTORY WHOSE ARRIVAL ORDER IS NOT ITS RENDERED ORDER -- twenty-five `Z` names, which belong in the answer, and twenty `a` names, which do not -- so a name arriving at a full list must REPLACE the worst kept and a locale gate rejects it. ITS PREMISE IS ASSERTED OFF THE DIRECTORY'S OWN ARRIVAL ORDER, read with the same call the module reads it with, and it is TWO conditions because either alone measures nothing: a lowercase name among the first `shown` arrivals, which is what makes the worst kept lowercase when the list fills, and an uppercase name arriving after them. A filesystem handing entries back in NAME order satisfies neither and reddens rather than passing vacuously, which is the honest shape for an arm that relies on an order promised by nothing. DEGENERATE RE-RUN: the same locale gate now reads 12 pass / 1 fail, four `a` names standing where `Z008`, `Z009`, `Z018` and `Z019` belong. Commit 3b224fa.",
-            "REVISE STAGE 2 ROUND 2 (codex), AND IT RETIRES THE `twenty names and one dirent` SENTENCE IN THE NOTE ABOVE AND IN THIS SPRINT'S DECISION LOG: a handle does not hand entries out one syscall at a time, so that claimed for the PROCESS what is only true of this function. WHAT WAS READ IN THE RUNTIMES' OWN `Dir` IMPLEMENTATIONS AND THEN MEASURED at 100k entries (macOS/APFS, resident set, warmed) IS A DIFFERENT FACT FROM THE 32-ENTRY BUFFER THE FINDING NAMED, and the number should not be repaired with it: BOTH runtimes materialise the whole directory behind the handle, by different routes. Bun's `Dir` is a facade over `readdir` with file types and materialises on the FIRST read -- 30 MB at the open, 61 MB once one entry has been taken. Deno reads the whole directory SYNCHRONOUSLY inside `opendir`, to fail early on a path that is not a directory, and only then streams entries from an op one at a time -- 57 MB before, 119 MB at the open, unmoved by the first entry. `bufferSize` is not the seam it looks like either: deno's `opendir` defaults it to 32 and validates it, and its `Dir` never uses it. Resident set is recorded as where the ALLOCATION happens rather than as what is retained, which it cannot separate from a collector's timing. THE CONCLUSION SURVIVES, NARROWED TO WHAT HOLDS IT UP: what the streaming shape retired is THIS FUNCTION'S array and the superlinear sort over it, and the bound is on the payload and on what this function holds. Three neighbouring sentences carried the same overstatement and are narrowed where they stand, AND A FOURTH IN THE MODULE HEADER FELL TO THE SAME MEASUREMENT rather than being left for a third round: `one opendir is the same order as one stat` -- on five thousand entries deno pays 37 ms for the OPEN ALONE against 0.088 ms for a stat, where bun's lazy open costs 0.004 ms against 0.053 ms. Commit 17aa5d6.",
-            "THE BOUND IS NOW SPELLED IN ONE ARM, WHICH RETIRES THE FIRST NOTE OF THIS SUBTASK (`spelled in no test`) ON A MEASUREMENT: codex changed `entriesShown` from 20 to 19 and the member arms, the edge arms, the hidden-entry arm and the wire arm were ALL GREEN, because each reads the count off an over-bound answer and compares everything else against that. Reading the wire means asserting how many names an over-bound directory RENDERS, which no arm did. RE-MEASURED after the arm was added: at 19 it alone reddens, 26 pass / 1 fail across the member file and the wire file on both runtimes. The constant is still imported by nothing, and the other arms are deliberately not rewritten to spell it. Commit 04e832c.",
-            "REVISE STAGE 2 ROUND 3 (codex), AND IT RETIRES THE ROUND 2 RETAIN ARM RATHER THAN AMENDING IT: that arm reached the gate only if the filesystem happened to hand lowercase names back before uppercase ones, and the premise it asserted to say so was read with a SECOND `opendir` of the same directory. A provider whose order varies between opens satisfies the staging read and lets the mutant through on the measuring one; a provider returning names in code-unit order fails the premise and reddens an arm that is about something else. THE DRAIN BECOMES A FUNCTION TAKING THE SEQUENCE AS A PARAMETER (`listingFrom`, exported for this arm alone and listed at the package index beside the other internal names), so the arm feeds twenty-five lowercase names then twenty-five uppercase ones with no filesystem in it at all. THE ONE PREMISE THAT REMAINS IS READ OFF THE DRAIN ITSELF -- the lowercase run alone comes back SHORTER than it went in, which is what says the kept list is full before the first uppercase name arrives, and `overfilled` rather than `filled` because `exactly full` and `not yet full` are one reading from outside. STILL NO NUMBER SPELLED. THIS FILE'S OWN RULE -- the subject is the handler's answer and never an internal helper -- IS BROKEN HERE AND THE EXCEPTION IS ARGUED AT THE ARM rather than taken quietly. DEGENERATE RE-RUN: the gate changed to `localeCompare`, 13 pass / 1 fail with the new arm alone reddening, and the wire file 16 pass / 0 fail, which is what says this rule is not visible from there. Commit 8d3ba90.",
-            "REVISE STAGE 2 ROUND 3 (codex), AND IT RETIRES THE `BOTH RUNTIMES MATERIALISE THE WHOLE DIRECTORY BEHIND THE HANDLE` SENTENCE IN THE NOTE ABOVE: that was read off a resident set, and the same reading's own parenthesis says a resident set cannot separate allocation from retention. READ IN DENO'S OWN SOURCE, extracted from the binary rather than taken on the reviewer's word since that reviewer was already wrong once about a buffer: `opendir` calls `Deno.readDirSync(path)` and DISCARDS THE RESULT -- the comment on the line is `Throws if path is invalid` -- then constructs `new Dir(path)` with the path alone, and the entries arrive later from a SEPARATE async op the first `read()` starts. MEASURED TWO WAYS AFTERWARDS at a hundred thousand entries: sixteen UNREAD handles leave `heapUsed` unmoved at 6 MB across a forced collection, and their resident set plateaus at 206 MB where sixteen retained copies would be near 600. SO THE NUMBERS STAND AND THE SUBJECT NARROWS -- deno pays an O(N) read at the open and throws it away, and retention behind the handle is BUN'S SHAPE ALONE (30 MB at the open, 61 MB once one entry is taken). Two neighbouring sentences that inherited the wider claim moved with it. Commit f7a5e85.",
-            "REVISE STAGE 2 ROUND 3 (codex): `WHAT THE STREAMING SHAPE RETIRED IS THIS FUNCTION'S ARRAY AND THE SORT OVER IT -- THE SUPERLINEAR TERM, AND THE PAYLOAD` NAMES ONE THING STREAMING DID NOT DO. The array shape already rendered the first twenty names and no more: the bound on what is SHOWN landed in commit 4234be0 and the streaming in c3a1a7b, whose own subject line says it bounds what a resolved directory HOLDS, `not only what it shows`. The payload was never the thing that moved. Written down because the two are separately revisable and this paragraph had them competing for one credit. Commit 8b30988.",
-            "REVISE STAGE 2 ROUND 3 (the Product Owner's own reading, and sharper than the reviewer's): THE DENO HALF OF THE STREAMING TRADE WAS RECORDED AND NEVER SUMMARISED. The paragraph stating what streaming costs went on to say what it buys with no runtime qualifier -- `this function's own working set plus the disappearance of a superlinear term at the tail` -- while the numbers three paragraphs above it say deno is SLOWER AT EVERY SIZE MEASURED, 45 -> 127 ms at five thousand entries and 1289 -> 1977 ms at a hundred thousand. The tail is where deno loses most, so naming it as the second half of the purchase read the measurement backwards. Bun buys both halves; deno buys THE WORKING SET ALONE and pays at the tail for it. Nothing measured moved and no ruling reopened. Commit 4b389e5.",
-          ],
-        },
-        {
-          test: "A path that can be stat-ed and not listed is answered WITH its one-line detail and WITHOUT a listing, stderr empty, paired in the same session with a listable directory whose block does appear. THE ARM ESTABLISHES ITS OWN PREMISE FIRST -- it asserts the listing really rejects in that staged tree, so a runner where the permission does not bite reddens rather than passes vacuously.",
-          implementation:
-            "The failure handling splits: a failed listing must not throw away a detail that was already in hand.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "fa5e5d7",
-              message:
-                "fix(completion-path): keep the detail a stat produced when the listing fails",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE PREMISE IS MEASURED AND IT BITES, on both runtimes and before the arm was written: uid 501, the directory at mode 0, `stat` RESOLVING and reporting a directory while `readdir` REJECTS EACCES -- bun 1.3.13 and deno 2.8.3, identical readings. So the staging did not have to change and the property is asserted as written.",
-            "THE RED IS THE DEGENERATE ITSELF, WHICH IS WHY NO SEPARATE DEGENERATE RUN WAS NEEDED: the implementation standing before this subtask WAS one try around both reads, and against it the new arm read 14 pass / 2 fail on the file -- the answer carrying no `detail` at all, on both runtimes. After the split, 64 pass / 0 fail across this package's suite and the wire file.",
-            "THE ARM RE-ASSERTS THE REJECTION IN ITS OWN TREE, so a runner as root reddens instead of measuring the ordinary directory case; and the mode is restored before the fixture is removed, or the removal fails on the directory it cannot descend into.",
-            "ENOTDIR IS NOT CONSTRUCTED AND IS SAID SO AT THE CATCH: `a path that was a directory at the stat and is not one at the listing` needs a RACE between two calls made back to back, and this handler offers no seam to open between them. It lands in the same catch as the permission case, which IS exercised.",
-            "THE STANDING RE-RUN, TAKEN AFTER THIS SUBTASK RESTRUCTURED THE HANDLER BODY: subtask 2's `append to every item` degenerate still reddens the tampering arms on both runtimes -- no control was disarmed by the split. It now reddens FAR MORE than the 4 it did when it was first run, and the MECHANISM was read rather than the prediction widened: subtask 3's arms drive items carrying NO incoming block, so an appending implementation composes a block with no path and no attribution in it. More arms, not a different failure.",
-            "THE DEGENERATE IS THE OBVIOUS IMPLEMENTATION: one try around both reads, which answers with the bare item and loses the detail the successful stat produced. That is the red this subtask exists for.",
-            "THE EXISTING DELETION TEST DOES NOT COVER THIS AND ITS NAME SUGGESTS IT DOES: it stages a FILE, so it exercises the stat rejection alone.",
-            "REVISE STAGE 2 (codex): THE SEAM THIS SUBTASK OPENED BETWEEN THE TWO READS IS WHERE THE REQUEST'S ABORT IS NOW READ, and it was read nowhere before -- a highlight cancelled while the stat was pending went on to open the directory and drain it, and a user arrowing through a popup supersedes their own highlight by the keystroke. WHAT THE CHECK BUYS WAS ESTABLISHED BEFORE IT WAS WRITTEN, off tsudoi's own `answerUnlessCancelled` rather than assumed: it re-reads the abort AFTER a handler settles and answers -32800 whatever the handler produced, so the ANSWER is discarded either way and what the check buys is that THE WORK IS NOT DONE. The comment says which, and the arm says so too rather than posing as an assertion about what a user sees. THE ARM'S CANCELLATION LANDS INSIDE THE STAT WITH NO TIMER -- the handler runs synchronously to its first await, so aborting before the returned promise is awaited is deterministic under any load, which a `setTimeout` would not be on this machine. DEGENERATE STATED IN ADVANCE AND RUN: with the check deleted the handler answers with a `detail` and a block carrying the entries -- 9 pass / 1 fail, the new arm alone reddening -- and it is paired in the same test with the uncancelled answer, or `the listing was skipped` and `this fixture has nothing to show` would be one observation. Commit a1b77eb.",
-            "UNMEASURED AND THE FIRST TASK MEASURES IT: that a directory can be stat-able and unlistable is standard posix and has not been read on these two runtimes. If the staging cannot be made to bite, THE STAGING CHANGES AND THE PROPERTY DOES NOT.",
-            "REVISE STAGE 2 ROUND 2 (codex): THE REFUSAL ABOVE WAS TOO WIDE AND A SECOND CHECKPOINT IS NOW TAKEN INSIDE THE LISTING. The refused seam is a cancellation arriving MID-DRAIN; the seam between the handler's own check and the FIRST ENTRY -- the handle open, nothing read off it -- is a different one, and the same measurement that refuses the first permits it. RE-MEASURED FOR THIS SHAPE rather than inherited: open, no read, explicit close, 500 rounds, bun 1.3.13 7 -> 7 and deno 2.8.3 21 -> 21, against 22 -> 522 for the same rounds with ONE entry read. THE MECHANISM IS NOW READ OFF DENO'S OWN `Dir` INSTEAD OF INFERRED: the descriptor is opened lazily by the first `read()`, `Dir.close()` only marks the facade closed (its own comment says directories need no closing), and the inner iterator holding the descriptor is dropped unfinished -- which is exactly what would retire the refusal. WHAT THE CHECKPOINT BUYS DIFFERS BY RUNTIME AND THE SMALLER HALF IS WRITTEN DOWN: on bun the whole read, since its `Dir` materialises the directory on the first read; on deno the async drain only, because `opendir` there has ALREADY read the directory synchronously to fail early on a non-directory. TWO DEGENERATES STATED IN ADVANCE AND RUN, both 11 pass / 1 fail with the new arm alone reddening and the answer carrying `2 entries` and the names: the check DELETED, and the check MOVED to before the open -- the second is what the arm's queued abort is for, since a cancellation taken synchronously in the first read would be in place before `opendir` was called and could not tell the two placements apart. Commit b316342.",
-            "REVISE STAGE 2 ROUND 3 (the Product Owner's own reading), AND IT RETIRES THE `ENOTDIR IS NOT CONSTRUCTED` NOTE OF THIS SUBTASK ON ITS OWN REASON: that note said the case needs a race between two calls made back to back and that this handler offers no seam between them. THIS SPRINT BUILT THE SEAM. The abort is READ between the stat and the open, the signal is the CALLER'S OBJECT, and a getter is arbitrary synchronous code running at exactly that point -- so a getter that swaps the directory for a file needs no race, no timer and no second thread, and the earlier stat snapshot still saying `directory` is what makes the open land on a file. RUN BEFORE IT WAS BELIEVED, and it constructs on both runtimes. WHERE THE REJECTION SURFACES DIFFERS AND BOTH WERE MEASURED, since the member file runs under bun alone: deno 2.8.3 rejects AT THE OPEN (`not a directory, opendir`), bun 1.3.13's lazy open resolves and the FIRST READ rejects (`not a directory, scandir`). One catch covers both. BOTH PREMISES ASSERTED so the arm cannot pass vacuously -- the answer's own `detail` places the stat before the swap, a fresh `statSync` says the swap happened. DEGENERATE: ENOTDIR rethrown out of that catch, 13 pass / 1 fail with the new arm alone reddening and the rejection escaping the handler, which is what says the arm reaches the catch. Commit 838c453.",
-            "REVISE STAGE 2 ROUND 3 (codex), AND IT NARROWS THE ARM COMMIT b316342 ADDED RATHER THAN RETIRING IT: that arm was named `a resolve cancelled while its directory is opening` and `await opendir` opens no such window. MEASURED at a hundred thousand entries, where a lazy open and an eager one differ by most of a second: the call yields exactly ONE MICROTASK turn and NO macrotask turn on either runtime -- deno spends 777-859 ms INSIDE it and a `setTimeout(0)` queued beforehand has still not fired when the continuation runs; bun spends 0-5 ms and reads the same. So the promise is ALREADY FULFILLED when it is awaited, the arm's queued abort lands after the handle exists and before the first read, and A CANCELLATION THE EVENT LOOP DELIVERS CANNOT REACH THAT SEAM AT ALL. NARROWED RATHER THAN YIELDED, and the alternative is priced rather than dismissed: a macrotask yield would buy skipping the DRAIN alone -- on deno the directory is already read by then -- at a loop turn of latency on every resolved directory, resting on internals neither runtime promises. What the checkpoint covers and what it does not is now written at the code and at the arm, and the check is KEPT with its worth stated. BOTH ROUND 2 DEGENERATES RE-RUN AND STILL REDDEN IT ALONE, 12 pass / 1 fail each: the check deleted, and the check moved to before the open. Commit 59ec428.",
-            "REVISE STAGE 2 ROUND 3 (codex), AND IT RETIRES THE `IT RE-READS THE ABORT AFTER A HANDLER SETTLES` CLAUSE IN THE NOTE ABOVE AND AT TWO PROSE SITES: tsudoi does not wait for the handler. `driveAwaitedOnce` RACES the handler against the abort and `answerUnlessCancelled` re-reads the abort once THAT RACE settles, which is why a handler that never settles at all is still answered -32800. Read off methods.ts rather than inferred. THE CONCLUSION THIS PACKAGE RESTS ON SURVIVES UNTOUCHED -- a cancelled resolve's answer is discarded whatever the handler composed, so what the check buys is that the work is not done -- and what was wrong is the mechanism, which as stated made the guarantee sound like something a handler could postpone by not returning. Commit d6ad290.",
-            "REVISE STAGE 2 ROUND 3 (codex): `THE UNTOUCHED ITEM IS WHAT A CANCELLED RESOLVE ANSWERS` WAS WRITTEN WHEN THERE WAS ONE SEAM AND LEFT STANDING WHEN ROUND 2 ADDED A SECOND, where it is false: by then the stat is SPENT, so the answer carries the directory's own `detail` line and a rebuilt block and lacks the listing alone. Two live arms already asserted exactly that shape, so the sentence contradicted the suite. Narrowed to the post-stat checkpoint, and the second seam is named for what it really is -- the same answer a directory that could not be LISTED gets, which is what the split between the two reads exists to produce. Commit 195a299.",
-          ],
-        },
-        {
-          test: "None -- prose, and the suite is the pair for the command blocks it does not touch.",
-          implementation:
-            "The reasons this change makes false, rewritten where they live: the module's arithmetic paragraph (it is no longer one syscall, and the listing is information the completion never had), its harmlessness paragraph (a forged mark now costs a directory listing, one step nearer `answered with its contents` than a stat was, and the line this handler will not cross is READING A FILE'S BYTES), the package index's count of internal names, the member README's method row and its `no entry's detail is read here`, and the example config's two mentions of the size and date.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "ec2eec1",
-              message: "docs(completion-path): rewrite the reasons a directory listing makes false",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "EVERY NAMED SITE REWRITTEN, AND ONE MORE FOUND BY READING RATHER THAN BY THE LIST: the package index's SECOND paragraph also described the resolve half as fetching `the size and date`, which is the same falsehood one paragraph above the count that was named. Found by reading the file the count lives in.",
-            "THE COUNT WAS REPAIRED BY NAMING AND NOT BY WRITING THE NEW NUMBER, which is this project's own convention and is worth the line here because the count moved TWICE inside one sprint -- the mark's reader in subtask 1, the composer and the listing type in subtask 2. A number that moves twice in one sprint is a number that will be wrong again.",
-            "THE MEMBER README GAINED A PARAGRAPH RATHER THAN ONLY LOSING A FALSE ONE: what resolving one item now costs is a fact an installing stranger reads nowhere else -- the full listing, the bound on what is rendered, the total, hidden entries shown, and that nothing recurses here either.",
-            "THE FIFTH CRITERION'S OWN FALSIFIER WAS RUN RATHER THAN ARGUED, since that criterion is a PIN and a pin nobody perturbs is a pin nobody has read: with the directory ENTRY's byte size put on the detail line -- the mistake the comment refuses -- 10 pass / 6 fail across both runtimes, the pin test named first in each. Restored, and the tree read clean afterwards.",
-            "THE SIZE REFUSAL SURVIVES AND STRENGTHENS, and saying so is the point: the listing is the honest answer to the question a directory's byte size answered badly. That is the constraint that outlived the mechanism change.",
-          ],
-        },
-      ],
-      impediments: [],
-      decisions: [
-        "THE COMPOSITION IS A REBUILD AND NOT AN APPEND, AND THE DEVELOPER WITHDREW THEIR OWN PROPOSAL ON THE REASON RATHER THAN ON AUTHORITY: they weighed line count and composer drift, the PO weighed PROVENANCE, and a string the client can put anything in is not a smaller trust surface than the mark -- it is the same surface, one field away. The duplication objection dissolved on reading: the two modules already share the mark by a relative import, and the package's published surface names only its entry point, so one composer serves both callers without publishing anything.",
-        "THE REBUILD FIRES FOR BOTH KINDS. Rebuilding for directories alone would leave a FILE answered with the client's own text, which is the thing the ruling refuses.",
-        "AN EARLIER PO RULING IS RETIRED BY MEASUREMENT AND THE RETIREMENT IS RECORDED RATHER THAN QUIETLY REPLACED: `no total, because a total is the walk`. MEASURED on one directory of five thousand entries, names only -- the whole drain is 51 ms on bun and 135 ms on deno, against one stat at 0.225 / 0.298 ms, and against the ~1.1 s per KEYSTROKE that this module exists to refuse. And the completion half beside it ALREADY drains the entire directory on every keystroke to filter by prefix, so a full drain once per HIGHLIGHT cannot be the expensive thing in this package. WHAT DOES NOT SHRINK IS THE PAYLOAD: those names are eighty-five thousand characters where the first twenty are three hundred, which is what the bound is actually about.",
-        "THE ACCEPTANCE OF AN UNBOUNDED DIRECTORY RESTED ON A SENTENCE THAT WAS FALSE, AND THE SECOND INDEPENDENT REVIEWER IS WHAT CAUGHT IT: `the cost is linear` -- while the shape read every name into an array and SORTED it. MEASURED at a hundred thousand entries, the size the original reading never took: 888 ms on bun and 1289 ms on deno, the sort alone 515 and 386. WHAT THIS PACKAGE RETAINS IS NOW BOUNDED INSTEAD OF THE ACCEPTANCE BEING KEPT: entries are streamed and only the best twenty kept, so the whole directory is still read -- which is what lets the answer state an exact total -- and no array of its size is built or sorted here. THE SENTENCE THAT REPLACED THE FIRST FALSE ONE WAS FALSE TOO, and this record is the third place on this subject to need repair: comparisons remain LINEAR, and NEITHER RUNTIME STREAMS FROM THE KERNEL -- but the fourth reading narrowed even that. `retained behind the handle` is BUN'S SHAPE ALONE (30 MB at the open, 61 MB after one entry). DENO'S O(N) AT THE OPEN IS TRANSIENT: its open takes a synchronous full read only to fail early and THROWS THE RESULT AWAY, storing the path and reading again lazily -- sixteen unread handles at a hundred thousand entries leave the heap unmoved across a forced collection, where sixteen retained copies would be near three times the plateau. TWO REVIEWERS WERE WRONG ABOUT THE MECHANISM ON THE WAY: one attributed the residue to a thirty-two entry buffer neither runtime uses, and the correction after it kept a retention claim only one runtime supports. WHAT THIS COSTS AND IT IS WRITTEN DOWN: streaming is SLOWER ON DENO AT EVERY SIZE MEASURED -- 45 to 127 ms at five thousand AND 1289 to 1977 ms at a hundred thousand -- so on that runtime it buys the working set and not the tail, and it buys both only on bun.",
-        "HIDDEN ENTRIES ARE SHOWN, RULED NOW BECAUSE IT WAS UNRULED RATHER THAN DECIDED. The deciding fact is inside this package: the completion half already offers dotfiles, so a block that hid them would make the two halves of ONE package disagree about ONE directory -- the popup offering a hidden file while the block describing its parent says it is not there.",
-        "AND THEY ARE SHOWN LAST, WHICH SHARPENS THAT RULING RATHER THAN AMENDING IT -- MEASURED, AND WHAT IT MEASURES IS THAT TODAY'S ORDER SHIPS BY ACCIDENT: the bound renders the first twenty names in code-unit order and `.` sorts before every alphanumeric, so a directory of twenty or more dotfiles renders TWENTY DOTFILES AND ZERO ORDINARY ENTRIES -- 21 dotfiles beside `index.ts`, `package.json`, `README.md`, `src`, `tsconfig.json` read back as `26 entries, first 20 shown` and then nothing but dotfiles. THE DECIDING FACT IS THAT THE RULING ABOVE IS ABOUT MEMBERSHIP AND NOT ABOUT ORDER: it exists so the two halves of one package cannot disagree about whether `.env` is IN a directory, and `itemsFrom` SORTS NOTHING -- it yields in the filesystem's own order and the client orders the popup -- so the completion half makes no ordering claim a grouped block could contradict. What is new this sprint is the BOUND, whose slice is order-dependent, and the order front-loads what the user is least likely to want in the directory they are likeliest to highlight: a project root, which lists as all noise. RAISING THE BOUND IS REFUSED -- it starves at 25 dotfiles instead of 20, and it is paid for out of the payload argument the bound exists for. HIDDEN IS A LEADING `.` AND NOTHING ELSE, decidable from the name with no syscall: reading Windows' hidden attribute is a stat per entry, which is the cost this package exists to refuse. THE KEY BECOMES (hidden, name) AND THE LOCALE REFUSAL IS UNTOUCHED -- still code units, still machine-independent, still whole-value assertable. THE TOTAL STILL COUNTS HIDDEN ENTRIES and the header does not move; membership is exactly where it was. PINNED BY one fixture holding more dotfiles than the bound beside a handful of ordinary entries, whole-value equality on the rendered names: a plain sort cannot pass it, and filtering dotfiles out reddens it too, on the names AND on `first N shown`. THE COST IS THE MIRROR OF THE DEFECT AND IS ACCEPTED WITH ITS SHAPE WRITTEN DOWN: dotfiles become the systematically truncated class where ordinary entries were, so a directory of 25 ordinary entries and 5 dotfiles now renders twenty ordinary names and no dotfile at all. A user asking what is in a directory is asking about the ordinary entries first; the total still says the rest are there. THREE CONSEQUENCES ARE DELIBERATE RATHER THAN COLLATERAL: the existing three-entry expectation flips to `alpha`, `beta.txt`, `.hidden` and stays the MEMBERSHIP witness; the MEMBER copy of the fixture helper -- the root copy already narrowed and serves a caller that names its own dotfiles -- narrows to bulk staging in the same edit that is already fixing its stale sentence; and the member README paragraph already in flight must read `shown, after the ordinary ones`. IT IS THE ONLY BEHAVIORAL ONE OF THE TEN FINDINGS: it moves what goes on the wire, so it is a red-first subtask of its own and the Definition of Done is re-run whole -- the sprint's 780/0 no longer covers the tree, and folded into a prose commit this change would skip its red.",
-        "THE IDENTITY GATE STAYS `completedPath` ALONE, AND THE WIDENED COST IS RECORDED RATHER THAN GUARDED. What this sprint changed is the BLAST RADIUS of a false positive and not its likelihood: a foreign item whose `data` happens to carry our key used to lose its one-line `detail` and now has its multi-line block REPLACED, so another server's user is shown documentation about a path nobody's completion offered them. That belongs in the forged-mark paragraph beside the rest of what a false mark costs, and it is not there yet. GATING ALSO ON THE SOURCE CHECK IS REFUSED, ON THIS REPOSITORY'S OWN EVIDENCE: `pathCompletion` is the identity and collides with nothing observed anywhere, while `source` is the key a fixture in this suite already shows another server writing under `data` -- so requiring both adds a second coincidence on the ONE key demonstrably shared, which is the weaker half of the conjunction. AND IT WOULD COST A LIVE WITNESS: the arm `a source name no completion of ours produced is left out of the answer` drives an item with a valid path and an invalid source, and under the wider gate that item comes back untouched -- the drop-rather-than-echo rule would survive as a call on the composer and never as a thing the HANDLER does. THE SOURCE CHECK IS A COMPOSITION RULE AND NOT AN IDENTITY CHECK, which is what the module already promises where it says that check is not a repair of the forgery boundary. IT PINS NOTHING NEW because it changes no code: every existing arm stands and the fix is the paragraph -- WHICH MAY NOT NAME THE FIXTURE BY PATH, since the paragraph lives in a shipped module and the packed-members citation guard already fired for exactly that once this sprint.",
-        "THE BLOCK'S LINE GRAMMAR IS NOW LOAD-BEARING, and it is the one constraint I add to a finding I am not taking back: a line reading `source: <name>` is a statement the SERVER makes, so no filename may render as a line the grammar assigns meaning to. The trade the module states -- nothing in a name is escaped, exactly as nothing in the path above it is -- was ruled when a name was only RENDERED, and it does not cover a name that FORGES the attribution the closed-set check just refused. What such a name renders as instead (dropped, escaped, control characters replaced) is the executor's choice.",
-        "THE STAKEHOLDER'S `kind` NAMES THE CASE AND IS NOT A DIRECTIVE TO READ THE ITEM'S OWN `kind` FIELD: that field is client-supplied, forgeable, and stale by resolve time. The branch stays on a FRESH stat, which is where the detail line takes it today.",
-        "THE FIRST CHECK REDDENED ONCE AT THE END OF THIS SPRINT AND IT WAS THE MACHINE, MEASURED RATHER THAN ASSUMED -- recorded because the next PBI in this backlog exists for exactly this ambiguity and a reviewer will otherwise read the red as the increment's. `bun test` at load average 58-61 gave 779 pass / 1 fail / 1 error in 321s, the failure being `the same two members pass once the error is removed` with the text `this test timed out after 5000ms` and a spawned check reporting exit code `null`. THE SAME FILE ALONE: 19 pass / 0 fail at the DEFAULT timeout, and 19 pass / 0 fail at `--timeout 30000`. THE WHOLE SUITE RE-RUN AS THE DEFINITION OF DONE SPELLS IT, load average 46: 780 pass / 0 fail, exit 0, with `timed out after` occurring ZERO times in the output. Nothing was changed between the two runs.",
-        "THE `revise` SKILL RUNS AFTER THE DEVELOPER'S WORK AND BEFORE SPRINT REVIEW, WITH NO PR -- the stakeholder's standing instruction, now recorded at the head of this dashboard rather than as a retrospective improvement.",
-      ],
-    },
   ],
   // THIS LIST IS DATA, AND `bun run scripts/definition-of-done.ts` IS THE ONE
   // FORM FOR TAKING IT. That runner EXECUTES this file and reads the checks
@@ -934,205 +953,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 56,
-    pbi_id: "PBI-69",
-    goal: "No commit is taken on a Definition of Done whose red was off screen: verifying a change is ONE command, it names every check's own result, and it is the only form this project documents.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "In a throwaway tree carrying its own dashboard whose checks log their own names: all pass -> exit 0; THE FIRST FAILS AND THE LAST PASSES -> non-zero, naming the failing check, with the last check's own pass still reported; two fail -> both named; an EMPTY list of checks -> refused rather than green.",
-        implementation:
-          "A script beside the workspace one, reading the checks by EXECUTING the dashboard and parsing the JSON it already prints, looping all of them without stopping at the first failure.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7f0324a",
-            message: "feat(scripts): one command that takes every check and reports each one",
-            phase: "green",
-          },
-          {
-            hash: "e3d6685",
-            message: "test(dod): make the throwaway dashboard compute what it prints",
-            phase: "green",
-          },
-          {
-            hash: "ed797e2",
-            message: "test(dod): make the summary word a function of the run, both directions",
-            phase: "green",
-          },
-          {
-            hash: "be27ff9",
-            message: "feat(scripts): refuse a `run` this runner cannot execute faithfully",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE FIRST-FAILS-LAST-PASSES ARM IS THE RECORDED DEFECT VERBATIM: a runner reading the last command's status passes an arm that fails the LAST check, and this project's five occurrences are all that shape.",
-          "IT CANNOT BE A SIXTH CHECK -- a check that runs every check would run itself, unbounded -- AND IT CANNOT REPLACE THE FIVE, because the five are the list it reads. AMENDED IN THE REVIEW ROUND RATHER THAN LEFT STANDING, because it is a present-tense design claim and it became false: this said `the dashboard's run stays an executable shell command`, and the runner never ran one. It is a COMMAND LINE the runner spawns, and one it cannot execute faithfully is refused; the property this sentence was reaching for -- every `run` is still a line a maintainer can type at a prompt -- survives the correction intact.",
-          "THE INPUT CONTRACT WAS MEASURED BEFORE A LINE WAS WRITTEN, because every arm here rests on it: `bun run scrum.ts` at this sprint's base exits 0, writes ZERO BYTES to stderr, and its stdout parses as JSON whose `definition_of_done.checks` is the five pairs. A runner built on an unmeasured premise about the file it reads would have been this project's own recorded shape.",
-          "RED THEN GREEN, AND THE RED IS THE HALF WORTH RECORDING: with no runner in the tree, 0 pass / 4 fail -- and the EMPTY-LIST arm failed on its TEXT rather than on its colour, which is the only reason it measures anything. Everything that goes wrong here exits non-zero, a runner that does not exist included, so an arm reading the colour alone would have been born green. After the implementation, 4 pass / 0 fail, and the whole suite 851 pass / 0 fail across 57 files against a base of 847 across 56.",
-          "TWO DEGENERATES, PREDICTED IN WRITING BEFORE EACH RUN AND BOTH BEHAVING AS PREDICTED. THE RECORDED DEFECT ITSELF -- verdict and report taken from the LAST result alone -- gives 2 pass / 2 fail: the two positional arms red, the all-pass arm green, which is exactly why an all-pass arm certifies nothing here. AND AN EMPTY LIST RUN AS WRITTEN rather than refused gives 3 pass / 1 fail. Neither degenerate is reachable from the other's arms, which is what earns them both.",
-          "REVIEW ROUND, FINDING 1, AND IT IS THIS PROJECT'S OWN DEFECT ARRIVING INSIDE THE INSTRUMENT BUILT TO RETIRE IT: THE SUMMARY HEADLINE COULD LIE WITH EVERY ARM GREEN. MEASURED -- the verdict word hardwired to `PASSED`, per-check lines and exit code untouched -- 12 pass / 0 fail, because `Definition of Done: FAILED` was asserted NOWHERE IN THE FILE. The only summary arm asserted one direction, which a constant satisfies. The header of that very runner says the five recorded occurrences were a reader taking a grep for the run's status, and the summary line is the line a reader greps. One arm now runs two trees and asserts both directions with the WHOLE string, never the bare word, since a failing report carries `[FAILED] alpha` whatever the summary says. DEGENERATES RE-RUN: hardwired PASSED, 12 pass / 1 fail, this arm alone; hardwired FAILED, 10 pass / 3 fail. Commit ed797e2.",
-          "FINDING 6, A FIXTURE-DESIGN WEAKNESS AGAINST THIS FILE'S OWN LOAD-BEARING CLAIM: the runner's header calls EXECUTING the dashboard the decision everything rests on, and the fixture could not hold it. The throwaway dashboard wrote its object INLINED, so its text WAS its output and any means of obtaining the JSON passed -- MEASURED, a runner slicing the file from its first brace to its last, never running it, left 12 pass / 0 fail. Severity is bounded and stated: against the real dashboard, a TypeScript program, that runner exits 1, so nothing shipped wrong; the arm simply did not hold the claim. The fixture now declares its pairs FLAT and assembles the shape at run time, so no substring of it is the JSON it prints. DEGENERATE RE-RUN: 0 pass / 12 fail. Commit e3d6685.",
-          'FINDING 4, FROM CODEX, THE ONLY ONE OF THE SIX THAT MOVED THE PRODUCT: `run` WAS DOCUMENTED AS A SHELL COMMAND AND WAS NEVER RUN AS ONE. MEASURED here as filed -- `run: "true && false"` split on spaces spawns `true` with the arguments `&&` and `false`, exits 0, and printed `[PASSED] conjunction -- exit 0 -- $ true && false`, where a shell runs `false` and fails; redirections, quoted arguments and globs misread the same way, in silence. The direct spawn was taken deliberately and the reasoning holds -- through a shell a missing binary arrives as exit 127 and cannot be told from a check that ran and said no -- but the price was being paid where no reader met it, least of all at the dashboard field calling it a shell command. OF THE THREE ANSWERS, refusing is the only one that gives up neither reading, and a misread command has no colour at all. `REFUSED` is its own verdict beside `UNRUNNABLE` because the reader\'s next move differs: rewrite the entry, not install a tool. THE ARM CARRIES A POSITIVE CONTROL, without which an over-broad predicate ships green -- no other `run` in that file carries a flag or a `.` argument, so a predicate refusing those would redden `oxfmt --check .` in the real Definition of Done and NOTHING in the suite. DEGENERATE RE-RUN, the predicate never firing: 14 pass / 1 fail. Commit be27ff9.',
-          "DISCLOSED IN ADVANCE RATHER THAN LEFT FOR THE NEXT REVIEWER, AND IT IS THE CLASS THIS RECORD HAS NOW FILED FIVE TIMES: be27ff9 SHIPPED WITH THIS DASHBOARD'S OWN FIELD COMMENT STILL CALLING `run` A SHELL COMMAND, FOR EXACTLY ONE COMMIT. The cause is the standing rule that scrum.ts moves alone in its own commits, which cannot be met in the same breath as a code change that falsifies a comment living here; the alternative was folding the dashboard into the feature commit. It was seen when written, not found afterwards, and the very next commit is the correction.",
-        ],
-      },
-      {
-        test: "Whole-value equality on the invocation log against the dashboard's declared ORDER and arity; the per-check report of a FAILING run carries each check's name, its command as run, and its own exit; and a dashboard with a different set of checks changes what runs WITH NO EDIT TO THE RUNNER.",
-        implementation: "Per-check report lines; output captured and echoed.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "5231fbe",
-            message:
-              "test(dod): read the invocation log as a sequence, and require a sixth check to run",
-            phase: "green",
-          },
-          {
-            hash: "c64fcc3",
-            message: "test(dod): require each check's own diagnostic to reach the reader",
-            phase: "green",
-          },
-          {
-            hash: "50d5664",
-            message: "test(dod): pause the first check, so the order arm reads order",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BORN GREEN, DECLARED AS SUCH BEFORE THE RUN AND NOT DISCOVERED AFTERWARDS: the per-check report lines landed in the first subtask, because its own arms needed the words `[FAILED] alpha` and `[PASSED] gamma` to exist. 7 pass / 0 fail on the first execution, which is worth nothing by itself -- ALL THE EVIDENCE FOR THESE THREE ARMS COMES FROM THE DEGENERATES, and that is the reason they were run before the arms were believed.",
-          "THREE DEGENERATES, EACH PREDICTED IN WRITING AND EACH REDDENING EXACTLY WHAT WAS PREDICTED. Checks SORTED by name before running -- a move that changes no value -- 5 pass / 2 fail, the sequence arm and the six-check arm; the runner EXITING INSIDE ITS LOOP at the first red, 4 pass / 3 fail, every one of them an arm about what is reported AFTER a failure; and the runner ASSUMING THE LIST IS FIVE LONG, 6 pass / 1 fail, the six-check arm alone. The third is the product owner's refusal in its cheapest form and no other arm in the file can see it.",
-          "THE SUITE AFTER THIS SUBTASK: 854 pass / 0 fail across 57 files, all five checks read individually and each exit 0.",
-          "`CAPTURED AND ECHOED` WAS HALF ASSERTED AND THE MISSING HALF WAS FOUND BY REVIEW, NOT BY A RED. Twelve arms proved CAPTURED -- the warning count is a parse of the captured bytes -- and NOT ONE proved ECHOED: they all read what the RUNNER writes, so a runner swallowing every check's own output satisfied all of them, including the two-run report equality, which holds when both runs echo nothing. MEASURED as a fourth degenerate for this subtask: deleting the two writes that tee a child's streams leaves 11 pass / 1 fail once the arm exists, and left 12 pass / 0 fail before it. The arm lives in the error-lint tree because the subject was already there, and what it reads is the linter's own diagnostic line rather than anything this runner composes.",
-          "THE LAST ARM IS THE PO'S REFUSAL MADE MEASURABLE: a green run that did not execute a check the dashboard lists, because the runner held its own copy, is green and silent and lets the Definition of Done shrink unnoticed -- the disarmed-control shape promoted into the instrument that certifies everything else.",
-          "ORDER IS LOAD-BEARING AND NOT COSMETIC: the first check builds every artifact the fourth reads. Sequential, in the declared order, no parallelism. AND `ALL FIVE RAN` IS MEMBERSHIP WHERE THE PROPERTY IS ORDER -- reordering changes no value -- so the arm reads the log as a SEQUENCE.",
-          "`REPORTS EVERY CHECK'S STATUS` IS SATISFIED AT THE EXIT-CODE LEVEL BY A RUNNER THAT EXITS INSIDE THE LOOP: moving the exit earlier changes no value, so the arm reads the REPORT TEXT of a failing run and requires the later checks' own statuses present.",
-          "REVIEW ROUND, THE OBSERVATION THAT CAME WITH THE SIX AND WAS ROUTED FOR A DECISION RATHER THAN FILED AS A HOLE -- TAKEN, BECAUSE THE RATE IS ITSELF THE EVIDENCE. Three commands that each take milliseconds tend to finish in the order they were STARTED even when nothing sequenced them, so this arm's log could not separate order from coincidence: MEASURED against a runner starting every check at once, the arm NAMED for the property reddened on 3 of 5 runs for the reviewer and on 4 of 5 re-run here, while the FILE reddened 5 of 5 both times -- its detection carried by the first-fails-last-passes arm and the six-check arm, neither of which is about order. A PAUSE ON THE FIRST CHECK puts that entry LAST under any parallel execution: same degenerate, same five runs, 5 of 5. AN ARM THAT USUALLY REDDENS IS A FLAKE IN THE OTHER DIRECTION, and the order it defends is not cosmetic -- the first real check builds every artifact the fourth reads. Commit 50d5664.",
-        ],
-      },
-      {
-        test: "A check naming a binary that does not exist is NON-GREEN and distinguishable in the report from one that ran and failed; and the runner invoked FROM A SUBDIRECTORY produces the same reading as from the root.",
-        implementation:
-          "Spawn-error handling; the root taken from the argument or from the script's own location, never from the working directory.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "996dfcc",
-            message: "test(dod): separate a check that never started from one that ran and said no",
-            phase: "green",
-          },
-          {
-            hash: "1212c4a",
-            message: "test(dod): put one missing binary in a tree of passes, so it gates alone",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BOTH ARMS BORN GREEN AND DECLARED SO BEFORE THE RUN -- 9 pass / 0 fail -- because the spawn-error handling and the location-derived root were written in the first subtask. FOUR DEGENERATES CARRY THE EVIDENCE INSTEAD, each predicted and each reddening one arm and no other: a spawn error COUNTED AS A PASS, 8 pass / 1 fail; a check that never started PRINTED AS ONE THAT RAN AND FAILED -- byte-identical text, the state this project has already been caught reading as one red -- 8 pass / 1 fail; the root taken FROM THE WORKING DIRECTORY, 8 pass / 1 fail; and the checks handed the WORKING DIRECTORY INSTEAD OF THE ROOT, 8 pass / 1 fail.",
-          "THE FOURTH DEGENERATE IS THE ONE THAT SHAPED THE ARM, and it is invisible to every exit code in the file: handing the checks a subdirectory changes no status and no report line. It is separated only by a check that RECORDS THE DIRECTORY IT RAN IN, compared whole between the run from the root and the run from below it -- which is why one check in that tree records where it ran rather than its name.",
-          "THE SUBDIRECTORY ARM RUNS A BYTE COPY OF THE RUNNER INSIDE THE THROWAWAY, and the reason is worth keeping: with no argument the shipped runner takes THIS repository's Definition of Done, so the arm measuring the argument-free route cannot use the shipped path without running `bun test` inside `bun test`.",
-          "THE SUITE AFTER THIS SUBTASK: 856 pass / 0 fail across 57 files, five exits read individually, all 0.",
-          "UNRUNNABLE IS NOT PASSED, AND TODAY THIS MACHINE IS THE WITNESS: two of the five tools are absent from PATH here, so a runner treating a spawn error as anything but non-green would ship green over two checks that never ran.",
-          "THE WORKING DIRECTORY IS A HAZARD AND NOT A DETAIL: the first check finds its configuration only in the current directory, so a runner inheriting a subdirectory would report five greens over a suite that built nothing.",
-          "REVIEW ROUND, FINDING 2, AND THIS MACHINE IS THE LIVE WITNESS FOR IT: AN UNRUNNABLE CHECK DID NOT HAVE TO GATE THE RUN. MEASURED -- the gate narrowed from `the outcome is not passed` to `the outcome is failed`, with outcome, reason and every byte of the report unchanged -- 12 pass / 0 fail in the file AND 859 pass / 0 fail across the whole suite. The arm named for it carried its non-green half on a DIFFERENT check in the same tree, one that ran and said no, so it measured the DISTINGUISHABILITY half and never the gating half: two hazards in one test, one of them unmeasured. IT IS NOT THE DEGENERATE ALREADY RECORDED ONE ENTRY ABOVE -- a spawn error counted as a pass flips the outcome and reddens the report text; this one moves the exit code alone. `oxfmt` and `tsc` are absent from this machine's own PATH, so under that narrowing the runner would ship exit 0 today over two checks that never ran. The repair is a tree whose SOLE non-pass is the missing binary, with every other check's pass asserted so the colour is attributable. DEGENERATE RE-RUN: 13 pass / 1 fail, the new arm alone. Commit 1212c4a.",
-        ],
-      },
-      {
-        test: "A planted warning -> count one, exit 0, the count present in the verdict; an error-only tree -> zero warnings beside a failure; a clean tree -> zero.",
-        implementation:
-          "The warning count read from the same invocation whose exit was read, printed in the same summary as the exits.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "ea63b6a",
-            message:
-              "test(dod): read the warning count off the real linter, and require it not to gate",
-            phase: "green",
-          },
-          {
-            hash: "97d5665",
-            message: "test(dod): sandwich the linter, so the warning count is read as a sum",
-            phase: "green",
-          },
-          {
-            hash: "d30f5c1",
-            message: "test(dod): give the linter's run an identity, so two readings are one run",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE ARMS RUN THE LINTER RATHER THAN ECHOING THE SHAPE THE PARSE LOOKS FOR, and that is a choice with a cost: an arm printing `path:line:col: warning ...` itself would assert the runner against its own regular expression and would stay green the day oxlint changes how a diagnostic is printed -- which is the day this must fail. What is planted instead is SOURCE: a generator with no `yield` for the warning, a missing file extension for the error, both measured before the arms were authored (warning tree exit 0 with one line, error tree exit 1 with one line, clean tree silent).",
-          "MEASURED IN THE STAGED TREE AND NOT ONLY IN THIS REPOSITORY: the count over a tree carrying the planted file, a dashboard, two shell probes and a copy of the runner is exactly 1 -- nothing else in a throwaway contributes a diagnostic -- and 0 in the error tree. The reading over this repository's own five checks at the sprint's base was 1, the deliberate fixture warning.",
-          "BORN GREEN, DECLARED IN ADVANCE -- 12 pass / 0 fail -- WITH THREE DEGENERATES, each predicted and each reddening one arm: the count HARDWIRED TO ZERO, 11 pass / 1 fail; EVERY DIAGNOSTIC COUNTED with severity ignored, 11 pass / 1 fail on the error tree alone, which is the arm that reads severity rather than volume; and WARNINGS GATING THE RUN, 11 pass / 1 fail, the ruling made falsifiable.",
-          "THE SUITE AFTER THIS SUBTASK: 859 pass / 0 fail across 57 files, five exits read individually, all 0.",
-          "A SECOND CRITERION AND NOT A CLAUSE OF THE FIRST, on this project's own rule that a hazard owns a test whose FIRST assertion it is: folded in, the exit-code assertions fire first and the warning reading could never be the thing that fails. The perturbation differs too -- planting a warning moves no exit code.",
-          "REPORTED AND NOT GATING, RULED: this tree carries ONE deliberate warning whose fixture records a refusal to silence it, so failing on warnings would overturn a decision by way of a tooling change -- and an instrument red on every green tree retires itself.",
-          "THE COUNT IS A PARSE, SO IT SHIPS WITH ITS PAIR. MEASURED on the installed linter, in a pipe and under a terminal alike: one line per diagnostic, no summary line -- so the count comes from lines, and re-measuring on a version bump is the maintenance this buys.",
-          "REVIEW ROUND, FINDING 3 -- THE COUNT COULD COME FROM THE FIRST CHECK ALONE AND EVERY ARM STAYED GREEN, because the linted tree declared the linter ALONE. With one check the first result, the last result and the total are extensionally equal, so every weaker reading of the aggregate is satisfied: MEASURED, the sum replaced by the FIRST result's count, 12 pass / 0 fail. IN THE REAL DASHBOARD THE LINTER IS THE SECOND OF FIVE, so that runner ships `warnings: 0` over a linter that emitted one, and this record's own claim that the count aggregates over all five had no arm behind it. One silent check before the linter and one after, the count still one. THE LAST READING WAS BOUGHT IN THE SAME MOVE and is worth its half -- five recorded occurrences here are the LAST command's status read as the run's. DEGENERATES RE-RUN: first-only, 13 pass / 1 fail; last-only, 13 pass / 1 fail. Commit 97d5665.",
-          "FINDING 5, FROM CODEX, AND IT IS AN IDENTITY PROBLEM RATHER THAN A VALUE ONE: the arm read an EXIT CODE and a WARNING COUNT off the linter and could not say they came from the same invocation of it. A runner spawning each check twice, taking the exit from the first run and the warnings from the second, prints exactly what was asserted -- the fixture is deterministic, so the second run's bytes are the first run's bytes. MEASURED with the bare `oxlint`: that runner left ALL THREE linted arms green, 9 pass / 5 fail with every red elsewhere in the file. The linter now runs through a wrapper that records its invocation and then `exec`s it, so the exit code and every parsed byte stay the real program's, and the log is asserted WHOLE. ARITY IS WHAT CARRIES IT: one entry is one invocation, so two readings cannot be two runs -- no nonce is needed and none was built. DEGENERATE RE-RUN: 7 pass / 7 fail, the two linted arms joining. Commit d30f5c1.",
-        ],
-      },
-      {
-        test: "The five real checks staged failing IN TURN, with predictions written before each run, and the paired unstaged green.",
-        implementation:
-          "Whatever repair a staging reveals; predicted none. Stagings are ADDED UNTRACKED FILES so nothing tracked is edited and cleanliness is verifiable.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "NO COMMIT OF ITS OWN AND THAT IS THE RESULT, NOT AN OMISSION: the predicted repair was none, and none was revealed. What this subtask produced is seven readings, each with its prediction written in a file before the run.",
-          "THE FIVE STAGINGS, EACH AN ADDED UNTRACKED FILE, EACH READ THROUGH THE RUNNER ITSELF. A failing test file -> `[FAILED] Tests pass -- exit 1` with the other four `[PASSED]`, which is THE RECORDED DEFECT'S OWN SHAPE now printed: the red is first and the last check passes. `Bun.file(...)` at the root -> `[FAILED] Lint passes -- exit 1`, error severity because the linter's exit code does not move on warnings. Extra spaces around an `=` -> `[FAILED] Format check passes -- exit 1`. A root-level `const wrong: number = \"no\"` -> `[FAILED] Type check passes`. And the unstaged pair, run before all of them: exit 0, five `[PASSED]`, `warnings: 1`.",
-          "PREDICTION MISSED, RECORDED RATHER THAN QUIETLY CORRECTED: the type-check staging was predicted to report `exit 2` and reported `exit 1`. The number was wrong, the property was not -- the report carries the check's OWN status rather than a normalised one -- and the miss was visible only because the prediction was written down first.",
-          "AND THE PLAN'S OWN CLAIM ABOUT THE FIFTH STAGING IS FALSE ON THIS TREE, MEASURED: an untracked file under a dot directory was planned as the CLEAN single-check staging, and it reddens TWO checks -- `[FAILED] Tests pass` beside `[FAILED] Workspace members type-check`, 858 pass / 1 fail, the failing arm being `this repository holds no TypeScript file that no program includes` in test/uncovered-files.test.ts, which SPAWNS THE FIFTH CHECK OVER THIS CHECKOUT and requires its stderr empty. THE STRONGER STATEMENT THAT REPLACES IT: the fifth check cannot be staged alone at all here, whatever the staging, because an arm of the first check IS the fifth check over this repository. Both checks are named in one report, which is the property under test.",
-          "THE STANDING RE-RUN CAME FOR FREE AND IS REPORTED AS ONE, because the question `which perturbation still has a target here` has an answer this sprint rather than the usual none: the dot-directory staging IS sprint 55's own perturbation -- a TypeScript file in this checkout that no program includes -- re-run against this sprint's tree. It reddened as recorded, and the two checks it reddens are named in one report, which is this increment's subject. REPRODUCED AND NOT INDEPENDENT: the verifier is the author.",
-          "THE SIXTH STAGING EXISTS TO MOVE NO EXIT CODE, and it did not: a generator with no `yield` gives exit 0, verdict PASSED, `warnings: 2`. That is the whole reason the count is reported beside the exits rather than folded into them.",
-          "ONE OF THE FIVE DOES NOT ISOLATE AND THE RECORD MUST SAY WHY: a type error inside a member breaks the preparation the first check runs, so the first check dies with the fifth. The clean single-check staging is an untracked source file under a directory no configuration includes -- which fires the guard whose own stated reason is that without it all five commands exit 0.",
-          "THE LINTER'S STAGING MUST BE ERROR-LEVEL, because its exit code does not move on warnings; a second warning-shaped staging exists precisely to move NO exit code.",
-        ],
-      },
-      {
-        test: "None -- prose and the round's own procedure.",
-        implementation:
-          "The documentation's Commands section names the one form, with running a single check labelled DEBUGGING so it cannot be read as verification; and the filing bar lands in this dashboard's header where the round's standing instruction already lives.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4ba6f4",
-            message:
-              "docs(scrum): file the review round's bar in the header, and say at the site that the checks are data",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "README.md IS DELIBERATELY UNTOUCHED AND THE READING IS RECORDED RATHER THAN LEFT TO BE RE-DERIVED AT REVIEW: it names three of the five checks in prose and tells a reader to run `bun test` or the fifth check FIRST, which is build-model guidance about what makes `tsc --noEmit` readable on a fresh checkout -- not a second spelling of how to verify a change. The ruling forbids a fenced block there anyway, since that document's blocks are extracted and executed and the runner runs the suite.",
-          "NO ARM, THEREFORE NO DEGENERATE, SAID RATHER THAN INVENTED: this subtask is prose, and a degenerate run against prose would be theatre. What it can be held to instead is where the words landed and what grades them.",
-          "THE COMMANDS SECTION NOW OPENS WITH THE ONE FORM and carries the five under a DEBUGGING heading that says in its own words that running them by hand is not verifying a change. THE SYNC OBLIGATION IS NAMED AT THE OTHER END TOO, and it MOVED rather than disappearing: the runner reads `definition_of_done.checks` at run time, so a check added there costs no edit anywhere; what still has to be kept by hand is the DEBUGGING list, which nothing executes and which sits in a file this repository does not track.",
-          "THE FILING BAR LANDED VERBATIM IN THE HEADER BESIDE THE ROUND'S STANDING INSTRUCTION, and the dashboard's `definition_of_done` now carries a comment AT THE SITE saying the list is the runner's data and that the runner is not added here as a sixth entry -- which is where that edit would be made, and the only place a reader meets the five without meeting the runner.",
-          "READ AGAINST THIS PROJECT'S OWN CONVENTION BEFORE IT LANDED: no fenced block was added to README.md, whose blocks are extracted and executed; the two blocks added are in the untracked guidance file, which the extraction does not read -- checked, nothing under test/ or scripts/ names that file at all.",
-          "NO FENCED BLOCK IS ADDED TO THE README: its command blocks are extracted and executed by the suite, and the runner runs the suite -- it would run itself. The commands appear there as prose today, which is what makes prose the safe carrier.",
-          "THE DOCUMENTATION ENDPOINT IS DELIVERY AND NOT THE MECHANISM, and the record says so rather than letting a later reader find it: that file is untracked in this repository, so one end of the sync obligation is a file no fresh checkout has and no check can grade.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "EXISTENCE IS NOT ENOUGH AND THE ITEM'S OWN FILING SAYS WHY: the skill forbidding this defect exists, is specific, is measured, carries its own recidivism count, and matched on description -- and the defect happened anyway. A RUNNER THAT MUST BE REMEMBERED IS THAT SKILL WITH AN EXIT CODE. What must become unavailable is the alternate SPELLING: after this sprint, `run the Definition of Done` has ONE form everywhere this project says how to verify a change, the five survive as the runner's DATA in one tracked enumeration, and running a single check by hand is labelled DEBUGGING where it appears.",
-      "A COMMIT HOOK IS REFUSED AS THE UNAVAILABILITY: untracked, per-clone, and undone by a flag -- and the whole Definition of Done at every commit is slow enough that the flag would be used. UNAVAILABILITY A FLAG UNDOES IS A RESTATEMENT IN A MECHANISM'S CLOTHES.",
-      "THE RESIDUE IS NAMED IN ADVANCE RATHER THAN DISCOVERED: an actor who types the five commands out of habit is NOT COVERED, and the runner cannot make that route unavailable. FILING IT ON RECURRENCE WAS ITSELF A REFUSAL TO FILE, so it is ruled here instead: NOT FILED, DELIBERATELY. A route that requires a person to choose the longer way is not closable by anything this repository can build short of a commit hook, and the hook is refused above for reasons that have not changed. What CAN be closed was: the alternate spelling of the LIST, which is now structurally unavailable. If a sixth occurrence arrives by the habit route, the item it justifies is about the commit moment and not about this runner.",
-      "THE DUPLICATED ENUMERATION IS REFUSED EVEN ON AN ALL-GREEN RUN, and the developer's design discharges it structurally rather than by assertion: the runner obtains its list by EXECUTING the dashboard, so there is no second list to drift. The alternative -- the runner holds the list and a test asserts equality -- satisfies the property equally, and whichever is taken, the choice and its cost are stated.",
-      "MEASURED AT PLANNING SO IT IS NOT MET AT RED: running the checks through one script does NOT change what any of them sees. The wrapper does not prepend the local binary directory to a child's path, so tool resolution is identical bare and wrapped; and the linter's output format is identical through a pipe and under a terminal.",
-      "THE REVIEW ROUND'S SIX FINDINGS SHARE ONE SUBJECT AND IT IS THE INSTRUMENT ITSELF: THREE OF THEM ARE THIS PROJECT'S RECORDED DEFECT LIVING INSIDE THE MACHINE BUILT TO ELIMINATE IT -- a summary headline that could read PASSED over a failing run, an unrunnable check that did not have to gate, and a warning count taken from ONE check and printed over five. Every one of them was green while the property it defends was violated, and none was findable by reading. THE STANDING RULE THIS LEAVES IS MECHANICAL AND APPLIES TO ANY ARM OVER A REPORT: an arm over a SUMMARY asserts BOTH DIRECTIONS, since one direction is satisfied by a constant; an arm over a GATE stands in a tree where NOTHING ELSE IS RED, or the colour it reads belongs to something else; an arm over an AGGREGATE stands where the aggregate DIFFERS FROM EVERY ELEMENT, or first, last and total are one value. That is the previous round's `test data that cannot discriminate` specialised to the three shapes a report has.",
-      "AND THE ROUND WAS TAKEN WITH THE THING THIS SPRINT BUILT, WHICH IS THE POINT OF HAVING BUILT IT: every fix was taken on `bun run scripts/definition-of-done.ts`, and TWICE it printed `[FAILED] Format check passes -- exit 1` beside four `[PASSED]` lines: once over a type declaration the formatter wanted on one line, once over a quotation mark inside one of these notes. Under the habit this sprint exists to retire -- five commands typed by hand, the last one read -- both of those commits go in red, and the second is this dashboard itself, which is where four of the five recorded occurrences came from. Each was fixed and the whole run repeated before committing. THE SUITE WENT 859 -> 862 ACROSS THE SIX FIXES and no check was red at any commit.",
-      "THE FILING BAR FOR THE REVIEW ROUND LANDS THIS SPRINT, in this dashboard's header beside the round's standing instruction -- NOT in a skill, which is the delivery that failed, and NOT in the round's own skill file, which lives outside this repository and would be invisible to this project's review of its own records. A finding recorded as PRE-EXISTING names both commits and the byte-identity result at the sprint's base, or it is this sprint's to repair; it names the item it is filed into, or it is not filed; and PREDATING IS NOT ITSELF A LICENCE -- a finding inside the sprint's own subject is repaired here even when it predates.",
-    ],
-  },
+  sprint: null,
   retrospectives: [],
 };
 
