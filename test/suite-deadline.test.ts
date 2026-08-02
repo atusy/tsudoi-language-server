@@ -478,8 +478,28 @@ test("the suite's deadline outlives the largest helper deadline an ungated test 
 });
 
 /**
- * Every deadline written in a helper, read as text so that adding one is what
- * moves this rather than remembering to.
+ * EVERY NUMERAL OF FOUR DIGITS OR MORE WRITTEN IN A HELPER -- NOT `every deadline
+ * a helper holds`, which is what this said and is a claim the matcher cannot
+ * make. It is read as text so that adding one is what moves the arm below rather
+ * than remembering to, and text is exactly where the limits come from.
+ *
+ * IT IS NOTATION-BOUND IN ONE DIRECTION AND OVER-WIDE IN THE OTHER, BOTH
+ * MEASURED against `bun test test/suite-deadline.test.ts -t "largest deadline"`
+ * with test/helpers/lsp.ts as the subject:
+ *
+ *   - a helper deadline written `26_000` is caught, 0 pass / 1 fail;
+ *   - THE SAME DEADLINE WRITTEN `26 * 1000` IS NOT, 1 pass / 0 fail. A deadline
+ *     assembled from an expression, read from a constant in another module, or
+ *     spelled in seconds is invisible here whatever its size;
+ *   - a 4+-digit numeral in a helper's PROSE reddens it, 0 pass / 1 fail, on a
+ *     tree whose deadlines never moved -- and this project writes measured
+ *     numbers into comments as a matter of course.
+ *
+ * BOTH ARE KEPT RATHER THAN ENGINEERED AWAY, and the second is the reason: the
+ * false positive fails LOUD and names the file, where narrowing the scan to
+ * non-comment text would buy silence in exchange for a new heuristic with
+ * blind spots nobody has measured. A rot detector, not a barrier -- the same
+ * ruling `.oxlintrc.json` carries for its own guards.
  */
 const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
   .filter((name) => name.endsWith(".ts") && name !== "deadline.ts")
@@ -495,8 +515,11 @@ const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
  * THE PAIR THE PIN CANNOT DO WITHOUT: `25_000 > 20_000` is true of a tree where
  * nothing reaches that helper at all, and true of a tree where a BIGGER helper
  * deadline was added last week. This arm is what makes the constant above the
- * right subject -- it reads every deadline the helpers hold and requires the
- * pinned one to be the largest.
+ * right subject -- it reads every 4+-digit numeral the helpers write and requires
+ * the pinned floor to be the largest. THE NAME SAYS `NUMBER` AND NOT `DEADLINE`
+ * BECAUSE THE INSTRUMENT READS NUMERALS: the two directions that costs are
+ * measured where the scan is built, and a deadline written as an expression walks
+ * past this arm.
  *
  * ONE EXCEPTION, NAMED WITH ITS REASON RATHER THAN FILTERED SILENTLY:
  * test/helpers/fake-editor.ts sets 30_000, and it is excluded because it is not
@@ -514,7 +537,7 @@ const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
  * to test/helpers/lsp.ts -- this arm reddens naming the file, and the pin above
  * stays green, which is exactly the split the two arms exist for.
  */
-test("the pinned floor is the largest deadline the helpers hold", () => {
+test("the pinned floor is the largest number any helper writes", () => {
   const reachable = helperDeadlines.filter((found) => found.file !== "fake-editor.ts");
   const larger = reachable.filter((found) => found.ms > handshakeTimeoutMs);
 
