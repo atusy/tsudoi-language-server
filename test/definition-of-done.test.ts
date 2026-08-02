@@ -49,6 +49,16 @@ interface Tree {
   root: string;
   /** A command that records its own invocation and then exits with `exit`. */
   logged: (name: string, exit: number) => string;
+  /**
+   * A command that records its own invocation under `name` and then BECOMES the
+   * program given, whose exit code and output bytes are then its own.
+   *
+   * IT EXISTS SO A REAL PROGRAM'S RUN HAS AN IDENTITY. Two readings taken off
+   * one check -- its exit code and its warning count -- are not one reading
+   * unless the run they came from can be counted, and a deterministic program
+   * cannot tell one invocation from two.
+   */
+  wrapping: (name: string, program: string) => string;
   /** A command that records the directory it was RUN IN rather than its name. */
   cwdProbe: () => string;
   /** A command naming a binary this machine does not have. */
@@ -112,6 +122,15 @@ function stageTree(): Tree {
   return {
     root,
     logged: (name, exit) => `${logger} ${name} ${exit}`,
+    wrapping: (name, program) => {
+      const wrapper = join(root, `wrapping-${name}`);
+      // `exec`, SO THE WRAPPER STOPS EXISTING THE MOMENT THE REAL PROGRAM STARTS:
+      // the exit code the runner reads and every byte it parses are the wrapped
+      // program's own, and no arm's subject is quietly this shell.
+      writeFileSync(wrapper, `#!/bin/sh\nprintf '%s\\n' "${name}" >> ${log}\nexec ${program}\n`);
+      chmodSync(wrapper, 0o755);
+      return wrapper;
+    },
     cwdProbe: () => wherever,
     missingBinary: () => "tsudoi-no-such-binary-anywhere --check",
     declare: (checks) => {
@@ -394,13 +413,31 @@ function stageLinted(source: string): Tree {
   // reading is sandwiched for the same money, and it is this project's signature
   // defect -- five recorded occurrences of the last command's status read as the
   // run's.
+  //
+  // AND THE LINTER RUNS THROUGH A WRAPPER THAT RECORDS ITS INVOCATION, so that
+  // the two readings taken off it -- an exit code and a warning count -- can be
+  // shown to come from ONE run. Without that they cannot: MEASURED with the bare
+  // `oxlint` here, a runner spawning each check TWICE and taking the exit from
+  // the first invocation and the warnings from the second left all three linted
+  // arms green, 9 pass / 5 fail with every red elsewhere. A deterministic
+  // program prints the same bytes on its second run, so the fixture, not the
+  // assertion, is what has to carry the identity.
   tree.declare([
     { name: "before", run: tree.logged("before", 0) },
-    { name: "Lint passes", run: "oxlint" },
+    { name: "Lint passes", run: tree.wrapping("lint", "oxlint") },
     { name: "after", run: tree.logged("after", 0) },
   ]);
   return tree;
 }
+
+/**
+ * What a linted tree's log reads when every check ran EXACTLY ONCE, in order.
+ *
+ * WHOLE-VALUE, AND THE ARITY IS THE POINT HERE rather than the order: one entry
+ * for the linter means one invocation of it in the whole run, so the exit code
+ * and the count the arms read cannot be two different runs of it.
+ */
+const linterRanOnce = ["before", "lint", "after"];
 
 /** A generator with no `yield`: warning severity, and the exit code does not move. */
 const warns = "export function* nothing() {\n  return 1;\n}\n";
@@ -419,6 +456,12 @@ test("a warning is counted and reported, and does NOT gate the run", async () =>
   expect(result.code).toBe(0);
   expect(report(result)).toContain("warnings: 1");
   expect(report(result)).toContain("Definition of Done: PASSED");
+  // ONE INVOCATION OF THE LINTER, SO THE EXIT ABOVE AND THE COUNT ABOVE ARE ONE
+  // READING. Nothing else in this arm can say that: a runner spawning the check
+  // twice, taking its exit from the first run and its warnings from the second,
+  // prints exactly what is asserted above -- the fixture is deterministic, so
+  // the second run's bytes are the first run's bytes.
+  expect(tree.invocations()).toEqual(linterRanOnce);
 });
 
 test("an error is not a warning: the count is 0 beside the failure", async () => {
@@ -436,6 +479,10 @@ test("an error is not a warning: the count is 0 beside the failure", async () =>
   // would satisfy all of them. It would also return a maintainer to running the
   // five by hand to find out WHAT broke, which is the habit this replaces.
   expect(report(result)).toContain("planted.ts:1:1: error");
+  // THE SAME BINDING AS THE ARM ABOVE, AND FOR THE SAME REASON: the exit code
+  // and the diagnostic line are two readings, and one invocation is what makes
+  // them one run's.
+  expect(tree.invocations()).toEqual(linterRanOnce);
 });
 
 test("a tree with nothing to say counts no warnings", async () => {
