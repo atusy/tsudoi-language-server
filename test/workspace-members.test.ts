@@ -100,10 +100,20 @@ test("the same two members pass once the error is removed", async () => {
   expect(result.code).toBe(0);
 });
 
-// The one state where a package is covered by NOTHING: excluded from the root
-// program by path, and outside what the workspace patterns declare. It exits
-// non-zero NAMING the directory, because `some package is uncovered` sends a
-// reader looking through every directory the exclusion reaches.
+/**
+ * The one state where a package is covered by NOTHING: excluded from the root
+ * program by path, and outside what the workspace patterns declare. It exits
+ * non-zero NAMING the directory, because `some package is uncovered` sends a
+ * reader looking through every directory the exclusion reaches.
+ *
+ * THE SHAPE OF THE SENTENCE IS ASSERTED AND NOT ONLY THE DIRECTORY, which is
+ * what the arm was missing: the file this package holds is uncovered too, so a
+ * run answering ONE MISSING WORKSPACE ENTRY with a list of its files would
+ * satisfy `names packages/forgotten` while telling the reader to widen an
+ * `include` -- the wrong repair for a package that should have been declared.
+ * The package sentence is a REFINEMENT over the uncovered file the one decider
+ * found, and this is where its precedence is pinned.
+ */
 test("a package the workspace patterns do not declare fails loudly", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -116,18 +126,52 @@ test("a package the workspace patterns do not declare fails loudly", async () =>
   });
 
   expect(result.stderr).toContain("packages/forgotten");
+  expect(result.stderr).toContain("workspaces");
+  expect(result.stderr).not.toContain("packages/forgotten/src/index.ts");
   expect(result.code).not.toBe(0);
+});
+
+/**
+ * THE NARROWING THE ONE-DECIDER RULING COSTS, PINNED SO THAT IT IS A DECISION
+ * AND NOT A LOSS: this package is excluded from the root program and declared by
+ * no pattern, exactly like the ones above, and it holds NO TypeScript -- so
+ * there is nothing here that nothing type-checks.
+ *
+ * WHAT USED TO REDDEN IT WAS A SECOND READER DECIDING COVERAGE ON ITS OWN, which
+ * is the reader that walked over the file this whole refusal was filed for and
+ * said nothing. Two readers answering one question can disagree with every check
+ * green; the package sentence is kept as a refinement of a fault the compilers'
+ * own file lists found, and where they find none there is nothing to refine.
+ */
+test("a package the workspace does not declare and that holds no TypeScript is left alone", async () => {
+  const result = await checkWorkspace({
+    "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
+    "tsconfig.json": JSON.stringify({ exclude: ["packages"] }),
+    "packages/declared/package.json": JSON.stringify({ name: "declared" }),
+    "packages/declared/tsconfig.json": memberTsconfig,
+    "packages/declared/src/index.ts": typeChecks,
+    "packages/forgotten/package.json": JSON.stringify({ name: "forgotten" }),
+    "packages/forgotten/README.md": "# forgotten\n",
+  });
+
+  expect(result.stderr).toBe("");
+  expect(result.code).toBe(0);
 });
 
 // THE SAME UNCOVERED PACKAGE, BEHIND AN EXCLUSION WRITTEN AS A GLOB, which
 // tsconfig permits everywhere it permits a path and which a reader reaches for
 // the moment they want `packages/*` excluded but `packages` itself kept.
 //
-// A LITERAL READING OF THE ENTRY LOSES THIS ONE SILENTLY: `packages/*` names no
-// directory on disk, so a check that joins it to the root and walks finds
-// nothing, reports nothing, and exits 0 -- the uncovered package is missed by
-// the one thing looking for it. The exclusion is expanded by the same enumerator
-// `workspaces` is read with, so the two keys are interpreted the same way.
+// A LITERAL READING OF THE ENTRY LOSES THIS ONE SILENTLY -- and what `loses`
+// means moved when the package reading became a refinement, which is why the
+// last two assertions are here. `packages/*` names no directory on disk, so a
+// check that joins it to the root and walks finds nothing; the run is no longer
+// silent, because the compilers' file lists still find the uncovered file, but
+// it prints the FILE sentence and sends the reader to widen an `include` that
+// was never the fault. MEASURED with the refinement disabled: this arm and the
+// one above both redden, and without these assertions only the one above does.
+// The exclusion is expanded by the same enumerator `workspaces` is read with, so
+// the two keys are interpreted the same way.
 test("a glob-form exclusion still names the package nothing declares", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -140,6 +184,8 @@ test("a glob-form exclusion still names the package nothing declares", async () 
   });
 
   expect(result.stderr).toContain("packages/forgotten");
+  expect(result.stderr).toContain("workspaces");
+  expect(result.stderr).not.toContain("packages/forgotten/src/index.ts");
   expect(result.code).not.toBe(0);
 });
 
@@ -148,8 +194,14 @@ test("a glob-form exclusion still names the package nothing declares", async () 
 // installed dependencies, so a match that starts there names a package.json
 // belonging to a stranger. Nothing in this repository will ever type-check it,
 // which would make the report a permanent red about somebody else's file.
-// MEASURED without the node_modules filter: exit 1 naming
-// `packages/declared/node_modules/stranger`.
+//
+// THE STRANGER SHIPS A SOURCE FILE, AND THAT IS WHAT KEEPS THIS ARM ABLE TO
+// FAIL. With the coverage decided by the compilers' file lists, a package
+// holding no TypeScript reddens nothing whatever the exclusion says -- so a
+// stranger with only a manifest would leave this green for a reason that has
+// nothing to do with node_modules. MEASURED with the installed-dependency
+// subtraction removed: exit 1 naming
+// `packages/declared/node_modules/stranger/index.ts`.
 test("an exclusion reaching into node_modules reports nobody else's package", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -158,6 +210,7 @@ test("an exclusion reaching into node_modules reports nobody else's package", as
     "packages/declared/tsconfig.json": memberTsconfig,
     "packages/declared/src/index.ts": typeChecks,
     "packages/declared/node_modules/stranger/package.json": JSON.stringify({ name: "stranger" }),
+    "packages/declared/node_modules/stranger/index.ts": typeError,
   });
 
   expect(result.stderr).toBe("");

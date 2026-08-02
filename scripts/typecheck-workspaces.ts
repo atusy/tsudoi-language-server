@@ -9,7 +9,6 @@ import {
   refuseMemberDirectoriesUnlikeTheUnscopedName,
   refuseMemberMappings,
   refuseUncoveredFiles,
-  refuseUncoveredPackages,
 } from "./workspaces.ts";
 
 /**
@@ -89,7 +88,6 @@ prepareWorkspace(root);
 // nothing at all while all five commands exit 0. The guards it runs read the
 // same list for the same reason.
 const members = declaredMembers(root);
-refuseUncoveredPackages(root, members);
 // HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND
 // IS THE WRONG ONE: that function is also what the `bun test` preload runs, so a
 // refusal wired into it aborts every test run before a single file loads. The
@@ -111,13 +109,19 @@ refuseMemberDirectoriesUnlikeTheUnscopedName(root, members);
 // type-checks GREEN, so running the checks first and the guard afterwards would
 // print a success no reader would then go back and disbelieve.
 refuseMemberMappings(root, members);
-// LAST AMONG THE REFUSALS, AND ITS REASON IS NOT THE OTHERS'. The three above
-// are questions about the workspace's own DECLARATIONS -- who the members are,
-// what each is called, how each resolves -- and this one is a question about the
-// TREE, which is only worth asking once those answers are believed. It is also
-// the widest: the three above name one manifest each, where this one can name
-// many files, and a run that printed the list first would bury a one-line fault
-// about a declaration underneath it.
+// LAST AMONG THE REFUSALS, AND ITS REASON IS NOT THE OTHERS'. The two above are
+// questions about the workspace's own DECLARATIONS -- what each member is
+// called, how each resolves -- and this one is a question about the TREE, which
+// is only worth asking once those answers are believed. It is also the widest:
+// those two name one manifest each, where this one can name many files, and a
+// run that printed the list first would bury a one-line fault about a
+// declaration underneath it.
+//
+// AND IT IS WHERE THE UNCOVERED-PACKAGE REFUSAL WENT. That guard used to stand
+// above, deciding coverage by walking directories that hold a manifest -- the
+// reading that ran over the file this one was built for. It is now a REFINEMENT
+// inside this call: the same sentence for the same state, printed instead of the
+// file list when the uncovered files sit in a package nobody declared.
 //
 // STILL NOT IN `prepareWorkspace`, for the reason already recorded beside the
 // name guard: that function is what the `bun test` preload runs, so a refusal
@@ -127,7 +131,7 @@ refuseMemberMappings(root, members);
 // AND BEFORE ANY MEMBER IS CHECKED, because a member that type-checks green
 // says nothing about the files its config never looked at: printing that green
 // first would leave a reader disbelieving the refusal that follows it.
-refuseUncoveredFiles(root);
+refuseUncoveredFiles(root, members);
 let failed = false;
 for (const member of members) {
   if (!typeCheckMember(root, member)) {

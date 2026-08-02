@@ -424,9 +424,23 @@ export function prepareWorkspace(root: string): void {
 }
 
 /**
- * Throws when a package sits somewhere the root type check excludes and the
- * workspace configuration does not declare -- the one state in which a package
- * is covered by nothing while every command still exits 0.
+ * The PACKAGE-SHAPED reading of an uncovered file: the sentence to print when
+ * what is really wrong is that a package sits somewhere the root type check
+ * excludes and the workspace configuration does not declare.
+ *
+ * IT REFINES A FAULT AND NO LONGER DECIDES ONE, which is the ruling and not a
+ * tidy-up. Deciding coverage by walking directories that hold a manifest is the
+ * UNFAITHFUL reading -- it is why a file planted one level inside a declared
+ * member ran under it and it said nothing -- and leaving it deciding alongside
+ * the compilers' own file lists would give this repository TWO ANSWERS TO ONE
+ * QUESTION that can disagree with every check green. So the file lists decide,
+ * and this says the actionable thing about what they found: a reader told to
+ * widen an `include` would be applying the wrong repair to a package that should
+ * have been declared.
+ *
+ * THE NARROWING IS DISCLOSED RATHER THAN DISCOVERED: an undeclared package
+ * holding NO TypeScript is no longer refused, because nothing about it is
+ * unchecked. Pinned as a decision in test/workspace-members.test.ts.
  *
  * IT READS THE EXCLUSION RATHER THAN RESTATING IT, so narrowing `workspaces`
  * while leaving `packages` excluded is caught here instead of going quiet.
@@ -445,7 +459,11 @@ export function prepareWorkspace(root: string): void {
  * red on a correct file. THE SAME ENUMERATOR `workspaces` IS READ WITH, so the
  * two keys this function compares cannot be interpreted differently.
  */
-export function refuseUncoveredPackages(root: string, members: readonly string[]): void {
+function packageShapedFault(
+  root: string,
+  members: readonly string[],
+  offenders: readonly string[],
+): string | undefined {
   const tsconfigPath = join(root, "tsconfig.json");
   const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8")) as Record<string, unknown>;
   const excluded = Array.isArray(tsconfig.exclude) ? tsconfig.exclude : [];
@@ -455,13 +473,20 @@ export function refuseUncoveredPackages(root: string, members: readonly string[]
       continue;
     }
     for (const found of excludedDirectories(root, entry)) {
-      if (!declared.has(found)) {
-        throw new Error(
-          `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`,
-        );
+      if (declared.has(found)) {
+        continue;
       }
+      // ONE OF THE UNCOVERED FILES MUST BE INSIDE IT. An undeclared package the
+      // file lists had nothing to say about is not a fault this reader is
+      // allowed to invent -- that is exactly the second opinion the ruling
+      // withdrew.
+      if (!offenders.some((offender) => join(root, offender).startsWith(found + sep))) {
+        continue;
+      }
+      return `${relative(root, found)} holds a package.json, is excluded from ${tsconfigPath}, and is not declared by \`workspaces\` -- nothing type-checks it.`;
     }
   }
+  return undefined;
 }
 
 /**
@@ -782,8 +807,15 @@ function readProgram(root: string, config: string): Program {
  * when one stops covering it. The framework's source is in both its check config
  * and its build config, so narrowing one alone reddens nothing here. The
  * property is `some program includes it`, not per-program coverage.
+ *
+ * AND THE FAULT IT REPORTS IS NOT ALWAYS THE FAULT TO FIX: where the uncovered
+ * files sit inside a package the root excludes and `workspaces` does not
+ * declare, the package-shaped sentence is printed instead of theirs. Widening an
+ * `include` is the wrong repair for a member nobody declared, and a missing
+ * workspace entry answered with a wall of file sentences is a regression on the
+ * message this check used to give.
  */
-export function refuseUncoveredFiles(root: string): void {
+export function refuseUncoveredFiles(root: string, members: readonly string[]): void {
   const tracked = checkoutPaths(root, ["ls-files", "-z"]);
   const visible = checkoutPaths(root, [
     // NOT DECORATION: this machine's own global ignore hides a file that is
@@ -821,6 +853,10 @@ export function refuseUncoveredFiles(root: string): void {
   });
   if (offenders.length === 0) {
     return;
+  }
+  const packaged = packageShapedFault(root, members, offenders);
+  if (packaged !== undefined) {
+    throw new Error(packaged);
   }
   // EVERY OFFENDER AND NOT THE FIRST, which is the opposite of the choice
   // `refuseMemberDirectoriesUnlikeTheUnscopedName` makes and for the reason that
