@@ -224,9 +224,12 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * bun 1.3.13 / tsc 7.0.2, with the handler type's RETURN narrowed in the
  * framework's src/ ALONE and its NAME kept: this build EXITS 0 against the
  * artifact that predates that edit and EXITS 2, TS2322 naming its own handler
- * function, against one rebuilt after it -- and in the stale cell `bun pm pack`
- * EXITS 0 AND PRODUCES ITS TARBALL. So two green commands in an order nothing
- * forbids ship declarations graded against a shape the framework no longer has.
+ * function, against one rebuilt after it. AND IN THE STALE CELL `bun pm pack`
+ * HERE EXITS 0 AND PRODUCES ITS TARBALL -- READ IN THIS PACKAGE AND NOT
+ * INHERITED FROM THE OTHER HANDLER'S CELL, in a staged tree at base 1d37757 on
+ * the same versions, because a pack cell taken in one package is a claim about
+ * that package. So two green commands in an order nothing forbids ship
+ * declarations graded against a shape the framework no longer has.
  * test/stale-framework-artifact.test.ts stages that pair.
  *
  * AT ONE SHAPE IN ONE DIRECTION, WHICH BOUNDS THE SENTENCE ABOVE RATHER THAN

@@ -106,14 +106,16 @@ applySuiteDeadline();
  * opens `rm -rf dist`. Both handlers' dist/ is deleted and recompiled before any
  * test body runs, so the preload's output is already gone by the time anything
  * here opens a file. IT IS NOT THE ONLY REBUILDER AND THAT DOES NOT WEAKEN THE
- * POINT: each member's README carries its own `bun pm pack` and
- * test/readme.test.ts executes every README command, and `installConsumer` in
- * test/helpers/install.ts packs EVERY handler from where it lives, reached from
- * five test files -- so which pack this reads depends on order, and every
- * candidate is a PACK rather than the preload. THE THIRD ONE WAS ADDED BY AN
- * ENUMERATION THAT WENT LOOKING, and the two-item version stood here while being
- * the set this paragraph's reasoning runs over: a candidate list is a claim, and
- * this one was written from memory.
+ * POINT: each HANDLER's README carries its own `bun pm pack` and
+ * test/readme.test.ts executes the pack command it carries, and
+ * `installConsumer` in test/helpers/install.ts packs every handler root it is
+ * not asked to withhold, from where it lives -- so which pack this reads depends
+ * on order, and every candidate is a PACK rather than the preload. THE THIRD ONE
+ * WAS ADDED BY AN ENUMERATION THAT WENT LOOKING, and the two-item version stood
+ * here while being the set this paragraph's reasoning runs over: a candidate
+ * list is a claim, and this one was written from memory. `EACH MEMBER'S` WAS THE
+ * SAME DEFECT ONE WORD WIDE -- three members, two READMEs, the framework's pack
+ * line living in the checkout root's README instead.
  *
  * SO THE COVERAGE IS NARROWER THAN THE TRANSFORM NAMED ABOVE, AND THE LINE IS
  * WHICH BUILD WROTE THE FILE. A transform living in a HANDLER'S OWN `prepack`

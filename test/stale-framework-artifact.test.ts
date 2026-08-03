@@ -116,7 +116,16 @@ interface Stage {
  * reason that helper carries: the checkout's node_modules holds entries leading
  * back to the very packages staged here, and handing the directory over would
  * give the handler a second route to the framework it is supposed to reach only
- * one way.
+ * one way. MIRRORED ONCE, AT THE STAGE ROOT, and both packages reach it by
+ * WALKING UP -- not per package, which is what a reader would otherwise assume
+ * from two copied trees.
+ *
+ * THE FRAMEWORK'S DESTINATION IS SPELLED AS A PATH RATHER THAN READ OFF ITS
+ * MANIFEST, which is a place this file does not practise its own principle and
+ * says so instead of hiding it. WHAT MAKES IT TOLERABLE IS THE ARM'S SHAPE: a
+ * renamed package leaves the copy where nothing resolves it, both cells answer
+ * TS2307, they AGREE, and the disagreement assertion reddens -- MEASURED as this
+ * arm's second degenerate rather than predicted.
  */
 function stage(): Stage {
   const root: ThrowawayPath = throwawayOnly(mkdtempSync(join(tmpdir(), "tsudoi-stale-")));
