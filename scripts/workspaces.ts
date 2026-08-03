@@ -718,10 +718,15 @@ function whereSubpathsLand(
  * so. test/unbuilt-artifact.test.ts stages that disagreement; this is the thing
  * that ends it for a workspace this check is pointed at.
  *
- * WHAT IT DOES NOT RULE OUT, AND IT IS THE LARGER HALF. It runs AFTER the build,
- * so the state it catches is an artifact that SURVIVED one and still does not
- * answer -- a partial emit, a build skipped for a package with no build config,
- * a dist/ removed by hand between the build and the check. IT DOES NOTHING FOR A
+ * WHAT IT DOES NOT RULE OUT, AND IT IS THE LARGER HALF. AS CALLED it runs AFTER
+ * the build, so the state it catches is an artifact that SURVIVED one and still
+ * does not answer -- a partial emit, a build skipped for a package with no build
+ * config, a dist/ removed by hand between the build and the check. `AS CALLED`
+ * IS LOAD-BEARING RATHER THAN A HEDGE, AND WAS MEASURED: called with no build in
+ * front of it this function reports every framework subpath answering from src/,
+ * so what bounds its subject is THE ORDER AT ITS ONE CALL SITE and nothing in
+ * the function. The reading is written where the consequence is, at the trailer
+ * below. IT DOES NOTHING FOR A
  * BARE `tsc --noEmit` ON A CHECKOUT NOBODY HAS BUILT: that command is the fourth
  * Definition-of-Done check, and the only invocation of it this repository owns
  * runs AFTER the first check has built -- scripts/definition-of-done.ts spawns it
@@ -816,6 +821,26 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
         const landed = answered.get(specifier);
         return `${specifier} answers from ${landed === undefined ? "NOTHING" : relative(root, landed)}, where its \`types\` arm promises ${relative(root, declaration)}.`;
       }),
+      // THIS TRAILER IS THE FOURTH PLACE `graded a file no consumer receives`
+      // WAS WRITTEN, AND THE ONLY ONE LEFT STANDING WHEN THE OTHER THREE WERE
+      // SUPERSEDED. The ground recorded for leaving it was that ITS SUBJECT IS
+      // DIFFERENT -- an artifact that SURVIVED a build and still does not
+      // answer, a fault on its own ground rather than the retired implicature.
+      // MEASURED FALSE ABOUT THIS FUNCTION at base 488787c: with
+      // packages/tsudoi-language-server/dist MOVED ASIDE with a literal `mv` and
+      // `refuseSubpathsAnsweringFromSource(root, declaredMembers(root))` called
+      // directly, it throws with ALL FOUR framework subpaths answering from
+      // src/*.ts and prints this trailer -- in a state where NO BUILD RAN AT
+      // ALL, which is the retired implicature firing in the retired state.
+      //
+      // SO THE GROUND IS THE CALL ORDER AND NOT A DIFFERENT SUBJECT, which is a
+      // narrower thing to rest on and is worth knowing before someone reuses
+      // this function. The sole caller is scripts/typecheck-workspaces.ts, which
+      // runs `prepareWorkspace` first; test/artifact-detector.test.ts drives
+      // THAT COMMAND rather than this function, so it inherits the same order.
+      // A second caller placed before a build would reach the unreachable state
+      // on its first run.
+      //
       // THE SECOND SENTENCE IS TRUE OF TWO OF THE THREE OFFENDERS ABOVE AND NOT
       // OF THE THIRD, said here because the trailer prints for all three. It
       // describes an artifact that is MISSING OR HALF WRITTEN -- the realpath
