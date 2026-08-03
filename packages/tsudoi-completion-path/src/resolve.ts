@@ -16,11 +16,18 @@
  * completion never asked what was inside the entries it offered, so this is a
  * question that gets asked here or nowhere. THE SYSCALL ARGUMENT DOES NOT SETTLE
  * IT EITHER, AND NOT FOR THE REASON WRITTEN HERE BEFORE: `one opendir is the
- * same order as one stat` is false where it matters. MEASURED on five thousand
- * entries -- deno 2.8.3 pays 37 ms for the OPEN ALONE, before an entry is read,
- * against 0.088 ms for a stat, because its `opendir` reads the whole directory
- * synchronously (see the listing below); bun 1.3.13's open is lazy and costs
- * 0.004 ms against 0.053 ms. What settles it is the arithmetic per HIGHLIGHT
+ * same order as one stat` is false where it matters. RE-TAKEN on five thousand
+ * entries, both runtimes in one session -- deno 2.8.3 pays 2.402 ms (2.387-2.612)
+ * for the OPEN ALONE, before an entry is read, against 0.032 ms (0.023-0.124) for
+ * a stat, because its `opendir` reads the whole directory synchronously (see the
+ * listing below); bun 1.3.13's open is lazy and costs 0.001 ms (0.001-0.003)
+ * against 0.011 ms (0.010-0.016). THE 37 ms THAT STOOD HERE FOR THAT OPEN IS
+ * RETIRED BY NAME, and it was falsifiable from inside this file: a whole
+ * open-plus-drain-plus-retain at that size measures 9.619 ms now, so the part
+ * cost more than the whole. WHAT SURVIVES UNTOUCHED IS THE MECHANISM the sentence
+ * exists for -- deno's open costs a thousand times bun's and dominates its own
+ * stat, where on bun the stat dominates the open. What settles it is the
+ * arithmetic per HIGHLIGHT
  * rather than per keystroke, below, and what the bound is really about is the
  * PAYLOAD: bytes in one response and lines in one popup.
  *
@@ -81,10 +88,12 @@ import type { Stats } from "node:fs";
 // `opendir` TAKES NO OPTIONS ARGUMENT HERE, and that is a compatibility reading
 // rather than a style: deno's node:fs rejects `opendir(path, {})` outright --
 // `The "options.bufferSize" property must be of type number. Received undefined`
-// -- where bun accepts it. MEASURED on deno 2.8.3, and a larger bufferSize was
-// measured to buy nothing worth the divergence anyway (5000 entries, deno: 127
-// ms at the default against 92 ms at 1024, against 45 ms for the shape this
-// module gave up; bun: within noise of each other).
+// -- where bun accepts it. MEASURED on deno 2.8.3. THE TIMINGS THAT STOOD HERE
+// FOR TWO VALUES OF `bufferSize` ARE RETIRED RATHER THAN RE-TAKEN, and the reason
+// is a mechanism this module records further down: deno's `Dir` never reads that
+// option for anything at all, so a comparison between two of its values was
+// timing nothing it named. The compatibility refusal above is what this comment
+// is for, and it stands on its own reading.
 import { opendir, stat } from "node:fs/promises";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import {
@@ -244,15 +253,25 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
 /**
  * What one directory holds, ready to be rendered.
  *
- * THE WHOLE DIRECTORY IS READ, ON PURPOSE, and the cost was MEASURED rather than
- * feared: one directory of five thousand entries, names only, drains in 51 ms on
- * bun 1.3.13 and 135 ms on deno 2.8.3 (macOS/APFS, mean of 5), against the ~1.1 s
- * of per-entry stats this package exists to refuse and against a completion half
- * that ALREADY drains an entire directory on every keystroke to filter it. A
- * drain once per HIGHLIGHT cannot be the expensive thing here. THOSE TWO NUMBERS
- * ARE THE RULING'S PROVENANCE AND NOT THIS SHAPE'S COST -- they were read off the
- * `readdir` this function no longer uses, and what the shape below measures is
- * further down.
+ * THE WHOLE DIRECTORY IS READ, ON PURPOSE, and the cost was RE-TAKEN at this base
+ * rather than inherited: one directory of five thousand entries, names only,
+ * drains through `readdir` in 2.528 ms on bun 1.3.13 and 6.374 ms on deno 2.8.3,
+ * and through the handle this function uses in 2.080 ms and 9.619 ms (macOS/APFS,
+ * warm, medians of fifteen interleaved rounds). THE 51 ms AND 135 ms THAT STOOD
+ * HERE ARE CORRECTED IN PLACE RATHER THAN FILED, because this session's own rows
+ * have the same subject: they are the `readdir` drain at that size, and they do
+ * not reproduce on this machine. A drain once per HIGHLIGHT is still not the
+ * expensive thing here, and the completion half beside this file still drains an
+ * entire directory on every keystroke to filter it.
+ *
+ * THE `~1.1 s` OF PER-ENTRY STATS IS A DIFFERENT RULING'S NUMBER AND IS FILED AS
+ * SUSPECT BY ASSOCIATION RATHER THAN RENUMBERED. It came from the session whose
+ * every other figure this base contradicts, and nothing in this reading has its
+ * subject -- a stat per entry was not measured here, and multiplying the
+ * single-stat cell above by an entry count would be arithmetic wearing a
+ * measurement's clothes. What the refusal rests on is unaffected: the completion
+ * half runs per KEYSTROKE, this runs per HIGHLIGHT, and a stat per entry is the
+ * only one of the three whose cost grows with the directory on the keystroke.
  *
  * WHAT DOES NOT SHRINK WITH IT IS THE PAYLOAD -- those five thousand names are
  * eighty-five thousand characters in one response and five thousand lines in one
@@ -265,11 +284,14 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * ARRAY and SORTED it
  * to keep twenty, so the working set grew with the directory while the payload
  * did not -- and the sentence that stood here calling that cost LINEAR was
- * FALSE: a sort is N log N. MEASURED at a hundred thousand entries, which the
- * old sentence admitted it had never read: the array shape took 888 ms on bun
- * 1.3.13 and 1289 ms on deno 2.8.3, of which the SORT ALONE was 515 ms and 386
- * ms -- against 315 ms and 1977 ms for the streaming shape below (macOS/APFS,
- * mean of 5, machine under load). Only the names still standing in the first
+ * FALSE: a sort is N log N. RE-TAKEN at a hundred thousand entries: the array
+ * shape takes 61.302 ms on bun 1.3.13 and 138.507 ms on deno 2.8.3, against
+ * 42.616 ms and 204.036 ms for the streaming shape below (macOS/APFS, warm,
+ * medians of seven interleaved rounds). THE SPLIT THAT NAMED THE SORT ALONE IS
+ * NOT RE-TAKEN AND IS NOT REPEATED: this session timed whole shapes, so it cannot
+ * say what part of either belongs to the sort, and a number carried forward from
+ * the session whose neighbours it contradicts would be the exact defect this
+ * paragraph is being repaired for. Only the names still standing in the first
  * twenty are kept, so what this function holds is twenty strings and one dirent
  * whatever the directory holds.
  *
@@ -288,12 +310,17 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * comment on the line is `Throws if path is invalid` -- then builds `new
  * Dir(path)`, which stores the path and nothing else; the entries come later
  * from a SEPARATE async op the first `read()` starts. So the whole directory is
- * read and thrown away at the open, which is where the 37 ms and the 57 -> 119
- * MB come from and why they are real, and the handle holds none of it. READ IN
- * DENO'S OWN SOURCE and then measured two ways rather than argued: sixteen
- * unread handles on one hundred-thousand-entry directory leave `heapUsed`
+ * read and thrown away at the open, which is where that runtime's open cost and
+ * the 57 -> 119 MB come from and why they are real, and the handle holds none of
+ * it. READ IN DENO'S OWN SOURCE and then measured two ways rather than argued:
+ * sixteen unread handles on one hundred-thousand-entry directory leave `heapUsed`
  * unmoved at 6 MB after a forced collection, and their resident set plateaus at
- * 206 MB where sixteen retained copies would be near 600.
+ * 206 MB where sixteen retained copies would be near 600. THOSE THREE MEMORY
+ * READINGS ARE INHERITED AND SAY SO: they are the mechanism, nothing in this
+ * shape's re-take touches them, and no timing here is evidence for or against
+ * them. WHAT NEITHER INSTRUMENT SEPARATES, named rather than glossed: what deno's
+ * LAZY read materialises once iteration has started. The transient allocation
+ * measured above is the OPEN's.
  *
  * (Resident set says where the ALLOCATION happens and never what stays, which is
  * exactly the distinction that made the earlier sentence wrong; `heapUsed` after
@@ -350,16 +377,58 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * process. The instrument cannot separate a runtime's cost from this
  * filesystem's, and says nothing about a cold cache or a network mount.
  *
- * WHAT IT BUYS IS NOT THE SAME TRADE ON THE TWO RUNTIMES, AND THE SENTENCE THAT
- * STOOD HERE NAMED ONLY THE BETTER HALF. On bun it buys both: this function's
- * working set, and a superlinear term gone at the tail -- 888 ms down to 315 ms
- * at a hundred thousand entries. ON DENO IT BUYS THE WORKING SET AND THE TAIL
- * GETS WORSE: 1289 ms up to 1977 ms at the same size, on top of the 45 -> 127 ms
- * at five thousand. Streaming is slower on deno at EVERY size these readings
- * cover, including the one this shape was adopted for, and the sort disappearing
- * does not buy it back there. What is bought on that runtime is that a highlight
- * on a directory of any size makes THIS function hold twenty names, and the
- * price is paid in time at the tail rather than saved there.
+ * THE RULING, TAKEN ON THE READING ABOVE AND SUPERSEDING WHAT STOOD HERE RATHER
+ * THAN CORRECTING IT LINE BY LINE. The shape was re-decided rather than
+ * inherited, and the decision is THIS SHAPE STAYS.
+ *
+ * WHO PAYS AND HOW MUCH, SIGNED. At five thousand entries -- the size this module
+ * calls ordinary -- keeping the handle costs DENO +3.261 ms per highlight against
+ * the array shape it replaced and +4.157 ms against an array read under this same
+ * gate, and it SAVES BUN 0.460 ms against the first while costing it 0.601 ms
+ * against the second. Both are outside the instrument's own noise on both
+ * runtimes, so this is not a ruling that the shapes are indistinguishable. The
+ * array read under this gate is the FASTEST of the three at every size on both
+ * runtimes and is refused below on what it holds, not on what it costs.
+ *
+ * WHAT THE SHAPE STILL BUYS, PER RUNTIME AND AFTER THE TRANSIENT-ALLOCATION
+ * READING, WHICH IS THE PART THAT DECIDED IT. On bun the process materialises the
+ * directory behind the handle anyway, so what the bound buys there is THIS
+ * FUNCTION'S OWN working set beside a copy the process holds regardless -- an
+ * array here would be a SECOND copy -- plus a tail that is 42.616 ms against
+ * 61.302 ms at a hundred thousand. On deno the open allocates and DISCARDS, so
+ * the process holds no whole directory at that point and an array here would be
+ * a retention it does not have today. THAT IS THE INVERSION, AND IT IS WHY THE
+ * TIME IS PAID WHERE IT IS: the runtime paying is the runtime where this
+ * function's bound is the only one available. It is narrowed rather than
+ * overstated -- what deno's lazy read materialises after the first entry is
+ * separated by no instrument here.
+ *
+ * AGAINST THE BUDGET, WHICH IS NAMED BECAUSE A DELTA WITHOUT ONE IS A NUMBER
+ * WITHOUT A JUDGEMENT: this runs ONCE PER HIGHLIGHT, on a moment the user is
+ * already waiting through a popup, and NEVER on the keystroke path -- the
+ * completion half beside this file owns that path and drains a directory on every
+ * one of them. NO CLAIM IS MADE HERE ABOUT WHAT A PERSON CAN PERCEIVE. `the
+ * difference is imperceptible` names no quantity, no threshold and no observer,
+ * and the measurement that would license it -- an editor, a plugin chain, a
+ * setting -- was not taken and is not in this suite. THE ONE AMPLIFIER IS A
+ * MACHINE COST AND IS NOT DRESSED AS A LATENCY: a user arrowing through a popup
+ * supersedes each highlight with the next keystroke, and on deno an abandoned
+ * read cannot be cut short, so every superseded highlight pays its whole drain at
+ * the per-highlight number above. None of it blocks the popup.
+ *
+ * WHAT WOULD REOPEN THIS, so it can age rather than harden into folklore: deno's
+ * `opendir` ceasing to discard -- at which point the bound this function keeps
+ * buys nothing there and the time is paid for nothing; bun's `Dir` ceasing to
+ * materialise on the first read, which would make the bound on bun worth what it
+ * is worth on deno today; or the ordinary-size delta on deno falling INSIDE the
+ * null cell when the instrument is re-run, which would mean the cost being
+ * accepted here has gone. The reading to take again is the tracked one, both
+ * runtimes, one session.
+ *
+ * AND ONE SENTENCE THAT STOOD HERE SURVIVES, RE-TAKEN RATHER THAN REPEATED:
+ * streaming is slower on deno at EVERY size this reading covers -- 200, five
+ * thousand and a hundred thousand -- including the one the shape was adopted for,
+ * and the sort disappearing does not buy it back there.
  *
  * `opendir` RATHER THAN `readdir`, AND THE REASON IS THIS FUNCTION'S WORKING
  * SET. It was `readdir` one commit ago on the ground that nothing here then
@@ -410,7 +479,8 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * On deno the directory has ALREADY been read once by then -- `opendir` calls
  * `Deno.readDirSync` to fail early on a path that is not a directory -- so what
  * is skipped there is the async drain, which is the expensive half on that
- * runtime anyway (about 127 ms at five thousand entries, above).
+ * runtime anyway -- 9.619 ms for the whole listing at five thousand entries
+ * against 2.402 ms for the open alone, both above and both re-taken at this base.
  *
  * AND WHAT CAN REACH THAT SEAM IS NARROWER THAN `a cancellation arriving while
  * the directory opens`, MEASURED AT A HUNDRED THOUSAND ENTRIES so a lazy open
@@ -425,6 +495,14 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * REMOVED because it is one boolean read against a drain, and because the
  * measurement that makes it narrow is the runtimes' current shape rather than
  * anything the protocol promises.
+ *
+ * THE TWO DURATIONS IN THAT PARAGRAPH ARE FILED AS SUSPECT BY ASSOCIATION rather
+ * than renumbered, and the distinction is which ruling they belong to: they were
+ * taken in the session whose every figure about THIS shape this base contradicts,
+ * and nothing in the re-take has their subject -- the open alone was re-taken at
+ * five thousand entries and not at a hundred thousand. WHAT THE SEAM'S ARGUMENT
+ * ACTUALLY RESTS ON IS THE TURN COUNT -- one microtask, no macrotask -- which is
+ * a count rather than a duration, and which this sprint did not re-take either.
  *
  * SORTED BY CODE UNIT AND NEVER BY LOCALE, and the first reason is testability
  * rather than taste: a directory's own order is the filesystem's bookkeeping,
