@@ -1231,10 +1231,13 @@ export interface CoverageReading {
  * is the author's-intention failure with the marker swapped for the sweep's own
  * run. What decides is the TABLE, and the marker only says which block.
  *
- * THREE REFUSALS, PRINTED DIFFERENTLY ON PURPOSE, because two states that
- * produce byte-identical text are one red and not two: a document in no pairing,
- * a block no consumer reaches, and an account whose projection names none of the
- * block's own bytes.
+ * FOUR REFUSALS, PRINTED DIFFERENTLY ON PURPOSE, because two states that produce
+ * byte-identical text are one red and not two: a document in no pairing, a block
+ * no consumer reaches, an account whose projection is EMPTY, and an account with
+ * a member the block does not contain. THE LAST TWO WERE THREE STATES UNDER TWO
+ * SENTENCES until the fourth was split out -- an EMPTY member was printed as one
+ * `the block's own bytes do not contain it`, which is untrue of every block,
+ * since every string contains the empty string.
  *
  * A DOCUMENT IN NO PAIRING IS REFUSED BEFORE A SINGLE BLOCK IS LOOKED AT. A
  * blockless README that nothing opens is still a document this repository ships
@@ -1294,17 +1297,35 @@ export function readmeCoverage(root: string): CoverageReading {
         });
         continue;
       }
-      // UNREACHABLE FROM THE TABLE AS IT STANDS, AND SAID SO RATHER THAN ARMED
-      // WITH A ROW WRITTEN TO FIRE IT: every shipped projection is built by
-      // MATCHING over `block.body`, so none of them can answer a string the
-      // block does not contain. It is kept because a row added tomorrow can --
-      // a projection that computes a name, or reads one from a manifest, is the
-      // obvious next kind -- and because the refusal above it, which IS armed,
-      // only catches the empty case. A fixture row invented to green this branch
-      // would be arming the sweep against a consumer this repository does not
+      // TWO STATES UNDER ONE SENTENCE, AND THE SENTENCE WAS UNTRUE OF ONE OF
+      // THEM: an EMPTY member was reported as one `the block's own bytes do not
+      // contain`, which no block can make true, since every string contains the
+      // empty string. Split rather than reworded, because the two are repaired
+      // in different places -- an empty member is a projection that ran and
+      // found nothing, a missing one is a projection that was never a reading.
+      //
+      // AND THEY DIFFER IN REACH, WHICH IS WHY NEITHER IS DROPPED. THE EMPTY
+      // MEMBER IS REACHABLE FROM THE TABLE AS IT STANDS: a marked install block
+      // with no command in it gives `soleCommandIn` `""` and `installedPath`
+      // `""`, so the projection has ONE member, the empty-projection refusal
+      // above does not fire, and this one does. THE MISSING MEMBER IS NOT
+      // REACHABLE TODAY -- every shipped projection is built by MATCHING over
+      // `block.body`, so none of them can answer a string the block does not
+      // contain -- and it is kept rather than armed with a row written to fire
+      // it, because a projection that computes a name or reads one from a
+      // manifest is the obvious next kind, and a fixture row invented to green
+      // it would be arming the sweep against a consumer this repository does not
       // have.
       for (const part of subject) {
-        if (part === "" || !block.body.includes(part)) {
+        if (part === "") {
+          offenders.push({
+            document,
+            line: block.line,
+            report: `${document}:${String(block.line)} is accounted for by ${consumer.name}, whose projection answers an EMPTY member -- a member that names no bytes accounts for none, whatever the block says`,
+          });
+          continue;
+        }
+        if (!block.body.includes(part)) {
           offenders.push({
             document,
             line: block.line,
