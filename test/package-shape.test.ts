@@ -553,6 +553,19 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  *   the probe takes this arm in every state of this repository. That is the
  *   blocker, and it is asserted rather than described in
  *   test/unbuilt-artifact.test.ts.
+ *   AND THE STATE IN WHICH THIS ARM ANSWERS IS REACHED BY A ROUTE RATHER THAN
+ *   BY AN ACCIDENT, MEASURED AT SPRINT 61 on a staged tree nobody had built:
+ *   `bun pm pack` in each handler package leaves every HANDLER artifact present
+ *   and this package's absent, and the root check is then exit 0 and silent with
+ *   every subpath of this map TRACED to src/. The arm stays for the cost above;
+ *   what moved is that the state it answers in is producible by two documented
+ *   commands rather than by a hand-made deletion.
+ *
+ * THE FIRING CONDITION IS THIS TEST, AND IT IS NAMED SO A READER DOES NOT INFER
+ * IT: the literal below spells `default` for every subpath, so the day someone
+ * deletes or retargets a source arm -- the fix PBI-60 refused -- THIS equality
+ * is what goes red first, by name, before any resolution test does. That is what
+ * makes the refusal terminate rather than persist by being forgotten.
  *
  * NOT ASSERTED, and named rather than left to be found: in the tarball the
  * `default` arm points at a path that is not shipped, so a resolver matching

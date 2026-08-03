@@ -429,6 +429,19 @@ function build(root: string, dir: string): void {
  * rather than here: it is the evidence the move was worth making, and it is
  * about a route this repository no longer has.
  *
+ * WHAT WRITES A dist/ AND WHAT REMOVES ONE, ENUMERATED RATHER THAN SAMPLED,
+ * because a reader who finds an artifact missing asks this question here first
+ * and there is no other site that can answer it. WRITERS: this function, through
+ * `build` above -- reached from the `bun test` preload and from the fifth check
+ * -- and each member's own `prepack`, reached by `bun pm pack` or `npm pack` run
+ * in that member. REMOVERS: NOTHING REMOVES A dist/ IT DOES NOT REWRITE ON THE
+ * SAME LINE. Both handler packages' `prepack` opens with `rm -rf dist` and
+ * rebuilds in the same command; the framework's `prepack` removes nothing at
+ * all; every other recursive delete in tracked code stands in a staged tree
+ * under the temporary directory. SO AN ABSENT ARTIFACT IS NEVER ONE A COMMAND
+ * TOOK AWAY -- it is one nothing has written yet, and which absences are loud is
+ * measured at test/helpers/build.ts.
+ *
  * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
  * tsc writes dist/ and THEN exits non-zero, so a failed build leaves a fresh,
  * wrong artifact behind. Callers throw; nothing here cleans up.

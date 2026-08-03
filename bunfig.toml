@@ -36,6 +36,27 @@
 # scripts/workspaces.ts -- which is narrower than this residue: it runs AFTER a
 # build and says nothing about the bare `tsc --noEmit` this paragraph is about.
 #
+# AND THE STATE THIS PARAGRAPH DESCRIBES HAS A NAMED PRODUCER, WHERE IT USED TO
+# READ AS IF IT TOOK A TARGETED DELETE. MEASURED END TO END at sprint 61 on a
+# staged tree nobody had built, tsc 7.0.2 at base 6d1c85d: `bun pm pack` in one
+# handler package and then in the other -- each in the member it is documented
+# for -- EXITS 0 and produces its tarball, because the prepack compiler answers
+# `@atusy/tsudoi-language-server/{types,deps/types}` from
+# packages/tsudoi-language-server/src/*.ts and never notices the artifact it was
+# promised is missing. After the first pack the root check is exit 1 with ONE
+# error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with this package's dist/
+# still absent -- the residue above, arrived at by two documented commands.
+#
+# CONSTRAINED, BECAUSE THE HONEST CLAIM IS NARROWER THAN THE ALARMING ONE: NO
+# SINGLE INVOCATION THIS REPOSITORY OWNS PRODUCES THAT STATE. The preload below
+# and the fifth check both build this package first, and test/helpers/install.ts
+# packs the handlers only after the preload has built. What produces it is TWO
+# DOCUMENTED COMMANDS IN AN ORDER NOTHING FORBIDS, and nothing runs that route
+# today -- so what changed is that the cell no longer needs a hand-made deletion,
+# not that anything here reaches it. WHAT WRITES AND WHAT REMOVES A dist/ IS
+# ENUMERATED AT `prepareWorkspace` in scripts/workspaces.ts, and what the whole
+# arrangement does to the fourth check's colour is at test/helpers/build.ts.
+#
 # MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
 # number written here goes stale with nobody editing it -- the suite grows and
 # the sentence quietly stops being true -- so what is kept is the SHAPE of the

@@ -63,6 +63,25 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * fourth check is still the command with the hole, and nothing in this
  * repository owns its invocation.
  *
+ * WHICH ARRANGEMENT OF dist/ THIS PRELOAD STANDS IN FRONT OF, TAKEN AS CELLS
+ * BECAUSE THE COLOUR OF THAT CHECK REPORTS THE HANDLERS' ARTIFACTS AND NEVER
+ * THIS PACKAGE'S. Root `tsc --noEmit`, tsc 7.0.2, base 6d1c85d -- read in the
+ * real checkout with every dist/ MOVED ASIDE and restored, and in a staged copy
+ * for the mixed states. Everything built: exit 0, silent. Nothing built: exit 1
+ * naming THE TWO HANDLER PACKAGES at examples/tsudoi.config.ts. This package
+ * built and the handlers not, which is what an interrupted build order leaves:
+ * exit 1 with the same two. One handler missing: exit 1 with one. AND THIS
+ * PACKAGE ABSENT WITH BOTH HANDLERS BUILT: EXIT 0 AND SILENT, every one of its
+ * subpaths TRACED to packages/tsudoi-language-server/src/*.ts while each
+ * handler answers from its own dist/. So a green fourth check is evidence about
+ * the handlers, and about this package it is evidence of nothing.
+ *
+ * AND THAT SILENT CELL IS NOT HAND-MADE, which is the half this comment used to
+ * leave a reader to assume: two documented commands in an order nothing forbids
+ * leave the tree in it. The route is written beside the residue it belongs to,
+ * in bunfig.toml, and what writes and what removes a dist/ is enumerated at
+ * `prepareWorkspace` in scripts/workspaces.ts.
+ *
  * stdio is inherited so a broken src/ prints tsc's own diagnostics, and the
  * throw on a non-zero exit is deliberate: a suite that ran on the previous
  * dist/ after a failed build is exactly the staleness this file removes.

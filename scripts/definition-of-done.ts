@@ -36,6 +36,28 @@ import { fileURLToPath } from "node:url";
  * first builds every artifact the fourth reads. Nothing here parallelises them,
  * and the order is the dashboard's, never this file's.
  *
+ * AND THAT ORDER IS WHAT LETS A READER DECIDE, IN ONE STEP, WHAT A GREEN FOURTH
+ * CHECK MEANT -- which until sprint 61 took re-deriving four cells from the
+ * dashboard, a file that is compacted on a schedule. The framework's `exports`
+ * map ends in a source arm, so `tsc --noEmit` answers its published subpaths
+ * from dist/ when the artifact is there and FROM src/ AT EXIT 0 WHEN IT IS NOT.
+ * A GREEN PRINTED BY THIS RUNNER WAS READ FROM dist/: the first check builds
+ * every artifact before the fourth reads, and the fifth then refuses any
+ * published subpath answering from anywhere but its `types` artifact. A GREEN
+ * FROM A BARE `tsc --noEmit` SAYS NOTHING ABOUT WHICH FILE ANSWERED, and if it
+ * was src/ that is the half NOTHING covers -- as against an artifact that
+ * survived a build, which is the fifth check's half.
+ *
+ * MEASURED AT SPRINT 61, base 6d1c85d, tsc 7.0.2, each cell taken with dist/
+ * MOVED ASIDE rather than deleted: with nothing built the fourth check is exit 1
+ * naming THE TWO HANDLER PACKAGES at examples/tsudoi.config.ts and the framework
+ * silent; with the framework's dist/ ALONE absent it is EXIT 0 AND SILENT, every
+ * framework subpath traced to packages/tsudoi-language-server/src/*.ts. That
+ * state is producible by two documented commands -- `bun pm pack` in each
+ * handler on a tree nobody has built, each exiting 0 -- and by nothing this
+ * repository runs. The route is written in bunfig.toml, the cells at
+ * test/helpers/build.ts.
+ *
  * UNRUNNABLE IS NOT PASSED, AND IT IS ITS OWN VERDICT. A command naming a binary
  * that is not installed is spawned DIRECTLY rather than through a shell, so it
  * arrives as a spawn error and can be reported as one; run through `sh -c` it
