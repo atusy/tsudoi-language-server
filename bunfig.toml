@@ -22,9 +22,19 @@
 # through the map's `default: ./src/*.ts` arm and reads
 # packages/tsudoi-language-server/src/types.ts -- exiting with only the two
 # errors the HANDLER packages produce, whose own maps name no source arm.
-# NOTHING DETECTS THAT FLIP. It is written here because this is the file whose
-# absence produces the state, and closing it is a separate decision about that
-# `default` arm.
+# RE-MEASURED at sprint 58 with the FRAMEWORK'S dist/ alone moved aside, which
+# isolates it: tsc then exits 0 with no diagnostic at all.
+#
+# THE SEPARATE DECISION THIS PARAGRAPH DEFERRED WAS TAKEN, AND IT REFUSED THE
+# DELETION. Removing the `default` arms makes the absent state loud -- TS2307
+# naming the framework's own subpaths, exactly as a handler already fails -- and
+# leaves every reader answering from the same file with the artifact present. It
+# is refused by the cost: three arms in this suite reach the framework through a
+# probe whose tree has the manifest and a symlinked src/ and NO dist/, so the
+# deletion turns graded resolutions into missing files. What landed instead is a
+# refusal on the FIFTH check -- `refuseSubpathsAnsweringFromSource` in
+# scripts/workspaces.ts -- which is narrower than this residue: it runs AFTER a
+# build and says nothing about the bare `tsc --noEmit` this paragraph is about.
 #
 # MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
 # number written here goes stale with nobody editing it -- the suite grows and

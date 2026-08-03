@@ -213,11 +213,16 @@ for (const [runtime, command] of Object.entries(route)) {
  *
  * THE SUBPATH IS TYPE-ONLY, AND THIS PROBE IS STILL NOT THE ONLY THING THAT
  * NOTICES THE ARM'S LOSS -- measured rather than reasoned, because the obvious
- * argument gets it wrong. MEASURED: dropping `import` from the `./types` arm
- * reddens FIVE tests -- this one, the type-only surface assertion in
- * test/published-artifacts.test.ts, and the deno halves of the installed-example
- * tests. `A type-only consumer never runs` is true of the TYPES and false of
- * the IMPORT STATEMENT that carries them.
+ * argument gets it wrong. RE-TAKEN at sprint 58, and the number this sentence
+ * used to carry had gone stale WITH NOBODY EDITING IT: `FIVE` was written and
+ * the same weakening now reddens six. So what is kept is the NAMES, which do not
+ * silently move. Dropping `import` from the `./types` arm reddens the type-only
+ * surface assertion in test/published-artifacts.test.ts, the exports equality
+ * pin in test/package-shape.test.ts, and FOUR arms in this file -- the deno
+ * handshake, the deno dictionary hover, this probe, and `a change to src/
+ * reaches the installed copy with no rebuild step`, which the old sentence did
+ * not name at all. `A type-only consumer never runs` is true of the TYPES and
+ * false of the IMPORT STATEMENT that carries them.
  *
  * WHY DENO IS IN THAT LIST AND BUN IS NOT, measured rather than reasoned:
  * examples/diagnostic-trailing-whitespace.ts writes

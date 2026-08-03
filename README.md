@@ -73,7 +73,9 @@ in a state `tsc --noEmit` reads.
 **It does not name tsudoi itself, and that is a known gap rather than a sign tsudoi is fine.**
 tsudoi's `exports` map ends in a source arm, so in that same unbuilt state the compiler quietly
 reads its sources instead of the artifact and says nothing -- while both runtimes fail loudly.
-A handler's map has no such arm, which is why only the handlers are named.
+A handler's map has no such arm, which is why only the handlers are named. The fifth command
+refuses a published subpath that answers from anywhere but the artifact, but it builds first, so
+what it catches is an artifact that survived a build rather than a checkout nobody has built.
 
 No `paths` mapping stands in for any of this, anywhere: tsudoi is a workspace member like the
 handlers, and a mapping would let a type check answer a package's imports without its own

@@ -20,21 +20,27 @@ const manifest = JSON.parse(
  * decision here that protects something outside this package.
  *
  * tsudoi's own map carries a third arm, `default`, pointing into ./src -- and
- * copying that shape here would be actively harmful. The root tsconfig EXCLUDES
- * packages/ so that its `paths` mapping cannot answer for a member, but
- * `exclude` filters the root FILE GLOB ONLY: it does not stop a file being
- * pulled into the program by MODULE RESOLUTION. examples/tsudoi.config.ts is in
- * the root program and imports this package, so a source arm would give root tsc
- * a route straight into src/hover.ts -- whose own tsudoi import the root's
- * mapping would then answer, reporting success for a member whose resolution
- * nobody checked. That is precisely the hazard the exclusion exists to make
- * unconstructible.
+ * copying that shape here would be actively harmful. THE REASON THIS PARAGRAPH
+ * USED TO GIVE NAMED A MECHANISM THAT NO LONGER EXISTS: it said the root
+ * tsconfig excludes packages/ so that its `paths` mapping cannot answer for a
+ * member, and there is no mapping anywhere in that repository now -- the
+ * framework is a workspace member like this one, and a refusal in
+ * scripts/workspaces.ts keeps members from writing one. The exclusion is still
+ * right and its reason is now the plain one: `exclude` filters the root FILE
+ * GLOB ONLY and does not stop a file being pulled into the program by MODULE
+ * RESOLUTION. examples/tsudoi.config.ts is in the root program and imports this
+ * package, so a source arm here would give root tsc a route straight into
+ * src/hover.ts -- graded by a program that excludes this package on purpose,
+ * reporting success for a member whose own resolution nobody checked.
  *
  * WHAT IT COSTS, so the next reader does not undo it looking for a quick fix:
  * everything resolves this package through dist/, so a checkout nothing has
  * built fails at `tsc --noEmit` naming it. Loud, and any other check clears it,
  * because both the test preload and the fifth Definition-of-Done check run one
- * shared builder in scripts/workspaces.ts.
+ * shared builder in scripts/workspaces.ts. THAT LOUDNESS IS EXACTLY WHAT
+ * TSUDOI'S THIRD ARM COSTS IT, MEASURED at sprint 58: with every dist/ removed,
+ * the root check names THIS package and the other handler and says nothing at
+ * all about tsudoi, whose subpaths the same run answers from source at exit 0.
  *
  * ASSERTED WHOLE RATHER THAN KEY BY KEY, as tsudoi's own map is: `exports` makes
  * every path not listed unreachable by bare specifier, so adding an entry is a

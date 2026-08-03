@@ -226,12 +226,26 @@ function publishedArm(condition: string): Record<string, string> {
  * The `types` arm answers only while dist/ EXISTS. With dist/ absent -- or
  * half-written, which is the window `rm -rf dist && tsc` passes through -- tsc
  * alone probes for the file, falls through the map's `default: ./src/*.ts` arm,
- * READS A DIFFERENT FILE AND EXITS 0. MEASURED during refinement, in both
- * states. NOTHING DETECTS THAT FLIP and no test here may: an assertion pinning
- * it would PASS while the residue persisted, specifying it rather than finding
- * it, and would make the later fix -- deleting the `default` arm -- look like a
- * regression. The arm below reads the state the suite's own preload guarantees,
- * and says nothing about the other one.
+ * READS A DIFFERENT FILE AND EXITS 0. RE-MEASURED at sprint 58 with the
+ * framework's dist/ ALONE moved aside: root tsc and both members' checks exit 0
+ * with NO diagnostic at all, every subpath answered from
+ * packages/tsudoi-language-server/src/*.ts, while both runtimes fail loudly. No
+ * test here may pin that: an assertion pinning it would PASS while the residue
+ * persisted, specifying it rather than finding it. The arm below reads the state
+ * the suite's own preload guarantees, and says nothing about the other one.
+ *
+ * THE FIX THIS PARAGRAPH PREDICTED WAS TAKEN, MEASURED AND REFUSED, which is the
+ * outcome it owes a reader rather than the prediction. Deleting the `default`
+ * arms leaves every reader answering from the same file it answers from today
+ * and turns the absent state into TS2307 naming the framework's own subpaths --
+ * both halves of what the item asked for. It is refused by the cost: three arms
+ * in this suite reach the framework through `typeCheckProbe`, whose tree has the
+ * manifest and a symlinked src/ AND NO dist/, so the deletion converts graded
+ * resolutions into missing files. WHAT REPLACES THE PREDICTION IS A DETECTOR
+ * RATHER THAN A PIN: `refuseSubpathsAnsweringFromSource` in
+ * scripts/workspaces.ts refuses, on the fifth check and after the build, a
+ * published subpath answering from anywhere but the artifact -- which is
+ * narrower than this residue and says so at its own site.
  *
  * tsconfig.build.json GETS NO MAPPING EITHER, and that half is unchanged. It
  * `include`s src alone, which never imports the bare specifier, so a mapping
@@ -519,14 +533,26 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  *   resolves to, and it names a file the tarball contains. Pinned by
  *   test/installed-runtime.test.ts, with the pair that drops it.
  * - `default` -> src/types.ts is the IN-REPO FALLBACK and is reached only
- *   because tsc falls through a condition whose target file is missing. That
- *   fall-through does NOT serve `tsc --noEmit`: a `paths` mapping intercepts
- *   the subpath before the exports map is consulted, so tsc never reaches this
- *   arm. MEASURED that it has other consumers -- removing every `default` arm
- *   leaves tsc at exit 0 and reddens FOUR tests -- and MEASURED that it is
- *   needed here: repointing this subpath at dist/ unconditionally breaks
- *   examples/tsudoi.config.ts and test/fixtures/published-specifier.ts with
- *   TS2307.
+ *   because tsc falls through a condition whose target file is missing. THE
+ *   LICENCE THIS BULLET USED TO CARRY WAS A MECHANISM THIS REPOSITORY NO LONGER
+ *   HAS -- it said a `paths` mapping intercepts the subpath before the exports
+ *   map is consulted, so tsc never reaches this arm, and there is no mapping
+ *   anywhere now. RE-MEASURED at sprint 58 under tsc 7.0.2, bun 1.3.13 and deno
+ *   2.8.3, and the correction runs both ways: root `tsc --noEmit` DOES consult
+ *   this map, answers every subpath from dist/ while the artifact is there, and
+ *   falls through to THIS ARM the moment it is not -- exit 0, no diagnostic,
+ *   reading a file no consumer receives.
+ *   WHAT DELETING THE ARM COSTS, RE-TAKEN RATHER THAN QUOTED, because the
+ *   recorded costs were measured under the layout the move destroyed: with the
+ *   artifact present every reader answers from exactly the same file it answers
+ *   from today, and the suite reads 875 pass / 4 fail. THE FOUR ARE NOT ONE
+ *   KIND. This equality pin is a literal that moves; the other three are
+ *   test/published-artifacts.test.ts's in-repo arm and the two probes in
+ *   test/published-specifier.test.ts, and all three go red because
+ *   `typeCheckProbe` stages this manifest with src/ SYMLINKED AND NO dist/, so
+ *   the probe takes this arm in every state of this repository. That is the
+ *   blocker, and it is asserted rather than described in
+ *   test/unbuilt-artifact.test.ts.
  *
  * NOT ASSERTED, and named rather than left to be found: in the tarball the
  * `default` arm points at a path that is not shipped, so a resolver matching
@@ -606,18 +632,25 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 //
 // THE REPO'S OWN dist/, which is a different artifact from the tarball's:
 // examples/diagnostic-trailing-whitespace.ts takes DiagnosticSeverity -- a
-// VALUE -- from
-// `@atusy/tsudoi-language-server/deps/types`, and THE TWO RUNTIMES ANSWER THAT
-// SUBPATH FROM DIFFERENT FILES. Deno takes the exports map's `import` arm to
-// ./dist/deps/types.js. Bun never reaches the map: the `paths` mapping above
-// intercepts the subpath into ./src/deps/types.ts. MEASURED under bun 1.3.13
-// and deno 2.9.2, in the two arms that discriminate it -- deleting `paths`
-// moves BUN's own resolution onto ./dist/deps/types.js, and removing
-// ./dist/deps/types.js leaves bun loading the example while deno fails NAMING
-// that file. So this repo's dist/ is load-bearing for `bun test` THROUGH ITS
-// DENO-SPAWNING ARMS -- AND IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than
-// by nothing, which is what keeps that dependency from being a trap for whoever
-// runs the suite.
+// VALUE -- from `@atusy/tsudoi-language-server/deps/types`.
+//
+// THE SPLIT THIS PARAGRAPH USED TO RECORD IS GONE WITH THE MECHANISM THAT MADE
+// IT. It said the two runtimes answer that subpath from DIFFERENT files --
+// deno through the exports map to ./dist/deps/types.js, bun intercepted by `the
+// paths mapping above` into ./src/deps/types.ts. THERE IS NO MAPPING ANYWHERE IN
+// THIS REPOSITORY, and the arm two tests above now asserts that no specifier the
+// root check resolves is answered by one at all. RE-MEASURED at sprint 58 off
+// `import.meta.resolve` under bun 1.3.13 and deno 2.8.3, at the checkout root
+// and inside each member: BOTH runtimes answer that subpath from
+// packages/tsudoi-language-server/dist/deps/types.js, and tsc answers its
+// declaration beside it.
+//
+// SO THE DEPENDENCE WIDENED RATHER THAN NARROWED: this repo's dist/ is
+// load-bearing for EVERY route into the package and not only for the arms that
+// spawn deno -- AND IT IS BUILT BY THE SUITE'S OWN PRELOAD rather than by
+// nothing, which is what keeps that from being a trap for whoever runs the
+// suite. With it absent the two readers stop agreeing, and which file each one
+// then answers from is staged and read in test/unbuilt-artifact.test.ts.
 //
 // A MARKER WRITTEN INTO dist/ CANNOT DISCRIMINATE THIS UNDER `bun test`, which
 // is why neither arm above uses one: the preload recompiles dist/ before any

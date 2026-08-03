@@ -53,6 +53,16 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * and any other Definition-of-Done command clears it -- but half of what it used
  * to cover is now a silent fall-through this preload hides rather than fixes.
  *
+ * AND THAT HALF IS STILL NOT COVERED HERE, WHICH IS THE OUTCOME OF SPRINT 58
+ * RATHER THAN AN OMISSION LEFT STANDING. Deleting the framework's source arms
+ * was measured and refused -- three arms in this suite reach the framework
+ * through a probe whose tree carries no dist/ at all -- so what landed is a
+ * refusal on the FIFTH check, `refuseSubpathsAnsweringFromSource` in
+ * scripts/workspaces.ts, which runs AFTER a build and therefore covers an
+ * artifact that survived one rather than a checkout nobody has built. The bare
+ * fourth check is still the command with the hole, and nothing in this
+ * repository owns its invocation.
+ *
  * stdio is inherited so a broken src/ prints tsc's own diagnostics, and the
  * throw on a non-zero exit is deliberate: a suite that ran on the previous
  * dist/ after a failed build is exactly the staleness this file removes.
