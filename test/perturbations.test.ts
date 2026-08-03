@@ -127,8 +127,10 @@ function recordOver(
  *
  * A SYMLINK IS NEITHER DESCENDED NOR COUNTED, which is not tidiness: the stage
  * borrows node_modules by symlink, and a walk that followed it would enumerate
- * the real checkout's dependencies as if the stage held them. Nothing tracked in
- * this repository is a symlink, so no tracked file is lost by that rule.
+ * the real checkout's dependencies as if the stage held them. MEASURED TODAY AND
+ * NOT ASSUMED FOREVER: no tracked path in this repository is a symlink, so the
+ * rule loses no tracked file -- and the day one is committed the set comparison
+ * that reads this reddens, naming the file, which is the loud direction.
  */
 function filesUnder(root: string, prefix = ""): string[] {
   const found: string[] = [];

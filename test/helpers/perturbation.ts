@@ -143,13 +143,21 @@ export interface Reading {
  * written as entities, so an element regex would find the tag's end correctly
  * today.
  *
- * THE CHUNKING IS KEPT ANYWAY, AND ITS HONEST REASON IS THAT IT NEVER HAS TO ASK:
- * where a tag ends is a property of the REPORTER's escaping, nothing here pins
- * it, and the failure if it changes is silent misattribution rather than a
+ * THE CHUNKING IS KEPT ANYWAY, AND ITS HONEST REASON IS THAT IT NEVER HAS TO ASK
+ * WHERE A TAG ENDS: that is a property of the REPORTER's escaping, nothing here
+ * pins it, and the failure if it changes is silent misattribution rather than a
  * crash. That reason is unwitnessed by construction -- the state it is for
  * cannot be produced on a bun that escapes -- and it is named rather than
  * armed. The unescaping below is the half that IS armed, in
  * test/perturbations.test.ts.
+ *
+ * AND THE TRADE IS NOT AN ESCAPE FROM THE DEPENDENCY, ONE STEP OVER: splitting
+ * on `<testcase ` assumes that literal never occurs INSIDE a name, which is the
+ * same bet on the reporter's escaping wearing different clothes. It is a weaker
+ * bet -- an arm would have to be named with that exact prefix, where the
+ * element form breaks on any `>` -- and it is written here rather than tested,
+ * because on a bun that escapes `<` the state cannot be reached from a name at
+ * all.
  */
 function readReport(xml: string): Map<string, ArmResult> {
   const arms = new Map<string, ArmResult>();
