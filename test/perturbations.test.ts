@@ -323,6 +323,29 @@ test("the report names the arm each record weakened, and no other", async () => 
   expect(quiet).not.toContain(probeArms.alpha);
   expect(held).toContain("[HELD]");
   expect(quiet).toContain("[GONE QUIET]");
+  // AND ALL FOUR LABELS, BECAUSE TWO OF THEM READ THE SAME TO A SCANNER
+  // OTHERWISE. Over two labels, `the verdict's own word` and `held or not held`
+  // are the same function: the non-held branch printing ONE constant word keeps
+  // every line above true. What that costs is exactly the distinction the
+  // verdict type exists for -- REFUSED means the record could not be applied and
+  // is repaired in the registry, DISARMED means it was applied and the red
+  // belongs to something else and is repaired in the tree -- and the detail
+  // text that still separates them is not what a reader scans.
+  const disarmed = line(read(recordOver("alpha", weakenToOne, [probeArms.beta]), before, after));
+  const refused = line(
+    read(
+      {
+        arm: { file: probeFile, name: "delta, which nothing registers" },
+        weakening: weakenToOne,
+        alsoReddens: [],
+      },
+      before,
+      after,
+    ),
+  );
+  expect(disarmed).toContain("[DISARMED]");
+  expect(refused).toContain("[REFUSED]");
+  expect(refused).not.toContain("[DISARMED]");
 });
 
 /**
