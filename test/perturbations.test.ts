@@ -704,6 +704,38 @@ const records: readonly PerturbationRecord[] = [
     },
     alsoReddens: [],
   },
+  {
+    // THE DRAWING READ AS A LIST INSTEAD OF AS A TREE, which is the adjacent
+    // weaker reading a reviewer accepts without noticing: every line still
+    // yields a directory, the projection is unchanged, and only the NESTING is
+    // dropped. It is exactly the reading that cannot tell a README picturing
+    // `packages/` inside the checkout from one picturing it beside -- which is
+    // the defect this account exists for.
+    arm: { file: "test/readme-layout.test.ts", name: "the layout holds over README.md block 1" },
+    weakening: {
+      file: "test/helpers/readme.ts",
+      from: '    const path = parent === undefined ? (at[2] ?? "") : `${parent}/${at[2] ?? ""}`;',
+      to: '    const path = at[2] ?? "";',
+    },
+    alsoReddens: ["corrupting README.md block 1 OUTSIDE the layout's subject leaves it saying yes"],
+  },
+  {
+    // THE CONJUNCTION READ AS A DISJUNCTION, one directory being enough. It
+    // leaves the account TRUE on this tree, so nothing that merely asks whether
+    // the layout holds can see it -- what sees it is the arm that requires
+    // corrupting the projection to be NOTICED, which is the half a `read` row
+    // is worth anything for.
+    arm: {
+      file: "test/readme-layout.test.ts",
+      name: "corrupting README.md block 1 INSIDE the layout's subject makes it say no",
+    },
+    weakening: {
+      file: "test/helpers/readme.ts",
+      from: "        return against.length > 0 && against.every((dir) => drawn.has(dir));",
+      to: "        return against.length > 0 && against.some((dir) => drawn.has(dir));",
+    },
+    alsoReddens: [],
+  },
 ];
 
 /**
