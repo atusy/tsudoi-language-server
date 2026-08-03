@@ -170,6 +170,29 @@ function disagreeing(root: string, unpublished: boolean): string[] {
  * BOTH DIRECTIONS, and the second is the one nobody thinks about: a member that
  * quietly dropped the flag while tsudoi is still unpublished is named here too,
  * because installing that package then 404s.
+ *
+ * AND ONE QUESTION IS PUT TO THE READER WHO REDDENS THIS ARM, BECAUSE THEY ARE
+ * THE ONLY READER IT CAN BE PUT TO. Deleting tsudoi's `private` is what turns
+ * this reading red, and it is also the precondition of the residual below --
+ * before that edit the residual has no subject at all.
+ *
+ * THE RESIDUAL. A handler's build reads the framework's SOURCE when the
+ * framework's artifact is absent, and a consumer receives the framework's
+ * `dist/`. The declarations that ship are the same either way -- measured, and
+ * the reading is at `prepareWorkspace` in scripts/workspaces.ts -- so what is
+ * left is narrow: it bites only if the framework's OWN published dist/ disagreed
+ * with its src/ at publish time, which is a publish that skipped `prepack`.
+ *
+ * WHAT HAPPENS THEN IS OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND
+ * IS LABELLED ONE RATHER THAN MEASURED: since a handler's emitted declaration
+ * names the framework BY SPECIFIER -- which is measured, and armed at
+ * test/handler-declaration-specifier.test.ts -- a consumer's compiler re-resolves
+ * that specifier against the framework THEY installed, so a disagreement should
+ * surface in THEIR compile as a named error. INFERRED, NOT OBSERVED: no
+ * consumer-side compile against a skipped-prepack publish has been run here. If
+ * it holds, the residual degrades WHO meets the error and not whether anyone
+ * does. THE ANSWER A PUBLISHER OWES IS THEREFORE ABOUT THEIR OWN ROUTE: that the
+ * publish they are about to make did not skip `prepack`.
  */
 test("no member's optional-peer flag disagrees with what tsudoi's manifest says about publication", () => {
   // The pair: with no members this reading is empty for a reason that has

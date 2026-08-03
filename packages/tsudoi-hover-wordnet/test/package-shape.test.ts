@@ -158,6 +158,39 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one
  * this workspace declares rather than whatever a machine happens to have. An
  * absolute path here would be someone's laptop.
+ *
+ * AND WHAT THIS SCRIPT MAY NOT GROW, REFUSED BY NAME IN BOTH SHAPES THE
+ * PRECONDITION ARRIVES IN -- because `prepack` is where that edit would be made,
+ * and package.json cannot hold the reason. The precondition is the obvious first
+ * move once someone notices that this build reads the framework's SOURCE when
+ * its artifact is absent.
+ *
+ * REFUSING THIS BUILD WHILE THE FRAMEWORK'S ARTIFACT IS ABSENT IS REFUSED ON A
+ * POSITIVE MEASUREMENT AND NOT FOR WANT OF A SHOWN COST. It would force this
+ * build onto the artifact and away from the framework's source -- and the source
+ * is the CURRENT grade: with a framework type renamed in src/ alone, a handler
+ * built against the stale artifact exits 0 while the same build against src/
+ * exits 2 naming the missing member at TS2305. The precondition would therefore
+ * SELECT THE GRADE THAT HIDES A DISAGREEMENT, which makes the product measurably
+ * worse, and a precondition that does that is the strongest refusal this project
+ * recognises. NOT `the source is the stricter grade`: the reverse edit -- a
+ * signature this handler violates under the stale artifact and satisfies under
+ * current source -- would put the strictness on the artifact's side. What is
+ * measured is CURRENCY, and the reading with its conditions and its bounds is at
+ * `prepareWorkspace` in scripts/workspaces.ts.
+ *
+ * `prepack` BUILDING THE FRAMEWORK FIRST IS REFUSED ON A GROUND INDEPENDENT OF
+ * THAT MEASUREMENT, which is what keeps it refused if that record ever moves:
+ * THIS MANIFEST TRAVELS TO A REGISTRY WITH ITS SCRIPTS. MEASURED on bun 1.3.13,
+ * `bun pm pack --destination` run in this package at sprint 62's base: the
+ * packed package.json carries `scripts.prepack` verbatim. So the edit would put
+ * a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in
+ * this workspace, and a stranger packing an installed copy would have prepack
+ * try to build a package that is not there -- the knowingly-false optional
+ * peer's class one step worse, because it FAILS rather than merely misleads. It
+ * would also encode this workspace's build order in a member's published
+ * manifest, where `buildOrder` in scripts/workspaces.ts already derives it from
+ * what the manifests declare.
  */
 test("packing this package builds it first, into a cleared directory", () => {
   expect(manifest.scripts).toEqual({ prepack: "rm -rf dist && tsc -p tsconfig.build.json" });
