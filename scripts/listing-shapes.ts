@@ -396,6 +396,80 @@ async function runOpenAndStat(fixture: Fixture) {
   };
 }
 
+/**
+ * A STAT PER ENTRY, at the ordinary size and in this same session, because the
+ * module's header REFUSES that shape and the figure it was refused against came
+ * from the session whose every other number about this listing this instrument
+ * contradicts. A figure nobody can re-take is not evidence for a refusal that is
+ * still being made.
+ *
+ * BOTH CALL PATTERNS, AND THE REASON IS THAT THE RETIRED FIGURE RECORDED
+ * NEITHER: SEQUENTIAL awaits each stat before issuing the next, CONCURRENT
+ * issues all of them and awaits `Promise.all`. They differ here by more than an
+ * order of magnitude on one runtime, so ONE number for `a stat per entry` names
+ * whichever pattern its author happened to write and says so to nobody.
+ *
+ * THE NAMES ARE READ BEFORE THE TIMING WINDOW, so what is timed is the stats
+ * ALONE. What the refusal is about is the cost ADDED to a listing that is being
+ * paid for anyway, not a listing plus its stats.
+ *
+ * GUARDED LIKE THE SHAPE CELLS: every result is counted and each must be a FILE
+ * of zero bytes, which is what this process wrote -- so a pattern that skipped
+ * the calls cannot report the fast row it would otherwise have earned.
+ */
+async function statsSequential(path: string, names: readonly string[]): Promise<number> {
+  let counted = 0;
+  for (const name of names) {
+    const seen = await stat(join(path, name));
+    counted += seen.isFile() && seen.size === 0 ? 1 : 0;
+  }
+  return counted;
+}
+
+async function statsConcurrent(path: string, names: readonly string[]): Promise<number> {
+  const seen = await Promise.all(names.map((name) => stat(join(path, name))));
+  return seen.filter((one) => one.isFile() && one.size === 0).length;
+}
+
+const statPatterns = [
+  ["sequential", statsSequential],
+  ["concurrent", statsConcurrent],
+] as const;
+
+async function runStatPerEntry(fixture: Fixture) {
+  const rounds = roundsFor(fixture.entries);
+  // OUTSIDE THE TIMING WINDOW, and read once: the subject is the stats.
+  const names = await readdir(fixture.path);
+  const samples = new Map<string, number[]>(statPatterns.map(([label]) => [label, []]));
+  const loadBefore = loadavg();
+  for (let round = 0; round < rounds + 1; round++) {
+    for (let position = 0; position < statPatterns.length; position++) {
+      const pattern = statPatterns[
+        (round + position) % statPatterns.length
+      ] as (typeof statPatterns)[number];
+      const started = performance.now();
+      const counted = await pattern[1](fixture.path, names);
+      const elapsed = performance.now() - started;
+      if (counted !== fixture.entries) {
+        throw new Error(
+          `${pattern[0]} statted ${String(counted)} of ${String(fixture.entries)} in ${fixture.path}`,
+        );
+      }
+      // The first round is the discarded warm-up, as in every other cell.
+      if (round > 0) {
+        (samples.get(pattern[0]) as number[]).push(elapsed);
+      }
+    }
+  }
+  return {
+    entries: fixture.entries,
+    rounds,
+    loadBefore,
+    loadAfter: loadavg(),
+    ms: Object.fromEntries([...samples].map(([label, values]) => [label, spreadOf(values)])),
+  };
+}
+
 const root = throwawayOnly(realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-listing-shapes-"))));
 try {
   const cells: Awaited<ReturnType<typeof runCell>>[] = [];
@@ -432,6 +506,7 @@ try {
         fixtureRoot: root,
         cells,
         openAndStat: ordinary === undefined ? null : await runOpenAndStat(ordinary),
+        statPerEntry: ordinary === undefined ? null : await runStatPerEntry(ordinary),
         creationOrderProbe: {
           entries: probeSize,
           enumerationFollowsCreationOrder:

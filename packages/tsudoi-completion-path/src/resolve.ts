@@ -267,14 +267,31 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * the completion half beside this file drains an entire directory on every
  * keystroke to filter it.
  *
- * THE `~1.1 s` OF PER-ENTRY STATS IS A DIFFERENT RULING'S NUMBER AND IS FILED AS
- * SUSPECT BY ASSOCIATION RATHER THAN RENUMBERED. It came from the session whose
- * every other figure this base contradicts, and nothing in this reading has its
- * subject -- a stat per entry was not measured here, and multiplying the
- * single-stat cell above by an entry count would be arithmetic wearing a
- * measurement's clothes. What the refusal rests on is unaffected: the completion
- * half runs per KEYSTROKE, this runs per HIGHLIGHT, and a stat per entry is the
- * only one of the three whose cost grows with the directory on the keystroke.
+ * THE `~1.1 s` OF PER-ENTRY STATS IS RETIRED BY NAME, AND WHAT RETIRED IT IS ONE
+ * COMMAND RATHER THAN AN ARGUMENT. It stood here filed as SUSPECT BY ASSOCIATION
+ * -- same session, every other figure of which this base contradicts -- and a
+ * label saying `doubt this` about a number whose subject is one run away is a
+ * standing uncertainty rather than a disclosure. RE-TAKEN by the tracked
+ * instrument at this base, five thousand entries, warm, medians of fifteen
+ * interleaved rounds, WITH THE NAMES READ BEFORE THE TIMING WINDOW so that what
+ * is timed is the stats alone: SEQUENTIALLY, each stat awaited before the next
+ * is issued, 47.573 ms (42.845-50.278) on bun 1.3.13 and 75.523 ms
+ * (73.392-78.658) on deno 2.8.3; CONCURRENTLY, all of them issued and awaited
+ * together, 3.356 ms (3.196-4.317) and 40.575 ms (38.288-42.861). BOTH PATTERNS
+ * ARE NAMED BECAUSE THE RETIRED FIGURE NAMED NEITHER, and they differ by a factor
+ * of fourteen on bun -- so one number for `a stat per entry` reports whichever
+ * its author happened to write. The old figure is fourteen to three hundred and
+ * thirty times these, depending which cell it is read against, which is the same
+ * inflation this base reads in every other number of that session. Same fixture
+ * as the shape rows below and the same things it cannot separate: one machine,
+ * macOS/APFS, one volume, a warm cache, empty entries.
+ *
+ * WHAT THE REFUSAL RESTS ON IS UNCHANGED, AND IT IS NOT WHAT THESE ROWS MEASURE:
+ * the completion half runs per KEYSTROKE and this runs per HIGHLIGHT, and a stat
+ * per entry is the only one of the three whose cost grows with the directory ON
+ * THE KEYSTROKE. These are the stats ALONE at one size; what a keystroke costs
+ * with them in it was not measured, and no product of these medians with a
+ * keystroke count is manufactured from them.
  *
  * WHAT DOES NOT SHRINK WITH IT IS THE PAYLOAD -- those five thousand names are
  * eighty-five thousand characters in one response and five thousand lines in one
