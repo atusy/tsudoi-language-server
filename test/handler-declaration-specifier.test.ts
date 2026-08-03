@@ -1,5 +1,14 @@
 import { expect, test } from "bun:test";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { handlerMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
@@ -51,15 +60,17 @@ applySuiteDeadline();
  * NO SECOND BUILD HAPPENS HERE: this reads the artifact test/helpers/build.ts
  * already wrote before any test file loaded.
  *
- * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED at
- * sprint 62's base 121384f, bun test v1.3.13, this file alone, which reads 2 pass
- * / 0 fail unperturbed. With the reader pointed at an EMPTY DIRECTORY: 0 pass / 2
- * fail, both arms naming both handlers. With it pointed at a directory holding
- * one ZERO-BYTE `.d.ts`: 1 pass / 1 fail -- the subject red naming both handlers
- * while the read below stays green, which is the discrimination the second arm
- * claims. With `handlerMembers` returning nothing: 1 pass / 1 fail -- the pair
- * inside the subject arm red, and the second arm GREEN over an enumeration that
- * found no handler at all, which is why that pair is where it is.
+ * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED in
+ * sprint 62 on bun test v1.3.13, this file as it stands and run alone, which
+ * reads 3 pass / 0 fail unperturbed. With the two readings of this checkout
+ * pointed at an EMPTY DIRECTORY: 1 pass / 2 fail, both naming both handlers.
+ * Pointed at a directory holding one ZERO-BYTE `.d.ts`: 2 pass / 1 fail, the
+ * subject alone, which is the discrimination the second arm claims. With
+ * `handlerMembers` returning nothing: 2 pass / 1 fail, the subject alone again,
+ * and there it is its PAIR that fires while the second arm goes green over an
+ * enumeration that found no handler at all -- which is why that pair is where it
+ * is. THE SURVIVING PASS IN ALL THREE IS THE LAST ARM, which builds its own
+ * directories and is not aimed at this checkout; that is the point of it.
  */
 
 /** The framework's published name, which is the whole of what travels. */
@@ -148,9 +159,9 @@ test("every handler's emitted declarations still name the framework by specifier
  * THE SECOND PAIR IS DIAGNOSIS AND NOT DETECTION, WHICH IS WEAKER THAN IT LOOKS
  * AND IS WHAT IS TRUE. An artifact nobody opened makes the arm above red on its
  * own -- a handler with no declarations names the framework in none of them --
- * so this does not close a hole in it, and the empty-directory reading in the
- * header is where that is measured: the arm above reddens there, and this
- * reddens beside it rather than instead of it.
+ * so this does not close a hole in it. The empty-directory reading in the header
+ * is where that is measured -- the arm above reddens there and this reddens
+ * beside it, rather than instead of it.
  *
  * WHAT IT BUYS IS THE READER'S NEXT MOVE, and sending them to the wrong one
  * costs a search: `opened nothing` sends them to the build, `opened and named the
@@ -165,4 +176,49 @@ test("the same read opens declarations in every handler, so a silent artifact is
   );
 
   expect(unread.map((member) => relative(repoRoot, member))).toEqual([]);
+});
+
+/**
+ * THE DISCRIMINATION THE TWO ARMS ABOVE CLAIM, ASSERTED RATHER THAN LEFT AS THE
+ * PROSE READING IN THE HEADER. This dashboard's rule is that a perturbation
+ * relied on later is written as something the suite RE-RUNS, or as an assertion
+ * beside the arm whose behaviour it reads -- and this reader is cheap enough
+ * that the second is available: no build, no spawn, three directories written
+ * where temporary files go.
+ *
+ * THE YES-WITNESS IS HALF OF IT: a reader that never reports a reference would
+ * satisfy both offender lists above for ever, and only a directory whose
+ * declaration DOES carry the specifier tells that apart from the property they
+ * are named for.
+ */
+test("the reader tells an unread directory, a silent declaration and a naming one apart", () => {
+  const stage = mkdtempSync(join(tmpdir(), "tsudoi-declarations-"));
+  try {
+    const silent = join(stage, "silent");
+    const naming = join(stage, "naming");
+    mkdirSync(silent);
+    mkdirSync(naming);
+    writeFileSync(join(silent, "index.d.ts"), "");
+    writeFileSync(
+      join(naming, "index.d.ts"),
+      `import type { X } from "${PUBLISHED_NAME}/types";\n`,
+    );
+
+    // NEVER WRITTEN, so `absent` and `empty` are separated too: the first is
+    // what an unbuilt member looks like, the second what a cleared one does.
+    const missing = frameworkReferences([join(stage, "unbuilt")]);
+    expect([missing.read, missing.naming]).toEqual([[], []]);
+
+    expect(frameworkReferences([silent]).naming).toEqual([]);
+    expect(frameworkReferences([silent]).read.length).toBe(1);
+    expect(frameworkReferences([naming]).naming.length).toBe(1);
+  } finally {
+    // THE ARGUMENT IS THIS FUNCTION'S OWN mkdtemp AND THE CHECK IS KEPT ANYWAY:
+    // a recursive delete whose path could ever come from elsewhere is the hazard
+    // this repository has already paid for once.
+    if (!stage.startsWith(tmpdir())) {
+      throw new Error(`refusing to remove ${stage}, which is not under ${tmpdir()}`);
+    }
+    rmSync(stage, { recursive: true, force: true });
+  }
 });
