@@ -235,5 +235,14 @@ matching; the loud ones were measured, not assumed:
 
 The one SILENT key was the root tsconfig's `paths` mapping — **which no longer
 exists anywhere in this repository**, so that finding has no subject today.
-`exclude`, the oxlint override globs, `workspaces` and the member `paths` are
-pinned BY EFFECT in `test/package-shape.test.ts` and `test/guard.test.ts`.
+
+**How each is held, corrected in sprint 63 — the sentence here said all four
+were pinned BY EFFECT, and the root `exclude` is not.** `exclude` and
+`workspaces` are pinned **by literal** in `test/package-shape.test.ts`, in the
+arm about the members being outside the root check; the two arms there that look
+effect-shaped observe a `dist/` the fixture itself manufactures, so they would
+read the same if the entry matched nothing — and it matches nothing, measured.
+The oxlint override globs are pinned **by effect** in `test/guard.test.ts`,
+which lints violation probes under a copy of the config. The member `paths` is
+not pinned at all: it is **refused** by `refuseMemberMappings`, off
+`tsc --showConfig`, so an `extends` cannot smuggle one in.
