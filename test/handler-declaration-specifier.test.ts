@@ -39,8 +39,11 @@ applySuiteDeadline();
  * WHAT WOULD REDDEN THIS, NAMED SO THE ARM IS NOT READ AS WIDER THAN IT IS:
  * declaration bundling, or any post-build transform that INLINES the framework's
  * types into a handler's declarations rather than leaving the import standing.
- * The day either lands, the conclusion above stops holding and this is the only
- * thing that would say so.
+ * The day either lands, the conclusion above stops holding, and this is the arm
+ * whose SUBJECT that is. NOT `and nothing else would say so`, which is what
+ * stood here for a commit: that is a coverage claim, this project's rule is that
+ * one is measured or not written, and what else in the tree moves under an
+ * inlining transform was not read.
  *
  * AND ITS BOUND, WHICH IS WHOLESALE RATHER THAN PER FILE: it asks each handler
  * for ONE emitted declaration naming the framework, so a single file inlined
