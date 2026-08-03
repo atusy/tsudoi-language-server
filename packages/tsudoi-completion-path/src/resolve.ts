@@ -389,9 +389,22 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * the array shape it replaced and +4.157 ms against an array read under this same
  * gate, and it SAVES BUN 0.460 ms against the first while costing it 0.601 ms
  * against the second. Both are outside the instrument's own noise on both
- * runtimes, so this is not a ruling that the shapes are indistinguishable. The
- * array read under this gate is the FASTEST of the three at every size on both
- * runtimes and is refused below on what it holds, not on what it costs.
+ * runtimes, so this is not a ruling that the shapes are indistinguishable.
+ *
+ * THE ARRAY READ UNDER THIS GATE IS REFUSED BELOW ON WHAT IT HOLDS AND NOT ON
+ * WHAT IT COSTS -- AND THE SENTENCE THAT STOOD HERE, `the fastest of the three
+ * at every size on both runtimes`, CLAIMED A SIZE THIS READING DOES NOT
+ * SEPARATE. At five thousand it is the fastest and the instrument tells it
+ * apart: paired against this shape it reads -0.601 where the sorted array reads
+ * +0.460 on bun, and -4.157 against -3.261 on deno, over nulls of 0.030 and
+ * 0.069. AT TWO HUNDRED IT IS NOT TOLD APART FROM THE SORTED ARRAY ON EITHER
+ * RUNTIME -- the two rows are -0.031 and -0.021 on bun and -0.200 and -0.195 on
+ * deno, and the gap between two paired medians is not itself a paired reading --
+ * and on bun it is inside the null against THIS shape as well, -0.031 against a
+ * null of +0.001 (-0.036..+0.016). That is the narrowing the paragraph above
+ * already applied to the other pair at that size and this sentence did not
+ * apply to itself. The tail separates the three on a null several times wider,
+ * and no ruling here rests on it.
  *
  * AND IT TAKES A SEAM WITH IT, WHICH IS NOT A COST AND IS WRITTEN HERE BECAUSE
  * THIS IS WHERE THE EDIT WOULD BE MADE. `readdir` has no BETWEEN THE OPEN AND THE
