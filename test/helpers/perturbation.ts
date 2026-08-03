@@ -397,11 +397,19 @@ export async function takeBaseline(file: string): Promise<ArmFileRun> {
 /**
  * Stages, weakens, runs, and reads -- the whole of one record.
  *
- * IT REFUSES A RECORD WHOSE ARM IS ONE OF THIS MODULE'S OWN, AND THE FAILURE IT
- * FORECLOSES IS NOT A RED: such a record would run a file that stages a tree and
- * runs a file that stages a tree, and the spawn tree has no bottom. The refusal
- * is on what the arm file IMPORTS rather than on its name, so it survives the
+ * IT REFUSES A RECORD WHOSE ARM IS ONE OF THIS MODULE'S OWN: such a record runs
+ * a file that stages a tree and runs a file that stages a tree. The refusal is
+ * on what the arm file IMPORTS rather than on its name, so it survives the
  * registry moving or being split.
+ *
+ * WHAT THAT RECURSION ACTUALLY DOES WAS MEASURED WITH THE REFUSAL DELETED, AND
+ * IT IS LESS THAN THIS COMMENT ONCE CLAIMED: it stops at the SECOND level, where
+ * `repoRoot` is the stage, the stage holds no `.git`, and `git ls-files` exits
+ * 128 -- 264 ms, and no third process. So the refusal is not standing between
+ * this suite and a machine to restart; it stands between a reader and a red
+ * reading `git ls-files failed in /var/folders/...`, which names neither the
+ * record nor the recursion. AND THE BOTTOM IS AN ACCIDENT OF THE STAGER: copy a
+ * `.git` in for any reason and it is gone, while this refusal is not.
  */
 export async function reRun(record: PerturbationRecord, before: ArmFileRun): Promise<Reading> {
   const stage = stageCheckout();

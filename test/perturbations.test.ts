@@ -388,11 +388,10 @@ test("nothing here stages into, or deletes, a path outside the throwaway directo
 
 test("a record naming an arm in a file that RE-RUNS perturbations is refused, never spawned", async () => {
   // KEPT AND ARMED RATHER THAN LEFT TO ITS FIRST OCCURRENCE, and the reason is
-  // the failure it forecloses: a record over an arm in THIS file would stage a
-  // tree and run a file that stages a tree and runs a file, and the spawn tree
-  // has no bottom -- there is no red at the end of that, only a machine to
-  // restart. It was written with no arm, and a refusal nobody exercises is one
-  // `if` away from being deleted as unreachable by whoever reads it next.
+  // the failure it forecloses: a record over an arm in THIS file stages a tree
+  // and runs a file that stages a tree and runs a file. It was written with no
+  // arm, and a refusal nobody exercises is one `if` away from being deleted as
+  // unreachable by whoever reads it next.
   //
   // THE SHAPE IS A SUBSTRING TEST OVER THE ARM FILE'S TEXT, AND IT IS KEPT AS
   // ONE: deciding what a file transitively imports is a program, and the cheap
@@ -418,17 +417,22 @@ test("a record naming an arm in a file that RE-RUNS perturbations is refused, ne
   // as much as the message. A rename of this file reddens this arm at the read,
   // which is the loud failure and not a false green.
   //
-  // ONLY THE SAFE HALF OF THIS ARM'S DEGENERATE IS EVER RUN, AND THE OTHER HALF
-  // IS REASONED ABOUT RATHER THAN TAKEN -- the same ruling this file's sweep
-  // already carries. SAFE: the refusal downgraded from a throw to a returned
-  // `refused` verdict, which still spawns nothing -- 14 pass / 1 fail, this arm
-  // alone. UNSAFE AND NOT RUN: the DETECTION deleted, which is the reading that
-  // would let this very record through, and letting it through starts the
-  // unbounded spawn the guard exists for. Running it to watch the red is
-  // lighting the fire to test the alarm, and no red is worth a chain of orphan
-  // runs on the machine. THE SECOND DIRECTION IS CARRIED ELSEWHERE: a refusal
-  // that refused everything would take the registry's own records with it, and
-  // they read HELD below.
+  // HOW FAR THE SPAWN ACTUALLY GETS, MEASURED RATHER THAN FEARED, AND THE FIRST
+  // WRITING OF THIS COMMENT HAD IT WRONG: with the detection deleted, the chain
+  // STOPS AT THE SECOND LEVEL. `repoRoot` is module-relative, so inside the
+  // stage it is the STAGE, and `stageCheckout` there runs `git ls-files` in a
+  // tree holding no `.git` under a temporary directory whose parents hold none
+  // either -- exit 128, and the stager throws `git ls-files failed`. The whole
+  // degenerate is 15 pass / 1 fail, this arm alone, and the level-2 run is over
+  // in 264 ms.
+  //
+  // SO THE REFUSAL IS KEPT FOR WHAT IT BUYS AND NOT FOR A CATASTROPHE: the
+  // bottom of that recursion is an ACCIDENT of how the stage is built -- copy a
+  // `.git` in for any reason and it is gone -- and what arrives without the
+  // refusal is a red that says `git ls-files failed in /var/folders/...`, which
+  // names neither the record nor the recursion. THE SECOND DIRECTION IS CARRIED
+  // ELSEWHERE: a refusal that refused everything would take the registry's own
+  // records with it, and they read HELD below.
   await expect(reRun(record, { exit: 0, arms: new Map() })).rejects.toThrow(/spawn without bound/);
 });
 
