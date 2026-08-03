@@ -343,12 +343,30 @@ test("an unbuilt checkout's root type check is non-zero and names a workspace pa
       `unresolved workspace specifiers: true\n${unbuilt.output}`,
     );
 
-    // THE PAIR, AND ITS SUBJECT IS STAGE FAITHFULNESS RATHER THAN THE TREE'S TYPE
-    // HEALTH -- said in those words because a control that cannot be first to
-    // fail is one this project deletes. It can only redden for a broken staging:
-    // a missing type library, a route out of the stage, or an artifact that was
-    // there before the build. The tree's type health is the fourth check's, and
-    // the fourth check runs on the tree.
+    // THE PAIR, AND `IT CAN ONLY REDDEN FOR A BROKEN STAGING` IS WHAT STOOD HERE
+    // AND IS MEASURED FALSE. Appending `const deliberateTypeError: number = "not
+    // a number";` to examples/tsudoi.config.ts -- tracked, in the root program,
+    // outside packages/ -- leaves the unbuilt half and `buildStage` passing and
+    // reddens THIS line with `examples/tsudoi.config.ts(...): error TS2322`, the
+    // staging entirely intact. So the honest name for this is DUPLICATED SIGNAL
+    // WITH A MISLEADING FAILURE STORY, and not a state nothing else sees: ANY
+    // tracked type error reddens both the fourth Definition-of-Done check and
+    // this line, and this line reports it under a test name about unresolved
+    // workspace packages. Measured on the other half too, by the sprint 61
+    // review: `tsc --noEmit --listFiles` over the tree and over the stage read
+    // IDENTICAL file sets, 160 against 160, so there is no state here that the
+    // fourth check misses.
+    //
+    // IT IS KEPT FOR THE ORDER AND THE STORY, WHICH IS THE WHOLE OF WHAT IT BUYS
+    // and is worth more than it sounds. Alone, the red above says `non-zero` and
+    // nothing says WHY it was non-zero -- a stage missing a type library, a route
+    // out of the stage, or an artifact left over from before the build is
+    // non-zero too. A green here attributes that red to THE ABSENT ARTIFACTS
+    // rather than to the apparatus, in the same run and on the same tree.
+    //
+    // SO A READER WHO MEETS THIS LINE RED SHOULD READ THE DIAGNOSTIC BEFORE
+    // TOUCHING THE STAGER: if it names a tracked file, the fourth check is
+    // already saying the same thing and the staging is not the fault.
     buildStage(stage);
     const built = await runTsc(stage.root);
     expect(`exit ${String(built.code)}\n${built.output}`).toBe("exit 0\n");
