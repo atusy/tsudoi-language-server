@@ -539,6 +539,18 @@ const records: readonly PerturbationRecord[] = [
  *
  * SHARED, BECAUSE IT IS ONE SUBJECT AND NOT ONE PER RECORD: two baselines of the
  * same file in the same tree are the same reading bought twice.
+ *
+ * KEYED BY FILE, AND THAT KEY IS DELIBERATELY LEFT UNWITNESSED. Every record
+ * today names one arm file, and over one file `by file` and `by nothing` are the
+ * same function -- no probe here can separate them, and a probe that could would
+ * have to put a second record in the registry, which is a perturbation invented
+ * to exercise a Map rather than one this repository ran. WHAT MAKES IT FIRE, so
+ * nobody has to rediscover it: the day a SECOND arm file enters the registry, a
+ * baseline taken from the wrong file reports arms that do not include the
+ * record's, the reading is REFUSED naming that arm, and the run is red on the
+ * first pass. That is the loud failure, which is this project's own condition
+ * for leaving a guard alone; deleting the key instead would be deleting a
+ * correctness the second record needs, to remove a line no red covers.
  */
 const baselines = new Map<string, Promise<ArmFileRun>>();
 
