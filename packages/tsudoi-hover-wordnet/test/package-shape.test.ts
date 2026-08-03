@@ -246,8 +246,9 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * it addresses an installing stranger, and the state above belongs to whoever is
  * editing the framework.
  *
- * AND NOTHING FIRES ON IT, WITH THE TWO ROUTES THAT WOULD HAVE TO RULED OUT BY
- * THEIR OWN ORDER RATHER THAN BY A SEARCH: an arm under `bun test` runs after a
+ * AND NO ROUTE THIS SPRINT COULD NAME FIRES ON IT -- said at that width rather
+ * than as `nothing fires`, because the warrant is two routes and not a census.
+ * THE TWO ARE RULED OUT BY THEIR OWN ORDER: an arm under `bun test` runs after a
  * preload that has just rebuilt every package, and the fifth Definition-of-Done
  * check calls `prepareWorkspace` before it reads anything. Both stand after a
  * build; this state is before one. The thing that meets whoever produces it is

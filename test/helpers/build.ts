@@ -48,7 +48,11 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  *
  * THAT PACK IS NOT THE ONLY ONE, IT IS THE ONE NOTHING CAN RUN BEFORE. Each
  * member's README carries its own `bun pm pack` and test/readme.test.ts executes
- * every README command, so the handlers are packed again from test bodies too.
+ * every README command, and `installConsumer` in test/helpers/install.ts packs
+ * EVERY handler from where it lives, reached from five test files -- so the
+ * handlers are packed again from test bodies, by more than one route. THE THIRD
+ * ROUTE ARRIVED FROM AN ENUMERATION RATHER THAN FROM A RE-READ: the pair that
+ * stood here was written from memory and read as the whole set.
  * THE FRAMEWORK'S OWN dist/ IS A DIFFERENT CASE and not a third instance: its
  * `prepack` is `tsc -p tsconfig.build.json` with no clear in front of it, so a
  * pack of it REWRITES IN PLACE rather than replacing the directory.
