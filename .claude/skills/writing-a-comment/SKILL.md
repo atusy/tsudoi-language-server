@@ -41,12 +41,17 @@ list, one in a test name and two in probe filenames.
 
 **A comment that licenses a present-day decision by a MECHANISM THE INCREMENT
 REMOVED is worse than a stale value, because it reads as CURRENT.** _(sprint 52,
-fifth instance of the class)_ MEASURED: the staged-path pin still explains itself
-by a compiler mapping that NO LONGER EXISTS ANYWHERE IN THIS REPOSITORY, so the
-tree's one narrative account of how it resolves its own subpaths is false and a
-contributor learns the pre-move story from the file that pins what is published.
-Distinct from a stale COUNT: a value went out of date, a reason stopped being
-true. **Nothing detects this class.**
+fifth instance of the class)_ MEASURED THEN: the staged-path pin explained itself
+by a compiler mapping the move had deleted, so the tree's narrative account of
+how it resolves its own subpaths was false and a contributor learned the pre-move
+story from the file that pins what is published. **That site was repaired in the
+move commit itself, so the finding has no subject today** — and this paragraph
+went on asserting it in the PRESENT TENSE through every sprint since, including
+the one whose sweep named `git ls-files` as its universe, matched two of its
+thirteen keys in this file, and did not open it. _The class describing itself is
+the reason the example is kept rather than deleted._ Distinct from a stale COUNT:
+a value went out of date, a reason stopped being true. **Nothing detects this
+class.**
 
 **A comment contradicting ANOTHER comment in the same repository is a detectable
 condition nobody detects.** _(sprint 46)_ MEASURED: four found in one revise pass
