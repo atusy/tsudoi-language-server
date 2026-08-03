@@ -34,6 +34,25 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * A MARKER WRITTEN INTO dist/ STILL CANNOT DISCRIMINATE THIS UNDER `bun test`:
  * this preload rebuilds over it before any test module loads.
  *
+ * AND `WHAT EVERY TEST READS` IS NOT WHAT THIS PRELOAD WROTE, FOR TWO OF THE
+ * ARTIFACTS IT WRITES. test/packed-members.test.ts performs a TOP-LEVEL AWAIT
+ * over `packPackage` for each handler, so `bun pm pack` runs in the REAL member
+ * during module load -- and a handler's `prepack` opens `rm -rf dist`. Both
+ * handlers' dist/ is therefore deleted and recompiled BEFORE ANY TEST BODY RUNS,
+ * and whatever this preload left in them is gone. MEASURED at base 488787c: a
+ * rewrite of the emitted declarations added HERE leaves the full suite 938 pass /
+ * 0 fail and the checkout's handler dist/ carrying the unrewritten text, while
+ * the same rewrite in a handler's `prepack` is 933 pass / 5 fail. What it costs
+ * the one arm that depends on the assumption is at
+ * test/handler-declaration-specifier.test.ts.
+ *
+ * THAT PACK IS NOT THE ONLY ONE, IT IS THE ONE NOTHING CAN RUN BEFORE. Each
+ * member's README carries its own `bun pm pack` and test/readme.test.ts executes
+ * every README command, so the handlers are packed again from test bodies too.
+ * THE FRAMEWORK'S OWN dist/ IS A DIFFERENT CASE and not a third instance: its
+ * `prepack` is `tsc -p tsconfig.build.json` with no clear in front of it, so a
+ * pack of it REWRITES IN PLACE rather than replacing the directory.
+ *
  * A HANDLER PACKAGE'S dist/ IS NEEDED EVEN MORE ABSOLUTELY, and the difference
  * between the two is the whole of what the residue above turns on: a handler
  * ships dist/ and not src/ -- deno refuses to type-strip under node_modules --

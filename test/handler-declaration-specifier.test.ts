@@ -60,8 +60,39 @@ applySuiteDeadline();
  * where the build already failed loudly. Both are the check whose cost
  * re-derives a guarantee.
  *
- * NO SECOND BUILD HAPPENS HERE: this reads the artifact test/helpers/build.ts
- * already wrote before any test file loaded.
+ * NO SECOND BUILD HAPPENS HERE, AND THAT IS THE HALF OF THE OLD SENTENCE THAT
+ * SURVIVED BEING MEASURED: this file spawns nothing and compiles nothing, it
+ * opens files. WHAT STOOD BESIDE IT WAS PROVENANCE AND WAS FALSE -- `this reads
+ * the artifact test/helpers/build.ts already wrote before any test file loaded`.
+ * IT READS THE ARTIFACT AS THE RUN LAST LEFT IT, and under a full `bun test` a
+ * PACK left it. The one that cannot be got behind is the TOP-LEVEL AWAIT in
+ * test/packed-members.test.ts: `packPackage` per handler, resolved AT MODULE
+ * LOAD, running `bun pm pack` with cwd set to the REAL member, whose `prepack`
+ * opens `rm -rf dist`. Both handlers' dist/ is deleted and recompiled before any
+ * test body runs, so the preload's output is already gone by the time anything
+ * here opens a file. IT IS NOT THE ONLY REBUILDER AND THAT DOES NOT WEAKEN THE
+ * POINT: each member's README carries its own `bun pm pack`, and
+ * test/readme.test.ts executes every README command -- so which pack this reads
+ * depends on order, and every candidate is a PACK rather than the preload.
+ *
+ * SO THE COVERAGE IS NARROWER THAN THE TRANSFORM NAMED ABOVE, AND THE LINE IS
+ * WHICH BUILD WROTE THE FILE. A transform living in a HANDLER'S OWN `prepack`
+ * travels into what this reads and IS CAUGHT. A transform in the SHARED BUILD
+ * PATH -- `prepareWorkspace` in scripts/workspaces.ts, which is what the preload
+ * runs -- is ERASED by that pack before this looks, and this arm goes green over
+ * the very thing it is the subject of. MEASURED IN BOTH DIRECTIONS at the base
+ * and version above, one rewrite moved between the two sites: from a handler's
+ * `prepack`, 933 pass / 5 fail with this arm among them, naming BOTH handlers on
+ * the `silent` list, and the checkout's dist/ left carrying the relative path.
+ * From `prepareWorkspace`, 938 pass / 0 fail -- NOTHING fires, this arm
+ * included -- and the same dist/ is left carrying the SPECIFIER, which is the
+ * pack having rebuilt over the preload's output rather than an inference about
+ * it.
+ *
+ * THE RESIDUE IS NAMED AND NOT CLOSED. Closing it takes a second build, or a
+ * detector for whether a rebuild happened between the preload and this read; the
+ * first is refused in the paragraph above, and the second buys a fact about the
+ * suite's own machinery rather than about a handler's declarations.
  *
  * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED in
  * sprint 62 on bun test v1.3.13, AT BASE 0ddae74 AND RUN ALONE -- the base is
