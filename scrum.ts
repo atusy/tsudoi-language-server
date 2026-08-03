@@ -904,7 +904,96 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 58,
+    pbi_id: "PBI-60",
+    goal: "The unbuilt-artifact flip stops living in prose: either the compiler NAMES THE FILE IT COULD NOT READ, or the cost that prevents that is a check which reddens the day the cost is gone.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- a READING, its predictions and their counterfactuals written down before the run.",
+        implementation:
+          "Delete the source arms from the framework's exports map and read EVERY reader, in the artifact PRESENT and ABSENT states, on both runtimes and the compiler. Readers enumerated rather than sampled -- the root program, each member's own, the build config, the consumer probes, both runtimes at the root and inside each member, the spawned CLI and fixtures and examples, and the installed and packed arms.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "A GREEN SUITE IS ZERO EVIDENCE HERE AND NOT WEAK EVIDENCE, WHICH IS WHY THE READING IS TAKEN OUTSIDE THE SUITE: the preload builds every package before any test file loads, so THE STATE UNDER MEASUREMENT NEVER EXISTS DURING A RUN. The reading is taken on a tree with the artifact removed AFTER the preload would have run, or it is not the reading.",
+          "AND BOTH ROUTES ARE STASHED. The root declares the framework in devDependencies, so every member has a second path through the root's installed packages, and this repository has already measured that perturbing only a member's own route measures NOTHING. A cost reading that stashes one route reports `no cost` for a reason unrelated to the arm.",
+          "EVERY READING RECORDS WHICH FILE ANSWERED -- a traced path, never an exit code. `The cost evaporated` is sayable only as: THESE specifiers, in THESE files, resolve to THESE paths with the arm removed. The instrument already exists in this suite.",
+          "THE RECORDED COSTS ARE SUPERSEDED AND ARE QUOTED ONLY AS THE THING BEING RE-TAKEN: they were measured under a mapping that no longer exists anywhere, and the two importers they name now reach the framework through installed packages instead. Locate those two by their paths in today's tree, or declare them gone and name what replaced them.",
+          "AND A RUN OFFERED AS EVIDENCE ACCOUNTS FOR SKIPS, per the previous sprint's own measurement: a file whose arms are ALL SKIPPED satisfies `every arm passed`.",
+        ],
+      },
+      {
+        test: "None -- a READING taken before any edit, and its output is what the deciding measurement is applied to.",
+        implementation:
+          "Enumerate every site whose REASON is about this arm, by reading each rather than counting them, and rule each REWRITE or RETARGET against a discriminator fixed BEFORE the enumeration: a rewrite is a sentence whose subject is deleted; a RETARGET is an assertion kept alive by substituting a different justifying fact, and the item's deciding measurement disqualifies it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE DECIDER AMONG THE SITES IS THE ONE WHOSE PROPERTY IS A PAIR: an arm requiring that perturbing an installed consumer's published types reddens the probe WHILE the root check stays green. The asymmetry that produces the pair -- the consumer loses the types where this repository, which has source, does not -- IS MANUFACTURED BY THE ARM UNDER DELETION. So the measurement is not `is it still red`: it is whether BOTH HALVES survive. If the pair collapses into `fails for everyone`, the arm has been retargeted.",
+          "ONE SITE IS THE CLASS THAT IS MISSED PRECISELY BECAUSE NO RED POINTS AT IT: a helper whose docstring says the map's arms are source-for-`default` and built-for-`types`, and which THROWS when a subpath carries no arm for the condition asked. It is called with one condition today, so under the deletion NOTHING REDDENS and the sentence quietly becomes false.",
+          "AND ONE SITE IS SETTLED RATHER THAN DELETED: the paragraph that names this residue, says no test here may pin it, and PREDICTS `the later fix -- deleting the default arm`. This sprint is that prediction arriving.",
+        ],
+      },
+      {
+        test: "In one staged package where one subpath is ARTIFACT-ONLY, another is WHOLLY ABSENT and the rest are complete: each reader's own output NAMES the missing file or the specifier for both, and in the complete tree every subpath answers from the artifact. Taken for the compiler and both runtimes.",
+        implementation:
+          "A staging helper writing the tree FROM THE MANIFEST'S OWN ARMS -- empty files created or omitted, no compiler -- under the guard whose type is the only route to a mutating end.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PARTIAL IS A PER-SUBPATH STATE VECTOR AND NOT A TREE-WIDE COLOUR, and the item's two definitions of it are not the same set: the compiler emits file by file, so mid-build the map ALSO holds some subpaths complete and others entirely missing. A uniform artifact-only tree would measure a state the build never passes through.",
+          "SO PARTIAL IS A WRITTEN STATE RATHER THAN A WINDOW ANYBODY HAS TO HIT, and the race question is answered by construction. THE ITEM'S OWN PREMISE THAT THIS SUITE ENTERS IT CONCURRENTLY IS RE-MEASURED RATHER THAN INHERITED: counter-evidence is already in hand -- the installer packs a STAGED copy, and the arm that packs in a real directory does so for the HANDLER packages, not the framework. If a writer is found that is a live finding; if not, the premise is recorded false-as-written.",
+          "THE FIXTURE-DISCRIMINATION PAIR IS ASSERTED AND NOT ARRANGED: each arm asserts the staged tree's own state beside the reading, and the compiler-versus-runtime split is asserted as the two readings DISAGREEING IN ONE TREE -- so the day they agree the arm reddens instead of quietly measuring one of them.",
+          "THE PROPERTY IS WHICH FILE ANSWERED, and the failure mode is a SECOND EXPRESSION STANDING BESIDE THE CALL -- computing the expected path from the manifest and comparing it with itself. The arm reads what the reader HANDS OVER: the compiler's own trace, the runtime's own resolution.",
+        ],
+      },
+      {
+        test: "The branch that lands, with its condition stated in advance and ONE branch taken.",
+        implementation:
+          "AFFORDABLE iff all three hold: with the arms deleted and the artifact present, every check is green AND every reader answers from the same file it answers from today; with the artifact absent, the new failures are all NAMED DIAGNOSTICS naming the framework's own subpath, so the framework fails the way a handler already does; and every affected site was ruled a rewrite with none retargeted. THEN the answer is the deletion. NOT AFFORDABLE otherwise, and then the deliverable is a detector on the route the checks already take -- after the build, the published subpaths are resolved and the file that answered is read, and a subpath answering from source is REFUSED naming the file.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IF THE FIRST TWO HOLD AND THE THIRD DOES NOT -- affordable but retargeting -- THE DELETION IS REFUSED WITH MEASUREMENT AND THE DETECTOR BRANCH RUNS. The sprint never takes both.",
+          "A THIRD OPTION SURFACED AT PLANNING AND IS REFUSED HERE: a condition-gated arm nothing matches without a flag. That is a SECOND SUBJECT FLIP ON THREE RESOLVERS, and one subject flip per sprint is the rule whose breach created this residue.",
+          "FOR THE DETECTOR THE PROPERTY IS WHEN -- the reading is taken after the build and before any check reads the artifact -- and that is violated by MOVING code without changing a value, so its arms run the real check command against staged trees and read its output rather than calling the function.",
+        ],
+      },
+      {
+        test: "None for the prose; what grades it is where the words land.",
+        implementation:
+          "Settle the sites the enumeration ruled, and REPAIR RATHER THAN FILE the one inside this sprint's own subject: a docstring licensing the arm by a mapping that intercepts the subpath before the exports map is consulted, when no tracked configuration in this repository contains such a mapping.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT PREDATES THIS SPRINT AND IS STILL THIS SPRINT'S, because the filing bar says a finding inside the sprint's own subject is repaired here even when it predates -- with byte-identity against the base verified and recorded, or it is this sprint's to own.",
+        ],
+      },
+      {
+        test: "The branch that lands carries its perturbation as something the suite RE-RUNS: a registry row when it needs a source mutation, an assertion beside the arm when the weakening is a reading of a result the arm already holds.",
+        implementation: "Ask first which perturbation still HAS a target here.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE CITATION IS LEFT UNASSERTED RATHER THAN PROPAGATED: the facilitator's tasking called this the residue one sprint shipped open and the item's own note names a different one. Neither is asserted here -- it is THE RESIDUE THE MOVE SHIPPED OPEN -- because this record has a case of a number standing unchallenged for thirty sprints, and a wrong one repeated is the failure it punishes.",
+      "BRANCH TWO IS AN ACCEPTABLE CLOSE ONLY WITH ALL FOUR: the deletion was TAKEN and not reasoned about; the blocker is NAMED TO A FILE -- which specifier, in which file, read by which reader, failing with what text, in which state -- because `something would break` is not a cost and neither is a count; the blocker is recorded AS A RE-RUN and not as a note, since this dashboard's header says a perturbation recorded only as prose is not recorded; and the residue's prose does not multiply, every surviving copy carrying the POST-move measurement.",
+      "AND IT IS NOT THE TEST THE ITEM REFUSES -- SAY SO AT THE SITE OR A REVIEWER WILL FILE IT AS ONE. The refused test asserts THE RESIDUE and would pass for as long as the residue persists, specifying it. The permitted record asserts THE BLOCKER and stops holding the moment the blocker does. Opposite failure directions, and that asymmetry IS the terminating mechanism: branch two ends with the decision reopening itself, unattended.",
+      "FAILURE TO DELIVER REGARDLESS OF TREE COLOUR: the arm kept and the output is better paragraphs; or the cost quoted from the pre-move layout; or the deletion never attempted. AT REVIEW THE PO ASKS ONE QUESTION -- what did the deletion produce, byte for byte -- and no answer is a failure.",
+      "THE ONE OUTCOME REFUSED WITH EVERY CHECK GREEN: the arm deleted, the absent state staged and diagnosing, THE PARTIAL STATE NEVER STAGED, and the prose warnings deleted as fixed. The criterion names both states because the pack window is the one a person actually stands in, and absent-only is the shortcut a green tree cannot catch -- removing the warnings on evidence covering one state converts a NAMED residue into an UNNAMED one, which is strictly worse than shipping it open again. The same refusal covers a diagnostic MANUFACTURED by a mapping or a project reference: there is none anywhere now, a refusal enforces it, and an error produced that way grades a resolution no stranger performs.",
+    ],
+  },
   retrospectives: [],
 };
 
