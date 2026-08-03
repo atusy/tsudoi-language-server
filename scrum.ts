@@ -953,7 +953,70 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 57,
+    pbi_id: "PBI-70",
+    goal: "A recorded perturbation is something the suite RE-RUNS, so an arm that has stopped noticing its own predicate being weakened reddens on the next run instead of at the next review.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- a READING, and it decides how much machinery the rest of the sprint needs.",
+        implementation:
+          "Take each weakening this sprint would record and sort it into two piles: those expressible as DATA THE ARM ALREADY READS -- an options object handed to two programs, a declared output directory's value, an index entry -- and those that need a SOURCE MUTATION. A data-expressible weakening is an ordinary arm asserting that the fixture discriminates: no tree copy, no inner build, no suite inside the suite.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "MEASURE THE FORK BEFORE BUILDING THE MACHINERY. Several of the filed instances are data-expressible, and if most are, this sprint is small -- only source mutations need an executor at all. This moves the cost by an order of magnitude and moves no ruling.",
+        ],
+      },
+      {
+        test: "A recorded perturbation whose NAMED ARM no longer reddens fails, and the same registry over the unmutated tree passes. THE REQUIRED DEGENERATE, run before the arms are believed: a runner that reads the MUTATED RUN'S PROCESS EXIT CODE instead of the named arm's own result.",
+        implementation:
+          "The executor rides the first check. Each record carries a mutation, a named arm, and a required red; applying it and reading THAT ARM'S OWN RESULT needs no heuristic.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ATTRIBUTION IS THE ACCEPTANCE CONDITION AND IT IS THIS ITEM'S OWN RULE TURNED ON THE INSTRUMENT BUILT TO ENFORCE IT: a mutation that breaks compilation reddens everything, and `the named arm reddened` is then satisfied for the wrong reason. AN ARM OVER A GATE STANDS WHERE NOTHING ELSE IS RED. Two states producing one red is this tree's recorded defect.",
+          "IT RIDES THE FIRST CHECK AND IS NOT A SIXTH ONE, and not a script a person invokes: a runner that must be remembered is the failure the previous sprint named.",
+          "WHAT REDDENS IS EXACTLY THE TWO OUTCOMES THIS PROJECT'S OWN VOCABULARY CALLS DEFECTS -- GONE QUIET and DISARMED. It is SILENT about arms with no record, and that silence is honest rather than a green.",
+        ],
+      },
+      {
+        test: "The seeds: every arm THIS SPRINT touches, plus AT LEAST ONE record standing over a real arm elsewhere in the suite.",
+        implementation: "None beyond writing the records.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE SECOND SEED IS MANDATORY OR THE INSTRUMENT'S ONLY EVIDENCE IS SELF-REFERENTIAL, which is why the previous sprint staged the five real checks. HISTORICAL SEEDS ARE OPPORTUNISTIC AND BUDGETED AT NONE; where a target is gone, record TARGET DELIBERATELY REMOVED rather than dropping it.",
+        ],
+      },
+      {
+        test: "None -- the ruling.",
+        implementation:
+          "A perturbation recorded ONLY AS PROSE IS NOT RECORDED, filed in this dashboard's header beside the filing bar and the review round's standing instruction.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WITHOUT THIS HALF THE SPRINT IS THE FIFTH RESTATEMENT WITH AN EXIT CODE, and the PO will not accept it as this item's work. The alternate spelling here is PROSE IN A SPRINT NOTE, and this header is the established home for exactly that shape -- it is there because skill delivery is what fails under load.",
+          "THE MEASURED FAILURE MODE IS NOT `NO PERTURBATION WAS RUN`: these records are full of perturbations. It is that each was run ONCE and recorded as PROSE, in a dashboard whose own header says a decision may only be compacted into a home that OUTLIVES A CONTEXT WINDOW -- and a note is not such a home. The manual compensator is known not to reach: the standing re-run carries its own measurement that nearly every earlier perturbation aimed at something that no longer existed.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE MACHINE CANNOT DECIDE COVERAGE AND CAN DECIDE FIDELITY, EXACTLY. A check deciding whether an arm HAS a perturbation is an approximate detector, and this project has refused that shape by name -- its failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED. That half stays unmechanised AND THE SPRINT SAYS SO IN ITS OWN TEXT. What is exact is that a perturbation, once recorded, is a mutation, a named arm and a required red.",
+      "REFUSED IN ADVANCE SO NO SPRINT IS SPENT ON THEM: any coverage detector in any spelling, including one scanning a diff for touched arms and cross-referencing a registry -- it reddens on a formatting-only touch and its matching is lexical over free text; a mutation-testing framework or any mutation SCORE, since generated mutants are not `the adjacent weaker reading of THIS predicate` and a survival percentage is the coverage number arriving through arithmetic; a backfill sweep of the existing corpus, which is the tail item by the back door; a skill as the deliverable; a sixth Definition-of-Done check; and any aggregate word in the report.",
+      "THE ONE OUTCOME REFUSED WITH EVERY CHECK GREEN: a green that can be read as a statement about arms NOT in the registry. Falsifiable form -- the report NAMES the arms it weakened, any count is computed at run time and written down nowhere, and no tracked prose claims the registry is complete.",
+      "DISCLOSED AT PLANNING RATHER THAN LEFT FOR REVIEW: the machine executes fidelity, but `the ADJACENT weaker reading` is a semantic judgement nothing verifies -- no check stops a record whose mutation is arbitrary or trivially detectable rather than genuinely one step weaker. A residue named before close is disclosure; the same thing found at review is a defect.",
+      "STAKEHOLDER RULING, ASKED FOR AS A GATE AND ANSWERED AS A DELEGATION: SO LONG AS THE ITEM'S ACCEPTANCE CRITERIA ARE HONOURED, HOW SUBTASKS ARE HANDLED IS THE DEVELOPER'S. The record MAY be made mandatory if it is needed -- AND IT MUST NOT BECOME A SHACKLE. So the developer's second design, which would make the schema refuse a completed subtask carrying no perturbation record, is THEIRS TO TAKE OR LEAVE rather than something waiting on a ruling; the type section's `request human review` was read as a gate over the mechanism when the gate is only over the SCHEMA'S SHAPE.",
+      "AND THE SHACKLE TEST IS WHAT DECIDES IT, applied to the design's own named costs: a field required of every completed subtask would force a perturbation record TO BE INVENTED AT PLANNING TIME, which installs theatre by construction; and it reddens every historical completed subtask on day one, which is the tail item's sweep arriving through the type system as unplanned work. Both are the shackle the stakeholder named. WHAT PASSES THE TEST IS AN OBLIGATION THAT ATTACHES WHERE THE CLAIM IS MADE -- to an arm that says it defends a predicate -- and never to the act of closing a subtask.",
+      "A FINDING SURFACED AT PLANNING AND IS FILED UNDER THE BAR RATHER THAN REPAIRED HERE: the Definition-of-Done runner's header says a type error in the dashboard stops the run. MEASURED -- the runtime strips types without checking them, so a dashboard holding a type error RUNS and exits 0, and the checks are read normally. It belongs to the stale-mechanism item, it predates this sprint's base, and it is outside this sprint's subject.",
+    ],
+  },
   retrospectives: [],
 };
 
