@@ -482,6 +482,18 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * accepted here has gone. The reading to take again is the tracked one, both
  * runtimes, one session.
  *
+ * AND NOTHING DETECTS ANY OF THE THREE, WHICH BELONGS BESIDE THEM RATHER THAN IN
+ * A DASHBOARD: a condition that can arrive with every check green is the
+ * folklore this paragraph is written against, one step later. All three clauses
+ * are properties of the RUNTIMES and not of this package -- no check here reads
+ * what an `opendir` allocates or retains, no check re-runs the instrument (a
+ * wall-clock assertion inside the suite is refused by name, at the instrument),
+ * and the versions every number above was taken on are read off the running
+ * binary only by that instrument, which nothing runs. So a runtime upgrade
+ * reddens nothing here, the versions in this file go stale in silence, and this
+ * condition is met by A PERSON re-running two lines. It is written to age; what
+ * makes it age is somebody looking.
+ *
  * AND ONE SENTENCE THAT STOOD HERE SURVIVES, RE-TAKEN RATHER THAN REPEATED:
  * streaming is slower on deno at EVERY size this reading covers -- 200, five
  * thousand and a hundred thousand -- including the one the shape was adopted for,
