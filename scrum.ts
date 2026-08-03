@@ -1071,18 +1071,26 @@ const scrum: ScrumDashboard = {
     number: 60,
     pbi_id: "PBI-64",
     goal: "A reader of this repository's promise about its own documentation finds it true of every fenced block in every tracked README -- because a block nothing consumes is refused by name, and a block that is read rather than run says which part of itself the reading can fail on.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "None -- structural. Pinned by the existing arms in test/readme.test.ts staying green (the marker-deleted probes, the count throws, the moved-marker throw) and by the whole Definition of Done. Born-green, no behaviour claim.",
         implementation:
           "ONE FENCE READER, and the markers select from it. `fencedBlocks(markdown)` in test/helpers/readme.ts returns each block's OPENING-FENCE OFFSET, info string, body and line; `markedBlocks(markdown, marker)` is the blocks whose opening fence the marker immediately precedes -- the adjacency the three current regexes already require, kept rather than loosened. The three extractors are rebuilt on it; their count guards and QUICKSTART_STEPS are untouched.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "599407e",
+            message:
+              "refactor(readme): one fence reader, so `reached` and `extracted` cannot drift",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "IT IS FIRST BECAUSE IT IS WHAT SATISFIES `NO SECOND PARSER`, not because it is tidy. The guard joins `the document's blocks` to `the blocks something consumes` on the opening-fence offset, so after this there is ONE matcher and the guard's notion of reached cannot drift from the extraction's. A second expression standing beside the call is not the call, applied to matching.",
           "THE READER READS FENCES AND INFO STRINGS, NEVER BODIES. Three-or-more backticks OR TILDES at up to three spaces of indent, closing on the same character at at least the same run length -- tildes included because a reader that misses `~~~sh` fails toward PERMITTING, the one direction this item cannot accept. WHAT IT CANNOT SEE, named rather than fixed: a four-space indented code block, which has no fence and no info string. Deciding `is this text a command` by reading the body is a matcher for a defect that is a property of matching, and this repository refuses that shape by name.",
+          "THE SECOND MATCHER WAS ALREADY IN THE FILE AND THE FIRST DRAFT OF THIS SUBTASK SHIPPED WITH IT, WHICH IS THIS RECORD'S OWN SAME-SPRINT SUBCASE CAUGHT BEFORE THE COMMIT RATHER THAN AFTER: `visibleProse` cut blocks with its own three-backtick expression while `fencedBlocks`'s docstring, twenty lines below, said it was the only matcher in the file. It is not a tidiness point -- three backticks see nothing tilde-fenced, so a directory named ONLY inside a `~~~` block satisfied `the prose a reader sees names it` in BOTH extractors that ask, which is the permitting direction this item refuses. Repaired in the same commit by cutting on the block's own offsets, which is why `FencedBlock` carries an `end`.",
         ],
       },
       {
