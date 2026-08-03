@@ -141,18 +141,26 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * -name resolution the next paragraph is about. It is run by bun, which is the
  * toolchain this repository documents.
  *
- * THE ROOT PACKAGE'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
- * ROUTE UNDER TEST rather than everywhere: test/helpers/install.ts packs the root
+ * THE FRAMEWORK'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
+ * ROUTE UNDER TEST rather than everywhere: the suite's own installer packs it
  * from a FRESH staging directory holding package.json, src/ and
  * tsconfig.build.json alone, so its dist/ is built into an empty tree every time.
  * This package is packed FROM WHERE IT LIVES -- deliberately, so no probe has to
  * perturb a copy -- so its dist/ is the one that persists between packs.
  *
- * WHAT THAT LEAVES UNCOVERED, said rather than implied: a HUMAN running
- * `bun pm pack` at the repository root packs whatever dist/ is lying there, with
- * the same staleness this clear removes here. Nothing in the suite takes that
- * route, so nothing observes it; the root has no `.d.ts` input to leak, which
- * bounds the consequence to a stale artifact rather than to a global declaration.
+ * IT WAS CALLED `THE ROOT PACKAGE` AND THE ROOT IS NOT THAT PACKAGE, which also
+ * made the uncovered route wrong: this paragraph said a HUMAN running `bun pm
+ * pack` AT THE REPOSITORY ROOT packs whatever dist/ is lying there. The root
+ * package of that workspace is private, declares no `files` and has no build of
+ * its own, so packing there collects tracked files and reaches no dist/ at all.
+ *
+ * WHAT THAT LEAVES UNCOVERED, RETARGETED AT THE ROUTE THAT EXISTS: the framework
+ * is packed by hand from ITS OWN directory -- the command the workspace's README
+ * gives for a manual runtime test -- and that pack carries whatever dist/ is lying
+ * there, with the same staleness this clear removes here. Nothing in the suite
+ * takes that route, so nothing observes it; its src/ holds no `.d.ts` input to
+ * leak, which bounds the consequence to a stale artifact rather than to a global
+ * declaration.
  *
  * BY BARE NAME, which is what takes the node_modules/.bin resolution: script
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one
