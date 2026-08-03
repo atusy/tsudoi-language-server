@@ -1125,6 +1125,12 @@ const scrum: ScrumDashboard = {
               "test(resolve): drive the grouping at the gate, where a directory cannot stage it",
             phase: "green",
           },
+          {
+            hash: "fc4b37f",
+            message:
+              "test(perturbations): let the suite re-run this sprint's perturbation, not a scratchpad",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE BRANCH THE RULE SELECTED IS THE SECOND ONE, AND THIS RECORD MAY NOT READ AS THE FIRST. At the ordinary size the delta is OUTSIDE the instrument's own noise on BOTH runtimes -- deno -3.261 ms against a null of -0.069 (-1.392..+0.227), bun +0.460 against a null of +0.030 (-0.031..+0.159) -- so nothing here closes on `the shapes are indistinguishable`. The decision was taken against the WORKING-SET reading, as the rule fixed in advance requires when either runtime pays outside noise, and ONE shape was taken: the streaming shape STAYS, and deno pays 3.261 ms per highlight at five thousand entries for it.",
@@ -1157,6 +1163,12 @@ const scrum: ScrumDashboard = {
               "docs(resolve): retire the readdir pair rather than renumber it, the subject differs",
             phase: "refactoring",
           },
+          {
+            hash: "634e30e",
+            message:
+              "docs(resolve): put the seam the fastest shape deletes where that edit would be made",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE RULING, AS IT LANDED AT THE SITE, AND ITS SIX CONTENTS CHECKED ONE AT A TIME. (1) A NUMBER PER RUNTIME AT THE ORDINARY SIZE FOR BOTH SHAPES, one instrument, one session: bun 2.080 streaming against 2.528 array, deno 9.619 against 6.374. (2) WHO PAYS, SIGNED: deno +3.261 ms per highlight against the array shape it replaced and +4.157 against an array under this same gate; bun -0.460 against the first and +0.601 against the second. (3) WHAT IT STILL BUYS, PER RUNTIME, AFTER THE TRANSIENT-ALLOCATION READING: on bun this function's own working set beside a copy the process holds anyway, plus a tail of 42.616 against 61.302; on deno the only whole-directory retention there is to avoid, since its open allocates and discards. (4) A FIRING CONDITION: deno's `opendir` ceasing to discard, bun's `Dir` ceasing to materialise on the first read, or the ordinary-size delta on deno falling inside the null cell on a re-run. (5) AT THE SITE, in the module's own docstring and not only here. (6) SUPERSEDING: the paragraph that stood there is replaced whole rather than corrected line by line.",
@@ -1175,6 +1187,8 @@ const scrum: ScrumDashboard = {
         status: "completed",
         commits: [],
         notes: [
+          "AND THE SUITE RE-RUNS ONE OF THIS SPRINT'S OWN NOW, which is what keeps a hand-run perturbation from being one nobody runs again: the split-comparator weakening is a record in test/perturbations.test.ts, the FIRST over a workspace member, and it needs no second instrument -- the stage is built from `git ls-files`, so a member's arm file and a member's source are tracked paths like any other. It reports `[HELD] a hidden name already kept is displaced by an ordinary name arriving after it`, and its collateral list is empty AS A MEASUREMENT: one arm in a file of fifteen. THE ONE THAT IS NOT RE-RUN BY THE SUITE IS THE INSTRUMENT'S OWN, and the reason is the sprint's own refusal: it would put a wall-clock reading inside `bun test`. It was run by hand instead and is recorded above.",
+          "THE INSTRUMENT'S OWN DEGENERATE WAS RUN BEFORE ITS ROWS WERE BELIEVED, and it is the one the plan named: a shape returning `{ names: [], total: 0 }` under a fourth label. The instrument EXITS 1 with `readsNothing counted 0 of 40` and writes ZERO BYTES to stdout, so a shape that read nothing cannot report the fast row it would otherwise have earned.",
           "HELD. The gate's comparison swapped for a locale collator, applied in a STAGED checkout rather than the working tree, reddens three arms and they are NAMED rather than counted: `a directory whose dotfiles outnumber the bound still renders its ordinary entries`, `a name arriving after the kept list is full replaces the worst kept by code unit`, and `a hidden name already kept is displaced by an ordinary name arriving after it`. Before the weakening the same file reads 15 arms and none failing.",
           "ITS TARGET SURVIVED BECAUSE THE SHAPE DID, which is what made it the right re-run to pick: the branch taken keeps the handle, so the gate and its comparator are where they were. Had the array shape landed the comparator would still have had a target -- it is the one perturbation in this area that does -- and this record would read the same.",
           "AND IT GAINED A THIRD RED THIS SPRINT, which is the half worth recording: the arm added here is one of the three, so the standing re-run is now reporting on a control that did not exist when the perturbation was first recorded.",
