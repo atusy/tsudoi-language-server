@@ -420,11 +420,33 @@ test("with no artifact at all the compiler answers from source and says nothing,
  *
  * IT IS NOT THE TEST PBI-60 REFUSES, and the difference is the failure
  * direction. That one would assert THE RESIDUE and pass for as long as the
- * residue persists. This asserts THE BLOCKER: the day the harness stages a
- * dist/, or gains any route that does not end in source, this arm stops
- * depending on the arm -- the recorded weakening in test/perturbations.test.ts
- * goes GONE QUIET, and the refusal reopens itself with nobody having to
- * remember it.
+ * residue persists. This asserts THE BLOCKER, and WHAT TERMINATES THE
+ * DISPOSITION IS THE PAIR BELOW ITSELF -- and not a record in
+ * test/perturbations.test.ts, where there is none and none is owed. That
+ * registry carries a weakening, a named arm and a required red for a weakening
+ * that needs a SOURCE MUTATION; when the two readings that separate a claim are
+ * ones ONE ARM CAN HOLD AT ONCE, this project's rule asks for them as an
+ * assertion beside the arm, which is what the halves below are.
+ *
+ * SO IT REDDENS IN BOTH DIRECTIONS THE COST CAN VANISH, AND BOTH WERE TAKEN.
+ * MEASURED over this file alone, `bun test test/unbuilt-artifact.test.ts`
+ * against 4 pass / 0 fail; `typeCheckProbe` has other callers and they were not
+ * re-run. THE HARNESS GAINS A ROUTE THAT DOES NOT END IN SOURCE -- the probe
+ * symlinking the built dist/ beside the src/ it already links -- 3 pass / 1
+ * fail, THIS ARM ALONE: half one still exits 0, while half two resolves through
+ * the `types` arm and hands back 0 where it demands 1. THE SOURCE ARMS ARE
+ * DELETED FROM THE PACKAGE, which is the fix this item refused: half one
+ * receives `consumer.ts(1,42): error TS2307: Cannot find module
+ * '@atusy/tsudoi-language-server/types'` where it requires no output at all.
+ * That direction is 0 pass / 4 fail rather than 1, and the collateral is read
+ * rather than assumed: the three staged arms above build their trees FROM THE
+ * MANIFEST'S OWN ARMS, so removing arms moves them too -- the absent-artifact
+ * arm dies inside `stage` with `ENOENT ... /package/package.json`, nothing
+ * having been written for it to sit beside, and the other two on expectations
+ * about which file answered. None of those three is this pair's reading.
+ *
+ * WHICH IS WHY THE DISPOSITION TERMINATES WITH NOBODY HAVING TO REMEMBER IT: the
+ * day the cost stops being a cost, the arm that records the cost goes red.
  *
  * THE PAIR IS THE BLOCKER ITSELF AND NOT A SECOND OBSERVATION OF THE TREE: the
  * same probe, with the source arm removed from ITS OWN copy of the manifest,
