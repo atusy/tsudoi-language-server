@@ -48,6 +48,29 @@ applySuiteDeadline();
 const scope = "@atusy";
 
 /**
+ * The path one write is about to take, refused unless it stays inside the stage.
+ *
+ * EVERY DESTINATION AND NOT THE COPIED FILES ALONE. `git ls-files` cannot emit a
+ * `..`, so guarding only that loop would be guarding the one input that needs it
+ * least -- while A MANIFEST'S OWN `name` reaches this function too, and a name
+ * carrying a separator would put a link outside the stage. The rule this
+ * repository lost a working tree to is that no write takes its path from
+ * configuration unchecked, not that some configuration is trustworthy.
+ *
+ * LEXICAL AND NOT `realpathSync`, for the reason its sibling in
+ * test/helpers/perturbation.ts records: every destination here is a path that
+ * does not exist yet, and a guard requiring existence could not stand in front
+ * of one at all.
+ */
+function inside(root: string, part: string): string {
+  const path = join(root, part);
+  if (path !== root && !path.startsWith(root + sep)) {
+    throw new Error(`${path} is outside the throwaway ${root}, so nothing here will write to it`);
+  }
+  return path;
+}
+
+/**
  * A staged copy of this checkout, with a node_modules of its OWN.
  *
  * THE BORROWED node_modules THE PERTURBATION STAGE USES IS WRONG HERE, AND IT IS
@@ -79,14 +102,7 @@ function stageThisCheckout(): { readonly root: string; dispose: () => void } {
     throw new Error(`git ls-files failed in ${repoRoot}, so no stage could be built`);
   }
   for (const tracked of listed.stdout.split("\0").filter((entry) => entry !== "")) {
-    const destination = join(root, tracked);
-    // THE GUARD IS ON THE WRITE AND NOT ON THE LIST IT CAME FROM, which is this
-    // repository's own finding paid for the worst way: a mutating end that reads
-    // the right QUANTITY -- a path -- against a subject that cannot tell a
-    // throwaway from the checkout.
-    if (!destination.startsWith(root + sep)) {
-      throw new Error(`${destination} is outside the throwaway ${root}, so nothing here writes it`);
-    }
+    const destination = inside(root, tracked);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(join(repoRoot, tracked), destination);
   }
@@ -98,19 +114,19 @@ function stageThisCheckout(): { readonly root: string; dispose: () => void } {
     cwd: root,
     stdio: "pipe",
   });
-  const modules = join(root, "node_modules");
+  const modules = inside(root, "node_modules");
   mkdirSync(modules);
   for (const entry of readdirSync(join(repoRoot, "node_modules"))) {
     if (entry !== scope) {
-      symlinkSync(join(repoRoot, "node_modules", entry), join(modules, entry), "dir");
+      symlinkSync(join(repoRoot, "node_modules", entry), inside(modules, entry), "dir");
     }
   }
-  mkdirSync(join(modules, scope));
+  mkdirSync(inside(modules, scope));
   for (const member of declaredMembers(root)) {
     const declared = JSON.parse(readFileSync(join(member, "package.json"), "utf8")) as {
       name: string;
     };
-    symlinkSync(member, join(modules, declared.name), "dir");
+    symlinkSync(member, inside(modules, declared.name), "dir");
   }
   return {
     root,
