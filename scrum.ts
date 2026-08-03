@@ -980,12 +980,25 @@ const scrum: ScrumDashboard = {
         implementation:
           "The executor rides the first check. Each record carries a mutation, a named arm, and a required red; applying it and reading THAT ARM'S OWN RESULT needs no heuristic.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "e9cd265",
+            message:
+              "test(perturbation): re-run a recorded perturbation, and read the ARM's own result",
+            phase: "green",
+          },
+        ],
         notes: [
           "ATTRIBUTION IS THE ACCEPTANCE CONDITION AND IT IS THIS ITEM'S OWN RULE TURNED ON THE INSTRUMENT BUILT TO ENFORCE IT: a mutation that breaks compilation reddens everything, and `the named arm reddened` is then satisfied for the wrong reason. AN ARM OVER A GATE STANDS WHERE NOTHING ELSE IS RED. Two states producing one red is this tree's recorded defect.",
           "IT RIDES THE FIRST CHECK AND IS NOT A SIXTH ONE, and not a script a person invokes: a runner that must be remembered is the failure the previous sprint named.",
           "WHAT REDDENS IS EXACTLY THE TWO OUTCOMES THIS PROJECT'S OWN VOCABULARY CALLS DEFECTS -- GONE QUIET and DISARMED. It is SILENT about arms with no record, and that silence is honest rather than a green.",
+          "THE REQUIRED DEGENERATE, RUN BEFORE THE ARMS WERE BELIEVED AND MEASURED TWICE -- once on the file as first written and once on the file as committed, because a guard and an arm were added between them. The reading is unmoved: a runner returning `held` the moment the mutated run's exit is non-zero leaves 3 pass / 6 fail. The three survivors are the two arms that never call the reader -- the `from` arity refusal and the throwaway-path refusal -- and the stage arm, and that is the honest boundary of what the degenerate reaches.",
+          "THE OTHER FIVE DEGENERATES, EACH REDDENING EXACTLY THE ARM NAMED FOR IT, 8 pass / 1 fail every time: the baseline dropped, so an arm already red reads held; the recorded red set compared by CONTAINMENT rather than equality; an absent arm defaulted to `passed`, so a deleted arm reads GONE QUIET instead of refused; the report line replaced by a constant; and the guard's own two directions -- refusing nothing takes the guard arm alone, refusing everything takes all nine. AND ONE MORE, AIMED AT THE STAGE: `applyWeakening` made a no-op reads 3 pass / 6 fail, which is the arm this sprint could not perturb the obvious way.",
+          "A DEGENERATE THAT MISSED, RECORDED BECAUSE IT IS THE RULE ITSELF ARRIVING IN MY OWN HAND: the first aim at the absent-arm refusal defaulted only the MUTATED run's lookup to `passed` and left the baseline's alone, so the refusal still fired on the baseline and the file read 9 pass / 0 fail. A perturbed input that is not in the program the assertion reads cannot make it fail. Re-aimed at both lookups, it reddens its arm and nothing else.",
+          "WHAT THE SPRINT PAID TO LEARN, AND IT IS INSIDE THIS ITEM'S OWN SUBJECT RATHER THAN BESIDE IT: A HAND-RUN DEGENERATE DELETED THE WORKING TREE. The perturbation made `stageCheckout` hand back the CHECKOUT ROOT -- which is the honest weakening of `the stage is a throwaway` -- and the arms' `afterEach` then ran `rmSync(root, { recursive: true, force: true })` on it, taking the worktree and `.git` with it. RECOVERED IN FULL from `origin/main` at dd4fbd9, which had every commit; the Definition of Done was re-taken on the restored checkout and read 862 pass / 0 fail across 57 files, five [PASSED], warnings 1 -- byte for byte this sprint's base. LOST AND RE-MADE: one scrum.ts-only commit, its content unchanged. NOT VERIFIABLE AGAINST GIT: CLAUDE.md is globally gitignored, so it was restored from this session's own copy rather than from history.",
+          "AND THE DIAGNOSIS IS NOT `THAT DEGENERATE WAS TOO DANGEROUS`, WHICH IS THE READING THAT WOULD LET THE CLASS THROUGH AGAIN. The destructive end read the RIGHT QUANTITY -- a path -- against a subject that could not discriminate a throwaway from the repository, because nothing asked; the value's producer was doing its job. That is this item's class exactly, arriving in the machine built to retire it, which is the third time this project has recorded that shape. THE REPAIR IS ON THE DELETE: `throwawayOnly` refuses any path outside the system temporary directory, both in the stager's own dispose and in the arms' sweep, and it has an arm with both directions. A note saying `do not point a stager at the checkout` forecloses nothing -- a TMPDIR that resolves oddly or an early return added later reaches the same rmSync with the same silence.",
+          "THE STAGE ARM'S DEGENERATE IS THE SAFE HALF OF THAT PAIR, DELIBERATELY, AND THE COST IS STATED: `the weakening never reaches the working tree` is now witnessed by the refusal firing on the checkout root rather than by pointing a live stager at it. The measured reading from the unsafe direction stands as taken -- the arm reddened, 7 pass / 1 fail -- and is NOT reproduced.",
         ],
       },
       {
