@@ -463,8 +463,18 @@ function build(root: string, dir: string): void {
  * SAME LINE. Both handler packages' `prepack` opens with `rm -rf dist` and
  * rebuilds in the same command; the framework's `prepack` removes nothing at
  * all; every other recursive delete in tracked code stands in a staged tree
- * under the temporary directory. SO AN ABSENT ARTIFACT IS NEVER ONE A COMMAND
- * TOOK AWAY -- it is one nothing has written yet, and which absences are loud is
+ * under the temporary directory. SO AN ABSENT ARTIFACT IS USUALLY ONE NOTHING
+ * HAS WRITTEN YET -- AND `NEVER ONE A COMMAND TOOK AWAY` IS WHAT THIS SAID AND IS
+ * TOO WIDE BY THE TREE'S OWN RECORD. It is true of the DIRECTORY and false of the
+ * artifacts in it, because `rm -rf dist && tsc` is a CONDITIONAL and not an
+ * atomic swap. TWO EXCEPTIONS, both already written down elsewhere: a `prepack`
+ * whose clear ran and whose compiler did not leaves the directory gone -- the
+ * sibling of the hazard six lines below, where the compiler runs and leaves a
+ * fresh wrong artifact -- and a source file RENAMED OR DELETED leaves an artifact
+ * the same-line `tsc` will not rewrite, which is exactly the artifact the clear
+ * exists to remove and which the rebuild no longer emits.
+ * packages/tsudoi-completion-path/test/package-shape.test.ts carries that reason
+ * and test/packed-members.test.ts measured it. WHICH ABSENCES ARE LOUD is
  * measured at test/helpers/build.ts.
  *
  * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
