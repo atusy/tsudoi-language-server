@@ -131,6 +131,32 @@ are perturbation records naming its arms by exact `test()` string. So when you
 delete or retarget an arm, the table is what you fix by hand; nothing will tell
 you.
 
+## Supersede; do not amend
+
+_(sprint 61)_ **When a fact changes, REWRITE THE PARAGRAPH THAT CARRIED IT.**
+Appending a correction beside the sentence it corrects leaves a reader to pick,
+and they pick whichever they reach first. MEASURED three times in one sprint: a
+corrected enumeration filed as a note BESIDE the false sentence in the same
+subtask; two superseded notes left standing in that sprint's own close, one
+still in the present tense about a procedure the same increment had discharged;
+and a reason repaired at `buildOrder` that had been standing NINE LINES BELOW
+its own correction in the same docstring.
+
+**The rule is worth more than tidiness because a superseded paragraph carries
+its REFERENT away with it, and an amended one leaves the pointer behind.**
+MEASURED in the same sprint. A sweep was run for a mechanism the project had
+just falsified, keyed to what that mechanism ASSERTED, and it missed two
+docstrings explaining a present-day fact by a `paths` mapping that no longer
+exists anywhere -- because one of them opened _"the mapping asserted above"_. **A
+DANGLING REFERENCE ASSERTS NOTHING**, so a sweep for false sentences walks past
+it and so does a reader scanning for falsehoods. It was found by someone reading
+the whole increment for truth.
+
+**NO DETECTOR IS PROPOSED AND THE REFUSAL IS BY NAME**: a matcher deciding
+whether a reference still has a referent is a matcher over prose content, which
+is the shape sprint 60 refused when it killed the exempt tag list. The remedy is
+the discipline at the moment of writing, which is why it lives here.
+
 ## Commit boundaries a comment decides
 
 **WHEN FIX A'S COMMENT DESCRIBES THE STATE FIX B CREATES, A AND B ARE ONE

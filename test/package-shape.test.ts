@@ -234,6 +234,18 @@ function publishedArm(condition: string): Record<string, string> {
  * persisted, specifying it rather than finding it. The arm below reads the state
  * the suite's own preload guarantees, and says nothing about the other one.
  *
+ * AND THIS REFUSAL IS ENFORCED BY NOTHING, WHICH IS SAID OUT LOUD BECAUSE IT
+ * SITS THIRD IN A LIST OF THREE AND THE OTHER TWO ARE ENFORCED. Deleting the
+ * framework's source arms REDDENS -- measured, and the blocker pair in
+ * test/unbuilt-artifact.test.ts fires in both directions the cost can vanish. A
+ * `paths` mapping is REFUSED BY A CHECK, `refuseMemberMappings`. A test that
+ * pins the residue is caught by neither, AND CANNOT BE: a check deciding
+ * whether some other test pins a residue is a matcher for a defect that is a
+ * property of matching, which this repository refuses by name wherever it comes
+ * up. A reader who met two enforced refusals and inferred the third from the
+ * pattern would be reading a silence as a mechanism, which is the failure this
+ * paragraph's own subject is made of.
+ *
  * THE FIX THIS PARAGRAPH PREDICTED WAS TAKEN, MEASURED AND REFUSED, which is the
  * outcome it owes a reader rather than the prediction. Deleting the `default`
  * arms leaves every reader answering from the same file it answers from today
