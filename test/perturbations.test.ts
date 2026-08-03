@@ -630,6 +630,35 @@ const records: readonly PerturbationRecord[] = [
     },
     alsoReddens: [],
   },
+  {
+    // THE PERTURBATION THIS SPRINT'S OWN DELIVERABLE CARRIES, and its adjacent
+    // weaker reading is the one a reviewer would accept without noticing: read
+    // THAT the subpath resolved rather than WHICH FILE answered. Source and
+    // artifact both resolve, so the weakened detector is silent over exactly the
+    // states it exists for.
+    //
+    // ITS THREE NAMES ARE A MEASUREMENT AND NOT A TOLERANCE: the complete-tree
+    // arm stays green under it -- the detector was never going to fire there --
+    // and every arm that requires a refusal goes red, including the ordering
+    // arm, which cannot observe a refusal that never happened.
+    arm: {
+      file: "test/artifact-detector.test.ts",
+      name: "a published subpath with no artifact at all is refused, naming the file it promised",
+    },
+    weakening: {
+      file: "scripts/workspaces.ts",
+      from: `    return (
+      landed === undefined ||
+      !existsSync(declaration) ||
+      realpathSync(landed) !== realpathSync(declaration)
+    );`,
+      to: "    return landed === undefined;",
+    },
+    alsoReddens: [
+      "a published subpath whose module is written and whose declaration is not is refused, naming the declaration",
+      "the refusal arrives before any member is type-checked against the artifact",
+    ],
+  },
 ];
 
 /**
@@ -658,17 +687,23 @@ function unweakened(file: string): Promise<ArmFileRun> {
   return taken;
 }
 
-test(`every arm in ${dodArms} passes before any weakening`, async () => {
-  const before = await unweakened(dodArms);
-  // THE HALF THAT MAKES EVERY RED BELOW ATTRIBUTABLE. Each record requires the
-  // arms it does NOT name to stay green under its weakening; that requirement
-  // means nothing unless they were green to begin with, and this stage is not
-  // this repository -- it carries no bunfig.toml, so no build ran in it.
-  expect([...(before.arms ?? [])].filter(([, result]) => result === "failed")).toEqual([]);
-  // AND THE PAIR: an empty list of failures and a reader that opened nothing are
-  // the same observation without it.
-  expect(before.arms?.size ?? 0).toBeGreaterThan(0);
-});
+// OVER THE FILES THE REGISTRY NAMES AND NOT OVER ONE SPELLED HERE, which the
+// second arm file made necessary rather than tidier: a baseline is what every
+// red below is attributed against, and a file entering the registry without one
+// would have its records read against no unweakened run at all.
+for (const file of new Set(records.map((record) => record.arm.file))) {
+  test(`every arm in ${file} passes before any weakening`, async () => {
+    const before = await unweakened(file);
+    // THE HALF THAT MAKES EVERY RED BELOW ATTRIBUTABLE. Each record requires the
+    // arms it does NOT name to stay green under its weakening; that requirement
+    // means nothing unless they were green to begin with, and this stage is not
+    // this repository -- it carries no bunfig.toml, so no build ran in it.
+    expect([...(before.arms ?? [])].filter(([, result]) => result === "failed")).toEqual([]);
+    // AND THE PAIR: an empty list of failures and a reader that opened nothing are
+    // the same observation without it.
+    expect(before.arms?.size ?? 0).toBeGreaterThan(0);
+  });
+}
 
 for (const record of records) {
   test(`the recorded weakening still reddens: ${record.arm.name}`, async () => {

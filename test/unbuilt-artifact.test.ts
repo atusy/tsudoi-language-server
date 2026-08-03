@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import { type ThrowawayPath, throwawayOnly } from "./helpers/perturbation.ts";
 import { frameworkRoot, runCommand } from "./helpers/spawn.ts";
-import { runTsc } from "./helpers/typecheck.ts";
+import { runTsc, typeCheckProbe } from "./helpers/typecheck.ts";
 
 applySuiteDeadline();
 
@@ -394,4 +394,57 @@ test("with no artifact at all the compiler answers from source and says nothing,
   } finally {
     staged.dispose();
   }
+});
+
+/**
+ * THE BLOCKER, ASSERTED BESIDE THE STAGED STATES IT EXPLAINS -- and it is
+ * this sprint's measured reason for refusing the deletion rather than a second
+ * copy of a resolution test.
+ *
+ * PBI-60's fix was to DELETE the framework's source arms, so that with the
+ * artifact absent the compiler names the file instead of quietly reading
+ * another. It was taken and measured and REFUSED, and this is the cost that
+ * refused it: THE HARNESS THIS SUITE GRADES CONSUMERS WITH HAS NO ARTIFACT AT
+ * ALL. `typeCheckProbe` stages the framework's manifest with src/ symlinked and
+ * no dist/, so `@atusy/tsudoi-language-server/types` resolves there through the
+ * `default` arm in EVERY state of this repository -- and deleting that arm turns
+ * this and two arms beside it from graded resolutions into TS2307.
+ *
+ * IT IS NOT THE TEST PBI-60 REFUSES, and the difference is the failure
+ * direction. That one would assert THE RESIDUE and pass for as long as the
+ * residue persists. This asserts THE BLOCKER: the day the harness stages a
+ * dist/, or gains any route that does not end in source, this arm stops
+ * depending on the arm -- the recorded weakening in test/perturbations.test.ts
+ * goes GONE QUIET, and the refusal reopens itself with nobody having to
+ * remember it.
+ *
+ * THE PAIR IS THE BLOCKER ITSELF AND NOT A SECOND OBSERVATION OF THE TREE: the
+ * same probe, with the source arm removed from ITS OWN copy of the manifest,
+ * cannot resolve the specifier at all. So the green above is that arm answering
+ * and not some other route, and the reading holds in any tree -- including a
+ * staged checkout with nothing built, where a `dist/ exists here` pair would be
+ * red for a reason that is not the blocker.
+ */
+test("the harness that grades a consumer's type check reaches the framework through its source arm", async () => {
+  const consumer = {
+    "consumer.ts": [
+      'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
+      "export type Factory = TsudoiConfigFactory;",
+      "",
+    ].join("\n"),
+  };
+
+  const asItStands = await typeCheckProbe(consumer);
+  expect(asItStands.output).toBe("");
+  expect(asItStands.code).toBe(0);
+
+  const withoutTheSourceArm = await typeCheckProbe(consumer, (packageJson) => {
+    for (const arm of Object.values(
+      packageJson.exports as Record<string, Record<string, string>>,
+    )) {
+      delete arm.default;
+    }
+  });
+  expect(withoutTheSourceArm.code).toBe(1);
+  expect(withoutTheSourceArm.output).toContain("@atusy/tsudoi-language-server/types");
 });
