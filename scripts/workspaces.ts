@@ -412,12 +412,31 @@ function build(root: string, dir: string): void {
  * does not stop.
  *
  * THE FRAMEWORK IS BUILT BEFORE THE HANDLERS AND IT IS NOT THIS FUNCTION SAYING
- * SO. A handler resolves `@atusy/tsudoi-language-server/types` through the
- * exports map to dist/types.d.ts, so a handler compiled against an unbuilt
- * framework fails at TS2307 -- an apparatus failure wearing a resolution
- * failure's clothes. What orders it is that BOTH HANDLERS DECLARE IT, read out
- * of their manifests by `buildOrder`. The loop knows nothing about which package
- * is which, which is what let the framework become a member with no edit here.
+ * SO. What orders it is that BOTH HANDLERS DECLARE IT, read out of their
+ * manifests by `buildOrder`. The loop knows nothing about which package is
+ * which, which is what let the framework become a member with no edit here.
+ *
+ * WHAT THAT ORDER IS FOR IS THE RUNTIMES AND NOT THE COMPILER, AND THIS IS A
+ * CORRECTION CARRYING ITS OWN PROVENANCE BECAUSE IT IS ITSELF A MEASUREMENT.
+ * This paragraph used to license the order with the compiler: a handler resolves
+ * `@atusy/tsudoi-language-server/types` through the exports map to
+ * dist/types.d.ts, so a handler compiled against an unbuilt framework fails at
+ * TS2307 -- `an apparatus failure wearing a resolution failure's clothes`.
+ * MEASURED FALSE at sprint 61, base 6d1c85d, tsc 7.0.2, on a staged tree with no
+ * dist/ anywhere: a handler's own `tsc -p tsconfig.build.json` EXITS 0 AND
+ * EMITS, with `@atusy/tsudoi-language-server/types` and `/deps/types` TRACED to
+ * packages/tsudoi-language-server/src/*.ts. The framework's map ends in a source
+ * arm, so the compiler falls through it and never asks for the artifact. THE
+ * RUNTIMES DO ASK -- both take the `import` arm into dist/, and a handler's own
+ * map names no source arm to fall through to -- WHICH IS WHY THE ORDER IS STILL
+ * RIGHT AND ONLY THE REASON MOVED.
+ *
+ * AND THE COMPILER'S INDIFFERENCE IS NOT FREE, said here rather than left as the
+ * happy half of a correction: a handler built in that state has its published
+ * declarations graded against a file no consumer receives. What is measured is
+ * WHAT THE BUILD READ and that it exited 0 -- not that the emitted declarations
+ * differ from ones built against dist/, which is an open question filed in the
+ * dashboard as the pack route's own item and deliberately not answered here.
  *
  * NO PACKAGE IS LINKED INTO ANOTHER ANY MORE, AND THAT ABSENCE IS THE STORY THIS
  * FILE WAS THE LAST HOLDER OF. A `linkRootPackage` stood here writing an entry
@@ -635,6 +654,17 @@ function whereSubpathsLand(
  * Definition-of-Done check and nothing in this repository owns its invocation.
  * Reaching it would take a `paths` mapping or a project reference, which is the
  * one manufacture this workspace refuses by name.
+ *
+ * AND A SECOND STATE PASSES UNDER THIS ENTIRELY, NEWLY MEASURED AND DISCLOSED
+ * HERE RATHER THAN LEFT FOR THE NEXT READER TO DISCOVER AT THE WRONG MOMENT: A
+ * PACK ON AN UNBUILT TREE. `bun pm pack` in a handler runs that package's
+ * `prepack`, whose compiler answers the framework's subpaths from src/ and exits
+ * 0 -- so the tarball's declarations are graded against a file nobody receives,
+ * and THIS REFUSAL CANNOT SEE IT: the check that runs it calls `prepareWorkspace`
+ * BEFORE it calls this, so by the time this reads, the artifact exists and every
+ * subpath answers from it. What the scope above says about the fourth check is
+ * therefore true of the pack too, and for the same reason -- this runs after a
+ * build, and both of those states are before one.
  *
  * IT NAMES THE FILE AND NEVER A COUNT: what a reader needs is which subpath,
  * which file answered, and which file was promised.
