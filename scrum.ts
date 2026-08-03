@@ -429,6 +429,185 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 63,
+      pbi_id: "PBI-62",
+      goal: "Every reference in this tree to a mechanism the move took away is followed to its site and either repaired or shown to have none left -- from an enumeration of the removed mechanisms written before the search, with this item's own record ending the sprint saying what the tree says.",
+      status: "done",
+      subtasks: [
+        {
+          test: "None -- FOLLOW THE RECORD'S OWN POINTERS. Bounded and decidable, with no judgement in it: the item names sites and quotes strings; open the named file and locate the string. The verdict is FOUND / NOT FOUND and never TRUE / FALSE.",
+          implementation:
+            "Disposition every site this item's verification field and notes cite, and repair the field to say what the tree says.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "360c4fa",
+              message:
+                "docs(scrum): this item's verification field named a site the tree had repaired",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "IN EXECUTION: SEVEN POINTERS FOLLOWED, EACH FOUND / NOT FOUND AND NEVER TRUE / FALSE, AND THE VERDICT SPLITS IN TWO FOR FOUR OF THEM -- the quoted STRING is FOUND while the LIVE CLAIM is not, because the site quotes its own dead sentence inside the paragraph that supersedes it. That is the shape a grep-only pass misreads as `still open`, which is why the subtask forbade the true/false verdict. (1) `that mapping is safe only because it cannot reach the packing stage`, test/installed-specifier.test.ts: string FOUND, claim DEAD AND MARKED. (2) `the mapping asserted above`, test/package-shape.test.ts: same split, repaired sprint 61. (3) `the root check answers a member's import THROUGH THE ROOT'S OWN paths MAPPING`, scripts/typecheck-workspaces.ts: NOT FOUND as written -- the header carries the past-tense supersession. (4) `NO EXEMPTION LIST`, scripts/workspaces.ts: FOUND and now TRUE of the function. (5) `bun does not escape > inside an attribute value`, test/helpers/perturbation.ts: same split, repaired. (6) the converse-identity docstring: NOT FOUND as an identity -- the site now says the index buys one direction. (7) `a type error in scrum.ts stops the run instead of failing one check`, scripts/definition-of-done.ts: FOUND, LIVE, UNREPAIRED -- the one open site, and it left for PBI-78.",
+            "AN EIGHTH POINTER, FOUND IN THIS FILE RATHER THAN IN THE TREE, AND ITS DISPOSITION IS A RULING: sprint 58's archived decisions still say the fifth check's header STILL licenses withdrawing the root check by a mapping that exists nowhere. That was true when written and sprint 61 repaired the site a sprint later. LEFT STANDING: an archived record of what a product owner decided is dated, and rewriting it falsifies the history instead of the tree. The repaired verification field is where a reader following that pointer now arrives, and it says the site is closed.",
+            "THIS ITEM'S OWN VERIFICATION FIELD IS AN INSTANCE OF THIS ITEM'S CLASS, WHICH IS THE SPRINT'S STARTING FACT AND WAS FOUND BY FOLLOWING ONE POINTER. It names the staged-path pin's licence as open -- `that mapping is safe only because it cannot reach the packing stage`. VERIFIED AT THE FILE: test/installed-specifier.test.ts carries no such licence. It supersedes in place, quotes the dead sentence, marks it dead, and narrows the surviving reason to `what may not reach the packing stage is any configuration that answers a subpath without the artifact`. `git log` on that file reaches the MOVE ITSELF, so the repair has been in the tree since the move and the record has named it open ever since.",
+            "AND THAT SITE CORRECTS THIS ITEM BY NAME, WHICH THE RECORD ALSO DID NOT HEAR: `node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI, whose text says three`.",
+            "SO `scrum.ts` IS THE TREE, RULED RATHER THAN ASSUMED, and repairing the field is a subtask with a named site rather than bookkeeping: it is tracked at the checkout root, this dashboard's header names it a permanent home for compacted decisions, and this item's benefit is that written reasons stay evidence. THE ITEM CANNOT CLOSE WHILE ITS OWN RECORD NAMES A CLOSED SITE AS OPEN.",
+            "IT RUNS FIRST FOR A REASON THAT IS ABOUT COST AND NOT ORDER: a sprint that opens by repairing a site repaired at the move has spent itself on nothing.",
+          ],
+        },
+        {
+          test: "None -- A SWEEP KEYED TO THE REMOVED MECHANISM'S NAME, with the keys WRITTEN DOWN BEFORE THE SEARCH so coverage is auditable rather than asserted.",
+          implementation:
+            "Keys: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, and `this package` written at the checkout root. Swept across the WHOLE tree including README.md and CLAUDE.md; every hit dispositioned as repaired or recorded-true.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "b3cffa8",
+              message:
+                "docs(tests): three more sentences explain today by the mapping the move deleted",
+              phase: "refactoring",
+            },
+            {
+              hash: "a9b93d6",
+              message:
+                "docs(hover-wordnet): the root is not the package whose prepack this contrasts",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "THE KEYS AS SWEPT, WRITTEN BEFORE THE SEARCH AND SIX OF THEM DERIVED RATHER THAN GUESSED. The seven the plan named: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, `this package` at the checkout root. THE DERIVED SIX COME FROM THE MOVE'S OWN DIFF, e8ddbcc, which is recoverable -- each is a line that diff DELETED at the checkout root, so a sentence uttering it names something the move took: `linkRootPackage`, the root's `prepack` and its `tsconfig.build.json`, an `exports` map attributed to the ROOT manifest, `files` attributed to the ROOT, a bare `src/` path written from the root, and `@atusy/tsudoi-language-server` naming the ROOT. FILE UNIVERSE: `git ls-files` plus CLAUDE.md named explicitly, since a global ignore hides it here.",
+            "WHAT THE SWEEP FOUND, AND IT IS THE ARGUMENT FOR KEYING TO THE NAME: FOUR LIVE SITES, all four invisible to a sweep keyed to the effect. Three were `paths` in the asserting form -- test/published-artifacts.test.ts, test/fixtures/published-specifier.ts, test/completion-path.test.ts, the last of them a THIRD COPY of the sentence sprint 61 superseded in two other files. The fourth came from the root-`dist` key: packages/tsudoi-hover-wordnet/test/package-shape.test.ts contrasting itself with `THE ROOT PACKAGE'S OWN prepack` and warning about a human packing the repository root. All four superseded in place.",
+            "AND THE DISPOSITIONS THAT ARE NOT REPAIRS, RECORDED BECAUSE `nothing else found` IS ONLY ACCEPTED WITH THEM. `main`, `bin`, `linkRootPackage`, root `exports`, root `files` and the root's old name: every hit is either a past-tense record of the retirement or a true statement about the MEMBER, and each was read. WITH ONE MISS, FOUND AFTER THIS SENTENCE WAS WRITTEN AND RECORDED HERE RATHER THAN QUIETLY REPAIRED, because it names the sweep's real failure mode: the `paths` key hit .claude/skills/recording-a-measurement/SKILL.md, whose clause about the retired mapping is a true past-tense record -- and THE SAME SENTENCE goes on to say the root `exclude` is pinned BY EFFECT, which is false and is neither of the two dispositions. A HIT IS A LINE AND A DISPOSITION IS A CLAUSE; reading only the clause the key matched is how this one survived. Repaired at the skill, which now says `exclude` is pinned by literal. AND THE TWO CLASS DISPOSITIONS BELOW ARE WHERE THE SWEEP ACTUALLY FAILED, RESTATED AFTER A SECOND REVIEWER RE-DERIVED THE KEYS FROM e8ddbcc AND FOUND THREE MORE SITES. THE BARE `src/x.ts` CLASS WAS DISPOSITIONED ON AN UNSOUND WARRANT: `package-relative pointers under a convention CLAUDE.md states in its own words` reads that convention wider than it is written -- CLAUDE.md scopes `paths below are relative to that directory` to its architecture list, and the hits are overwhelmingly OUTSIDE packages/, where there is nothing to be relative to. This project's own MEASURED principle says the opposite at three sites, `a bare src/index.ts identifies nothing in a repository holding more than one src/` (test/build-diagnostics.test.ts, scripts/workspaces.ts, scripts/typecheck-workspaces.ts), and code was changed so diagnostics never print the bare form. WHAT THE CLASS COST IS ONE SITE AND IT IS MACHINE OUTPUT RATHER THAN PROSE: `.oxlintrc.json`'s no-restricted-imports `message` -- the text a developer SEES on tripping the rule -- said `Only src/notifications.ts`, while the exemption glob in the same file spells the member path in full because the move updated the glob and not the message. Repaired. THE REST ARE PROSE POINTERS AND ARE NOT BEING CALLED LIVE. And `this package` at the checkout root was the SAME KIND OF DISPOSITION AND ALSO DROPPED A LIVE SITE: test/helpers/build.ts said root `tsc --noEmit` reads THIS package's source rather than its dist/, which the move made false and which licensed a refusal six lines below it -- and bunfig.toml, the file the disposition cited as having got the rule right, is the file that POINTS AT build.ts for that very measurement.",
+            "WHAT ACTUALLY FAILED, AND IT IS THE TRANSFERABLE HALF: A CLASS DISPOSITION IS NOT A DISPOSITION -- IT IS AN UNREAD SET WITH A REASON ATTACHED. The key list was not the defect; every one of the three later sites was REACHED by a key this sprint swept. Each was then dropped by a sentence about the class it belonged to, and a class warrant is exactly the shape that cannot be checked by the person writing it: it asserts something about hits nobody opened. The sprint's own headline finding -- a sentence superseded in two files still shipping in a third -- has a fourth and fifth copy for this reason. A class may bound EFFORT; it may not stand in for reading, and a hit inside one is at best DEFERRED rather than dispositioned.",
+            "AND THE CLOSING RECORD'S TWO LISTS DO NOT CORRESPOND, WHICH IS RECORDED WITH ITS NEGATIVE RESULT RATHER THAN REPAIRED INTO AGREEMENT: clause (1) enumerates the root manifest's runtime `dependencies` among the mechanisms the move removed, and clause (2)'s thirteen keys never included it. ENUMERATED, NOT SWEPT. The second reviewer swept it independently and found ZERO LIVE SITES, so nothing is at risk -- but `each key swept` was read as covering the enumeration, and the two are different lists.",
+            "KEYED TO THE NAME AND NOT TO THE EFFECT, WHICH IS THE FIX FOR THE MEASURED BLIND SPOT. Sprint 61's sweep was keyed to an EFFECT -- a build failing at TS2307 -- and walked past two of this item's own named sites, because their giveaway was `the mapping asserted above`: a DANGLING REFERENCE, which asserts nothing and so lies outside the subject of any sweep for false sentences. But a pointer still UTTERS ITS REFERENT'S NAME, so keying to the name catches the asserting form and the pointing form in one pass.",
+            "IT IS NOT THE REFUSED DETECTOR AND THE DISTINCTION IS LOAD-BEARING: the refused thing DECIDES whether a reference still has a referent, which is a matcher over prose content with a verdict. A token grep produces a READING LIST and decides nothing; a person dispositions each hit. The sprint may not blur this into `just a citation checker`.",
+            "README.md AND CLAUDE.md ARE IN SCOPE TO READ, and the reason each is easy to skip is different: the README's COMMAND BLOCKS are executed by the suite and its PROSE is not, and CLAUDE.md is the densest mechanism narrative in the tree while being globally gitignored here -- which decides where a repair may LAND, not whether it is in scope to READ.",
+          ],
+        },
+        {
+          test: "THE DEGENERATE APPLIED TO THE SITE RATHER THAN TO THE PROSE: delete the entry from the REAL tsconfig.json and run the REAL Definition of Done, reporting the pin's red SEPARATELY from any type-check red.",
+          implementation:
+            'The root config excludes a directory the root no longer produces. `exclude: ["dist", "packages"]` -- the root has no tsconfig.build.json, only the three members do, and this repository\'s own enumeration of dist writers is `build()` plus each member\'s `prepack`, so nothing writes a root dist/.',
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "MEASURED, AND `commits` IS EMPTY BECAUSE THE DEGENERATE WAS RESTORED RATHER THAN KEPT. `dist` deleted from the REAL tsconfig.json; the REAL Definition of Done taken at 938 pass / 0 fail / 67 files immediately before, and again with the entry gone. THREE RESULTS, REPORTED APART.\n\nTHE TYPE CHECK IS UNCHANGED AND THAT IS THE POSITIVE READING RATHER THAN AN ABSENCE OF RED: `tsc --noEmit --listFiles` taken BOTH WAYS gives file lists that are IDENTICAL when sorted, so the entry sweeps in NOTHING. A green fourth check alone would have been consistent with a red being masked; the file list is not.\n\nTHE LITERAL PIN REDDENS AND MEASURES NOTHING, exactly as the plan predicted: `the members are outside the root type check, and the workspace patterns are what finds them` asserts the array `[dist, packages]` and fails on the value.\n\nAND THE SECOND RED IS THE FINDING. `the repo's tsconfig keeps dist out of the program` ALSO reddens -- and its subject is a THROWAWAY TREE `typeCheckWith` builds, into which the fixture itself mkdirs a dist/ and writes a broken declaration. It reddens over the FIXTURE'S dist, in a repository where nothing writes a root one. Its pair, `the same tree fails once the dist exclusion is removed`, stays GREEN, because it strips `exclude` entirely and the manufactured dist/ fails it either way. So two arms carrying this decision's words both redden and NEITHER observes the entry doing work.",
+            "THE DISPOSITION IS `STALE VALUE, KEPT`, AND KEEPING IT IS THE SUBTASK'S ANSWER RATHER THAN A DEFERRAL. The closure condition asks that the site be DISPOSITIONED, and the refusal below rules out the generalisation: an unmatched pattern is legitimate configuration. What the sprint owes and now pays is the MEASUREMENT -- the entry matches nothing, and this is known rather than inspected.\n\nWHERE IT IS WRITTEN, CORRECTED: this note said `into the item's verification field where the next reader meets it`, and that was true for two commits -- the close then retired PBI-62 and took the field with it, so the pointer named nothing. THE SPRINT'S OWN HEADLINE DEFECT, ARRIVING A SECOND TIME INSIDE THE NOTE THAT RECORDS IT, and caught by a reviewer rather than by its author both times. It now lives at the two arms in test/package-shape.test.ts that carry this decision's words, which is where a reader of those arms meets it and which does not compact.",
+            "RESTORED AND VERIFIED: tsconfig.json is byte-identical to its committed self, checked with `git status` before any commit was taken.",
+            "THE READING TRAP, NAMED BEFORE THE READING BECAUSE THE SPRINT WILL OTHERWISE FALL INTO IT. The two arms in test/package-shape.test.ts that look like this decision's verification -- `the repo's tsconfig keeps dist out of the program` and `the same tree fails once the dist exclusion is removed` -- run through `typeCheckWith`, WHICH ITSELF CREATES A dist/ AND WRITES A BROKEN DECLARATION INTO IT. THE FIXTURE MANUFACTURES THE LAYOUT UNDER TEST, so both are green today and would be green in a world where the root could never hold a dist/ at all, which is the world we are in. They are not verification for this decision.",
+            "AND THE PIN REDDENS EITHER WAY, which is why the two reds must be reported apart: test/package-shape.test.ts pins the literal, so deleting the entry reddens it whether or not the entry was doing any work. A sprint reading the pin's red as the entry doing work has measured nothing.",
+            "REFUSED, RESTATED FROM THIS ITEM'S OWN NOTES SO THE REPAIR DOES NOT SMUGGLE IT BACK: no guard that every `exclude` entry matches something on disk. An unmatched pattern is legitimate configuration and such a guard would redden correct files.",
+          ],
+        },
+        {
+          test: "None -- THE SPLIT, and it lands with its receiving items in the SAME EDIT or not at all.",
+          implementation:
+            "Four notes in this item are not about the move and have been recorded as having NO INNOCENT STORY -- nothing was removed, so there is no reading in which the prose was once true. They leave as their own bounded item. The superlatives note leaves as another.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "0a01ac2",
+              message:
+                "docs(scrum): the drop box held two subjects, and only one of them was the move",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "LANDED AS ONE EDIT, WHICH THE HAZARD BELOW REQUIRED: PBI-77 receives the superlatives note, PBI-78 receives the four, and the five notes left PBI-62 in the same commit that filed both. THE OPEN ONE TRAVELLED WITH ITS MEASUREMENT AND NOT AS A POINTER -- PBI-78's first note carries the throwaway-tree reading itself, because an item receiving a reference whose evidence stayed behind is the deletion this subtask was warned about, one indirection later.",
+            "RANKED BY THE PLAN'S OWN DISCRIMINATOR AND NOT BY TOPIC, stated so a later reader can disagree with the reason rather than guess it. PBI-77 above PBI-78: `X is the only Y` and `nothing anywhere does Z` have a MECHANISABLE CORE, and `this reason was never read against its code` has none -- no check decides that class, and an approximate one is a green certifying it as watched. BOTH BELOW PBI-76, whose subject is the artifact a stranger installs rather than this project's own record; nothing about prose outranks a handler graded against a stale framework.",
+            "THE PROVENANCE IS ON THE RECEIVING SIDE, AND THIS SENTENCE IS THE SPRINT'S OWN CORRECTION OF ITSELF. It said PBI-62 keeps a note saying where the five went -- true when the split landed, FALSE ONE COMMIT LATER, because the close removed that item from the ranked backlog and took its notes with it. So the departure record lives where it survives: PBI-77 and PBI-78 each CARRY a note reading `MOVED OUT OF PBI-62 IN SPRINT 63` -- PBI-77's first, PBI-78's last, and `each open with` was this note's own next false detail. Recorded rather than quietly edited because it is this sprint's own class arriving inside this sprint -- a record asserting something the tree stopped carrying -- and it was caught at review rather than by its author, which is the discriminator this project uses on that class.",
+            "WHY THE ITEM WAS NOT CONVERGENT, AND IT IS A MISMATCH RATHER THAN A COUNT. The criterion is BOUNDED -- `a mechanism THE MOVE removed`, and the move is one completed historical event. But the item has been used as the drop box for PROSE THAT DISAGREES WITH CODE, which is unbounded. Those are different subjects and, decisively, DIFFERENT REPAIRS: a move-instance is repaired by SUPERSEDING A STALE REASON, since the sentence was once true; a never-true sentence is repaired by adding an assertion or weakening the claim, since it was never checkable.",
+            "THE SPLIT HAZARD, WHICH CONSTRAINS THE EDIT: `scripts/definition-of-done.ts`'s header is OPEN AND UNREPAIRED among the four. Moving it out of this item without the receiving item existing in the same edit is A DELETION WEARING TIDYING'S CLOTHES.",
+            "THE SUPERLATIVES NOTE IS A DIFFERENT SUBJECT AND THE DISCRIMINATOR IS THE REPAIR, NOT THE TOPIC. It is also the MORE VALUABLE of the two, because `X is the only Y` and `nothing anywhere does Z` are exactly the shapes a test can hold, where `this is so because` is not -- so it has a mechanisable core and this item does not. It has sat here for several sprints because it is true, important and HOMELESS, and a homeless truth in a notes array is the first thing compaction takes. It leaves this sprint or it is deleted deliberately; it is not carried an eighth time.",
+          ],
+        },
+        {
+          test: "None -- the close, against a closure condition written before the work.",
+          implementation:
+            "PBI-62 RETIRES when the move's enumeration is discharged: the removed mechanisms enumerated with the scope written down, each key swept whole-tree, the one remaining named site dispositioned, and this item's own record made to agree with the tree.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "PBI-62 IS RETIRED AND REMOVED FROM THE RANKED BACKLOG, which is this dashboard's convention for a closed item and the defect a previous sprint had to repair. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
+            "THE CLOSURE CONDITION, DISCHARGED CLAUSE BY CLAUSE. (1) THE REMOVED MECHANISMS ARE ENUMERATED WITH THE SCOPE WRITTEN DOWN, and the scope is DERIVED: the move is e8ddbcc, its diff is recoverable, so `a mechanism the move removed` means what that diff deleted at the checkout root -- the `paths` mapping `@atusy/tsudoi-language-server/*` to `./src/*.ts`; the root manifest's four-subpath `exports` map, its `files: [dist]`, its `prepack` and its runtime `dependencies`; the root's own `src/` and `tsconfig.build.json`, both renamed into the member; the root's NAME, now `@atusy/tsudoi-workspace`; and `linkRootPackage` in scripts/workspaces.ts. THE LIST IS WRITTEN HERE AND NOT ONLY IN THE ITEM, because the item retires and takes its fields with it -- which this sprint learned by watching one of its own notes go false that way. The `if the diff cannot be recovered` branch does not apply and is not used. (2) EACH KEY SWEPT WHOLE-TREE over `git ls-files` plus CLAUDE.md, thirteen keys, seven from the plan and six derived from that same diff, every hit dispositioned by hand. (3) THE REMAINING NAMED SITE -- the root config's excluded directory -- is dispositioned as a stale value MEASURED to sweep in nothing and KEPT, with the generalisation still refused by name. (4) THE ITEM'S OWN RECORD AGREES WITH THE TREE: the field that called a repaired site open is superseded, and four sites the record did not know about are repaired.",
+            "WHAT IS NOT CLAIMED, SAID PLAINLY BECAUSE THE ITEM'S LAST NOTE DEMANDED IT: no universal over the prose. The enumeration bounds the SEARCH KEYS, not the sentences. `these are all of them` is exactly the shape PBI-77 now exists to stop being written, and writing it here while retiring the item that filed PBI-77 would have been the defect committed in the act of filing its repair.",
+            "WHAT IT MUST NOT BECOME: a standing `no false prose anywhere` item. That half already has a home AND a mechanism -- `supersede, do not amend` in .claude/skills/writing-a-comment/SKILL.md -- and a standing unbounded item is precisely the eighty-one-improvements failure this dashboard's header already struck.",
+            "AND THE ENUMERATION MAY NOT BE ASSERTED. `these are all of them` is a universal with no compiler, which is the very defect the superlatives note describes; if the move's diff cannot be recovered, the scope is stated explicitly as `the mechanisms already named` and the limit is written down rather than implied.",
+          ],
+        },
+        {
+          test: "None -- NINE REVIEW FINDINGS, EACH DISPOSITIONED AT ITS OWN SITE. The verdict per finding is taken by opening the named file and reading the claim against the code beside it; where the claim was wider than any reading, the repair is the narrower dated sentence or a reading taken here, never a re-authored superlative.",
+          implementation:
+            "Repair the nine, and land the rule that ties three of them together beside the rule that produces them.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "035f84e",
+              message:
+                "docs(tests): two files were grading the tarball before this one was written",
+              phase: "refactoring",
+            },
+            {
+              hash: "17c3ee0",
+              message:
+                "docs(tests): the root generates no dist, and these arms watch the fixture's own",
+              phase: "refactoring",
+            },
+            {
+              hash: "4e13019",
+              message:
+                "docs(hover-wordnet): the stage holds four entries, and `alone` survived the count's repair",
+              phase: "refactoring",
+            },
+            {
+              hash: "c12df13",
+              message:
+                "docs(skills): exclude is pinned by a literal, not by an effect this tree can show",
+              phase: "refactoring",
+            },
+            {
+              hash: "a801c43",
+              message:
+                "docs(skills): superseding rewrites the sentence, and the rewrite is where it grows",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "THE DIAGNOSIS, AND IT IS WHY THREE OF THE NINE ARE ONE DEFECT RATHER THAN THREE: `supersede, do not amend` forces RE-AUTHORING a sentence, and each sentence this sprint re-authored came out WIDER AND LATER-TENSED than the dated one it replaced, with no reading behind the widening. (A) test/published-artifacts.test.ts: `nothing checked the artifacts against that UNTIL THIS FILE` became `nothing but this file grades that`. FALSE, and the dated form would have been false too -- `git log --diff-filter=A` puts test/installed-specifier.test.ts in the tree BEFORE this file, grading the same tarball, so the repair is neither form but an enumeration of what is this file's alone. (B) PBI-78's first note re-asserted a byte-identity result over a range that had grown: `git diff dd4fbd9 HEAD -- scripts/definition-of-done.ts` is 30 INSERTIONS, re-run at sprint 63, and the QUOTED SENTENCE is what is unchanged. (C) PBI-77's verification carried a MEASURED label from `this sprint` onto `across several sprints`, with neither a number nor a condition. THE RULE IS LANDED beside the one that produces it, in .claude/skills/writing-a-comment/SKILL.md: a supersession may not widen the claim or advance its date, and these three are its measurement.",
+            "AND PBI-77 SHIPPED TWO INSTANCES OF ITS OWN CLASS, which is the argument for the item rather than a mark against it. `THE ONLY ONES WITH NO ENFORCEMENT AT ALL` is STRUCK and not traded for `among the least enforced`, since the substitute is the same unmeasured comparative: test/package-shape.test.ts already says of a NON-superlative refusal that it is enforced by nothing. `NOTHING HAS EVER GRADED ONE` is replaced by the four that ARE graded, named at the site -- which is this item's own repair shape applied to the item.",
+            "THE FIFTH LIVE INSTANCE OF THIS SPRINT'S HEADLINE DEFECT WAS AT THE SITE THE SPRINT DISPOSITIONED AND LEFT STANDING. The excluded-directory measurement was written into PBI-62's verification field at 360c4fa; 5db480f retired the item two commits later and took the field with it. The pointer clause is struck, and the disposition now lives at the two arms in test/package-shape.test.ts, which do not compact -- where the comment also supersedes `dist/ is generated`, a reason that described the pre-move root and that a reader would use to defend the entry as load-bearing.",
+            "NOTHING NEW WAS MEASURED ABOUT THAT ENTRY, DELIBERATELY: the degenerate was NOT re-run. Both premises the new comment needs are readable in the fixture's own code -- `typeCheckWith` mkdirs dist/ and writes the broken declaration into it, and the lower arm destructures the whole `exclude` array -- and re-deleting `dist` from the real tsconfig.json is a write against the real checkout for a result this sprint already took and restored.",
+            "THE SMALL ONES, RECORDED BECAUSE BOTH ARE COUNTS OR POINTERS THIS TREE HAD CORRECTED ONCE ALREADY. `each open with` was false of PBI-78, whose move note is its LAST. And packages/tsudoi-hover-wordnet/test/package-shape.test.ts said the framework's pack stage holds package.json, src/ and tsconfig.build.json ALONE -- the stage also holds a borrowed node_modules symlink, and test/installed-specifier.test.ts carries the note recording that same three-to-four correction. `alone` survived the rewrite that fixed the count next door.",
+            "AND THE REPAIRS THEMSELVES SHIPPED TWO FALSE SENTENCES, CAUGHT ON A SECOND READING AND RECORDED BECAUSE THE MECHANISM IS THE SAME ONE THIS SUBTASK IS ABOUT: a LIST COPIED FROM A NEIGHBOURING PARAGRAPH without each element being read against the code. `the example is graded on both routes too` was true of test/installed-specifier.test.ts and false of test/installed-without-node-types.test.ts, which names no example at all; and `a staged copy with no tarball, no node_modules and nothing dist/` took its list from test/helpers/readme.ts, where those words describe THE READER'S OWN PROJECT -- the staged CHECKOUT is handed a node_modules symlink, because the pack step's prepack build needs it. Both narrowed to the absence each claim actually needs. THE WIDENING DOES NOT ONLY ARRIVE BY RE-AUTHORING; it also arrives by borrowing a true sentence's list for a different subject.",
+            "A SECOND REVIEWER RE-DERIVED THE SWEEP FROM e8ddbcc BEFORE OPENING THE KEY LIST AND FOUND THREE MORE, ALL INSIDE KEYS THIS SPRINT SWEPT. (F1) test/helpers/build.ts licensed a named refusal by `tsc --noEmit reads THIS package's source rather than its dist/`. RE-MEASURED HERE rather than taken on report: root `tsc --noEmit --listFiles` lists FOUR of the framework's dist/*.d.ts -- exactly the four published subpaths -- beside nine of its src/*.ts, at exit 0. So the compiler READS the artifact, and the reviewer's paired injection says what spares it: a SYNTAX error in dist/types.d.ts fails the root check at TS1110, a TYPE error leaves it at exit 0, which is `skipLibCheck` -- a mechanism the refusal did not name. Superseded at the site, with what the readings leave open labelled unread. (F2) .claude/skills/writing-a-comment/SKILL.md described the staged-path pin in the PRESENT TENSE as still explaining itself by the deleted mapping; that site was repaired in e8ddbcc itself, which subtask 1 verified at the file. Rewritten past-tense with `no subject today`, keeping `Nothing detects this class`, which is still true. (F3) the bare `src/x.ts` class, above. NO DEGENERATE WAS RE-RUN FOR ANY OF THEM: the list reading is read-only, and injecting a syntax error into a real dist/ is a write against the checkout for a result already taken.",
+            "THE DEFINITION OF DONE AFTER ALL NINE: 938 pass / 0 fail across 67 files, five checks at exit 0, one warning reported and not gating (`require-yield` in test/fixtures/throws-on-cancel.ts, pre-existing). The suite is unchanged in size because every repair is prose at a site the suite already runs.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THE PRODUCT OWNER GATED ARCHIVAL RATHER THAN ACCEPTANCE, AND THE GATE IS DISCHARGED. The transferable finding -- A CLASS DISPOSITION IS NOT A DISPOSITION, IT IS AN UNREAD SET WITH A REASON ATTACHED -- existed only in this sprint's own notes, which is the location this dashboard's header says compaction takes first, while the facilitator's report claimed it had landed where the next sweep's author would meet it. THAT SENTENCE WAS FALSE AT THE FILE AND IS THIS SPRINT'S OWN CLASS ARRIVING A THIRD TIME, in the report about the sprint. It now lives in .claude/skills/writing-a-test/SKILL.md's `## Sweeps` section, beside sprint 46's rule that a sweep for a matching-defect is an instance of its own class.",
+        "THE RULE FORBIDS NOTHING, WHICH IS WHY IT WILL BE KEPT: a sweep of a hundred-odd hits that opens all of them is a tax rather than a discipline. A class may bound EFFORT and may not stand in for READING; a hit inside one is DEFERRED. THE ADMISSIBILITY TEST IS THE CHECKABLE HALF -- a class warrant holds only if the property defining the class is decidable FROM THE MATCHED LINE -- and it dissolves both of this sprint's failed warrants before either could hide anything, because both were properties of a site's MEANING and invisible in a grep hit. A SAMPLE PER CLASS WAS CONSIDERED AND REFUSED: it adds mechanism to a rule whose strength is that it forbids nothing, and an approximation that reads as coverage is the shape this project keeps refusing.",
+        "PBI-62 STAYS RETIRED THOUGH THE SWEEP WAS MEASURED INCOMPLETE AFTER IT CLOSED, and the reason is that the criterion is a property of THE TREE and not of the process that reached it: all three later sites were reached by keys this sprint swept and all three are repaired here. THE KEY LIST WAS INDEPENDENTLY MEASURED ADEQUATE -- a reviewer re-derived it from the move's diff before opening this one's, had all thirteen plus five more, and all five found ZERO live sites. AND REOPENING WOULD REBUILD THE DROP BOX the split was paid to dismantle, on a finding whose actual subject is SWEEP METHOD rather than this item.",
+        "THE CLOSURE CONDITION'S OWN WORDING WAS TOO WEAK AND THE PRODUCT OWNER OWNED IT: `each key swept` was written where the binding thing was `each enumerated mechanism swept`, as if one covered the other. The sprint executed those words faithfully and then noticed they permitted a gap. WHAT DISCHARGED THE CLAUSE WAS THE REVIEWER'S INDEPENDENT SWEEP AT ZERO LIVE SITES, NOT THE RECORDING OF THE GAP -- recording a gap discharges nothing, and the record is only how a later reader checks the sweep.",
+        "THE ONE OUTCOME REFUSED WITH EVERY CHECK GREEN: the tree repaired and the record left stale. A sprint that supersedes the excluded directory, exits green on all five checks, and leaves this item's verification field still naming the staged-path pin as open would have certified the exact defect the item exists for, IN THE ITEM'S OWN FILE.",
+        "`NOTHING ELSE FOUND` IS ACCEPTED ONLY WITH THE SWEPT KEYS WRITTEN DOWN. A coverage claim from a re-read is the shape this project has measured itself failing at repeatedly, and the keys are what make the claim checkable by someone who was not there.",
+        "IN EXECUTION -- THE ONE REFUSED OUTCOME WAS THE FIRST THING PAID FOR, and the ORDER is the reason it did not happen: the record was followed before the tree was touched, so the sprint learned in its first hour that its own verification field named a site the move itself had repaired. Had the excluded directory been superseded first, the sprint would have exited green having certified the defect in the item's own file.",
+        "IN EXECUTION -- KEYING THE SWEEP TO THE NAME IS VINDICATED BY FOUR SITES AND NOT BY AN ARGUMENT. Sprint 61's sweep was keyed to an EFFECT and missed two named sites; this one, keyed to the removed mechanism's NAME, turned up four more the record had never heard of, one of them a THIRD COPY of a sentence already superseded in two files. THE COROLLARY IS UNCOMFORTABLE AND IS RECORDED AS SUCH: a sentence repaired in two places was still shipping in a third, so `superseded in place` has been an incomplete repair in this tree twice now -- sprint 62 caught the same shape at review. The discipline that answers it is `supersede, do not amend` PLUS a sweep for the phrase, not either alone.",
+        "IN EXECUTION -- THE SCOPE IS DERIVED AND THAT CHANGED WHAT THE ITEM COULD CLAIM. The closure condition allowed `the mechanisms already named` if the move's diff could not be recovered. It could: e8ddbcc. So the enumeration is what one commit deleted at the checkout root, and six of the thirteen sweep keys are lines from that diff rather than guesses -- which is also why the keys are auditable by someone who was not here.",
+        "IN EXECUTION -- THE DEGENERATE PRODUCED THREE RESULTS AND THE SECOND RED IS WORTH MORE THAN THE ENTRY IT WAS AIMED AT. The type check is UNCHANGED, evidenced by sorted-identical `--listFiles` output rather than by an absent red; the literal pin reddens and measures nothing; and `the repo's tsconfig keeps dist out of the program` ALSO reddens, over a dist/ ITS OWN FIXTURE MANUFACTURES, in a repository where nothing writes a root one. Two arms that read like this decision's verification, neither of them observing it.",
+        "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; the `revise` round has not been run here and the executor is not the one who can say a review happened. PBI-62'S RETIREMENT IS THE EXCEPTION AND THE REASON IS IN THE PLAN: the close was subtask five's deliverable against a condition written before the work, not a reviewer's verdict.",
+      ],
+    },
+    {
       number: 62,
       pbi_id: "PBI-75",
       goal: "The pack route stops carrying a harm nobody measured -- the item's premise is tested and retired, the three sentences in the tree that carry its implicature are superseded, and the ONE structural fact the retirement rests on gets something that reddens the day it stops holding.",
@@ -1509,180 +1688,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 63,
-    pbi_id: "PBI-62",
-    goal: "Every reference in this tree to a mechanism the move took away is followed to its site and either repaired or shown to have none left -- from an enumeration of the removed mechanisms written before the search, with this item's own record ending the sprint saying what the tree says.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "None -- FOLLOW THE RECORD'S OWN POINTERS. Bounded and decidable, with no judgement in it: the item names sites and quotes strings; open the named file and locate the string. The verdict is FOUND / NOT FOUND and never TRUE / FALSE.",
-        implementation:
-          "Disposition every site this item's verification field and notes cite, and repair the field to say what the tree says.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "360c4fa",
-            message:
-              "docs(scrum): this item's verification field named a site the tree had repaired",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "IN EXECUTION: SEVEN POINTERS FOLLOWED, EACH FOUND / NOT FOUND AND NEVER TRUE / FALSE, AND THE VERDICT SPLITS IN TWO FOR FOUR OF THEM -- the quoted STRING is FOUND while the LIVE CLAIM is not, because the site quotes its own dead sentence inside the paragraph that supersedes it. That is the shape a grep-only pass misreads as `still open`, which is why the subtask forbade the true/false verdict. (1) `that mapping is safe only because it cannot reach the packing stage`, test/installed-specifier.test.ts: string FOUND, claim DEAD AND MARKED. (2) `the mapping asserted above`, test/package-shape.test.ts: same split, repaired sprint 61. (3) `the root check answers a member's import THROUGH THE ROOT'S OWN paths MAPPING`, scripts/typecheck-workspaces.ts: NOT FOUND as written -- the header carries the past-tense supersession. (4) `NO EXEMPTION LIST`, scripts/workspaces.ts: FOUND and now TRUE of the function. (5) `bun does not escape > inside an attribute value`, test/helpers/perturbation.ts: same split, repaired. (6) the converse-identity docstring: NOT FOUND as an identity -- the site now says the index buys one direction. (7) `a type error in scrum.ts stops the run instead of failing one check`, scripts/definition-of-done.ts: FOUND, LIVE, UNREPAIRED -- the one open site, and it left for PBI-78.",
-          "AN EIGHTH POINTER, FOUND IN THIS FILE RATHER THAN IN THE TREE, AND ITS DISPOSITION IS A RULING: sprint 58's archived decisions still say the fifth check's header STILL licenses withdrawing the root check by a mapping that exists nowhere. That was true when written and sprint 61 repaired the site a sprint later. LEFT STANDING: an archived record of what a product owner decided is dated, and rewriting it falsifies the history instead of the tree. The repaired verification field is where a reader following that pointer now arrives, and it says the site is closed.",
-          "THIS ITEM'S OWN VERIFICATION FIELD IS AN INSTANCE OF THIS ITEM'S CLASS, WHICH IS THE SPRINT'S STARTING FACT AND WAS FOUND BY FOLLOWING ONE POINTER. It names the staged-path pin's licence as open -- `that mapping is safe only because it cannot reach the packing stage`. VERIFIED AT THE FILE: test/installed-specifier.test.ts carries no such licence. It supersedes in place, quotes the dead sentence, marks it dead, and narrows the surviving reason to `what may not reach the packing stage is any configuration that answers a subpath without the artifact`. `git log` on that file reaches the MOVE ITSELF, so the repair has been in the tree since the move and the record has named it open ever since.",
-          "AND THAT SITE CORRECTS THIS ITEM BY NAME, WHICH THE RECORD ALSO DID NOT HEAR: `node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI, whose text says three`.",
-          "SO `scrum.ts` IS THE TREE, RULED RATHER THAN ASSUMED, and repairing the field is a subtask with a named site rather than bookkeeping: it is tracked at the checkout root, this dashboard's header names it a permanent home for compacted decisions, and this item's benefit is that written reasons stay evidence. THE ITEM CANNOT CLOSE WHILE ITS OWN RECORD NAMES A CLOSED SITE AS OPEN.",
-          "IT RUNS FIRST FOR A REASON THAT IS ABOUT COST AND NOT ORDER: a sprint that opens by repairing a site repaired at the move has spent itself on nothing.",
-        ],
-      },
-      {
-        test: "None -- A SWEEP KEYED TO THE REMOVED MECHANISM'S NAME, with the keys WRITTEN DOWN BEFORE THE SEARCH so coverage is auditable rather than asserted.",
-        implementation:
-          "Keys: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, and `this package` written at the checkout root. Swept across the WHOLE tree including README.md and CLAUDE.md; every hit dispositioned as repaired or recorded-true.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "b3cffa8",
-            message:
-              "docs(tests): three more sentences explain today by the mapping the move deleted",
-            phase: "refactoring",
-          },
-          {
-            hash: "a9b93d6",
-            message:
-              "docs(hover-wordnet): the root is not the package whose prepack this contrasts",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE KEYS AS SWEPT, WRITTEN BEFORE THE SEARCH AND SIX OF THEM DERIVED RATHER THAN GUESSED. The seven the plan named: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, `this package` at the checkout root. THE DERIVED SIX COME FROM THE MOVE'S OWN DIFF, e8ddbcc, which is recoverable -- each is a line that diff DELETED at the checkout root, so a sentence uttering it names something the move took: `linkRootPackage`, the root's `prepack` and its `tsconfig.build.json`, an `exports` map attributed to the ROOT manifest, `files` attributed to the ROOT, a bare `src/` path written from the root, and `@atusy/tsudoi-language-server` naming the ROOT. FILE UNIVERSE: `git ls-files` plus CLAUDE.md named explicitly, since a global ignore hides it here.",
-          "WHAT THE SWEEP FOUND, AND IT IS THE ARGUMENT FOR KEYING TO THE NAME: FOUR LIVE SITES, all four invisible to a sweep keyed to the effect. Three were `paths` in the asserting form -- test/published-artifacts.test.ts, test/fixtures/published-specifier.ts, test/completion-path.test.ts, the last of them a THIRD COPY of the sentence sprint 61 superseded in two other files. The fourth came from the root-`dist` key: packages/tsudoi-hover-wordnet/test/package-shape.test.ts contrasting itself with `THE ROOT PACKAGE'S OWN prepack` and warning about a human packing the repository root. All four superseded in place.",
-          "AND THE DISPOSITIONS THAT ARE NOT REPAIRS, RECORDED BECAUSE `nothing else found` IS ONLY ACCEPTED WITH THEM. `main`, `bin`, `linkRootPackage`, root `exports`, root `files` and the root's old name: every hit is either a past-tense record of the retirement or a true statement about the MEMBER, and each was read. WITH ONE MISS, FOUND AFTER THIS SENTENCE WAS WRITTEN AND RECORDED HERE RATHER THAN QUIETLY REPAIRED, because it names the sweep's real failure mode: the `paths` key hit .claude/skills/recording-a-measurement/SKILL.md, whose clause about the retired mapping is a true past-tense record -- and THE SAME SENTENCE goes on to say the root `exclude` is pinned BY EFFECT, which is false and is neither of the two dispositions. A HIT IS A LINE AND A DISPOSITION IS A CLAUSE; reading only the clause the key matched is how this one survived. Repaired at the skill, which now says `exclude` is pinned by literal. AND THE TWO CLASS DISPOSITIONS BELOW ARE WHERE THE SWEEP ACTUALLY FAILED, RESTATED AFTER A SECOND REVIEWER RE-DERIVED THE KEYS FROM e8ddbcc AND FOUND THREE MORE SITES. THE BARE `src/x.ts` CLASS WAS DISPOSITIONED ON AN UNSOUND WARRANT: `package-relative pointers under a convention CLAUDE.md states in its own words` reads that convention wider than it is written -- CLAUDE.md scopes `paths below are relative to that directory` to its architecture list, and the hits are overwhelmingly OUTSIDE packages/, where there is nothing to be relative to. This project's own MEASURED principle says the opposite at three sites, `a bare src/index.ts identifies nothing in a repository holding more than one src/` (test/build-diagnostics.test.ts, scripts/workspaces.ts, scripts/typecheck-workspaces.ts), and code was changed so diagnostics never print the bare form. WHAT THE CLASS COST IS ONE SITE AND IT IS MACHINE OUTPUT RATHER THAN PROSE: `.oxlintrc.json`'s no-restricted-imports `message` -- the text a developer SEES on tripping the rule -- said `Only src/notifications.ts`, while the exemption glob in the same file spells the member path in full because the move updated the glob and not the message. Repaired. THE REST ARE PROSE POINTERS AND ARE NOT BEING CALLED LIVE. And `this package` at the checkout root was the SAME KIND OF DISPOSITION AND ALSO DROPPED A LIVE SITE: test/helpers/build.ts said root `tsc --noEmit` reads THIS package's source rather than its dist/, which the move made false and which licensed a refusal six lines below it -- and bunfig.toml, the file the disposition cited as having got the rule right, is the file that POINTS AT build.ts for that very measurement.",
-          "WHAT ACTUALLY FAILED, AND IT IS THE TRANSFERABLE HALF: A CLASS DISPOSITION IS NOT A DISPOSITION -- IT IS AN UNREAD SET WITH A REASON ATTACHED. The key list was not the defect; every one of the three later sites was REACHED by a key this sprint swept. Each was then dropped by a sentence about the class it belonged to, and a class warrant is exactly the shape that cannot be checked by the person writing it: it asserts something about hits nobody opened. The sprint's own headline finding -- a sentence superseded in two files still shipping in a third -- has a fourth and fifth copy for this reason. A class may bound EFFORT; it may not stand in for reading, and a hit inside one is at best DEFERRED rather than dispositioned.",
-          "AND THE CLOSING RECORD'S TWO LISTS DO NOT CORRESPOND, WHICH IS RECORDED WITH ITS NEGATIVE RESULT RATHER THAN REPAIRED INTO AGREEMENT: clause (1) enumerates the root manifest's runtime `dependencies` among the mechanisms the move removed, and clause (2)'s thirteen keys never included it. ENUMERATED, NOT SWEPT. The second reviewer swept it independently and found ZERO LIVE SITES, so nothing is at risk -- but `each key swept` was read as covering the enumeration, and the two are different lists.",
-          "KEYED TO THE NAME AND NOT TO THE EFFECT, WHICH IS THE FIX FOR THE MEASURED BLIND SPOT. Sprint 61's sweep was keyed to an EFFECT -- a build failing at TS2307 -- and walked past two of this item's own named sites, because their giveaway was `the mapping asserted above`: a DANGLING REFERENCE, which asserts nothing and so lies outside the subject of any sweep for false sentences. But a pointer still UTTERS ITS REFERENT'S NAME, so keying to the name catches the asserting form and the pointing form in one pass.",
-          "IT IS NOT THE REFUSED DETECTOR AND THE DISTINCTION IS LOAD-BEARING: the refused thing DECIDES whether a reference still has a referent, which is a matcher over prose content with a verdict. A token grep produces a READING LIST and decides nothing; a person dispositions each hit. The sprint may not blur this into `just a citation checker`.",
-          "README.md AND CLAUDE.md ARE IN SCOPE TO READ, and the reason each is easy to skip is different: the README's COMMAND BLOCKS are executed by the suite and its PROSE is not, and CLAUDE.md is the densest mechanism narrative in the tree while being globally gitignored here -- which decides where a repair may LAND, not whether it is in scope to READ.",
-        ],
-      },
-      {
-        test: "THE DEGENERATE APPLIED TO THE SITE RATHER THAN TO THE PROSE: delete the entry from the REAL tsconfig.json and run the REAL Definition of Done, reporting the pin's red SEPARATELY from any type-check red.",
-        implementation:
-          'The root config excludes a directory the root no longer produces. `exclude: ["dist", "packages"]` -- the root has no tsconfig.build.json, only the three members do, and this repository\'s own enumeration of dist writers is `build()` plus each member\'s `prepack`, so nothing writes a root dist/.',
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "MEASURED, AND `commits` IS EMPTY BECAUSE THE DEGENERATE WAS RESTORED RATHER THAN KEPT. `dist` deleted from the REAL tsconfig.json; the REAL Definition of Done taken at 938 pass / 0 fail / 67 files immediately before, and again with the entry gone. THREE RESULTS, REPORTED APART.\n\nTHE TYPE CHECK IS UNCHANGED AND THAT IS THE POSITIVE READING RATHER THAN AN ABSENCE OF RED: `tsc --noEmit --listFiles` taken BOTH WAYS gives file lists that are IDENTICAL when sorted, so the entry sweeps in NOTHING. A green fourth check alone would have been consistent with a red being masked; the file list is not.\n\nTHE LITERAL PIN REDDENS AND MEASURES NOTHING, exactly as the plan predicted: `the members are outside the root type check, and the workspace patterns are what finds them` asserts the array `[dist, packages]` and fails on the value.\n\nAND THE SECOND RED IS THE FINDING. `the repo's tsconfig keeps dist out of the program` ALSO reddens -- and its subject is a THROWAWAY TREE `typeCheckWith` builds, into which the fixture itself mkdirs a dist/ and writes a broken declaration. It reddens over the FIXTURE'S dist, in a repository where nothing writes a root one. Its pair, `the same tree fails once the dist exclusion is removed`, stays GREEN, because it strips `exclude` entirely and the manufactured dist/ fails it either way. So two arms carrying this decision's words both redden and NEITHER observes the entry doing work.",
-          "THE DISPOSITION IS `STALE VALUE, KEPT`, AND KEEPING IT IS THE SUBTASK'S ANSWER RATHER THAN A DEFERRAL. The closure condition asks that the site be DISPOSITIONED, and the refusal below rules out the generalisation: an unmatched pattern is legitimate configuration. What the sprint owes and now pays is the MEASUREMENT -- the entry matches nothing, and this is known rather than inspected.\n\nWHERE IT IS WRITTEN, CORRECTED: this note said `into the item's verification field where the next reader meets it`, and that was true for two commits -- the close then retired PBI-62 and took the field with it, so the pointer named nothing. THE SPRINT'S OWN HEADLINE DEFECT, ARRIVING A SECOND TIME INSIDE THE NOTE THAT RECORDS IT, and caught by a reviewer rather than by its author both times. It now lives at the two arms in test/package-shape.test.ts that carry this decision's words, which is where a reader of those arms meets it and which does not compact.",
-          "RESTORED AND VERIFIED: tsconfig.json is byte-identical to its committed self, checked with `git status` before any commit was taken.",
-          "THE READING TRAP, NAMED BEFORE THE READING BECAUSE THE SPRINT WILL OTHERWISE FALL INTO IT. The two arms in test/package-shape.test.ts that look like this decision's verification -- `the repo's tsconfig keeps dist out of the program` and `the same tree fails once the dist exclusion is removed` -- run through `typeCheckWith`, WHICH ITSELF CREATES A dist/ AND WRITES A BROKEN DECLARATION INTO IT. THE FIXTURE MANUFACTURES THE LAYOUT UNDER TEST, so both are green today and would be green in a world where the root could never hold a dist/ at all, which is the world we are in. They are not verification for this decision.",
-          "AND THE PIN REDDENS EITHER WAY, which is why the two reds must be reported apart: test/package-shape.test.ts pins the literal, so deleting the entry reddens it whether or not the entry was doing any work. A sprint reading the pin's red as the entry doing work has measured nothing.",
-          "REFUSED, RESTATED FROM THIS ITEM'S OWN NOTES SO THE REPAIR DOES NOT SMUGGLE IT BACK: no guard that every `exclude` entry matches something on disk. An unmatched pattern is legitimate configuration and such a guard would redden correct files.",
-        ],
-      },
-      {
-        test: "None -- THE SPLIT, and it lands with its receiving items in the SAME EDIT or not at all.",
-        implementation:
-          "Four notes in this item are not about the move and have been recorded as having NO INNOCENT STORY -- nothing was removed, so there is no reading in which the prose was once true. They leave as their own bounded item. The superlatives note leaves as another.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "0a01ac2",
-            message:
-              "docs(scrum): the drop box held two subjects, and only one of them was the move",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "LANDED AS ONE EDIT, WHICH THE HAZARD BELOW REQUIRED: PBI-77 receives the superlatives note, PBI-78 receives the four, and the five notes left PBI-62 in the same commit that filed both. THE OPEN ONE TRAVELLED WITH ITS MEASUREMENT AND NOT AS A POINTER -- PBI-78's first note carries the throwaway-tree reading itself, because an item receiving a reference whose evidence stayed behind is the deletion this subtask was warned about, one indirection later.",
-          "RANKED BY THE PLAN'S OWN DISCRIMINATOR AND NOT BY TOPIC, stated so a later reader can disagree with the reason rather than guess it. PBI-77 above PBI-78: `X is the only Y` and `nothing anywhere does Z` have a MECHANISABLE CORE, and `this reason was never read against its code` has none -- no check decides that class, and an approximate one is a green certifying it as watched. BOTH BELOW PBI-76, whose subject is the artifact a stranger installs rather than this project's own record; nothing about prose outranks a handler graded against a stale framework.",
-          "THE PROVENANCE IS ON THE RECEIVING SIDE, AND THIS SENTENCE IS THE SPRINT'S OWN CORRECTION OF ITSELF. It said PBI-62 keeps a note saying where the five went -- true when the split landed, FALSE ONE COMMIT LATER, because the close removed that item from the ranked backlog and took its notes with it. So the departure record lives where it survives: PBI-77 and PBI-78 each CARRY a note reading `MOVED OUT OF PBI-62 IN SPRINT 63` -- PBI-77's first, PBI-78's last, and `each open with` was this note's own next false detail. Recorded rather than quietly edited because it is this sprint's own class arriving inside this sprint -- a record asserting something the tree stopped carrying -- and it was caught at review rather than by its author, which is the discriminator this project uses on that class.",
-          "WHY THE ITEM WAS NOT CONVERGENT, AND IT IS A MISMATCH RATHER THAN A COUNT. The criterion is BOUNDED -- `a mechanism THE MOVE removed`, and the move is one completed historical event. But the item has been used as the drop box for PROSE THAT DISAGREES WITH CODE, which is unbounded. Those are different subjects and, decisively, DIFFERENT REPAIRS: a move-instance is repaired by SUPERSEDING A STALE REASON, since the sentence was once true; a never-true sentence is repaired by adding an assertion or weakening the claim, since it was never checkable.",
-          "THE SPLIT HAZARD, WHICH CONSTRAINS THE EDIT: `scripts/definition-of-done.ts`'s header is OPEN AND UNREPAIRED among the four. Moving it out of this item without the receiving item existing in the same edit is A DELETION WEARING TIDYING'S CLOTHES.",
-          "THE SUPERLATIVES NOTE IS A DIFFERENT SUBJECT AND THE DISCRIMINATOR IS THE REPAIR, NOT THE TOPIC. It is also the MORE VALUABLE of the two, because `X is the only Y` and `nothing anywhere does Z` are exactly the shapes a test can hold, where `this is so because` is not -- so it has a mechanisable core and this item does not. It has sat here for several sprints because it is true, important and HOMELESS, and a homeless truth in a notes array is the first thing compaction takes. It leaves this sprint or it is deleted deliberately; it is not carried an eighth time.",
-        ],
-      },
-      {
-        test: "None -- the close, against a closure condition written before the work.",
-        implementation:
-          "PBI-62 RETIRES when the move's enumeration is discharged: the removed mechanisms enumerated with the scope written down, each key swept whole-tree, the one remaining named site dispositioned, and this item's own record made to agree with the tree.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "PBI-62 IS RETIRED AND REMOVED FROM THE RANKED BACKLOG, which is this dashboard's convention for a closed item and the defect a previous sprint had to repair. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
-          "THE CLOSURE CONDITION, DISCHARGED CLAUSE BY CLAUSE. (1) THE REMOVED MECHANISMS ARE ENUMERATED WITH THE SCOPE WRITTEN DOWN, and the scope is DERIVED: the move is e8ddbcc, its diff is recoverable, so `a mechanism the move removed` means what that diff deleted at the checkout root -- the `paths` mapping `@atusy/tsudoi-language-server/*` to `./src/*.ts`; the root manifest's four-subpath `exports` map, its `files: [dist]`, its `prepack` and its runtime `dependencies`; the root's own `src/` and `tsconfig.build.json`, both renamed into the member; the root's NAME, now `@atusy/tsudoi-workspace`; and `linkRootPackage` in scripts/workspaces.ts. THE LIST IS WRITTEN HERE AND NOT ONLY IN THE ITEM, because the item retires and takes its fields with it -- which this sprint learned by watching one of its own notes go false that way. The `if the diff cannot be recovered` branch does not apply and is not used. (2) EACH KEY SWEPT WHOLE-TREE over `git ls-files` plus CLAUDE.md, thirteen keys, seven from the plan and six derived from that same diff, every hit dispositioned by hand. (3) THE REMAINING NAMED SITE -- the root config's excluded directory -- is dispositioned as a stale value MEASURED to sweep in nothing and KEPT, with the generalisation still refused by name. (4) THE ITEM'S OWN RECORD AGREES WITH THE TREE: the field that called a repaired site open is superseded, and four sites the record did not know about are repaired.",
-          "WHAT IS NOT CLAIMED, SAID PLAINLY BECAUSE THE ITEM'S LAST NOTE DEMANDED IT: no universal over the prose. The enumeration bounds the SEARCH KEYS, not the sentences. `these are all of them` is exactly the shape PBI-77 now exists to stop being written, and writing it here while retiring the item that filed PBI-77 would have been the defect committed in the act of filing its repair.",
-          "WHAT IT MUST NOT BECOME: a standing `no false prose anywhere` item. That half already has a home AND a mechanism -- `supersede, do not amend` in .claude/skills/writing-a-comment/SKILL.md -- and a standing unbounded item is precisely the eighty-one-improvements failure this dashboard's header already struck.",
-          "AND THE ENUMERATION MAY NOT BE ASSERTED. `these are all of them` is a universal with no compiler, which is the very defect the superlatives note describes; if the move's diff cannot be recovered, the scope is stated explicitly as `the mechanisms already named` and the limit is written down rather than implied.",
-        ],
-      },
-      {
-        test: "None -- NINE REVIEW FINDINGS, EACH DISPOSITIONED AT ITS OWN SITE. The verdict per finding is taken by opening the named file and reading the claim against the code beside it; where the claim was wider than any reading, the repair is the narrower dated sentence or a reading taken here, never a re-authored superlative.",
-        implementation:
-          "Repair the nine, and land the rule that ties three of them together beside the rule that produces them.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "035f84e",
-            message: "docs(tests): two files were grading the tarball before this one was written",
-            phase: "refactoring",
-          },
-          {
-            hash: "17c3ee0",
-            message:
-              "docs(tests): the root generates no dist, and these arms watch the fixture's own",
-            phase: "refactoring",
-          },
-          {
-            hash: "4e13019",
-            message:
-              "docs(hover-wordnet): the stage holds four entries, and `alone` survived the count's repair",
-            phase: "refactoring",
-          },
-          {
-            hash: "c12df13",
-            message:
-              "docs(skills): exclude is pinned by a literal, not by an effect this tree can show",
-            phase: "refactoring",
-          },
-          {
-            hash: "a801c43",
-            message:
-              "docs(skills): superseding rewrites the sentence, and the rewrite is where it grows",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE DIAGNOSIS, AND IT IS WHY THREE OF THE NINE ARE ONE DEFECT RATHER THAN THREE: `supersede, do not amend` forces RE-AUTHORING a sentence, and each sentence this sprint re-authored came out WIDER AND LATER-TENSED than the dated one it replaced, with no reading behind the widening. (A) test/published-artifacts.test.ts: `nothing checked the artifacts against that UNTIL THIS FILE` became `nothing but this file grades that`. FALSE, and the dated form would have been false too -- `git log --diff-filter=A` puts test/installed-specifier.test.ts in the tree BEFORE this file, grading the same tarball, so the repair is neither form but an enumeration of what is this file's alone. (B) PBI-78's first note re-asserted a byte-identity result over a range that had grown: `git diff dd4fbd9 HEAD -- scripts/definition-of-done.ts` is 30 INSERTIONS, re-run at sprint 63, and the QUOTED SENTENCE is what is unchanged. (C) PBI-77's verification carried a MEASURED label from `this sprint` onto `across several sprints`, with neither a number nor a condition. THE RULE IS LANDED beside the one that produces it, in .claude/skills/writing-a-comment/SKILL.md: a supersession may not widen the claim or advance its date, and these three are its measurement.",
-          "AND PBI-77 SHIPPED TWO INSTANCES OF ITS OWN CLASS, which is the argument for the item rather than a mark against it. `THE ONLY ONES WITH NO ENFORCEMENT AT ALL` is STRUCK and not traded for `among the least enforced`, since the substitute is the same unmeasured comparative: test/package-shape.test.ts already says of a NON-superlative refusal that it is enforced by nothing. `NOTHING HAS EVER GRADED ONE` is replaced by the four that ARE graded, named at the site -- which is this item's own repair shape applied to the item.",
-          "THE FIFTH LIVE INSTANCE OF THIS SPRINT'S HEADLINE DEFECT WAS AT THE SITE THE SPRINT DISPOSITIONED AND LEFT STANDING. The excluded-directory measurement was written into PBI-62's verification field at 360c4fa; 5db480f retired the item two commits later and took the field with it. The pointer clause is struck, and the disposition now lives at the two arms in test/package-shape.test.ts, which do not compact -- where the comment also supersedes `dist/ is generated`, a reason that described the pre-move root and that a reader would use to defend the entry as load-bearing.",
-          "NOTHING NEW WAS MEASURED ABOUT THAT ENTRY, DELIBERATELY: the degenerate was NOT re-run. Both premises the new comment needs are readable in the fixture's own code -- `typeCheckWith` mkdirs dist/ and writes the broken declaration into it, and the lower arm destructures the whole `exclude` array -- and re-deleting `dist` from the real tsconfig.json is a write against the real checkout for a result this sprint already took and restored.",
-          "THE SMALL ONES, RECORDED BECAUSE BOTH ARE COUNTS OR POINTERS THIS TREE HAD CORRECTED ONCE ALREADY. `each open with` was false of PBI-78, whose move note is its LAST. And packages/tsudoi-hover-wordnet/test/package-shape.test.ts said the framework's pack stage holds package.json, src/ and tsconfig.build.json ALONE -- the stage also holds a borrowed node_modules symlink, and test/installed-specifier.test.ts carries the note recording that same three-to-four correction. `alone` survived the rewrite that fixed the count next door.",
-          "AND THE REPAIRS THEMSELVES SHIPPED TWO FALSE SENTENCES, CAUGHT ON A SECOND READING AND RECORDED BECAUSE THE MECHANISM IS THE SAME ONE THIS SUBTASK IS ABOUT: a LIST COPIED FROM A NEIGHBOURING PARAGRAPH without each element being read against the code. `the example is graded on both routes too` was true of test/installed-specifier.test.ts and false of test/installed-without-node-types.test.ts, which names no example at all; and `a staged copy with no tarball, no node_modules and nothing dist/` took its list from test/helpers/readme.ts, where those words describe THE READER'S OWN PROJECT -- the staged CHECKOUT is handed a node_modules symlink, because the pack step's prepack build needs it. Both narrowed to the absence each claim actually needs. THE WIDENING DOES NOT ONLY ARRIVE BY RE-AUTHORING; it also arrives by borrowing a true sentence's list for a different subject.",
-          "A SECOND REVIEWER RE-DERIVED THE SWEEP FROM e8ddbcc BEFORE OPENING THE KEY LIST AND FOUND THREE MORE, ALL INSIDE KEYS THIS SPRINT SWEPT. (F1) test/helpers/build.ts licensed a named refusal by `tsc --noEmit reads THIS package's source rather than its dist/`. RE-MEASURED HERE rather than taken on report: root `tsc --noEmit --listFiles` lists FOUR of the framework's dist/*.d.ts -- exactly the four published subpaths -- beside nine of its src/*.ts, at exit 0. So the compiler READS the artifact, and the reviewer's paired injection says what spares it: a SYNTAX error in dist/types.d.ts fails the root check at TS1110, a TYPE error leaves it at exit 0, which is `skipLibCheck` -- a mechanism the refusal did not name. Superseded at the site, with what the readings leave open labelled unread. (F2) .claude/skills/writing-a-comment/SKILL.md described the staged-path pin in the PRESENT TENSE as still explaining itself by the deleted mapping; that site was repaired in e8ddbcc itself, which subtask 1 verified at the file. Rewritten past-tense with `no subject today`, keeping `Nothing detects this class`, which is still true. (F3) the bare `src/x.ts` class, above. NO DEGENERATE WAS RE-RUN FOR ANY OF THEM: the list reading is read-only, and injecting a syntax error into a real dist/ is a write against the checkout for a result already taken.",
-          "THE DEFINITION OF DONE AFTER ALL NINE: 938 pass / 0 fail across 67 files, five checks at exit 0, one warning reported and not gating (`require-yield` in test/fixtures/throws-on-cancel.ts, pre-existing). The suite is unchanged in size because every repair is prose at a site the suite already runs.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE ONE OUTCOME REFUSED WITH EVERY CHECK GREEN: the tree repaired and the record left stale. A sprint that supersedes the excluded directory, exits green on all five checks, and leaves this item's verification field still naming the staged-path pin as open would have certified the exact defect the item exists for, IN THE ITEM'S OWN FILE.",
-      "`NOTHING ELSE FOUND` IS ACCEPTED ONLY WITH THE SWEPT KEYS WRITTEN DOWN. A coverage claim from a re-read is the shape this project has measured itself failing at repeatedly, and the keys are what make the claim checkable by someone who was not there.",
-      "IN EXECUTION -- THE ONE REFUSED OUTCOME WAS THE FIRST THING PAID FOR, and the ORDER is the reason it did not happen: the record was followed before the tree was touched, so the sprint learned in its first hour that its own verification field named a site the move itself had repaired. Had the excluded directory been superseded first, the sprint would have exited green having certified the defect in the item's own file.",
-      "IN EXECUTION -- KEYING THE SWEEP TO THE NAME IS VINDICATED BY FOUR SITES AND NOT BY AN ARGUMENT. Sprint 61's sweep was keyed to an EFFECT and missed two named sites; this one, keyed to the removed mechanism's NAME, turned up four more the record had never heard of, one of them a THIRD COPY of a sentence already superseded in two files. THE COROLLARY IS UNCOMFORTABLE AND IS RECORDED AS SUCH: a sentence repaired in two places was still shipping in a third, so `superseded in place` has been an incomplete repair in this tree twice now -- sprint 62 caught the same shape at review. The discipline that answers it is `supersede, do not amend` PLUS a sweep for the phrase, not either alone.",
-      "IN EXECUTION -- THE SCOPE IS DERIVED AND THAT CHANGED WHAT THE ITEM COULD CLAIM. The closure condition allowed `the mechanisms already named` if the move's diff could not be recovered. It could: e8ddbcc. So the enumeration is what one commit deleted at the checkout root, and six of the thirteen sweep keys are lines from that diff rather than guesses -- which is also why the keys are auditable by someone who was not here.",
-      "IN EXECUTION -- THE DEGENERATE PRODUCED THREE RESULTS AND THE SECOND RED IS WORTH MORE THAN THE ENTRY IT WAS AIMED AT. The type check is UNCHANGED, evidenced by sorted-identical `--listFiles` output rather than by an absent red; the literal pin reddens and measures nothing; and `the repo's tsconfig keeps dist out of the program` ALSO reddens, over a dist/ ITS OWN FIXTURE MANUFACTURES, in a repository where nothing writes a root one. Two arms that read like this decision's verification, neither of them observing it.",
-      "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; the `revise` round has not been run here and the executor is not the one who can say a review happened. PBI-62'S RETIREMENT IS THE EXCEPTION AND THE REASON IS IN THE PLAN: the close was subtask five's deliverable against a condition written before the work, not a reviewer's verdict.",
-    ],
-  },
+  sprint: null,
   retrospectives: [],
 };
 
