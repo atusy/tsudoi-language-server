@@ -662,6 +662,33 @@ const records: readonly PerturbationRecord[] = [
       "the refusal arrives before any member is type-checked against the artifact",
     ],
   },
+  {
+    // TWO SPELLINGS OF ONE ORDER, WHICH IS THE HAZARD THE GATE'S OWN COMMENT
+    // NAMES AND NOTHING CAUGHT UNTIL THE ARM THIS RECORD WATCHES: the early
+    // return compares the arriving name against the worst KEPT one flat, while
+    // the insertion point below it stays grouped, so a retention rule and a
+    // render order disagree. The disagreement is only visible on a directory big
+    // enough to truncate AND holding both groups.
+    //
+    // THE FIRST RECORD OVER A WORKSPACE MEMBER, and it is the same instrument
+    // rather than a second one: the stage is built from `git ls-files`, so a
+    // member's arm file and a member's source are two tracked paths like any
+    // other. What that costs is one more staged checkout per run, which is the
+    // price of the attribution and is why the collateral list below is a
+    // MEASUREMENT: this weakening reddens THE NAMED ARM ALONE, in a file of
+    // fifteen, which is what makes the arm worth having rather than a second
+    // reading of the arm above it.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/resolve.test.ts",
+      name: "a hidden name already kept is displaced by an ordinary name arriving after it",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/resolve.ts",
+      from: "  if (worstKept !== undefined && byGroupThenName(name, worstKept) >= 0) {",
+      to: "  if (worstKept !== undefined && (name < worstKept ? -1 : 1) >= 0) {",
+    },
+    alsoReddens: [],
+  },
 ];
 
 /**
