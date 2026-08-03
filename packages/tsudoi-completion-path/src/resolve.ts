@@ -320,13 +320,35 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * would bound the read by TIME, and a highlight that answers differently
  * depending on how busy the machine was is a defect of its own.
  *
- * WHAT THE STREAMING SHAPE COSTS, MEASURED AND ACCEPTED RATHER THAN OMITTED:
- * deno pays per entry for iterating the handle, so the ordinary large directory
- * -- five thousand entries -- drains in about 127 ms where the array shape took
- * about 45 ms (bun: about 24 ms against about 18 ms, and at two hundred entries
- * neither runtime tells the two apart at all). That reading lands on the SAME
- * ORDER as the 135 ms this module's ruling was made on, so it is inside the
- * envelope already accepted.
+ * WHAT THE STREAMING SHAPE COSTS, RE-TAKEN AT THIS BASE RATHER THAN INHERITED --
+ * AND WHAT STOOD HERE CONTRADICTED ITSELF ABOUT BUN. It priced the ordinary
+ * directory -- five thousand entries -- at `about 24 ms against about 18 ms` on
+ * that runtime, which reads STREAMING SLOWER there, nine lines above a sentence
+ * saying bun gains on both counts. BOTH COULD NOT STAND, AND THE ONE RETIRED BY
+ * NAME IS THE PARENTHESIS: measured on bun 1.3.13 at five thousand entries by
+ * `listing-shapes.ts`, the instrument this workspace tracks beside its other
+ * scripts -- IN THE REPOSITORY AND NOT IN THIS PACKAGE, so a reader holding only
+ * the installed artifact cannot re-run it, and a shipped comment may not name its
+ * directory either. Streaming is 2.080 ms against 2.528 ms for the array shape it
+ * replaced -- FASTER there by 0.460 ms, paired round by round
+ * (0.356-0.659) against an instrument noise of 0.030 ms read off the same shape
+ * run twice under two labels.
+ *
+ * DENO'S HALF IS RE-TAKEN IN THE SAME SESSION AND NOT CARRIED FORWARD, because
+ * new numbers for one runtime beside inherited ones for the other is how a pair
+ * like that one comes to disagree: 9.619 ms against 6.374 ms, so streaming costs
+ * that runtime 3.261 ms at the ordinary size (2.266-4.532 paired, noise 0.069).
+ * THE OTHER HALF OF THE OLD CLAUSE DOES NOT SURVIVE WHOLE EITHER -- `at two
+ * hundred entries neither runtime tells the two apart` is true of BUN ALONE
+ * here, where the difference is inside the instrument's noise; deno's is not
+ * (0.195 ms against a noise of 0.002).
+ *
+ * WHAT THOSE NUMBERS ARE OF, since none of them means anything without it:
+ * macOS/APFS, one volume, a warm cache, empty entries whose names are twelve
+ * characters with one in thirty-seven hidden, arriving in the order that
+ * filesystem hands them back; medians over fifteen rounds INTERLEAVED in one
+ * process. The instrument cannot separate a runtime's cost from this
+ * filesystem's, and says nothing about a cold cache or a network mount.
  *
  * WHAT IT BUYS IS NOT THE SAME TRADE ON THE TWO RUNTIMES, AND THE SENTENCE THAT
  * STOOD HERE NAMED ONLY THE BETTER HALF. On bun it buys both: this function's
