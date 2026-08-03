@@ -429,17 +429,32 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * separated by no instrument here.
  *
  * AGAINST THE BUDGET, WHICH IS NAMED BECAUSE A DELTA WITHOUT ONE IS A NUMBER
- * WITHOUT A JUDGEMENT: this runs ONCE PER HIGHLIGHT, on a moment the user is
- * already waiting through a popup, and NEVER on the keystroke path -- the
- * completion half beside this file owns that path and drains a directory on every
- * one of them. NO CLAIM IS MADE HERE ABOUT WHAT A PERSON CAN PERCEIVE. `the
- * difference is imperceptible` names no quantity, no threshold and no observer,
- * and the measurement that would license it -- an editor, a plugin chain, a
- * setting -- was not taken and is not in this suite. THE ONE AMPLIFIER IS A
- * MACHINE COST AND IS NOT DRESSED AS A LATENCY: a user arrowing through a popup
- * supersedes each highlight with the next keystroke, and on deno an abandoned
- * read cannot be cut short, so every superseded highlight pays its whole drain at
- * the per-highlight number above. None of it blocks the popup.
+ * WITHOUT A JUDGEMENT -- AND WHAT THE BUDGET IS MADE OF IS SPELLED OUT, BECAUSE
+ * WHAT STOOD HERE RESTED IT ON A USER NOBODY WATCHED. What is this package's own
+ * and readable from this file: this runs once per `completionItem/resolve`, a
+ * request a client sends about ONE item, and NEVER on the keystroke path -- the
+ * completion half beside this file owns that path and drains a directory on
+ * every keystroke.
+ *
+ * WHAT IS MEASURED NOWHERE HERE IS EVERYTHING ABOUT THE PERSON, AND TWO
+ * SENTENCES THAT STOOD IN THIS PARAGRAPH ARE RETIRED FOR IT RATHER THAN DRESSED.
+ * `the difference is imperceptible` names no quantity, no threshold and no
+ * observer, and the reading that would license it -- an editor, a plugin chain,
+ * a setting -- was not taken and is not in this suite. `None of it blocks the
+ * popup` IS THE SAME CLAIM IN THE DECLARATIVE and goes with it: whether a client
+ * blocks its popup on a resolve answer is that CLIENT'S behaviour, and no editor
+ * was in the loop for any number above. So does `a moment the user is already
+ * waiting through`, which was the budget's other unmeasured half -- a disclaimer
+ * about perception standing beside two sentences that assume it licenses a
+ * reader to stop reading rather than mitigating anything.
+ *
+ * THE ONE AMPLIFIER IS A MACHINE COST AND IS NOT DRESSED AS A LATENCY, AND IT IS
+ * CONDITIONAL BECAUSE ITS PREMISE IS THE CLIENT'S: IF a client resolves per
+ * highlight while a user arrows -- which the protocol permits and nothing here
+ * observed -- then on deno an abandoned read cannot be cut short, so every
+ * superseded highlight pays its whole drain at the number above. That is CPU on
+ * the machine the server runs on, which is the only place any figure here was
+ * taken.
  *
  * WHAT WOULD REOPEN THIS, so it can age rather than harden into folklore: deno's
  * `opendir` ceasing to discard -- at which point the bound this function keeps
