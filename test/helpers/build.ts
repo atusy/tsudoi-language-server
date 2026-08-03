@@ -136,10 +136,11 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * SO THE CONCLUSION SURVIVES ON A MECHANISM NOBODY HAD WRITTEN DOWN, which is
  * a narrower warrant than the sentence it replaces and is stated as such. AND
  * WHAT THE TWO READINGS LEAVE OPEN IS NAMED RATHER THAN CLAIMED: those four
- * files are the subpaths the root check RESOLVES there -- test/package-shape.
- * test.ts asserts that off `--traceResolution` -- so a freshly wrong dist/ that
- * still parses is what the root check grades this checkout's importers AGAINST.
- * Whether that can move a red to a green here is unread.
+ * files are the subpaths the root check RESOLVES there, which
+ * test/package-shape.test.ts asserts off `--traceResolution` over EVERY arm of
+ * the exports map. So a freshly wrong dist/ that still parses is what the root
+ * check grades this checkout's importers AGAINST. Whether that can move a red
+ * to a green here is unread.
  *
  * REMOVING dist/ BEFORE RETHROWING IS AUTHORISED AND NOT DONE, which turns a
  * silently wrong artifact into a loudly missing one and is this repository's
