@@ -680,8 +680,12 @@ function whereSubpathsLand(
  * `prepack`, whose compiler answers the framework's subpaths from src/ and exits
  * 0 -- so the tarball's declarations are graded against a file nobody receives,
  * and THIS REFUSAL CANNOT SEE IT: the check that runs it calls `prepareWorkspace`
- * BEFORE it calls this, so by the time this reads, the artifact exists and every
- * subpath answers from it. What the scope above says about the fourth check is
+ * BEFORE it calls this, so by the time this reads, the artifact exists and the
+ * pack's own state is gone. NOT `and every subpath answers from it`, which is
+ * what stood here and reads this refusal as vacuous fifteen lines under the
+ * paragraph saying what it is for -- the state it catches IS an artifact that
+ * survived a build and still does not answer. What the scope above says about
+ * the fourth check is
  * therefore true of the pack too, and for the same reason -- this runs after a
  * build, and both of those states are before one.
  *
