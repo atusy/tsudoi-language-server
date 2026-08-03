@@ -41,12 +41,20 @@ import { fileURLToPath } from "node:url";
  * dashboard, a file that is compacted on a schedule. The framework's `exports`
  * map ends in a source arm, so `tsc --noEmit` answers its published subpaths
  * from dist/ when the artifact is there and FROM src/ AT EXIT 0 WHEN IT IS NOT.
- * A GREEN PRINTED BY THIS RUNNER WAS READ FROM dist/: the first check builds
- * every artifact before the fourth reads, and the fifth then refuses any
- * published subpath answering from anywhere but its `types` artifact. A GREEN
- * FROM A BARE `tsc --noEmit` SAYS NOTHING ABOUT WHICH FILE ANSWERED, and if it
- * was src/ that is the half NOTHING covers -- as against an artifact that
- * survived a build, which is the fifth check's half.
+ * A GREEN FOURTH CHECK PRINTED BY THIS RUNNER WAS READ FROM dist/ -- PROVIDED
+ * THE FIRST CHECK WAS GREEN TOO, and that condition is the step rather than a
+ * nicety. `A green printed by this runner` is what stood here and reads two ways:
+ * the RUN was green, or THAT CELL printed green. They come apart in exactly the
+ * state this procedure exists for -- the first check red because its preload
+ * build threw, so no artifact was written, and the fourth green because the
+ * compiler fell through to src/ and raised nothing, which is the silent cell
+ * measured below -- and the unconditioned sentence sends that reader to `dist/`.
+ * WITH BOTH GREEN the step holds: the first check builds every artifact before
+ * the fourth reads, and the fifth then refuses any published subpath answering
+ * from anywhere but its `types` artifact. A GREEN FROM A BARE `tsc --noEmit` SAYS
+ * NOTHING ABOUT WHICH FILE ANSWERED, and if it was src/ that is the half NOTHING
+ * covers -- as against an artifact that survived a build, which is the fifth
+ * check's half.
  *
  * MEASURED AT SPRINT 61, base 6d1c85d, tsc 7.0.2, each cell taken with dist/
  * MOVED ASIDE rather than deleted: with nothing built the fourth check is exit 1
