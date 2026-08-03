@@ -115,37 +115,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-75",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "pack a handler package and know the declarations inside the tarball were graded against the artifact a consumer receives",
-        benefit:
-          "what a stranger installs was checked against what they get, not against a file that is never shipped",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A handler package's build does not grade its declarations against the framework's source when the framework's artifact is absent -- either it cannot run in that state, or the state cannot arise, and whichever it is, something reddens the day that stops being true.",
-          verification:
-            "THE FIRST SUBTASK IS A BOUNDED MEASUREMENT AND THE DESIGN WAITS ON IT: do the `.d.ts` a handler emits differ between a build against the framework's `dist/` and a build against its `src/`? Byte-compare the emitted declarations from both states of one member, at a named base. IF THEY DO NOT DIFFER, a hard refusal would be added to a documented command for a cost nobody has shown. IF THEY DO, the refusal is obvious and its message can name what differed. Only then is the shape chosen.",
-        },
-      ],
-      status: "done",
-      notes: [
-        "CLOSED IN SPRINT 62 AS A RECORDED DECISION THAT RETIRES THE CRITERION ABOVE RATHER THAN MEETING IT, AND THE DIFFERENCE IS THE WHOLE OF WHAT A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade its declarations against the framework's SOURCE while the framework's artifact is absent. THE MEASUREMENT SAYS THAT GRADING IS THE CURRENT ONE: with a framework type renamed in src/ alone, the build against the stale artifact exits 0 while the build against src/ exits 2 at TS2305 -- so the state the criterion asks to forbid is the state that CATCHES a disagreement the artifact hides, and meeting it in letter would make the product worse. WHAT THE EVIDENCE SUPPORTS IS CURRENCY AND NOT STRICTNESS, carried here rather than left at the handler sites alone BECAUSE THIS FILE'S SPRINT BLOCK COMPACTS AND THIS ITEM IS WHAT A LATER READER REACHES FOR: source grades against the framework AS IT IS NOW and the artifact against whatever was last built, so the reverse edit -- a signature the handler violates under the stale artifact and satisfies under current source -- would put the strictness on the artifact's side. A `done` reading as `we delivered the story` would leave this re-filed by the next reader.",
-        "AND THE PREMISE UNDER THE CRITERION IS WHAT WENT, NOT THE WORK: that a build grading against src/ costs the tarball something. MEASURED FALSE -- both handlers, every emitted file, byte for byte identical from either state -- so the capability this story asks for was never absent. NOT MET, NOT MET DIFFERENTLY, AND NOT WITHDRAWN FOR WANT OF EFFORT: the subject was measured away.",
-        "WHAT THE SPRINT LEFT IN THE TREE RATHER THAN IN THIS FILE, WHICH COMPACTS: the three sentences carrying the retired implicature are superseded in place in scripts/workspaces.ts; the ONE STRUCTURAL FACT the retirement rests on -- a handler's emitted declaration naming the framework BY SPECIFIER -- is armed at test/handler-declaration-specifier.test.ts; both shapes of the `prepack` precondition are refused at each handler's own package-shape test; and the residual the measurement cannot reach is at the publish sentinel's live arm in test/optional-peer-premise.test.ts, labelled an INFERENCE.",
-        "WHAT DID NOT CLOSE WITH IT AND MUST NOT BE FOLDED BACK IN: an artifact that answers WHILE STALE. That is the opposite mechanism -- the artifact answering and being wrong, rather than being absent -- and it left as its own item with the question and no predicted outcome.",
-        "MEASURED IN SPRINT 61, AND THIS ITEM CLAIMS ONLY WHAT WAS MEASURED. On a staged fresh checkout nobody has built, `bun pm pack` in each handler EXITS 0 and produces a tarball, because its `prepack` compiler answers `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from `packages/tsudoi-language-server/src/*.ts` -- TRACED with the compiler's own resolver, not inferred. WHAT WAS MEASURED IS WHAT THE PACK READ AND THAT IT EXITED 0. IT IS NOT CLAIMED THAT THE TARBALLS ARE WRONG; that is the first subtask's question.",
-        "IT INHERITS THE SENTENCE OF PBI-60 -- CLOSED IN SPRINT 61, WHOSE RECORD CARRIES THE MEASUREMENTS -- AT A DIFFERENT CHECK AND WITH A WORSE CONSEQUENCE, which is why it outranks everything: the same source arm answers, but where that item's cell ends in a quiet root type check, this one ends in an artifact a stranger installs.",
-        "WHY NOTHING CAUGHT IT, AND IT IS A REASON RATHER THAN A GAP: the suite runs this route only in the state where it is safe. The README arm packs in a REAL member directory for the handlers, but under `bun test` the preload has already built the framework, so the route is exercised exclusively after the artifact exists. `refuseSubpathsAnsweringFromSource` cannot see it either -- scripts/typecheck-workspaces.ts builds before it reads, so the pack route passes under it entirely.",
-        "REFUSAL IS NOT THE ONLY SHAPE, NAMED SO THE NEXT EXECUTOR MEETS THE FORK RATHER THAN TREATING REFUSAL AS DECIDED: `prepack` may instead BUILD THE FRAMEWORK FIRST. A precondition that refuses edits the publish sentinel and changes a documented command whose blocks this suite extracts and executes, so the ripple reaches the documentation layer.",
-        "FORECLOSED HERE AS EVERYWHERE: deleting the framework's source arms, and a `paths` mapping or project reference. Both are refused with measurement -- the record is PBI-60's, closed in sprint 61, and the refusals themselves are IN THE TREE: the exports equality pin in test/package-shape.test.ts and the blocker pair in test/unbuilt-artifact.test.ts for the arms, `refuseMemberMappings` for the mapping. Neither becomes available because the subject moved to the pack.",
-      ],
-    },
-
-    {
       id: "PBI-62",
       story: {
         role: "tsudoi maintainer",
@@ -437,6 +406,150 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 62,
+      pbi_id: "PBI-75",
+      goal: "The pack route stops carrying a harm nobody measured -- the item's premise is tested and retired, the three sentences in the tree that carry its implicature are superseded, and the ONE structural fact the retirement rests on gets something that reddens the day it stops holding.",
+      status: "done",
+      subtasks: [
+        {
+          test: "None -- the deciding READING, taken before the sprint was planned because the design waited on it. Method recorded so the instrument can be judged before the number: a `git clone --no-hardlinks` at base c1979a4 into a scratch directory, `node_modules` COPIED rather than symlinked and ALL THREE @atusy entries verified to realpath INSIDE the stage first, since a symlinked borrow was measured last sprint to read the real checkout and measure nothing. The real checkout's dist/ was never touched. Whole emitted trees compared, not only declarations.",
+          implementation:
+            "Build each handler with the framework's dist/ PRESENT; move that dist/ aside with a literal `mv`; rebuild; `diff -r`. Restore and verify.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "121384f",
+              message:
+                "docs(scrum): plan sprint 62 -- the harm this item was filed on does not exist",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE RESULT: BYTE-FOR-BYTE IDENTICAL, BOTH HANDLERS, EVERY EMITTED FILE. hover-wordnet 4 files against 4, completion-path 6 against 6, `diff -r` clean both times, concatenated declaration hashes equal in both directions, both builds exit 0 with zero bytes of output in the source-answered state.",
+            'AND THE MECHANISM IS THE FINDING RATHER THAN THE NUMBER, which is what makes the result survive this base. A handler\'s emitted declarations name the framework BY SPECIFIER and not by structure -- `import type { MethodHandler } from "@atusy/tsudoi-language-server/types"` travels into the artifact verbatim -- so WHICH FILE ANSWERED CANNOT APPEAR IN THE EMITTED DECLARATIONS AT ALL while both files declare the same names. The byte-identity is what that indirection forces.',
+            "A PROBE WAS RUN, FOUND TO HAVE NO SUBJECT, AND DISCARDED -- reported because discarding it silently is this record's own catalogued failure. The first stale probe added an OPTIONAL member to a framework type and read `identical`; a handler that does not use the member emits nothing about it, so the reading was not evidence and is not counted.",
+            "THE CELL WITH A SUBJECT, and it inverts the item's premise. With an exported type RENAMED in the framework's src/ alone, so the two files genuinely disagree: built against the stale dist/ the handler EXITS 0; built against src/ it EXITS 2 with TS2305 naming the missing member. SO THE DIVERGENCE IS A BUILD FAILURE AND NOT A SILENTLY WRONG ARTIFACT.",
+            "WHAT THE EVIDENCE SUPPORTS IS CURRENCY AND NOT STRICTNESS, and the wider claim was caught in this record's own headline where it is hardest to see. `src/ is the stricter grade` is true of the cell taken and too wide: a rename makes src/ stricter because src/ is NEWER, and the reverse edit -- a signature the handler violates under the stale artifact and satisfies under current source -- would make the artifact stricter. Source-grading grades against the framework AS IT IS NOW; artifact-grading grades against whatever was last built. Currency carries every conclusion here and survives the untaken cell.",
+            "FOUR THINGS THIS INSTRUMENT CANNOT SEPARATE, owed by the MEASURED label. (1) IN-SYNC ONLY -- it compares two spellings of the same content. (2) WHAT WAS EMITTED AGAINST WHAT WAS CHECKED: `skipLibCheck: true` is declared in each handler's build config, so a build reading the framework's dist/*.d.ts SKIPS CHECKING IT while a build falling through to src/*.ts reads ordinary TypeScript, which skipLibCheck does not skip. The two builds did DIFFERENT AMOUNTS OF CHECKING and still emitted identical bytes; the asymmetry runs in the safe direction, but `the outputs agree` is not `the two builds are the same build`. (3) One compiler, one session, one machine, one base -- it cannot separate `identical because this emit is deterministic here` from `identical for a reason that survives a compiler upgrade`. (4) THE STRUCTURAL CELL IS UNTAKEN -- a type CHANGED with its name kept -- named so its absence is not read as coverage.",
+          ],
+        },
+        {
+          test: "The arm's subject is the ONE STRUCTURAL FACT the retirement rests on: a handler's emitted declaration still refers to the framework BY SPECIFIER. It reads an artifact WITHOUT BUILDING ONE -- and `the artifact the preload already built` was the provenance written beside that and is MEASURED FALSE, corrected at review: under a full run a top-level pack in test/packed-members.test.ts has replaced both handlers' dist/ before any test body reads one. IT SHIPS WITH ITS PRESENCE PAIR, because `no framework reference found` and `the file was never opened` are the same observation otherwise, and the degenerate that greens on an empty or unread artifact is measured RED before the arm is believed.",
+          implementation:
+            "Read each handler's emitted declarations and require the framework's published specifier to appear in them, paired with a count of what was actually opened.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "4c70ae7",
+              message: "test: the retirement rests on an indirection nothing was watching",
+              phase: "green",
+            },
+            {
+              hash: "dfa7bf9",
+              message:
+                "test: the discrimination those two arms claim was prose, and prose is not recorded",
+              phase: "green",
+            },
+            {
+              hash: "48cc72e",
+              message: "test: a throw from a finally block reports the cleanup and hides the test",
+              phase: "green",
+            },
+            {
+              hash: "2ba68ea",
+              message:
+                "docs: a uniqueness claim shipped in the increment whose subject is unmeasured prose",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE ARM IS test/handler-declaration-specifier.test.ts, AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED on bun test v1.3.13, AT BASE 0ddae74 and run alone -- the base named because the first spelling of this record said `as it now stands` while the file's executable code moved twice after the reading, pinning nothing a reader could return to, and because a re-take at that base showed EACH NUMBER BELONGS TO ITS SPELLING: the same three degenerates spelled wider give 0/3 and 1/2 where these give 1/2 and 2/1, with only the third reproducing identically, 3 pass / 0 fail unperturbed: the two readings of this checkout pointed at an EMPTY DIRECTORY, 1 pass / 2 fail with both naming both handlers; pointed at a directory holding one ZERO-BYTE `.d.ts`, 2 pass / 1 fail, the subject alone; `handlerMembers` returning nothing, 2 pass / 1 fail, the subject alone again and there by its PAIR while the read arm goes green over an enumeration that found no handler at all. The surviving pass in all three is the discrimination arm, which builds its own directories. THESE SUPERSEDE THE FIRST ROUND'S NUMBERS RATHER THAN STANDING BESIDE THEM: those were taken on the two-arm file, and were stale inside this sprint the moment the third arm landed.",
+            "THE DEGENERATES DID NOT STAY PROSE, and the rule is this dashboard's own: a perturbation relied on later is a record the suite re-runs, or an assertion beside the arm. The reader is cheap enough for the second -- no build, no spawn -- so an unread directory, a silent declaration and a naming one are told apart by an arm, with the yes-witness in it because a reader that never reports a reference would satisfy both offender lists for ever.",
+            "WHICH PAIR IS WHICH, RECORDED BECAUSE THE FILE CLAIMS IT: the DETECTION pair is the handler enumeration, and the file-list pair is DIAGNOSIS ONLY -- an artifact nobody opened already reddens the subject arm on its own, so the second arm buys the reader's next move and not a hole closed. The offender-list spelling that would make it detection -- no emitted declaration LACKS the specifier -- is unavailable: each handler's `index.d.ts` re-exports its own modules and names the framework nowhere, correctly. THE BOUND IS WHOLESALE: one file inlined while a sibling keeps its import leaves the arm green.",
+            "TWO CHEAPER-LOOKING SUBJECTS ARE REFUSED, EACH FOR ITS OWN REASON. An arm comparing the two builds' OUTPUTS pays a second build per run to re-derive what the preload already forces. An arm asserting that src/ and dist/ AGREE is structurally green under that same preload and can only redden when the build already failed loudly. Both are the check whose cost re-derives a guarantee, which this project refuses.",
+            "WHAT REDDENS IT IS NAMED SO THE ARM IS NOT READ AS WIDER THAN IT IS: declaration bundling, or any post-build transform that inlines the framework's types into a handler's declarations rather than leaving the import. The day either lands, the conclusion the retirement rests on stops holding, and this arm is the one whose SUBJECT that is. NOR `every conclusion in this record` -- the registry-scripts measurement and the currency reading both survive an inlining transform untouched.",
+            "AND `NOTHING ELSE WOULD SAY SO` WAS WITHDRAWN AS UNREAD AND HAS SINCE BEEN READ, WITH BOTH HALVES FALSE -- which supersedes the withdrawal rather than joining it, and the surviving numbers are in the tree at the arm rather than only here. MEASURED at base 488787c on bun test v1.3.13, full suite from the repository root, the rewrite `\"../../tsudoi-language-server/dist/<subpath>.d.ts\"` put where the specifier stood. FROM BOTH HANDLERS' OWN `prepack`: 933 pass / 5 fail across 67 files. TWO of the five are independent readings of the EMITTED ARTIFACT -- `no member ships a module naming a directory-qualified repository file its reader does not have`, and `the root type check resolves the published subpaths through the exports map, to the built artifact`, which reddens because `deps/protocol` is then named by nothing in the root program. TWO ARE DISQUALIFIED AS WITNESSES: both `packing this package builds it first, into a cleared directory` arms fire on the edited manifest STRING and would fire for a perturbation touching no declaration. The fifth is the arm. AND THE LIST BELONGS TO ITS SPELLING: the two `to their real types rather than any` arms stayed GREEN under this rewrite -- measured; WHY they did is an INFERENCE labelled as one at the arm, that `../../` out of a scoped package's dist/ lands on its scoped sibling, with no resolution trace taken inside that consumer.",
+            "THE OTHER HALF FALSE IS THE ARM'S OWN, AND IT IS THE BLOCKING ONE: the same rewrite moved into `prepareWorkspace` -- the shared build path the `bun test` preload runs -- leaves the suite 938 pass / 0 fail, NOTHING firing, the arm included. The mechanism is a TOP-LEVEL AWAIT: test/packed-members.test.ts packs each handler at module load, `bun pm pack` runs with cwd set to the real member, and a handler's `prepack` opens `rm -rf dist`. Both readings are confirmed by what each run LEFT on disk rather than inferred -- the prepack cell leaves the relative path in the checkout's dist/, the shared cell leaves the specifier. SO THE ARM'S REAL COVERAGE IS A TRANSFORM IN A HANDLER'S OWN `prepack`, and a transform in the shared build path is a NAMED RESIDUE: closing it takes the second build or the rebuild detector the arm already refuses.",
+            "IF THE ARM CANNOT BE HAD AT THIS COST, a firing condition is the fallback and it must NAME OBSERVATIONS rather than intentions: the framework's prepack ceasing to rebuild from src/, a route that packs or publishes a handler without prepareWorkspace having run, and the inlining above.",
+          ],
+        },
+        {
+          test: "None -- three supersessions IN PLACE, not amendments. The facts stay true; the IMPLICATURE each carries is measured wrong.",
+          implementation:
+            "scripts/workspaces.ts says at three sites that a handler built in the source-answered state has its declarations `graded against a file no consumer receives`. Every one of those sentences remains TRUE and every one now implies a harm that was measured not to exist. Superseded with the reading and its bound.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "5d37bbd",
+              message:
+                "docs: three sentences stayed true while the harm they implied was measured away",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "WHERE EACH LANDED, AND ALL THREE FILES WERE BYTE-IDENTICAL TO BASE 121384f BEFORE THE EDIT. `buildOrder`'s inline comment and `refuseSubpathsAnsweringFromSource`'s docstring carry the reading and send the reader to `prepareWorkspace`, which carries the measurement, its conditions and the four things it cannot separate -- it is the site that had filed the divergence as an open question, so it is the site that answers it. NOT A POINTER TO THIS DASHBOARD, deliberately: test/optional-peer-premise.test.ts already rules that a dashboard entry will not do, because this file compacts.",
+            "WHAT REPLACES THE IMPLIED HARM AT EACH SITE IS THE EXPOSURE THAT SURVIVES THE MEASUREMENT -- an artifact that answers WHILE STALE, which is absence's opposite -- named as a state rather than cited as an item, for the same compaction reason.",
+            "ONE PHRASE OF THE SAME WORDS IS DELIBERATELY LEFT STANDING: the throw text in `refuseSubpathsAnsweringFromSource` says a published subpath answering from anywhere but the artifact means the artifact is missing or half written `and every check below this one would have graded a file no consumer receives`.",
+            "AND THE GROUND GIVEN FOR LEAVING IT -- `its subject is an artifact that SURVIVED a build and still does not answer` -- DOES NOT SURVIVE A RUN, caught at review. MEASURED at base 488787c: with packages/tsudoi-language-server/dist MOVED ASIDE by a literal `mv` and `refuseSubpathsAnsweringFromSource(root, declaredMembers(root))` called directly, it throws with ALL FOUR framework subpaths answering from src/*.ts and prints that trailer -- the retired implicature firing in the retired state, where NO BUILD RAN AT ALL. With dist/ present the same call does not throw. WHAT THE GROUND REALLY IS, AND IT IS NARROWER: THE ORDER AT THE ONE CALL SITE. scripts/typecheck-workspaces.ts is the sole caller -- `git grep` over the whole repository, every other mention being prose -- and it runs `prepareWorkspace` first; test/artifact-detector.test.ts drives that command rather than the function, so it inherits the order. A second caller placed before a build reaches the state on its first run. Corrected at the trailer and at the docstring paragraph that made the same attribution, so the two agree.",
+            "SUPERSEDE RATHER THAN AMEND IS THE RULE THIS PROJECT LANDED LAST SPRINT, AND THIS IS THE SPRINT THAT WOULD OTHERWISE BREAK IT. A paragraph keeping its sentence and appending a correction leaves the pointer behind, which is the dangling-reference shape -- produced, if it happened here, by the increment that ruled on it. One of the three sites already carries `an open question filed in the dashboard as the pack route's own item and deliberately not answered here`; that question is answered now and the sentence goes with the answer.",
+          ],
+        },
+        {
+          test: "None -- foreclosures landing where a `prepack` reason has to live, which is each handler's own package-shape test, since package.json cannot carry comments.",
+          implementation:
+            "Both shapes of the prepack precondition are refused BY NAME with their reasons, and the residual is landed at the publish sentinel's arm.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "6d0194a",
+              message:
+                "docs: the pack precondition is foreclosed where it would be typed, in both shapes",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "WHERE THEY LANDED: both refusals at the `prepack` arm of EACH handler's own test/package-shape.test.ts, and the residual at the LIVE arm of test/optional-peer-premise.test.ts -- the reading that reddens when tsudoi's `private` comes off, not its control, which is green either way.",
+            "ONE NEW CLAIM WAS WRITTEN, SO IT WAS MEASURED HERE RATHER THAN INHERITED: shape two rests on a member's manifest travelling to a registry with its scripts. MEASURED on bun 1.3.13 at this base, `bun pm pack --destination` into a scratch directory, run in each handler in turn -- both packed package.json files carry `scripts.prepack` verbatim. Nothing in the checkout was written to.",
+            "AND THE INFERENCE IS LABELLED AS ONE AT THE ARM: that a consumer's compiler re-resolves the surviving specifier against the framework THEY installed, so a disagreement should surface in their compile. NOT OBSERVED -- no consumer-side compile against a skipped-prepack publish was run -- and what it would buy if it holds is WHO meets the error, not whether anyone does.",
+            "SHAPE ONE -- REFUSE THE HANDLER BUILD WHILE THE FRAMEWORK'S ARTIFACT IS ABSENT -- IS REFUSED WITH A POSITIVE MEASUREMENT AND NOT MERELY FOR WANT OF A SHOWN COST. It would force the build onto the artifact and away from the source, and the measured cell says the artifact is the grade that HIDES a disagreement the source raises as TS2305. A precondition that makes the product measurably worse is the strongest refusal this backlog recognises.",
+            "SHAPE TWO -- prepack BUILDS THE FRAMEWORK FIRST -- IS REFUSED ON A GROUND INDEPENDENT OF ANY OTHER ITEM, which is what keeps it refused when that item's record changes: a handler's package.json TRAVELS TO A REGISTRY WITH ITS SCRIPTS, so this would put a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in this workspace. A stranger packing an installed copy would have prepack try to build a package that is not there. That is the knowingly-false optional peer's class one step worse -- it FAILS rather than merely misleads. It would also encode this workspace's build order in a member's published manifest where buildOrder already derives it.",
+            "THE RESIDUAL THE MEASUREMENT CANNOT REACH, LANDED AT THE ARM RATHER THAN ONLY HERE. A consumer receives the framework's dist/, so a handler graded against src/ ships declarations validated against something the consumer does not have -- which bites only if the framework's OWN published dist/ disagreed with its src/ at publish time, i.e. a publish that skipped prepack. THE PRECONDITION IS THE FRAMEWORK'S `private` COMING OFF, and that edit already reddens an arm, so the question goes to the reader who reddens it BY THAT EDIT: they are about to publish and are exactly the reader who must answer it. NOT `the only reader it can be put to`, which is how the residual was addressed and is MEASURED FALSE, caught at review: dropping `optional: true` from a handler while `private` still stands reddens the SAME arm -- 5 pass / 2 fail on that file at base 488787c, the arm naming `optional=false while tsudoi's own manifest forbids publication=true` and the control red beside it -- and that reader is not publishing. The file already said the arm fires in both directions two paragraphs above, so it contradicted itself; the addressee is now the direction rather than the arm. OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND LABELLED AS ONE, NOT AS MEASURED: since the specifier survives into the artifact, the consumer re-resolves it against the framework they installed, so a disagreement surfaces in THEIR compile as a named error -- the residual degrades WHO meets the error, not whether anyone does.",
+          ],
+        },
+        {
+          test: "None -- the close.",
+          implementation:
+            "PBI-75 closes as a recorded decision that RETIRES ITS CRITERION rather than meeting it, and the stale-artifact hazard leaves as its own item carrying the question and no predicted outcome.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE DECISION IS RECORDED IN PBI-75'S OWN NOTES AND NOT ONLY HERE, because a subtask note is compacted with the sprint while the item is what a later reader reaches for. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
+            "THE HAZARD'S OWN ITEM WAS ALREADY FILED AT PLANNING AND IS DELIBERATELY NOT TOUCHED HERE, so this subtask's second clause is discharged by not re-filing it.",
+            "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; a review has not happened, and the executor is not the one who can say it did. THE ITEM'S STATUS IS THE EXCEPTION AND THE REASON IS IN THE ITEM: what closes it is a decision that its subject was measured away, which is this subtask's deliverable rather than a reviewer's verdict.",
+            "RETIRED AND NOT MET, WHICH IS THE DIFFERENCE A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade against the framework's source -- and the measured cell says that grading is the CURRENT one, which catches a disagreement the artifact hides. A `done` reading as `we delivered the story` would leave the item re-filed.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "TWO READINGS OF `THE SAME` PERTURBATION DISAGREED AND THE DISAGREEMENT SURVIVES UNRECONCILED ON PURPOSE. A reviewer and the executor each rewrote a handler's emitted declarations away from the framework's specifier and each produced a FIVE-ARM LIST, and the lists are not the same five: the executor's includes THE ARM UNDER TEST and two manifest-string arms, the reviewer's includes two `to their real types rather than any` arms that stayed GREEN for the executor and omits the arm. ONLY ONE OF THE TWO HAS ITS SPELLING WRITTEN DOWN. IT WAS NOT RE-RUN, deliberately: a third number taken against a reconstructed spelling would be attributed to whoever did not take it, which is manufacturing evidence. AND THE EXECUTOR'S REFUSAL TO WRITE THE LIST THEY WERE HANDED IS ENDORSED BY NAME -- they were given the reviewer's five as an instruction, measured something else, and wrote what they measured. The opposite is what politeness produces. The general rule is in .claude/skills/recording-a-measurement/SKILL.md, because it binds the author at the moment of writing and a dashboard note would be compacted.",
+        "THE DECIDING MEASUREMENT WAS TAKEN BEFORE THE SPRINT WAS PLANNED, deliberately, because the item made its design wait on it and planning ahead of it would have been discarded. It inverted the premise, so the sprint that was filed is not the sprint that would have been filed.",
+        "THE PRODUCT OWNER NARROWED THE FACILITATOR'S OWN CONCLUSION AND THE NARROWING IS KEPT: the evidence supports CURRENCY, not strictness. It is recorded because it is the conclusion-wider-than-its-enumeration class arriving in a ruling's headline, which is the position where this project has measured it hardest to see.",
+        "IN EXECUTION: THE ARM'S FIRST DEGENERATE NUMBERS WENT STALE INSIDE THIS SPRINT, and how they went is the finding rather than the correction. They were taken on the two-arm file, and the third arm -- the one that stops the degenerate being prose -- landed after them, so a paragraph in the tree described a run nobody could reproduce from it. Re-taken and SUPERSEDED, not set beside; this is the sprint whose whole subject is what an amended paragraph leaves behind.",
+        "IN EXECUTION: ONE CLAIM IN THE FORECLOSURES WAS NEW AND WAS MEASURED HERE RATHER THAN INHERITED -- that a member's manifest reaches a registry with its `scripts`. Every other reading written into the tree this sprint is the deciding measurement's, carried across without being re-derived, which is what the plan asked for.",
+        "IN EXECUTION: A UNIQUENESS CLAIM SHIPPED FOR THREE COMMITS INSIDE THE SPRINT WHOSE SUBJECT IS PROSE THAT OUTRAN ITS MEASUREMENT. The arm's header said the day an inlining transform lands `nothing else would say so` -- a coverage claim, which this project's rule says is measured or not written, and what else in the tree moves under such a transform was never read. Withdrawn IN PLACE at the arm, with the withdrawal visible, because a reader meeting only the narrower sentence cannot tell it from a claim nobody made. AND THE WITHDRAWAL WAS INCOMPLETE, WHICH IS THE PART WORTH MORE THAN THE ORIGINAL DEFECT: the same claim had been written into TWO FURTHER SITES in the same sprint -- this record's own arm note, and the retirement's home at `prepareWorkspace` -- and the withdrawal touched only the test file, so this very note asserted a repair the tree did not carry. Both survivors are now withdrawn in the same words. CAUGHT AT REVIEW AND NOT BY ITS AUTHOR, twice, which is the discriminator this project uses on this class.",
+        "AT REVIEW: THE ARM'S PROVENANCE WAS FALSE AND ONLY RUNNING IT SHOWED SO, WHICH IS THIS SPRINT'S OWN CLASS ARRIVING IN ITS CENTRAL DELIVERABLE. The arm was believed on degenerates that pointed its READER somewhere else and never on a perturbation of its SUBJECT. Perturbed for real, it fires from a handler's `prepack` and stays green for the identical transform in the shared build path, because a top-level pack replaces both handlers' dist/ during module load. The cost claim was true; the provenance beside it was not, and no degenerate could have separated them.",
+        "AT REVIEW: A COVERAGE CLAIM WITHDRAWN FOR BEING UNREAD WAS THEN READ, AND THE READING IS STRONGER THAN THE WITHDRAWAL IN BOTH DIRECTIONS. This closes a loop the sprint opened twice -- the claim shipped, was withdrawn incompletely, was withdrawn again -- and the lesson is that WITHDRAWING AN UNMEASURED CLAIM IS NOT THE SAME REPAIR AS MEASURING IT. The tree now carries which arms say so, which are disqualified as witnesses and why, and the spelling the list belongs to.",
+        "AT REVIEW: TWO OF THE FOUR FINDINGS WERE PROSE THAT SURVIVED BECAUSE NOBODY RAN THE THING IT DESCRIBED -- the trailer's ground and the residual's addressee. Both are refuted by a single direct call or a single manifest edit, neither costing more than a minute, and both had been reasoned about instead. THE DISCRIMINATOR THIS PROJECT SHOULD TAKE FROM IT: a sentence whose subject is a function's behaviour is measured by calling the function, and a sentence about who reddens an arm is measured by reddening it.",
+        "IN EXECUTION: A LINT WARNING WAS INTRODUCED AND REPAIRED IN THE SAME SPRINT rather than carried to review -- a refusal written inside a `finally`, which would have overwritten whatever the arm was already reporting. The Definition of Done reports warnings without gating on them, so the only thing that catches this is reading the run.",
+      ],
+    },
     {
       number: 61,
       pbi_id: "PBI-60",
@@ -1374,149 +1487,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 62,
-    pbi_id: "PBI-75",
-    goal: "The pack route stops carrying a harm nobody measured -- the item's premise is tested and retired, the three sentences in the tree that carry its implicature are superseded, and the ONE structural fact the retirement rests on gets something that reddens the day it stops holding.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "None -- the deciding READING, taken before the sprint was planned because the design waited on it. Method recorded so the instrument can be judged before the number: a `git clone --no-hardlinks` at base c1979a4 into a scratch directory, `node_modules` COPIED rather than symlinked and ALL THREE @atusy entries verified to realpath INSIDE the stage first, since a symlinked borrow was measured last sprint to read the real checkout and measure nothing. The real checkout's dist/ was never touched. Whole emitted trees compared, not only declarations.",
-        implementation:
-          "Build each handler with the framework's dist/ PRESENT; move that dist/ aside with a literal `mv`; rebuild; `diff -r`. Restore and verify.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "121384f",
-            message:
-              "docs(scrum): plan sprint 62 -- the harm this item was filed on does not exist",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE RESULT: BYTE-FOR-BYTE IDENTICAL, BOTH HANDLERS, EVERY EMITTED FILE. hover-wordnet 4 files against 4, completion-path 6 against 6, `diff -r` clean both times, concatenated declaration hashes equal in both directions, both builds exit 0 with zero bytes of output in the source-answered state.",
-          'AND THE MECHANISM IS THE FINDING RATHER THAN THE NUMBER, which is what makes the result survive this base. A handler\'s emitted declarations name the framework BY SPECIFIER and not by structure -- `import type { MethodHandler } from "@atusy/tsudoi-language-server/types"` travels into the artifact verbatim -- so WHICH FILE ANSWERED CANNOT APPEAR IN THE EMITTED DECLARATIONS AT ALL while both files declare the same names. The byte-identity is what that indirection forces.',
-          "A PROBE WAS RUN, FOUND TO HAVE NO SUBJECT, AND DISCARDED -- reported because discarding it silently is this record's own catalogued failure. The first stale probe added an OPTIONAL member to a framework type and read `identical`; a handler that does not use the member emits nothing about it, so the reading was not evidence and is not counted.",
-          "THE CELL WITH A SUBJECT, and it inverts the item's premise. With an exported type RENAMED in the framework's src/ alone, so the two files genuinely disagree: built against the stale dist/ the handler EXITS 0; built against src/ it EXITS 2 with TS2305 naming the missing member. SO THE DIVERGENCE IS A BUILD FAILURE AND NOT A SILENTLY WRONG ARTIFACT.",
-          "WHAT THE EVIDENCE SUPPORTS IS CURRENCY AND NOT STRICTNESS, and the wider claim was caught in this record's own headline where it is hardest to see. `src/ is the stricter grade` is true of the cell taken and too wide: a rename makes src/ stricter because src/ is NEWER, and the reverse edit -- a signature the handler violates under the stale artifact and satisfies under current source -- would make the artifact stricter. Source-grading grades against the framework AS IT IS NOW; artifact-grading grades against whatever was last built. Currency carries every conclusion here and survives the untaken cell.",
-          "FOUR THINGS THIS INSTRUMENT CANNOT SEPARATE, owed by the MEASURED label. (1) IN-SYNC ONLY -- it compares two spellings of the same content. (2) WHAT WAS EMITTED AGAINST WHAT WAS CHECKED: `skipLibCheck: true` is declared in each handler's build config, so a build reading the framework's dist/*.d.ts SKIPS CHECKING IT while a build falling through to src/*.ts reads ordinary TypeScript, which skipLibCheck does not skip. The two builds did DIFFERENT AMOUNTS OF CHECKING and still emitted identical bytes; the asymmetry runs in the safe direction, but `the outputs agree` is not `the two builds are the same build`. (3) One compiler, one session, one machine, one base -- it cannot separate `identical because this emit is deterministic here` from `identical for a reason that survives a compiler upgrade`. (4) THE STRUCTURAL CELL IS UNTAKEN -- a type CHANGED with its name kept -- named so its absence is not read as coverage.",
-        ],
-      },
-      {
-        test: "The arm's subject is the ONE STRUCTURAL FACT the retirement rests on: a handler's emitted declaration still refers to the framework BY SPECIFIER. It reads an artifact WITHOUT BUILDING ONE -- and `the artifact the preload already built` was the provenance written beside that and is MEASURED FALSE, corrected at review: under a full run a top-level pack in test/packed-members.test.ts has replaced both handlers' dist/ before any test body reads one. IT SHIPS WITH ITS PRESENCE PAIR, because `no framework reference found` and `the file was never opened` are the same observation otherwise, and the degenerate that greens on an empty or unread artifact is measured RED before the arm is believed.",
-        implementation:
-          "Read each handler's emitted declarations and require the framework's published specifier to appear in them, paired with a count of what was actually opened.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "4c70ae7",
-            message: "test: the retirement rests on an indirection nothing was watching",
-            phase: "green",
-          },
-          {
-            hash: "dfa7bf9",
-            message:
-              "test: the discrimination those two arms claim was prose, and prose is not recorded",
-            phase: "green",
-          },
-          {
-            hash: "48cc72e",
-            message: "test: a throw from a finally block reports the cleanup and hides the test",
-            phase: "green",
-          },
-          {
-            hash: "2ba68ea",
-            message:
-              "docs: a uniqueness claim shipped in the increment whose subject is unmeasured prose",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE ARM IS test/handler-declaration-specifier.test.ts, AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED on bun test v1.3.13, AT BASE 0ddae74 and run alone -- the base named because the first spelling of this record said `as it now stands` while the file's executable code moved twice after the reading, pinning nothing a reader could return to, and because a re-take at that base showed EACH NUMBER BELONGS TO ITS SPELLING: the same three degenerates spelled wider give 0/3 and 1/2 where these give 1/2 and 2/1, with only the third reproducing identically, 3 pass / 0 fail unperturbed: the two readings of this checkout pointed at an EMPTY DIRECTORY, 1 pass / 2 fail with both naming both handlers; pointed at a directory holding one ZERO-BYTE `.d.ts`, 2 pass / 1 fail, the subject alone; `handlerMembers` returning nothing, 2 pass / 1 fail, the subject alone again and there by its PAIR while the read arm goes green over an enumeration that found no handler at all. The surviving pass in all three is the discrimination arm, which builds its own directories. THESE SUPERSEDE THE FIRST ROUND'S NUMBERS RATHER THAN STANDING BESIDE THEM: those were taken on the two-arm file, and were stale inside this sprint the moment the third arm landed.",
-          "THE DEGENERATES DID NOT STAY PROSE, and the rule is this dashboard's own: a perturbation relied on later is a record the suite re-runs, or an assertion beside the arm. The reader is cheap enough for the second -- no build, no spawn -- so an unread directory, a silent declaration and a naming one are told apart by an arm, with the yes-witness in it because a reader that never reports a reference would satisfy both offender lists for ever.",
-          "WHICH PAIR IS WHICH, RECORDED BECAUSE THE FILE CLAIMS IT: the DETECTION pair is the handler enumeration, and the file-list pair is DIAGNOSIS ONLY -- an artifact nobody opened already reddens the subject arm on its own, so the second arm buys the reader's next move and not a hole closed. The offender-list spelling that would make it detection -- no emitted declaration LACKS the specifier -- is unavailable: each handler's `index.d.ts` re-exports its own modules and names the framework nowhere, correctly. THE BOUND IS WHOLESALE: one file inlined while a sibling keeps its import leaves the arm green.",
-          "TWO CHEAPER-LOOKING SUBJECTS ARE REFUSED, EACH FOR ITS OWN REASON. An arm comparing the two builds' OUTPUTS pays a second build per run to re-derive what the preload already forces. An arm asserting that src/ and dist/ AGREE is structurally green under that same preload and can only redden when the build already failed loudly. Both are the check whose cost re-derives a guarantee, which this project refuses.",
-          "WHAT REDDENS IT IS NAMED SO THE ARM IS NOT READ AS WIDER THAN IT IS: declaration bundling, or any post-build transform that inlines the framework's types into a handler's declarations rather than leaving the import. The day either lands, the conclusion the retirement rests on stops holding, and this arm is the one whose SUBJECT that is. NOR `every conclusion in this record` -- the registry-scripts measurement and the currency reading both survive an inlining transform untouched.",
-          "AND `NOTHING ELSE WOULD SAY SO` WAS WITHDRAWN AS UNREAD AND HAS SINCE BEEN READ, WITH BOTH HALVES FALSE -- which supersedes the withdrawal rather than joining it, and the surviving numbers are in the tree at the arm rather than only here. MEASURED at base 488787c on bun test v1.3.13, full suite from the repository root, the rewrite `\"../../tsudoi-language-server/dist/<subpath>.d.ts\"` put where the specifier stood. FROM BOTH HANDLERS' OWN `prepack`: 933 pass / 5 fail across 67 files. TWO of the five are independent readings of the EMITTED ARTIFACT -- `no member ships a module naming a directory-qualified repository file its reader does not have`, and `the root type check resolves the published subpaths through the exports map, to the built artifact`, which reddens because `deps/protocol` is then named by nothing in the root program. TWO ARE DISQUALIFIED AS WITNESSES: both `packing this package builds it first, into a cleared directory` arms fire on the edited manifest STRING and would fire for a perturbation touching no declaration. The fifth is the arm. AND THE LIST BELONGS TO ITS SPELLING: the two `to their real types rather than any` arms stayed GREEN under this rewrite -- measured; WHY they did is an INFERENCE labelled as one at the arm, that `../../` out of a scoped package's dist/ lands on its scoped sibling, with no resolution trace taken inside that consumer.",
-          "THE OTHER HALF FALSE IS THE ARM'S OWN, AND IT IS THE BLOCKING ONE: the same rewrite moved into `prepareWorkspace` -- the shared build path the `bun test` preload runs -- leaves the suite 938 pass / 0 fail, NOTHING firing, the arm included. The mechanism is a TOP-LEVEL AWAIT: test/packed-members.test.ts packs each handler at module load, `bun pm pack` runs with cwd set to the real member, and a handler's `prepack` opens `rm -rf dist`. Both readings are confirmed by what each run LEFT on disk rather than inferred -- the prepack cell leaves the relative path in the checkout's dist/, the shared cell leaves the specifier. SO THE ARM'S REAL COVERAGE IS A TRANSFORM IN A HANDLER'S OWN `prepack`, and a transform in the shared build path is a NAMED RESIDUE: closing it takes the second build or the rebuild detector the arm already refuses.",
-          "IF THE ARM CANNOT BE HAD AT THIS COST, a firing condition is the fallback and it must NAME OBSERVATIONS rather than intentions: the framework's prepack ceasing to rebuild from src/, a route that packs or publishes a handler without prepareWorkspace having run, and the inlining above.",
-        ],
-      },
-      {
-        test: "None -- three supersessions IN PLACE, not amendments. The facts stay true; the IMPLICATURE each carries is measured wrong.",
-        implementation:
-          "scripts/workspaces.ts says at three sites that a handler built in the source-answered state has its declarations `graded against a file no consumer receives`. Every one of those sentences remains TRUE and every one now implies a harm that was measured not to exist. Superseded with the reading and its bound.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "5d37bbd",
-            message:
-              "docs: three sentences stayed true while the harm they implied was measured away",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "WHERE EACH LANDED, AND ALL THREE FILES WERE BYTE-IDENTICAL TO BASE 121384f BEFORE THE EDIT. `buildOrder`'s inline comment and `refuseSubpathsAnsweringFromSource`'s docstring carry the reading and send the reader to `prepareWorkspace`, which carries the measurement, its conditions and the four things it cannot separate -- it is the site that had filed the divergence as an open question, so it is the site that answers it. NOT A POINTER TO THIS DASHBOARD, deliberately: test/optional-peer-premise.test.ts already rules that a dashboard entry will not do, because this file compacts.",
-          "WHAT REPLACES THE IMPLIED HARM AT EACH SITE IS THE EXPOSURE THAT SURVIVES THE MEASUREMENT -- an artifact that answers WHILE STALE, which is absence's opposite -- named as a state rather than cited as an item, for the same compaction reason.",
-          "ONE PHRASE OF THE SAME WORDS IS DELIBERATELY LEFT STANDING: the throw text in `refuseSubpathsAnsweringFromSource` says a published subpath answering from anywhere but the artifact means the artifact is missing or half written `and every check below this one would have graded a file no consumer receives`.",
-          "AND THE GROUND GIVEN FOR LEAVING IT -- `its subject is an artifact that SURVIVED a build and still does not answer` -- DOES NOT SURVIVE A RUN, caught at review. MEASURED at base 488787c: with packages/tsudoi-language-server/dist MOVED ASIDE by a literal `mv` and `refuseSubpathsAnsweringFromSource(root, declaredMembers(root))` called directly, it throws with ALL FOUR framework subpaths answering from src/*.ts and prints that trailer -- the retired implicature firing in the retired state, where NO BUILD RAN AT ALL. With dist/ present the same call does not throw. WHAT THE GROUND REALLY IS, AND IT IS NARROWER: THE ORDER AT THE ONE CALL SITE. scripts/typecheck-workspaces.ts is the sole caller -- `git grep` over the whole repository, every other mention being prose -- and it runs `prepareWorkspace` first; test/artifact-detector.test.ts drives that command rather than the function, so it inherits the order. A second caller placed before a build reaches the state on its first run. Corrected at the trailer and at the docstring paragraph that made the same attribution, so the two agree.",
-          "SUPERSEDE RATHER THAN AMEND IS THE RULE THIS PROJECT LANDED LAST SPRINT, AND THIS IS THE SPRINT THAT WOULD OTHERWISE BREAK IT. A paragraph keeping its sentence and appending a correction leaves the pointer behind, which is the dangling-reference shape -- produced, if it happened here, by the increment that ruled on it. One of the three sites already carries `an open question filed in the dashboard as the pack route's own item and deliberately not answered here`; that question is answered now and the sentence goes with the answer.",
-        ],
-      },
-      {
-        test: "None -- foreclosures landing where a `prepack` reason has to live, which is each handler's own package-shape test, since package.json cannot carry comments.",
-        implementation:
-          "Both shapes of the prepack precondition are refused BY NAME with their reasons, and the residual is landed at the publish sentinel's arm.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "6d0194a",
-            message:
-              "docs: the pack precondition is foreclosed where it would be typed, in both shapes",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "WHERE THEY LANDED: both refusals at the `prepack` arm of EACH handler's own test/package-shape.test.ts, and the residual at the LIVE arm of test/optional-peer-premise.test.ts -- the reading that reddens when tsudoi's `private` comes off, not its control, which is green either way.",
-          "ONE NEW CLAIM WAS WRITTEN, SO IT WAS MEASURED HERE RATHER THAN INHERITED: shape two rests on a member's manifest travelling to a registry with its scripts. MEASURED on bun 1.3.13 at this base, `bun pm pack --destination` into a scratch directory, run in each handler in turn -- both packed package.json files carry `scripts.prepack` verbatim. Nothing in the checkout was written to.",
-          "AND THE INFERENCE IS LABELLED AS ONE AT THE ARM: that a consumer's compiler re-resolves the surviving specifier against the framework THEY installed, so a disagreement should surface in their compile. NOT OBSERVED -- no consumer-side compile against a skipped-prepack publish was run -- and what it would buy if it holds is WHO meets the error, not whether anyone does.",
-          "SHAPE ONE -- REFUSE THE HANDLER BUILD WHILE THE FRAMEWORK'S ARTIFACT IS ABSENT -- IS REFUSED WITH A POSITIVE MEASUREMENT AND NOT MERELY FOR WANT OF A SHOWN COST. It would force the build onto the artifact and away from the source, and the measured cell says the artifact is the grade that HIDES a disagreement the source raises as TS2305. A precondition that makes the product measurably worse is the strongest refusal this backlog recognises.",
-          "SHAPE TWO -- prepack BUILDS THE FRAMEWORK FIRST -- IS REFUSED ON A GROUND INDEPENDENT OF ANY OTHER ITEM, which is what keeps it refused when that item's record changes: a handler's package.json TRAVELS TO A REGISTRY WITH ITS SCRIPTS, so this would put a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in this workspace. A stranger packing an installed copy would have prepack try to build a package that is not there. That is the knowingly-false optional peer's class one step worse -- it FAILS rather than merely misleads. It would also encode this workspace's build order in a member's published manifest where buildOrder already derives it.",
-          "THE RESIDUAL THE MEASUREMENT CANNOT REACH, LANDED AT THE ARM RATHER THAN ONLY HERE. A consumer receives the framework's dist/, so a handler graded against src/ ships declarations validated against something the consumer does not have -- which bites only if the framework's OWN published dist/ disagreed with its src/ at publish time, i.e. a publish that skipped prepack. THE PRECONDITION IS THE FRAMEWORK'S `private` COMING OFF, and that edit already reddens an arm, so the question goes to the reader who reddens it BY THAT EDIT: they are about to publish and are exactly the reader who must answer it. NOT `the only reader it can be put to`, which is how the residual was addressed and is MEASURED FALSE, caught at review: dropping `optional: true` from a handler while `private` still stands reddens the SAME arm -- 5 pass / 2 fail on that file at base 488787c, the arm naming `optional=false while tsudoi's own manifest forbids publication=true` and the control red beside it -- and that reader is not publishing. The file already said the arm fires in both directions two paragraphs above, so it contradicted itself; the addressee is now the direction rather than the arm. OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND LABELLED AS ONE, NOT AS MEASURED: since the specifier survives into the artifact, the consumer re-resolves it against the framework they installed, so a disagreement surfaces in THEIR compile as a named error -- the residual degrades WHO meets the error, not whether anyone does.",
-        ],
-      },
-      {
-        test: "None -- the close.",
-        implementation:
-          "PBI-75 closes as a recorded decision that RETIRES ITS CRITERION rather than meeting it, and the stale-artifact hazard leaves as its own item carrying the question and no predicted outcome.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE DECISION IS RECORDED IN PBI-75'S OWN NOTES AND NOT ONLY HERE, because a subtask note is compacted with the sprint while the item is what a later reader reaches for. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
-          "THE HAZARD'S OWN ITEM WAS ALREADY FILED AT PLANNING AND IS DELIBERATELY NOT TOUCHED HERE, so this subtask's second clause is discharged by not re-filing it.",
-          "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; a review has not happened, and the executor is not the one who can say it did. THE ITEM'S STATUS IS THE EXCEPTION AND THE REASON IS IN THE ITEM: what closes it is a decision that its subject was measured away, which is this subtask's deliverable rather than a reviewer's verdict.",
-          "RETIRED AND NOT MET, WHICH IS THE DIFFERENCE A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade against the framework's source -- and the measured cell says that grading is the CURRENT one, which catches a disagreement the artifact hides. A `done` reading as `we delivered the story` would leave the item re-filed.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE DECIDING MEASUREMENT WAS TAKEN BEFORE THE SPRINT WAS PLANNED, deliberately, because the item made its design wait on it and planning ahead of it would have been discarded. It inverted the premise, so the sprint that was filed is not the sprint that would have been filed.",
-      "THE PRODUCT OWNER NARROWED THE FACILITATOR'S OWN CONCLUSION AND THE NARROWING IS KEPT: the evidence supports CURRENCY, not strictness. It is recorded because it is the conclusion-wider-than-its-enumeration class arriving in a ruling's headline, which is the position where this project has measured it hardest to see.",
-      "IN EXECUTION: THE ARM'S FIRST DEGENERATE NUMBERS WENT STALE INSIDE THIS SPRINT, and how they went is the finding rather than the correction. They were taken on the two-arm file, and the third arm -- the one that stops the degenerate being prose -- landed after them, so a paragraph in the tree described a run nobody could reproduce from it. Re-taken and SUPERSEDED, not set beside; this is the sprint whose whole subject is what an amended paragraph leaves behind.",
-      "IN EXECUTION: ONE CLAIM IN THE FORECLOSURES WAS NEW AND WAS MEASURED HERE RATHER THAN INHERITED -- that a member's manifest reaches a registry with its `scripts`. Every other reading written into the tree this sprint is the deciding measurement's, carried across without being re-derived, which is what the plan asked for.",
-      "IN EXECUTION: A UNIQUENESS CLAIM SHIPPED FOR THREE COMMITS INSIDE THE SPRINT WHOSE SUBJECT IS PROSE THAT OUTRAN ITS MEASUREMENT. The arm's header said the day an inlining transform lands `nothing else would say so` -- a coverage claim, which this project's rule says is measured or not written, and what else in the tree moves under such a transform was never read. Withdrawn IN PLACE at the arm, with the withdrawal visible, because a reader meeting only the narrower sentence cannot tell it from a claim nobody made. AND THE WITHDRAWAL WAS INCOMPLETE, WHICH IS THE PART WORTH MORE THAN THE ORIGINAL DEFECT: the same claim had been written into TWO FURTHER SITES in the same sprint -- this record's own arm note, and the retirement's home at `prepareWorkspace` -- and the withdrawal touched only the test file, so this very note asserted a repair the tree did not carry. Both survivors are now withdrawn in the same words. CAUGHT AT REVIEW AND NOT BY ITS AUTHOR, twice, which is the discriminator this project uses on this class.",
-      "AT REVIEW: THE ARM'S PROVENANCE WAS FALSE AND ONLY RUNNING IT SHOWED SO, WHICH IS THIS SPRINT'S OWN CLASS ARRIVING IN ITS CENTRAL DELIVERABLE. The arm was believed on degenerates that pointed its READER somewhere else and never on a perturbation of its SUBJECT. Perturbed for real, it fires from a handler's `prepack` and stays green for the identical transform in the shared build path, because a top-level pack replaces both handlers' dist/ during module load. The cost claim was true; the provenance beside it was not, and no degenerate could have separated them.",
-      "AT REVIEW: A COVERAGE CLAIM WITHDRAWN FOR BEING UNREAD WAS THEN READ, AND THE READING IS STRONGER THAN THE WITHDRAWAL IN BOTH DIRECTIONS. This closes a loop the sprint opened twice -- the claim shipped, was withdrawn incompletely, was withdrawn again -- and the lesson is that WITHDRAWING AN UNMEASURED CLAIM IS NOT THE SAME REPAIR AS MEASURING IT. The tree now carries which arms say so, which are disqualified as witnesses and why, and the spelling the list belongs to.",
-      "AT REVIEW: TWO OF THE FOUR FINDINGS WERE PROSE THAT SURVIVED BECAUSE NOBODY RAN THE THING IT DESCRIBED -- the trailer's ground and the residual's addressee. Both are refuted by a single direct call or a single manifest edit, neither costing more than a minute, and both had been reasoned about instead. THE DISCRIMINATOR THIS PROJECT SHOULD TAKE FROM IT: a sentence whose subject is a function's behaviour is measured by calling the function, and a sentence about who reddens an arm is measured by reddening it.",
-      "IN EXECUTION: A LINT WARNING WAS INTRODUCED AND REPAIRED IN THE SAME SPRINT rather than carried to review -- a refusal written inside a `finally`, which would have overwritten whatever the arm was already reporting. The Definition of Done reports warnings without gating on them, so the only thing that catches this is reading the run.",
-    ],
-  },
+  sprint: null,
   retrospectives: [],
 };
 
