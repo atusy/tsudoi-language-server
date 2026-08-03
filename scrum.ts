@@ -1688,7 +1688,92 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 64,
+    pbi_id: "PBI-76",
+    goal: "A handler packed against a framework artifact that no longer matches the framework's source is a state this repository has MEASURED, BOUNDED and NAMED where the next maintainer meets it -- rather than one it can produce with two green commands and say nothing about.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "None -- the deciding READINGS, taken before the sprint was planned because the item makes its design wait on them and predicts no outcome. Stage: `git clone --no-hardlinks` at base d2d6519, node_modules COPIED not symlinked and ALL THREE @atusy entries verified to realpath INSIDE the stage BEFORE anything was read, everything built first. The real checkout never written to; every `dist/` moved with a literal `mv`; `git status` clean after. bun 1.3.13, tsc 7.0.2, deno 2.8.3, darwin arm64.",
+        implementation:
+          "Narrow the handler type's RETURN in the framework's src/ ALONE -- its NAME kept, so a stale artifact still resolves it -- and read each handler's build against the stale artifact and against a REBUILT one.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PAIR, AND IT IS THE ITEM'S OWN CONTROL RATHER THAN THE ONE FIRST TAKEN. CELL A, the framework's artifact STALE: both handlers EXIT 0 and EMIT. CELL B, THE SAME EDIT WITH THE FRAMEWORK'S ARTIFACT REBUILT: both handlers EXIT 2 with TS2322 naming their own handler function. So the disagreement is between the STALE artifact and the CURRENT one, with the resolution route IDENTICAL in both cells -- which is a stronger reading than artifact-against-source and is the pair the item asked for.",
+          "AND THE FIRST TABLE TAKEN WAS THE WRONG CONTROL, CAUGHT BY THE PRODUCT OWNER FROM A METHOD PARAGRAPH RATHER THAN FROM A NUMBER. Its `against src/` column was produced by MOVING THE ARTIFACT ASIDE, which is PBI-75's ABSENT cell -- already measured harmless -- and not this item's written control, `PAIR IT with the same edit and a rebuilt framework`. The conclusion survived, but the control was unrun and is now run.",
+          "THE PACK ROUTE IS THE ITEM'S SUBJECT AND WAS READ RATHER THAN INFERRED: `bun pm pack` in a handler, in the STALE cell, EXITS 0 AND PRODUCES A TARBALL. So the hazard is not hypothetical -- two green commands in an order nothing forbids ship declarations graded against a shape the framework no longer has.",
+          "A PROBE WITH NO SUBJECT, RUN AND DISCARDED, REPORTED BECAUSE DISCARDING IT SILENTLY IS THE CATALOGUED FAILURE -- AND IT IS THE SECOND SUCH PROBE IN THREE SPRINTS, WHICH IS THE PART WORTH KEEPING. The first structural probe added a REQUIRED THIRD PARAMETER to the handler type: both handlers exited 0 against BOTH artifacts, because TypeScript assigns a function of fewer parameters to a type of more, so a handler ignoring the new parameter is untouched. THE PATTERN: `changed the type` is not `changed something the consumer's own code must satisfy`, and a structural probe must be aimed at what the consumer WRITES.",
+          "WHAT THIS INSTRUMENT CANNOT SEPARATE, owed by the label and named rather than left for a reviewer. (1) ONE PERTURBATION SHAPE IN ONE DIRECTION -- a NARROWED RETURN. A widened return, a changed parameter type, a renamed property inside an object type and a changed generic constraint are all unmeasured, so the claim that may be written is `a stale artifact hides a narrowed return type` and NOT `hides a changed shape`. (2) BOTH HANDLERS IS ONE OBSERVATION TWICE, NOT BREADTH: both declare tsudoi the same way and both consume the same handler type. (3) `EMITTED` SAYS THE BUILD WROTE FILES AND NOT WHAT THEY ENCODE -- whether the tarball's declarations carry the stale shape in a form a consumer trips on is UNREAD, no consumer-side compile was run, and that half decides whether the residue is `a stranger meets an error` or `a stranger meets nothing`. (4) NO RESOLUTION TRACE was taken, so `the artifact I moved is the one that answered` is inferred from the 0-against-2 split rather than read.",
+        ],
+      },
+      {
+        test: "None -- an ENUMERATION, and it sets the price of the branch the item is now on.",
+        implementation:
+          "Who actually packs a handler, and by what command. The documented pack line in CLAUDE.md is for the FRAMEWORK, run in its own directory. The handler packs in this tree are test/packed-members.test.ts -- at module load, under the preload, framework already built, so safe -- and the README arm.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IF NOTHING THIS REPOSITORY DOCUMENTS PACKS A HANDLER ON AN UNBUILT OR STALE FRAMEWORK, the hazard's producer is a maintainer typing an UNDOCUMENTED command, and `named the day it arises` lands affordably -- a foreclosure at each handler's own package-shape test, already the home for `prepack` reasons since package.json cannot carry comments, plus the documented route carrying the order. IF A DOCUMENTED HANDLER-PACK ROUTE DOES EXIST, naming costs a firing detector and the calculus changes. THE ENUMERATION IS TAKEN BEFORE ANYTHING IS DESIGNED FOR THE BRANCH.",
+        ],
+      },
+      {
+        test: "ONE STAGED TREE, BOTH BUILDS, AND THE ASSERTION IS THAT THE TWO EXIT CODES DISAGREE -- not that either is 0 or 2. Asserting the disagreement is what makes it redden the day they agree. The stage's own state is asserted BESIDE the reading, so a green cannot come from a stage that was never narrowed.",
+        implementation:
+          "The cell above, landed as an arm rather than left as prose: a staged tree where the framework's source and its artifact disagree, and a handler's build read against each.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT IS REQUIRED RATHER THAN PERMITTED, because this design now RESTS on that cell and this dashboard's header says a perturbation recorded only as prose is not recorded.",
+          "TWO NEIGHBOURING ARMS STAY REFUSED AND THE STALE CELL STRENGTHENS BOTH REFUSALS RATHER THAN REOPENING THEM. An arm asserting that the framework's src/ and dist/ AGREE is refused because ANY ARM RUNNING UNDER `bun test` RUNS AFTER THE PRELOAD HAS REBUILT EVERY PACKAGE -- you cannot observe staleness from inside a run that just eliminated it, and such an arm would be green forever while reading as coverage of this hazard. An arm comparing two builds OF THE REAL TREE stays refused on sprint 62's ground, that it pays a second build to re-derive what the preload already forces. THE STAGED FORM IS NEITHER: it pays a staged build to CREATE a disagreement that exists nowhere else and reads a behaviour nothing in this tree asserts.",
+          "AND WHAT NO ARM CAN DELIVER, SAID PLAINLY SO THE SPRINT DOES NOT ARGUE ITSELF INTO A GREEN: an arm inside `bun test` cannot NAME THE STATE THE DAY IT ARISES on the pack route. It can only pin that the state is producible and what it looks like.",
+        ],
+      },
+      {
+        test: "None -- a note at ONE existing site, decided by a reading rather than by resemblance.",
+        implementation:
+          "The emit-on-error state, measured while measuring something else: `tsc` exits non-zero AND STILL EMITS, so `the build failed` and `no dist/ was written` are different states. READ RATHER THAN INFERRED: with the handler's own prepack compiler failing, `bun pm pack` EXITS 2 AND PRODUCES NO TARBALL, while the handler's dist/ holds declarations from the failed build.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SO IT IS A NOTE AND NOT AN ITEM, and the reading is what decided that rather than a judgement about families: the pack ABORTS, so no tarball ships declarations from a failed build. THE NOTE CARRIES THE SELF-HEAL, which is what keeps it from reading as a buried hazard -- `prepack` opens with `rm -rf dist`, so a wrong artifact left by a failed build does not survive the next pack.",
+          "IT LANDS AT scripts/workspaces.ts's OWN EXISTING PARAGRAPH AND NOWHERE ELSE. That paragraph already says a failed build leaves a fresh wrong artifact and nothing cleans up; what is new is the handler-side instance and the pack's behaviour. A SECOND HOME IS THE DUPLICATION THIS TREE MEASURED TWICE -- a sentence superseded in two files still shipping in a third.",
+          "AND IT IS NOT THIS ITEM'S STATE, ON THE PRODUCER RATHER THAN THE FAMILY: this item's subject is a STALE FRAMEWORK artifact grading a handler; that one is a WRONG-BUT-FRESH HANDLER artifact left by a failed build. Different package, different producer. Folding it in would be the drop-box mistake one sprint after paying to dismantle it.",
+        ],
+      },
+      {
+        test: "None -- a supersession this sprint's own work makes due.",
+        implementation:
+          "PBI-76's note saying THE UNTAKEN CELL IS THE STRUCTURAL ONE is superseded in place. The replacement MAY NOT WIDEN THE CLAIM OR ADVANCE ITS DATE: a NARROWED RETURN was measured at d2d6519 on the named tool versions -- not `structural changes are hidden`.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "None -- the close, on a branch the measurement SELECTED rather than one the sprint chose.",
+        implementation:
+          "The criterion is a disjunction so a measurement could pick the arm, and it has: the CLOSURE branch is exhausted across all three shapes, so PBI-76 takes the NAMING branch.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "ALL THREE SHAPES, EACH REFUSED ON ITS OWN GROUND. SHAPE ONE -- refuse the handler build while the framework's artifact is ABSENT -- does not trigger here at all, and its REASON now points harder the other way: the artifact was already the grade that hides a disagreement, and it now hides a CHANGED SHAPE and emits. SHAPE TWO -- prepack builds the framework first -- WOULD functionally close this route and stays refused on a ground this measurement does not touch: a handler's package.json travels to a registry with its scripts, so it would put a cross-package build in a published manifest whose subject exists only in this workspace. That ground was written to be independent for exactly this moment. SHAPE THREE, NAMED SO NOBODY PROPOSES IT AS NEW -- freshen from the WORKSPACE side, a root-resident wrapper or a documented build-then-pack order, which ships nothing since the root is permanently private -- DOES NOT SATISFY THE CLOSURE BRANCH: it adds a safe route BESIDE the unsafe one, and a maintainer typing bare `bun pm pack` in the member bypasses it. Any mechanism resident in `prepack` itself, INCLUDING A DETECTOR RATHER THAN A BUILDER, takes shape two's registry ground.",
+          "AND THE OUTCOME IS AUTHORISED IN ADVANCE SO THE SPRINT DOES NOT ARGUE ITSELF INTO A `done`: if no affordable firing detector exists on the pack route, PBI-76 RETIRES AS A RECORDED DECISION WITH ITS RESIDUE NAMED, which is PBI-75's shape. A firing condition must NAME OBSERVATIONS RATHER THAN INTENTIONS.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE DECIDING MEASUREMENT WAS TAKEN BEFORE PLANNING AND THE PRODUCT OWNER THEN FOUND ITS CONTROL WAS THE WRONG ONE -- from the METHOD PARAGRAPH rather than from any number, which is the reading this project's records say is worth more than a re-run. The corrected pair is stronger than the original, so the correction cost the sprint nothing and bought it the claim it can actually write.",
+      "TWO STRUCTURAL PROBES IN THREE SPRINTS TURNED OUT TO HAVE NO SUBJECT, AND THE PATTERN IS FILED RATHER THAN THE INSTANCES: an optional member added to a type nobody reads, and a required parameter added to a function type consumers may ignore. BOTH ARE `CHANGED THE TYPE` MISTAKEN FOR `CHANGED SOMETHING THE CONSUMER'S OWN CODE MUST SATISFY`. A structural probe is aimed at what the consumer WRITES, or it measures nothing.",
+    ],
+  },
   retrospectives: [],
 };
 
