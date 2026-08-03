@@ -157,6 +157,35 @@ whether a reference still has a referent is a matcher over prose content, which
 is the shape sprint 60 refused when it killed the exempt tag list. The remedy is
 the discipline at the moment of writing, which is why it lives here.
 
+### A supersession may not widen the claim or advance its date
+
+_(sprint 63)_ **A dated claim's replacement INHERITS THE DATE, or the
+measurement is re-taken.** The rule above forces you to RE-AUTHOR a sentence
+rather than append to it, and re-authoring is where the claim quietly grows: you
+are writing prose, not copying a reading, and the wider, present-tense sentence
+is the better-sounding one. Three instances in the sprint that landed this,
+every one written by the author of the repair:
+
+- a docstring said the artifact a stranger receives is graded by **"nothing but
+  this file"**. The sentence it replaced was the dated form, _"nothing checked
+  the artifacts against that **until this file**"_ — and two other files had been
+  grading the same tarball since before this one was added.
+- a dashboard note re-asserted a byte-identity result over a **wider range of
+  commits** than the one it was measured on. `git diff` over the new range: 30
+  insertions.
+- a **MEASURED** label was carried from a claim scoped to _"this sprint"_ onto
+  one reading _"across several sprints"_, with no number and no sprint named.
+
+**The tell is the tense and the quantifier, and you can check both without
+re-measuring anything.** `until this file` → `nothing but this file`;
+`this sprint` → `across several sprints`; `and this commit` → `and today's`. If
+the replacement says more than the reading did, either take the reading again or
+keep the narrower sentence and let it look weaker. **A superlative is the
+strongest thing you can write and the cheapest thing to write; when it is the
+part you did not measure, drop the word rather than substitute a comparative** —
+`the only one` traded for `among the fewest` is the same defect at a lower
+volume.
+
 ## Commit boundaries a comment decides
 
 **WHEN FIX A'S COMMENT DESCRIBES THE STATE FIX B CREATES, A AND B ARE ONE
