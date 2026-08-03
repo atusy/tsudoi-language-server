@@ -120,6 +120,15 @@ applySuiteDeadline();
  * and make fixing it a test-breaking change. This one survives that fix and
  * therefore specifies nothing about it -- with the framework's source arms
  * deleted the stage is still non-zero and merely names framework specifiers too.
+ * THAT LAST CLAUSE SHIPPED AS AN UNLABELLED PREDICTION AND IS NOW MEASURED, and
+ * the reading is the SPRINT 61 REVIEW'S rather than this file's: on increment
+ * 11e249a, with the four source arms deleted and every dist/ MOVED ASIDE, the
+ * root check is exit 1 naming `@atusy/tsudoi-language-server/types` four times,
+ * `/deps/types` and `/deps/textdocument`, with both handler packages beside them.
+ * Non-zero still, and now naming the framework too, which is exactly what
+ * `survives the fix` has to mean. NOTHING HERE RE-TOOK IT: the reading costs
+ * deleting four arms and moving every artifact, and its provenance is named so
+ * it is not read as this arm's own.
  */
 
 /** The stage, with the two facts the reading rests on read off it rather than assumed. */
