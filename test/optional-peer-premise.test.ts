@@ -181,7 +181,12 @@ function disagreeing(root: string, unpublished: boolean): string[] {
  * `dist/`. The declarations that ship are the same either way -- measured, and
  * the reading is at `prepareWorkspace` in scripts/workspaces.ts -- so what is
  * left is narrow: it bites only if the framework's OWN published dist/ disagreed
- * with its src/ at publish time, which is a publish that skipped `prepack`.
+ * with its src/ at publish time -- a publish that skipped `prepack`, OR one
+ * whose dist/ carried a file `prepack` did not rewrite. THE SECOND DISJUNCT IS
+ * NOT A HEDGE: unlike both handlers, the framework's `prepack` is `tsc -p
+ * tsconfig.build.json` with NO `rm -rf dist` in front of it, so it clears
+ * nothing and an artifact surviving from an earlier shape of src/ ships beside
+ * the freshly emitted ones.
  *
  * WHAT HAPPENS THEN IS OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND
  * IS LABELLED ONE RATHER THAN MEASURED: since a handler's emitted declaration
@@ -191,8 +196,10 @@ function disagreeing(root: string, unpublished: boolean): string[] {
  * surface in THEIR compile as a named error. INFERRED, NOT OBSERVED: no
  * consumer-side compile against a skipped-prepack publish has been run here. If
  * it holds, the residual degrades WHO meets the error and not whether anyone
- * does. THE ANSWER A PUBLISHER OWES IS THEREFORE ABOUT THEIR OWN ROUTE: that the
- * publish they are about to make did not skip `prepack`.
+ * does. THE ANSWER A PUBLISHER OWES IS THEREFORE ABOUT THEIR OWN ROUTE, AND
+ * `PREPACK RAN` IS NOT THE WHOLE OF IT for the reason above: that the publish
+ * they are about to make did not skip `prepack`, AND that nothing in the
+ * framework's dist/ predates the source it is shipped beside.
  */
 test("no member's optional-peer flag disagrees with what tsudoi's manifest says about publication", () => {
   // The pair: with no members this reading is empty for a reason that has

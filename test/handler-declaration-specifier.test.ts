@@ -64,8 +64,19 @@ applySuiteDeadline();
  * already wrote before any test file loaded.
  *
  * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED in
- * sprint 62 on bun test v1.3.13, this file as it stands and run alone, which
- * reads 3 pass / 0 fail unperturbed. With the two readings of this checkout
+ * sprint 62 on bun test v1.3.13, AT BASE 0ddae74 AND RUN ALONE -- the base is
+ * named because `this file as it stands` was written here first and the file's
+ * executable code moved twice afterwards, so the phrase pinned nothing a reader
+ * could return to. Unperturbed it reads 3 pass / 0 fail.
+ *
+ * EACH NUMBER BELONGS TO ITS SPELLING AND NOT TO ITS DESCRIPTION, which a
+ * re-take at this base demonstrated rather than argued: the same three
+ * degenerates spelled WIDER -- the shared reader disabled outright instead of
+ * the two checkout-facing readings redirected, and every read answered empty
+ * instead of one staged file -- give 0 pass / 3 fail and 1 pass / 2 fail, since
+ * the wider spelling also reaches the last arm. Only the third reproduced
+ * identically. So a spelling is part of a degenerate's record here, not
+ * decoration on it. With the two readings of this checkout
  * pointed at an EMPTY DIRECTORY: 1 pass / 2 fail, both naming both handlers.
  * Pointed at a directory holding one ZERO-BYTE `.d.ts`: 2 pass / 1 fail, the
  * subject alone, which is the discrimination the second arm claims. With

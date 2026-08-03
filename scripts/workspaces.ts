@@ -463,16 +463,20 @@ function build(root: string, dir: string): void {
  * survive this base: a handler's emitted declarations name the framework BY
  * SPECIFIER and never by structure, so WHICH FILE ANSWERED CANNOT APPEAR IN THEM
  * while both files declare the same names.
- * test/handler-declaration-specifier.test.ts is what reddens the day that
- * indirection goes, and nothing else in the tree would say so.
+ * test/handler-declaration-specifier.test.ts is the arm whose SUBJECT that
+ * indirection is. NOT `and nothing else in the tree would say so`, which stood
+ * here: that is a coverage claim, and this project's rule is that one is
+ * measured or not written -- what else moves under an inlining transform was
+ * never read.
  *
  * WHAT THAT INSTRUMENT CANNOT SEPARATE, owed by the label and NOT a hedge on the
  * result. IT IS IN-SYNC ONLY: it compares two spellings of the SAME content, so
  * it says nothing about an artifact that DISAGREES with the source it was built
  * from. Where they do disagree the source-answered state is the one that SPEAKS
- * -- with a framework type renamed in src/ alone, the handler built against the
- * stale artifact exits 0 while the same build against src/ exits 2 naming the
- * missing member at TS2305 -- and WHAT THAT SUPPORTS IS CURRENCY AND NOT
+ * -- MEASURED at base c1979a4 with tsc 7.0.2 in the same clone stage as the
+ * byte-identity reading above, with a framework type renamed in src/ alone: the
+ * handler built against the stale artifact exits 0 while the same build against
+ * src/ exits 2 naming the missing member at TS2305 -- and WHAT THAT SUPPORTS IS CURRENCY AND NOT
  * STRICTNESS: source grades against the framework AS IT IS NOW, the artifact
  * against whatever was last built, and the reverse edit would put the strictness
  * on the artifact's side. It also cannot separate WHAT WAS EMITTED from WHAT WAS
@@ -802,6 +806,16 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
         const landed = answered.get(specifier);
         return `${specifier} answers from ${landed === undefined ? "NOTHING" : relative(root, landed)}, where its \`types\` arm promises ${relative(root, declaration)}.`;
       }),
+      // THE SECOND SENTENCE IS TRUE OF TWO OF THE THREE OFFENDERS ABOVE AND NOT
+      // OF THE THIRD, said here because the trailer prints for all three. It
+      // describes an artifact that is MISSING OR HALF WRITTEN -- the realpath
+      // mismatch, and the declaration that does not exist. IT DOES NOT DESCRIBE
+      // `landed === undefined`, the subpath that never resolved at all: there no
+      // artifact was graded and no check below would have read a wrong file, so
+      // the offender line above it is the whole of what that state is. Kept
+      // rather than split because the remedy is the same one and a reader of the
+      // per-offender line is not misled; named so the trailer is not read as an
+      // enumeration.
       "A published subpath answering from anywhere but the artifact means the artifact is missing or half written, and every check below this one would have graded a file no consumer receives. Build the package, or repair its `exports` map.",
     ].join("\n"),
   );
