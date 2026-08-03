@@ -657,9 +657,12 @@ function whereSubpathsLand(
  * answer -- a partial emit, a build skipped for a package with no build config,
  * a dist/ removed by hand between the build and the check. IT DOES NOTHING FOR A
  * BARE `tsc --noEmit` ON A CHECKOUT NOBODY HAS BUILT: that command is the fourth
- * Definition-of-Done check and nothing in this repository owns its invocation.
- * Reaching it would take a `paths` mapping or a project reference, which is the
- * one manufacture this workspace refuses by name.
+ * Definition-of-Done check, and the only invocation of it this repository owns
+ * runs AFTER the first check has built -- scripts/definition-of-done.ts spawns it
+ * from the dashboard's list, and that runner's one-step reading depends on the
+ * order. The BARE, PRE-BUILD one is nobody's, and it is the one this paragraph is
+ * about. Reaching it would take a `paths` mapping or a project reference, which
+ * is the one manufacture this workspace refuses by name.
  *
  * AND A SECOND STATE PASSES UNDER THIS ENTIRELY, NEWLY MEASURED AND DISCLOSED
  * HERE RATHER THAN LEFT FOR THE NEXT READER TO DISCOVER AT THE WRONG MOMENT: A

@@ -60,8 +60,11 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * refusal on the FIFTH check, `refuseSubpathsAnsweringFromSource` in
  * scripts/workspaces.ts, which runs AFTER a build and therefore covers an
  * artifact that survived one rather than a checkout nobody has built. The bare
- * fourth check is still the command with the hole, and nothing in this
- * repository owns its invocation.
+ * fourth check is still the command with the hole -- and `nothing owns its
+ * invocation` is qualified rather than repeated, because one thing does:
+ * scripts/definition-of-done.ts spawns `tsc --noEmit` from the dashboard's list,
+ * AFTER the first check has built. The invocation nobody owns is the BARE,
+ * PRE-BUILD one, which is the only one the hole is about.
  *
  * WHICH ARRANGEMENT OF dist/ THIS PRELOAD STANDS IN FRONT OF, TAKEN AS CELLS
  * BECAUSE THE COLOUR OF THAT CHECK REPORTS THE HANDLERS' ARTIFACTS AND NEVER

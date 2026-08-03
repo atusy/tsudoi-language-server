@@ -106,9 +106,13 @@ applySuiteDeadline();
  * green here says nothing about it.
  *
  * (3) IT SAYS NOTHING ABOUT THE REAL FOURTH CHECK. That command is `tsc
- * --noEmit` at the checkout root and nothing in this repository owns its
- * invocation; what runs here is a staged copy, and a staged copy is a claim
- * about a stage.
+ * --noEmit` at the checkout root; what runs here is a staged copy, and a staged
+ * copy is a claim about a stage. AND `NOTHING OWNS ITS INVOCATION` IS TOO WIDE,
+ * QUALIFIED RATHER THAN DROPPED: scripts/definition-of-done.ts spawns exactly
+ * that command from the dashboard's own list -- but only AFTER the first check
+ * has built every artifact, which is the ordering that runner's own one-step
+ * reading leans on. What nothing here owns is the BARE, PRE-BUILD invocation,
+ * and that is the one this arm's subject is about.
  *
  * (4) IT IS NOT THE PIN THE CRITERION REFUSES, AND THE DIRECTION IS NAMED. The
  * refused arm is one asserting that the framework IS SILENT on an unbuilt stage:
