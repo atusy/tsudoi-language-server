@@ -46,6 +46,21 @@ export function armReadAccounts(accounts: readonly ReadAccount[]): void {
       ).toBe(`${at}:${String(block.line)} true`);
     });
 
+    // WHAT THIS ARM DOES NOT SAY, MEASURED RATHER THAN REASONED AND RECORDED
+    // HERE BECAUSE ITS NAME INVITES THE STRONGER READING: IT IS SATISFIED BY A
+    // PROJECTION THAT IS A CONSTANT. `replace` is a no-op when `part` is not in
+    // the body, so a subject the block does not contain leaves `holds` false
+    // over the UNTOUCHED block, and false is what this arm asks for. MEASURED
+    // with the layout row's subject replaced by a constant: 925 pass / 9 fail,
+    // and THIS ARM IS GREEN in that run.
+    //
+    // WHAT CAUGHT IT INSTEAD, NAMED SO THE GAP IS NOT READ AS AN UNGUARDED ONE:
+    // `readmeCoverage`'s fourth refusal -- a projection member the block's own
+    // bytes do not contain -- fired FOUR TIMES, the OUTSIDE arm below reddened
+    // because a constant cannot survive a corruption it never covered, and the
+    // `holds` arm above reddened because the account stopped being true at all.
+    // The remaining three reds are the registry's, over the two arms it names in
+    // test/readme-layout.test.ts and their shared baseline.
     test(`corrupting ${where} INSIDE ${consumer.name}'s subject makes it say no`, () => {
       const subject = form.subject(block);
       // The pair for the loop below, which is green over no elements at all.
