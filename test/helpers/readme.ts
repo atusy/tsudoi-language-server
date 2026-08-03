@@ -1068,12 +1068,37 @@ function resolvesFrom(specifier: string, dir: string): boolean {
  * `write=tsudoi.config.ts` step is a ```ts block and IS reached -- and an exempt
  * list makes the defect reintroducible by typing three characters.
  *
- * THE RESIDUE, NAMED HERE AND DELIBERATELY NOT GIVEN A DETECTOR: nothing
- * notices a row whose consuming arm was deleted, and this table would go on
- * claiming a consumer. A check deciding whether an arm REALLY consumes is the
- * approximate detector refused above. What keeps the claim honest instead is the
- * mutation arm, which fails the day a `read` row's account stops being about the
- * block.
+ * THE RESIDUE, MEASURED RATHER THAN NAMED, AND IT IS FOUR OF THE FIVE ROWS.
+ * Nothing notices a row whose consuming arm was deleted: this table goes on
+ * claiming a consumer with no assertion left behind it. MEASURED by emptying
+ * each consuming file to a placeholder that still registers something, against a
+ * baseline of 934 pass / 0 fail across 65 files -- test/readme.test.ts, which
+ * carries BOTH `executed` rows, reads 837 pass / 0 fail, ninety-seven arms
+ * simply gone; test/readme-accounts.test.ts, which carries the snippet and
+ * install rows, reads 916 pass / 0 fail, eighteen gone. Neither is caught by
+ * anything.
+ *
+ * THE FIFTH IS CAUGHT AND ONLY INCIDENTALLY: test/readme-layout.test.ts emptied
+ * reads 929 pass / 2 fail, and both reds are PERTURBATION RECORDS that name arms
+ * in that file BY EXACT `test()` STRING -- so what reddened is the registry
+ * losing its subject, not the table losing a consumer. It is the most fragile
+ * catch available, too: `armReadAccounts` names an arm by ORDINAL, so a marked
+ * block added ahead of that one turns those same records into a REFUSED, which
+ * this project reads as a stale registry rather than as a missing arm.
+ *
+ * SO THE MITIGATION THIS DOCSTRING USED TO NAME IS STRUCK. It said `what keeps
+ * the claim honest instead is the mutation arm`. The mutation arms live in the
+ * two files above -- `armReadAccounts` is called from both -- so for the snippet
+ * and install rows the mitigation is deleted by the same edit as the thing it
+ * mitigates, in the same silence. A mitigation that shares the fate it mitigates
+ * is not one, and it covered only the `read` rows in the first place: the two
+ * `executed` rows never had it.
+ *
+ * WHAT IS STILL NOT OWED IS A DETECTOR, and the refusal is the one above: a
+ * check deciding whether an arm REALLY consumes is the approximate detector
+ * whose failure mode is a green certifying a class as watched. The residue is
+ * recorded at its measured size and the table is left saying no more than it is
+ * worth.
  */
 export const consumers: readonly Consumer[] = [
   {

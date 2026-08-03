@@ -118,9 +118,18 @@ check green -- the path is the subject and THE VERB IS THE RESIDUE. So when you
 add a block: add its marker, add the row, and if what reads it reads only part of
 it, that part is the subject and the rest is a residue you write down -- IN THE
 DOCUMENT THE READER MEETS, not only in the helper, which is the half this sprint
-shipped wrong and had to repair. A row whose consuming arm was deleted is a
-residue nothing notices; the mutation arms (corrupt inside the subject, corrupt
-outside it) are what keep the rest honest.
+shipped wrong and had to repair.
+
+**A row whose consuming arm was deleted is a residue nothing notices, and the
+mutation arms do NOT cover it — they share its fate.** _(sprint 60)_ MEASURED by
+emptying each consuming file, against 934 pass / 0 fail across 65 files:
+`test/readme.test.ts` (both `executed` rows) reads 837/0 and
+`test/readme-accounts.test.ts` (the snippet and install rows, AND the mutation
+arms over them) reads 916/0 — four of the five rows, uncaught. Only
+`test/readme-layout.test.ts` reddens, at 929/2, and incidentally: the two reds
+are perturbation records naming its arms by exact `test()` string. So when you
+delete or retarget an arm, the table is what you fix by hand; nothing will tell
+you.
 
 ## Commit boundaries a comment decides
 
