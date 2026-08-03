@@ -255,14 +255,17 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  *
  * THE WHOLE DIRECTORY IS READ, ON PURPOSE, and the cost was RE-TAKEN at this base
  * rather than inherited: one directory of five thousand entries, names only,
- * drains through `readdir` in 2.528 ms on bun 1.3.13 and 6.374 ms on deno 2.8.3,
- * and through the handle this function uses in 2.080 ms and 9.619 ms (macOS/APFS,
- * warm, medians of fifteen interleaved rounds). THE 51 ms AND 135 ms THAT STOOD
- * HERE ARE CORRECTED IN PLACE RATHER THAN FILED, because this session's own rows
- * have the same subject: they are the `readdir` drain at that size, and they do
- * not reproduce on this machine. A drain once per HIGHLIGHT is still not the
- * expensive thing here, and the completion half beside this file still drains an
- * entire directory on every keystroke to filter it.
+ * costs 2.080 ms on bun 1.3.13 and 9.619 ms on deno 2.8.3 through the handle this
+ * function uses, and 1.476 ms and 5.511 ms read into an array under the same gate
+ * (macOS/APFS, warm, medians of fifteen interleaved rounds). THE 51 ms AND 135 ms
+ * THAT STOOD HERE FOR `readdir` ALONE ARE RETIRED RATHER THAN RENUMBERED, AND THE
+ * REASON IS A SUBJECT AND NOT A MAGNITUDE: this session timed WHOLE SHAPES, so
+ * the nearest row to a bare `readdir` still carries the gate that runs over its
+ * result, and calling that row `the drain` would be the class of error this
+ * paragraph is being repaired for. What the old pair was cited for survives its
+ * own numbers: a drain once per HIGHLIGHT is not the expensive thing here, and
+ * the completion half beside this file drains an entire directory on every
+ * keystroke to filter it.
  *
  * THE `~1.1 s` OF PER-ENTRY STATS IS A DIFFERENT RULING'S NUMBER AND IS FILED AS
  * SUSPECT BY ASSOCIATION RATHER THAN RENUMBERED. It came from the session whose
