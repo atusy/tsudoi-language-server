@@ -277,8 +277,14 @@ function refuseCycle(
 export function buildOrder(root: string): readonly string[] {
   // EVERY MEMBER AND NOT ONLY THE HANDLERS. A package left out of the order is a
   // package never built, and the framework is the one every other package here
-  // compiles against -- narrowing this to the consumers would leave the producer
-  // unbuilt and hand every one of them a TS2307 for a subpath that is fine.
+  // compiles against -- so narrowing this to the consumers would leave the
+  // producer unbuilt. WHAT THAT COSTS IS WHAT THE CYCLE PARAGRAPH ABOVE ALREADY
+  // SAYS, and the sentence that stood here said the opposite: NOT `a TS2307 for
+  // a subpath that is fine`, but exit 0 through the `default: ./src/*.ts` arm,
+  // every consumer's declarations graded against a file no consumer receives.
+  // MEASURED FALSE at sprint 61 -- a member's own build in that state exits 0
+  // and emits -- and the prediction had been standing nine lines below its own
+  // correction.
   const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
   const dirsByName = new Map<string, string>();
   for (const node of nodes) {

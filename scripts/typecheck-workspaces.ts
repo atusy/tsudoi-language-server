@@ -91,12 +91,25 @@ function typeCheckMember(root: string, member: string): boolean {
 }
 
 const root = resolve(process.argv[2] ?? process.cwd());
-// A MEMBER IS TYPE-CHECKED AGAINST WHAT IT ACTUALLY RESOLVES, which is the
-// dist/ its dependency publishes and not that dependency's source. So this
-// builds before it reads, on the preload's own reasoning: a check run against a
-// dist/ nobody rebuilt reports on a tree that no longer exists, and the failure
-// it invents -- TS2307 for a subpath that resolves perfectly well -- is exactly
-// the one this check exists to distinguish.
+// A MEMBER IS TYPE-CHECKED AGAINST WHAT IT ACTUALLY RESOLVES, so this builds
+// before it reads, on the preload's own reasoning: a check run against a dist/
+// nobody rebuilt reports on a tree that no longer exists.
+//
+// WHAT THE ORDER SPARES IS NOT A RED, AND THIS IS A CORRECTION CARRYING ITS OWN
+// PROVENANCE BECAUSE IT IS ITSELF A MEASUREMENT. This used to license the order
+// with an INVENTED failure -- `TS2307 for a subpath that resolves perfectly
+// well`, exactly the one this check exists to distinguish. MEASURED FALSE at
+// sprint 61, base 6d1c85d, tsc 7.0.2, on a staged tree with no dist/ anywhere: a
+// member's own `tsc -p tsconfig.build.json` EXITS 0 AND EMITS, its
+// `@atusy/tsudoi-language-server/*` subpaths TRACED to
+// packages/tsudoi-language-server/src/*.ts, because the framework's map ends in
+// a source arm the compiler falls through to. There is no red to spare. WHAT THE
+// ORDER ACTUALLY BUYS IS WHICH FILE THE GRADE IS TAKEN AGAINST: unbuilt, this
+// check greens a member whose declarations were read against a file no consumer
+// receives, and it greens it silently. That silence is why
+// `refuseSubpathsAnsweringFromSource` below reads what the build WROTE instead
+// of trusting the exit codes underneath it. The same correction is at
+// `prepareWorkspace` and `buildOrder` in scripts/workspaces.ts.
 prepareWorkspace(root);
 // EVERY MEMBER AND NOT ONLY THE HANDLERS, which is the one enumeration in this
 // repository that may never narrow: this check is the ONLY thing type-checking a
