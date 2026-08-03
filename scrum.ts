@@ -1067,7 +1067,109 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 60,
+    pbi_id: "PBI-64",
+    goal: "A reader of this repository's promise about its own documentation finds it true of every fenced block in every tracked README -- because a block nothing consumes is refused by name, and a block that is read rather than run says which part of itself the reading can fail on.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "None -- structural. Pinned by the existing arms in test/readme.test.ts staying green (the marker-deleted probes, the count throws, the moved-marker throw) and by the whole Definition of Done. Born-green, no behaviour claim.",
+        implementation:
+          "ONE FENCE READER, and the markers select from it. `fencedBlocks(markdown)` in test/helpers/readme.ts returns each block's OPENING-FENCE OFFSET, info string, body and line; `markedBlocks(markdown, marker)` is the blocks whose opening fence the marker immediately precedes -- the adjacency the three current regexes already require, kept rather than loosened. The three extractors are rebuilt on it; their count guards and QUICKSTART_STEPS are untouched.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT IS FIRST BECAUSE IT IS WHAT SATISFIES `NO SECOND PARSER`, not because it is tidy. The guard joins `the document's blocks` to `the blocks something consumes` on the opening-fence offset, so after this there is ONE matcher and the guard's notion of reached cannot drift from the extraction's. A second expression standing beside the call is not the call, applied to matching.",
+          "THE READER READS FENCES AND INFO STRINGS, NEVER BODIES. Three-or-more backticks OR TILDES at up to three spaces of indent, closing on the same character at at least the same run length -- tildes included because a reader that misses `~~~sh` fails toward PERMITTING, the one direction this item cannot accept. WHAT IT CANNOT SEE, named rather than fixed: a four-space indented code block, which has no fence and no info string. Deciding `is this text a command` by reading the body is a matcher for a defect that is a property of matching, and this repository refuses that shape by name.",
+        ],
+      },
+      {
+        test: "test/readme-coverage.test.ts. Every arm stages a throwaway with stageCheckout() -- ThrowawayPath-branded, tracked files, borrowed node_modules -- plus `git init -q` and an add, plants INTO THE STAGE, and calls the guard with that root. NOTHING HERE EVER EDITS A TRACKED README: a test mutating a version-controlled file in order to fire is this record's own measured failure, and readReadme()'s hardcoded path is exactly how this sprint would fall into it.",
+        implementation:
+          "THE DEGENERATE FIRST, READ BEFORE ANY ARM IS BELIEVED. Ship the guard returning the empty list and take the reading: the planted arms must redden and the unplanted ones stay green, recorded with the numbers rather than argued. AND THE SECOND DEGENERATE, because no arm above catches over-refusal: refuse-everything must redden the unplanted-tree arm.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE UNPLANTED-TREE ARM SHIPS WITH ITS PRESENCE PAIR -- documents read above zero AND blocks read above zero. An empty offender list and a reader that opened nothing are the same observation without it.",
+          "THIS SPRINT'S EVIDENCE IS NOT ONE PLANTED WITNESS. The criterion asked for a staged plant BECAUSE it assumed every block in this tree today is reached or declared, and that premise was MEASURED FALSE while planning: five blocks have zero consumers, so the shipped guard is red at five real sites on this repository before anything is staged.",
+        ],
+      },
+      {
+        test: "A throwaway gains packages/tsudoi-nowhere/README.md and is refused NAMING THAT PATH with no enumeration edited. Three pairs: the same file left UNTRACKED is not swept; the enumeration run against a directory that is not a checkout THROWS rather than returning empty; and -- the arm that matters -- a new README carrying a KNOWN, WELL-FORMED MARKER that no test opens is REFUSED, not cleared.",
+        implementation:
+          "`trackedReadmes(root)` -- `git ls-files -z` filtered to basename README.md, inheriting checkoutPaths's two rules verbatim: a failed enumeration is not an empty one, and NUL separators, because git quotes odd paths and a quoted path matches no file.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "NOT declaredMembers AND NOT handlerMembers. The criterion says TRACKED README; those two answer `which packages`, and a README under examples/ or docs/ is neither. Joining them would give the guard the same blind spot the documents have, which is the guard over `the documents that exist today` the criterion refuses in its own words.",
+          "THE MARKER ARM IS THE ONE THAT ENFORCES `THE GUARD MAY NOT BE ITS OWN CALLER`. A guard that ran the extractors over each tracked README and cleared whatever matched would certify a document nobody opens -- the author's-intention failure with the marker swapped for the guard's own run. THE ADJACENT WEAKER READING, in the perturbation registry: a readdirSync walk for README.md, whose required red is the untracked-file arm.",
+        ],
+      },
+      {
+        test: "Arms built FROM the table, so the guard consumes a pairing that exists for the arms rather than performing one. A tracked README in no pairing is refused, naming the document, before a single block is looked at.",
+        implementation:
+          "`consumers` in test/helpers/readme.ts: the document set expressed as the enumerations the tests already use (the checkout's own README; handlerMembers), the marker, and the form -- `executed` (the block's bytes are run) or `read` with a `subject` projection and its reason.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHY AN ACCOUNT IS A CONSUMPTION AND NEVER A DECLARATION, decided on a measurement rather than on principle. `declared and read` is already not `checked`, and this tree has the instance: the install block's three consumers are a negative match that survives any corruption, a contains of the tarball name, and a split taking the LAST TOKEN. So the path is checked and THE VERB IS NOT -- `bun frobnicate ../<checkout>/x.tgz` satisfies all three and leaves every check green. A rule admitting `it is read` wholesale would certify that; a rule demanding `corrupting any byte reddens something` would refuse the very block the item forbids refusing.",
+          "A HUMAN WRITES THE MARKER AND MUST -- every extractor here is marker-keyed and the marker is what routes a block to its consumer. A HUMAN NEVER WRITES THE ACCOUNT. A marker cannot make a block accounted for, because the guard does not read markers to decide.",
+          "REFUSED, EACH WITH ITS REASON: an allow-list of documents, blocks, lines or hashes, which is the approximate detector whose failure mode is a green certifying a class as watched, and which as a hash list is the rubber stamp with one extra step; an exemption written in the document whose only consumer is the guard; and a sixth Definition-of-Done check, since the guard belongs where the extraction already lives.",
+          "THE RESIDUE, NAMED AT THE TABLE AND NOT GIVEN A DETECTOR: nothing notices a pairing entry whose consuming arm was deleted -- the table would go on claiming a consumer. A check deciding whether an arm REALLY consumes is the shape refused above. What keeps the claim honest even so is the mutation arm below.",
+        ],
+      },
+      {
+        test: "THE MUTATION ARM, which is where the teeth are: corrupt the block INSIDE its subject and the consuming predicate must go false; corrupt it OUTSIDE and it must stay true. The account's boundary asserted rather than assumed -- and the unverified verb written down at last.",
+        implementation:
+          "The subject is never inspected as prose. It is the projection the consuming assertion is HANDED, and the assertion receives ONLY its output, so it cannot fail on anything the account does not name -- by construction rather than by inspection. For the install block that projection is test/readme.test.ts's own last-token expression MOVED INTO THE HELPER so that there is one of it. The guard additionally requires the projection to return a non-empty string the block's own bytes include, so a projection cannot be a constant.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT NEEDS THE LAST-TOKEN PREDICATE LIFTED OUT of the expensive pack test into a pure function both the arm and the guard call -- a structural step inside this subtask, taken for the same reason as the fence reader: two spellings of one premise is what the join exists to kill.",
+        ],
+      },
+      {
+        test: "The guard is written first and is RED ON THIS TREE at five sites; each consumer greens named blocks. That ordering IS the increment and not a follow-up.",
+        implementation:
+          "THE INFO STRING DECIDES NOTHING -- every fenced block in a paired document is reached or accounted, the tag recorded for the refusal message alone. Two new consumers pay for it: a SNIPPET consumer compiling every marked `ts` block against the installed framework, and a LAYOUT consumer holding the drawn tree against the directories the quickstart markers name.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "WHY THE EXEMPT TAG LIST DIED, AND THE PRODUCT OWNER OVERTURNED THEIR OWN SETTLEMENT TO SAY IT. `command block` names a class NOTHING IN THIS TREE CAN COMPUTE: the info string is refuted by the quickstart's `write=tsudoi.config.ts` step, which is a ```ts block and IS reached, and a matcher over block content is a matcher for a defect that is a property of matching. An exempt list makes the defect reintroducible by typing three characters -- green, witness red, defect reachable, which is the one outcome refused with every check green. The widening SATISFIES the criterion by refusing a superset; no acceptance criterion is loosened.",
+          "MEASURED WHILE PLANNING, and it is what sets this sprint's size: grep finds NO consumer of the root layout block, of either root `ts` block, or of each member's `ts` config -- and it could not be otherwise, because visibleProse strips fenced blocks before any ReadmeFact sees them, so no prose assertion can reach a block's bytes.",
+          "A BLOCK DECLARED TO FAIL NAMES ITS DIAGNOSTIC CODE, and must fail with THAT code and not with TS2307. This tree's ambient failure is unresolved specifiers -- another item's whole subject -- so without the code, `the broken mock fails as promised` is satisfied by a checkout where the framework did not build: two states, one red. The code is the subject clause; `must fail` alone is a stamp.",
+          "THE LAYOUT CONSUMER IS NOT A SECOND MECHANISM. test/helpers/readme.ts twice requires a directory to be stated twice and be the same string; this is that idiom a third time, over the drawing instead of the sentence, and it catches a README picturing one layout while staging another -- which nothing today would see.",
+          "THE PRESSURE VALVE IS THE WIDTH OF AN ASSERTION AND NEVER AN EXEMPTION: if the layout consumer runs long it narrows to one direction -- every marker directory appears in the drawn tree, dropping the converse -- and still ships. A tag may not start skipping. Vetoes get traded under schedule pressure, so the trade is priced in advance.",
+        ],
+      },
+      {
+        test: "None new -- the subject of each sentence is the guard this sprint ships. Byte-identity at the base recorded before the first edit; offered as READINGS, not as MEASURED.",
+        implementation:
+          "The four sentences this increment makes false, repaired IN THE COMMIT THAT SHIPS THE GUARD: the skill's `nothing sweeps for what it missed`; README.md's `every block in this file is extracted and executed`, which the widening falsifies in a NEW way by giving the document blocks that are read but not run; test/readme.test.ts's MEASURED coverage claim, DERIVED FROM THE TABLE or deleted; and CLAUDE.md, local only.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TWO CONSTRAINTS THAT REDDEN MID-SPRINT IF THE REWRITE IGNORES THEM: one arm requires `extracted from this README`, `executed` and a member-README path pattern together in one section; and each member's facts require `executed` AND `never run` together, its comment naming the second load-bearing because `these are executed` is the sentence that was false once already. Under the widening the ROOT document now owes that same exception shape.",
+          "THE CHEAP FORM FOR THE MEASURED COMMENT IS NAMED SO IT IS NOT RE-LITIGATED: delete the enumeration, keep the asymmetry sentence, point it at the table. Restating it in new words rebuilds the second spelling the file objects to a few hundred lines below.",
+          "WHY IT IS ONE COMMIT WITH THE GUARD: when fix A's comment describes the state fix B creates, A and B are one commit. Shipping the sweep while the skill still says nothing sweeps would be this item's own class, produced by its fix.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE PRODUCT OWNER SETTLED THE SUBJECT ON THE CRITERION'S OWN WORD -- `command block` -- AND THEN OVERTURNED THEMSELVES WHEN THE DEVELOPER SHOWED IT COLLIDED WITH TWO OF THEIR OWN RULINGS. Recorded because the reversal is the decision: a tag-exempt list cannot coexist with an arm requiring a ```text command block to be refused, and the exemption is what their own veto forbids. The widening is what is left once the word is read honestly.",
+      "THE DEVELOPER'S FIRST DESIGN -- an account as reader-visible prose adjacent to the block -- WAS REFUSED AND THE DEVELOPER AGREED AFTER VERIFYING THE DECIDING FACT BY READING RATHER THAN RECOLLECTION. Kept here because the refused shape is the one a later executor will re-propose: it is satisfied by an author's intention, which is the defect the item names.",
+      "WHAT SURVIVED FROM BOTH PLANS INDEPENDENTLY, which is why it is not argued below: the class is tracked READMEs read from git and not the member enumerations. Two routes reached it for the same reason.",
+    ],
+  },
   retrospectives: [],
 };
 
