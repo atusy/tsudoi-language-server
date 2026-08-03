@@ -66,18 +66,19 @@ applySuiteDeadline();
  * the stage, and every declared output directory to be absent, beside the
  * reading they explain.
  *
- * READ IN BOTH DIRECTIONS -- AND THE RECORDED ORDER IS TRUE OF ONE SPELLING OF
- * THE DEGENERATION AND NOT OF THE MINIMAL ONE, WHICH IS WHY THE EARLIER THROW IS
- * NAMED HERE RATHER THAN LEFT FOR WHOEVER FIRST MEETS IT. As it stands, this file
- * alone is 1 pass / 0 fail. With the `@atusy` entries made to resolve out of the
- * stage while the scope directory inside it stays a real directory, it is 0 pass
- * / 1 fail and THE FIRST LINE TO FAIL IS THE STAGE-FAITHFULNESS GUARD, naming all
- * three entries, before the exit code is ever read. SPELT MINIMALLY INSTEAD --
- * node_modules replaced by ONE SYMLINK and the member-link loop left alone --
- * NOTHING IN THE ARM RUNS AT ALL: MEASURED at sprint 61's review,
+ * READ IN BOTH DIRECTIONS -- AND THE ORDER OF FAILURE IS THE HALF THAT NEEDED
+ * REPAIRING, BECAUSE THE RECORDED ONE DOES NOT HOLD OF THE MINIMAL DEGENERATION.
+ * As it stands, this file alone is 1 pass / 0 fail. THE SPRINT 61 RECORD REPORTS
+ * 0 pass / 1 fail with THE STAGE-FAITHFULNESS GUARD FAILING FIRST, naming all
+ * three entries before the exit code is read; that reading is kept as the
+ * record's, AND THE RECORD DOES NOT SAY HOW IT SPELT THE DEGENERATION, which is
+ * why nothing here reconstructs one. WHAT IS MEASURED HERE IS THE MINIMAL
+ * SPELLING -- node_modules replaced by ONE SYMLINK and the member-link loop left
+ * alone -- AND IN IT NOTHING IN THE ARM RUNS AT ALL: taken at sprint 61's review,
  * `stageUnbuiltCheckout` throws at the scope-directory guard naming
  * `<checkout>/node_modules/@atusy` as outside the stage, and the arm reports 0
- * expect() calls. THE TWO ORDERS AGREE ON THE HALF THAT MATTERS: in a degenerate
+ * expect() calls. SO THE EARLIER THROW IS NAMED RATHER THAN LEFT FOR WHOEVER
+ * FIRST MEETS IT. Both routes agree on the half that matters: in a degenerate
  * stage the compiler reads exit 0 with zero bytes of output, so anything reaching
  * that exit code first would report a green apparatus failure, and neither route
  * gets there.
@@ -241,11 +242,12 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
     }
     scopes.add(dirname(name));
   }
-  // THE EMPTY SET SAYS WHAT IS TRUE OF ITSELF, and it is reachable only with the
-  // derivation above perturbed -- the loop refuses an unscoped member outright,
-  // so an empty set means THE SCOPES CAME OUT WRONG rather than that a member did.
-  // It used to arrive fifteen lines down wearing the borrow degeneration's own
-  // message, which sent a reader to the wrong half of this function.
+  // THE EMPTY SET SAYS WHAT IS TRUE OF ITSELF. The loop above refuses an unscoped
+  // member outright, so an empty set means either that THE DERIVATION CAME OUT
+  // WRONG or that there were NO MEMBERS TO DERIVE FROM -- and in neither case did
+  // a member misbehave. It used to arrive fifteen lines down wearing the borrow
+  // degeneration's own message, which sent a reader to the wrong half of this
+  // function.
   if (scopes.size === 0) {
     throw new Error(
       `no member of ${root} contributed a scope directory, so nothing would keep the borrow below out of this workspace's own scope and every member link would land in the real checkout's node_modules.`,
