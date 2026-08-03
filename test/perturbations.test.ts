@@ -60,6 +60,7 @@ const probeArms = {
   alpha: "alpha requires the limit to be exactly 2",
   beta: "beta requires the limit to be at least 1",
   broken: "broken is red before anything is weakened",
+  entities: `entities <requires> the "limit" & it's exactly 2`,
 } as const;
 
 type ProbeTag = keyof typeof probeArms;
@@ -68,6 +69,7 @@ const probeBodies: Record<ProbeTag, string> = {
   alpha: "expect(limit).toBe(2);",
   beta: "expect(limit >= 1).toBe(true);",
   broken: "expect(limit).toBe(99);",
+  entities: "expect(limit).toBe(2);",
 };
 
 /** The file a weakening edits in the probe, and the arm file that reads it. */
@@ -322,6 +324,22 @@ test("the stage is the tracked tree, and the weakening never reaches the working
   const built = "packages/tsudoi-language-server/dist/types.js";
   expect(existsSync(join(repoRoot, built))).toBe(true);
   expect(existsSync(join(stage.root, built))).toBe(false);
+});
+
+test("an arm whose name carries XML's own characters is read as ITSELF", async () => {
+  const root = stageProbe(["entities", "beta"]);
+  const { before, after } = await bothRuns(root, weakenToOne);
+  // THE UNESCAPING KEPT AND ARMED, BECAUSE ITS SUBJECT IS ORDINARY HERE: this
+  // suite's arm names are English sentences, and `a `run` this runner cannot
+  // execute` is one apostrophe away from the state below. MEASURED on bun
+  // 1.3.13, the version this module already cites: a name carrying < > & " '
+  // comes back through `--reporter=junit` with all five WRITTEN AS ENTITIES, so
+  // a reader that does not unescape holds a key no record can spell. What it
+  // costs is not a wrong colour but a REFUSED -- the record's own arm is not
+  // found in a report that contains it -- which reads to the author as `the
+  // registry is stale` and sends them to edit a record that is right.
+  expect(before.arms?.has(probeArms.entities)).toBe(true);
+  expect(read(recordOver("entities", weakenToOne), before, after).verdict).toBe("held");
 });
 
 test("a record naming an UNTRACKED arm file fails at the read, not with a colour", async () => {

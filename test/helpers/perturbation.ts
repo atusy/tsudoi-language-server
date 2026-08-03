@@ -136,11 +136,20 @@ export interface Reading {
  * Reads bun's JUnit report into one result per arm.
  *
  * CHUNKED ON THE OPENING TAG RATHER THAN MATCHED AS AN ELEMENT, and the reason
- * is this project's own rule about a matcher carrying the defect it hunts: an
- * element regex has to decide where the tag ENDS, and bun does not escape `>`
- * inside an attribute value, so an arm whose name contains one would be read as
- * a different arm or as none. Splitting on `<testcase ` and reading the first
- * quoted `name` out of each chunk never has to find a tag's end.
+ * this was first written down is FALSE ON THE BUN THIS RUNS UNDER, which is
+ * recorded rather than quietly repaired: it said bun does not escape `>` inside
+ * an attribute value. MEASURED on bun 1.3.13 -- the version this module already
+ * cites -- a name carrying `<`, `>`, `&`, `"` and `'` comes back with all five
+ * written as entities, so an element regex would find the tag's end correctly
+ * today.
+ *
+ * THE CHUNKING IS KEPT ANYWAY, AND ITS HONEST REASON IS THAT IT NEVER HAS TO ASK:
+ * where a tag ends is a property of the REPORTER's escaping, nothing here pins
+ * it, and the failure if it changes is silent misattribution rather than a
+ * crash. That reason is unwitnessed by construction -- the state it is for
+ * cannot be produced on a bun that escapes -- and it is named rather than
+ * armed. The unescaping below is the half that IS armed, in
+ * test/perturbations.test.ts.
  */
 function readReport(xml: string): Map<string, ArmResult> {
   const arms = new Map<string, ArmResult>();
