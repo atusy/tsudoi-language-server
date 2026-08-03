@@ -392,15 +392,33 @@ test("with no mapping the same subpaths answer from the built artifact", async (
  * in this repository that REMOVES coverage rather than declining to grade a
  * build artifact.
  *
- * ROOT `tsc --noEmit` DOES NOT MERELY MISS A MEMBER -- IT ANSWERS FOR ONE AND
- * REPORTS SUCCESS. The mapping asserted above resolves
- * `@atusy/tsudoi-language-server/*` for EVERY file in the root program, a
- * member's files included, so a member that declares no dependency on tsudoi at
- * all still type-checks green at the root through a route no consumer of that
- * member has. MEASURED, on a member planted for it: with the mapping in place
- * its subpath import produces NO error, and deleting the mapping turns that
- * exact line into TS2307. A green that arrives that way is worse than no check,
- * because it is read as one.
+ * THE REASON THIS PARAGRAPH GAVE IS SUPERSEDED, AND THE GIVEAWAY WAS A DANGLING
+ * REFERENCE RATHER THAN A FALSE SENTENCE: it opened `the mapping asserted
+ * above` and there is no longer a mapping asserted above, nor anywhere in this
+ * repository. What it said, kept because the next reader will otherwise
+ * re-derive it: root `tsc --noEmit` did not merely MISS a member, it ANSWERED
+ * for one and reported success, because the mapping resolved
+ * `@atusy/tsudoi-language-server/*` for every file in the root program -- and
+ * that was MEASURED on a planted member, whose subpath import produced no error
+ * with the mapping in place and TS2307 without it. THE LAYOUT THAT MEASUREMENT
+ * WAS TAKEN AGAINST IS GONE, and a finding taken against a shape that moved is
+ * superseded rather than inherited.
+ *
+ * WHAT `exclude` BUYS IN THE LAYOUT THAT EXISTS, MEASURED at base 954cc62 with
+ * `tsc --noEmit --listFiles` over a built tree: NO handler source file is in
+ * the root program at all, so for two of the three members the root check is
+ * silent rather than wrong. The exclusion is what keeps it that way -- without
+ * it every member's source is swept in and graded under the ROOT'S options and
+ * the ROOT'S resolution, which is a grade no consumer's build ever takes, and a
+ * green arriving that way is worse than no check because it is read as one.
+ *
+ * WHAT THE EXCLUSION DOES NOT REACH, named here because it is the half a reader
+ * would otherwise assume away: `exclude` stops files being SWEPT IN and not
+ * files being IMPORTED. The framework's own `src/` is in the root program today
+ * -- nine files, entering through RELATIVE imports from this suite's own
+ * `test/*.test.ts` -- so the root check does grade that member's source, by a
+ * route no consumer writes. That is this suite testing its own subject and not
+ * a second opinion on the package.
  *
  * SO THE COVERAGE IS TRANSFERRED RATHER THAN DROPPED, and the two keys asserted
  * here are the two halves of that transfer: `exclude` makes the wrong answer

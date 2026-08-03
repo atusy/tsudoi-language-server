@@ -16,12 +16,29 @@ import {
  * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
  * ITS OWN tsconfig, because the root check must not and now cannot.
  *
- * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION, and it
- * is worse than a gap: root `tsc --noEmit` answers a member's
- * `@atusy/tsudoi-language-server/*` import THROUGH THE ROOT'S OWN `paths`
- * MAPPING and REPORTS SUCCESS -- so a member whose own dependency resolution is
- * broken type-checks green at the root, and the greener the root the less it
- * means. tsconfig.json therefore excludes the members and this script takes the
+ * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION. THE
+ * REASON WRITTEN HERE THROUGH SPRINT 61 DESCRIBED A LAYOUT THAT IS GONE and is
+ * superseded rather than amended: it said the root answered a member's
+ * `@atusy/tsudoi-language-server/*` import through the root's own `paths`
+ * MAPPING and reported success. THERE IS NO MAPPING ANYWHERE IN THIS
+ * REPOSITORY -- `refuseMemberMappings` below enforces the absence for members,
+ * and the root's own tsconfig carries none -- so a finding taken against the
+ * mapped layout cannot be inherited by this one.
+ *
+ * WHAT IS TRUE OF THE LAYOUT THAT EXISTS, MEASURED at base 954cc62 with
+ * `tsc --noEmit --listFiles` and `--traceResolution` over a built tree rather
+ * than read off this file: the root's `exclude` stops a member's files being
+ * swept in, so NO handler source file is in the root program at all -- the
+ * check does not answer for those members, it never opens them. What of a
+ * member DOES arrive comes by two routes that are not the member's own, and
+ * neither is a route a stranger takes: the framework's own `src/` enters
+ * through RELATIVE imports from this suite's own `test/*.test.ts`, and each
+ * package's `dist/*.d.ts` enters BY PACKAGE NAME from `examples/`. So the root
+ * green is still not a second opinion on a member -- not because it answers
+ * wrongly, but because for two of three members it is silent, and for the third
+ * it grades files reached by a path no consumer writes.
+ *
+ * tsconfig.json therefore excludes the members and this script takes the
  * coverage over. NEITHER HALF WORKS ALONE: without the exclusion this check is
  * shadowed by a root green, and without this check the exclusion means nothing
  * type-checks a member at all. The exclusion's reason is asserted in
