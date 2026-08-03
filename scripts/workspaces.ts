@@ -643,10 +643,24 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
   //
   // AND NOTHING IN THIS REPOSITORY REACHES IT, DISCLOSED RATHER THAN LEFT TO BE
   // REDISCOVERED. Made vacuous -- `subpaths.filter(() => false)` -- every arm
-  // stays green, because every state anything here can stage is one the compiler
-  // ATTEMPTS; the wildcard subpath was the documented reachable case and is
-  // measured attempted. It is kept because it is what keeps the two diagnoses
-  // separable, and it is named unwitnessed rather than deleted for want of a red.
+  // stays green; the wildcard subpath was the documented reachable case and is
+  // measured ATTEMPTED. It is kept because it is what keeps the two diagnoses
+  // separable, and it is named unwitnessed BY ANY ARM rather than deleted for
+  // want of a red.
+  //
+  // WHAT MAKES IT FIRE IS NAMED, so a later reader can tell whether the state
+  // ever became reachable instead of inferring it from silence -- which is the
+  // gap the sentence above used to leave. THE PROBE WRITES EACH SPECIFIER INTO A
+  // DOUBLE-QUOTED `import`, so a subpath key carrying a character that does not
+  // survive that trip makes the probe source say something other than what the
+  // map says, and the specifier AS DECLARED never reaches the resolver. MEASURED
+  // BY HAND, one staged member declaring one such key at a time, each reporting
+  // `@staged/producer/... never reached the resolver`: `./a"b`, where the probe
+  // no longer parses; `./a\b`, where `\b` is an escape and a DIFFERENT specifier
+  // is attempted; and a key carrying a newline. No map in this workspace has
+  // one, so this is the shape to expand `publishedSubpaths` for the day one
+  // does -- and until then the pair sends a reader to the probe, which is where
+  // the fault would be.
   const unasked = subpaths.filter(({ specifier }) => !attempted.has(specifier));
   if (unasked.length > 0) {
     throw new Error(
