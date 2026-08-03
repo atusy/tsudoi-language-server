@@ -41,15 +41,22 @@
 # staged tree nobody had built, tsc 7.0.2 at base 6d1c85d: `bun pm pack` in one
 # handler package and then in the other -- each in the member it is documented
 # for -- EXITS 0 and produces its tarball, because the prepack compiler answers
-# `@atusy/tsudoi-language-server/{types,deps/types}` from
+# `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from
 # packages/tsudoi-language-server/src/*.ts and never notices the artifact it was
-# promised is missing. After the first pack the root check is exit 1 with ONE
-# error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with this package's dist/
-# still absent -- the residue above, arrived at by two documented commands.
+# promised is missing. THREE AND NOT TWO, because this trace is the UNION OVER
+# BOTH PACKS: the two-subpath list at `prepareWorkspace` in
+# scripts/workspaces.ts is a different measurement -- ONE handler's own build --
+# and both are right. After the first pack the root check is exit 1 with ONE
+# error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with
+# packages/tsudoi-language-server/dist/ still absent -- the residue above,
+# arrived at by two documented commands. THE FRAMEWORK MEMBER IS NAMED AND NOT
+# CALLED `this package`: this file sits at the CHECKOUT ROOT, whose own package
+# is the private workspace -- it has no tsconfig.build.json, is never built, and
+# has no dist/ for any of this to be about.
 #
 # CONSTRAINED, BECAUSE THE HONEST CLAIM IS NARROWER THAN THE ALARMING ONE: NO
 # SINGLE INVOCATION THIS REPOSITORY OWNS PRODUCES THAT STATE. The preload below
-# and the fifth check both build this package first, and test/helpers/install.ts
+# and the fifth check both build the framework member first, and test/helpers/install.ts
 # packs the handlers only after the preload has built. What produces it is TWO
 # DOCUMENTED COMMANDS IN AN ORDER NOTHING FORBIDS, and nothing runs that route
 # today -- so what changed is that the cell no longer needs a hand-made deletion,
@@ -60,7 +67,8 @@
 # MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
 # number written here goes stale with nobody editing it -- the suite grows and
 # the sentence quietly stops being true -- so what is kept is the SHAPE of the
-# failure, which does not move. With THIS package's dist/ AND both members' dist/
+# failure, which does not move. With THE FRAMEWORK MEMBER'S dist/ AND both
+# handlers' dist/
 # removed and this file absent, much of the suite does not merely fail: it never
 # RUNS, because test files fail to LOAD. Load errors standing beside assertion
 # failures are the signature of a missing build, and no other fault in this
