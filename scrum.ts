@@ -115,33 +115,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-62",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read a comment or a documented number and find it describes the repository I am in",
-        benefit:
-          "the reasons this project writes down keep being evidence rather than becoming folklore",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "No statement in the tree explains a present-day fact by a mechanism the move removed.",
-          verification:
-            "Named sites, each READ rather than grepped for. THE SCOPE IS DERIVED AND NOT ASSERTED: the move is commit e8ddbcc and its diff is recoverable, so `a mechanism the move removed` means what that diff deleted at the checkout root -- the `paths` mapping `@atusy/tsudoi-language-server/*` to `./src/*.ts`; the root manifest's four-subpath `exports` map, its `files: [dist]`, its `prepack` and its runtime `dependencies`; the root's own `src/` and `tsconfig.build.json`, both renamed into the member; the root's NAME, now `@atusy/tsudoi-workspace`; and `linkRootPackage` in scripts/workspaces.ts. THAT LIST IS THE SEARCH KEYS AND NOT A CLAIM ABOUT THE PROSE -- no `these are all of them` is offered for the sentences, which would be the superlatives defect committed while repairing it. What is offered instead: each key swept across `git ls-files` plus CLAUDE.md, every hit dispositioned by hand.\n\nTHIS FIELD NAMED A REPAIRED SITE AS OPEN, WHICH IS THIS ITEM'S OWN CLASS IN THIS ITEM'S OWN FILE. It said the staged-path pin licenses itself with `that mapping is safe only because it cannot reach the packing stage`. CLOSED AT THE FILE, and closed since the move itself: test/installed-specifier.test.ts quotes that sentence as dead and narrows the surviving reason to `what may not reach the packing stage is any configuration that answers a subpath without the artifact`. The same paragraph corrects this item BY NAME -- `node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI, whose text says three`.\n\nTHE SIXTH AND SEVENTH INSTANCES ARE CLOSED, REPAIRED IN SPRINT 61, and they are written up rather than struck because HOW they were found is this item's most useful fact. They were test/package-shape.test.ts explaining the members' exclusion by `the mapping asserted above resolves the framework's subpaths for EVERY file in the root program`, and the fifth check's header licensing the withdrawal by `the root check answers a member's import THROUGH THE ROOT'S OWN paths MAPPING and reports success`. Both are superseded in place with what was MEASURED at that sprint's base by --listFiles and --traceResolution over a built tree: no handler source is in the root program at all, so for two of three members the root check is silent rather than wrong, and `exclude` stops files being SWEPT IN rather than IMPORTED, so the framework's own src/ IS graded there by relative imports from this suite's own tests. AN ARCHIVED DECISION STILL CALLS THE SECOND OF THOSE LIVE -- sprint 58's own record, one sprint before the repair -- AND IT IS LEFT ALONE ON PURPOSE: it was true the day it was written, and rewriting a dated record of what a product owner decided falsifies the history instead of the tree. This field is where a reader following that pointer arrives.\n\nFOUR MORE, FOUND BY THE NAME-KEYED SWEEP AND REPAIRED IN SPRINT 63, which is the sweep earning its keep: keyed to the EFFECT, sprint 61 could not reach a sentence whose giveaway is the word `paths` itself. test/published-artifacts.test.ts licensed its own existence by `the repo's own type check never reaches the exports map`; test/fixtures/published-specifier.ts said that check holds open the mapping RATHER THAN the exports map; test/completion-path.test.ts carried a THIRD copy of the sentence sprint 61 superseded twice; and packages/tsudoi-hover-wordnet/test/package-shape.test.ts contrasted itself with `THE ROOT PACKAGE'S OWN prepack` and warned of a human packing the repository root, where the deleted `files` and `prepack` were the whole mechanism.\n\nTHE ROOT CONFIG'S EXCLUDED DIRECTORY IS A STALE VALUE, MEASURED AND KEPT. Nothing writes a root dist/. MEASURED at sprint 63 by deleting `dist` from the REAL tsconfig.json and taking `tsc --noEmit --listFiles` both ways: the sorted file lists are IDENTICAL, so the entry sweeps in nothing, and the real fourth check is exit 0 either way. TWO ARMS REDDEN AND NEITHER MEASURES THE ENTRY -- one pins the literal, and `the repo's tsconfig keeps dist out of the program` runs through `typeCheckWith`, WHICH MANUFACTURES A dist/ AND A BROKEN DECLARATION IN ITS OWN THROWAWAY TREE, so it reddens over the fixture's dist and would be green in a world where the root can never hold one. The entry STAYS: an unmatched pattern is legitimate configuration, and the guard that would catch it is refused by name below.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "THE COUNT SITE THIS PBI WAS FILED WITH IS ALREADY CLOSED, and how it closed is the argument for the rest: adding four skill files moved the documented number, and it was repaired BY NAMING rather than by writing the new number -- which is the convention this project holds and the reason the count was a defect rather than a typo.",
-        "SEPARATED FROM STALE-VALUE REPAIRS BY WHAT MAKES THEM WRONG: an excluded directory that matches nothing is a VALUE that went stale, while the pin's licence is a MECHANISM CLAIM that is now false -- which is the class this project has filed five instances of and has no check for.",
-        "FIVE NOTES LEFT THIS ITEM IN SPRINT 63 AND WHERE THEY WENT IS PART OF THIS RECORD, because a note that simply vanishes from a drop box is indistinguishable from a note that was answered. THE SPLIT IS A MISMATCH RATHER THAN A COUNT: this item's criterion is BOUNDED -- a mechanism THE MOVE removed, one completed historical event with a recoverable diff -- while `prose that disagrees with code` is unbounded, and the two take DIFFERENT REPAIRS. A move-instance is repaired by SUPERSEDING A STALE REASON, since the sentence was once true. A never-true sentence is repaired by measuring it or weakening it, since it was never checkable. The four never-true instances are now PBI-78 and the superlatives note is now PBI-77, both filed in the same edit that removed them here -- the open one among the four would otherwise have been a deletion wearing tidying's clothes.",
-        "THE VERIFICATION MUST COVER THE POINTING FORM AND NOT ONLY THE ASSERTING FORM, WHICH IS WHAT SPRINT 61 LEARNED BY MISSING TWO OF THIS ITEM'S OWN NAMED SITES WITH A SWEEP IT RAN ON PURPOSE. That sweep was keyed to a MECHANISM the sprint had just falsified -- a build failing at TS2307 -- and it found a third site by meaning rather than by phrase, which is the sweep working. It could not have found these two: their giveaway is `the mapping asserted above`, and A DANGLING REFERENCE ASSERTS NOTHING, so it is outside the subject of any sweep for false sentences and a reader scanning for falsehoods walks past it too. They were found by someone reading the whole increment for truth. NO DETECTOR IS PROPOSED AND THE REFUSAL IS BY NAME: a matcher deciding whether a reference still has a referent is a matcher over prose content, which is the shape refused when the exempt tag list was killed. THE DURABLE HALF IS A WRITING DISCIPLINE AND IT HAS LANDED -- `supersede, do not amend` in .claude/skills/writing-a-comment/SKILL.md, because a superseded paragraph carries its referent away with it and an amended one leaves the pointer behind.",
-        "THE GENERALISATION IS REFUSED IN ADVANCE: no guard that every exclude entry matches something on disk. An unmatched pattern is legitimate configuration, such a guard would redden correct files, and this instance was caught by the layer meant to catch it -- filed by its executor rather than shipped.",
-      ],
-    },
-
-    {
       id: "PBI-76",
       story: {
         role: "tsudoi maintainer",
@@ -1540,16 +1513,25 @@ const scrum: ScrumDashboard = {
     number: 63,
     pbi_id: "PBI-62",
     goal: "Every reference in this tree to a mechanism the move took away is followed to its site and either repaired or shown to have none left -- from an enumeration of the removed mechanisms written before the search, with this item's own record ending the sprint saying what the tree says.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "None -- FOLLOW THE RECORD'S OWN POINTERS. Bounded and decidable, with no judgement in it: the item names sites and quotes strings; open the named file and locate the string. The verdict is FOUND / NOT FOUND and never TRUE / FALSE.",
         implementation:
           "Disposition every site this item's verification field and notes cite, and repair the field to say what the tree says.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "360c4fa",
+            message:
+              "docs(scrum): this item's verification field named a site the tree had repaired",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "IN EXECUTION: SEVEN POINTERS FOLLOWED, EACH FOUND / NOT FOUND AND NEVER TRUE / FALSE, AND THE VERDICT SPLITS IN TWO FOR FOUR OF THEM -- the quoted STRING is FOUND while the LIVE CLAIM is not, because the site quotes its own dead sentence inside the paragraph that supersedes it. That is the shape a grep-only pass misreads as `still open`, which is why the subtask forbade the true/false verdict. (1) `that mapping is safe only because it cannot reach the packing stage`, test/installed-specifier.test.ts: string FOUND, claim DEAD AND MARKED. (2) `the mapping asserted above`, test/package-shape.test.ts: same split, repaired sprint 61. (3) `the root check answers a member's import THROUGH THE ROOT'S OWN paths MAPPING`, scripts/typecheck-workspaces.ts: NOT FOUND as written -- the header carries the past-tense supersession. (4) `NO EXEMPTION LIST`, scripts/workspaces.ts: FOUND and now TRUE of the function. (5) `bun does not escape > inside an attribute value`, test/helpers/perturbation.ts: same split, repaired. (6) the converse-identity docstring: NOT FOUND as an identity -- the site now says the index buys one direction. (7) `a type error in scrum.ts stops the run instead of failing one check`, scripts/definition-of-done.ts: FOUND, LIVE, UNREPAIRED -- the one open site, and it left for PBI-78.",
+          "AN EIGHTH POINTER, FOUND IN THIS FILE RATHER THAN IN THE TREE, AND ITS DISPOSITION IS A RULING: sprint 58's archived decisions still say the fifth check's header STILL licenses withdrawing the root check by a mapping that exists nowhere. That was true when written and sprint 61 repaired the site a sprint later. LEFT STANDING: an archived record of what a product owner decided is dated, and rewriting it falsifies the history instead of the tree. The repaired verification field is where a reader following that pointer now arrives, and it says the site is closed.",
           "THIS ITEM'S OWN VERIFICATION FIELD IS AN INSTANCE OF THIS ITEM'S CLASS, WHICH IS THE SPRINT'S STARTING FACT AND WAS FOUND BY FOLLOWING ONE POINTER. It names the staged-path pin's licence as open -- `that mapping is safe only because it cannot reach the packing stage`. VERIFIED AT THE FILE: test/installed-specifier.test.ts carries no such licence. It supersedes in place, quotes the dead sentence, marks it dead, and narrows the surviving reason to `what may not reach the packing stage is any configuration that answers a subpath without the artifact`. `git log` on that file reaches the MOVE ITSELF, so the repair has been in the tree since the move and the record has named it open ever since.",
           "AND THAT SITE CORRECTS THIS ITEM BY NAME, WHICH THE RECORD ALSO DID NOT HEAR: `node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI, whose text says three`.",
           "SO `scrum.ts` IS THE TREE, RULED RATHER THAN ASSUMED, and repairing the field is a subtask with a named site rather than bookkeeping: it is tracked at the checkout root, this dashboard's header names it a permanent home for compacted decisions, and this item's benefit is that written reasons stay evidence. THE ITEM CANNOT CLOSE WHILE ITS OWN RECORD NAMES A CLOSED SITE AS OPEN.",
@@ -1561,9 +1543,25 @@ const scrum: ScrumDashboard = {
         implementation:
           "Keys: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, and `this package` written at the checkout root. Swept across the WHOLE tree including README.md and CLAUDE.md; every hit dispositioned as repaired or recorded-true.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "b3cffa8",
+            message:
+              "docs(tests): three more sentences explain today by the mapping the move deleted",
+            phase: "refactoring",
+          },
+          {
+            hash: "a9b93d6",
+            message:
+              "docs(hover-wordnet): the root is not the package whose prepack this contrasts",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "THE KEYS AS SWEPT, WRITTEN BEFORE THE SEARCH AND SIX OF THEM DERIVED RATHER THAN GUESSED. The seven the plan named: `paths`, `mapping`, a root `dist`, `main`, `bin`, `the root package`, `this package` at the checkout root. THE DERIVED SIX COME FROM THE MOVE'S OWN DIFF, e8ddbcc, which is recoverable -- each is a line that diff DELETED at the checkout root, so a sentence uttering it names something the move took: `linkRootPackage`, the root's `prepack` and its `tsconfig.build.json`, an `exports` map attributed to the ROOT manifest, `files` attributed to the ROOT, a bare `src/` path written from the root, and `@atusy/tsudoi-language-server` naming the ROOT. FILE UNIVERSE: `git ls-files` plus CLAUDE.md named explicitly, since a global ignore hides it here.",
+          "WHAT THE SWEEP FOUND, AND IT IS THE ARGUMENT FOR KEYING TO THE NAME: FOUR LIVE SITES, all four invisible to a sweep keyed to the effect. Three were `paths` in the asserting form -- test/published-artifacts.test.ts, test/fixtures/published-specifier.ts, test/completion-path.test.ts, the last of them a THIRD COPY of the sentence sprint 61 superseded in two other files. The fourth came from the root-`dist` key: packages/tsudoi-hover-wordnet/test/package-shape.test.ts contrasting itself with `THE ROOT PACKAGE'S OWN prepack` and warning about a human packing the repository root. All four superseded in place.",
+          "AND THE DISPOSITIONS THAT ARE NOT REPAIRS, RECORDED BECAUSE `nothing else found` IS ONLY ACCEPTED WITH THEM. `main`, `bin`, `linkRootPackage`, root `exports`, root `files` and the root's old name: every hit is either a past-tense record of the retirement or a true statement about the MEMBER, and each was read. THE BARE `src/x.ts` KEY IS A DISPOSITIONED CLASS AND NOT A LIST: it has well over a hundred hits, all of them package-relative pointers under a convention CLAUDE.md states in its own words, and the two that are CODE rather than prose resolve against the framework's own URL. `this package` written at the checkout root is the same class, and bunfig.toml is where the rule was already written down -- it names the framework member instead of saying `this package`, for exactly this reason.",
           "KEYED TO THE NAME AND NOT TO THE EFFECT, WHICH IS THE FIX FOR THE MEASURED BLIND SPOT. Sprint 61's sweep was keyed to an EFFECT -- a build failing at TS2307 -- and walked past two of this item's own named sites, because their giveaway was `the mapping asserted above`: a DANGLING REFERENCE, which asserts nothing and so lies outside the subject of any sweep for false sentences. But a pointer still UTTERS ITS REFERENT'S NAME, so keying to the name catches the asserting form and the pointing form in one pass.",
           "IT IS NOT THE REFUSED DETECTOR AND THE DISTINCTION IS LOAD-BEARING: the refused thing DECIDES whether a reference still has a referent, which is a matcher over prose content with a verdict. A token grep produces a READING LIST and decides nothing; a person dispositions each hit. The sprint may not blur this into `just a citation checker`.",
           "README.md AND CLAUDE.md ARE IN SCOPE TO READ, and the reason each is easy to skip is different: the README's COMMAND BLOCKS are executed by the suite and its PROSE is not, and CLAUDE.md is the densest mechanism narrative in the tree while being globally gitignored here -- which decides where a repair may LAND, not whether it is in scope to READ.",
@@ -1574,9 +1572,12 @@ const scrum: ScrumDashboard = {
         implementation:
           'The root config excludes a directory the root no longer produces. `exclude: ["dist", "packages"]` -- the root has no tsconfig.build.json, only the three members do, and this repository\'s own enumeration of dist writers is `build()` plus each member\'s `prepack`, so nothing writes a root dist/.',
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "MEASURED, AND `commits` IS EMPTY BECAUSE THE DEGENERATE WAS RESTORED RATHER THAN KEPT. `dist` deleted from the REAL tsconfig.json; the REAL Definition of Done taken at 938 pass / 0 fail / 67 files immediately before, and again with the entry gone. THREE RESULTS, REPORTED APART.\n\nTHE TYPE CHECK IS UNCHANGED AND THAT IS THE POSITIVE READING RATHER THAN AN ABSENCE OF RED: `tsc --noEmit --listFiles` taken BOTH WAYS gives file lists that are IDENTICAL when sorted, so the entry sweeps in NOTHING. A green fourth check alone would have been consistent with a red being masked; the file list is not.\n\nTHE LITERAL PIN REDDENS AND MEASURES NOTHING, exactly as the plan predicted: `the members are outside the root type check, and the workspace patterns are what finds them` asserts the array `[dist, packages]` and fails on the value.\n\nAND THE SECOND RED IS THE FINDING. `the repo's tsconfig keeps dist out of the program` ALSO reddens -- and its subject is a THROWAWAY TREE `typeCheckWith` builds, into which the fixture itself mkdirs a dist/ and writes a broken declaration. It reddens over the FIXTURE'S dist, in a repository where nothing writes a root one. Its pair, `the same tree fails once the dist exclusion is removed`, stays GREEN, because it strips `exclude` entirely and the manufactured dist/ fails it either way. So two arms carrying this decision's words both redden and NEITHER observes the entry doing work.",
+          "THE DISPOSITION IS `STALE VALUE, KEPT`, AND KEEPING IT IS THE SUBTASK'S ANSWER RATHER THAN A DEFERRAL. The closure condition asks that the site be DISPOSITIONED, and the refusal below rules out the generalisation: an unmatched pattern is legitimate configuration. What the sprint owes and now pays is the MEASUREMENT -- the entry matches nothing, this is known rather than inspected, and it is written into the item's verification field where the next reader meets it.",
+          "RESTORED AND VERIFIED: tsconfig.json is byte-identical to its committed self, checked with `git status` before any commit was taken.",
           "THE READING TRAP, NAMED BEFORE THE READING BECAUSE THE SPRINT WILL OTHERWISE FALL INTO IT. The two arms in test/package-shape.test.ts that look like this decision's verification -- `the repo's tsconfig keeps dist out of the program` and `the same tree fails once the dist exclusion is removed` -- run through `typeCheckWith`, WHICH ITSELF CREATES A dist/ AND WRITES A BROKEN DECLARATION INTO IT. THE FIXTURE MANUFACTURES THE LAYOUT UNDER TEST, so both are green today and would be green in a world where the root could never hold a dist/ at all, which is the world we are in. They are not verification for this decision.",
           "AND THE PIN REDDENS EITHER WAY, which is why the two reds must be reported apart: test/package-shape.test.ts pins the literal, so deleting the entry reddens it whether or not the entry was doing any work. A sprint reading the pin's red as the entry doing work has measured nothing.",
           "REFUSED, RESTATED FROM THIS ITEM'S OWN NOTES SO THE REPAIR DOES NOT SMUGGLE IT BACK: no guard that every `exclude` entry matches something on disk. An unmatched pattern is legitimate configuration and such a guard would redden correct files.",
@@ -1587,9 +1588,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Four notes in this item are not about the move and have been recorded as having NO INNOCENT STORY -- nothing was removed, so there is no reading in which the prose was once true. They leave as their own bounded item. The superlatives note leaves as another.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "0a01ac2",
+            message:
+              "docs(scrum): the drop box held two subjects, and only one of them was the move",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "LANDED AS ONE EDIT, WHICH THE HAZARD BELOW REQUIRED: PBI-77 receives the superlatives note, PBI-78 receives the four, and the five notes left PBI-62 in the same commit that filed both. THE OPEN ONE TRAVELLED WITH ITS MEASUREMENT AND NOT AS A POINTER -- PBI-78's first note carries the throwaway-tree reading itself, because an item receiving a reference whose evidence stayed behind is the deletion this subtask was warned about, one indirection later.",
+          "RANKED BY THE PLAN'S OWN DISCRIMINATOR AND NOT BY TOPIC, stated so a later reader can disagree with the reason rather than guess it. PBI-77 above PBI-78: `X is the only Y` and `nothing anywhere does Z` have a MECHANISABLE CORE, and `this reason was never read against its code` has none -- no check decides that class, and an approximate one is a green certifying it as watched. BOTH BELOW PBI-76, whose subject is the artifact a stranger installs rather than this project's own record; nothing about prose outranks a handler graded against a stale framework.",
+          "AND PBI-62 KEEPS A NOTE SAYING WHERE THE FIVE WENT, because a note vanishing from a drop box is indistinguishable from a note that was answered.",
           "WHY THE ITEM WAS NOT CONVERGENT, AND IT IS A MISMATCH RATHER THAN A COUNT. The criterion is BOUNDED -- `a mechanism THE MOVE removed`, and the move is one completed historical event. But the item has been used as the drop box for PROSE THAT DISAGREES WITH CODE, which is unbounded. Those are different subjects and, decisively, DIFFERENT REPAIRS: a move-instance is repaired by SUPERSEDING A STALE REASON, since the sentence was once true; a never-true sentence is repaired by adding an assertion or weakening the claim, since it was never checkable.",
           "THE SPLIT HAZARD, WHICH CONSTRAINS THE EDIT: `scripts/definition-of-done.ts`'s header is OPEN AND UNREPAIRED among the four. Moving it out of this item without the receiving item existing in the same edit is A DELETION WEARING TIDYING'S CLOTHES.",
           "THE SUPERLATIVES NOTE IS A DIFFERENT SUBJECT AND THE DISCRIMINATOR IS THE REPAIR, NOT THE TOPIC. It is also the MORE VALUABLE of the two, because `X is the only Y` and `nothing anywhere does Z` are exactly the shapes a test can hold, where `this is so because` is not -- so it has a mechanisable core and this item does not. It has sat here for several sprints because it is true, important and HOMELESS, and a homeless truth in a notes array is the first thing compaction takes. It leaves this sprint or it is deleted deliberately; it is not carried an eighth time.",
@@ -1600,9 +1611,12 @@ const scrum: ScrumDashboard = {
         implementation:
           "PBI-62 RETIRES when the move's enumeration is discharged: the removed mechanisms enumerated with the scope written down, each key swept whole-tree, the one remaining named site dispositioned, and this item's own record made to agree with the tree.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "PBI-62 IS RETIRED AND REMOVED FROM THE RANKED BACKLOG, which is this dashboard's convention for a closed item and the defect a previous sprint had to repair. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
+          "THE CLOSURE CONDITION, DISCHARGED CLAUSE BY CLAUSE. (1) THE REMOVED MECHANISMS ARE ENUMERATED WITH THE SCOPE WRITTEN DOWN, and the scope is DERIVED: the move is e8ddbcc, its diff is recoverable, so `a mechanism the move removed` means what that diff deleted at the checkout root. The `if the diff cannot be recovered` branch does not apply and is not used. (2) EACH KEY SWEPT WHOLE-TREE over `git ls-files` plus CLAUDE.md, thirteen keys, seven from the plan and six derived from that same diff, every hit dispositioned by hand. (3) THE REMAINING NAMED SITE -- the root config's excluded directory -- is dispositioned as a stale value MEASURED to sweep in nothing and KEPT, with the generalisation still refused by name. (4) THE ITEM'S OWN RECORD AGREES WITH THE TREE: the field that called a repaired site open is superseded, and four sites the record did not know about are repaired.",
+          "WHAT IS NOT CLAIMED, SAID PLAINLY BECAUSE THE ITEM'S LAST NOTE DEMANDED IT: no universal over the prose. The enumeration bounds the SEARCH KEYS, not the sentences. `these are all of them` is exactly the shape PBI-77 now exists to stop being written, and writing it here while retiring the item that filed PBI-77 would have been the defect committed in the act of filing its repair.",
           "WHAT IT MUST NOT BECOME: a standing `no false prose anywhere` item. That half already has a home AND a mechanism -- `supersede, do not amend` in .claude/skills/writing-a-comment/SKILL.md -- and a standing unbounded item is precisely the eighty-one-improvements failure this dashboard's header already struck.",
           "AND THE ENUMERATION MAY NOT BE ASSERTED. `these are all of them` is a universal with no compiler, which is the very defect the superlatives note describes; if the move's diff cannot be recovered, the scope is stated explicitly as `the mechanisms already named` and the limit is written down rather than implied.",
         ],
@@ -1612,6 +1626,11 @@ const scrum: ScrumDashboard = {
     decisions: [
       "THE ONE OUTCOME REFUSED WITH EVERY CHECK GREEN: the tree repaired and the record left stale. A sprint that supersedes the excluded directory, exits green on all five checks, and leaves this item's verification field still naming the staged-path pin as open would have certified the exact defect the item exists for, IN THE ITEM'S OWN FILE.",
       "`NOTHING ELSE FOUND` IS ACCEPTED ONLY WITH THE SWEPT KEYS WRITTEN DOWN. A coverage claim from a re-read is the shape this project has measured itself failing at repeatedly, and the keys are what make the claim checkable by someone who was not there.",
+      "IN EXECUTION -- THE ONE REFUSED OUTCOME WAS THE FIRST THING PAID FOR, and the ORDER is the reason it did not happen: the record was followed before the tree was touched, so the sprint learned in its first hour that its own verification field named a site the move itself had repaired. Had the excluded directory been superseded first, the sprint would have exited green having certified the defect in the item's own file.",
+      "IN EXECUTION -- KEYING THE SWEEP TO THE NAME IS VINDICATED BY FOUR SITES AND NOT BY AN ARGUMENT. Sprint 61's sweep was keyed to an EFFECT and missed two named sites; this one, keyed to the removed mechanism's NAME, turned up four more the record had never heard of, one of them a THIRD COPY of a sentence already superseded in two files. THE COROLLARY IS UNCOMFORTABLE AND IS RECORDED AS SUCH: a sentence repaired in two places was still shipping in a third, so `superseded in place` has been an incomplete repair in this tree twice now -- sprint 62 caught the same shape at review. The discipline that answers it is `supersede, do not amend` PLUS a sweep for the phrase, not either alone.",
+      "IN EXECUTION -- THE SCOPE IS DERIVED AND THAT CHANGED WHAT THE ITEM COULD CLAIM. The closure condition allowed `the mechanisms already named` if the move's diff could not be recovered. It could: e8ddbcc. So the enumeration is what one commit deleted at the checkout root, and six of the thirteen sweep keys are lines from that diff rather than guesses -- which is also why the keys are auditable by someone who was not here.",
+      "IN EXECUTION -- THE DEGENERATE PRODUCED THREE RESULTS AND THE SECOND RED IS WORTH MORE THAN THE ENTRY IT WAS AIMED AT. The type check is UNCHANGED, evidenced by sorted-identical `--listFiles` output rather than by an absent red; the literal pin reddens and measures nothing; and `the repo's tsconfig keeps dist out of the program` ALSO reddens, over a dist/ ITS OWN FIXTURE MANUFACTURES, in a repository where nothing writes a root one. Two arms that read like this decision's verification, neither of them observing it.",
+      "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; the `revise` round has not been run here and the executor is not the one who can say a review happened. PBI-62'S RETIREMENT IS THE EXCEPTION AND THE REASON IS IN THE PLAN: the close was subtask five's deliverable against a condition written before the work, not a reviewer's verdict.",
     ],
   },
   retrospectives: [],
