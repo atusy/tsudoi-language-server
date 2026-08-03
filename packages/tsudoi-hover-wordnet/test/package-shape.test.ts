@@ -143,8 +143,12 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  *
  * THE FRAMEWORK'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
  * ROUTE UNDER TEST rather than everywhere: the suite's own installer packs it
- * from a FRESH staging directory holding package.json, src/ and
- * tsconfig.build.json alone, so its dist/ is built into an empty tree every time.
+ * from a FRESH staging directory holding package.json, src/,
+ * tsconfig.build.json AND A BORROWED node_modules SYMLINK -- four entries, not
+ * three, which is the count the pin in test/installed-specifier.test.ts reads
+ * back and which that file already had to correct once. WHAT MATTERS HERE IS
+ * WHICH ENTRY IS ABSENT rather than how many there are: no dist/ is staged, so
+ * the framework's dist/ is built into an empty tree every time.
  * This package is packed FROM WHERE IT LIVES -- deliberately, so no probe has to
  * perturb a copy -- so its dist/ is the one that persists between packs.
  *
@@ -157,10 +161,14 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * WHAT THAT LEAVES UNCOVERED, RETARGETED AT THE ROUTE THAT EXISTS: the framework
  * is packed by hand from ITS OWN directory -- the command the workspace's README
  * gives for a manual runtime test -- and that pack carries whatever dist/ is lying
- * there, with the same staleness this clear removes here. Nothing in the suite
- * takes that route, so nothing observes it; its src/ holds no `.d.ts` input to
- * leak, which bounds the consequence to a stale artifact rather than to a global
- * declaration.
+ * there, with the same staleness this clear removes here. NOTHING IN THE SUITE
+ * PACKS IT FROM A DIRECTORY WHERE A dist/ PERSISTS, which is the narrow thing
+ * and not `the command is never run`: the README's pack step IS executed, as
+ * every command block in that file is, but in a staged copy the extractor
+ * builds with no tarball, no node_modules and nothing dist/ -- so a stale
+ * artifact is never there to be carried, and the executed run cannot observe
+ * this. Its src/ holds no `.d.ts` input to leak, which bounds the consequence to
+ * a stale artifact rather than to a global declaration.
  *
  * BY BARE NAME, which is what takes the node_modules/.bin resolution: script
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one
