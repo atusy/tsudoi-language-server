@@ -354,6 +354,15 @@ test("the stage is the tracked tree, and the weakening never reaches the working
       /inside the checkout/,
     );
   }
+  // AND THE STAGE ITSELF IS NOT THE ONLY WAY OUT OF THE STAGE, which is the
+  // refusal that would otherwise ship with nothing exercising it -- one `if`
+  // away from being deleted as unreachable by whoever reads it next. The stage
+  // here is a GENUINE throwaway and the record's own file is what leaves it, so
+  // this reads the second half of the guard: a path is refused for where it
+  // LANDS and not only for which root it was joined onto.
+  expect(() => applyWeakening(stage.root, { ...unwritable, file: "../escaped.ts" })).toThrow(
+    /outside the throwaway/,
+  );
   // `""` AND `"."` ARE IN THAT LIST BECAUSE THEY ARE CHEAPER THAN THE ACCIDENT
   // THIS TREE SUFFERED, NOT BECAUSE THEY ARE EXOTIC: every join under them goes
   // relative, and this project mandates the checkout root as the working
