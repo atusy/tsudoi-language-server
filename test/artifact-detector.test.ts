@@ -70,6 +70,22 @@ const artifactOnly = {
 };
 
 /**
+ * THE SAME TWO FILES IN THE OTHER ORDER: source first, artifact after it.
+ *
+ * `exports` CONDITIONS ARE MATCHED IN DECLARATION ORDER, so this map promises
+ * one file in its `types` arm and hands every reader another -- with the
+ * artifact built, complete and untouched. It is the one staged shape where `the
+ * declaration exists` and `the declaration answers` disagree.
+ */
+const sourceBeforeArtifact = {
+  "./thing": {
+    default: "./src/thing.ts",
+    types: "./dist/thing.d.ts",
+    import: "./dist/thing.js",
+  },
+};
+
+/**
  * A workspace whose one member PUBLISHES a subpath, in whichever state its
  * artifact is left in.
  *
@@ -170,6 +186,33 @@ test("a published subpath with NO source arm and no artifact is refused, saying 
     "code",
     0,
   );
+});
+
+/**
+ * THE STATE THAT SEPARATES `THE DECLARATION EXISTS` FROM `THE DECLARATION
+ * ANSWERS`, and until this arm the two coincided in every state staged here --
+ * so the whole compiler probe could be replaced by an `existsSync` and nothing
+ * reddened. MEASURED: `subpaths.filter(({ declaration }) => !existsSync(declaration))`
+ * as the entire offender rule keeps every other arm in this file.
+ *
+ * THEY DIVERGE WHENEVER THE MAP ANSWERS SOURCE FIRST. Conditions are matched in
+ * declaration order, so a `default` arm ahead of `types` wins for every reader,
+ * and the compiler reads a file the package does not ship WHILE THE ARTIFACT IS
+ * COMPLETE AND ON DISK. That is the function's own stated whole reason -- the
+ * trace and not an exit code is the only reading that can name the file -- and
+ * it is a repair a person really makes, since reordering an `exports` map looks
+ * like formatting.
+ */
+test("a published subpath whose map answers source BEFORE its artifact is refused, though the artifact is complete", async () => {
+  const files = publishingMember(complete, typeChecks, sourceBeforeArtifact);
+  const result = await checkWorkspace(files);
+
+  expect(result.code).not.toBe(0);
+  // THE DISCRIMINATION AGAINST A FILE-EXISTENCE READING, ASSERTED RATHER THAN
+  // ARRANGED: the promised declaration is IN the staged tree, so the cheaper
+  // question answers `yes` here and the refusal still has to fire.
+  expect(Object.keys(files)).toContain(declaration);
+  expect(result.stderr).toContain("@staged/producer/thing");
 });
 
 /**

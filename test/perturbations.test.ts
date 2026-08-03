@@ -637,10 +637,12 @@ const records: readonly PerturbationRecord[] = [
     // artifact both resolve, so the weakened detector is silent over exactly the
     // states it exists for.
     //
-    // ITS THREE NAMES ARE A MEASUREMENT AND NOT A TOLERANCE: the complete-tree
-    // arm stays green under it -- the detector was never going to fire there --
-    // and every arm that requires a refusal goes red, including the ordering
-    // arm, which cannot observe a refusal that never happened.
+    // ITS COLLATERAL NAMES ARE A MEASUREMENT AND NOT A TOLERANCE: the
+    // complete-tree arm stays green under it -- the detector was never going to
+    // fire there -- and so does the arm whose subpath answers from NO FILE,
+    // which this weakening still catches. What goes red is every arm requiring a
+    // refusal where something DID answer, the ordering arm included, since it
+    // cannot observe a refusal that never happened.
     arm: {
       file: "test/artifact-detector.test.ts",
       name: "a published subpath with no artifact at all is refused, naming the file it promised",
@@ -655,6 +657,7 @@ const records: readonly PerturbationRecord[] = [
       to: "    return landed === undefined;",
     },
     alsoReddens: [
+      "a published subpath whose map answers source BEFORE its artifact is refused, though the artifact is complete",
       "a published subpath whose module is written and whose declaration is not is refused, naming the declaration",
       "the refusal arrives before any member is type-checked against the artifact",
     ],
