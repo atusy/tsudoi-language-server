@@ -1421,6 +1421,17 @@ const scrum: ScrumDashboard = {
               "test: the discrimination those two arms claim was prose, and prose is not recorded",
             phase: "green",
           },
+          {
+            hash: "48cc72e",
+            message: "test: a throw from a finally block reports the cleanup and hides the test",
+            phase: "green",
+          },
+          {
+            hash: "2ba68ea",
+            message:
+              "docs: a uniqueness claim shipped in the increment whose subject is unmeasured prose",
+            phase: "green",
+          },
         ],
         notes: [
           "THE ARM IS test/handler-declaration-specifier.test.ts, AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED on bun test v1.3.13, that file as it now stands and run alone, 3 pass / 0 fail unperturbed: the two readings of this checkout pointed at an EMPTY DIRECTORY, 1 pass / 2 fail with both naming both handlers; pointed at a directory holding one ZERO-BYTE `.d.ts`, 2 pass / 1 fail, the subject alone; `handlerMembers` returning nothing, 2 pass / 1 fail, the subject alone again and there by its PAIR while the read arm goes green over an enumeration that found no handler at all. The surviving pass in all three is the discrimination arm, which builds its own directories. THESE SUPERSEDE THE FIRST ROUND'S NUMBERS RATHER THAN STANDING BESIDE THEM: those were taken on the two-arm file, and were stale inside this sprint the moment the third arm landed.",
@@ -1496,6 +1507,7 @@ const scrum: ScrumDashboard = {
       "THE PRODUCT OWNER NARROWED THE FACILITATOR'S OWN CONCLUSION AND THE NARROWING IS KEPT: the evidence supports CURRENCY, not strictness. It is recorded because it is the conclusion-wider-than-its-enumeration class arriving in a ruling's headline, which is the position where this project has measured it hardest to see.",
       "IN EXECUTION: THE ARM'S FIRST DEGENERATE NUMBERS WENT STALE INSIDE THIS SPRINT, and how they went is the finding rather than the correction. They were taken on the two-arm file, and the third arm -- the one that stops the degenerate being prose -- landed after them, so a paragraph in the tree described a run nobody could reproduce from it. Re-taken and SUPERSEDED, not set beside; this is the sprint whose whole subject is what an amended paragraph leaves behind.",
       "IN EXECUTION: ONE CLAIM IN THE FORECLOSURES WAS NEW AND WAS MEASURED HERE RATHER THAN INHERITED -- that a member's manifest reaches a registry with its `scripts`. Every other reading written into the tree this sprint is the deciding measurement's, carried across without being re-derived, which is what the plan asked for.",
+      "IN EXECUTION: A UNIQUENESS CLAIM SHIPPED FOR THREE COMMITS INSIDE THE SPRINT WHOSE SUBJECT IS PROSE THAT OUTRAN ITS MEASUREMENT. The arm's header said the day an inlining transform lands `nothing else would say so` -- a coverage claim, which this project's rule says is measured or not written, and what else in the tree moves under such a transform was never read. Withdrawn IN PLACE, with the withdrawal visible: a reader meeting only the narrower sentence cannot tell it from a claim nobody made. CAUGHT AT REVIEW AND NOT BY ITS AUTHOR, which is the discriminator this project uses on this class.",
       "IN EXECUTION: A LINT WARNING WAS INTRODUCED AND REPAIRED IN THE SAME SPRINT rather than carried to review -- a refusal written inside a `finally`, which would have overwritten whatever the arm was already reporting. The Definition of Done reports warnings without gating on them, so the only thing that catches this is reading the run.",
     ],
   },
