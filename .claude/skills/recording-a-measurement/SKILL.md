@@ -138,6 +138,34 @@ payloads — wants, inherited measurements, counts. The bringer labels a want AS
 FOR or MENTIONED and a handed measurement with WHO TOOK IT; the receiver DOES NOT
 RULE ON AN UNLABELLED ONE.
 
+## A reddened-arm list belongs to its spelling
+
+_(sprint 62)_ **A list of which arms reddened is a reading OF A SPELLING, not of
+a perturbation's description. Cited without the spelling it can be neither
+reconciled nor re-run.** MEASURED twice in one sprint, from opposite ends:
+
+- Three degenerates described identically but spelled WIDER — the shared reader
+  disabled outright instead of two readings redirected, every read answering
+  empty instead of one staged file — read **0/3** and **1/2** against the narrow
+  spellings' **1/2** and **2/1**, on a **3/0** baseline. Only one of the three
+  reproduced identically. The wider spelling reaches an arm the narrow one
+  leaves alone.
+- A reviewer and an executor ran "the same" transform and produced **different
+  five-arm lists**, one including the arm under test and the other not. Neither
+  is wrong; only one had its spelling written down.
+
+**So when two lists disagree, DO NOT RE-RUN AGAINST A RECONSTRUCTED SPELLING.**
+The third number would be attributed to whoever did not take it — manufacturing
+evidence, which is this record's own catalogued failure. Record both with their
+provenance, say which one has a spelling attached, and let the disagreement
+stand unreconciled ON PURPOSE.
+
+**And writing a list you did not take, to make two readings agree, is the
+failure that reads as courtesy.** _(sprint 62)_ An executor was handed a
+reviewer's list as an instruction, measured something different, and wrote what
+they measured. That refusal is the correct call and is named here because the
+opposite is what politeness produces.
+
 ## Four ways a measurement goes stale
 
 _(sprints 38, 41)_ An edit to the measurement; an edit to the file it describes; a

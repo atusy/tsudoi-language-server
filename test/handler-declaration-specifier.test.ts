@@ -124,6 +124,21 @@ applySuiteDeadline();
  * pack having rebuilt over the preload's output rather than an inference about
  * it.
  *
+ * AND THE CONSEQUENCE OF THAT LINE IS WHAT MAKES IT A BOUND RATHER THAN A HOLE,
+ * READ OFF THE MANIFESTS AND NOT RECOLLECTED. The erased half is not in the
+ * TARBALL'S PRODUCER: each handler declares `files: ["dist"]` and
+ * `prepack: "rm -rf dist && tsc -p tsconfig.build.json"`, so what a stranger
+ * installs is built by THAT MEMBER'S OWN prepack through THAT MEMBER'S OWN build
+ * config, and nothing in `prepareWorkspace` runs when `bun pm pack` produces it.
+ * SO THE HALF THIS ARM COVERS IS THE PUBLICATION PATH AND THE HALF IT MISSES IS
+ * THE DEVELOPMENT ARTIFACT -- a transform in the shared path corrupts the tree
+ * the suite grades, which is a real fault and somebody else's, but it cannot
+ * reach what is shipped. The retirement this arm exists to guard is a claim
+ * about consumer-facing artifacts, and that is the half read here. The corrected
+ * provenance is therefore BETTER aligned with the subject than the sentence it
+ * replaced, which is said plainly because a reader meeting a repaired false
+ * claim will otherwise assume the repair cost something.
+ *
  * THE RESIDUE IS NAMED AND NOT CLOSED. Closing it takes a second build, or a
  * detector for whether a rebuild happened between the preload and this read; the
  * first is refused in the paragraph above, and the second buys a fact about the
