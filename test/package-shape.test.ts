@@ -119,8 +119,8 @@ test("the repo's tsconfig keeps dist out of the program", async () => {
 //
 // IT STRIPS THE WHOLE ARRAY AND SO CANNOT SPEAK FOR ONE ENTRY: destructuring
 // `exclude` away removes `packages` with `dist`, and deleting only `"dist"`
-// from the real config leaves this arm GREEN -- measured with that degenerate,
-// which was restored, not kept.
+// from the real config leaves this arm GREEN -- MEASURED in sprint 63 with that
+// degenerate, which was restored rather than kept.
 test("the same tree fails once the dist exclusion is removed", async () => {
   const { exclude: _removed, ...withoutExclude } = repoTsconfig;
 

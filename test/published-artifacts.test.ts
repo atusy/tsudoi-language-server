@@ -39,15 +39,15 @@ applySuiteDeadline();
  * over readers that already existed: test/installed-specifier.test.ts -- ADDED
  * BEFORE THIS FILE -- and test/installed-without-node-types.test.ts both
  * type-check against the same packed artifact, through the same `installConsumer`
- * that packs it here. The example is graded on both routes too.
+ * that packs it here. installed-specifier grades the EXAMPLE too, both spellings.
  *
- * WHAT IS THIS FILE'S ALONE IS WHERE ITS PROBE COMES FROM, enumerated rather
- * than asserted: `extractQuickstart` has three callers -- this file,
- * test/readme.test.ts, which EXECUTES the quickstart's commands instead of
- * type-checking its snippet, and the helper both go through. So the config
- * compiled below is README.md's own bytes, read at test time, and a README edit
- * lands in the type check; installed-specifier writes the documented shape out
- * BY HAND, where it cannot. Everything here is therefore BORN GREEN by design:
+ * WHAT IS THIS FILE'S ALONE IS WHERE ITS PROBE COMES FROM, and it is read off the
+ * callers rather than asserted: `extractQuickstart` is called here and in
+ * test/readme.test.ts, which EXECUTES the quickstart's commands and type-checks
+ * nothing (measured -- it calls no `typeCheck` at all). So the config compiled
+ * below is README.md's own bytes, read at test time, and a README edit lands in
+ * this type check; installed-specifier writes the documented shape out BY HAND,
+ * where it cannot. Everything here is therefore BORN GREEN by design:
  * the snippet and the example already compile, MEASURED. What this file supplies
  * is the CHECK and not a fix, so all of its value is in its controls.
  *
