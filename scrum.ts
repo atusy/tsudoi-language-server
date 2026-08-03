@@ -948,7 +948,14 @@ const scrum: ScrumDashboard = {
           "Enumerate every site whose REASON is about this arm, by reading each rather than counting them, and rule each REWRITE or RETARGET against a discriminator fixed BEFORE the enumeration: a rewrite is a sentence whose subject is deleted; a RETARGET is an assertion kept alive by substituting a different justifying fact, and the item's deciding measurement disqualifies it.",
         type: "behavioral",
         status: "completed",
-        commits: [],
+        commits: [
+          {
+            hash: "001339e",
+            message:
+              "docs(scrum): rule the sites against a red, and the one with a red is a retarget",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE DISCRIMINATOR, FIXED BEFORE THE ENUMERATION AND APPLIED TO A RED RATHER THAN TO A SENTENCE: does any ARM'S REQUIRED RED change cause? A rewrite is a sentence whose subject is deleted and whose arm, if it has one, keeps the red it always had. A retarget is an assertion that survives only by substituting a different justifying fact. Under that rule a false sentence with no arm behind it is a REWRITE however completely its mechanism changed -- which is what makes the one site that DOES have an arm the decider.",
           "THE ENUMERATION IS WIDER THAN THE TWELVE PLANNING NAMED, and the surplus is named rather than counted: every site below was READ. Beyond the planned set it holds bunfig.toml's residue paragraph, README.md's `it does not name tsudoi itself` paragraph, BOTH handler packages' own package-shape docstrings (each says tsudoi's map `carries a third arm, default`), test/package-shape.test.ts's prepack comment, and the skills file that quotes sprint 44's reading.",
@@ -967,9 +974,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "A staging helper writing the tree FROM THE MANIFEST'S OWN ARMS -- empty files created or omitted, no compiler -- under the guard whose type is the only route to a mutating end.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "951d50f",
+            message:
+              "test(unbuilt-artifact): stage the partial window as a written state, and read which file answered",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BOTH STATES ARE STAGED AND NEITHER IS THE SHORTCUT: test/unbuilt-artifact.test.ts writes one tree carrying `./deps/protocol` ARTIFACT-ONLY (its module present, its declaration withheld), `./deps/textdocument` WHOLLY ABSENT from the artifact and the other two COMPLETE, and a second tree with no artifact at all. Written FROM THE MANIFEST'S OWN ARMS, every file empty, no compiler -- so the pack window is a written state rather than a window anybody has to hit.",
+          "WHAT THE READERS ANSWER, WITH THE DISAGREEMENT ASSERTED RATHER THAN ARRANGED. On the artifact-only subpath the compiler falls through to the staged src/ while BOTH runtimes load the module that is there -- one tree, one subpath, two files -- and the arm asserts the two answers DIFFER, so the day they agree it reddens. On the absent subpath deno names the FILE it could not read, bun names the SPECIFIER, and the compiler names NEITHER because it answered. In both trees tsc exits 0.",
+          "THE DEGENERATE IS MEASURED IN THE FILE RATHER THAN RUN ONCE AND WRITTEN UP: `exit 0` is asserted in all three staged states, so a reading asserting only the compiler's colour separates none of them. The two stager degenerates were RUN before the arms were believed -- a stager that writes the declaration anyway, and one that puts every subpath in the same state -- and each leaves 2 pass / 1 fail, the partial-vector arm alone.",
+          "THE ITEM'S CONCURRENCY PREMISE IS RECORDED FALSE-AS-WRITTEN RATHER THAN INHERITED: nothing in this suite writes the FRAMEWORK'S OWN dist/ while another arm reads it. The installer packs a staged copy, the README arm packs in a real member directory but for the HANDLERS, and this file's own stager writes only into a throwaway. So the race is answered by construction and no writer was found.",
           "PARTIAL IS A PER-SUBPATH STATE VECTOR AND NOT A TREE-WIDE COLOUR, and the item's two definitions of it are not the same set: the compiler emits file by file, so mid-build the map ALSO holds some subpaths complete and others entirely missing. A uniform artifact-only tree would measure a state the build never passes through.",
           "SO PARTIAL IS A WRITTEN STATE RATHER THAN A WINDOW ANYBODY HAS TO HIT, and the race question is answered by construction. THE ITEM'S OWN PREMISE THAT THIS SUITE ENTERS IT CONCURRENTLY IS RE-MEASURED RATHER THAN INHERITED: counter-evidence is already in hand -- the installer packs a STAGED copy, and the arm that packs in a real directory does so for the HANDLER packages, not the framework. If a writer is found that is a live finding; if not, the premise is recorded false-as-written.",
           "THE FIXTURE-DISCRIMINATION PAIR IS ASSERTED AND NOT ARRANGED: each arm asserts the staged tree's own state beside the reading, and the compiler-versus-runtime split is asserted as the two readings DISAGREEING IN ONE TREE -- so the day they agree the arm reddens instead of quietly measuring one of them.",
@@ -981,9 +999,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "AFFORDABLE iff all three hold: with the arms deleted and the artifact present, every check is green AND every reader answers from the same file it answers from today; with the artifact absent, the new failures are all NAMED DIAGNOSTICS naming the framework's own subpath, so the framework fails the way a handler already does; and every affected site was ruled a rewrite with none retargeted. THEN the answer is the deletion. NOT AFFORDABLE otherwise, and then the deliverable is a detector on the route the checks already take -- after the build, the published subpaths are resolved and the file that answered is read, and a subpath answering from source is REFUSED naming the file.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "543d28b",
+            message:
+              "feat(workspaces): refuse a published subpath that answers from anywhere but the artifact",
+            phase: "green",
+          },
+        ],
         notes: [
+          "THE CONDITION WAS APPLIED AND IT SELECTED BRANCH TWO, WITH TWO OF ITS THREE CLAUSES FAILING RATHER THAN ONE. (i) FAILS: with the arms deleted and the artifact present the suite reads 875 pass / 4 fail, and three of the four are not pin updates -- `typeCheckProbe`'s answer moves from packages/tsudoi-language-server/src/types.ts to nothing at all, and that probe's tree has no dist/ in either state, so no build repairs it. (ii) HOLDS, completely: with the artifact absent the new failures are TS2307 naming the framework's own subpaths at examples/*.ts, test/documents.test.ts and test/fixtures/published-specifier.ts, and in each member's own check -- the framework failing the way a handler already does. (iii) FAILS: the decider retargets.",
+          "SO THE DELETION IS REFUSED WITH MEASUREMENT AND THE DETECTOR LANDED. `refuseSubpathsAnsweringFromSource` in scripts/workspaces.ts resolves every published subpath the workspace declares -- through node_modules and the exports map, by a link under each package's own declared name, with no mapping and no project reference -- and reads WHICH FILE ANSWERED off the compiler's own trace. A subpath answering from anywhere but the file its `types` arm names is refused, naming the specifier, the file that answered and the file promised.",
+          "ITS SCOPE IS SMALLER THAN THE RESIDUE AND IS WRITTEN AT ITS OWN SITE. It runs on the FIFTH check, after the build, so what it catches is an artifact that SURVIVED one -- a partial emit, a package with no build config, a dist/ removed by hand between the build and the check. It does nothing for a bare `tsc --noEmit` on an unbuilt checkout: that is the fourth check, and nothing in this repository owns its invocation. Reaching it would take a mapping or a project reference, which decision 5 refuses by name.",
+          "THE PROPERTY IS WHEN AND THE ARM READS WHAT THE COMMAND DID NOT PRINT. test/artifact-detector.test.ts spawns the REAL fifth check against staged workspaces whose member has no build config, so the artifact is exactly what the fixture wrote. THE MOVE DEGENERATE WAS RUN: the call relocated below the member loop, no value changed, leaves 3 pass / 1 fail -- the ordering arm alone. Two more degenerates were run before the arms were believed, each leaving 1 pass / 3 fail: a detector reading only THAT the subpath resolved, and one comparing the manifest's own path with itself.",
           "IF THE FIRST TWO HOLD AND THE THIRD DOES NOT -- affordable but retargeting -- THE DELETION IS REFUSED WITH MEASUREMENT AND THE DETECTOR BRANCH RUNS. The sprint never takes both.",
           "A THIRD OPTION SURFACED AT PLANNING AND IS REFUSED HERE: a condition-gated arm nothing matches without a flag. That is a SECOND SUBJECT FLIP ON THREE RESOLVERS, and one subject flip per sprint is the rule whose breach created this residue.",
           "FOR THE DETECTOR THE PROPERTY IS WHEN -- the reading is taken after the build and before any check reads the artifact -- and that is violated by MOVING code without changing a value, so its arms run the real check command against staged trees and read its output rather than calling the function.",
@@ -994,9 +1023,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Settle the sites the enumeration ruled, and REPAIR RATHER THAN FILE the one inside this sprint's own subject: a docstring licensing the arm by a mapping that intercepts the subpath before the exports map is consulted, when no tracked configuration in this repository contains such a mapping.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7af5396",
+            message:
+              "docs: settle the residue's prose on the post-move reading, and repair three false mechanisms",
+            phase: "refactoring",
+          },
+        ],
         notes: [
+          "THE NAMED SITE WAS REPAIRED AND TWO MORE OF ITS CLASS WERE FOUND BESIDE IT, ALL INSIDE THIS SPRINT'S SUBJECT. (1) test/package-shape.test.ts's `default` bullet licensed the arm by `a paths mapping intercepts the subpath before the exports map is consulted, so tsc never reaches this arm`. (2) The prepack note in the same file said `Bun never reaches the map: the paths mapping above intercepts the subpath into ./src/deps/types.ts`, contradicting test/helpers/build.ts's own corrected paragraph. (3) BOTH handler packages' package-shape docstrings explained the root exclusion by `its paths mapping cannot answer for a member`. There is no mapping anywhere; the arm two tests above (1) asserts that no specifier the root check resolves is answered by one.",
+          "EACH REPAIR CARRIES THE POST-MOVE READING RATHER THAN A DELETION: bun and deno both answer `deps/types` from packages/tsudoi-language-server/dist/deps/types.js, measured off `import.meta.resolve` at the root and inside each member, and tsc answers its declaration beside it -- so the dependence on this repository's dist/ WIDENED where the old prose said it was split.",
+          "THE SETTLED PARAGRAPH NOW OWES ITS OUTCOME AND NOT ITS PREDICTION, in all three places it lived -- test/package-shape.test.ts, bunfig.toml and test/helpers/build.ts -- and every copy says the same thing: the deletion was taken, both halves of what the item asked for were measured, and it is refused by a cost named to a file. The residue's prose does not multiply.",
+          "AND ONE STALE MEASURED NUMBER WAS REPAIRED BY NAMING, WHICH IS THIS PROJECT'S OWN CONVENTION: test/installed-runtime.test.ts said dropping `import` reddens FIVE tests. Re-taken, unpiped: 873 pass / 6 fail. The sixth is `a change to src/ reaches the installed copy with no rebuild step`, in that same file, which the sentence never named.",
           "IT PREDATES THIS SPRINT AND IS STILL THIS SPRINT'S, because the filing bar says a finding inside the sprint's own subject is repaired here even when it predates -- with byte-identity against the base verified and recorded, or it is this sprint's to own.",
         ],
       },
@@ -1004,9 +1044,21 @@ const scrum: ScrumDashboard = {
         test: "The branch that lands carries its perturbation as something the suite RE-RUNS: a registry row when it needs a source mutation, an assertion beside the arm when the weakening is a reading of a result the arm already holds.",
         implementation: "Ask first which perturbation still HAS a target here.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "acba6e6",
+            message:
+              "test(perturbation): record this branch's own weakening, and the blocker beside the states it explains",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "TWO SHAPES, SORTED BY THE RULE THIS SUBTASK STATES AND NOT BY CONVENIENCE. THE REGISTRY ROW is the detector's own weakening -- read THAT the subpath resolved instead of WHICH FILE answered -- because it needs a source mutation in scripts/workspaces.ts. It reads HELD, and its two collateral names are MEASURED: the complete-tree arm stays green under it and every arm requiring a refusal goes red, the ordering arm included, since it cannot observe a refusal that never happened.",
+          "THE BLOCKER IS AN ASSERTION BECAUSE ONE ARM CAN HOLD BOTH READINGS: `typeCheckProbe` resolves the framework's subpath today, and the SAME probe with the source arm deleted from its own copy of the manifest cannot resolve it at all. That pair is tree-independent, which the first spelling was not -- an `existsSync(dist)` pair was RED IN THE PERTURBATION STAGE, where nothing is built, for a reason that was not its weakening.",
+          "AND THE STAGE REFUSED TWO CANDIDATE ARM FILES, WHICH IS A FINDING ABOUT THE INSTRUMENT RATHER THAN ABOUT THIS SPRINT. test/published-specifier.test.ts cannot be a registry arm file: in a staged checkout `mirrorInstalledDependencies` treats the real framework as an INSTALLED dependency -- its realpath is outside the stage -- and hands the probe a second route, so `the same config fails with TS2307 once the exports entry is removed` is DISARMED there and the baseline refuses the file. The same route is why the blocker's arm had to leave test/artifact-detector.test.ts, which is a registry arm file.",
+          "THE BASELINE NOW COVERS EVERY FILE THE REGISTRY NAMES rather than one spelled in the test's own name: a second arm file entering without a baseline would have its records read against no unweakened run at all.",
+        ],
       },
     ],
     impediments: [],
