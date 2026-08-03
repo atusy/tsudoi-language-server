@@ -17,10 +17,19 @@ applySuiteDeadline();
  * THE HANDLER'S OWN CLAIMS ARE NOT HERE AND THAT IS THE SPLIT WORTH KNOWING:
  * `@atusy/tsudoi-completion-path` is a workspace member, and what its modules
  * produce is asserted inside that package against ITS OWN SOURCE. Nothing at the
- * repository root may import a member's source -- the root type check excludes
- * the members precisely so it cannot answer their imports through its own
- * `paths` mapping, and a relative import from here would put member source back
- * in the root program by module resolution, which `exclude` does not stop.
+ * repository root may import a member's source, and THE REASON THIS SENTENCE
+ * GAVE IS THE THIRD COPY OF ONE SUPERSEDED IN SPRINT 61 -- it said the root type
+ * check excludes the members precisely so it cannot answer their imports through
+ * its own `paths` mapping. There is no mapping anywhere in this repository, so
+ * that is not what the exclusion buys.
+ *
+ * WHAT IT BUYS INSTEAD, and the reason the rule here is unchanged: `exclude`
+ * stops a member's files being SWEPT IN, and without it every member's source is
+ * graded under the ROOT'S options and the ROOT'S resolution -- a grade no
+ * consumer's build ever takes, read as one because it is green. A relative
+ * import from here reaches that same grade by the door `exclude` does not close,
+ * MODULE RESOLUTION, which is why the rule is about imports and not about the
+ * config. test/package-shape.test.ts is where the exclusion's own reason lives.
  *
  * WHAT IS LEFT HERE IS THE PART THAT IS NOT ABOUT THE MODULE AT ALL: batches
  * leaving the process as `$/progress`, under BOTH runtimes, from a config that

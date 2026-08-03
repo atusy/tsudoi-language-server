@@ -17,12 +17,23 @@ applySuiteDeadline();
 /**
  * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT.
  *
- * The repo's own type check never reaches the exports map: tsconfig's `paths`
- * intercepts `@atusy/tsudoi-language-server/types` and answers it straight at
- * src/types.ts, which is the same ruling test/package-shape.test.ts records
- * from the map's side. What a stranger receives is the COMPILED
- * dist/types.d.ts, and nothing checked the artifacts against that until this
- * file. Everything here is therefore BORN GREEN by design: the
+ * THE REASON THIS PARAGRAPH GAVE NAMED A MECHANISM THIS REPOSITORY NO LONGER
+ * HAS, and it is quoted rather than struck so the next reader does not re-derive
+ * the pre-move story from the file that reads what we publish. It said: the
+ * repo's own type check never reaches the exports map, because tsconfig's
+ * `paths` intercepts `@atusy/tsudoi-language-server/types` and answers it
+ * straight at src/types.ts. THERE IS NO MAPPING ANYWHERE IN THIS REPOSITORY --
+ * test/package-shape.test.ts asserts that no specifier the root check resolves
+ * is answered by one, and scripts/workspaces.ts refuses one in a member.
+ *
+ * WHAT IS TRUE INSTEAD, and it moves this file's subject rather than removing
+ * it: root `tsc --noEmit` DOES consult the map, and while the artifact is there
+ * it answers the published subpaths from that same dist/. So the gap is no
+ * longer `the root check reads sources` -- it is that the root check reads only
+ * the subpaths THIS CHECKOUT'S OWN FILES import, under the ROOT'S options, out
+ * of a workspace link. What a stranger receives is a TARBALL, type-checked under
+ * their own options from a project that never saw this checkout, and nothing but
+ * this file grades that. Everything here is therefore BORN GREEN by design: the
  * snippet and the example already compile, MEASURED. What this file supplies is
  * the CHECK and not a fix, so all of its value is in its controls.
  *
