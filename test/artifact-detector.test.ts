@@ -39,8 +39,18 @@ const memberTsconfig = JSON.stringify({
 /** A source file that type-checks, so a member built from it cannot be the red. */
 const typeChecks = "export const fine: number = 1;\n";
 
-/** A source file that cannot type-check, and a `broken` a diagnostic can name. */
+/**
+ * A source file that cannot type-check.
+ *
+ * WHAT THE DIAGNOSTIC ACTUALLY NAMES IS THE FILE AND THE CODE, MEASURED: this
+ * compiler reports `packages/producer/src/index.ts(1,14): error TS2322` and
+ * never the identifier, so an arm looking for `broken` in the output is looking
+ * for a word no run prints -- true whether the member was checked or not.
+ */
 const typeError = 'export const broken: number = "not a number";\n';
+
+/** The member's own source, which is what its diagnostic is printed against. */
+const memberSource = "packages/producer/src/index.ts";
 
 /**
  * The map a package WITH SOURCE IN THE TREE publishes: the artifact first, the
@@ -134,7 +144,7 @@ function publishingMember(
       exports,
     }),
     "packages/producer/tsconfig.json": memberTsconfig,
-    "packages/producer/src/index.ts": source,
+    [memberSource]: source,
     [sourceFile]: "export type Thing = string;\n",
     ...artifact,
   };
@@ -289,9 +299,20 @@ test("the refusal arrives before any member is type-checked against the artifact
 
   expect(result.code).not.toBe(0);
   expect(output).toContain(declaration);
-  // The pair: this member really would have been reported, so the absence below
-  // is the ordering and not a member that had nothing to say.
-  expect(await checkWorkspace(publishingMember(complete, typeError))).toHaveProperty("code", 1);
-  expect(output).not.toContain("broken");
+  // THE PAIR, AND IT READS THE DIAGNOSTIC RATHER THAN A COLOUR. An exit code
+  // alone cannot tell `the member was reported` from `the member failed
+  // silently`, so the halves below were not each other's mirror: MEASURED, with
+  // the diagnostics piped this arm stayed green EVEN WITH THE REFUSAL MOVED
+  // BELOW THE MEMBER LOOP, and what kept it honest was four unrelated arms
+  // defending the inherited stdio.
+  const reported = await checkWorkspace(publishingMember(complete, typeError));
+  const printed = `${reported.stdout}${reported.stderr}`;
+  expect(reported.code).toBe(1);
+  expect(printed).toContain(memberSource);
+  expect(printed).toContain("TS2322");
+  // AND THE TWO HALVES ARE NOW EACH OTHER'S MIRROR, WHICH THEY WERE NOT: the
+  // absent half looked for `broken`, a word this compiler prints in no run at
+  // all, so it held for a reason unrelated to the ordering.
+  expect(output).not.toContain(memberSource);
   expect(output).not.toContain("TS2322");
 });
