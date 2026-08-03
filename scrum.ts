@@ -1094,9 +1094,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "Settle the ordinary-size number for the faster runtime, which the module states in two places that contradict each other: a parenthesis whose two numbers, read with the sentence they qualify, say the streaming shape is SLOWER there, and a sentence nine lines below saying that runtime gains on both counts.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a025889",
+            message:
+              "docs(resolve): settle which half of the bun contradiction was true, by re-taking it",
+            phase: "green",
+          },
+        ],
         notes: [
+          "BYTE-IDENTITY AT THE BASE, RECORDED BEFORE THE FIRST EDIT: at 82164c5 the module is blob 7dad06faffd9c8075f6e3e7df2462ca0f3ac24cc, sha256 f116795b014fc2e44220a94cf2753f175d808150416f83ff3cccf933b7baf3e9, 34409 bytes.",
+          "SETTLED, AND IT IS THE PARENTHESIS THAT GOES. `bun: about 24 ms against about 18 ms` reads STREAMING SLOWER at the ordinary size; re-taken at this base it is 2.080 ms against 2.528 ms, so streaming is FASTER there by 0.460 ms paired (0.356-0.659, noise 0.030) and the sentence nine lines below is the half that survives. Deno's half of the same parenthesis was re-taken in the same session rather than carried forward -- 9.619 against 6.374 -- because one runtime re-measured beside another inherited is how that pair came to disagree.",
+          "AND THE CLAUSE BESIDE IT WAS HALF WRONG RATHER THAN WRONG: `at two hundred entries neither runtime tells the two apart` is true of BUN, where the difference is inside the instrument's noise, and false of deno, where 0.195 ms sits well outside a noise of 0.002. Narrowed to the runtime it holds for rather than deleted.",
+          "A RED THE REPAIR EARNED, AND IT IS RECORDED BECAUSE IT IS A RULE NOBODY HAD MET IN THIS MODULE BEFORE: the first version of this comment cited the instrument BY ITS DIRECTORY-QUALIFIED PATH, and test/packed-members.test.ts reddened -- 893 pass / 1 fail -- naming `dist/resolve.js names scripts/listing-shapes.ts`. A shipped module may not name a repository file its reader does not have. The instrument is named by its bare filename now, with the disclosure that a consumer holding the installed artifact cannot re-run it.",
           "IF THE PARENTHESIS IS READ AGAINST ITS OWN SENTENCE, THE CRITERION FAILS ON BOTH RUNTIMES RATHER THAN ONE -- and that is a subject error of the known class living in the paragraph this sprint exists to re-decide. It PREDATES and is repaired here rather than filed, because the filing bar repairs what is inside the sprint's own subject. NO NUMBER FROM THAT PARAGRAPH MAY BE CITED AGAIN until the reading settles which of the two it was.",
           "AND THE PLANNING READING ALREADY CONTRADICTS THE PARAGRAPH THREE WAYS, at the same nominal sizes and the same two runtime versions it cites: every magnitude in it is many times larger than this machine reads; one number is falsified by its own neighbour, since a whole open-plus-drain measures less than the figure the paragraph gives for the OPEN ALONE; and the ranking on the faster runtime FLIPS WITH SIZE, which is why one number per runtime could never have settled this.",
         ],
