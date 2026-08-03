@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { handlerMembers, trackedReadmes } from "../scripts/workspaces.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
-import { readmeCoverage } from "./helpers/readme.ts";
+import { type CoverageReading, readmeCoverage } from "./helpers/readme.ts";
 import {
   stageCheckout,
   type ThrowawayPath,
@@ -125,7 +125,11 @@ const fenceForms: readonly FenceForm[] = [
   // A TILDE FENCE, because the reader was widened to see one on the ground that
   // missing `~~~sh` fails toward PERMITTING -- the one direction this sweep
   // cannot accept -- and no arm planted one until now, so the widening was
-  // carried by the reader's own docstring alone.
+  // carried by the reader's own docstring alone. WHAT ARMS IT IS THE PLANTED
+  // TEXT AND NOT THE ECHOED TAG, which this entry's `info` deliberately shares
+  // with the first: MEASURED with `~{3,}` struck from `fencedBlocks`'s needle,
+  // the two planted arms read 8 pass / 2 fail in this file, because a reader
+  // blind to tildes reports no block and the text goes missing from the refusal.
   { name: "a tilde fence", fence: "~~~", info: "sh" },
   // NO INFO STRING AT ALL: what a tag-keyed skip reads as the empty string, and
   // what a writer produces without deciding anything. A list of exempt tags and
@@ -161,7 +165,13 @@ function plantInto(stage: ThrowawayPath, document: string): void {
  * with it -- so a reader looking for where the tag is used finds a message and
  * never a branch.
  */
-function expectEveryFormRefused(reported: string): void {
+function expectEveryFormRefused(reading: CoverageReading): void {
+  const reported = reading.offenders.map((offence) => offence.report).join("\n");
+  // THE PRESENCE HALF, WHICH THE REFUSING DIRECTION NEEDS AS MUCH AS THE EMPTY
+  // ONE: a sweep that answered five offences out of a table lookup, having
+  // opened nothing, satisfies every line below. The count is over the plant's
+  // own forms because each document already carried blocks before it.
+  expect(reading.blocksRead).toBeGreaterThan(fenceForms.length);
   for (const form of fenceForms) {
     expect(`${form.name}: ${String(reported.includes(plantedText(form)))}`).toBe(
       `${form.name}: true`,
@@ -197,12 +207,10 @@ test("a fenced block the root README nobody marked is refused, naming the docume
   plantInto(stage, "README.md");
   indexEverything(stage);
 
-  const reported = readmeCoverage(stage)
-    .offenders.map((offence) => offence.report)
-    .join("\n");
+  const reading = readmeCoverage(stage);
 
-  expect(reported).toContain("README.md:");
-  expectEveryFormRefused(reported);
+  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain("README.md:");
+  expectEveryFormRefused(reading);
 });
 
 // THE SECOND DOCUMENT, AND IT IS NOT THE SAME ARM TWICE: the root README is
@@ -215,12 +223,10 @@ test("a fenced block nobody marked in a MEMBER's README is refused, naming that 
   plantInto(stage, document);
   indexEverything(stage);
 
-  const reported = readmeCoverage(stage)
-    .offenders.map((offence) => offence.report)
-    .join("\n");
+  const reading = readmeCoverage(stage);
 
-  expect(reported).toContain(`${document}:`);
-  expectEveryFormRefused(reported);
+  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain(`${document}:`);
+  expectEveryFormRefused(reading);
 });
 
 /**
