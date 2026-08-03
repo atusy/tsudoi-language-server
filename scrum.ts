@@ -163,11 +163,35 @@ const scrum: ScrumDashboard = {
             "Staged in a throwaway copy, because every block in this tree today is either reached or declared and an instrument whose witness cannot fail measures nothing: plant a fenced command block that no extraction reaches into the root README and into a member's, and require each to be reported naming the document and enough of the block's own text to find it. Pair each with the same tree unplanted going green. AND THE DEGENERATE ARM, RUN BEFORE THE ARMS ARE BELIEVED: an implementation that reports nothing must redden the planted arms while leaving the unplanted ones green, measured rather than argued -- the extractors this repository already has are MARKER-KEYED and each throws only when ITS OWN marker is missing, so an implementation built from them is satisfied by an author's intention. STARTING EVIDENCE, MEASURED: an unmarked block added to README.md leaves every check exit 0 while the project's own documentation tells a reader every command block in that file is extracted and executed.",
         },
       ],
-      status: "draft",
+      status: "done",
       notes: [
         "THE FIRST THING THE EXECUTOR MEETS IS NOT A BUG: one extractor in test/helpers/readme.ts says of itself `NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all are and a reader would otherwise assume it`, and gives its reason. A property that forces EVERY block to be executed would delete a considered decision. WHAT THE CRITERION REFUSES IS A BLOCK THAT IS UNREACHED AND UNACCOUNTED FOR; how an account is expressed is this item's work and is deliberately not named here.",
         "THE PROSE CLAIM IS PART OF THE SUBJECT: claimed in the project's own documentation and asserted by nothing is a COVERAGE CLAIM TAKEN ON RECOLLECTION, which is what makes this a defect rather than a gap.",
         "FOUND BY TRIAGING THE RETROSPECTIVE RECORD RATHER THAN BY A RED, and that is worth recording: the improvement being retired claimed this remedy existed, and reading for its mechanism before marking it done is what found that it does not.",
+      ],
+    },
+
+    {
+      id: "PBI-74",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "trust that a documented example which teaches by FAILING still fails",
+        benefit:
+          "the one block whose whole lesson is that it does not compile cannot start compiling in silence",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A documented block whose didactic content is its own failure is refused the day it stops failing, naming the block and what it was supposed to fail with.",
+          verification:
+            "The block at README.md's `snippet` marker under the type-shape section is the subject: it annotates an object literal as the framework's document view and omits three members, and the prose beside it says so. Perturb the TYPE rather than the block -- give the omitted members defaults, or widen the annotation -- and require a named red. THE DEGENERATE FIRST: an implementation that only resolves the block's imports must leave that perturbation green, which is the state shipped today.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AS A PRODUCT OWNER'S CONDITION ON ACCEPTING SPRINT 60, WHICH IS WHY IT IS NARROW: the sprint narrowed the snippet account from compiling the block to resolving its import specifiers, and that narrowing is disclosed to the reader in the document. DISCLOSED AND COVERED ARE DIFFERENT STATES and this block is currently neither -- if the view type ever gained defaults making that literal valid, the README would teach a falsehood with every check green.",
+        "THE OBVIOUS FIX IS NAMED SO IT IS NOT REDISCOVERED, AND SO IS ITS PRICE. `expect=error` -- a marker declaring the block fails and naming the diagnostic code it must fail with -- was designed and dropped in sprint 60. THE CODE IS NOT DECORATION: this tree's ambient failure is unresolved specifiers, so `it fails as promised` is otherwise satisfied by a checkout where the framework did not build, which is two states behind one red. PBI-60's record carries the instance -- an assertion demanding TS2322 RECEIVED TS2307 BESIDE IT under a staged state -- so a compile-based account here sits directly in front of the unbuilt-artifact residue and is not free.",
+        "SCOPE THIS CANNOT QUIETLY BECOME: a general snippet-compilation harness over every marked block. One block is the subject; the criterion is about a block that teaches by failing, and the other marked snippets teach by working.",
       ],
     },
 
@@ -411,6 +435,173 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 60,
+      pbi_id: "PBI-64",
+      goal: "A reader of this repository's promise about its own documentation finds it true of every fenced block in every tracked README -- because a block nothing consumes is refused by name, and a block that is read rather than run says which part of itself the reading can fail on.",
+      status: "in_progress",
+      subtasks: [
+        {
+          test: "None -- structural. Pinned by the existing arms in test/readme.test.ts staying green (the marker-deleted probes, the count throws, the moved-marker throw) and by the whole Definition of Done. Born-green, no behaviour claim.",
+          implementation:
+            "ONE FENCE READER, and the markers select from it. `fencedBlocks(markdown)` in test/helpers/readme.ts returns each block's OPENING-FENCE OFFSET, info string, body and line; `markedBlocks(markdown, marker)` is the blocks whose opening fence the marker immediately precedes -- the adjacency the three current regexes already require, kept rather than loosened. The three extractors are rebuilt on it; their count guards and QUICKSTART_STEPS are untouched.",
+          type: "structural",
+          status: "completed",
+          commits: [
+            {
+              hash: "599407e",
+              message:
+                "refactor(readme): one fence reader, so `reached` and `extracted` cannot drift",
+              phase: "refactoring",
+            },
+          ],
+          notes: [
+            "IT IS FIRST BECAUSE IT IS WHAT SATISFIES `NO SECOND PARSER`, not because it is tidy. The guard joins `the document's blocks` to `the blocks something consumes` on the opening-fence offset, so after this there is ONE matcher and the guard's notion of reached cannot drift from the extraction's. A second expression standing beside the call is not the call, applied to matching.",
+            "THE READER READS FENCES AND INFO STRINGS, NEVER BODIES. Three-or-more backticks OR TILDES at up to three spaces of indent, closing on the same character at at least the same run length -- tildes included because a reader that misses `~~~sh` fails toward PERMITTING, the one direction this item cannot accept. WHAT IT CANNOT SEE, named rather than fixed: a four-space indented code block, which has no fence and no info string. Deciding `is this text a command` by reading the body is a matcher for a defect that is a property of matching, and this repository refuses that shape by name.",
+            "THE SECOND MATCHER WAS ALREADY IN THE FILE AND THE FIRST DRAFT OF THIS SUBTASK SHIPPED WITH IT, WHICH IS THIS RECORD'S OWN SAME-SPRINT SUBCASE CAUGHT BEFORE THE COMMIT RATHER THAN AFTER: `visibleProse` cut blocks with its own three-backtick expression while `fencedBlocks`'s docstring, twenty lines below, said it was the only matcher in the file. It is not a tidiness point -- three backticks see nothing tilde-fenced, so a directory named ONLY inside a `~~~` block satisfied `the prose a reader sees names it` in BOTH extractors that ask, which is the permitting direction this item refuses. Repaired in the same commit by cutting on the block's own offsets, which is why `FencedBlock` carries an `end`.",
+          ],
+        },
+        {
+          test: "test/readme-coverage.test.ts. Every arm stages a throwaway with stageCheckout() -- ThrowawayPath-branded, tracked files, borrowed node_modules -- plus `git init -q` and an add, plants INTO THE STAGE, and calls the guard with that root. NOTHING HERE EVER EDITS A TRACKED README: a test mutating a version-controlled file in order to fire is this record's own measured failure, and readReadme()'s hardcoded path is exactly how this sprint would fall into it.",
+          implementation:
+            "THE DEGENERATE FIRST, READ BEFORE ANY ARM IS BELIEVED. Ship the guard returning the empty list and take the reading: the planted arms must redden and the unplanted ones stay green, recorded with the numbers rather than argued. AND THE SECOND DEGENERATE, because no arm above catches over-refusal: refuse-everything must redden the unplanted-tree arm.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE TWO DEGENERATE READINGS, TAKEN BEFORE ANY ARM WAS BELIEVED AND RECORDED AS NUMBERS RATHER THAN ARGUED. (1a) THE SWEEP REPORTS NOTHING, counts real -- 3 pass / 5 fail over 8 arms. RED: both planted-block arms, the unpaired-document arm, the well-formed-marker arm, and the untracked/tracked pair. GREEN: the unplanted-tree arm, the not-a-checkout arm, AND `every fenced block in every tracked README of this checkout is reached or accounted for` -- which is the arm the shipped sweep is red on, so the degenerate bought its green by reporting nothing. (1b) THE SWEEP ALSO OPENS NOTHING -- documentsRead and blocksRead zeroed as well -- 0 pass / 8 fail: the presence pairs fire, which is what they are for and what 1a alone cannot show. (2) THE SWEEP REFUSES EVERY BLOCK -- 5 pass / 3 fail, and the four planted arms are GREEN under it. What catches it is the unplanted-tree arm, exactly as the plan required, and with it the untracked half of the tracked/untracked pair.",
+            "THE UNPLANTED-TREE ARM SHIPS WITH ITS PRESENCE PAIR -- documents read above zero AND blocks read above zero. An empty offender list and a reader that opened nothing are the same observation without it.",
+            "THIS SPRINT'S EVIDENCE IS NOT ONE PLANTED WITNESS. The criterion asked for a staged plant BECAUSE it assumed every block in this tree today is reached or declared, and that premise was MEASURED FALSE while planning: five blocks have zero consumers, so the shipped guard is red at five real sites on this repository before anything is staged.",
+          ],
+        },
+        {
+          test: "A throwaway gains packages/tsudoi-nowhere/README.md and is refused NAMING THAT PATH with no enumeration edited. Three pairs: the same file left UNTRACKED is not swept; the enumeration run against a directory that is not a checkout THROWS rather than returning empty; and -- the arm that matters -- a new README carrying a KNOWN, WELL-FORMED MARKER that no test opens is REFUSED, not cleared.",
+          implementation:
+            "`trackedReadmes(root)` -- `git ls-files -z` filtered to basename README.md, inheriting checkoutPaths's two rules verbatim: a failed enumeration is not an empty one, and NUL separators, because git quotes odd paths and a quoted path matches no file.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE ADJACENT WEAKER READING IS RECORDED BESIDE THE ARM AND NOT AS A REGISTRY ROW, AND THE REFUSAL IS STRUCTURAL RATHER THAN A CHOICE: `reRun` refuses any arm file that imports helpers/perturbation.ts, and every arm over this sweep must import it -- they stage. So the readdirSync weakening is carried where the dashboard header already permits it, as the untracked-file arm's own two assertions: `trackedReadmes` does NOT hold the planted file before `git add`, and DOES the moment after, in one arm over one tree. That pair is also the absence/presence pair the item owes.",
+            "NOT declaredMembers AND NOT handlerMembers. The criterion says TRACKED README; those two answer `which packages`, and a README under examples/ or docs/ is neither. Joining them would give the guard the same blind spot the documents have, which is the guard over `the documents that exist today` the criterion refuses in its own words.",
+            "THE MARKER ARM IS THE ONE THAT ENFORCES `THE GUARD MAY NOT BE ITS OWN CALLER`. A guard that ran the extractors over each tracked README and cleared whatever matched would certify a document nobody opens -- the author's-intention failure with the marker swapped for the guard's own run. THE ADJACENT WEAKER READING, in the perturbation registry: a readdirSync walk for README.md, whose required red is the untracked-file arm.",
+          ],
+        },
+        {
+          test: "Arms built FROM the table, so the guard consumes a pairing that exists for the arms rather than performing one. A tracked README in no pairing is refused, naming the document, before a single block is looked at.",
+          implementation:
+            "`consumers` in test/helpers/readme.ts: the document set expressed as the enumerations the tests already use (the checkout's own README; handlerMembers), the marker, and the form -- `executed` (the block's bytes are run) or `read` with a `subject` projection and its reason.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE ARMS ARE BUILT FROM THE TABLE BY `readAccounts`, WHICH IS ALSO WHAT SPLIT THEM ACROSS TWO FILES -- and the split is read out of a field on the row rather than out of a list. Each `read` row declares what its assertion NEEDS besides the document; test/readme-layout.test.ts takes the rows needing nothing else and test/readme-accounts.test.ts the rest. It is not tidiness: a perturbation stage carries no build outputs and its directory NAME is not this repository's, so the install row (which compares against basename(repoRoot)) and the snippet row (which resolves through dist/) are legitimately red there, and a registry row over their arms would fail at the baseline instead of at its weakening. MEASURED: every arm in test/readme-layout.test.ts passes in that stage.",
+            "WHY AN ACCOUNT IS A CONSUMPTION AND NEVER A DECLARATION, decided on a measurement rather than on principle. `declared and read` is already not `checked`, and this tree has the instance: the install block's three consumers are a negative match that survives any corruption, a contains of the tarball name, and a split taking the LAST TOKEN. So the path is checked and THE VERB IS NOT -- `bun frobnicate ../<checkout>/x.tgz` satisfies all three and leaves every check green. A rule admitting `it is read` wholesale would certify that; a rule demanding `corrupting any byte reddens something` would refuse the very block the item forbids refusing.",
+            "A HUMAN WRITES THE MARKER AND MUST -- every extractor here is marker-keyed and the marker is what routes a block to its consumer. A HUMAN NEVER WRITES THE ACCOUNT. A marker cannot make a block accounted for, because the guard does not read markers to decide.",
+            "REFUSED, EACH WITH ITS REASON: an allow-list of documents, blocks, lines or hashes, which is the approximate detector whose failure mode is a green certifying a class as watched, and which as a hash list is the rubber stamp with one extra step; an exemption written in the document whose only consumer is the guard; and a sixth Definition-of-Done check, since the guard belongs where the extraction already lives.",
+            "THE RESIDUE, NAMED AT THE TABLE AND NOT GIVEN A DETECTOR: nothing notices a pairing entry whose consuming arm was deleted -- the table would go on claiming a consumer. A check deciding whether an arm REALLY consumes is the shape refused above.",
+            "AND THE MITIGATION THIS NOTE SHIPPED WITH WAS FALSE, FOUND AT REVIEW AND REPAIRED IN THE TREE RATHER THAN ONLY HERE: it said `what keeps the claim honest even so is the mutation arm below`, and the mutation arms are DELETED BY THE SAME EDIT as two of the rows they stand over. MEASURED by emptying each consuming file to a placeholder that still registers something, against 934 pass / 0 fail across 65 files: test/readme.test.ts (both `executed` rows) reads 837 pass / 0 fail and test/readme-accounts.test.ts (the snippet and install rows, and their mutation arms) 916 pass / 0 fail -- FOUR OF THE FIVE ROWS, uncaught. The fifth reads 929 pass / 2 fail and is caught INCIDENTALLY: both reds are perturbation records naming its arms by exact `test()` string, and `armReadAccounts` names an arm by ORDINAL, so a marked block added ahead of that one turns the catch into a REFUSED. The size now sits at the table and in the skill; no detector was added, for the reason above.",
+          ],
+        },
+        {
+          test: "THE MUTATION ARM, which is where the teeth are: corrupt the block INSIDE its subject and the consuming predicate must go false; corrupt it OUTSIDE and it must stay true. The account's boundary asserted rather than assumed -- and the unverified verb written down at last.",
+          implementation:
+            "The subject is never inspected as prose. It is the projection the consuming assertion is HANDED, and the assertion receives ONLY its output, so it cannot fail on anything the account does not name -- by construction rather than by inspection. For the install block that projection is test/readme.test.ts's own last-token expression MOVED INTO THE HELPER so that there is one of it. The guard additionally requires the projection to return a non-empty string the block's own bytes include, so a projection cannot be a constant.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "EVERY MEMBER OF THE PROJECTION, ONE AT A TIME, AND NOT THE FIRST -- which is what forced the layout row's subject to exclude the drawing's ROOT line. A subject carrying one load-bearing member and four decorative ones satisfies a reading that corrupts whichever comes first, and `parent/` is decorative by construction: no marker names it and its spelling changes no path below it. It is outside the subject, which is what the OUTSIDE-corruption arm then probes.",
+            "WHAT THE INSIDE ARM DOES NOT SAY, FOUND AT REVIEW AND RECORDED AT THE ARM RATHER THAN REPAIRED: IT IS SATISFIED BY A PROJECTION THAT IS A CONSTANT. `block.body.replace(part, ...)` is a no-op when `part` is not in the body, so a constant subject leaves `holds` false over the UNTOUCHED block, and false is what the arm asks for. MEASURED with the layout row's subject replaced by a constant the block does not contain: 925 pass / 9 fail, and THE INSIDE ARM IS GREEN in that run. What caught it instead is named beside it -- the sweep's own fourth refusal firing four times, the OUTSIDE arm, the `holds` arm, and the registry's three -- so `the account's boundary asserted rather than assumed` holds for the increment and not for that arm alone.",
+            "IT NEEDS THE LAST-TOKEN PREDICATE LIFTED OUT of the expensive pack test into a pure function both the arm and the guard call -- a structural step inside this subtask, taken for the same reason as the fence reader: two spellings of one premise is what the join exists to kill.",
+          ],
+        },
+        {
+          test: "The guard is written first and is RED ON THIS TREE at five sites; each consumer greens named blocks. That ordering IS the increment and not a follow-up.",
+          implementation:
+            "THE INFO STRING DECIDES NOTHING -- every fenced block in a paired document is reached or accounted, the tag recorded for the refusal message alone. Two new consumers pay for it: a SNIPPET consumer compiling every marked `ts` block against the installed framework, and a LAYOUT consumer holding the drawn tree against the directories the quickstart markers name.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "THE FIVE SITES CONFIRMED BY RUNNING THE SHIPPED SWEEP AND NOT BY THE PLANNING GREP, and they are the five the grep named, each with its line: README.md:95 (a ```text drawing), README.md:267 and README.md:275 (both ```ts), packages/tsudoi-completion-path/README.md:15 and packages/tsudoi-hover-wordnet/README.md:11. The reading beside them is documentsRead=3, blocksRead=14, offenders=5. Each of the five is greened by the consumer it was written for: the layout row takes the first, the ts-snippet row the other four.",
+            "BOTH NEW CONSUMERS SHIP AT THE NARROWEST WIDTH THAT IS STILL A CONSUMPTION, AND THE `expect=error` MECHANISM IS DROPPED FROM THIS SPRINT -- the product owner's own pressure valve, opened up front rather than after the sprint ran long, and it is the WIDTH OF AN ASSERTION and never an exemption: no tag skips, the info string still decides nothing, and every fenced block in a paired document is still reached or accounted for. LAYOUT: subject is the drawn directory lines, assertion is that every directory a quickstart marker names is drawn -- ONE DIRECTION IN `holds`, and see the note below for what the mutation arm enforces on top of it. SNIPPET: subject is the import specifiers, assertion is that each resolves; THE BLOCKS ARE NOT COMPILED. WHY, and it is not speed: a consumer whose green depends on `fails with code X and not TS2307` reddens for environmental reasons in this tree, and PBI-60 already records the instance -- an arm asserting not.toContain(TS2307) RECEIVED TS2307 beside the TS2322 it wanted. A compilation harness with expect=error semantics is its own item.",
+            "WHAT THE NARROWED SUBJECTS THEREFORE CANNOT SEE, NAMED RATHER THAN HIDDEN, because this is the account rule working as designed: a ```ts block whose imports all resolve and whose BODY is wrong is accounted for and unchecked. AND A SECOND ONE, which is where a later reader will reach for an exemption: a marked ```ts block carrying NO import at all cannot be accounted for by the snippet row -- its projection would be empty and the sweep refuses that. The move is to give the snippet the import it was already implying, which is what README.md's mock block got: it now names the type it fails to satisfy, which the prose beside it (`an object literal carrying the four obvious members satisfies nothing`) had left unstated.",
+            "WHY THE EXEMPT TAG LIST DIED, AND THE PRODUCT OWNER OVERTURNED THEIR OWN SETTLEMENT TO SAY IT. `command block` names a class NOTHING IN THIS TREE CAN COMPUTE: the info string is refuted by the quickstart's `write=tsudoi.config.ts` step, which is a ```ts block and IS reached, and a matcher over block content is a matcher for a defect that is a property of matching. An exempt list makes the defect reintroducible by typing three characters -- green, witness red, defect reachable, which is the one outcome refused with every check green. The widening SATISFIES the criterion by refusing a superset; no acceptance criterion is loosened.",
+            "MEASURED WHILE PLANNING, and it is what sets this sprint's size: grep finds NO consumer of the root layout block, of either root `ts` block, or of each member's `ts` config -- and it could not be otherwise, because visibleProse strips fenced blocks before any ReadmeFact sees them, so no prose assertion can reach a block's bytes.",
+            "IF `expect=error` EVER SHIPS, A BLOCK DECLARED TO FAIL NAMES ITS DIAGNOSTIC CODE, and must fail with THAT code and not with TS2307. This tree's ambient failure is unresolved specifiers -- another item's whole subject -- so without the code, `the broken mock fails as promised` is satisfied by a checkout where the framework did not build: two states, one red. The code is the subject clause; `must fail` alone is a stamp. THE MECHANISM DID NOT SHIP -- this stands as the foreclosure record for the design that was dropped, so the next executor reaching for it meets the condition rather than rediscovering it.",
+            "THE LAYOUT CONSUMER IS NOT A SECOND MECHANISM. test/helpers/readme.ts twice requires a directory to be stated twice and be the same string; this is that idiom a third time, over the drawing instead of the sentence, and it catches a README picturing one layout while staging another -- which nothing today would see.",
+            "THE PRESSURE VALVE WAS OPENED, AND UP FRONT RATHER THAN AFTER THE SPRINT RAN LONG -- so this is what happened and not what might. The layout consumer ships with `holds` NARROWED to one direction: every marker directory appears in the drawn tree. It is the width of an assertion and never an exemption. A tag may not start skipping. Vetoes get traded under schedule pressure, so the trade is priced in advance.",
+            "AND `THE CONVERSE IS DROPPED` WAS FALSE OF THE SHIPPED INCREMENT, WHICH IS THIS RECORD'S OWN SUBJECT-ERROR CLASS ABOUT AN INCREMENT RATHER THAN A NUMBER: the narrowing is real of `holds` and of nothing else, because `armReadAccounts` requires EVERY member of a projection to be load-bearing. So the layout DOES enforce the converse over its subject -- every INDENTED `foo/` line must be a directory a quickstart marker names or a proper ANCESTOR of one -- and the un-indented root line is the single exception, made one by the subject regex demanding leading whitespace and not by any decision about drawings. MEASURED with two decorative indented lines added to the drawing: 25 pass / 3 fail over test/readme-layout.test.ts and test/perturbations.test.ts -- the INSIDE arm, the registry row over it reading DISARMED, and their shared baseline. The repair is at the row, where the next drawing gets edited.",
+            "THE RULING SHIPPED ARMED AT ONE TAG, WHICH IS THIS ITEM'S OWN DEFECT CLASS PRODUCED BY ITS OWN FIX. `THE INFO STRING DECIDES NOTHING` was written in the table's docstring, in this record and in the skill, and both planted arms planted ```sh -- while `text` and `ts` are the tags of the five real blocks the sweep was written against. MEASURED at review, with `if (block.info === \"text\" || block.info === \"ts\") { continue; }` in the sweep's UNREACHED branch alone: 934 pass / 0 fail across 65 files and every check exit 0, the unweakened reading. With the plant driven from `fenceForms` -- sh, ts, text, a tilde fence and no info string at all, each entry carrying why it is there -- the same weakening reads 932 pass / 2 fail, the two planted arms alone. NO REGISTRY ROW CAN CARRY IT: `reRun` refuses any arm file importing helpers/perturbation.ts, and every arm over this sweep stages, so the weakening is recorded beside the arms as the untracked-file arm's already is.",
+          ],
+        },
+        {
+          test: "None new -- the subject of each sentence is the guard this sprint ships. Byte-identity at the base recorded before the first edit; offered as READINGS, not as MEASURED.",
+          implementation:
+            "The four sentences this increment makes false, repaired IN THE COMMIT THAT SHIPS THE GUARD: the skill's `nothing sweeps for what it missed`; README.md's `every block in this file is extracted and executed`, which the widening falsifies in a NEW way by giving the document blocks that are read but not run; test/readme.test.ts's MEASURED coverage claim, DERIVED FROM THE TABLE or deleted; and CLAUDE.md, local only.",
+          type: "behavioral",
+          status: "completed",
+          commits: [
+            {
+              hash: "57529b6",
+              message:
+                "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
+              phase: "green",
+            },
+          ],
+          notes: [
+            "BYTE-IDENTITY AT THE BASE, RECORDED BEFORE THE FIRST EDIT AND OFFERED AS A READING RATHER THAN AS MEASURED. Base 0f0382d, blob hashes: README.md e68aef3, .claude/skills/writing-a-comment/SKILL.md 6e7f3ab, test/readme.test.ts 091790c, test/helpers/readme.ts c8c2d13, packages/tsudoi-completion-path/README.md 7d2aab8, packages/tsudoi-hover-wordnet/README.md 2a0b20a. CLAUDE.md is UNTRACKED in this repository -- globally gitignored -- so no such reading exists for it and its repair is local only. None of these is filed as pre-existing-and-therefore-not-ours: every one is inside this sprint's own subject, which the dashboard header says is repaired here even when it predates.",
+            "THE ROOT DOCUMENT NOW OWES THE EXCEPTION SHAPE THE MEMBERS ALREADY DID, and the fact entry gained `never run` as a fourth token to hold it there. The two constraints below both held: `extracted from this README`, `executed` and the member-README path pattern still meet in ONE section, and each member's `executed` AND `never run` are untouched.",
+            "TWO CONSTRAINTS THAT REDDEN MID-SPRINT IF THE REWRITE IGNORES THEM: one arm requires `extracted from this README`, `executed` and a member-README path pattern together in one section; and each member's facts require `executed` AND `never run` together, its comment naming the second load-bearing because `these are executed` is the sentence that was false once already. Under the widening the ROOT document now owes that same exception shape.",
+            "THE CHEAP FORM FOR THE MEASURED COMMENT IS NAMED SO IT IS NOT RE-LITIGATED: delete the enumeration, keep the asymmetry sentence, point it at the table. Restating it in new words rebuilds the second spelling the file objects to a few hundred lines below.",
+            "WHY IT IS ONE COMMIT WITH THE GUARD: when fix A's comment describes the state fix B creates, A and B are one commit. Shipping the sweep while the skill still says nothing sweeps would be this item's own class, produced by its fix.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THE PRODUCT OWNER NARROWED BOTH NEW CONSUMERS BEFORE EITHER WAS BUILT, AND OPENED THEIR OWN PRESSURE VALVE UP FRONT RATHER THAN AFTER THE SPRINT RAN LONG. The valve is the WIDTH OF AN ASSERTION and never an exemption, and under the narrowing no tag skips: the layout account's `holds` keeps one direction (the converse it says it drops is enforced anyway, by the mutation arm rather than by the row -- see the subtask note), the snippet account checks that each import specifier RESOLVES and does not compile the block, and `expect=error` semantics are out of this sprint entirely. The deciding evidence is in this dashboard: PBI-60 records an arm asserting `not.toContain(TS2307)` RECEIVING TS2307 beside the TS2322 it wanted, so a green that depends on `fails with code X and not TS2307` reddens for environmental reasons in this tree.",
+        "THE PRODUCT OWNER SETTLED THE SUBJECT ON THE CRITERION'S OWN WORD -- `command block` -- AND THEN OVERTURNED THEMSELVES WHEN THE DEVELOPER SHOWED IT COLLIDED WITH TWO OF THEIR OWN RULINGS. Recorded because the reversal is the decision: a tag-exempt list cannot coexist with an arm requiring a ```text command block to be refused, and the exemption is what their own veto forbids. The widening is what is left once the word is read honestly.",
+        "THE DEVELOPER'S FIRST DESIGN -- an account as reader-visible prose adjacent to the block -- WAS REFUSED AND THE DEVELOPER AGREED AFTER VERIFYING THE DECIDING FACT BY READING RATHER THAN RECOLLECTION. Kept here because the refused shape is the one a later executor will re-propose: it is satisfied by an author's intention, which is the defect the item names.",
+        "WHAT SURVIVED FROM BOTH PLANS INDEPENDENTLY, which is why it is not argued below: the class is tracked READMEs read from git and not the member enumerations. Two routes reached it for the same reason.",
+      ],
+    },
     {
       number: 59,
       pbi_id: "PBI-67",
@@ -1067,173 +1258,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 60,
-    pbi_id: "PBI-64",
-    goal: "A reader of this repository's promise about its own documentation finds it true of every fenced block in every tracked README -- because a block nothing consumes is refused by name, and a block that is read rather than run says which part of itself the reading can fail on.",
-    status: "in_progress",
-    subtasks: [
-      {
-        test: "None -- structural. Pinned by the existing arms in test/readme.test.ts staying green (the marker-deleted probes, the count throws, the moved-marker throw) and by the whole Definition of Done. Born-green, no behaviour claim.",
-        implementation:
-          "ONE FENCE READER, and the markers select from it. `fencedBlocks(markdown)` in test/helpers/readme.ts returns each block's OPENING-FENCE OFFSET, info string, body and line; `markedBlocks(markdown, marker)` is the blocks whose opening fence the marker immediately precedes -- the adjacency the three current regexes already require, kept rather than loosened. The three extractors are rebuilt on it; their count guards and QUICKSTART_STEPS are untouched.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "599407e",
-            message:
-              "refactor(readme): one fence reader, so `reached` and `extracted` cannot drift",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "IT IS FIRST BECAUSE IT IS WHAT SATISFIES `NO SECOND PARSER`, not because it is tidy. The guard joins `the document's blocks` to `the blocks something consumes` on the opening-fence offset, so after this there is ONE matcher and the guard's notion of reached cannot drift from the extraction's. A second expression standing beside the call is not the call, applied to matching.",
-          "THE READER READS FENCES AND INFO STRINGS, NEVER BODIES. Three-or-more backticks OR TILDES at up to three spaces of indent, closing on the same character at at least the same run length -- tildes included because a reader that misses `~~~sh` fails toward PERMITTING, the one direction this item cannot accept. WHAT IT CANNOT SEE, named rather than fixed: a four-space indented code block, which has no fence and no info string. Deciding `is this text a command` by reading the body is a matcher for a defect that is a property of matching, and this repository refuses that shape by name.",
-          "THE SECOND MATCHER WAS ALREADY IN THE FILE AND THE FIRST DRAFT OF THIS SUBTASK SHIPPED WITH IT, WHICH IS THIS RECORD'S OWN SAME-SPRINT SUBCASE CAUGHT BEFORE THE COMMIT RATHER THAN AFTER: `visibleProse` cut blocks with its own three-backtick expression while `fencedBlocks`'s docstring, twenty lines below, said it was the only matcher in the file. It is not a tidiness point -- three backticks see nothing tilde-fenced, so a directory named ONLY inside a `~~~` block satisfied `the prose a reader sees names it` in BOTH extractors that ask, which is the permitting direction this item refuses. Repaired in the same commit by cutting on the block's own offsets, which is why `FencedBlock` carries an `end`.",
-        ],
-      },
-      {
-        test: "test/readme-coverage.test.ts. Every arm stages a throwaway with stageCheckout() -- ThrowawayPath-branded, tracked files, borrowed node_modules -- plus `git init -q` and an add, plants INTO THE STAGE, and calls the guard with that root. NOTHING HERE EVER EDITS A TRACKED README: a test mutating a version-controlled file in order to fire is this record's own measured failure, and readReadme()'s hardcoded path is exactly how this sprint would fall into it.",
-        implementation:
-          "THE DEGENERATE FIRST, READ BEFORE ANY ARM IS BELIEVED. Ship the guard returning the empty list and take the reading: the planted arms must redden and the unplanted ones stay green, recorded with the numbers rather than argued. AND THE SECOND DEGENERATE, because no arm above catches over-refusal: refuse-everything must redden the unplanted-tree arm.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE TWO DEGENERATE READINGS, TAKEN BEFORE ANY ARM WAS BELIEVED AND RECORDED AS NUMBERS RATHER THAN ARGUED. (1a) THE SWEEP REPORTS NOTHING, counts real -- 3 pass / 5 fail over 8 arms. RED: both planted-block arms, the unpaired-document arm, the well-formed-marker arm, and the untracked/tracked pair. GREEN: the unplanted-tree arm, the not-a-checkout arm, AND `every fenced block in every tracked README of this checkout is reached or accounted for` -- which is the arm the shipped sweep is red on, so the degenerate bought its green by reporting nothing. (1b) THE SWEEP ALSO OPENS NOTHING -- documentsRead and blocksRead zeroed as well -- 0 pass / 8 fail: the presence pairs fire, which is what they are for and what 1a alone cannot show. (2) THE SWEEP REFUSES EVERY BLOCK -- 5 pass / 3 fail, and the four planted arms are GREEN under it. What catches it is the unplanted-tree arm, exactly as the plan required, and with it the untracked half of the tracked/untracked pair.",
-          "THE UNPLANTED-TREE ARM SHIPS WITH ITS PRESENCE PAIR -- documents read above zero AND blocks read above zero. An empty offender list and a reader that opened nothing are the same observation without it.",
-          "THIS SPRINT'S EVIDENCE IS NOT ONE PLANTED WITNESS. The criterion asked for a staged plant BECAUSE it assumed every block in this tree today is reached or declared, and that premise was MEASURED FALSE while planning: five blocks have zero consumers, so the shipped guard is red at five real sites on this repository before anything is staged.",
-        ],
-      },
-      {
-        test: "A throwaway gains packages/tsudoi-nowhere/README.md and is refused NAMING THAT PATH with no enumeration edited. Three pairs: the same file left UNTRACKED is not swept; the enumeration run against a directory that is not a checkout THROWS rather than returning empty; and -- the arm that matters -- a new README carrying a KNOWN, WELL-FORMED MARKER that no test opens is REFUSED, not cleared.",
-        implementation:
-          "`trackedReadmes(root)` -- `git ls-files -z` filtered to basename README.md, inheriting checkoutPaths's two rules verbatim: a failed enumeration is not an empty one, and NUL separators, because git quotes odd paths and a quoted path matches no file.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE ADJACENT WEAKER READING IS RECORDED BESIDE THE ARM AND NOT AS A REGISTRY ROW, AND THE REFUSAL IS STRUCTURAL RATHER THAN A CHOICE: `reRun` refuses any arm file that imports helpers/perturbation.ts, and every arm over this sweep must import it -- they stage. So the readdirSync weakening is carried where the dashboard header already permits it, as the untracked-file arm's own two assertions: `trackedReadmes` does NOT hold the planted file before `git add`, and DOES the moment after, in one arm over one tree. That pair is also the absence/presence pair the item owes.",
-          "NOT declaredMembers AND NOT handlerMembers. The criterion says TRACKED README; those two answer `which packages`, and a README under examples/ or docs/ is neither. Joining them would give the guard the same blind spot the documents have, which is the guard over `the documents that exist today` the criterion refuses in its own words.",
-          "THE MARKER ARM IS THE ONE THAT ENFORCES `THE GUARD MAY NOT BE ITS OWN CALLER`. A guard that ran the extractors over each tracked README and cleared whatever matched would certify a document nobody opens -- the author's-intention failure with the marker swapped for the guard's own run. THE ADJACENT WEAKER READING, in the perturbation registry: a readdirSync walk for README.md, whose required red is the untracked-file arm.",
-        ],
-      },
-      {
-        test: "Arms built FROM the table, so the guard consumes a pairing that exists for the arms rather than performing one. A tracked README in no pairing is refused, naming the document, before a single block is looked at.",
-        implementation:
-          "`consumers` in test/helpers/readme.ts: the document set expressed as the enumerations the tests already use (the checkout's own README; handlerMembers), the marker, and the form -- `executed` (the block's bytes are run) or `read` with a `subject` projection and its reason.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE ARMS ARE BUILT FROM THE TABLE BY `readAccounts`, WHICH IS ALSO WHAT SPLIT THEM ACROSS TWO FILES -- and the split is read out of a field on the row rather than out of a list. Each `read` row declares what its assertion NEEDS besides the document; test/readme-layout.test.ts takes the rows needing nothing else and test/readme-accounts.test.ts the rest. It is not tidiness: a perturbation stage carries no build outputs and its directory NAME is not this repository's, so the install row (which compares against basename(repoRoot)) and the snippet row (which resolves through dist/) are legitimately red there, and a registry row over their arms would fail at the baseline instead of at its weakening. MEASURED: every arm in test/readme-layout.test.ts passes in that stage.",
-          "WHY AN ACCOUNT IS A CONSUMPTION AND NEVER A DECLARATION, decided on a measurement rather than on principle. `declared and read` is already not `checked`, and this tree has the instance: the install block's three consumers are a negative match that survives any corruption, a contains of the tarball name, and a split taking the LAST TOKEN. So the path is checked and THE VERB IS NOT -- `bun frobnicate ../<checkout>/x.tgz` satisfies all three and leaves every check green. A rule admitting `it is read` wholesale would certify that; a rule demanding `corrupting any byte reddens something` would refuse the very block the item forbids refusing.",
-          "A HUMAN WRITES THE MARKER AND MUST -- every extractor here is marker-keyed and the marker is what routes a block to its consumer. A HUMAN NEVER WRITES THE ACCOUNT. A marker cannot make a block accounted for, because the guard does not read markers to decide.",
-          "REFUSED, EACH WITH ITS REASON: an allow-list of documents, blocks, lines or hashes, which is the approximate detector whose failure mode is a green certifying a class as watched, and which as a hash list is the rubber stamp with one extra step; an exemption written in the document whose only consumer is the guard; and a sixth Definition-of-Done check, since the guard belongs where the extraction already lives.",
-          "THE RESIDUE, NAMED AT THE TABLE AND NOT GIVEN A DETECTOR: nothing notices a pairing entry whose consuming arm was deleted -- the table would go on claiming a consumer. A check deciding whether an arm REALLY consumes is the shape refused above.",
-          "AND THE MITIGATION THIS NOTE SHIPPED WITH WAS FALSE, FOUND AT REVIEW AND REPAIRED IN THE TREE RATHER THAN ONLY HERE: it said `what keeps the claim honest even so is the mutation arm below`, and the mutation arms are DELETED BY THE SAME EDIT as two of the rows they stand over. MEASURED by emptying each consuming file to a placeholder that still registers something, against 934 pass / 0 fail across 65 files: test/readme.test.ts (both `executed` rows) reads 837 pass / 0 fail and test/readme-accounts.test.ts (the snippet and install rows, and their mutation arms) 916 pass / 0 fail -- FOUR OF THE FIVE ROWS, uncaught. The fifth reads 929 pass / 2 fail and is caught INCIDENTALLY: both reds are perturbation records naming its arms by exact `test()` string, and `armReadAccounts` names an arm by ORDINAL, so a marked block added ahead of that one turns the catch into a REFUSED. The size now sits at the table and in the skill; no detector was added, for the reason above.",
-        ],
-      },
-      {
-        test: "THE MUTATION ARM, which is where the teeth are: corrupt the block INSIDE its subject and the consuming predicate must go false; corrupt it OUTSIDE and it must stay true. The account's boundary asserted rather than assumed -- and the unverified verb written down at last.",
-        implementation:
-          "The subject is never inspected as prose. It is the projection the consuming assertion is HANDED, and the assertion receives ONLY its output, so it cannot fail on anything the account does not name -- by construction rather than by inspection. For the install block that projection is test/readme.test.ts's own last-token expression MOVED INTO THE HELPER so that there is one of it. The guard additionally requires the projection to return a non-empty string the block's own bytes include, so a projection cannot be a constant.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "EVERY MEMBER OF THE PROJECTION, ONE AT A TIME, AND NOT THE FIRST -- which is what forced the layout row's subject to exclude the drawing's ROOT line. A subject carrying one load-bearing member and four decorative ones satisfies a reading that corrupts whichever comes first, and `parent/` is decorative by construction: no marker names it and its spelling changes no path below it. It is outside the subject, which is what the OUTSIDE-corruption arm then probes.",
-          "WHAT THE INSIDE ARM DOES NOT SAY, FOUND AT REVIEW AND RECORDED AT THE ARM RATHER THAN REPAIRED: IT IS SATISFIED BY A PROJECTION THAT IS A CONSTANT. `block.body.replace(part, ...)` is a no-op when `part` is not in the body, so a constant subject leaves `holds` false over the UNTOUCHED block, and false is what the arm asks for. MEASURED with the layout row's subject replaced by a constant the block does not contain: 925 pass / 9 fail, and THE INSIDE ARM IS GREEN in that run. What caught it instead is named beside it -- the sweep's own fourth refusal firing four times, the OUTSIDE arm, the `holds` arm, and the registry's three -- so `the account's boundary asserted rather than assumed` holds for the increment and not for that arm alone.",
-          "IT NEEDS THE LAST-TOKEN PREDICATE LIFTED OUT of the expensive pack test into a pure function both the arm and the guard call -- a structural step inside this subtask, taken for the same reason as the fence reader: two spellings of one premise is what the join exists to kill.",
-        ],
-      },
-      {
-        test: "The guard is written first and is RED ON THIS TREE at five sites; each consumer greens named blocks. That ordering IS the increment and not a follow-up.",
-        implementation:
-          "THE INFO STRING DECIDES NOTHING -- every fenced block in a paired document is reached or accounted, the tag recorded for the refusal message alone. Two new consumers pay for it: a SNIPPET consumer compiling every marked `ts` block against the installed framework, and a LAYOUT consumer holding the drawn tree against the directories the quickstart markers name.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE FIVE SITES CONFIRMED BY RUNNING THE SHIPPED SWEEP AND NOT BY THE PLANNING GREP, and they are the five the grep named, each with its line: README.md:95 (a ```text drawing), README.md:267 and README.md:275 (both ```ts), packages/tsudoi-completion-path/README.md:15 and packages/tsudoi-hover-wordnet/README.md:11. The reading beside them is documentsRead=3, blocksRead=14, offenders=5. Each of the five is greened by the consumer it was written for: the layout row takes the first, the ts-snippet row the other four.",
-          "BOTH NEW CONSUMERS SHIP AT THE NARROWEST WIDTH THAT IS STILL A CONSUMPTION, AND THE `expect=error` MECHANISM IS DROPPED FROM THIS SPRINT -- the product owner's own pressure valve, opened up front rather than after the sprint ran long, and it is the WIDTH OF AN ASSERTION and never an exemption: no tag skips, the info string still decides nothing, and every fenced block in a paired document is still reached or accounted for. LAYOUT: subject is the drawn directory lines, assertion is that every directory a quickstart marker names is drawn -- ONE DIRECTION IN `holds`, and see the note below for what the mutation arm enforces on top of it. SNIPPET: subject is the import specifiers, assertion is that each resolves; THE BLOCKS ARE NOT COMPILED. WHY, and it is not speed: a consumer whose green depends on `fails with code X and not TS2307` reddens for environmental reasons in this tree, and PBI-60 already records the instance -- an arm asserting not.toContain(TS2307) RECEIVED TS2307 beside the TS2322 it wanted. A compilation harness with expect=error semantics is its own item.",
-          "WHAT THE NARROWED SUBJECTS THEREFORE CANNOT SEE, NAMED RATHER THAN HIDDEN, because this is the account rule working as designed: a ```ts block whose imports all resolve and whose BODY is wrong is accounted for and unchecked. AND A SECOND ONE, which is where a later reader will reach for an exemption: a marked ```ts block carrying NO import at all cannot be accounted for by the snippet row -- its projection would be empty and the sweep refuses that. The move is to give the snippet the import it was already implying, which is what README.md's mock block got: it now names the type it fails to satisfy, which the prose beside it (`an object literal carrying the four obvious members satisfies nothing`) had left unstated.",
-          "WHY THE EXEMPT TAG LIST DIED, AND THE PRODUCT OWNER OVERTURNED THEIR OWN SETTLEMENT TO SAY IT. `command block` names a class NOTHING IN THIS TREE CAN COMPUTE: the info string is refuted by the quickstart's `write=tsudoi.config.ts` step, which is a ```ts block and IS reached, and a matcher over block content is a matcher for a defect that is a property of matching. An exempt list makes the defect reintroducible by typing three characters -- green, witness red, defect reachable, which is the one outcome refused with every check green. The widening SATISFIES the criterion by refusing a superset; no acceptance criterion is loosened.",
-          "MEASURED WHILE PLANNING, and it is what sets this sprint's size: grep finds NO consumer of the root layout block, of either root `ts` block, or of each member's `ts` config -- and it could not be otherwise, because visibleProse strips fenced blocks before any ReadmeFact sees them, so no prose assertion can reach a block's bytes.",
-          "IF `expect=error` EVER SHIPS, A BLOCK DECLARED TO FAIL NAMES ITS DIAGNOSTIC CODE, and must fail with THAT code and not with TS2307. This tree's ambient failure is unresolved specifiers -- another item's whole subject -- so without the code, `the broken mock fails as promised` is satisfied by a checkout where the framework did not build: two states, one red. The code is the subject clause; `must fail` alone is a stamp. THE MECHANISM DID NOT SHIP -- this stands as the foreclosure record for the design that was dropped, so the next executor reaching for it meets the condition rather than rediscovering it.",
-          "THE LAYOUT CONSUMER IS NOT A SECOND MECHANISM. test/helpers/readme.ts twice requires a directory to be stated twice and be the same string; this is that idiom a third time, over the drawing instead of the sentence, and it catches a README picturing one layout while staging another -- which nothing today would see.",
-          "THE PRESSURE VALVE WAS OPENED, AND UP FRONT RATHER THAN AFTER THE SPRINT RAN LONG -- so this is what happened and not what might. The layout consumer ships with `holds` NARROWED to one direction: every marker directory appears in the drawn tree. It is the width of an assertion and never an exemption. A tag may not start skipping. Vetoes get traded under schedule pressure, so the trade is priced in advance.",
-          "AND `THE CONVERSE IS DROPPED` WAS FALSE OF THE SHIPPED INCREMENT, WHICH IS THIS RECORD'S OWN SUBJECT-ERROR CLASS ABOUT AN INCREMENT RATHER THAN A NUMBER: the narrowing is real of `holds` and of nothing else, because `armReadAccounts` requires EVERY member of a projection to be load-bearing. So the layout DOES enforce the converse over its subject -- every INDENTED `foo/` line must be a directory a quickstart marker names or a proper ANCESTOR of one -- and the un-indented root line is the single exception, made one by the subject regex demanding leading whitespace and not by any decision about drawings. MEASURED with two decorative indented lines added to the drawing: 25 pass / 3 fail over test/readme-layout.test.ts and test/perturbations.test.ts -- the INSIDE arm, the registry row over it reading DISARMED, and their shared baseline. The repair is at the row, where the next drawing gets edited.",
-          "THE RULING SHIPPED ARMED AT ONE TAG, WHICH IS THIS ITEM'S OWN DEFECT CLASS PRODUCED BY ITS OWN FIX. `THE INFO STRING DECIDES NOTHING` was written in the table's docstring, in this record and in the skill, and both planted arms planted ```sh -- while `text` and `ts` are the tags of the five real blocks the sweep was written against. MEASURED at review, with `if (block.info === \"text\" || block.info === \"ts\") { continue; }` in the sweep's UNREACHED branch alone: 934 pass / 0 fail across 65 files and every check exit 0, the unweakened reading. With the plant driven from `fenceForms` -- sh, ts, text, a tilde fence and no info string at all, each entry carrying why it is there -- the same weakening reads 932 pass / 2 fail, the two planted arms alone. NO REGISTRY ROW CAN CARRY IT: `reRun` refuses any arm file importing helpers/perturbation.ts, and every arm over this sweep stages, so the weakening is recorded beside the arms as the untracked-file arm's already is.",
-        ],
-      },
-      {
-        test: "None new -- the subject of each sentence is the guard this sprint ships. Byte-identity at the base recorded before the first edit; offered as READINGS, not as MEASURED.",
-        implementation:
-          "The four sentences this increment makes false, repaired IN THE COMMIT THAT SHIPS THE GUARD: the skill's `nothing sweeps for what it missed`; README.md's `every block in this file is extracted and executed`, which the widening falsifies in a NEW way by giving the document blocks that are read but not run; test/readme.test.ts's MEASURED coverage claim, DERIVED FROM THE TABLE or deleted; and CLAUDE.md, local only.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "57529b6",
-            message:
-              "feat(readme): refuse a fenced block nothing consumes, over READMEs as a class",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "BYTE-IDENTITY AT THE BASE, RECORDED BEFORE THE FIRST EDIT AND OFFERED AS A READING RATHER THAN AS MEASURED. Base 0f0382d, blob hashes: README.md e68aef3, .claude/skills/writing-a-comment/SKILL.md 6e7f3ab, test/readme.test.ts 091790c, test/helpers/readme.ts c8c2d13, packages/tsudoi-completion-path/README.md 7d2aab8, packages/tsudoi-hover-wordnet/README.md 2a0b20a. CLAUDE.md is UNTRACKED in this repository -- globally gitignored -- so no such reading exists for it and its repair is local only. None of these is filed as pre-existing-and-therefore-not-ours: every one is inside this sprint's own subject, which the dashboard header says is repaired here even when it predates.",
-          "THE ROOT DOCUMENT NOW OWES THE EXCEPTION SHAPE THE MEMBERS ALREADY DID, and the fact entry gained `never run` as a fourth token to hold it there. The two constraints below both held: `extracted from this README`, `executed` and the member-README path pattern still meet in ONE section, and each member's `executed` AND `never run` are untouched.",
-          "TWO CONSTRAINTS THAT REDDEN MID-SPRINT IF THE REWRITE IGNORES THEM: one arm requires `extracted from this README`, `executed` and a member-README path pattern together in one section; and each member's facts require `executed` AND `never run` together, its comment naming the second load-bearing because `these are executed` is the sentence that was false once already. Under the widening the ROOT document now owes that same exception shape.",
-          "THE CHEAP FORM FOR THE MEASURED COMMENT IS NAMED SO IT IS NOT RE-LITIGATED: delete the enumeration, keep the asymmetry sentence, point it at the table. Restating it in new words rebuilds the second spelling the file objects to a few hundred lines below.",
-          "WHY IT IS ONE COMMIT WITH THE GUARD: when fix A's comment describes the state fix B creates, A and B are one commit. Shipping the sweep while the skill still says nothing sweeps would be this item's own class, produced by its fix.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE PRODUCT OWNER NARROWED BOTH NEW CONSUMERS BEFORE EITHER WAS BUILT, AND OPENED THEIR OWN PRESSURE VALVE UP FRONT RATHER THAN AFTER THE SPRINT RAN LONG. The valve is the WIDTH OF AN ASSERTION and never an exemption, and under the narrowing no tag skips: the layout account's `holds` keeps one direction (the converse it says it drops is enforced anyway, by the mutation arm rather than by the row -- see the subtask note), the snippet account checks that each import specifier RESOLVES and does not compile the block, and `expect=error` semantics are out of this sprint entirely. The deciding evidence is in this dashboard: PBI-60 records an arm asserting `not.toContain(TS2307)` RECEIVING TS2307 beside the TS2322 it wanted, so a green that depends on `fails with code X and not TS2307` reddens for environmental reasons in this tree.",
-      "THE PRODUCT OWNER SETTLED THE SUBJECT ON THE CRITERION'S OWN WORD -- `command block` -- AND THEN OVERTURNED THEMSELVES WHEN THE DEVELOPER SHOWED IT COLLIDED WITH TWO OF THEIR OWN RULINGS. Recorded because the reversal is the decision: a tag-exempt list cannot coexist with an arm requiring a ```text command block to be refused, and the exemption is what their own veto forbids. The widening is what is left once the word is read honestly.",
-      "THE DEVELOPER'S FIRST DESIGN -- an account as reader-visible prose adjacent to the block -- WAS REFUSED AND THE DEVELOPER AGREED AFTER VERIFYING THE DECIDING FACT BY READING RATHER THAN RECOLLECTION. Kept here because the refused shape is the one a later executor will re-propose: it is satisfied by an author's intention, which is the defect the item names.",
-      "WHAT SURVIVED FROM BOTH PLANS INDEPENDENTLY, which is why it is not argued below: the class is tracked READMEs read from git and not the member enumerations. Two routes reached it for the same reason.",
-    ],
-  },
+  sprint: null,
   retrospectives: [],
 };
 
