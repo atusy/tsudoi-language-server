@@ -59,6 +59,30 @@
 // REPAIR. IT NAMES THE ITEM IT IS FILED INTO, OR IT IS NOT FILED. AND
 // PREDATING IS NOT ITSELF A LICENCE: a finding inside the sprint's own
 // subject is repaired here even when it predates.
+//
+// AND A PERTURBATION RECORDED ONLY AS PROSE IS NOT RECORDED. It stands
+// beside the bar above and qualifies it the same way: a note reporting
+// what reddened is a reading OF THE MOMENT IT WAS TAKEN and nothing
+// more, so a perturbation whose result is going to be relied on later is
+// written as a record THE SUITE RE-RUNS -- a weakening, a named arm and
+// a required red -- or, when the weakening is a reading of something the
+// arm already holds, as an assertion beside that arm. Prose may then say
+// why; it may not be the whole of it.
+//
+// THE MEASURED FAILURE MODE IS NOT `NO PERTURBATION WAS RUN`: these
+// records are full of them. It is that each was run ONCE and written up,
+// in a file whose own header says a decision may be compacted only into
+// a home that OUTLIVES A CONTEXT WINDOW -- and a note is not such a
+// home. The compensator that was supposed to reach is the standing
+// re-run, which carries its own measurement that nearly every earlier
+// perturbation aimed at something that no longer existed.
+//
+// WHAT NOTHING CHECKS, SAID HERE SO THE BAR IS NOT MISREAD AS A GREEN: no
+// check decides whether an arm HAS a record. That detector is refused by
+// name -- its failure mode is a green certifying a class as watched --
+// so the registry's silence about unrecorded arms is honest, and this bar
+// binds the AUTHOR rather than the run. `The adjacent weaker reading` is
+// a judgement nothing verifies either.
 // ============================================================
 
 const userStoryRoles = [
@@ -1027,10 +1051,12 @@ const scrum: ScrumDashboard = {
         implementation:
           "A perturbation recorded ONLY AS PROSE IS NOT RECORDED, filed in this dashboard's header beside the filing bar and the review round's standing instruction.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
           "WITHOUT THIS HALF THE SPRINT IS THE FIFTH RESTATEMENT WITH AN EXIT CODE, and the PO will not accept it as this item's work. The alternate spelling here is PROSE IN A SPRINT NOTE, and this header is the established home for exactly that shape -- it is there because skill delivery is what fails under load.",
+          "THE RULING AS FILED CARRIES A SECOND ARM THE PLAN DID NOT NAME, and it is subtask 1's sort arriving in the ruling itself: a record the suite re-runs is a weakening, a named arm and a required red WHEN the weakening needs a source edit, and an ASSERTION BESIDE THE ARM when it is a reading of something the arm already holds. Without that clause the bar reads as `every perturbation becomes a registry row`, which would have this sprint's own nine arms staging trees and spawning runs to re-derive lines already written down.",
+          "AND IT SAYS WHAT NOTHING CHECKS, IN THE SAME BREATH, because a bar stated alone is read as a green: no check decides whether an arm HAS a record, that detector is refused by name, and `the adjacent weaker reading` is a judgement nothing verifies. The registry's silence is honest and the bar binds the author.",
           "THE MEASURED FAILURE MODE IS NOT `NO PERTURBATION WAS RUN`: these records are full of perturbations. It is that each was run ONCE and recorded as PROSE, in a dashboard whose own header says a decision may only be compacted into a home that OUTLIVES A CONTEXT WINDOW -- and a note is not such a home. The manual compensator is known not to reach: the standing re-run carries its own measurement that nearly every earlier perturbation aimed at something that no longer existed.",
         ],
       },
