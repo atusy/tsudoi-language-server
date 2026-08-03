@@ -173,6 +173,32 @@ const scrum: ScrumDashboard = {
     },
 
     {
+      id: "PBI-76",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "know that a handler I packed was graded against the framework as it is now, and not against whatever was last built",
+        benefit:
+          "the artifact a stranger installs is checked against the framework's current shape rather than a stale copy of it",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A handler's build does not silently grade against a framework artifact that disagrees with the framework's source -- either the route that can produce that state is closed, or the state is named the day it arises.",
+          verification:
+            "THE FIRST SUBTASK TAKES THE READING AND THIS ITEM PREDICTS NO OUTCOME, because the sprint that filed it had just spent a defect on an unlabelled prediction. Stage a checkout, build everything, then change the framework's src/ WITHOUT rebuilding its dist/, then build a handler. Read what the handler's build does and what it emits. PAIR IT with the same edit and a rebuilt framework, so a green is not read for want of a subject.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "WHAT IS ALREADY MEASURED, so the first subtask starts from it rather than from zero: with an exported type RENAMED in the framework's src/ alone, a handler built against the stale dist/ EXITS 0 while the same build against src/ EXITS 2 with TS2305. So the stale artifact is the grade that HIDES a disagreement. THE UNTAKEN CELL IS THE STRUCTURAL ONE -- a type CHANGED with its name kept -- which is where a stale artifact could grade a handler against a shape the framework no longer has, and emit.",
+        "WHY THE PRELOAD DOES NOT RETIRE THIS, AND IT IS THE TRAP THIS ITEM EXISTS FOR: `bun pm pack` IS NOT `bun test`. The preload rebuilds every package before any test loads, but a handler's own `prepack` is `rm -rf dist && tsc -p tsconfig.build.json` -- it freshens ITS OWN artifact and NEVER the framework's. So nothing on the pack route rebuilds the framework, and a maintainer who edits framework src/ and then packs a handler grades against a stale framework artifact and ships the result.",
+        "THIS IS THE OPPOSITE MECHANISM FROM THE ITEM IT CAME OUT OF AND MUST NOT BE FOLDED BACK INTO IT. PBI-75 was about the artifact being ABSENT and source answering, which was measured harmless; this is the artifact ANSWERING WHILE WRONG, through the `types` arm, with the source arm playing no part at all.",
+        "FORECLOSED BEFORE IT IS PROPOSED, because it is the obvious first move and it was refused with measurement in sprint 62: a `prepack` precondition in either shape -- refusing the handler build while the framework's artifact is absent, or having prepack build the framework first. The first selects the grade that hides disagreement; the second puts a cross-package build into a manifest that travels to a registry.",
+      ],
+    },
+
+    {
       id: "PBI-71",
       story: {
         role: "tsudoi maintainer",
@@ -1344,7 +1370,83 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 62,
+    pbi_id: "PBI-75",
+    goal: "The pack route stops carrying a harm nobody measured -- the item's premise is tested and retired, the three sentences in the tree that carry its implicature are superseded, and the ONE structural fact the retirement rests on gets something that reddens the day it stops holding.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "None -- the deciding READING, taken before the sprint was planned because the design waited on it. Method recorded so the instrument can be judged before the number: a `git clone --no-hardlinks` at base c1979a4 into a scratch directory, `node_modules` COPIED rather than symlinked and ALL THREE @atusy entries verified to realpath INSIDE the stage first, since a symlinked borrow was measured last sprint to read the real checkout and measure nothing. The real checkout's dist/ was never touched. Whole emitted trees compared, not only declarations.",
+        implementation:
+          "Build each handler with the framework's dist/ PRESENT; move that dist/ aside with a literal `mv`; rebuild; `diff -r`. Restore and verify.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE RESULT: BYTE-FOR-BYTE IDENTICAL, BOTH HANDLERS, EVERY EMITTED FILE. hover-wordnet 4 files against 4, completion-path 6 against 6, `diff -r` clean both times, concatenated declaration hashes equal in both directions, both builds exit 0 with zero bytes of output in the source-answered state.",
+          'AND THE MECHANISM IS THE FINDING RATHER THAN THE NUMBER, which is what makes the result survive this base. A handler\'s emitted declarations name the framework BY SPECIFIER and not by structure -- `import type { MethodHandler } from "@atusy/tsudoi-language-server/types"` travels into the artifact verbatim -- so WHICH FILE ANSWERED CANNOT APPEAR IN THE EMITTED DECLARATIONS AT ALL while both files declare the same names. The byte-identity is what that indirection forces.',
+          "A PROBE WAS RUN, FOUND TO HAVE NO SUBJECT, AND DISCARDED -- reported because discarding it silently is this record's own catalogued failure. The first stale probe added an OPTIONAL member to a framework type and read `identical`; a handler that does not use the member emits nothing about it, so the reading was not evidence and is not counted.",
+          "THE CELL WITH A SUBJECT, and it inverts the item's premise. With an exported type RENAMED in the framework's src/ alone, so the two files genuinely disagree: built against the stale dist/ the handler EXITS 0; built against src/ it EXITS 2 with TS2305 naming the missing member. SO THE DIVERGENCE IS A BUILD FAILURE AND NOT A SILENTLY WRONG ARTIFACT.",
+          "WHAT THE EVIDENCE SUPPORTS IS CURRENCY AND NOT STRICTNESS, and the wider claim was caught in this record's own headline where it is hardest to see. `src/ is the stricter grade` is true of the cell taken and too wide: a rename makes src/ stricter because src/ is NEWER, and the reverse edit -- a signature the handler violates under the stale artifact and satisfies under current source -- would make the artifact stricter. Source-grading grades against the framework AS IT IS NOW; artifact-grading grades against whatever was last built. Currency carries every conclusion here and survives the untaken cell.",
+          "FOUR THINGS THIS INSTRUMENT CANNOT SEPARATE, owed by the MEASURED label. (1) IN-SYNC ONLY -- it compares two spellings of the same content. (2) WHAT WAS EMITTED AGAINST WHAT WAS CHECKED: `skipLibCheck: true` is declared in each handler's build config, so a build reading the framework's dist/*.d.ts SKIPS CHECKING IT while a build falling through to src/*.ts reads ordinary TypeScript, which skipLibCheck does not skip. The two builds did DIFFERENT AMOUNTS OF CHECKING and still emitted identical bytes; the asymmetry runs in the safe direction, but `the outputs agree` is not `the two builds are the same build`. (3) One compiler, one session, one machine, one base -- it cannot separate `identical because this emit is deterministic here` from `identical for a reason that survives a compiler upgrade`. (4) THE STRUCTURAL CELL IS UNTAKEN -- a type CHANGED with its name kept -- named so its absence is not read as coverage.",
+        ],
+      },
+      {
+        test: "The arm's subject is the ONE STRUCTURAL FACT the retirement rests on: a handler's emitted declaration still refers to the framework BY SPECIFIER. It reads an artifact the preload already built -- NO SECOND BUILD. IT SHIPS WITH ITS PRESENCE PAIR, because `no framework reference found` and `the file was never opened` are the same observation otherwise, and the degenerate that greens on an empty or unread artifact is measured RED before the arm is believed.",
+        implementation:
+          "Read each handler's emitted declarations and require the framework's published specifier to appear in them, paired with a count of what was actually opened.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TWO CHEAPER-LOOKING SUBJECTS ARE REFUSED, EACH FOR ITS OWN REASON. An arm comparing the two builds' OUTPUTS pays a second build per run to re-derive what the preload already forces. An arm asserting that src/ and dist/ AGREE is structurally green under that same preload and can only redden when the build already failed loudly. Both are the check whose cost re-derives a guarantee, which this project refuses.",
+          "WHAT REDDENS IT IS NAMED SO THE ARM IS NOT READ AS WIDER THAN IT IS: declaration bundling, or any post-build transform that inlines the framework's types into a handler's declarations rather than leaving the import. The day that lands, every conclusion in this record stops holding and nothing else would say so.",
+          "IF THE ARM CANNOT BE HAD AT THIS COST, a firing condition is the fallback and it must NAME OBSERVATIONS rather than intentions: the framework's prepack ceasing to rebuild from src/, a route that packs or publishes a handler without prepareWorkspace having run, and the inlining above.",
+        ],
+      },
+      {
+        test: "None -- three supersessions IN PLACE, not amendments. The facts stay true; the IMPLICATURE each carries is measured wrong.",
+        implementation:
+          "scripts/workspaces.ts says at three sites that a handler built in the source-answered state has its declarations `graded against a file no consumer receives`. Every one of those sentences remains TRUE and every one now implies a harm that was measured not to exist. Superseded with the reading and its bound.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SUPERSEDE RATHER THAN AMEND IS THE RULE THIS PROJECT LANDED LAST SPRINT, AND THIS IS THE SPRINT THAT WOULD OTHERWISE BREAK IT. A paragraph keeping its sentence and appending a correction leaves the pointer behind, which is the dangling-reference shape -- produced, if it happened here, by the increment that ruled on it. One of the three sites already carries `an open question filed in the dashboard as the pack route's own item and deliberately not answered here`; that question is answered now and the sentence goes with the answer.",
+        ],
+      },
+      {
+        test: "None -- foreclosures landing where a `prepack` reason has to live, which is each handler's own package-shape test, since package.json cannot carry comments.",
+        implementation:
+          "Both shapes of the prepack precondition are refused BY NAME with their reasons, and the residual is landed at the publish sentinel's arm.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "SHAPE ONE -- REFUSE THE HANDLER BUILD WHILE THE FRAMEWORK'S ARTIFACT IS ABSENT -- IS REFUSED WITH A POSITIVE MEASUREMENT AND NOT MERELY FOR WANT OF A SHOWN COST. It would force the build onto the artifact and away from the source, and the measured cell says the artifact is the grade that HIDES a disagreement the source raises as TS2305. A precondition that makes the product measurably worse is the strongest refusal this backlog recognises.",
+          "SHAPE TWO -- prepack BUILDS THE FRAMEWORK FIRST -- IS REFUSED ON A GROUND INDEPENDENT OF ANY OTHER ITEM, which is what keeps it refused when that item's record changes: a handler's package.json TRAVELS TO A REGISTRY WITH ITS SCRIPTS, so this would put a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in this workspace. A stranger packing an installed copy would have prepack try to build a package that is not there. That is the knowingly-false optional peer's class one step worse -- it FAILS rather than merely misleads. It would also encode this workspace's build order in a member's published manifest where buildOrder already derives it.",
+          "THE RESIDUAL THE MEASUREMENT CANNOT REACH, LANDED AT THE ARM RATHER THAN ONLY HERE. A consumer receives the framework's dist/, so a handler graded against src/ ships declarations validated against something the consumer does not have -- which bites only if the framework's OWN published dist/ disagreed with its src/ at publish time, i.e. a publish that skipped prepack. THE PRECONDITION IS THE FRAMEWORK'S `private` COMING OFF, and that edit already reddens an arm, so the question goes to the reader who reddens it: they are about to publish and are exactly the reader who must answer it. OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND LABELLED AS ONE, NOT AS MEASURED: since the specifier survives into the artifact, the consumer re-resolves it against the framework they installed, so a disagreement surfaces in THEIR compile as a named error -- the residual degrades WHO meets the error, not whether anyone does.",
+        ],
+      },
+      {
+        test: "None -- the close.",
+        implementation:
+          "PBI-75 closes as a recorded decision that RETIRES ITS CRITERION rather than meeting it, and the stale-artifact hazard leaves as its own item carrying the question and no predicted outcome.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "RETIRED AND NOT MET, WHICH IS THE DIFFERENCE A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade against the framework's source -- and the measured cell says that grading is the CURRENT one, which catches a disagreement the artifact hides. A `done` reading as `we delivered the story` would leave the item re-filed.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE DECIDING MEASUREMENT WAS TAKEN BEFORE THE SPRINT WAS PLANNED, deliberately, because the item made its design wait on it and planning ahead of it would have been discarded. It inverted the premise, so the sprint that was filed is not the sprint that would have been filed.",
+      "THE PRODUCT OWNER NARROWED THE FACILITATOR'S OWN CONCLUSION AND THE NARROWING IS KEPT: the evidence supports CURRENCY, not strictness. It is recorded because it is the conclusion-wider-than-its-enumeration class arriving in a ruling's headline, which is the position where this project has measured it hardest to see.",
+    ],
+  },
   retrospectives: [],
 };
 
