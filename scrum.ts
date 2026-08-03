@@ -1060,8 +1060,77 @@ const scrum: ScrumDashboard = {
           "THE BASELINE NOW COVERS EVERY FILE THE REGISTRY NAMES rather than one spelled in the test's own name: a second arm file entering without a baseline would have its records read against no unweakened run at all.",
         ],
       },
+      {
+        test: "Per finding, the weakening it names applied to the SHIPPED source and re-run: the reading that was missing reddens, and the arms the finding is not about stay green.",
+        implementation:
+          "Close the ONE STRUCTURAL GAP review stage 1 named -- every arm exercising the detector drove it against a fixture that ALWAYS carried a source arm, ALWAYS resolved, and was NEVER this repository's own package, so one point of a three-way state space was pinned and every branch outside it was unasserted. Move each axis, plus the one caught degenerate in the ordering pair.",
+        type: "behavioral",
+        status: "completed",
+        commits: [
+          {
+            hash: "7f1a81e",
+            message:
+              "test(own-subpaths): drive the artifact refusal against the repository it is for",
+            phase: "green",
+          },
+          {
+            hash: "8d0e1d6",
+            message: "test(artifact-detector): read a subpath that answers from no file at all",
+            phase: "green",
+          },
+          {
+            hash: "3c5f8b0",
+            message:
+              "test(artifact-detector): separate the declaration existing from the declaration answering",
+            phase: "green",
+          },
+          {
+            hash: "d1118b2",
+            message:
+              "docs(workspaces): the wildcard case the `unasked` pair claimed is the other diagnosis",
+            phase: "refactoring",
+          },
+          {
+            hash: "53bcbc0",
+            message:
+              "test(artifact-detector): read the file that answered, not only the file promised",
+            phase: "green",
+          },
+          {
+            hash: "751f2ba",
+            message:
+              "test(artifact-detector): make the ordering pair read the diagnostic, not a colour",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BASELINE AND CLOSE, BOTH UNPIPED `bun run scripts/definition-of-done.ts`: 889 pass / 0 fail across 60 files, five [PASSED], warnings 1, at 1efc02f -- and 894 pass / 0 fail across 61 files, five [PASSED], warnings 1, at the last commit below. Environment as the sprint's first item recorded it: bun 1.3.13, tsc 7.0.2.",
+          "W1 -- THE DETECTOR COULD BE MADE BLIND TO EVERY PACKAGE THIS REPOSITORY SHIPS. test/own-subpaths.test.ts stages a copy of THIS checkout, edits the framework's own build config to emit no declarations, and reads the refusal for tsudoi's own specifier and the SOURCE file that answered in the artifact's place. DEGENERATE RE-RUN, `publishedSubpaths` skipping any manifest whose name begins with this workspace's scope: 5 pass / 1 fail over test/own-subpaths.test.ts and test/artifact-detector.test.ts -- the new refusal arm ALONE, every synthetic arm green, which is the finding restated as a reading.",
+          "AND W1's STAGE CANNOT BORROW node_modules, MEASURED THE WAY THE ARM ALMOST SHIPPED WRONG: with the perturbation stage's symlink the UNPERTURBED copy REFUSED, naming files inside the real checkout. The staged handlers' own declarations import the framework specifier, that import resolves out of the borrowed directory into the real tree, and the trace this check reads is last-writer-wins per specifier. So the stage relinks this workspace's scope at its own members and borrows the rest -- what `bun install` would have written there.",
+          "W2 -- `NO ANSWER` WAS READ BY NOTHING. Every fixture carried a source arm, so every specifier resolved to something. DEGENERATE RE-RUN with the registry row's `from` honestly updated, `landed !== undefined && (...)`: 4 pass / 1 fail, the new arm ALONE. Its shape is not invented -- a `types` arm and NO source arm is what both handler packages here declare -- and its pair is the same map with the artifact present, which passes.",
+          "W3 -- THE WHOLE COMPILER PROBE COULD BE REPLACED BY `existsSync` AND NOTHING REDDENED, because `the declaration exists` and `it answers` coincided in every staged state. They diverge when the map answers SOURCE FIRST: conditions match in declaration order, so a complete artifact sits on disk while every reader is handed src/thing.ts. DEGENERATE RE-RUN, `subpaths.filter(({ declaration }) => !existsSync(declaration))` as the entire offender rule: 5 pass / 1 fail, the new arm alone. The registry row gained the arm BY NAME and still reads HELD.",
+          "W4 -- THE `unasked` PAIR'S ONE DOCUMENTED REACHABLE CASE IS MEASURABLY FALSE, AND THE PAIR REMAINS UNWITNESSED. Staged, a wildcard subpath whose arms carry the star reports `@staged/producer/* answers from NOTHING` -- the compiler DOES attempt the specifier -- and never `never reached the resolver`. The prose is replaced by that measurement and pinned by an arm. THE VACUITY IS NOT REPAIRED AND IS DISCLOSED AT ITS SITE: `subpaths.filter(() => false)` re-run leaves 9 pass / 0 fail. Under the shipped rule the pair is redundant with the no-answer branch -- a specifier never reached has no answer, so it is already an offender -- and what it buys is which way a reader is sent. Kept, named unwitnessed, rather than deleted for want of a red.",
+          "W5 -- THE MESSAGE PROMISED TWO FILES AND ONLY ONE WAS READ. DEGENERATE RE-RUN, the promised declaration printed in the `answers from` slot: 7 pass / 2 fail -- the module-written arm and W1's own arm, which reads the same property about this repository. The received text is the finding verbatim: `X answers from D, where its `types` arm promises D`.",
+          "W6 -- THE ORDERING PAIR NOW READS THE DIAGNOSTIC. Its positive half asserted an exit code alone, and its mirror looked for `broken` -- MEASURED, a word this compiler prints in NO run: it reports `packages/producer/src/index.ts(1,14): error TS2322` and never the identifier. Both halves now read the member's own file path. DEGENERATE RE-RUN with the refusal moved below the member loop: 6 pass / 1 fail, the ordering arm, failing on the half that could not speak before.",
+          'AND ONE REVIEW CLAIM DID NOT REPRODUCE, RECORDED RATHER THAN QUIETLY ADOPTED. W6 was reported as staying green under the move `even with diagnostics piped`. Re-taken on the arm AS IT STOOD, with the call relocated: 6 pass / 1 fail -- it reddened, on `not.toContain("TS2322")`. What is true and what the repair is for is the rest of the finding: the pair could not tell `the member was reported` from `the member failed silently`, and half of it was vacuous.',
+        ],
+      },
     ],
-    impediments: [],
+    impediments: [
+      {
+        description:
+          "codex could not be run, so this sprint has had ONE review stage. The same configuration error, two sprints running.",
+        impact:
+          "Every finding this sprint acted on came from one reviewer. A second stage is what has historically found the class the first misses, and its absence is a gap in the evidence rather than a claim that none remain -- so the sprint's greens say what one reading of them says and no more.",
+        request:
+          "Repair the codex configuration, or rule that one review stage is the standard for this repository so the expectation stops being restated per sprint.",
+        status: "waiting_human",
+        notes: [
+          "FILED AT THE MOMENT AND NOT AT CLOSE, which is what the product owner required last sprint: recorded as a decision after the fact it reads as a choice this sprint made, and it is neither a choice nor this sprint's to make.",
+          "NO COMPENSATION WAS ATTEMPTED. Inventing findings to stand in for the missing stage would put unmeasured work beside measured work with nothing separating them, which is worse than the gap.",
+        ],
+      },
+    ],
     decisions: [
       "THE CITATION IS LEFT UNASSERTED RATHER THAN PROPAGATED: the facilitator's tasking called this the residue one sprint shipped open and the item's own note names a different one. Neither is asserted here -- it is THE RESIDUE THE MOVE SHIPPED OPEN -- because this record has a case of a number standing unchallenged for thirty sprints, and a wrong one repeated is the failure it punishes.",
       "BRANCH TWO IS AN ACCEPTABLE CLOSE ONLY WITH ALL FOUR: the deletion was TAKEN and not reasoned about; the blocker is NAMED TO A FILE -- which specifier, in which file, read by which reader, failing with what text, in which state -- because `something would break` is not a cost and neither is a count; the blocker is recorded AS A RE-RUN and not as a note, since this dashboard's header says a perturbation recorded only as prose is not recorded; and the residue's prose does not multiply, every surviving copy carrying the POST-move measurement.",
