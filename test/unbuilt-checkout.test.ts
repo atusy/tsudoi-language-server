@@ -166,12 +166,25 @@ function nameOf(dir: string): string {
  * NO `paths` MAPPING AND NO PROJECT REFERENCE. There is none anywhere in this
  * repository, a refusal enforces it for members, and a diagnostic manufactured
  * by either would grade a resolution no stranger performs.
+ *
+ * WHAT THIS CANNOT RUN INSIDE, NAMED RATHER THAN LEFT TO BE DISCOVERED AT THE
+ * WRONG MOMENT: A TREE WITH NO INDEX. It stages from `git ls-files`, so run
+ * inside one of this suite's OWN stages -- which carry the tracked files and no
+ * .git -- it throws about the index rather than reading anything. The state is
+ * reachable only by a perturbation record naming an arm here as its arm, which
+ * no record does; the throw above says what the failure means for this arm so
+ * that whoever first meets it is not sent looking at the compiler. Staging from
+ * a directory walk instead was declined: the index is what makes `every TRACKED
+ * file and nothing built` a definition rather than a filter that has to know
+ * about every output directory and every ignore rule.
  */
 function stageUnbuiltCheckout(): UnbuiltCheckout {
   const root = throwawayOnly(mkdtempSync(join(tmpdir(), "tsudoi-unbuilt-checkout-")));
   const listed = spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" });
   if (listed.status !== 0) {
-    throw new Error(`git ls-files failed in ${repoRoot}, so no stage could be built`);
+    throw new Error(
+      `git ls-files failed in ${repoRoot}, so nothing here could say what a checkout contains -- this arm stages FROM THE INDEX, and a tree with no .git cannot answer it.`,
+    );
   }
   for (const tracked of listed.stdout.split("\0").filter((entry) => entry !== "")) {
     const destination = inStage(root, tracked);
@@ -179,22 +192,60 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
     cpSync(join(repoRoot, tracked), destination);
   }
 
-  const scope = dirname(nameOf(repoRoot));
+  // THE SCOPES ARE READ OFF THE MEMBERS THEMSELVES AND NOT OFF THE ROOT'S NAME,
+  // WHICH IS THE DIFFERENCE BETWEEN A GUARD AND A COINCIDENCE. `dirname` of the
+  // root's name answers `@atusy` here and `.` for an unscoped root -- and with
+  // `.` nothing matches, the workspace's own scope directory is BORROWED BY
+  // SYMLINK like any stranger, and the member link below then lands through it
+  // INSIDE THE REAL CHECKOUT'S node_modules, which is lexically inside the stage
+  // and physically not. An unscoped member is refused outright for the same
+  // reason: there would be no directory to own.
+  //
+  // MEASURED RATHER THAN ARGUED, in a copy: with this set left EMPTY -- which is
+  // exactly what `dirname` of an unscoped root name produces -- the parent
+  // resolution below refuses and NAMES the checkout's own node_modules entry as
+  // outside the stage, the arm reads 0 pass / 1 fail, and nothing is written
+  // anywhere. As it stands the same file is 1 pass / 0 fail.
+  const memberDirs = declaredMembers(root);
+  const scopes = new Set<string>();
+  for (const member of memberDirs) {
+    const name = nameOf(member);
+    if (!name.startsWith("@") || !name.includes("/")) {
+      throw new Error(
+        `${member} declares \`${name}\`, which carries no scope -- this stage tells its own packages from installed strangers by the scope directory, and with none there is nothing to keep the borrow out of.`,
+      );
+    }
+    scopes.add(dirname(name));
+  }
   const nodeModules = inStage(root, "node_modules");
   mkdirSync(nodeModules, { recursive: true });
   for (const entry of readdirSync(join(repoRoot, "node_modules"))) {
-    if (entry === scope) {
+    if (scopes.has(entry)) {
       continue;
     }
     symlinkSync(join(repoRoot, "node_modules", entry), join(nodeModules, entry));
   }
+  for (const scope of scopes) {
+    mkdirSync(inStage(root, join("node_modules", scope)), { recursive: true });
+  }
 
+  const realRoot = realpathSync(root);
   const entries: { name: string; resolved: string }[] = [];
   const outputs: { member: string; path: string }[] = [];
-  for (const member of declaredMembers(root)) {
+  for (const member of memberDirs) {
     const name = nameOf(member);
     const entry = inStage(root, join("node_modules", name));
-    mkdirSync(dirname(entry), { recursive: true });
+    // THE PARENT IS RESOLVED AND NOT ONLY JOINED, which is the one place this
+    // file needs more than the lexical guard: a scope directory that were a
+    // symlink would make this write land in the real checkout while passing
+    // every prefix test. `inStage` cannot ask that -- its targets do not exist
+    // yet -- and here the parent does.
+    const scopeDir = realpathSync(dirname(entry));
+    if (scopeDir !== realRoot && !scopeDir.startsWith(realRoot + sep)) {
+      throw new Error(
+        `${scopeDir} is outside the stage ${realRoot}, so nothing here will link a package into it`,
+      );
+    }
     symlinkSync(member, entry);
     entries.push({ name, resolved: realpathSync(entry) });
     // THE OUTPUT DIRECTORY IS READ FROM THE MEMBER'S OWN BUILD CONFIG and never
