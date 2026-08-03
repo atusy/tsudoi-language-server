@@ -927,7 +927,7 @@ export interface ExecutedForm {
  * negative match that survives any corruption, a `contains` of the tarball name,
  * and a split taking the last token -- so the PATH is checked and THE VERB IS
  * NOT, and `bun frobnicate ../<checkout>/x.tgz` satisfies every one of them. The
- * mutation arm in test/readme-consumers.test.ts is what turns that from a
+ * mutation arm `armReadAccounts` in test/helpers/account-arms.ts is what turns that from a
  * sentence into a red: corrupt the block INSIDE its subject and `holds` must go
  * false, corrupt it OUTSIDE and it must stay true.
  */

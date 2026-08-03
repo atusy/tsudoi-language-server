@@ -136,7 +136,9 @@ bun install ../tsudoi-language-server/tsudoi-completion-path.tgz
 **Which of these the test suite runs**, so you know what the commands above are worth: the
 **pack** command is extracted from this file and executed, and the file it writes is compared
 against the path the install line names. The **install** command is read and never run — the
-suite builds a consumer by a different route — so what is checked is its text.
+suite builds a consumer by a different route — so what is checked is the `../` checkout prefix it
+starts with and the tarball name it ends with, and NOT the command that installs them nor
+anything between: `bun frobnicate` that same path passes every check this repository has.
 
 ## License
 

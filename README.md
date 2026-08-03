@@ -28,8 +28,10 @@ without saying what reads it fails the suite instead of quietly withdrawing the 
 
 **Accounted for is narrower than executed, and the difference is owed to you rather than
 implied.** Two kinds of block here are **never run**: the layout drawing under _Quickstart_,
-whose directories are held against the ones the quickstart's own steps stage, and the TypeScript
-snippets, whose import specifiers are held against what resolves. What is checked in each case is
+whose directories are held against the ones the quickstart's own steps stage, and the two blocks
+marked `snippet` under _Documents_, whose import specifiers are held against what resolves. They
+are named by the marker that routes them and NOT by their language, because a `ts` block here is
+just as likely to be run -- the quickstart step that writes the config is one. What is checked in each case is
 that named part and nothing else -- a snippet whose imports all resolve and whose body is wrong
 is accounted for and unchecked.
 
@@ -62,9 +64,11 @@ project's dashboard declares, in the order declared, and prints each one's own e
 beside the command that produced it -- so a failure cannot be missed by reading the part of the
 output that happened to be on screen, which is how four commits were once taken on a red tree.
 Running one check by hand is debugging; this is verification. It is named here rather than
-shown as a runnable block on purpose: a fenced block here is either run by the suite or accounted
-for by a check over a named part of it, with no third option -- so a block holding this command
-would be run, and running it runs the suite.
+shown as a runnable block on purpose, and the reason is NOT that a block here must be run -- since
+this increment, a block may instead be accounted for over a named part of it, and a block pairing
+this command with one resolvable import would satisfy that without ever being run. The reason is
+that the only consumer this document has which would EXECUTE a command block is the quickstart's
+runner, and handing it this command runs the suite inside the suite.
 
 A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
 and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through

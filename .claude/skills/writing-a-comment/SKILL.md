@@ -101,11 +101,17 @@ characters.
 
 **What the sweep still cannot decide is whether a consumer really consumes.** A
 row saying `read` names a SUBJECT — the projection its assertion is handed — and
-everything the subject leaves out is unchecked BY DECLARATION. So when you add a
-block: add its marker, add the row, and if what reads it reads only part of it,
-that part is the subject and the rest is a residue you write down. A row whose
-consuming arm was deleted is the one thing nothing notices; the mutation arms
-(corrupt inside the subject, corrupt outside it) are what keep the rest honest.
+everything the subject leaves out is unchecked BY DECLARATION. _(sprint 60)_
+MEASURED on the block this rule was written from: the install line's three
+consumers check a `../<checkout>/` prefix and a `<member>.tgz` suffix, so
+`bun frobnicate ../<checkout>/x.tgz` satisfies every one of them and leaves every
+check green -- the path is the subject and THE VERB IS THE RESIDUE. So when you
+add a block: add its marker, add the row, and if what reads it reads only part of
+it, that part is the subject and the rest is a residue you write down -- IN THE
+DOCUMENT THE READER MEETS, not only in the helper, which is the half this sprint
+shipped wrong and had to repair. A row whose consuming arm was deleted is a
+residue nothing notices; the mutation arms (corrupt inside the subject, corrupt
+outside it) are what keep the rest honest.
 
 ## Commit boundaries a comment decides
 

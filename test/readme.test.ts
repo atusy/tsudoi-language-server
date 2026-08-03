@@ -773,8 +773,18 @@ const memberFacts: ReadmeFact[] = [
     // was false once already, and it goes false again the moment a command is
     // added outside the extraction. The document owes the exception, not the
     // rule.
+    // THE THIRD TOKEN NAMES THE RESIDUE, AND IT IS HERE BECAUSE THE SPRINT THAT
+    // BUILT THE SUBJECT RULE SHIPPED THIS DOCUMENT VIOLATING IT. The rule says
+    // everything a subject leaves out is unchecked BY DECLARATION, declared
+    // where the reader is; this file's install row names the path as its
+    // subject, and both member documents went on saying `what is checked is its
+    // text` -- which is the whole command. The narrowing was written into two
+    // test helpers and into no document, so the one reader it was owed to could
+    // not have found it. `executed` and `never run` are both satisfied by that
+    // overbroad sentence, which is why neither of them caught it and a third
+    // token is what does.
     name: "which of this package's commands are run and which are only read",
-    tokens: [/executed/i, /never run/i],
+    tokens: [/executed/i, /never run/i, /not the command/i],
   },
   {
     // THE FALSEHOOD THE MANIFEST SHIPS, CORRECTED WHERE ITS READER IS. This is
