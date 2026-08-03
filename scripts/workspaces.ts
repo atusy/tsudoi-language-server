@@ -464,10 +464,20 @@ function build(root: string, dir: string): void {
  * SPECIFIER and never by structure, so WHICH FILE ANSWERED CANNOT APPEAR IN THEM
  * while both files declare the same names.
  * test/handler-declaration-specifier.test.ts is the arm whose SUBJECT that
- * indirection is. NOT `and nothing else in the tree would say so`, which stood
- * here: that is a coverage claim, and this project's rule is that one is
- * measured or not written -- what else moves under an inlining transform was
- * never read.
+ * indirection is.
+ *
+ * `AND NOTHING ELSE IN THE TREE WOULD SAY SO` STOOD HERE AND WAS WITHDRAWN AS AN
+ * UNREAD COVERAGE CLAIM. THE READING WAS THEN TAKEN AND BOTH HALVES ARE FALSE,
+ * which is what replaces the withdrawal rather than standing beside it. OTHERS
+ * DO SAY SO: with the specifier rewritten out of both handlers' declarations by
+ * their own `prepack`, the suite is 933 pass / 5 fail and two of the five read
+ * the EMITTED ARTIFACT independently of that arm. AND THE ARM DOES NOT ALWAYS
+ * SAY SO: the same rewrite moved into `prepareWorkspace` -- this function, which
+ * the `bun test` preload runs -- leaves the suite 938 pass / 0 fail, because a
+ * top-level pack in test/packed-members.test.ts rebuilds both handlers' dist/
+ * before any test body reads one. Both numbers, the base they were taken at, the
+ * spelling of the rewrite and which of the five are disqualified as witnesses
+ * are at that arm, which is the site that owns them.
  *
  * WHAT THAT INSTRUMENT CANNOT SEPARATE, owed by the label and NOT a hedge on the
  * result. IT IS IN-SYNC ONLY: it compares two spellings of the SAME content, so

@@ -40,10 +40,42 @@ applySuiteDeadline();
  * declaration bundling, or any post-build transform that INLINES the framework's
  * types into a handler's declarations rather than leaving the import standing.
  * The day either lands, the conclusion above stops holding, and this is the arm
- * whose SUBJECT that is. NOT `and nothing else would say so`, which is what
- * stood here for a commit: that is a coverage claim, this project's rule is that
- * one is measured or not written, and what else in the tree moves under an
- * inlining transform was not read.
+ * whose SUBJECT that is.
+ *
+ * `AND NOTHING ELSE WOULD SAY SO` STOOD HERE FOR A COMMIT AND WAS WITHDRAWN AS A
+ * COVERAGE CLAIM NOBODY HAD READ. THE READING HAS SINCE BEEN TAKEN AND BOTH ITS
+ * HALVES ARE FALSE, which is stronger than the withdrawal and is why the
+ * withdrawal is not what stands here now. OTHERS DO SAY SO. MEASURED at base
+ * 488787c on bun test v1.3.13, full suite from the repository root, with BOTH
+ * handlers' `prepack` extended to rewrite the specifier out of every emitted
+ * declaration: 933 pass / 5 fail across 67 files, and TWO of the five are
+ * independent readings of the EMITTED ARTIFACT. `no member ships a module naming
+ * a directory-qualified repository file its reader does not have` in
+ * test/packed-members.test.ts finds the relative path in the tarball. `the root
+ * type check resolves the published subpaths through the exports map, to the
+ * built artifact` in test/package-shape.test.ts reddens because
+ * `@atusy/tsudoi-language-server/deps/protocol` is then named by nothing in the
+ * root program and answers with an EMPTY set -- a witness rather than a
+ * diagnosis, since its message sends a reader to the exports map and not to
+ * whatever rewrote a declaration.
+ *
+ * TWO OF THE FIVE ARE DISQUALIFIED AS WITNESSES, AND SAYING SO IS WORTH AS MUCH
+ * AS THE LIST: both `packing this package builds it first, into a cleared
+ * directory` arms fire on the EDITED `scripts.prepack` STRING in a member's
+ * manifest, so they would fire for a perturbation that changed no declaration at
+ * all. The fifth is this arm.
+ *
+ * AND THOSE FIVE BELONG TO THEIR SPELLING, which is this file's own rule below
+ * applied to itself. The rewrite measured put
+ * `"../../tsudoi-language-server/dist/<subpath>.d.ts"` where the specifier had
+ * been: path-shaped, so the tarball reading finds it, AND STILL RESOLVING IN AN
+ * INSTALLED CONSUMER, because `../../` out of a scoped package's dist/ lands on
+ * its scoped sibling and test/helpers/install.ts puts the framework at
+ * node_modules/@atusy/tsudoi-language-server. That is why the two `to their real
+ * types rather than any` arms in test/published-artifacts.test.ts stayed GREEN:
+ * the handler's declarations still reached real types. A spelling whose target
+ * resolved to nothing would redden those as well, for a reason about the probe
+ * rather than about this arm.
  *
  * AND ITS BOUND, WHICH IS WHOLESALE RATHER THAN PER FILE: it asks each handler
  * for ONE emitted declaration naming the framework, so a single file inlined
