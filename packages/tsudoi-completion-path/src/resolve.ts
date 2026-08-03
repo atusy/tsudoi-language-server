@@ -393,6 +393,15 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * array read under this gate is the FASTEST of the three at every size on both
  * runtimes and is refused below on what it holds, not on what it costs.
  *
+ * AND IT TAKES A SEAM WITH IT, WHICH IS NOT A COST AND IS WRITTEN HERE BECAUSE
+ * THIS IS WHERE THE EDIT WOULD BE MADE. `readdir` has no BETWEEN THE OPEN AND THE
+ * FIRST ENTRY, so the second cancellation check below would have nowhere to
+ * stand, and the arm defending it would become TARGET DELIBERATELY REMOVED rather
+ * than a test that started failing -- which reads identically in a green run.
+ * Deleting an arm that defends an accepted criterion is a SCOPE DECISION and is
+ * routed rather than taken in passing, so `it measured faster` is not by itself
+ * enough to make this edit.
+ *
  * WHAT THE SHAPE STILL BUYS, PER RUNTIME AND AFTER THE TRANSIENT-ALLOCATION
  * READING, WHICH IS THE PART THAT DECIDED IT. On bun the process materialises the
  * directory behind the handle anyway, so what the bound buys there is THIS
