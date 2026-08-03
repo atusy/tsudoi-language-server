@@ -117,15 +117,35 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  *
  * MEASURED, AND IT POISONS PROBES: a construction built on a freshly wrong
  * dist/ reads exit 0 against a prediction of 1, and that is caught only when
- * the prediction is written first. Every AUTOMATED route is covered -- this
- * throw stops the suite, `tsc --noEmit` reads THIS package's source rather than
- * its dist/, `bun pm pack` builds in its own stage -- so what stays exposed is
- * HAND-RUN PROBE SEQUENCES: break src, run something, revert, then read dist/.
+ * the prediction is written first. The BUILDING routes are covered -- this
+ * throw stops the suite, `bun pm pack` builds in its own stage -- so what
+ * stays exposed is HAND-RUN PROBE SEQUENCES: break src, run something, revert,
+ * then read dist/.
+ *
+ * THE tsc CLAUSE THAT USED TO STAND IN THAT LIST IS FALSE AND IS SUPERSEDED
+ * HERE, because the refusal below rests on it. It read `tsc --noEmit` reads
+ * THIS package's source RATHER THAN its dist/ -- true while the deleted `paths`
+ * mapping answered every subpath at ./src/*.ts, and false since the move.
+ * MEASURED at sprint 63 on the real tree: root `tsc --noEmit --listFiles` lists
+ * FOUR of this package's dist/*.d.ts -- the four published subpaths -- beside
+ * nine of its src/*.ts, which arrive by relative import from this suite. THE
+ * COMPILER READS THE ARTIFACT. What spares it is `skipLibCheck`, measured both
+ * ways: a SYNTAX error injected into dist/types.d.ts fails the root check with
+ * TS1110, while a TYPE error in the same file leaves it at exit 0.
+ *
+ * SO THE CONCLUSION SURVIVES ON A MECHANISM NOBODY HAD WRITTEN DOWN, which is
+ * a narrower warrant than the sentence it replaces and is stated as such. AND
+ * WHAT THE TWO READINGS LEAVE OPEN IS NAMED RATHER THAN CLAIMED: those four
+ * files are the subpaths the root check RESOLVES there -- test/package-shape.
+ * test.ts asserts that off `--traceResolution` -- so a freshly wrong dist/ that
+ * still parses is what the root check grades this checkout's importers AGAINST.
+ * Whether that can move a red to a green here is unread.
  *
  * REMOVING dist/ BEFORE RETHROWING IS AUTHORISED AND NOT DONE, which turns a
  * silently wrong artifact into a loudly missing one and is this repository's
- * stated preference. NOTHING PREVENTS IT; it is declined here only because the
- * exposure is a manual sequence rather than any route the suite takes, and that
- * sentence is the whole of the reason.
+ * stated preference. NOTHING PREVENTS IT; it is declined here because the
+ * exposure the throw leaves is a manual sequence, and because no automated
+ * route BUILDS on the wrong artifact -- not because none reads it, which the
+ * paragraph above measures it doing.
  */
 prepareWorkspace(repoRoot);
