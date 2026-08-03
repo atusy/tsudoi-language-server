@@ -308,9 +308,11 @@ test("the report names the arm each record weakened, and no other", async () => 
  * arms are named, whoever wants a number counts the lines, and no sentence in
  * this tree asserts that the arms with records are the arms that need them.
  *
- * BOTH SEEDS STAND OVER ARMS ELSEWHERE IN THE SUITE AND NOT OVER THIS FILE'S
+ * THE SEEDS STAND OVER ARMS ELSEWHERE IN THE SUITE AND NOT OVER THIS FILE'S
  * OWN, which is the condition that keeps the instrument's evidence from being
- * self-referential. The arms THIS sprint wrote carry their perturbation as an
+ * self-referential. HOW MANY OF THEM THERE ARE IS NOT WRITTEN HERE: a number in
+ * the prose immediately above the rows it counts is false the day a row lands,
+ * and this is the one place a reader would trust it. The arms THIS sprint wrote carry their perturbation as an
  * assertion instead -- their weakenings are readings of a result the arm already
  * holds, so a record here would be a slower spelling of a line already above.
  *
