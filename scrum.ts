@@ -115,6 +115,33 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-75",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "pack a handler package and know the declarations inside the tarball were graded against the artifact a consumer receives",
+        benefit:
+          "what a stranger installs was checked against what they get, not against a file that is never shipped",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A handler package's build does not grade its declarations against the framework's source when the framework's artifact is absent -- either it cannot run in that state, or the state cannot arise, and whichever it is, something reddens the day that stops being true.",
+          verification:
+            "THE FIRST SUBTASK IS A BOUNDED MEASUREMENT AND THE DESIGN WAITS ON IT: do the `.d.ts` a handler emits differ between a build against the framework's `dist/` and a build against its `src/`? Byte-compare the emitted declarations from both states of one member, at a named base. IF THEY DO NOT DIFFER, a hard refusal would be added to a documented command for a cost nobody has shown. IF THEY DO, the refusal is obvious and its message can name what differed. Only then is the shape chosen.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "MEASURED IN SPRINT 61, AND THIS ITEM CLAIMS ONLY WHAT WAS MEASURED. On a staged fresh checkout nobody has built, `bun pm pack` in each handler EXITS 0 and produces a tarball, because its `prepack` compiler answers `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from `packages/tsudoi-language-server/src/*.ts` -- TRACED with the compiler's own resolver, not inferred. WHAT WAS MEASURED IS WHAT THE PACK READ AND THAT IT EXITED 0. IT IS NOT CLAIMED THAT THE TARBALLS ARE WRONG; that is the first subtask's question.",
+        "IT INHERITS PBI-60'S SENTENCE AT A DIFFERENT CHECK, WITH A WORSE CONSEQUENCE, which is why it outranks it: the same source arm answers, but where PBI-60's cell ends in a quiet root type check, this one ends in an artifact a stranger installs.",
+        "WHY NOTHING CAUGHT IT, AND IT IS A REASON RATHER THAN A GAP: the suite runs this route only in the state where it is safe. The README arm packs in a REAL member directory for the handlers, but under `bun test` the preload has already built the framework, so the route is exercised exclusively after the artifact exists. `refuseSubpathsAnsweringFromSource` cannot see it either -- scripts/typecheck-workspaces.ts builds before it reads, so the pack route passes under it entirely.",
+        "REFUSAL IS NOT THE ONLY SHAPE, NAMED SO THE NEXT EXECUTOR MEETS THE FORK RATHER THAN TREATING REFUSAL AS DECIDED: `prepack` may instead BUILD THE FRAMEWORK FIRST. A precondition that refuses edits the publish sentinel and changes a documented command whose blocks this suite extracts and executes, so the ripple reaches the documentation layer.",
+        "FORECLOSED HERE AS EVERYWHERE: deleting the framework's source arms, and a `paths` mapping or project reference. Both are refused with measurement at PBI-60 and neither becomes available because the subject moved to the pack.",
+      ],
+    },
+
+    {
       id: "PBI-60",
       story: {
         role: "tsudoi maintainer",
@@ -143,30 +170,6 @@ const scrum: ScrumDashboard = {
         "THIS IS THE RESIDUE THE MOVE SHIPPED OPEN. Which sprint that was is deliberately left unasserted -- the facilitator's tasking and this item's own note named different ones, and a wrong number repeated is the failure this record punishes. It was accepted rather than fixed, on the ground that deleting the arm in the move would have put two subject flips in one sprint and made the move's own readings unattributable.",
         "THE DECIDING MEASUREMENT WAS APPLIED AND IT SELECTED THE DETECTOR, so this item is no longer a deletion looking for a justification: the deletion lands only if it converts the residue into a named diagnostic WITHOUT any test needing its REASON retargeted, and one site retargets -- test/published-artifacts.test.ts's pair collapses into `fails for everyone`, which the item named in advance as the disqualifying outcome.",
         "AND IT MAY CLOSE AS A RECORDED DECISION RATHER THAN AS A FIX, which is said here so nobody spends a sprint proving it cannot be done: with both foreclosures standing, an honest close is a statement that the fourth check's invocation is nobody's, that the residue is named at its sites, and that what a stranger gets is graded by the fifth check instead.",
-      ],
-    },
-
-    {
-      id: "PBI-74",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust that a documented example which teaches by FAILING still fails",
-        benefit:
-          "the one block whose whole lesson is that it does not compile cannot start compiling in silence",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A documented block whose didactic content is its own failure is refused the day it stops failing, naming the block and what it was supposed to fail with.",
-          verification:
-            "The block at README.md's `snippet` marker under the type-shape section is the subject: it annotates an object literal as the framework's document view and omits three members, and the prose beside it says so. Perturb the TYPE rather than the block -- give the omitted members defaults, or widen the annotation -- and require a named red. THE DEGENERATE FIRST: an implementation that only resolves the block's imports must leave that perturbation green, which is the state shipped today.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FILED AS A PRODUCT OWNER'S CONDITION ON ACCEPTING SPRINT 60, WHICH IS WHY IT IS NARROW: the sprint narrowed the snippet account from compiling the block to resolving its import specifiers, and that narrowing is disclosed to the reader in the document. DISCLOSED AND COVERED ARE DIFFERENT STATES and this block is currently neither -- if the view type ever gained defaults making that literal valid, the README would teach a falsehood with every check green.",
-        "THE OBVIOUS FIX IS NAMED SO IT IS NOT REDISCOVERED, AND SO IS ITS PRICE. `expect=error` -- a marker declaring the block fails and naming the diagnostic code it must fail with -- was designed and dropped in sprint 60. THE CODE IS NOT DECORATION: this tree's ambient failure is unresolved specifiers, so `it fails as promised` is otherwise satisfied by a checkout where the framework did not build, which is two states behind one red. PBI-60's record carries the instance -- an assertion demanding TS2322 RECEIVED TS2307 BESIDE IT under a staged state -- so a compile-based account here sits directly in front of the unbuilt-artifact residue and is not free.",
-        "SCOPE THIS CANNOT QUIETLY BECOME: a general snippet-compilation harness over every marked block. One block is the subject; the criterion is about a block that teaches by failing, and the other marked snippets teach by working.",
       ],
     },
 
@@ -406,6 +409,31 @@ const scrum: ScrumDashboard = {
         "RANKED LAST AND CARRYING ITS OWN CLOSURE CONDITION, WHICH IS THE POINT OF FILING IT RATHER THAN LEAVING IT IMPLIED: IT MAY CLOSE AS A RECORDED DECISION THAT GOING-FORWARD-ONLY SUFFICES. A backlog item that can only be closed by doing it is how a programme becomes unbounded.",
         "NO RISK-RANKED COHORT IS PROMISED HERE, because nothing in the tree specifies one and inventing a ranking at filing time is the shape where a criterion gets satisfied by whichever subset was chosen.",
         "ONE SEED FOR THIS ITEM WITH ITS COLLATERAL ALREADY MEASURED, FILED INTO PBI-70b BECAUSE WHAT ITS CLOSURE CONDITION NEEDS IS THE SWEEP BEING CHEAP ENOUGH TO DECIDE AGAINST. Sprint 57's standing re-run took the PREVIOUS increment's summary-word perturbation -- `scripts/definition-of-done.ts`'s verdict word hardwired to `PASSED` -- through this sprint's own instrument, against `test/definition-of-done.test.ts`. IT REDDENS THREE ARMS AND NOT ONE, and which three is the part a sweep would otherwise pay to rediscover: `the VERDICT WORD is the run's own, in BOTH directions`, which is the arm named for it, plus `a check that never started GATES the run, with every other check green` and `a `run` this runner cannot execute FAITHFULLY is refused, never misread`. THE REASON THE SECOND AND THIRD GO WITH IT is one mechanism and not a coincidence: each asserts the whole string `Definition of Done: FAILED` in its own failing report, so hardwiring the word reddens them for exactly the reason it reddens the first. Recorded with no second name the instrument reads DISARMED and says which reds it cannot account for; with the two measured in, HELD. WHAT THE SPRINT THAT FILED IT RECORDED INSTEAD was `12 pass / 0 fail` -- a size, taken before the arm existed, naming nothing and checkable against no tree -- which is the difference between a perturbation kept and a perturbation written up.",
+      ],
+    },
+
+    {
+      id: "PBI-74",
+      story: {
+        role: "tsudoi maintainer",
+        capability: "trust that a documented example which teaches by FAILING still fails",
+        benefit:
+          "the one block whose whole lesson is that it does not compile cannot start compiling in silence",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A documented block whose didactic content is its own failure is refused the day it stops failing, naming the block and what it was supposed to fail with.",
+          verification:
+            "The block at README.md's `snippet` marker under the type-shape section is the subject: it annotates an object literal as the framework's document view and omits three members, and the prose beside it says so. Perturb the TYPE rather than the block -- give the omitted members defaults, or widen the annotation -- and require a named red. THE DEGENERATE FIRST: an implementation that only resolves the block's imports must leave that perturbation green, which is the state shipped today.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FILED AS A PRODUCT OWNER'S CONDITION ON ACCEPTING SPRINT 60, WHICH IS WHY IT IS NARROW: the sprint narrowed the snippet account from compiling the block to resolving its import specifiers, and that narrowing is disclosed to the reader in the document. DISCLOSED AND COVERED ARE DIFFERENT STATES and this block is currently neither -- if the view type ever gained defaults making that literal valid, the README would teach a falsehood with every check green.",
+        "THE OBVIOUS FIX IS NAMED SO IT IS NOT REDISCOVERED, AND SO IS ITS PRICE. `expect=error` -- a marker declaring the block fails and naming the diagnostic code it must fail with -- was designed and dropped in sprint 60. THE CODE IS NOT DECORATION: this tree's ambient failure is unresolved specifiers, so `it fails as promised` is otherwise satisfied by a checkout where the framework did not build, which is two states behind one red. PBI-60's record carries the instance -- an assertion demanding TS2322 RECEIVED TS2307 BESIDE IT under a staged state -- so a compile-based account here sits directly in front of the unbuilt-artifact residue and is not free.",
+        "RANKED LAST BY THE PRODUCT OWNER, ON CONSEQUENCE AND NOT ON AGE, WITH THE TRIGGER THAT MOVES IT. Against a route that publishes declarations graded against a file no consumer receives, this is a README block that would teach a falsehood only IF the view type gained defaults. FILING-ADJACENCY IS NOT A RANKING SIGNAL -- it arrived at rank two purely because it was filed beside the item it came from, and the order IS the priority, so an accident of filing had become a claim about value. FIRING CONDITION THAT RE-RANKS IT UP: the view type gaining an optional member, or the snippet's prose being edited. Written here so a low rank is a decision with a trigger rather than a silence. IT DOES NOT WAIT ON THE AMBIENT FAILURE DISAPPEARING: no item will ever remove it -- the ambient failure IS the source arm answering, and deleting that is foreclosed with measurement -- and a rank derived from a dependency that can never land is how an item becomes unrankable.",
+        "SCOPE THIS CANNOT QUIETLY BECOME: a general snippet-compilation harness over every marked block. One block is the subject; the criterion is about a block that teaches by failing, and the other marked snippets teach by working.",
       ],
     },
   ],
@@ -1233,7 +1261,88 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 61,
+    pbi_id: "PBI-60",
+    goal: "The unbuilt fourth check stops being a fact this dashboard remembers -- the state has a NAMED PRODUCER reached by two documented commands, the cover that hides it can redden, and the reason a handler builds against source is the reason the code actually has.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "None -- READINGS, taken by hand outside `bun test` because the preload builds and the state never exists during a run. `dist/` MOVED ASIDE AND NEVER DELETED, tree restored and verified after each cell. Environment recorded: bun 1.3.13, deno 2.8.3, tsc 7.0.2 -- the checkout's own node_modules/.bin/tsc, which is what a package script gets -- base a0a22b2.",
+        implementation:
+          "Record the five cells, the enumeration of what writes `dist/` and what removes it, and the two-command route, at the sites where the next executor would make the refused edit: scripts/workspaces.ts, test/helpers/build.ts, bunfig.toml, test/package-shape.test.ts and CLAUDE.md. PROSE THAT LANDS ONLY IN THIS DASHBOARD IS A TIDY-UP, because this file is compacted on a schedule.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PLANNING HYPOTHESIS WAS THAT THE EXIT-0 CELL IS HAND-MADE, AND THE READING FALSIFIED IT. Bare `tsc --noEmit` at the root: both artifacts present, exit 0 silent. Both absent -- a fresh checkout -- exit 1 naming EXACTLY examples/tsudoi.config.ts(1,49) and (2,30), TS2307, both handlers, the framework silent. Framework present and handlers absent, which is what an interrupted build order leaves, exit 1 with the same two. FRAMEWORK ABSENT AND HANDLERS PRESENT: EXIT 0, SILENT, with the framework's `/types` answered from packages/tsudoi-language-server/src/types.ts, TRACED.",
+          "THE PRODUCER, MEASURED END TO END RATHER THAN ARGUED. `bun pm pack` in one handler and then the other, on a tree nobody has built: each pack EXITS 0 and produces a tarball, its `prepack` compiler exiting 0 because the framework's subpaths answer from src/. After the first pack the root check is exit 1 with ONE error; after the second it is exit 0 and silent. WRITERS OF `dist/`, ENUMERATED AND NOT SAMPLED: `build()` and each member's `prepack`. REMOVERS: NONE -- every recursive delete in tracked code targets a throwaway behind the nominal guard.",
+          "CONSTRAINED AS IT MUST BE WRITTEN, because the honest claim is narrower than the alarming one: NO SINGLE INVOCATION THIS REPOSITORY OWNS PRODUCES THE CELL -- the preload and the fifth check both build the framework first. What produces it is TWO DOCUMENTED COMMANDS IN AN ORDER NOTHING FORBIDS. So the close is not `the state we wrote down does not occur`; it is that the cell no longer needs a targeted delete, and nothing runs that route today.",
+          "WHAT THE FRESH-CHECKOUT LOUDNESS RESTS ON, READ WITH THE COMPILER'S OWN RESOLVER AND NOT A NAME-GREP, because what is hunted is itself a property of matching. Attempts naming a handler package in the root program: TWO, BOTH FROM examples/tsudoi.config.ts, identical in the built and unbuilt states, with ZERO resolution-cache lines so no importer hides behind a cached resolution. WITNESS: that one file removed from a staged fresh checkout leaves the root check exit 0 and silent. AND THE INSTRUMENT THAT WAS REFUSED IS PART OF THE READING: `Bun.Transpiler` was measured to drop `import type` and `export type` entirely, which would have missed line 3 of the very file under examination.",
+        ],
+      },
+      {
+        test: "The unbuilt stage is non-zero AND raises at least one TS2307 whose specifier is a name read from THE STAGE'S OWN MANIFESTS, never hardcoded -- with NO claim about which package. Beside it: every `@atusy` entry realpaths INSIDE the stage, and every declared `dist` is absent. THE PAIR, and its subject is STAGE FAITHFULNESS rather than the tree's type health: the same stage BUILT reads exit 0 and empty output.",
+        implementation:
+          "A local stager -- per-entry node_modules links with `@atusy` pointing into the stage's own packages/. `stageCheckout` CANNOT BE REUSED AS WRITTEN: its single symlink borrow IS the degenerate.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT IS DECLARED NOT TO MEET THE CRITERION, AND THAT IS WHY IT MAY SHIP. Under the answering-reading it satisfies neither disjunct -- the framework stays silently source-answered INSIDE the red run, and `some workspace specifier failed to resolve` survives the refused fix, so it does not carry the fact. It ships because the closing record's load-bearing sentence is that two import lines keep this check loud, and a fact still needed is MECHANISED IF SOMETHING CAN REDDEN. This is that mechanisation and it is offered as nothing else.",
+          "BOTH FEASIBILITY HAZARDS WERE MEASURED RATHER THAN PREDICTED, AND ONE OF THEM IS WHY THE ARM MAY NOT ASSERT `NON-ZERO` ALONE. A stage with no node_modules is exit 1 with SIX TS2688 LINES for `bun` and `node` and ZERO TS2307 naming any workspace package -- red for a reason that is not its subject. And the borrow route decides everything: borrowed by ONE SYMLINK, the stage's entries realpath into the real checkout and the unbuilt stage reads the real BUILT artifacts, giving EXIT 0 AND ZERO OUTPUT -- an arm measuring nothing. Borrowed per-entry, they realpath inside the stage and the reading is the two TS2307.",
+          "WHAT THE DOCSTRING MUST SAY IT DOES NOT WATCH, or sprint 9's rule deletes it: it does NOT watch the framework's silence -- its green is bought by two import lines in examples/, and the framework's own subpaths answer from source at exit 0 in the very stage this arm calls red; it stages the ALL-ABSENT cell and never the silent one; it says nothing about the real fourth check, since nothing in this repository owns that invocation; and it is NOT the refused pin, in a named direction -- with the source arms deleted the stage is still non-zero and now names framework specifiers too, so it survives the fix and specifies nothing.",
+          "FORECLOSURE THREE, REFUSED AND WRITTEN DOWN SO IT IS MET RATHER THAN REDISCOVERED: an arm asserting the framework IS SILENT on an unbuilt stage. It pins the residue, passes for as long as the residue persists, and makes fixing it a test-breaking change.",
+          "`declaredMembers` CARRIES ITS REASON AT THE CALL: every member, because the property is `some workspace package failed to resolve` and not `a handler did`. Neither enumeration is applied wholesale.",
+          "AN UNNAMED HAZARD CARRIED FORWARD RATHER THAN ASSUMED AWAY: the stage's wall clock was taken BY HAND. This project has a measured instance of a 0.046 s hand reading becoming 80 TimeoutErrors under the suite's concurrency, so the number is re-taken with the arm in place under a full run, or the cheaper recipe is taken from the start.",
+        ],
+      },
+      {
+        test: "None -- a repair of a false mechanism claim, superseding rather than layering, with byte-identity at the base recorded first.",
+        implementation:
+          "`prepareWorkspace`'s docstring in scripts/workspaces.ts says a handler compiled against an unbuilt framework `fails at TS2307 -- an apparatus failure wearing a resolution failure's clothes`. MEASURED FALSE at base a0a22b2: it exits 0 and emits, through the same source arm. KEEP THE BUILD ORDER AND REPLACE ONLY THE REASON -- the runtimes need `dist/`, the compiler does not -- and the replacement carries ITS OWN PROVENANCE, because the correction is itself a measurement. Beside it, the disclosure at `refuseSubpathsAnsweringFromSource`, whose stated scope is now incomplete in a newly measured way: scripts/typecheck-workspaces.ts builds before it reads, so the pack route passes under it entirely.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IT IS THIS SPRINT'S REPAIR AND NOT A FILING, because it is squarely inside this sprint's own subject -- a handler's build answering from the framework's source is the route this sprint measured. The filing bar routes it here.",
+        ],
+      },
+      {
+        test: "None -- the close. Its own bar: a record that lets a reader DO something they cannot do today, not a narrative.",
+        implementation:
+          "PBI-60 closes AS A RECORDED DECISION, on the licence its own sixth note gives it, carrying: the producer; the three foreclosures WITH THE ASYMMETRY STATED; the decision procedure keyed to observable state; and the `exit 0` correction with its timing.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE `exit 0` READING WAS RESOLVED IN ADVANCE BY THE PRODUCT OWNER, THEN WITHDRAWN BY THEM ON PRIMARY SOURCE, AND THE WITHDRAWAL IS THE RECORD RATHER THAN AN EMBARRASSMENT. They fixed it as attaching to THE RUN; sprint 58's own closing decision says the criterion is unmet because a bare check `still answers the framework's own subpaths from source at exit 0`, while cell (B') records that same state as EXIT 1. Under the run-reading that sentence is false of the state it names; under the ANSWERING-reading -- no diagnostic is raised about those specifiers -- it is exactly true and it agrees with the story's own word, `diagnostic`. WHAT MAKES THE CORRECTION TRUSTWORTHY IS ITS DIRECTION: under the withdrawn reading PBI-60 closed this sprint as a FIX; under the correct one it does not. A resolution that costs the ruler the cleaner close is the one shape a retrofit never takes.",
+          "THE THREE FORECLOSURES ARE NOT EQUALLY ENFORCED AND THE RECORD MUST SAY SO, because a reader who sees three in a row infers from the pattern that all three redden. ONE REDDENS: deleting the framework's source arms is measured, and the blocker pair in test/unbuilt-artifact.test.ts fires in both directions the cost can vanish. ONE IS ENFORCED: a `paths` mapping, by `refuseMemberMappings`. THE THIRD HAS NO MECHANISM AND CANNOT HAVE ONE: no check decides whether a test pins a residue, and building one would be the approximate detector this project refuses by name.",
+          "TWO BINDINGS ON THE CLOSE OR IT IS A SHRUG. The record states plainly that THE CRITERION'S WORDS DO NOT REACH THE NEWLY MEASURED CELL -- a tree packed twice HAS been built, partially, by `prepack` -- and it does not present the close as the criterion having been satisfied. And the pack route leaves as its own item, ranked first.",
+          "THE DECISION PROCEDURE THE RECORD OWES, stated as what a reader must be able to DO: given a green Definition of Done and `the fourth check passed`, decide IN ONE STEP whether the framework's own subpaths were read from `dist/` or from `src/` in that run -- and if from src/, whether that is the half the fifth check covers, an artifact that survived a build, or the half nothing covers, a bare fourth check on an unbuilt tree. Today that takes re-deriving four cells from a file that gets compacted.",
+        ],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "The `revise` pipeline's second stage -- the codex MCP server -- has failed identically for a fifth consecutive sprint: `Failed to load Codex configuration from overrides: No such file or directory`.",
+        impact:
+          "Every sprint since it broke has been reviewed by stage one alone. That is not nothing -- stage one found this project's last several real defects, including sprint 60's central one -- but the second stage exists because a reviewer sharing none of the executor's context reads differently, and five sprints of single-stage review is a standing reduction in what review can catch.",
+        request:
+          "Repair or remove the codex MCP configuration. If it is not coming back, say so and the pipeline's second stage should be re-specified around something that runs here, rather than left as a step that is skipped every sprint.",
+        status: "waiting_human",
+        notes: [
+          "Retried once per sprint with the same error text each time; nothing in this repository configures it, so there is no workaround from inside the tree.",
+        ],
+      },
+    ],
+    decisions: [
+      "THE FACILITATOR OPENED A PRESSURE VALVE IN SPRINT 60 THAT WAS NOT THE ONE THE PRODUCT OWNER AUTHORISED, and the ruling is kept here because the distinction is the useful part: dropping the `expect=error` mechanism was a SCOPE CALL, which is the facilitator's to make, and it was ruled after the fact to have met no condition unmet -- the ruling it referred to was a ruling ON A MECHANISM, and when the mechanism left the ruling lost its referent. What would have made it a quiet narrowing is if the narrower account had not been disclosed to the reader. It was.",
+      "FILING-ADJACENCY IS NOT A RANKING SIGNAL, stated as a standing rule because this dashboard just produced the instance. A condition filed at acceptance inherited the position of the item it came from and sat at rank two above nine live items. Rank is derived from consequence, and a low rank is written with the FIRING CONDITION that would raise it, so it is a decision with a trigger rather than a silence.",
+      "A RANK MAY NOT BE DERIVED FROM A DEPENDENCY THAT CAN NEVER LAND. The tempting derivation here was `below the item that removes the ambient failure` -- and no such item will ever exist, since the ambient failure IS the source arm answering and deleting it is foreclosed with measurement. That derivation makes an item unrankable rather than low.",
+    ],
+  },
   retrospectives: [],
 };
 
