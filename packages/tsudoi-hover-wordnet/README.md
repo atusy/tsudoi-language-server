@@ -8,6 +8,8 @@ Dictionary hover for a [tsudoi](https://github.com/atusy/tsudoi-language-server)
 | -------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
 | `textDocument/hover` | `hoverWordnet` | every WordNet sense of the word under the cursor, or `null` for a word the dictionary does not have |
 
+<!-- snippet -->
+
 ```ts
 import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";

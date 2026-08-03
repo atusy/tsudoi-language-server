@@ -21,8 +21,17 @@ little about the other.
 Until then the working route is the one below: build a tarball out of a checkout and install
 that. It is the route the test suite runs, and it runs it from this file's own bytes. **The
 quickstart's commands are extracted from this README and executed**, under both runtimes, so an
-instruction there that no longer works fails the suite. **Every command block in this document is
-executed**, so there is no block here whose promise a reader has to guess at.
+instruction there that no longer works fails the suite. **Every fenced block in this document is
+either executed or accounted for**, and one that is neither is refused by name -- over tracked
+READMEs as a class rather than over a list of the blocks that exist today, so a block added here
+without saying what reads it fails the suite instead of quietly withdrawing the promise.
+
+**Accounted for is narrower than executed, and the difference is owed to you rather than
+implied.** Two kinds of block here are **never run**: the layout drawing under _Quickstart_,
+whose directories are held against the ones the quickstart's own steps stage, and the TypeScript
+snippets, whose import specifiers are held against what resolves. What is checked in each case is
+that named part and nothing else -- a snippet whose imports all resolve and whose body is wrong
+is accounted for and unchecked.
 
 **Neither is the handler packages under `packages/`.** The route for each of those lives in that
 package's own README -- `packages/tsudoi-hover-wordnet/README.md` and
@@ -53,8 +62,9 @@ project's dashboard declares, in the order declared, and prints each one's own e
 beside the command that produced it -- so a failure cannot be missed by reading the part of the
 output that happened to be on screen, which is how four commits were once taken on a red tree.
 Running one check by hand is debugging; this is verification. It is named here rather than
-shown as a runnable block on purpose: every block in this file is extracted and executed by the
-suite, and this command runs the suite.
+shown as a runnable block on purpose: a fenced block here is either run by the suite or accounted
+for by a check over a named part of it, with no third option -- so a block holding this command
+would be run, and running it runs the suite.
 
 A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
 and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through
@@ -91,6 +101,8 @@ re-exports.
 ## Quickstart
 
 Two directories, side by side:
+
+<!-- layout -->
 
 ```text
 parent/
@@ -264,13 +276,19 @@ own helpers annotated with tsudoi's type accept the documents you build in your 
 you, and it comes up in your own tests rather than in your config. An object literal carrying the
 four obvious members satisfies nothing:
 
+<!-- snippet -->
+
 ```ts
+import type { DocumentView } from "@atusy/tsudoi-language-server/types";
+
 // not a document: positionAt, offsetAt and lineCount are missing
-const document = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
+const document: DocumentView = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
 ```
 
 Build one instead. `TextDocument.create` is the remedy and the only supported way to make a
 document at all -- and what it builds satisfies both types:
+
+<!-- snippet -->
 
 ```ts
 import { TextDocument } from "vscode-languageserver-textdocument";

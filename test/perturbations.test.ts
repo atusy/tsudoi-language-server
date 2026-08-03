@@ -17,6 +17,7 @@ import {
   type ThrowawayPath,
   throwawayOnly,
   type Weakening,
+  writeInThrowaway,
 } from "./helpers/perturbation.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
@@ -376,6 +377,20 @@ test("the stage is the tracked tree, and the weakening never reaches the working
   // have and may leave an UNTRACKED report at the root -- bounded, tracked
   // nothing, and the reason that degenerate is taken in a copy.
   expect(() => runArmFile(repoRoot as ThrowawayPath, probeFile)).toThrow(/inside the checkout/);
+  // AND THE PLANTING WRITE, which arrived with the README sweep and would
+  // otherwise be the one mutating end in this module with no arm over its guard
+  // call. Both halves, for the reason the two above are split: a root outside
+  // the throwaway, and a FILE that climbs out of a genuine one.
+  expect(() => writeInThrowaway(repoRoot as ThrowawayPath, "planted.md", "# planted\n")).toThrow(
+    /inside the checkout/,
+  );
+  expect(() => writeInThrowaway(stage.root, "../planted.md", "# planted\n")).toThrow(
+    /outside the throwaway/,
+  );
+  // THE POSITIVE CONTROL, WITHOUT WHICH A REFUSAL THAT REFUSED EVERYTHING SHIPS
+  // GREEN: the same call, at a path this module made, writes.
+  writeInThrowaway(stage.root, "planted/README.md", "# planted\n");
+  expect(existsSync(join(stage.root, "planted", "README.md"))).toBe(true);
 });
 
 test("an arm whose name carries XML's own characters is read as ITSELF", async () => {

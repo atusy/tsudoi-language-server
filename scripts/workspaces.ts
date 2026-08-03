@@ -946,6 +946,32 @@ function checkoutPaths(root: string, args: readonly string[]): readonly string[]
 }
 
 /**
+ * EVERY TRACKED README, AS THE CLASS A DOCUMENTATION SWEEP IS ABOUT.
+ *
+ * NOT `declaredMembers` AND NOT `handlerMembers`, and the reason is the question
+ * rather than the convenience: those two answer WHICH PACKAGES, and a README
+ * under `examples/`, `docs/` or the checkout root is neither. A sweep built on
+ * them would inherit exactly the blind spot the documents have -- a guard over
+ * the documents that exist today, which is what a guard over READMEs AS A CLASS
+ * has to refuse.
+ *
+ * TRACKED, WHICH IS WHAT MAKES `A DOCUMENT NOBODY MEANT TO SHIP` NOT ONE OF
+ * THESE. A file a build wrote, a scratch copy, a stranger's README inside a
+ * vendored tree: none of them is a promise this repository made, and `git
+ * ls-files` is the one reading that tells them apart without a name written
+ * here.
+ *
+ * IT INHERITS BOTH OF `checkoutPaths`'s RULES VERBATIM by calling it, which is
+ * the point of not spelling the spawn again: a failed enumeration is a THROW and
+ * never an empty answer -- `this tree has no README` and `I could not be told`
+ * must not read alike -- and the separator is a NUL, because git quotes a path
+ * holding a newline or a non-ASCII byte and a quoted path matches no file.
+ */
+export function trackedReadmes(root: string): readonly string[] {
+  return checkoutPaths(root, ["ls-files", "-z"]).filter((path) => basename(path) === "README.md");
+}
+
+/**
  * The submodules this checkout mounts, which is where its subject STOPS.
  *
  * READ AS THE MODE AND NOT AS A DIRECTORY THAT LOOKS ODD: a submodule is one

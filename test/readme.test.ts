@@ -11,6 +11,7 @@ import {
   extractFailureContract,
   extractHandlerPack,
   extractQuickstart,
+  installedPath,
   invocationOf,
   type ReadmeFact,
   startStep,
@@ -178,10 +179,14 @@ test("the root README states no handler pack or install command of its own", () 
  * THE OVER-INSTALLATION DIRECTION, and a SOURCE-TEXT assertion because nothing
  * anywhere runs this command.
  *
- * The asymmetry, stated rather than hidden. Every other command block in these
- * documents is EXECUTED, so a stale one fails by running. This one is not:
- * MEASURED -- the extraction harness executes the five `quickstart` blocks and
- * each member's pack block, and this is neither, so no run reaches it. What
+ * The asymmetry, stated rather than hidden. Some blocks in these documents are
+ * EXECUTED, so a stale one fails by running, and this one is not. WHICH ARE
+ * WHICH IS NOT ENUMERATED HERE, and that is the repair rather than an omission:
+ * the enumeration this comment used to carry -- five `quickstart` blocks and
+ * each member's pack block -- was a second spelling of `consumers` in
+ * test/helpers/readme.ts, went stale the moment a row was added, and is exactly
+ * the duplication this file objects to a few hundred lines below. The table is
+ * the one place that says what runs. What
  * stands in for it is test/helpers/install.ts, which packs and installs every
  * member's own tarball into every consumer -- so that harness observes whether
  * the config works when the handlers are INSTALLED, and never whether this line
@@ -279,7 +284,11 @@ test("each member's pack command runs, and writes the file its own install names
     // which sits beside the checkout -- so it is resolved the way they would
     // resolve it, through the checkout's own directory name. A README that renamed
     // the checkout in one place and not the other fails here.
-    const installed = extractExamplesInstall(member.markdown).split(" ").at(-1) ?? "";
+    // THE SAME EXPRESSION THE ACCOUNT'S PROJECTION IS, AND NOT A SECOND
+    // SPELLING OF IT. `consumers` says the install block is READ and names this
+    // as the part of it the reading is about; if the two ever disagreed, the
+    // account would be claiming a subject nothing here checks.
+    const installed = installedPath(extractExamplesInstall(member.markdown));
     const prefix = `../${basename(repoRoot)}/`;
     if (!installed.startsWith(prefix)) {
       throw new Error(
@@ -664,14 +673,25 @@ const facts: readonly ReadmeFact[] = [
     // it is the thing that stops a reader checking.
     //
     // THE EXCEPTION MOVED RATHER THAN VANISHING, and this entry moved with the
-    // half of it that is still this document's. Every block HERE is executed;
-    // the read-only command is each handler package's install line, which now
-    // lives in that package's own README beside its own statement of what covers
-    // it. So what this document owes is the promise plus the POINTER -- a
-    // promise that quietly covered a second document is the overbroad shape this
-    // entry was written against in the first place.
-    name: "every block here is executed, and the handler routes live elsewhere",
-    tokens: [/extracted from this README/i, /executed/i, /packages\/[a-z-]+\/README\.md/],
+    // half of it that is still this document's -- and then the exception came
+    // BACK here, which is what the fourth token is. While every block in this
+    // file was executed, the promise and the pointer were the whole of what it
+    // owed; the sweep widened `covered` to include blocks that are READ, so this
+    // document now has blocks of its own that no run reaches, and a promise that
+    // says only `executed` is overbroad in exactly the way this entry was
+    // written against in the first place.
+    //
+    // `never run` IS THE LOAD-BEARING TOKEN, for the reason the members' own
+    // entry gives: `these are executed` is the sentence that was false once
+    // already, and it goes false again the moment a block is accounted for
+    // rather than run. The document owes the exception, not the rule.
+    name: "every block here is executed or accounted for, the exception is named, and the handler routes live elsewhere",
+    tokens: [
+      /extracted from this README/i,
+      /executed/i,
+      /never run/i,
+      /packages\/[a-z-]+\/README\.md/,
+    ],
   },
   {
     // THE RIGHT BOUNDARY IS WHAT MAKES THESE TOKENS A CONTROL RATHER THAN A

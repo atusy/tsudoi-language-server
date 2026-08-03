@@ -12,6 +12,8 @@ config, with the item-resolution half in the same package.
 | `textDocument/completion` | `pathCompletion`  | offers the entries of the one directory the fragment under the cursor names              |
 | `completionItem/resolve`  | `resolvePathStat` | when you highlight an entry: a file's size and modification date, a directory's contents |
 
+<!-- snippet -->
+
 ```ts
 import { pathCompletion, resolvePathStat } from "@atusy/tsudoi-completion-path";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";

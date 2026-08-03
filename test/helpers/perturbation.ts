@@ -364,6 +364,28 @@ export function stageCheckout(): { readonly root: ThrowawayPath; dispose: () => 
 }
 
 /**
+ * Plants a file inside a staged tree, THROUGH THE SAME GUARD EVERY OTHER WRITE
+ * HERE GOES THROUGH.
+ *
+ * IT EXISTS SO THAT AN ARM WITH A FILE TO PLANT HAS SOMEWHERE TO PUT IT THAT IS
+ * NOT `writeFileSync(join(stage, ...))`. That expression is one token from the
+ * accident this module was written after: a join whose left side is whatever the
+ * stager returned, evaluated by a hand that is not the stager's. The type alone
+ * does not stop it -- a hand-written degenerate can cast -- so the guard is
+ * re-asked here, at the mutating end, exactly as `applyWeakening` re-asks it.
+ *
+ * PARENTS ARE CREATED, because what an arm plants is a document at a path the
+ * stage does not have yet; and the guard stands in front of `mkdirSync` too,
+ * since a directory tree is as destructive a thing to create in the wrong place
+ * as a file.
+ */
+export function writeInThrowaway(stage: ThrowawayPath, file: string, contents: string): void {
+  const path = throwawayTarget(stage, file);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, contents);
+}
+
+/**
  * Applies one weakening to a staged tree.
  *
  * EXACTLY ONE OCCURRENCE, OR THE RECORD IS REFUSED. A `from` that no longer

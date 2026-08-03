@@ -38,9 +38,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { InitializeResult } from "vscode-languageserver-protocol";
-import { declaredMembers } from "../../scripts/workspaces.ts";
+import { declaredMembers, handlerMembers, trackedReadmes } from "../../scripts/workspaces.ts";
 import { initializeParams, LspSession } from "./lsp.ts";
 import { frameworkRoot, repoRoot, runCommand } from "./spawn.ts";
 
@@ -882,4 +882,523 @@ export async function runQuickstartWithBrokenConfig(
   } finally {
     stage.dispose();
   }
+}
+/**
+ * THE PATH A READER'S INSTALL COMMAND NAMES, AS THE ONE EXPRESSION THAT READS
+ * IT.
+ *
+ * LIFTED OUT OF test/readme.test.ts's PACK TEST RATHER THAN COPIED, for the
+ * reason the fence reader was: the guard and the arm join on what this returns,
+ * and two spellings of one premise is exactly what the join exists to kill. It
+ * is the LAST TOKEN and deliberately nothing cleverer -- what the account claims
+ * is that the PATH is checked, and a parser that also understood the verb would
+ * be claiming more than any assertion here delivers.
+ */
+export function installedPath(command: string): string {
+  return command.split(" ").at(-1) ?? "";
+}
+
+/** How a block reads in a refusal: enough of its own text for a reader to find it. */
+function excerptOf(block: FencedBlock): string {
+  const first = block.body.split("\n").find((line) => line.trim() !== "") ?? "";
+  return first.trim().slice(0, 80);
+}
+
+/** The bytes of a block are RUN, and the thing that runs them is named. */
+export interface ExecutedForm {
+  readonly kind: "executed";
+  /** What runs them -- prose, because no check decides whether an arm really does. */
+  readonly by: string;
+}
+
+/**
+ * The bytes of a block are READ, and the account says WHICH PART.
+ *
+ * THE SUBJECT IS NEVER INSPECTED AS PROSE. It is the projection the consuming
+ * assertion is HANDED, and `holds` receives ONLY that and the counterpart, so
+ * the assertion cannot fail on anything the account does not name -- by
+ * construction rather than by inspection. What the account leaves out is
+ * therefore unchecked BY DECLARATION, which is the honest half of admitting a
+ * block that nothing runs.
+ *
+ * WHY AN ACCOUNT IS A CONSUMPTION AND NEVER A DECLARATION, decided on a
+ * measurement rather than on principle. `declared and read` is already not
+ * `checked`, and this tree holds the instance: the install block's readers are a
+ * negative match that survives any corruption, a `contains` of the tarball name,
+ * and a split taking the last token -- so the PATH is checked and THE VERB IS
+ * NOT, and `bun frobnicate ../<checkout>/x.tgz` satisfies every one of them. The
+ * mutation arm in test/readme-consumers.test.ts is what turns that from a
+ * sentence into a red: corrupt the block INSIDE its subject and `holds` must go
+ * false, corrupt it OUTSIDE and it must stay true.
+ */
+export interface ReadForm {
+  readonly kind: "read";
+  /** Why the bytes are not run, and what stands in for running them. */
+  readonly reason: string;
+  /**
+   * What the assertion needs BESIDES the document, which is what decides where
+   * its arm can be run.
+   *
+   * IT IS DECLARED RATHER THAN INFERRED because it is a fact about the arm's
+   * ENVIRONMENT, and the caller that needs it is the perturbation registry: a
+   * recorded weakening is re-run in a staged checkout of every tracked file --
+   * no build outputs, and a temporary directory whose NAME is not this
+   * repository's. An account needing either is legitimately red there, so its
+   * arm cannot sit in a file a record names. The split between the two arm files
+   * is read out of this field and out of no list.
+   */
+  readonly needs:
+    | "the document alone"
+    | "this checkout's own directory name"
+    | "the installed tree";
+  /** The part of the block the consuming assertion is handed. */
+  subject(block: FencedBlock): readonly string[];
+  /** What the projection is compared against, out of everything BUT the block. */
+  against(markdown: string, document: string): readonly string[];
+  /** The consuming assertion. It sees the projection and the counterpart, never the block. */
+  holds(subject: readonly string[], against: readonly string[]): boolean;
+}
+
+export type ConsumingForm = ExecutedForm | ReadForm;
+
+/** One pairing: these documents, this marker, this form of consumption. */
+export interface Consumer {
+  readonly name: string;
+  /** The documents it consumes, as paths RELATIVE to the root they are under. */
+  documents(root: string): readonly string[];
+  /** The marker a human writes above a block to route it here. */
+  readonly marker: string;
+  readonly form: ConsumingForm;
+}
+
+/** The checkout's own README -- the one document that is nobody's package. */
+function theCheckoutsOwnReadme(): readonly string[] {
+  return ["README.md"];
+}
+
+/**
+ * Every handler package's README.
+ *
+ * HANDLERS AND NOT MEMBERS, carried at this call rather than assumed: the
+ * framework ships no README at all, ruled rather than overlooked, so a pairing
+ * over `declaredMembers` would name a document that does not exist and the
+ * sweep would report a tracked file that is not tracked.
+ */
+function everyHandlersReadme(root: string): readonly string[] {
+  return handlerMembers(root).map((member) => join(relative(root, member), "README.md"));
+}
+
+/** The one command a block a reader RUNS carries, as the last non-empty line. */
+function soleCommandIn(block: FencedBlock): string {
+  const lines = block.body
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  return lines.at(-1) ?? "";
+}
+
+/**
+ * The full directory paths a drawn tree names, assembled from its own
+ * indentation.
+ *
+ * THE ROOT LINE IS NOT ONE OF THEM, and that is what makes every element of the
+ * projection LOAD-BEARING: the drawing's outermost directory is the reader's
+ * `parent/`, which no marker names and whose spelling changes no path below it,
+ * so an account that claimed it would be an account with a member nothing can
+ * falsify.
+ */
+function drawnPaths(drawn: readonly string[]): ReadonlySet<string> {
+  const paths = new Set<string>();
+  const open: { indent: number; path: string }[] = [];
+  for (const line of drawn) {
+    const at = /^([^\S\n]*)(\S+)\/$/.exec(line);
+    if (at === null) {
+      continue;
+    }
+    const indent = (at[1] ?? "").length;
+    while (open.length > 0 && (open.at(-1)?.indent ?? 0) >= indent) {
+      open.pop();
+    }
+    const parent = open.at(-1)?.path;
+    const path = parent === undefined ? (at[2] ?? "") : `${parent}/${at[2] ?? ""}`;
+    open.push({ indent, path });
+    paths.add(path);
+  }
+  return paths;
+}
+
+/**
+ * Whether a specifier resolves from a directory, ASKED OF THE RUNTIME rather
+ * than of a manifest.
+ *
+ * WHAT IT THEREFORE ANSWERS ABOUT IS THE INSTALLED TREE AND NOT THE DOCUMENT: a
+ * green here means a reader standing in that directory could load what the
+ * snippet names, which is the whole of what this account claims.
+ */
+function resolvesFrom(specifier: string, dir: string): boolean {
+  try {
+    import.meta.resolve(specifier, pathToFileURL(join(dir, "readme-snippet.ts")).href);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * THE PAIRING THE SWEEP CONSUMES, WHICH EXISTS FOR THE ARMS RATHER THAN BEING
+ * PERFORMED BY THE SWEEP.
+ *
+ * A HUMAN WRITES THE MARKER AND MUST -- every extractor here is marker-keyed and
+ * the marker is what routes a block to its consumer. A HUMAN NEVER WRITES THE
+ * ACCOUNT: a marker cannot make a block accounted for, because the sweep does
+ * not read markers to decide whether something consumes a block, it reads THIS
+ * TABLE and then asks the marker only WHICH block.
+ *
+ * REFUSED, EACH WITH ITS REASON: an allow-list of documents, blocks, lines or
+ * hashes, which is the approximate detector whose failure mode is a green
+ * certifying a class as watched, and which as a hash list is a rubber stamp with
+ * one extra step; an exemption written in the document whose only consumer is
+ * the sweep; and a sixth Definition-of-Done check, since the sweep belongs where
+ * the extraction already lives.
+ *
+ * THE INFO STRING DECIDES NOTHING. Every fenced block in a paired document is
+ * reached or accounted for, and the tag is recorded for the refusal message
+ * alone. An exempt tag list was settled on and then OVERTURNED: `command block`
+ * names a class nothing in this tree can compute -- the quickstart's
+ * `write=tsudoi.config.ts` step is a ```ts block and IS reached -- and an exempt
+ * list makes the defect reintroducible by typing three characters.
+ *
+ * THE RESIDUE, NAMED HERE AND DELIBERATELY NOT GIVEN A DETECTOR: nothing
+ * notices a row whose consuming arm was deleted, and this table would go on
+ * claiming a consumer. A check deciding whether an arm REALLY consumes is the
+ * approximate detector refused above. What keeps the claim honest instead is the
+ * mutation arm, which fails the day a `read` row's account stops being about the
+ * block.
+ */
+export const consumers: readonly Consumer[] = [
+  {
+    name: "the quickstart",
+    documents: theCheckoutsOwnReadme,
+    marker: "quickstart",
+    form: {
+      kind: "executed",
+      by: "test/readme.test.ts runs the documented sequence in a bare stage, under both runtimes, and sweeps each step's omission",
+    },
+  },
+  {
+    // THE LAYOUT CONSUMER IS NOT A SECOND MECHANISM. This file twice requires a
+    // directory to be stated twice and be the same string -- once for the
+    // quickstart, once for the pack -- and this is that idiom a third time, over
+    // the DRAWING instead of the sentence. It catches a README picturing one
+    // layout while the markers stage another, which nothing today would see.
+    //
+    // ONE DIRECTION, AND THE CONVERSE IS DROPPED RATHER THAN POSTPONED: every
+    // directory a marker names is drawn. A drawing may show more than the
+    // markers reach -- `parent/` is the instance -- and requiring otherwise
+    // would forbid a document from picturing the reader's own surroundings.
+    name: "the layout",
+    documents: theCheckoutsOwnReadme,
+    marker: "layout",
+    form: {
+      kind: "read",
+      reason:
+        "a drawing is not a command; what stands in for running it is that every directory the quickstart's markers stage is a directory this tree draws",
+      needs: "the document alone",
+      subject: (block) => [...block.body.matchAll(/^[^\S\n]+\S+\/(?=\s|$)/gm)].map((at) => at[0]),
+      against: (markdown) => [
+        ...new Set(
+          markedBlocks(markdown, "quickstart").flatMap(({ marker }) => {
+            const dir = attributes(marker).get("in");
+            return dir === undefined ? [] : [dir];
+          }),
+        ),
+      ],
+      holds: (subject, against) => {
+        const drawn = drawnPaths(subject);
+        return against.length > 0 && against.every((dir) => drawn.has(dir));
+      },
+    },
+  },
+  {
+    // WHAT THIS ACCOUNT CANNOT SEE, NAMED SO IT IS NOT MISTAKEN FOR A COMPILE: a
+    // block whose imports all resolve and whose BODY is wrong is accounted for
+    // and unchecked. That is the account rule working as designed rather than a
+    // gap being hidden -- the subject is the specifiers, so the specifiers are
+    // what a red here is about.
+    //
+    // AND A MARKED `ts` BLOCK CARRYING NO IMPORT AT ALL CANNOT BE ACCOUNTED FOR
+    // BY THIS ROW, because its projection would be empty and the sweep refuses
+    // an empty projection. That is the place a later reader will reach for an
+    // exemption; the move is to give the snippet the import it was already
+    // implying, which is what the root README's mock block got.
+    name: "the ts snippets",
+    documents: (root) => [...theCheckoutsOwnReadme(), ...everyHandlersReadme(root)],
+    marker: "snippet",
+    form: {
+      kind: "read",
+      reason:
+        "a snippet is a fragment of a reader's file rather than a program, so what stands in for running it is that every module it tells a reader to import resolves from the directory the document sits in",
+      needs: "the installed tree",
+      subject: (block) => [
+        ...new Set(
+          [
+            ...block.body.matchAll(/\bfrom\s+["']([^"']+)["']/g),
+            ...block.body.matchAll(/\bimport\s+["']([^"']+)["']/g),
+          ].map((at) => at[1] ?? ""),
+        ),
+      ],
+      against: (_markdown, document) => [dirname(document)],
+      holds: (subject, against) =>
+        subject.length > 0 &&
+        against.length === 1 &&
+        subject.every((specifier) => resolvesFrom(specifier, against[0] ?? "")),
+    },
+  },
+  {
+    name: "the handler pack command",
+    documents: everyHandlersReadme,
+    marker: "handler-pack",
+    form: {
+      kind: "executed",
+      by: "test/readme.test.ts runs it in the member's own directory and compares the file it wrote against the path the install line names",
+    },
+  },
+  {
+    name: "the handler install command",
+    documents: everyHandlersReadme,
+    marker: "examples-install",
+    form: {
+      kind: "read",
+      reason:
+        "the package is unpublished, so running this is the thing that does not work yet; what stands in for running it is that the path it names is the one the pack beside it writes",
+      needs: "this checkout's own directory name",
+      subject: (block) => [installedPath(soleCommandIn(block))],
+      against: (_markdown, document) => [
+        `../${basename(repoRoot)}/`,
+        `${basename(dirname(document))}.tgz`,
+      ],
+      holds: (subject, against) => {
+        const [installed] = subject;
+        const [prefix, tarball] = against;
+        return (
+          installed !== undefined &&
+          prefix !== undefined &&
+          tarball !== undefined &&
+          installed.startsWith(prefix) &&
+          installed.endsWith(tarball)
+        );
+      },
+    },
+  },
+];
+
+/** One block, or one document, this sweep refuses -- with its own account of why. */
+export interface Offence {
+  /** The document, relative to the root it was swept under. */
+  readonly document: string;
+  /** The line of the opening fence, or 0 when the refusal is about the document itself. */
+  readonly line: number;
+  readonly report: string;
+}
+
+/**
+ * What one sweep read, WITH THE PAIR THAT KEEPS AN EMPTY OFFENDER LIST HONEST.
+ *
+ * An empty list and a reader that opened nothing are the same observation
+ * without `documentsRead` and `blocksRead`, so the counts are returned rather
+ * than logged: every arm asserting the absence asserts these above zero beside
+ * it.
+ */
+export interface CoverageReading {
+  readonly offenders: readonly Offence[];
+  readonly documentsRead: number;
+  readonly blocksRead: number;
+}
+
+/**
+ * EVERY FENCED BLOCK IN EVERY TRACKED README, REFUSED UNLESS SOMETHING CONSUMES
+ * IT.
+ *
+ * IT TAKES A ROOT AND READS NOTHING BY A HARDCODED PATH, which is not a
+ * convenience: the arms plant into a THROWAWAY, and a sweep reaching for
+ * `readReadme()` would have made them mutate a version-controlled file in order
+ * to fire -- this record's own measured failure, in the file that already holds
+ * the hardcoded path.
+ *
+ * THE SWEEP MAY NOT BE ITS OWN CALLER. It never runs an extractor over a
+ * document to decide whether the document is consumed: a sweep that cleared
+ * whatever its own matching found would certify a document nobody opens, which
+ * is the author's-intention failure with the marker swapped for the sweep's own
+ * run. What decides is the TABLE, and the marker only says which block.
+ *
+ * THREE REFUSALS, PRINTED DIFFERENTLY ON PURPOSE, because two states that
+ * produce byte-identical text are one red and not two: a document in no pairing,
+ * a block no consumer reaches, and an account whose projection names none of the
+ * block's own bytes.
+ *
+ * A DOCUMENT IN NO PAIRING IS REFUSED BEFORE A SINGLE BLOCK IS LOOKED AT. A
+ * blockless README that nothing opens is still a document this repository ships
+ * and nothing reads, and reporting it only once it happened to carry a block
+ * would make the refusal an accident of its contents.
+ */
+export function readmeCoverage(root: string): CoverageReading {
+  const paired = new Map<string, Consumer[]>();
+  for (const consumer of consumers) {
+    for (const document of consumer.documents(root)) {
+      paired.set(document, [...(paired.get(document) ?? []), consumer]);
+    }
+  }
+
+  const offenders: Offence[] = [];
+  let documentsRead = 0;
+  let blocksRead = 0;
+  for (const document of trackedReadmes(root)) {
+    documentsRead += 1;
+    const pairs = paired.get(document) ?? [];
+    if (pairs.length === 0) {
+      offenders.push({
+        document,
+        line: 0,
+        report: `${document} is a tracked README that no consumer is paired with, so nothing in this suite ever opens it`,
+      });
+      continue;
+    }
+    const markdown = readFileSync(join(root, document), "utf8");
+    const blocks = fencedBlocks(markdown);
+    blocksRead += blocks.length;
+    const reached = new Map<number, Consumer>();
+    for (const consumer of pairs) {
+      for (const marked of markedBlocks(markdown, consumer.marker)) {
+        reached.set(marked.block.offset, consumer);
+      }
+    }
+    for (const block of blocks) {
+      const consumer = reached.get(block.offset);
+      if (consumer === undefined) {
+        offenders.push({
+          document,
+          line: block.line,
+          report: `${document}:${String(block.line)} opens a \`${block.info}\` block no consumer reaches -- ${excerptOf(block)}`,
+        });
+        continue;
+      }
+      if (consumer.form.kind !== "read") {
+        continue;
+      }
+      const subject = consumer.form.subject(block);
+      if (subject.length === 0) {
+        offenders.push({
+          document,
+          line: block.line,
+          report: `${document}:${String(block.line)} is accounted for by ${consumer.name}, whose projection answers nothing at all -- an account that names no part of the block cannot be about it`,
+        });
+        continue;
+      }
+      for (const part of subject) {
+        if (part === "" || !block.body.includes(part)) {
+          offenders.push({
+            document,
+            line: block.line,
+            report: `${document}:${String(block.line)} is accounted for by ${consumer.name}, whose projection answers \`${part}\` -- which the block's own bytes do not contain, so the account is a constant rather than a reading`,
+          });
+        }
+      }
+    }
+  }
+  return { offenders, documentsRead, blocksRead };
+}
+
+/** One block a `read` row accounts for, in one document, on one checkout. */
+export interface ReadAccount {
+  readonly consumer: Consumer;
+  readonly form: ReadForm;
+  /** The document's absolute path -- what `against` is handed. */
+  readonly document: string;
+  /** The same document relative to the root, which is what an arm's name says. */
+  readonly at: string;
+  readonly markdown: string;
+  readonly block: FencedBlock;
+}
+
+/**
+ * Every block the table accounts for by READING, over one checkout.
+ *
+ * THE ARMS ARE BUILT FROM THIS AND NOT FROM A LIST BESIDE IT, which is what
+ * makes the sweep consume a pairing that exists for the arms rather than perform
+ * one: a row added to the table arms itself, and a row whose marker names no
+ * block arms nothing and is caught by the non-empty assertions its arm file
+ * carries.
+ */
+export function readAccounts(root: string): readonly ReadAccount[] {
+  return consumers.flatMap((consumer) => {
+    const form = consumer.form;
+    if (form.kind !== "read") {
+      return [];
+    }
+    return consumer.documents(root).flatMap((at) => {
+      const document = join(root, at);
+      const markdown = readFileSync(document, "utf8");
+      return markedBlocks(markdown, consumer.marker).map(({ block }) => ({
+        consumer,
+        form,
+        document,
+        at,
+        markdown,
+        block,
+      }));
+    });
+  });
+}
+
+/**
+ * The same text with ONE LETTER changed -- the smallest corruption that is still
+ * one.
+ *
+ * A LETTER AND NOT A DELETION, because a deletion can leave a string that is
+ * still a prefix or still resolves, and this is used to require that an
+ * assertion NOTICES. It throws rather than returning its input when there is no
+ * letter to change: a corruption that corrupted nothing would make the arm above
+ * it a reading of the untouched block.
+ */
+export function corruptOneLetter(text: string): string {
+  const at = text.search(/[A-Za-z]/);
+  const letter = text[at];
+  if (at === -1 || letter === undefined) {
+    throw new Error(`${text} carries no letter, so nothing here can corrupt it`);
+  }
+  return `${text.slice(0, at)}${letter === "z" ? "q" : "z"}${text.slice(at + 1)}`;
+}
+
+/**
+ * The block's bytes with one letter changed OUTSIDE every occurrence of its
+ * subject.
+ *
+ * THIS IS THE HALF THAT BOUNDS THE ACCOUNT FROM ABOVE. Corrupting inside the
+ * subject shows the assertion is not a rubber stamp; corrupting outside it shows
+ * the account is not secretly about the whole block -- which is what makes
+ * `everything the subject leaves out is unchecked` a statement with a witness
+ * rather than a disclaimer.
+ *
+ * IT THROWS WHEN THERE IS NOWHERE OUTSIDE TO CORRUPT, and that is a legitimate
+ * state to be told about rather than to pass over: an account whose projection
+ * covers every letter of its block has no residue, and an arm claiming to have
+ * probed one would be claiming a reading it never took.
+ */
+export function corruptOutsideSubject(body: string, subject: readonly string[]): string {
+  const covered = new Set<number>();
+  for (const part of subject) {
+    for (let at = body.indexOf(part); at !== -1; at = body.indexOf(part, at + 1)) {
+      for (let index = at; index < at + part.length; index += 1) {
+        covered.add(index);
+      }
+    }
+  }
+  for (const [index, letter] of [...body].entries()) {
+    if (!covered.has(index) && /[A-Za-z]/.test(letter)) {
+      return `${body.slice(0, index)}${letter === "z" ? "q" : "z"}${body.slice(index + 1)}`;
+    }
+  }
+  throw new Error(
+    "this block carries no letter outside its own subject, so its account covers all of it and there is no outside to probe",
+  );
 }

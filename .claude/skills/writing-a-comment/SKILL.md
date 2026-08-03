@@ -89,12 +89,23 @@ sequence DID NOT WORK, and the install path named a file that is never created �
 `bun pm pack` inside a workspace member writes the tarball to the WORKSPACE ROOT.
 Two defects behind one unexecuted block.
 
-**Extraction here is MARKER-DRIVEN and nothing sweeps for what it missed.**
-`test/helpers/readme.ts` matches exactly three markers (`quickstart`,
-`examples-install`, `handler-pack`); a fenced block you add without one is not
-run, and the document's own promise about itself goes false at that moment. If
-you add a command to a README, add its marker or state in the document that the
-command is never run.
+**Extraction here is MARKER-DRIVEN, and since sprint 60 something DOES sweep for
+what it missed.** `consumers` in `test/helpers/readme.ts` pairs each tracked
+README with the markers something consumes, and `readmeCoverage` refuses BY NAME
+any fenced block in a paired document that no consumer reaches — and any tracked
+README the table does not name. So a block added without a marker is red rather
+than silently unrun, and the info string decides nothing — a fence tagged `text`
+owes an account exactly as one tagged `sh` does. An exempt tag list was settled
+on and then overturned: it makes the defect reintroducible by typing three
+characters.
+
+**What the sweep still cannot decide is whether a consumer really consumes.** A
+row saying `read` names a SUBJECT — the projection its assertion is handed — and
+everything the subject leaves out is unchecked BY DECLARATION. So when you add a
+block: add its marker, add the row, and if what reads it reads only part of it,
+that part is the subject and the rest is a residue you write down. A row whose
+consuming arm was deleted is the one thing nothing notices; the mutation arms
+(corrupt inside the subject, corrupt outside it) are what keep the rest honest.
 
 ## Commit boundaries a comment decides
 
