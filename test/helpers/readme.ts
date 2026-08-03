@@ -1092,10 +1092,23 @@ export const consumers: readonly Consumer[] = [
     // the DRAWING instead of the sentence. It catches a README picturing one
     // layout while the markers stage another, which nothing today would see.
     //
-    // ONE DIRECTION, AND THE CONVERSE IS DROPPED RATHER THAN POSTPONED: every
-    // directory a marker names is drawn. A drawing may show more than the
-    // markers reach -- `parent/` is the instance -- and requiring otherwise
-    // would forbid a document from picturing the reader's own surroundings.
+    // ONE DIRECTION IS WHAT `holds` ASKS -- every directory a marker names is
+    // drawn -- AND THE CONVERSE IS ENFORCED ANYWAY, BY THE ARM AND NOT BY THIS
+    // ROW. `armReadAccounts` requires EVERY member of the projection to be
+    // load-bearing, so an INDENTED `foo/` line that is neither a directory a
+    // quickstart marker names nor a proper ANCESTOR of one survives its own
+    // corruption and reddens the INSIDE arm. MEASURED, two decorative indented
+    // lines added to this drawing: 25 pass / 3 fail over
+    // test/readme-layout.test.ts and test/perturbations.test.ts -- the INSIDE
+    // arm, the registry row over it reading DISARMED, and their shared baseline.
+    //
+    // THE UN-INDENTED ROOT LINE IS THE ONE EXCEPTION, AND IT IS THE SUBJECT
+    // REGEX THAT MAKES IT ONE: leading whitespace is required, so the drawing's
+    // outermost directory -- the reader's `parent/` -- is outside the projection
+    // entirely and is corrupted by nothing. It is not that a drawing may show
+    // more than the markers reach; it is that it may show exactly one thing
+    // more, the surroundings the reader is standing in, whose spelling changes
+    // no path below it.
     name: "the layout",
     documents: theCheckoutsOwnReadme,
     marker: "layout",
