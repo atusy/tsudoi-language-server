@@ -456,7 +456,7 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
  */
 export function line(reading: Reading): string {
   const held = reading.verdict === "held";
-  return `  [${held ? "HELD" : reading.verdict.toUpperCase()}] ${reading.record.arm.name} -- ${reading.record.arm.file}${held ? "" : ` -- ${reading.detail}`}`;
+  return `  [${reading.verdict.toUpperCase()}] ${reading.record.arm.name} -- ${reading.record.arm.file}${held ? "" : ` -- ${reading.detail}`}`;
 }
 
 /**
