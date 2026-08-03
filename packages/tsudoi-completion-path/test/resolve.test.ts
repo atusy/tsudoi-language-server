@@ -839,7 +839,15 @@ describe("what the drain keeps when the names arrive out of rendered order", () 
     // the arm could pass while the gate was never reached at all. Overfilled and
     // not merely filled, because `exactly full` and `not yet full` are the same
     // reading from out here.
+    //
+    // AND NOT EMPTY, WHICH `fewer than went in` ALONE ADMITS AND WHICH IS THE
+    // CASE THAT ACTUALLY BIT: MEASURED, with the gate keeping NOTHING this arm
+    // and the one below it both PASSED while eleven of this file's fifteen
+    // reddened, because every list assertion under this premise degenerates to
+    // empty-equals-empty and the total is counted somewhere else. Still no
+    // number spelled -- the bound may move without touching this file.
     const lowerOnly = await listingFrom(arriving(lower));
+    expect(lowerOnly.names.length).toBeGreaterThan(0);
     expect(lowerOnly.names.length).toBeLessThan(lower.length);
 
     const listing = await listingFrom(arriving([...lower, ...upper]));
@@ -869,6 +877,16 @@ describe("what the drain keeps when the names arrive out of rendered order", () 
    * alone comes back as hidden names, so this arm cannot be satisfied by an
    * implementation that FILTERED them -- which would be a different decision
    * from the one the module took, and one the total would still hide.
+   *
+   * AND THAT SENTENCE WAS TRUE OF A FILTER AND FALSE OF THE EMPTY LIST, WHICH IS
+   * WHY THE PREMISE NOW EXCLUDES IT. Every assertion here is sliced by a length
+   * read off the premise's own result, so with a gate keeping NOTHING all three
+   * degenerate to empty-equals-empty and the total is counted somewhere else:
+   * MEASURED, this arm and the one above it PASSED under that gate while eleven
+   * of this file's fifteen reddened. The hole was inherited from the arm above
+   * rather than invented here -- it is fixed in both, in the same commit as this
+   * sentence, because a comment claiming a premise closes a hole is worse than
+   * the hole.
    */
   test("a hidden name already kept is displaced by an ordinary name arriving after it", async () => {
     const hidden = entryNames(".h", 25);
@@ -878,6 +896,7 @@ describe("what the drain keeps when the names arrive out of rendered order", () 
     // the hidden run ALONE overfills the kept list, so every ordinary name below
     // arrives at a FULL list holding nothing but hidden names.
     const hiddenOnly = await listingFrom(arriving(hidden));
+    expect(hiddenOnly.names.length).toBeGreaterThan(0);
     expect(hiddenOnly.names.length).toBeLessThan(hidden.length);
     expect(hiddenOnly.names).toEqual(hidden.slice(0, hiddenOnly.names.length));
 
