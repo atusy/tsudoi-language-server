@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import {
@@ -276,6 +276,15 @@ test("nothing here stages into, or deletes, a path outside the throwaway directo
   expect(() => throwawayOnly(join(repoRoot, ".git"))).toThrow(/is not under/);
   const throwaway = stageProbe(["alpha"]);
   expect(throwawayOnly(throwaway)).toBe(throwaway);
+  // AND A PATH UNDER NEITHER, WHICH IS THE ONE THE OTHER THREE DO NOT REACH.
+  // Sampling the checkout and a throwaway leaves `not under the checkout` and
+  // `under the throwaway` extensionally equal over everything asserted, so the
+  // guard narrowed to the first -- same message, same arity -- keeps this arm
+  // green while a sibling repository, a home directory or a mounted volume
+  // becomes a legal argument to the recursive delete three lines up. The home
+  // directory is the sample because it is the largest such subject on this
+  // machine and it exists on every machine that can run this suite.
+  expect(() => throwawayOnly(homedir())).toThrow(/is not under/);
 });
 
 test("the report names the arm each record weakened, and no other", async () => {
