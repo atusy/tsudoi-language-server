@@ -670,17 +670,30 @@ const records: readonly PerturbationRecord[] = [
  * SHARED, BECAUSE IT IS ONE SUBJECT AND NOT ONE PER RECORD: two baselines of the
  * same file in the same tree are the same reading bought twice.
  *
- * KEYED BY FILE, AND THAT KEY IS DELIBERATELY LEFT UNWITNESSED. Every record
- * today names one arm file, and over one file `by file` and `by nothing` are the
- * same function -- no probe here can separate them, and a probe that could would
- * have to put a second record in the registry, which is a perturbation invented
- * to exercise a Map rather than one this repository ran. WHAT MAKES IT FIRE, so
- * nobody has to rediscover it: the day a SECOND arm file enters the registry, a
- * baseline taken from the wrong file reports arms that do not include the
- * record's, the reading is REFUSED naming that arm, and the run is red on the
- * first pass. That is the loud failure, which is this project's own condition
- * for leaving a guard alone; deleting the key instead would be deleting a
- * correctness the second record needs, to remove a line no red covers.
+ * KEYED BY FILE, AND THE KEY IS WITNESSED NOW -- the disclosure that stood here
+ * named the second arm file as a FUTURE event, and it arrived. While every
+ * record named ONE file, `by file` and `by nothing` were the same function and
+ * nothing here could separate them; the registry names two files today, so the
+ * degenerate is real and it was taken rather than predicted.
+ *
+ * MEASURED, `by nothing` spelled as the docstring's own alternative -- one
+ * baseline for the whole file, `baselines.get("")` -- against 19 pass / 0 fail:
+ * 18 pass / 1 fail, THE SECOND FILE'S RECORD ALONE, reading `[REFUSED] ... no
+ * arm named <it> ran in test/artifact-detector.test.ts`. The records over the
+ * FIRST file are untouched, because the run they get is the one they wanted.
+ *
+ * AND THE HALF WORTH MORE THAN THE RED IS THE GREEN BESIDE IT: `every arm in
+ * test/artifact-detector.test.ts passes before any weakening` PASSED under that
+ * degenerate, having read the other file's run -- an arm named for one file
+ * certifying another. So the key is what makes THAT arm's green mean its own
+ * file, and the red that finds it lives one test below.
+ *
+ * WHY THAT READING IS NOT A ROW IN THE REGISTRY BELOW, since a perturbation
+ * recorded only as prose is not recorded: the weakening is a source mutation in
+ * THIS file, and `reRun` refuses any arm file that imports
+ * helpers/perturbation.ts -- which this one does. It is the instrument's own
+ * blind spot rather than an omission, and it is filed as a backlog item rather
+ * than left as the registry's silence.
  */
 const baselines = new Map<string, Promise<ArmFileRun>>();
 
