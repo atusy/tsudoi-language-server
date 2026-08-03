@@ -1005,10 +1005,21 @@ const scrum: ScrumDashboard = {
         test: "The seeds: every arm THIS SPRINT touches, plus AT LEAST ONE record standing over a real arm elsewhere in the suite.",
         implementation: "None beyond writing the records.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "83464a9",
+            message: "test(perturbation): seed two perturbations this tree had only written up",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE SECOND SEED IS MANDATORY OR THE INSTRUMENT'S ONLY EVIDENCE IS SELF-REFERENTIAL, which is why the previous sprint staged the five real checks. HISTORICAL SEEDS ARE OPPORTUNISTIC AND BUDGETED AT NONE; where a target is gone, record TARGET DELIBERATELY REMOVED rather than dropping it.",
+          "BOTH SEEDS STAND OVER REAL ARMS ELSEWHERE, AND NEITHER OVER THIS SPRINT'S OWN, so the mandatory half is met twice rather than once. The gate narrowed by a word, and the warning total taken from the first element -- each was run ONCE in the sprint that found it and written up in the comment beside its arm, which is the exact shape this item calls not-recorded. Both read HELD on the tree as committed, and the report names them.",
+          "THE ARMS THIS SPRINT TOUCHED CARRY THEIR PERTURBATION AS AN ASSERTION AND NOT AS A ROW, which is subtask 1's sort arriving at its consequence rather than a shortfall: their weakenings are readings of a result the arm already holds, so the pair that separates the readings sits beside the subject and re-runs with the suite. A row in the registry for any of them would stage a tree and spawn a run to re-derive a line already there.",
+          "THREE DEGENERATES OVER THE REGISTRY'S OWN DATA, EACH REDDENING EXACTLY ITS OWN RECORD'S ARM, 11 pass / 1 fail every time -- and the third is the one worth the cost, because it is the reading a subset test would lose. A `from` edited so it no longer occurs: REFUSED, and the run is 42 ms because nothing is spawned. A weakening replaced by an edit that changes no behaviour: GONE QUIET, the arm reporting that it no longer reddens on what is recorded against it. And the gate record's second name DROPPED: DISARMED, naming the refusal arm as the red the record does not account for.",
+          "HISTORICAL SEEDS TAKEN: NONE, as budgeted. The three instances this item's criterion cites as starting evidence were each REPAIRED IN THE SPRINT THAT FOUND THEM, per that sprint's own record -- the output-directory comparison folded, the reference message's second repair named, the arm whose name said `tracked` narrowed. THAT IS READ OFF THE RECORD AND NOT OFF THE ARMS, which were not re-read here, so it is filed as the reason none was seeded rather than as a claim about what those arms defend today.",
+          "WHAT THE SEEDS COST THE SUITE, MEASURED RATHER THAN ESTIMATED: 874 pass / 0 fail across 58 files at 102.44 s, against this sprint's base of 862 across 57 at 80.92 s. Three staged runs buy it -- one shared baseline and one per record -- and the stage itself is 45 ms of the 7 s. What the reading cannot separate: this machine, one file, and a suite that runs its files in sequence.",
         ],
       },
       {
