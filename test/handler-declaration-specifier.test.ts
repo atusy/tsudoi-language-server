@@ -193,6 +193,14 @@ test("the same read opens declarations in every handler, so a silent artifact is
  */
 test("the reader tells an unread directory, a silent declaration and a naming one apart", () => {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-declarations-"));
+  // THE REFUSAL SITS BEFORE THE `try` AND NOT IN THE `finally`: a throw from a
+  // finally block overwrites whatever the arm was already saying, which is a
+  // failure that reports the cleanup and hides the test. A recursive delete whose
+  // path could ever come from elsewhere is the hazard this repository has already
+  // paid for once, so the check is kept even over this function's own mkdtemp.
+  if (!stage.startsWith(tmpdir())) {
+    throw new Error(`refusing to remove ${stage}, which is not under ${tmpdir()}`);
+  }
   try {
     const silent = join(stage, "silent");
     const naming = join(stage, "naming");
@@ -213,12 +221,6 @@ test("the reader tells an unread directory, a silent declaration and a naming on
     expect(frameworkReferences([silent]).read.length).toBe(1);
     expect(frameworkReferences([naming]).naming.length).toBe(1);
   } finally {
-    // THE ARGUMENT IS THIS FUNCTION'S OWN mkdtemp AND THE CHECK IS KEPT ANYWAY:
-    // a recursive delete whose path could ever come from elsewhere is the hazard
-    // this repository has already paid for once.
-    if (!stage.startsWith(tmpdir())) {
-      throw new Error(`refusing to remove ${stage}, which is not under ${tmpdir()}`);
-    }
     rmSync(stage, { recursive: true, force: true });
   }
 });
