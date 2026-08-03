@@ -546,6 +546,22 @@ function build(root: string, dir: string): void {
  * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
  * tsc writes dist/ and THEN exits non-zero, so a failed build leaves a fresh,
  * wrong artifact behind. Callers throw; nothing here cleans up.
+ *
+ * THAT STATE HAS A HANDLER-SIDE INSTANCE ON THE PACK ROUTE, AND ITS ENDING WAS
+ * READ RATHER THAN INFERRED FROM THE FAMILY. With a handler's OWN `prepack`
+ * compiler failing, `bun pm pack` EXITS 2 AND PRODUCES NO TARBALL, while that
+ * member's dist/ is left holding the declarations the failed build wrote. So
+ * `the build failed` and `no dist/ was written` are still two different states,
+ * and the pack ABORTS between them -- nothing ships from a failed build. THE
+ * SELF-HEAL IS WHAT KEEPS THIS FROM READING AS A BURIED HAZARD: `prepack` opens
+ * with `rm -rf dist`, so the wrong artifact does not survive the next pack.
+ *
+ * AND IT IS NOT THE STALE-FRAMEWORK STATE, SEPARATED ON THE PRODUCER RATHER THAN
+ * ON THE FAMILY: that one is a FRAMEWORK artifact grading a handler while it
+ * disagrees with the framework's source; this is a WRONG-BUT-FRESH artifact of
+ * the HANDLER'S OWN, left by its own compiler. Different package, different
+ * producer, and folding them together is how one paragraph comes to stand for
+ * two failures it cannot both describe.
  */
 export function prepareWorkspace(root: string): void {
   for (const dir of buildOrder(root)) {
