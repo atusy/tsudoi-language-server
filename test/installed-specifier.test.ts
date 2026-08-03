@@ -121,13 +121,27 @@ test("the tarball ships the compiled module the exports entry points at, and not
  * EVERYTHING THAT TRAVELS FROM THIS REPOSITORY INTO THE THING WE PUBLISH, and
  * the reason it is pinned is what is NOT here.
  *
- * tsconfig.json carries a `paths` mapping resolving `@atusy/tsudoi-language-server/*` to src/,
- * so that this repository's own `tsc --noEmit` reads source instead of a built
- * dist/. That mapping is safe ONLY BECAUSE IT CANNOT REACH THE PACKING STAGE:
- * the build here runs under tsconfig.build.json, which carries no mapping (and
- * test/package-shape.test.ts is where that absence is asserted), and the
- * consumer's own type check runs under options that carry none either. Nothing
- * else stopped a fourth path being copied in.
+ * THE LICENCE THIS PARAGRAPH CARRIED WAS THE TREE'S LAST NARRATIVE ACCOUNT OF A
+ * MECHANISM THAT NO LONGER EXISTS, so a contributor learned the pre-move story
+ * from the file that pins what we publish. It said: tsconfig.json carries a
+ * `paths` mapping resolving `@atusy/tsudoi-language-server/*` to src/, so this
+ * repository's own `tsc --noEmit` reads source instead of a built dist/, and
+ * that mapping is safe only because it cannot reach the packing stage. THERE IS
+ * NO MAPPING ANYWHERE IN THIS REPOSITORY, and test/package-shape.test.ts asserts
+ * that no specifier the root check resolves is answered by one.
+ *
+ * WHAT IS TRUE INSTEAD, MEASURED at sprint 58: the root check resolves the
+ * published subpaths through node_modules and the exports map, to
+ * packages/tsudoi-language-server/dist/, exactly as a stranger's project does --
+ * and it reads SOURCE only when that artifact is missing, by falling through the
+ * map's own `default` arm.
+ *
+ * SO THE REASON THIS PIN SURVIVES IS NARROWER AND UNCHANGED IN EFFECT: what may
+ * not reach the packing stage is any configuration that answers a subpath
+ * without the artifact. The build here runs under tsconfig.build.json, which
+ * carries no mapping (and test/package-shape.test.ts is where that absence is
+ * asserted), and the consumer's own type check runs under options that carry
+ * none either. Nothing else stopped a fourth path being copied in.
  *
  * node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI,
  * whose text says three: it is symlinked in because the build must resolve the

@@ -13,6 +13,14 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
+// THE GUARD IS TAKEN FROM THERE BECAUSE A MUTATING END NEEDS IT, AND THE IMPORT
+// COSTS THIS FILE SOMETHING WORTH NAMING: `reRun` refuses any arm file whose
+// TEXT mentions helpers/perturbation.ts, on the reasoning that such a file
+// re-runs perturbations itself and would spawn without bound. That is false
+// about this one -- it stages a package tree and re-runs nothing -- so a record
+// naming an arm here is refused with a message about recursion that does not
+// describe it. The refusal's breadth is deliberate and asserted, so the shape of
+// the failure is recorded rather than the predicate widened.
 import { type ThrowawayPath, throwawayOnly } from "./helpers/perturbation.ts";
 import { frameworkRoot, runCommand } from "./helpers/spawn.ts";
 import { runTsc, typeCheckProbe } from "./helpers/typecheck.ts";

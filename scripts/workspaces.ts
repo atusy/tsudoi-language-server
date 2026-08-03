@@ -454,6 +454,13 @@ interface PublishedSubpath {
  * THE `types` ARM IS THE SUBJECT AND A SUBPATH WITHOUT ONE IS SKIPPED RATHER
  * THAN GUESSED AT: what is being graded is where a TYPE CHECK lands, and a map
  * that names no declaration makes no promise for one to break.
+ *
+ * A WILDCARD SUBPATH WOULD BE READ LITERALLY, and the shape of that failure is
+ * named because no map here has one: `"./*"` becomes a specifier ending in a
+ * star, the probe cannot resolve it, and the refusal below reports `never
+ * reached the resolver` -- which is a fault in this reading and not a missing
+ * artifact. The day a map grows one, expand it here rather than loosening that
+ * pair.
  */
 function publishedSubpaths(root: string, members: readonly string[]): PublishedSubpath[] {
   const found: PublishedSubpath[] = [];
