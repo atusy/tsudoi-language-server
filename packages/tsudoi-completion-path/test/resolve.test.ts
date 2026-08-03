@@ -847,4 +847,43 @@ describe("what the drain keeps when the names arrive out of rendered order", () 
     expect(listing.names).toEqual(upper.slice(0, lowerOnly.names.length));
     expect(listing.total).toBe(lower.length + upper.length);
   });
+
+  /**
+   * THE GROUPING AT THE GATE, WHICH IS A SECOND HAZARD AND SO A SECOND ARM: the
+   * one above owns the comparison BETWEEN two names, this one owns the group
+   * they are compared in. `.` is 0x2E and every ordinary letter is above it, so
+   * under ONE FLAT code-unit order the hidden names arriving first are the
+   * twenty that render, and every ordinary name arriving after them is refused
+   * by the gate as worse than the worst kept.
+   *
+   * WHY IT IS NOT COVERED BY THE HANDLER ARM THAT ALREADY STAGES DOTFILES,
+   * MEASURED RATHER THAN ARGUED: the grouping removed from the comparator
+   * reddens that arm and only that arm -- and that arm reaches the gate through
+   * a real directory, so WHICH names are in the kept list when an ordinary one
+   * arrives is the filesystem's bookkeeping rather than the arm's choice. The
+   * case where a hidden name is ALREADY KEPT and must be DISPLACED by an
+   * ordinary one arriving later cannot be staged from out there at all. It is
+   * the same reason the sequence is a parameter, applied to the other key.
+   *
+   * MEMBERSHIP IS ASSERTED BY THE PREMISE AND NOT ONLY THE ORDER: the hidden run
+   * alone comes back as hidden names, so this arm cannot be satisfied by an
+   * implementation that FILTERED them -- which would be a different decision
+   * from the one the module took, and one the total would still hide.
+   */
+  test("a hidden name already kept is displaced by an ordinary name arriving after it", async () => {
+    const hidden = entryNames(".h", 25);
+    const ordinary = entryNames("o", 25);
+
+    // THE PREMISE, READ OFF THE DRAIN ITSELF, as the arm above reads its own:
+    // the hidden run ALONE overfills the kept list, so every ordinary name below
+    // arrives at a FULL list holding nothing but hidden names.
+    const hiddenOnly = await listingFrom(arriving(hidden));
+    expect(hiddenOnly.names.length).toBeLessThan(hidden.length);
+    expect(hiddenOnly.names).toEqual(hidden.slice(0, hiddenOnly.names.length));
+
+    const listing = await listingFrom(arriving([...hidden, ...ordinary]));
+
+    expect(listing.names).toEqual(ordinary.slice(0, hiddenOnly.names.length));
+    expect(listing.total).toBe(hidden.length + ordinary.length);
+  });
 });
