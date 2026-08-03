@@ -1074,6 +1074,18 @@ const scrum: ScrumDashboard = {
               "feat(scripts): read the listing's shape with a null cell, so the noise is measured",
             phase: "green",
           },
+          {
+            hash: "a56666e",
+            message:
+              "test(scripts): give the open-and-stat cell a guard, since it asserted nothing",
+            phase: "green",
+          },
+          {
+            hash: "e1ada09",
+            message:
+              "test(instrument): pin the timing instrument's copy of the gate to the shipped one",
+            phase: "green",
+          },
         ],
         notes: [
           "TAKEN, AND THE INSTRUMENT IS scripts/listing-shapes.ts. Commands as run, unpiped, one after the other with nothing else running on the machine: `bun run scripts/listing-shapes.ts` exit 0 and `deno run -A scripts/listing-shapes.ts` exit 0. bun 1.3.13 and deno 2.8.3, both READ OFF THE RUNNING BINARY by the instrument rather than off a note; darwin arm64, macOS 26.5.1, APFS, one volume; warm -- the process writes the fixture and discards one whole round per cell; 15 rounds at 200 and 5000, 7 at 100000; load average 1.29/1.27/1.39 through the bun run and 1.67/1.35/1.42 through the deno run, reported per cell by the instrument itself. ENTRY MIX: names of twelve characters, `NNNNNN-entry`, one in 37 carrying a leading dot, written in a seeded shuffle.",
@@ -1131,6 +1143,11 @@ const scrum: ScrumDashboard = {
               "test(perturbations): let the suite re-run this sprint's perturbation, not a scratchpad",
             phase: "refactoring",
           },
+          {
+            hash: "aa6bce0",
+            message: "test(resolve): close the empty list both gate arms were satisfied by",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE BRANCH THE RULE SELECTED IS THE SECOND ONE, AND THIS RECORD MAY NOT READ AS THE FIRST. At the ordinary size the delta is OUTSIDE the instrument's own noise on BOTH runtimes -- deno -3.261 ms against a null of -0.069 (-1.392..+0.227), bun +0.460 against a null of +0.030 (-0.031..+0.159) -- so nothing here closes on `the shapes are indistinguishable`. The decision was taken against the WORKING-SET reading, as the rule fixed in advance requires when either runtime pays outside noise, and ONE shape was taken: the streaming shape STAYS, and deno pays 3.261 ms per highlight at five thousand entries for it.",
@@ -1170,6 +1187,29 @@ const scrum: ScrumDashboard = {
               "docs(resolve): put the seam the fastest shape deletes where that edit would be made",
             phase: "refactoring",
           },
+          {
+            hash: "c82c563",
+            message: "docs(resolve): narrow the superlative the sprint's own null cell refutes",
+            phase: "refactoring",
+          },
+          {
+            hash: "1c9c23b",
+            message:
+              "docs(resolve): take the perception claim out of the declarative, and say what the budget rests on",
+            phase: "refactoring",
+          },
+          {
+            hash: "eb05491",
+            message:
+              "feat(scripts): price the stat per entry, and retire the figure that was left suspect",
+            phase: "green",
+          },
+          {
+            hash: "e8a67d9",
+            message:
+              "docs(resolve): say that nothing detects the firing condition, beside the condition",
+            phase: "refactoring",
+          },
         ],
         notes: [
           "THE RULING, AS IT LANDED AT THE SITE, AND ITS SIX CONTENTS CHECKED ONE AT A TIME. (1) A NUMBER PER RUNTIME AT THE ORDINARY SIZE FOR BOTH SHAPES, one instrument, one session: bun 2.080 streaming against 2.528 array, deno 9.619 against 6.374. (2) WHO PAYS, SIGNED: deno +3.261 ms per highlight against the array shape it replaced and +4.157 against an array under this same gate; bun -0.460 against the first and +0.601 against the second. (3) WHAT IT STILL BUYS, PER RUNTIME, AFTER THE TRANSIENT-ALLOCATION READING: on bun this function's own working set beside a copy the process holds anyway, plus a tail of 42.616 against 61.302; on deno the only whole-directory retention there is to avoid, since its open allocates and discards. (4) A FIRING CONDITION: deno's `opendir` ceasing to discard, bun's `Dir` ceasing to materialise on the first read, or the ordinary-size delta on deno falling inside the null cell on a re-run. AND NOTHING DETECTS ANY OF THE THREE, which is written AT THE CONDITION now and not only here, and not only about the instrument's re-run: all three clauses are properties of the RUNTIMES, no check in this repository reads what an `opendir` allocates or retains, no check re-runs the instrument, and the versions every number was taken on are read off the running binary INSIDE that instrument alone. So a runtime upgrade reddens nothing, the cited versions go stale in silence, and this condition fires only when a person runs the two lines. A ruling written to age against a suite that cannot see it age is the folklore it was written against, one step later. (5) AT THE SITE, in the module's own docstring and not only here. (6) SUPERSEDING: the paragraph that stood there is replaced whole rather than corrected line by line.",
@@ -1198,6 +1238,8 @@ const scrum: ScrumDashboard = {
     ],
     impediments: [],
     decisions: [
+      "REVISE ROUND TWO, NINE FINDINGS, ALL FIXED AT THIS BASE, AND THE COUNTS MOVED FOR ONE REASON. Baseline before the first edit, unpiped `bun run scripts/definition-of-done.ts`: 897 pass / 0 fail / 2725 expect() across 61 files, five [PASSED], warnings 1. At the last commit below: 898 pass / 0 fail / 2742 expect() across 62 files, five [PASSED], warnings 1. THE FILE AND THE TEST ARE test/instrument-copy.test.ts and the 17 further expect() calls are its 15 plus the two the gate arms gained; nothing else moved. Environment: bun 1.3.13, deno 2.8.3, tsc 7.0.2, darwin arm64.",
+      "FOUR OF THE NINE WERE THE SPRINT'S OWN PROSE FAILING THE RULE THE SPRINT EXISTS TO APPLY, which is worth naming as a pattern rather than leaving as four repairs: a superlative the sprint's own null cell refutes and which propagated from the dashboard into the module; a perception claim retired in one paragraph and re-made in the declarative in another; a generalisation about guards that swallowed the two cells it was least true of; and a degenerate's recorded output that the tracked instrument cannot produce. THE COMMON SHAPE IS THAT EACH READS AS A DISCLOSURE. A sentence that says `no claim is made here`, `filed as suspect`, `a shape that read nothing cannot report a fast row` or `written before the run` buys the reader's trust in the same breath it spends it, and this sprint's own reviewers read past all four. What separates them from the ordinary error is that RE-MEASURING DOES NOT CATCH ANY OF THEM: the numbers were right every time.",
       "A RECORDED RULING IS A LEGITIMATE CLOSE HERE -- the criterion licenses it -- AND IT NEEDS SIX THINGS OR IT IS A SHRUG: a number per runtime at the ordinary size for both shapes, taken at this base by ONE instrument in ONE session; who pays and how much as a SIGNED DELTA rather than a direction word; what the shape still buys after the transient-allocation reading, per runtime, in the terms it was adopted for; A FIRING CONDITION, the observation that would reopen it, since a ruling that cannot age is folklore; landing AT THE SITE and not only in the dashboard; and SUPERSEDING rather than layering.",
       "`THE DIFFERENCE IS IMPERCEPTIBLE TO A USER` IS REFUSED AS WRITTEN, AND THIS IS THE ITEM WHERE IT MUST BE. It names no quantity, no threshold and no observer, so no measurement can contradict it -- the superlative class. And it is the subject-error class exactly: a number would be taken in milliseconds while the sentence's subject is PERCEPTION, which the number does not measure. Shipping it in the sprint whose whole business is a measured claim would be the class arriving inside its own repair, which this backlog has recorded happening twice.",
       "TWO HONEST NEIGHBOURS ARE ADMISSIBLE INSTEAD: the delta placed against a NAMED BUDGET WITH ITS OWN PROVENANCE -- this runs once per HIGHLIGHT on an idle moment, never per keystroke -- or a perception claim made the way this package has already made one, naming the editor, the plugin chain and the setting it was measured in AND disclosing that the measurement is not in this suite and no red here catches its regression. A claim naming an editor, a harness and what it cannot catch is admissible; one naming none of the three is not. IF NEITHER IS OBTAINABLE HONESTLY, THE RULING DROPS THE PERCEPTION CLAIM and stands on the working set -- declining to claim what was not measured is a close; claiming it anyway is the shrug.",
