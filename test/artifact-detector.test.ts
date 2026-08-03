@@ -43,8 +43,40 @@ const typeChecks = "export const fine: number = 1;\n";
 const typeError = 'export const broken: number = "not a number";\n';
 
 /**
+ * The map a package WITH SOURCE IN THE TREE publishes: the artifact first, the
+ * source last, which is the shape tsudoi's own map has and the only shape under
+ * which the compiler can fall through to a file the package does not ship.
+ */
+const artifactThenSource = {
+  "./thing": {
+    types: "./dist/thing.d.ts",
+    import: "./dist/thing.js",
+    default: "./src/thing.ts",
+  },
+};
+
+/**
+ * The map with NO SOURCE ARM, which is the shape BOTH handler packages in this
+ * repository have -- deno refuses to type-strip under node_modules, so a handler
+ * publishes dist/ and names no other route. Under it a missing artifact is not a
+ * fall-through: there is nothing to fall through TO, and the subpath resolves to
+ * no file at all.
+ */
+const artifactOnly = {
+  "./thing": {
+    types: "./dist/thing.d.ts",
+    import: "./dist/thing.js",
+  },
+};
+
+/**
  * A workspace whose one member PUBLISHES a subpath, in whichever state its
  * artifact is left in.
+ *
+ * THE MAP IS A PARAMETER BECAUSE THE MAP IS A STATE, and it is the axis every
+ * arm here used to hold fixed: with one map in the fixture, `does this package
+ * declare a source arm` was never varied, and the branch that reads a subpath
+ * answering from NOTHING was reachable by no arm at all.
  *
  * NO tsconfig.build.json, DELIBERATELY: the check builds every package that has
  * one, so a member with a build config would have its artifact written by the
@@ -58,6 +90,7 @@ const typeError = 'export const broken: number = "not a number";\n';
 function publishingMember(
   artifact: Record<string, string>,
   source = typeChecks,
+  exports: Record<string, Record<string, string>> = artifactThenSource,
 ): Record<string, string> {
   return {
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/*"] }),
@@ -67,13 +100,7 @@ function publishingMember(
       name: "@staged/producer",
       version: "0.0.0",
       files: ["dist"],
-      exports: {
-        "./thing": {
-          types: "./dist/thing.d.ts",
-          import: "./dist/thing.js",
-          default: "./src/thing.ts",
-        },
-      },
+      exports,
     }),
     "packages/producer/tsconfig.json": memberTsconfig,
     "packages/producer/src/index.ts": source,
@@ -115,6 +142,34 @@ test("a published subpath with no artifact at all is refused, naming the file it
   expect(result.code).not.toBe(0);
   expect(result.stderr).toContain("@staged/producer/thing");
   expect(result.stderr).toContain(declaration);
+});
+
+/**
+ * NO ANSWER IS NOT AN ANSWER FROM THE ARTIFACT, and until this arm nothing in
+ * this suite said so. Every fixture above carries a source arm, so every
+ * specifier the probe asked about resolved to SOMETHING -- and a detector
+ * treating an unresolved subpath as satisfactory kept the whole suite green.
+ * MEASURED: `landed !== undefined && (...)` in place of the offender predicate
+ * reddens nothing without this pair.
+ *
+ * AND THE SHAPE IS NOT INVENTED FOR THE ARM: it is what both handler packages
+ * here declare, so the state this reads is one this workspace can actually be
+ * in.
+ */
+test("a published subpath with NO source arm and no artifact is refused, saying it answers from nothing", async () => {
+  const result = await checkWorkspace(publishingMember({}, typeChecks, artifactOnly));
+
+  expect(result.code).not.toBe(0);
+  // THE WORDING IS PART OF THE READING AND NOT DECORATION: `answers from NOTHING`
+  // is what separates a subpath that resolved to the wrong file from one that
+  // resolved to none, and a reader's next move differs between them.
+  expect(result.stderr).toContain("@staged/producer/thing answers from NOTHING");
+  // THE PAIR: the same map with the artifact present passes, so the red above is
+  // the missing artifact and not the missing source arm.
+  expect(await checkWorkspace(publishingMember(complete, typeChecks, artifactOnly))).toHaveProperty(
+    "code",
+    0,
+  );
 });
 
 /**
