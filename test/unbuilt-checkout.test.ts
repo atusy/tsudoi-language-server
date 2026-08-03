@@ -66,14 +66,21 @@ applySuiteDeadline();
  * the stage, and every declared output directory to be absent, beside the
  * reading they explain.
  *
- * READ IN BOTH DIRECTIONS, AND THE ORDER OF FAILURE IS THE HALF WORTH RECORDING.
- * As it stands, this file alone is 1 pass / 0 fail. With the borrow degenerated
- * to the single symlink -- the whole of the change -- it is 0 pass / 1 fail, and
- * THE FIRST LINE TO FAIL IS THE STAGE-FAITHFULNESS GUARD, naming all three
- * entries as resolving outside the stage, before the exit code is ever read.
- * That is the right order: in that stage the compiler reads exit 0 with zero
- * bytes of output, so an arm reaching its exit code first would report a green
- * apparatus failure.
+ * READ IN BOTH DIRECTIONS -- AND THE RECORDED ORDER IS TRUE OF ONE SPELLING OF
+ * THE DEGENERATION AND NOT OF THE MINIMAL ONE, WHICH IS WHY THE EARLIER THROW IS
+ * NAMED HERE RATHER THAN LEFT FOR WHOEVER FIRST MEETS IT. As it stands, this file
+ * alone is 1 pass / 0 fail. With the `@atusy` entries made to resolve out of the
+ * stage while the scope directory inside it stays a real directory, it is 0 pass
+ * / 1 fail and THE FIRST LINE TO FAIL IS THE STAGE-FAITHFULNESS GUARD, naming all
+ * three entries, before the exit code is ever read. SPELT MINIMALLY INSTEAD --
+ * node_modules replaced by ONE SYMLINK and the member-link loop left alone --
+ * NOTHING IN THE ARM RUNS AT ALL: MEASURED at sprint 61's review,
+ * `stageUnbuiltCheckout` throws at the scope-directory guard naming
+ * `<checkout>/node_modules/@atusy` as outside the stage, and the arm reports 0
+ * expect() calls. THE TWO ORDERS AGREE ON THE HALF THAT MATTERS: in a degenerate
+ * stage the compiler reads exit 0 with zero bytes of output, so anything reaching
+ * that exit code first would report a green apparatus failure, and neither route
+ * gets there.
  *
  * AND THE WALL CLOCK WAS RE-TAKEN UNDER A FULL RUN rather than by hand, because
  * this project has a measured instance of a 0.046 s hand reading becoming 80
@@ -202,10 +209,14 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
   // reason: there would be no directory to own.
   //
   // MEASURED RATHER THAN ARGUED, in a copy: with this set left EMPTY -- which is
-  // exactly what `dirname` of an unscoped root name produces -- the parent
-  // resolution below refuses and NAMES the checkout's own node_modules entry as
-  // outside the stage, the arm reads 0 pass / 1 fail, and nothing is written
-  // anywhere. As it stands the same file is 1 pass / 0 fail.
+  // exactly what `dirname` of an unscoped root name produces -- nothing keeps the
+  // borrow out of this workspace's own scope, the member links would land inside
+  // the REAL checkout's node_modules, and the arm reads 0 pass / 1 fail with
+  // nothing written anywhere. As it stands the same file is 1 pass / 0 fail. THAT
+  // REFUSAL IS NOW THE THROW BELOW AND NO LONGER THE PARENT RESOLUTION IN THE
+  // LINKING LOOP, which is a correction and not a move: the two refused with the
+  // SAME BYTES, and two states printing one message are one state a reader cannot
+  // act on.
   const memberDirs = declaredMembers(root);
   const scopes = new Set<string>();
   for (const member of memberDirs) {
@@ -216,6 +227,16 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
       );
     }
     scopes.add(dirname(name));
+  }
+  // THE EMPTY SET SAYS WHAT IS TRUE OF ITSELF, and it is reachable only with the
+  // derivation above perturbed -- the loop refuses an unscoped member outright,
+  // so an empty set means THE SCOPES CAME OUT WRONG rather than that a member did.
+  // It used to arrive fifteen lines down wearing the borrow degeneration's own
+  // message, which sent a reader to the wrong half of this function.
+  if (scopes.size === 0) {
+    throw new Error(
+      `no member of ${root} contributed a scope directory, so nothing would keep the borrow below out of this workspace's own scope and every member link would land in the real checkout's node_modules.`,
+    );
   }
   const nodeModules = inStage(root, "node_modules");
   mkdirSync(nodeModules, { recursive: true });
@@ -243,7 +264,7 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
     const scopeDir = realpathSync(dirname(entry));
     if (scopeDir !== realRoot && !scopeDir.startsWith(realRoot + sep)) {
       throw new Error(
-        `${scopeDir} is outside the stage ${realRoot}, so nothing here will link a package into it`,
+        `${scopeDir} is outside the stage ${realRoot}, so nothing here will link a package into it -- the borrow above degenerated to a link, and this stage's node_modules or its scope directory is the real checkout's rather than a directory of its own.`,
       );
     }
     symlinkSync(member, entry);
