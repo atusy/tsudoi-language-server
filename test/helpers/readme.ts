@@ -94,15 +94,169 @@ export interface WriteStep {
 
 export type QuickstartStep = RunStep | WriteStep;
 
-/** Everything a READER sees: markers and code blocks removed. */
+/**
+ * Everything a READER sees: markers and code blocks removed.
+ *
+ * THE BLOCKS COME OUT BY OFFSET, THROUGH THE ONE READER BELOW, and not by a
+ * second expression matching backticks -- which is what stood here, in the same
+ * file as the reader, while the reader's own docstring claimed to be the only
+ * matcher in it. Two spellings of `what a fenced block is` is exactly what this
+ * join exists to kill, and this was the second one.
+ *
+ * IT WAS ALSO WRONG IN THE PERMITTING DIRECTION, which is why the repair is not
+ * cosmetic: three backticks matched nothing tilde-fenced, so a directory named
+ * ONLY inside a `~~~` block counted as prose a reader sees, and the two
+ * extractors that ask `is this directory in the prose` would have said yes about
+ * a name no reader is shown.
+ *
+ * BACK TO FRONT, so removing one block does not move the next one's offset.
+ */
 function visibleProse(markdown: string): string {
-  return markdown.replaceAll(/<!--[\s\S]*?-->/g, "").replaceAll(/```[\s\S]*?```/g, "");
+  let prose = markdown.replaceAll(/<!--[\s\S]*?-->/g, "");
+  for (const block of [...fencedBlocks(prose)].reverse()) {
+    prose = `${prose.slice(0, block.offset)}${prose.slice(block.end)}`;
+  }
+  return prose;
 }
 
 function attributes(text: string): Map<string, string> {
   return new Map(
     [...text.matchAll(/([a-z]+)=(\S+)/g)].map(([, key, value]) => [key ?? "", value ?? ""]),
   );
+}
+
+/** One fenced block, LOCATED so that two readers of this document can join on it. */
+export interface FencedBlock {
+  /**
+   * Where the opening fence starts, as an index into the markdown.
+   *
+   * IT IS THE IDENTITY AND NOT A CONVENIENCE. A sweep over `the document's
+   * blocks` and an extractor over `the blocks something consumes` are only
+   * comparable if both name a block the same way, and every other candidate --
+   * the body, the info string, the line -- can repeat within one document.
+   */
+  readonly offset: number;
+  /**
+   * Where the block stops, as an index just past its CLOSING fence.
+   *
+   * IT IS HERE SO THAT `visibleProse` CAN CUT A BLOCK OUT BY OFFSET rather than
+   * match one again. A caller wanting `the document without its blocks` and
+   * given only the opening offset would have to find the end itself, which is
+   * the second matcher arriving by the back door.
+   */
+  readonly end: number;
+  /** 1-based line of the opening fence, for a message a reader can walk to. */
+  readonly line: number;
+  /** The info string, trimmed. `""` when the fence carries none. */
+  readonly info: string;
+  /** The bytes between the fences, with no trailing newline. */
+  readonly body: string;
+}
+
+/**
+ * EVERY FENCED BLOCK IN A MARKDOWN DOCUMENT, AND THE ONLY MATCHER IN THIS FILE
+ * THAT FINDS ONE.
+ *
+ * THE READER READS FENCES AND INFO STRINGS, NEVER BODIES. Deciding `is this text
+ * a command` by looking at what is written inside a block is a matcher for a
+ * defect that is a property of matching, and this repository refuses that shape
+ * by name.
+ *
+ * TILDES ARE IN, AND THE DIRECTION OF THE ERROR IS WHY. A reader that missed
+ * `~~~sh` would fail toward PERMITTING -- a block nobody consumes, reported by
+ * nothing -- which is the one direction the sweep standing on this cannot
+ * accept. Three-or-more of either character at up to three spaces of indent,
+ * closing on the same character at at least the same run length, which is
+ * CommonMark's own rule.
+ *
+ * WHAT IT CANNOT SEE, NAMED RATHER THAN FIXED: a four-space indented code block,
+ * which has no fence and therefore no info string and no marker position. A
+ * document that wrote its commands that way is invisible here.
+ *
+ * AN UNCLOSED FENCE THROWS. The alternative is to treat the rest of the document
+ * as one enormous block, which silently swallows every block after it -- and a
+ * sweep whose input quietly shrank is the vacuity this file exists against.
+ */
+export function fencedBlocks(markdown: string): readonly FencedBlock[] {
+  const blocks: FencedBlock[] = [];
+  let open: { run: string; offset: number; line: number; info: string; body: string[] } | undefined;
+  let offset = 0;
+  for (const [index, line] of markdown.split("\n").entries()) {
+    const fence = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    const run = fence?.[1] ?? "";
+    if (open === undefined) {
+      if (fence !== null) {
+        open = {
+          run,
+          offset: offset + line.indexOf(run),
+          line: index + 1,
+          info: (fence[2] ?? "").trim(),
+          body: [],
+        };
+      }
+    } else if (
+      run[0] === open.run[0] &&
+      run.length >= open.run.length &&
+      (fence?.[2] ?? "") === ""
+    ) {
+      blocks.push({
+        offset: open.offset,
+        end: offset + line.length,
+        line: open.line,
+        info: open.info,
+        body: open.body.join("\n"),
+      });
+      open = undefined;
+    } else {
+      open.body.push(line);
+    }
+    offset += line.length + 1;
+  }
+  if (open !== undefined) {
+    throw new Error(
+      `a fence opened at line ${String(open.line)} is never closed, so every block after it would be read as part of it`,
+    );
+  }
+  return blocks;
+}
+
+/** A block a marker routes somewhere, with the marker's own attribute text. */
+export interface MarkedBlock {
+  /** Everything the marker said after its name -- what `attributes` reads. */
+  readonly marker: string;
+  readonly block: FencedBlock;
+}
+
+/**
+ * The blocks ONE marker names, selected out of `fencedBlocks` rather than found
+ * by a second expression.
+ *
+ * THIS IS WHAT MAKES `NO SECOND PARSER` TRUE. The sweep asks which blocks a
+ * consumer reaches and gets OFFSETS out of the same reader the extractors take
+ * their bodies from, so the two cannot drift apart into a document where a block
+ * is extracted and swept as unreached, or the reverse. A regex standing beside
+ * this call would be the drift, spelled once.
+ *
+ * ADJACENCY, WHICH THE THREE REGEXES THIS REPLACED ALREADY REQUIRED: the marker
+ * ends, whitespace including at least one newline follows, and the next thing in
+ * the document is the opening fence. Kept rather than loosened, because a marker
+ * that may sit anywhere above a block stops saying WHICH block it is about.
+ */
+export function markedBlocks(markdown: string, marker: string): readonly MarkedBlock[] {
+  const blocks = fencedBlocks(markdown);
+  const marked: MarkedBlock[] = [];
+  for (const comment of markdown.matchAll(/<!--\s*([a-z-]+)\b([^>]*?)-->/g)) {
+    if (comment[1] !== marker) {
+      continue;
+    }
+    const after = comment.index + comment[0].length;
+    const block = blocks.find((candidate) => candidate.offset >= after);
+    const between = block === undefined ? "" : markdown.slice(after, block.offset);
+    if (block !== undefined && between.trim() === "" && between.includes("\n")) {
+      marked.push({ marker: comment[2] ?? "", block });
+    }
+  }
+  return marked;
 }
 
 /**
@@ -115,9 +269,7 @@ function attributes(text: string): Map<string, string> {
  * and the caller is given no way to skip it.
  */
 export function extractQuickstart(markdown: string, expected: number): QuickstartStep[] {
-  const blocks = [
-    ...markdown.matchAll(/<!--\s*quickstart\b([^>]*?)-->\s*\n```[a-z]*\n([\s\S]*?)\n```/g),
-  ];
+  const blocks = markedBlocks(markdown, "quickstart");
   if (blocks.length !== expected) {
     throw new Error(
       `README quickstart: expected ${String(expected)} marked blocks, found ${String(blocks.length)}`,
@@ -125,7 +277,8 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
   }
 
   const prose = visibleProse(markdown);
-  const steps = blocks.map(([, marker = "", body = ""]) => {
+  const steps = blocks.map(({ marker, block }) => {
+    const body = block.body;
     const attrs = attributes(marker);
     const dir = attrs.get("in");
     if (dir === undefined) {
@@ -216,15 +369,13 @@ export function extractQuickstart(markdown: string, expected: number): Quickstar
  * still tells a reader to install it.
  */
 export function extractExamplesInstall(markdown: string): string {
-  const blocks = [
-    ...markdown.matchAll(/<!--\s*examples-install\s*-->\s*\n\s*```[a-z]*\n([\s\S]*?)\n\s*```/g),
-  ];
+  const blocks = markedBlocks(markdown, "examples-install");
   if (blocks.length !== 1) {
     throw new Error(
       `README examples install: expected 1 marked block, found ${String(blocks.length)}`,
     );
   }
-  const lines = (blocks[0]?.[1] ?? "")
+  const lines = (blocks[0]?.block.body ?? "")
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line !== "");
@@ -258,13 +409,11 @@ export function extractExamplesInstall(markdown: string): string {
  * execution mean anything: a command nobody found runs vacuously green.
  */
 export function extractHandlerPack(markdown: string): { dir: string; command: string } {
-  const blocks = [
-    ...markdown.matchAll(/<!--\s*handler-pack\b([^>]*?)-->\s*\n\s*```[a-z]*\n([\s\S]*?)\n\s*```/g),
-  ];
+  const blocks = markedBlocks(markdown, "handler-pack");
   if (blocks.length !== 1) {
     throw new Error(`README handler pack: expected 1 marked block, found ${String(blocks.length)}`);
   }
-  const dir = attributes(blocks[0]?.[1] ?? "").get("in");
+  const dir = attributes(blocks[0]?.marker ?? "").get("in");
   if (dir === undefined) {
     throw new Error("README handler pack: the marked block does not say which directory");
   }
@@ -273,7 +422,7 @@ export function extractHandlerPack(markdown: string): { dir: string; command: st
       `README handler pack: the marker says in=${dir}, but no prose a reader sees names ${dir}`,
     );
   }
-  const lines = (blocks[0]?.[2] ?? "")
+  const lines = (blocks[0]?.block.body ?? "")
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line !== "");
