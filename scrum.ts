@@ -1425,9 +1425,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "scripts/workspaces.ts says at three sites that a handler built in the source-answered state has its declarations `graded against a file no consumer receives`. Every one of those sentences remains TRUE and every one now implies a harm that was measured not to exist. Superseded with the reading and its bound.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "5d37bbd",
+            message:
+              "docs: three sentences stayed true while the harm they implied was measured away",
+            phase: "green",
+          },
+        ],
         notes: [
+          "WHERE EACH LANDED, AND ALL THREE FILES WERE BYTE-IDENTICAL TO BASE 121384f BEFORE THE EDIT. `buildOrder`'s inline comment and `refuseSubpathsAnsweringFromSource`'s docstring carry the reading and send the reader to `prepareWorkspace`, which carries the measurement, its conditions and the four things it cannot separate -- it is the site that had filed the divergence as an open question, so it is the site that answers it. NOT A POINTER TO THIS DASHBOARD, deliberately: test/optional-peer-premise.test.ts already rules that a dashboard entry will not do, because this file compacts.",
+          "WHAT REPLACES THE IMPLIED HARM AT EACH SITE IS THE EXPOSURE THAT SURVIVES THE MEASUREMENT -- an artifact that answers WHILE STALE, which is absence's opposite -- named as a state rather than cited as an item, for the same compaction reason.",
+          "ONE PHRASE OF THE SAME WORDS IS DELIBERATELY LEFT STANDING: the throw text in `refuseSubpathsAnsweringFromSource` says a published subpath answering from anywhere but the artifact means the artifact is missing or half written `and every check below this one would have graded a file no consumer receives`. Its subject is an artifact that SURVIVED a build and still does not answer, which is a fault on its own ground and not the implicature this subtask retired.",
           "SUPERSEDE RATHER THAN AMEND IS THE RULE THIS PROJECT LANDED LAST SPRINT, AND THIS IS THE SPRINT THAT WOULD OTHERWISE BREAK IT. A paragraph keeping its sentence and appending a correction leaves the pointer behind, which is the dangling-reference shape -- produced, if it happened here, by the increment that ruled on it. One of the three sites already carries `an open question filed in the dashboard as the pack route's own item and deliberately not answered here`; that question is answered now and the sentence goes with the answer.",
         ],
       },
