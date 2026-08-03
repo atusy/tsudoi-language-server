@@ -9,8 +9,10 @@ import {
   line,
   type PerturbationRecord,
   read,
+  reRun,
   runArmFile,
   stageCheckout,
+  takeBaseline,
   throwawayOnly,
   type Weakening,
 } from "./helpers/perturbation.ts";
@@ -296,3 +298,98 @@ test("the report names the arm each record weakened, and no other", async () => 
   expect(held).toContain("[HELD]");
   expect(quiet).toContain("[GONE QUIET]");
 });
+
+/**
+ * THE REGISTRY: perturbations this repository has already run once and written
+ * up as prose, recorded here as something the suite RE-RUNS.
+ *
+ * NOTHING HERE CLAIMS TO BE COMPLETE, AND A GREEN BELOW SAYS NOTHING ABOUT ANY
+ * ARM NOT NAMED IN IT. That is the product owner's refusal made structural: the
+ * arms are named, whoever wants a number counts the lines, and no sentence in
+ * this tree asserts that the arms with records are the arms that need them.
+ *
+ * BOTH SEEDS STAND OVER ARMS ELSEWHERE IN THE SUITE AND NOT OVER THIS FILE'S
+ * OWN, which is the condition that keeps the instrument's evidence from being
+ * self-referential. The arms THIS sprint wrote carry their perturbation as an
+ * assertion instead -- their weakenings are readings of a result the arm already
+ * holds, so a record here would be a slower spelling of a line already above.
+ *
+ * AN ARM FILE THAT IS NOT TRACKED CANNOT BE RE-RUN HERE: the stage is built from
+ * `git ls-files`, so a record naming a file that has never been committed fails
+ * at the read, loudly, rather than reporting a colour.
+ */
+const dodArms = "test/definition-of-done.test.ts";
+const dodRunner = "scripts/definition-of-done.ts";
+
+const records: readonly PerturbationRecord[] = [
+  {
+    // THE GATE NARROWED BY ONE WORD. `not passed` to `failed` leaves outcome,
+    // reason and every byte of the report unchanged and moves only the exit
+    // code, so nothing but a tree of passes around one missing binary sees it.
+    // ITS SECOND NAME IS A MEASUREMENT AND NOT A TOLERANCE: the same word gates
+    // a REFUSED check too, so the refusal arm reddens with it, and the day it
+    // stops doing so this record fails rather than passing quietly.
+    arm: {
+      file: dodArms,
+      name: "a check that never started GATES the run, with every other check green",
+    },
+    weakening: {
+      file: dodRunner,
+      from: 'const failed = results.filter((result) => result.outcome !== "passed");',
+      to: 'const failed = results.filter((result) => result.outcome === "failed");',
+    },
+    alsoReddens: ["a `run` this runner cannot execute FAITHFULLY is refused, never misread"],
+  },
+  {
+    // THE TOTAL TAKEN FROM THE FIRST ELEMENT, which is invisible wherever the
+    // aggregate and its first element are one value. This one reddens ITS ARM
+    // AND NOTHING ELSE, so it is the seed to point at when this instrument's
+    // attribution is being described.
+    arm: { file: dodArms, name: "a warning is counted and reported, and does NOT gate the run" },
+    weakening: {
+      file: dodRunner,
+      from: "const warnings = results.reduce((total, result) => total + result.warnings, 0);",
+      to: "const warnings = results[0]?.warnings ?? 0;",
+    },
+    alsoReddens: [],
+  },
+];
+
+/**
+ * The unweakened run each record is read against, taken once per arm file.
+ *
+ * SHARED, BECAUSE IT IS ONE SUBJECT AND NOT ONE PER RECORD: two baselines of the
+ * same file in the same tree are the same reading bought twice.
+ */
+const baselines = new Map<string, Promise<ArmFileRun>>();
+
+function unweakened(file: string): Promise<ArmFileRun> {
+  const taken = baselines.get(file) ?? takeBaseline(file);
+  baselines.set(file, taken);
+  return taken;
+}
+
+test(`every arm in ${dodArms} passes before any weakening`, async () => {
+  const before = await unweakened(dodArms);
+  // THE HALF THAT MAKES EVERY RED BELOW ATTRIBUTABLE. Each record requires the
+  // arms it does NOT name to stay green under its weakening; that requirement
+  // means nothing unless they were green to begin with, and this stage is not
+  // this repository -- it carries no bunfig.toml, so no build ran in it.
+  expect([...(before.arms ?? [])].filter(([, result]) => result === "failed")).toEqual([]);
+  // AND THE PAIR: an empty list of failures and a reader that opened nothing are
+  // the same observation without it.
+  expect(before.arms?.size ?? 0).toBeGreaterThan(0);
+});
+
+for (const record of records) {
+  test(`the recorded weakening still reddens: ${record.arm.name}`, async () => {
+    const reading = await reRun(record, await unweakened(record.arm.file));
+    // THE REPORT, AND IT IS PRINTED RATHER THAN COUNTED. A green run of this
+    // suite prints nothing per arm, so without this line the only naming a
+    // reader gets is on a failure -- and the one outcome refused with every
+    // check green is a green that reads as a statement about arms nobody
+    // recorded.
+    process.stdout.write(`${line(reading)}\n`);
+    expect(reading.verdict).toBe("held");
+  });
+}
