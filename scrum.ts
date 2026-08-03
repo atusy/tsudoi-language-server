@@ -131,8 +131,12 @@ const scrum: ScrumDashboard = {
             "THE FIRST SUBTASK IS A BOUNDED MEASUREMENT AND THE DESIGN WAITS ON IT: do the `.d.ts` a handler emits differ between a build against the framework's `dist/` and a build against its `src/`? Byte-compare the emitted declarations from both states of one member, at a named base. IF THEY DO NOT DIFFER, a hard refusal would be added to a documented command for a cost nobody has shown. IF THEY DO, the refusal is obvious and its message can name what differed. Only then is the shape chosen.",
         },
       ],
-      status: "draft",
+      status: "done",
       notes: [
+        "CLOSED IN SPRINT 62 AS A RECORDED DECISION THAT RETIRES THE CRITERION ABOVE RATHER THAN MEETING IT, AND THE DIFFERENCE IS THE WHOLE OF WHAT A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade its declarations against the framework's SOURCE while the framework's artifact is absent. THE MEASUREMENT SAYS THAT GRADING IS THE CURRENT ONE: with a framework type renamed in src/ alone, the build against the stale artifact exits 0 while the build against src/ exits 2 at TS2305 -- so the state the criterion asks to forbid is the state that CATCHES a disagreement the artifact hides, and meeting it in letter would make the product worse. A `done` reading as `we delivered the story` would leave this re-filed by the next reader.",
+        "AND THE PREMISE UNDER THE CRITERION IS WHAT WENT, NOT THE WORK: that a build grading against src/ costs the tarball something. MEASURED FALSE -- both handlers, every emitted file, byte for byte identical from either state -- so the capability this story asks for was never absent. NOT MET, NOT MET DIFFERENTLY, AND NOT WITHDRAWN FOR WANT OF EFFORT: the subject was measured away.",
+        "WHAT THE SPRINT LEFT IN THE TREE RATHER THAN IN THIS FILE, WHICH COMPACTS: the three sentences carrying the retired implicature are superseded in place in scripts/workspaces.ts; the ONE STRUCTURAL FACT the retirement rests on -- a handler's emitted declaration naming the framework BY SPECIFIER -- is armed at test/handler-declaration-specifier.test.ts; both shapes of the `prepack` precondition are refused at each handler's own package-shape test; and the residual the measurement cannot reach is at the publish sentinel's live arm in test/optional-peer-premise.test.ts, labelled an INFERENCE.",
+        "WHAT DID NOT CLOSE WITH IT AND MUST NOT BE FOLDED BACK IN: an artifact that answers WHILE STALE. That is the opposite mechanism -- the artifact answering and being wrong, rather than being absent -- and it left as its own item with the question and no predicted outcome.",
         "MEASURED IN SPRINT 61, AND THIS ITEM CLAIMS ONLY WHAT WAS MEASURED. On a staged fresh checkout nobody has built, `bun pm pack` in each handler EXITS 0 and produces a tarball, because its `prepack` compiler answers `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from `packages/tsudoi-language-server/src/*.ts` -- TRACED with the compiler's own resolver, not inferred. WHAT WAS MEASURED IS WHAT THE PACK READ AND THAT IT EXITED 0. IT IS NOT CLAIMED THAT THE TARBALLS ARE WRONG; that is the first subtask's question.",
         "IT INHERITS THE SENTENCE OF PBI-60 -- CLOSED IN SPRINT 61, WHOSE RECORD CARRIES THE MEASUREMENTS -- AT A DIFFERENT CHECK AND WITH A WORSE CONSEQUENCE, which is why it outranks everything: the same source arm answers, but where that item's cell ends in a quiet root type check, this one ends in an artifact a stranger installs.",
         "WHY NOTHING CAUGHT IT, AND IT IS A REASON RATHER THAN A GAP: the suite runs this route only in the state where it is safe. The README arm packs in a REAL member directory for the handlers, but under `bun test` the preload has already built the framework, so the route is exercised exclusively after the artifact exists. `refuseSubpathsAnsweringFromSource` cannot see it either -- scripts/typecheck-workspaces.ts builds before it reads, so the pack route passes under it entirely.",
@@ -1374,7 +1378,7 @@ const scrum: ScrumDashboard = {
     number: 62,
     pbi_id: "PBI-75",
     goal: "The pack route stops carrying a harm nobody measured -- the item's premise is tested and retired, the three sentences in the tree that carry its implicature are superseded, and the ONE structural fact the retirement rests on gets something that reddens the day it stops holding.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "None -- the deciding READING, taken before the sprint was planned because the design waited on it. Method recorded so the instrument can be judged before the number: a `git clone --no-hardlinks` at base c1979a4 into a scratch directory, `node_modules` COPIED rather than symlinked and ALL THREE @atusy entries verified to realpath INSIDE the stage first, since a symlinked borrow was measured last sprint to read the real checkout and measure nothing. The real checkout's dist/ was never touched. Whole emitted trees compared, not only declarations.",
@@ -1476,9 +1480,12 @@ const scrum: ScrumDashboard = {
         implementation:
           "PBI-75 closes as a recorded decision that RETIRES ITS CRITERION rather than meeting it, and the stale-artifact hazard leaves as its own item carrying the question and no predicted outcome.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
+          "THE DECISION IS RECORDED IN PBI-75'S OWN NOTES AND NOT ONLY HERE, because a subtask note is compacted with the sprint while the item is what a later reader reaches for. `commits` IS EMPTY BECAUSE THE CLOSE IS THE COMMIT ITSELF and cannot cite its own hash.",
+          "THE HAZARD'S OWN ITEM WAS ALREADY FILED AT PLANNING AND IS DELIBERATELY NOT TOUCHED HERE, so this subtask's second clause is discharged by not re-filing it.",
+          "WHAT THIS EXECUTOR DOES NOT DO, ON THIS DASHBOARD'S OWN PRECEDENT: the sprint is left `in_progress` rather than `review` or `done`, and it is not archived into `completed`. Execution finished; a review has not happened, and the executor is not the one who can say it did. THE ITEM'S STATUS IS THE EXCEPTION AND THE REASON IS IN THE ITEM: what closes it is a decision that its subject was measured away, which is this subtask's deliverable rather than a reviewer's verdict.",
           "RETIRED AND NOT MET, WHICH IS THE DIFFERENCE A LATER READER NEEDS. Read literally the criterion asks that a handler's build NOT grade against the framework's source -- and the measured cell says that grading is the CURRENT one, which catches a disagreement the artifact hides. A `done` reading as `we delivered the story` would leave the item re-filed.",
         ],
       },
@@ -1487,6 +1494,9 @@ const scrum: ScrumDashboard = {
     decisions: [
       "THE DECIDING MEASUREMENT WAS TAKEN BEFORE THE SPRINT WAS PLANNED, deliberately, because the item made its design wait on it and planning ahead of it would have been discarded. It inverted the premise, so the sprint that was filed is not the sprint that would have been filed.",
       "THE PRODUCT OWNER NARROWED THE FACILITATOR'S OWN CONCLUSION AND THE NARROWING IS KEPT: the evidence supports CURRENCY, not strictness. It is recorded because it is the conclusion-wider-than-its-enumeration class arriving in a ruling's headline, which is the position where this project has measured it hardest to see.",
+      "IN EXECUTION: THE ARM'S FIRST DEGENERATE NUMBERS WENT STALE INSIDE THIS SPRINT, and how they went is the finding rather than the correction. They were taken on the two-arm file, and the third arm -- the one that stops the degenerate being prose -- landed after them, so a paragraph in the tree described a run nobody could reproduce from it. Re-taken and SUPERSEDED, not set beside; this is the sprint whose whole subject is what an amended paragraph leaves behind.",
+      "IN EXECUTION: ONE CLAIM IN THE FORECLOSURES WAS NEW AND WAS MEASURED HERE RATHER THAN INHERITED -- that a member's manifest reaches a registry with its `scripts`. Every other reading written into the tree this sprint is the deciding measurement's, carried across without being re-derived, which is what the plan asked for.",
+      "IN EXECUTION: A LINT WARNING WAS INTRODUCED AND REPAIRED IN THE SAME SPRINT rather than carried to review -- a refusal written inside a `finally`, which would have overwritten whatever the arm was already reporting. The Definition of Done reports warnings without gating on them, so the only thing that catches this is reading the run.",
     ],
   },
   retrospectives: [],
