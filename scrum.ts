@@ -1295,9 +1295,17 @@ const scrum: ScrumDashboard = {
         implementation:
           "A local stager -- per-entry node_modules links with `@atusy` pointing into the stage's own packages/. `stageCheckout` CANNOT BE REUSED AS WRITTEN: its single symlink borrow IS the degenerate.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a3f3e88",
+            message: "test: the fresh-checkout loudness this repository leans on can now redden",
+            phase: "green",
+          },
+        ],
         notes: [
+          "EXECUTED AS test/unbuilt-checkout.test.ts, WITH THE DEGENERATE REPRODUCED FIRST AND WITH THE REAL FUNCTION rather than an imitation: `stageCheckout()` on this built tree hands back a stage whose own packages hold NO dist/ and whose three `@atusy` entries realpath into the REAL checkout, and its root check is EXIT 0 WITH ZERO BYTES. Both feasibility hazards were re-taken too -- no node_modules at all is exit 1 with SIX TS2688 lines and ZERO TS2307 naming a workspace package. THE ARM IN BOTH DIRECTIONS: 1 pass / 0 fail as it stands; with the borrow degenerated to the single symlink, 0 pass / 1 fail, FAILING ON THE STAGE-FAITHFULNESS GUARD FIRST and naming all three entries, before any exit code is read.",
+          "THE UNNAMED HAZARD WAS PAID OFF RATHER THAN CARRIED: the wall clock was re-taken UNDER A FULL RUN, not by hand. This file alone is 0.6 s, and the whole suite is 121.26 s at 935 pass / 0 fail across 66 files against 121.30 s at 934 across 65 -- no TimeoutError anywhere, so the concurrency risk this project has a recorded instance of did not materialise.",
           "IT IS DECLARED NOT TO MEET THE CRITERION, AND THAT IS WHY IT MAY SHIP. Under the answering-reading it satisfies neither disjunct -- the framework stays silently source-answered INSIDE the red run, and `some workspace specifier failed to resolve` survives the refused fix, so it does not carry the fact. It ships because the closing record's load-bearing sentence is that two import lines keep this check loud, and a fact still needed is MECHANISED IF SOMETHING CAN REDDEN. This is that mechanisation and it is offered as nothing else.",
           "BOTH FEASIBILITY HAZARDS WERE MEASURED RATHER THAN PREDICTED, AND ONE OF THEM IS WHY THE ARM MAY NOT ASSERT `NON-ZERO` ALONE. A stage with no node_modules is exit 1 with SIX TS2688 LINES for `bun` and `node` and ZERO TS2307 naming any workspace package -- red for a reason that is not its subject. And the borrow route decides everything: borrowed by ONE SYMLINK, the stage's entries realpath into the real checkout and the unbuilt stage reads the real BUILT artifacts, giving EXIT 0 AND ZERO OUTPUT -- an arm measuring nothing. Borrowed per-entry, they realpath inside the stage and the reading is the two TS2307.",
           "WHAT THE DOCSTRING MUST SAY IT DOES NOT WATCH, or sprint 9's rule deletes it: it does NOT watch the framework's silence -- its green is bought by two import lines in examples/, and the framework's own subpaths answer from source at exit 0 in the very stage this arm calls red; it stages the ALL-ABSENT cell and never the silent one; it says nothing about the real fourth check, since nothing in this repository owns that invocation; and it is NOT the refused pin, in a named direction -- with the source arms deleted the stage is still non-zero and now names framework specifiers too, so it survives the fix and specifies nothing.",
