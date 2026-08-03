@@ -1382,7 +1382,14 @@ const scrum: ScrumDashboard = {
           "Build each handler with the framework's dist/ PRESENT; move that dist/ aside with a literal `mv`; rebuild; `diff -r`. Restore and verify.",
         type: "behavioral",
         status: "completed",
-        commits: ["121384f"],
+        commits: [
+          {
+            hash: "121384f",
+            message:
+              "docs(scrum): plan sprint 62 -- the harm this item was filed on does not exist",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE RESULT: BYTE-FOR-BYTE IDENTICAL, BOTH HANDLERS, EVERY EMITTED FILE. hover-wordnet 4 files against 4, completion-path 6 against 6, `diff -r` clean both times, concatenated declaration hashes equal in both directions, both builds exit 0 with zero bytes of output in the source-answered state.",
           'AND THE MECHANISM IS THE FINDING RATHER THAN THE NUMBER, which is what makes the result survive this base. A handler\'s emitted declarations name the framework BY SPECIFIER and not by structure -- `import type { MethodHandler } from "@atusy/tsudoi-language-server/types"` travels into the artifact verbatim -- so WHICH FILE ANSWERED CANNOT APPEAR IN THE EMITTED DECLARATIONS AT ALL while both files declare the same names. The byte-identity is what that indirection forces.',
@@ -1398,7 +1405,13 @@ const scrum: ScrumDashboard = {
           "Read each handler's emitted declarations and require the framework's published specifier to appear in them, paired with a count of what was actually opened.",
         type: "behavioral",
         status: "completed",
-        commits: ["4c70ae7"],
+        commits: [
+          {
+            hash: "4c70ae7",
+            message: "test: the retirement rests on an indirection nothing was watching",
+            phase: "green",
+          },
+        ],
         notes: [
           "THE ARM IS test/handler-declaration-specifier.test.ts, AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED at base 121384f, bun test v1.3.13, that file alone, 2 pass / 0 fail unperturbed: reader pointed at an EMPTY DIRECTORY, 0 pass / 2 fail with both arms naming both handlers; pointed at a directory holding one ZERO-BYTE `.d.ts`, 1 pass / 1 fail, the subject red naming both handlers while the read arm stays green; `handlerMembers` returning nothing, 1 pass / 1 fail, the pair inside the subject arm red while the read arm goes GREEN over an enumeration that found no handler at all.",
           "WHICH PAIR IS WHICH, RECORDED BECAUSE THE FILE CLAIMS IT: the DETECTION pair is the handler enumeration, and the file-list pair is DIAGNOSIS ONLY -- an artifact nobody opened already reddens the subject arm on its own, so the second arm buys the reader's next move and not a hole closed. The offender-list spelling that would make it detection -- no emitted declaration LACKS the specifier -- is unavailable: each handler's `index.d.ts` re-exports its own modules and names the framework nowhere, correctly. THE BOUND IS WHOLESALE: one file inlined while a sibling keeps its import leaves the arm green.",
