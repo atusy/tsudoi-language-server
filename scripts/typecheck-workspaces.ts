@@ -8,6 +8,7 @@ import {
   prepareWorkspace,
   refuseMemberDirectoriesUnlikeTheUnscopedName,
   refuseMemberMappings,
+  refuseSubpathsAnsweringFromSource,
   refuseUncoveredFiles,
 } from "./workspaces.ts";
 
@@ -158,6 +159,19 @@ refuseMemberMappings(root, members);
 // says nothing about the files its config never looked at: printing that green
 // first would leave a reader disbelieving the refusal that follows it.
 refuseUncoveredFiles(root, members);
+// AFTER THE BUILD AND BEFORE ANYTHING GRADES WHAT IT WROTE, which is a
+// requirement about WHEN and not about what: moving this call below the loop
+// changes no value, leaves this file's own bytes almost identical, and turns the
+// refusal into a report printed after every member has already been checked
+// against a file no consumer receives. test/artifact-detector.test.ts asserts
+// the position by driving THIS command and reading what it did NOT print.
+//
+// LAST AMONG THE REFUSALS AND NOT FIRST. The three above are questions about
+// DECLARATIONS and about the TREE -- answerable whether or not a build wrote
+// anything -- and this one is a question about what the build LEFT. A reader
+// told their artifact does not answer, before being told the package it belongs
+// to is not even declared, would repair the wrong thing.
+refuseSubpathsAnsweringFromSource(root, members);
 let failed = false;
 for (const member of members) {
   if (!typeCheckMember(root, member)) {

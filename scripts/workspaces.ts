@@ -1,5 +1,18 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, globSync, readdirSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  globSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -424,6 +437,219 @@ export function prepareWorkspace(root: string): void {
   for (const dir of buildOrder(root)) {
     build(root, dir);
   }
+}
+
+/** One published subpath, as the specifier a stranger writes and the file we promise them. */
+interface PublishedSubpath {
+  readonly specifier: string;
+  /** The package that declares it, for the message to send a reader somewhere. */
+  readonly dir: string;
+  /** The file its `types` arm names -- the artifact, and the only right answer. */
+  readonly declaration: string;
+}
+
+/**
+ * Every published subpath this workspace declares, with the file each promises.
+ *
+ * THE `types` ARM IS THE SUBJECT AND A SUBPATH WITHOUT ONE IS SKIPPED RATHER
+ * THAN GUESSED AT: what is being graded is where a TYPE CHECK lands, and a map
+ * that names no declaration makes no promise for one to break.
+ */
+function publishedSubpaths(root: string, members: readonly string[]): PublishedSubpath[] {
+  const found: PublishedSubpath[] = [];
+  for (const dir of [root, ...members]) {
+    const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const name = manifest.name;
+    const map = manifest.exports;
+    if (typeof name !== "string" || typeof map !== "object" || map === null) {
+      continue;
+    }
+    for (const [subpath, arm] of Object.entries(map as Record<string, unknown>)) {
+      const declaration = (arm as Record<string, unknown> | null)?.types;
+      if (typeof declaration !== "string") {
+        continue;
+      }
+      found.push({
+        specifier: `${name}${subpath.slice(1)}`,
+        dir,
+        declaration: join(dir, declaration),
+      });
+    }
+  }
+  return found;
+}
+
+/**
+ * A temporary directory this function made, refused unless it is one.
+ *
+ * THE GUARD IS ON THE MUTATION AND NOT ON THE CALLER, which is this
+ * repository's own finding paid for the worst way: a staging function that
+ * returned the checkout root reached a recursive delete that validated nothing,
+ * and the working tree went with it. The destructive end read the right
+ * QUANTITY -- a path -- against a subject that could not tell a throwaway from
+ * the repository, because nothing asked. The same shape as
+ * test/helpers/perturbation.ts's `throwawayOnly`, written again here because a
+ * script may not import out of the suite.
+ */
+function throwawayDirectory(path: string, root: string): string {
+  const resolved = realpathSync(path);
+  const checkout = realpathSync(root);
+  if (resolved === checkout || resolved.startsWith(checkout + sep)) {
+    throw new Error(
+      `${resolved} is inside ${checkout}, so nothing here will write to or delete it`,
+    );
+  }
+  const throwaway = realpathSync(tmpdir());
+  if (resolved !== throwaway && !resolved.startsWith(throwaway + sep)) {
+    throw new Error(`${resolved} is not under ${throwaway}, so nothing here will delete it`);
+  }
+  return resolved;
+}
+
+/**
+ * WHERE A PUBLISHED SUBPATH ACTUALLY LANDS, ASKED OF THE COMPILER ITSELF.
+ *
+ * THE ROUTE IS node_modules AND THE EXPORTS MAP AND NOTHING ELSE. No `paths`
+ * mapping, no project reference: there is none anywhere in this repository, a
+ * refusal keeps it that way, and a diagnostic manufactured by either would grade
+ * a resolution no stranger performs. The probe declares nothing and reaches each
+ * package only through an entry under that package's own declared name.
+ *
+ * `--traceResolution` AND NOT AN EXIT CODE, which is the whole reason this
+ * function exists: source and artifact both answer at 0 with nothing printed, so
+ * the compiler's colour cannot separate the file we publish from the file we
+ * happen to have. The trace names the file, which is the only reading that can.
+ *
+ * THE PROBE'S OWN DIAGNOSTICS ARE IGNORED ON PURPOSE. It carries no dependency
+ * of any package it links, so a declaration re-exporting an upstream name
+ * reports TS2307 -- about the probe's tree and never about the subpath under
+ * reading, which the trace has already answered by then.
+ */
+function whereSubpathsLand(
+  root: string,
+  subpaths: readonly PublishedSubpath[],
+): { answered: Map<string, string>; attempted: Set<string> } {
+  const dir = mkdtempSync(join(tmpdir(), "tsudoi-subpath-probe-"));
+  try {
+    const probe = throwawayDirectory(dir, root);
+    for (const { specifier, dir: packageDir } of subpaths) {
+      const name = specifier
+        .split("/")
+        .slice(0, specifier.startsWith("@") ? 2 : 1)
+        .join("/");
+      const entry = join(probe, "node_modules", name);
+      if (!existsSync(entry)) {
+        mkdirSync(dirname(entry), { recursive: true });
+        symlinkSync(packageDir, entry, "dir");
+      }
+    }
+    writeFileSync(
+      join(probe, "package.json"),
+      JSON.stringify({ name: "tsudoi-subpath-probe", private: true, type: "module" }),
+    );
+    writeFileSync(
+      join(probe, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "esnext",
+          module: "esnext",
+          moduleResolution: "bundler",
+          noEmit: true,
+          types: [],
+        },
+        files: ["probe.ts"],
+      }),
+    );
+    writeFileSync(
+      join(probe, "probe.ts"),
+      subpaths.map(({ specifier }) => `import "${specifier}";\n`).join(""),
+    );
+    const run = spawnSync(compiler, ["--traceResolution"], {
+      cwd: probe,
+      encoding: "utf8",
+      maxBuffer: 256 * 1024 * 1024,
+    });
+    const output = `${run.stdout ?? ""}${run.stderr ?? ""}`;
+    const answered = new Map<string, string>();
+    for (const [, specifier, file] of output.matchAll(
+      /Module name '(.+?)' was successfully resolved to '(.+?)'/g,
+    )) {
+      answered.set(specifier, file);
+    }
+    return {
+      answered,
+      attempted: new Set(
+        [...output.matchAll(/======== Resolving module '(.+?)' from/g)].map(([, name]) => name),
+      ),
+    };
+  } finally {
+    rmSync(throwawayDirectory(dir, root), { recursive: true, force: true });
+  }
+}
+
+/**
+ * REFUSES A PUBLISHED SUBPATH THAT ANSWERS FROM ANYTHING BUT THE ARTIFACT,
+ * NAMING THE FILE -- which is the state this repository has carried in prose and
+ * pinned by nothing.
+ *
+ * WHAT IT IS FOR. tsudoi's `exports` map ends in a source arm, so with the
+ * artifact missing or half written the compiler PROBES FOR THE FILE, FALLS
+ * THROUGH AND READS A DIFFERENT ONE AT EXIT 0 -- while both runtimes fail
+ * loudly. Two readers, one tree, different files, and no colour anywhere says
+ * so. test/unbuilt-artifact.test.ts stages that disagreement; this is the thing
+ * that ends it for a workspace this check is pointed at.
+ *
+ * WHAT IT DOES NOT RULE OUT, AND IT IS THE LARGER HALF. It runs AFTER the build,
+ * so the state it catches is an artifact that SURVIVED one and still does not
+ * answer -- a partial emit, a build skipped for a package with no build config,
+ * a dist/ removed by hand between the build and the check. IT DOES NOTHING FOR A
+ * BARE `tsc --noEmit` ON A CHECKOUT NOBODY HAS BUILT: that command is the fourth
+ * Definition-of-Done check and nothing in this repository owns its invocation.
+ * Reaching it would take a `paths` mapping or a project reference, which is the
+ * one manufacture this workspace refuses by name.
+ *
+ * IT NAMES THE FILE AND NEVER A COUNT: what a reader needs is which subpath,
+ * which file answered, and which file was promised.
+ */
+export function refuseSubpathsAnsweringFromSource(root: string, members: readonly string[]): void {
+  const subpaths = publishedSubpaths(root, members);
+  if (subpaths.length === 0) {
+    return;
+  }
+  const { answered, attempted } = whereSubpathsLand(root, subpaths);
+  // THE PAIR, AND WITHOUT IT AN EMPTY OFFENDER LIST IS SATISFIED BY A PROBE THAT
+  // RESOLVED NOTHING AT ALL: every specifier this reads about was one the
+  // compiler was asked, and a specifier it never reached is a fault in the probe
+  // rather than a subpath that answered correctly.
+  const unasked = subpaths.filter(({ specifier }) => !attempted.has(specifier));
+  if (unasked.length > 0) {
+    throw new Error(
+      `${unasked.map(({ specifier }) => specifier).join(", ")} never reached the resolver, so nothing here read where ${unasked.length === 1 ? "it lands" : "they land"}.`,
+    );
+  }
+  const offenders = subpaths.filter(({ specifier, declaration }) => {
+    const landed = answered.get(specifier);
+    return (
+      landed === undefined ||
+      !existsSync(declaration) ||
+      realpathSync(landed) !== realpathSync(declaration)
+    );
+  });
+  if (offenders.length === 0) {
+    return;
+  }
+  throw new Error(
+    [
+      ...offenders.map(({ specifier, declaration }) => {
+        const landed = answered.get(specifier);
+        return `${specifier} answers from ${landed === undefined ? "NOTHING" : relative(root, landed)}, where its \`types\` arm promises ${relative(root, declaration)}.`;
+      }),
+      "A published subpath answering from anywhere but the artifact means the artifact is missing or half written, and every check below this one would have graded a file no consumer receives. Build the package, or repair its `exports` map.",
+    ].join("\n"),
+  );
 }
 
 /**
