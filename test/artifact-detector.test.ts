@@ -135,13 +135,15 @@ function publishingMember(
     }),
     "packages/producer/tsconfig.json": memberTsconfig,
     "packages/producer/src/index.ts": source,
-    "packages/producer/src/thing.ts": "export type Thing = string;\n",
+    [sourceFile]: "export type Thing = string;\n",
     ...artifact,
   };
 }
 
 const declaration = "packages/producer/dist/thing.d.ts";
 const module_ = "packages/producer/dist/thing.js";
+/** The file the map's LAST arm names -- what the compiler answers when the artifact does not. */
+const sourceFile = "packages/producer/src/thing.ts";
 
 /** The complete artifact: the declaration a consumer type-checks against, and the module. */
 const complete = {
@@ -244,6 +246,13 @@ test("a published subpath whose module is written and whose declaration is not i
   // The discrimination, asserted rather than arranged: the file that IS there is
   // not what it complains about.
   expect(result.stderr).not.toContain(module_);
+  // AND THE OTHER HALF OF THE MESSAGE'S OWN PROMISE, WHICH NOTHING READ. It
+  // undertakes to name WHICH FILE ANSWERED beside WHICH WAS PROMISED, and every
+  // arm here asserted only the promised one -- so printing the declaration in
+  // both slots yields `X answers from D, where its types arm promises D` and the
+  // file was kept green. The two paths must differ, and the answering one is the
+  // file a reader has never heard of.
+  expect(result.stderr).toContain(sourceFile);
 });
 
 /**
