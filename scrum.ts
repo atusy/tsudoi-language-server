@@ -1272,9 +1272,18 @@ const scrum: ScrumDashboard = {
         implementation:
           "Record the five cells, the enumeration of what writes `dist/` and what removes it, and the two-command route, at the sites where the next executor would make the refused edit: scripts/workspaces.ts, test/helpers/build.ts, bunfig.toml, test/package-shape.test.ts and CLAUDE.md. PROSE THAT LANDS ONLY IN THIS DASHBOARD IS A TIDY-UP, because this file is compacted on a schedule.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "fe8e6f6",
+            message:
+              "docs: the quiet fourth check has a producer, recorded where the edit would be made",
+            phase: "green",
+          },
+        ],
         notes: [
+          "EXECUTED: EVERY READING WRITTEN INTO THE TREE WAS RE-TAKEN AT THIS BASE (6d1c85d, tsc 7.0.2) RATHER THAN QUOTED, and one inherited reading did not survive it. `REMOVERS: NONE` is wrong in the detail a reader would act on: BOTH handler packages' `prepack` is `rm -rf dist && tsc -p tsconfig.build.json`, so two of the three members DO delete -- their own, rewritten on the same line -- while the framework's prepack removes nothing. What is true and is what landed: nothing removes a dist/ it does not rewrite on the same line.",
+          "THE SITE LIST CHANGED FOR A MEASURED REASON: `CLAUDE.md` IS GLOBALLY GITIGNORED IN THIS CHECKOUT (`git check-ignore` names ~/.config/git/ignore), so it is untracked and prose landing only there is local to one machine -- the same failure the subtask's own rule names for the dashboard, one directory over. The decision procedure therefore landed in `scripts/definition-of-done.ts`, at the runner that prints the green a reader is holding; CLAUDE.md carries it too, and is not where it is kept.",
           "THE PLANNING HYPOTHESIS WAS THAT THE EXIT-0 CELL IS HAND-MADE, AND THE READING FALSIFIED IT. Bare `tsc --noEmit` at the root: both artifacts present, exit 0 silent. Both absent -- a fresh checkout -- exit 1 naming EXACTLY examples/tsudoi.config.ts(1,49) and (2,30), TS2307, both handlers, the framework silent. Framework present and handlers absent, which is what an interrupted build order leaves, exit 1 with the same two. FRAMEWORK ABSENT AND HANDLERS PRESENT: EXIT 0, SILENT, with the framework's `/types` answered from packages/tsudoi-language-server/src/types.ts, TRACED.",
           "THE PRODUCER, MEASURED END TO END RATHER THAN ARGUED. `bun pm pack` in one handler and then the other, on a tree nobody has built: each pack EXITS 0 and produces a tarball, its `prepack` compiler exiting 0 because the framework's subpaths answer from src/. After the first pack the root check is exit 1 with ONE error; after the second it is exit 0 and silent. WRITERS OF `dist/`, ENUMERATED AND NOT SAMPLED: `build()` and each member's `prepack`. REMOVERS: NONE -- every recursive delete in tracked code targets a throwaway behind the nominal guard.",
           "CONSTRAINED AS IT MUST BE WRITTEN, because the honest claim is narrower than the alarming one: NO SINGLE INVOCATION THIS REPOSITORY OWNS PRODUCES THE CELL -- the preload and the fifth check both build the framework first. What produces it is TWO DOCUMENTED COMMANDS IN AN ORDER NOTHING FORBIDS. So the close is not `the state we wrote down does not occur`; it is that the cell no longer needs a targeted delete, and nothing runs that route today.",
