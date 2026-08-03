@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
@@ -117,6 +118,27 @@ function recordOver(
   alsoReddens: readonly string[] = [],
 ): PerturbationRecord {
   return { arm: { file: probeFile, name: probeArms[tag] }, weakening, alsoReddens };
+}
+
+/**
+ * Every FILE under a directory, relative and sorted.
+ *
+ * A SYMLINK IS NEITHER DESCENDED NOR COUNTED, which is not tidiness: the stage
+ * borrows node_modules by symlink, and a walk that followed it would enumerate
+ * the real checkout's dependencies as if the stage held them. Nothing tracked in
+ * this repository is a symlink, so no tracked file is lost by that rule.
+ */
+function filesUnder(root: string, prefix = ""): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(join(root, prefix), { withFileTypes: true })) {
+    const relative = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) {
+      found.push(...filesUnder(root, relative));
+    } else if (entry.isFile()) {
+      found.push(relative);
+    }
+  }
+  return found.sort();
 }
 
 /** Baseline, weakening, second run -- the sequence every arm below reads. */
@@ -276,6 +298,48 @@ test("the stage is the tracked tree, and the weakening never reaches the working
   // WEAKENED source once per record.
   expect(existsSync(join(stage.root, "bunfig.toml"))).toBe(false);
   expect(existsSync(join(stage.root, "node_modules"))).toBe(true);
+  // AND `TRACKED` AS THE SET, WHICH IS THE WORD IN THIS ARM'S NAME AND WAS THE
+  // ONE THING IT DID NOT READ. A copied file, an unchanged working tree, an
+  // absent config and a present directory are all true of a stager that copies
+  // the whole checkout, so the property was carried by the implementation alone.
+  //
+  // THE ENUMERATION IS SPELLED AGAIN HERE RATHER THAN BORROWED FROM THE STAGER,
+  // AND THAT IS DELIBERATE AGAINST THIS PROJECT'S OWN RULE ABOUT TWO PRODUCERS:
+  // a stager widened to take untracked files moves ITS enumeration, and an arm
+  // reading the same one moves with it and stays green. Two producers is the
+  // point when the second one is the specification.
+  const listed = spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" });
+  const tracked = listed.stdout
+    .split("\0")
+    .filter((entry) => entry !== "" && entry !== "bunfig.toml")
+    .sort();
+  expect(filesUnder(stage.root)).toEqual(tracked);
+  // THE CONCRETE INSTANCE BESIDE THE SET, because `dist/` is the untracked tree
+  // this repository always has on disk while the suite runs -- the preload built
+  // it -- and it is IGNORED, so a stager widened with `--others
+  // --exclude-standard` would not carry it while a wholesale copy would. The set
+  // above catches both; this line says which file the reader is looking at.
+  const built = "packages/tsudoi-language-server/dist/types.js";
+  expect(existsSync(join(repoRoot, built))).toBe(true);
+  expect(existsSync(join(stage.root, built))).toBe(false);
+});
+
+test("a record naming an UNTRACKED arm file fails at the read, not with a colour", async () => {
+  // THE REGISTRY SAYS THIS IN PROSE -- an arm file that has never been committed
+  // `fails at the read, loudly, rather than reporting a colour` -- and a claim
+  // about a failure mode is worth exactly the arm that takes it. LOUDLY MEANS AN
+  // EXCEPTION: a verdict would be read as a measurement of an arm that was never
+  // run, which is the one reading this instrument is refused for. The file named
+  // is on disk in the working tree and untracked, so what is being observed is
+  // the STAGE and not the file's absence from the machine.
+  const untracked = "packages/tsudoi-language-server/dist/types.js";
+  expect(existsSync(join(repoRoot, untracked))).toBe(true);
+  const record: PerturbationRecord = {
+    arm: { file: untracked, name: "no arm, because nothing here is a test file" },
+    weakening: { file: untracked, from: "export", to: "export" },
+    alsoReddens: [],
+  };
+  await expect(reRun(record, { exit: 0, arms: new Map() })).rejects.toThrow(/ENOENT/);
 });
 
 test("nothing here stages into, or deletes, a path outside the throwaway directory", () => {
