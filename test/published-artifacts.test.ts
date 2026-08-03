@@ -32,10 +32,24 @@ applySuiteDeadline();
  * longer `the root check reads sources` -- it is that the root check reads only
  * the subpaths THIS CHECKOUT'S OWN FILES import, under the ROOT'S options, out
  * of a workspace link. What a stranger receives is a TARBALL, type-checked under
- * their own options from a project that never saw this checkout, and nothing but
- * this file grades that. Everything here is therefore BORN GREEN by design: the
- * snippet and the example already compile, MEASURED. What this file supplies is
- * the CHECK and not a fix, so all of its value is in its controls.
+ * their own options from a project that never saw this checkout.
+ *
+ * THIS FILE IS NOT THE ONLY READER THAT GRADES THAT TARBALL, and the sentence
+ * that said so is struck rather than narrowed in place, because it was written
+ * over readers that already existed: test/installed-specifier.test.ts -- ADDED
+ * BEFORE THIS FILE -- and test/installed-without-node-types.test.ts both
+ * type-check against the same packed artifact, through the same `installConsumer`
+ * that packs it here. The example is graded on both routes too.
+ *
+ * WHAT IS THIS FILE'S ALONE IS WHERE ITS PROBE COMES FROM, enumerated rather
+ * than asserted: `extractQuickstart` has three callers -- this file,
+ * test/readme.test.ts, which EXECUTES the quickstart's commands instead of
+ * type-checking its snippet, and the helper both go through. So the config
+ * compiled below is README.md's own bytes, read at test time, and a README edit
+ * lands in the type check; installed-specifier writes the documented shape out
+ * BY HAND, where it cannot. Everything here is therefore BORN GREEN by design:
+ * the snippet and the example already compile, MEASURED. What this file supplies
+ * is the CHECK and not a fix, so all of its value is in its controls.
  *
  * Every control that CAN fail is a test below. Exactly one is a comment
  * instead, and only because the property it records is FORECLOSED by the
