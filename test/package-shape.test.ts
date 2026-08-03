@@ -564,8 +564,12 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  * THE FIRING CONDITION IS THIS TEST, AND IT IS NAMED SO A READER DOES NOT INFER
  * IT: the literal below spells `default` for every subpath, so the day someone
  * deletes or retargets a source arm -- the fix PBI-60 refused -- THIS equality
- * is what goes red first, by name, before any resolution test does. That is what
- * makes the refusal terminate rather than persist by being forgotten.
+ * is the one of the four that reddens BY NAME, where the other three redden as
+ * COLLATERAL through `typeCheckProbe`. That is a KIND and not an order: the
+ * measurement above sorts the four by kind, nothing measured an execution order,
+ * and `bun test` pins no file order -- the ordering clause that stood here was
+ * never taken. The kind is what makes the refusal terminate rather than persist
+ * by being forgotten: a reader meeting this red is told which literal to edit.
  *
  * NOT ASSERTED, and named rather than left to be found: in the tarball the
  * `default` arm points at a path that is not shipped, so a resolver matching
