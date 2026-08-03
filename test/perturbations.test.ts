@@ -368,6 +368,52 @@ test("nothing here stages into, or deletes, a path outside the throwaway directo
   expect(() => throwawayOnly(homedir())).toThrow(/is not under/);
 });
 
+test("a record naming an arm in a file that RE-RUNS perturbations is refused, never spawned", async () => {
+  // KEPT AND ARMED RATHER THAN LEFT TO ITS FIRST OCCURRENCE, and the reason is
+  // the failure it forecloses: a record over an arm in THIS file would stage a
+  // tree and run a file that stages a tree and runs a file, and the spawn tree
+  // has no bottom -- there is no red at the end of that, only a machine to
+  // restart. It was written with no arm, and a refusal nobody exercises is one
+  // `if` away from being deleted as unreachable by whoever reads it next.
+  //
+  // THE SHAPE IS A SUBSTRING TEST OVER THE ARM FILE'S TEXT, AND IT IS KEPT AS
+  // ONE: deciding what a file transitively imports is a program, and the cheap
+  // test is wrong in two directions that are named here rather than fixed. A
+  // future helper that imports this module while the arm file names only the
+  // helper is NOT refused, and that is the direction that still recurses. A file
+  // mentioning the path in a comment IS refused, and that direction costs a
+  // record nobody can run until the comment moves.
+  const record: PerturbationRecord = {
+    arm: {
+      file: "test/perturbations.test.ts",
+      name: "the report names the arm each record weakened, and no other",
+    },
+    weakening: {
+      file: "scripts/definition-of-done.ts",
+      from: "const failed = results.filter",
+      to: "const failed = results.slice(0, 0).filter",
+    },
+    alsoReddens: [],
+  };
+  // THE WEAKENING IS APPLICABLE AND IS NEVER APPLIED: the refusal is read off
+  // the arm file before the stage is touched, so what this asserts is the order
+  // as much as the message. A rename of this file reddens this arm at the read,
+  // which is the loud failure and not a false green.
+  //
+  // ONLY THE SAFE HALF OF THIS ARM'S DEGENERATE IS EVER RUN, AND THE OTHER HALF
+  // IS REASONED ABOUT RATHER THAN TAKEN -- the same ruling this file's sweep
+  // already carries. SAFE: the refusal downgraded from a throw to a returned
+  // `refused` verdict, which still spawns nothing -- 14 pass / 1 fail, this arm
+  // alone. UNSAFE AND NOT RUN: the DETECTION deleted, which is the reading that
+  // would let this very record through, and letting it through starts the
+  // unbounded spawn the guard exists for. Running it to watch the red is
+  // lighting the fire to test the alarm, and no red is worth a chain of orphan
+  // runs on the machine. THE SECOND DIRECTION IS CARRIED ELSEWHERE: a refusal
+  // that refused everything would take the registry's own records with it, and
+  // they read HELD below.
+  await expect(reRun(record, { exit: 0, arms: new Map() })).rejects.toThrow(/spawn without bound/);
+});
+
 test("the report names the arm each record weakened, and no other", async () => {
   const root = stageProbe(["alpha", "beta"]);
   const { before, after } = await bothRuns(root, weakenToOne);
