@@ -170,16 +170,33 @@ test("a red nobody recorded, beside the named arm's own, is not the named arm's"
   // disarmed. The two readings differ in the record alone -- same probe, same
   // weakening, same two runs.
   //
-  // AND THE SET IS COMPARED FOR EQUALITY AND NEVER FOR CONTAINMENT, which is the
-  // asymmetry a future editor would relax: a name in `alsoReddens` that STOPS
-  // reddening is a measurement gone stale, and a subset test would let it pass
-  // in silence.
+  // THE SET IS COMPARED FOR EQUALITY AND NEVER FOR CONTAINMENT, and only the
+  // direction where the recorded set is SHORT of what reddened is readable here:
+  // under this weakening every probe arm is red, so no record over it can be
+  // longer than the observation. The other direction has its own arm below.
   const accounted = read(recordOver("alpha", weakenToZero, [probeArms.beta]), before, after);
   expect(unaccounted.after).toBe("failed");
   expect(unaccounted.reddened).toContain(probeArms.beta);
   expect(unaccounted.verdict).toBe("disarmed");
   expect(unaccounted.detail).toContain(probeArms.beta);
   expect(accounted.verdict).toBe("held");
+});
+
+test("a recorded collateral name that STOPPED reddening is disarmed, never held", async () => {
+  const root = stageProbe(["alpha", "beta"]);
+  const { before, after } = await bothRuns(root, weakenToOne);
+  const stale = read(recordOver("alpha", weakenToOne, [probeArms.beta]), before, after);
+  // THE HALF OF THE EQUALITY THE ARM ABOVE CANNOT REACH, AND IT IS WHY THE
+  // COMPARISON IS NOT A SUBSET TEST. There the recorded set is SHORT of what
+  // reddened; here it is LONGER -- `beta` is recorded as MEASURED to redden and
+  // does not, which is what a rename or a typo in a record leaves behind. A
+  // comparison relaxed to `every observed name is required` reads HELD for that,
+  // so the stale measurement outlives the arm it was taken for with nothing red.
+  // The pair: the same two runs, read WITHOUT the stale name, are held.
+  expect(stale.reddened).not.toContain(probeArms.beta);
+  expect(stale.verdict).toBe("disarmed");
+  expect(stale.detail).toContain(probeArms.beta);
+  expect(read(recordOver("alpha", weakenToOne), before, after).verdict).toBe("held");
 });
 
 test("a weakening that stops the file being READ is refused, never read as the arm reddening", async () => {
