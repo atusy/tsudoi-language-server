@@ -1311,9 +1311,16 @@ const scrum: ScrumDashboard = {
         implementation:
           "`prepareWorkspace`'s docstring in scripts/workspaces.ts says a handler compiled against an unbuilt framework `fails at TS2307 -- an apparatus failure wearing a resolution failure's clothes`. MEASURED FALSE at base a0a22b2: it exits 0 and emits, through the same source arm. KEEP THE BUILD ORDER AND REPLACE ONLY THE REASON -- the runtimes need `dist/`, the compiler does not -- and the replacement carries ITS OWN PROVENANCE, because the correction is itself a measurement. Beside it, the disclosure at `refuseSubpathsAnsweringFromSource`, whose stated scope is now incomplete in a newly measured way: scripts/typecheck-workspaces.ts builds before it reads, so the pack route passes under it entirely.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "9808c24",
+            message: "docs: the build order is the runtimes' requirement, not the compiler's",
+            phase: "green",
+          },
+        ],
         notes: [
+          "EXECUTED, AND THE FALSITY WAS RE-TAKEN AT THIS BASE BEFORE IT WAS REPAIRED rather than inherited from the planning record: a handler's own `tsc -p tsconfig.build.json`, on a staged tree with no dist/ anywhere, EXITS 0 AND EMITS, with `@atusy/tsudoi-language-server/types` and `/deps/types` traced to packages/tsudoi-language-server/src/*.ts. BYTE-IDENTITY AT THE BASE, RECORDED FIRST: scripts/workspaces.ts was `0aa3fae` in the worktree and at 6d1c85d alike, so the sentence repaired is the one the base shipped.",
           "IT IS THIS SPRINT'S REPAIR AND NOT A FILING, because it is squarely inside this sprint's own subject -- a handler's build answering from the framework's source is the route this sprint measured. The filing bar routes it here.",
         ],
       },
