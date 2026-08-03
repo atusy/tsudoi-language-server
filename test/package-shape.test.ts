@@ -83,16 +83,44 @@ const repoTsconfig = JSON.parse(readFileSync(join(repoRoot, "tsconfig.json"), "u
 // and the pair would prove nothing.
 const brokenDeclaration = "export declare const broken: = ;\n";
 
-// `tsc --noEmit` is a DoD check and dist/ is generated, so the DoD must not
-// grade the compiler's own output: a build artifact failing the typecheck of
-// the sources that produced it is a puzzle with no useful answer.
+// NOTHING AT THE CHECKOUT ROOT WRITES A dist/, AND THE ENTRY IS KEPT ANYWAY.
+// The reason this comment used to give -- `dist/ is generated, so the DoD must
+// not grade the compiler's own output` -- described the pre-move root and is
+// superseded here rather than amended, because a reader who believes it will
+// defend the entry as load-bearing. The root manifest declares no `scripts` and
+// the root has no tsconfig.build.json; this repository's own enumeration of
+// dist writers is `build()` plus each member's `prepack`, every one of them
+// writing under packages/. MEASURED in sprint 63 on the real tree:
+// `tsc --noEmit --listFiles` taken with the entry and without it gives file
+// lists that are IDENTICAL when sorted, so `dist` sweeps in nothing. It is a
+// STALE VALUE, KEPT: an unmatched pattern is legitimate configuration, and the
+// generalisation -- a guard that every `exclude` entry match something on disk
+// -- is refused by name, since it would redden correct files.
+//
+// AND THE TWO ARMS BELOW OBSERVE A dist/ THIS FIXTURE MANUFACTURES, NOT THE
+// ENTRY, which is the reading a maintainer will otherwise take from their
+// titles. `typeCheckWith` mkdirs dist/ and writes brokenDeclaration into it, so
+// the exit 0 asserted here and the exit 1 asserted in the pair are both
+// readings of the throwaway tree; both would read the same in a world where the
+// root could never hold a dist/ at all, which is the world we are in. What
+// holds the entry's VALUE is a LITERAL further down -- `the members are outside
+// the root type check, and the workspace patterns are what finds them` -- which
+// reddens on deletion whether or not the entry does any work, so a sprint
+// reading that red as the entry doing work has measured nothing.
 test("the repo's tsconfig keeps dist out of the program", async () => {
   expect(await typeCheckWith(repoTsconfig, brokenDeclaration)).toBe(0);
 });
 
 // The pair, and it is not decoration: without `exclude` this same tree fails,
-// which is what makes the green above evidence rather than a coincidence.
+// which is what makes the green above evidence rather than a coincidence --
+// evidence about THE EXCLUSION MECHANISM over the fixture's own dist/, not
+// about the root's `dist` entry, per the note above.
 // (Measured separately with --listFiles: 8 emitted files enter the program.)
+//
+// IT STRIPS THE WHOLE ARRAY AND SO CANNOT SPEAK FOR ONE ENTRY: destructuring
+// `exclude` away removes `packages` with `dist`, and deleting only `"dist"`
+// from the real config leaves this arm GREEN -- measured with that degenerate,
+// which was restored, not kept.
 test("the same tree fails once the dist exclusion is removed", async () => {
   const { exclude: _removed, ...withoutExclude } = repoTsconfig;
 
