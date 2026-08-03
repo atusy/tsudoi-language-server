@@ -1233,7 +1233,7 @@ const scrum: ScrumDashboard = {
     number: 61,
     pbi_id: "PBI-60",
     goal: "The unbuilt fourth check stops being a fact this dashboard remembers -- the state has a NAMED PRODUCER reached by two documented commands, the cover that hides it can redden, and the reason a handler builds against source is the reason the code actually has.",
-    status: "review",
+    status: "in_progress",
     subtasks: [
       {
         test: "None -- READINGS, taken by hand outside `bun test` because the preload builds and the state never exists during a run. `dist/` MOVED ASIDE AND NEVER DELETED, tree restored and verified after each cell. Environment recorded: bun 1.3.13, deno 2.8.3, tsc 7.0.2 -- the checkout's own node_modules/.bin/tsc, which is what a package script gets -- base a0a22b2.",
@@ -1336,7 +1336,8 @@ const scrum: ScrumDashboard = {
       },
     ],
     decisions: [
-      "THE DEFINITION OF DONE AT THE END OF EXECUTION, TAKEN IN ONE COMMAND: PASSED, 935 pass / 0 fail across 66 files [122.31s], five [PASSED] at exit 0 each, warnings 1 -- the deliberate fixture warning, unmoved. The base reading was 934 / 0 across 65 files, five [PASSED], warnings 1, so the one added file is the arm and nothing else moved.",
+      "THE DEFINITION OF DONE AT THE END OF EXECUTION, TAKEN IN ONE COMMAND: PASSED, 935 pass / 0 fail across 66 files [121.75s], five [PASSED] at exit 0 each, warnings 1 -- the deliberate fixture warning, unmoved. The base reading was 934 / 0 across 65 files, five [PASSED], warnings 1, so the one added file is the arm and nothing else moved.",
+      "THE SPRINT'S OWN STATUS IS `in_progress` AND NOT `review`, WHICH IS A SMALL FIELD WITH THIS DASHBOARD'S OWN PRECEDENT BEHIND IT: the previous sprint had to be repaired for closing under a status that described a state nobody was in. Execution finished; a review has not happened, and the executor is not the one who can say it did.",
       "A SITE THIS SPRINT WAS TOLD TO WRITE TO IS NOT IN THE REPOSITORY, AND THE RULING GENERALISES: `CLAUDE.md` is matched by a GLOBAL gitignore on this machine, so it is untracked here and prose landing only there reaches one checkout -- the same failure this sprint's first subtask names for this dashboard, one directory over. Where a durable home is required, the test is `git ls-files`, not `the file is in the working tree`.",
       "THE FACILITATOR OPENED A PRESSURE VALVE IN SPRINT 60 THAT WAS NOT THE ONE THE PRODUCT OWNER AUTHORISED, and the ruling is kept here because the distinction is the useful part: dropping the `expect=error` mechanism was a SCOPE CALL, which is the facilitator's to make, and it was ruled after the fact to have met no condition unmet -- the ruling it referred to was a ruling ON A MECHANISM, and when the mechanism left the ruling lost its referent. What would have made it a quiet narrowing is if the narrower account had not been disclosed to the reader. It was.",
       "FILING-ADJACENCY IS NOT A RANKING SIGNAL, stated as a standing rule because this dashboard just produced the instance. A condition filed at acceptance inherited the position of the item it came from and sat at rank two above nine live items. Rank is derived from consequence, and a low rank is written with the FIRING CONDITION that would raise it, so it is a decision with a trigger rather than a silence.",
