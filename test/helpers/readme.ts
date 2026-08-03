@@ -1294,6 +1294,15 @@ export function readmeCoverage(root: string): CoverageReading {
         });
         continue;
       }
+      // UNREACHABLE FROM THE TABLE AS IT STANDS, AND SAID SO RATHER THAN ARMED
+      // WITH A ROW WRITTEN TO FIRE IT: every shipped projection is built by
+      // MATCHING over `block.body`, so none of them can answer a string the
+      // block does not contain. It is kept because a row added tomorrow can --
+      // a projection that computes a name, or reads one from a manifest, is the
+      // obvious next kind -- and because the refusal above it, which IS armed,
+      // only catches the empty case. A fixture row invented to green this branch
+      // would be arming the sweep against a consumer this repository does not
+      // have.
       for (const part of subject) {
         if (part === "" || !block.body.includes(part)) {
           offenders.push({

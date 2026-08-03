@@ -259,6 +259,56 @@ test("the enumeration refuses a directory that is not a checkout, rather than an
 });
 
 /**
+ * A MARKER IS NOT AN ACCOUNT, AND A ROW WHOSE PROJECTION COMES BACK EMPTY DOES
+ * NOT COVER THE BLOCK IT WAS POINTED AT.
+ *
+ * THIS ARM EXISTS BECAUSE THE CLAIM WAS ALREADY WRITTEN DOWN IN THREE PLACES --
+ * the table's own docstring, this sprint's record, and the skill -- and asserted
+ * by nothing, which is the exact defect this item was filed for: a coverage
+ * claim taken on recollection. The subject is a marked `ts` block with no
+ * import, which the snippet row's projection answers `[]` about.
+ *
+ * THE TWO REFUSALS MUST NOT PRINT ALIKE, and that is what the second assertion
+ * reads: a block nothing REACHES and a block that is reached by a row which then
+ * accounts for none of it are different states, and a sweep printing one
+ * sentence for both would be one red wearing two names.
+ */
+test("a marked block whose account projects nothing is refused, and not as an unreached one", () => {
+  const stage = stageWithIndex();
+  const before = readFileSync(join(stage, "README.md"), "utf8");
+  const unaccountable =
+    "\n## Marked, and about nothing\n\n<!-- snippet -->\n\n```ts\nconst nothing = 1;\n```\n";
+  writeInThrowaway(stage, "README.md", `${before}${unaccountable}`);
+  indexEverything(stage);
+
+  const reported = readmeCoverage(stage)
+    .offenders.map((offence) => offence.report)
+    .join("\n");
+
+  expect(reported).toContain("whose projection answers nothing at all");
+  expect(reported).not.toContain("no consumer reaches");
+});
+
+/**
+ * THE PRESENCE HALF OF THE ARM ABOVE, and it is what stops that refusal being
+ * satisfied by a sweep that refuses every marked block: the SAME block, one
+ * import later, is accounted for and reported by nothing.
+ */
+test("the same block with one import to name is accounted for, and goes unreported", () => {
+  const stage = stageWithIndex();
+  const before = readFileSync(join(stage, "README.md"), "utf8");
+  const accounted =
+    '\n## Marked, and about something\n\n<!-- snippet -->\n\n```ts\nimport { TextDocument } from "vscode-languageserver-textdocument";\n\nconst nothing = TextDocument;\n```\n';
+  writeInThrowaway(stage, "README.md", `${before}${accounted}`);
+  indexEverything(stage);
+
+  const reading = readmeCoverage(stage);
+
+  expect(reading.offenders.map((offence) => offence.report)).toEqual([]);
+  expect(reading.blocksRead).toBeGreaterThan(0);
+});
+
+/**
  * THE SWEEP OVER THIS REPOSITORY ITSELF, which is the reading the whole item is
  * for and the one no staged plant can stand in for.
  */
