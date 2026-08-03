@@ -356,6 +356,33 @@ const scrum: ScrumDashboard = {
     },
 
     {
+      id: "PBI-72",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "record a perturbation over an arm file that stages a checkout of its own, instead of finding out that the instrument cannot re-run it",
+        benefit:
+          "the registry's silence keeps meaning `nobody recorded this` rather than `nothing here could`",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A weakening whose arm file stages a checkout of its own is re-run by something -- or the registry states IN ITS OWN TEXT which shapes it cannot hold, as a class, rather than each such file naming its own exemption at its own site.",
+          verification:
+            "THREE MEASURED INSTANCES ALREADY EXIST AND ARE THE STARTING EVIDENCE; no fourth needs finding. (1) THE PUBLISHED-SPECIFIER ARMS: in a staged checkout `mirrorInstalledDependencies` treats the real framework as an INSTALLED dependency -- its realpath is outside the stage -- and hands the probe a SECOND ROUTE, so `the same config fails with TS2307 once the exports entry is removed` is DISARMED there and the baseline refuses the file. The same route is why sprint 58's blocker arm had to LEAVE test/artifact-detector.test.ts, which IS a registry arm file. (2) THIS SPRINT'S OWN-SUBPATHS ARM: test/own-subpaths.test.ts stages a copy of this checkout, and in that stage `repoRoot` IS the stage, which holds no `.git` -- MEASURED, both arms fail reading `git ls-files failed in /var/folders/...`, for a reason that is not the weakening. A SECOND AND INDEPENDENT REFUSAL stands behind it: `reRun` refuses any arm file importing helpers/perturbation.ts, which that file does for its write guard. (3) FOUND AT SPRINT 58'S ACCEPTANCE, WHILE REPAIRING (2)'s NEIGHBOUR: the keyless-baseline degenerate is a source mutation in test/perturbations.test.ts itself, which `reRun` refuses outright for the same import -- so the registry cannot hold the perturbation over its OWN correctness either, and that reading is prose beside the code it measures.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "W1'S WEAKENING IS THE CONCRETE PERTURBATION THE REGISTRY CANNOT HOLD, which is what makes this an item rather than an observation: `publishedSubpaths` skipping any manifest whose name begins with this workspace's scope makes the detector blind to every package this repository ships, and it reads 5 pass / 1 fail over two files, the refusal arm ALONE. That is a real weakening, over shipped source, with a measured red -- and there is nowhere in the registry to put it.",
+        "AND THIS REPOSITORY KEEPS WRITING MORE OF THAT SHAPE, which is the argument for filing rather than accepting: the residue the detector exists for is a property of THIS workspace's own map, so the arms that measure it must stage THIS checkout -- and every one of them lands outside the instrument by construction, not by accident.",
+        "ONE FORECLOSURE, NAMED BECAUSE IT IS THE CHEAP MOVE AND THIS REPOSITORY HAS ALREADY PAID FOR IT: making the stage carry a `.git`, or pointing the stage at the real checkout, is refused. A staging function that returned the checkout root reached a recursive delete that validated nothing and the working tree went with it; `ThrowawayPath` and `throwawayOnly` exist because of that day, and a fix that widens what the stage may be is the same shape again.",
+        "IT MAY CLOSE AS A RECORDED DECISION THAT THE EXEMPTION-AT-THE-SITE IS THE ANSWER, and that is a legitimate outcome rather than a failure -- what the criterion refuses is the exemption being written once per file by whoever remembered, since the class is then discoverable only by reading every file that has one.",
+        "NOT RANKED AGAINST THE ITEMS ABOVE IT. It is placed here because the item below carries its own reason for staying last, and no other ordering claim is made.",
+      ],
+    },
+
+    {
       id: "PBI-70b",
       story: {
         role: "tsudoi maintainer",
