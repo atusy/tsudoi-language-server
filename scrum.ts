@@ -1055,7 +1055,81 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 59,
+    pbi_id: "PBI-67",
+    goal: "A user highlighting a directory waits no longer for its detail than under the shape this package replaced -- on whichever runtime their editor runs -- or the wait they now pay is written down with its number and the runtime that bears it.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- a READING, with a TRACKED instrument, predictions and their counterfactuals written down before the run.",
+        implementation:
+          "Both shapes on both runtimes at a calibration size, the ordinary size and one tail size; INTERLEAVED IN ONE PROCESS so machine drift hits both; median, min and spread over a stated repetition count; versions read off the binaries; load reported per reading; warm-up stated; and THE ENTRY MIX STATED -- how many hidden entries, what the names look like, and in what arrival order.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE INSTRUMENT IS TRACKED, and that is the honest middle between a benchmark inside the suite -- REFUSED BY NAME, because a wall-clock number a busy machine can trip is another item's whole subject and this sprint may not open it -- and prose, which this dashboard says is not a record. A reading taken by hand once and written up is this record's named failure mode.",
+          "WHAT IS REFUSED: any reading taken while the machine is doing anything else; SEQUENTIAL A-then-B, which confounds drift with the shape; one number per cell or a mean with no spread; an unstated cache state; new numbers for one runtime and carried-forward numbers for the other; a ruling from the tail alone, since the module's own premise is that a few thousand entries is ORDINARY and the tail is where the shapes differ most and the user is least; and A READING WITH NO CALIBRATION CELL -- if the new instrument separates the shapes where the old one could not, it is measuring itself.",
+          "AND THE ARRIVAL ORDER IS PART OF THE SUBJECT, not a detail: the sort's cost is DOMINATED by it -- sorted arrival is nearly free and shuffled is many times that -- so a directory of identical short names in creation order is not the ordinary one and flatters one shape.",
+        ],
+      },
+      {
+        test: "None -- a repair, with byte-identity at the base recorded.",
+        implementation:
+          "Settle the ordinary-size number for the faster runtime, which the module states in two places that contradict each other: a parenthesis whose two numbers, read with the sentence they qualify, say the streaming shape is SLOWER there, and a sentence nine lines below saying that runtime gains on both counts.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IF THE PARENTHESIS IS READ AGAINST ITS OWN SENTENCE, THE CRITERION FAILS ON BOTH RUNTIMES RATHER THAN ONE -- and that is a subject error of the known class living in the paragraph this sprint exists to re-decide. It PREDATES and is repaired here rather than filed, because the filing bar repairs what is inside the sprint's own subject. NO NUMBER FROM THAT PARAGRAPH MAY BE CITED AGAIN until the reading settles which of the two it was.",
+          "AND THE PLANNING READING ALREADY CONTRADICTS THE PARAGRAPH THREE WAYS, at the same nominal sizes and the same two runtime versions it cites: every magnitude in it is many times larger than this machine reads; one number is falsified by its own neighbour, since a whole open-plus-drain measures less than the figure the paragraph gives for the OPEN ALONE; and the ranking on the faster runtime FLIPS WITH SIZE, which is why one number per runtime could never have settled this.",
+        ],
+      },
+      {
+        test: "The listing driven with an arrival order that is NOT the render order, over a sequence with hidden entries and more entries than the bound, asserting the rendered names AND the total -- plus the degenerates, run before the arms are believed.",
+        implementation:
+          "ONE BRANCH, the rule fixed in advance. If the ordinary-size delta on both runtimes is inside the instrument's own noise -- which the calibration cell establishes -- the shape STAYS and the item closes on a recorded ruling. If either runtime pays outside noise, the decision is taken against the WORKING-SET reading and one shape is taken, never two.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE INVERSION NOBODY HAS RULED, AND IT MAY BE THE RULING RATHER THAN THE TIMING: the faster runtime retains the whole directory behind its handle ANYWAY, so an array shape's array is a SECOND copy there; the slower one discards, so this function's array would be THE ONLY whole-directory retention. IF THAT HOLDS, THE RUNTIME PAYING THE TIME IS THE RUNTIME WHERE THE BOUND IS WORTH THE MOST. Read it, do not assert it -- and if the reading refutes it, the reading is the ruling.",
+          "A THIRD SHAPE IS ON THE TABLE AND CARRIES A ROUTING RATHER THAN A COST: reading all names without a handle and keeping only the best twenty measured fastest on BOTH runtimes at every size -- but it DELETES THE SECOND CANCELLATION SEAM, because without a handle there is no between-open-and-first-entry, and the arm defending that seam becomes TARGET DELIBERATELY REMOVED. Deleting an arm that defends an accepted criterion is a scope decision and is ROUTED BEFORE it is taken.",
+          "THE AGGREGATE HAZARD IS NAMED IN ADVANCE because this area already has it: first, last, bound and total collapse into one value on the easiest fixtures, so every arm uses a directory where all four differ.",
+          "DEGENERATES, IN ADVANCE: a shape that reads nothing is the fastest shape there is, so the instrument asserts the total and the rendered names per timed call; the retention gate weakened to `keep the first twenty` goes green on any fixture whose arrival order IS the render order -- measured, not feared, since the planning reading's own directories rendered in arrival order; and the comparator swapped for a locale collator is the one perturbation here whose target survives every branch.",
+        ],
+      },
+      {
+        test: "None -- the ruling and the prose.",
+        implementation:
+          "The ruling lands AT THE SITE and supersedes rather than layers; the dashboard carries it too. Every sentence in that module whose subject is this shape is re-taken, retired by name, or narrowed -- and same-session numbers belonging to a DIFFERENT ruling are filed as suspect-by-association rather than silently renumbered.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THAT DOCSTRING ALREADY CARRIES THREE STACKED CORRECTIONS. A fourth pasted on top is not a close: the paragraph is REWRITTEN so the reading a maintainer meets first is the current one.",
+        ],
+      },
+      {
+        test: "The standing re-run -- the comparator degenerate against whichever shape lands, reds NAMED rather than counted.",
+        implementation: "Run after the shape decision; record the outcome with the arms named.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "A RECORDED RULING IS A LEGITIMATE CLOSE HERE -- the criterion licenses it -- AND IT NEEDS SIX THINGS OR IT IS A SHRUG: a number per runtime at the ordinary size for both shapes, taken at this base by ONE instrument in ONE session; who pays and how much as a SIGNED DELTA rather than a direction word; what the shape still buys after the transient-allocation reading, per runtime, in the terms it was adopted for; A FIRING CONDITION, the observation that would reopen it, since a ruling that cannot age is folklore; landing AT THE SITE and not only in the dashboard; and SUPERSEDING rather than layering.",
+      "`THE DIFFERENCE IS IMPERCEPTIBLE TO A USER` IS REFUSED AS WRITTEN, AND THIS IS THE ITEM WHERE IT MUST BE. It names no quantity, no threshold and no observer, so no measurement can contradict it -- the superlative class. And it is the subject-error class exactly: a number would be taken in milliseconds while the sentence's subject is PERCEPTION, which the number does not measure. Shipping it in the sprint whose whole business is a measured claim would be the class arriving inside its own repair, which this backlog has recorded happening twice.",
+      "TWO HONEST NEIGHBOURS ARE ADMISSIBLE INSTEAD: the delta placed against a NAMED BUDGET WITH ITS OWN PROVENANCE -- this runs once per HIGHLIGHT on an idle moment, never per keystroke -- or a perception claim made the way this package has already made one, naming the editor, the plugin chain and the setting it was measured in AND disclosing that the measurement is not in this suite and no red here catches its regression. A claim naming an editor, a harness and what it cannot catch is admissible; one naming none of the three is not. IF NEITHER IS OBTAINABLE HONESTLY, THE RULING DROPS THE PERCEPTION CLAIM and stands on the working set -- declining to claim what was not measured is a close; claiming it anyway is the shrug.",
+      "A PER-RUNTIME BRANCH IS REFUSED OUTRIGHT, EVEN WITH EVERY CHECK GREEN, and the story sentence invites it. THE SAME INSTALLED ARTIFACT RUNS UNDER BOTH RUNTIMES, and every platform decision in this package is ASKED rather than branched on -- a runtime sniff is that defect in another coordinate. AND THE TWO SHAPES DO NOT SHARE A CANCELLATION STORY: two shapes means two seam analyses, two leak stories and two abort placements, OF WHICH ONLY ONE IS EXERCISED ON ANY MACHINE ON ANY RUN, so half the shipped code is graded by nothing in any given Definition of Done.",
+      "A RUNNER-UP IS NAMED SO IT IS NOT REACHED FOR: keeping the current shape by DELETING THE PARAGRAPH THAT RECORDS WHAT IT COSTS. The cost paragraph is the evidence, and a green suite over a shorter docstring is a shrug that reads as a close.",
+      "THE SPRINT RUNS SINGLE-STAGE AGAIN. The reviewer that failed twice is still `waiting_human` and is NOT re-escalated here; no claim about finding density may rest on the count of readers.",
+    ],
+  },
   retrospectives: [],
 };
 
