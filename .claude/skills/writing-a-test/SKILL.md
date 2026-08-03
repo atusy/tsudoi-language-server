@@ -56,6 +56,49 @@ control proving it can see the thing it compares.
 
 ## Sweeps
 
+**A CLASS DISPOSITION IS NOT A DISPOSITION — it is an unread set with a reason
+attached.** _(sprint 63)_ A class may bound EFFORT; it may not stand in for
+READING, and a hit inside one is DEFERRED rather than dispositioned. **The
+admissibility test, which costs nothing and is the whole rule: a class warrant
+holds only if the property defining the class is decidable FROM THE MATCHED
+LINE.** MEASURED, two for two — both class dispositions written in one sweep hid
+a live site, and both warrants were properties of a site's MEANING rather than
+of its text:
+
+- "package-relative pointers under a convention the project states" hid a
+  MACHINE-OUTPUT site: a lint rule's violation message named `src/notifications.ts`
+  while the same file's exemption glob spelled the member path in full, because
+  a refactor updated the glob and not the message. Nothing in the suite asserts
+  that message, so a message the linter dropped would have left every check
+  green.
+- "prose rather than machine output" hid a docstring licensing a NAMED REFUSAL
+  six lines below it, whose claim — that the root type check reads source rather
+  than the artifact — was false: four artifact declarations are in that program,
+  a syntax error in one reddens the check, and a type error does not. The
+  conclusion survived on `skipLibCheck`, a mechanism nobody had written down.
+
+**A DEFERRAL IS STATED WITH ITS COUNT AND THE SWEEP'S CLAIM NARROWS TO MATCH.**
+"Nothing else found" becomes "nothing else found outside N hits in these
+classes, unread" — checkable by someone who was not there, which is what writing
+the keys down is for. A SAMPLE OF EACH CLASS WAS CONSIDERED AND REFUSED: a
+sample reported as a sample is honest, but it adds mechanism to a rule whose
+strength is that it forbids nothing, and an approximation that reads as coverage
+is the shape this project keeps refusing.
+
+**AND A HIT IS A LINE WHERE A DISPOSITION IS A CLAUSE.** _(sprint 63)_ Same
+failure at line granularity: reading only the clause the key matched is how a
+false sentence survived in a file the sweep had opened. MEASURED — a skill file
+inside the sweep's own declared universe, reached by two of its keys, carrying
+three present-tense claims false since the refactor, was never opened at all.
+
+**A SWEEP'S KEY LIST IS DERIVED FROM THE ENUMERATION AND THE DERIVATION IS
+SHOWN.** _(sprint 63)_ Otherwise the two are different claims and "each key
+swept" says nothing about the enumeration. MEASURED: one enumerated mechanism
+had no key — found after the item closed, swept independently at zero live
+sites, so nothing was at risk and the closure condition had still claimed a
+correspondence that did not hold. A key with no enumerated parent, or a
+mechanism with no key, is named as such.
+
 **When the defect class you are sweeping for is a property of MATCHING, your
 sweep is an instance of that class.** Bound the instrument first. _(sprint 46)_
 MEASURED: a sweep concluded "no other prefix matcher exists" using greps that
