@@ -280,11 +280,20 @@ export function buildOrder(root: string): readonly string[] {
   // compiles against -- so narrowing this to the consumers would leave the
   // producer unbuilt. WHAT THAT COSTS IS WHAT THE CYCLE PARAGRAPH ABOVE ALREADY
   // SAYS, and the sentence that stood here said the opposite: NOT `a TS2307 for
-  // a subpath that is fine`, but exit 0 through the `default: ./src/*.ts` arm,
-  // every consumer's declarations graded against a file no consumer receives.
+  // a subpath that is fine`, but exit 0 through the `default: ./src/*.ts` arm.
   // MEASURED FALSE at sprint 61 -- a member's own build in that state exits 0
   // and emits -- and the prediction had been standing nine lines below its own
   // correction.
+  //
+  // AND WHAT THAT EXIT 0 COSTS IS NOT THE ARTIFACT, WHICH IS THE HALF THIS
+  // PARAGRAPH GOT WRONG NEXT. It went on `every consumer's declarations graded
+  // against a file no consumer receives` -- true of WHICH FILE ANSWERED and
+  // wrong about the consequence, since a handler emits the same declarations
+  // from either state. The reading and everything it cannot separate are at
+  // `prepareWorkspace` below. WHAT LEAVING THE PRODUCER OUT WOULD REALLY COST IS
+  // CURRENCY: this order is what makes the framework's artifact freshly built
+  // before anything grades against it, and the state that hides a disagreement
+  // is an artifact that answers while STALE, not one that is absent.
   const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
   const dirsByName = new Map<string, string>();
   for (const node of nodes) {
@@ -437,12 +446,45 @@ function build(root: string, dir: string): void {
  * map names no source arm to fall through to -- WHICH IS WHY THE ORDER IS STILL
  * RIGHT AND ONLY THE REASON MOVED.
  *
- * AND THE COMPILER'S INDIFFERENCE IS NOT FREE, said here rather than left as the
- * happy half of a correction: a handler built in that state has its published
- * declarations graded against a file no consumer receives. What is measured is
- * WHAT THE BUILD READ and that it exited 0 -- not that the emitted declarations
- * differ from ones built against dist/, which is an open question filed in the
- * dashboard as the pack route's own item and deliberately not answered here.
+ * AND THE COMPILER'S INDIFFERENCE COSTS NOTHING IN THE ARTIFACT, WHICH IS THE
+ * ANSWER TO THE QUESTION THIS PARAGRAPH USED TO FILE. It said the indifference
+ * `is not free` -- a handler built in that state having its declarations graded
+ * against a file no consumer receives -- and left the emitted declarations an
+ * open question for the pack route's own backlog item. MEASURED at sprint 62, on
+ * base c1979a4, in a `git clone --no-hardlinks` stage whose node_modules was
+ * COPIED rather than symlinked and whose every @atusy entry was verified to
+ * realpath INSIDE the stage before anything was built, the real checkout's dist/
+ * never touched: each handler built with the framework's dist/ PRESENT and again
+ * with it moved aside emits BYTE-FOR-BYTE IDENTICAL trees -- every emitted file,
+ * both handlers, `diff -r` clean in both directions, and both builds exit 0 with
+ * no output in the source-answered state.
+ *
+ * THE MECHANISM IS THE FINDING AND NOT THE NUMBER, which is what makes it
+ * survive this base: a handler's emitted declarations name the framework BY
+ * SPECIFIER and never by structure, so WHICH FILE ANSWERED CANNOT APPEAR IN THEM
+ * while both files declare the same names.
+ * test/handler-declaration-specifier.test.ts is what reddens the day that
+ * indirection goes, and nothing else in the tree would say so.
+ *
+ * WHAT THAT INSTRUMENT CANNOT SEPARATE, owed by the label and NOT a hedge on the
+ * result. IT IS IN-SYNC ONLY: it compares two spellings of the SAME content, so
+ * it says nothing about an artifact that DISAGREES with the source it was built
+ * from. Where they do disagree the source-answered state is the one that SPEAKS
+ * -- with a framework type renamed in src/ alone, the handler built against the
+ * stale artifact exits 0 while the same build against src/ exits 2 naming the
+ * missing member at TS2305 -- and WHAT THAT SUPPORTS IS CURRENCY AND NOT
+ * STRICTNESS: source grades against the framework AS IT IS NOW, the artifact
+ * against whatever was last built, and the reverse edit would put the strictness
+ * on the artifact's side. It also cannot separate WHAT WAS EMITTED from WHAT WAS
+ * CHECKED: `skipLibCheck: true` in each handler's build config skips the
+ * framework's `.d.ts` and does not skip its `.ts`, so the two builds did
+ * DIFFERENT AMOUNTS OF CHECKING and still agreed -- the asymmetry runs in the
+ * safe direction, and `the outputs agree` is still not `the two builds are the
+ * same build`. One compiler, one session, one machine, one base, so `identical
+ * because this emit is deterministic here` and `identical for a reason that
+ * survives a compiler upgrade` are one reading. AND THE STRUCTURAL CELL IS
+ * UNTAKEN -- a type CHANGED with its name kept -- named so its absence is not
+ * read as coverage.
  *
  * NO PACKAGE IS LINKED INTO ANOTHER ANY MORE, AND THAT ABSENCE IS THE STORY THIS
  * FILE WAS THE LAST HOLDER OF. A `linkRootPackage` stood here writing an entry
@@ -674,20 +716,30 @@ function whereSubpathsLand(
  * about. Reaching it would take a `paths` mapping or a project reference, which
  * is the one manufacture this workspace refuses by name.
  *
- * AND A SECOND STATE PASSES UNDER THIS ENTIRELY, NEWLY MEASURED AND DISCLOSED
- * HERE RATHER THAN LEFT FOR THE NEXT READER TO DISCOVER AT THE WRONG MOMENT: A
- * PACK ON AN UNBUILT TREE. `bun pm pack` in a handler runs that package's
- * `prepack`, whose compiler answers the framework's subpaths from src/ and exits
- * 0 -- so the tarball's declarations are graded against a file nobody receives,
- * and THIS REFUSAL CANNOT SEE IT: the check that runs it calls `prepareWorkspace`
- * BEFORE it calls this, so by the time this reads, the artifact exists and the
- * pack's own state is gone. NOT `and every subpath answers from it`, which is
- * what stood here and reads this refusal as vacuous fifteen lines under the
- * paragraph saying what it is for -- the state it catches IS an artifact that
- * survived a build and still does not answer. What the scope above says about
- * the fourth check is
- * therefore true of the pack too, and for the same reason -- this runs after a
- * build, and both of those states are before one.
+ * AND A SECOND STATE PASSES UNDER THIS ENTIRELY, DISCLOSED HERE RATHER THAN LEFT
+ * FOR THE NEXT READER TO DISCOVER AT THE WRONG MOMENT: A PACK ON AN UNBUILT
+ * TREE. `bun pm pack` in a handler runs that package's `prepack`, whose compiler
+ * answers the framework's subpaths from src/ and exits 0, and THIS REFUSAL
+ * CANNOT SEE IT: the check that runs it calls `prepareWorkspace` BEFORE it calls
+ * this, so by the time this reads, the artifact exists and the pack's own state
+ * is gone. NOT `and every subpath answers from it`, which is what stood here and
+ * reads this refusal as vacuous fifteen lines under the paragraph saying what it
+ * is for -- the state it catches IS an artifact that survived a build and still
+ * does not answer. What the scope above says about the fourth check is therefore
+ * true of the pack too, and for the same reason -- this runs after a build, and
+ * both of those states are before one.
+ *
+ * AND WHAT THAT PACK COSTS IS NOT THE TARBALL, WHICH IS WHAT THE SENTENCE ABOVE
+ * USED TO SAY: `so the tarball's declarations are graded against a file nobody
+ * receives` -- true of which file the compiler read, and wrong about the
+ * consequence. The declarations are the same either way; `prepareWorkspace`
+ * above carries that reading, its conditions and what it cannot separate, and
+ * test/handler-declaration-specifier.test.ts holds the one structural fact it
+ * rests on. WHAT THE PACK ROUTE IS STILL EXPOSED TO IS CURRENCY RATHER THAN
+ * ABSENCE: a handler's own `prepack` freshens ITS OWN artifact and never the
+ * framework's, so the state that hides a disagreement is a framework artifact
+ * that answers WHILE STALE -- which this refusal cannot see either, and for the
+ * same reason.
  *
  * IT NAMES THE FILE AND NEVER A COUNT: what a reader needs is which subpath,
  * which file answered, and which file was promised.
