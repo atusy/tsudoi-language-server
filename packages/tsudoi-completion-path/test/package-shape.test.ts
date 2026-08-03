@@ -192,6 +192,51 @@ test("tsudoi is a peer this package cannot install, and nothing else is a depend
  * would also encode this workspace's build order in a member's published
  * manifest, where `buildOrder` in scripts/workspaces.ts already derives it from
  * what the manifests declare.
+ *
+ * A DETECTOR IN `prepack` TAKES THAT SAME GROUND AS A BUILDER DOES, NAMED HERE
+ * SO IT IS NOT PROPOSED AS THE CHEAP VERSION OF THE REFUSAL ABOVE: a script that
+ * merely REFUSED to pack while the framework's artifact disagreed with the
+ * framework's source still travels to a registry, and still names a package that
+ * exists only in this workspace. It buys a stranger a pack that fails instead of
+ * one that builds the wrong thing, which is the same import with a politer
+ * message.
+ *
+ * SO THE STATE THAT LEAVES IS WRITTEN DOWN RATHER THAN CLOSED, AND THIS
+ * PARAGRAPH IS WHERE PBI-76 ENDED. `bun pm pack` here runs THIS package's
+ * prepack, which freshens THIS package's dist/ and NEVER the framework's -- so a
+ * maintainer who edits the framework's src/ and then packs this package grades
+ * its declarations against whatever was last built. MEASURED at base d2d6519,
+ * bun 1.3.13 / tsc 7.0.2, with the handler type's RETURN narrowed in the
+ * framework's src/ ALONE and its NAME kept: this build EXITS 0 against the
+ * artifact that predates that edit and EXITS 2, TS2322 naming its own handler
+ * function, against one rebuilt after it -- and in the stale cell `bun pm pack`
+ * EXITS 0 AND PRODUCES ITS TARBALL. So two green commands in an order nothing
+ * forbids ship declarations graded against a shape the framework no longer has.
+ * test/stale-framework-artifact.test.ts stages that pair.
+ *
+ * AT ONE SHAPE IN ONE DIRECTION, WHICH BOUNDS THE SENTENCE ABOVE RATHER THAN
+ * HEDGING IT: a widened return, a changed parameter type, a renamed property
+ * inside an object type and a changed generic constraint are UNMEASURED, and the
+ * EMITTED content of the green cell, any consumer-side compile of it and the
+ * resolution trace are UNREAD. What is held is a narrowed return type, not `a
+ * stale artifact hides a changed shape`.
+ *
+ * WHAT WOULD CLOSE THE ROUTE AND IS DECLINED ANYWAY, named so it is not
+ * re-proposed as new: freshening from the WORKSPACE side -- a root-resident
+ * wrapper, or a documented build-then-pack order -- ships nothing, since that
+ * root is permanently private, and STILL LEAVES THE ROUTE OPEN: it adds a safe
+ * way BESIDE the unsafe one, and a maintainer typing bare `bun pm pack` in this
+ * directory bypasses it. The prerequisite this package's README already carries
+ * is about the LINK a build needs, not about CURRENCY, and it stays that way --
+ * it addresses an installing stranger, and the state above belongs to whoever is
+ * editing the framework.
+ *
+ * AND NOTHING FIRES ON IT, WITH THE TWO ROUTES THAT WOULD HAVE TO RULED OUT BY
+ * THEIR OWN ORDER RATHER THAN BY A SEARCH: an arm under `bun test` runs after a
+ * preload that has just rebuilt every package, and the fifth Definition-of-Done
+ * check calls `prepareWorkspace` before it reads anything. Both stand after a
+ * build; this state is before one. The thing that meets whoever produces it is
+ * this paragraph.
  */
 test("packing this package builds it first, into a cleared directory", () => {
   expect(manifest.scripts).toEqual({ prepack: "rm -rf dist && tsc -p tsconfig.build.json" });
