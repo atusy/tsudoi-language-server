@@ -68,14 +68,17 @@ applySuiteDeadline();
  * AND THOSE FIVE BELONG TO THEIR SPELLING, which is this file's own rule below
  * applied to itself. The rewrite measured put
  * `"../../tsudoi-language-server/dist/<subpath>.d.ts"` where the specifier had
- * been: path-shaped, so the tarball reading finds it, AND STILL RESOLVING IN AN
- * INSTALLED CONSUMER, because `../../` out of a scoped package's dist/ lands on
- * its scoped sibling and test/helpers/install.ts puts the framework at
- * node_modules/@atusy/tsudoi-language-server. That is why the two `to their real
- * types rather than any` arms in test/published-artifacts.test.ts stayed GREEN:
- * the handler's declarations still reached real types. A spelling whose target
- * resolved to nothing would redden those as well, for a reason about the probe
- * rather than about this arm.
+ * been: path-shaped, so the tarball reading finds it. WHAT IS MEASURED IS THAT
+ * THE TWO `to their real types rather than any` ARMS IN
+ * test/published-artifacts.test.ts STAYED GREEN under it. WHY THEY DID IS
+ * OFFERED AS AN INFERENCE AND LABELLED ONE: `../../` out of a scoped package's
+ * dist/ lands on its scoped sibling, and test/helpers/install.ts installs both
+ * tarballs into one node_modules with the framework at
+ * @atusy/tsudoi-language-server -- so the rewritten target should still reach the
+ * framework's real declarations. NOT OBSERVED: no resolution trace was taken
+ * inside that consumer. Either way a spelling whose target resolved to nothing
+ * would redden those arms too, for a reason about the probe rather than about
+ * this one.
  *
  * AND ITS BOUND, WHICH IS WHOLESALE RATHER THAN PER FILE: it asks each handler
  * for ONE emitted declaration naming the framework, so a single file inlined
