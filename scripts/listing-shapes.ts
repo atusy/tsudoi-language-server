@@ -216,6 +216,12 @@ interface Fixture {
   /** Whether the first twenty to arrive are already the twenty that render. */
   readonly arrivalIsRenderOrder: boolean;
   readonly rendered: readonly string[];
+  /**
+   * READ OFF THE DIRECTORY THIS PROCESS JUST WROTE, and it exists so that a cell
+   * with nothing to render still has something to be WRONG about: a stat is
+   * checked against this rather than against its own answer.
+   */
+  readonly ino: number;
 }
 
 async function buildFixture(
@@ -246,6 +252,7 @@ async function buildFixture(
     arrivalPrefix: enumerated.slice(0, 25),
     arrivalIsRenderOrder: enumerated.slice(0, entriesShown).join(" ") === rendered.join(" "),
     rendered,
+    ino: (await stat(path)).ino,
   };
 }
 
@@ -331,11 +338,17 @@ async function runCell(fixture: Fixture) {
  * number it states for the open is larger than a whole open-plus-drain measures
  * here.
  *
- * WHAT THIS PAIR DOES NOT CARRY, and it is the shape cells' own guard that is
- * missing: neither call RENDERS anything, so there is no total and no twenty to
- * assert. A stat is checked for being a directory and an open for handing back a
- * handle that closes; a wrong number here would not announce itself the way a
- * wrong shape row does.
+ * GUARDED LIKE THE SHAPE CELLS, AND IT WAS NOT WHEN THE ROWS THE MODULE CITES
+ * WERE TAKEN. What stood here observed that neither call RENDERS anything -- so
+ * there is no total and no twenty to assert -- and stopped, which left two timed
+ * calls asserting nothing at all. MEASURED, with the open replaced by a no-op
+ * handing back an empty handle: this cell reported a median of 0.000 ms and the
+ * process exited 0 with a complete, publishable reading. What binds these two
+ * rows now is THE FIXTURE rather than the call's own shape -- the handle is
+ * DRAINED after the timing window and its entries counted, and the stat's `ino`
+ * must be the one this process read off the directory it wrote. THE ROWS THE
+ * MODULE CITES PREDATE THIS GUARD and are not retro-validated by it: what it
+ * buys is the next reading.
  */
 async function runOpenAndStat(fixture: Fixture) {
   const rounds = roundsFor(fixture.entries);
@@ -346,12 +359,27 @@ async function runOpenAndStat(fixture: Fixture) {
     const openStarted = performance.now();
     const handle = await opendir(fixture.path);
     const openElapsed = performance.now() - openStarted;
-    await handle.close();
+    // DRAINED RATHER THAN CLOSED, OUTSIDE THE TIMING WINDOW, and the drain is
+    // the guard: counting the entries is what ties this row to the directory
+    // the shape rows are read over. Exhausting the iteration is also the
+    // release this handle needs on the runtime whose PARTIAL reads never give a
+    // descriptor back, so the guard costs no `close()` either.
+    const drained: string[] = [];
+    for await (const entry of handle) {
+      drained.push(entry.name);
+    }
+    if (drained.length !== fixture.entries) {
+      throw new Error(
+        `openAlone drained ${String(drained.length)} of ${String(fixture.entries)} in ${fixture.path}`,
+      );
+    }
     const statStarted = performance.now();
     const seen = await stat(fixture.path);
     const statElapsed = performance.now() - statStarted;
-    if (!seen.isDirectory()) {
-      throw new Error(`${fixture.path} is not a directory`);
+    if (!seen.isDirectory() || seen.ino !== fixture.ino) {
+      throw new Error(
+        `statAlone read ino ${String(seen.ino)} of ${String(fixture.ino)} in ${fixture.path}`,
+      );
     }
     // The first round is the discarded warm-up, as in every other cell.
     if (round > 0) {
