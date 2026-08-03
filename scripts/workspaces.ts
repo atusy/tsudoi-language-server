@@ -496,9 +496,19 @@ function build(root: string, dir: string): void {
  * safe direction, and `the outputs agree` is still not `the two builds are the
  * same build`. One compiler, one session, one machine, one base, so `identical
  * because this emit is deterministic here` and `identical for a reason that
- * survives a compiler upgrade` are one reading. AND THE STRUCTURAL CELL IS
- * UNTAKEN -- a type CHANGED with its name kept -- named so its absence is not
- * read as coverage.
+ * survives a compiler upgrade` are one reading. AND THE STRUCTURAL CELL IS NO
+ * LONGER UNTAKEN, AT ONE SHAPE AND IN ONE DIRECTION -- a NARROWED RETURN, the
+ * handler type's return intersected with a required marker and its NAME kept.
+ * MEASURED at base d2d6519, bun 1.3.13 / tsc 7.0.2: a handler builds at exit 0
+ * against the framework artifact that predates the edit and at exit 2, TS2322
+ * naming its own handler function, against one rebuilt after it, with the
+ * resolution route identical in both. test/stale-framework-artifact.test.ts
+ * stages that pair. WHAT IS STILL UNREAD IS NAMED RATHER THAN COVERED: the
+ * EMITTED content of the green cell, any consumer-side compile of it, and the
+ * resolution trace -- and a widened return, a changed parameter type, a renamed
+ * property inside an object type and a changed generic constraint are
+ * unmeasured, so what is held is a narrowed return type and not `a changed
+ * shape`.
  *
  * NO PACKAGE IS LINKED INTO ANOTHER ANY MORE, AND THAT ABSENCE IS THE STORY THIS
  * FILE WAS THE LAST HOLDER OF. A `linkRootPackage` stood here writing an entry
