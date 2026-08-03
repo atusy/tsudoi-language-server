@@ -423,6 +423,18 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * apply to itself. The tail separates the three on a null several times wider,
  * and no ruling here rests on it.
  *
+ * AND `WHAT IT HOLDS` IS NARROWER THAN THE PHRASE READS, WRITTEN OUT HERE RATHER
+ * THAN LEFT TO THE PARAGRAPH IT LEANS ON, BECAUSE THIS IS WHERE THE REFUSAL IS.
+ * The whole of what it rests on: on bun an array is a SECOND copy of a directory
+ * the process materialises behind the handle regardless, and on deno it is the
+ * only whole-directory retention there is AT THE OPEN -- at the open, because
+ * that is where the reading stops, and what deno's lazy read materialises once
+ * iteration has started is separated by no instrument here. WITH THE SEAM BELOW,
+ * THAT IS EVERYTHING THIS REFUSAL HAS. A shape that measured faster on both
+ * runtimes MAY NOT BE REFUSED ON MORE THAN THAT: if the unmeasured half is ever
+ * read and deno materialises too, this refusal stands on the seam alone and is
+ * owed a re-decision rather than a defence.
+ *
  * AND IT TAKES A SEAM WITH IT, WHICH IS NOT A COST AND IS WRITTEN HERE BECAUSE
  * THIS IS WHERE THE EDIT WOULD BE MADE. `readdir` has no BETWEEN THE OPEN AND THE
  * FIRST ENTRY, so the second cancellation check below would have nowhere to
@@ -438,12 +450,25 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * FUNCTION'S OWN working set beside a copy the process holds regardless -- an
  * array here would be a SECOND copy -- plus a tail that is 42.616 ms against
  * 61.302 ms at a hundred thousand. On deno the open allocates and DISCARDS, so
- * the process holds no whole directory at that point and an array here would be
- * a retention it does not have today. THAT IS THE INVERSION, AND IT IS WHY THE
- * TIME IS PAID WHERE IT IS: the runtime paying is the runtime where this
- * function's bound is the only one available. It is narrowed rather than
- * overstated -- what deno's lazy read materialises after the first entry is
- * separated by no instrument here.
+ * AT THAT POINT the process holds no whole directory and an array here would be
+ * a retention IT DOES NOT HAVE THERE.
+ *
+ * THE CLAIM ENDS WHERE THE READING DOES, AND THE SENTENCE THAT STOOD HERE
+ * ASSERTED IT OF THE WHOLE SCAN: `a retention it does not have today`, said of a
+ * runtime whose LAZY read no instrument here has touched. What that read
+ * materialises once iteration has started is separated by nothing in this file,
+ * so on deno `the process holds no whole directory` is established AT THE OPEN
+ * and UNMEASURED afterwards -- unmeasured rather than answered no, which is the
+ * difference this paragraph is being repaired for.
+ *
+ * THAT IS THE INVERSION, AND WHAT IT STILL DECIDES AFTER THE NARROWING. Bun holds
+ * a whole directory from the first read whatever this function does, so the bound
+ * here declines a SECOND copy; deno holds none at the open, so the bound here is
+ * the only one available there for as far as the reading reaches. The time is
+ * therefore paid on the runtime where this function's bound is worth NO LESS than
+ * on the other -- and the observation that would make it worth exactly the same
+ * WITH THE TIME STILL PAID is written into the firing condition below, as the
+ * clause about `Dir` materialising once iteration starts.
  *
  * AGAINST THE BUDGET, WHICH IS NAMED BECAUSE A DELTA WITHOUT ONE IS A NUMBER
  * WITHOUT A JUDGEMENT -- AND WHAT THE BUDGET IS MADE OF IS SPELLED OUT, BECAUSE
@@ -479,20 +504,34 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
  * materialise on the first read, which would make the bound on bun worth what it
  * is worth on deno today; or the ordinary-size delta on deno falling INSIDE the
  * null cell when the instrument is re-run, which would mean the cost being
- * accepted here has gone. The reading to take again is the tracked one, both
- * runtimes, one session.
+ * accepted here has gone. The reading to take again for those is the tracked one,
+ * both runtimes, one session.
  *
- * AND NOTHING DETECTS ANY OF THE THREE, WHICH BELONGS BESIDE THEM RATHER THAN IN
- * A DASHBOARD: a condition that can arrive with every check green is the
- * folklore this paragraph is written against, one step later. All three clauses
- * are properties of the RUNTIMES and not of this package -- no check here reads
- * what an `opendir` allocates or retains, no check re-runs the instrument (a
- * wall-clock assertion inside the suite is refused by name, at the instrument),
- * and the versions every number above was taken on are read off the running
- * binary only by that instrument, which nothing runs. So a runtime upgrade
- * reddens nothing here, the versions in this file go stale in silence, and this
- * condition is met by A PERSON re-running two lines. It is written to age; what
- * makes it age is somebody looking.
+ * AND ONE CLAUSE MORE, WHICH IS THE LIKELIEST TO FIRE AND IS NOT THE SAME KIND OF
+ * THING: DENO'S `Dir` MATERIALISING THE DIRECTORY ONCE ITERATION STARTS, the way
+ * bun's does on the first read. The clauses above are runtime CHANGES; this one
+ * is a present unknown -- the narrowing above says in as many words that nothing
+ * here separates it -- so it may be true TODAY with every sentence above reading
+ * exactly as it does. IF IT HOLDS, deno pays the 3.261 ms per highlight for a
+ * bound the process ALREADY HAS, which is the configuration this shape was ruled
+ * against rather than a smaller version of the one it was ruled for. SO IT GUARDS
+ * THE RULING'S BASIS AND NOT ITS SIZE: the others change what the bound is worth,
+ * this one removes the reason the time is borne here at all. What settles it is a
+ * RETENTION reading on that runtime with iteration started -- which no number in
+ * this file is, every one of them being wall-clock.
+ *
+ * AND NOTHING DETECTS ANY OF THEM, WHICH BELONGS BESIDE THEM RATHER THAN IN A
+ * DASHBOARD: a condition that can arrive with every check green is the folklore
+ * this paragraph is written against, one step later. EVERY CLAUSE IS A PROPERTY
+ * OF THE RUNTIMES and not of this package -- no check here reads what an
+ * `opendir` allocates or retains, no check re-runs the instrument (a wall-clock
+ * assertion inside the suite is refused by name, at the instrument), and the
+ * versions every number above was taken on are read off the running binary only
+ * by that instrument, which nothing runs. So a runtime upgrade reddens nothing
+ * here, the versions in this file go stale in silence, and this condition is met
+ * by A PERSON: two lines for the timing clause, and for the retention one a
+ * reading nobody has taken yet. It is written to age; what makes it age is
+ * somebody looking.
  *
  * AND ONE SENTENCE THAT STOOD HERE SURVIVES, RE-TAKEN RATHER THAN REPEATED:
  * streaming is slower on deno at EVERY size this reading covers -- 200, five
