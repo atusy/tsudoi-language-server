@@ -161,8 +161,14 @@ function readReport(xml: string): Map<string, ArmResult> {
         "a <testcase> in bun's report carries no name, so no arm's result can be read",
       );
     }
-    const body = chunk.split("</testsuite")[0] ?? chunk;
-    const own = body.split("<testcase ")[0] ?? body;
+    // BOUNDED AT ITS OWN SUITE'S END, AND NOT SPLIT ON `<testcase ` A SECOND
+    // TIME: this chunk is what splitting on that delimiter produced, so it holds
+    // none, and the second split returned its input -- an expression that could
+    // not have been false, which is the shape this module exists to catch. The
+    // suite bound is live and stays: a report carrying more than one
+    // `<testsuite>` lets the last chunk of one run into the next, and a
+    // `<failure` over there is not this arm's.
+    const own = chunk.split("</testsuite")[0] ?? chunk;
     arms.set(unescapeXml(named[1] ?? ""), own.includes("<failure") ? "failed" : "passed");
   }
   return arms;
