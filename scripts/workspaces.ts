@@ -455,12 +455,17 @@ interface PublishedSubpath {
  * THAN GUESSED AT: what is being graded is where a TYPE CHECK lands, and a map
  * that names no declaration makes no promise for one to break.
  *
- * A WILDCARD SUBPATH WOULD BE READ LITERALLY, and the shape of that failure is
- * named because no map here has one: `"./*"` becomes a specifier ending in a
- * star, the probe cannot resolve it, and the refusal below reports `never
- * reached the resolver` -- which is a fault in this reading and not a missing
- * artifact. The day a map grows one, expand it here rather than loosening that
- * pair.
+ * A WILDCARD SUBPATH IS READ LITERALLY, AND WHAT THAT PRODUCES IS MEASURED --
+ * the reasoned version stood here and was wrong in the one detail a reader would
+ * act on. `"./*"` becomes a specifier ending in a star, and the compiler DOES
+ * attempt it: it substitutes nothing, finds no file under any arm, and the
+ * refusal below reports `answers from NOTHING` against a promised path that
+ * still carries the star. NOT `never reached the resolver` -- that pair does not
+ * fire here, so a reader following the old sentence would have gone looking at
+ * the probe for a fault that is in the map. Staged in
+ * test/artifact-detector.test.ts, since no map in this workspace has one. The
+ * day a map grows one, expand this function rather than reading its refusal as a
+ * missing artifact.
  */
 function publishedSubpaths(root: string, members: readonly string[]): PublishedSubpath[] {
   const found: PublishedSubpath[] = [];
@@ -627,10 +632,21 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
     return;
   }
   const { answered, attempted } = whereSubpathsLand(root, subpaths);
-  // THE PAIR, AND WITHOUT IT AN EMPTY OFFENDER LIST IS SATISFIED BY A PROBE THAT
-  // RESOLVED NOTHING AT ALL: every specifier this reads about was one the
-  // compiler was asked, and a specifier it never reached is a fault in the probe
-  // rather than a subpath that answered correctly.
+  // THE PAIR IS ABOUT THE DIAGNOSIS AND NOT ABOUT DETECTION, WHICH IS WEAKER
+  // THAN THE CLAIM THAT STOOD HERE AND IS WHAT IS TRUE. `an empty offender list
+  // is satisfied by a probe that resolved nothing at all` is false under the
+  // rule below: a specifier the compiler never reached HAS NO ANSWER, so it is
+  // already an offender, and such a probe is refused with this pair or without
+  // it. What the pair buys is the reader's next move -- `never reached the
+  // resolver` sends them to this probe, `answers from NOTHING` sends them to the
+  // artifact -- and sending them to the wrong one costs a search.
+  //
+  // AND NOTHING IN THIS REPOSITORY REACHES IT, DISCLOSED RATHER THAN LEFT TO BE
+  // REDISCOVERED. Made vacuous -- `subpaths.filter(() => false)` -- every arm
+  // stays green, because every state anything here can stage is one the compiler
+  // ATTEMPTS; the wildcard subpath was the documented reachable case and is
+  // measured attempted. It is kept because it is what keeps the two diagnoses
+  // separable, and it is named unwitnessed rather than deleted for want of a red.
   const unasked = subpaths.filter(({ specifier }) => !attempted.has(specifier));
   if (unasked.length > 0) {
     throw new Error(

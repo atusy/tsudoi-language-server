@@ -86,6 +86,21 @@ const sourceBeforeArtifact = {
 };
 
 /**
+ * A WILDCARD SUBPATH, whose arms carry the star its key does.
+ *
+ * NO MAP IN THIS WORKSPACE HAS ONE, WHICH IS WHY IT IS STAGED HERE: the
+ * enumeration reads a subpath literally, and what that produces was written down
+ * in prose from reasoning and was wrong. This is the shape that measures it.
+ */
+const wildcard = {
+  "./*": {
+    types: "./dist/*.d.ts",
+    import: "./dist/*.js",
+    default: "./src/*.ts",
+  },
+};
+
+/**
  * A workspace whose one member PUBLISHES a subpath, in whichever state its
  * artifact is left in.
  *
@@ -229,6 +244,27 @@ test("a published subpath whose module is written and whose declaration is not i
   // The discrimination, asserted rather than arranged: the file that IS there is
   // not what it complains about.
   expect(result.stderr).not.toContain(module_);
+});
+
+/**
+ * THE ONE DOCUMENTED REACHABLE CASE OF THE `unasked` PAIR, MEASURED AND FOUND
+ * TO BE THE OTHER DIAGNOSIS. The enumeration's docstring said a wildcard
+ * subpath is one the probe cannot resolve and that the refusal would report
+ * `never reached the resolver`. Staged, the compiler ATTEMPTS the specifier,
+ * substitutes nothing and finds no file, so what a reader gets is `answers from
+ * NOTHING` -- pointing at the map, which is where the fault is.
+ *
+ * SO THE ARM EXISTS TO KEEP THE CORRECTED SENTENCE HONEST rather than to cover
+ * the pair, which nothing here reaches: made vacuous, the pair costs no arm in
+ * this suite, and that is recorded at its site instead of being fixed with a
+ * fixture invented to have one.
+ */
+test("a wildcard subpath is reported as answering from no file, and never as a probe that was not asked", async () => {
+  const result = await checkWorkspace(publishingMember(complete, typeChecks, wildcard));
+
+  expect(result.code).not.toBe(0);
+  expect(result.stderr).toContain("@staged/producer/* answers from NOTHING");
+  expect(result.stderr).not.toContain("never reached the resolver");
 });
 
 /**
