@@ -171,10 +171,18 @@ function disagreeing(root: string, unpublished: boolean): string[] {
  * quietly dropped the flag while tsudoi is still unpublished is named here too,
  * because installing that package then 404s.
  *
- * AND ONE QUESTION IS PUT TO THE READER WHO REDDENS THIS ARM, BECAUSE THEY ARE
- * THE ONLY READER IT CAN BE PUT TO. Deleting tsudoi's `private` is what turns
- * this reading red, and it is also the precondition of the residual below --
- * before that edit the residual has no subject at all.
+ * AND ONE QUESTION IS PUT TO THE READER WHO REDDENS THIS ARM BY DELETING
+ * TSUDOI'S `private`, WHICH IS ONE OF THE TWO READERS IT CAN HAVE AND NOT THE
+ * ONLY ONE. `BECAUSE THEY ARE THE ONLY READER IT CAN BE PUT TO` STOOD HERE AND
+ * CONTRADICTED THE PARAGRAPH ABOVE IT: this arm fires in both directions, and
+ * MEASURED at base 488787c on bun test v1.3.13, `optional: true` dropped from
+ * packages/tsudoi-hover-wordnet's `peerDependenciesMeta` with tsudoi's `private`
+ * STILL IN PLACE reddens this same arm -- 5 pass / 2 fail on this file, this arm
+ * naming `optional=false while tsudoi's own manifest forbids publication=true`,
+ * and the control below red beside it. THAT READER IS NOT PUBLISHING and the
+ * residual is not theirs: their repair is the flag, and the question below has
+ * no subject for them at all. Deleting `private` is what makes it theirs,
+ * because it is the residual's precondition.
  *
  * THE RESIDUAL. A handler's build reads the framework's SOURCE when the
  * framework's artifact is absent, and a consumer receives the framework's
