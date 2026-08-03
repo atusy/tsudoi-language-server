@@ -147,31 +147,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-64",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read the guarantee this repository makes about its own documentation and find it true of the whole document",
-        benefit:
-          "a reader following a command block in this README is following one that something ran",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A fenced command block in a tracked README that the extraction executing those commands does not reach is refused, naming the document and the block, over READMEs as a class rather than over the documents that exist today.",
-          verification:
-            "Staged in a throwaway copy, because every block in this tree today is either reached or declared and an instrument whose witness cannot fail measures nothing: plant a fenced command block that no extraction reaches into the root README and into a member's, and require each to be reported naming the document and enough of the block's own text to find it. Pair each with the same tree unplanted going green. AND THE DEGENERATE ARM, RUN BEFORE THE ARMS ARE BELIEVED: an implementation that reports nothing must redden the planted arms while leaving the unplanted ones green, measured rather than argued -- the extractors this repository already has are MARKER-KEYED and each throws only when ITS OWN marker is missing, so an implementation built from them is satisfied by an author's intention. STARTING EVIDENCE, MEASURED: an unmarked block added to README.md leaves every check exit 0 while the project's own documentation tells a reader every command block in that file is extracted and executed.",
-        },
-      ],
-      status: "done",
-      notes: [
-        "THE FIRST THING THE EXECUTOR MEETS IS NOT A BUG: one extractor in test/helpers/readme.ts says of itself `NOT EXECUTED BY ANYTHING, stated here because the neighbouring extractors all are and a reader would otherwise assume it`, and gives its reason. A property that forces EVERY block to be executed would delete a considered decision. WHAT THE CRITERION REFUSES IS A BLOCK THAT IS UNREACHED AND UNACCOUNTED FOR; how an account is expressed is this item's work and is deliberately not named here.",
-        "THE PROSE CLAIM IS PART OF THE SUBJECT: claimed in the project's own documentation and asserted by nothing is a COVERAGE CLAIM TAKEN ON RECOLLECTION, which is what makes this a defect rather than a gap.",
-        "FOUND BY TRIAGING THE RETROSPECTIVE RECORD RATHER THAN BY A RED, and that is worth recording: the improvement being retired claimed this remedy existed, and reading for its mechanism before marking it done is what found that it does not.",
-      ],
-    },
-
-    {
       id: "PBI-74",
       story: {
         role: "tsudoi maintainer",
@@ -439,7 +414,7 @@ const scrum: ScrumDashboard = {
       number: 60,
       pbi_id: "PBI-64",
       goal: "A reader of this repository's promise about its own documentation finds it true of every fenced block in every tracked README -- because a block nothing consumes is refused by name, and a block that is read rather than run says which part of itself the reading can fail on.",
-      status: "in_progress",
+      status: "done",
       subtasks: [
         {
           test: "None -- structural. Pinned by the existing arms in test/readme.test.ts staying green (the marker-deleted probes, the count throws, the moved-marker throw) and by the whole Definition of Done. Born-green, no behaviour claim.",
