@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, sep } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { repoRoot } from "./spawn.ts";
 
 /**
@@ -201,8 +201,8 @@ function unescapeXml(text: string): string {
  * module exists to catch, arriving in the cheapest implementation of it. It also
  * throws away every other arm's result, which is what makes a red attributable.
  */
-export function runArmFile(stage: string, file: string): Promise<ArmFileRun> {
-  const report = join(stage, "perturbation-report.xml");
+export function runArmFile(stage: ThrowawayPath, file: string): Promise<ArmFileRun> {
+  const report = throwawayTarget(stage, "perturbation-report.xml");
   rmSync(report, { force: true });
   return new Promise((settle) => {
     const child = spawn("bun", ["test", file, "--reporter=junit", `--reporter-outfile=${report}`], {
@@ -218,10 +218,32 @@ export function runArmFile(stage: string, file: string): Promise<ArmFileRun> {
   });
 }
 
+declare const throwawayBrand: unique symbol;
+
 /**
- * THE ONE PLACE A PATH IS ALLOWED TO BE DELETED, AND IT IS A REFUSAL RATHER THAN
- * A FILTER: a caller handing this something outside the system temporary
- * directory gets an exception, never a silent skip.
+ * A PATH THIS MODULE MADE, WHICH IS THE ONLY KIND ANYTHING HERE MAY MUTATE.
+ *
+ * TWO MECHANISMS FOR ONE PROPERTY, AND EACH COVERS THE OTHER'S BLIND SPOT. The
+ * TYPE is produced by `throwawayOnly` alone and demanded by every mutating
+ * signature below, so a stager handed back an unguarded string stops COMPILING
+ * at the moment the violating line is written, before any run. THE GUARD CALL AT
+ * EACH SITE is what survives the thing the type cannot see: a hand-written
+ * degenerate CAN CAST, and this sprint's accident was exactly a hand-written
+ * degenerate. A type alone would have compiled it.
+ *
+ * WHY IT IS NOT ENOUGH TO GUARD WHERE THE PATH IS MADE, MEASURED IN A COPY OF
+ * THIS CHECKOUT RATHER THAN REASONED: with the creation-time guard left intact
+ * and only what `stageCheckout` RETURNS degenerated to the checkout root,
+ * `applyWeakening` wrote the weakened source INTO THE WORKING TREE, `runArmFile`
+ * ran there and left its report there, and `dispose` then correctly refused to
+ * delete -- so nothing restored the file. The delete was guarded and the two
+ * WRITES one line in front of it were not.
+ */
+export type ThrowawayPath = string & { readonly [throwawayBrand]: true };
+
+/**
+ * A REFUSAL RATHER THAN A FILTER: a caller handing this a path this module could
+ * not have made gets an exception, never a silent skip.
  *
  * IT IS THIS SPRINT'S OWN FINDING, MEASURED THE WORST WAY: a hand-run
  * perturbation made a staging function return the CHECKOUT ROOT, and the
@@ -232,21 +254,71 @@ export function runArmFile(stage: string, file: string): Promise<ArmFileRun> {
  * the RIGHT QUANTITY -- a path -- against a subject that could not discriminate a
  * throwaway from the repository, because nothing asked.
  *
- * SO THE GUARD IS ON THE DELETE AND NOT ON THE PERTURBATION. A note saying `do
- * not point a stager at the checkout` foreclose nothing: a `TMPDIR` that
+ * SO THE GUARD IS ON THE MUTATION AND NOT ON THE PERTURBATION. A note saying `do
+ * not point a stager at the checkout` forecloses nothing: a `TMPDIR` that
  * resolves oddly, an early return added later, or a caller passing its own root
  * all reach the same `rmSync` with the same silence.
+ *
+ * AND THE CHECKOUT CLAUSE IS NOT REDUNDANT WITH THE TEMPORARY-DIRECTORY ONE,
+ * WHICH IS WHY IT IS CONJOINED HERE RATHER THAN LEFT IMPLIED: `a TMPDIR that
+ * resolves oddly` is the scenario the paragraph above names, and a TMPDIR
+ * resolving INTO the checkout passes the first clause and licenses the delete.
+ * The two are extensionally equal over every path on an ordinary machine, so the
+ * second clause is witnessed by an arm that MOVES `TMPDIR` -- and the messages
+ * are different because the reader's next move is: fix your environment, or stop
+ * pointing a stager at the repository.
+ *
+ * `""` AND `"."` ARE THE CHEAPEST DEGENERATE AND THEY LAND IN THE CHECKOUT
+ * CLAUSE: MEASURED on bun 1.3.13, `realpathSync("")` returns the WORKING
+ * DIRECTORY rather than throwing, and this project mandates the checkout root as
+ * the working directory, so a stager returning either resolves to the repository
+ * and is named as such.
  *
  * realpathSync ON BOTH SIDES, because on macOS the temporary directory lives
  * under a symlink and a prefix test between the two spellings passes nothing.
  */
-export function throwawayOnly(path: string): string {
+export function throwawayOnly(path: string): ThrowawayPath {
   const resolved = realpathSync(path);
+  const checkout = realpathSync(repoRoot);
+  if (resolved === checkout || resolved.startsWith(checkout + sep)) {
+    throw new Error(
+      `${resolved} is inside the checkout ${checkout}, so nothing here will stage into it, write to it or delete it`,
+    );
+  }
   const throwaway = realpathSync(tmpdir());
   if (resolved !== throwaway && !resolved.startsWith(throwaway + sep)) {
     throw new Error(
       `${resolved} is not under ${throwaway}, so nothing here will stage into it or delete it`,
     );
+  }
+  return path as ThrowawayPath;
+}
+
+/**
+ * The path one mutating end is about to touch, refused unless it is inside a
+ * throwaway this module made.
+ *
+ * IT RE-ASKS THE GUARD RATHER THAN TRUSTING THE TYPE IT WAS HANDED, which is the
+ * half the compiler cannot deliver: `stage as ThrowawayPath` is one token, and a
+ * degenerate written by hand is where this repository's own loss came from.
+ *
+ * LEXICAL AND NOT `realpathSync`, DELIBERATELY, because two of the three callers
+ * mutate a path that DOES NOT EXIST YET -- the report file and every staged
+ * destination -- and a guard that required existence could not stand in front of
+ * them at all, which is the position that leaves the write unguarded.
+ *
+ * WHAT IT THEREFORE DOES NOT CATCH, NAMED RATHER THAN FIXED: the stage borrows
+ * `node_modules` BY SYMLINK into the real checkout, so a target under it is
+ * lexically inside the stage and physically inside the repository. Nothing a
+ * record weakens lives there -- what a record names is a tracked file, and
+ * node_modules is not tracked -- and resolving the parent instead would change
+ * what `applyWeakening` accepts in a direction no arm covers.
+ */
+function throwawayTarget(stage: ThrowawayPath, target: string): string {
+  const root = realpathSync(throwawayOnly(stage));
+  const path = resolve(root, target);
+  if (path !== root && !path.startsWith(root + sep)) {
+    throw new Error(`${path} is outside the throwaway ${root}, so nothing here will write to it`);
   }
   return path;
 }
@@ -272,19 +344,19 @@ export function throwawayOnly(path: string): string {
  * node_modules IS BORROWED BY SYMLINK because it is neither tracked nor cheap,
  * and nothing a record weakens lives in it.
  */
-export function stageCheckout(): { readonly root: string; dispose: () => void } {
+export function stageCheckout(): { readonly root: ThrowawayPath; dispose: () => void } {
   const root = throwawayOnly(mkdtempSync(join(tmpdir(), "tsudoi-perturbation-")));
   const listed = spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" });
   if (listed.status !== 0) {
     throw new Error(`git ls-files failed in ${repoRoot}, so no stage could be built`);
   }
   for (const tracked of listed.stdout.split("\0").filter((entry) => entry !== "")) {
-    const destination = join(root, tracked);
+    const destination = throwawayTarget(root, tracked);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(join(repoRoot, tracked), destination);
   }
-  rmSync(join(root, "bunfig.toml"), { force: true });
-  symlinkSync(join(repoRoot, "node_modules"), join(root, "node_modules"), "dir");
+  rmSync(throwawayTarget(root, "bunfig.toml"), { force: true });
+  symlinkSync(join(repoRoot, "node_modules"), throwawayTarget(root, "node_modules"), "dir");
   return {
     root,
     dispose: (): void => rmSync(throwawayOnly(root), { recursive: true, force: true }),
@@ -298,9 +370,12 @@ export function stageCheckout(): { readonly root: string; dispose: () => void } 
  * appears means the code moved under the record and the run that follows would
  * measure the UNWEAKENED tree -- a green saying nothing. A `from` appearing
  * twice means the record does not say which site it weakens.
+ *
+ * THE GUARD STANDS BEFORE THE READ AND NOT MERELY BEFORE THE WRITE, so that the
+ * arm which perturbs it away cannot reach a `writeFileSync` by any ordering.
  */
-export function applyWeakening(stage: string, weakening: Weakening): void {
-  const path = join(stage, weakening.file);
+export function applyWeakening(stage: ThrowawayPath, weakening: Weakening): void {
+  const path = throwawayTarget(stage, weakening.file);
   const before = readFileSync(path, "utf8");
   const occurrences = before.split(weakening.from).length - 1;
   if (occurrences !== 1) {

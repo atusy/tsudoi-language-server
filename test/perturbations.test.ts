@@ -14,6 +14,7 @@ import {
   runArmFile,
   stageCheckout,
   takeBaseline,
+  type ThrowawayPath,
   throwawayOnly,
   type Weakening,
 } from "./helpers/perturbation.ts";
@@ -83,8 +84,12 @@ const probeFile = "probe.test.ts";
  * records: a tree under test/ would be swept by this suite's own enumerations
  * and would put a second [test] section where the build lives.
  */
-function stageProbe(tags: readonly ProbeTag[]): string {
-  const root = mkdtempSync(join(tmpdir(), "tsudoi-probe-"));
+function stageProbe(tags: readonly ProbeTag[]): ThrowawayPath {
+  // THE GUARD IS WHAT MAKES THIS A `ThrowawayPath` AND THERE IS NO OTHER ROUTE
+  // TO ONE, which is the compiler's half of the property: every mutating end
+  // below demands the type, so a probe stager edited to hand back anything else
+  // stops compiling here rather than reddening after it has written.
+  const root = throwawayOnly(mkdtempSync(join(tmpdir(), "tsudoi-probe-")));
   staged.push(root);
   writeFileSync(join(root, probeTarget), "export const limit = 2;\n");
   writeFileSync(
@@ -147,7 +152,7 @@ function filesUnder(root: string, prefix = ""): string[] {
 
 /** Baseline, weakening, second run -- the sequence every arm below reads. */
 async function bothRuns(
-  root: string,
+  root: ThrowawayPath,
   weakening: Weakening,
 ): Promise<{ before: ArmFileRun; after: ArmFileRun }> {
   const before = await runArmFile(root, probeFile);
@@ -326,6 +331,42 @@ test("the stage is the tracked tree, and the weakening never reaches the working
   const built = "packages/tsudoi-language-server/dist/types.js";
   expect(existsSync(join(repoRoot, built))).toBe(true);
   expect(existsSync(join(stage.root, built))).toBe(false);
+  // AND `NO WRITE CAN LEAVE THE STAGE` AS ITS OWN DIRECTION, WHICH EVERYTHING
+  // ABOVE WITNESSES FOR EXACTLY ONE RECORD'S DATA. `no write can leave the
+  // stage` and `this record's file happens to be relative and clean` have
+  // identical truth values over the whole fixture -- so the property was carried
+  // by the record, in the arm standing over the destructive side, in the sprint
+  // whose accident WAS a destructive side. MEASURED IN A COPY OF THIS CHECKOUT
+  // rather than reasoned: with `stageCheckout` returning the checkout root, the
+  // write above landed in the working tree, `dispose` refused, and nothing put
+  // the file back.
+  //
+  // SAFE UNDER ITS OWN DEGENERATE BY CONSTRUCTION, WHICH IS WHY IT CAN BE RUN AT
+  // ALL AGAINST THE REAL CHECKOUT: the `from` below occurs in no file, so with
+  // the guard deleted `applyWeakening` reads, counts zero and refuses on the
+  // ARITY -- there is no ordering that reaches `writeFileSync`. What separates
+  // the readings is therefore the MESSAGE and not the throw, and the cast is the
+  // degenerate's own shape: a hand-written one can always cast, which is what
+  // the guard call buys over the type.
+  const unwritable: Weakening = { ...weakening, from: "no source line reads like this one" };
+  for (const outside of [repoRoot, "", "."]) {
+    expect(() => applyWeakening(outside as ThrowawayPath, unwritable)).toThrow(
+      /inside the checkout/,
+    );
+  }
+  // `""` AND `"."` ARE IN THAT LIST BECAUSE THEY ARE CHEAPER THAN THE ACCIDENT
+  // THIS TREE SUFFERED, NOT BECAUSE THEY ARE EXOTIC: every join under them goes
+  // relative, and this project mandates the checkout root as the working
+  // directory, so a stager with an early return added later lands there.
+  //
+  // AND THE OTHER WRITE, WHICH IS THE ONE THE ACCIDENT'S REPLAY LEFT BEHIND: the
+  // run's report file. Its guard throws SYNCHRONOUSLY, before the promise, so
+  // this reads as a throw and not as a rejection. WHAT ITS DEGENERATE COSTS,
+  // STATED BECAUSE IT IS NOT SAFE BY CONSTRUCTION THE WAY THE THREE ABOVE ARE:
+  // with the guard deleted this spawns one run over a file the checkout does not
+  // have and may leave an UNTRACKED report at the root -- bounded, tracked
+  // nothing, and the reason that degenerate is taken in a copy.
+  expect(() => runArmFile(repoRoot as ThrowawayPath, probeFile)).toThrow(/inside the checkout/);
 });
 
 test("an arm whose name carries XML's own characters is read as ITSELF", async () => {
@@ -373,8 +414,8 @@ test("nothing here stages into, or deletes, a path outside the throwaway directo
   //
   // BOTH DIRECTIONS, because a refusal that refuses everything is satisfied by
   // the first line alone and would take every arm above with it.
-  expect(() => throwawayOnly(repoRoot)).toThrow(/is not under/);
-  expect(() => throwawayOnly(join(repoRoot, ".git"))).toThrow(/is not under/);
+  expect(() => throwawayOnly(repoRoot)).toThrow(/inside the checkout/);
+  expect(() => throwawayOnly(join(repoRoot, ".git"))).toThrow(/inside the checkout/);
   const throwaway = stageProbe(["alpha"]);
   expect(throwawayOnly(throwaway)).toBe(throwaway);
   // AND A PATH UNDER NEITHER, WHICH IS THE ONE THE OTHER THREE DO NOT REACH.
@@ -386,6 +427,48 @@ test("nothing here stages into, or deletes, a path outside the throwaway directo
   // directory is the sample because it is the largest such subject on this
   // machine and it exists on every machine that can run this suite.
   expect(() => throwawayOnly(homedir())).toThrow(/is not under/);
+});
+
+test("a TMPDIR that resolves INTO the checkout does not license the delete", () => {
+  // ITS OWN ARM AND NOT A LINE IN THE ONE ABOVE, BECAUSE IT COULD NEVER BE THE
+  // FIRST THING TO FAIL THERE. MEASURED: with the checkout clause deleted, that
+  // arm reddens on its own first line -- the one about the checkout root -- and
+  // this reading is never taken, so a hazard sharing a test with another hazard
+  // is a hazard nothing observes.
+  //
+  // WHAT THIS SEPARATES AND THE ARM ABOVE CANNOT. `under the temporary
+  // directory` and `under it AND outside the checkout` are ONE predicate over
+  // every path on an ordinary machine, so the conjunction is unwitnessed until
+  // TMPDIR RESOLVES INTO THE CHECKOUT -- which is the scenario the guard's own
+  // docstring names as its motivation and, until this arm, the one it did not
+  // stop: such a path passed, and the recursive delete at the far end of it was
+  // licensed over the repository.
+  //
+  // NO DIRECTORY IS CREATED AND NOTHING IS DELETED: an existing tracked
+  // directory is borrowed as the temporary root, so this arm's own setup writes
+  // nothing anywhere. MEASURED on bun 1.3.13: `os.tmpdir()` re-reads `TMPDIR` on
+  // every call, so the move takes effect inside the guard.
+  const priorTmpdir = process.env.TMPDIR;
+  process.env.TMPDIR = join(repoRoot, "scripts");
+  try {
+    // THE OTHER DIRECTION IS NOT WRITTEN HERE AND CANNOT BE: under a TMPDIR that
+    // resolves into the checkout, `under the temporary directory AND outside the
+    // checkout` is the EMPTY SET, so a positive control would have to leave the
+    // state this arm exists to put the guard in. Constructing one by staging a
+    // probe would create a directory INSIDE the repository, which is the write
+    // this arm is about. It is carried instead by every other arm in this file:
+    // each stages through the same guard, so a refusal that refused everything
+    // takes all of them.
+    expect(() => throwawayOnly(join(repoRoot, "scripts", "workspaces.ts"))).toThrow(
+      /inside the checkout/,
+    );
+  } finally {
+    if (priorTmpdir === undefined) {
+      delete process.env.TMPDIR;
+    } else {
+      process.env.TMPDIR = priorTmpdir;
+    }
+  }
 });
 
 test("a record naming an arm in a file that RE-RUNS perturbations is refused, never spawned", async () => {
