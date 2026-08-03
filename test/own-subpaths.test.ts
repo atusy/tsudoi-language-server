@@ -42,6 +42,20 @@ applySuiteDeadline();
  * The state under measurement is `this workspace's artifact does not answer`,
  * and the working tree may never be put in it -- every other file in the suite
  * is resolving through that artifact at the same moment.
+ *
+ * AND THE WEAKENING ABOVE CANNOT BE A PERTURBATION RECORD, WHICH IS MEASURED
+ * RATHER THAN CHOSEN -- this dashboard's rule is that a perturbation recorded
+ * only as prose is not recorded, so the exemption is owed a reason. The
+ * instrument re-runs an arm file inside a stage of TRACKED files, and this file
+ * stages a checkout of its own: in that stage `repoRoot` IS the stage, the stage
+ * holds no `.git`, and `git ls-files` exits non-zero -- MEASURED, both arms fail
+ * reading `git ls-files failed in /var/folders/...`, for a reason that is not
+ * the weakening, which is the same class of blocker already recorded there for
+ * test/published-specifier.test.ts. A SECOND AND INDEPENDENT REFUSAL STANDS
+ * BEHIND IT: `reRun` refuses any arm file importing helpers/perturbation.ts, and
+ * this one does, for the guard below. So the weakening is a reading taken by
+ * hand and kept in the sprint dashboard, named here because the registry's
+ * silence about this file would otherwise read as an oversight.
  */
 
 /** This workspace's own scope, which is the directory its members are linked under. */
