@@ -1446,9 +1446,19 @@ const scrum: ScrumDashboard = {
         implementation:
           "Both shapes of the prepack precondition are refused BY NAME with their reasons, and the residual is landed at the publish sentinel's arm.",
         type: "structural",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "6d0194a",
+            message:
+              "docs: the pack precondition is foreclosed where it would be typed, in both shapes",
+            phase: "green",
+          },
+        ],
         notes: [
+          "WHERE THEY LANDED: both refusals at the `prepack` arm of EACH handler's own test/package-shape.test.ts, and the residual at the LIVE arm of test/optional-peer-premise.test.ts -- the reading that reddens when tsudoi's `private` comes off, not its control, which is green either way.",
+          "ONE NEW CLAIM WAS WRITTEN, SO IT WAS MEASURED HERE RATHER THAN INHERITED: shape two rests on a member's manifest travelling to a registry with its scripts. MEASURED on bun 1.3.13 at this base, `bun pm pack --destination` into a scratch directory, run in each handler in turn -- both packed package.json files carry `scripts.prepack` verbatim. Nothing in the checkout was written to.",
+          "AND THE INFERENCE IS LABELLED AS ONE AT THE ARM: that a consumer's compiler re-resolves the surviving specifier against the framework THEY installed, so a disagreement should surface in their compile. NOT OBSERVED -- no consumer-side compile against a skipped-prepack publish was run -- and what it would buy if it holds is WHO meets the error, not whether anyone does.",
           "SHAPE ONE -- REFUSE THE HANDLER BUILD WHILE THE FRAMEWORK'S ARTIFACT IS ABSENT -- IS REFUSED WITH A POSITIVE MEASUREMENT AND NOT MERELY FOR WANT OF A SHOWN COST. It would force the build onto the artifact and away from the source, and the measured cell says the artifact is the grade that HIDES a disagreement the source raises as TS2305. A precondition that makes the product measurably worse is the strongest refusal this backlog recognises.",
           "SHAPE TWO -- prepack BUILDS THE FRAMEWORK FIRST -- IS REFUSED ON A GROUND INDEPENDENT OF ANY OTHER ITEM, which is what keeps it refused when that item's record changes: a handler's package.json TRAVELS TO A REGISTRY WITH ITS SCRIPTS, so this would put a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in this workspace. A stranger packing an installed copy would have prepack try to build a package that is not there. That is the knowingly-false optional peer's class one step worse -- it FAILS rather than merely misleads. It would also encode this workspace's build order in a member's published manifest where buildOrder already derives it.",
           "THE RESIDUAL THE MEASUREMENT CANNOT REACH, LANDED AT THE ARM RATHER THAN ONLY HERE. A consumer receives the framework's dist/, so a handler graded against src/ ships declarations validated against something the consumer does not have -- which bites only if the framework's OWN published dist/ disagreed with its src/ at publish time, i.e. a publish that skipped prepack. THE PRECONDITION IS THE FRAMEWORK'S `private` COMING OFF, and that edit already reddens an arm, so the question goes to the reader who reddens it: they are about to publish and are exactly the reader who must answer it. OFFERED AS AN INFERENCE FROM THE MEASURED MECHANISM AND LABELLED AS ONE, NOT AS MEASURED: since the specifier survives into the artifact, the consumer re-resolves it against the framework they installed, so a disagreement surfaces in THEIR compile as a named error -- the residual degrades WHO meets the error, not whether anyone does.",
