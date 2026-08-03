@@ -33,7 +33,18 @@ applySuiteDeadline();
  * THE ASSERTION IS THAT THE TWO EXITS DISAGREE, and never that either is 0 or 2.
  * That spelling is what makes this redden the day they agree -- which is the day
  * the hazard stops existing, or the day this stage stops reaching the artifact it
- * thinks it does. IT IS ALSO WHAT MAKES A MIS-STAGED TREE LOUD RATHER THAN
+ * thinks it does.
+ *
+ * AND A THIRD STATE PRINTS THE SAME WORDS AS THE FIRST, WHICH IS SAID HERE
+ * BECAUSE THE READER'S NEXT MOVE DIFFERS AND NOTHING ELSE TELLS THEM WHICH:
+ * THE PERTURBATION CEASING TO LAND ON WHAT THE CONSUMER WRITES. MEASURED, as
+ * this arm's third degenerate -- a staged consumer annotated with a type the
+ * narrowing does not reach reads exit 0 in BOTH cells, agreeing, and this
+ * fails with text BYTE-IDENTICAL to `the hazard is over`. The two are
+ * separable by hand and not by the message: the hazard being over means the
+ * arm should go, while a perturbation that stopped landing means the arm
+ * should be RE-AIMED. The mis-staged state above does not collide -- it
+ * arrives as TS2307 in the cells' own output where these two arrive silent. IT IS ALSO WHAT MAKES A MIS-STAGED TREE LOUD RATHER THAN
  * GREEN: a handler answering `@atusy/tsudoi-language-server/types` from the REAL
  * checkout instead of from the copy below reads the same code in both cells, and
  * this fails. No resolution trace is taken here, deliberately -- the disagreement

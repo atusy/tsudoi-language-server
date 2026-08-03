@@ -230,7 +230,13 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * the same versions, because a pack cell taken in one package is a claim about
  * that package. So two green commands in an order nothing forbids ship
  * declarations graded against a shape the framework no longer has.
- * test/stale-framework-artifact.test.ts stages that pair.
+ * test/stale-framework-artifact.test.ts stages that disagreement over the OTHER
+ * handler and not this one -- it names a single consumer and says so -- so the
+ * arm is what keeps the SHAPE of this claim honest and is not a witness for this
+ * package. THE BUILD CELL WAS READ HERE TOO, exit 0 against the stale artifact
+ * and exit 2 with TS2322 at this package's own handler against a rebuilt one;
+ * what is inherited from the other handler is nothing, and what is uncovered by
+ * an arm is this package's half.
  *
  * AT ONE SHAPE IN ONE DIRECTION, WHICH BOUNDS THE SENTENCE ABOVE RATHER THAN
  * HEDGING IT: a widened return, a changed parameter type, a renamed property
