@@ -99,6 +99,15 @@ owes an account exactly as one tagged `sh` does. An exempt tag list was settled
 on and then overturned: it makes the defect reintroducible by typing three
 characters.
 
+**That ruling is armed at a SET of tags, and for one round it was armed at
+exactly one.** _(sprint 60)_ `fenceForms` in `test/readme-coverage.test.ts` plants
+`sh`, `ts`, `text`, a tilde fence and a fence carrying no info string at all into
+two documents, each entry with the reason it is in the list. MEASURED before the
+list existed, with `if (block.info === "text" || block.info === "ts") continue;`
+in the sweep's unreached branch: 934 pass / 0 fail, every check exit 0 — both
+planted arms planted ```sh, so the one tag witnessed was the one the ruling was
+never in danger over. **A ruling in prose is worth the tags its arm plants.**
+
 **What the sweep still cannot decide is whether a consumer really consumes.** A
 row saying `read` names a SUBJECT — the projection its assertion is handed — and
 everything the subject leaves out is unchecked BY DECLARATION. _(sprint 60)_

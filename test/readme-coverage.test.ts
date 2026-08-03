@@ -75,13 +75,99 @@ function indexEverything(stage: ThrowawayPath): void {
   }
 }
 
-/** A fenced block no marker names, appended to a document IN THE STAGE. */
-const plantedText = "echo this-block-is-reached-by-nothing";
-const plantedBlock = `\n## A section nobody wrote a marker for\n\n\`\`\`sh\n${plantedText}\n\`\`\`\n`;
+/** One way of opening a fence: the character run, and the tag it carries. */
+interface FenceForm {
+  /** What an assertion line says about this form, so a red names the tag. */
+  readonly name: string;
+  /** The fence character run the block opens and closes on. */
+  readonly fence: string;
+  /** The info string. It is RECORDED by the sweep and consulted by nothing. */
+  readonly info: string;
+}
 
+/**
+ * THE FORMS EVERY PLANT IS TAKEN IN, AND WHY EACH ONE IS IN THE LIST.
+ *
+ * `THE INFO STRING DECIDES NOTHING` IS THE RULING THIS SWEEP SHIPS, AND UNTIL
+ * THIS LIST IT WAS ARMED AT EXACTLY ONE TAG. Both planted arms below planted
+ * ```sh, so the block-level refusal was witnessed for `sh` and for nothing else
+ * -- while `text` and `ts` are the tags of the five real blocks this sweep was
+ * written against. MEASURED rather than argued, with
+ * `if (block.info === "text" || block.info === "ts") { continue; }` added to the
+ * sweep's UNREACHED branch alone, the whole suite read 934 pass / 0 fail across
+ * 65 files WITH THE ONE-TAG ARMS -- the same reading as the unweakened tree, so
+ * the skip was invisible to every arm in this repository. With the list, the
+ * same weakening reads 932 pass / 2 fail, THE TWO PLANTED ARMS ALONE, on bun
+ * 1.3.13. A ruling written in three places and armed at the one tag it was never
+ * in danger over is a claim in prose, which is the defect this item exists to
+ * refuse -- reproduced, here, by this item's own fix.
+ *
+ * NO REGISTRY ROW CAN CARRY THAT WEAKENING, WHICH IS WHY IT IS A LIST AND NOT A
+ * RECORD: `reRun` refuses any arm file that imports helpers/perturbation.ts, and
+ * every arm over this sweep must import it -- they stage. So the weakening is
+ * carried where the dashboard header permits it, beside the arms it reddens,
+ * exactly as the untracked-file arm further down carries its own.
+ */
+const fenceForms: readonly FenceForm[] = [
+  // THE TAG EVERY EXTRACTOR HERE ALREADY ROUTES ON, and the only one these arms
+  // planted before this list existed. It is kept first so the list reads as a
+  // widening of the arm rather than as a replacement of it.
+  { name: "sh", fence: "```", info: "sh" },
+  // TWO OF THE FIVE BLOCKS THIS SWEEP FOUND UNCONSUMED ARE ```ts, and the
+  // quickstart's `write=` step is a ```ts block that IS executed -- which is the
+  // refutation the exempt-tag list died on. It belongs in an arm and not only in
+  // the prose that records the reversal.
+  { name: "ts", fence: "```", info: "ts" },
+  // THE DRAWING'S TAG, AND THE THIRD OF THE FIVE. `text` is what a writer
+  // reaches for when the block is not a program, which is the moment an
+  // exemption looks harmless and is therefore the moment one gets written.
+  { name: "text", fence: "```", info: "text" },
+  // A TILDE FENCE, because the reader was widened to see one on the ground that
+  // missing `~~~sh` fails toward PERMITTING -- the one direction this sweep
+  // cannot accept -- and no arm planted one until now, so the widening was
+  // carried by the reader's own docstring alone.
+  { name: "a tilde fence", fence: "~~~", info: "sh" },
+  // NO INFO STRING AT ALL: what a tag-keyed skip reads as the empty string, and
+  // what a writer produces without deciding anything. A list of exempt tags and
+  // a list of required ones both have to say something about this state, and
+  // neither this sweep nor these arms may.
+  { name: "no info string", fence: "```", info: "" },
+];
+
+/** The one line a planted block carries -- what its refusal must echo back. */
+function plantedText(form: FenceForm): string {
+  return `echo this-block-is-reached-by-nothing-${form.name.replaceAll(" ", "-")}`;
+}
+
+function plantedBlock(form: FenceForm): string {
+  return [
+    `\n## A section nobody wrote a marker for (${form.name})\n`,
+    `\n${form.fence}${form.info}\n${plantedText(form)}\n${form.fence}\n`,
+  ].join("");
+}
+
+/** Every form, planted into one document IN THE STAGE, in one write. */
 function plantInto(stage: ThrowawayPath, document: string): void {
   const before = readFileSync(join(stage, document), "utf8");
-  writeInThrowaway(stage, document, `${before}${plantedBlock}`);
+  writeInThrowaway(stage, document, `${before}${fenceForms.map(plantedBlock).join("")}`);
+}
+
+/**
+ * Every planted form refused, NAMED ON THE ASSERTION LINE so a tag that stopped
+ * being refused says WHICH ONE rather than `expected true`.
+ *
+ * THE SECOND ASSERTION IS WHAT KEEPS THE TAG RECORDED WITHOUT LETTING IT DECIDE:
+ * the refusal echoes the info string back -- the whole of what the sweep does
+ * with it -- so a reader looking for where the tag is used finds a message and
+ * never a branch.
+ */
+function expectEveryFormRefused(reported: string): void {
+  for (const form of fenceForms) {
+    expect(`${form.name}: ${String(reported.includes(plantedText(form)))}`).toBe(
+      `${form.name}: true`,
+    );
+    expect(reported).toContain(`\`${form.info}\` block no consumer reaches`);
+  }
 }
 
 /** One handler package's README, as a path relative to the root, enumerated. */
@@ -111,10 +197,12 @@ test("a fenced block the root README nobody marked is refused, naming the docume
   plantInto(stage, "README.md");
   indexEverything(stage);
 
-  const reading = readmeCoverage(stage);
+  const reported = readmeCoverage(stage)
+    .offenders.map((offence) => offence.report)
+    .join("\n");
 
-  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain("README.md:");
-  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain(plantedText);
+  expect(reported).toContain("README.md:");
+  expectEveryFormRefused(reported);
 });
 
 // THE SECOND DOCUMENT, AND IT IS NOT THE SAME ARM TWICE: the root README is
@@ -127,10 +215,12 @@ test("a fenced block nobody marked in a MEMBER's README is refused, naming that 
   plantInto(stage, document);
   indexEverything(stage);
 
-  const reading = readmeCoverage(stage);
+  const reported = readmeCoverage(stage)
+    .offenders.map((offence) => offence.report)
+    .join("\n");
 
-  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain(`${document}:`);
-  expect(reading.offenders.map((offence) => offence.report).join("\n")).toContain(plantedText);
+  expect(reported).toContain(`${document}:`);
+  expectEveryFormRefused(reported);
 });
 
 /**
