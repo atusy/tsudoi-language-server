@@ -92,7 +92,13 @@
           {
             "name": "vscode-languageserver-protocol/node",
             "importNames": ["createProtocolConnection"],
-            "message": "Only src/notifications.ts may create a connection: it registers the notification table and returns a handle with no onNotification. Take a connection from createGatedConnection instead."
+            // SPELLED IN FULL BECAUSE THIS STRING IS WHAT A DEVELOPER SEES.
+            // A bare `src/notifications.ts` identifies nothing in a workspace
+            // holding more than one src/ -- the reading this repository already
+            // acted on in its diagnostics (test/build-diagnostics.test.ts) and
+            // in the exemption glob below, which the move updated while this
+            // message kept the pre-move spelling.
+            "message": "Only packages/tsudoi-language-server/src/notifications.ts may create a connection: it registers the notification table and returns a handle with no onNotification. Take a connection from createGatedConnection instead."
           }
         ]
       }
