@@ -59,33 +59,29 @@ const sentFolders: WorkspaceFolder[] = [
 const addedFolder: WorkspaceFolder = { uri: "file:///home/me/added", name: "added" };
 
 /**
- * ONE DIRECTORY, TWO SPELLINGS, and they are TWO FOLDERS here.
- *
- * MEASURED against Neovim, adding four folders and removing three: it accepts
- * `…/plain` and `…/plain/` as different folders, and removing `…/plain` leaves
- * `…/plain/` in place. Also measured, and it is what makes a plain string
- * filter correct for this client: every `removed` URI arrives BYTE-IDENTICAL to
- * the `added` one it refers to.
- *
- * So this pair is not a curiosity -- it is the case an implementation that
- * NORMALISES gets wrong by deleting a folder the client still holds. THE
- * WORKSPACE FOLDER LIST IS CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE
- * INTERPRET.
- */
-/**
  * THE SAME URI AS `addedFolder` UNDER A DIFFERENT NAME, which is how a client
  * would spell a rename if LSP had a rename event. It has none: a client wanting
  * one sends `removed` then `added`, so this arriving as an `added` alone says
  * the client now holds that folder twice, and tsudoi reconciles by neither URI
  * nor name.
  *
- * IT IS ALSO THE `removed` ENTRY IN BOTH PBI-20 TESTS, which is a second job
+ * IT IS ALSO THE `removed` ENTRY IN THE TWO REMOVAL TESTS, which is a second job
  * rather than a coincidence: a removal is matched BY URI AND NOT BY NAME, so an
  * entry whose name differs from the copies it takes is what stops those tests
  * passing under an implementation that compared whole folders.
  */
 const addedAgain: WorkspaceFolder = { uri: addedFolder.uri, name: "added again" };
 
+/**
+ * ONE DIRECTORY, TWO SPELLINGS, and they are TWO FOLDERS here.
+ *
+ * MEASURED against Neovim: it accepts `…/plain` and `…/plain/` as different
+ * folders, and every `removed` URI arrives BYTE-IDENTICAL to the `added` one it
+ * refers to -- which is what makes a plain string filter correct for this
+ * client. So this pair is the case an implementation that NORMALISES gets wrong,
+ * by deleting a folder the client still holds. THE WORKSPACE FOLDER LIST IS
+ * CLIENT STATE WE MIRROR, NOT FILESYSTEM STATE WE INTERPRET.
+ */
 const plainFolder: WorkspaceFolder = { uri: "file:///home/me/plain", name: "plain" };
 const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name: "plain-slash" };
 
@@ -95,9 +91,8 @@ const plainSlashFolder: WorkspaceFolder = { uri: "file:///home/me/plain/", name:
  * say which project the editor opened.
  *
  * NO FOLDER IS DERIVED FROM IT ANYWHERE, AND NO CONSTANT HERE SAYS WHAT ONE
- * WOULD LOOK LIKE. tsudoi's TYPES module may not export a runtime function, so
- * there is no published reduction to derive one with. What these constants are
- * is the two spellings themselves, read back as the bytes the client sent.
+ * WOULD LOOK LIKE. What these are is the two spellings themselves, read back as
+ * the bytes the client sent.
  *
  * `rootedPath` IS ABSOLUTE AND THAT IS ITS JOB, not an incidental property of a
  * plausible path: it is the PRESENCE ARM of the refusal below, so a value that
@@ -163,10 +158,8 @@ async function observedFolders(session: LspSession): Promise<unknown> {
 }
 
 /**
- * THE THREE MIRRORED FIELDS, WHOLE, which is everything the fixture reports. It
- * is not a deliberate subset: there is no published reduction for a fourth key
- * to carry, so this reader has nothing left to omit and exists for the
- * assertions that spell all three.
+ * THE THREE MIRRORED FIELDS, WHOLE, which is everything the fixture reports --
+ * not a deliberate subset.
  */
 async function mirrored(session: LspSession): Promise<Observation> {
   const { workspaceFolders, rootUri, rootPath } = await observed(session);
@@ -279,10 +272,10 @@ function workspaceItems(items: readonly CompletionItem[]): CompletionItem[] {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    // CRITERION 1's positive half, and the PERMANENT PAIR for every absence
-    // assertion below: the same fixture, the same hover, the same reader. A
-    // `the handler observed an empty list` claim measured by a path that can
-    // never observe anything is satisfied by a broken measurement.
+    // THE PERMANENT PAIR FOR EVERY ABSENCE ASSERTION BELOW: the same fixture,
+    // the same hover, the same reader. A `the handler observed an empty list`
+    // claim measured by a path that can never observe anything is satisfied by a
+    // broken measurement.
     test("a handler observes the workspace folders the client sent at initialize", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -298,10 +291,6 @@ for (const runtime of runtimes) {
       }
     });
 
-    // CRITERION 1's NEGATIVE CONTROL and criterion 2's first absent state. The
-    // client omits the field entirely, which is what `initializeParams` -- the
-    // smallest conforming client this suite has -- already sends.
-    //
     // toEqual([]) and never a truthiness check: `undefined` is what arrives
     // unnormalised, and every `for` a config author writes over it throws
     // rather than looping zero times.
@@ -317,12 +306,10 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE SECOND ABSENT STATE, split from the first rather than bundled with
-    // it: `workspaceFolders` is declared `WorkspaceFolder[] | null` AND
-    // optional, so a client may spell `no workspace` either way, and a
-    // normalisation covering one of them passes a test that only sends the
-    // other. One test per spelling is what lets a perturbation aimed at null
-    // be seen to leave the omitted case green.
+    // SPLIT FROM THE ARM ABOVE RATHER THAN BUNDLED WITH IT: `workspaceFolders`
+    // is declared `WorkspaceFolder[] | null` AND optional, so a client may spell
+    // `no workspace` either way, and a normalisation covering one of them passes
+    // a test that only sends the other.
     test("a client sending a null workspaceFolders leaves the handler observing an empty array", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -338,20 +325,12 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-49 CRITERION 1, AND THE ABSENCE IS PAIRED INSIDE ONE ASSERTION. A
-    // test reading only the empty list cannot tell `nothing was synthesised`
-    // from `the field was dropped on the floor`, so the rootUri the client sent
-    // is read back through the SAME measurement: the empty list is then evidence
-    // about synthesis rather than about plumbing.
-    //
-    // THE PERCENT-ENCODED SPELLING IS WHAT MAKES `MIRRORED` MEAN ANYTHING. `%6A`
-    // is `j`, an unreserved character no encoder must escape, so a round trip
-    // through the URL parser hands back DIFFERENT BYTES. On a clean URI that
-    // round trip is the identity and this could not tell the two apart.
-    //
-    // ITS PERMANENT PRESENCE ARM IS THE TEST BELOW, through the same reader: a
-    // session that sends folders observes them here, so `[]` is not what this
-    // measurement says whatever it is given.
+    // THE ABSENCE IS PAIRED INSIDE ONE ASSERTION. A test reading only the empty
+    // list cannot tell `nothing was synthesised` from `the field was dropped on
+    // the floor`, so the rootUri the client sent is read back through the SAME
+    // measurement: the empty list is then evidence about synthesis rather than
+    // about plumbing. Its permanent presence arm is the test below, through the
+    // same reader.
     //
     // WHAT IS DELIBERATELY NOT ASSERTED HERE, since a reader will otherwise
     // look for it: that a rootUri-only client REACHES A HANDLER WITH A FOLDER.
@@ -378,24 +357,17 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE THREE SPELLINGS OF `NO FOLDERS HERE` ARE TREATED ALIKE -- omitted,
-    // null and the EMPTY ARRAY are one state, an empty list. The omitted
-    // spelling is two tests above; these are the other two.
-    //
     // THE ROOT IS SENT AND IS NOT FOLDED IN, which is what makes this more than
-    // a repetition: the client named a project, the list stays empty, and the
-    // author can SEE the project in the field beside it. That visible absence is
-    // the whole trade this PBI made -- the old failure was an author reading an
-    // empty list with no way to know the editor had opened anything.
+    // a repetition of the omitted spelling two tests above: the client named a
+    // project, the list stays empty, and the author can SEE the project in the
+    // field beside it.
     //
     // THE COUNTER-ARGUMENT, kept because it is grounded in the same chain: the
     // installed types say `null` means `supports workspace folders but none are
     // configured` -- a STATEMENT of emptiness, where omission is the absence of
     // one. NOTHING IN tsudoi TURNS ON THE DIFFERENCE AND NOTHING IS LEFT THAT
     // COULD: neither spelling reaches a folder, and the reduction that once fell
-    // through an empty list on that distinction has been withdrawn. An author
-    // who reduces these fields themselves is the only reader the difference can
-    // still reach, and both spellings arrive here as one empty list.
+    // through an empty list on that distinction has been withdrawn.
     test("an empty or null workspaceFolders is an empty list beside the rootUri, as omitting it is", async () => {
       for (const spelling of [[], null]) {
         const session = LspSession.start(runtime, echoConfig);
@@ -418,11 +390,7 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE PRESENCE ARM OF THE PAIR ABOVE, through the same reader, and it is
-    // ALSO what remains of `folders win over a conflicting rootUri`: with no
-    // precedence left to apply, what that test defended is that the two fields
-    // DO NOT MIX -- neither is folded into the other, neither replaces the
-    // other, and both reach the author as sent.
+    // THE PRESENCE ARM OF THE PAIR ABOVE, through the same reader.
     //
     // TWO FOLDERS AND A CONFLICTING ROOT, so a list that merely CONTAINS what
     // the client sent cannot pass: an implementation appending the root fails,
@@ -447,23 +415,15 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE HANDSHAKE SURVIVES A rootUri THAT NAMES NO LOCAL PATH, and that is
-    // ALL this asserts.
-    //
     // IT IS THE WEAKEST TEST IN THIS FILE, AND SAYING SO IS THE POINT OF THIS
     // BLOCK. `fileURLToPath` throws on such a URI, and NOTHING IN tsudoi CALLS
     // IT ON THESE BYTES AT ALL -- so the throw belongs to whatever a config
-    // author writes, and src/types.ts says so at `rootUri`. What is left for
-    // this test is the handshake surviving, which is a real claim and a small
-    // one.
+    // author writes, and src/types.ts says so at `rootUri`.
     //
-    // WHAT WOULD MAKE THIS RED TODAY, asked because a green that measures
-    // nothing is what this project's rules exist to catch: only a server that
-    // fails the handshake outright, which every other test in this file would
-    // fail first. IT CANNOT BE THE FIRST THING TO FAIL any more. It is kept
-    // rather than deleted because retiring a defence of an accepted criterion is
-    // a scope decision and not tidying -- and this comment is the record that
-    // its evidential value is gone, so nobody reads its green as coverage.
+    // WHAT WOULD MAKE THIS RED TODAY: only a server that fails the handshake
+    // outright, which every other test in this file would fail first. IT CANNOT
+    // BE THE FIRST THING TO FAIL any more, and nobody should read its green as
+    // coverage.
     test("a rootUri naming no local path still completes the handshake", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -478,25 +438,20 @@ for (const runtime of runtimes) {
       }
     });
 
-    // THE cwd HAZARD, OWNED BY CODE AGAIN AND AT THE BOUNDARY THIS TIME. A
-    // RELATIVE rootPath IS NOT A ROOT -- it resolves only against a working
-    // directory the client does not share -- so it is REFUSED rather than
-    // forwarded, and reaches a handler as null. Nothing downstream can turn it
-    // into `file://` plus this process's launch directory, because nothing
-    // downstream ever sees it.
+    // A RELATIVE rootPath RESOLVES ONLY AGAINST A WORKING DIRECTORY THE CLIENT
+    // DOES NOT SHARE, so nothing downstream can turn it into `file://` plus this
+    // process's launch directory -- because nothing downstream ever sees it.
     //
     // BOTH RELATIVE SPELLINGS, because they are two values and not one: "" is
     // what a client with a field to fill and nothing to put in it sends, and "."
     // is what a client that means `here` sends. Neither is absence, which is the
     // door `??` does not cover.
     //
-    // THE PRESENCE ARM IS IN THIS TABLE AND NOT IN A TEST OF ITS OWN, per the
-    // absence-pairing rule: an absolute path travels THROUGH THE SAME READER
-    // and must arrive
-    // VERBATIM, so `null` here is evidence about the refusal rather than about a
-    // field that was dropped, a handle that never stored it, or a fixture that
-    // stopped reporting it. Read as a pair, the table also says the refusal is
-    // NARROW -- it takes the relative spellings and nothing else.
+    // THE PRESENCE ARM IS IN THIS TABLE AND NOT IN A TEST OF ITS OWN: an
+    // absolute path travels THROUGH THE SAME READER and must arrive VERBATIM, so
+    // `null` here is evidence about the refusal rather than about a field that
+    // was dropped, a handle that never stored it, or a fixture that stopped
+    // reporting it. Read as a pair, the table also says the refusal is NARROW.
     //
     // ITS NEGATIVE CONTROL IS WHY `isAbsolute` IS NAMED RATHER THAN IMPLIED:
     // replace it with a truthiness test and the "." row reddens, reporting "."
@@ -527,11 +482,10 @@ for (const runtime of runtimes) {
       }
     });
 
-    // A rootPath OF THE WRONG TYPE, which is the case the null check does not
-    // cover: `node:path`'s `isAbsolute` RAISES `ERR_INVALID_ARG_TYPE` on a
-    // number, and that throw lands in the `initialize` handler -- so a client
-    // sending `"rootPath": 5` gets its handshake answered -32603, with nothing
-    // on stderr and nothing in the LSP log, and the author has no server at all.
+    // `node:path`'s `isAbsolute` RAISES `ERR_INVALID_ARG_TYPE` on a number, and
+    // that throw lands in the `initialize` handler -- so a client sending
+    // `"rootPath": 5` gets its handshake answered -32603, with nothing on stderr
+    // and nothing in the LSP log, and the author has no server at all.
     // `rootPath !== null` passes a number straight into the throw.
     //
     // THE HANDSHAKE IS ASSERTED FIRST AND SEPARATELY from what arrived: the
@@ -564,12 +518,11 @@ for (const runtime of runtimes) {
       }
     });
 
-    // A MALFORMED HANDSHAKE PUBLISHES NOTHING, AND THE ONE THAT FOLLOWS IS WHAT
-    // THE MIRROR ANSWERS FROM. `"params": null` is not a conforming request:
-    // JSON-RPC 2.0 requires that `If present, parameters for the rpc call MUST
-    // be provided as a Structured value. Either by-position through an Array or
-    // by-name through an Object`, and `null` is neither -- LSP requires an
-    // `InitializeParams` object besides. It is refused -32602 at the entry.
+    // `"params": null` IS NOT A CONFORMING REQUEST: JSON-RPC 2.0 requires that
+    // `If present, parameters for the rpc call MUST be provided as a Structured
+    // value. Either by-position through an Array or by-name through an Object`,
+    // and `null` is neither -- LSP requires an `InitializeParams` object
+    // besides.
     //
     // THE RETRY IS ASSERTED THROUGH THE MIRROR AND NOT THROUGH THE RESPONSE,
     // which is what keeps this row this file's business rather than a second
@@ -612,25 +565,17 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * THE SAME CLASS ONE MESSAGE LATER, and it is here because the first sweep
-     * of this field REPORTED IT CLEAN. That sweep initialized with
-     * `"workspaceFolders": 5` and read the mirror back through a hover: nothing
-     * threw, so the field was written down as `propagates a lying value`. IT
-     * NEVER SENT THE NOTIFICATION THAT SPREADS THE LIST. `change()` opens with
-     * `[...folders]`, and `[...5]` is a TypeError -- measured, in the
-     * `workspace/didChangeWorkspaceFolders` handler.
+     * THE LATER CHANGE IS THE HALF A HANDSHAKE-ONLY ARM CANNOT SEE, and it is
+     * why this test sends one: reading the mirror straight back through a hover
+     * shows nothing threw, while `change()` opens with `[...folders]` and
+     * `[...5]` is a TypeError in the `workspace/didChangeWorkspaceFolders`
+     * handler.
      *
-     * WHY IT IS WORSE THAN THE HANDSHAKE ONE RATHER THAN MILDER, though the
+     * WHY THAT IS WORSE THAN THE HANDSHAKE ONE RATHER THAN MILDER, though the
      * session survives it: a notification has NO RESPONSE, so the client is
      * never told its change failed. The folder the user added is silently
      * missing from every handler for the rest of the session, and the only trace
      * is one line on stderr.
-     *
-     * A NON-ARRAY IS AN EMPTY LIST, which is the reading this handle already
-     * gives to omitted and to `null`: a client that sent no usable list named no
-     * folders. The change then applies to that empty list, so the folder the
-     * user really did add arrives -- which is what this asserts, and it is
-     * strictly more than `nothing threw`.
      *
      * WHAT IS STILL PROPAGATED, so that this is not read as a validating mirror:
      * `[5]` -- an ARRAY of things that are not folders -- passes here and
@@ -656,16 +601,7 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-17 CRITERION 1. The client opened with one folder and added a second
-    // WHILE THE SESSION WAS RUNNING, which is what `add_workspace_folder()`
-    // sends. The handler must see the workspace as it is NOW.
-    //
-    // ITS NEGATIVE CONTROL IS OBSERVED RATHER THAN ARGUED: with the
-    // notification's table entry taken out it is unregistered and inert, the
-    // hover observes `[sentFolders[0]]` alone, and this assertion fails on the
-    // missing second entry.
-    //
-    // BOTH folders, in order, and never `toContain`: a list that lost what the
+    // BOTH FOLDERS, IN ORDER, AND NEVER `toContain`: a list that lost what the
     // session started with is exactly as wrong as one that never gained what
     // the user added.
     test("a folder added after initialize is observable by a config handler", async () => {
@@ -685,25 +621,8 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-17 CRITERION 2, and it is THE DISCRIMINATING CASE for it: an
-    // implementation that only appends passes the added criterion above and
-    // fails here.
-    //
-    // ITS NORMALISATION HALF IS BLIND, AND IS ANNOTATED RATHER THAN REPAIRED,
-    // because repairing it would rewrite a defence of an accepted criterion,
-    // which is a scope decision. One copy per `removed` entry deletes exactly
-    // ONE folder, and first-match lands on `…/plain` -- the intended target --
-    // so the survivor stands and this test passes whether or not the matcher
-    // normalises. MEASURED: stripping a trailing slash before comparing reddens
-    // NOTHING ANYWHERE IN THE SUITE.
-    //
-    // WHAT WOULD UN-BLIND IT, REASONED and not measured -- measuring it needs a
-    // test that does not exist -- is a removal naming the spelling that is NOT
-    // first in the list; the case here names the first, because that is the direction
-    // MEASURED against nvim and a synthetic direction would not be. SO THE
-    // RESIDUAL IS REAL: a normalising implementation now ships undetected in
-    // the measured direction, and nobody should read this test as defending
-    // exact-string matching any more.
+    // THE DISCRIMINATING CASE FOR REMOVAL: an implementation that only appends
+    // passes the added arm above and fails here.
     //
     // AN ECHOING ORACLE CANNOT PASS THIS. A server that answered with whatever
     // the last event mentioned, or that compared paths rather than strings,
@@ -711,9 +630,8 @@ for (const runtime of runtimes) {
     // the whole array, so `the survivor is in there somewhere` is not what is
     // being claimed.
     //
-    // The session opens with NO folders on purpose: the survivor is then ALONE
-    // in the list, which is what the criterion asks for, rather than sitting
-    // beside something initialize put there.
+    // The session opens with NO folders on purpose, so the survivor is ALONE in
+    // the list rather than sitting beside something initialize put there.
     test("a folder removed stops being observable, and the other spelling of it remains", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -722,14 +640,13 @@ for (const runtime of runtimes) {
 
         changeFolders(session, { added: [plainFolder, plainSlashFolder] });
         // THE NON-FIRST SPELLING, and the choice is what makes this test
-        // discriminate. Removing `…/plain` -- the first entry -- leaves
+        // discriminate. Removing `…/plain` -- the FIRST entry -- leaves
         // `…/plain/` under exact matching AND under normalisation, because
         // one-copy-per-entry deletes one folder and first-match lands on the
-        // intended target either way. MEASURED: with the removal naming the
-        // FIRST entry, a normalising matcher reddens NOTHING ANYWHERE IN THE
-        // SUITE.
-        // Naming the SECOND separates them -- exact matching leaves
-        // `…/plain`, normalisation leaves `…/plain/`.
+        // intended target either way; with the removal named that way a
+        // normalising matcher reddens NOTHING ANYWHERE IN THE SUITE. Naming the
+        // SECOND separates them -- exact matching leaves `…/plain`,
+        // normalisation leaves `…/plain/`.
         changeFolders(session, { removed: [plainSlashFolder] });
 
         expect(await observedFolders(session)).toEqual([plainFolder]);
@@ -738,35 +655,14 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-17 CRITERION 3, and it is a criterion rather than a note because AN
-    // `includes` GUARD PASSES EVERY OTHER ONE. Deduplicating here would leave
-    // the added, removed and gate criteria green while quietly disagreeing with
-    // the client about what it holds.
-    //
-    // DECIDED ON OBSERVABILITY, NOT ON PRINCIPLE -- mirroring a duplicate can
-    // be wrong too. The tiebreak is that a PHANTOM entry shows up as visibly
-    // wrong items a user can see and report, while a MISSING one is silent
-    // absence, which is the failure class this whole PBI exists against.
-    //
-    // TWO EVENTS, not one `added` array of two, because the guard this pins
-    // against is written against the list AS IT STANDS: a filter comparing the
-    // incoming array to the previous list admits both copies when they arrive
-    // together, and would leave this passing while doing the wrong thing.
-    //
-    // The second entry carries a DIFFERENT NAME, which is where the `name`
-    // question folds in: both survive, so nothing here reconciles by name
-    // either.
     // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
-    // two orders apart, and the reason `removed` before `added` goes
-    // UNDEFENDED without it. MEASURED: applying `added` first reddens NOTHING
-    // ANYWHERE IN THE SUITE.
+    // two orders apart, and the reason `removed` before `added` goes UNDEFENDED
+    // without it: applying `added` first reddens NOTHING ANYWHERE IN THE SUITE.
     //
-    // PINNED OPPORTUNISTICALLY, not as repair: nothing about the ordering is
-    // broken, and what this adds is a defence where there was none. It earns a
-    // test because the ordering has ONE REQUIRED OUTCOME -- a client spelling a
-    // rename as one
-    // event ends HOLDING the folder, a phantom that is visible if wrong, where
-    // the other order ends holding NOTHING, which is silent.
+    // THE ORDERING HAS ONE REQUIRED OUTCOME, which is why it earns a test: a
+    // client spelling a rename as one event ends HOLDING the folder, a phantom
+    // that is visible if wrong, where the other order ends holding NOTHING,
+    // which is silent.
     test("one event removing and adding the same URI ends holding the folder", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -775,11 +671,10 @@ for (const runtime of runtimes) {
 
         // THE LIST MUST NOT ALREADY HOLD IT, and that is the whole
         // construction: with the folder already held, one-copy-per-entry makes
-        // the two orders AGREE -- remove-then-add gives [X], and add-then-
-        // remove gives [X, X] minus one, also [X]. MEASURED: a first attempt
-        // that pre-added the folder reddened NOTHING under the flipped order.
-        // Starting empty separates them -- remove-then-add ends HOLDING it,
-        // add-then-remove ends with nothing.
+        // the two orders AGREE -- remove-then-add gives [X], and add-then-remove
+        // gives [X, X] minus one, also [X], so a fixture that pre-added the
+        // folder reddens nothing under the flipped order. Starting empty
+        // separates them.
         changeFolders(session, { removed: [plainFolder], added: [plainFolder] });
 
         expect(await observedFolders(session)).toEqual([plainFolder]);
@@ -788,6 +683,20 @@ for (const runtime of runtimes) {
       }
     });
 
+    // AN `includes` GUARD PASSES EVERY OTHER ARM IN THIS FILE: deduplicating
+    // would leave every one of them green while quietly disagreeing with the
+    // client about what it holds. DECIDED ON OBSERVABILITY, NOT ON PRINCIPLE --
+    // mirroring a duplicate can be wrong too, and the tiebreak is that a PHANTOM
+    // entry shows up as visibly wrong items a user can report, while a MISSING
+    // one is silent absence.
+    //
+    // TWO EVENTS, not one `added` array of two, because the guard this pins
+    // against is written against the list AS IT STANDS: a filter comparing the
+    // incoming array to the previous list admits both copies when they arrive
+    // together, and would leave this passing while doing the wrong thing.
+    //
+    // The second entry carries a DIFFERENT NAME, so nothing here reconciles by
+    // name either.
     test("a URI added twice is held twice", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -803,20 +712,13 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-20 CRITERION 1, and it is the discriminating case for the whole PBI:
-    // N `removed` entries take N copies, so ONE entry against TWO copies leaves
-    // ONE. A filter that matches every entry with that URI wipes both and
-    // reddens the FIRST assertion here -- observed, not argued, as
-    // `[sentFolders[0]]` where the client holds `[sentFolders[0], addedFolder]`.
+    // A FILTER THAT MATCHES EVERY ENTRY WITH THAT URI wipes both copies and
+    // reddens the FIRST assertion, as `[sentFolders[0]]` where the client holds
+    // `[sentFolders[0], addedFolder]`.
     //
-    // THE SECOND HALF PINS REPEATABILITY: N removals take N copies, so the
-    // SECOND one drives the count to zero. It is not there to catch a removal
-    // that took nothing -- the first assertion already does that, since a no-op
-    // leaves THREE entries against a whole-array expectation of two.
-    //
-    // ITS OWN CONTROL, MEASURED, because a second assertion nothing can flip
-    // alone is decoration: a guard that removes a copy only when the URI occurs
-    // MORE THAN ONCE leaves the first assertion GREEN and reddens the second.
+    // THE SECOND ASSERTION HAS ITS OWN CONTROL, without which a second assertion
+    // nothing can flip alone is decoration: a guard that removes a copy only
+    // when the URI occurs MORE THAN ONCE leaves the first GREEN and reddens it.
     //
     // THE TWO COPIES ARE BYTE-IDENTICAL, which is what makes the outcome
     // SINGLE-VALUED and therefore pinnable as a whole array. Which copy a
@@ -828,10 +730,8 @@ for (const runtime of runtimes) {
     // this cannot pass by matching whole folders rather than URIs.
     //
     // sentFolders[0] IS THE PAIRED PRESENCE for the absence in the second
-    // assertion, and it sits INSIDE that assertion: the same reader that must
-    // no longer see `addedFolder` is seen observing a folder that is still
-    // there, so `they are gone` cannot be satisfied by a measurement that
-    // observes nothing at all.
+    // assertion, and it sits INSIDE that assertion, so `they are gone` cannot be
+    // satisfied by a measurement that observes nothing at all.
     test("a URI held twice loses one copy per removal, not both to one", async () => {
       const session = LspSession.start(runtime, echoConfig);
       try {
@@ -855,13 +755,13 @@ for (const runtime of runtimes) {
       }
     });
 
-    // PBI-20 CRITERION 2, AND IT IS BORN GREEN AND SAYS SO: it passes against a
-    // remove-all filter just as readily as against one-copy-per-entry removal,
-    // because that filter gets this particular case right.
+    // BORN GREEN AND SAYING SO: it passes against a remove-all filter just as
+    // readily as against one-copy-per-entry removal, because that filter gets
+    // this particular case right.
     //
     // ITS OWN TEST BECAUSE THE HAZARDS DIFFER, which is the whole reason a
     // born-green test is worth writing here. The remove-all filter PASSES this
-    // and FAILS the sequential test below; deduping the `removed` array --
+    // and FAILS the sequential test above; deduping the `removed` array --
     // `new Set(event.removed.map(f => f.uri))` around a one-copy-per-entry
     // removal -- does the exact reverse. Neither control covers both, so
     // bundling the two claims into one test would leave whichever hazard is not
@@ -869,16 +769,10 @@ for (const runtime of runtimes) {
     //
     // TWO EVENTS TO ADD AND ONE TO REMOVE: the multiplicity has to arrive on
     // the REMOVED side within a SINGLE event, since that is the arm the dedupe
-    // hazard lives on. That both adds are held at all is not asserted here --
-    // `a URI added twice is held twice` above pins it, and repeating it would
-    // put a second hazard's assertion ahead of this one's.
+    // hazard lives on.
     //
     // THE REMOVED ENTRIES CARRY A DIFFERENT NAME than the copies they take, so
     // nothing here can pass by matching whole folders rather than URIs.
-    //
-    // sentFolders[0] IS THE PAIRED PRESENCE, inside the assertion rather than
-    // in another test, so `both copies are gone` is not read off a measurement
-    // that observes nothing at all.
     //
     // WHAT IT DOES NOT RULE OUT, stated because the opposite is the tempting
     // thing to write: a session that dropped EVERY notification also leaves
@@ -905,19 +799,13 @@ for (const runtime of runtimes) {
       }
     });
 
-    // WHAT `tsudoi` BEING ONE SERVER-LIFETIME OBJECT MEANS FOR A HANDLER, and
-    // both halves of it in ONE request: the folder list is a LIVE READ, so a
-    // handler that reads it after an `await` sees a change that landed
-    // meanwhile -- and what it TOOK before that await still answers with the
-    // folders it took, because src/workspace.ts replaces the list rather than
-    // writing into it.
-    //
-    // NEITHER HALF STANDS ALONE. Live-without-copy-on-write is a surface on
-    // which a handler cannot answer about the moment it started; copy-on-write
-    // without liveness is the frozen snapshot this surface deliberately no
-    // longer takes. THE TWO PERTURBATIONS ARE DIFFERENT AND EACH REDDENS ONE
-    // ASSERTION: making the handler capture the folders once flips the second
-    // batch, and making `change()` push into the live array flips the third.
+    // BOTH HALVES IN ONE REQUEST, AND NEITHER STANDS ALONE.
+    // Live-without-copy-on-write is a surface on which a handler cannot answer
+    // about the moment it started; copy-on-write without liveness is the frozen
+    // snapshot this surface deliberately no longer takes. THE TWO PERTURBATIONS
+    // ARE DIFFERENT AND EACH REDDENS ONE ASSERTION: making the handler capture
+    // the folders once flips the second batch, and making `change()` push into
+    // the live array flips the third.
     //
     // PROVEN BY ORDERING, NEVER BY A TIMING BOUND. The change is written to the
     // same stdin as the release that follows it, and the server frames what it
@@ -1073,26 +961,16 @@ for (const runtime of runtimes) {
     // THE HAZARD IS UNOWNED BY CODE AND IS ASSERTED HERE AS THE BEHAVIOUR IT
     // IS: an author reading `workspaceFolders` alone is handed `[]` where a
     // root exists, and THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE is such
-    // an author. No published reduction exists to fold the three fields
-    // together on their behalf.
+    // an author.
     //
-    // WHAT IT ASSERTS IS WHAT `@atusy/tsudoi-completion-path` CLAIMS IN PROSE at
-    // its `sourcesFor` call -- that a rootUri-only client leaves the workspace
-    // source contributing NOTHING while the other sources still answer. An
-    // unasserted claim in the document that argues for adoption is exactly what
-    // the standing prose item exists against, so the claim and the assertion
-    // move together.
+    // IT ASSERTS WHAT `@atusy/tsudoi-completion-path` CLAIMS IN PROSE at its
+    // `sourcesFor` call, so the claim and the assertion move together.
     //
     // THE ABSENCE IS FIRST AND ITS NON-VACUITY PAIR IS SECOND: cwd answering
     // proves the completion ran for this fragment at all, so the empty workspace
     // list is evidence rather than a request that never happened. ITS PERMANENT
     // PRESENCE PAIR is the folders-sent test below, where the same filter over
     // the same wire DOES find workspace items.
-    //
-    // WHAT WOULD MAKE IT RED: any reduction reappearing anywhere between the
-    // deprecated fields and the example's roots -- which is the drift this
-    // ruling forbids, and the one thing left in the repository that could still
-    // manufacture a root out of `rootUri`.
     test("a rootUri-only session gets no workspace source, since nothing reduces the deprecated fields", async () => {
       const cwd = tree(["notes/cwd-only.txt"]);
       const rooted = tree(["notes/root-only.txt"]);

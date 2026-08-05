@@ -26,13 +26,6 @@ applySuiteDeadline();
  * five here are green, and an instrument whose witness cannot fail measures
  * nothing.
  *
- * THE HEADLINE ARM IS THE RECORDED DEFECT VERBATIM AND NOT A GENERIC FAILURE:
- * this project has five occurrences of a red going unread because the FIRST
- * check failed and the LAST one passed, so the arm that matters puts the failure
- * first and requires both the red and the later check's own pass in the report.
- * A runner reading only the last status passes an all-fail arm and passes an
- * all-pass arm; it is that pair of positions that separates it.
- *
  * WHAT IS DELIBERATELY NOT ASSERTED HERE: that the five real checks are those
  * five. The dashboard is where that list lives, and an arm pinning it here would
  * be the second enumeration this runner exists to refuse.
@@ -78,10 +71,9 @@ interface Tree {
   /**
    * Runs the Definition of Done over this tree.
    *
-   * `standalone` runs a COPY of the runner that lives inside the tree and is
-   * given no argument, which is the only way to measure the other half of the
-   * root rule -- a runner invoked with a root can never show where it would have
-   * looked without one. It is a byte copy, so the code path is the shipped one.
+   * `standalone` runs the tree's own copy of the runner with NO ARGUMENT, which
+   * is the only way to measure the other half of the root rule -- a runner
+   * invoked with a root can never show where it would have looked without one.
    */
   run: (options?: { cwd?: string; standalone?: boolean }) => Promise<CliResult>;
 }
@@ -124,9 +116,10 @@ function stageTree(): Tree {
   const wherever = join(root, "cwd-probe");
   writeFileSync(wherever, `#!/bin/sh\nprintf 'ran in %s\\n' "$(pwd -P)" >> ${log}\n`);
   chmodSync(wherever, 0o755);
-  // A COPY OF THE RUNNER INSIDE THE TREE, so that "its own location" is this
-  // throwaway. Running the repository's own copy with no argument would take the
-  // Definition of Done of this repository -- `bun test` inside `bun test`.
+  // A BYTE COPY OF THE RUNNER INSIDE THE TREE, so that "its own location" is
+  // this throwaway and the code path is still the shipped one. Running the
+  // repository's own copy with no argument would take the Definition of Done of
+  // this repository -- `bun test` inside `bun test`.
   mkdirSync(join(root, "scripts"));
   const standalone = join(root, "scripts", "definition-of-done.ts");
   copyFileSync(runner, standalone);
@@ -152,11 +145,10 @@ function stageTree(): Tree {
       //
       // IT COMPUTES THE SHAPE INSTEAD OF SPELLING IT, AND THAT IS WHAT MAKES
       // `EXECUTED` MEASURABLE HERE. A fixture that wrote the object out inline
-      // has its OUTPUT SITTING IN ITS TEXT, so every arm in this file is
-      // satisfied by any means of obtaining that JSON -- MEASURED: a runner
-      // slicing the file from its first brace to its last, never running it,
-      // left this file 12 pass / 0 fail while dying on the real dashboard, which
-      // is a TypeScript program. The pairs below are declared FLAT and the
+      // has its OUTPUT SITTING IN ITS TEXT, so every arm in this file would be
+      // satisfied by a runner that sliced the file from its first brace to its
+      // last and never ran it -- while dying on the real dashboard, which is a
+      // TypeScript program. The pairs below are declared FLAT and the
       // `{ definition_of_done: { checks } }` shape is assembled at run time, so
       // NO SUBSTRING OF THIS FILE IS THE JSON IT PRINTS.
       const pairs = checks.map((check) => [check.name, check.run]);
@@ -199,13 +191,6 @@ test("a run in which every check passes is the only green", async () => {
 });
 
 test("the VERDICT WORD is the run's own, in BOTH directions", async () => {
-  // THE SUMMARY LINE IS THE LINE A READER GREPS, and until this arm existed it
-  // could say anything. MEASURED: the word hardwired to `PASSED` -- per-check
-  // lines and the exit code left alone -- and this file read 12 pass / 0 fail,
-  // because `Definition of Done: FAILED` was asserted NOWHERE in it. That is the
-  // recorded defect itself, a reader taking a grep for the run's status, arriving
-  // inside the instrument built to retire it.
-  //
   // BOTH DIRECTIONS IN ONE ARM, AND THE PAIR IS THE POINT: `contains PASSED on a
   // green run` is satisfied by a constant, and so is `contains FAILED on a red
   // one`. Only the two together make the word a function of the run. Two trees
@@ -271,17 +256,10 @@ test("what ran is the dashboard's list, as a SEQUENCE and not as a set", async (
   // them ran` is MEMBERSHIP where the property is ORDER: a runner sorting the
   // list, or reversing it, changes no value and would pass a set-shaped arm.
   //
-  // AND THE FIRST CHECK PAUSES BEFORE IT RECORDS ITSELF, WHICH IS WHAT MAKES
-  // THIS ARM'S NAME TRUE. Three commands that each take milliseconds tend to
-  // finish in the order they were STARTED even when nothing sequenced them, so
-  // the log alone could not tell order from coincidence. MEASURED against a
-  // runner starting every check at once, and the rate itself is evidence: this
-  // arm -- the one NAMED for the property -- reddened on 3 of 5 runs for the
-  // reviewer who found it and on 4 of 5 when re-run here, while the FILE
-  // reddened on 5 of 5 both times, its detection carried by arms named for
-  // something else. A pause on the FIRST check puts that check's entry LAST
-  // under any parallel execution: 5 of 5, and a flake that reads as a race
-  // becomes a reading of the property.
+  // AND THE PAUSE IS ON THE FIRST CHECK, which is what makes the log an ORDER
+  // rather than a coincidence: under a runner starting every check at once,
+  // three millisecond-long commands still tend to finish in the order they were
+  // STARTED, and a pause on the FIRST puts its entry LAST instead.
   tree.declare([
     { name: "gamma", run: tree.logged("gamma", 0, 0.3) },
     { name: "alpha", run: tree.logged("alpha", 0) },
@@ -302,10 +280,8 @@ test("a FAILING run reports each check's name, its command as run, and its own e
   ]);
   const result = await tree.run();
   expect(result.code).not.toBe(0);
-  // THE WHOLE LINE AND NOT THE VERDICT WORD. A report carrying only a colour
-  // cannot be audited by its reader, which is the rule this project already
-  // applies to a hand-run exit code; and the check's OWN exit is what separates
-  // `it failed` from `the run failed`.
+  // THE WHOLE LINE AND NOT THE VERDICT WORD: the check's OWN exit is what
+  // separates `it failed` from `the run failed`.
   expect(report(result)).toContain(`[FAILED] alpha -- exit 3 -- $ ${tree.logged("alpha", 3)}`);
   // AND THE CHECK AFTER THE RED, which is what a runner exiting inside its loop
   // loses: moving its exit earlier changes no value, so nothing but the report
@@ -315,11 +291,9 @@ test("a FAILING run reports each check's name, its command as run, and its own e
 
 test("a SIXTH check on the dashboard runs, with no edit to the runner", async () => {
   const tree = stageTree();
-  // SIX, BECAUSE FIVE IS THE NUMBER A RUNNER HOLDING ITS OWN COPY WOULD HOLD.
-  // This is the product owner's refusal made measurable: a green run that never
-  // executed a check the dashboard lists is green and silent, and lets the
-  // Definition of Done shrink unnoticed. Nothing in the runner is edited between
-  // this arm and the three-check arms above -- only the dashboard differs.
+  // SIX, BECAUSE FIVE IS THE NUMBER A RUNNER HOLDING ITS OWN COPY WOULD HOLD: a
+  // green run that never executed a check the dashboard lists is green and
+  // silent, and lets the Definition of Done shrink unnoticed.
   const names = ["one", "two", "three", "four", "five", "six"];
   tree.declare(names.map((name) => ({ name, run: tree.logged(name, 0) })));
   const result = await tree.run();
@@ -330,11 +304,6 @@ test("a SIXTH check on the dashboard runs, with no edit to the runner", async ()
   }
 });
 
-// THE NAME SAYS WHAT THIS MEASURES AND NOT WHAT THE TREE HAPPENS TO PROVE. It
-// said `is non-green and is not a check that ran and failed` while the colour it
-// read belonged to the failing check beside it -- the arm-name overclaim this
-// record has already filed once, in the sprint whose whole subject is arms that
-// claim more than they hold. The gating half has its own arm below.
 test("a check that never started is REPORTED APART from one that ran and failed", async () => {
   const tree = stageTree();
   tree.declare([
@@ -348,9 +317,6 @@ test("a check that never started is REPORTED APART from one that ran and failed"
   // check that never started gates anything. What this arm measures is the
   // DIFFERENCE between the two, which is why both are present.
   expect(result.code).not.toBe(0);
-  // TWO STATES THAT PRINT THE SAME TEXT ARE ONE RED, so what is asserted is the
-  // DIFFERENCE: the one that never started carries no exit code of its own and
-  // says why, and the one that ran carries its own number.
   expect(report(result)).toContain("[UNRUNNABLE] absent -- never started:");
   expect(report(result)).toContain(`[FAILED] beta -- exit 1 -- $ ${tree.logged("beta", 1)}`);
   expect(report(result)).not.toContain("[FAILED] absent");
@@ -364,19 +330,10 @@ test("a check that never started GATES the run, with every other check green", a
   const tree = stageTree();
   // THE SOLE NON-PASS IN THIS TREE IS THE BINARY THAT IS NOT THERE, and that is
   // the whole design: the arm above cannot say it, because a check that RAN AND
-  // FAILED sits beside the missing one and reddens the run on its own.
-  //
-  // MEASURED: the gate narrowed from `the outcome is not passed` to `the outcome
-  // is failed` -- outcome, reason and every byte of the report unchanged -- left
-  // this file 12 pass / 0 fail AND THE WHOLE SUITE 859 pass / 0 fail. IT IS NOT
-  // THE DEGENERATE ALREADY RECORDED, a spawn error counted as a pass: that one
-  // flips the outcome, so the report reddens and the distinguishability arm sees
-  // it. This one leaves the text alone and only the exit code moves, so nothing
-  // but a tree of passes around one missing binary can detect it.
-  //
-  // AND THIS MACHINE IS THE LIVE WITNESS RATHER THAN A HYPOTHETICAL: `oxfmt` and
-  // `tsc` are not on this machine's own PATH, so under that narrowing the runner
-  // ships exit 0 today over two of the five checks that never ran.
+  // FAILED sits beside the missing one and reddens the run on its own. A gate
+  // narrowed to `the outcome is failed` leaves outcome, reason and every byte of
+  // the report unchanged and moves only the exit code, so nothing but a tree of
+  // passes around one missing binary can detect it.
   tree.declare([
     { name: "alpha", run: tree.logged("alpha", 0) },
     { name: "absent", run: tree.missingBinary() },
@@ -397,11 +354,10 @@ test("a check that never started GATES the run, with every other check green", a
 test("a `run` this runner cannot execute FAITHFULLY is refused, never misread", async () => {
   const tree = stageTree();
   tree.declare([
-    // THE CASE VERBATIM, AND IT IS A MEASUREMENT AND NOT AN ILLUSTRATION: split
-    // on spaces, this spawns `true` WITH THE ARGUMENTS `&&` AND `false`, which
-    // exits 0 -- so it was REPORTED PASSED, where the shell every reader has in
-    // mind runs `false` and fails. A wrong colour on a check nobody can see is
-    // strictly worse than a red, and it is what this whole runner exists against.
+    // THE VALUE IS CHOSEN, NOT ILLUSTRATIVE: split on spaces, this spawns `true`
+    // WITH THE ARGUMENTS `&&` AND `false`, which exits 0 -- reported PASSED,
+    // where the shell every reader has in mind runs `false` and fails. A wrong
+    // colour on a check nobody can see is worse than a red.
     { name: "conjunction", run: "true && false" },
     // THE OTHER THREE MISREADINGS, ONE EACH: a redirection becomes two
     // arguments, a quoted argument becomes two, and a glob is never expanded.
@@ -477,22 +433,14 @@ function stageLinted(source: string): Tree {
   // THE LINTER IS SANDWICHED BETWEEN TWO CHECKS THAT SAY NOTHING, AND THE COUNT
   // IS STILL ONE -- which is the only reason the count is readable as a SUM. A
   // tree declaring the linter ALONE makes the first result, the last result and
-  // the total extensionally equal, so every weaker reading passes. MEASURED with
-  // that one-check tree: the total replaced by the FIRST result's count, 12 pass
-  // / 0 fail; and in the real dashboard the linter is the SECOND of five, so
-  // that runner ships `warnings: 0` over a linter that emitted one. The LAST
-  // reading is sandwiched for the same money, and it is this project's signature
-  // defect -- five recorded occurrences of the last command's status read as the
-  // run's.
+  // the total extensionally equal, so every weaker reading passes there.
   //
   // AND THE LINTER RUNS THROUGH A WRAPPER THAT RECORDS ITS INVOCATION, so that
   // the two readings taken off it -- an exit code and a warning count -- can be
-  // shown to come from ONE run. Without that they cannot: MEASURED with the bare
-  // `oxlint` here, a runner spawning each check TWICE and taking the exit from
-  // the first invocation and the warnings from the second left all three linted
-  // arms green, 9 pass / 5 fail with every red elsewhere. A deterministic
-  // program prints the same bytes on its second run, so the fixture, not the
-  // assertion, is what has to carry the identity.
+  // shown to come from ONE run. A deterministic program prints the same bytes on
+  // its second run, so a runner spawning each check twice and taking one reading
+  // from each invocation is invisible to any assertion over the report: the
+  // fixture, not the assertion, is what has to carry the identity.
   tree.declare([
     { name: "before", run: tree.logged("before", 0) },
     { name: "Lint passes", run: tree.wrapping("lint", "oxlint") },
@@ -528,10 +476,7 @@ test("a warning is counted and reported, and does NOT gate the run", async () =>
   expect(report(result)).toContain("warnings: 1");
   expect(report(result)).toContain("Definition of Done: PASSED");
   // ONE INVOCATION OF THE LINTER, SO THE EXIT ABOVE AND THE COUNT ABOVE ARE ONE
-  // READING. Nothing else in this arm can say that: a runner spawning the check
-  // twice, taking its exit from the first run and its warnings from the second,
-  // prints exactly what is asserted above -- the fixture is deterministic, so
-  // the second run's bytes are the first run's bytes.
+  // READING. Nothing else in this arm can say that.
   expect(tree.invocations()).toEqual(linterRanOnce);
 });
 
@@ -546,13 +491,9 @@ test("an error is not a warning: the count is 0 beside the failure", async () =>
   expect(report(result)).toContain("[FAILED] Lint passes -- exit 1");
   // AND THE DIAGNOSTIC ITSELF REACHES THE READER, which every other arm in this
   // file would survive the loss of: they read the summary and the count, both
-  // written by the runner, and a runner that swallowed each check's own output
-  // would satisfy all of them. It would also return a maintainer to running the
-  // five by hand to find out WHAT broke, which is the habit this replaces.
+  // written by the runner, so a runner that swallowed each check's own output
+  // would satisfy all of them.
   expect(report(result)).toContain("planted.ts:1:1: error");
-  // THE SAME BINDING AS THE ARM ABOVE, AND FOR THE SAME REASON: the exit code
-  // and the diagnostic line are two readings, and one invocation is what makes
-  // them one run's.
   expect(tree.invocations()).toEqual(linterRanOnce);
 });
 

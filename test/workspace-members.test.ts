@@ -101,18 +101,15 @@ test("the same two members pass once the error is removed", async () => {
 });
 
 /**
- * The one state where a package is covered by NOTHING: excluded from the root
- * program by path, and outside what the workspace patterns declare. It exits
- * non-zero NAMING the directory, because `some package is uncovered` sends a
- * reader looking through every directory the exclusion reaches.
+ * THE DIRECTORY IS NAMED because `some package is uncovered` sends a reader
+ * looking through every directory the exclusion reaches.
  *
- * THE SHAPE OF THE SENTENCE IS ASSERTED AND NOT ONLY THE DIRECTORY, which is
- * what the arm was missing: the file this package holds is uncovered too, so a
- * run answering ONE MISSING WORKSPACE ENTRY with a list of its files would
- * satisfy `names packages/forgotten` while telling the reader to widen an
- * `include` -- the wrong repair for a package that should have been declared.
- * The package sentence is a REFINEMENT over the uncovered file the one decider
- * found, and this is where its precedence is pinned.
+ * THE SHAPE OF THE SENTENCE IS ASSERTED AND NOT ONLY THE DIRECTORY: the file
+ * this package holds is uncovered too, so a run answering ONE MISSING WORKSPACE
+ * ENTRY with a list of its files would satisfy `names packages/forgotten` while
+ * telling the reader to widen an `include` -- the wrong repair for a package
+ * that should have been declared. The package sentence is a REFINEMENT over the
+ * uncovered file, and this is where its precedence is pinned.
  */
 test("a package the workspace patterns do not declare fails loudly", async () => {
   const result = await checkWorkspace({
@@ -132,16 +129,11 @@ test("a package the workspace patterns do not declare fails loudly", async () =>
 });
 
 /**
- * THE SAME UNDECLARED PACKAGE WITH AN UNRELATED FILE UNCOVERED ELSEWHERE, which
- * is the run where the two sentences must both appear.
- *
- * WHAT IT REPLACES THE PACKAGE SENTENCE FOR IS THE FILES IT SPEAKS FOR, and that
+ * WHAT THE PACKAGE SENTENCE REPLACES IS THE FILES IT SPEAKS FOR, and that
  * is the whole of it: `tools/elsewhere.ts` is in no package any `workspaces`
- * entry would have covered, so declaring the member repairs nothing about it.
- * MEASURED before this arm, on exactly this tree: the run printed the package
- * sentence ALONE and the second file was never named -- so a reader would have
- * fixed the package and met the other file on the following run, which is the
- * outcome the file-list message one line down exists to prevent.
+ * entry would have covered, so declaring the member repairs nothing about it. A
+ * run printing the package sentence ALONE sends a reader to fix the package and
+ * meet the other file on the following run.
  *
  * AND IT IS NOT REPAIRED BY DEMANDING THAT EVERY OFFENDER BE IN A PACKAGE: that
  * would answer ONE missing entry with a wall of file sentences the moment
@@ -170,15 +162,13 @@ test("an offender outside the undeclared package is named beside the package sen
 
 /**
  * THE NARROWING THE ONE-DECIDER RULING COSTS, PINNED SO THAT IT IS A DECISION
- * AND NOT A LOSS: this package is excluded from the root program and declared by
- * no pattern, exactly like the ones above, and it holds NO TypeScript -- so
- * there is nothing here that nothing type-checks.
+ * AND NOT A LOSS: this package is excluded and declared by no pattern, exactly
+ * like the ones above, and it holds NO TypeScript -- so there is nothing here
+ * that nothing type-checks.
  *
- * WHAT USED TO REDDEN IT WAS A SECOND READER DECIDING COVERAGE ON ITS OWN, which
- * is the reader that walked over the file this whole refusal was filed for and
- * said nothing. Two readers answering one question can disagree with every check
- * green; the package sentence is kept as a refinement of a fault the compilers'
- * own file lists found, and where they find none there is nothing to refine.
+ * TWO READERS ANSWERING ONE QUESTION CAN DISAGREE WITH EVERY CHECK GREEN, which
+ * is why the package sentence is a refinement of a fault the compilers' own file
+ * lists found: where they find none there is nothing to refine.
  */
 test("a package the workspace does not declare and that holds no TypeScript is left alone", async () => {
   const result = await checkWorkspace({
@@ -195,20 +185,13 @@ test("a package the workspace does not declare and that holds no TypeScript is l
   expect(result.code).toBe(0);
 });
 
-// THE SAME UNCOVERED PACKAGE, BEHIND AN EXCLUSION WRITTEN AS A GLOB, which
-// tsconfig permits everywhere it permits a path and which a reader reaches for
-// the moment they want `packages/*` excluded but `packages` itself kept.
-//
-// A LITERAL READING OF THE ENTRY LOSES THIS ONE SILENTLY -- and what `loses`
-// means moved when the package reading became a refinement, which is why the
-// last two assertions are here. `packages/*` names no directory on disk, so a
-// check that joins it to the root and walks finds nothing; the run is no longer
+// A LITERAL READING OF THE ENTRY LOSES THE PACKAGE SENTENCE, WHICH IS WHY THE
+// LAST TWO ASSERTIONS ARE HERE. `packages/*` names no directory on disk, so a
+// check that joins it to the root and walks finds nothing; the run is not
 // silent, because the compilers' file lists still find the uncovered file, but
 // it prints the FILE sentence and sends the reader to widen an `include` that
-// was never the fault. MEASURED with the refinement disabled: this arm and the
-// one above both redden, and without these assertions only the one above does.
-// The exclusion is expanded by the same enumerator `workspaces` is read with, so
-// the two keys are interpreted the same way.
+// was never the fault. Without these assertions the arm above is the only one
+// that reddens when the refinement goes.
 test("a glob-form exclusion still names the package nothing declares", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -236,9 +219,7 @@ test("a glob-form exclusion still names the package nothing declares", async () 
 // FAIL. With the coverage decided by the compilers' file lists, a package
 // holding no TypeScript reddens nothing whatever the exclusion says -- so a
 // stranger with only a manifest would leave this green for a reason that has
-// nothing to do with node_modules. MEASURED with the installed-dependency
-// subtraction removed: exit 1 naming
-// `packages/declared/node_modules/stranger/index.ts`.
+// nothing to do with node_modules.
 test("an exclusion reaching into node_modules reports nobody else's package", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -312,13 +293,6 @@ function memberNamed(directory: string, declared: string): Record<string, string
  * different clothes, and the pair below is written so the message is shown
  * naming THE SIDE THAT WAS NOT TOUCHED in each -- which is what distinguishes a
  * diagnostic from an echo of the argument it was handed.
- *
- * WHAT NOTHING HERE READ BEFORE. test/readme.test.ts already reddens on a bare
- * directory rename, because it keys the member README path and the install
- * line's tarball on the directory basename -- but as `the install command does
- * not name the member's own tarball`, which sends a reader to a document rather
- * than to the mismatch. The manifest `name` FIELD against that directory was
- * read by nothing at all.
  */
 test("a member whose manifest declares a name other than its directory fails loudly", async () => {
   const result = await checkWorkspace(memberNamed("late", "elsewhere"));
@@ -356,10 +330,8 @@ test("a member whose scoped name ends in its own directory is left alone", async
 // AND THE OTHER HALF OF THE STRIPPING, WHICH IS THE ONE THAT STOPS THE GUARD
 // GOING VACUOUS ON THIS REPOSITORY. `pass anything holding a scope` satisfies
 // the two reds above and the green above, AND leaves both real members -- both
-// scoped -- refused by nothing. MEASURED with exactly that predicate in place:
-// the three arms above stay green and the fifth check on this checkout, whose
-// directories disagreed with its manifests at the time, reported nothing. This
-// is the only arm of the four that reddens it.
+// scoped -- refused by nothing. This is the only arm of the four that reddens
+// that predicate.
 test("a member whose scoped name ends in something else is refused, scope and all", async () => {
   const result = await checkWorkspace(memberNamed("late", "@scope/elsewhere"));
 
@@ -391,29 +363,10 @@ test("a member declaring no name is refused rather than passed over", async () =
  * The allowance the two arms below need, because they build and type-check
  * THREE members where every other test in this file builds two.
  *
- * A MEASUREMENT AND NOT A PRECAUTION, AND IT WAS TAKEN AGAINST A DEFAULT THAT NO
- * LONGER APPLIES: when bun's own 5000ms was the ambient bound -- not a meaningful
- * bound on a tsc invocation at all -- a full-suite run at load average ~76 had
- * `the same three members pass once the third agrees with its directory` failing
- * at 5006ms with `this test timed out after 5000ms`, while the same test alone on
- * the same machine finished well inside it. A CONTROL THAT REPORTS THE MACHINE IS
- * WORSE THAN A SLOW ONE, because its pair then reads as `the guard refused a
- * workspace it should have passed` -- the one conclusion this file exists to make
- * unavailable. The ambient bound is now this suite's own 25_000; the allowance
- * stays because these two arms build one member more than anything else here, and
- * because 120_000 was never chosen against 5000 in particular.
- *
- * THE REFUSAL THAT USED TO STAND HERE IS SPENT, AND THAT IS THE POINT OF SAYING
- * SO RATHER THAN DELETING IT. It read: the other tests in this file have the same
- * exposure -- MEASURED at load ~59, the two two-member arms both timed out at
- * ~5002ms and both passed alone moments later -- and are left alone BECAUSE the
- * remedy would be a third argument on twenty `test` calls, and because a
- * suite-wide default was not available: `[test] timeout` in bunfig.toml is
- * ignored on bun 1.3.13, measured. THE SECOND HALF OF THAT REASON IS GONE. A
- * suite-wide default exists, it is chosen rather than inherited, and every test in
- * this file gets it from the `applySuiteDeadline()` call at the top. The twenty
- * call sites were never edited and never need to be, which is the outcome the
- * refusal was holding out for.
+ * A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE, because its pair
+ * then reads as `the guard refused a workspace it should have passed` -- the one
+ * conclusion this file exists to make unavailable. Every other arm here takes
+ * the suite's own ambient bound from the `applySuiteDeadline()` call at the top.
  */
 const threeMembersBuildOneMore = 120_000;
 
@@ -450,12 +403,9 @@ function threeMembers(third: string): Record<string, string> {
 }
 
 /**
- * THE GUARD IS OVER MEMBERS AS A CLASS, DEMONSTRATED ON A MEMBER NOBODY WROTE IT
- * FOR -- and the demonstration is a property of the HISTORY as much as of this
- * file: the commit that added the guard came first, and this arm cost it no
- * edit. `the guard` means everything that would have to change for a further
- * package to be covered -- a fixture list, an allowlist, an exclude entry keyed
- * to a name.
+ * `THE GUARD` MEANS EVERYTHING THAT WOULD HAVE TO CHANGE FOR A FURTHER PACKAGE
+ * TO BE COVERED -- a fixture list, an allowlist, an exclude entry keyed to a
+ * name.
  *
  * THE FIRST TWO ARE ASSERTED ABSENT FROM THE MESSAGE, which is the half that
  * makes this about the third package rather than about the workspace: a guard
@@ -528,13 +478,11 @@ function memberReachingPastItsOwnResolution(): Record<string, string> {
 }
 
 /**
- * WHAT THE WITHDRAWAL IS FOR, AND IT IS NOT A TYPE ERROR.
- *
- * Every pair above moves a member's own SOURCE and watches the colour follow. A
- * broken RESOLUTION is the different failure, and the only one the root check
- * could ever have answered WRONGLY rather than merely missed: a root that holds
- * a `paths` mapping resolves a member's specifier through the ROOT'S map and
- * reports success, so the greener the root the less it means.
+ * A BROKEN RESOLUTION IS THE ONE FAILURE THE ROOT CHECK COULD ANSWER WRONGLY
+ * rather than merely miss -- a root that holds a `paths` mapping resolves a
+ * member's specifier through the ROOT'S map and reports success, so the greener
+ * the root the less it means. Every other pair here moves a member's own SOURCE
+ * and watches the colour follow.
  *
  * ONE TREE AND TWO COMMANDS, which is what makes this a measurement of the
  * responsibility MOVING rather than two unrelated readings. The root check is
@@ -595,16 +543,11 @@ const mappedMemberOptions = {
 const memberPaths = { [`${sharedModule.split("/")[0] ?? ""}/*`]: ["./shared/*.ts"] };
 
 /**
- * A MEMBER MAY NOT MAP A SPECIFIER TO A FILE, and the guard is over members as a
- * CLASS rather than over the one package that exists.
- *
- * WHAT IT FORECLOSES is the original false green rebuilt one directory down: the
- * root check answered a member's imports through the ROOT's `paths` and reported
- * success, so the members were excluded from it and this script took the
- * coverage over. A mapping in the MEMBER'S OWN tsconfig answers the same
- * specifier the same way -- without the member's node_modules and without the
- * framework's `exports` map -- and every check in this suite stays green while
- * the resolution nobody checks is the one a stranger will actually take.
+ * WHAT IT FORECLOSES is the false green rebuilt one directory down: a mapping in
+ * the MEMBER'S OWN tsconfig answers a specifier without the member's
+ * node_modules and without the framework's `exports` map, so every check in this
+ * suite stays green while the resolution nobody checks is the one a stranger
+ * will actually take.
  */
 test("a member that maps a specifier to a file fails loudly", async () => {
   const result = await checkWorkspace(
@@ -692,22 +635,3 @@ test("a member that extends a base carrying no mapping is left alone", async () 
   expect(result.stderr).toBe("");
   expect(result.code).toBe(0);
 });
-
-/**
- * THERE IS NO LINKER LEFT TO ASSERT ANYTHING ABOUT, AND THAT ABSENCE IS THE
- * MOVE'S WHOLE POINT RATHER THAN A DELETION FOR TIDINESS.
- *
- * A test stood here for `linkRootPackage`, which wrote into each member's
- * node_modules an entry `bun install` would not create -- because the framework
- * WAS the workspace root, which the `workspaces` globs never match. It carried
- * one measured claim: that link was ABSOLUTE, so a checkout that was moved or
- * renamed left every member pointing at a path no longer there, and a builder
- * that skips whatever resolves could not repair it.
- *
- * THE FRAMEWORK IS A MEMBER NOW AND `bun install` WRITES THOSE ENTRIES ITSELF --
- * MEASURED, and RELATIVE, so the dangle-on-moving-the-checkout mode INVERTS
- * rather than disappears: the link survives a move of the checkout and dies if a
- * member directory moves inside it. The old function's full record is kept in
- * the sprint 52 dashboard entry, where it is history about a route this
- * repository no longer has; a test asserting it here would have no subject.
- */
