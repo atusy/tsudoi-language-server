@@ -25,45 +25,19 @@ export interface DocumentStoreHandle {
  * author is handed for it.
  *
  * TWO OBJECTS BECAUSE ONE CANNOT BE BOTH. Upstream's instance MUST stay writable
- * -- `update` writes its content, its version and its line offsets -- and what
- * leaves this store MUST NOT be, since a handler shipping `document.getText = ()
- * => "forged"` would answer every later request from its own string with the
- * buffer itself untouched and the version still rising. Sealing the instance
- * refuses that and stops synchronisation dead; sealing a view over it refuses it
- * and costs synchronisation nothing.
- *
- * AND TWO TYPES FOR THE SAME REASON. The view is published as `DocumentView`,
- * which is TSUDOI'S declaration of upstream's reader members: upstream marks its
- * own interface `Not to be implemented` and enforces it -- `TextDocument.update`
- * refuses anything `TextDocument.create` did not build -- so typing the view as
- * that interface would promise a substitutability no forwarder can have. What
- * that costs an author, and which upstream helpers still answer from the view,
- * is at `DocumentView` in src/types.ts.
+ * -- `update` writes its content, its version and its line offsets -- so sealing
+ * it against a handler's forgery would stop synchronisation dead, where sealing
+ * a view over it costs synchronisation nothing.
  */
 interface OpenDocument {
-  /**
-   * UPSTREAM'S OWN, AND IT NEVER LEAVES THIS MODULE. Reassigned rather than
-   * merely mutated at `change` below, for the reason recorded there.
-   */
   document: TextDocument;
   /**
-   * WHAT `DocumentStore` HANDS BACK: sealed, and forwarding every read to
-   * `document` AT THE MOMENT IT IS ASKED, which is what keeps the published
-   * liveness exactly as it was -- a reference kept across an `await` reflects
-   * every change that arrived meanwhile, and the boundary is that this object
-   * belongs to ONE open, so a reference carried across a close goes on
-   * forwarding to a buffer nothing writes any more.
+   * What `DocumentStore` hands back: sealed, and forwarding every read to
+   * `document` AT THE MOMENT IT IS ASKED.
    */
   readonly published: DocumentView;
 }
 
-/**
- * EVERY BUFFER IS BUILT BY `TextDocument.create`, AND THAT IS AN INVARIANT
- * RATHER THAN A HABIT: upstream's `update` documents itself as accepting `only
- * documents created by TextDocument.create`, and it throws on anything else. An
- * object literal put into an entry -- by a future shortcut in `open`, or by a
- * test reaching in -- would survive every read and fail at the first edit.
- */
 function openDocument(
   uri: string,
   languageId: string,
@@ -74,19 +48,6 @@ function openDocument(
   // still uninitialised -- the getters and the forwarders are called by a
   // handler, long afterwards -- so the view reads whatever `document` holds AT
   // THE MOMENT OF THE CALL rather than what it held on this line.
-  //
-  // BUILT ONCE PER OPEN AND NEVER PER CALL, which is a decision about IDENTITY
-  // and not an economy: `documents.get(uri) === documents.get(uri)` holds within
-  // one open/close cycle, `values()` yields the same object `get` does, and a
-  // reopened uri is a DIFFERENT one. Pinned by `one document is handed back for
-  // the life of an open, and another after a reopen` in test/documents.test.ts.
-  //
-  // EVERY MEMBER `DocumentView` DECLARES, and forgetting one is not a compile
-  // error to rely on -- an object literal missing `lineCount` would fail the
-  // annotation, but one forwarding it to the wrong place would not. What measures the
-  // forwarding is test/document-members.test.ts, which reads `lineCount`,
-  // `offsetAt`, `positionAt` and a ranged `getText` off a CHANGED document
-  // through a real session.
   const entry: OpenDocument = {
     document: TextDocument.create(uri, languageId, version, text),
     published: Object.freeze({
@@ -111,9 +72,10 @@ function openDocument(
 }
 
 /**
- * The published document of each entry, LAZILY, because `values()` hands back
- * upstream's map iterator: building an array here would turn a live iteration
- * into a snapshot taken at the call.
+ * The published document of each entry, LAZILY, and nothing reddens if you
+ * return an array instead: `values()` hands back upstream's map iterator, so a
+ * materialised list would answer about the moment of the CALL where the store
+ * answers about the moment of the READ.
  */
 function* publishedOf(entries: Iterable<OpenDocument>): Iterable<DocumentView> {
   for (const entry of entries) {
@@ -124,15 +86,6 @@ function* publishedOf(entries: Iterable<OpenDocument>): Iterable<DocumentView> {
 export function createDocumentStore(): DocumentStoreHandle {
   const byUri = new Map<string, OpenDocument>();
 
-  // SEALED WHERE IT IS BUILT, which is the half of the read-only surface that
-  // runs. `DocumentStore` declares its operations `readonly` and that is erased
-  // at run time, so the JavaScript a config author ships could otherwise put its
-  // own `get` here -- and this object serves EVERY request for the life of the
-  // session, so one write leaves every later handler asking a store that answers
-  // about nothing. SHALLOW is the whole of what this needs: the two members are
-  // the operations, and what they hand back is sealed where IT is built -- the
-  // published document at `openDocument` above, the mirror's lists in
-  // src/workspace.ts.
   const documents: DocumentStore = Object.freeze({
     get: (uri: string): DocumentView | undefined => byUri.get(uri)?.published,
     values: (): Iterable<DocumentView> => publishedOf(byUri.values()),
@@ -153,37 +106,13 @@ export function createDocumentStore(): DocumentStoreHandle {
         return;
       }
       if (params.contentChanges.length === 0) {
-        // An empty contentChanges says nothing changed, and returning early is
-        // deliberate: upstream's `update` called with an empty change array
-        // RAISES THE VERSION and leaves the text alone, which describes a buffer
-        // state no client ever sent.
         return;
       }
-      // HANDED STRAIGHT THROUGH: every entry is applied to the document as the
-      // entries BEFORE IT left it, so ranges within one notification compose.
-      // Reading only the last entry silently DROPS EDITS under Incremental sync,
-      // since an earlier entry moves the text a later one addresses.
-      //
-      // WRITTEN INTO THE ENTRY, WHICH IS WHAT THE PUBLISHED DOCUMENT READS, so a
-      // config author holding a document from an earlier `get()` holds a handle
-      // that moves under them WHILE THE URI STAYS OPEN, AND NO FURTHER. `close`
-      // drops the entry and the next `open` builds another one, so a reference
-      // carried across a close goes on reading a buffer nothing writes again --
-      // a detached snapshot that silently stops moving. ITS VERSION IS NO
-      // WARNING EITHER: the reopened document numbers from whatever the client
-      // sent at `didOpen`, so the two can report the same version while their
-      // texts differ, and a handler checking versions to see whether its
-      // reference is current is told everything is fine. An author who must
-      // survive a close re-reads `get()`; the store is live, a reference is not.
-      // Pinned by `a reference captured before a close stops tracking the
-      // reopened document` in test/documents.test.ts.
-      //
-      // ASSIGNED RATHER THAN LEFT TO THE MUTATION, AND THAT IS WHAT THE ENTRY IS
-      // FOR. Upstream's `update` returns the same instance it was handed today,
-      // so the assignment is a no-op today; one that REPLACED instead would
-      // leave the published document forwarding to a buffer no client writes to
-      // any more -- liveness lost with nothing to say so. The return value is
-      // what the contract promises, and this is the line that believes it.
+      // ASSIGNED RATHER THAN LEFT TO THE MUTATION, and nothing reddens if you
+      // drop the assignment: upstream's `update` returns the same instance it
+      // was handed today, so this is a no-op today. One that REPLACED instead
+      // would leave the published document forwarding to a buffer no client
+      // writes to any more -- liveness lost with nothing to say so.
       current.document = TextDocument.update(current.document, params.contentChanges, version);
     },
 

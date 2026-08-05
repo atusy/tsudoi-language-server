@@ -25,26 +25,12 @@ export type NotificationGate = "lifecycle" | "always";
  * One notification tsudoi answers: what it is, what to do with it, and WHEN it
  * may run.
  *
- * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design. What it
+ * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design: what it
  * replaced was a lifecycle check at the top of each handler body -- a
  * CONVENTION, which a fourth handler joins only if whoever writes it remembers.
- * That defence is re-homed HERE, since the checks themselves are gone:
- *
- * - what each check prevented: a document mutation applied BEFORE initialize
- *   (the server has no client state to apply it against) or AFTER shutdown (the
- *   session is over and the store is about to be discarded), so a client that
- *   mistimes a notification cannot leave the store holding a document the
- *   session never agreed to;
- * - and why a required field prevents it now: an entry that decides nothing
- *   does not TYPE-CHECK, so the realistic failure -- a new notification whose
- *   author never thought about the lifecycle -- is a compile error instead of a
- *   handler that silently runs in every state.
- *
- * A future edit calling `connection.onNotification` directly does not bypass
- * this file, and it takes no lint rule to say so: `createGatedConnection` below
- * is what stops it, since src/server.ts never holds a value that HAS an
- * `onNotification` to call. What that does and does not reach is named at that
- * function rather than repeated here.
+ * An entry that decides nothing does not TYPE-CHECK, so the realistic failure --
+ * a new notification whose author never thought about the lifecycle -- is a
+ * compile error instead of a handler that silently runs in every state.
  */
 export interface NotificationEntry<P> {
   /** The protocol message. `NotificationType0` is how `exit` is declared. */
@@ -71,13 +57,8 @@ export interface NotificationRegistrar {
 /**
  * The identity function that gives an entry LIST the same inference the router
  * gives it, so a table can be built somewhere and registered elsewhere without
- * losing what makes it safe.
- *
- * WITHOUT THIS, extracting the table costs the property this router exists
- * beside: each handler's `params` is contextually typed BY THE `type` NEXT TO
- * IT, and a plain `return [...]` from a helper drops that -- handlers fall to
- * implicit `any` -- so a handler typed against the wrong notification's params
- * would stop being a compile error.
+ * losing what makes it safe: each handler's `params` is contextually typed BY
+ * THE `type` NEXT TO IT, and a plain `return [...]` from a helper drops that.
  */
 export function defineNotifications<P extends readonly unknown[]>(entries: {
   readonly [K in keyof P]: NotificationEntry<P[K]>;
@@ -93,21 +74,15 @@ export function defineNotifications<P extends readonly unknown[]>(entries: {
  * carve-out, no set of exceptions. `exit` survives the gate because ITS ENTRY
  * says `always`, at one site, with the reason beside it. A second place that
  * knew which messages are special would be a second place to get it wrong.
- *
- * Registered with the notification TYPE rather than its method string:
- * vscode-jsonrpc dispatches both identically, but only the type carries the
- * arity and parameter-structure it logs a mismatch against.
  */
 export function registerNotifications<P extends readonly unknown[]>(
   connection: NotificationRegistrar,
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
 ): void {
-  // THE ONE ERASURE, and it is confined to this loop. Each entry's own params
-  // type is checked where the entry is WRITTEN, against the `type` beside it;
-  // here they are a heterogeneous list, and no single element type describes
-  // them without it. `gate` is deliberately outside it -- it is a string on
-  // every entry, so the required-field check above survives this cast.
+  // THE ONE ERASURE, and it is confined to this loop. `gate` is deliberately
+  // outside it -- it is a string on every entry, so the required-field check
+  // above survives this cast.
   const erased = entries as unknown as readonly NotificationEntry<unknown>[];
   for (const entry of erased) {
     connection.onNotification(entry.type as NotificationType<unknown>, (params: unknown) => {
@@ -130,66 +105,19 @@ export function registerNotifications<P extends readonly unknown[]>(
  * - `trace` hands a caller-supplied `Tracer` every notification a handler runs
  *   for, BEFORE that handler runs -- so before this module's gate, which lives
  *   inside the handler, decides anything. WHAT PUTS IT IN THE `Omit` IS ORDER
- *   AND NOT BREADTH: a `Tracer` sees every notification that HAS a handler, plus
- *   `$/cancelRequest`, which is COMPLEMENTARY to `onUnhandledNotification`
- *   rather than broader than it.
+ *   AND NOT BREADTH.
  *
- * THAT LIST IS AN ENUMERATION AND NOT A RECOLLECTION: `ProtocolConnection`'s
- * member set is pinned in test/notifications.test.ts, checked by `tsc --noEmit`
- * against the dependency's own connection.d.ts, so a member the dependency adds
- * cannot arrive silently.
+ * The claim is bounded to what is ON THIS TYPE; what the VALUE carries beyond it
+ * is at `ProtocolConnectionHasTheseMembers` in test/notifications.test.ts.
  *
- * AND THE PIN'S LIMITS, because the sentence above still outruns them. The pin
- * asserts THE SET OF NAMES, never that no REMAINING member exposes traffic; it is
- * a claim about the INSTALLED dependency and not about the next release; and it
- * pins the TYPE, while the VALUE this module hands out is
- * `createMessageConnection`'s result unchanged and carries `onUnhandledProgress`,
- * which sees every inbound `$/progress` nothing claimed. THAT ONE IS REACHABLE
- * ONLY BY A CAST, so it is the deliberate-evasion class this module already
- * accepts elsewhere -- but it is why the opening sentence is bounded to what is
- * ON THIS TYPE, and stops short of saying nothing can observe traffic at all.
- * Completeness remains a JUDGEMENT, made against a list the compiler agrees is
- * complete.
- *
- * `onUnhandledNotification` is an EVENT PROPERTY holding a callable rather than
- * a method, which changes nothing here: `Omit` removes a property whatever its
- * type is, and calling it is what installs the listener.
- *
- * `Omit`, not a hand-written interface: the remainder then tracks whatever
- * `ProtocolConnection` grows, and only the members this narrowing is about are
- * named here.
- *
- * A MISSPELLED KEY HERE IS A SILENT NO-OP, and it is why no probe defending
- * this type may DISCRIMINATE on a tsc exit code: `Omit<T, K>` accepts a key that
- * is not in `keyof T` and hands back T unchanged, so the misspelling compiles at
- * 0 with nothing objecting. test/notifications.test.ts matches each removed
- * member BY NAME, and pins the removed SET exactly.
- *
- * AND THAT IS WHY `Pick` IS THE BETTER INSTRUMENT FOR THIS BOUNDARY -- stated as
- * a PREFERENCE AND NOT A MANDATE. `Omit` names what must GO and trusts the base
- * type to contain it; `Pick` names what may STAY, so a name the base type does
- * not have is a compile error rather than a no-op. The failure becomes
- * UNREPRESENTABLE instead of merely detected. And it is not hypothetical: the
- * one base type anyone has proposed moving to is measured at
- * `createGatedConnection` below, and two of these four keys are not its members
- * at all.
- *
- * NOT A MANDATE TO CONVERT WHAT IS WRITTEN HERE, because today's `Omit` IS
- * DEFENDED and a change with no defect to fix is churn. TWO pins in
- * test/notifications.test.ts carry it and they carry DIFFERENT halves:
- * `ProtocolConnectionHasTheseMembers` reddens when the DEPENDENCY's member set
- * moves, `BoundaryIsTheObservingMembers` when the key set below moves.
- *
- * THE REVERSAL CONDITION, so this is a decision and not an opinion: IF EITHER
- * PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES REQUIRED. They do not overlap
- * on the cases that matter here. A key naming something the base type does not
- * have -- the silent no-op, whether by typo or by rebasing onto a wider
- * connection -- moves only `BoundaryIsTheObservingMembers`, because the other
- * never mentions this type at all. A member the DEPENDENCY ADDS moves only
- * `ProtocolConnectionHasTheseMembers`, because the set difference the first
- * computes puts it on both sides and cancels it out. Between them the `Omit` has
- * a defence; with one of them gone it has half of one; and `Pick` needs neither,
- * which is the whole of its advantage.
+ * A MISSPELLED KEY HERE IS A SILENT NO-OP: `Omit<T, K>` accepts a key that is
+ * not in `keyof T` and hands back T unchanged, so the misspelling compiles at 0
+ * with nothing objecting. AND THAT IS WHY `Pick` IS THE BETTER INSTRUMENT FOR
+ * THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE, because today's `Omit` is
+ * defended by two pins in test/notifications.test.ts and a change with no defect
+ * to fix is churn. THE REVERSAL CONDITION, so this is a decision and not an
+ * opinion: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES REQUIRED.
+ * `Pick` needs neither of them.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
@@ -199,9 +127,7 @@ export type RequestOnlyConnection = Omit<
 /**
  * The connection tsudoi serves on, with its notification table ALREADY
  * REGISTERED and every notification-observing member gone from what the caller
- * holds. Which members those are is named at `RequestOnlyConnection` above and
- * deliberately not repeated here, so this sentence cannot fall out of step with
- * that list the way its predecessor did.
+ * holds.
  *
  * THE MODULE THAT OWNS THE GATE OWNS THE THING BEING GATED, and that is what
  * makes this the whole mechanism rather than a tidy-up: the caller cannot
@@ -209,63 +135,20 @@ export type RequestOnlyConnection = Omit<
  * in scope beside the narrow one. The only way the narrow handle is the only
  * handle is for the wide one never to be bound, so creation moves here.
  *
- * WHY A TYPE RATHER THAN A LINT: oxlint 1.73.0 does not merely fail to match on
- * `no-restricted-syntax`, it FAILS TO PARSE that config.
- * `no-restricted-properties` does work, and matches the IDENTIFIER `connection`
- * -- so `const conn = connection` walks straight past it, and a guard a rename
- * evades forecloses nothing. A type cannot be renamed away, and
- * test/notifications.test.ts drives that exact alias rather than inferring it.
- *
  * THE RESIDUAL IS DETECTED RATHER THAN FORECLOSED, AND THE DETECTOR LEANS ON
- * THIS FUNCTION. This type forecloses the call only while NO WIDE VALUE IS IN
- * SCOPE: an `import { createProtocolConnection }` added to src/server.ts puts
- * one back, and nothing here notices -- src/server.ts rewritten to import it,
- * register the table on the WIDE value and call an ungated `onNotification`
- * beside it passes the suite, `tsc --noEmit` and `oxlint` alike, with nothing
- * objecting. .oxlintrc.json now bans that import in every file but this one: the
- * lint route at a target where it works, since a specifier cannot be renamed the
- * way a variable can. A SECOND GAP rather than a second guard on this one, which
- * is what allowed closing it at all.
- *
- * AND THE DEBT THAT CREATES IS OWED BY THIS FUNCTION, which is why it is
- * recorded here rather than only beside the rule. That lint is a ROT DETECTOR,
- * NOT A BARRIER -- no rule can stop a module importing a third party's export --
- * and it is adequate ONLY BECAUSE WHAT THIS FUNCTION RETURNS IS THE SOLE
+ * THIS FUNCTION. An `import { createProtocolConnection }` added to src/server.ts
+ * puts a wide value back and no type notices, so .oxlintrc.json bans that import
+ * in every file but this one. THAT LINT IS A ROT DETECTOR, NOT A BARRIER, and it
+ * is adequate ONLY BECAUSE WHAT THIS FUNCTION RETURNS IS THE SOLE
  * CONNECTION-SHAPED VALUE IN startServer's SCOPE, so importing a factory nothing
  * there needs is a conspicuous act rather than a slip. WIDEN THE RETURN
  * ANNOTATION, OR LET startServer BIND A WIDE CONNECTION AGAIN, AND THAT
  * SUFFICIENCY ARGUMENT GOES WITH IT while the lint still passes and still reads
- * like a guard. The probes in test/notifications.test.ts redden on the
- * annotation; NOTHING REDDENS ON THE ARGUMENT, so this paragraph is the only
+ * like a guard. NOTHING REDDENS ON THE ARGUMENT, so this paragraph is the only
  * thing that carries it.
  *
- * THE RETURN ANNOTATION BELOW IS A SEPARATE SEAM, and it is asserted rather than
- * assumed: widening it to `ProtocolConnection` while leaving
- * `RequestOnlyConnection` alone leaves the foreclosure entirely gone with an
- * ungated `connection.onNotification` in src/server.ts compiling fine, so a
- * probe takes its connection FROM THIS FUNCTION rather than binding the alias,
- * and that perturbation reddens it and it alone.
- *
- * WHAT NEITHER THE TYPE NOR THE LINT REACHES: `await import(...)`, MEASURED to
- * walk past the rule, and a WRAPPER exported from this module, which is why
- * test/notifications.test.ts asserts this module exports no factory -- as is the
- * exemption in .oxlintrc.json that switches the factory ban off in test files
- * and test/helpers/. All are the deliberate-evasion class, not slips.
- *
- * THE BOUNDARY THAT NARROWING CLAIMS: the members named in the `Omit` above are
- * foreclosed AND NOTHING ELSE IS, pinned by test/notifications.test.ts so that
- * adding a key here reddens rather than quietly widening this sentence's claim.
- * `sendNotification` survives and is not a gap at all -- that is SENDING a
- * notification, not installing a handler for one. NEITHER HALF OF THAT SENTENCE
- * IS COUNTED, and that is deliberate: a count falsifies itself at the next
- * widening, where the names go on being true.
- *
- * NONE OF THOSE FOUR IS REACHABLE BY THE PARTY WHO MIGHT WANT IT: this type
- * never leaves src/, and src/types.ts -- the one path package.json exports, and
- * so the whole of what a config author is handed -- does not export it. Each
- * foreclosure is reversible at the one token it cost, so the capabilities behind
- * them -- diagnostics on unhandled notifications, `$/progress`, tracing -- are
- * DEFERRED rather than surrendered.
+ * WHAT NEITHER THE TYPE NOR THE LINT REACHES: `await import(...)`, and a WRAPPER
+ * exported from this module. Both are the deliberate-evasion class, not slips.
  *
  * ============================================================================
  *
@@ -389,8 +272,6 @@ export function createGatedConnection<P extends readonly unknown[]>(
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
 ): RequestOnlyConnection {
-  // The one place the wide type is ever bound, and it does not escape this
-  // function: the return annotation is what the caller gets.
   const connection = createProtocolConnection(reader, writer, logger);
   registerNotifications(connection, lifecycle, entries);
   return connection;

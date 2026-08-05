@@ -194,8 +194,8 @@ for (const runtime of runtimes) {
      * `capabilities` PRESENT and not an object is refused -32602 at the
      * handshake, so an OMITTED field -- which a non-conforming client sends
      * despite the protocol declaring it required -- and an explicit `null` are
-     * what is left. src/tsudoi.ts reads both as `{}` and says so in a comment;
-     * this is what measures it rather than asserting it.
+     * what is left. src/tsudoi.ts reads both as `{}` at its `??`, and this is
+     * what measures that rather than asserting it.
      *
      * THE `{}` IS FROZEN TOO, which is not a free consequence of the paragraph
      * above: the value a handler meets before the client has declared anything
