@@ -428,8 +428,7 @@ describe("a path that stops being a directory between the two reads", () => {
    * regular file -- its handle is lazy -- and the first read rejects
    * `ENOTDIR: not a directory, scandir`. deno 2.8.3: `opendir` rejects AT THE
    * CALL with `ENOTDIR: not a directory, opendir`, because it reads the
-   * directory synchronously to fail early. One catch covers both, which is what
-   * that comment gets right.
+   * directory synchronously to fail early. One catch covers both.
    *
    * A SEPARATE PROXY FROM THE CANCELLATION ONE, deliberately: sharing one would
    * tie what this arm constructs to whatever the cancellation seam is later
