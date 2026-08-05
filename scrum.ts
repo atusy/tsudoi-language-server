@@ -1830,7 +1830,44 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 65,
+    pbi_id: "PBI-79",
+    goal: "A reader opens any file here and reaches the code; what comments remain were kept because a measurement said no test holds them, not because someone thought they read well.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "For each comment warning against an edit: APPLY that edit, read which arms redden, revert. Redden -> the test is the guard, delete the comment. Nothing reddens -> keep it, short. Roughly 200 weakenings across the tree.",
+        implementation:
+          "Cut 27 files. Code byte-identical everywhere, verified per file by stripping comment lines and diffing against the base rather than by reading a green suite.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "50% -> 42% of tracked .ts, 6,617 comment lines deleted, DoD green at every step.",
+          "THE RATIO THAT DECIDES WHERE COMMENTS BELONG, and it is the sprint's reusable finding: in PRODUCTION CODE 8-9 of every 10 comments were restating what a test already holds -- scripts/workspaces.ts 17 weakenings, 17 caught; src/methods.ts 34 and 28. In HELPERS it inverts: test/helpers/readme.ts 24 weakenings with 9 catching NOTHING, perturbation.ts 13 with 3, install.ts 14 with 5. The layer that supports the tests has no tests of its own, so a comment there is doing work.",
+          "WHAT SURVIVES FALLS IN THREE KINDS. Unconstructible by any test: a client-forged path, Windows' FILE_ATTRIBUTE_HIDDEN, a case-folding filesystem. Undetectable because the answer is identical: collapsing listingOf into `(await readdir(path)).sort()` leaves the full DoD green. And comments that ARE the specification: types.ts compiles into the published dist/types.d.ts and is the only API reference a config author gets; notifications.ts has an arm that extracts the doc block preceding an anchor and fails naming the missing clause.",
+          "THE MEASUREMENT WAS WRONG ONCE AND THE ARM STAYS UNWITNESSED. Replacing the JUnit reader's chunking with an element regex reddened 17 arms -- but bun emits a PASSING testcase self-closed, so a regex demanding a closing tag never saw a pass. Those 17 measured a broken reader rather than the property. The original claim is labelled unwitnessed rather than counted as verified.",
+        ],
+      },
+      {
+        test: "None -- the two rules that produced the growth, scoped where they are read.",
+        implementation:
+          "`Supersede, do not amend` gains a DELETE branch as its default; the Lifetime Rule gains the question it never asked -- whether a reason needs a home in the tree at all.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "BOTH RULES WERE TRACED RATHER THAN GUESSED. `A decision whose only home is a machine-formatted file belongs in a test` is sprint 10's, correctly scoped to package.json and tsconfig, and the facilitator widened it to `every reason becomes prose`. `Supersede, do not amend` was written by the facilitator four sprints ago with no measurement of its cost: it offers dead-sentence plus why-dead plus current-fact, three times the line it repairs, and never offered deleting.",
+        ],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "TWO HOLES FOUND WHILE CUTTING, NEITHER THIS ITEM'S SUBJECT. The arm asserting that writeInThrowaway REFUSES the real checkout leaves planted.md in the real checkout when the guard fails -- a test guarding against writing into this repository writes into it on failure, and nothing cleans up. And a concurrent tarball install replaced node_modules/@atusy/tsudoi-language-server with an unpacked copy, breaking the workspace link and reddening resolution arms; `bun install` restores it, and the lesson is that tarball-handling work does not parallelise.",
+      "COMMENTS CROSS-REFERENCE EACH OTHER, WHICH IS WHAT MAKES A CUT EXPENSIVE. Deleting a target dangles its pointer, and several were found already dangling before this work -- one cited a sentence absent from the tree at any point. Each cut swept for inbound pointers and repaired or deleted them.",
+    ],
+  },
   retrospectives: [],
 };
 
