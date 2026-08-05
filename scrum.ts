@@ -378,6 +378,45 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 68,
+      pbi_id: "PBI-71",
+      goal: "The evidence PBI-71 was filed on is re-taken in the checkout it is about, and what the item still owes is stated at the sites that owe it -- rather than closed on a reading from a tree that is not this one.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Plant a file, run the readers, remove it. Both halves of the filing measured separately: is it DISCOVERED, and is it GRADED.",
+          implementation:
+            "A test file under __ignored/, then under a member's __ignored/, then under packages/*/dist/, against `bun test`, root `tsc --noEmit`, the fifth check, oxlint and the deadline sweep.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE FILING WAS HALF FALSE OF THIS TREE AND THE CLOSE ATTEMPT WAS FALSE OF MORE OF IT. At the root, `type-checked by nothing` does not hold: a type error, a syntax error and an unresolved import planted under __ignored/ are all reported, because tsconfig.json excludes dist and packages and declares no `include`. The filing's reading came from a THROWAWAY checkout whose tsconfig is not this one's.",
+            "THE CLOSE WAS REFUSED AT REVIEW ON ONE LINE OF .gitignore. `__ignored/` carries NO LEADING SLASH, so it matches AT ANY DEPTH -- and I had read it as a root directory name. A test file under a member's __ignored/ runs and is graded by nothing: root tsc excludes packages, every member tsconfig includes src alone, oxlint skips gitignored paths, and the deadline sweep filters members out.",
+            "THE SECOND SITE AROSE WITHOUT BEING PLANTED, which is what makes it the item's real subject. A tracked control under a member's src/ was compiled into dist/ by the preload; the source was deleted and THE EMITTED ARTIFACT WENT ON BEING DISCOVERED AND RUN ALONE. A stale build output reaching dist/ is ordinary. The preload rewrites dist/ every run, and the framework's prepack carries no `rm -rf`, so what is already there stays.",
+            "AND THE NUMBER I OFFERED AS EVIDENCE MEASURES THE WRONG THING: `940 tests across 69 files where the tree reads 939 across 68` was written as the graded case, and review produced the same figure from an UNGRADED file. It measures DISCOVERY and says nothing about grading. A count that cannot separate the two states it is offered to distinguish is not evidence for either.",
+            "WHAT REVIEW ADDED RATHER THAN REFUTED: bun's walk is wider than the filing knew -- .test.ts, .spec.ts, _test.ts, .test.js and nested paths all run, node_modules and dot-directories do not -- and test/suite-deadline.test.ts already recorded that, including that GITIGNORED IS NOT A THING BUN'S WALK KNOWS. So the root case has TWO graders, not the zero the filing claimed.",
+          ],
+        },
+        {
+          test: "None -- a comment withdrawn before it shipped.",
+          implementation:
+            "A line was drafted at test/package-shape.test.ts saying the exclude literal incidentally protects the grading of __ignored/. Withdrawn.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "IT WOULD HAVE ENSHRINED THE NON-DISCRIMINATING COUNT, and the pin does not guard what it was about to be credited with. MEASURED: reordering the array to [packages, dist] reddens that arm while the grading of __ignored/ is unchanged, and ADDING an `include` array removes the grading entirely while the arm stays GREEN. It fires on the bytes, not on the property -- which is this record's own rule about an arm firing for a different reason.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THE SPRINT'S DELIVERABLE IS THAT THE ITEM DID NOT CLOSE. Its filed evidence is corrected, its two live sites are named, and what it may close on is narrowed to a choice: narrow the criterion to the ROOT __ignored/, which the re-measurement satisfies more thoroughly than the filing knew, or keep the class as written with the two member-level sites as its subject. Neither is chosen here.",
+        "A RE-MEASUREMENT THAT CONTRADICTS A FILING IS NOT A CLOSE. Both readings were taken in good faith and in different trees, and the second was narrower than it knew. What settles an item is the measurement that covers the criterion's own words -- `the directory this repository ignores` is a pattern, not a path, and reading it as a path is what made the close wrong.",
+      ],
+    },
+    {
       number: 67,
       pbi_id: "PBI-78",
       goal: "A licence in this tree -- `X is done this way BECAUSE Y` -- has had its Y read against the code, and the ones that were never true are gone rather than softened.",
