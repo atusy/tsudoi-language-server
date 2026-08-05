@@ -115,6 +115,32 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-79",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "open a file in this repository and reach the code without reading a essay first",
+        benefit: "the comments that remain are the ones a reader at that line actually needs",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "A comment survives only if a reader AT THAT LINE needs it to avoid making a wrong edit. Everything else moves to the commit message, to the dashboard, or is deleted.",
+          verification:
+            "MEASURED at sprint 65: 23,561 of 46,861 tracked .ts lines are comments -- half the tree. packages/tsudoi-completion-path/src/resolve.ts is 88% (706 comment lines to 96 of code); packages/tsudoi-language-server/src/methods.ts 70%; test/package-shape.test.ts 68%; scripts/workspaces.ts 63%. The reduction is judged file by file against the criterion, not against a target ratio -- a percentage would be satisfied by deleting the wrong lines.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "RAISED BY THE STAKEHOLDER, AND THE MECHANISM MATTERS MORE THAN THE COUNT. This project's convention is that comments state why and why-not. That was read as a licence to record every measurement, every foreclosed alternative, every review finding and every correction IN PLACE, in full sentences, permanently. Each addition was defensible alone; the aggregate is not readable.",
+        "`SUPERSEDE, DO NOT AMEND` IS WHAT COMPOUNDED IT, and the rule is not withdrawn -- it is scoped. Superseding is right for a claim someone still relies on. It is the wrong DEFAULT, because it only ever grows the file, and deleting was never treated as an option. The scoping belongs in .claude/skills/writing-a-comment/SKILL.md beside the rule itself.",
+        "WHAT MOVES RATHER THAN DIES, so the reduction is not a loss of evidence: a measurement's home is the commit that took it; a review finding's home is the sprint record; a foreclosed alternative earns a line at a site only if someone editing THAT LINE would otherwise reintroduce it.",
+        "REFUSED: a lint rule on comment length or density, and any target ratio. Both are satisfied by deleting whatever is cheapest to delete.",
+        "THIS RE-RANKS THE PROSE ITEMS BELOW IT. PBI-77, PBI-78, PBI-66, PBI-57 and PBI-73 all take prose as their subject and all repair by rewriting. Their scope changes once the prose they audit is smaller, so they are re-read after this lands rather than executed before it.",
+      ],
+    },
+
+    {
       id: "PBI-77",
       story: {
         role: "tsudoi maintainer",
