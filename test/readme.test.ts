@@ -35,8 +35,6 @@ await requireRuntime(denoRuntime);
 
 const readme = readReadme();
 
-// The extractor is what makes every criterion in PBI-8 non-vacuous, so its own
-// count guard is asserted before anything reads what it found.
 test("the README's quickstart yields the expected number of marked steps", () => {
   const steps = extractQuickstart(readme, QUICKSTART_STEPS);
 
@@ -50,15 +48,14 @@ test("the README's quickstart yields the expected number of marked steps", () =>
 });
 
 /**
- * THE PAIRED POSITIVE CONTROL, permanent rather than a one-time perturbation:
- * an extractor that finds nothing would make `every extracted command succeeds`
- * VACUOUSLY TRUE, and the README could then rot exactly as if the tests held
- * their own copy of it.
+ * THE PAIRED POSITIVE CONTROL, permanent rather than a one-time perturbation: an
+ * extractor that finds nothing makes `every extracted command succeeds`
+ * VACUOUSLY TRUE, and the README then rots as if the tests held their own copy.
  *
  * The probe is THIS README with its markers deleted, not a hand-written string:
- * that is the actual way the mechanism would break -- someone edits the
- * document and the markers go with the edit -- and a hand-written probe would
- * prove only that the regex fails on prose it was never pointed at.
+ * that is the actual way the mechanism breaks -- someone edits the document and
+ * the markers go with the edit -- where a hand-written probe would prove only
+ * that the regex fails on prose it was never pointed at.
  */
 test("a README whose markers are gone extracts nothing, and says so", () => {
   const unmarked = readme.replaceAll("<!-- quickstart", "<!-- was-quickstart");
@@ -68,7 +65,6 @@ test("a README whose markers are gone extracts nothing, and says so", () => {
   );
 });
 
-// The other end of the same guard: finding SOME of them is not finding them.
 test("a README missing one marked step extracts fewer, and says so", () => {
   const short = readme.replace("<!-- quickstart", "<!-- was-quickstart");
 
@@ -78,11 +74,9 @@ test("a README missing one marked step extracts fewer, and says so", () => {
 });
 
 /**
- * The working directory a step runs in is stated TWICE -- once in the marker
- * the test obeys, once in the prose the reader obeys -- and two copies is the
- * defect this whole PBI exists to prevent, reintroduced by the extraction
- * mechanism itself. The extractor refuses a marker whose directory the reader
- * is never shown; this asserts that the refusal works.
+ * The working directory is stated TWICE -- once in the marker the test obeys,
+ * once in the prose the reader obeys -- which is the duplication this whole file
+ * exists against, reintroduced by the extraction mechanism itself.
  */
 test("a directory named only in a marker is refused", () => {
   const hidden = readme.replaceAll("in=tsudoi-language-server", "in=elsewhere");
@@ -96,17 +90,14 @@ test("a directory named only in a marker is refused", () => {
 });
 
 /**
- * ONE TOKEN MUST NOT DENOTE TWO DIRECTORIES, and this is the arm that makes the
- * quickstart's vocabulary a property rather than a spelling.
- *
  * THE TWO MARKER FAMILIES SPEAK DIFFERENT LANGUAGES: a `handler-pack` token is
  * relative to the CHECKOUT, a `quickstart` token names a directory beside the
- * reader's own project in a staged parent. So a quickstart token that happens to
- * equal a member's directory name is read one way by the harness and the other
- * way by a human -- AND EVERY ASSERTION IN THIS FILE STAYS GREEN, because the
- * harness stages the sibling and runs the command there successfully. The prose
- * check cannot see it either: a colliding name is IN the prose, which is exactly
- * what makes the collision plausible.
+ * reader's own project in a staged parent. So a quickstart token equal to a
+ * member's directory name is read one way by the harness and the other way by a
+ * human -- AND EVERY OTHER ASSERTION IN THIS FILE STAYS GREEN, the harness
+ * staging the sibling and running the command there successfully. The prose
+ * check cannot see it either: a colliding name is IN the prose, which is what
+ * makes the collision plausible.
  *
  * THE MEMBER IS ENUMERATED AND NOT NAMED, so this arm keeps its subject through
  * every rename and every package added under packages/.
@@ -119,8 +110,6 @@ test("a quickstart marker naming a workspace member's directory is refused, nami
   const colliding = basename(member);
   const perturbed = readme.replaceAll("in=my-language-server", `in=${colliding}`);
 
-  // THE MARKER, and then BOTH directories it would denote -- the staged sibling
-  // it silently obeys, and the member a reader would walk to.
   expect(() => extractQuickstart(perturbed, QUICKSTART_STEPS)).toThrow(`in=${colliding}`);
   expect(() => extractQuickstart(perturbed, QUICKSTART_STEPS)).toThrow(
     "sibling of the reader's own project",
@@ -133,74 +122,48 @@ test("a quickstart marker naming a workspace member's directory is refused, nami
  * CONFIGURATION -- the document a registry page shows, and the only one a
  * stranger who installed that package can read.
  *
- * THE ROUTE LIVES THERE AND NOT IN THE ROOT DOCUMENT, which is a decision about
- * duplication rather than about tidiness: two copies of a pack-and-install
- * sequence are two things kept equal by hand, and the copy nobody executes is
- * the one that goes stale.
+ * HANDLERS AND NOT MEMBERS: the framework ships no README of its own, ruled
+ * rather than overlooked -- the sole documented route to its tarball IS the root
+ * README's quickstart, and two of the facts demanded below are unstatable by the
+ * framework about itself.
  */
-// HANDLERS AND NOT MEMBERS: the framework ships no README of its own, ruled
-// rather than overlooked -- the sole documented route to its tarball IS the root
-// README's quickstart, so its reader has already read the document a member
-// README exists to stand in for, and two of the four facts demanded below are
-// unstatable by the framework about itself.
 const memberReadmes = handlerMembers(repoRoot).map((member) => ({
   name: basename(member),
   markdown: readMemberReadme(member),
 }));
 
-// The pair for every loop below: no members would make each of them a claim
-// about nothing, asserted in a test rather than in a comment because a loop over
-// an empty list is green.
+// The pair for every loop below: a loop over an empty list is green.
 test("there are handler packages whose own READMEs these claims are about", () => {
   expect(memberReadmes.length).toBeGreaterThan(0);
 });
 
 /**
- * THE ROOT DOCUMENT NO LONGER CARRIES A PER-HANDLER ROUTE, and this is what
- * stops one coming back.
- *
- * A DUPLICATE WOULD NOT FAIL ANYTHING ELSE. The extractors throw on a count
- * other than one, so a second copy in the root README would be found by the
- * per-member loops below only if they happened to read it -- and they do not,
- * they read the member's file. What a returning copy actually costs is that the
- * two diverge silently, which is the whole reason the route moved.
+ * A DUPLICATE WOULD FAIL NOTHING ELSE: the per-member loops below read the
+ * member's own file, so a second copy in the root README is found by none of
+ * them. What a returning copy costs is that the two diverge silently, which is
+ * the whole reason the route lives in the member's document.
  */
 test("the root README states no handler pack or install command of its own", () => {
   expect(readme).not.toContain("<!-- handler-pack");
   expect(readme).not.toContain("<!-- examples-install -->");
-  // The pair: a document that had lost its markers altogether would satisfy the
-  // two absences above and tell a reader nothing about the packages at all.
+  // The pair: a document that had lost its markers altogether satisfies the two
+  // absences above and tells a reader nothing about the packages at all.
   for (const member of memberReadmes) {
     expect(readme).toContain(`packages/${member.name}/README.md`);
   }
 });
 
 /**
- * THE OVER-INSTALLATION DIRECTION, and a SOURCE-TEXT assertion because nothing
- * anywhere runs this command.
+ * A SOURCE-TEXT ASSERTION BECAUSE NOTHING ANYWHERE RUNS THIS COMMAND. What
+ * stands in for running it is test/helpers/install.ts, which packs and installs
+ * every member's own tarball into every consumer -- so that harness observes
+ * whether the config works when the handlers are INSTALLED, and never whether
+ * this line names the right thing to install. Telling a reader to install a
+ * package they do not need leaves every other assertion in this suite green.
  *
- * The asymmetry, stated rather than hidden. Some blocks in these documents are
- * EXECUTED, so a stale one fails by running, and this one is not. WHICH ARE
- * WHICH IS NOT ENUMERATED HERE, and that is the repair rather than an omission:
- * the enumeration this comment used to carry -- five `quickstart` blocks and
- * each member's pack block -- was a second spelling of `consumers` in
- * test/helpers/readme.ts, went stale the moment a row was added, and is exactly
- * the duplication this file objects to a few hundred lines below. The table is
- * the one place that says what runs. What
- * stands in for it is test/helpers/install.ts, which packs and installs every
- * member's own tarball into every consumer -- so that harness observes whether
- * the config works when the handlers are INSTALLED, and never whether this line
- * names the right thing to install. Telling a reader to install a package they
- * do not need would leave every other assertion in this suite green.
- *
- * ITS PATH IS THE ONE PART OF IT THAT IS CHECKED BY RUNNING, and only because
- * the pack test compares the file it produced against the file this line names.
- * Each member's README carries that narrowing in its own words, where the
- * command is.
- *
- * ITS OWN TEST, not a second assertion on the one below, because the two
- * hazards are different and either can hide the other: naming a package the
- * config does not need, and naming none of the ones it does.
+ * ITS OWN TEST, not a second assertion on the one below, because the two hazards
+ * are different and either can hide the other: naming a package the config does
+ * not need, and naming none of the ones it does.
  */
 test("no member's install command names a protocol package", () => {
   for (const member of memberReadmes) {
@@ -211,16 +174,14 @@ test("no member's install command names a protocol package", () => {
 });
 
 /**
- * THE PAIR for the absence above, and it is what stops the absence being
- * satisfied by deleting the command's arguments altogether.
+ * THE PAIR for the absence above: without it, deleting the command's arguments
+ * altogether satisfies that one.
  *
- * THE MEMBER'S OWN TARBALL IS WHAT IT MUST NAME, DERIVED FROM THE DIRECTORY
- * rather than spelled: a needle written here would be a third place the package
- * is named, and the one that goes stale at a rename. What it must NOT have to
- * name is a runtime dependency of that package -- `wordnet` is declared by the
- * member that reads it, so a reader who installs the handler is done, and a
- * README telling them to install a transitive dependency by hand is true today
- * and wrong the moment the handler changes what it reads from.
+ * DERIVED FROM THE DIRECTORY rather than spelled: a needle written here would be
+ * a third place the package is named, and the one that goes stale at a rename.
+ * What the command must NOT have to name is a runtime dependency of that package
+ * -- a README telling a reader to install one by hand is true today and wrong
+ * the moment the handler changes what it reads from.
  */
 test("each member's install command names that member's own tarball", () => {
   for (const member of memberReadmes) {
@@ -231,8 +192,7 @@ test("each member's install command names that member's own tarball", () => {
 });
 
 // The extractor's own vacuity guard, permanent: both assertions above are
-// satisfied by a command nobody found -- one of them trivially -- so the throw
-// is what makes them mean anything at all.
+// satisfied by a command nobody found, one of them trivially.
 test("a README with no examples-install marker states no install command, and says so", () => {
   for (const member of memberReadmes) {
     const unmarked = member.markdown.replace("<!-- examples-install -->", "");
@@ -242,52 +202,29 @@ test("a README with no examples-install marker states no install command, and sa
 });
 
 /**
- * THE PACK COMMAND IS RUN, AND THAT IS WHAT THE INSTALL COMMAND BESIDE IT CANNOT
- * BE.
- *
  * WHY IT IS WORTH RUNNING RATHER THAN MATCHING: the pack COMPILES the package, so
- * a wrong directory, a wrong subcommand, a wrong flag or a build that cannot
- * resolve are all one failure here -- and the last of those is not hypothetical.
- * MEASURED on this repository with the member's link to the root package removed,
- * which is the state of a checkout where only `bun install` has run: the
- * documented command exits 2 with `src/hover.ts(47,36): error TS2307`, and the
- * document said nothing about it until the prose beside the marker did.
+ * a wrong directory, a wrong subcommand, a wrong flag and a build that cannot
+ * resolve are all one failure here.
  *
  * IN THE REAL MEMBER DIRECTORY AND NOT A STAGED COPY, deliberately: the
  * prerequisite this command needs is a link INSIDE the checkout, and a staged
- * tree would have to reproduce it -- which is supplying the very thing the
- * measurement is about.
+ * tree would have to reproduce it -- which is supplying the very thing being
+ * asked about.
  *
- * AND THE FILE IT PRODUCES IS THE ONE THE NEXT COMMAND NAMES, which is the half
- * that makes running it worth more than reading it. The pack and the install are
- * two commands in two directories joined by a PATH, and nothing but this compares
- * them. MEASURED, and it is what this found: `bun pm pack` run inside a workspace
- * member writes to the WORKSPACE ROOT, not to the member -- so the documented
- * install pointed at `packages/hover-wordnet/hover-wordnet.tgz`, which the pack
- * had never written.
- *
- * THAT PATH IS THE FINDING AND IS DELIBERATELY NOT RENAMED, though the directory
- * it names is gone. It is a record of what a document said at the moment it was
- * read, and a measurement rewritten to spell a directory that did not exist when
- * it was taken is no longer a measurement of anything. What the reader needs is
- * that the pack writes to the root, which is as true of the new spelling as of
- * the old.
- *
- * THE TARBALL IS REMOVED IN A `finally`, because it lands in a directory this
- * repository tracks and a leftover is an untracked file the next reader has to
- * explain.
+ * AND THE FILE IT PRODUCES IS THE ONE THE NEXT COMMAND NAMES: the pack and the
+ * install are two commands in two directories joined by a PATH, and nothing but
+ * this compares them.
  */
 test("each member's pack command runs, and writes the file its own install names", async () => {
   for (const member of memberReadmes) {
     const pack = extractHandlerPack(member.markdown);
-    // The install command is a READER'S path -- relative to their own project,
-    // which sits beside the checkout -- so it is resolved the way they would
-    // resolve it, through the checkout's own directory name. A README that renamed
-    // the checkout in one place and not the other fails here.
-    // THE SAME EXPRESSION THE ACCOUNT'S PROJECTION IS, AND NOT A SECOND
-    // SPELLING OF IT. `consumers` says the install block is READ and names this
-    // as the part of it the reading is about; if the two ever disagreed, the
-    // account would be claiming a subject nothing here checks.
+    // A READER'S PATH -- relative to their own project, which sits beside the
+    // checkout -- so it is resolved the way they would resolve it, through the
+    // checkout's own directory name.
+    //
+    // THE SAME EXPRESSION THE ACCOUNT'S PROJECTION IS, AND NOT A SECOND SPELLING
+    // OF IT: `consumers` names this as the part of the install block its reading
+    // is about, and two spellings could disagree about the subject.
     const installed = installedPath(extractExamplesInstall(member.markdown));
     const prefix = `../${basename(repoRoot)}/`;
     if (!installed.startsWith(prefix)) {
@@ -297,19 +234,15 @@ test("each member's pack command runs, and writes the file its own install names
     }
     const tarball = join(repoRoot, installed.slice(prefix.length));
     const alsoRemoved = join(repoRoot, pack.dir, basename(tarball));
-    // REFUSED BEFORE THE COMMAND RUNS, and this is what makes the existence
-    // check below a reading of THIS run rather than of the directory. A tarball
-    // already sitting at either path -- left by a hand-run pack, or by an earlier
-    // run that died between the command and the cleanup -- satisfies `the pack
-    // wrote the file the install names` with the pack having written nothing, so
-    // the one defect this test exists to catch is the one a stale artifact
-    // hides. AND THE COST IS NOT ONLY A FALSE GREEN: the cleanup below then
-    // deletes a file this run did not create.
+    // REFUSED BEFORE THE COMMAND RUNS, which is what makes the existence check
+    // below a reading of THIS run rather than of the directory: a tarball left
+    // by a hand-run pack, or by an earlier run that died before its cleanup,
+    // satisfies `the pack wrote the file the install names` with the pack having
+    // written nothing. AND THE COST IS NOT ONLY A FALSE GREEN: the cleanup below
+    // then deletes a file this run did not create.
     //
-    // BOTH PATHS, because both are removed. Guarding only the documented target
-    // would leave the clobber open on the other, which is the one the cleanup
-    // reaches when the document is wrong -- exactly the case the `finally` is
-    // written for.
+    // BOTH PATHS, because both are removed, and the undocumented one is the one
+    // the cleanup reaches when the document is wrong.
     for (const stale of [tarball, alsoRemoved]) {
       if (existsSync(stale)) {
         throw new Error(
@@ -321,10 +254,9 @@ test("each member's pack command runs, and writes the file its own install names
       const result = await runCommand(pack.command, join(repoRoot, pack.dir));
 
       // THE EXIT CODE AND NOT AN EMPTY STREAM: bun echoes the `prepack` line it
-      // is about to run on stderr even when everything works, so `stderr is
-      // empty` would fail on a success. The whole stream rides on the assertion
-      // anyway, so a failure explains itself instead of reporting a number that
-      // moved.
+      // is about to run on stderr even when everything works. The whole stream
+      // rides on the assertion anyway, so a failure explains itself instead of
+      // reporting a number that moved.
       expect(`${member.name} exit ${String(result.code)} | ${result.stderr}`).toContain(
         `${member.name} exit 0 |`,
       );
@@ -336,18 +268,17 @@ test("each member's pack command runs, and writes the file its own install names
       expect(existsSync(tarball) ? tarball : `${tarball} was never written`).toBe(tarball);
     } finally {
       // BOTH CANDIDATE LOCATIONS, and the second is not belt-and-braces: when
-      // the README names the wrong path this test is RED, and the cleanup that
-      // follows the document would then leave the real tarball behind -- an
-      // untracked file arriving with a failure, which is the moment a reader can
-      // least afford a second puzzle.
+      // the README names the wrong path this test is RED, and a cleanup that
+      // followed the document would leave the real tarball behind -- an
+      // untracked file arriving with a failure.
       rmSync(tarball, { force: true });
       rmSync(join(repoRoot, pack.dir, basename(tarball)), { force: true });
     }
   }
 }, 120_000);
 
-// The vacuity guard, permanent and for the same reason its neighbour's is: an
-// extractor that found nothing would make the run above a test of no command.
+// The vacuity guard, permanent: an extractor that found nothing would make the
+// run above a test of no command.
 test("a README with no handler-pack marker states no pack command, and says so", () => {
   for (const member of memberReadmes) {
     const unmarked = member.markdown.replace(/<!--\s*handler-pack\b[^>]*-->/, "");
@@ -356,9 +287,6 @@ test("a README with no handler-pack marker states no pack command, and says so",
   }
 });
 
-// The other half of the extractor's contract: the directory it obeys must be one
-// a READER is told to stand in. A marker naming the directory that works while
-// the prose named another would run green and mislead every human.
 test("a README whose pack marker names a directory the prose does not says so", () => {
   for (const member of memberReadmes) {
     const moved = member.markdown.replace(
@@ -371,14 +299,12 @@ test("a README whose pack marker names a directory the prose does not says so", 
 });
 
 /**
- * CRITERION 1. The commands are not mirrored here: they are the README's own
- * bytes, run in order, in a staged environment that supplies NOTHING the README
- * asks the reader to do -- no tarball, no node_modules, no config file. A
- * checkout of this repository with its dependencies installed is the one thing
+ * The commands are not mirrored here: they are the README's own bytes, run in
+ * order, in a staged environment that supplies NOTHING the README asks the
+ * reader to do. A checkout with its dependencies installed is the one thing
  * staged, and the README names it as a prerequisite rather than a step.
  *
- * Both runtimes, because "starts under bun and deno" is the product goal's own
- * metric and a route only bun can take looks healthy from bun.
+ * Both runtimes, because a route only bun can take looks healthy from bun.
  */
 for (const runtime of ["bun", "deno"] as const) {
   test(`the README's quickstart brings up a server under ${runtime}`, async () => {
@@ -400,21 +326,16 @@ function label(step: QuickstartStep): string {
 }
 
 /**
- * THE COMPLETENESS SWEEP, and its real function is not what it looks like.
+ * THE COMPLETENESS SWEEP, AND ITS REAL FUNCTION IS NOT WHAT IT LOOKS LIKE. It
+ * reads as a check that no documented step is USELESS. What it proves is that
+ * THE ENVIRONMENT IS BARE: an omitted step whose absence still produced a server
+ * would mean something other than the documented command was supplying it, and
+ * the intact run above would then be a test of the harness. Extraction catches a
+ * STALE instruction; only this catches a MISSING one.
  *
- * It reads as a check that no documented step is USELESS. What it actually
- * proves is that THE ENVIRONMENT IS BARE: an omitted step whose absence still
- * produced a server would mean something other than the documented command was
- * supplying it, and the intact run above would then be a test of the harness
- * rather than evidence about the README. Extraction catches a STALE
- * instruction; only this catches a MISSING one -- and a README that omits a
- * required step is worse than no README, because a reader follows it, fails,
- * and concludes the product is broken.
- *
- * ONE RUNTIME, and the licence is the MEASUREMENT that both runtimes take one
- * artifact, one install and one file path -- not that two would be
- * expensive. If that route ever diverges, this basis is void and the sweep owes
- * both runtimes.
+ * ONE RUNTIME, and the licence is that both runtimes take one artifact, one
+ * install and one file path -- not that two would be expensive. If that route
+ * ever diverges, this basis is void and the sweep owes both runtimes.
  *
  * The last step's omission looks degenerate -- run no server, get no server --
  * and is the strongest bareness assertion here: if anything OTHER than the
@@ -433,16 +354,11 @@ for (const [index, omitted] of bunSequence.entries()) {
 }
 
 /**
- * CRITERION 2, COMPARED TWO-SIDEDLY. The README's flags are read out of its own
- * bytes; the suite's come from `denoRuntime` IMPORTED from the helper every
- * other test spawns with -- not from parsing that helper's source. The compared
- * value is therefore the one that really runs, and no second parsing mechanism
- * enters needing a vacuity guard of its own.
- *
- * Both directions matter and neither alone is enough: narrowing the README
- * alone must redden, and narrowing `denoRuntime.runArgs` alone must redden. A
- * one-sided test passes when the two drift TOGETHER, which is the drift this
- * criterion exists to catch.
+ * COMPARED TWO-SIDEDLY. The README's flags are read out of its own bytes; the
+ * suite's come from `denoRuntime` IMPORTED from the helper every other test
+ * spawns with, not from parsing that helper's source -- so the compared value is
+ * the one that really runs, and no second parsing mechanism enters needing a
+ * vacuity guard of its own.
  */
 test("the deno permissions the README documents are the ones the suite spawns", () => {
   const invocation = invocationOf(
@@ -456,14 +372,12 @@ test("the deno permissions the README documents are the ones the suite spawns", 
 /**
  * The reason is OWED, not optional: a deno user handing every permission to a
  * server that reads their source needs to know it is a third-party module-load
- * env read rather than tsudoi wanting their network -- and that narrower sets
- * are untested, whatever one measurement of one of them found.
+ * env read rather than tsudoi wanting their network.
  *
- * `--allow-read --allow-env` completing the handshake is a HISTORICAL claim,
- * pinned to deno 2.9.2, and that is deliberate: the suite spawns `-A` and
- * nothing here keeps a narrower set working, so a present-tense promise about
- * it would be a claim the suite cannot defend. A claim about what a measurement
- * found on a named version cannot go stale.
+ * `--allow-read --allow-env` completing the handshake is required to be a
+ * HISTORICAL claim on a named version: the suite spawns `-A` and nothing keeps a
+ * narrower set working, so a present-tense promise is one the suite cannot
+ * defend, and `untested` is the token that holds the document to it.
  */
 const permissionsFact: ReadmeFact = {
   name: "why -A, what one narrower set measured, and that narrower is untested",
@@ -478,14 +392,9 @@ const permissionsFact: ReadmeFact = {
 };
 
 /**
- * CRITERION 3, and the reader is STIPULATED: someone who was not here. Every
- * prerequisite that reader is assumed to have is named below, because an
- * unnamed prerequisite cannot be perturbed and is therefore not defended.
- *
- * Matched on DISCRIMINATING TOKENS rather than on sentences, in both
- * directions: rewording must still find the fact, and removing it must lose it.
- * A test matching a sentence fails on an improvement to the prose, which is how
- * a test teaches the next person to delete it.
+ * THE READER IS STIPULATED: someone who was not here. Every prerequisite that
+ * reader is assumed to have is named below, because an unnamed prerequisite
+ * cannot be perturbed and is therefore not defended.
  */
 const facts: readonly ReadmeFact[] = [
   permissionsFact,
@@ -498,15 +407,10 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/default export/i, /factory/i],
   },
   {
-    // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one. A
-    // token the document carries without explaining is a lateral move on the
-    // parameter authors would otherwise have to name and then ignore -- so the
-    // README owes the REASON, and this entry is what holds it to that.
-    //
-    // Nothing type-checks an author's own config against `TsudoiConfigFactory`
-    // -- src/config.ts reaches the type through a cast from `unknown` -- so the
-    // annotation is the whole of the defence on the documented route, and the
-    // sentence explaining it is load-bearing rather than decorative.
+    // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one:
+    // nothing type-checks an author's own config against `TsudoiConfigFactory`,
+    // src/config.ts reaching the type through a cast from `unknown`, so the
+    // annotation is the whole of the defence on the documented route.
     name: "annotating the factory const is what reports a config shape change",
     tokens: [/TsudoiConfigFactory/, /annotat/i, /shape changes/i],
   },
@@ -515,29 +419,18 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/deno/i, /PATH/, /bun test/, /fails/i],
   },
   {
-    // AN ARTIFACT PRECONDITION RATHER THAN AN ENVIRONMENT ONE, which is the
-    // distinction that puts it in its own entry: deno-on-PATH and `bun install`
-    // are things a reader's MACHINE must have, where this is about a file the
-    // repository generates. `dist/` is gitignored and generated, and
-    // bunfig.toml builds it before any test file loads, so a reader runs no
-    // `bun run prepack` of their own.
+    // AN ARTIFACT PRECONDITION RATHER THAN AN ENVIRONMENT ONE, which is what
+    // puts it in its own entry: deno-on-PATH and `bun install` are things a
+    // reader's MACHINE must have, where this is about a file the repository
+    // generates.
     //
-    // THE SECOND TOKEN PAIR IS THE ONE THAT MATTERS, and it is here because the
-    // automatic build is NOT total: bun discovers bunfig.toml relative to the
-    // CURRENT WORKING DIRECTORY and does not search upward, so `bun test`
-    // started anywhere but the repository root runs the whole suite with no
-    // build. MEASURED on that route, with dist/ deliberately stale: the suite
-    // gives TWO failures, and the ONLY staleness-specific one is the comparison
-    // in package-shape.test.ts. That is why that comparison stands rather than
-    // being deleted as redundant, and why the README must keep saying where to
-    // stand.
+    // `repository root` IS THE TOKEN THAT MATTERS, because the automatic build
+    // is NOT total: bun discovers bunfig.toml relative to the CURRENT WORKING
+    // DIRECTORY and does not search upward, so `bun test` started anywhere else
+    // runs the whole suite with no build.
     //
-    // NO TOKEN BELOW ASKS THE README FOR A NUMBER, deliberately: the suite
-    // grows and any count the document carried would go false on its own. The
-    // reading belongs in a comment, and even here as a SHAPE rather than a
-    // size, for exactly that reason -- MEASURED on a dist/-less `bun test`:
-    // failures spread BROADLY across the suite rather than at one assertion,
-    // and tests that never run at all.
+    // NO TOKEN HERE ASKS THE README FOR A NUMBER, deliberately: the suite grows,
+    // and any count the document carried would go false on its own.
     name: "`bun test` builds dist/ itself, and only from the repository root",
     tokens: [/dist\//, /not committed/i, /automatic/i, /repository root/i],
   },
@@ -545,25 +438,18 @@ const facts: readonly ReadmeFact[] = [
     // THE ENTRY ABOVE IS ABOUT WHAT THE BUILD COVERS; THIS ONE IS ABOUT WHAT IT
     // DOES NOT, and they are separate because a reader who takes the first at
     // its word runs a Definition-of-Done command and gets a failure the document
-    // never mentioned. MEASURED on a clone with `bun install` run and nothing
-    // built: `tsc --noEmit` reports TS2307 at examples/tsudoi.config.ts naming
-    // `@atusy/tsudoi-hover-wordnet`, because the config reaches the handler by
-    // PACKAGE SPECIFIER and a workspace member publishes dist/ with no source
-    // arm.
+    // never mentioned.
     //
     // THE REMEDY IS A TOKEN AND THE DIAGNOSTIC IS A TOKEN, both, because either
     // alone leaves a reader somewhere they cannot act: a document naming the
     // failure and no command tells them they are stuck, and a document naming a
     // command they have no reason to run is not read until after they are.
     //
-    // WHY NO `paths` MAPPING IS ALSO OWED, and it is the sentence that stops the
-    // next reader from supplying one: a mapping would resolve a member's imports
-    // through the ROOT'S map and report success for a member whose own
-    // resolution is broken, which is the false green the members' exclusion from
-    // the root check exists to make unconstructible. That reason is asserted
-    // from the code's side in test/package-shape.test.ts and driven by
-    // test/workspace-members.test.ts; here it is owed to the person holding the
-    // error message.
+    // `paths` IS A TOKEN BECAUSE THE REFUSAL IS OWED TO THE PERSON HOLDING THE
+    // ERROR MESSAGE: a mapping would resolve a member's imports through the
+    // ROOT'S map and report success for a member whose own resolution is broken,
+    // which is the false green the members' exclusion exists to make
+    // unconstructible.
     name: "`tsc --noEmit` on an unbuilt checkout fails, which command clears it, and why no mapping",
     tokens: [
       /tsc --noEmit/,
@@ -574,15 +460,10 @@ const facts: readonly ReadmeFact[] = [
     ],
   },
   {
-    // THE ONE PLACE A CONSUMER-FACING FALSEHOOD CAN BE CORRECTED, and that is
-    // why it is owed here rather than left where it was written.
-    // `peerDependenciesMeta.optional` is in the handler's manifest, which SHIPS;
-    // the account of why it is there is in that package's own test, which
-    // `files: ["dist"]` keeps out of the tarball. So a reader who installs the
-    // handler meets the flag and meets no correction anywhere -- MEASURED: a
-    // project installing the handler alone gets EXIT 0 and no warning from
-    // `bun install`, then `Cannot find module
-    // '@atusy/tsudoi-language-server/deps/types'` at load.
+    // THE ONE PLACE A CONSUMER-FACING FALSEHOOD CAN BE CORRECTED:
+    // `peerDependenciesMeta.optional` is in the handler's manifest, which SHIPS,
+    // and the account of why it is there is in that package's own test, which
+    // `files: ["dist"]` keeps out of the tarball.
     //
     // THE PEER AND THE FLAG ARE ONE ENTRY BECAUSE THEY ARE ONE READING. `peer`
     // alone tells a reader to install tsudoi; `optional` alone tells them not
@@ -590,7 +471,8 @@ const facts: readonly ReadmeFact[] = [
     // carrying neither.
     //
     // THE FAILURE TEXT IS A TOKEN so the correction is findable by someone who
-    // already hit it and is searching for the string in front of them.
+    // already hit it and is searching for the string in front of them: the
+    // install itself exits 0 with no warning, and the throw arrives at load.
     name: "tsudoi is a peer the handler does not install, and `optional` does not mean otherwise",
     tokens: [/peer/i, /optional/, /Cannot find module/, /unpublished/i],
   },
@@ -604,14 +486,11 @@ const facts: readonly ReadmeFact[] = [
   {
     // Named because a reader meets this type as something they RECEIVE and
     // finds out only in their own test suite that it is also something they may
-    // have to BUILD. The four obvious members are the shape everyone reaches
-    // for, and stopping there type-errors at a site nothing else in this
-    // document prepares them for.
+    // have to BUILD.
     //
     // `receive` IS DELIBERATELY NOT A TOKEN, though the word is available: it
     // sits in this section's own heading, so it would be matched by a section
-    // that had lost the paragraph entirely and would assert nothing about the
-    // prose this entry exists to defend.
+    // that had lost the paragraph entirely.
     //
     // `TextDocument\.create` is in the tokens because the remedy is the half a
     // reader needs: a named gap with no named remedy is a warning rather than
@@ -620,12 +499,6 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/TextDocument/, /implement/i, /mock/i, /TextDocument\.create/],
   },
   {
-    // NAMED BECAUSE THE CLAIM IT REPLACES WENT FALSE AND NOTHING NOTICED. The
-    // document said tsudoi hands a reader `the real thing`, and it had not been
-    // true since the store began publishing a sealed forwarder: upstream's
-    // `update` refuses anything its own `create` did not build, so a reader who
-    // took that sentence at its word met a throw inside a live handler.
-    //
     // THE COMPILE TOKEN IS THE HALF A READER CANNOT INFER. `DocumentView` and
     // upstream's interface carry the same seven members, so tsc accepts the call
     // -- and a warning about a runtime throw that omits `nothing stops you at
@@ -638,53 +511,33 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/TextDocument\.update/, /applyEdits/, /throws/i, /type-check/i],
   },
   {
-    // NAMED BECAUSE IT WENT FALSE AND NOTHING NOTICED. The document said every
-    // protocol name the examples use comes from `@atusy/tsudoi-language-server/types`, and it
-    // had not been true since the surface was split by origin: `CompletionParams`
-    // comes from `deps/protocol` and `CompletionItem`, `CompletionItemKind`,
-    // `MarkupContent`, `Position`, `WorkspaceFolder` and `DiagnosticSeverity`
-    // from `deps/types`. src/types.ts says the opposite of what the README said,
-    // in so many words, and neither file was reading the other.
-    //
-    // WHY THE FALSE HALF SURVIVED A READING: the parenthetical about
+    // WHY A FALSE HALF OF THIS SURVIVED A READING ONCE: the parenthetical about
     // `CompletionItemKind` being used as a VALUE was true, and a reader who
     // checks that nods past the sentence carrying it. That is why the value
     // token is in this list -- it is the true half, and it must stay attached to
     // the corrected one rather than drift back into a claim about `./types`.
     //
     // ALL THREE `deps/` SUBPATHS, INCLUDING THE ONE NO EXAMPLE IMPORTS:
-    // `deps/textdocument` is published and was named nowhere in the document, so
-    // a reader following the README could not learn the type of the thing every
-    // handler is handed.
+    // `deps/textdocument` is published, and a reader following a document that
+    // never named it could not learn the type of the thing every handler is
+    // handed.
     name: "protocol names come from the deps subpaths, and tsudoi's own from ./types",
     tokens: [/deps\/protocol/, /deps\/types/, /deps\/textdocument/, /CompletionItemKind/, /value/i],
   },
   // SHARED WITH test/optional-peer-premise.test.ts RATHER THAN SPELLED TWICE:
-  // that file turns this fact going FALSE into a red over every handler
-  // package's manifest, and two spellings of one premise would let the two
-  // disagree about which section states it.
+  // two spellings of one premise would let the two disagree about which section
+  // states it.
   UNPUBLISHED,
   {
     // WHAT THIS DOCUMENT PROMISES ABOUT ITSELF, owed because the promise is the
-    // reason a reader trusts a command here over one in a blog post -- and
-    // because it went overbroad once already: the document said the commands
-    // below were extracted and executed while the handler's install line was
-    // neither. A promise that covers more than it does is worse than none, since
-    // it is the thing that stops a reader checking.
+    // reason a reader trusts a command here over one in a blog post. A promise
+    // that covers more than it does is worse than none, since it is the thing
+    // that stops a reader checking.
     //
-    // THE EXCEPTION MOVED RATHER THAN VANISHING, and this entry moved with the
-    // half of it that is still this document's -- and then the exception came
-    // BACK here, which is what the fourth token is. While every block in this
-    // file was executed, the promise and the pointer were the whole of what it
-    // owed; the sweep widened `covered` to include blocks that are READ, so this
-    // document now has blocks of its own that no run reaches, and a promise that
-    // says only `executed` is overbroad in exactly the way this entry was
-    // written against in the first place.
-    //
-    // `never run` IS THE LOAD-BEARING TOKEN, for the reason the members' own
-    // entry gives: `these are executed` is the sentence that was false once
-    // already, and it goes false again the moment a block is accounted for
-    // rather than run. The document owes the exception, not the rule.
+    // `never run` IS THE LOAD-BEARING TOKEN: `these are executed` is the
+    // sentence that was false once already, and it goes false again the moment a
+    // block is accounted for rather than run. The document owes the exception,
+    // not the rule.
     name: "every block here is executed or accounted for, the exception is named, and the handler routes live elsewhere",
     tokens: [
       /extracted from this README/i,
@@ -696,12 +549,11 @@ const facts: readonly ReadmeFact[] = [
   {
     // THE RIGHT BOUNDARY IS WHAT MAKES THESE TOKENS A CONTROL RATHER THAN A
     // SHAPE. Every other command this file matches is also EXECUTED, so a wrong
-    // spelling fails by running; these two cannot be, because the package is
-    // unpublished and running them is the thing that does not work yet. This
-    // fact is their only spelling control, and an unbounded pattern gives that
-    // control away: this package's name is a PREFIX of every name that extends
-    // it, so a README telling a reader to install `...-language-server-wrong`
-    // satisfies all three tokens -- MEASURED.
+    // spelling fails by running; these two cannot be, the package being
+    // unpublished. This fact is their only spelling control, and an unbounded
+    // pattern gives it away: this package's name is a PREFIX of every name that
+    // extends it, so a README telling a reader to install
+    // `...-language-server-wrong` satisfies all three tokens.
     //
     // THE COMPLETE INLINE COMMAND WOULD BE STRICTER AND IS DECLINED: the
     // subject here is the NAME, and a token carrying the backticks and the
@@ -717,9 +569,9 @@ const facts: readonly ReadmeFact[] = [
   },
   {
     // The claim is that tsudoi CLOSES the generator, never that the author's
-    // cleanup COMPLETES: a `finally` that awaits something which never settles
-    // never finishes. Promising completion would document something the
-    // language forbids.
+    // cleanup COMPLETES: a `finally` awaiting something that never settles never
+    // finishes, and promising completion would document what the language
+    // forbids.
     //
     // WHERE THE `finally` GOES IS DELIBERATELY NOT A TOKEN HERE. A completion
     // handler IS the generator -- one body, and no level to be one above it --
@@ -734,80 +586,58 @@ const facts: readonly ReadmeFact[] = [
 
 /**
  * WHAT EVERY HANDLER PACKAGE'S OWN README OWES, IN THE SAME SHAPE AND FOR A
- * DIFFERENT READER.
- *
- * THE ROOT DOCUMENT'S FACTS ARE ABOUT THIS REPOSITORY; these are about a
- * PACKAGE, and the reader is a stranger who has installed one and can see
- * nothing else. Two of them moved here bodily when the route did, which is the
- * only reason they are not simply new.
+ * DIFFERENT READER: the root document's facts are about this REPOSITORY, these
+ * about a PACKAGE, and the reader is a stranger who has installed one and can
+ * see nothing else.
  *
  * OVER MEMBERS AS A CLASS, so a package added under packages/ owes the same
- * things with no list edited -- and the third test below, which requires exactly
- * ONE home per fact, is what keeps a member from satisfying one of these by
- * accident in a section about something else.
+ * things with no list edited.
  */
 const memberFacts: ReadmeFact[] = [
   {
-    // NAMED BECAUSE THE INSTRUCTION WAS BROKEN AND NOTHING SAID SO. MEASURED on
-    // this checkout with the member's link to the root package removed -- which
-    // is the state after `bun install` and nothing else, the only prerequisite
-    // these documents name: the documented pack command exits 2 at TS2307,
-    // pointing at the package's own source for a fault that lives in
-    // node_modules.
-    //
     // THE REMEDY AND THE DIAGNOSTIC ARE BOTH TOKENS: a document naming the
     // failure and no command leaves a reader stuck, and a command they have no
     // reason to run is not read until after they are.
     //
     // WHY THE EXECUTING TEST DOES NOT COVER THIS: it runs the pack in a checkout
-    // where the link is already there, because that is the state of any tree the
-    // suite has touched. The prerequisite is therefore prose nothing runs, which
-    // is exactly the case a fact exists for.
+    // where the link is already there, that being the state of any tree the
+    // suite has touched. The prerequisite is prose nothing runs, which is
+    // exactly the case a fact exists for.
     name: "packing this package needs a link `bun install` does not create",
     tokens: [/TS2307/, /scripts\/typecheck-workspaces\.ts/, /bun pm pack/, /link/i],
   },
   {
-    // THE EXCEPTION THE ROOT DOCUMENT USED TO CARRY, now where the commands are.
     // `never run` IS THE LOAD-BEARING TOKEN and the reason this is one entry
-    // rather than two: `these are executed` alone is exactly the sentence that
-    // was false once already, and it goes false again the moment a command is
-    // added outside the extraction. The document owes the exception, not the
-    // rule.
-    // THE THIRD TOKEN NAMES THE RESIDUE, AND IT IS HERE BECAUSE THE SPRINT THAT
-    // BUILT THE SUBJECT RULE SHIPPED THIS DOCUMENT VIOLATING IT. The rule says
-    // everything a subject leaves out is unchecked BY DECLARATION, declared
-    // where the reader is; this file's install row names the path as its
-    // subject, and both member documents went on saying `what is checked is its
-    // text` -- which is the whole command. The narrowing was written into two
-    // test helpers and into no document, so the one reader it was owed to could
-    // not have found it. `executed` and `never run` are both satisfied by that
-    // overbroad sentence, which is why neither of them caught it and a third
-    // token is what does.
+    // rather than two: `these are executed` alone is the sentence that was false
+    // once already, and it goes false again the moment a command is added
+    // outside the extraction. The document owes the exception, not the rule.
+    //
+    // THE THIRD TOKEN NAMES THE RESIDUE. Everything a subject leaves out is
+    // unchecked BY DECLARATION, declared where the reader is; the install row's
+    // subject is the PATH, and a member document saying `what is checked is its
+    // text` -- the whole command -- satisfies `executed` and `never run` both.
+    // Neither caught it, which is why a third token is what does.
     name: "which of this package's commands are run and which are only read",
     tokens: [/executed/i, /never run/i, /not the command/i],
   },
   {
-    // THE FALSEHOOD THE MANIFEST SHIPS, CORRECTED WHERE ITS READER IS. This is
-    // the same reading the root document owes a maintainer, owed again here
-    // because a stranger who installed the package sees only this file: the
-    // account of why `optional` is there lives in a test `files` keeps out of
-    // the tarball.
+    // THE FALSEHOOD THE MANIFEST SHIPS, CORRECTED WHERE ITS READER IS: the same
+    // reading the root document owes a maintainer, owed again because a stranger
+    // who installed the package sees only this file.
     //
     // THE PEER AND THE FLAG ARE ONE ENTRY BECAUSE THEY ARE ONE READING. `peer`
     // alone tells a reader to install tsudoi; `optional` alone tells them not to
-    // bother. A document carrying either without the other is worse than one
-    // carrying neither. `unpublished` is here because it is the PREMISE: the day
-    // it stops holding, the flag is a lie with nothing bought by it.
+    // bother. `unpublished` is here because it is the PREMISE: the day it stops
+    // holding, the flag is a lie with nothing bought by it.
     name: "tsudoi is a peer this package does not install, and `optional` does not mean otherwise",
     tokens: [/peer/i, /optional/, /Cannot find module/, /unpublished/i],
   },
   {
-    // WHAT BOUNDS THE HANDLER, and the token is deliberately generic where the
-    // SENTENCE is not: each package's bound is its own, so a shared needle would
-    // be satisfied by whichever member happened to carry it. The per-member
-    // sentences are pinned off the TARBALL in test/packed-members.test.ts, which
-    // is where a registry reader meets them; what this asks is that the document
-    // has a section for it at all, in exactly one place.
+    // THE TOKEN IS DELIBERATELY GENERIC WHERE THE SENTENCE IS NOT: each
+    // package's bound is its own, so a shared needle would be satisfied by
+    // whichever member happened to carry it. What this asks is that the document
+    // has a section for it at all, in exactly one place; the per-member
+    // sentences are pinned off the TARBALL elsewhere.
     name: "the package states what bounds it",
     tokens: [/What bounds it/i, /rather than/i],
   },
@@ -837,14 +667,10 @@ for (const fact of facts) {
   });
 
   /**
-   * THE REMOVAL HALF, and the only form of it that can fail.
-   *
-   * `delete a token, the fact goes` is true of every conjunction ever written
-   * -- a test that cannot fail, which is the vacuity this file exists against.
-   * What CAN fail is this: the fact must have exactly ONE home in the
-   * document. Then deleting that section is what loses it, and a fact
-   * satisfied incidentally by tokens scattered through some other section
-   * fails here instead of passing quietly.
+   * THE REMOVAL HALF, AND THE ONLY FORM OF IT THAT CAN FAIL. `delete a token,
+   * the fact goes` is true of every conjunction ever written. What CAN fail is
+   * uniqueness, and it fails exactly when a fact is satisfied incidentally by
+   * tokens scattered through a section that does not state it.
    */
   test(`«${fact.name}» is stated in exactly one section, so deleting it loses it`, () => {
     const homes = sectionsStating(readme, fact);
@@ -853,10 +679,8 @@ for (const fact of facts) {
   });
 
   /**
-   * THE REWORDING HALF: the sentences of every section reordered and the
-   * paragraphs reflowed onto one line -- the edit a writer actually makes.
-   * The fact must survive it, or the next person to improve the prose is
-   * punished for it.
+   * THE REWORDING HALF: a fact that dies here was matched on sentence structure
+   * rather than on tokens, and punishes the next person to improve the prose.
    */
   test(`«${fact.name}» survives having its section reworded`, () => {
     expect(statesFact(reword(readme), fact)).toBe(true);
@@ -864,32 +688,11 @@ for (const fact of facts) {
 }
 
 /**
- * THE HALF NO `facts` ENTRY CAN DO, and it is worth saying which is which: a
- * fact reddens when someone edits the README, never when someone edits the
- * PACKAGE. The claim that went false above went false because the exports map
- * was split by origin and this document was not touched -- an edit that no
- * amount of token matching over prose could have caught, because the prose did
- * not change.
- *
- * SO THE TWO DOCUMENTS ARE COMPARED DIRECTLY, and in BOTH directions by one
- * equality: a subpath added to package.json that the README never mentions
- * reddens here, and so does a README naming a subpath that is not published.
- * test/package-shape.test.ts already pins the map's shape; nothing else
- * connects it to what a reader is told.
- *
- * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
- * `node_modules/@atusy/tsudoi-language-server/dist/cli.js` is a path INTO the installed package
- * that the quickstart tells a reader to run, reached by walking the tree rather
- * than through the exports map -- which is precisely why it must not be
- * expected to appear there.
- */
-/**
- * THE SUBJECT IS THE MANIFEST CARRYING THE PUBLISHED SURFACE, WHICH IS NO LONGER
- * THE CHECKOUT ROOT'S -- and this is the one site the move breaks by THROWING AT
+ * THE SUBJECT IS THE MANIFEST CARRYING THE PUBLISHED SURFACE, WHICH IS NOT THE
+ * CHECKOUT ROOT'S -- and reading the wrong one breaks this file by THROWING AT
  * MODULE LOAD rather than by failing an assertion. `Object.keys(undefined)` on a
- * root that has no `exports` takes this comparison AND its permanent pair down
- * with it, so the file reports one error where two tests should have spoken.
- * Named as a subtask rather than found by a first run, for exactly that reason.
+ * root that has no `exports` takes the comparison below AND its permanent pair
+ * down with it, so the file reports one error where two tests should speak.
  */
 const publishedExports = Object.keys(
   (
@@ -899,6 +702,12 @@ const publishedExports = Object.keys(
   ).exports,
 ).sort();
 
+/**
+ * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
+ * `node_modules/@atusy/tsudoi-language-server/dist/cli.js` is a path INTO the
+ * installed package that the quickstart tells a reader to run, reached by
+ * walking the tree rather than through the exports map.
+ */
 function subpathsNamed(markdown: string): string[] {
   return [
     ...new Set(
@@ -909,16 +718,23 @@ function subpathsNamed(markdown: string): string[] {
   ].sort();
 }
 
+/**
+ * THE HALF NO `facts` ENTRY CAN DO: a fact reddens when someone edits the README,
+ * never when someone edits the PACKAGE. This document's claim about the surface
+ * went false once because the exports map was split by origin and the prose was
+ * not touched -- an edit no amount of token matching over prose can catch.
+ *
+ * BOTH DIRECTIONS BY ONE EQUALITY: a subpath added to package.json that the
+ * README never mentions reddens here, and so does a README naming a subpath that
+ * is not published.
+ */
 test("the published subpaths the README names are exactly the ones package.json exports", () => {
   expect(subpathsNamed(readme)).toEqual(publishedExports);
 });
 
 /**
- * THE PERMANENT PAIR, and the direction it probes is the one that actually
- * happened: a README that stops naming a published subpath. Without it, an
- * extractor that had quietly stopped matching anything would satisfy the
- * equality above only by accident -- and the assertion would be reporting that
- * two empty lists agree.
+ * THE PERMANENT PAIR: without it, an extractor that had quietly stopped matching
+ * anything satisfies the equality above by reporting that two empty lists agree.
  */
 test("a README that stopped naming one of them no longer matches the exports map", () => {
   const narrowed = readme.replaceAll(
@@ -930,11 +746,9 @@ test("a README that stopped naming one of them no longer matches the exports map
 });
 
 /**
- * CRITERION 4, and the whole of it is that THE README IS THE SOURCE OF THE
- * EXPECTATION. Every value asserted below comes out of the table a reader
- * reads: the exit code, the prefix on stderr, the byte count on stdout. A test
- * holding its own `1` would pass against a README that promised `2`, which is
- * the failure this criterion exists to catch.
+ * THE README IS THE SOURCE OF THE EXPECTATION: every value asserted below comes
+ * out of the table a reader reads, because a test holding its own `1` passes
+ * against a README that promised `2`.
  */
 for (const runtime of ["bun", "deno"] as const) {
   test(`the documented failure behaviour is what happens under ${runtime}`, async () => {
@@ -948,14 +762,14 @@ for (const runtime of ["bun", "deno"] as const) {
     expect(Buffer.byteLength(outcome.stdout, "utf8")).toBe(contract.stdoutBytes);
     // THE PAIR for that absence, permanent: the same counting, on the same
     // stream, through the same helper, DOES see bytes when a command produces
-    // them. Without it, an apparatus that counted nothing would satisfy `zero
-    // bytes on stdout` on every run forever.
+    // them. Without it, an apparatus that counted nothing satisfies `zero bytes
+    // on stdout` on every run forever.
     expect(outcome.stdoutBytesSeenElsewhere).toBeGreaterThan(0);
   });
 }
 
-// The failure contract's own vacuity guard, permanent: a table nothing points
-// at yields no values, and a contract of no values is satisfied by anything.
+// The failure contract's own vacuity guard, permanent: a contract of no values
+// is satisfied by anything.
 test("a README with no failure-contract table states no contract, and says so", () => {
   const unmarked = readme.replace("<!-- failure-contract -->", "");
 

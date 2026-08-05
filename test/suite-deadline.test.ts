@@ -21,10 +21,9 @@ applySuiteDeadline();
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
 
 /**
- * THE REAL MODULE, NOT A RE-IMPLEMENTATION, AND THAT IS THE WHOLE REASON THE
- * OVERRIDE SEAM EXISTS. A throwaway tree calling a copy of the policy would
- * share no subject with the suite: deleting `setDefaultTimeout` from the module
- * this repository actually calls would leave every arm here green.
+ * THE REAL MODULE, NOT A RE-IMPLEMENTATION: a throwaway tree calling a copy of
+ * the policy shares no subject with the suite, so deleting `setDefaultTimeout`
+ * from the module this repository actually calls would leave every arm green.
  */
 const deadlineModule = fileURLToPath(new URL("./helpers/deadline.ts", import.meta.url));
 
@@ -32,26 +31,20 @@ const deadlineModule = fileURLToPath(new URL("./helpers/deadline.ts", import.met
  * A tree bun will run `bun test` in. Every file is written by the caller, and
  * the tags below are the only naming this file does.
  *
- * THREE FILES AND NOT ONE, AND THE RULE IS PAID FOR IN THIS PROJECT'S OWN
- * BLOOD: the first version of these arms used a one-file tree and read 5 pass
- * while the mechanism they were verifying reached only the first file of a real
- * suite. A single-file throwaway is exactly the case that defect spares.
+ * THREE FILES AND NOT ONE: the defect these arms exist for reaches only the
+ * FIRST file of a real suite, which a one-file throwaway spares.
  *
- * AND `PUT THE ARM IN THE SECOND FILE` IS NOT A THING A TEST CAN DO HERE,
- * MEASURED: bun evaluates test files IN THE DIRECTORY'S OWN ORDER, NOT IN NAME
- * ORDER. Five files written a-x, b-x, a-fast, b-slow, c-zzz evaluated as b-x,
- * a-fast, a-x, c-zzz, b-slow -- stable across runs, and it cost this session an
- * hour: two trees differing in NOTHING BUT FILENAMES read 2 pass and 1 pass / 1
- * fail against the same module. So the arms below do not nominate a
- * non-first file; they put THE SAME DISCRIMINATING PAIR IN EVERY FILE, so
- * whichever one bun reaches first, the others answer.
+ * AND `PUT THE ARM IN THE SECOND FILE` IS NOT A THING A TEST CAN DO HERE: bun
+ * evaluates test files in the DIRECTORY'S own order, not in name order. So the
+ * arms below nominate no file; they put THE SAME DISCRIMINATING PAIR IN EVERY
+ * ONE, so whichever bun reaches first, the others answer.
  *
  * OUTSIDE THE REPOSITORY, because bun discovers bunfig.toml relative to the
  * current working directory: a tree under test/ would put a second [test]
  * section where the suite's own build lives, and its files would be swept.
  *
- * THE FILENAMES SHARE `deadline` SO THE NAME-FILTER FORM SELECTS ALL THREE.
- * A filter matching only one file would run it alone, which is the single-file
+ * THE FILENAMES SHARE `deadline` SO THE NAME-FILTER FORM SELECTS ALL THREE. A
+ * filter matching only one file would run it alone, which is the single-file
  * case again wearing an invocation form's clothes.
  */
 const treeTags = ["a", "b", "c"] as const;
@@ -93,11 +86,7 @@ test("${tag} sleeps UNDER the deadline", async () => {
 
 interface Run {
   readonly code: number | null;
-  /**
-   * THE REPORTER'S STREAM, MEASURED RATHER THAN GUESSED: on bun 1.3.13 stdout
-   * carries the version banner and NOTHING ELSE, and every line these arms read
-   * -- the failure, the timeout value, the counts -- arrives on stderr.
-   */
+  /** Every line these arms read -- the failure, the value, the counts. */
   readonly stderr: string;
 }
 
@@ -105,15 +94,13 @@ interface Run {
  * `bun test` in `cwd`, with the override PINNED EXPLICITLY -- set to a value, or
  * `null` for REMOVED FROM THE CHILD'S ENVIRONMENT.
  *
- * EVERY ARM PINS IT, INCLUDING THE ONES THAT WOULD BE HAPPY WITH THE DEFAULT.
- * An arm relying on the variable's ABSENCE agrees silently with a developer who
- * left it set in their shell, and this process's own environment is inherited by
- * the child.
+ * EVERY ARM PINS IT, INCLUDING THE ONES THAT WOULD BE HAPPY WITH THE DEFAULT:
+ * an arm relying on the variable's ABSENCE agrees silently with a developer who
+ * left it set in their shell, and this process's environment is inherited.
  *
- * `null` IS NOT THAT ABSENCE AND THE DIFFERENCE IS THE WHOLE OF THE NO-OVERRIDE
- * ARM'S STANDING: the key is DELETED from the inherited copy, so the child meets
- * the unset state whatever the developer's shell holds. Omitting the key from
- * the object below would not do it -- `process.env` is spread in first.
+ * `null` IS NOT THAT ABSENCE. The key is DELETED from the inherited copy, so the
+ * child meets the unset state whatever the shell holds; omitting the key from
+ * the object below would not do it, `process.env` being spread in first.
  */
 function runBunTest(cwd: string, args: readonly string[], overrideMs: string | null): Promise<Run> {
   const env = { ...process.env };
@@ -141,14 +128,13 @@ function runBunTest(cwd: string, args: readonly string[], overrideMs: string | n
 }
 
 /**
- * THE FOUR FORMS THE PRELOAD CONTRACT NAMES, spelled the way bunfig.toml's own
- * paragraph spells them, with the counts each form's SELECTION produces.
+ * THE FOUR FORMS THE PRELOAD CONTRACT NAMES, with the counts each form's
+ * SELECTION produces.
  *
  * ONE OF THEM RUNS A SINGLE FILE AND THAT IS THE FORM'S OWN DOING RATHER THAN A
  * WEAKENING -- `bun test <path>` names one file, so under it every file in the
- * run is the first file. It is the one form under which the module-scope
- * degenerate below cannot be told from a correct module, said here rather than
- * left to be discovered; the other three carry that reading.
+ * run is the first file. It is the one form under which a policy reaching only
+ * the first file cannot be told from a correct one; the other three carry that.
  */
 const invocationForms = [
   { name: "the bare form", args: [], passes: 3, fails: 3 },
@@ -158,29 +144,14 @@ const invocationForms = [
 ] as const;
 
 /**
- * WHAT DISCRIMINATES HERE IS THE PRINTED VALUE AND THE COUNTS, not the mere
- * presence of a failure: bun names the deadline it applied, so `500ms` separates
- * OUR override from bun's own 5000ms default and from a module that set nothing
- * -- and requiring EVERY file's over-arm to have died separates a policy that
- * reached all three files from one that reached whichever bun evaluated first.
+ * THE VALUE IS WHAT DISCRIMINATES AND THE TWO NUMBERS ARE CHOSEN FOR IT: bun
+ * names the deadline it applied, so 500 separates OUR override from bun's own
+ * 5000ms default and from a module that set nothing, and 1500 straddles both.
  *
- * THREE DEGENERATES, STATED IN ADVANCE AND RUN, WITH WHAT EACH READ IN THIS
- * FILE. (1) `applySuiteDeadline` with an empty body: the 1500ms sleeps pass
- * under bun's 5000ms default and the fail count collapses -- 2 pass / 6 fail,
- * every arm in this file except the two sweeps. (2) The module reading a
- * MISSPELT variable: 25_000 applies, the sleeps pass, 4 pass / 4 fail, the four
- * arms below -- which is what makes the spelling something every run of this
- * suite exercises rather than something a reader must check. (3) THE ONE THIS
- * SPRINT EARNED: the call moved OUT of the function back to module scope, which
- * is the preload defect wearing different clothes -- the registry evaluates it
- * once, so exactly ONE file gets the deadline and the other two revert. 3 pass /
- * 5 fail, AND THE ONE FORM THAT STAYED GREEN IS THE FILE-PATH FORM, for the
- * reason written above it rather than by luck.
- *
- * WHAT THE `UNDER` HALF DOES NOT RULE OUT, said plainly: at 100ms it passes
- * under any deadline anyone could set, so it witnesses the criterion's other
- * direction and nothing more. The two arms after this loop are the ones that
- * make a PASS impossible for an ambient default to have produced.
+ * WHAT THE `UNDER` HALF DOES NOT RULE OUT: at 100ms it passes under any deadline
+ * anyone could set, so it witnesses the criterion's other direction and nothing
+ * more. The two arms after this loop are the ones that make a PASS impossible
+ * for an ambient default to have produced.
  */
 for (const form of invocationForms) {
   test(`the deadline applies under ${form.name}, and bun names it`, async () => {
@@ -199,23 +170,13 @@ for (const form of invocationForms) {
 }
 
 /**
- * THE FLAG THIS SPRINT SET OUT TO RETIRE, MEASURED AS A LIVE PROPERTY OF THE
- * SUITE RATHER THAN INHERITED BY ANALOGY. The record's `a preload beats
- * --timeout` has already been shown narrower than it read, so the same claim is
- * not extended to this call site without a reading: the child runs with
- * `--timeout 100`, which is the ambient deadline every file that does NOT call
- * the module gets, and a 1500ms test passing under it is impossible without the
- * call.
+ * THE CHEAP DETERMINISTIC READING OF `THE POLICY REACHES EVERY FILE`: three
+ * calling files at 1500ms against a `--timeout 100` child, where straddling
+ * bun's own 5000ms three times would cost 16.5s of every run.
  *
- * IT IS ALSO THE CHEAP DETERMINISTIC READING OF `THE POLICY REACHES EVERY FILE`:
- * three calling files at 1500ms cost 4.5s where straddling bun's own 5000ms
- * three times would cost 16.5s, and under the module-scope degenerate exactly
- * one of the three survives.
- *
- * THE PAIR RIDES IN THE SAME SPAWN, permanent and free: a FOURTH file that does
- * not call the module, sleeping the same 1500ms, must die -- and must die naming
- * 100ms. Without it, `3 pass` is satisfied by a run in which the flag was never
- * applied to anything.
+ * THE PAIR RIDES IN THE SAME SPAWN, permanent and free: without a fourth file
+ * that does NOT call the module, `3 pass` is satisfied by a run in which the
+ * flag was never applied to anything.
  */
 test("a file's own call beats --timeout, and a file without one does not", async () => {
   const tree = throwawayTree((tag) => callingPair(tag, 1500));
@@ -244,24 +205,17 @@ test("d sleeps 1500 WITHOUT the call", async () => {
 });
 
 /**
- * THE ONE ARM WHOSE PASS BUN'S OWN DEFAULT COULD NOT HAVE PRODUCED, and it is
- * the product property rather than a control: raising the limit ABOVE 5000ms in
- * a file that is not the first one is the whole of what this sprint buys. Every
- * other arm here proves the module LOWERS a deadline, which is the cheap
- * direction and which the preload could already do.
+ * THE ONE ARM WHOSE PASS BUN'S OWN DEFAULT COULD NOT HAVE PRODUCED. Every other
+ * arm here proves the module LOWERS a deadline, which is the cheap direction and
+ * which the preload could already do.
  *
- * IT COSTS 5.5 SECONDS OF WALL CLOCK ON EVERY RUN OF THE SUITE AND THAT IS
- * DELIBERATE: with no flag in the child there is nothing to straddle but 5000ms
- * itself, and a pass that says nothing is what this file exists not to ship. It
- * is run ONCE rather than per form, because what a form decides is which tests
- * are SELECTED, and the four arms above already read that.
+ * IT COSTS 5.5 SECONDS OF WALL CLOCK ON EVERY RUN AND THAT IS DELIBERATE: with
+ * no flag in the child there is nothing to straddle but 5000ms itself.
  *
  * WHAT IT DOES NOT RULE OUT, and the arm above is what does: ONE slow test
  * cannot tell a module that reached every file from one that reached only the
- * file bun evaluated first, since that order is the directory's rather than the
- * name's. Making it deterministic here would mean straddling 5000ms in all three
- * files, which is 16.5s on every run of the suite; the `--timeout 100` arm buys
- * the same reading for 4.5s and this one keeps the no-flag path honest.
+ * file bun evaluated first. Buying that here would mean straddling 5000ms in all
+ * three files, 16.5s on every run.
  */
 test("the deadline is raised past bun's own default, with no flag in the run", async () => {
   const tree = throwawayTree((tag) =>
@@ -298,19 +252,13 @@ test("${tag} runs beside it", () => {
 });
 
 /**
- * The values that reach `setDefaultTimeout` as NaN, as zero or as a fraction,
- * and what each is called in the failure this file produces.
+ * The values that reach `setDefaultTimeout` as NaN, as zero or as a fraction.
  *
- * EVERY ONE OF THEM WAS MEASURED AGAINST A 6000ms SLEEP -- one bun's own 5000ms
- * default fails -- BEFORE THE REFUSAL EXISTED, and that is why this is not
- * defensive coding: `""`, `"abc"`, `"0"` and `"-5"` each ran 1 pass at exit 0,
- * because a NaN or non-positive default DISABLES THE DEADLINE ENTIRELY rather
- * than falling back. `Number("") === 0`, so a set-but-empty variable switches
- * every deadline in this suite off while the run reports green.
- *
- * `"1.5"` IS THE ONE THE RECORD DID NOT ANTICIPATE and it fails the other way,
- * truncating to 1ms so that EVERYTHING dies. One rule -- a positive integer --
- * covers both directions, which is why the arms below are one loop and not two.
+ * NOT DEFENSIVE CODING: a NaN or non-positive default DISABLES THE DEADLINE
+ * ENTIRELY rather than falling back, and `Number("") === 0`, so a set-but-empty
+ * variable switches every deadline in this suite off while the run reports
+ * green. A fraction fails the other way, truncating to 1ms so EVERYTHING dies --
+ * one rule, a positive integer, covers both, which is why this is one loop.
  */
 const malformedOverrides = [
   { label: "the empty string", value: "" },
@@ -322,16 +270,10 @@ const malformedOverrides = [
 ] as const;
 
 /**
- * THE TREE THESE ARMS NEVER GET TO RUN, and its shape is the assertion's whole
- * point: three files whose tests sleep 6000ms, so that a module which ACCEPTED
- * the malformed value would report three passes at exit 0 -- three tests that
- * bun's own default could not have passed, green, with the deadline switched
- * off. That is the silent green the refusal exists to make impossible, and it is
- * what the degenerate below actually printed.
- *
- * DEGENERATE, STATED IN ADVANCE AND RUN: the validation deleted, so the module
- * takes `Number(raw)` as it comes. Every arm below reddens -- exit 0 where 1 is
- * required, no message, and ` 3 pass` where nothing should have run.
+ * THE TREE THESE ARMS NEVER GET TO RUN, and 6000ms is the whole point: a module
+ * that ACCEPTED the malformed value reports three passes at exit 0 -- three
+ * tests bun's own 5000ms default could not have passed, green, with the deadline
+ * switched off. Shorten the sleep and the refusal is asserted against nothing.
  */
 function refusalTree(): { readonly root: string; dispose(): void } {
   return throwawayTree(
@@ -371,8 +313,7 @@ for (const malformed of malformedOverrides) {
 
 /**
  * THE PAIR, PERMANENT: without it every arm above is satisfied by a module that
- * refuses EVERYTHING, which would fail the suite it is meant to protect and
- * would look identical in this file.
+ * refuses EVERYTHING, which would fail the suite it is meant to protect.
  */
 test("a well-formed override runs the suite normally", async () => {
   const tree = throwawayTree((tag) => callingPair(tag, 100));
@@ -388,68 +329,36 @@ test("a well-formed override runs the suite normally", async () => {
 });
 
 /**
- * THE ARM WITHOUT WHICH THE PIN BELOW PINS NOTHING, AND THE HOLE IT CLOSES WAS
- * MEASURED RATHER THAN FEARED: with the module's no-override branch changed from
- * `suiteDeadlineMs` to a literal `10_000` and the constant left exported at
- * 25_000, the whole suite read 809 pass / 0 fail and all five Definition-of-Done
- * checks exited 0. EVERY OTHER ARM IN THIS FILE PINS THE OVERRIDE, deliberately
- * and for the reason written at `runBunTest`, so THE NO-OVERRIDE BRANCH IS
- * EXECUTED BY NOTHING -- and the pin below reads the EXPORTED constant, which the
- * degenerate does not touch. Under it the property the pin defends is actually
- * violated: an ungated test runs at 10_000 while the handshake deadline it can
- * reach is 20_000.
+ * THE ARM WITHOUT WHICH THE PIN BELOW PINS NOTHING. Every other arm in this file
+ * PINS THE OVERRIDE, for the reason written at `runBunTest`, so the no-override
+ * branch is executed by nothing -- and the pin below reads the EXPORTED
+ * constant, which a branch handing bun some other literal does not touch.
  *
  * SO THE SUBJECT HERE IS THE ARGUMENT `setDefaultTimeout` RECEIVES, not a
  * constant beside it. Nothing in JavaScript short of intercepting the callee can
  * see that: a returned value, a recorded copy, an exported resolution are all
- * defeated by the same one-token edit, because each of them is a SECOND
- * expression that the edit leaves alone.
+ * defeated by the same one-token edit, each being a SECOND expression that the
+ * edit leaves alone. The spy CALLS THROUGH, so this reads the argument without
+ * disabling the effect.
  *
- * THE INTERCEPTION IS `spyOn` ON THE `bun:test` NAMESPACE, AND THAT IT REACHES
- * ANOTHER MODULE'S ALREADY-BOUND IMPORT IS MEASURED, not assumed from ESM's live
- * bindings: bun 1.3.13, a module importing `setDefaultTimeout` by name and called
- * after the spy is installed, `spy.mock.calls` reads `[[25000]]`. IT ALSO CALLS
- * THROUGH -- the same tree passes a 6000ms test, one bun's own 5000ms default
- * would fail -- so this arm reads the argument WITHOUT disabling the effect.
+ * THE COUNTS ACCUMULATE ACROSS FILES AND THE ASSERTION IS WRITTEN FOR IT: bun
+ * hands back THE SAME SPY on a second `spyOn` of a property already spied, so
+ * the file bun evaluates last sees three calls and the first sees one, and
+ * asserting `[[suiteDeadlineMs]]` would redden on two of three in a correct
+ * tree. What is asserted instead is that NO recorded call carried anything else.
  *
- * THE COUNTS ACCUMULATE ACROSS FILES AND THE ASSERTION IS WRITTEN FOR IT.
- * MEASURED in the three-file tree: bun hands back THE SAME SPY on a second
- * `spyOn` of a property already spied, so the file bun evaluates last sees three
- * calls and the first sees one. Asserting `[[suiteDeadlineMs]]` would therefore
- * redden on two of the three files in a correct tree. What is asserted instead is
- * that NO recorded call carried anything else, with the non-empty pair beside it.
+ * AND THE NON-EMPTY PAIR IS WHAT MAKES THE INSTRUMENT SAFE RATHER THAN TIDY: if
+ * the interception ever stops working, `args` is EMPTY and an empty offender
+ * list passes.
  *
- * AND THE PAIR IS WHAT MAKES THE INSTRUMENT SAFE RATHER THAN TIDY: if the
- * interception ever stops working, `args` is EMPTY, and an empty offender list
- * would pass. It reddens on the emptiness instead, so this arm fails in both
- * directions -- a wrong value and a spy that saw nothing.
- *
- * WHAT `NO RECORDED CALL CARRIED ANYTHING ELSE` DOES NOT SAY IS *WHEN*, AND THE
- * TWO HALVES WERE SEPARATED BY MEASUREMENT RATHER THAN BY ARGUMENT. A stray
- * SECOND call carrying a different value is already caught wherever it lands:
- * with `setDefaultTimeout(5000)` added to each child AFTER its registration this
- * arm read 0 pass / 3 fail, the offender list printing 5000 in every file. What
- * was NOT caught is the same stray carrying the RIGHT value -- or, the shape
- * that matters, THE ONE CALL MOVED BELOW THE REGISTRATION: every recorded value
- * is still the constant, so the filter is satisfied while the test registered
- * above it captured bun's own 5000ms. MEASURED: 1 pass / 0 fail, green. It is
- * the sweep's own hole one layer down, and it is why the two assertions below
- * are about ORDER rather than about values.
- *
- * THE ORDER IS READABLE BECAUSE bun INTERLEAVES, MEASURED IN THIS TREE RATHER
- * THAN ASSUMED FROM THE ACCUMULATION NOTE ABOVE: a file is evaluated, ITS TESTS
- * RUN, and only then is the next file evaluated -- with the stray above placed
- * after each registration the three files read one, two and three strays rather
- * than three each. So at the moment a file's body runs, THE LAST RECORDED CALL
- * IS THAT FILE'S OWN, which is what makes a per-file reading possible off a spy
- * the whole run shares. The day bun evaluates every file before running
- * anything, the count assertion reddens rather than going quiet.
- *
- * AND THE LAST-CALL ASSERTION IS IMPLIED BY THE FILTER ON TODAY'S ASSERTION SET,
- * said plainly rather than sold as new coverage: what it adds is a NAME for the
- * property a deadline actually has -- the value IN FORCE when this file's tests
- * were registered -- so a later arm that legitimately admits a second value
- * cannot quietly drop it. THE COUNT ASSERTION IS THE ONE THAT MOVED THE READING.
+ * WHAT A FILTER OVER VALUES CANNOT SAY IS *WHEN*, WHICH IS WHY THE LAST TWO
+ * ASSERTIONS ARE ABOUT ORDER: THE ONE CALL MOVED BELOW THE REGISTRATION leaves
+ * every recorded value the constant while the test registered above it captured
+ * bun's own 5000ms. That reading is possible off a shared spy only because bun
+ * INTERLEAVES -- a file is evaluated, ITS TESTS RUN, and only then is the next
+ * evaluated -- so at the moment a file's body runs the last recorded call is
+ * that file's own. The day that stops being true, the count assertion reddens
+ * rather than going quiet.
  */
 test("with no override in the environment, bun is handed the exported constant", async () => {
   const tree = throwawayTree(
@@ -487,28 +396,21 @@ const callsWhenRegistered = spy.mock.calls.length;
 });
 
 /**
- * WHEN THE OVERRIDE IS READ, WHICH IS A SECOND QUESTION FROM WHAT IT IS READ AS
- * -- AND NO OTHER ARM IN THIS FILE CAN ASK IT. Every one of them pins the
- * variable in the CHILD'S ENVIRONMENT before that process starts, so an
- * import-time read and a call-time read produce the same reading everywhere
- * else here; the seam is exercised constantly and its TIMING by nothing.
+ * NO OTHER ARM IN THIS FILE CAN ASK THIS. Every one of them pins the variable in
+ * the CHILD'S ENVIRONMENT before that process starts, so an import-time read and
+ * a call-time read produce the same reading everywhere else here; the seam is
+ * exercised constantly and its TIMING by nothing.
  *
- * THE MUTATION IS REACHABLE ONLY BECAUSE ESM HOISTS: the assignment below is
- * written after the imports and RUNS after them too, so the module has already
- * been evaluated -- and evaluated ONCE for the whole child, since the registry
- * is per process. That is what makes `300 in all three files` the discriminating
- * reading rather than an accident of which file bun reached first.
- *
- * DEGENERATE, STATED IN ADVANCE AND RUN, AND IT IS THE FIX A TIDIER WOULD MAKE:
- * the environment read moved INSIDE `applySuiteDeadline`, which looks like
- * localising a constant and is a behaviour change. This arm reads 777 in all
- * three files and reddens; before it existed the same module left every arm of
- * this file green, so the flip was undetectable by anything the suite ran.
+ * THE MUTATION IS REACHABLE ONLY BECAUSE ESM HOISTS: the assignment below runs
+ * after the imports, so the module has already been evaluated -- and evaluated
+ * ONCE for the whole child, since the registry is per process. That is what
+ * makes `300 in all three files` discriminating rather than an accident of which
+ * file bun reached first.
  *
  * IT ALSO GUARDS THE REFUSAL RATHER THAN ONLY THE VALUE: the malformed-value
- * check in that module runs at module scope, so a per-call read would accept
- * anything assigned afterwards -- the silent-disable class arriving by the one
- * route its own subtask cannot see.
+ * check runs at that module's scope, so a per-call read would accept anything
+ * assigned afterwards -- the silent-disable class by the one route its own
+ * subtask cannot see.
  */
 test("the override is read once at import, not again at every call", async () => {
   const frozenMs = 300;
@@ -542,25 +444,15 @@ test("${tag} is handed the value the import saw", () => {
 });
 
 /**
- * THE PIN, AND IT IS A RELATION BETWEEN TWO IMPORTED CONSTANTS RATHER THAN AN
- * EQUALITY AGAINST A LITERAL. `expect(suiteDeadlineMs).toBe(25_000)` would be
- * green against ANY tree, including one where a helper's deadline had since been
- * raised past it -- it would pin the typing rather than the property. The
- * alternative it also refuses is asserting a DURATION, which is asserting a
- * property of the machine, the exact defect this whole item removes.
+ * A RELATION BETWEEN TWO IMPORTED CONSTANTS RATHER THAN AN EQUALITY AGAINST A
+ * LITERAL. `expect(suiteDeadlineMs).toBe(25_000)` would be green against ANY
+ * tree, including one where a helper's deadline had since been raised past it --
+ * it would pin the typing rather than the property. The alternative it also
+ * refuses is asserting a DURATION, which is asserting a property of the machine.
  *
  * WHAT IT DEFENDS: under bun's 5000ms default the quickstart test dies before
  * `shakeHands` can speak, so a broken documented command reports `this test
- * timed out` instead of naming the command that never answered. Which deadline
- * arrives first is what decides whether a failure names its cause.
- *
- * AND WHAT MAKES THE CONSTANT IT READS THE RIGHT SUBJECT IS THE ARM ABOVE, which
- * is the half this file shipped without: on its own, this compares two numbers
- * that a suite running at a THIRD one would leave green.
- *
- * DEGENERATE, STATED IN ADVANCE AND RUN: `handshakeTimeoutMs` raised to 30_000
- * with nothing else touched -- this arm reddens, and the equality form would not
- * have.
+ * timed out` instead of naming the command that never answered.
  */
 test("the suite's deadline outlives the largest helper deadline an ungated test can reach", () => {
   expect(suiteDeadlineMs).toBeGreaterThan(handshakeTimeoutMs);
@@ -568,27 +460,17 @@ test("the suite's deadline outlives the largest helper deadline an ungated test 
 
 /**
  * EVERY NUMERAL OF FOUR DIGITS OR MORE WRITTEN IN A HELPER -- NOT `every deadline
- * a helper holds`, which is what this said and is a claim the matcher cannot
- * make. It is read as text so that adding one is what moves the arm below rather
- * than remembering to, and text is exactly where the limits come from.
+ * a helper holds`, which is a claim the matcher cannot make.
  *
- * IT IS NOTATION-BOUND IN ONE DIRECTION AND OVER-WIDE IN THE OTHER, BOTH
- * MEASURED against `bun test test/suite-deadline.test.ts -t "largest deadline"`
- * with test/helpers/lsp.ts as the subject:
+ * IT IS NOTATION-BOUND IN ONE DIRECTION AND OVER-WIDE IN THE OTHER. A deadline
+ * written `26 * 1000`, read from a constant in another module, or spelled in
+ * seconds is invisible here whatever its size; and a 4+-digit numeral in a
+ * helper's PROSE reddens the arm below on a tree whose deadlines never moved.
  *
- *   - a helper deadline written `26_000` is caught, 0 pass / 1 fail;
- *   - THE SAME DEADLINE WRITTEN `26 * 1000` IS NOT, 1 pass / 0 fail. A deadline
- *     assembled from an expression, read from a constant in another module, or
- *     spelled in seconds is invisible here whatever its size;
- *   - a 4+-digit numeral in a helper's PROSE reddens it, 0 pass / 1 fail, on a
- *     tree whose deadlines never moved -- and this project writes measured
- *     numbers into comments as a matter of course.
- *
- * BOTH ARE KEPT RATHER THAN ENGINEERED AWAY, and the second is the reason: the
- * false positive fails LOUD and names the file, where narrowing the scan to
- * non-comment text would buy silence in exchange for a new heuristic with
- * blind spots nobody has measured. A rot detector, not a barrier -- the same
- * ruling `.oxlintrc.json` carries for its own guards.
+ * BOTH ARE KEPT RATHER THAN ENGINEERED AWAY, and the false positive is the
+ * reason: it fails LOUD and names the file, where narrowing the scan to
+ * non-comment text buys silence in exchange for a heuristic nobody has measured.
+ * A rot detector, not a barrier -- the ruling `.oxlintrc.json` carries too.
  */
 function numeralsIn(source: string): readonly number[] {
   return [...source.matchAll(/(?<![\w.])(\d[\d_]{3,})(?![\w.])/g)].map((match) =>
@@ -608,36 +490,18 @@ const helperDeadlines = readdirSync(join(repoRoot, "test", "helpers"))
 /**
  * THE PAIR THE PIN CANNOT DO WITHOUT: `25_000 > 20_000` is true of a tree where
  * nothing reaches that helper at all, and true of a tree where a BIGGER helper
- * deadline was added last week. This arm is what makes the constant above the
- * right subject -- it reads every 4+-digit numeral the helpers write and requires
- * the pinned floor to be the largest. THE NAME SAYS `NUMBER` AND NOT `DEADLINE`
- * BECAUSE THE INSTRUMENT READS NUMERALS: the two directions that costs are
- * measured where the scan is built, and a deadline written as an expression walks
- * past this arm.
+ * deadline was added last week. THE NAME SAYS `NUMBER` AND NOT `DEADLINE`
+ * BECAUSE THE INSTRUMENT READS NUMERALS, with the two costs of that named where
+ * the scan is built.
  *
- * ONE EXCEPTION, NAMED WITH ITS REASON RATHER THAN FILTERED SILENTLY:
- * test/helpers/fake-editor.ts sets 30_000, and it is excluded because it is not
- * a deadline a test carrying no explicit one can reach -- the only tests that
- * start that rig, the two in test/editor-death.test.ts, set 20_000 for
- * THEMSELVES and so fire first. It is also a leak bound on a spawned child
- * rather than a diagnostic, so arriving second costs a reader nothing. THE DAY
- * SOMETHING ELSE REACHES IT, this exception is what has to be argued again.
- *
- * AND THAT WHOLE ARGUMENT RESTS ON A NUMBER NOTHING PINNED, WHICH IS THE ONE
- * ARRIVING SECOND. MEASURED: the rig's self-exit changed from 30_000 to 3_000
- * read 17 pass / 0 fail -- the exclusion still standing, its premise inverted,
- * and the timer now firing FIRST and killing the two rig tests with a message
- * about a child process rather than about the server they are watching. It is
- * pinned two arms below, where the root enumeration this file needs for it
- * exists.
- *
- * `deadline.ts` IS EXCLUDED TOO, and for a different reason: it is the file that
- * DECLARES the number under test, so including it would compare the constant
- * with itself.
- *
- * DEGENERATE, STATED IN ADVANCE AND RUN: a new helper deadline of 26_000 added
- * to test/helpers/lsp.ts -- this arm reddens naming the file, and the pin above
- * stays green, which is exactly the split the two arms exist for.
+ * TWO EXCLUSIONS, EACH WITH ITS REASON RATHER THAN FILTERED SILENTLY.
+ * test/helpers/fake-editor.ts, because its timer is not a deadline a test
+ * carrying no explicit one can reach -- the only tests that start that rig set
+ * one for themselves and so fire first, and it is a leak bound on a spawned
+ * child rather than a diagnostic. THE DAY SOMETHING ELSE REACHES IT, that has to
+ * be argued again, and the number it turns on has an arm of its own below.
+ * `deadline.ts`, because it DECLARES the number under test, so including it
+ * would compare the constant with itself.
  */
 test("the pinned floor is the largest number any helper writes", () => {
   const reachable = helperDeadlines.filter((found) => found.file !== "fake-editor.ts");
@@ -653,35 +517,22 @@ test("the pinned floor is the largest number any helper writes", () => {
 });
 
 /**
- * THE NAMING FORMS bun ACTUALLY RUNS, MEASURED ON 1.3.13 RATHER THAN READ OFF A
- * DOCUMENT: in a throwaway tree `a.test.ts`, `b.spec.ts`, `c_test.ts`,
- * `d_spec.ts` and `e.test.js` each ran; `f.testx.ts` did not. The sweep's
- * subject is therefore wider than `.test.ts`, which is all this tree happens to
- * hold today -- a file named any of the other four ways would be RUN by the
- * suite and, under the old filter, swept by nothing.
+ * THE NAMING FORMS bun ACTUALLY RUNS, which is WIDER than `.test.ts` -- all this
+ * tree happens to hold today. A file named any of the other four ways would be
+ * RUN by the suite, so narrowing this to what the tree has sweeps none of them.
  */
 const testFileNames = /(?:\.|_)(?:test|spec)\.[cm]?[jt]sx?$/;
 
 /**
- * EVERY TEST FILE THE ROOT `bun test` REACHES, WALKED RATHER THAN LISTED, AND
- * THE RECURSION IS THE WHOLE POINT: bun DISCOVERS TEST FILES RECURSIVELY --
- * MEASURED in a throwaway tree, where a probe in `sub/deep/` ran beside the one
- * at the root. Both enumerations here used to be a single `readdirSync` of one
- * directory, so a `.test.ts` under test/fixtures/, under scripts/, or under a
- * package's src/ WAS RUN BY THE SUITE at bun's 5000ms and was invisible to both
- * of them -- a correct-but-slow test dropped there is killed reporting the
- * machine, which is the class this file exists to remove.
+ * EVERY TEST FILE THE ROOT `bun test` REACHES, WALKED RATHER THAN LISTED,
+ * BECAUSE BUN DISCOVERS RECURSIVELY: a `.test.ts` under test/fixtures/, under
+ * scripts/, or under a package's src/ is RUN by the suite, and a single
+ * `readdirSync` of one directory saw none of them.
  *
- * THE PRUNE IS bun'S OWN, MEASURED IN THE SAME TREE rather than chosen: probes
- * under `node_modules/` and under a DOT-DIRECTORY did not run, and probes under
- * `dist/` and under `__ignored/` DID -- gitignored is not a thing bun's walk
- * knows. So the walk skips exactly what bun skips, and a scratch test file in an
- * ignored directory is swept because it is also RUN.
- *
- * WHAT THE PRUNE COSTS, NAMED WHERE IT HAPPENS BECAUSE IT IS THE SAME CLASS THE
- * ARMS BELOW GUARD: this is a filter, and a filter that stops matching stops
- * finding. It is one of the two enumerations the cross-check arm pairs against a
- * second mechanism.
+ * THE PRUNE IS bun'S OWN RATHER THAN CHOSEN: probes under `node_modules/` and
+ * under a DOT-DIRECTORY did not run, probes under `dist/` and `__ignored/` DID.
+ * GITIGNORED IS NOT A THING BUN'S WALK KNOWS, so a scratch test file in an
+ * ignored directory is swept here because it is also run there.
  */
 function discoverTestFiles(dir: string): readonly string[] {
   return readdirSync(dir, { withFileTypes: true })
@@ -701,32 +552,23 @@ function discoverTestFiles(dir: string): readonly string[] {
 const everyTestFile = discoverTestFiles(repoRoot);
 
 /**
- * THE PAIR NEITHER SWEEP CAN SUPPLY FOR ITSELF, AND THE HOLE IT CLOSES WAS
- * MEASURED: with the walk's filter narrowed to ONE filename, the two sweeps read
- * 17 pass / 0 fail -- one file of the tree enumerated, and success reported --
- * and a real escapee added on top of that, a root test file stripped of its
- * import and its call, left the whole Definition of Done green. `expect(list).
- * toEqual([])` beside `expect(subjects.length).toBeGreaterThan(0)` cannot see it:
- * ONE subject is non-empty, so the pair is satisfied by an enumeration that found
- * almost nothing.
+ * THE PAIR NEITHER SWEEP CAN SUPPLY FOR ITSELF: a non-empty subject list is
+ * satisfied by an enumeration that found ONE file, so `toEqual([])` beside
+ * `length > 0` cannot see a walk whose filter quietly stopped matching.
  *
- * A SECOND MECHANISM AND NOT A SECOND READING OF THE FIRST, which is what the
- * failed sentence here used to claim -- `the count is asserted against the
- * directory listing that produced it` is `list.length === list.length`, and no
- * edit to the filter can make that false. `globSync` walks by PATTERN where
- * `discoverTestFiles` walks by hand, and the two prunes are spelled separately
- * BELOW AND ABOVE ON PURPOSE: one edit cannot narrow both.
+ * A SECOND MECHANISM AND NOT A SECOND READING OF THE FIRST -- `the count is
+ * asserted against the listing that produced it` is `list.length ===
+ * list.length`, which no edit to the filter can falsify. `globSync` walks by
+ * PATTERN where `discoverTestFiles` walks by hand, and the two prunes are
+ * spelled separately BELOW AND ABOVE ON PURPOSE: one edit cannot narrow both.
  *
  * `node:fs` AND NOT `Bun.Glob`: `.oxlintrc.json` bans the `Bun` global with no
- * exemption anywhere, deliberately, and a test file is not where that is spent.
- * `globSync` is the same enumeration scripts/workspaces.ts reads members with.
+ * exemption anywhere, and a test file is not where that is spent.
  *
- * WHAT IT STILL CANNOT SEE, NAMED BECAUSE THE PATTERN IS NARROWER THAN THE WALK:
- * the four other naming forms bun runs. `**\/*.test.ts` is every test file in
- * this tree today, so the equality binds today's tree exactly; the day a
- * `*.spec.ts` lands, the walk finds it and this arm does not -- it reddens on the
- * disagreement rather than passing, which is the direction that costs nothing to
- * be wrong in.
+ * WHAT IT STILL CANNOT SEE, THE PATTERN BEING NARROWER THAN THE WALK: the four
+ * other naming forms bun runs. The day a `*.spec.ts` lands, the walk finds it
+ * and this arm does not -- it reddens on the disagreement rather than passing,
+ * which is the direction that costs nothing to be wrong in.
  */
 test("the walk both sweeps read agrees with a second enumeration", () => {
   const globbed = globSync("**/*.test.ts", { cwd: repoRoot })
@@ -743,12 +585,10 @@ test("the walk both sweeps read agrees with a second enumeration", () => {
 });
 
 /**
- * The partition, and it is BY PATH rather than by two separate walks: a file is
- * a member's if it lies under a declared member directory, and the root suite is
- * everything else. `declaredMembers` AND NOT A GLOB, so a package added under
- * packages/ moves to the right side with no edit here -- and NOT
- * `handlerMembers`, because the question is `which suites are outside the root
- * sweep`, which is true of every member whatever it declares.
+ * The partition, BY PATH rather than by two separate walks. `declaredMembers` AND
+ * NOT A GLOB, so a package added under packages/ moves to the right side with no
+ * edit here -- and NOT `handlerMembers`, because the question is `which suites
+ * are outside the root sweep`, true of every member whatever it declares.
  */
 const memberDirectories = declaredMembers(repoRoot).map(
   (member) => `${relative(repoRoot, member)}/`,
@@ -762,108 +602,54 @@ function insideAMember(path: string): boolean {
 const rootTestFiles = everyTestFile.filter((path) => !insideAMember(path));
 
 /**
- * THE SWEEP THAT CLOSES THE HOLE THE PER-FILE CALL OPENS, and it is the reason
- * a per-file mechanism is acceptable at all: a new test file that forgets the
- * call runs at bun's 5000ms with nothing anywhere saying so. MEASURED that the
- * hole is silent -- three calling files plus one that does not call read 3 pass
- * / 1 fail, the fourth dying at 5000ms while nothing else moved.
- *
  * TEXT AND NOT BEHAVIOUR, WITH THE LIMITS NAMED: bun exposes no way to read the
  * deadline currently in force, and the honest behavioural instrument -- spawning
  * `bun test <file>` once per file at a tiny override -- costs a spawn per file
  * on every run. So this reads source, and what it CANNOT see is a file that
- * imports the function under another name, or calls it inside a function body
- * where it would run too late. A rot detector, not a barrier, which is the same
- * ruling `.oxlintrc.json` carries for its own guards.
+ * imports the function under another name. A rot detector, not a barrier, which
+ * is the same ruling `.oxlintrc.json` carries for its own guards.
  *
- * THE THIRD LIMIT USED TO BE THE ENUMERATION ITSELF AND IS NOT ANY MORE, said
- * here because the two above read as a complete list and were not one: this
- * walked one directory while bun walks the tree, so a file in a subdirectory was
- * run by the suite and named by nobody. It is now the same walk bun does, with
- * bun's own prune, both measured at `discoverTestFiles`.
+ * THE IMPORT NEEDLE CARRIES NO LEADING `./`: a swept file one directory down
+ * spells the same import `../helpers/deadline.ts`, and a needle anchored to the
+ * root suite's depth would quietly excuse it.
  *
- * THE IMPORT NEEDLE CARRIES NO LEADING `./` FOR THE SAME REASON: a swept file
- * one directory down spells the same import `../helpers/deadline.ts`, and a
- * needle anchored to the root suite's depth would have quietly excused it.
+ * THE CALL IS MATCHED AS A WHOLE LINE, WHICH THE SUBSTRING FORM WAS NOT:
+ * `// applySuiteDeadline();` satisfies a substring search perfectly, and so does
+ * a call inside a function body, where it would run too late. WHAT THE ANCHOR
+ * COSTS IS NAMED INSTEAD OF DENIED: a file that WRAPPED the call across lines
+ * would be reported as missing it -- the loud direction.
  *
- * THE CALL IS MATCHED AS A WHOLE LINE AND THE SUBSTRING FORM WAS A HOLE, MEASURED
- * BEFORE IT WAS CLOSED: commenting the call out in one root test file while
- * leaving the import in place read 17 pass / 0 fail here and exit 0 on all five
- * checks, with that file silently back at bun's 5000ms. Neither disclosed blind
- * spot covered it -- the function was imported under its own name and called at
- * top level, in the eyes of a substring search. The anchor also refuses an
- * INDENTED call, which narrows the second blind spot above rather than widening
- * anything: a call inside a function body no longer satisfies this sweep.
- *
- * BUT COLUMN 0 IS A CLAIM ABOUT TYPOGRAPHY AND THE PROPERTY IS ABOUT ORDER, AND
- * THE GAP BETWEEN THE TWO WAS MEASURED: the call moved from the top of
- * test/hover.test.ts to the BOTTOM, still at column 0 and still on its own line,
- * left every arm in this file GREEN -- while every test that file registered
- * above it carried bun's own 5000ms. A deadline set after the registrations reaches
- * nothing, so the sweep now asks where the call is RELATIVE TO the first
- * `test(` or `describe(` in the file rather than where it is on its line.
- *
- * THE COLUMN-0 ANCHOR IS KEPT UNDER THE NEW RULE RATHER THAN REPLACED BY IT, AND
- * THE COST OF DROPPING IT IS WHY: without it `// applySuiteDeadline();` matches
- * again, which is the hole measured two paragraphs up, and so does a call inside
- * a function body. Both are text that precedes the first registration perfectly
- * well. WHAT THE ANCHOR STILL COSTS IS NAMED INSTEAD OF DENIED: a file that
- * WRAPPED the call across lines would be reported as missing it. No file does,
- * the formatter keeps it one line, and the failure names the file -- the loud
- * direction, which is the same ruling the numeral scan above is kept under.
- *
- * `test(` AND `describe(` MATCH ONLY AS CALLS, WHICH COST A READING TO GET RIGHT:
- * a needle allowing a following `.` matched THE ENGLISH WORD ENDING A SENTENCE --
- * `the margin this value buys is five times what the sentence used to describe.`
- * in test/protocol.test.ts and `nowhere in an ASCII test.` in test/sync.test.ts
- * -- which in a codebase whose headers are this long is a spurious red waiting
- * for the day someone writes it ABOVE the call. The lookbehind is what keeps
- * `regex.test(source)`, which this very file uses, from counting as one.
+ * AND COLUMN 0 IS A CLAIM ABOUT TYPOGRAPHY WHERE THE PROPERTY IS ABOUT ORDER: a
+ * call at the BOTTOM of a file is still on its own line at column 0, and the
+ * deadline it sets reaches none of the tests registered above it. So the sweep
+ * asks where the call is RELATIVE TO the first registration, with the anchor
+ * KEPT under the new rule rather than replaced by it.
  *
  * A FILE WITH NO REGISTRATION AT ALL IS AN OFFENDER AND NOT A PASS, deliberately:
- * an ordering rule whose anchor is missing decides nothing, and a rule that
- * decides nothing while reporting success is the disarmed-control shape this
- * sprint has already shipped three times. Every root test file has one today --
- * enumerated, not assumed -- and in a large minority of them it is INDENTED,
+ * an ordering rule whose anchor is missing decides nothing. The registration
+ * needle carries no column anchor of its own, where the call's needle does,
  * because `describe(runtime.name, ...)` inside a loop over the two runtimes is
- * this suite's commonest shape. That is why the registration needle carries no
- * column anchor of its own, where the call's needle does.
+ * this suite's commonest shape and is INDENTED.
  *
  * THE LEFTOVER IMPORT IS FLAGGED BY NOTHING AND THAT IS LEFT STANDING: oxlint's
- * rule set here is a deno-compatibility guard and carries no unused-binding rule,
- * so the only thing that reddens is this arm. It is enough, because the import
- * was never the subject -- the call is.
+ * rule set here is a deno-compatibility guard and carries no unused-binding
+ * rule. The import was never the subject -- the call is.
  *
- * THE MATCHER HAS ITS OWN PAIR, one test below, for the reason `spawnsIn` has
- * one: a needle that stopped matching anything and a tree with no offenders are
- * the same green.
+ * AND THE ONE FILE THIS CANNOT READ IS THIS ONE, NAMED RATHER THAN PATCHED: the
+ * child sources generated here put the call at column 0 INSIDE TEMPLATE
+ * LITERALS, above a generated `test(` in the same template, and the module path
+ * appears in the import needle's shape too -- so both halves and the ordering
+ * rule match text belonging to a child suite that does not exist yet. With the
+ * call at the top of this file commented out the sweep stays GREEN. IT IS
+ * TOLERABLE ONLY BECAUSE THIS FILE ANNOUNCES ITSELF LOUDLY: the same run fails
+ * on `the deadline is raised past bun's own default`, which waits 5.5s on a
+ * child and cannot survive bun's own default. A test-only heuristic for `not
+ * inside a template literal` would buy the reading back at the price of a
+ * matcher nobody has measured.
  *
- * AND THE ONE FILE IT CANNOT READ IS THIS ONE, MEASURED AFTER THE ANCHOR LANDED
- * AND NAMED RATHER THAN PATCHED: the child sources this file generates put the
- * call at column 0 INSIDE TEMPLATE LITERALS, and the module path appears in the
- * import needle's shape too, so both halves match text that is not this file's
- * own call. With line 19 commented out the sweep stays green. IT IS TOLERABLE
- * ONLY BECAUSE THIS FILE ANNOUNCES ITSELF LOUDLY: the same run fails on `the
- * deadline is raised past bun's own default`, dying at 5002ms, because
- * that arm waits 5.5s on a child and cannot survive bun's own default. The one
- * file whose call the sweep cannot verify is the one file that fails without it.
- * A test-only heuristic for `not inside a template literal` would buy the reading
- * back at the price of a matcher nobody has measured.
- *
- * THE ORDERING RULE DOES NOT REPAIR THAT AND IS RE-MEASURED RATHER THAN ASSUMED
- * TO INHERIT IT: the first generated call sits at column 0 in `callingPair`'s
- * template ABOVE the first generated `test(` in the same template, so with line
- * 19 commented out the sweep still reads this file as compliant -- green, on
- * text belonging to a child suite that does not exist yet. Its shape is
- * unchanged and so is the reason it is accepted; only the rule that fails to
- * see it is new.
- *
- * THE PAIR HERE IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS, said plainly
- * because the sentence that stood here claimed more: an offender list that is
- * empty and a sweep that opened nothing are the same green without it, and a
- * sweep over ONE file satisfies it just as well as a sweep over all of them.
- * WHAT MAKES THE SUBJECT LIST TRUSTWORTHY IS A DIFFERENT ARM -- the cross-check
- * above, where this enumeration must agree with one built by another mechanism.
+ * THE PAIR BELOW IS `THE LIST IS NON-EMPTY` AND THAT IS ALL IT IS: a sweep over
+ * ONE file satisfies it as well as a sweep over all of them, and what makes the
+ * subject list trustworthy is the cross-check arm above.
  */
 const callsTheModule = /^applySuiteDeadline\(\);$/m;
 const registersATest = /(?<![\w$.])(?:test|describe)\s*\(/;
@@ -885,18 +671,9 @@ test("every root test file sets the suite's deadline before it registers a test"
 });
 
 /**
- * THE SHAPES THAT DECIDE WHETHER THE SWEEP ABOVE IS A SWEEP: the call it accepts,
- * and the four that used to pass it -- or would pass a looser needle -- while the
- * file ran at bun's own default. Written as a pair rather than as a comment
- * because `no file is missing the call` is what a needle matching everything also
- * says, and `no file calls late` is what a needle finding no registration says.
- *
- * THE FOURTH IS THIS ROUND'S, AND ITS SUBJECT IS A FILE THAT DOES EVERYTHING THE
- * OLD RULE ASKED: imports the module, calls it at column 0, on its own line, at
- * top level -- below its first `test(`, where the deadline it sets reaches no
- * test the file registered. THE FIFTH IS THE ANCHOR'S OWN VACUITY, which no
- * degenerate in the tree could have shown, since every root test file has a
- * registration to anchor against.
+ * WRITTEN AS A PAIR RATHER THAN AS A COMMENT, because `no file is missing the
+ * call` is what a needle matching everything also says, and `no file calls late`
+ * is what a needle finding no registration says.
  */
 test("the sweep's needle takes the call, and refuses one that is commented out, buried or late", () => {
   const importLine = 'import { applySuiteDeadline } from "./helpers/deadline.ts";\n\n';
@@ -917,8 +694,9 @@ test("the sweep's needle takes the call, and refuses one that is commented out, 
   ).toBe(false);
   expect(callPrecedesEveryRegistration(`${importLine}applySuiteDeadline();\n`)).toBe(false);
   // AND THE ENGLISH THAT IS NOT A REGISTRATION, both halves of it: a sentence
-  // ending in the word, and the method call this file itself makes. Either one
-  // counted as a registration would report a compliant file as late.
+  // ending in the word, which a codebase with headers this long writes often,
+  // and the `regex.test(source)` this very file makes. Either one counted as a
+  // registration reports a compliant file as late.
   expect(
     callPrecedesEveryRegistration(
       `${importLine}// a claim about this test.\nconst hit = /x/.test(source);\n\napplySuiteDeadline();\n\ndescribe("d", () => {});\n`,
@@ -929,12 +707,11 @@ test("the sweep's needle takes the call, and refuses one that is commented out, 
 /**
  * The files that start the fake editor, read with the needle a reference to it
  * must carry. A rot detector like every text arm here: prose ending in that same
- * quoted path would count as a reacher, which is the loud direction.
+ * quoted path counts as a reacher, which is the loud direction.
  *
- * THIS FILE IS EXCLUDED AND IT LEARNED WHY BY READING ITSELF -- the arm went red
- * on its own source the first time it ran, because the file that SPELLS the
- * needle contains it. The same shape as the helper scan dropping deadline.ts,
- * and safe for the same reason: this file starts no rig.
+ * THIS FILE IS EXCLUDED because the file that SPELLS the needle contains it --
+ * the same shape as the helper scan dropping deadline.ts, and safe for the same
+ * reason: this file starts no rig.
  */
 const thisFile = relative(repoRoot, fileURLToPath(import.meta.url));
 
@@ -945,23 +722,18 @@ const rigReachers = rootTestFiles.filter(
 );
 
 /**
- * THE NUMBER THE HELPER ARM'S EXCLUSION IS MADE OF, PINNED AT LAST. The scan
- * above drops test/helpers/fake-editor.ts on an argument with two halves -- the
- * rig's timer is LARGE ENOUGH that the deadline of the file reaching it fires
- * first, and only one file reaches it -- and the number that argument turns on
- * was stated as fact in three places' prose and asserted nowhere. MEASURED: the
- * self-exit changed from 30_000 to 3_000 read 20 pass / 0 fail in this file, the
- * exclusion still standing with its premise inverted.
+ * THE NUMBER THE HELPER ARM'S EXCLUSION IS MADE OF. Without this the exclusion
+ * goes on standing with its premise inverted: shrink the rig's self-exit and the
+ * scan above still drops it, while the timer now fires FIRST and kills the rig's
+ * tests with a message about a child process.
  *
- * IT IS PINNED AGAINST THE SUITE'S OWN DEADLINE FIRST, and that is the assertion
- * that survives the file below dropping its own: an ungated test that reached
- * this rig would run at `suiteDeadlineMs`, so the rig arriving second means
- * outliving THAT, whatever any file sets for itself.
+ * AGAINST THE SUITE'S OWN DEADLINE FIRST, which is the half that survives the
+ * reaching file dropping its own: an ungated test that reached this rig would
+ * run at `suiteDeadlineMs`.
  *
  * AND AGAINST THE REACHING FILE'S LARGEST NUMERAL SECOND, which is a PROXY and
- * says so: it is the same numeral scan, so what it compares is the biggest number
- * that file writes rather than the deadline it sets. On today's tree the two are
- * the same value, and the day they part this arm reddens rather than going quiet.
+ * says so: the same numeral scan, so what it compares is the biggest number that
+ * file writes rather than the deadline it sets.
  */
 test("the excluded rig timer outlives every deadline that can reach it", () => {
   const rig = helperDeadlines
@@ -980,11 +752,9 @@ test("the excluded rig timer outlives every deadline that can reach it", () => {
 });
 
 /**
- * THE EXCLUSION'S OTHER HALF, ITS OWN ARM BECAUSE IT IS ITS OWN HAZARD: `the only
- * tests that start that rig` is a claim about the whole root suite, and the day a
- * second file reaches for the fake editor the paragraph above has to be argued
- * again. Written as a test so that whoever writes that file is told, rather than
- * left to find the exception years later.
+ * THE EXCLUSION'S OTHER HALF, ITS OWN ARM BECAUSE IT IS ITS OWN HAZARD: `only`
+ * is a claim about the whole root suite, and it is written as a test so that
+ * whoever adds a second reacher is told rather than left to find the exception.
  */
 test("only the rig's own file reaches the fake editor", () => {
   expect(rigReachers).toEqual(["test/editor-death.test.ts"]);
@@ -995,11 +765,8 @@ test("only the rig's own file reaches the fake editor", () => {
  *
  * ANYWHERE UNDER THE MEMBER AND NOT `<member>/test` ALONE: that directory is a
  * convention and bun's walk is not bound by it, so a test file beside a
- * package's `src/` used to satisfy neither enumeration while the root `bun test`
- * ran it. tsudoi's own member directory holds no test file today; the pair below
- * is what keeps that from reading as a clean result -- and it is the same
- * non-emptiness with the same limit, so what stands behind THIS list too is the
- * cross-check arm.
+ * package's `src/` satisfies neither enumeration while the root `bun test` runs
+ * it.
  */
 const memberTestFiles = everyTestFile.filter(insideAMember);
 
@@ -1021,21 +788,10 @@ function spawnsIn(source: string): string[] {
 
 /**
  * WHY THE MEMBERS ARE OUT OF THE SWEEP, ASSERTED RATHER THAN ASSUMED. The
- * exposure this whole item exists for is a test that SPAWNS -- a compiler, a
- * server, a package manager -- and then waits on a machine that is busy. No
- * member test spawns anything: each builds its context in process, which their
- * own comments say in as many words. So the deadline they run under is bun's,
- * and it binds nothing they do.
- *
- * IT REDDENS THE DAY THAT STOPS BEING TRUE, which is the whole point of writing
- * it as a test rather than as a paragraph: the first member test to reach for a
- * child process fails here, naming the file and the route, and whoever wrote it
- * is told to extend the sweep rather than left to discover the exclusion years
- * later.
- *
- * THE PAIR IS THE SAME MATCHER ON A FILE THAT DOES SPAWN, because `no member
- * matched` and `the matcher matches nothing` are the same observation otherwise
- * -- and this project has shipped a probe whose needles no longer occurred.
+ * exposure this file exists for is a test that SPAWNS -- a compiler, a server, a
+ * package manager -- and then waits on a machine that is busy. No member test
+ * spawns anything: each builds its context in process, so the deadline they run
+ * under is bun's and it binds nothing they do.
  *
  * READ AS TEXT AND NOT IMPORTED, deliberately: importing a member's test from
  * here would pull it into the root program, which is the containment the root
