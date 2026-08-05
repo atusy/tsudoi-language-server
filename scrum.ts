@@ -167,32 +167,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-57",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust that a citation inside a comment still refers to something that exists",
-        benefit:
-          "a reader sent to a file or a test by a comment arrives somewhere, instead of learning that the comment aged",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A path-shaped token in a TRACKED file resolves against the checkout, and a comment naming a test resolves to a test the suite actually declares.",
-          verification:
-            "Both arms staged in a throwaway directory, because the tokens in this repository all resolve TODAY and an instrument whose witness cannot fail measures nothing: inject a token naming a file that does not exist, and a comment citing a test name the suite does not declare, and require each to be reported naming the citing file. Pair each with the same tree uninjected going green.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WHY IT IS NARROWED TO REFERENTS AND THE NAME SAYS SO. This came out of sprint 50, where a shipped comment claimed the guard ran BEFORE THE COMPILER IS SPAWNED FOR ANYTHING while `prepareWorkspace` two lines above spawns tsc to build every member -- the FOURTH instance of a comment asserting a mechanism the code denies. NO CHECK DECIDES THAT CLASS: `before X happens` is an ordering claim, and an approximate detector's failure mode is a GREEN CERTIFYING THE CLASS AS WATCHED, which is this record's own disarmed-control defect. So the PBI must state IN ITS OWN TEXT that the ordering and causality class REMAINS UNCOVERED -- filed only on that condition, because the way it becomes worse than nothing is being read as coverage of the class it was filed for.",
-        "WHY IT IS NOT A FIFTH `POINT ATTENTION AT THE CLASS` ENTRY: sprint 47's remedy reads SHIPPED comments, and this instance was in scripts/, which ships nothing. The gap is mechanical rather than attentional, and sprint 47's own record already shows attention was pointed and an instance still escaped.",
-        "THE INSTRUMENT EXISTS: `unreachableClaims` in test/packed-members.test.ts already reads citations out of comments. This extends its reach to tracked source rather than building a second reader.",
-        "AN INSTANCE FROM SPRINT 57, FILED INTO PBI-57 BECAUSE THIS ITEM COUNTS INSTANCES AS ITS EVIDENCE AND THIS ONE IS THE COMMENT HALF, NOT THE ARM HALF: the recursion refusal in `test/helpers/perturbation.ts` shipped with BOTH its new comment and the inherited one asserting that deleting the detection starts a spawn tree with no bottom -- a mechanism the code denies. MEASURED with the detection deleted rather than feared: `repoRoot` is module-relative, so inside the stage it IS the stage, the stage carries no `.git` and no parent of a temporary directory does either, `git ls-files` exits 128 and the stager throws -- the chain STOPS AT DEPTH 2 in 264 ms, and the whole degenerate reads 15 pass / 1 fail, that arm alone. Corrected in caaf376, which also took the full degenerate the fear had withheld. WHY IT BELONGS HERE AND NOT IN THE CITATION HALF: every path and every test name in that comment resolved, so nothing this item's criterion checks would have found it -- it is the ordering-and-causality class the item's own text says REMAINS UNCOVERED, arriving in the commit that repaired six of its siblings.",
-        "WIDENED BY SPRINT 54: THE UNCOVERED CLASS LIVES IN ARMS AND NOT ONLY IN COMMENTS, and in arms it is worse. This item's own text says the ordering-and-causality class stays uncovered and reasons about COMMENTS asserting a mechanism the code denies. Sprint 54 produced FOUR ARMS THAT WERE GREEN WHILE THE ORDERING THEY DEFENDED WAS VIOLATED -- a spy reading the value handed over and not its ordinal among the registrations, a sweep reading a call's COLUMN where the property was its POSITION relative to the first registration, an environment read whose TIME nobody had written down, and a pin reading the exported constant rather than the value the runtime received. That is the disarmed-control shape one level above what this item was filed against, and it is a different statement from the comment half -- folding them blunts both.",
-      ],
-    },
-
-    {
       id: "PBI-66",
       story: {
         role: "tsudoi maintainer",
@@ -377,6 +351,48 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 69,
+      pbi_id: "PBI-57",
+      goal: "A citation in this tree names a file that exists, and the arm that cannot be mechanised is shown not to be rather than said not to be.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Enumerate path-shaped tokens in tracked files and decide each with existsSync. Comment lines only for the rewrite -- a blind string replace hit an import on the first attempt and produced a doubled path.",
+          implementation:
+            "Bare `src/x.ts` citations outside packages/, where the package-relative convention does not apply and this repository holds three src/ directories, spelled in full.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE FILING SAID `the tokens in this repository all resolve TODAY`, WHICH THE COMMENT REDUCTION MADE FALSE. The convention this tree states for itself is at test/build-diagnostics.test.ts -- a bare src/index.ts identifies nothing in a repository holding more than one src/ -- and code was changed once so diagnostics never print the bare form.",
+            "THREE COUNTS WERE PUBLISHED AND NONE SURVIVED REVIEW. `73 repaired` matches no derivation: 83 tokens, 83 added diff lines, 71 comment blocks, 55 distinct file-and-path pairs. `all resolved to the framework, zero elsewhere` is false -- one is packages/tsudoi-completion-path. And `six code lines staging throwaways` splits 3/3, half of it being assertions against lint output, which the same report filed separately as diagnostic strings.",
+            "THE COMMIT MESSAGE ASSERTED SOMETHING THE AMEND HAD UNDONE: `every citation outside packages/ is spelled in full` shipped while README.md's two had been reverted to bare. Review re-applied the hunk and got the IDENTICAL nine failures, so the revert was a hand decision the message was never updated for rather than one the suite forced.",
+            "MACHINE OUTPUT WAS THE HALF NEITHER PASS REACHED. Three throw messages in test/notifications.test.ts print a bare src/notifications.ts; the report named two and missed the third five lines above them, and a comment-scoped repair could not have reached any. Left bare and correct: guard.test.ts asserts on src/bare.ts, a file the probe writes into a throwaway holding one src/ -- not ambiguous and not about this checkout.",
+            "CODE DID NOT MOVE, PROVEN WITH THE REAL PARSER RATHER THAN A SCANNER: ts.createSourceFile printed with removeComments, JSONC compared structurally, 34 files CODE-SAME and the md5 of every declaration line unchanged. FIVE CONTROLS WERE RUN AND ALL REDDENED, one of them code placed after a regex literal containing `//` -- the shape a regex strip swallows.",
+          ],
+        },
+        {
+          test: "Enumerate every declared test name from the AST, then every quoted span in a comment, and check each citation against the set.",
+          implementation:
+            "The criterion's second arm: a comment naming a test resolves to a test the suite declares.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "SIX CITATIONS, AND ZERO NAME A TEST THAT IS GONE -- against the expectation that the comment cuts would have left dead ones. Four are proper prefixes of a live name and two are paraphrases; 561 declared names, 3,444 quoted spans, and the flags ranked by overlap so a renamed test would surface at the top. That number is what decides the ruling below.",
+            "ARM ONE IS MECHANISABLE AND ARM TWO IS NOT, AND THE SECOND HALF IS MEASURED RATHER THAN ASSERTED. The predicate for a test name is not `is this a declared name`, which is a lookup; it is `is this quoted string a citation at all`, which is classification over prose. REVIEW BUILT THE RULE RATHER THAN ARGUING -- so `no such rule exists` is refused -- and it flags 251 spans for 0 defects. Both thresholds fail in opposite directions: exact matching reddens all four prefix truncations, each of which points a human reader correctly and uniquely, so satisfying it means editing four sound comments; truncation-tolerant matching greens those AND greens a citation of a name that no longer exists, certifying as watched the class it cannot see.",
+            "AND `JUST RE-ROOT THE EXISTING INSTRUMENT` UNDERSTATES ARM ONE. pathClaim in test/packed-members.test.ts does decide the predicate, but it has no comment extractor -- pointed at the checkout it flags 763 tokens over whole file text against 65 over comments alone, so 91% are code -- and its comment reader returns nothing for markdown, which is where three of the surviving bare citations live.",
+            "THE HONEST FORM OF THE RULING IS `UNMECHANISABLE GIVEN THE CURRENT CONVENTION`. It becomes a lookup the day comments carry a citation syntax, which is a decision about how comments are written rather than a test that can be added to the tree as it stands.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "USE VERSUS MENTION DECIDED FOUR SITES AND WAS GOT WRONG IN BOTH DIRECTIONS. Three sentences are ABOUT the bare spelling -- what tsc prints from inside a member, what a lint message must not say -- and qualifying them would make them describe something else, so they stay bare. Two in README.md sit inside backticks and were read as mentions on that ground alone; they say WHERE a thing is written, which is use, and they were qualified.",
+        "THE BASELINE DID NOT REPRODUCE IN THE REVIEWER'S SANDBOX -- 13 failures at base and the identical 13 at head, all network-dependent pack and install arms. A delta against a red baseline is still a delta, and saying which failures are the environment's is what makes it readable.",
+      ],
+    },
     {
       number: 68,
       pbi_id: "PBI-71",
