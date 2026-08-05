@@ -103,9 +103,10 @@ test("the same example spelled with a relative path into src fails in a consumer
 // test/installed-runtime.test.ts -- it does, under BOTH runtimes, because the
 // package ships compiled .js rather than the sources.
 //
-// `src/types.ts` is deliberately absent: dist/ is the whole published tree, so
-// a user cannot aim a runtime at a .ts file under node_modules even by
-// mistake. What deno does when they can is pinned in installed-runtime.
+// `packages/tsudoi-language-server/src/types.ts` is deliberately absent: dist/
+// is the whole published tree, so a user cannot aim a runtime at a .ts file
+// under node_modules even by mistake. What deno does when they can is pinned in
+// installed-runtime.
 test("the tarball ships the compiled module the exports entry points at, and nothing else", () => {
   expect(existsSync(join(consumer.packageDir, "dist", "types.d.ts"))).toBe(true);
   expect(existsSync(join(consumer.packageDir, "dist", "cli.js"))).toBe(true);

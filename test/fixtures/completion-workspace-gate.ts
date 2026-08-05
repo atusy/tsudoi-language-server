@@ -39,10 +39,11 @@ export function itemsFor(folders: Iterable<WorkspaceFolder>): CompletionItem[] {
  * THE THIRD YIELD IS THE OTHER HALF, AND IT IS DELIBERATELY THE SAME ITERABLE
  * THE FIRST ONE CAME FROM. What a handler can do about liveness is TAKE THE
  * VALUE BEFORE ITS FIRST `await`, and that is worth nothing unless what it took
- * stays as it was. `change()` in src/workspace.ts builds a new array rather than
- * writing into the live one; make it `push` into the old one instead and this
- * yield reddens while the second one goes on passing, which is what makes the
- * two halves separable rather than one assertion in two spellings.
+ * stays as it was. `change()` in
+ * packages/tsudoi-language-server/src/workspace.ts builds a new array rather
+ * than writing into the live one; make it `push` into the old one instead and
+ * this yield reddens while the second one goes on passing, which is what makes
+ * the two halves separable rather than one assertion in two spellings.
  *
  * TAKEN AS `values()` AND NOT AS `Array.from(values())`, which is the whole of
  * what this third yield can measure: a copy is unmoved by a mirror written in

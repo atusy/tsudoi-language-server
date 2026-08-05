@@ -18,11 +18,12 @@
 // member's shape in guard.test.ts names no package, so it covers every package
 // added here and the next one costs nothing.
 //
-// ONE MORE SHAPE IN THAT LIST, src/notifications.ts, follows from something else
-// entirely and is named so it is not read as part of the argument above: the
-// connection-factory ban below exempts it. It is carried as its own shape so the
-// exemption's SPELLING is pinned -- an `"off"` there would silence bun and bun:*
-// in the router too, and the bun assertion at that path reddens.
+// ONE MORE SHAPE IN THAT LIST,
+// packages/tsudoi-language-server/src/notifications.ts, follows from something
+// else entirely and is named so it is not read as part of the argument above:
+// the connection-factory ban below exempts it. It is carried as its own shape
+// so the exemption's SPELLING is pinned -- an `"off"` there would silence bun
+// and bun:* in the router too, and the bun assertion at that path reddens.
 //
 // A rot detector, not a barrier. (globalThis as { Bun: ... }).Bun and an
 // oxlint-disable comment both walk straight past it, and no static rule proves
@@ -46,19 +47,21 @@
     //
     // `paths` closes the last route around the notification gate. The router
     // registers every notification with its gate and hands back a connection
-    // with no `onNotification` on its type, so no other module can register
-    // one -- unless it CREATES A CONNECTION OF ITS OWN.
-    // Measured before this entry existed: src/server.ts importing the factory,
-    // registering the table on the wide value and calling an ungated
+    // with no `onNotification` on its type, so no other module can register one
+    // -- unless it CREATES A CONNECTION OF ITS OWN. Measured before this entry
+    // existed: packages/tsudoi-language-server/src/server.ts importing the
+    // factory, registering the table on the wide value and calling an ungated
     // `onNotification` beside it ran at 331 tests green, `tsc --noEmit` 0 and
     // `oxlint` 0, with nothing objecting.
     //
-    // `importNames` AND NOT A MODULE-WIDE BAN: src/server.ts, src/methods.ts
-    // and src/lifecycle.ts all import other names from this exact specifier.
-    // The ban is on ONE NAME, and unlike the identifier a rule would have had
-    // to match inside a function body, an import specifier CANNOT BE RENAMED
-    // AWAY -- which is why the lint route works here after being declined for
-    // `connection.onNotification`.
+    // `importNames` AND NOT A MODULE-WIDE BAN:
+    // packages/tsudoi-language-server/src/server.ts,
+    // packages/tsudoi-language-server/src/methods.ts and
+    // packages/tsudoi-language-server/src/lifecycle.ts all import other names
+    // from this exact specifier. The ban is on ONE NAME, and unlike the
+    // identifier a rule would have had to match inside a function body, an
+    // import specifier CANNOT BE RENAMED AWAY -- which is why the lint route
+    // works here after being declined for `connection.onNotification`.
     //
     // A ROT DETECTOR, NOT A BARRIER, exactly as the Bun guard above is, and
     // THERE IS NO CHEAPER FORECLOSURE: a module cannot stop another module
@@ -71,16 +74,18 @@
     // deliberate rather than a slip. IF THAT NARROWING WERE UNDONE THIS
     // ARGUMENT GOES WITH IT AND NOTHING HERE WOULD ANNOUNCE IT -- the
     // load-bearing copy of this dependency is at `createGatedConnection` in
-    // src/notifications.ts, where that edit would be made.
+    // packages/tsudoi-language-server/src/notifications.ts, where that edit
+    // would be made.
     //
     // THE BOUNDARY IT CLAIMS, both members of the deliberate-evasion class this
     // file already names for Bun rather than slips. MEASURED: `await
     // import("vscode-languageserver-protocol/node")` is not seen at all -- in a
     // run where a static import of the same name in a sibling file WAS flagged.
     // And the exemption below is itself a hole: a re-export from
-    // src/notifications.ts would launder the factory to every other module, an
-    // edit made inside THE ONE FILE THIS RULE CANNOT SEE, which is why
-    // test/notifications.test.ts asserts the router does not export it. A
+    // packages/tsudoi-language-server/src/notifications.ts would launder the
+    // factory to every other module, an edit made inside THE ONE FILE THIS RULE
+    // CANNOT SEE, which is why test/notifications.test.ts asserts the router
+    // does not export it. A
     // WRAPPER -- `export const makeConnection = () => createProtocolConnection(...)`
     // -- defeats that assertion too; REASONED and true by construction, since
     // the assertion names one export.

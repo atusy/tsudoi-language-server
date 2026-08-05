@@ -90,9 +90,10 @@ for (const runtime of runtimes) {
     // stdio at every keystroke however well the store applies ranges.
     //
     // diagnosticProvider's TWO BOOLEANS are asserted here as values rather than
-    // as presence, and their reasons live at the contributor in src/methods.ts:
-    // workspaceDiagnostics is FORCED by tsudoi not serving workspace/diagnostic,
-    // while interFileDependencies is CHOSEN on harm asymmetry.
+    // as presence, and their reasons live at the contributor in
+    // packages/tsudoi-language-server/src/methods.ts: workspaceDiagnostics is
+    // FORCED by tsudoi not serving workspace/diagnostic, while
+    // interFileDependencies is CHOSEN on harm asymmetry.
     test("initialize returns a result naming tsudoi, advertising incremental textDocumentSync and a capability for every method the example supplies", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
@@ -115,13 +116,14 @@ for (const runtime of runtimes) {
     // THIS KEY IS WHAT MAKES workspace.ts REACHABLE, and it is not a courtesy
     // advertisement. vscode-languageclient's WorkspaceFoldersFeature.initialize
     // reads `capabilities.workspace.workspaceFolders.changeNotifications` and
-    // nothing else; only a string or `true` yields a registration id, and only an
-    // id reaches its register() -- the SOLE subscriber to
-    // onDidChangeWorkspaceFolders and the sole route to the notification. Without
-    // this key a conforming client never sends `didChangeWorkspaceFolders` at
-    // all, so the entire delta path in src/workspace.ts is dead code under a real
-    // editor and Tsudoi.workspaceFolders is frozen for the session at whatever
-    // `initialize` stated.
+    // nothing else; only a string or `true` yields a registration id, and only
+    // an id reaches its register() -- the SOLE subscriber to
+    // onDidChangeWorkspaceFolders and the sole route to the notification.
+    // Without this key a conforming client never sends
+    // `didChangeWorkspaceFolders` at all, so the entire delta path in
+    // packages/tsudoi-language-server/src/workspace.ts is dead code under a
+    // real editor and Tsudoi.workspaceFolders is frozen for the session at
+    // whatever `initialize` stated.
     //
     // NARROW ON PURPOSE, and that is the point of it standing apart from the
     // exact-equality pin above: that pin moves whenever ANY capability moves, so
@@ -145,7 +147,7 @@ for (const runtime of runtimes) {
 
     test("a --config path relative to the working directory resolves", async () => {
       // Exactly the acceptance criterion's command form, run from the repo root:
-      //   <runtime> src/cli.ts --config examples/tsudoi.config.ts
+      //   <runtime> packages/tsudoi-language-server/src/cli.ts --config examples/tsudoi.config.ts
       const session = LspSession.start(runtime, "examples/tsudoi.config.ts");
       try {
         const result = await session.request<InitializeResult>("initialize", initializeParams);
@@ -262,14 +264,15 @@ for (const runtime of runtimes) {
       }
     });
 
-    // A shutdown tsudoi REFUSED is not a shutdown, and this is where that reading
-    // is defended. WHY IT IS NOT THE TEST ABOVE: there the client never asked to
-    // shut down; here it asked and was told no, which is a different session and
-    // the one LSP's wording leaves open -- `if the shutdown request has been
-    // RECEIVED before` reads as bare arrival on the wire until the pre-initialize
-    // rule is read beside it. THE READING AND ITS GROUNDS ARE AT exitCode() IN
-    // src/lifecycle.ts and are deliberately not repeated here: two copies of one
-    // reading is how a project ends up with two rulings that disagree.
+    // A shutdown tsudoi REFUSED is not a shutdown, and this is where that
+    // reading is defended. WHY IT IS NOT THE TEST ABOVE: there the client never
+    // asked to shut down; here it asked and was told no, which is a different
+    // session and the one LSP's wording leaves open -- `if the shutdown request
+    // has been RECEIVED before` reads as bare arrival on the wire until the
+    // pre-initialize rule is read beside it. THE READING AND ITS GROUNDS ARE AT
+    // exitCode() IN packages/tsudoi-language-server/src/lifecycle.ts and are
+    // deliberately not repeated here: two copies of one reading is how a
+    // project ends up with two rulings that disagree.
     //
     // THE -32002 ASSERTION IS NOT DECORATION AND MAY NOT BE DROPPED: without it
     // `exited 1` is satisfied by a session whose shutdown never arrived at all --
@@ -358,9 +361,10 @@ for (const runtime of runtimes) {
      * IT IS ALSO THE ONE SHAPE THE REFUSAL ABOVE CANNOT SEE, which is why it is
      * asserted here rather than left to be inferred: vscode-jsonrpc SPREADS a
      * by-position array across the handler's arguments, so `[]` and an omitted
-     * `params` reach a handler as the same single argument. The shape that could
-     * tell them apart is named at the handler in src/server.ts, along with why it
-     * was declined.
+     * `params` reach a handler as the same single argument. The shape that
+     * could tell them apart is named at the handler in
+     * packages/tsudoi-language-server/src/server.ts, along with why it was
+     * declined.
      */
     test("shutdown with an empty by-position params proceeds, exactly as an omitted one does", async () => {
       const session = LspSession.start(runtime, demoConfig);
@@ -379,7 +383,8 @@ for (const runtime of runtimes) {
 
     /**
      * TWO THINGS ARE WRONG WITH THIS MESSAGE AND THE PHASE ANSWERS FIRST, which
-     * is the same order the request router in src/methods.ts and the `initialize`
+     * is the same order the request router in
+     * packages/tsudoi-language-server/src/methods.ts and the `initialize`
      * boundary both use. A server that has not been initialized has no shutdown
      * to refuse the params of, and -32002 is the diagnosis a client can act on:
      * it says send `initialize` first, where -32602 would send the client

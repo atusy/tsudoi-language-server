@@ -282,10 +282,11 @@ function reportedAgainst(path: string): RegExp {
 // written, so the three paths are named here instead, each absence sharing its
 // run with a file the ban really flags.
 //
-// Why a lint at all, when PBI-22 already makes src/server.ts unable to CALL
-// onNotification: it can still IMPORT the factory, build its own wide connection
-// and register beside the table. MEASURED with this rule taken out -- THE WHOLE
-// SUITE green, tsc 0, oxlint 0, with nothing objecting.
+// Why a lint at all, when PBI-22 already makes
+// packages/tsudoi-language-server/src/server.ts unable to CALL onNotification:
+// it can still IMPORT the factory, build its own wide connection and register
+// beside the table. MEASURED with this rule taken out -- THE WHOLE SUITE green,
+// tsc 0, oxlint 0, with nothing objecting.
 test("importing createProtocolConnection is flagged in src/server.ts", async () => {
   const result = await lintProbe({
     [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
@@ -327,8 +328,10 @@ test("the same import is exempt in src/notifications.ts, in a run where src/serv
 //
 // The ban is on ONE NAME because three src modules import OTHER names from this
 // exact specifier: dropping it takes `oxlint` over the repo to exit 1 with
-// diagnostics in src/server.ts, src/methods.ts and src/lifecycle.ts, and reddens
-// the two bare-specifier tests above, which import createConnection from it.
+// diagnostics in packages/tsudoi-language-server/src/server.ts,
+// packages/tsudoi-language-server/src/methods.ts and
+// packages/tsudoi-language-server/src/lifecycle.ts, and reddens the two
+// bare-specifier tests above, which import createConnection from it.
 //
 // Same two-files-in-one-run design as above, for the same reason.
 test("a different export from the same module is unflagged, in a run where the factory is flagged", async () => {

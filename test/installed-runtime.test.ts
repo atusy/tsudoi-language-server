@@ -331,7 +331,8 @@ test("a change to src/ reaches the installed copy with no rebuild step", async (
  * PBI-13 criterion 1's NEGATIVE CONTROL, a PERMANENT test rather than a
  * one-time perturbation: shipping .ts sources instead of compiled .js makes the
  * Deno route fail, and it fails by NAME. A tarball whose only entry point is
- * src/cli.ts is exactly what a Deno user cannot run.
+ * packages/tsudoi-language-server/src/cli.ts is exactly what a Deno user cannot
+ * run.
  *
  * IT DEFENDS STRICTLY LESS THAN IT LOOKS LIKE IT DOES, said so the two claims
  * are never read as one: it says `deno rejects a .ts entry point under

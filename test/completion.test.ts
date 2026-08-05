@@ -52,8 +52,9 @@ const textDocumentSync: TextDocumentSyncOptions = {
 /**
  * Advertised for EVERY config, so it stands in every exact-equality pin below
  * and is not evidence about the fixture any one of them drives. Why tsudoi
- * claims it unconditionally -- it mirrors folders whatever the config supplies --
- * is at the capabilities literal in src/server.ts.
+ * claims it unconditionally -- it mirrors folders whatever the config supplies
+ * -- is at the capabilities literal in
+ * packages/tsudoi-language-server/src/server.ts.
  */
 const workspace: ServerCapabilities["workspace"] = {
   workspaceFolders: { supported: true, changeNotifications: true },
@@ -346,7 +347,8 @@ for (const runtime of runtimes) {
     // discriminating: one handler, one build, and the ONLY difference between
     // the two runs is whether the client sent a token.
     //
-    // THE MODE TABLE IS AT `MethodMap` IN src/types.ts, which is where the
+    // THE MODE TABLE IS AT `MethodMap` IN
+    // packages/tsudoi-language-server/src/types.ts, which is where the
     // violating edit would be made, and it is not restated here because a table
     // in two places is a table that disagrees with itself.
     //

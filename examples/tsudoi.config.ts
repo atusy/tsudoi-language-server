@@ -36,9 +36,9 @@ const config: TsudoiConfigFactory = () => {
       // `CompletionItem[]` and nothing else, so there is no value this config
       // or its delegate could produce that says anything other than COMPLETE --
       // the wrongness is in the published type, and the edit that removes it is
-      // at `MethodMap` in src/types.ts, not in this file. Relabelling this
-      // COMPLETE would make the tree consistent and leave nothing at all
-      // recording that what goes out on the wire is false.
+      // at `MethodMap` in packages/tsudoi-language-server/src/types.ts, not in
+      // this file. Relabelling this COMPLETE would make the tree consistent and
+      // leave nothing at all recording that what goes out on the wire is false.
       //
       // AND THE ARM JUST BELOW DECLINES A SECOND WRONG CLAIM, worth separating
       // because a re-type papers over both: it fires when the document is NOT IN

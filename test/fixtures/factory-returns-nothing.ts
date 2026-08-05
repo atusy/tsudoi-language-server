@@ -10,6 +10,7 @@
  *
  * NO TYPE ANNOTATION, deliberately: annotating it `TsudoiConfigFactory` would
  * make tsc refuse the file, and this exists to be REFUSED AT RUNTIME by
- * src/config.ts, which reaches the factory through a cast from `unknown`.
+ * packages/tsudoi-language-server/src/config.ts, which reaches the factory
+ * through a cast from `unknown`.
  */
 export default () => {};

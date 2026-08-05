@@ -238,11 +238,11 @@ for (const runtime of runtimes) {
      *
      * ALL THREE REGISTRATION ROUTES, because they are three: `initialize` is
      * registered directly, `textDocument/hover` comes from the table in
-     * src/methods.ts, and `shutdown` is registered directly again. A fallback
-     * that shadowed would turn each of them into -32601, and each is asserted on
-     * its RESULT -- the server name, the example's own heading, the null the
-     * specification requires -- because `not -32601` is satisfied by a wrong
-     * answer too.
+     * packages/tsudoi-language-server/src/methods.ts, and `shutdown` is
+     * registered directly again. A fallback that shadowed would turn each of
+     * them into -32601, and each is asserted on its RESULT -- the server name,
+     * the example's own heading, the null the specification requires -- because
+     * `not -32601` is satisfied by a wrong answer too.
      */
     test(
       "a fallback for unknown methods shadows none of initialize, hover or shutdown",

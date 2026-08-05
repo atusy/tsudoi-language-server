@@ -22,11 +22,12 @@ await Promise.all(runtimes.map(requireRuntime));
  * prefixed reason on stderr, and nothing at all on stdout.
  *
  * The PREFIX half is named by criteria all over this project and PINNED HERE
- * ALONE. MEASURED: deleting `tsudoi: ` from src/cli.ts leaves every ASCII case
- * green without this assertion, because each asserts only the substring it
- * cares about. It is the one thing here a config author greps for -- every
- * line tsudoi writes carries it, and a message without it is indistinguishable
- * from whatever the runtime printed.
+ * ALONE. MEASURED: deleting `tsudoi: ` from
+ * packages/tsudoi-language-server/src/cli.ts leaves every ASCII case green
+ * without this assertion, because each asserts only the substring it cares
+ * about. It is the one thing here a config author greps for -- every line
+ * tsudoi writes carries it, and a message without it is indistinguishable from
+ * whatever the runtime printed.
  *
  * STARTS WITH rather than contains, measured under both runtimes on EVERY case
  * in this file: the reason is the FIRST thing on stderr, so nothing the config
@@ -126,9 +127,10 @@ for (const runtime of runtimes) {
      *
      * `() => {}` -- the arrow whose braces are a BODY -- reached
      * requireCompletionBesideResolve and raised a TYPEERROR. A TypeError is not
-     * a ConfigError, so src/cli.ts RETHROWS it: the author got a raw stack, and
-     * the `tsudoi: ` prefix that `expectFailureContract` asserts for every other
-     * case in this file was simply absent.
+     * a ConfigError, so packages/tsudoi-language-server/src/cli.ts RETHROWS it:
+     * the author got a raw stack, and the `tsudoi: ` prefix that
+     * `expectFailureContract` asserts for every other case in this file was
+     * simply absent.
      *
      * `Promise.resolve(null)` is the arm a guard written `typeof returned !==
      * "object"` still admits, since `typeof null` is `"object"`.

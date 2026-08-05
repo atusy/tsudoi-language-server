@@ -125,7 +125,7 @@ const encodedRootUri = "file:///home/me/pro%6Aect";
  * sends. `fileURLToPath` THROWS on it, which is the hazard an author who
  * converts this field inherits: nothing in tsudoi calls that function on these
  * bytes any more, so the throw would land in a config's own handler, and
- * src/types.ts says so at `rootUri`.
+ * packages/tsudoi-language-server/src/types.ts says so at `rootUri`.
  */
 const remoteRootUri = "vscode-remote://ssh-remote%2Bexample/home/me/rooted";
 
@@ -418,7 +418,8 @@ for (const runtime of runtimes) {
     // IT IS THE WEAKEST TEST IN THIS FILE, AND SAYING SO IS THE POINT OF THIS
     // BLOCK. `fileURLToPath` throws on such a URI, and NOTHING IN tsudoi CALLS
     // IT ON THESE BYTES AT ALL -- so the throw belongs to whatever a config
-    // author writes, and src/types.ts says so at `rootUri`.
+    // author writes, and packages/tsudoi-language-server/src/types.ts says so
+    // at `rootUri`.
     //
     // WHAT WOULD MAKE THIS RED TODAY: only a server that fails the handshake
     // outright, which every other test in this file would fail first. IT CANNOT

@@ -77,11 +77,12 @@ applySuiteDeadline();
 
 /**
  * THE CONSUMER THIS STAGES, NAMED AND THEN LOOKED FOR RATHER THAN SPELLED AS A
- * PATH: it is picked because src/resolve.ts annotates a const with
- * `MethodHandler<"completionItem/resolve">` and writes an async arrow into it,
- * which is the site a narrowed RETURN lands on -- what the consumer WRITES, and
- * not merely a type it mentions. A name that stops being a handler member of this
- * workspace fails here, naming itself, instead of staging a tree with no subject.
+ * PATH: it is picked because packages/tsudoi-completion-path/src/resolve.ts
+ * annotates a const with `MethodHandler<"completionItem/resolve">` and writes
+ * an async arrow into it, which is the site a narrowed RETURN lands on -- what
+ * the consumer WRITES, and not merely a type it mentions. A name that stops
+ * being a handler member of this workspace fails here, naming itself, instead
+ * of staging a tree with no subject.
  */
 const consumerName = "@atusy/tsudoi-completion-path";
 

@@ -9,6 +9,7 @@
  * resolve/completion rule beside it exists to prevent.
  *
  * NO TYPE ANNOTATION, deliberately: `MethodHandler` would make tsc refuse the
- * file, and this is refused at runtime by src/config.ts instead.
+ * file, and this is refused at runtime by
+ * packages/tsudoi-language-server/src/config.ts instead.
  */
 export default () => ({ methods: { "textDocument/hover": 5 } });

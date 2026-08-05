@@ -11,12 +11,12 @@ import type {
  * `textDocument/completion` can have produced, and this config supplies no way
  * to produce one.
  *
- * IT TYPE-CHECKS, WHICH IS THE POINT AND IS WHY THIS FILE CAN SIT IN THE REPO AT
- * ALL. `TsudoiConfig.methods` is a `Partial`, so nothing here is a compile
+ * IT TYPE-CHECKS, WHICH IS THE POINT AND IS WHY THIS FILE CAN SIT IN THE REPO
+ * AT ALL. `TsudoiConfig.methods` is a `Partial`, so nothing here is a compile
  * error; the requirement is enforced when the config LOADS, and the reason for
  * choosing that stage over the type system is written at the check itself in
- * src/config.ts. A fixture that failed `tsc --noEmit` would break the DoD rather
- * than demonstrate anything.
+ * packages/tsudoi-language-server/src/config.ts. A fixture that failed
+ * `tsc --noEmit` would break the DoD rather than demonstrate anything.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({

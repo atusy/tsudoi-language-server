@@ -12,19 +12,21 @@ export const cleanupMarker = "completion-yields-non-array: released";
  * TypeError of its own on this one, WHILE THE GENERATOR IS SUSPENDED AT ITS
  * YIELD.
  *
- * THE GUARD IS EXPLICIT AND STANDS ABOVE THE MODE SPLIT, which is what makes the
- * two modes agree: aggregation would have refused this INCIDENTALLY, since
+ * THE GUARD IS EXPLICIT AND STANDS ABOVE THE MODE SPLIT, which is what makes
+ * the two modes agree: aggregation would have refused this INCIDENTALLY, since
  * `push(...42)` is a TypeError, while streaming would have sent the value out
  * verbatim as a `$/progress` carrying something the protocol does not declare
  * and then answered `null` successfully. One loud failure and one silent
  * wire-protocol violation, decided by whether the client asked for partial
- * results. The reasoning is at the guard itself in src/methods.ts.
+ * results. The reasoning is at the guard itself in
+ * packages/tsudoi-language-server/src/methods.ts.
  *
  * NOTHING VALIDATES THIS ANYWHERE, which is why the case is reachable at all:
- * src/config.ts checks the resolve/completion pair and nothing about payloads,
- * and both runtimes STRIP the types rather than checking them. The cast below is
- * the whole of what a config author has to get past, and in a config written in
- * plain JavaScript there is not even that.
+ * packages/tsudoi-language-server/src/config.ts checks the resolve/completion
+ * pair and nothing about payloads, and both runtimes STRIP the types rather
+ * than checking them. The cast below is the whole of what a config author has
+ * to get past, and in a config written in plain JavaScript there is not even
+ * that.
  *
  * ITS SUBJECT IS THE `finally` AND NOT THE TYPEERROR. The exception leaves the
  * drive's loop from a point where the generator is still parked and still

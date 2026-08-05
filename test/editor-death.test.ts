@@ -30,16 +30,17 @@ applySuiteDeadline();
  * changing what is written, so no reviewer reading a diff can see it go. These
  * tests are what would go red instead.
  *
- * WHAT FOLLOWS FROM THAT FOR ANYONE EDITING src/ -- that a long-lived handle must
- * be unref()'d, and why that is correctness rather than tidiness -- is recorded
- * at startServer in src/server.ts, WHERE SUCH AN EDIT WOULD BE MADE, and is not
- * repeated here. This file is only what turns it red.
+ * WHAT FOLLOWS FROM THAT FOR ANYONE EDITING src/ -- that a long-lived handle
+ * must be unref()'d, and why that is correctness rather than tidiness -- is
+ * recorded at startServer in packages/tsudoi-language-server/src/server.ts,
+ * WHERE SUCH AN EDIT WOULD BE MADE, and is not repeated here. This file is only
+ * what turns it red.
  *
  * WHY THE EXIT CODE HERE IS 0 while `exit` without a prior `shutdown` is 1 is
- * ruled at exitCode() in src/lifecycle.ts, which is the ONE place this project's
- * reading of the specification's exit-code sentence lives. It is not restated
- * here on purpose: two copies of one reading is how a project ends up holding
- * two rulings that disagree.
+ * ruled at exitCode() in packages/tsudoi-language-server/src/lifecycle.ts,
+ * which is the ONE place this project's reading of the specification's
+ * exit-code sentence lives. It is not restated here on purpose: two copies of
+ * one reading is how a project ends up holding two rulings that disagree.
  */
 
 const demoConfig = fileURLToPath(new URL("../examples/tsudoi.config.ts", import.meta.url));
@@ -50,11 +51,12 @@ const fakeEditor = fileURLToPath(new URL("./helpers/fake-editor.ts", import.meta
  * signal 0, from a process that is no longer its parent.
  *
  * `catch` is total here on purpose, and the reason it is safe is worth stating
- * because it does not generalise: the only errors this can raise are ESRCH (gone)
- * and EPERM (alive but not ours), and the server runs as the same user. THE
- * PORTABLE WAY TO TELL THEM APART IS `code === "ESRCH"` AND NOT THE ERRNO NUMBER;
- * that trap is recorded at startServer in src/server.ts, where anyone tempted to
- * write this check into the product would be writing it.
+ * because it does not generalise: the only errors this can raise are ESRCH
+ * (gone) and EPERM (alive but not ours), and the server runs as the same user.
+ * THE PORTABLE WAY TO TELL THEM APART IS `code === "ESRCH"` AND NOT THE ERRNO
+ * NUMBER; that trap is recorded at startServer in
+ * packages/tsudoi-language-server/src/server.ts, where anyone tempted to write
+ * this check into the product would be writing it.
  */
 function alive(pid: number): boolean {
   try {

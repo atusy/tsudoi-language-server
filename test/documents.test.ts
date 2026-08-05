@@ -358,9 +358,10 @@ test("one document is handed back for the life of an open, and another after a r
 // separates the two.
 //
 // MEASURED: an `open` that reuses and updates a document it built for that URI
-// earlier -- the store the liveness paragraph in src/documents.ts would describe
-// if the reference did survive -- reddens this test and NOTHING ELSE in the
-// suite, close's own removal tests included.
+// earlier -- the store the liveness paragraph in
+// packages/tsudoi-language-server/src/documents.ts would describe if the
+// reference did survive -- reddens this test and NOTHING ELSE in the suite,
+// close's own removal tests included.
 test("a reference captured before a close stops tracking the reopened document", () => {
   const store = createDocumentStore();
   store.open(opened(uri, "first"));

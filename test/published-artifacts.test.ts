@@ -111,12 +111,13 @@ test("a type error in the example reddens the example, not the snippet", async (
  * wearing the words `checked through the published arm`.
  */
 test("perturbing the published types reddens the probe while tsc --noEmit stays green", async () => {
-  // THE LEVER IS THE `types` CONDITION, not an edit to src/types.ts: that file
-  // is consumed in full by src/, so any change to it fails the build instead of
-  // shipping a different surface. Dropping the condition leaves tsc to fall
-  // back to `default` -> ./src/types.ts, WHICH THE PACKAGE DOES NOT SHIP
-  // (`files` is dist/ alone) -- so a consumer loses the types while this repo,
-  // which does have src/, is unaffected. That asymmetry IS the pair.
+  // THE LEVER IS THE `types` CONDITION, not an edit to
+  // packages/tsudoi-language-server/src/types.ts: that file is consumed in full
+  // by src/, so any change to it fails the build instead of shipping a
+  // different surface. Dropping the condition leaves tsc to fall back to
+  // `default` -> ./src/types.ts, WHICH THE PACKAGE DOES NOT SHIP (`files` is
+  // dist/ alone) -- so a consumer loses the types while this repo, which does
+  // have src/, is unaffected. That asymmetry IS the pair.
   const perturbed = await installConsumer({
     editPackage: (packageJson) => {
       const exports = packageJson.exports as Record<string, Record<string, string>>;
@@ -207,10 +208,11 @@ test("tsudoi's own subpath exports nothing at run time, where its dependency sub
  * -- every type-check assertion in this file would stay green while a config
  * author got `undefined` at their first completion.
  *
- * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE. src/deps/types.ts
- * satisfies it with a star, so incompleteness is structural rather than checked
- * -- what this test defends is the star itself: replace it with an explicit list
- * and this reddens the day upstream adds a name.
+ * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE.
+ * packages/tsudoi-language-server/src/deps/types.ts satisfies it with a star,
+ * so incompleteness is structural rather than checked -- what this test defends
+ * is the star itself: replace it with an explicit list and this reddens the day
+ * upstream adds a name.
  */
 test("the published module re-exports every LSP data value, and nothing else", async () => {
   const published = await runtimeKeysOf(
@@ -271,11 +273,11 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
 });
 
 /**
- * THE SURFACE IS UPSTREAM'S TYPE SET, and the probe names a type NO example uses
- * and NO line of src/types.ts mentions, so it passes only because `export type *`
- * carries it. The boundary runs between TYPES and VALUES rather than between
- * chosen names and withheld ones, and the test below is where the restraint
- * lives.
+ * THE SURFACE IS UPSTREAM'S TYPE SET, and the probe names a type NO example
+ * uses and NO line of packages/tsudoi-language-server/src/types.ts mentions, so
+ * it passes only because `export type *` carries it. The boundary runs between
+ * TYPES and VALUES rather than between chosen names and withheld ones, and the
+ * test below is where the restraint lives.
  */
 test("a protocol type no example names is reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
@@ -398,15 +400,17 @@ const handWrittenSuperset = [
  * `vscode-languageserver-protocol` re-exports `vscode-languageserver-types`
  * WHOLE, and that package still carries a `TextDocument` whose own doc comment
  * reads `@deprecated Use the text document from the new
- * vscode-languageserver-textdocument package` -- with the same seven members and
- * no `update`. src/types.ts already imports from that specifier, so this is the
- * edit a future tidy-up would make while believing it removed a dependency.
+ * vscode-languageserver-textdocument package` -- with the same seven members
+ * and no `update`. packages/tsudoi-language-server/src/types.ts already imports
+ * from that specifier, so this is the edit a future tidy-up would make while
+ * believing it removed a dependency.
  */
 const deprecatedProtocolTwin =
   'export type { TextDocument } from "vscode-languageserver-protocol";';
 
 /**
- * WHAT IT CATCHES THAT THE READINGS BESIDE IT DO NOT: with src/types.ts re-exporting
+ * WHAT IT CATCHES THAT THE READINGS BESIDE IT DO NOT: with
+ * packages/tsudoi-language-server/src/types.ts re-exporting
  * `vscode-languageserver-protocol`'s DEPRECATED TextDocument instead -- a
  * one-line edit that adds no dependency -- `tsc --noEmit` exits 0, the type arm
  * above exits 0, the value arm is unchanged, and this arm is the only red.

@@ -168,8 +168,9 @@ function readSource(name: string): string {
   return readFileSync(join(frameworkRoot, "src", name), "utf8");
 }
 
-// READ OFF THE FILE'S OWN BYTES, because the claim is about what src/server.ts
-// SAYS: checked any other way it would rot the moment someone put a check back.
+// READ OFF THE FILE'S OWN BYTES, because the claim is about what
+// packages/tsudoi-language-server/src/server.ts SAYS: checked any other way it
+// would rot the moment someone put a check back.
 test("no handler body in src/server.ts calls the notification gate", () => {
   expect(gateCalls(readSource("server.ts"))).toEqual([]);
 });
@@ -341,12 +342,14 @@ test("the same entry with a gate type-checks", async () => {
  * REMOVING THE LAST `always` ENTRY IS A SCOPE DECISION AND NOT A CLEANUP, and
  * this block is the site of that edit. Both assertions below redden if `exit`'s
  * entry goes, which is the loud half; the quiet half is what comes after --
- * with nothing left declaring `always`, the union in src/notifications.ts
- * collapses to a single member, and whatever is written in this test's place can
- * then only restate what the type already guarantees. THE KNOWN REASON ANYONE
- * WOULD WANT TO is recorded at `createGatedConnection` in src/notifications.ts:
- * the framework's exit-0 path fires only if tsudoi stops registering `exit`
- * itself, so that path and this carve-out cannot both be had.
+ * with nothing left declaring `always`, the union in
+ * packages/tsudoi-language-server/src/notifications.ts collapses to a single
+ * member, and whatever is written in this test's place can then only restate
+ * what the type already guarantees. THE KNOWN REASON ANYONE WOULD WANT TO is
+ * recorded at `createGatedConnection` in
+ * packages/tsudoi-language-server/src/notifications.ts: the framework's exit-0
+ * path fires only if tsudoi stops registering `exit` itself, so that path and
+ * this carve-out cannot both be had.
  */
 test("exit's entry declares always, and every other entry declares lifecycle", () => {
   const entries = notificationEntries(
@@ -404,7 +407,7 @@ const forbidsAndPermits: Record<string, string> = {
 // A FIRING-HALF-ONLY PROBE WOULD PASS A TYPE THAT FORBIDS EVERYTHING, which is
 // why the permitted half is not optional: `Omit<ProtocolConnection, keyof
 // ProtocolConnection>` satisfies the failing half perfectly and would leave
-// src/server.ts unable to register a request.
+// packages/tsudoi-language-server/src/server.ts unable to register a request.
 //
 // THE DIAGNOSTIC IS BOUND TO THE FILE ON ONE LINE, not asserted as two
 // independent `toContain`s: in a multi-file run a diagnostic in permits.ts
@@ -512,7 +515,8 @@ type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
 
 /**
- * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY src/notifications.ts CLAIMS.
+ * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY
+ * packages/tsudoi-language-server/src/notifications.ts CLAIMS.
  *
  * Every probe above names a member the `Omit` REMOVES or one it KEEPS, so all of
  * them stay green when a FURTHER key is added to it -- appending
@@ -553,13 +557,15 @@ export type BoundaryIsTheObservingMembers = Assert<
  * member like `onProgress` or `trace` sit unnoticed on the handle indefinitely.
  *
  * IT IS THE OTHER DIRECTION FROM THE PIN ABOVE, and neither substitutes for the
- * other: that one is a set DIFFERENCE, so a member the dependency adds appears on
- * both sides and cancels; this one has no `RequestOnlyConnection` in it, so a key
- * added to the `Omit` leaves it untouched. Between them, a member arriving from
- * the dependency and a key arriving in the `Omit` both redden something.
+ * other: that one is a set DIFFERENCE, so a member the dependency adds appears
+ * on both sides and cancels; this one has no `RequestOnlyConnection` in it, so
+ * a key added to the `Omit` leaves it untouched. Between them, a member
+ * arriving from the dependency and a key arriving in the `Omit` both redden
+ * something.
  *
  * WHAT THIS DOES NOT ASSERT, IN THREE DIRECTIONS, stated in full because the
- * sentence it supports at src/notifications.ts outruns it in every one of them.
+ * sentence it supports at packages/tsudoi-language-server/src/notifications.ts
+ * outruns it in every one of them.
  *
  * FIRST, IT ASSERTS THE SET OF NAMES AND NOT WHAT THEY DO. A member still on the
  * list that GROWS a way to observe traffic reddens nothing: adding
@@ -579,12 +585,13 @@ export type BoundaryIsTheObservingMembers = Assert<
  * does not: `inspect`, and `onUnhandledProgress`. THE SECOND OBSERVES INBOUND
  * TRAFFIC -- vscode-jsonrpc's own `$/progress` handler fires
  * `unhandledProgressEmitter` for every progress notification whose token has no
- * handler registered, and tsudoi registers none, so that is EVERY ONE. It is off
- * the handle's TYPE and therefore off this pin, and reaching it needs a CAST.
- * That puts it in the deliberate-evasion class this module already accepts for
- * `await import(...)` and for a wrapper exported from src/notifications.ts --
- * a line whose author had to mean it -- rather than in the by-accident class the
- * `Omit` exists to close. Recorded so it is not rediscovered as news.
+ * handler registered, and tsudoi registers none, so that is EVERY ONE. It is
+ * off the handle's TYPE and therefore off this pin, and reaching it needs a
+ * CAST. That puts it in the deliberate-evasion class this module already
+ * accepts for `await import(...)` and for a wrapper exported from
+ * packages/tsudoi-language-server/src/notifications.ts -- a line whose author
+ * had to mean it -- rather than in the by-accident class the `Omit` exists to
+ * close. Recorded so it is not rediscovered as news.
  */
 export type ProtocolConnectionHasTheseMembers = Assert<
   Exact<
@@ -630,8 +637,9 @@ const traceCall = "trace(Trace.Off, null as unknown as Tracer);";
  * WHAT IT REACHES IS NARROWER THAN THE MEMBERS CLOSED BEFORE IT: `$/progress`
  * arrives as a notification like any other, and `onProgress` installs a handler
  * for it under a TOKEN, outside the table this module gates. Nothing in tsudoi
- * receives `$/progress` today -- src/methods.ts SENDS it, through
- * `sendProgress`, which this narrowing deliberately leaves alone.
+ * receives `$/progress` today -- packages/tsudoi-language-server/src/methods.ts
+ * SENDS it, through `sendProgress`, which this narrowing deliberately leaves
+ * alone.
  *
  * REACHABILITY IS WHY IT GOES, not breadth: it sits on the handle
  * `createGatedConnection` hands out, so reaching it needs NO DELIBERATE ACT, and
@@ -720,14 +728,16 @@ test("the same two outcomes hold for trace through an alias under a different na
  * green whatever `createGatedConnection` hands back. Widen that function's
  * return annotation to `ProtocolConnection` and all of them stay green, the
  * whole suite with them, while an ungated `connection.onNotification` in
- * src/server.ts compiles fine -- the foreclosure entirely gone with nothing
- * saying so. This reddens, and only this.
+ * packages/tsudoi-language-server/src/server.ts compiles fine -- the
+ * foreclosure entirely gone with nothing saying so. This reddens, and only
+ * this.
  *
- * WHAT IT STILL DOES NOT REACH is src/server.ts choosing to call
- * `createProtocolConnection` instead, which no type can catch: that route is
- * banned by .oxlintrc.json and asserted in test/guard.test.ts. THE TWO ARE NOT
- * INDEPENDENT -- widening this annotation also destroys the argument that a mere
- * lint suffices over there, and only this probe would say so.
+ * WHAT IT STILL DOES NOT REACH is packages/tsudoi-language-server/src/server.ts
+ * choosing to call `createProtocolConnection` instead, which no type can catch:
+ * that route is banned by .oxlintrc.json and asserted in test/guard.test.ts.
+ * THE TWO ARE NOT INDEPENDENT -- widening this annotation also destroys the
+ * argument that a mere lint suffices over there, and only this probe would say
+ * so.
  */
 function factorySource(body: string[]): string {
   return [
@@ -754,9 +764,9 @@ function factorySource(body: string[]): string {
  * be created -- so the ban is blind to exactly one file, and a single line
  * inside it, `export { createProtocolConnection } from ...`, hands the factory
  * to every other module through a specifier the rule permits. THE GUARD WOULD
- * STAY SILENT: src/server.ts would import from ./notifications.ts, which is not
- * the banned path. Not a second claim about the ban, then, but the PRECONDITION
- * that makes the ban's claim true at all.
+ * STAY SILENT: packages/tsudoi-language-server/src/server.ts would import from
+ * ./notifications.ts, which is not the banned path. Not a second claim about
+ * the ban, then, but the PRECONDITION that makes the ban's claim true at all.
  *
  * THE NEGATIVE ONLY, AND DELIBERATELY NOT AN EXPORT LIST: this module will grow,
  * and a test that fails when it does defends nothing.

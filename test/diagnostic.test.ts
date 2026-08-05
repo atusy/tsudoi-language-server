@@ -32,8 +32,9 @@ const textDocumentSync: TextDocumentSyncOptions = {
 /**
  * Advertised for EVERY config, so it stands in every exact-equality pin below
  * and is not evidence about the fixture any one of them drives. Why tsudoi
- * claims it unconditionally -- it mirrors folders whatever the config supplies --
- * is at the capabilities literal in src/server.ts.
+ * claims it unconditionally -- it mirrors folders whatever the config supplies
+ * -- is at the capabilities literal in
+ * packages/tsudoi-language-server/src/server.ts.
  */
 const workspace: ServerCapabilities["workspace"] = {
   workspaceFolders: { supported: true, changeNotifications: true },
@@ -70,11 +71,12 @@ for (const runtime of runtimes) {
      *
      * BOTH BOOLEANS ARE REQUIRED BY THE PROTOCOL AND ARE DECIDED DIFFERENTLY,
      * which is why they are asserted together and why the reasons live at the
-     * contributor in src/methods.ts: `workspaceDiagnostics: false` is FORCED by
-     * tsudoi not serving `workspace/diagnostic`, while `interFileDependencies:
-     * true` is CHOSEN on harm asymmetry -- a stale diagnostic in another file
-     * that never clears is silent and wrong, where a redundant pull is visible
-     * and merely costs. Flipping either reddens this and this alone.
+     * contributor in packages/tsudoi-language-server/src/methods.ts:
+     * `workspaceDiagnostics: false` is FORCED by tsudoi not serving
+     * `workspace/diagnostic`, while `interFileDependencies: true` is CHOSEN on
+     * harm asymmetry -- a stale diagnostic in another file that never clears is
+     * silent and wrong, where a redundant pull is visible and merely costs.
+     * Flipping either reddens this and this alone.
      */
     test("a config supplying a diagnostic handler advertises diagnosticProvider with both booleans decided", async () => {
       const session = LspSession.start(runtime, diagnosticOffsets);

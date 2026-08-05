@@ -22,10 +22,11 @@ export const bareItem: CompletionItem = { label: "裸の候補", detail: "yielde
  * A handler yielding a single ITEM rather than an array of them.
  *
  * NOTHING BUT TSUDOI STANDS BETWEEN THIS AND THE WIRE, which is why the case is
- * reachable at all: src/config.ts checks the resolve/completion pair and nothing
- * about payloads, and both runtimes STRIP the annotation rather than checking
- * it. The cast below is the whole of what an annotated config has to get past,
- * and a config written in plain JavaScript has not even that.
+ * reachable at all: packages/tsudoi-language-server/src/config.ts checks the
+ * resolve/completion pair and nothing about payloads, and both runtimes STRIP
+ * the annotation rather than checking it. The cast below is the whole of what
+ * an annotated config has to get past, and a config written in plain JavaScript
+ * has not even that.
  *
  * ITS SUBJECT IS BOTH DISPATCH MODES, which is what separates it from a fixture
  * about cleanup. Aggregation rejects this incidentally -- spreading a

@@ -10,7 +10,8 @@
  *
  * NO TYPE ANNOTATION, deliberately, and for the reason given in full at
  * factory-returns-nothing.ts: annotating this would make tsc refuse the file,
- * and it exists to be REFUSED AT RUNTIME by src/config.ts, which reaches the
- * factory through a cast from `unknown`.
+ * and it exists to be REFUSED AT RUNTIME by
+ * packages/tsudoi-language-server/src/config.ts, which reaches the factory
+ * through a cast from `unknown`.
  */
 export default () => ({ methods: 5 });

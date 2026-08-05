@@ -79,8 +79,9 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * result type. MEASURED ON THIS TREE at typescript 7.0.2 / protocol 3.18.2
  * rather than taken on trust: pinning the entry gives TS2322 AT THE TABLE,
  * `Type 'CompletionList' is missing the following properties from type
- * 'CompletionItem[]'`. `StreamDrivenEntry` in src/methods.ts leaves the result
- * open for exactly that reason.
+ * 'CompletionItem[]'`. `StreamDrivenEntry` in
+ * packages/tsudoi-language-server/src/methods.ts leaves the result open for
+ * exactly that reason.
  *
  * WHAT THIS TEST SAYS THAT NO PIN EVER COULD, and it is why it would be kept
  * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in
@@ -146,9 +147,10 @@ for (const runtime of runtimes) {
      * method would have been the convention this work exists to retire.
      *
      * WHAT IT NO LONGER SAYS ON ITS OWN, because two different answers are now
-     * one answer on the wire: the fallback in src/server.ts refuses an
-     * UNREGISTERED method -32002 in this phase as well, so a table entry that
-     * reached no registration at all would satisfy every assertion here.
+     * one answer on the wire: the fallback in
+     * packages/tsudoi-language-server/src/server.ts refuses an UNREGISTERED
+     * method -32002 in this phase as well, so a table entry that reached no
+     * registration at all would satisfy every assertion here.
      *
      * THE HALF THAT STILL DISCRIMINATES IS THE -32800 TEST BELOW, which drives
      * the SAME table inside the serving window -- where an unregistered method
@@ -227,8 +229,9 @@ for (const runtime of runtimes) {
      * `textDocument/completion` and at no other method.
      *
      * LSP 3.17 PERMITS EITHER ANSWER, so this pins a CHOICE rather than a
-     * requirement -- the same choice `requestCancelled` in src/methods.ts is
-     * written for, made once and now made for every entry.
+     * requirement -- the same choice `requestCancelled` in
+     * packages/tsudoi-language-server/src/methods.ts is written for, made once
+     * and now made for every entry.
      */
     test("every method in the table is answered -32800 when cancelled with no handler", async () => {
       const session = LspSession.start(runtime, noMethods);

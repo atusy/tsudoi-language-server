@@ -410,8 +410,9 @@ const facts: readonly ReadmeFact[] = [
   {
     // WHAT THE ANNOTATION BUYS, not merely that the quickstart carries one:
     // nothing type-checks an author's own config against `TsudoiConfigFactory`,
-    // src/config.ts reaching the type through a cast from `unknown`, so the
-    // annotation is the whole of the defence on the documented route.
+    // packages/tsudoi-language-server/src/config.ts reaching the type through a
+    // cast from `unknown`, so the annotation is the whole of the defence on the
+    // documented route.
     name: "annotating the factory const is what reports a config shape change",
     tokens: [/TsudoiConfigFactory/, /annotat/i, /shape changes/i],
   },

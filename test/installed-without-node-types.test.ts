@@ -8,18 +8,19 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * THE ONE THING THAT DEFENDS src/types.ts's BARE SPECIFIER, and it has to be a
- * TEST: a paragraph explaining why the specifier is bare holds nothing in
- * place, however honest it is about that.
+ * THE ONE THING THAT DEFENDS packages/tsudoi-language-server/src/types.ts's
+ * BARE SPECIFIER, and it has to be a TEST: a paragraph explaining why the
+ * specifier is bare holds nothing in place, however honest it is about that.
  *
  * THE PROPERTY: a config author who has never installed @types/node can
- * type-check against `@atusy/tsudoi-language-server/types`. src/types.ts re-exports its
- * protocol names from the BARE `vscode-languageserver-protocol` rather than from
- * `/node`, and `/node` drags Node stream typings into a consumer that has none.
+ * type-check against `@atusy/tsudoi-language-server/types`.
+ * packages/tsudoi-language-server/src/types.ts re-exports its protocol names
+ * from the BARE `vscode-languageserver-protocol` rather than from `/node`, and
+ * `/node` drags Node stream typings into a consumer that has none.
  *
  * THE MEASURED TABLE, and it is the whole design -- ONLY THE PAIR
  * DISCRIMINATES. Rows are the consumer's own tsconfig, columns are the
- * specifier src/types.ts re-exports from:
+ * specifier packages/tsudoi-language-server/src/types.ts re-exports from:
  *
  *   skipLibCheck | types    | bare   | /node
  *   -------------+----------+--------+-------
@@ -36,9 +37,10 @@ applySuiteDeadline();
  * ITSELF WAS BLIND, not merely the build.
  *
  * THROUGH installConsumer, NOT typeCheckProbe, and the two are not
- * interchangeable: the in-repo arm resolves the exports map's `default` straight
- * at src/types.ts, so it observes a file rather than what ships.
- * test/published-artifacts.test.ts measures that difference directly.
+ * interchangeable: the in-repo arm resolves the exports map's `default`
+ * straight at packages/tsudoi-language-server/src/types.ts, so it observes a
+ * file rather than what ships. test/published-artifacts.test.ts measures that
+ * difference directly.
  *
  * EVERYTHING HERE IS BORN GREEN, stated plainly rather than dressed up: the
  * specifier already behaves this way, and what was missing is the CHECK. So the
@@ -75,7 +77,8 @@ applySuiteDeadline();
  *   vscode-jsonrpc/lib/node/main.d.ts and
  *   vscode-languageserver-protocol/lib/node/main.d.ts, which is where every one
  *   of them was measured -- means THE PROBE FIRED FOR ITS REAL CAUSE. Somebody
- *   moved src/types.ts off the bare specifier. The fix is the specifier.
+ *   moved packages/tsudoi-language-server/src/types.ts off the bare specifier.
+ *   The fix is the specifier.
  *
  *   ANYTHING ELSE is the dependency's declaration graph, and the fix is not in
  *   this repository. The response is to NARROW THE ASSERTION -- from `output is
@@ -125,13 +128,13 @@ afterAll(() => {
  * built ON FIRST USE and MEMOISED so both controls below observe ONE tree.
  *
  * DELIBERATELY NOT IN beforeAll, and the reason was MEASURED rather than
- * guessed. With src/types.ts already at `/node` -- the very regression this file
- * exists to catch -- the replacement finds nothing to move and throws. Raised
- * from beforeAll that takes the WHOLE FILE down before any test runs, so the
- * headline test never reports and the suite blames a helper instead of naming
- * the specifier. Raised from here, the headline test reddens FIRST and with the
- * node-typing diagnostics, and the two controls fail beside it under their own
- * names. MEASURED both ways.
+ * guessed. With packages/tsudoi-language-server/src/types.ts already at `/node`
+ * -- the very regression this file exists to catch -- the replacement finds
+ * nothing to move and throws. Raised from beforeAll that takes the WHOLE FILE
+ * down before any test runs, so the headline test never reports and the suite
+ * blames a helper instead of naming the specifier. Raised from here, the
+ * headline test reddens FIRST and with the node-typing diagnostics, and the two
+ * controls fail beside it under their own names. MEASURED both ways.
  *
  * The perturbation reaches the published artifact with no rebuild step of
  * anyone's: `bun pm pack` runs prepack over this staged copy, so dist/types.d.ts

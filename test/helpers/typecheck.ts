@@ -47,12 +47,12 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * `files` the probe is exit 0, without it exit 1 naming that file.
  *
  * `skipLibCheck` IS ON, AND EVERY PROBE THAT TAKES THESE OPTIONS IS THEREFORE
- * BLIND TO ONE THING: whether src/types.ts re-exports from the BARE
- * `vscode-languageserver-protocol` or from `/node`. With it on, both exit 0.
- * The property that needs it OFF -- that the published subpath type-checks for
- * a consumer with no Node typings reachable -- is measured by
- * test/installed-without-node-types.test.ts, which passes its own value through
- * installConsumer's `typeCheck` rather than moving this line.
+ * BLIND TO ONE THING: whether packages/tsudoi-language-server/src/types.ts
+ * re-exports from the BARE `vscode-languageserver-protocol` or from `/node`.
+ * With it on, both exit 0. The property that needs it OFF -- that the published
+ * subpath type-checks for a consumer with no Node typings reachable -- is
+ * measured by test/installed-without-node-types.test.ts, which passes its own
+ * value through installConsumer's `typeCheck` rather than moving this line.
  *
  * WHY IT IS NOT SIMPLY TURNED OFF HERE, MEASURED rather than argued: setting it
  * `false` reddens NOTHING -- the whole of `bun test` stays green -- and it would
@@ -228,11 +228,12 @@ export function mirrorInstalledDependencies(into: string): void {
  *
  * package.json is COPIED from the repo and src/ is SYMLINKED to it, so these
  * tests track the identity and the module that actually ship. The installed
- * dependencies are MIRRORED rather than installed -- src/types.ts imports
- * tsudoi's own declared dependencies, and installing them per probe would cost a
- * network fetch to prove nothing. Named that way rather than listed: the set of
- * declared dependencies grows, and a comment that spells it out goes stale at
- * the next one.
+ * dependencies are MIRRORED rather than installed --
+ * packages/tsudoi-language-server/src/types.ts imports tsudoi's own declared
+ * dependencies, and installing them per probe would cost a network fetch to
+ * prove nothing. Named that way rather than listed: the set of declared
+ * dependencies grows, and a comment that spells it out goes stale at the next
+ * one.
  *
  * MIRRORED AND NOT BORROWED, which is the difference this probe's controls rest
  * on: the whole directory used to be handed over, and it carried entries leading

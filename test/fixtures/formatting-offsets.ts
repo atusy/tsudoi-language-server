@@ -4,8 +4,9 @@
 // `DocumentFormattingParams`, no `TextEdit`, no `Position`, and no annotation
 // on the handler: `MethodHandler` supplies all of it by contextual typing, so
 // `tsc --noEmit` type-checking this file is the standing evidence for the
-// ruling at src/types.ts that neither name joins the published surface. Add an
-// annotation here and that evidence is gone.
+// ruling at packages/tsudoi-language-server/src/types.ts that neither name
+// joins the published surface. Add an annotation here and that evidence is
+// gone.
 import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /** What this formatter rewrites, and what it rewrites it to. */

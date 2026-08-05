@@ -41,8 +41,9 @@ const textDocumentSync: TextDocumentSyncOptions = {
 /**
  * Advertised for EVERY config, so it stands in every exact-equality pin below
  * and is not evidence about the fixture any one of them drives. Why tsudoi
- * claims it unconditionally -- it mirrors folders whatever the config supplies --
- * is at the capabilities literal in src/server.ts.
+ * claims it unconditionally -- it mirrors folders whatever the config supplies
+ * -- is at the capabilities literal in
+ * packages/tsudoi-language-server/src/server.ts.
  */
 const workspace: ServerCapabilities["workspace"] = {
   workspaceFolders: { supported: true, changeNotifications: true },

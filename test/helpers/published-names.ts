@@ -1,9 +1,11 @@
 /**
  * THE PROTOCOL NAMES THE PUBLISHED SUBPATH RE-EXPORTS, spelled here so a probe
- * that imports them cannot quietly agree with a src/types.ts that dropped one.
+ * that imports them cannot quietly agree with a
+ * packages/tsudoi-language-server/src/types.ts that dropped one.
  *
- * WHY THESE AND NOT OTHERS is stated at src/types.ts, where a new one would be
- * added. What this list is for is the probes that import it. NAMED RATHER THAN
+ * WHY THESE AND NOT OTHERS is stated at
+ * packages/tsudoi-language-server/src/types.ts, where a new one would be added.
+ * What this list is for is the probes that import it. NAMED RATHER THAN
  * COUNTED, because the surface grows: a probe describing itself by an ordinal
  * goes on reading a number that has stopped being true, and nothing fails when
  * it does.

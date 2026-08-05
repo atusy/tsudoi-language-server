@@ -507,14 +507,15 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  * - `import` -> dist/types.js is what a runtime import of the subpath actually
  *   resolves to, and it names a file the tarball contains. Pinned by
  *   test/installed-runtime.test.ts, with the pair that drops it.
- * - `default` -> src/types.ts is the IN-REPO FALLBACK, reached only because tsc
- *   falls through a condition whose target file is missing: root `tsc --noEmit`
- *   answers every subpath from dist/ while the artifact is there and falls
- *   through to THIS ARM the moment it is not -- exit 0, no diagnostic, reading a
- *   file no consumer receives. DELETING IT IS BLOCKED BY `typeCheckProbe`, which
- *   stages this manifest with src/ SYMLINKED AND NO dist/, so three arms of this
- *   suite take this arm in every state of this repository. The blocker is
- *   asserted rather than described in test/unbuilt-artifact.test.ts.
+ * - `default` -> packages/tsudoi-language-server/src/types.ts is the IN-REPO
+ *   FALLBACK, reached only because tsc falls through a condition whose target
+ *   file is missing: root `tsc --noEmit` answers every subpath from dist/ while
+ *   the artifact is there and falls through to THIS ARM the moment it is not --
+ *   exit 0, no diagnostic, reading a file no consumer receives. DELETING IT IS
+ *   BLOCKED BY `typeCheckProbe`, which stages this manifest with src/ SYMLINKED
+ *   AND NO dist/, so three arms of this suite take this arm in every state of
+ *   this repository. The blocker is asserted rather than described in
+ *   test/unbuilt-artifact.test.ts.
  *
  * THE FIRING CONDITION IS THIS TEST, AND IT IS NAMED SO A READER DOES NOT INFER
  * IT: the literal below spells `default` for every subpath, so the day someone
@@ -540,19 +541,20 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  *
  * NO `bin`, and this is a deliberate refusal rather than an omission. A bin is
  * executed through a shim that obeys the file's shebang, so declaring one means
- * naming an interpreter in src/cli.ts. This project verifies exactly two runtimes
- * and neither of them reaches a package this way: deno does not use
- * node_modules/.bin at all, and the stated route is a file path both runtimes
- * take identically. A shebang naming node would be a third runtime's claim that
- * nothing here tests.
+ * naming an interpreter in packages/tsudoi-language-server/src/cli.ts. This
+ * project verifies exactly two runtimes and neither of them reaches a package
+ * this way: deno does not use node_modules/.bin at all, and the stated route is
+ * a file path both runtimes take identically. A shebang naming node would be a
+ * third runtime's claim that nothing here tests.
  *
  * JSR WAS MEASURED AND DECLINED, recorded so the next person does not re-derive
  * it: it type-checks this package with no slow-types errors, but it flags
  * tsudoi's CORE MECHANISM -- the `await import(pathToFileURL(...))` in
- * src/config.ts that loads the user's config -- as unanalyzable-dynamic-import;
- * it REQUIRES a deno.json, which the assertion below forbids; and its bun half
- * cannot be verified without an irreversible publish needing an account. Compiled
- * .js on npm serves both runtimes from one artifact.
+ * packages/tsudoi-language-server/src/config.ts that loads the user's config --
+ * as unanalyzable-dynamic-import; it REQUIRES a deno.json, which the assertion
+ * below forbids; and its bun half cannot be verified without an irreversible
+ * publish needing an account. Compiled .js on npm serves both runtimes from one
+ * artifact.
  */
 test("the published surface is tsudoi's types beside the dependency subpaths, and nothing else", () => {
   const arm = (name: string): Record<string, string> => ({
@@ -611,19 +613,20 @@ test("packing builds, so a stale dist cannot be published", () => {
  *
  * WHAT IT WATCHES ON THAT ROUTE IS dist/deps/types.js AND ONLY THAT FILE, which
  * is narrower than `dist/ is stale` and is the reading to hold it to: a value
- * added to src/types.ts leaves this GREEN, because neither side of the comparison
- * below reads that file. It is one failure among many on that route and earns its
- * place by NAMING ITS OWN CAUSE -- the others arrive as `initialize failed` and
- * send a reader to the config, where the remedy string below sends them to the
- * build.
+ * added to packages/tsudoi-language-server/src/types.ts leaves this GREEN,
+ * because neither side of the comparison below reads that file. It is one
+ * failure among many on that route and earns its place by NAMING ITS OWN CAUSE
+ * -- the others arrive as `initialize failed` and send a reader to the config,
+ * where the remedy string below sends them to the build.
  *
  * IT DETECTS AND DOES NOT BUILD. Whether the suite builds is settled in
  * bunfig.toml; what keeps the build OUT of THIS test is that a test which
  * repaired the condition it asserts could never fail.
  */
 test("the framework's own dist/ is built, and carries every LSP data value", async () => {
-  // THE SOURCE SIDE IS THE DEPENDENCY ITSELF, because src/deps/types.ts is a star
-  // and there is no list here to read.
+  // THE SOURCE SIDE IS THE DEPENDENCY ITSELF, because
+  // packages/tsudoi-language-server/src/deps/types.ts is a star and there is no
+  // list here to read.
   //
   // WHAT IT CANNOT SEE, so its green is not read as more than it is: a STALE
   // dist/ is unreachable from a root `bun test`, because the preload rebuilds

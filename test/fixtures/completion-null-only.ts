@@ -35,8 +35,9 @@ export default (): Promise<TsudoiConfig> => {
       // AND THE DRIVE IS WHAT KEEPS THIS TRUE, which is why the ruling is worth
       // re-reading beside it: aggregating zero yields into `[]` would turn this
       // fixture's refusal into `the candidate set is complete and empty`
-      // WITHOUT ONE CHARACTER OF THIS FILE CHANGING. src/methods.ts answers
-      // `null` for a stream that yielded nothing, and says so at the site.
+      // WITHOUT ONE CHARACTER OF THIS FILE CHANGING.
+      // packages/tsudoi-language-server/src/methods.ts answers `null` for a
+      // stream that yielded nothing, and says so at the site.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,
