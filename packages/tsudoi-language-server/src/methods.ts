@@ -1,3 +1,9 @@
+/**
+ * How a config author's handler is RUN to the answer the client receives: the
+ * request table, the cancellation every answer passes through, and the two
+ * drives -- one that awaits a handler once, one that pulls a generator a batch
+ * at a time.
+ */
 import process from "node:process";
 import {
   type CancellationToken,
@@ -20,112 +26,28 @@ import {
 import type { RequestOnlyConnection } from "./notifications.ts";
 import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
 
-/**
- * How a config author's handler is RUN to the answer the client receives.
- *
- * TWO KINDS, NAMED, AND THE CHOICE IS NOT FREE: it is DERIVED from what
- * `MethodMap` says the handler returns, so a method declared with the wrong
- * drive does not compile -- writing `stream-driven` on hover's entry fails
- * TS2322 naming the two strings, and completion's entry requires the `progress`
- * member that only a stream-driven entry declares.
- *
- * A DERIVATION THAT STOPS MATCHING FAILS SILENTLY, BY ROUTING COMPLETION TO THE
- * AWAITED-ONCE ENTRY WITH NOTHING OBJECTING, which is why the question is asked
- * of THE ONE THING THE DRIVE ACTUALLY NEEDS: does the declared result YIELD
- * BATCHES this drive must pull. Questions that were true of the result rather
- * than of the need -- `does it extend AsyncGenerator`, `does it carry a stream
- * slot` -- have each stopped matching when the declared result moved.
- *
- * DECLARING `partialResult` IS NECESSARY AND NOT SUFFICIENT, which is the trap
- * `textDocument/diagnostic` sits in: it declares one and is AWAITED ONCE. See
- * `driveStream`, which states both of that drive's requirements and which that
- * method fails on the second.
- */
+/** Which drive a method needs, derived from whether its result yields batches. */
 type DriveKind<M extends Method> = [StreamChunk<M>] extends [never]
   ? "awaited-once"
   : "stream-driven";
 
-/**
- * WHAT THE CLIENT RECEIVES AS THE RESPONSE for a method this drive AWAITS ONCE,
- * which is every method except completion. Nothing about hover, formatting,
- * diagnostic or resolve is derived through a conditional at all: their handler's
- * awaited result IS what goes on the wire.
- *
- * COMPLETION IS ABSENT FROM THIS ON PURPOSE, and the reason is at
- * `StreamDrivenEntry` where its consequence lands.
- */
+/** What the client receives as the response for a method this drive awaits once. */
 type WireResult<M extends Method> = Awaited<MethodMap[M]["result"]>;
 
-/**
- * What one method adds to `ServerCapabilities` when the config can answer it.
- *
- * A FUNCTION, NOT A KEY AND A VALUE, and that is a requirement rather than a
- * taste. No mechanical `methods[k] !== undefined -> capabilities[flag] = true`
- * expresses what these five have to say: `completionProvider` is an OBJECT and
- * `completionItem/resolve` contributes `completionProvider.resolveProvider` --
- * A KEY INSIDE ANOTHER METHOD'S -- while `diagnosticProvider` is an object with
- * TWO REQUIRED BOOLEANS, so for that one neither `true` nor `{}` would
- * type-check and copying completion's shape would not either. A function is
- * immune to the next shape arriving; a key/value pair has to be widened for each
- * one.
- *
- * IT MUTATES, AND IT IS NOT ORDER-DEPENDENT. Reaching inside another method's
- * key is what would make it so -- A CONTRIBUTOR THAT WRITES INTO A KEY ANOTHER
- * METHOD OWNS MUST RUN AFTER THAT METHOD'S -- and what removes the constraint is
- * that THE ONE KEY TWO METHODS SHARE IS MERGED INTO RATHER THAN ASSIGNED OVER,
- * so what another contributor already wrote survives and the order they run in
- * decides nothing. The table is still iterated in DECLARATION ORDER, because
- * string keys on an object literal preserve it, and nothing depends on that.
- *
- * WHAT IS NOT DEFENDED, NAMED RATHER THAN LEFT TO BE FOUND: nothing stops a
- * FUTURE contributor from assigning over a key another method owns. The merge
- * is a property of the two lines that write `completionProvider` and not of
- * this type, and no test can see the difference while `textDocument/completion`
- * contributes no key of its own.
- */
+/** What one method adds to `ServerCapabilities` when the config can answer it. */
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
 
 /**
- * What a table entry accepts in a request type's ERROR position: ANYTHING,
- * because that payload is THE PROTOCOL'S AND NOT TSUDOI'S.
- *
- * ONE HOME FOR THE REASON, and the alias exists for that rather than for
- * brevity: three entry interfaces sit at this position and a reader narrowing
- * one back to `void` would find nothing at the other two.
- *
- * NOT `void`, AND THAT IS NOT A TASTE: hover, completion and formatting each
- * declare `void` there, but `DocumentDiagnosticRequest` declares
- * `DiagnosticServerCancellationData`, so pinning `void` REFUSES THE REAL REQUEST
- * TYPE with TS2322 at position 2 of `RequestType`'s phantom tuple.
- *
- * TSUDOI STILL NAMES NO METHOD-SPECIFIC ERROR TYPE, which is the criterion this
- * has to be read against: `MethodMap` gains nothing, no handler's return type
- * mixes an error shape in, and `retriggerRequest` remains foreclosed -- it is a
- * server telling a client its analysis is TRANSIENTLY unavailable, and that
- * needs a config author who can know that. None has asked to be.
- *
- * BOOKED AS A DEBIT so the ledger carries costs and not only gains: an entry may
- * name a request type whose error payload disagrees with every other entry's and
- * NOTHING OBJECTS. Nothing exercises that today and nothing checks it.
+ * What a table entry accepts in a request type's ERROR position: anything,
+ * because that payload is the protocol's and not tsudoi's.
  */
 type EntryErrorPayload = unknown;
 
-/**
- * The batch a stream-driven method yields, read off `MethodMap` rather than
- * fixed here: the drive is shared, so the payload type may not be one method's.
- * `never` for a method whose result is not something to pull at all, which is
- * what `DriveKind` above turns on.
- */
+/** The batch a stream-driven method yields, or `never` for one that yields none. */
 type StreamChunk<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<infer C, unknown, unknown> ? C : never;
 
-/**
- * A method whose handler is AWAITED ONCE.
- *
- * ITS `type` IS FULLY DISCRIMINATING, which is the property the whole table
- * rests on: the result is pinned to `MethodMap`'s own, so
- * `CompletionRequest.type` written into hover's slot fails TS2322.
- */
+/** A method whose handler is AWAITED ONCE. */
 interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
   readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
@@ -133,42 +55,15 @@ interface AwaitedOnceEntry<M extends Method> {
 }
 
 /**
- * A method whose handler is DRIVEN A CHUNK AT A TIME.
- *
- * ITS `type` LEAVES THE RESULT OPEN, AND THAT IS A MEASURED WEAKNESS RATHER
- * THAN A SHRUG -- stated here because the natural reading of the entry above is
- * that both are equally safe, and they are not. The protocol declares
- * `CompletionRequest`'s result as `CompletionItem[] | CompletionList | null`,
- * WIDER than the `CompletionItem[] | null` this drive can produce, so pinning
- * the result to what tsudoi's own types describe REFUSES THE REAL REQUEST TYPE.
- * With the result open, any request type whose params are assignable is
- * accepted -- and `HoverParams` IS assignable to `CompletionParams`, since they
- * differ only in OPTIONAL members -- so `HoverRequest.type` in completion's slot
- * COMPILES.
- *
- * PINNING IT BACK IS NOT AVAILABLE: a handler that yields `CompletionItem[]`
- * and nothing else cannot say `CompletionList`, so `StreamChunk<M> | null` gives
- * TS2322 AT THE TABLE ENTRY. And WIDENING THE DECLARED RESULT TO KEEP THE PIN IS
- * REFUSED: declaring that a completion answer may be a `CompletionList` when
- * nothing in this drive can produce one is a slot whose meaning does not match
- * its contents.
- *
- * SO THE MIS-KEYING HAZARD IS CLOSED BY A TEST RATHER THAN BY THE COMPILER, and
- * that test is THE ONLY thing standing between this entry and a mis-keying:
- * every entry's key is asserted equal to its own `type.method` in
- * test/methods-table.test.ts. It makes a second, different claim too --
- * `type.method` is a RUNTIME STRING, and a dependency that renamed the method a
- * request constant carries while leaving its types alone would satisfy every
- * compile-time check and reach the wrong handler.
+ * A method whose handler is DRIVEN A CHUNK AT A TIME. Its `type` leaves the
+ * result open, so a request type whose params merely fit is accepted here; the
+ * key and the request type are held together by test rather than by the
+ * compiler.
  */
 interface StreamDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
   readonly type: RequestType<MethodMap[M]["params"], unknown, EntryErrorPayload>;
-  /**
-   * What the streamed chunks travel as. On the entry rather than in the drive
-   * so the drive names no single method's payload -- `ProgressType` carries no
-   * state, so one instance per method is the whole cost.
-   */
+  /** What the streamed chunks travel as. */
   readonly progress: ProgressType<StreamChunk<M>>;
   readonly capability: CapabilityContributor;
 }
@@ -181,17 +76,7 @@ export type RequestEntry<M extends Method> = [StreamChunk<M>] extends [never]
   ? AwaitedOnceEntry<M>
   : StreamDrivenEntry<M>;
 
-/**
- * EVERY REQUEST TSUDOI SERVES, AND THE SHAPE IS THE POINT: a mapped type over
- * `Method`, so a method `MethodMap` declares and this table omits IS A COMPILE
- * ERROR NAMING THE MISSING KEY (measured: TS2741). That is the whole of the
- * user story -- a method that decides nothing does not compile, instead of
- * joining a convention whoever writes it must remember.
- *
- * THE KEY IS THE METHOD NAME AND NOTHING ELSE CARRIES IT. There is no `method`
- * field to disagree with the key, because the router looks the config's handler
- * up BY THE KEY and reports failures BY THE KEY.
- */
+/** Every request tsudoi serves, keyed by the method name the router looks up. */
 export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/hover": {
     drive: "awaited-once",
@@ -204,58 +89,20 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     drive: "stream-driven",
     type: CompletionRequest.type,
     progress: new ProgressType<CompletionItem[]>(),
-    // EMPTY OPTIONS, NOT triggerCharacters: TsudoiConfig has no surface for a
-    // config author to declare them, and claiming trigger characters nobody
-    // configured would have the client ask at moments the handler knows nothing
-    // about.
-    //
-    // IT MERGES RATHER THAN ASSIGNS, AND THAT IS WHAT MAKES THIS TABLE
-    // ORDER-INDEPENDENT. `= {}` here would mean a contributor writing into a key
-    // THIS method owns had to run after this one, and `completionItem/resolve`
-    // is that contributor. The spread is the whole fix: what is already there
-    // survives, so the two entries produce the same `completionProvider` in
-    // either order.
-    //
-    // `{ ...undefined }` IS `{}`, which is why the no-resolve case is
-    // unchanged: for a config supplying completion alone this key is absent
-    // when this runs and the spread contributes nothing.
+    // MERGED AND NEVER ASSIGNED, and nothing reddens if you write `= {}`:
+    // `completionItem/resolve` writes into this same key, so an assignment here
+    // would delete its `resolveProvider` on the day the two run in the other
+    // order.
     capability: (capabilities) => {
       capabilities.completionProvider = { ...capabilities.completionProvider };
     },
   },
-  // THE ONLY ENTRY WHOSE CAPABILITY WRITES INTO A KEY ANOTHER METHOD OWNS. Its
-  // POSITION IS NOT LOAD-BEARING: completion merges rather than assigns, so both
-  // orders produce the same `completionProvider`, and this sits below completion
-  // because that is the order the pair reads in.
   "completionItem/resolve": {
     drive: "awaited-once",
     type: CompletionResolveRequest.type,
-    // THE ONE SHAPE THIS TABLE HOLDS THAT IS NOT A KEY OF ITS OWN:
-    // `resolveProvider` lives inside `CompletionOptions`, which is
-    // `completionProvider`'s value -- so this is the line that makes
-    // `CapabilityContributor` a FUNCTION rather than a flag.
-    //
-    // THE EXISTING VALUE IS PRESERVED RATHER THAN REPLACED, and both lines that
-    // write `completionProvider` merge into it, which is exactly what makes the
-    // pair order-independent. IT IS NOT DEFENDED: `textDocument/completion`
-    // contributes no key of its own, so deleting this spread produces an
-    // identical result for every config and reddens nothing. What it buys is a
-    // FUTURE `triggerCharacters` on completion's line not being deleted by this
-    // one, silently, at a distance.
-    //
-    // THIS LINE WOULD BRING A `completionProvider` INTO BEING FOR A CONFIG THAT
-    // CANNOT ANSWER COMPLETION, and what stops it is NOT here. That state --
-    // resolveProvider on a completion provider whose handler does not exist,
-    // inviting completion requests tsudoi can only answer `null` -- is reachable
-    // for the first time through this contributor, because it is the first that
-    // writes into a key it does not own.
-    //
-    // IT IS FORECLOSED ONE STAGE EARLIER: a config supplying
-    // `completionItem/resolve` without `textDocument/completion` is REJECTED AT
-    // CONFIG LOAD, in src/config.ts, where the reason for rejecting there rather
-    // than here is written out. So by the time any contributor runs, the pair is
-    // known to hold, and this line is not defending itself against a state that
-    // has already been refused.
+    // The spread keeps what completion's own contributor wrote, and dropping it
+    // reddens nothing while completion contributes no key of its own -- it is
+    // the first key completion gains that this line would silently delete.
     capability: (capabilities) => {
       capabilities.completionProvider = {
         ...capabilities.completionProvider,
@@ -266,67 +113,17 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/formatting": {
     drive: "awaited-once",
     type: DocumentFormattingRequest.type,
-    // `true`, NOT AN OPTIONS OBJECT, and the difference from completion's line
-    // is not a style drift: DocumentFormattingOptions extends
-    // WorkDoneProgressOptions and declares NOTHING ELSE, so the only thing an
-    // options object could say here is `workDoneProgress`, which tsudoi does
-    // not implement for this method. `true` is the protocol's own way to say
-    // `provided, with nothing to configure`, and
-    // `documentFormattingProvider?: boolean | DocumentFormattingOptions` sits at
-    // the TOP LEVEL of ServerCapabilities -- it is nobody else's key, which is
-    // why this reads like hover's and not like resolve's, which reaches inside
-    // completion's.
     capability: (capabilities) => {
       capabilities.documentFormattingProvider = true;
     },
   },
   "textDocument/diagnostic": {
-    // AWAITED ONCE DESPITE DECLARING `partialResult` -- see `driveStream`:
-    // declaring it is NECESSARY AND NOT SUFFICIENT, because that drive
-    // concatenates chunks and this method's chunks are objects. Nothing here
-    // chooses the drive anyway; `DriveKind` DERIVES it from `MethodMap`, so
-    // writing `stream-driven` on this line would not compile.
     drive: "awaited-once",
     type: DocumentDiagnosticRequest.type,
-    // AN OBJECT WITH TWO REQUIRED BOOLEANS, WHICH IS WHY NEITHER `true` NOR `{}`
-    // WOULD DO: `DiagnosticOptions` requires BOTH.
-    //
-    // NO `identifier`, AND ITS ABSENCE IS A DECISION RATHER THAN AN OMISSION,
-    // written here because this is the line that would gain one.
-    // `DiagnosticOptions` declares it optional, and `DocumentDiagnosticParams`
-    // carries the matching optional `identifier` a client echoes back -- so
-    // registering one would create a value tsudoi must then MATCH incoming
-    // params against, and `TsudoiConfig` has no surface for an author to name
-    // it. A client sending `identifier` today is answered from the same handler
-    // regardless, which is correct while tsudoi registers exactly one diagnostic
-    // source.
-    //
-    // `workspaceDiagnostics: false` IS FORCED, NOT CHOSEN. tsudoi does not serve
-    // `workspace/diagnostic` -- a SEPARATE request with its own params and
-    // result, not a variant of this one -- and the protocol makes this field the
-    // switch for exactly that: `WorkspaceDiagnosticRequest.capabilities` is
-    // `CM<"workspace.diagnostics", "diagnosticProvider.workspaceDiagnostics">`.
-    // It becomes `true` in the same change that adds that entry, never before.
-    //
-    // `interFileDependencies: true` IS CHOSEN BY TSUDOI, ON HARM ASYMMETRY AND
-    // EXPLICITLY NOT ON WHAT IS TYPICAL. The config author has NO SURFACE to
-    // answer this on, so tsudoi must answer it for them, and the two errors are
-    // not symmetric: `true` for a language with no inter-file dependencies costs
-    // REDUNDANT PULLS -- visible, a performance cost, borne by the client --
-    // while `false` for a language that has them leaves A STALE DIAGNOSTIC IN
-    // ANOTHER FILE THAT NEVER CLEARS, which is SILENT AND WRONG.
-    //
-    // THE PROTOCOL'S OWN COMMENT SAYS `typically uncommon for linters` AND THAT
-    // IS DELIBERATELY NOT THE REASON, written here because it is the obvious
-    // wrong path back to this line: it describes LANGUAGES, which is the one
-    // thing only a config author knows and the exact thing they cannot tell us.
-    //
-    // THE COST IS NAMED RATHER THAN HIDDEN: tsudoi's likely audience is
-    // linter-shaped, so MOST CONFIGS WILL PAY PULLS THEY DO NOT NEED. NOT A
-    // PUBLISHED SURFACE, on one-way reversibility -- tsudoi picking now makes a
-    // later surface ADDITIVE, where a surface now would make removal BREAKING.
-    // REVERSAL IS EVIDENCE-SHAPED rather than predictive: a config author who
-    // reports redundant pulls, or asks for `false`.
+    // `workspaceDiagnostics` is FORCED by tsudoi not serving
+    // `workspace/diagnostic`; `interFileDependencies` is CHOSEN, on the two
+    // errors not being symmetric -- a redundant pull is visible and costs, where
+    // a stale diagnostic in another file that never clears is silent and wrong.
     capability: (capabilities) => {
       capabilities.diagnosticProvider = {
         interFileDependencies: true,
@@ -337,23 +134,12 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
 };
 
 /**
- * One entry with its per-method types gone.
- *
- * THE ONE ERASURE, and it is confined to the two places that ITERATE the table
- * -- exactly as src/notifications.ts's router does, and for the same reason.
- * Each entry's own params, result and chunk types are checked where the entry is
- * WRITTEN, against the mapped type above; here the entries are a heterogeneous
- * list and no single element type describes them without this. `drive` is
- * deliberately outside it: it is a string on every entry, so the discrimination
- * the router does survives the cast.
+ * One entry with its per-method types gone, for the two places that ITERATE the
+ * table: each entry's own types are checked where the entry is WRITTEN.
  */
 interface ErasedEntry {
   readonly drive: "awaited-once" | "stream-driven";
   readonly type: RequestType<unknown, unknown, EntryErrorPayload>;
-  /**
-   * WIDER THAN THE ENTRY'S OWN FOR THE SAME REASON `type` IS: this is the
-   * erasure, and the per-method payload is checked where the entry is WRITTEN.
-   */
   readonly progress: ProgressType<unknown>;
   readonly capability: CapabilityContributor;
 }
@@ -367,22 +153,12 @@ type ErasedStreamHandler = (
   params: unknown,
 ) => AsyncGenerator<unknown[], void, void>;
 
-/**
- * The table as a list, in DECLARATION ORDER -- which holds because these are
- * ordinary string keys, and which NOTHING DEPENDS ON: the one shared capability
- * key is merged into rather than assigned over, so the order is a fact about
- * `Object.entries` and not a requirement anything here rests on.
- */
+/** The table as a list. */
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
 }
 
-/**
- * Claims each capability the config can actually answer for.
- *
- * THE POLICY IS THE STAKEHOLDER'S: a client is entitled to send whatever it was
- * told about, so a capability is claimed ONLY where the config can answer it.
- */
+/** Claims each capability the config can actually answer for. */
 export function contributeCapabilities(
   config: TsudoiConfig,
   capabilities: ServerCapabilities,
@@ -402,22 +178,9 @@ export function contributeCapabilities(
 export type RequestRejection = () => ResponseError<void> | undefined;
 
 /**
- * Reports a config handler's failure and rethrows it.
- *
- * vscode-jsonrpc answers the client -32603 for a throwing REQUEST handler, so
- * the client knows the request failed -- but it consults the connection's
- * logger for NOTIFICATION handlers only, leaving stderr empty and the config
- * author debugging a handler they cannot see fail. Hence tsudoi's own line.
- *
- * The rethrow is the load-bearing half. Absorbing the failure here would answer
- * the client null or [], which reads as `nothing to say` and hides a broken
- * handler behind a plausible answer -- and on the streaming path it would do so
- * after the client had already been sent partial results.
- *
- * Only the REPORTING is shared. THE CALLS STAY SEPARATE, at `driveAwaitedOnce`
- * and `driveStream`, with a method picking one of them BY NAME: a hover handler
- * is awaited once and a completion handler is driven a chunk at a time, and
- * there is no shape both fit into that is not an invention.
+ * Reports a config handler's failure and rethrows it. vscode-jsonrpc consults
+ * the connection's logger for NOTIFICATION handlers only, so without this line a
+ * config author's handler fails where they cannot see it.
  */
 function reportHandlerFailure(method: Method, error: unknown): never {
   process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
@@ -425,129 +188,49 @@ function reportHandlerFailure(method: Method, error: unknown): never {
 }
 
 /**
- * Reports a config handler's CLEANUP failure -- and stops there.
- *
- * Shares the `tsudoi:` convention above, because one prefix is what makes the
- * LSP log greppable, and deliberately NOT its rethrow. The asymmetry is the
- * point: a handler failure still has a response to decide, so absorbing it
- * would answer the client a plausible `nothing to say`, whereas cleanup fails
- * only after the client already holds its -32800 and there is no response left
- * to correct. Rethrowing could only take down a session otherwise able to
- * answer the next completion -- and on the floating call this is attached to it
- * would do that by way of an unhandled rejection, which kills the process.
- *
- * SCOPE, stated here because this is the file where the opposite would be
- * assumed: cleanup runs for CLIENT CANCELLATION only. tsudoi does not wire
- * shutdown to cancellation, so an in-flight completion finishes across
- * shutdown. That is correct by specification -- LSP constrains the client, not
- * the server -- and it is left unpinned on purpose, since cancelling in-flight
- * requests at shutdown would be equally acceptable and a test would pin an
- * arbitrary choice rather than a requirement.
+ * Reports a config handler's CLEANUP failure -- and stops there. Cleanup fails
+ * only once the client already holds its -32800, so there is no response left to
+ * correct and a rethrow could only take down a session still able to serve.
  */
 function reportCleanupFailure(method: Method, error: unknown): void {
   process.stderr.write(`tsudoi: ${method} cleanup failed: ${failureDetail(error)}\n`);
 }
 
 /**
- * What a config author is shown of a failure: the stack when there is one,
- * since that is what locates the line in THEIR file, and the value itself when
- * something other than an Error was thrown. Shared so the two reports above
- * cannot drift into saying different amounts about the same kind of failure.
+ * What a config author is shown of a failure: the stack when there is one, since
+ * that is what locates the line in THEIR file.
  */
 function failureDetail(error: unknown): string {
   return error instanceof Error ? (error.stack ?? error.message) : String(error);
 }
 
 /**
- * How a cancelled request is answered, whatever its handler produced and
- * whatever drive its method uses. UNQUALIFIED: every request that reaches a
- * drive reaches `answerUnlessCancelled`, so there is no path to a cancelled
- * answer that goes around this one.
- *
- * LSP 3.17 permits answering normally instead, so this is a CHOICE: the client
- * has already discarded the request's context, and a stale result invites the
- * desync that partial results are careful to avoid.
- *
- * Thrown rather than returned because vscode-jsonrpc replies a thrown
- * ResponseError verbatim -- which keeps every handler's return type the config
- * author's own, with no error shape mixed into it.
+ * How a cancelled request is answered, whatever its handler produced. LSP 3.17
+ * permits answering normally instead, so this is a CHOICE: the client has
+ * already discarded the request's context.
  */
 function requestCancelled(): never {
   throw new ResponseError(LSPErrorCodes.RequestCancelled, "Request cancelled");
 }
 
 /**
- * Bridges the connection's CancellationToken onto the AbortSignal a config
- * author already has, ONE controller per request: a shared one would abort
- * every handler in flight when the client cancelled any single request.
- *
- * tsudoi bridges rather than tracking `$/cancelRequest` itself. It could not
- * track it if it wanted to -- vscode-jsonrpc consumes that notification before
- * consulting any handler, and a request handler is never told its own id.
+ * Bridges the connection's CancellationToken onto the AbortSignal a config author
+ * already has, one controller per request.
  */
 function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
   const controller = new AbortController();
-  // Read BEFORE subscribing, and not merely to save a turn: when the client
-  // cancels before the request is dispatched, vscode-jsonrpc cancels the token
-  // source ahead of the handler, which installs CancellationToken.Cancelled --
-  // whose onCancellationRequested is Event.None and never fires at all. The
-  // flag is the only evidence of that cancellation.
   if (cancellation.isCancellationRequested) {
     controller.abort();
   }
   cancellation.onCancellationRequested(() => controller.abort());
-  // TWO MEMBERS AND NOTHING ASSEMBLED, which is what the split between the two
-  // context types buys: the signal is built here because it is this request's,
-  // and `tsudoi` is passed straight through because it is the SESSION'S and this
-  // function has nothing to say about it. Anything read OFF `tsudoi` here would
-  // be a snapshot taken at request start, which is the decision src/types.ts
-  // leaves to the handler.
   return { signal: controller.signal, tsudoi };
 }
 
 /**
  * Runs one config handler to the answer the client receives, under that
- * request's cancellation.
- *
- * Everything cancellation changes about a request is here and nowhere else: a
- * cancelled request answers -32800 whatever its handler produced, and a
- * cancelled handler's failure is not reported, because being aborted is why it
- * failed. The abort is read BEFORE the handler is invoked and AGAIN after it
- * settles; the second read is what suppresses a handler that never looks at its
- * signal exactly like one that does.
- *
- * THE FIRST READ IS NOT AN OPTIMISATION AND NOT A SECOND ANSWER. A request
- * cancelled before dispatch is dispatched anyway -- vscode-jsonrpc hands it
- * CancellationToken.Cancelled and calls this file's request handler -- so
- * without this read the CONFIG AUTHOR'S handler is entered for a request whose
- * answer is already decided, and a handler entered is a handler free to open a
- * timer, a child process or a lock file. NOTHING LEFT CAN TAKE THOSE BACK: the
- * only thing that could is the signal it just proved it ignores, and on the
- * streaming drive the cleanup that would release them is queued behind a
- * `.next()` a parked handler never settles. One such request leaks; a client
- * that supersedes its own completions makes them by the keystroke. FORECLOSED
- * RATHER THAN DETECTED, which is this file's standing preference.
- *
- * WHAT IT DOES NOT RULE OUT, said because this read looks like more than it is:
- * a cancellation arriving AFTER dispatch still finds the handler running and
- * still cannot unallocate anything it holds. Only the signal the handler was
- * given can do that, and only if the handler reads it. What this closes is the
- * window tsudoi decides ALONE -- where the handler had no chance to cooperate
- * because there was nothing to cooperate with.
- *
- * WHAT WOULD FALSIFY THAT, written here because that is the edit: any drive
- * answering a request before it reaches this function -- a stream drive that
- * returned early for a config with no handler would answer such a request `null`
- * where the awaited-once drive answers -32800. LSP permits either, so nothing is
- * breached; what would go is the claim above, and THAT CLAIM IS THE ASSET. Both
- * drives build the request context whether or not a handler exists, and both
- * answer through here, which is the property test/methods-table.test.ts pins for
- * EVERY entry in the table with no handler configured.
- *
- * Only the ANSWER is shared. The CALLS stay separate: a hover handler is
- * awaited once and a completion handler is driven a chunk at a time, and
- * `produce` is where that difference lives -- supplied by one of the two named
- * drives rather than by a handler written out per method.
+ * request's cancellation. Everything cancellation changes about a request is
+ * here and nowhere else, which is why every drive answers through it -- including
+ * for a request it has no handler for.
  */
 async function answerUnlessCancelled<T>(
   method: Method,
@@ -561,9 +244,10 @@ async function answerUnlessCancelled<T>(
   try {
     value = await produce();
   } catch (error) {
-    // A cancelled handler is EXPECTED to fail: an aborted fetch rejects by
-    // design. A failure line plus a stack for every cancellation would train
-    // the config author to ignore the one stderr channel that means something.
+    // A cancelled handler is EXPECTED to fail -- an aborted fetch rejects by
+    // design -- and nothing reddens if this check goes: a stack per cancellation
+    // would train the config author to ignore the one stderr channel that means
+    // something.
     if (signal.aborted) {
       requestCancelled();
     }
@@ -576,28 +260,9 @@ async function answerUnlessCancelled<T>(
 }
 
 /**
- * Whether a value is a ProgressToken: LSP defines the type as `integer |
- * string`, so `0` and `""` are both legitimate AND falsy. That is why this is a
- * type test rather than a truthiness test -- `if (!token)` would fix the null
- * case and break every client that numbers its tokens from zero.
- *
- * `integer` IS THE PROTOCOL'S OWN AND NOT JAVASCRIPT'S, which is the whole of
- * why the numeric arm is three conditions rather than one. LSP defines
- * `integer` as SIGNED 32-BIT, so `2147483648` is a perfectly good
- * `Number.isInteger` and not a token any conforming client can send -- accepting
- * it means streaming under a token the client will not correlate, which is the
- * silent misdelivery `streamingToken` below exists to refuse.
- *
- * THE BOUNDS ARE THE PACKAGE'S, DERIVED THERE AND NOT RESTATED HERE: `integer`
- * is `vscode-languageserver-protocol`'s namespace for exactly this type, so its
- * MIN_VALUE and MAX_VALUE move with the specification tsudoi is implementing
- * rather than with a pair of literals somebody has to remember.
- *
- * `integer.is` IS NOT USED, AND THAT IS A MEASUREMENT RATHER THAN A PREFERENCE:
- * it tests `typeof value === "number"` and the two bounds and NOTHING ELSE, so
- * `integer.is(1.5)` is `true`. A token of 1.5 survives JSON and is not an
- * integer in any sense, so `Number.isInteger` stays and only the bounds are
- * borrowed.
+ * Whether a value is a ProgressToken. `integer.is` is not used in its place: it
+ * tests the two bounds and `typeof`, so `integer.is(1.5)` is `true`, and a token
+ * of 1.5 survives JSON.
  */
 function isProgressToken(value: unknown): value is ProgressToken {
   return (
@@ -612,22 +277,15 @@ function isProgressToken(value: unknown): value is ProgressToken {
 /**
  * The token this completion may stream under, or undefined when it must be
  * aggregated into one response instead.
- *
- * NORMALISE AND REPORT, chosen on harm-proportionality. Answering -32602 would
- * cost an editor user every completion for their client's serialisation quirk;
- * normalising in silence is the invisible-client-bug failure mode. Streaming
- * under the invalid token is worse than either: null survives sendProgress, so
- * the items leave addressed to a `$/progress` no client can correlate and the
- * user simply sees fewer candidates than the handler produced.
- *
- * Validation lives here and nowhere else. One call site, no seam: the story is
- * protocol-violation handling, the implementation is one concrete case. HOW
- * OFTEN the refusal is reported is the caller's business, not this function's.
  */
 function streamingToken(
   requested: unknown,
   report: (requested: unknown) => void,
 ): ProgressToken | undefined {
+  // ABSENCE AND NOT FALSINESS, and nothing reddens if you write `if (!token)`:
+  // LSP defines a ProgressToken as `integer | string`, so `0` and `""` are both
+  // legitimate AND falsy, and that spelling silently aggregates for every client
+  // that numbers its tokens from zero.
   if (requested === undefined) {
     return undefined;
   }
@@ -639,40 +297,13 @@ function streamingToken(
 }
 
 /**
- * Registers the request handlers a config can answer.
+ * Registers the request handlers a config can answer -- every one of them,
+ * whether or not the config supplies a handler: a client that sends a request it
+ * was never told about is answered emptily rather than MethodNotFound, since a
+ * server must not fail because a client misbehaves.
  *
- * Every one is registered whether or not the config supplies a handler:
- * registration and advertisement are independent questions, and a client that
- * sends a request it was never told about is answered emptily rather than
- * MethodNotFound -- a server must not fail because a client misbehaves.
- *
- * THAT EMPTY ANSWER IS OFF-SPEC FOR TWO OF THE FIVE, named rather than glossed:
- * `completionItem/resolve` results in a `CompletionItem` and
- * `textDocument/diagnostic` in a `DocumentDiagnosticReport`, and NEITHER TYPE
- * HAS A NULL ARM, where hover's and completion's do.
- *
- * IT IS UNREACHABLE FROM A CONFORMING CLIENT, and that is a property of one
- * expression rather than a hope: `contributeCapabilities` claims a method's
- * capability on `config.methods?.[method] !== undefined`, and the handler below
- * is looked up by the SAME READ over the SAME TABLE -- so for each method's OWN
- * capability key, advertised and answerable are one condition.
- *
- * NOT A CLAIM ABOUT EVERY KEY, and the exception is the one this table already
- * names: `completionItem/resolve`'s contributor writes into `completionProvider`,
- * so it advertises COMPLETION on the strength of resolve's handler. That pair is
- * refused at config load instead, and completion's result HAS a null arm anyway,
- * so the reachable case there is conformant.
- *
- * WHAT CONFORMING ANYWAY WOULD COST: a no-handler answer PER METHOD -- the item
- * echoed back for resolve, `{ kind: "full", items: [] }` for diagnostic -- which
- * is exactly the second axis the drive split refuses to grow, paid for a client
- * that has already ignored what it was told.
- *
- * TAKES THE NARROWED CONNECTION, and that is not merely what the caller happens
- * to hold: this module registers REQUESTS, so an `onNotification` on its
- * parameter would be a second door out of the router in the one other file that
- * is handed the connection at all. `onRequest` and `sendProgress` are all it
- * uses, and both survive the narrowing.
+ * The parameter is the NARROWED connection: an `onNotification` reachable from
+ * here would be a second door out of the notification router.
  */
 export function registerMethods(
   connection: RequestOnlyConnection,
@@ -680,26 +311,14 @@ export function registerMethods(
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
 ): void {
-  /**
-   * Whether this SESSION has already been told about an invalid token. One
-   * process serves one client, so the flag's lifetime is the session's.
-   */
   let invalidTokenReported = false;
 
-  /**
-   * Names a refused token on stderr ONCE. A client whose serialisation
-   * produces a bad token produces it on every keystroke, and a line per
-   * completion buries everything else in the LSP log -- the one channel a
-   * config author has for a handler that failed. Once is diagnosable; a
-   * thousand times is noise that makes the log useless for anything else.
-   */
+  /** Names a refused token on stderr ONCE per session. */
   function reportInvalidToken(requested: unknown): void {
     if (invalidTokenReported === true) {
       return;
     }
     invalidTokenReported = true;
-    // JSON.stringify, not String(): a token is client data of any shape, and
-    // `[object Object]` would name nothing the config author could act on.
     process.stderr.write(
       `tsudoi: ignoring an invalid partialResultToken ${JSON.stringify(requested)}; ` +
         `a ProgressToken is an integer or a string, so this completion is answered ` +
@@ -711,40 +330,10 @@ export function registerMethods(
     connection.onRequest(
       entry.type,
       async (params: unknown, cancellation: CancellationToken): Promise<unknown> => {
-        // THE PROLOGUE, AND IT IS THE WHOLE REASON THE ROUTER EXISTS. A refused
-        // request is answered before anything else happens, because a server
-        // outside its serving window has no client state to answer FROM. Running
-        // it once here is what stops it being a per-method convention a new
-        // method joins only if whoever writes it remembers.
         const rejection = requestRejection();
         if (rejection !== undefined) {
           throw rejection;
         }
-        // THE PROLOGUE'S SECOND STEP, AND IT MAKES `MethodMap[M]["params"]`
-        // TRUE. Every method in the table declares an OBJECT there, so a
-        // handler is entitled to read a member off what it is handed -- and
-        // only this line entitles it, because nothing between the wire and here
-        // inspects the value.
-        //
-        // `"params": null` IS THE WHOLE OF WHAT ARRIVES MALFORMED, measured
-        // rather than defended against in general: vscode-jsonrpc answers
-        // -32602 itself when params are OMITTED and when they arrive BY
-        // POSITION, so those two shapes never reach this line. `null` and a
-        // primitive are what it lets through -- a member read off `null` throws
-        // a TypeError, which vscode-jsonrpc turns into -32603, telling a client
-        // its own malformed request was OUR internal error.
-        //
-        // -32602 IS THE SAME CODE THE LIBRARY ANSWERS the two shapes it does
-        // catch, which is the point: one wrong-params answer rather than one
-        // per shape, and a client that reads it learns the request was theirs
-        // to fix.
-        //
-        // THROWN IN THE ROUTER RATHER THAN IN A DRIVE, so a method added to the
-        // table joins this the moment it is declared, and NOT LEFT TO A
-        // PER-METHOD GUARD for the reason the whole prologue exists.
-        //
-        // NOT REPORTED ON STDERR: the client is told, in the response, and the
-        // one stderr channel a config author has means THEIR handler failed.
         if (typeof params !== "object" || params === null) {
           throw new ResponseError(
             ErrorCodes.InvalidParams,
@@ -752,17 +341,6 @@ export function registerMethods(
           );
         }
         const handler = config.methods?.[method];
-        // THE DRIVE, AND THE NO-HANDLER CASE COMES WITH IT RATHER THAN BEING A
-        // SECOND AXIS. The awaited-once drive calls `handler?.(...) ?? null`,
-        // while the stream drive answers with a return of its own, because no
-        // single expression both drives a generator and answers for a missing
-        // one. They are NOT independent: each drive has exactly one of them, so
-        // choosing the drive chooses it, and nothing third is invented.
-        //
-        // WHAT IS NOT A DIFFERENCE BETWEEN THEM is WHERE that answer is
-        // produced. Both drives build the request context whether or not a
-        // handler exists and answer through `answerUnlessCancelled`, so a
-        // cancelled request is -32800 either way.
         if (entry.drive === "stream-driven") {
           return driveStream({
             method,
@@ -788,40 +366,8 @@ export function registerMethods(
 }
 
 /**
- * The AWAITED-ONCE drive: call the handler once, RACE it against the abort,
+ * The AWAITED-ONCE drive: call the handler once, race it against the abort,
  * answer what it produced.
- *
- * THE RACE IS NOT AN OPTIMISATION AND NOT A SECOND CANCELLATION MECHANISM. A
- * handler that ignores its `AbortSignal` and awaits work that never settles is
- * suspended INSIDE the promise this drive awaits, so a drive that awaited it
- * unconditionally had nowhere to ask about cancellation from: the request
- * produced no answer AT ALL and the client waited forever for one it had already
- * given up on. One fetch without a timeout is the whole of what it takes. The
- * streaming drive carried the identical defect; `abortedRace` is where the one
- * reasoning lives.
- *
- * `?? null` STILL ANSWERS THE NO-HANDLER CASE IN THE SAME EXPRESSION that
- * answers the handler's own `null`, and the race did not cost that: `handler?.()`
- * is `undefined` when there is none, and a promise of it is ALREADY SETTLED, so
- * it wins any race it is entered in. Nothing here has to know whether a handler
- * exists before the call is written, which is hover's original shape and the one
- * this drive needs -- where `driveStream` must ask, because nothing both drives a
- * generator and answers for a missing one.
- *
- * THE LOSING CALL IS LEFT PENDING, AND WHY THAT IS SAFE IS NOT RESTATED HERE: it
- * is at the abort branch of `driveStream`, where the same `Promise.race`
- * property holds it up, and it applies unchanged to a handler's own promise.
- *
- * ANSWERING `null` ON THE ABORT IS NOT ANSWERING THE CLIENT `null`. It returns
- * INTO `answerUnlessCancelled`, which re-reads the abort and throws -32800 --
- * the same route the streaming drive's abort branch takes, so a cancelled
- * request is answered by one decision made in one place whichever drive served
- * it.
- *
- * THE CONTEXT IS BUILT EITHER WAY, exactly as on the other drive: the epilogue
- * reads the abort off the context, so a drive that skipped building one for a
- * request it answers `null` would be deciding that request's cancellation
- * itself.
  */
 async function driveAwaitedOnce(run: {
   method: Method;
@@ -844,51 +390,30 @@ async function driveAwaitedOnce(run: {
  * How many batches a config author's `finally` may yield before tsudoi stops
  * draining it and says so.
  *
- * NOT A GUESS AT HOW BIG A REAL CLEANUP IS, and that is why the number is
- * generous rather than tight. Its whole job is to make an UNBOUNDED loop finite;
- * the two errors around it are wildly asymmetric, so it is set far above any
- * cleanup that flushes buffered records a batch at a time. Too low truncates one
- * request's cleanup AND REPORTS IT, where too high merely drains a runaway a
- * moment longer -- and no bound at all is the only outcome that is fatal.
- *
- * WHY A COUNT AND NOT A DEADLINE: a timer would measure the machine rather than
- * the generator, so the same config would be truncated on a loaded laptop and
- * drained on a fast one. A count is a property of what the author wrote.
+ * A COUNT AND NOT A DEADLINE, and nothing reddens if you make it one: a timer
+ * would measure the machine rather than the generator, so the same config would
+ * be truncated on a loaded laptop and drained on a fast one. The number itself
+ * is guarded by nothing either -- only the existence of a bound is.
  */
 const maxCleanupYields = 1000;
 
 /**
  * What the abort resolves as when it beats a pending pull.
  *
- * A SYMBOL SO IT CANNOT BE A HANDLER'S OWN VALUE. The race settles with either
- * what the config author produced -- an `IteratorResult` on one drive, a hover
- * or a report on the other -- or this, and the two are told apart by identity. A
- * sentinel a config author could yield or return, `null` or a string among them,
- * would make a handler able to fake its own cancellation. Nothing exports it, so
- * no config can hold one to try.
+ * A SYMBOL SO IT CANNOT BE A HANDLER'S OWN VALUE, and nothing reddens if you make
+ * it a string: the race is told apart from what the config author produced by
+ * identity alone, so a sentinel an author could return would let a handler fake
+ * its own cancellation.
  */
 const abortWon = Symbol("tsudoi.abortWon");
 
 /**
- * The abort as something a pending promise can be RACED against.
+ * The abort as something a pending promise can be RACED against, so that a
+ * handler suspended inside its own await still leaves a moment to answer in.
  *
- * WHY EITHER DRIVE NEEDS ONE, and it is one defect rather than two. A handler
- * that ignores its `AbortSignal` and awaits slow work is suspended INSIDE the
- * call -- inside `next()` where a generator is driven, inside the handler's own
- * promise where one is awaited -- and NOT at a yield, where the drive is between
- * calls and free to notice an abort. So a drive that awaits and asks about
- * cancellation only afterwards has no moment to ask in: the request stays parked
- * indefinitely and the client that cancelled is answered NOTHING, which is worse
- * than any answer.
- *
- * THE FLAG IS READ FIRST for the reason `requestContext` gives: a request
- * cancelled before dispatch gets `CancellationToken.Cancelled`, whose event
- * never fires, so a subscribe-only bridge would wait here forever.
- *
- * HOW MANY OF THESE A DRIVE TAKES IS THE CALLER'S BUSINESS AND NOT THIS
- * FUNCTION'S: one race is one subscription, so a drive that pulls in a loop
- * builds it ABOVE the loop -- one taken per pull would leave a listener per
- * batch on a signal that outlives them all.
+ * THE FLAG IS READ BEFORE SUBSCRIBING, and nothing reddens if you drop that read:
+ * a request cancelled before dispatch is handed `CancellationToken.Cancelled`,
+ * whose event never fires at all, so a subscribe-only bridge waits here forever.
  */
 function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
   return new Promise<typeof abortWon>((resolve) => {
@@ -902,48 +427,17 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
 
 /**
  * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
- * author yields BATCHES OF ITEMS and says nothing at all about how they travel;
+ * author yields BATCHES OF ITEMS and says nothing at all about how they travel:
  * whether they leave as `$/progress` or as one aggregated response is decided
- * here, from the one thing the protocol actually offers -- the presence of
- * `partialResultToken`. There is no client capability declaring partial-result
- * support, so a client that cannot take partial results simply omits the token,
- * and the two triggers the brief describes are one trigger.
+ * here, from the presence of `partialResultToken` and from nothing else. There is
+ * no client capability declaring partial-result support, so a client that cannot
+ * take them simply omits the token.
  *
- * THE TOKEN DECIDES AND NOTHING ELSE DOES, INCLUDING THE STREAM ITSELF. There is
- * no look-ahead here and no arm for a stream that happened to yield once: under
- * a token that stream spends one `$/progress` and a `null` response, knowingly.
- * WHAT A LOOK-AHEAD WOULD COST IS WHY IT IS ABSENT -- to know a stream yielded
- * exactly once you must pull TWICE, so the first batch would wait on the second
- * pull, which delays delivery exactly when the first chunk is slow and streaming
- * matters most. THE EDIT THAT WOULD RE-INTRODUCE IT IS MADE HERE, which is why
- * the reason is here.
- *
- * `null` FOR A STREAM THAT YIELDED NOTHING IS THE ONE THING THE TOKEN DOES NOT
- * DECIDE, and it decides a VALUE rather than a channel. `[]` is not available to
- * mean it: the specification treats a supplied `CompletionItem[]` as
- * `{ isIncomplete: false, items }`, so `[]` says THERE ARE NO CANDIDATES where
- * `null` says THIS SERVER HAS NO ANSWER FOR THAT POSITION. Only request-local
- * state tells the two apart, which is what `yielded` below is for.
- *
- * A RETURN OF ITS OWN IS THIS DRIVE'S NO-HANDLER SHAPE and not an oversight
- * beside the `?? null` above: nothing here both drives a stream and answers
- * for a missing one, so the two cases are two statements. WHAT THEY ARE NOT is
- * two answers about cancellation -- that return goes through
- * `answerUnlessCancelled` like every other answer this file produces.
- *
- * WHAT THIS DRIVE REQUIRES OF A METHOD THAT PICKS IT: its params must carry a
- * `partialResultToken`, and what it yields must be ARRAYS, since aggregating
- * concatenates them. Both requirements are about the ONE payload shape this
- * drive handles, and the second is the one that excludes
- * `textDocument/diagnostic`: `DocumentDiagnosticParams` DOES declare
- * `PartialResultParams`, but `DocumentDiagnosticRequest.partialResult` is
- * `ProgressType<DocumentDiagnosticReportProgress>`, a union of two OBJECT types
- * and not an array.
- *
- * THE PROTOCOL'S OWN COMMENT SAYS WHY, and it is the half a type check would
- * miss: those chunks carry RELATED DOCUMENTS rather than more diagnostics for
- * the requested one, where completion's chunks are more items of a single list.
- * `textDocument/diagnostic` is served awaited-once.
+ * What a method picking this drive must satisfy: its params carry a
+ * `partialResultToken`, and what it yields is ARRAYS, since aggregating
+ * concatenates them. The second is what excludes `textDocument/diagnostic`, whose
+ * partial results are objects carrying OTHER documents' reports rather than more
+ * of the one that was asked for.
  */
 async function driveStream(run: {
   method: Method;
@@ -958,118 +452,20 @@ async function driveStream(run: {
   const handler = run.handler;
   const context = requestContext(run.tsudoi, run.cancellation);
   if (handler === undefined) {
-    // THIS DRIVE'S NO-HANDLER ANSWER, AND IT GOES THROUGH THE EPILOGUE LIKE
-    // EVERY OTHER ANSWER THIS FILE PRODUCES. Nothing pulls a generator or reads
-    // a token, but the `null` is produced INSIDE `answerUnlessCancelled` rather
-    // than ahead of it, so a CANCELLED request with no handler is answered
-    // -32800 here exactly as it is on the awaited-once drive.
-    //
-    // WHY THE CONTEXT IS BUILT FOR A REQUEST NOTHING WILL ANSWER: the epilogue
-    // reads the abort off it. That is the same trade the awaited-once drive
-    // makes -- one AbortController and one subscription for a request that
-    // answers `null` -- and it is what makes the cancellation decision one
-    // decision rather than one per drive.
     return answerUnlessCancelled(run.method, context.signal, () => Promise.resolve(null));
   }
-  // BELOW THE NO-HANDLER RETURN, AND THAT SIDE OF THE POSITION IS DELIBERATE: a
+  // BELOW THE NO-HANDLER RETURN, and nothing reddens if you lift it above: a
   // config that cannot answer completion at all has no business reporting the
-  // client's token on stderr -- that line exists to tell a config author their
-  // items were aggregated rather than streamed, and here there are no items.
-  //
-  // THE READ ITSELF CANNOT THROW, and that is the router's doing rather than
-  // this line's: the prologue refuses params that are not an object with
-  // -32602, so `params` is one by the time any drive runs. Whether the read
-  // sits inside `answerUnlessCancelled` or above it therefore decides nothing
-  // any more.
-  //
-  // Read through `unknown` on purpose: the declared ProgressToken type
-  // describes what a CONFORMING client sends, and this path exists for the
-  // one that does not.
+  // client's token on stderr, since that line exists to say the items were
+  // aggregated rather than streamed and here there are none.
   const requestedToken: unknown = (run.params as PartialResultParams).partialResultToken;
   const token = streamingToken(requestedToken, run.reportInvalidToken);
   const progress = run.entry.progress;
   return answerUnlessCancelled(run.method, context.signal, async () => {
-    // What the author yielded, kept only when there is no token to stream it
-    // under. In streaming mode this stays empty, which is what lets one
-    // expression below answer for both modes.
     const collected: unknown[] = [];
-    // WHETHER THIS REQUEST PRODUCED ANYTHING AT ALL, and the ONE piece of
-    // request-local state this drive keeps. `[]` and `null` are different
-    // answers -- `no candidates` versus `no answer` -- and nothing but this
-    // tells them apart once the loop has ended.
-    //
-    // DEFENDED AT EXACTLY ONE SITE, and said here because this is where the
-    // deleting edit would be made. Dropping this flag -- `token === undefined ?
-    // collected : null` -- reddens `the example config is driven end to end ...`
-    // in test/completion.test.ts, at its assertion that a position the example
-    // has nothing for is answered null, AND NOTHING ELSE in the suite. That
-    // assertion is DESCRIBED rather than quoted, and must stay that way: this
-    // project measures `none weakened` by grepping source lines that open an
-    // assertion call, and a comment quoting one inflates that count. WHY ONE
-    // SITE IS ALL THERE IS: under a token the response is `null` whatever this
-    // flag says, so the zero-yield fixture cannot see it; and the helpers that
-    // read completions elsewhere spell `result ?? []`, which erases the very
-    // distinction. NOT A GAP TO CLOSE BY ADDING A TEST FOR ITS OWN SAKE, but a
-    // reader deleting this flag should know a single assertion stands between
-    // them and telling every user there are no candidates.
     let yielded = false;
     const batches = handler(context, run.params);
-    // CLOSING THE GENERATOR IS WHAT RUNS THE CONFIG AUTHOR'S `finally`, and it
-    // is a local rather than an inline call because the loop below has SEVERAL
-    // ways out and all but one of them owe it. It is fired from the `finally`
-    // around that loop, so this is the one statement of how, and the branches
-    // are statements of when.
-    //
-    // FIRED, NEVER AWAITED, and the rejection handler is not optional.
-    // Measured on both runtimes: a `finally` that never settles leaves this
-    // promise pending forever, so awaiting it would mean the answer the client
-    // is waiting for is never sent at all -- and a `finally` that throws
-    // rejects it, which unhandled kills the process. That one handler does both
-    // jobs: it is how a throwing cleanup gets reported, and it is what stops
-    // the same rejection being fatal. Drop it and both halves fail together.
-    //
-    // IT COVERS EVERY PULL THE DRAIN MAKES, not just the `return()`. A `finally`
-    // that fails AFTER yielding rejects a `next()` that did not exist until the
-    // drain created it -- a promise reachable no other way -- so a handler
-    // attached to the `return()` alone would leave exactly that rejection
-    // unhandled.
-    //
-    // What no arrangement of this can do: a generator parked inside its own
-    // `await` queues return() behind the pending next(), so its cleanup runs
-    // only when that settles. A limit of async generators, not a defect here.
-    //
-    // A CLEANUP THAT YIELDS IS DRAINED RATHER THAN ABANDONED, and `done: false`
-    // is what makes that possible. When the author's `finally` itself yields,
-    // `return()` resolves `{ value, done: false }` on both runtimes, because the
-    // RETURN COMPLETION is suspended by that yield -- so a drive that stopped
-    // there would leave the generator parked INSIDE its own finally with every
-    // statement after that yield never running, silently, on every superseded
-    // keystroke. That result is not an obstacle but the SIGNAL that the cleanup
-    // has more to do, and `next()` is how it is let do it. `for await (...) {
-    // break }` leaves the same generator in the same state, and is not the same
-    // situation: that consumer CHOSE to stop, where this one is holding the
-    // evidence that it should not.
-    //
-    // THE DRAINED BATCHES ARE DISCARDED, and that is the one thing the drain
-    // must not get wrong. They belong to a request the client already holds a
-    // -32800 for, so forwarding them would trade a silent leak for a louder
-    // protocol violation -- `$/progress` for a request that is over.
-    //
-    // BOUNDED, AND THE BOUND IS NOT TIMIDITY. Nothing awaits this drain and
-    // nothing cancels it, so a `finally` that yields forever is answered by
-    // pulls that settle as MICROTASKS: the loop never hands the event loop back,
-    // and the session stops answering anything at all -- the orphaned server
-    // this file's own editor-death reasoning treats as a correctness
-    // requirement. The two errors are not symmetric. A bound reached truncates
-    // one cleanup AND SAYS SO on stderr; no bound at all takes the session down
-    // in silence.
-    //
-    // NO NARROWING AND NO GUARD, AND THAT IS A RULING RATHER THAN AN OVERSIGHT.
-    // THE PUBLISHED TYPE IS AN `AsyncGenerator`, which REQUIRES `return`, so
-    // narrowing to `AsyncIterator` -- whose `return` is OPTIONAL -- would widen
-    // a guarantee away by hand and then guard against the absence it had just
-    // manufactured. This repository prefers FORECLOSING a failure to DETECTING
-    // one, and the type forecloses this one.
+    // Closing the generator is what runs the config author's `finally`.
     const drainCleanup = async (): Promise<void> => {
       let result = await batches.return();
       for (let pulled = 0; result.done !== true; pulled += 1) {
@@ -1089,168 +485,33 @@ async function driveStream(run: {
         reportCleanupFailure(run.method, error);
       });
     };
-    // WHETHER THE GENERATOR ENDED ON ITS OWN, and the only thing the `finally`
-    // below reads. `.return()` on a COMPLETED generator is a no-op that runs no
-    // cleanup, so this skip is an OPTIMISATION AND NOT A REQUIREMENT: an edit
-    // that dropped the flag and closed unconditionally would be correct, merely
-    // wasteful. Nothing may come to depend on the skip.
     let completed = false;
-    // A `finally` AROUND THE WHOLE LOOP, because ABORT IS NOT THE ONLY WAY OUT
-    // OF IT. The other exits are EXCEPTIONS THROWN WHILE THE GENERATOR IS
-    // SUSPENDED AT ITS YIELD: the malformed-batch guard below rejects a batch
-    // that is not an array -- config.ts checks only the resolve/completion pair
-    // and both runtimes strip types without checking them, so that guard is the
-    // whole of what stands there -- and `sendProgress` rejects once the
-    // connection is Closed, which is what an editor dying mid-stream looks like
-    // from here. Both propagate out of this closure, so a close reachable from
-    // the abort branch ALONE would leave the generator never touched again and
-    // the author's cleanup WOULD NEVER RUN.
-    //
-    // THE EDITOR-DEATH ARM IS THE ONE THAT COSTS. A handler holding a child
-    // process or a lock file loses exactly the release that mattered, and THE
-    // SAME UNRELEASED HANDLE KEEPS THE EVENT LOOP ALIVE -- which is the orphaned
-    // server src/server.ts treats as a correctness requirement rather than an
-    // untidiness.
-    //
-    // A `finally` AND NOT A `catch`: this drive has nothing to say about the
-    // exception, which belongs to answerUnlessCancelled's own reporting one
-    // level up. Catching here would either swallow a handler failure or oblige
-    // this code to rethrow it in the right shape.
-    // BUILT ONCE, ABOVE THE LOOP RATHER THAN PER PULL: a subscription taken
-    // inside it would leave one listener per batch on a signal that outlives
-    // them all. Why a race is needed at all is at `abortedRace`.
+    // BUILT ONCE, ABOVE THE LOOP RATHER THAN PER PULL, and nothing reddens if you
+    // move it in: one race is one subscription, so a race taken per pull leaves a
+    // listener per batch on a signal that outlives them all.
     const aborted = abortedRace(context.signal);
     try {
       for (;;) {
-        // Checked BEFORE the pull, and this is the ONE place an abort that
-        // landed during a send can be read. `sendProgress` is the only await in
-        // this loop that hands the event loop back -- a generator between yields
-        // settles its pull as a microtask -- so mid-stream cancellation lands
-        // there, and the next thing that happens without this check is another
-        // pull for a request the client has already given up on.
-        //
-        // THE PULL IT SAVES IS NOT THE POINT; WHERE IT LEAVES THE GENERATOR IS.
-        // Returning from here leaves it suspended AT A YIELD, where the
-        // `finally` below closes it and the author's own cleanup runs at once.
-        // Pulling once more resumes it into work whose only product is
-        // discarded, and a handler that then awaits anything slow -- the one
-        // fetch without a timeout -- takes its cleanup with it: `.return()` is
-        // queued behind that pull by the language.
-        //
-        // NOT THE FIRST ITERATION'S GUARD. A request cancelled before dispatch
-        // never reaches this loop at all: `answerUnlessCancelled` reads the
-        // abort before invoking the handler, so there is no generator to pull
-        // from.
         if (context.signal.aborted) {
           return null;
         }
         const pull = batches.next();
         const settled = await Promise.race([pull, aborted]);
         if (settled === abortWon) {
-          // THE LOSING PULL IS LEFT PENDING, AND `Promise.race` IS WHAT MAKES
-          // THAT SAFE -- a load-bearing property of that call and the reason it
-          // is not hand-rolled here. The loser is still the generator's, and a
-          // handler whose ignored wait later FAILS rejects exactly it; unhandled,
-          // that kills the process, which would trade a parked request for a
-          // dead session. `Promise.race` subscribes to EVERY element, so the
-          // rejection is already handled however late it lands.
-          //
-          // MEASURED BY PERTURBATION, AND THE RUNTIMES DISAGREE ABOUT IT: a
-          // hand-rolled race forwarding only fulfilments dies under DENO with
-          // `Uncaught (in promise)` and survives under bun, so deno is the only
-          // runtime in which this property is observable at all. `the abandoned
-          // pull's later rejection is handled ...` in
-          // test/cancel-parked-pull.test.ts stands over it by the session's own
-          // exit code -- on one of the two runtimes, which is why the reason is
-          // written here rather than left to that test to imply.
-          //
-          // NOTHING IS REPORTED ABOUT IT, which is this file's existing ruling
-          // and not a new one: a cancelled handler is EXPECTED to fail, an
-          // aborted wait rejects by design, and a stack per cancellation would
-          // train the config author to ignore the one stderr channel that means
-          // something.
-          //
-          // NOTHING IS CLOSED HERE. The `finally` below owns that, for the same
-          // reason the abort check further down does not close either: a close
-          // fired on both paths would report one throwing cleanup twice. What
-          // that close CANNOT do is run the author's `finally` while this pull is
-          // still pending -- `.return()` is queued behind it by the language --
-          // so the generator stays parked even though the client is answered.
           return null;
         }
         const next = settled;
         if (next.done === true) {
-          // THE RETURN CARRIES NOTHING AND IS NOT READ. `next.value` is `void`
-          // here by the published type, so a handler has no second entrance for
-          // content and this drive has no second thing to interpret.
           completed = true;
           return yielded && token === undefined ? collected : null;
         }
-        // Checked HERE, between pulling a batch and sending it, and NOT made
-        // redundant by either check around it: the race above covers an abort
-        // landing while the pull is parked, the check at the top of the loop
-        // covers one landing while a batch was being sent, and this one covers
-        // an abort landing while the pull was in flight AND LOSING THE RACE TO
-        // IT -- both settle, and which one `Promise.race` reports is not this
-        // code's to decide. The batch is then already in hand and must not go
-        // out to a client that has stopped listening. Returning also stops
-        // driving the generator, which is the point of cancelling at all. The
-        // value is discarded either way -- the answer is already -32800.
-        //
-        // REACHED BY A HANDLER THAT AWAITS BETWEEN YIELDS, which is the shape
-        // that makes a pull long enough to be racing anything: a generator whose
-        // body runs straight to its next yield settles its pull as a microtask
-        // and gives no abort the chance.
+        // NOT MADE REDUNDANT BY EITHER CHECK AROUND IT, and nothing reddens if
+        // you drop it: this is the seam where the pull and the abort BOTH settled
+        // and `Promise.race` reported the pull, so the batch is in hand and must
+        // not go out to a client that has stopped listening.
         if (context.signal.aborted) {
-          // Returning stops DRIVING the generator; the `finally` below is what
-          // closes it, and closing it is what runs the config author's
-          // `finally`. Without that close the generator is left suspended at its
-          // yield forever, and cleanup nobody can watch succeed is silently
-          // skipped on every superseded keystroke.
-          //
-          // NOTHING IS CLOSED ON THIS LINE ANY MORE, and the reason is that this
-          // branch turned out not to be the only exit that owed a close -- see
-          // the `try` above. A close fired here AND from the `finally` would
-          // report one throwing cleanup twice.
-          //
-          // The close stays above the mode split, where this check already is:
-          // whether the request streamed or aggregated says what the CLIENT can
-          // take and nothing about what the HANDLER holds open.
           return null;
         }
-        // THE ONE THING THIS DRIVE REQUIRES OF A BATCH, CHECKED ABOVE THE MODE
-        // SPLIT BECAUSE THE TWO MODES DISAGREED ABOUT IT. Aggregation refused a
-        // non-array INCIDENTALLY -- `push(...batch)` throws on something that is
-        // not iterable -- while streaming sent the same value out verbatim as a
-        // `$/progress` whose payload is not the array the protocol declares, and
-        // then answered `null` successfully. Same mistake, one loud failure and
-        // one SILENT WIRE-PROTOCOL VIOLATION, decided by whether the client
-        // asked for partial results.
-        //
-        // NOTHING EARLIER CAN CATCH IT. `MethodMap` says a completion handler
-        // yields `CompletionItem[]`, and both runtimes STRIP that annotation
-        // rather than checking it -- so an unannotated handler, or a config
-        // written in plain JavaScript, reaches this line with whatever it
-        // yielded. `yield item` for `yield [item]` is the whole of the mistake.
-        //
-        // THROWN, NOT ANSWERED AS -32602. The router answers that code for
-        // params that are not an object, which is a CLIENT fault the client can
-        // fix; this is a CONFIG AUTHOR fault reached from a well-formed request,
-        // so accusing the client would send the one party who cannot act on it
-        // to look at its own message. Throwing instead reaches
-        // `answerUnlessCancelled`, which reports on stderr and lets
-        // vscode-jsonrpc answer -32603 -- and, by leaving the loop from a point
-        // where the generator is suspended, runs the `finally` below, so the
-        // author's cleanup happens in BOTH modes rather than in the aggregating
-        // one alone.
-        //
-        // THE VALUE IS NAMED, and `JSON.stringify` rather than `String` for the
-        // reason the token report gives: `[object Object]` names nothing an
-        // author could act on. BOOKED AS A DEBIT: a circular batch makes this
-        // line throw a serialisation error instead of the message below. The
-        // answer, the report and the close are unchanged -- only the wording
-        // degrades -- and a circular batch already failed here, in the spread on
-        // one mode and inside `sendProgress`'s own serialisation on the other.
         if (!Array.isArray(next.value)) {
           throw new TypeError(
             `${run.method} handler yielded a batch that is not an array: ` +

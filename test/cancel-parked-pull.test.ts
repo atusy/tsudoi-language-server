@@ -303,8 +303,8 @@ for (const runtime of runtimes) {
      *
      * AND THE RUNTIMES DISAGREE ABOUT WHETHER IT IS OBSERVABLE AT ALL -- a
      * hand-rolled race dies under deno with `Uncaught (in promise)` and survives
-     * under bun -- which is why this runs on both and why the reason is recorded
-     * at the site in src/methods.ts rather than left to this test to imply.
+     * under bun -- which is why this runs on both, rather than letting one
+     * runtime stand for a property only the other can observe.
      */
     test(
       "a parked hover's later rejection is handled: the session survives and goes on serving",

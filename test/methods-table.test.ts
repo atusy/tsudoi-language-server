@@ -79,8 +79,8 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * result type. MEASURED ON THIS TREE at typescript 7.0.2 / protocol 3.18.2
  * rather than taken on trust: pinning the entry gives TS2322 AT THE TABLE,
  * `Type 'CompletionList' is missing the following properties from type
- * 'CompletionItem[]'`. The reasoning for accepting that cost is at
- * `StreamDrivenEntry` in src/methods.ts.
+ * 'CompletionItem[]'`. `StreamDrivenEntry` in src/methods.ts leaves the result
+ * open for exactly that reason.
  *
  * WHAT THIS TEST SAYS THAT NO PIN EVER COULD, and it is why it would be kept
  * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in

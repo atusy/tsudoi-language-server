@@ -718,8 +718,8 @@ const facts: readonly ReadmeFact[] = [
   {
     // The claim is that tsudoi CLOSES the generator, never that the author's
     // cleanup COMPLETES: a `finally` that awaits something which never settles
-    // never finishes -- MEASURED, and recorded at src/methods.ts. Promising
-    // completion would document something the language forbids.
+    // never finishes. Promising completion would document something the
+    // language forbids.
     //
     // WHERE THE `finally` GOES IS DELIBERATELY NOT A TOKEN HERE. A completion
     // handler IS the generator -- one body, and no level to be one above it --
