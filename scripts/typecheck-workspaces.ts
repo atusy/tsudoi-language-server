@@ -128,11 +128,11 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // of trusting the exit codes underneath it. The same correction is at
 // `prepareWorkspace` in scripts/workspaces.ts.
 prepareWorkspace(root);
-// EVERY MEMBER AND NOT ONLY THE HANDLERS, which is the one enumeration in this
-// repository that may never narrow: `buildOrder` reads this same list, so a
-// member dropped from it is dropped from the test-time build too and is covered
-// by nothing at all while all five commands exit 0. The guards below read the
-// same list for the same reason.
+// EVERY MEMBER AND NOT ONLY THE HANDLERS: `buildOrder` reads this same list, so
+// narrowing it drops that member from the test-time build too. MEASURED, and it
+// refutes what stood here: dropping a handler from `workspaces` reddens 11 arms
+// with dist/ intact, so the narrowing is loud rather than silent. The guards
+// below read the same list for the same reason.
 const members = declaredMembers(root);
 // HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND
 // IS THE WRONG ONE: that function is also what the `bun test` preload runs, so a

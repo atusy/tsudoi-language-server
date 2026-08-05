@@ -211,18 +211,17 @@ for (const [runtime, command] of Object.entries(route)) {
  * ./src/types.ts, which is deliberately not published -- a package.json
  * pointing at a file it does not ship.
  *
- * THE SUBPATH IS TYPE-ONLY, AND THIS PROBE IS STILL NOT THE ONLY THING THAT
- * NOTICES THE ARM'S LOSS -- measured rather than reasoned, because the obvious
- * argument gets it wrong. RE-TAKEN at sprint 58, and the number this sentence
- * used to carry had gone stale WITH NOBODY EDITING IT: `FIVE` was written and
- * the same weakening now reddens six. So what is kept is the NAMES, which do not
- * silently move. Dropping `import` from the `./types` arm reddens the type-only
- * surface assertion in test/published-artifacts.test.ts, the exports equality
- * pin in test/package-shape.test.ts, and FOUR arms in this file -- the deno
- * handshake, the deno dictionary hover, this probe, and `a change to src/
- * reaches the installed copy with no rebuild step`, which the old sentence did
- * not name at all. `A type-only consumer never runs` is true of the TYPES and
- * false of the IMPORT STATEMENT that carries them.
+ * THE SUBPATH IS TYPE-ONLY AND THIS PROBE IS NOT WHAT NOTICES THE ARM'S LOSS,
+ * which the obvious argument gets wrong: `a type-only consumer never runs` is
+ * true of the TYPES and false of the IMPORT STATEMENT carrying them. Dropping
+ * `import` from the `./types` arm reddens arms in test/published-artifacts.test.ts,
+ * test/package-shape.test.ts, test/unbuilt-artifact.test.ts and this file.
+ *
+ * NO COUNT AND NO ROSTER, BECAUSE BOTH HAVE GONE STALE HERE ALREADY. `FIVE` was
+ * written and became six with nobody editing it; the names that replaced the
+ * number were read as complete and were short by three from the day they were
+ * written -- test/unbuilt-artifact.test.ts predates them and asserts the arm in
+ * three places. A reader who needs the set drops the arm and runs the suite.
  *
  * WHY DENO IS IN THAT LIST AND BUN IS NOT, measured rather than reasoned:
  * examples/diagnostic-trailing-whitespace.ts writes

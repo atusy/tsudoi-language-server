@@ -164,6 +164,13 @@ this file** grades X"; a byte-identity range was extended without re-measuring
 and was false by 30 lines; "every finding **this sprint**" became "MEASURED
 ACROSS SEVERAL SPRINTS" with neither a number nor a condition.
 
+**`is what X` IS THE SAME CLAIM AS `is the only thing that X`, and a sweep keyed
+to the words will not find it.** _(sprint 66)_ The dominant repair when
+superlatives were swept was exactly that substitution -- `the only thing that
+notices it` became `what notices it`, thirty times. It satisfies the rule, and a
+later sweep for `the only` / `nothing else` returns none of them. **So the shape
+to look for is the definite article doing quantifier work, not the word `only`.**
+
 **The tell is the TENSE and the QUANTIFIER, and you can check both without
 re-measuring anything.** `until this file` became `nothing but this file`;
 `this sprint` became `across several sprints`. _(sprint 65)_ **A superlative is
