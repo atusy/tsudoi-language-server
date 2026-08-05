@@ -14,16 +14,6 @@ applySuiteDeadline();
  * EVERY TYPESCRIPT FILE THIS CHECKOUT OWNS IS IN SOME COMPILER'S PROGRAM, driven
  * against checkouts built here rather than against this one.
  *
- * WHY THIS IS NOT IN test/workspace-members.test.ts, WHICH SPAWNS THE SAME
- * COMMAND: that file's subject is WHICH PACKAGES the fifth check reaches and
- * what it says about each -- a member's own type error, a directory no list
- * names, a mapping one directory down. This one's subject is a FILE, and the
- * question is asked of the whole checkout rather than per member: the offender
- * the arms below plant is usually in no member at all. Sharing a file would mean
- * one header trying to say both, and the fixtures differ in the one respect that
- * matters here -- these trees are built so that something is uncovered, which
- * every tree over there is written to avoid.
- *
  * THE PROPERTY IS A `WHERE` PROPERTY AND SO IS ALMOST EVERY ARM, which decides
  * their shape: each violation is a MOVE with no value changed -- a file dragged
  * out of an included directory, an `include` narrowed, a file added under a path
@@ -31,14 +21,12 @@ applySuiteDeadline();
  * member includes `src`; an arm doing that would assert WHAT where the property
  * is WHERE, and would stay green through the move it exists to catch.
  *
- * THE EXCEPTION IS NAMED RATHER THAN LEFT FOR A READER TO FIND, AND IT IS FORCED
- * BY WHAT IT MEASURES: the declaration-file arms flip `skipLibCheck`, which is a
- * compiler-option VALUE and not a location, and they can be nothing else.
- * Whether a `.d.ts` is in the subject at all is READ from what the programs
- * report, so that setting IS their subject -- an arm moving a file instead would
- * pin the exclusion by the file's NAME, which is the reading that ruling exists
- * to refuse. The sentence above said `end to end` while three arms below
- * contradicted it.
+ * THE EXCEPTION IS THE DECLARATION-FILE ARMS, AND IT IS FORCED BY WHAT THEY
+ * MEASURE: they flip `skipLibCheck`, a compiler-option VALUE and not a location,
+ * and can be nothing else. Whether a `.d.ts` is in the subject at all is READ
+ * from what the programs report, so that setting IS their subject -- an arm
+ * moving a file instead would pin the exclusion by the file's NAME, which is the
+ * reading that ruling exists to refuse.
  *
  * AND EVERY ARM SPAWNS THE CHECK RATHER THAN CALLING THE FUNCTION. The refusal's
  * two readers are private to scripts/workspaces.ts on purpose, so what is
@@ -82,12 +70,10 @@ const memberTsconfig = JSON.stringify({ compilerOptions: programOptions, include
  * A member's BUILD config, which emits a declaration beside a JavaScript file.
  *
  * ITS OUTPUT DIRECTORY IS DELIBERATELY NOT CALLED `dist`, and that is the arms'
- * only defence against a reader that knows the WORD rather than the SETTING.
- * MEASURED while it was: with the subtraction replaced by `any path segment
- * equal to dist`, this file and the whole suite stayed green, because the one
- * fixture that emitted anything spelled its `outDir` `dist` and no tree held a
- * `dist` that no program wrote. `out` is a name nothing in the check knows, so
- * a reader not reading the reported configuration cannot find it.
+ * only defence against a reader that knows the WORD rather than the SETTING:
+ * `out` is a name nothing in the check knows, so a reader not reading the
+ * reported configuration cannot find it. Spelled `dist`, every arm below stays
+ * green under a subtraction that matches the name instead.
  */
 const memberBuildTsconfig = JSON.stringify({
   compilerOptions: {
@@ -118,8 +104,7 @@ async function checkWorkspace(files: Record<string, string>): Promise<CliResult>
 /**
  * THE ASYMMETRY THIS REPOSITORY LIVES WITH, STAGED AS A THROWAWAY: a member
  * whose config reaches its source directory and nothing else, so anything
- * dropped BESIDE that directory is run by whatever runs it and graded by
- * nobody.
+ * dropped BESIDE that directory is run by whatever runs it and graded by nobody.
  */
 function memberIncludingOnlyItsSource(extra: Record<string, string> = {}): Record<string, string> {
   return {
@@ -155,11 +140,6 @@ test("the same member with nothing beside its source passes", async () => {
 });
 
 /**
- * THE ORDERING CLAIM'S SUBJECT, WHICH IT DID NOT HAVE: the refusal runs BEFORE
- * ANY MEMBER IS CHECKED, and until this arm no tree anywhere paired an uncovered
- * file with a member type error -- so moving the call below the type-check loop
- * left every arm in this file and the whole suite green.
- *
  * WHY THE ORDER IS WORTH AN ARM RATHER THAN A COMMENT: a member that type-checks
  * says nothing about the files its config never looked at, so a run that prints
  * member diagnostics first invites a reader to believe the compiler's verdict
@@ -189,12 +169,10 @@ test("no member's diagnostics are printed before an uncovered file is refused", 
   expect(unplanted.code).not.toBe(0);
 });
 
-// THE STORY'S OWN MOMENT, WHICH IS A FILE THAT HAS JUST BEEN ADDED: it is
-// written after the throwaway is staged, so no index anywhere mentions it. A
-// candidate enumeration reading tracked files alone reddens ONE RUN AFTER the
-// commit that introduced the hazard, which is the shape this arm exists to
-// foreclose -- and the arm above cannot catch it, because everything the
-// workspace helper writes is staged.
+// WRITTEN AFTER THE THROWAWAY IS STAGED, which is the whole of the setup and the
+// reason the arm above cannot stand in: everything the workspace helper writes is
+// staged, so a candidate enumeration reading tracked files alone reddens ONE RUN
+// AFTER the commit that introduced the hazard.
 test("a file that has only just been added, and no index mentions, is reported", async () => {
   const root = workspace(memberIncludingOnlyItsSource());
   try {
@@ -210,15 +188,12 @@ test("a file that has only just been added, and no index mentions, is reported",
 });
 
 /**
- * THE ONE STATE WHERE THIS CHECK CAN NAME A FILE THAT DOES NOT EXIST, which is
- * the opposite fault to every other arm here: a FALSE RED rather than a missed
- * one.
- *
- * `--cached` REPORTS A PATH WHOSE FILE HAS BEEN DELETED, and no compiler's list
- * can hold a file that is not on disk -- so the deletion ALONE turns a candidate
- * into an offender, and the reader is told to widen an `include` for a path they
- * cannot open. MEASURED before the arm, on this tree: exit 1 naming
- * `packages/late/probe.ts`, with nothing at that path.
+ * THE ONE STATE WHERE THIS CHECK CAN NAME A FILE THAT DOES NOT EXIST -- a FALSE
+ * RED rather than a missed one, which is the opposite fault to every other arm
+ * here. `--cached` REPORTS A PATH WHOSE FILE HAS BEEN DELETED, and no compiler's
+ * list can hold a file that is not on disk, so the deletion ALONE would turn a
+ * candidate into an offender and the reader would be told to widen an `include`
+ * for a path they cannot open.
  *
  * TWO RUNS OVER ONE TREE, AND THE FIRST IS WHAT MAKES THE SECOND MEAN ANYTHING.
  * A green over a tree with the file gone is satisfied by a check that never
@@ -229,12 +204,6 @@ test("a file that has only just been added, and no index mentions, is reported",
  * the whole hazard: were the deletion staged as well, the path would leave the
  * candidate set for a reason that has nothing to do with this arm and the green
  * below would be free.
- *
- * NOT THE DELETED-CONFIG ARM'S STATE, WHICH IS THE NEIGHBOUR AND THE OPPOSITE
- * ANSWER: a tracked config gone from the worktree is refused BY NAME, since a
- * program nobody can read turns every file it covered into an offender. There
- * the absence is the fault; here it is the repair, and both are staged the same
- * way, one directory apart.
  */
 test("a file deleted from the worktree, with its index entry left behind, is not reported", async () => {
   const root = workspace(memberIncludingOnlyItsSource({ [besideTheSource]: probe }));
@@ -270,15 +239,11 @@ test("a file deleted from the worktree, with its index entry left behind, is not
  * override, must not mention the plant. Only then does the guard reporting it
  * mean the override did the work.
  *
- * MEASURED ON THIS MACHINE, which is why this arm exists at all rather than
- * being a hypothetical: the personal ignore file here hides a file that is
- * tracked and visible in every other checkout of this repository.
- *
  * THE CONFIGURATION IS HANDED TO BOTH CHILDREN EXPLICITLY, not left in this
- * process for them to inherit -- MEASURED on bun 1.3.13: a child spawned after
- * `process.env` is written does not see the change. Inheriting would have left
- * this arm asserting against an environment the check never received, which is
- * the same green as an arm with no subject at all.
+ * process for them to inherit: a child spawned after `process.env` is written
+ * does not see the change, so inheriting would leave this arm asserting against
+ * an environment the check never received -- the same green as an arm with no
+ * subject at all.
  */
 test("a personal ignore file does not shrink the subject", async () => {
   const root = workspace(memberIncludingOnlyItsSource());
@@ -316,10 +281,9 @@ test("a personal ignore file does not shrink the subject", async () => {
  * BEGINS with `node_modules`, which nobody installed and this checkout owns.
  *
  * BOTH SUBTRACTIONS ARE MATCHES AGAINST A PATH AND SO BOTH CAN BE WIDENED BY ONE
- * TOKEN, which is the class this arm and the one below the emitter cover -- and
- * MEASURED, both widenings applied AT ONCE left this file and the suite green,
- * so neither had a subject anywhere. Here the segment split becomes a substring
- * test and the stranger filter starts swallowing a directory somebody wrote.
+ * TOKEN, which is the class this arm and the one below the emitter cover: here
+ * the segment split becomes a substring test and the stranger filter starts
+ * swallowing a directory somebody wrote.
  *
  * IT PAIRS WITH THE UNPLANTED MEMBER TREE ABOVE, which is the same fixture with
  * nothing dropped into it and is silent.
@@ -335,14 +299,10 @@ test("a directory whose name merely begins with node_modules is not read as inst
 /**
  * A CONFIG THAT NAMES A TRACKED FILE IN ANOTHER CASE, which is the second way
  * this check can print a FALSE RED and the only arm here whose correct colour is
- * a property of the MACHINE.
- *
- * WHAT THE TWO SIDES ARE: the compiler answers with the spelling ITS CONFIG
+ * a property of the MACHINE: the compiler answers with the spelling ITS CONFIG
  * used, git answers with the spelling THE INDEX holds, and the comparison is
- * string equality. MEASURED on this machine's filesystem, which folds case: tsc
- * exits 0 and lists `src/foo.ts` -- it is compiling the file -- while the check
- * reported `src/Foo.ts` as covered by nothing and named widening an `include`
- * that already reaches it.
+ * string equality. Where the filesystem folds case, one file is compiled under
+ * one spelling and reported uncovered under the other.
  *
  * SO THE ARM ASSERTS THE MACHINE FIRST AND THE COLOUR SECOND, and the branch is
  * the honest shape rather than a convenience. Where case is SIGNIFICANT these
@@ -396,11 +356,10 @@ test("a tracked file its config names in another case is judged by what the file
  * A ROOT WHOSE CONFIG DECLARES NO `include` AT ALL, which is the arm that
  * decides WHICH READER answers `is this file in the program`.
  *
- * MEASURED, AND IT IS WHY THE JSON GLOBS ARE NOT THE READER: the default include
- * a compiler applies to a config with no `include` does NOT reach a directory
- * whose name begins with a dot. A hand-written expansion of that wildcard says
- * the opposite, calls the plant covered, and this arm is the only one that
- * notices.
+ * IT IS WHY THE JSON GLOBS ARE NOT THE READER: the default include a compiler
+ * applies to a config with no `include` does NOT reach a directory whose name
+ * begins with a dot. A hand-written expansion of that wildcard says the
+ * opposite, calls the plant covered, and this arm is the only one that notices.
  */
 function rootDeclaringNoInclude(extra: Record<string, string> = {}): Record<string, string> {
   return {
@@ -486,10 +445,9 @@ test("the same file moved under the included path passes", async () => {
  * subject. `src/only-in-build.ts` is reached by the BUILD config alone, and a
  * reader that skipped it would report a file that is compiled and published.
  *
- * THE EMITTED ARTIFACT IS IGNORED HERE, deliberately and by a `.gitignore` this
- * tree carries: that is the shape of a real checkout, and it keeps this arm's
- * red owned by the split rather than shared with the emitted-declaration arm
- * below, whose tree carries no such file.
+ * THE EMITTED ARTIFACT IS IGNORED BY A `.gitignore` THIS TREE CARRIES, which is
+ * the shape of a real checkout and keeps this arm's red owned by the split rather
+ * than shared with the emitted-declaration arm below.
  */
 function memberSplitAcrossTwoConfigs(extra: Record<string, string> = {}): Record<string, string> {
   return {
@@ -532,8 +490,6 @@ test("the same split member with a file outside both configs is reported", async
  * the whole of the subtraction this arm defends: the check BUILDS before it
  * reads, so without it every throwaway tree that builds would redden -- and the
  * emitted declaration would be reported to a reader who cannot act on it.
- * MEASURED with the subtraction removed: this arm reports
- * packages/emitter/out/index.d.ts.
  *
  * ON THIS REPOSITORY THE SUBTRACTION IS A NO-OP, since every `dist/` here is
  * ignored -- which is exactly why it is defended by a throwaway rather than by a
@@ -564,17 +520,11 @@ test("a member's emitted declaration is not reported as uncovered", async () => 
  * THE INDEX RULES `THE COMPILER WROTE IT` OUT, WHICH IS THE ONE DIRECTION IT CAN
  * AND THE ONE THIS ARM MEASURES: no artifact is ever committed, so a committed
  * file under an output directory is somebody's whatever that directory is
- * called. The converse is neither checked nor true -- an untracked hand-written
+ * called. THE CONVERSE IS NEITHER CHECKED NOR TRUE -- an untracked hand-written
  * file there is subtracted like an emitted one, and the arm above cannot tell
- * them apart either. Excusing every path under a declared `outDir` excuses a
- * directory rather than an artifact -- for a program that need not emit at all,
- * and for a hand-written file the compiler has never touched, COMMITTED OR NOT.
- * MEASURED on the shipped subtraction, in a
- * tree whose member check config carried `noEmit` beside `outDir: "../../vendor"`
- * and a committed `vendor/probe.ts` in no program's list: exit 0 and zero bytes,
- * and exit 1 naming that file the moment the `outDir` was deleted. One config
- * key, one silenced directory, in a check whose message says there is no list to
- * exempt a file from it.
+ * them apart either. So one config key naming an `outDir` silences a whole
+ * directory, in a check whose message says there is no list to exempt a file
+ * from.
  *
  * BOTH READINGS COME OFF ONE RUN, which is what makes this a discriminator and
  * not a second copy of the arm above: the emitted declaration in the same
@@ -593,30 +543,14 @@ test("a committed file under a program's output directory is reported, the emitt
 });
 
 /**
- * A DIRECTORY MERELY CALLED `dist`, WHICH NO PROGRAM IN THIS TREE WRITES -- the
- * other side of the same question, and the one that says the subtraction reads a
- * SETTING rather than a name everyone happens to use.
- *
- * THE PLANT IS UNTRACKED ON PURPOSE, which is what keeps this arm's subject its
- * own: a committed file under an output directory is already refused one arm
- * above, for the index rather than for the path, so a tracked plant here would
- * be reported whatever the directory is called and would measure nothing new.
- * Untracked, it is exempt exactly when a reader thinks `dist` means output.
- *
- * IT IS A `WHERE` PROPERTY LIKE THE REST: nothing about the file changes between
- * this arm and the emitted declaration beside it -- both untracked, both in no
- * program's roots -- and the only difference is that one directory is in a
- * program's reported configuration and the other is a name.
- */
-/**
  * THE SECOND BOUNDARY, AND IT IS THE SAME ONE-TOKEN WIDENING: a SIBLING whose
  * name begins with the output directory's, which the prefix reaches the moment
  * the separator comes off. `out` and `outbox` share five characters and nothing
  * else -- one is a program's reported output, the other is somebody's source.
  *
- * UNTRACKED FOR THE REASON THE `dist` ARM BELOW IS: a committed file under an
- * output directory is refused for the index rather than for the path, so a
- * tracked plant here could not tell the two boundaries apart.
+ * THE PLANT IS UNTRACKED ON PURPOSE, here and at the `dist` arm below: a
+ * committed file under an output directory is refused for the INDEX rather than
+ * for the path, so a tracked plant could not tell the two boundaries apart.
  */
 test("a sibling of the output directory whose name merely extends it is reported", async () => {
   const root = workspace(memberEmittingItsDeclaration());
@@ -640,9 +574,9 @@ test("a sibling of the output directory whose name merely extends it is reported
  * is the SECOND comparison in this check that takes its two strings from two
  * different producers -- the compiler's reported `outDir` and the index.
  *
- * MEASURED before the fold reached it, on this tree: the build config says
- * `outDir: "Out"`, the directory is already on disk as `out`, tsc emits into
- * `out`, and `packages/emitter/out/index.d.ts` was reported as covered by
+ * WHERE THE FILESYSTEM FOLDS, the build config says `outDir: "Out"`, the
+ * directory is on disk as `out`, tsc emits into `out` -- and without the fold in
+ * the subtraction `packages/emitter/out/index.d.ts` is reported as covered by
  * nothing. The same false red as the case arm above, one subtraction over.
  *
  * ITS SUBJECT EXISTS ONLY WHERE THE FILESYSTEM FOLDS, and it needs no branch for
@@ -675,6 +609,13 @@ test("an output directory spelled in another case still subtracts what the compi
   expect(result.code).toBe(0);
 });
 
+/**
+ * THE OTHER SIDE OF THE SAME QUESTION, and the one that says the subtraction
+ * reads a SETTING rather than a name everyone happens to use: nothing about the
+ * plant changes between this arm and the emitted declaration beside it -- both
+ * untracked, both in no program's roots -- and the only difference is that one
+ * directory is in a program's reported configuration and the other is a name.
+ */
 test("a file under a directory merely named dist, which no program writes, is reported", async () => {
   const root = workspace(memberEmittingItsDeclaration());
   const decoy = join("packages", "emitter", "dist", "decoy.ts");
@@ -699,8 +640,7 @@ test("a file under a directory merely named dist, which no program writes, is re
  * WHY `.d.ts` IS THE ONE EXCLUSION: with library checking skipped -- which every
  * config in this repository sets -- a declaration file is IN a program's inputs
  * and its body is checked by nothing, so membership is the wrong question to ask
- * about it. MEASURED: a local `.d.ts` carrying two errors gives exit 0 with the
- * setting on and exit 1 naming both with it off.
+ * about it.
  *
  * SO THE EXCLUSION IS CONDITIONAL, AND THE PAIR IS THE POINT: flip the setting
  * off and the same file RE-ENTERS the subject. A guard that simply never
@@ -709,10 +649,9 @@ test("a file under a directory merely named dist, which no program writes, is re
  * THE TWO PROGRAMS ARE SET SEPARATELY, AND THAT IS WHAT MAKES THE PAIR MEAN
  * `ONCE ONE OF THEM STOPS`. One options object fed to both builds only all-on
  * and all-off trees, and on those `every program skips` and `some program skips`
- * are the same reading -- MEASURED: with the condition weakened to `some`,
- * nothing in this file or in the suite reddened. The tree below is therefore
- * MIXED, with the ROOT the one that stops skipping, so the two runs differ by
- * exactly one flag on exactly one config and the weaker reading goes silent.
+ * are the same reading. The tree below is therefore MIXED, with the ROOT the one
+ * that stops skipping, so the two runs differ by exactly one flag on exactly one
+ * config and the weaker reading goes silent.
  */
 function declarationNoProgramIncludes(skipping: {
   readonly root: boolean;
@@ -750,13 +689,11 @@ test("the same declaration file is reported once a program stops skipping lib ch
   expect(result.code).not.toBe(0);
 });
 
-// AND THE OTHER PROGRAM STOPS SKIPPING, WHICH IS THE HALF THE MIXED TREE ABOVE
-// COULD NOT MEASURE. The pair above flips the ROOT and leaves the member
-// skipping, so an implementation reading ONLY THE ROOT's setting -- which is the
-// one config every tree here is guaranteed to have -- satisfies both of them:
-// MEASURED with exactly that reader in place, 44 pass / 0 fail across this file
-// and test/workspace-members.test.ts. `ANY program stops` is what the exclusion
-// claims, so the member must be able to withdraw it alone.
+// AND THE OTHER PROGRAM STOPS SKIPPING, WHICH IS THE HALF THE PAIR ABOVE CANNOT
+// MEASURE: it flips the ROOT and leaves the member skipping, so an
+// implementation reading ONLY THE ROOT's setting -- the one config every tree
+// here is guaranteed to have -- satisfies both of them. `ANY program stops` is
+// what the exclusion claims, so the member must be able to withdraw it alone.
 test("the same declaration file is reported when it is the MEMBER that stops skipping", async () => {
   const result = await checkWorkspace(declarationNoProgramIncludes({ root: true, member: false }));
 
@@ -769,12 +706,12 @@ test("the same declaration file is reported when it is the MEMBER that stops ski
  * `every tracked config is a program` a property rather than a description of
  * this repository's layout.
  *
- * AND THE OTHER HALF THE PAIR MEASURES: the root program in this tree matches
- * NOTHING -- it excludes both directories that hold TypeScript -- and the
- * compiler answers that with a diagnostic and a NON-ZERO EXIT. A reader that
- * treated a failed run as a reason to abort would redden here and in about
- * twenty existing arms; one that treated it as `this config covers everything`
- * would go green with the plant. It contributes zero.
+ * AND THE OTHER HALF THIS TREE MEASURES: the root program here matches NOTHING
+ * -- it excludes both directories that hold TypeScript -- and the compiler
+ * answers that with a diagnostic and a NON-ZERO EXIT. A reader that treated a
+ * failed run as a reason to abort would redden here; one that treated it as
+ * `this config covers everything` would go green with a plant. It contributes
+ * zero.
  */
 function configOutsideEveryMember(): Record<string, string> {
   return {
@@ -805,15 +742,13 @@ test("a config outside the root and outside every member still covers its own fi
  * covered becomes an offender, and the run answers a broken config with a list
  * of innocent sources. So the second assertion is the load-bearing one.
  *
- * THE NAME NO LONGER SAYS `TRACKED`, AND THAT IS THE REPAIR RATHER THAN A LOSS.
- * Being in the index is how this tree REACHES the state and is not what the arm
- * measures: unlinking the file leaves the entry, so nothing here separates an
- * unreadable TRACKED config from an unreadable untracked one, and the arm is
- * green under a reader that never asked. What defends the tracked-only
+ * WHAT IT DOES NOT MEASURE IS `TRACKED`. Being in the index is how this tree
+ * REACHES the state: unlinking the file leaves the entry, so nothing here
+ * separates an unreadable TRACKED config from an unreadable untracked one, and
+ * the arm is green under a reader that never asked. What defends the tracked-only
  * enumeration is `a config that is not staged does not mark the tree covered`,
  * where an unstaged config is the whole subject -- CITED BY NAME AND NOT BY
- * DIRECTION, since a reorder would silently falsify `below` and no grep for a
- * claim's words would find it.
+ * DIRECTION, since a reorder would silently falsify `below`.
  */
 test("a config the compiler cannot read is refused by name, not read as covering nothing", async () => {
   const root = workspace(configOutsideEveryMember());
@@ -886,19 +821,15 @@ test("a config that is not staged does not mark the tree covered", async () => {
  * report names -- widen an `include` -- IS WRONG: the file is already in a
  * program.
  *
- * WHY THE REFERENCE IS NOT FOLLOWED, MEASURED RATHER THAN PREFERRED: `tsc -p` on
- * the PARENT, which is the form the root check and every member check take,
- * reports NOTHING about a type error in `lib/x.ts` -- only `-p` on the
- * referenced config, or `tsc -b` on the parent, names it. Following the
- * reference would therefore mark covered a file no command in the Definition of
- * Done reads.
+ * WHY THE REFERENCE IS NOT FOLLOWED: `tsc -p` on the PARENT, which is the form
+ * the root check and every member check take, reports NOTHING about a type error
+ * in `lib/x.ts` -- only `-p` on the referenced config, or `tsc -b` on the parent,
+ * names it. Following the reference would therefore mark covered a file no
+ * command in the Definition of Done reads.
  *
  * SO THE ARM ASSERTS BOTH SENTENCES. Naming the file alone is what the check
  * already did; naming `lib/project.json` and the RENAME is the part that stops a
  * reader widening the wrong include.
- *
- * THIS REPOSITORY USES NO REFERENCES TODAY, so the tree is a throwaway end to
- * end -- which is the same reason every other arm here builds its own.
  */
 function rootReferencing(referenced: string): Record<string, string> {
   return {
@@ -937,9 +868,7 @@ test("a file covered only by a referenced project is reported WITH the reference
 
 // THE PAIR, AND IT IS THE RULING MADE INTO AN EDIT: the same tree with the
 // referenced config RENAMED so the enumeration finds it, and nothing else moved
-// -- not the reference, not a single `include`. A config named `tsconfig.json`
-// was covered before this arm only because it is independently enumerated, which
-// was luck; this is where that becomes the rule a reader is pointed at.
+// -- not the reference, not a single `include`.
 test("the same tree passes once the referenced config is named so the enumeration finds it", async () => {
   const result = await checkWorkspace(rootReferencing("tsconfig.json"));
 
@@ -957,14 +886,10 @@ test("the same tree passes once the referenced config is named so the enumeratio
  * a commit and the workspace helper deliberately stops at `add`; and the same
  * ignore-file override every other staging here uses.
  *
- * THE DONOR IS ITS OWN CHECKOUT AND IS DISPOSED OF WITH THE TREE, which is what
- * makes this a submodule rather than a directory: the file under test lives in
- * ANOTHER REPOSITORY'S history, at a commit the outer tree pins.
- *
- * THE MOUNT POINT IS RELATIVE AND THAT IS NOT STYLE, MEASURED: this machine's
- * temporary directory is reached through `/var`, which is a symbolic link, and
- * `git submodule add` REFUSES an absolute path holding one -- `expected '/var'
- * in submodule path ... not to be a symbolic link`. Relative to the root it is
+ * THE MOUNT POINT IS RELATIVE AND THAT IS NOT STYLE: a temporary directory
+ * reached through a symbolic link -- which is what `/var` is on this machine --
+ * makes `git submodule add` REFUSE the absolute path, `expected '/var' in
+ * submodule path ... not to be a symbolic link`. Relative to the root it is
  * spawned in, the question never arises.
  */
 function withSubmodule(root: string, at: string, files: Record<string, string>): void {
@@ -1000,13 +925,13 @@ function withSubmodule(root: string, at: string, files: Record<string, string>):
  * A SUBMODULE'S TYPESCRIPT IS NOT THIS CHECKOUT'S TO GRADE, and the ruling is
  * pinned here in both directions rather than left as the enumerator's accident.
  *
- * MEASURED, AND IT IS WHAT DECIDES THE RULING: `git ls-files --recurse-submodules`
- * works and the same flag WITH `--others` is REFUSED -- exit 128, `unsupported
- * mode` -- so recursing could only ever reach a submodule's TRACKED files. That
- * is one subject with two rules, and the half it would lose inside a submodule
- * is a file JUST ADDED, which is the moment this whole refusal exists for.
- * Substantively: no `include` in this tree can be widened to cover somebody
- * else's history, so the report would be a permanent red nothing here repairs.
+ * WHAT DECIDES THE RULING: `git ls-files --recurse-submodules` works and the same
+ * flag WITH `--others` is REFUSED -- exit 128, `unsupported mode` -- so recursing
+ * could only ever reach a submodule's TRACKED files. That is one subject with two
+ * rules, and the half it would lose inside a submodule is a file JUST ADDED,
+ * which is the moment this whole refusal exists for. Substantively: no `include`
+ * in this tree can be widened to cover somebody else's history, so the report
+ * would be a permanent red nothing here repairs.
  *
  * TWO RUNS OVER ONE TREE, AND THE SECOND IS WHAT MAKES THE FIRST MEAN ANYTHING.
  * A green over a tree with a submodule is satisfied by a check that examined
@@ -1023,13 +948,12 @@ function withSubmodule(root: string, at: string, files: Record<string, string>):
  */
 test("a submodule's TypeScript is outside the subject, and the refusal says so", async () => {
   const root = workspace(memberIncludingOnlyItsSource());
-  // MOUNTED WHERE A PLANT IS ALREADY KNOWN TO BE UNCOVERED, which the first
-  // spelling of this arm got wrong: at the tree's top the ROOT program's default
-  // include reaches everything outside `packages`, so the control plant was
-  // covered and the run was silent for a reason that had nothing to do with
-  // submodules. Inside the member, one directory beside its `src`, both sites
-  // are in no program's list -- so the only thing separating them is which
-  // repository holds them.
+  // MOUNTED WHERE A PLANT IS ALREADY KNOWN TO BE UNCOVERED: at the tree's top the
+  // ROOT program's default include reaches everything outside `packages`, so a
+  // control plant there is covered and the run is silent for a reason that has
+  // nothing to do with submodules. Inside the member, one directory beside its
+  // `src`, both sites are in no program's list -- so the only thing separating
+  // them is which repository holds them.
   const vendor = join("packages", "late", "vendor");
   const inside = join(vendor, "pkg", "probe.ts");
   const outside = join(vendor, "probe.ts");
@@ -1083,12 +1007,11 @@ test("a root that is not a checkout is refused rather than read as holding nothi
 });
 
 /**
- * The allowance this one arm needs, MEASURED rather than guessed: it is the only
- * arm whose root is THIS repository, so it pays for a full build of three
- * packages before the refusal it is about can speak.
+ * The allowance this one arm needs: it is the only arm whose root is THIS
+ * repository, so it pays for a full build of three packages before the refusal it
+ * is about can speak.
  *
- * A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE, which
- * test/workspace-members.test.ts already records at length: were this to time
+ * A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE: were this to time
  * out under load, it would read as `the guard refused this repository`, the one
  * conclusion it exists to make unavailable.
  */
@@ -1099,17 +1022,15 @@ const oneArmBuildsThisWholeRepository = 120_000;
  * what it pairs with rather than for its own colour.
  *
  * WHAT IT CANNOT SAY, stated because an empty answer and a reader that opened
- * nothing are the same observation: nothing in a green run reports how many
- * files were examined. What stands behind it is the SAME MEASUREMENT reddening
- * on other roots -- every planted arm above is this command reading a checkout
- * with one file out of place -- and the arm below it, which makes a failure to
- * enumerate loud instead of empty. The reading on THIS root, taken by hand and
- * recorded in the sprint: two files planted at two sites uncovered by different
- * mechanisms, both reported, both green when removed.
+ * nothing are the same observation: nothing in a green run reports how many files
+ * were examined. What stands behind it is the SAME COMMAND reddening on other
+ * roots -- every planted arm above is it reading a checkout with one file out of
+ * place -- and the arm refusing a root that is not a checkout, which makes a
+ * failure to enumerate loud instead of empty.
  *
- * BY SPRINT 9'S RULE ITS EMPTINESS CAN NEVER BE THE FIRST THING TO FAIL: were a
- * file here uncovered, this arm and the fifth check itself would redden
- * together, and the check names the file.
+ * ITS EMPTINESS CAN NEVER BE THE FIRST THING TO FAIL: were a file here uncovered,
+ * this arm and the fifth check itself would redden together, and the check names
+ * the file.
  */
 test(
   "this repository holds no TypeScript file that no program includes",

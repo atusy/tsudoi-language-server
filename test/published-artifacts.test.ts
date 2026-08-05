@@ -15,54 +15,23 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT.
+ * WHAT THIS FILE ADDS THAT `tsc --noEmit` DOES NOT: the root check reads only the
+ * subpaths THIS CHECKOUT'S OWN FILES import, under the ROOT'S options, out of a
+ * workspace link. What a stranger receives is a TARBALL, type-checked under their
+ * own options from a project that never saw this checkout.
  *
- * THE REASON THIS PARAGRAPH GAVE NAMED A MECHANISM THIS REPOSITORY NO LONGER
- * HAS, and it is quoted rather than struck so the next reader does not re-derive
- * the pre-move story from the file that reads what we publish. It said: the
- * repo's own type check never reaches the exports map, because tsconfig's
- * `paths` intercepts `@atusy/tsudoi-language-server/types` and answers it
- * straight at src/types.ts. THERE IS NO MAPPING ANYWHERE IN THIS REPOSITORY --
- * test/package-shape.test.ts asserts that no specifier the root check resolves
- * is answered by one, and scripts/workspaces.ts refuses one in a member.
+ * IT IS NOT THE ONLY READER OF THAT TARBALL -- test/installed-specifier.test.ts
+ * and test/installed-without-node-types.test.ts type-check against the same
+ * packed artifact. WHAT IS THIS FILE'S ALONE IS WHERE ITS PROBE COMES FROM: the
+ * config compiled below is README.md's OWN BYTES, read at test time, so a README
+ * edit lands in this type check, where installed-specifier writes the documented
+ * shape out by hand.
  *
- * WHAT IS TRUE INSTEAD, and it moves this file's subject rather than removing
- * it: root `tsc --noEmit` DOES consult the map, and while the artifact is there
- * it answers the published subpaths from that same dist/. So the gap is no
- * longer `the root check reads sources` -- it is that the root check reads only
- * the subpaths THIS CHECKOUT'S OWN FILES import, under the ROOT'S options, out
- * of a workspace link. What a stranger receives is a TARBALL, type-checked under
- * their own options from a project that never saw this checkout.
- *
- * THIS FILE IS NOT THE ONLY READER THAT GRADES THAT TARBALL, and the sentence
- * that said so is struck rather than narrowed in place, because it was written
- * over readers that already existed: test/installed-specifier.test.ts -- ADDED
- * BEFORE THIS FILE -- and test/installed-without-node-types.test.ts both
- * type-check against the same packed artifact, through the same `installConsumer`
- * that packs it here. installed-specifier grades the EXAMPLE too, both spellings.
- *
- * WHAT IS THIS FILE'S ALONE IS WHERE ITS PROBE COMES FROM, and it is read off the
- * callers rather than asserted: `extractQuickstart` is called here and in
- * test/readme.test.ts, which EXECUTES the quickstart's commands and type-checks
- * nothing (measured -- it calls no `typeCheck` at all). So the config compiled
- * below is README.md's own bytes, read at test time, and a README edit lands in
- * this type check; installed-specifier writes the documented shape out BY HAND,
- * where it cannot. Everything here is therefore BORN GREEN by design:
- * the snippet and the example already compile, MEASURED. What this file supplies
- * is the CHECK and not a fix, so all of its value is in its controls.
- *
- * Every control that CAN fail is a test below. Exactly one is a comment
- * instead, and only because the property it records is FORECLOSED by the
- * staging design rather than assertable -- see the stays-green note further
- * down.
- *
- * THE DIVERGENCE THIS FILE WATCHES FOR HAS NO SUBJECT AT PRESENT, noted so the
- * next reader does not go hunting for one: src/types.ts re-exports nothing at
- * all, so neither built file carries a relative specifier. THE HAZARD IS REAL
- * ANYWAY -- declaration emit does not rewrite such a specifier, so a runtime
- * re-export from ./workspace.ts would put `./workspace.js` in dist/types.js
- * beside `./workspace.ts` in dist/types.d.ts, naming a file the tarball does
- * not ship. MEASURED on the built artifact rather than reasoned from the source.
+ * EVERYTHING HERE IS THEREFORE BORN GREEN BY DESIGN -- the snippet and the
+ * example already compile -- so what this file supplies is the CHECK and not a
+ * fix, and all of its value is in its controls. Every control that CAN fail is a
+ * test below; exactly one is a comment instead, because the staging design
+ * forecloses it rather than leaving it unwritten (the stays-green note).
  */
 
 /** The config the README tells a reader to write, read out of the README. */
@@ -137,10 +106,9 @@ test("a type error in the example reddens the example, not the snippet", async (
 });
 
 /**
- * THE CONTROL THAT MAKES THIS FILE MORE THAN A SECOND TYPE CHECK, and the pair
- * is the whole point. Perturbing the PUBLISHED types must redden the probe WHILE the repo's
- * own `tsc --noEmit` stays green -- without the stays-green half this file is
- * `checked again` wearing the words `checked through the published arm`.
+ * THE CONTROL THAT MAKES THIS FILE MORE THAN A SECOND TYPE CHECK, and the pair is
+ * the whole point: without the stays-green half this file is `checked again`
+ * wearing the words `checked through the published arm`.
  */
 test("perturbing the published types reddens the probe while tsc --noEmit stays green", async () => {
   // THE LEVER IS THE `types` CONDITION, not an edit to src/types.ts: that file
@@ -169,10 +137,6 @@ test("perturbing the published types reddens the probe while tsc --noEmit stays 
   }
 });
 
-/**
- * The converse: a check pointed at IN-REPO sources cannot observe a change to
- * what ships, so satisfying it proves nothing this file is for.
- */
 test("the in-repo arm cannot observe what the published arm checks", async () => {
   const viaRepoSources = await typeCheckProbe({ "probe.ts": readmeSnippet() });
 
@@ -208,35 +172,22 @@ async function runtimeKeysOf(specifier: string, probe: string): Promise<string[]
 }
 
 /**
- * TSUDOI'S OWN SUBPATH CARRIES NO RUNTIME VALUE, AND THIS IS THE GUARANTEE
- * RATHER THAN A CONFIRMATION TAKEN ONCE.
+ * A RULING RATHER THAN AN OBSERVATION: a types module exporting a runtime
+ * function is incoherent, so this subpath may not GROW one. It is read off the
+ * artifact a stranger receives rather than grepped over src/, which can see
+ * neither an interface MEMBER nor a RE-EXPORT line.
  *
- * `@atusy/tsudoi-language-server/types` IS TYPES, AND THAT IS A RULING RATHER THAN AN
- * OBSERVATION: a types module exporting a runtime function is incoherent, so
- * this subpath may not grow one. IT IS A TEST AND NOT A COMMENT because a
- * comment cannot redden -- the same claim written as prose in
- * test/package-shape.test.ts and in test/installed-runtime.test.ts goes false
- * with nothing anywhere to say so.
+ * ITS PAIR IS IN THE SAME MEASUREMENT, because this asserts an ABSENCE: `[]`
+ * alone cannot tell `type-only` from `the module failed to load` from `I read the
+ * wrong module`. The sibling subpath goes through the SAME reader in the same
+ * test and must show keys.
  *
- * MEASURED ON THE ARTIFACT A STRANGER RECEIVES, not grepped over src/. A name
- * grep is what missed this class before: it cannot see interface MEMBERS and it
- * cannot see a RE-EXPORT line, so it reports an empty diff over a surface that
- * grew both.
+ * PER SUBPATH AND NEVER PER PACKAGE: `deps/types` re-exports the dependency's
+ * data values ON PURPOSE, so `this package exports no values` would be false. The
+ * pair is also what stops the claim being quietly widened.
  *
- * ITS PAIR IS IN THE SAME MEASUREMENT, per the absence-pairing rule, because
- * this asserts an ABSENCE: `[]` alone cannot tell `type-only` from `the module
- * failed to load` from `I read the wrong module`. The sibling subpath goes
- * through the SAME reader in the same test and must show keys.
- *
- * PER SUBPATH AND NEVER PER PACKAGE: `@atusy/tsudoi-language-server/deps/types` re-exports the
- * dependency's data values ON PURPOSE, so `this package exports no values` would
- * be false. Only tsudoi's OWN subpath makes this claim, and the pair below is
- * also what stops the claim being quietly widened.
- *
- * THE SIBLING IS ASSERTED NON-EMPTY AND NOT BY SET, which is the test above's
- * job: the same set pinned twice is two instruments that can disagree, where
- * `this reader sees keys when there are keys` is the only thing this test needs
- * from it.
+ * THE SIBLING IS ASSERTED NON-EMPTY AND NOT BY SET, which is the next test's job:
+ * the same set pinned twice is two instruments that can disagree.
  */
 test("tsudoi's own subpath exports nothing at run time, where its dependency subpath exports values", async () => {
   const ours = await runtimeKeysOf("@atusy/tsudoi-language-server/types", "own-surface.js");
@@ -250,26 +201,16 @@ test("tsudoi's own subpath exports nothing at run time, where its dependency sub
 });
 
 /**
- * THE VALUE ARM, and no type check can stand in for it.
+ * THE VALUE ARM, and no type check can stand in for it: dist/types.d.ts and
+ * dist/types.js are separate files emitted from one source, and an `export type`
+ * re-export produces a perfect declaration beside a module that exports nothing
+ * -- every type-check assertion in this file would stay green while a config
+ * author got `undefined` at their first completion.
  *
- * `CompletionItemKind` and `DiagnosticSeverity` are namespaces of const members
- * -- VALUES -- so a config that reaches for either needs the published
- * dist/types.js to really re-export it at runtime.
- * dist/types.d.ts and dist/types.js are separate files emitted from one source,
- * and a `export type` re-export produces a perfect declaration beside a module
- * that exports nothing: every type-check assertion in this file would stay
- * green while a config author got `undefined` at their first completion.
- *
- * Object.keys of the namespace object is therefore the assertion, and the reader
- * that takes it is shared with the type-only test above -- INCLUDING ITS LOAD
- * CHECK, which written out again here would be the same claim in the same words
- * in two places.
- *
- * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE, and it must be
- * EXACTLY what vscode-languageserver-types exports at run time. src/deps/types.ts
- * satisfies that with a star, so incompleteness is structural rather than
- * checked -- what this test now defends is the star itself: replace it with an
- * explicit list and this reddens the day upstream adds a name.
+ * THE SET IS DERIVED FROM THE DEPENDENCY, NOT LISTED HERE. src/deps/types.ts
+ * satisfies it with a star, so incompleteness is structural rather than checked
+ * -- what this test defends is the star itself: replace it with an explicit list
+ * and this reddens the day upstream adds a name.
  */
 test("the published module re-exports every LSP data value, and nothing else", async () => {
   const published = await runtimeKeysOf(
@@ -285,11 +226,9 @@ test("the published module re-exports every LSP data value, and nothing else", a
  * THE TYPE ARM, which the value arm above cannot give: all but CompletionItemKind
  * and DiagnosticSeverity are types and leave no runtime trace at all.
  *
- * THROUGH THE INSTALLED CONSUMER, NOT typeCheckProbe, and that is not
+ * THROUGH THE INSTALLED CONSUMER, NOT typeCheckProbe, and the two are not
  * interchangeable: the in-repo arm resolves this subpath against sources a
- * stranger never receives, which the test above at
- * `the in-repo arm cannot observe what the published arm checks` measures
- * directly.
+ * stranger never receives.
  *
  * The list and the source it builds live in test/helpers/published-names.ts,
  * which carries the reason for each -- including why every name is USED rather
@@ -308,26 +247,16 @@ test("every published protocol name type-checks from the installed copy", async 
 });
 
 /**
- * A NAME ON THE SUBPATH THAT IS NOT A PROTOCOL NAME AT ALL -- and this
- * test exists because that distinction leaves it otherwise UNDEFENDED.
+ * A NAME ON THE SUBPATH THAT IS NOT A PROTOCOL NAME AT ALL -- and this test
+ * exists because that distinction leaves it otherwise UNDEFENDED. `TextDocument`
+ * is not in `publicProtocolNames` and must not be: that list holds the PROTOCOL
+ * names the subpath re-exports, and this one comes from
+ * vscode-languageserver-textdocument. So the published-names probe above and the
+ * value probe below both skip it.
  *
- * `TextDocument` is not in `publicProtocolNames` and must not be: that list's
- * doc block says it holds the PROTOCOL names the subpath re-exports, and this
- * one comes from vscode-languageserver-textdocument. So the published-names probe
- * above and the value probe below both skip it, and without this it would ship
- * with no published-surface coverage at all.
- *
- * BORN GREEN, DECLARED: what this test supplies is the CHECK and not the
- * property -- the name is reachable from this subpath either way -- which is
- * the same honesty this file states about itself at the top. Its evidence is
- * the perturbation, RUN: removing the export from
- * src/types.ts reddens THIS and the identity test below, and leaves the
- * published-names probe and the value probe green.
- *
- * WHAT IT DOES NOT SEE is WHICH TextDocument arrived -- MEASURED, and it is the
- * reason the identity test exists: pointing src/types.ts at
- * vscode-languageserver-protocol's DEPRECATED twin leaves this test green,
- * `tsc --noEmit` at 0, and every test in the suite passing except that one.
+ * WHAT IT DOES NOT SEE IS WHICH TextDocument ARRIVED, which is the reason the
+ * identity test exists: pointed at vscode-languageserver-protocol's DEPRECATED
+ * twin, this arm is green.
  */
 test("TextDocument type-checks from the installed copy, though it is not one of the protocol names", async () => {
   const result = await consumer.typeCheck({
@@ -342,14 +271,11 @@ test("TextDocument type-checks from the installed copy, though it is not one of 
 });
 
 /**
- * THE SURFACE IS UPSTREAM'S TYPE SET, and this is the test that says so. It
- * names a type NO example uses and NO line of src/types.ts mentions, so it
- * passes only because `export type *` carries it.
- *
- * It replaces an assertion that the same name was NOT reachable, which was the
- * negative control for a curated surface. That boundary moved: it now runs
- * between TYPES and VALUES rather than between chosen names and withheld ones,
- * and the test below is where the restraint lives.
+ * THE SURFACE IS UPSTREAM'S TYPE SET, and the probe names a type NO example uses
+ * and NO line of src/types.ts mentions, so it passes only because `export type *`
+ * carries it. The boundary runs between TYPES and VALUES rather than between
+ * chosen names and withheld ones, and the test below is where the restraint
+ * lives.
  */
 test("a protocol type no example names is reachable from the subpath", async () => {
   const result = await consumer.typeCheck({
@@ -364,16 +290,15 @@ test("a protocol type no example names is reachable from the subpath", async () 
 });
 
 /**
- * WHAT `export type *` MUST NOT CARRY, and the reason the star is type-only.
- *
- * The dependency exports 93 Request and Notification constants as VALUES, for
+ * WHAT `export type *` MUST NOT CARRY, and the reason the star is type-only: the
+ * dependency exports its Request and Notification constants as VALUES, for
  * methods tsudoi does not implement -- plus `createProtocolConnection`, which
  * would let a config build its own connection and bypass tsudoi entirely. A
  * surface carrying them would advertise capabilities the server does not have.
  *
- * TS1362 is the diagnostic that says a name arrived through `export type`, so
- * asserting on it distinguishes `not exported at all` from `exported as a type`.
- * Turning the star into a plain `export *` reddens this and nothing else.
+ * WHAT IS READ BELOW IS THE NAME AND NOT THE DIAGNOSTIC CODE, so the red does not
+ * by itself separate `exported as a type` from `not exported at all` -- the
+ * diagnostic tsc produces here is TS1362, which is the first of those.
  */
 test("a protocol request constant is not reachable as a value from the subpath", async () => {
   const result = await consumer.typeCheck({
@@ -388,11 +313,9 @@ test("a protocol request constant is not reachable as a value from the subpath",
 /**
  * THE CONTROL FOR THE NAME ITSELF: `DefinitionParams` has to be a real export of
  * the dependency, or the reachability asserted above is the reachability of a
- * name nobody ever had.
- *
- * Its own test rather than a second assertion, because it is a different hazard:
- * a renamed-away protocol symbol and a broken re-export are not the same mistake
- * and must not share a first failure.
+ * name nobody ever had. Its own test rather than a second assertion, because a
+ * renamed-away protocol symbol and a broken re-export are different mistakes and
+ * must not share a first failure.
  */
 test("the unpublished name the probe asks for is one the dependency really exports", async () => {
   const result = await consumer.typeCheck({
@@ -407,21 +330,18 @@ test("the unpublished name the probe asks for is one the dependency really expor
 });
 
 /**
- * A PROBE THAT OBSERVES DECLARATION IDENTITY RATHER THAN SHAPE, which is the
- * one thing an assignability check cannot do.
- *
- * It AUGMENTS upstream's own `TextDocument` interface with a marker member and
- * then reads that member off whatever `from` calls `TextDocument`. Declaration
- * merging reaches ONE declaration, so the member is visible through the subject
- * only if the subject IS that declaration. A structural twin -- however exact --
- * never sees it.
+ * A PROBE THAT OBSERVES DECLARATION IDENTITY RATHER THAN SHAPE, which is the one
+ * thing an assignability check cannot do. It AUGMENTS upstream's own
+ * `TextDocument` interface with a marker member and then reads that member off
+ * whatever `from` calls `TextDocument`. Declaration merging reaches ONE
+ * declaration, so the member is visible through the subject only if the subject
+ * IS that declaration; a structural twin -- however exact -- never sees it.
  *
  * THE FIRST IMPORT IS LOAD-BEARING AND IS NOT DECORATION. A module augmentation
  * whose target is not already in the program fails with TS2664 `module cannot be
- * found` INSTEAD OF the marker diagnostic -- measured, on a subject that did not
- * import the package -- and that failure looks like a missing dependency rather
- * than like a wrong type. Anchoring the module in the program leaves TS2339 on
- * the marker as the only way this can fail.
+ * found` INSTEAD OF the marker diagnostic, and that failure looks like a missing
+ * dependency rather than like a wrong type. Anchoring the module in the program
+ * leaves TS2339 on the marker as the only way this can fail.
  *
  * WHAT IT WOULD ALSO REDDEN FOR, disclosed because it is a different fault: a
  * tree holding TWO copies of vscode-languageserver-textdocument, where the
@@ -456,8 +376,8 @@ function assignabilityProbe(from: string): string {
 }
 
 /**
- * TSUDOI'S OWN INTERFACE, WIDENED BY HAND to everything PBI-31 promises -- the
- * increment someone would ship if they read criterion 1 and stopped there.
+ * TSUDOI'S OWN INTERFACE, WIDENED BY HAND to every structural promise the
+ * published one makes -- the increment someone would ship who stopped at shape.
  */
 const handWrittenSuperset = [
   'import type { Position, Range } from "vscode-languageserver-textdocument";',
@@ -486,16 +406,10 @@ const deprecatedProtocolTwin =
   'export type { TextDocument } from "vscode-languageserver-protocol";';
 
 /**
- * CRITERION 2, and it is IDENTITY rather than assignability for a reason the
- * test below MEASURES rather than states.
- *
- * WHAT IT CATCHES THAT NOTHING ELSE DOES, measured on this tree rather than
- * argued: with src/types.ts re-exporting `vscode-languageserver-protocol`'s
- * DEPRECATED TextDocument instead -- a one-line edit that adds no dependency --
- * `tsc --noEmit` exits 0, the type arm above exits 0, the value arm is
- * unchanged, and THIS IS THE ONLY TEST IN THE WHOLE SUITE THAT FAILS. Named
- * rather than counted on purpose: a count of what fails is true when it is
- * written and false as soon as a test joins this file.
+ * WHAT IT CATCHES THAT NOTHING ELSE DOES: with src/types.ts re-exporting
+ * `vscode-languageserver-protocol`'s DEPRECATED TextDocument instead -- a
+ * one-line edit that adds no dependency -- `tsc --noEmit` exits 0, the type arm
+ * above exits 0, the value arm is unchanged, and this arm is the only red.
  */
 test("the TextDocument the published subpath exports is upstream's own declaration", async () => {
   const result = await consumer.typeCheck({
@@ -509,17 +423,15 @@ test("the TextDocument the published subpath exports is upstream's own declarati
 /**
  * WHAT MAKES THE TEST ABOVE WORTH RUNNING, and it FAILS FIRST if the instrument
  * is ever weakened to a shape check -- which is the whole hazard, since a shape
- * check reads exactly like coverage and sees none of this.
+ * check reads exactly like coverage and sees none of this. Both subjects satisfy
+ * every structural promise the interface makes: both pass a `getText(range) is
+ * callable` test, an `assignable to upstream` test and a strict-superset
+ * comparison, while one is code this project would own forever and the other a
+ * type its own authors deprecated.
  *
- * Both subjects satisfy every structural promise PBI-31 makes. Both would pass
- * a `getText(range) is callable` test, an `assignable to upstream` test, and a
- * strict-superset comparison. Neither delivers the maintenance the PBI exists
- * for: one is code this project would then own forever, the other is a type its
- * own authors deprecated in favour of the package tsudoi now depends on.
- *
- * Its own test rather than assertions appended to the one above, because
- * `tsudoi adopted upstream` and `this probe can tell adoption from resemblance`
- * are different hazards and must not share a first failure.
+ * Its own test rather than assertions appended to the one above, because `tsudoi
+ * adopted upstream` and `this probe can tell adoption from resemblance` are
+ * different hazards and must not share a first failure.
  */
 test("the identity probe reddens on both near-misses where mutual assignability sees nothing", async () => {
   const clonedIdentity = await consumer.typeCheck({
@@ -552,24 +464,15 @@ test("the identity probe reddens on both near-misses where mutual assignability 
 });
 
 /*
- * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, NOT MEASURED, and it is a
- * comment rather than a test because no test could carry it.
+ * THE STAYS-GREEN HALF IS GUARANTEED BY CONSTRUCTION, and it is a comment rather
+ * than a test because no test could carry it: the perturbation is applied to the
+ * copy that gets PACKED, so this repository is untouched and running tsc under it
+ * would be trivially green rather than informative. What would un-foreclose it is
+ * perturbing the repo itself, which the two tests above exist to avoid.
  *
- * The pair the criterion asks for is `perturbing the published types reddens
- * the probe WHILE tsc --noEmit stays green`. It cannot be tied by one
- * measurement, and that is the STAGING DESIGN rather than a gap: the
- * perturbation is applied to the copy that gets PACKED, so this repository is
- * untouched, and running tsc under the perturbation would be trivially green
- * rather than informative. FORECLOSED, and what would un-foreclose it is
- * perturbing the repo itself -- which the two tests above exist to avoid.
- *
- * The evidence lives in those two: the probe reddens when the published arm
- * breaks, and an in-repo check cannot observe that break at all.
- *
- * NO TEST HERE MAY CALL runTsc(repoRoot), and this is the trap to refuse: that
- * IS the `tsc --noEmit` the Definition of Done already runs, so it cannot fail
- * unless the DoD has already failed. A control that cannot fail is not one, and
- * an inert test is how a suite's green stops meaning what it says.
+ * NO TEST HERE MAY CALL runTsc(repoRoot), and this is the trap to refuse: that IS
+ * the `tsc --noEmit` the Definition of Done already runs, so it cannot fail
+ * unless the DoD has already failed. A control that cannot fail is not one.
  */
 
 /**
@@ -591,27 +494,17 @@ function useNonHoistingLayout(dir: string): void {
 }
 
 /**
- * WHY THIS IS THE INVERSE ASSERTION RATHER THAN THE OBVIOUS ONE, said here so
- * the absent half is read as a decision and not as a gap.
+ * WHY THIS IS THE INVERSE ASSERTION RATHER THAN THE OBVIOUS ONE, said here so the
+ * absent half is read as a decision and not as a gap.
  *
  * `without the documented install the example reddens, and tsudoi itself does
  * not` is UNCONSTRUCTIBLE rather than merely unwritten. It needs an undeclared
- * BARE SPECIFIER inside the examples to withhold -- a package the consumer
- * never declares, which the non-hoisting layout would then fail to resolve --
- * and the examples take every protocol name through this package's own
- * `deps/protocol` and `deps/types` subpaths rather than through a bare
- * `vscode-*` specifier, so there is nothing left in them to withhold. A control
- * that cannot be built out of anything is a different thing from a control that
- * could be built and was not.
- *
- * WHAT CAN BE BUILT IS THE INVERSE, and it is the test immediately below: the
- * examples type-check under that layout, and a bare protocol import does not.
- *
- * WHAT THE HARNESS MUST STILL BE ABLE TO DO is notice a package that is
- * GENUINELY MISSING, and `wordnet` is the only case of it -- no longer as a
- * package the harness withholds by hand, but as the handler package's own
- * declared dependency, which a consumer's install fetches and this suite can
- * delete. That is asserted further down rather than assumed.
+ * BARE SPECIFIER inside the examples to withhold -- a package the consumer never
+ * declares, which the non-hoisting layout would then fail to resolve -- and the
+ * examples take every protocol name through this package's own `deps/protocol`
+ * and `deps/types` subpaths, so there is nothing left in them to withhold. A
+ * control that cannot be built out of anything is a different thing from a
+ * control that could be built and was not.
  */
 test("under the non-hoisting layout the examples type-check, and a bare protocol import does not", async () => {
   const strict = await installConsumer();
@@ -640,24 +533,14 @@ test("under the non-hoisting layout the examples type-check, and a bare protocol
 });
 
 /**
- * THE RUNTIME HALF, and no type check can stand in for it.
- *
- * `CompletionItemKind` is an enum, so the example needs
- * `@atusy/tsudoi-language-server/deps/types` to resolve TO A VALUE at run time.
- * Tsudoi's own `/types` subpath cannot stand in for it and is not what the
- * example imports: it exports nothing at run time, asserted above. A criterion
- * checked only by tsc would go green against a dist/deps/types.d.ts that
- * declares every published name beside a dist/deps/types.js that re-exports
- * none -- the two are separate files emitted from one source, and only one of
- * them can be observed by running.
- *
- * IN THE NON-HOISTING LAYOUT, so this is not merely `the example runs`: it is
- * the example running in a tree where the protocol package is NOT reachable
- * from the consumer's own files, which is the tree criterion 1 is about.
+ * THE RUNTIME HALF, and no type check can stand in for it: a check made only by
+ * tsc goes green against a dist/deps/types.d.ts that declares every published
+ * name beside a dist/deps/types.js that re-exports none, the two being separate
+ * files emitted from one source.
  *
  * A NON-EMPTY result is the assertion. An empty list is what a handler returns
- * when it silently fails to find anything, so `it answered` would be satisfied
- * by a completion handler that had given up.
+ * when it silently fails to find anything, so `it answered` would be satisfied by
+ * a completion handler that had given up.
  */
 test("the example serves a completion from a consumer that declares no protocol package", async () => {
   const strict = await installConsumer();
@@ -702,32 +585,20 @@ test("the example serves a completion from a consumer that declares no protocol 
 });
 
 /**
- * THE LAST GENUINELY-MISSING-PACKAGE CASE, AND IT IS NOT AT THE ARM ANYONE
- * REACHES FOR FIRST -- measured rather than assumed, because that arm sees
- * nothing at all.
+ * `withhold wordnet and the examples must still fail` is FALSE OF THE TYPE CHECK.
+ * The ambient `declare module "wordnet"` that types the dictionary lives inside
+ * `@atusy/tsudoi-hover-wordnet` and is deliberately NOT published, and no name it
+ * declares appears in what that package publishes -- so a consumer's type space
+ * never mentions the dictionary and tsc has nothing to miss. Taken on trust, the
+ * detection would be asserted at the one arm that cannot see it.
  *
- * `withhold wordnet and the examples must still fail` is FALSE of the type
- * check, AND THE REASON IS NOW THE HANDLER PACKAGE'S PUBLISHED SURFACE RATHER
- * THAN A FILE THE READER COPIED. `wordnet` is a dependency of
- * `@atusy/tsudoi-hover-wordnet`; the ambient `declare module "wordnet"` that
- * types it lives inside that package and is deliberately NOT published, and no
- * name it declares appears in what the package publishes. So a consumer's type
- * space never mentions the dictionary at all, and tsc has nothing to miss.
+ * THAT MAKES THIS THE CONTROL FOR THAT DECISION TOO, in the direction that
+ * matters: if the handler ever published a type reaching into `wordnet`, the
+ * consumer would need a declaration it does not have and this type check would
+ * redden.
  *
- * THAT MAKES THIS TEST THE CONTROL FOR THAT DECISION AS WELL, in the direction
- * that matters: if the handler ever published a type reaching into `wordnet`,
- * the consumer would need a declaration it does not have and this type check
- * would redden -- which is the loud failure the decision is worth having.
- *
- * SO THE DETECTION LIVES AT THE OTHER ARM: what notices the missing package is
- * RUNNING, where the handler's own import of `wordnet` is a real resolution.
- * Exit 1, and stderr names the package. Taken on trust, the detection would be
- * asserted at the one arm that cannot see it -- a test that passes because it
- * measures nothing.
- *
- * REMOVED RATHER THAN UNLINKED, and RECURSIVELY: the dictionary now arrives as
- * the handler package's declared dependency, which bun installs as a real
- * directory, where it used to be a symlink this suite put there by hand.
+ * REMOVED RATHER THAN UNLINKED, and RECURSIVELY: the dictionary arrives as the
+ * handler package's declared dependency, which bun installs as a real directory.
  */
 test("withholding wordnet is still detected, at the runtime arm rather than the type arm", async () => {
   const strict = await installConsumer();
@@ -763,48 +634,32 @@ test("withholding wordnet is still detected, at the runtime arm rather than the 
  * stage does write its own package.json. A reading taken at the repo root would
  * be a claim about what we intend to publish rather than about what we do.
  *
- * SCOPED TO `dependencies` DELIBERATELY. A workspace member in devDependencies
- * is normal, reaches no consumer, and is exactly what the repo's own demo config
- * needs; `files: ["dist"]` keeps examples/ out of the tarball anyway. A claim
- * written over both fields would force the demo config out of this package as a
- * side effect nobody asked for.
- *
- * OVER MEMBERS AS A CLASS rather than over the one handler that exists, on the
- * same reasoning as the fifth Definition-of-Done check and the deno guard's
- * member shape: the names come from the workspace configuration, so a package
- * added under packages/ is covered here with nothing edited, and a claim naming
- * one package would go quietly narrow at the second.
+ * SCOPED TO `dependencies` DELIBERATELY. A workspace member in devDependencies is
+ * normal, reaches no consumer, and is exactly what the repo's own demo config
+ * needs; a claim written over both fields would force that config out of this
+ * package as a side effect nobody asked for.
  *
  * TWO GUARDS AGAINST A VACUOUS GREEN, both needed and for different reasons: an
  * empty member list would make the filter trivially empty, and an empty
  * dependency map would make it empty for the wrong reason -- a tarball whose
  * manifest failed to parse looks exactly like a package that depends on nothing.
  *
- * AND WHAT THIS CANNOT CURRENTLY BE THE FIRST THING TO CATCH, MEASURED rather
- * than assumed, because a control that never fires first is not a control.
- * Moving the handler from devDependencies into dependencies does NOT reach this
- * assertion: `bun install` of the tarball 404s on `@atusy/tsudoi-hover-wordnet`
- * -- nothing here is published -- and installConsumer throws before any test
- * runs. So the property is FORECLOSED BY THE REGISTRY TODAY and this reading is
- * shadowed by a louder failure.
- *
- * IT IS KEPT ANYWAY, AND THE REASON IS DATED RATHER THAN GENERAL: the
- * foreclosure lasts exactly as long as both packages stay unpublished. Publish
- * either and the 404 goes away, the dependency installs cleanly, and this
- * becomes the only thing that says a framework must not drag a handler along
- * with it. The 404 also names a registry rather than the rule it happens to
- * enforce, which is the case S9 admits for a control that would fail first.
+ * AND IT CANNOT CURRENTLY BE THE FIRST THING TO CATCH ITS OWN SUBJECT: moving a
+ * handler from devDependencies into dependencies never reaches this assertion,
+ * because `bun install` of the tarball 404s on an unpublished package and
+ * installConsumer throws before any test runs. THE FORECLOSURE IS DATED RATHER
+ * THAN GENERAL -- it lasts exactly as long as both packages stay unpublished, and
+ * then this becomes the only thing that says a framework must not drag a handler
+ * along with it.
  */
 test("the published package depends on no package from this workspace", () => {
   const published = JSON.parse(readFileSync(join(consumer.packageDir, "package.json"), "utf8")) as {
     dependencies?: Record<string, string>;
   };
-  // MEMBERS AND NOT HANDLERS, deliberately, and it is the sentence being
-  // asserted that decides it: `no package FROM THIS WORKSPACE`. The framework is
-  // one of those packages the day it becomes a member, and its own name in the
-  // list can never match its own dependencies -- so the wider reading costs
-  // nothing and the narrower one would quietly stop asking about a package this
-  // claim covers.
+  // MEMBERS AND NOT HANDLERS, and it is the sentence being asserted that decides
+  // it: `no package FROM THIS WORKSPACE`. The framework's own name in the list can
+  // never match its own dependencies, so the wider reading costs nothing and the
+  // narrower one would quietly stop asking about a package this claim covers.
   const members = declaredMembers(repoRoot).map(
     (dir) => (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string }).name,
   );
@@ -824,22 +679,17 @@ test("the published package depends on no package from this workspace", () => {
  * missing is a declaration. A probe run where the package was absent would redden
  * for the other reason and say nothing about the type space.
  *
- * WHAT THIS CANNOT SEE, AND THE PREMISE IT REFUTES, because a control believed to
- * catch something it cannot is worse than none. It does NOT detect the handler
- * SHIPPING its ambient `declare module "wordnet"`. MEASURED, all three routes:
- * a stray `dist/wordnet.d.ts` collected into the tarball leaves this GREEN;
- * `files` grown to `["dist", "src"]`, which packs the declaration itself, leaves
- * this GREEN; and moving the declaration into a `.ts` input so declaration emit
- * would carry it does not compile at all -- a string-named ambient module is not
- * parseable outside a `.d.ts`, so emit can never produce one. tsc loads only the
- * files in the PROGRAM, and an unreferenced `.d.ts` sitting in node_modules is
- * not one of them. `an ambient declaration that ships lands in every consumer's
- * global type space` is therefore FALSE AS STATED: it lands there only where
- * something puts the file in the program.
+ * WHAT THIS CANNOT SEE, because a control believed to catch something it cannot
+ * is worse than none: it does NOT detect the handler SHIPPING its ambient
+ * `declare module "wordnet"`. tsc loads only the files in the PROGRAM, and an
+ * unreferenced `.d.ts` sitting in node_modules is not one of them -- so a stray
+ * declaration in the tarball leaves this GREEN. `an ambient declaration that
+ * ships lands in every consumer's global type space` is FALSE AS STATED: it lands
+ * there only where something puts the file in the program.
  *
  * SO THE ARTIFACT-SIDE GUARD IS NOT REDUNDANT WITH THIS ONE AND CANNOT BE
- * REPLACED BY IT: test/packed-members.test.ts reads the tarball, which is where
- * a stray IS visible. What remains here is the reading that file cannot take --
+ * REPLACED BY IT: test/packed-members.test.ts reads the tarball, which is where a
+ * stray IS visible. What remains here is the reading that file cannot take --
  * that nothing else in a real install, hoisted or transitive, supplies the
  * declaration either.
  *
@@ -882,9 +732,6 @@ test("the same consumer resolves the handler, and to its real type rather than a
 const pathPackage = "@atusy/tsudoi-completion-path";
 
 /**
- * WHAT THE PATH PACKAGE PROMISES, READ FROM AN INSTALLED COPY IN BOTH
- * DIRECTIONS -- and the second direction is the one this file exists for.
- *
  * BOTH HANDLERS OR NEITHER. `resolvePathStat` reads a mark `pathCompletion`
  * writes onto its items, and tsudoi refuses a config that supplies the resolve
  * method with no completion handler beside it, so a consumer who received only
@@ -963,18 +810,11 @@ test("the mark the two handlers share cannot be named by a consumer, by either r
  * ARRIVING there is the event worth reddening on, and a probe that asks about
  * one name at a time can only ever refuse the names somebody thought to list.
  *
- * IT WAS THE MISSING HALF, MEASURED WITH A NEGATIVE CONTROL: appending an export
- * of the shared BLOCK COMPOSER to the entry module left package-shape,
- * published-artifacts and packed-members at 40 pass / 0 fail, while appending
- * the mark reader reddened the probe below -- so the probe was live and the
- * names this sprint newly shared between the two handlers had simply never been
- * added to it. `documentationFor` and `preferredFormat` are exported from the
- * completion module so the resolve half can rebuild one block rather than
- * spelling a second, and publishing either would make how the two agree a
- * compatibility question with a stranger, exactly as the mark would.
- *
- * IT ALSO PINS `two names for two methods`, which the entry module states as
- * prose and nothing asserted.
+ * THE SHARED NAMES ARE WHAT IT IS FOR: `documentationFor` and `preferredFormat`
+ * are exported from the completion module so the resolve half can rebuild one
+ * block rather than spelling a second, and publishing either would make how the
+ * two agree a compatibility question with a stranger, exactly as the mark would.
+ * A name-by-name probe would have to be edited for each of them.
  *
  * WHAT IT CANNOT SEE IS A TYPE, BY CONSTRUCTION -- a module namespace object
  * carries runtime exports alone -- which is why the type-only member of the same
