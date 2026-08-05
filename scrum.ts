@@ -405,6 +405,46 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 66,
+      pbi_id: "PBI-77",
+      goal: "The superlatives this repository can reach by a declared key list are dropped, held or narrowed -- and what the key list cannot reach is measured and written down rather than left as the impression that the tree was swept.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Two passes, each declaring its KEYS and its FILE SET before searching and enumerating what it did not reach by key and path. A partition carved out DURING a sweep from what the hits look like is the class disposition measured hiding live sites twice, and is refused.",
+          implementation:
+            "Keys `the only`, `nothing else`, `no other`, `nothing anywhere`, `always`. Pass 1 over packages/*/src/, scripts/, test/helpers/, the READMEs and .claude/skills/; pass 2 over test/, test/fixtures/, packages/*/test/, examples/ and CLAUDE.md.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "FOUR CLAIMS WERE FALSE RATHER THAN UNMEASURED, AND EACH HAD ITS REFUTATION WITHIN TWELVE LINES OF ITSELF. types.ts called resolve the only one of five whose params are not a document and a position -- formatting and diagnostic carry no position either. typecheck-workspaces.ts called itself the only thing type-checking an excluded package while prepareWorkspace twelve lines above spawns tsc per member, AND ITS OWN LINE 144 SAID SO. installed-runtime.test.ts headed a paragraph with `which nothing else would notice the loss of` NINE LINES ABOVE that paragraph's own by-name enumeration of what does. The fourth was written by the repair itself.",
+            "SO A SUPERLATIVE IS NOT AN ERROR NEEDING DISTANT EVIDENCE. The refutation is adjacent; what is missing is that nobody opens the set the sentence quantifies over. That is why ordinary review walks past them, and why this needed a sweep rather than a re-read.",
+            "ONE REPAIR MADE ITS CLAIM FALSE, which is this shape's own risk: narrowing replaced an UNSTAGEABLE counterfactual with a STAGEABLE one, and the stageable one is false. `A member dropped from workspaces is covered by nothing at all while all five commands exit 0` -- MEASURED, dropping a handler reddens 11 arms with dist/ intact.",
+            "ONE ROSTER WAS SHORT FROM THE DAY IT WAS WRITTEN. A count that had gone stale on its own (FIVE becoming six with nobody editing it) was replaced by NAMES, because names do not silently move. They do not -- and three were missing at birth, in a file that already existed and already asserted the arm three times. Dropping the import arm reddens nine. Neither form survives, so the paragraph now names the FILES and tells a reader who needs the set to drop the arm and run the suite.",
+            "ONE REPAIR WAS WITHDRAWN AFTER MEASURING IT: `supersession was the only option here for four sprints` was weakened to `was the rule`, then restored -- 5f34afd is the commit that ADDED the delete and narrow branches, and git log -S finds exactly two commits touching the rule, four sprints apart. The superlative is held by its own history.",
+          ],
+        },
+        {
+          test: "None -- the residue, measured at close rather than described.",
+          implementation:
+            "What the declared keys cannot reach, by key and count, so a later sweep starts from a number instead of an impression.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "`every` 276 inside the declared file set alone; scrum.ts 41 on the five keys; bunfig.toml and .oxlintrc.json 8. None touched.",
+            "AND THE SWEEP CREATED ITS OWN BLIND SPOT, WHICH IS THE PART WORTH CARRYING FORWARD. The dominant repair was `the only thing that notices it` becoming `what notices it`, roughly thirty times. It satisfies the criterion and IS INVISIBLE to a sweep keyed on `the only`. That shape measures 265 tree-wide -- thirty of them this sprint's own -- so the key list has to grow to the definite article doing quantifier work, and the rule is at .claude/skills/writing-a-comment/SKILL.md rather than only here.",
+            "PBI-77 THEREFORE DOES NOT CLOSE. What is discharged is the five keys over the two declared file sets; what remains is enumerated above. Closing on a partial sweep whose residue is written down was authorised for this shape; closing while calling the tree swept was not.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "A REVIEW FINDING POINTED AT A SENTENCE AND THE TREE WAS WHAT HAD MOVED. test/definition-of-done.test.ts says this repository carries one deliberate warning and the run reported four; the cheap reading is that the record went stale. THREE OF THE FOUR WERE ESCAPES INTRODUCED AN HOUR EARLIER, IN THIS ITEM'S OWN PLANNING COMMIT. Repairing the sentence would have fixed the record into agreement with damage. WHICH SIDE MOVED IS THE FIRST QUESTION, not the last -- and the lint warnings do not gate, so that sentence was what detected it.",
+      ],
+    },
+    {
       number: 65,
       pbi_id: "PBI-79",
       goal: "A reader opens any file here and reaches the code; what comments remain were kept because a measurement said no test holds them, not because someone thought they read well.",
