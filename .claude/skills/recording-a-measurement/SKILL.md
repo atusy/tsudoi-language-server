@@ -63,9 +63,25 @@ revert, read `dist/`.
 
 ## Labelling it
 
-**A MEASURED claim names WHOSE cost it is, at what SIZE, on which RUNTIME, and
-what its instrument CANNOT SEPARATE.** Without those four the label warrants the
-number and reads as a warrant for the sentence. _(sprint 53)_ MEASURED, and the
+**A MEASURED claim is stated NO WIDER THAN WHAT ITS INSTRUMENT OBSERVED.** It
+names what was observed, under what condition, and what else would have produced
+the same reading. Without that last part the label warrants the number and reads
+as a warrant for the sentence.
+
+**THE QUESTION TO ASK AT THE KEYBOARD, and it is answerable for a behaviour
+observation as well as for a timing:** name a state of this repository that
+would produce THIS SAME READING and make the sentence false. If one exists and
+is not written down, the sentence is wider than its reading.
+
+_(sprint 70)_ **`whose cost, at what size, on which runtime` STOOD HERE AS THE
+RULE AND IS DEMOTED TO AN EXAMPLE**, because it is one instrument's
+condition-spelling: 8 of this tree's 318 labels are a timing, and 148 are a
+behaviour observed, where cost and size have no referent to fill in. An author
+either leaves them blank and fails the rule, or invents them. MEASURED against
+the four failures that prompted this edit: THREE OF THE FOUR SATISFIED THE
+FOUR-PART FORM, and the worst of them -- `940 tests across 69 files`, offered
+as evidence of a graded file when the same figure comes from an ungraded one --
+cites a size, a runtime and a cost-bearer. _(sprint 53)_ MEASURED, and the
 evidence is four wrong sentences in a row about one subject, three of them
 carrying this label: "the cost is linear" — true of the per-entry comparison,
 false of the sort beside it; "nothing of the directory's size is held or
