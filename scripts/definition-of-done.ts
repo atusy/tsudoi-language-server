@@ -28,9 +28,18 @@ import { fileURLToPath } from "node:url";
  * THE DASHBOARD LISTS, silently, because a sixth entry was added over there and
  * nobody remembered to edit this. There is no second list to drift. THE COST,
  * stated rather than discovered: this cannot report anything at all when the
- * dashboard does not run, so a type error in scrum.ts stops the run instead of
- * failing one check -- which is the trade taken, since a dashboard that does not
- * execute has no checks to report.
+ * dashboard does not RUN. What stood here said a type error in scrum.ts stops
+ * the run instead of failing one check, and called that the trade taken. IT WAS
+ * NEVER AVAILABLE TO TAKE. MEASURED on a throwaway whose dashboard's only
+ * unusual property is a type error: `tsc --noEmit` there is exit 1, `bun run
+ * scrum.ts` is exit 0 and prints its JSON, and this runner pointed at that tree
+ * reads the checks, runs them and prints PASSED at exit 0. The runtime strips
+ * types without checking them, so the failure this paragraph priced is one the
+ * fourth check catches AFTERWARDS and this runner never sees. MEASURED in this
+ * checkout: a type error planted in scrum.ts is reported by `tsc --noEmit` and
+ * by nothing else -- not by this runner, not by the arms that grade it. The
+ * order is what makes that safe rather than a hole: the fourth check runs in
+ * the same invocation, so nothing reaches a reader as green.
  *
  * THE CHECKS RUN SEQUENTIALLY IN THE DECLARED ORDER, WHICH IS NOT COSMETIC: the
  * first builds every artifact the fourth reads. Nothing here parallelises them,
