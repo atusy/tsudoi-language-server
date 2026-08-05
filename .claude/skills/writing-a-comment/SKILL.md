@@ -136,60 +136,39 @@ are perturbation records naming its arms by exact `test()` string. So when you
 delete or retarget an arm, the table is what you fix by hand; nothing will tell
 you.
 
-## Supersede; do not amend
+## When a fact changes: delete, narrow, or supersede — in that order
 
-_(sprint 61)_ **When a fact changes, REWRITE THE PARAGRAPH THAT CARRIED IT.**
-Appending a correction beside the sentence it corrects leaves a reader to pick,
-and they pick whichever they reach first. MEASURED three times in one sprint: a
-corrected enumeration filed as a note BESIDE the false sentence in the same
-subtask; two superseded notes left standing in that sprint's own close, one
-still in the present tense about a procedure the same increment had discharged;
-and a reason repaired at `buildOrder` that had been standing NINE LINES BELOW
-its own correction in the same docstring.
+_(sprint 61, scoped sprint 65)_ **Appending a correction beside the sentence it
+corrects leaves a reader to pick, and they pick whichever they reach first.** So
+do not amend. But the first question is whether the paragraph should survive at
+all.
 
-**The rule is worth more than tidiness because a superseded paragraph carries
-its REFERENT away with it, and an amended one leaves the pointer behind.**
-MEASURED in the same sprint. A sweep was run for a mechanism the project had
-just falsified, keyed to what that mechanism ASSERTED, and it missed two
-docstrings explaining a present-day fact by a `paths` mapping that no longer
-exists anywhere -- because one of them opened _"the mapping asserted above"_. **A
-DANGLING REFERENCE ASSERTS NOTHING**, so a sweep for false sentences walks past
-it and so does a reader scanning for falsehoods. It was found by someone reading
-the whole increment for truth.
+1. **DELETE** — the default. Most corrected sentences were recording a
+   measurement or a foreclosed alternative that a reader at that line never
+   needed. Deleting takes the referent away with it, which is the whole benefit.
+2. **NARROW** — the claim was too wide. Rewrite it to what was read.
+3. **SUPERSEDE** — only when someone still relies on the dead sentence and would
+   re-derive it. Quote it, mark it dead, state what is true.
 
-**NO DETECTOR IS PROPOSED AND THE REFUSAL IS BY NAME**: a matcher deciding
-whether a reference still has a referent is a matcher over prose content, which
-is the shape sprint 60 refused when it killed the exempt tag list. The remedy is
-the discipline at the moment of writing, which is why it lives here.
+_(sprint 65)_ **Supersession was the only option here for four sprints, and it
+only ever grows the file.** Half this tree became comments; one module reached
+88%. Every correction landed as dead-sentence + why-dead + current-fact, three
+times the length of the line it fixed.
 
-### A supersession may not widen the claim or advance its date
+**A supersession inherits the date of the claim it replaces, or the measurement
+is re-taken.** _(sprint 63)_ Re-authoring is where a claim quietly grows —
+you are writing prose, not copying a reading, and the wider present-tense
+sentence sounds better. Measured three times in one sprint, each by the author
+of the repair: "nothing checked X **until this file**" became "**nothing but
+this file** grades X"; a byte-identity range was extended without re-measuring
+and was false by 30 lines; "every finding **this sprint**" became "MEASURED
+ACROSS SEVERAL SPRINTS" with neither a number nor a condition.
 
-_(sprint 63)_ **A dated claim's replacement INHERITS THE DATE, or the
-measurement is re-taken.** The rule above forces you to RE-AUTHOR a sentence
-rather than append to it, and re-authoring is where the claim quietly grows: you
-are writing prose, not copying a reading, and the wider, present-tense sentence
-is the better-sounding one. Three instances in the sprint that landed this,
-every one written by the author of the repair:
-
-- a docstring said the artifact a stranger receives is graded by **"nothing but
-  this file"**. The sentence it replaced was the dated form, _"nothing checked
-  the artifacts against that **until this file**"_ — and two other files had been
-  grading the same tarball since before this one was added.
-- a dashboard note re-asserted a byte-identity result over a **wider range of
-  commits** than the one it was measured on. `git diff` over the new range: 30
-  insertions.
-- a **MEASURED** label was carried from a claim scoped to _"this sprint"_ onto
-  one reading _"across several sprints"_, with no number and no sprint named.
-
-**The tell is the tense and the quantifier, and you can check both without
-re-measuring anything.** `until this file` → `nothing but this file`;
-`this sprint` → `across several sprints`; `and this commit` → `and today's`. If
-the replacement says more than the reading did, either take the reading again or
-keep the narrower sentence and let it look weaker. **A superlative is the
-strongest thing you can write and the cheapest thing to write; when it is the
-part you did not measure, drop the word rather than substitute a comparative** —
-`the only one` traded for `among the fewest` is the same defect at a lower
-volume.
+**A dangling reference asserts nothing**, so a sweep for false sentences walks
+past it — "the mapping asserted above", where no mapping is asserted above.
+Deleting removes the pointer; amending leaves it. No detector is proposed: a
+matcher deciding whether a reference still has a referent is a matcher over
+prose content.
 
 ## Commit boundaries a comment decides
 
@@ -204,6 +183,13 @@ written and recorded rather than left, which is the behaviour to keep; the rule
 is what stops it needing to be seen.
 
 ## Where a reason belongs — the Lifetime Rule
+
+_(sprint 65)_ **First ask whether the reason needs a home in the tree at all.**
+This rule answers WHERE a reason goes and was read as saying every reason goes
+somewhere. Most do not. A measurement's home is the commit that took it; a
+review finding's is the sprint record; a foreclosed alternative earns a line
+only where someone would otherwise reintroduce it. Half this tree became
+comments under the wider reading.
 
 _(sprints 9, 40)_ A decision whose violation would be a CODE EDIT belongs in a
 comment AT THE SITE where that edit would be made. One that shapes WHAT TO BUILD
