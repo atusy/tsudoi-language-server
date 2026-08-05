@@ -19,7 +19,7 @@ import process from "node:process";
  * backlog has an item of its own about. The opposite failure is a reading taken
  * by hand once and written up as prose, which nobody can re-take. A tracked
  * script is the middle: nothing gates on it, and a stranger runs the two lines
- * above to get the rows the module's ruling cites.
+ * above to take the rows for themselves.
  *
  * IT CARRIES A COPY OF THE GATE AND THE COMPARATOR, AND THAT COPY IS WHAT MAKES
  * THE SHAPES COMPARABLE AT ALL. Two of the three shapes below do not exist in the
@@ -86,11 +86,11 @@ import process from "node:process";
 const entriesShown = 20;
 
 /**
- * The three sizes, and none is a round number for its own sake: 200 is the size
- * the module's own prose says neither runtime tells the shapes apart at, so a
- * difference there is the instrument; 5000 is the ORDINARY case the package's
- * premise names; 100000 is the tail nobody highlights, kept so that no ruling is
- * taken from a size the user never meets.
+ * The three sizes, and none is a round number for its own sake: 5000 is the
+ * ORDINARY case the package's premise names; 100000 is the tail nobody
+ * highlights, kept so that no ruling is taken from a size the user never meets;
+ * 200 brackets the ordinary one from below, so a ruling read off it is a ruling
+ * about an interval rather than about a point.
  */
 const sizes = [200, 5000, 100000] as const;
 
@@ -334,9 +334,9 @@ async function runCell(fixture: Fixture) {
 
 /**
  * The open alone against the stat alone, at the ordinary size and in this same
- * session, because the module's header rests an argument on that pair and the
- * number it states for the open is larger than a whole open-plus-drain measures
- * here.
+ * session, because the module's header rests an argument on THAT PAIR: what it
+ * spends per highlight is a stat, and for a directory one listing. It states no
+ * number for either of them, so this cell is where one is taken.
  *
  * GUARDED LIKE THE SHAPE CELLS, AND IT WAS NOT WHEN THE ROWS THE MODULE CITES
  * WERE TAKEN. What stood here observed that neither call RENDERS anything -- so
@@ -398,10 +398,10 @@ async function runOpenAndStat(fixture: Fixture) {
 
 /**
  * A STAT PER ENTRY, at the ordinary size and in this same session, because the
- * module's header REFUSES that shape and the figure it was refused against came
- * from the session whose every other number about this listing this instrument
- * contradicts. A figure nobody can re-take is not evidence for a refusal that is
- * still being made.
+ * module REFUSES that shape -- reading hidden as a platform ATTRIBUTE rather than
+ * as a leading dot is a stat per entry, and that is the cost it names -- and the
+ * refusal stands on no figure at all. This cell is where one is taken, so a
+ * refusal that is still being made is one somebody can re-take.
  *
  * BOTH CALL PATTERNS, AND THE REASON IS THAT THE RETIRED FIGURE RECORDED
  * NEITHER: SEQUENTIAL awaits each stat before issuing the next, CONCURRENT

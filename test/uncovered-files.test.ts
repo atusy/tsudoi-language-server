@@ -240,10 +240,12 @@ test("a file deleted from the worktree, with its index entry left behind, is not
  * mean the override did the work.
  *
  * THE CONFIGURATION IS HANDED TO BOTH CHILDREN EXPLICITLY, not left in this
- * process for them to inherit: a child spawned after `process.env` is written
- * does not see the change, so inheriting would leave this arm asserting against
- * an environment the check never received -- the same green as an arm with no
- * subject at all.
+ * process for them to inherit, and IT IS THE CONTROL THAT REQUIRES IT: MEASURED
+ * on bun 1.3.13, a `spawnSync` child does not see a variable written into
+ * `process.env` after this process started, where the async spawn under
+ * `runCommand` does. Planted that way, `GIT_CONFIG_GLOBAL` would reach the guard
+ * and NOT the control -- and an arm whose control ran in a different environment
+ * from its subject is the same green as an arm with no subject at all.
  */
 test("a personal ignore file does not shrink the subject", async () => {
   const root = workspace(memberIncludingOnlyItsSource());

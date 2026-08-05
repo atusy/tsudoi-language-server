@@ -90,13 +90,15 @@ export function runCli(runtime: Runtime, args: readonly string[]): Promise<CliRe
  * follow and a route a test executes must be the same bytes, not two things
  * kept equal by hand.
  *
- * THE ENVIRONMENT IS HANDED OVER EXPLICITLY OR NOT AT ALL, and the parameter
- * exists because the obvious alternative DOES NOT WORK HERE -- MEASURED on bun
- * 1.3.13: a child spawned after `process.env.X = ...` is set does not see `X`,
- * where the same call with `env` passed does. A caller whose subject IS the
- * environment (a per-person git configuration, say) would otherwise be asserting
- * against a variable the child never received, and would pass for want of a
- * subject.
+ * THE ENVIRONMENT IS HANDED OVER EXPLICITLY OR NOT AT ALL, and the parameter is
+ * for a caller whose SUBJECT is the environment (a per-person git configuration,
+ * say). What it forecloses is planting that variable in `process.env` and letting
+ * children inherit it, because the plant DOES NOT REACH EVERY CHILD ALIKE --
+ * MEASURED on bun 1.3.13: a variable present at process START reaches a
+ * `spawnSync` child, one written into `process.env` afterwards does not, and the
+ * async `spawn` below sees both. A caller pairing this helper with a `spawnSync`
+ * CONTROL would then be running the subject and its control in two environments,
+ * and an arm whose control measured nothing passes for want of a subject.
  */
 export function runCommand(
   command: string,

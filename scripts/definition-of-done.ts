@@ -35,10 +35,13 @@ import { fileURLToPath } from "node:url";
  * scrum.ts` is exit 0 and prints its JSON, and this runner pointed at that tree
  * reads the checks, runs them and prints PASSED at exit 0. The runtime strips
  * types without checking them, so the failure this paragraph priced is one the
- * fourth check catches AFTERWARDS and this runner never sees. MEASURED in this
- * checkout: a type error planted in scrum.ts is reported by `tsc --noEmit` and
- * by nothing else -- not by this runner, not by the arms that grade it. The
- * order is what makes that safe rather than a hole: the fourth check runs in
+ * fourth check catches AFTERWARDS and this runner never sees. NOT BY THIS
+ * RUNNER AND NOT BY THE ARMS THAT GRADE IT, which is the claim worth having and
+ * the widest one this file may make: an earlier form said `and by nothing else`,
+ * MEASURED FALSE -- a planted type error reddens `bun test` too, through
+ * test/unbuilt-checkout.test.ts comparing a staged tsc's output against `exit 0`
+ * exactly, WHICH THAT FILE ALREADY SAID before this sentence was written. The
+ * order is what makes the gap safe rather than a hole: the fourth check runs in
  * the same invocation, so nothing reaches a reader as green.
  *
  * THE CHECKS RUN SEQUENTIALLY IN THE DECLARED ORDER, WHICH IS NOT COSMETIC: the

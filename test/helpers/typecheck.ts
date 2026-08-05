@@ -40,10 +40,11 @@ export type PackageEdit = (packageJson: Record<string, unknown>) => void;
  * probe would otherwise fail for a reason unrelated to the specifier, which is
  * the same standard the `bun` exclusion above is held to.
  *
- * `files` is set to the probe sources alone. Left to its default `include`,
- * tsc would walk the symlinked src/ and report TS2591 for every `node:` import
- * in cli.ts and config.ts -- a red that looks like a resolution failure and is
- * not one.
+ * `files` is set to the probe sources alone, and WHAT IT KEEPS OUT IS THE
+ * SYMLINKED src/: left to its default `include`, tsc walks that too, and any
+ * diagnostic in the framework's own source becomes a red on a probe whose subject
+ * is a specifier. MEASURED with one type error planted in a COPIED src/ -- with
+ * `files` the probe is exit 0, without it exit 1 naming that file.
  *
  * `skipLibCheck` IS ON, AND EVERY PROBE THAT TAKES THESE OPTIONS IS THEREFORE
  * BLIND TO ONE THING: whether src/types.ts re-exports from the BARE

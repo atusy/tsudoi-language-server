@@ -219,8 +219,14 @@ export function notificationEntries(
   return defineNotifications([
     {
       type: InitializedNotification.type,
-      // Registered rather than left unhandled so that vscode-jsonrpc does not
-      // log it as unanswered on every session.
+      // AN EMPTY HANDLER, KEPT FOR THIS TABLE RATHER THAN FOR THE WIRE. MEASURED
+      // on vscode-jsonrpc 9.0.1: an UNREGISTERED notification is fired at
+      // `unhandledNotificationEmitter` and logged by nobody -- what produces
+      // `Notification handler '...' failed` is a REGISTERED handler that THROWS
+      // -- and nothing here subscribes, `onUnhandledNotification` being one of
+      // the members `RequestOnlyConnection` removes. So the entry earns its line
+      // by DECLARING that `initialized` is answered by doing nothing, inside the
+      // lifecycle window, rather than leaving it absent and unexamined.
       handler: () => {},
       gate: "lifecycle",
     },

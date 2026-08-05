@@ -249,9 +249,6 @@ function fail(step: string, result: TypeCheckResult): never {
  * copy afterwards would prove something about a directory, not about what this
  * repo publishes.
  *
- * src/ is copied, never symlinked -- `bun pm pack` follows the `files` field
- * and a symlinked directory is not what the registry would receive.
- *
  * THE TARBALL IS BUILT HERE, NOT FOUND: `bun pm pack` runs `prepack` before it
  * collects files, so dist/ inside the tarball is compiled from the src/ copied
  * one line above, at test time, and a stale artifact cannot be what a test
@@ -345,10 +342,12 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
       join(consumer, "package.json"),
       JSON.stringify({ name: "tsudoi-consumer", version: "1.0.0", type: "module", private: true }),
     );
-    // BOTH TARBALLS IN ONE COMMAND, AND NOTHING REDDENS IF THEY ARE INSTALLED
-    // ONE AT A TIME: it is the route the README states, and the handler declares
-    // tsudoi as a PEER, so it must find the consumer's copy by walking up rather
-    // than carry one of its own.
+    // EVERY TARBALL IN ONE `bun install`, AND IT IS NOT A ROUTE ANY README
+    // STATES: the three of them carry three SEPARATE one-tarball installs, and
+    // nothing here reproduces that sequence. What the one command must leave
+    // standing is the PEER -- each handler declares tsudoi as a peer rather than
+    // a dependency, so it finds the consumer's copy by walking up rather than
+    // carrying one of its own -- and tsudoi's own tarball is in the same command.
     const installed = await run("bun", ["install", tarball, ...handlerTarballs], consumer);
     if (installed.code !== 0) {
       fail("bun install", installed);
