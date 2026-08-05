@@ -498,7 +498,7 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  * THE PUBLISHED SHAPE, asserted whole rather than key by key: `exports` makes
  * every path not listed unreachable by bare specifier, so adding an entry is a
  * decision about the public surface and never a convenience, and an equality
- * assertion is the only kind that notices one appearing.
+ * assertion is what notices one appearing.
  *
  * Each arm:
  *

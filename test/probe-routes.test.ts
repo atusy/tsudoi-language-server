@@ -118,7 +118,7 @@ test("the compiler and the type packages a probe compiles against are still reac
  * THE SAME PROPERTY READ THROUGH THE COMPILER, which is the reading that says
  * what the arms above are FOR: an entry the mirror drops is a specifier the
  * probe can no longer answer, so a control that perturbs the probe's own copy of
- * a manifest is the only thing left that can answer it.
+ * a manifest is what is left to answer it.
  *
  * THE PAIR IS TWO SPECIFIERS AND ONE PROBE, because `TS2307` on its own is also
  * what a broken harness prints: one names a workspace package the probe never

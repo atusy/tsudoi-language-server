@@ -127,8 +127,7 @@ for (const { path } of pathShapes) {
 
 // RULE 2, the Bun global. Not exempted at any shape, deliberately: @types/bun
 // declares it, so `tsc --noEmit` ACCEPTS Bun.file() in src/ and this rule is
-// the only check that rejects it. Each shape is named so a leak reports which
-// one leaked.
+// what rejects it. Each shape is named so a leak reports which one leaked.
 for (const { path } of pathShapes) {
   test(`the Bun global is flagged in ${path}`, async () => {
     const result = await lintProbe({ [path]: 'export const read = () => Bun.file("x").text();\n' });

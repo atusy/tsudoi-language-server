@@ -85,9 +85,8 @@ for (const runtime of runtimes) {
          * The AGGREGATING cell is answered -32603 with or without the guard, by
          * `push(...batch)` throwing on something that is not iterable. It is
          * asserted anyway, as a REGRESSION LOCK rather than a red-driven claim:
-         * with the guard in place the spread is not what refuses this, so
-         * nothing else would notice if the spread were later replaced by a
-         * plain push.
+         * with the guard in place the spread is not what refuses this, so this
+         * cell is what notices the spread being later replaced by a plain push.
          */
         test(`${mode.name}, ${shape.name} is refused, reported, and the handler's finally runs`, async () => {
           const session = LspSession.start(runtime, fixture(shape.config));

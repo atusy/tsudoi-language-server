@@ -226,7 +226,7 @@ test("a published subpath with NO source arm and no artifact is refused, saying 
  * declaration order, so a `default` arm ahead of `types` wins for every reader,
  * and the compiler reads a file the package does not ship WHILE THE ARTIFACT IS
  * COMPLETE AND ON DISK. That is the function's own stated whole reason -- the
- * trace and not an exit code is the only reading that can name the file -- and
+ * trace and not an exit code is the reading that names the file -- and
  * it is a repair a person really makes, since reordering an `exports` map looks
  * like formatting.
  */

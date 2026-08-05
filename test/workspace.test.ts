@@ -191,7 +191,7 @@ function changeFolders(
  *
  * startCommand, not start: `start` spells the CLI path relative to the repo,
  * and every session below needs a cwd that is NOT the repo. Forcing cwd apart
- * from the workspace is the only way to attribute an item to one of them --
+ * from the workspace is what attributes an item to one of them --
  * and it is a SYNTHETIC ISOLATION STATE, never an observed editor one, since
  * nvim spawns the server with cwd = root_dir whenever it found a root.
  */
@@ -644,7 +644,7 @@ for (const runtime of runtimes) {
         // `…/plain/` under exact matching AND under normalisation, because
         // one-copy-per-entry deletes one folder and first-match lands on the
         // intended target either way; with the removal named that way a
-        // normalising matcher reddens NOTHING ANYWHERE IN THE SUITE. Naming the
+        // normalising matcher PASSES THIS ARM. Naming the
         // SECOND separates them -- exact matching leaves `…/plain`,
         // normalisation leaves `…/plain/`.
         changeFolders(session, { removed: [plainSlashFolder] });
@@ -655,9 +655,8 @@ for (const runtime of runtimes) {
       }
     });
 
-    // ONE EVENT, THE SAME URI IN BOTH ARMS -- the only shape that can tell the
-    // two orders apart, and the reason `removed` before `added` goes UNDEFENDED
-    // without it: applying `added` first reddens NOTHING ANYWHERE IN THE SUITE.
+    // ONE EVENT, THE SAME URI IN BOTH ARMS -- the shape that can tell the two
+    // orders apart.
     //
     // THE ORDERING HAS ONE REQUIRED OUTCOME, which is why it earns a test: a
     // client spelling a rename as one event ends HOLDING the folder, a phantom
@@ -871,8 +870,8 @@ for (const runtime of runtimes) {
         // read went to the server, and the server had already changed.
         expect(session.progress[1]).toEqual({ token: parkedToken, value: itemsFor(after) });
         // AND ITS THIRD YIELD IS THE ARRAY IT TOOK BEFORE PARKING, UNCHANGED --
-        // the copy-on-write, which is the only thing that makes `take it before
-        // your first await` an answer rather than advice.
+        // the copy-on-write, which is what makes `take it before your first
+        // await` an answer rather than advice.
         expect(session.progress[2]).toEqual({ token: parkedToken, value: itemsFor(before) });
         await parked;
 
@@ -995,7 +994,7 @@ for (const runtime of runtimes) {
     // filter that could never match.
     //
     // cwd and the workspace are DIFFERENT DIRECTORIES holding DIFFERENT files,
-    // which is the only way to tell which root produced an item. It is a
+    // which is what tells which root produced an item. It is a
     // SYNTHETIC ISOLATION STATE and no editor produces it -- nvim spawns the
     // server with cwd = root_dir whenever it found a root -- and nobody should
     // later read it as an observed one.

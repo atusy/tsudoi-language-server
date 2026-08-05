@@ -148,7 +148,7 @@ test("tsudoi is a peer this package cannot install, and nothing else is a depend
  * it used to emit sitting in dist/ -- and `files: ["dist"]` collects it. A
  * stray here would publish a module this package no longer has, under a name
  * src/index.ts no longer mentions, and the packed file list at the repository
- * root is the only thing that would see it.
+ * root is what would see it.
  *
  * `rm -rf` AND NOT A BUILD FLAG, because tsc has none that clears an output
  * directory outside build mode, and a script in another file would lose the bare

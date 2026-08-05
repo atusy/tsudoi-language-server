@@ -22,9 +22,8 @@ applySuiteDeadline();
  * WHY NOT AGAINST THIS REPOSITORY: the runner's subject IS the five checks, so
  * an arm running it here would run `bun test` inside `bun test`. Every arm below
  * hands it a checkout whose checks are shell scripts that report a chosen exit
- * code, which is also the only way to get the states this is built for -- the
- * five here are green, and an instrument whose witness cannot fail measures
- * nothing.
+ * code, which is also what produces the states this is built for -- the five
+ * here are green, and an instrument whose witness cannot fail measures nothing.
  *
  * WHAT IS DELIBERATELY NOT ASSERTED HERE: that the five real checks are those
  * five. The dashboard is where that list lives, and an arm pinning it here would
@@ -44,8 +43,8 @@ interface Tree {
    * A command that records its own invocation and then exits with `exit`,
    * optionally pausing that many seconds BEFORE it records itself.
    *
-   * THE PAUSE IS AN INSTRUMENT AND NOT A DELAY: it is the only thing that makes
-   * a log ORDER read as an order rather than as a coincidence, since three
+   * THE PAUSE IS AN INSTRUMENT AND NOT A DELAY: it is what makes a log ORDER
+   * read as an order rather than as a coincidence, since three
    * commands that each take milliseconds tend to finish in the order they were
    * started even when nothing made them.
    */
@@ -364,7 +363,7 @@ test("a `run` this runner cannot execute FAITHFULLY is refused, never misread", 
     { name: "redirection", run: `true > ${join(tree.root, "written")}` },
     { name: "quoted", run: `${tree.logged("q", 0)} "one two"` },
     // A COMMAND THAT NAMES NO PROGRAM: refused for the same reason and reported
-    // the same way, which is the branch nothing else in this file reaches.
+    // the same way.
     { name: "empty", run: "   " },
     // THE POSITIVE CONTROL, AND WITHOUT IT AN OVER-BROAD REFUSAL SHIPS GREEN:
     // every other `run` in this file is a bare path or `path name exit`, so a
@@ -431,7 +430,7 @@ function stageLinted(source: string): Tree {
   copyFileSync(join(repoRoot, ".oxlintrc.json"), join(tree.root, ".oxlintrc.json"));
   writeFileSync(join(tree.root, "planted.ts"), source);
   // THE LINTER IS SANDWICHED BETWEEN TWO CHECKS THAT SAY NOTHING, AND THE COUNT
-  // IS STILL ONE -- which is the only reason the count is readable as a SUM. A
+  // IS STILL ONE -- which is what makes the count readable as a SUM. A
   // tree declaring the linter ALONE makes the first result, the last result and
   // the total extensionally equal, so every weaker reading passes there.
   //

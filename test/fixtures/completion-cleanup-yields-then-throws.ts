@@ -43,8 +43,7 @@ function failCleanup(): never {
  * statement that is only ever reached by a `.next()` PULLED DURING CLEANUP, so
  * its rejection arrives on a promise that did not exist until the drain created
  * it. Unhandled, that rejection kills the process -- strictly worse than the
- * unfinished cleanup the drain exists to fix -- and no other fixture can reach
- * it.
+ * unfinished cleanup the drain exists to fix.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({

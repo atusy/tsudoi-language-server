@@ -76,8 +76,7 @@ test("every package the workspace declares is ordered exactly once", () => {
  * on the day a name changes and the accident stops holding.
  *
  * THE ARMS BELOW MAY NEVER BE RETARGETED AT A TREE WHERE THE TWO ORDERS AGREE.
- * They are the only thing in this repository forbidding `the sort is the order`
- * as a reading of the tie-break.
+ * They are what forbids `the sort is the order` as a reading of the tie-break.
  */
 function producerSortingLast(consumerNeeds: Record<string, unknown>): Record<string, string> {
   return {
@@ -330,7 +329,7 @@ function consumerReadingItsProducer(
     }),
     // THE TWO FILES THE ARMS DISCRIMINATE ON. `built/` is what the producer's
     // build config compiles, so the artifact and the source arm can disagree --
-    // which is the only way a reader downstream can say which of them answered.
+    // which is what lets a reader downstream say which of them answered.
     "packages/producer/built/index.ts": 'export const MARK: "dist" = "dist";\n',
     "packages/producer/src/index.ts": 'export const MARK: "src" = "src";\n',
     "packages/producer/tsconfig.build.json": emitting("built", false),

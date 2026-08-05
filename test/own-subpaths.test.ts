@@ -38,7 +38,7 @@ applySuiteDeadline();
  * exit 0 -- the flip that lived in prose for six sprints. No `@staged/producer`
  * can stand in for it, because the flip is a property of tsudoi's own map.
  *
- * THE COPY IS NOT AN ISOLATION MEASURE, IT IS THE ONLY WAY TO TAKE THE READING.
+ * THE COPY IS NOT AN ISOLATION MEASURE, IT IS HOW THE READING IS TAKEN AT ALL.
  * The state under measurement is `this workspace's artifact does not answer`,
  * and the working tree may never be put in it -- every other file in the suite
  * is resolving through that artifact at the same moment.
@@ -87,7 +87,7 @@ function inside(root: string, part: string): string {
  * A staged copy of this checkout, with a node_modules of its OWN.
  *
  * THE BORROWED node_modules THE PERTURBATION STAGE USES IS WRONG HERE, AND IT IS
- * WRONG SILENTLY -- MEASURED, which is the only reason it is written down.
+ * WRONG SILENTLY -- MEASURED, which is why it is written down.
  * Symlinking the real node_modules gives every member a SECOND ROUTE to the real
  * framework, and the resolution trace this check reads is last-writer-wins per
  * specifier: the staged handler's own declarations import

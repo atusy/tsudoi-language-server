@@ -154,12 +154,13 @@ test("the root README states no handler pack or install command of its own", () 
 });
 
 /**
- * A SOURCE-TEXT ASSERTION BECAUSE NOTHING ANYWHERE RUNS THIS COMMAND. What
- * stands in for running it is test/helpers/install.ts, which packs and installs
- * every member's own tarball into every consumer -- so that harness observes
- * whether the config works when the handlers are INSTALLED, and never whether
- * this line names the right thing to install. Telling a reader to install a
- * package they do not need leaves every other assertion in this suite green.
+ * A SOURCE-TEXT ASSERTION AND NOT A RUN, the block being declared `read` in
+ * `consumers`. What stands in for running it is test/helpers/install.ts, which
+ * packs and installs every member's own tarball into every consumer -- so that
+ * harness observes whether the config works when the handlers are INSTALLED, and
+ * never whether this line names the right thing to install. Telling a reader to
+ * install a package they do not need leaves every other assertion in this suite
+ * green.
  *
  * ITS OWN TEST, not a second assertion on the one below, because the two hazards
  * are different and either can hide the other: naming a package the config does

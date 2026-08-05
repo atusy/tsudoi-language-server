@@ -866,7 +866,7 @@ describe("a filename containing a space is completed whole", () => {
       expect(both?.insert.start.character).toBe(4);
       expect(both?.replace.start.character).toBe(4);
 
-      // AND THE TWO ENDS DIFFER, which is the only place in this file they do:
+      // AND THE TWO ENDS DIFFER:
       // the cursor sits mid-word, so `insert` stops at it and leaves the `ng`
       // standing while `replace` takes the whole word. WHICH ONE APPLIES IS THE
       // USER'S SETTING TO MAKE, and carrying a single range would decide it.

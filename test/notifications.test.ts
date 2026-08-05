@@ -297,9 +297,9 @@ function entryProbe(entry: string): Record<string, string> {
   };
 }
 
-// WHAT MAKES THIS FORECLOSURE RATHER THAN DETECTION, and the only durable home
-// for it: the DoD's own `tsc --noEmit` can only say that what IS written
-// compiles. That a notification written WITHOUT deciding its gate does not
+// WHAT MAKES THIS FORECLOSURE RATHER THAN DETECTION: the DoD's own
+// `tsc --noEmit` can only say that what IS written compiles. That a
+// notification written WITHOUT deciding its gate does not
 // compile is a claim about a source this repo must never contain, so it is
 // asserted against a throwaway project instead.
 test("an entry that decides no gate does not type-check, and the diagnostic names gate", async () => {
@@ -512,8 +512,7 @@ type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
 
 /**
- * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY src/notifications.ts CLAIMS, and
- * the ONLY thing in this repo that carries it.
+ * THE `AND NOTHING ELSE` HALF OF THE BOUNDARY src/notifications.ts CLAIMS.
  *
  * Every probe above names a member the `Omit` REMOVES or one it KEEPS, so all of
  * them stay green when a FURTHER key is added to it -- appending

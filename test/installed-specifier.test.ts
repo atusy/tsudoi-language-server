@@ -141,7 +141,7 @@ test("the tarball ships the compiled module the exports entry points at, and not
  * without the artifact. The build here runs under tsconfig.build.json, which
  * carries no mapping (and test/package-shape.test.ts is where that absence is
  * asserted), and the consumer's own type check runs under options that carry
- * none either. Nothing else stopped a fourth path being copied in.
+ * none either.
  *
  * node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI,
  * whose text says three: it is symlinked in because the build must resolve the

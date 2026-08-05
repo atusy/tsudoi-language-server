@@ -167,7 +167,7 @@ function inStage(stage: ThrowawayPath, target: string): string {
   return path;
 }
 
-/** The name a member declares, which is the only name this file ever matches on. */
+/** The name a member declares, which is the name this file matches on. */
 function nameOf(dir: string): string {
   return (
     (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name?: string }).name ?? ""

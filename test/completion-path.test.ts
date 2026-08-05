@@ -11,8 +11,8 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * WHAT A CLIENT RECEIVES FROM AN INSTALLED PATH COMPLETION, which is the only
- * place the streaming property is observable at all.
+ * WHAT A CLIENT RECEIVES FROM AN INSTALLED PATH COMPLETION, which is where the
+ * streaming property is observable at all.
  *
  * THE HANDLER'S OWN CLAIMS ARE NOT HERE AND THAT IS THE SPLIT WORTH KNOWING:
  * `@atusy/tsudoi-completion-path` is a workspace member, and what its modules
@@ -56,9 +56,9 @@ const partialResultToken = "path-completion-partial-1";
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
-    // THE STREAMING PROPERTY, and nothing else can catch its loss: a module
-    // that collected the whole listing and returned it satisfies every content
-    // assertion in this file while discarding the streaming altogether.
+    // THE STREAMING PROPERTY, which no content assertion in this file catches
+    // the loss of: a module that collected the whole listing and returned it
+    // satisfies every one of them while discarding the streaming altogether.
     //
     // ONE directory with more entries than one batch holds. That is why
     // batching survives the per-segment foreclosure -- no walk is needed for a

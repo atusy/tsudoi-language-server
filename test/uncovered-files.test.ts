@@ -22,11 +22,11 @@ applySuiteDeadline();
  * is WHERE, and would stay green through the move it exists to catch.
  *
  * THE EXCEPTION IS THE DECLARATION-FILE ARMS, AND IT IS FORCED BY WHAT THEY
- * MEASURE: they flip `skipLibCheck`, a compiler-option VALUE and not a location,
- * and can be nothing else. Whether a `.d.ts` is in the subject at all is READ
- * from what the programs report, so that setting IS their subject -- an arm
- * moving a file instead would pin the exclusion by the file's NAME, which is the
- * reading that ruling exists to refuse.
+ * MEASURE: they flip `skipLibCheck`, a compiler-option VALUE and not a location.
+ * Whether a `.d.ts` is in the subject at all is READ from what the programs
+ * report, so that setting IS their subject -- an arm moving a file instead would
+ * pin the exclusion by the file's NAME, which is the reading that ruling exists
+ * to refuse.
  *
  * AND EVERY ARM SPAWNS THE CHECK RATHER THAN CALLING THE FUNCTION. The refusal's
  * two readers are private to scripts/workspaces.ts on purpose, so what is
@@ -298,11 +298,11 @@ test("a directory whose name merely begins with node_modules is not read as inst
 
 /**
  * A CONFIG THAT NAMES A TRACKED FILE IN ANOTHER CASE, which is the second way
- * this check can print a FALSE RED and the only arm here whose correct colour is
- * a property of the MACHINE: the compiler answers with the spelling ITS CONFIG
- * used, git answers with the spelling THE INDEX holds, and the comparison is
- * string equality. Where the filesystem folds case, one file is compiled under
- * one spelling and reported uncovered under the other.
+ * this check can print a FALSE RED and an arm whose correct colour is a property
+ * of the MACHINE: the compiler answers with the spelling ITS CONFIG used, git
+ * answers with the spelling THE INDEX holds, and the comparison is string
+ * equality. Where the filesystem folds case, one file is compiled under one
+ * spelling and reported uncovered under the other.
  *
  * SO THE ARM ASSERTS THE MACHINE FIRST AND THE COLOUR SECOND, and the branch is
  * the honest shape rather than a convenience. Where case is SIGNIFICANT these
@@ -358,8 +358,8 @@ test("a tracked file its config names in another case is judged by what the file
  *
  * IT IS WHY THE JSON GLOBS ARE NOT THE READER: the default include a compiler
  * applies to a config with no `include` does NOT reach a directory whose name
- * begins with a dot. A hand-written expansion of that wildcard says the
- * opposite, calls the plant covered, and this arm is the only one that notices.
+ * begins with a dot. A hand-written expansion of that wildcard says the opposite
+ * and calls the plant covered.
  */
 function rootDeclaringNoInclude(extra: Record<string, string> = {}): Record<string, string> {
   return {
@@ -1007,9 +1007,8 @@ test("a root that is not a checkout is refused rather than read as holding nothi
 });
 
 /**
- * The allowance this one arm needs: it is the only arm whose root is THIS
- * repository, so it pays for a full build of three packages before the refusal it
- * is about can speak.
+ * The allowance this one arm needs: its root is THIS repository, so it pays for
+ * a full build of three packages before the refusal it is about can speak.
  *
  * A CONTROL THAT REPORTS THE MACHINE IS WORSE THAN A SLOW ONE: were this to time
  * out under load, it would read as `the guard refused this repository`, the one

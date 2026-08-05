@@ -202,7 +202,7 @@ for (const [runtime, command] of Object.entries(route)) {
 }
 
 /**
- * The exports map's MIDDLE ARM, which nothing else would notice the loss of.
+ * The exports map's MIDDLE ARM.
  *
  * `types` is what tsc takes and `default` is the in-repo fallback that keeps a
  * never-built checkout resolving; between them sits `import`, and it is there

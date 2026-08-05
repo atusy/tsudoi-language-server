@@ -208,8 +208,8 @@ test("a reference taken before a change reflects that change afterwards", () => 
 // otherwise be held by prose alone: an empty change array is a notification
 // saying nothing happened, and tsudoi returns before upstream sees it. Upstream
 // WOULD raise the version -- measured -- so deleting that early return is a
-// silent behaviour change, and the version assertion below is the only thing in
-// the suite that notices. The text assertion is the presence half: whatever the
+// silent behaviour change, and the version assertion below is what notices it.
+// The text assertion is the presence half: whatever the
 // version does, the buffer must not move.
 test("an empty contentChanges moves neither the text nor the version", () => {
   const store = createDocumentStore();

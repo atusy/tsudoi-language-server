@@ -39,7 +39,7 @@ const uri = "file:///workspace/a.txt";
  * a CompletionItem rather than a document and a position, and `label` is its
  * one required member -- nothing on the wire validates that, so omitting it
  * leaves the sentence above FALSE while every test here stays green. It is here
- * to keep that claim true, which is the only reason it needs.
+ * to keep that claim true.
  */
 function paramsForAnyMethod(): unknown {
   return {
@@ -64,8 +64,8 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
 }
 
 /**
- * THE COMPILER CANNOT DO THIS ONE, AND THIS TEST IS AGAIN THE ONLY THING THAT
- * CATCHES A MIS-KEYED STREAM-DRIVEN ENTRY. A stream-driven entry cannot pin its
+ * THE COMPILER CANNOT DO THIS ONE, AND THIS TEST IS AGAIN WHAT CATCHES A
+ * MIS-KEYED STREAM-DRIVEN ENTRY. A stream-driven entry cannot pin its
  * result: the protocol declares `CompletionItem[] | CompletionList | null`
  * where a tsudoi completion handler yields `CompletionItem[]`, so the slot is
  * left OPEN -- and `HoverParams` is assignable to `CompletionParams`, they
@@ -88,8 +88,8 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * constant carries while leaving its types alone would pass every compile check
  * and register completion's entry under another method's name. NAMED AS A
  * DIFFERENT CLAIM rather than left looking redundant: a control
- * that could never be first to fail is not a control, and this one can -- it is
- * the only thing here that reads the wire name at all.
+ * that could never be first to fail is not a control, and this one can -- it
+ * reads the wire name, which the type system does not.
  *
  * WHY EITHER WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
  * with the entry's `type` and looks the config author's handler up BY THE KEY.

@@ -112,7 +112,7 @@ for (const runtime of runtimes) {
     // notifications sent before initialize -- except `exit`, which a client is
     // entitled to send at any moment and which must still terminate the
     // process. A gate written without that exception turns this measured
-    // exit=1 into a hang, and nothing else in the suite sends `exit` first.
+    // exit=1 into a hang.
     test(
       "exit as the very first message, with no initialize, exits 1 rather than hanging",
       async () => {

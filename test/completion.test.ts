@@ -214,8 +214,8 @@ for (const runtime of runtimes) {
      * READ AS A CLIENT THAT APPENDS READS, which is why it is a flat count
      * rather than a comparison against three literals: a client concatenates
      * every literal's items in arrival order and then appends the response.
-     * Counting labels over that whole view is the only thing that sees a
-     * duplicate WHEREVER it was introduced.
+     * Counting labels over that whole view sees a duplicate WHEREVER it was
+     * introduced.
      */
     test("a client that appends sees each item exactly once", async () => {
       const session = LspSession.start(runtime, completionChunks);

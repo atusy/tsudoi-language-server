@@ -135,10 +135,10 @@ for (const runtime of runtimes) {
      *
      * `() => 5` IS THE ONE WORTH THE FIXTURE. It broke NO assertion: a number
      * has no `methods` to read, so nothing threw, loadConfig SUCCEEDED, and the
-     * server started advertising no capability at all. This test is the only
-     * thing standing between a config author and a server that answers every
-     * request with silence -- and it is why the arms are asserted for exit 1
-     * rather than merely for a good message.
+     * server started advertising no capability at all. This test is what stands
+     * between a config author and a server that answers every request with
+     * silence -- and it is why the arms are asserted for exit 1 rather than
+     * merely for a good message.
      *
      * WHAT ARRIVED IS NAMED, not just that something was wrong: `undefined` and
      * `null` and `number` are three different mistakes with three different
@@ -186,8 +186,8 @@ for (const runtime of runtimes) {
      * than merely a good message.
      *
      * THE THIRD ARM ASSERTS THE AUTHOR'S OWN WORDS, not just that something
-     * failed: what a lazily-built handler threw is the only thing that locates
-     * the line in their file.
+     * failed: what a lazily-built handler threw is what locates the line in
+     * their file.
      *
      * REJECTED RATHER THAN DIAGNOSED, for all three, on the ground this whole
      * file asserts: config load runs before startServer, so refusing here costs

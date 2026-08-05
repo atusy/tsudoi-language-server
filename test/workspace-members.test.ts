@@ -190,8 +190,8 @@ test("a package the workspace does not declare and that holds no TypeScript is l
 // check that joins it to the root and walks finds nothing; the run is not
 // silent, because the compilers' file lists still find the uncovered file, but
 // it prints the FILE sentence and sends the reader to widen an `include` that
-// was never the fault. Without these assertions the arm above is the only one
-// that reddens when the refinement goes.
+// was never the fault. Without these assertions the arm above is what reddens
+// when the refinement goes.
 test("a glob-form exclusion still names the package nothing declares", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root", workspaces: ["packages/declared"] }),
@@ -236,8 +236,8 @@ test("an exclusion reaching into node_modules reports nobody else's package", as
 });
 
 // `I found no members` and `I was given no way to find them` must not produce
-// the same observation, since this check is the only thing looking at the paths
-// the root check gave up.
+// the same observation, since this check is what looks at the paths the root
+// check gave up.
 test("a manifest declaring no workspaces fails rather than reporting nothing to do", async () => {
   const result = await checkWorkspace({
     "package.json": JSON.stringify({ name: "root" }),

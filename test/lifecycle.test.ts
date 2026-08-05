@@ -64,8 +64,8 @@ for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // EXACT EQUALITY, DELIBERATELY, however wide the value grows: openClose is
     // what entitles a conforming client to send
-    // didOpen/didClose at all, so an equality assertion is the only kind that
-    // catches its loss. The capabilities are here because this file drives
+    // didOpen/didClose at all, so an equality assertion is what catches its
+    // loss. The capabilities are here because this file drives
     // examples/tsudoi.config.ts, and it advertises ONE FOR EACH METHOD THAT
     // CONFIG SUPPLIES -- so this value moves whenever the example gains or
     // loses a method, which is a DELIBERATE CHANGE TO A PINNED ARTIFACT rather

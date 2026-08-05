@@ -341,7 +341,7 @@ test("the unpublished name the probe asks for is one the dependency really expor
  * whose target is not already in the program fails with TS2664 `module cannot be
  * found` INSTEAD OF the marker diagnostic, and that failure looks like a missing
  * dependency rather than like a wrong type. Anchoring the module in the program
- * leaves TS2339 on the marker as the only way this can fail.
+ * leaves TS2339 on the marker as the way this fails.
  *
  * WHAT IT WOULD ALSO REDDEN FOR, disclosed because it is a different fault: a
  * tree holding TWO copies of vscode-languageserver-textdocument, where the
@@ -406,7 +406,7 @@ const deprecatedProtocolTwin =
   'export type { TextDocument } from "vscode-languageserver-protocol";';
 
 /**
- * WHAT IT CATCHES THAT NOTHING ELSE DOES: with src/types.ts re-exporting
+ * WHAT IT CATCHES THAT THE READINGS BESIDE IT DO NOT: with src/types.ts re-exporting
  * `vscode-languageserver-protocol`'s DEPRECATED TextDocument instead -- a
  * one-line edit that adds no dependency -- `tsc --noEmit` exits 0, the type arm
  * above exits 0, the value arm is unchanged, and this arm is the only red.
@@ -480,8 +480,8 @@ test("the identity probe reddens on both near-misses where mutual assignability 
  * out of the top level and under node_modules/@atusy/tsudoi-language-server/node_modules/,
  * which is where a package manager that does not hoist puts it.
  *
- * It is the only arrangement that DISCRIMINATES `the consumer declared this
- * package` from `it happened to be lying around at the top level`. Under the
+ * It DISCRIMINATES `the consumer declared this package` from `it happened to be
+ * lying around at the top level`, which the hoisted default cannot. Under the
  * hoisted default a bare specifier in a consumer's own file resolves whether or
  * not they ever asked for the package, so nothing measured there can tell the
  * two apart.
@@ -649,8 +649,7 @@ test("withholding wordnet is still detected, at the runtime arm rather than the 
  * because `bun install` of the tarball 404s on an unpublished package and
  * installConsumer throws before any test runs. THE FORECLOSURE IS DATED RATHER
  * THAN GENERAL -- it lasts exactly as long as both packages stay unpublished, and
- * then this becomes the only thing that says a framework must not drag a handler
- * along with it.
+ * then this becomes what says a framework must not drag a handler along with it.
  */
 test("the published package depends on no package from this workspace", () => {
   const published = JSON.parse(readFileSync(join(consumer.packageDir, "package.json"), "utf8")) as {
