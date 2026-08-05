@@ -409,13 +409,11 @@ function signalAbortingWhereItIsFirstRead(): AbortSignal {
 
 describe("a path that stops being a directory between the two reads", () => {
   /**
-   * THE CASE THE CATCH IN `listingOf` SAID NO TEST COULD CONSTRUCT, and the
-   * sentence saying so named the wrong reason: `it needs a race between two
-   * calls this handler makes back to back, and there is no seam to open between
-   * them`. There is one, and this sprint built it. The abort is READ between the
-   * stat and the open, the signal is the CALLER'S, and a getter is arbitrary
-   * synchronous code running at exactly that point -- so the swap needs no race,
-   * no timer and no second thread, and lands identically on every run.
+   * THE ENOTDIR ARM OF THE CATCH IN `listingOf`, CONSTRUCTED RATHER THAN RACED.
+   * The abort is READ between the stat and the open, the signal is the
+   * CALLER'S, and a getter is arbitrary synchronous code running at exactly
+   * that point -- so the swap needs no race, no timer and no second thread, and
+   * lands identically on every run.
    *
    * THE STAT SNAPSHOT IS WHAT MAKES IT AN ENOTDIR RATHER THAN A SECOND
    * GONE-PATH CASE: `stat` has already resolved and already said `directory`, so
