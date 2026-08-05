@@ -143,33 +143,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-78",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "trust that a reason written beside code was read against that code at least once",
-        benefit:
-          "a licence in a docstring is evidence rather than its author's belief about what the code does",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "Each of the four named instances is either falsified and superseded at its site, or its claim is narrowed to what was measured.",
-          verification:
-            "BOUNDED TO FOUR NAMED INSTANCES ON PURPOSE, and the bound is the condition it was filed under: the unbounded version is the `no false prose anywhere` item this dashboard's header already struck, and this one closes by dispositioning a list.\n\nTHE CLASS AND WHY IT IS THE HARDER ONE. Every instance PBI-62 held had an INNOCENT STORY -- the mechanism was removed after the sentence was written -- and that story licenses reading the prose as once-true. These four have no such story: nothing was removed after the sentence was written, so there is no reading in which any of them was ever true. The prose was never read against the code even once, which is what separates this class from a reason that aged, and it is why the repair is different: a stale reason is SUPERSEDED, a never-true one must be MEASURED OR WEAKENED.\n\nTHREE ARE ALREADY REPAIRED IN PLACE AND ARE CARRIED AS CLOSED INSTANCES, because how each was caught is the item's evidence. THE FOURTH IS OPEN AND UNREPAIRED: `scripts/definition-of-done.ts`'s header. DISCLOSED AND COVERED ARE DIFFERENT STATES -- this item exists so the naming does not come to be read as the covering.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "THE OPEN ONE, AND IT IS THE REASON THIS ITEM EXISTS RATHER THAN A POINTER: `scripts/definition-of-done.ts`'s header states its own cost as `a type error in scrum.ts stops the run instead of failing one check -- which is the trade taken`. MEASURED on bun 1.3.13, in a throwaway tree whose dashboard's only unusual property is a type error: `tsc --noEmit` there is exit 1 with `TS2322`, while `bun run scrum.ts` is exit 0 and prints its JSON, and the shipped runner pointed at that tree reads the checks, runs them and prints `Definition of Done: PASSED` at exit 0. THE RUNTIME STRIPS TYPES WITHOUT CHECKING THEM, so the sentence explains a present-day decision by a mechanism this project does not have -- and the trade it says was taken was never available to take. PRE-EXISTING: THE SENTENCE QUOTED IS UNCHANGED SINCE dd4fbd9, sprint 57's base. THE FILE IS NOT, and the earlier form of this note said it was -- a byte-identity result true when PBI-62 wrote it at sprint 57 and re-asserted here over a range that had grown: `git diff dd4fbd9 HEAD -- scripts/definition-of-done.ts` is 30 INSERTIONS, two paragraphs sprint 61 added elsewhere in the header, MEASURED at sprint 63. THE MEASUREMENT TRAVELS WITH THE INSTANCE and is not left behind in the item it came from, because a moved pointer with its evidence elsewhere is a deletion wearing tidying's clothes.",
-        "CLOSED INSTANCE, SPRINT 55: a function's docstring said `NO EXEMPTION LIST, AND SHIPPING WITHOUT ONE IS A DECISION` while the function shipped one, and the sentence and the code it misdescribes were written BY THE SAME AUTHOR IN THE SAME SPRINT. The prose was never read against the implementation even once. Repaired at `refuseUncoveredFiles` in scripts/workspaces.ts. WHERE, CORRECTED IN SPRINT 67: the docstring that carried the repair was deleted whole by the comment reduction, so the live sentence is the function's own ERROR MESSAGE -- `there is deliberately no list to exempt a file from this check` -- which is true of the subtractions as written, they being categorical rather than a path list. The instance is repaired; only this pointer to where was false.",
-        "CLOSED INSTANCE, SPRINT 57, AND IT IS WHAT MADE `THE HARDER ONE` A CLAIM ABOUT MORE THAN ONE MEMBER: the report reader in `test/helpers/perturbation.ts` licensed its chunking by `bun does not escape `>` inside an attribute value`. MEASURED on bun 1.3.13 -- THE VERSION THAT SAME DOCSTRING ALREADY CITES, so nothing about the environment had to be discovered to falsify it -- an arm name carrying `<`, `>`, `&`, `\"` and `'` comes back through `--reporter=junit` with all five WRITTEN AS ENTITIES. The sentence and the code it misdescribes were written in ONE SPRINT and the licence was falsified in that SAME sprint, by its own author, while arming the thing it licensed. The chunking is KEPT for the reason it actually has, and that reason is labelled unwitnessed.",
-        "CLOSED INSTANCE, AND THE ONE THAT MAKES THE CLASS STRUCTURAL RATHER THAN A LAPSE, BECAUSE IT RECURRED INSIDE ITS OWN REPAIR. The corrected subtraction reads `not in the index AND under a declared output directory`, and the sound direction is the one the code takes: in the index implies not compiler-written. THE DOCSTRING ABOVE IT ASSERTED THE CONVERSE AS AN IDENTITY -- `an untracked path under a program's own output directory IS a file the compiler WROTE`. It is not: an untracked file a person dropped there is excused, and nothing in the tree named that. It did not bite in this checkout because every build output is ignored and never reaches candidacy; in a throwaway with no ignore file it would. Now superseded at the site, which says the index buys ONE DIRECTION rather than an identity.",
-        "MOVED OUT OF PBI-62 IN SPRINT 63, IN THE SAME EDIT THAT REMOVED THE FOUR NOTES THERE. The split is a MISMATCH RATHER THAN A COUNT: PBI-62's criterion is bounded to what one commit removed, these four are about prose never read against its code, and the two take different repairs. Ranked below PBI-77 because that item's shapes have a mechanisable core and this class has none -- no check decides `this reason was never read against this code`, and an approximate one would be a green certifying the class as watched.",
-      ],
-    },
-
-    {
       id: "PBI-71",
       story: {
         role: "tsudoi maintainer",
@@ -404,6 +377,44 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 67,
+      pbi_id: "PBI-78",
+      goal: "A licence in this tree -- `X is done this way BECAUSE Y` -- has had its Y read against the code, and the ones that were never true are gone rather than softened.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Read licences and check each Y against the code rather than against another sentence. NOT A KEYWORD SWEEP: the class has no keyword, and every instance found beyond the filed four came from reading a reason and opening what it claimed.",
+          implementation: "The fourth filed instance repaired, plus five the item did not name.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE FILED FOURTH: scripts/definition-of-done.ts priced reading the checks out of the dashboard by `a type error in scrum.ts stops the run instead of failing one check -- which is the trade taken`. MEASURED on a throwaway whose dashboard's only unusual property is a type error: tsc exits 1, `bun run scrum.ts` exits 0 and prints its JSON, and the runner pointed at that tree prints PASSED at exit 0. The runtime strips types without checking them. THE TRADE WAS NEVER AVAILABLE TO TAKE.",
+            "FIVE MORE, FOUND BY READING LICENCES RATHER THAN BY A SWEEP. server.ts registered a notification handler `so that vscode-jsonrpc does not log it as unanswered` -- measured in-process against 9.0.1: an UNREGISTERED notification logs NOTHING, a registered handler that throws logs, and the no-handler branch fires an emitter this package never subscribes to. THE REGISTRATION HAS NO RUNTIME REASON, which is what the comment now says. spawn.ts licensed its `env` parameter by `a child spawned after process.env.X is set does not see X` -- true of spawnSync, FALSE of the async spawn the helper actually calls, measured over six forms. install.ts said putting both tarballs on one command `is the route the README states` -- NEVER TRUE, the three READMEs carry three separate one-tarball installs. And two that were true at birth: typecheck.ts's TS2591 claim, which `types: [\"node\"]` has prevented since it was added, and install.ts's `files`-and-symlink reason, dead since `files` became dist alone.",
+            "THE ITEM WAS FILED AS FOUR AND THE CLASS HELD NINE. Its bound was the condition it was filed under -- the unbounded version is the `no false prose anywhere` item this dashboard already struck -- so the bound was right and the count was not evidence about the class's size.",
+            "AND THE REPAIR COMMITTED THE CLASS ONCE. `a planted type error is reported by tsc --noEmit and by nothing else` was written without measuring: `bun test` reddens too, through an arm comparing a staged tsc's output against `exit 0` exactly -- AND THAT FILE ALREADY SAID SO, measured a sprint earlier. Written before it was measured, against a measurement already in the tree.",
+          ],
+        },
+        {
+          test: "None -- citations whose referent the comment reduction removed.",
+          implementation:
+            "scripts/listing-shapes.ts cited prose deleted from the module it instruments. Four citations, not the three review named: two had lost only a number and kept a live referent, two had lost the referent entirely.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "REPAIRED BY DROPPING THE CITATION OR THE NUMBER, NEVER BY RESTORING THE DELETED PROSE. Two kept their live half -- the module still states the per-highlight pair, and still refuses a stat per entry -- and lost only the figure.",
+            "AND ONE RECORD IN THIS FILE POINTED AT A DELETED DOCSTRING: PBI-78's own closed-instance note said the repair lives where `refuseUncoveredFiles`'s docstring names each subtraction's measurement. The reduction deleted that docstring whole. The instance is repaired; the live sentence is the function's ERROR MESSAGE. A cut has no way to know a record depends on the paragraph it removes.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "A REVIEWER'S FIRST PROBE CONFIRMED A FALSE SENTENCE AND THEIR SECOND REVERSED IT, which is the method working rather than a slip: the first measured `spawnSync` where the helper calls the async `spawn`. A PERTURBED INPUT THAT IS NOT IN THE PROGRAM YOUR ASSERTION READS CANNOT MAKE IT FAIL -- this record's own rule, arriving as a probe aimed at the wrong call.",
+        "THE DISCRIMINATOR AGAINST PBI-62'S CLASS HELD UNDER USE. Two of the five were TRUE AT BIRTH and belong to the aged class rather than this one; three had no innocent story at all. The two repairs differ -- a stale reason is superseded, a never-true one is measured or deleted -- and knowing which was in hand decided each edit.",
+      ],
+    },
     {
       number: 66,
       pbi_id: "PBI-77",
