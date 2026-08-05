@@ -44,26 +44,11 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
  * The stakeholder-facing example's own bytes, keyed by the path each must be
  * written to in a consumer project.
  *
- * THE WHOLE SET OF WHAT IS COPIED, NEVER THE CONFIG ALONE, and that is the point
- * of it being a function rather than a constant at each call site. The config
- * imports a module per method by RELATIVE specifier, so a consumer given only
- * the config fails at import with a MISSING-MODULE ERROR -- which looks exactly
- * like the dependency-resolution failure these probes exist to observe, and
- * would be misdiagnosed as one. The artifact under test is the SET, and no
- * fixture copy of any member exists.
- *
- * AND THE INSTALLED HANDLERS ARE NOT IN IT, WHICH IS A DIFFERENT KIND OF ABSENCE
- * FROM A MISSING ENTRY. They are not copied at all: the config imports
- * `@atusy/tsudoi-hover-wordnet` and `@atusy/tsudoi-completion-path` by PACKAGE
- * SPECIFIER, and installConsumer installs each package's own tarball beside
- * tsudoi's. Adding their source back here would put the bytes in the consumer
- * that criterion 1 asserts are absent, and every probe would still pass -- which
- * is why the omission is written down rather than left to be read off the list.
- *
- * STATED AS A SET RATHER THAN A NUMBER, and that is the load-bearing choice: a
- * count in prose falsifies itself the next time the thing it counts grows, and
- * nothing about editing the returned object draws the editor's eye up here. The
- * set grows; the sentence must not have to.
+ * THE INSTALLED HANDLERS ARE DELIBERATELY NOT IN IT, and that absence is a
+ * different kind from a missing entry: the config imports them by PACKAGE
+ * SPECIFIER and installConsumer installs each one's own tarball, so adding their
+ * source here would put bytes in the consumer that criterion 1 asserts are
+ * absent and every probe would still pass.
  */
 export function exampleSources(): Record<string, string> {
   return {
@@ -71,9 +56,6 @@ export function exampleSources(): Record<string, string> {
       fileURLToPath(new URL("../../examples/tsudoi.config.ts", import.meta.url)),
       "utf8",
     ),
-    // THE PAIR, AND NEITHER TRAVELS WITHOUT THE OTHER: the formatting module
-    // imports its scan from the diagnostic one, so a consumer given only the
-    // formatter fails exactly as a consumer given only the config does.
     "diagnostic-trailing-whitespace.ts": readFileSync(
       fileURLToPath(new URL("../../examples/diagnostic-trailing-whitespace.ts", import.meta.url)),
       "utf8",
@@ -85,19 +67,7 @@ export function exampleSources(): Record<string, string> {
   };
 }
 
-/**
- * What a staging directory holds, sorted, READ BACK RATHER THAN LISTED.
- *
- * A list written here would agree with a staging step that had grown a fourth
- * copy, which is the one thing this reader exists to disagree with. It reports
- * BY NAME rather than by a count, so a violating entry appears in the failure
- * text instead of a number that moved.
- *
- * The set it observes is pinned by `the pack stage receives package.json, src/
- * and tsconfig.build.json, and nothing else` in
- * test/installed-specifier.test.ts, and the pair beside it shows this same
- * reader naming a fifth path when one is there.
- */
+/** What a staging directory holds, sorted, READ BACK RATHER THAN LISTED. */
 export function stageEntries(stage: string): readonly string[] {
   return readdirSync(stage).sort();
 }
@@ -108,10 +78,8 @@ export function stageEntries(stage: string): readonly string[] {
  *
  * WHY THE TARBALL AND NOT `files`: `files` is an INSTRUCTION and the tarball is
  * its result, and the two part company the moment anything writes a file the
- * instruction happens to admit. A `prepack` that compiles into a directory it
- * does not clear leaves a renamed or deleted output on disk, and `files:
- * ["dist"]` packs it -- so a reading taken off the manifest reports the intent
- * of an edit nobody made.
+ * instruction happens to admit -- a `prepack` compiling into a directory it does
+ * not clear leaves a renamed output on disk, and `files: ["dist"]` packs it.
  */
 export interface PackedPackage {
   /** The name the manifest inside the tarball carries. */
@@ -127,12 +95,9 @@ export interface PackedPackage {
  * Packs `packageRoot` and unpacks the result, so both the file list and the file
  * CONTENTS can be read off the artifact.
  *
- * PACKED FROM WHERE IT LIVES, matching what installConsumer does with the
- * handler: a staged copy would be a different tree, and the staleness this reader
- * exists to see is a property of the directory that persists between packs.
- *
- * `tar` RATHER THAN A LIBRARY: the archive is what a package manager will read,
- * and a second implementation of tar is a second thing to be wrong about it.
+ * PACKED FROM WHERE IT LIVES: a staged copy would be a different tree, and the
+ * staleness this reader exists to see is a property of the directory that
+ * persists between packs.
  */
 export async function packPackage(packageRoot: string): Promise<PackedPackage> {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-tarball-"));
@@ -142,9 +107,6 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
     if (packed.code !== 0) {
       fail(`bun pm pack (${packageRoot})`, packed);
     }
-    // Found rather than spelled, for the reason installConsumer gives: the
-    // filename is the packer's derivation, and the stage is a fresh mkdtemp
-    // holding exactly one .tgz.
     const tarballName = readdirSync(stage).find((entry) => entry.endsWith(".tgz"));
     if (tarballName === undefined) {
       fail(`bun pm pack (${packageRoot})`, {
@@ -166,9 +128,9 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
       .map((line) => line.trim())
       .filter((line) => line !== "" && !line.endsWith("/"))
       .map((line) => {
-        // THE PREFIX IS REFUSED RATHER THAN STRIPPED WHERE IT IS ABSENT: npm's
-        // archive layout puts everything under `package/`, and an entry outside
-        // it is a shape this reader has no account of -- reporting it as a
+        // THE PREFIX IS REFUSED RATHER THAN STRIPPED WHERE IT IS ABSENT, and
+        // nothing reddens if it is stripped: an entry outside npm's `package/`
+        // layout is a shape this reader has no account of, so reporting it as a
         // top-level file would be inventing one.
         if (!line.startsWith("package/")) {
           throw new Error(`${packageRoot} packed ${line}, which is outside the archive's package/`);
@@ -189,23 +151,6 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
 /**
  * The handler packages a consumer installs BESIDE tsudoi, ENUMERATED FROM THE
  * WORKSPACE CONFIGURATION rather than named here.
- *
- * OVER MEMBERS AS A CLASS, on the same reasoning as the fifth Definition-of-Done
- * check and test/packed-members.test.ts: a name written here would go quietly
- * narrow at the second member, and a consumer missing one of the packages the
- * demo config imports fails at config load with no test saying which package was
- * never installed.
- *
- * THE DIRECTORY IS THE MEMBER'S OWN AND NOT THE WORKSPACE LINK. Both routes
- * reach the same tree, and the workspace enumerators are what every other tool
- * in this repository reads -- so taking the names from `workspaces` and the
- * directories from a node_modules walk would be two answers to one question.
- *
- * HANDLERS AND NOT MEMBERS, WHICH IS THE ONE THING THIS SITE CANNOT GET WRONG
- * QUIETLY: `beside tsudoi` is in the sentence. The day the framework is a member
- * too, a member-wide enumeration would install the package under test a SECOND
- * time as though it were one of the handlers a consumer adds -- a consumer built
- * to measure the tarball, holding two copies of it by two routes.
  */
 const handlerRoots = handlerMembers(repoRoot).map((dir) => realpathSync(dir));
 
@@ -234,19 +179,9 @@ export interface InstalledConsumer {
    * Type-checks probe sources, keyed by path relative to the consumer root.
    *
    * `overrides` are MERGED OVER `consumerCompilerOptions`, NOT SUBSTITUTED FOR
-   * IT, and the distinction is written here because the other semantics fail
-   * SILENTLY: an override that REPLACES a rule's options rather than merging
-   * them turns off every option it did not restate, and the thing it turns off
-   * can be the guard in the very file whose purpose is guarding. Merging means
-   * a probe that moves ONE option keeps the other six identical to every
-   * consumer probe in the suite, so a red it produces is about the option it
-   * moved.
-   *
-   * WHY THE PARAMETER EXISTS AT ALL: a probe whose SUBJECT is a compiler option
-   * cannot take that option from a shared constant. `skipLibCheck` is the case
-   * -- with it on, two specifiers that behave differently for a config author
-   * are indistinguishable here, so a probe about the specifier has to set it
-   * itself.
+   * IT, AND NOTHING REDDENS EITHER WAY: substitution turns off every option it
+   * did not restate, and the thing it turns off can be the guard in the very
+   * file whose purpose is guarding.
    *
    * A key spelled wrong, or a merge that stopped applying, leaves the probe
    * running under the shared defaults AND STILL GREEN. Nothing in this helper
@@ -260,17 +195,6 @@ export interface InstalledConsumer {
   /**
    * Starts a server by running a documented command line VERBATIM in the
    * consumer's own directory.
-   *
-   * WHY IT IS HERE AT ALL, since a caller could reach LspSession.startCommand
-   * directly: the cwd is the whole point. Module resolution is a property of
-   * the directory a process starts in, and a consumer's directory is the only
-   * place where a config's imports resolve the way a stranger's do. Binding the
-   * two together here is what stops a probe from starting a session in the repo
-   * and believing it measured an install.
-   *
-   * The COMMAND is the caller's, unsplit and unassembled by this helper, for
-   * the reason LspSession.startCommand takes one: a route stated in prose beside
-   * independently built spawn arguments is two things kept equal by hand.
    */
   start(command: string): LspSession;
   dispose(): void;
@@ -291,17 +215,12 @@ export interface InstallOptions {
    * Leaves ONE NAMED handler package out of the install, which is criterion 1's
    * negative control and nothing else's.
    *
-   * WHAT IT HAS TO PRODUCE, or the green beside it records nothing: a failure
-   * NAMING THE SPECIFIER. An empty answer would mean the probe is measuring
-   * something other than the handler, and an answer that still ARRIVED would
-   * mean some other route -- a copied file, a hoisted stray -- is supplying it.
-   *
    * A NAME AND NOT A FLAG, because with two members a flag withholds both and
-   * the config then fails on whichever import the loader reached first: the
-   * specifier in stderr would name a package the caller did not choose, and the
-   * control would silently stop being about the package under test. An
-   * unrecognised name is refused rather than ignored, since a typo would leave
-   * every member installed and the negative control passing on the positive tree.
+   * the config then fails on whichever import the loader reached first -- so the
+   * specifier in stderr would name a package the caller did not choose. AN
+   * UNRECOGNISED NAME IS REFUSED RATHER THAN IGNORED, AND NOTHING REDDENS IF THE
+   * REFUSAL GOES: a typo would leave every member installed and the negative
+   * control passing on the positive tree.
    */
   readonly omitHandler?: string;
 }
@@ -326,29 +245,23 @@ function fail(step: string, result: TypeCheckResult): never {
  * Packs this package and installs the tarball into a fresh project, so the
  * specifier is exercised from OUTSIDE the repo rather than by self-reference.
  *
- * `editPackage` is applied to the copy that gets PACKED, which is what makes a
- * perturbation meaningful here: editing the installed copy afterwards would
- * prove something about a directory, not about what this repo publishes.
+ * `editPackage` is applied to the copy that gets PACKED: editing the installed
+ * copy afterwards would prove something about a directory, not about what this
+ * repo publishes.
  *
  * src/ is copied, never symlinked -- `bun pm pack` follows the `files` field
  * and a symlinked directory is not what the registry would receive.
  *
- * THE TARBALL IS BUILT HERE, NOT FOUND: the stage carries src/ and
- * tsconfig.build.json, and `bun pm pack` runs the `prepack` script before it
- * collects files (MEASURED -- `bun pm pack` and `npm pack` both fire prepack
- * and both include what it emitted). So dist/ inside the tarball is compiled
- * from the src/ copied one line above, at test time, and a stale artifact
- * cannot be what a test observed. node_modules is symlinked in only because
- * the build needs to resolve the types of tsudoi's own declared dependencies;
- * `files` keeps it out of the tarball, which
- * test/installed-runtime.test.ts asserts rather than assumes.
+ * THE TARBALL IS BUILT HERE, NOT FOUND: `bun pm pack` runs `prepack` before it
+ * collects files, so dist/ inside the tarball is compiled from the src/ copied
+ * one line above, at test time, and a stale artifact cannot be what a test
+ * observed.
  */
 export async function installConsumer(options: InstallOptions = {}): Promise<InstalledConsumer> {
   const stage = mkdtempSync(join(tmpdir(), "tsudoi-pack-"));
-  // ONE STAGE PER MEMBER, and it is the same reason each member is packed into a
-  // directory of its own below: the tarball filename is FOUND rather than
-  // spelled, and that search is sound only while a directory holds exactly one
-  // .tgz.
+  // ONE STAGE PER MEMBER, AND NOTHING REDDENS IF THEY SHARE ONE: the tarball
+  // filename is FOUND rather than spelled, and that search is sound only while a
+  // directory holds exactly one .tgz.
   const handlerStages = handlerRoots.map(() => mkdtempSync(join(tmpdir(), "tsudoi-handler-pack-")));
   const consumer = mkdtempSync(join(tmpdir(), "tsudoi-consumer-"));
   const dispose = (): void => {
@@ -359,11 +272,10 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     rmSync(consumer, { recursive: true, force: true });
   };
   try {
-    // THE FRAMEWORK'S OWN MANIFEST, WHICH SINCE THE MOVE IS NOT THE CHECKOUT
-    // ROOT'S. The stage is a copy of THE PACKAGE BEING PACKED: the workspace
-    // root's manifest carries no `exports`, no `files` and no `prepack`, so a
-    // stage built from it would pack nothing and publish nothing, with every
-    // consumer assertion below failing about the wrong file.
+    // THE FRAMEWORK'S OWN MANIFEST AND NOT THE CHECKOUT ROOT'S: the workspace
+    // root's carries no `exports`, no `files` and no `prepack`, so a stage built
+    // from it would pack nothing and publish nothing, with every consumer
+    // assertion below failing about the wrong file.
     const packageJson: Record<string, unknown> = JSON.parse(
       readFileSync(join(frameworkRoot, "package.json"), "utf8"),
     ) as Record<string, unknown>;
@@ -371,75 +283,31 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
     writeFileSync(join(stage, "package.json"), JSON.stringify(packageJson, null, 2));
     cpSync(join(frameworkRoot, "src"), join(stage, "src"), { recursive: true });
     options.editSource?.(join(stage, "src"));
-    // tsconfig.build.json AND NOT tsconfig.json, and the omission is still the
-    // load-bearing half AFTER THE `paths` MAPPING IS GONE. It used to be that
-    // the checkout's tsconfig.json mapped `@atusy/tsudoi-language-server/*` to
-    // src/ and an inheriting stage would type-check what we publish against
-    // sources we do not ship. THAT MAPPING NO LONGER EXISTS ANYWHERE -- the
-    // framework is a member and resolves through node_modules like a stranger --
-    // and the omission is kept for the reason that survives it: the package's
-    // own tsconfig.json is a NO-EMIT check config, so a stage carrying it would
-    // hand `prepack` a configuration that writes nothing. A FOURTH COPY ADDED
-    // HERE REDDENS `the pack stage receives package.json, src/ and
-    // tsconfig.build.json, and nothing else` in
-    // test/installed-specifier.test.ts, which names what it found.
     cpSync(join(frameworkRoot, "tsconfig.build.json"), join(stage, "tsconfig.build.json"));
-    // THE BORROWED node_modules NOW HOLDS A RESOLVING ENTRY FOR THIS PACKAGE,
-    // created by the framework becoming a member the root declares -- and it
-    // answers nothing here, which is a property of what is compiled rather than
-    // a hope: the stage runs `prepack` over this package's OWN src/, and no file
-    // there names the package by specifier. What the borrow is for is the three
-    // upstream packages the build needs.
-    //
-    // THE CONSUMER BELOW BORROWS ONLY @types AND NOT THIS, which is where it
-    // would have mattered: a consumer with a route to this checkout would be
-    // answering the tarball's specifiers from the repository, and the tarball is
-    // the whole subject there.
+    // THE CONSUMER BELOW BORROWS ONLY @types AND NOT THIS, which is where a route
+    // to the checkout would have mattered: it would answer the tarball's
+    // specifiers from the repository, and the tarball is the whole subject there.
     symlinkSync(join(repoRoot, "node_modules"), join(stage, "node_modules"), "dir");
-    // Captured HERE rather than after the pack: `bun pm pack` writes the tarball
-    // into this same directory, so a reading taken later would see a fifth entry
-    // that no copying step put there.
     const staged = stageEntries(stage);
 
     const packed = await run("bun", ["pm", "pack", "--destination", stage], stage);
     if (packed.code !== 0) {
       fail("bun pm pack", packed);
     }
-    // Found rather than spelled out: bun derives the filename from name and
-    // version, so hardcoding it would turn the next version bump into a
-    // puzzling ENOENT.
-    //
-    // NOT ASSERTED AGAINST package.json's `name` EITHER, which is the edit this
-    // looseness invites and the reason it is refused: the filename is the
-    // PACKER'S derivation, not this package's identity, so an equality here
-    // would pin how bun spells a temporary file and would redden on a change
-    // that costs a consumer nothing. Nor can the search pick the wrong
-    // artifact -- the stage is a fresh mkdtemp holding exactly one .tgz.
-    // WHAT THE NAME MUST REACH ON THIS ROUTE IS THE INSTALL LAYOUT, spelled at
-    // `packageDir` below, and reverting `name` reddens the consumer suite
-    // through that rather than through this line. README.md declines the
-    // derived filename outright for its own reason, packing with
-    // `--filename tsudoi.tgz` so the command it hands a reader cannot go stale
-    // at a release.
+    // Found rather than spelled out, and NOT ASSERTED AGAINST package.json's
+    // `name` either -- which is the edit this looseness invites: the filename is
+    // the PACKER'S derivation and not this package's identity, so an equality
+    // here would pin how bun spells a temporary file.
     const tarballName = readdirSync(stage).find((entry) => entry.endsWith(".tgz"));
     if (tarballName === undefined) {
       fail("bun pm pack", { code: packed.code, output: `no .tgz in ${stage}\n${packed.output}` });
     }
     const tarball = join(stage, tarballName);
 
-    // EVERY HANDLER PACKAGE IS PACKED FROM WHERE IT LIVES, not from a staged
-    // copy, and the asymmetry with the block above is deliberate rather than an
-    // oversight. The staging exists to let `editPackage` and `editSource` perturb
-    // what gets packed; no probe perturbs a member, and a copy would only add
-    // a second place for its build to go wrong. Each member's own `prepack`
-    // compiles it in place, so every tarball is still built at test time from
-    // current source.
-    //
-    // ONE DESTINATION DIRECTORY EACH, AND THAT IS LOAD-BEARING: the tarball
-    // filename is FOUND rather than spelled, for the reason written above, and
-    // that search is sound only while a stage holds exactly one .tgz. Packing
-    // two members into one directory would make each search able to pick the
-    // other's.
+    // EVERY HANDLER PACKAGE IS PACKED FROM WHERE IT LIVES, and the asymmetry with
+    // the block above is deliberate: the staging exists to let `editPackage` and
+    // `editSource` perturb what gets packed, no probe perturbs a member, and a
+    // copy would only add a second place for its build to go wrong.
     const handlerTarballs: string[] = [];
     const omitted = options.omitHandler;
     let withheld = false;
@@ -467,9 +335,6 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
       }
       handlerTarballs.push(join(handlerStage, handlerTarballName));
     }
-    // A NAME THAT MATCHED NOTHING IS A FAILED CONTROL WEARING A PASS: every
-    // member would be installed, the config would load, and the caller's
-    // negative assertion would be taken against the positive tree.
     if (omitted !== undefined && !withheld) {
       throw new Error(
         `installConsumer was asked to omit ${omitted}, which is not a workspace member: ${handlerRoots.map(packageNameOf).join(", ")}`,
@@ -480,36 +345,19 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
       join(consumer, "package.json"),
       JSON.stringify({ name: "tsudoi-consumer", version: "1.0.0", type: "module", private: true }),
     );
-    // BOTH TARBALLS IN ONE COMMAND, which is the route the README states and the
-    // only one that puts the two packages in the same node_modules -- the handler
-    // declares tsudoi as a PEER, so it must find the consumer's copy by walking
-    // up rather than carry one of its own.
+    // BOTH TARBALLS IN ONE COMMAND, AND NOTHING REDDENS IF THEY ARE INSTALLED
+    // ONE AT A TIME: it is the route the README states, and the handler declares
+    // tsudoi as a PEER, so it must find the consumer's copy by walking up rather
+    // than carry one of its own.
     const installed = await run("bun", ["install", tarball, ...handlerTarballs], consumer);
     if (installed.code !== 0) {
       fail("bun install", installed);
     }
-    // @types/node BORROWED, for the same reason typecheck.ts borrows the whole
-    // of node_modules: the example config reads the filesystem, so it imports
-    // `node:` modules, and MEASURED, tsc reports TS2591 for those without the
-    // types present. A config author writing filesystem code installs them; a
-    // probe fetching them over the network to prove nothing about tsudoi's
-    // specifier would add a dependency and no information. It is a devDependency
-    // of this package and never ships, so nothing here can reach a user.
+    // @types/node BORROWED and `wordnet` deliberately NOT: the handler package
+    // declares wordnet, so the install above fetches it BY THE ROUTE UNDER TEST
+    // and a package that forgot to declare it reddens rather than being propped
+    // up from here.
     symlinkSync(join(repoRoot, "node_modules", "@types"), join(consumer, "node_modules", "@types"));
-    // `wordnet` IS NOT BORROWED, AND THE PREMISE THAT MADE IT A LOAN IS GONE
-    // RATHER THAN RESTATED. It stood in for an install a README told a reader to
-    // perform by hand, which was worth faking because it proved nothing about
-    // tsudoi. NOW `@atusy/tsudoi-hover-wordnet` DECLARES IT, so the line above
-    // installs it for real -- MEASURED: the consumer's node_modules/wordnet is
-    // there before this point is reached, which is what turned the symlink into
-    // an EEXIST rather than into a redundancy nobody would have noticed.
-    //
-    // WHAT THAT COSTS AND WHY IT IS WORTH IT: a cold bun cache now fetches 27MB
-    // once for the whole suite, where before it fetched none. What it buys is
-    // that the dependency arrives BY THE ROUTE UNDER TEST -- a consumer who
-    // installs the handler gets its dependency -- so a handler package that
-    // FORGOT to declare `wordnet` reddens here instead of being propped up by a
-    // symlink this helper puts in reach of it.
 
     return {
       dir: consumer,

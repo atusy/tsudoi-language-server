@@ -10,24 +10,18 @@ import {
 } from "@atusy/tsudoi-language-server/deps/types";
 import type { TextDocument } from "@atusy/tsudoi-language-server/deps/textdocument";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-// THE VALUE COMES FROM THE PACKAGE AND THE TYPE FROM TSUDOI, and the pair is
-// deliberate rather than clumsy. `@atusy/tsudoi-language-server/types` publishes this name
-// TYPE-ONLY -- ruled at tsudoi's own types module -- so the constructor is
-// reached where it lives, while the annotation still checks that what `create`
-// returns is what the published surface promises. It is also the exact shape a
-// config author ends up writing, which is why it is worth seeing here.
-//
-// BY ITS OWN NAME AND DECLARED BY THIS PACKAGE, not borrowed from the workspace
-// root: leaning on the root's copy would resolve perfectly well here and break
-// the day this package is checked out alone.
+// THE VALUE FROM THE PACKAGE AND THE TYPE FROM TSUDOI:
+// `@atusy/tsudoi-language-server/types` publishes this name TYPE-ONLY, so the
+// constructor is reached where it lives while the annotation still checks that
+// what `create` returns is what the published surface promises. BY ITS OWN NAME
+// AND DECLARED BY THIS PACKAGE, since leaning on the root's copy would resolve
+// perfectly well here and break the day this package is checked out alone.
 import { TextDocument as UpstreamTextDocument } from "vscode-languageserver-textdocument";
 import { tree } from "./helpers/tree.ts";
-// RELATIVE, INTO src/, AND NOT THROUGH THIS PACKAGE'S OWN SPECIFIER, which is
-// what lets all but one of the names below stay unpublished: index.ts names two
-// for the whole package, and nothing outside this directory can reach the rest.
-// Importing the package by name here would test dist/ -- the built artifact
-// rather than the source just edited -- and would only see what index.ts
-// publishes.
+// RELATIVE, INTO src/, AND NOT THROUGH THIS PACKAGE'S OWN SPECIFIER: importing
+// by name would test dist/ rather than the source just edited, and would only see
+// what index.ts publishes -- which is what lets all but one of the names below
+// stay unpublished.
 import {
   editFor,
   itemsFrom,
@@ -53,53 +47,40 @@ interface Buffer {
 }
 
 /**
- * Drives the module the way tsudoi drives a config handler -- through the
- * public RequestContext, with the line in a real document -- and returns every
- * item it yielded, in order.
+ * Drives the module the way tsudoi drives a config handler -- through the public
+ * RequestContext, with the line in a real document -- and returns every item it
+ * yielded, in order.
  *
  * The context is built here rather than spawned because these claims are about
- * WHAT THE HANDLER PRODUCES. The claims about what reaches a client over the
- * wire are driven through a real server further down this file.
+ * WHAT THE HANDLER PRODUCES.
  */
 async function complete(
   buffer: Buffer,
   cwd: string,
   character?: number,
   /**
-   * What the client declared about `insertReplaceSupport`, and the ONE knob
-   * every other test in this file leaves alone.
-   *
-   * DEFAULTED TO `true` HERE AND NEVER IN THE MODULE, which is the same split
-   * `fromSource` makes for `line`: the assertions below read `endsOf`, which
-   * asks about the two ranges of an `InsertReplaceEdit`, so this default states
-   * the client class they are written about instead of repeating it at every
-   * call. The module itself takes the flag REQUIRED, so no default of its own
-   * can decide this for an author.
+   * DEFAULTED HERE AND NEVER IN THE MODULE: the assertions below read `endsOf`,
+   * which asks about the two ranges of an `InsertReplaceEdit`, so this default
+   * states the client class they are written about instead of repeating it at
+   * every call. The module itself takes the flag REQUIRED, so no default of its
+   * own can decide this for an author.
    */
   insertReplaceSupport = true,
   /**
-   * What the client declared about `documentationFormat`, SPELLED AS THE CLIENT
-   * SPELLS IT -- a preference LIST rather than the one kind the module settles
-   * on, so the choosing stays the module's here exactly as it is in a session.
+   * SPELLED AS THE CLIENT SPELLS IT -- a preference LIST rather than the one kind
+   * the module settles on, so the choosing stays the module's here exactly as it
+   * is in a session. Defaulted for the reason the flag above is.
    *
-   * DEFAULTED TO MARKDOWN-FIRST for the reason the flag above is defaulted: the
-   * documentation assertions elsewhere in this file read a markdown value, and
-   * this states the client class they are written about once rather than at
-   * every call.
-   *
-   * `undeclared` RATHER THAN `undefined` FOR THE CLIENT THAT DECLARED NOTHING,
-   * and it is a correction rather than a flourish: passing `undefined` to a
-   * defaulted parameter takes the DEFAULT, so that arm silently drove the
-   * markdown client and asserted the markdown answer against itself.
+   * `undeclared` RATHER THAN `undefined` FOR THE CLIENT THAT DECLARED NOTHING:
+   * passing `undefined` to a defaulted parameter takes the DEFAULT, so that arm
+   * would silently drive the markdown client and assert the markdown answer
+   * against itself.
    */
   documentationFormat: MarkupKind[] | typeof undeclared = ["markdown"],
 ): Promise<CompletionItem[]> {
-  // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND, and this line is PBI-31's
-  // break demonstrated on the only mock in this repository. A hand-written
-  // four-member object literal does NOT satisfy the real TextDocument -- which
-  // is the break falling exactly where README says it falls: on an IMPLEMENTOR,
-  // in their own tests, and not on a handler that merely receives a document.
-  // `create` is the one-line remedy.
+  // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND: a hand-written four-member
+  // object literal does NOT satisfy the real TextDocument, and `create` is the
+  // one-line remedy.
   const document: TextDocument = UpstreamTextDocument.create(
     buffer.uri,
     "plaintext",
@@ -110,21 +91,16 @@ async function complete(
     signal: new AbortController().signal,
     tsudoi: {
       documents: { get: () => document, values: () => [document] },
-      // THE THREE ROOT FIELDS AS A CLIENT THAT NAMED NO PROJECT SENDS THEM, and
-      // on `tsudoi` because they are the SESSION'S rather than this request's.
-      // The module reads them itself, so a `Tsudoi` missing any of the three is
-      // not one a handler can be given -- which is what makes this literal fail
-      // to compile rather than silently model an impossible session.
       // A STORE THAT HOLDS NOTHING, WRITTEN OUT RATHER THAN STOOD IN FOR BY AN
       // ARRAY: an array answers `values()` and would satisfy a store missing its
-      // lookup, so spelling both members is what keeps this literal modelling
-      // the surface a handler is actually handed.
+      // lookup, so spelling both members is what keeps this literal modelling the
+      // surface a handler is actually handed.
       workspaceFolders: { get: () => [], values: () => [] },
       rootUri: null,
       rootPath: null,
-      // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole
-      // optional chain, so a rename anywhere along it reddens here rather than
-      // silently reading `undefined` and testing the other arm.
+      // THE WHOLE OPTIONAL CHAIN, as a client spells it, so a rename anywhere
+      // along it reddens here rather than silently reading `undefined` and
+      // testing the other arm.
       clientCapabilities: {
         textDocument: {
           completion: {
@@ -138,11 +114,9 @@ async function complete(
       },
     },
   };
-  // EVERY ITEM THIS MODULE HAS FOR ONE REQUEST, in the order it produces them,
-  // read the way tsudoi's own no-token drive reads it: every batch it yields,
+  // Read the way tsudoi's own no-token drive reads it: every batch it yields,
   // concatenated. A generator that yields NOTHING is an empty list here rather
-  // than a failure -- the tests below assert emptiness by name, and tsudoi
-  // itself distinguishes it from `[]` on the wire by answering `null`.
+  // than a failure, since the tests below assert emptiness by name.
   const items: CompletionItem[] = [];
   for await (const batch of pathCompletion(
     context,
@@ -176,20 +150,14 @@ function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemK
   return Object.fromEntries(items.map((item) => [item.insertText ?? "", item.kind]));
 }
 
-// WHAT THIS FILE DRIVES: src/completion.ts itself, with no fixture copy of it
-// in existence. The rule is why the assertions below import the module DIRECTLY
-// rather than a duplicate that would drift away from it.
-//
-// AND IT REACHES WHAT A CONSUMER CANNOT. Every name imported from src/ above
-// except `pathCompletion` is absent from index.ts, so this is the only place
-// they are exercised at all -- which is what makes keeping them internal cost no
-// coverage. What a consumer DOES receive is driven over the wire from the
-// repository root instead, through a config that reaches this package by
-// specifier.
+// IT REACHES WHAT A CONSUMER CANNOT: every name imported from src/ above except
+// `pathCompletion` is absent from index.ts, so this is the only place they are
+// exercised at all -- which is what makes keeping them internal cost no coverage.
+// What a consumer DOES receive is driven over the wire from the repository root.
 describe("path fragments", () => {
-  // The candidates are shortest-first: a fragment widens across a space ONLY
-  // when the narrower one names nothing, which is a property of
-  // pathCompletion, not of this function. Here only the LIST is asserted.
+  // The candidates are shortest-first: a fragment widens across a space ONLY when
+  // the narrower one names nothing, which is a property of pathCompletion and not
+  // of this function. Here only the LIST is asserted.
   test("the fragment under the cursor carries its directory part and its filter", () => {
     expect(pathFragments("foo/ba", 6)).toEqual([
       { text: "foo/ba", start: 0, end: 6, directory: "foo/", name: "ba" },
@@ -199,8 +167,6 @@ describe("path fragments", () => {
     ]);
   });
 
-  // A lone "/" is a fragment with an EMPTY filter, not an absent fragment:
-  // typing it is what asks for the filesystem root's children.
   test("a trailing separator is a directory part with an empty filter", () => {
     expect(pathFragments("/", 1)).toEqual([
       { text: "/", start: 0, end: 1, directory: "/", name: "" },
@@ -213,14 +179,14 @@ describe("path fragments", () => {
   test("a cursor with no path characters before it yields no fragment at all", () => {
     expect(pathFragments("", 0)).toEqual([]);
     expect(pathFragments("こんにちは", 0)).toEqual([]);
-    // Immediately after whitespace: everything to the left belongs to another
-    // word, and an EMPTY fragment would list every entry of every root.
+    // Immediately after whitespace, where an EMPTY fragment would list every
+    // entry of every root.
     expect(pathFragments("see ", 4)).toEqual([]);
   });
 
-  // The spaced-filename case, at the extraction layer: `foo (1).png` must be
-  // REACHABLE as a candidate, which a whitespace split forecloses. Which
-  // candidate wins is decided against the filesystem, not here.
+  // WHICH CANDIDATE WINS IS DECIDED AGAINST THE FILESYSTEM AND NOT HERE: this is
+  // only that `foo (1).png` is REACHABLE as one, which a whitespace split
+  // forecloses.
   test("a word boundary to the left of a space is a candidate, so a spaced filename is reachable", () => {
     expect(pathFragments("see foo (1).png", 13)).toEqual([
       { text: "(1).p", start: 8, end: 15, directory: "", name: "(1).p" },
@@ -242,27 +208,20 @@ describe("the typed prefix selects the source class", () => {
     }
   });
 
-  // THE NEGATIVE HALF IS THE DISCRIMINATOR. cwd here HAS CHILDREN OF ITS OWN,
-  // so an implementation where every source answers every keystroke would
-  // still pass the positive half above and fail here.
-  //
-  // This is the stakeholder's own example -- typing `/` completes the
-  // filesystem root -- with cwd deliberately not being it.
+  // cwd HERE HAS CHILDREN OF ITS OWN, so an implementation where every source
+  // answers every keystroke would still pass the positive half above and fail
+  // here.
   test("a /-prefixed fragment is answered by the absolute source ALONE", async () => {
     const fixture = tree(["src/foo.ts", "notes/", "doc.txt"]);
     try {
       const items = await complete({ ...elsewhere, line: "/" }, fixture.root);
 
-      // Every one of them, not merely the presence of a root entry: a
-      // cwd-relative item is exactly one whose inserted text is NOT anchored.
       expect(items.length).toBeGreaterThan(0);
       expect(items.filter((item) => !(item.insertText ?? "").startsWith("/"))).toEqual([]);
-      // And nothing extra. Compared against a listing this test performs
-      // ITSELF, so the oracle is the filesystem rather than the module.
-      //
-      // Hidden entries are dropped from BOTH sides on purpose: whether a
-      // completion offers them is UNRULED, and a set equality including them
-      // would decide it here by accident.
+      // Compared against a listing this test performs ITSELF, so the oracle is
+      // the filesystem rather than the module. HIDDEN ENTRIES ARE DROPPED FROM
+      // BOTH SIDES ON PURPOSE: whether a completion offers them is UNRULED, and a
+      // set equality including them would decide it here by accident.
       const visible = (name: string): boolean => !name.startsWith(".");
       const rootEntries = (await readdir("/")).filter(visible);
       expect(
@@ -278,18 +237,15 @@ describe("the typed prefix selects the source class", () => {
 });
 
 // ============================================================================
-// THE WINDOWS READING, MEASURED ON A HOST THAT IS NOT WINDOWS. Every case below
-// hands the module `win32` EXPLICITLY, and that is the whole reason the flavour
-// is a parameter rather than a fact the module reads off the process: a suite
-// exercising only the host's own separators is green on this machine and says
-// nothing at all about the platform the defect lives on.
+// THE WINDOWS READING, ON A HOST THAT IS NOT WINDOWS. Every case below hands the
+// module `win32` EXPLICITLY, which is why the flavour is a parameter rather than
+// a fact the module reads off the process.
 //
 // PURE THROUGHOUT, and it has to be: no `win32` path names anything a macOS or
-// Linux filesystem holds, so a case driven through `opendir` would answer
-// nothing and pass for the wrong reason. What is asserted here is the PARSING
-// and the SPANS -- the two halves that decide what a Windows user's buffer ends
-// up reading -- while the tests above drive the same code through a real
-// filesystem under the host's own flavour.
+// Linux filesystem holds, so a case driven through `opendir` would answer nothing
+// and pass for the wrong reason. What is asserted here is the PARSING and the
+// SPANS -- the two halves that decide what a Windows user's buffer ends up
+// reading.
 // ============================================================================
 
 describe("a fragment is split by the flavour's own separators", () => {
@@ -298,9 +254,8 @@ describe("a fragment is split by the flavour's own separators", () => {
       { text: "C:\\Users\\fo", start: 0, end: 11, directory: "C:\\Users\\", name: "fo" },
     ]);
     // FORWARD SLASHES ON WINDOWS ARE NOT A CONCESSION: editors and users both
-    // produce them there. That node's win32 flavour reads them is ASSERTED
-    // rather than assumed -- this line is the verification, and a fix that
-    // switched on `sep` alone would fail it.
+    // produce them there, and a fix that switched on `sep` alone would fail this
+    // line.
     expect(pathFragments("C:/Users/fo", 11, win32)).toEqual([
       { text: "C:/Users/fo", start: 0, end: 11, directory: "C:/Users/", name: "fo" },
     ]);
@@ -316,18 +271,14 @@ describe("a fragment is split by the flavour's own separators", () => {
     ]);
   });
 
-  // THE IDENTITY EVERY RANGE RESTS ON, asserted at the CUT rather than at the
-  // item because that is where it can be broken. An item writes the fragment's
-  // directory part with an entry name after it, over a span anchored at
-  // `fragment.start`; a cut whose two parts did not reconstruct the fragment
-  // would leave every range correct and every `newText` wrong at the same
-  // anchor, which writes a MANGLED LINE rather than nothing.
+  // ASSERTED AT THE CUT RATHER THAN AT THE ITEM, because that is where it can be
+  // broken: a cut whose two parts did not reconstruct the fragment leaves every
+  // range correct and every `newText` wrong at the same anchor, which writes a
+  // MANGLED LINE rather than nothing.
   //
-  // BORN GREEN, and its falsifier is measured rather than hypothetical: deriving
-  // the cut from `parse(text).base` -- the obvious upstream spelling, and the
-  // one this fix nearly took -- breaks on a TRAILING SEPARATOR, because
-  // `parse("notes/").base` is `notes` and not `""`. That splits `notes/` into
-  // `n` and `otes/`, which is the central case of this whole feature.
+  // BORN GREEN, and its falsifier is not hypothetical: deriving the cut from
+  // `parse(text).base` -- the obvious upstream spelling -- breaks on a TRAILING
+  // SEPARATOR, because `parse("notes/").base` is `notes` and not `""`.
   test("the directory part and the filter reconstruct the fragment, which reconstructs the line", () => {
     const cases: [PlatformPath, string][] = [
       [win32, "C:\\Users\\fo"],
@@ -363,14 +314,9 @@ describe("the flavour decides which fragments are absolute, and what their root 
     ]);
   });
 
-  // DRIVE-RELATIVE IS OUT OF SCOPE, AND THE ANSWER IS `NO SOURCE` RATHER THAN A
-  // READING OF IT -- the decision is at `sourcesFor` in the example, with its
-  // reason. What this test defends is that the refusal is EXACT: `C:foo` and
-  // `C:\foo` differ by one character, and only the first is out of scope.
-  //
   // BOTH ARMS IN ONE MEASUREMENT, because `[]` is satisfied by a `sourcesFor`
-  // that answers nothing for everything -- which is the degenerate reading of
-  // the emptiness, and the second line is what forbids it.
+  // that answers nothing for everything: `C:foo` and `C:\foo` differ by one
+  // character, and only the first is out of scope.
   test("a drive-relative fragment contributes no source, where a drive-absolute one contributes its drive", () => {
     expect(sourcesFor(only("C:foo", win32), elsewhere.uri, "/somewhere", [], win32)).toEqual([]);
     expect(sourcesFor(only("C:\\foo", win32), elsewhere.uri, "/somewhere", [], win32)).toEqual([
@@ -378,11 +324,9 @@ describe("the flavour decides which fragments are absolute, and what their root 
     ]);
   });
 
-  // UNC, AND THE ASYMMETRY IS THE FINDING RATHER THAN A DETAIL: a COMPLETE share
-  // is a root the same code path serves, while a share name still being TYPED is
-  // read as a root of its own -- so the second answers from a share that does
-  // not exist and produces nothing. Both are asserted as ROOTS rather than as
-  // `no items`, which would pass against a module that had lost UNC entirely.
+  // BOTH ASSERTED AS ROOTS RATHER THAN AS `no items`, which would pass against a
+  // module that had lost UNC entirely: a share name still being TYPED is read as
+  // a root of its own, so it answers from a share that does not exist.
   test("a complete UNC share is a root, and an INCOMPLETE share name is read as one too", () => {
     expect(
       sourcesFor(only("\\\\server\\share\\fo", win32), elsewhere.uri, "/somewhere", [], win32),
@@ -392,10 +336,9 @@ describe("the flavour decides which fragments are absolute, and what their root 
     ).toEqual([{ name: "absolute", root: "\\\\server\\sh" }]);
   });
 
-  // THE PERMANENT PAIR ON THE OTHER SIDE: the same text under the POSIX flavour
-  // is ONE ORDINARY FILENAME, which is exactly right there -- and it is what
-  // says the absolute arms above come from the flavour rather than from a
-  // hardcoded reading of `C:` that would now be wrong on every posix machine.
+  // THE PERMANENT PAIR ON THE OTHER SIDE, and what says the absolute arms above
+  // come from the flavour rather than from a hardcoded reading of `C:` that would
+  // be wrong on every posix machine.
   test("a drive path under the posix flavour is one filename, answered by the relative sources", () => {
     expect(
       sourcesFor(only("C:\\Users\\fo", posix), "file:///workspace/a.txt", "/somewhere", [], posix),
@@ -407,10 +350,9 @@ describe("the flavour decides which fragments are absolute, and what their root 
 });
 
 describe("a listing directory is read under the root that produced it", () => {
-  // THE DEFECT AT ITS SHARPEST, and it is invisible on posix BY COINCIDENCE:
-  // `join("/", "/usr/")` is `/usr/`, so concatenating a root onto a directory
-  // that already carries it is harmless there and doubles the root on Windows.
-  // MEASURED: `win32.join("C:\\", "C:\\Users\\")` is `C:\C:\Users\`.
+  // INVISIBLE ON POSIX BY COINCIDENCE: `join("/", "/usr/")` is `/usr/`, so
+  // concatenating a root onto a directory that already carries it is harmless
+  // there, while `win32.join("C:\\", "C:\\Users\\")` is `C:\C:\Users\`.
   test("the absolute source's root is not written twice onto a directory that already carries it", () => {
     expect(
       listingDirectory({ name: "absolute", root: "C:\\" }, only("C:\\Users\\fo", win32), win32),
@@ -432,11 +374,10 @@ describe("a listing directory is read under the root that produced it", () => {
 });
 
 describe("an item's edit spans the fragment whatever the separators are", () => {
-  // WHERE THE TWO RULES MEET. The anchor is a WHITESPACE boundary and the cut is
-  // a SEPARATOR one, so changing the separator set must not move the anchor --
-  // and the text written back must still reconstruct the span it is written
-  // over. An edit inserting the right path at the wrong span corrupts the
-  // buffer, which is worse than the empty popup this fix set out to close.
+  // WHERE THE TWO RULES MEET: the anchor is a WHITESPACE boundary and the cut is
+  // a SEPARATOR one, so changing the separator set must not move the anchor. An
+  // edit inserting the right path at the wrong span corrupts the buffer, which is
+  // worse than the empty popup this feature set out to close.
   test("a Windows fragment's edit is anchored at the word, and writes the whole path back", () => {
     const line = "see C:\\Users\\fo";
     const cursor = line.length;
@@ -445,15 +386,13 @@ describe("an item's edit spans the fragment whatever the separators are", () => 
     const edit = editFor(fragment, { line: 0, character: cursor }, line, newText, true);
     const item: CompletionItem = { label: newText, insertText: newText, textEdit: edit };
 
-    // The directory part the user typed is CARRIED, not dropped: this is the
-    // string the client puts in the buffer.
     expect(newText).toBe("C:\\Users\\foo.txt");
     // 4, where the WORD begins -- not 0, and not 13 where the last separator
     // sits. Both ranges, because a client reads whichever its own setting names.
     expect("insert" in edit ? edit.insert.start.character : undefined).toBe(4);
     expect("insert" in edit ? edit.replace.start.character : undefined).toBe(4);
-    // AND THE LINE THE USER IS LEFT WITH, under both preferences: at the end of
-    // the line the two coincide, and what this claims is that each is WHOLE.
+    // At the end of the line the two preferences coincide, and what this claims
+    // is that each is WHOLE.
     expect(applyAsClient(line, cursor, item, "replace")).toBe("see C:\\Users\\foo.txt");
     expect(applyAsClient(line, cursor, item, "insert")).toBe("see C:\\Users\\foo.txt");
   });
@@ -461,13 +400,10 @@ describe("an item's edit spans the fragment whatever the separators are", () => 
 
 describe("directories are distinguishable from files", () => {
   // A WRONG KIND STILL COMPLETES AND STILL DISPLAYS, so nothing but this
-  // assertion catches it.
-  //
-  // The symlinks are not decoration. MEASURED on bun 1.3.13 and deno 2.9.2:
-  // readdir/opendir report a symlink-to-directory as NOT a directory, so an
-  // implementation trusting the dirent alone labels `linkdir` a File -- and on
-  // macOS /tmp is itself a symlink, so this is the first keystroke rather than
-  // an exotic case.
+  // assertion catches it. THE SYMLINKS ARE NOT DECORATION: readdir/opendir report
+  // a symlink-to-directory as NOT a directory, so an implementation trusting the
+  // dirent alone labels `linkdir` a File -- and on macOS /tmp is itself a
+  // symlink, so this is the first keystroke rather than an exotic case.
   test("a symlink is the kind of what it points AT, and a dangling one still lists", async () => {
     const fixture = tree(
       ["realdir/", "realfile.txt"],
@@ -480,10 +416,9 @@ describe("directories are distinguishable from files", () => {
     try {
       const items = await complete({ ...elsewhere, line: "real" }, fixture.root);
       const links = await complete({ ...elsewhere, line: "link" }, fixture.root);
-      // The DANGLING half: the entry is offered and the request still answers.
-      // MEASURED: the obvious fix for the line above -- stat every entry --
-      // throws ENOENT here, which under tsudoi's dispatch becomes -32603 plus
-      // a stack and kills the whole completion, not merely this one item.
+      // The DANGLING half: the obvious fix for the line above -- stat every entry
+      // -- throws ENOENT here, which under tsudoi's dispatch becomes -32603 and
+      // kills the whole completion, not merely this one item.
       const dangling = await complete({ ...elsewhere, line: "dang" }, fixture.root);
 
       expect(kinds(items)).toEqual({
@@ -525,23 +460,17 @@ function resolvesTo(root: string, insertedText: string): string | undefined {
 async function fromSource(
   source: PathSource,
   fragment: PathFragment,
-  // These callers build their fragment with `only(line)`, whose cursor is at
-  // the END of the line -- so the fragment's text IS the line. Spelled as a
-  // default here and never in the module: a module-level default would decide
-  // the replace end from a line it was not given.
+  // These callers build their fragment with `only(line)`, whose cursor is at the
+  // END of the line -- so the fragment's text IS the line. Spelled as a default
+  // here and never in the module, which would otherwise decide the replace end
+  // from a line it was not given.
   line: string = fragment.text,
-  // As `complete` defaults it, and for the same reason: these callers ask about
-  // the two ranges, which only the supporting client's edit carries.
   insertReplaceSupport = true,
   // THE KIND RATHER THAN THE DECLARATION, because this entrance is BELOW the
-  // choosing: `itemsFrom` is handed a format that has already been negotiated,
-  // and defaulting it here states the client class these callers' documentation
-  // assertions are written about.
+  // choosing: `itemsFrom` is handed a format that has already been negotiated.
   documentationFormat: MarkupKind = "markdown",
 ): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
-  // The cursor, spelled out: itemsFrom takes it rather than defaulting it,
-  // because a default can only assume line 0 and would be wrong anywhere else.
   const position = { line: 0, character: fragment.start + fragment.text.length };
   for await (const batch of itemsFrom(
     source,
@@ -566,10 +495,9 @@ function only(line: string, flavour: PlatformPath = nodePath): PathFragment {
 }
 
 describe("an item resolves against its own source's root", () => {
-  // ASSERTED PER SOURCE, never over the merged list. The two trees hold
-  // DIFFERENT names on purpose: an item attributed to the wrong root resolves
-  // to a path that does not exist, so this fails rather than passing by
-  // coincidence.
+  // THE TWO TREES HOLD DIFFERENT NAMES ON PURPOSE: an item attributed to the
+  // wrong root resolves to a path that does not exist, so this fails rather than
+  // passing by coincidence.
   test("each source's items resolve, under that source's root, to the files it holds", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
@@ -584,10 +512,9 @@ describe("an item resolves against its own source's root", () => {
       expect(sources.map((source) => source.name)).toEqual(["document", "cwd", "absolute"]);
 
       // WHAT THE ROOT MUST BE, stated by the test rather than read off the
-      // module. Without this the oracle below derives its expectation FROM
-      // source.root and compares the module to itself: swapping the document
-      // and cwd roots swaps both sides together and nothing reddens. Measured
-      // -- the swap perturbation passed until this assertion existed.
+      // module: without this the oracle below derives its expectation FROM
+      // source.root and compares the module to itself, so swapping the document
+      // and cwd roots swaps both sides together and nothing reddens.
       const expectedRoot: Record<string, string> = {
         document: documentTree.root,
         cwd: cwdTree.root,
@@ -617,9 +544,8 @@ describe("an item resolves against its own source's root", () => {
     }
   });
 
-  // THE NEGATIVE CONTROLS the criterion names, on REAL items rather than on
-  // invented ones: each mutation is the plausible implementation mistake, and
-  // each must stop resolving.
+  // THE NEGATIVE CONTROLS, on REAL items rather than invented ones: each mutation
+  // is the plausible implementation mistake, and each must stop resolving.
   test("an absolute text under a named root, or a relative one under /, fails to resolve", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -643,19 +569,12 @@ describe("an item resolves against its own source's root", () => {
 });
 
 describe("an item names the root that produced it", () => {
-  // ASSERTED PER SOURCE, and the reason is the masking control below rather
-  // than tidiness: over a merged list, a document-relative source that fell
-  // back to `/` is indistinguishable from the absolute source's legitimate
-  // output, so a merged assertion cannot tell a broken source from a working
-  // one.
+  // ASSERTED PER SOURCE, for the masking control below: over a merged list, a
+  // document-relative source that fell back to `/` is indistinguishable from the
+  // absolute source's legitimate output.
   //
-  // THE CARRIER IS `documentation`, not the label and not `detail`: the label
-  // is the text being inserted, and repeating the root there read as noise
-  // beside the path the user is already typing. What it carries is BOTH
-  // answers to the question the inserted text raises -- the ABSOLUTE PATH,
-  // which says which file this actually is when two roots offer the same
-  // relative one, and the source name below the rule. A client that shows no
-  // documentation window shows no attribution at all, which is the cost.
+  // THE CARRIER IS `documentation`, not the label and not `detail`, and the cost
+  // is that a client showing no documentation window shows no attribution at all.
   test("each item names the file it resolves to and the source that produced it", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
@@ -668,8 +587,8 @@ describe("an item names the root that produced it", () => {
         expect(items.length).toBeGreaterThan(0);
         for (const item of items) {
           // The absolute path as THIS TEST computes it, never as the module
-          // reported it -- an oracle taken from the subject cannot disagree
-          // with it.
+          // reported it -- an oracle taken from the subject cannot disagree with
+          // it.
           expect(item.documentation).toEqual({
             kind: "markdown",
             value: `${join(source.root, item.insertText ?? "")}\n\n---\n\nsource: ${source.name}`,
@@ -686,14 +605,12 @@ describe("an item names the root that produced it", () => {
     }
   });
 
-  // BOTH ARMS IN ONE MEASUREMENT, for the reason the edit-shape pair below is
-  // written that way: `markdown is produced when markdown is supported` passes
-  // unchanged against a module that produces markdown for everyone, which is
-  // the defect. The claim is the DIFFERENCE, and one request cannot carry it.
+  // BOTH ARMS IN ONE MEASUREMENT: `markdown is produced when markdown is
+  // supported` passes unchanged against a module that produces markdown for
+  // everyone, so the claim is the DIFFERENCE and one request cannot carry it.
   //
-  // THE WHOLE MarkupContent IS COMPARED, kind AND value. A kind of `plaintext`
-  // on a value still carrying `---` is the same defect wearing the right label,
-  // and only the value says the markdown is actually gone.
+  // THE WHOLE MarkupContent IS COMPARED, kind AND value: a kind of `plaintext` on
+  // a value still carrying `---` is the same defect wearing the right label.
   test("the documentation format follows what the client declared, both ways", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -710,8 +627,7 @@ describe("an item names the root that produced it", () => {
         kind: "markdown",
         value: `${absolutePath}\n\n---\n\nsource: document`,
       });
-      // The rule is GONE rather than sent as three hyphens, and the blank line
-      // between the two parts is what separates them for this client.
+      // The rule is GONE rather than sent as three hyphens.
       expect(await documentationWhen(["plaintext"])).toEqual({
         kind: "plaintext",
         value: `${absolutePath}\n\nsource: document`,
@@ -734,20 +650,17 @@ describe("an item names the root that produced it", () => {
     }
   });
 
-  // THE MASKING CONTROL, constructed rather than argued: `file://` resolves to
-  // `/` WITHOUT THROWING (measured), so a document-relative source that lost
-  // its parent produces items from exactly the directory the absolute source
-  // legitimately produces them from. Attribution is the only thing that tells
-  // the two apart.
+  // THE MASKING CONTROL: `file://` resolves to `/` WITHOUT THROWING, so a
+  // document-relative source that lost its parent produces items from exactly the
+  // directory the absolute source legitimately produces them from.
   test("a source rooted at / is still distinguishable from the absolute source", async () => {
     const fragment = only("/us");
     const fallback = await fromSource({ name: "document", root: "/" }, fragment);
     const legitimate = await fromSource({ name: "absolute", root: "/" }, fragment);
 
     expect(inserted(fallback)).toEqual(inserted(legitimate));
-    // Same text, same labels, and even the same absolute path -- the source
-    // name is the only thing that tells a broken document source from a
-    // working absolute one.
+    // Same text, same labels, and even the same absolute path -- the source name
+    // is the only thing that tells the two apart.
     expect(fallback.map((item) => item.label)).toEqual(legitimate.map((item) => item.label));
     expect(fallback.map(documentationOf)).not.toEqual(legitimate.map(documentationOf));
   });
@@ -755,25 +668,21 @@ describe("an item names the root that produced it", () => {
 
 describe("an item records the source it was produced under", () => {
   /**
-   * ASSERTED PER SOURCE ACROSS EVERY NAME THE CLOSED SET HOLDS, and the reason
-   * is the degenerate rather than thoroughness: an implementation that wrote one
-   * hardcoded name onto every item satisfies any single-source reading of this
-   * claim. Four names and not three, MEASURED off `PathSourceName` rather than
-   * counted from the fixture a relative fragment can drive -- `sourcesFor`
-   * answers an absolute fragment with the absolute source ALONE, so the fourth
-   * needs a fragment of its own and cannot ride in the same list.
+   * ACROSS EVERY NAME THE CLOSED SET HOLDS, for the degenerate rather than for
+   * thoroughness: an implementation writing one hardcoded name onto every item
+   * satisfies any single-source reading of this claim. THE FOURTH NEEDS A
+   * FRAGMENT OF ITS OWN and cannot ride in the same list, since `sourcesFor`
+   * answers an absolute fragment with the absolute source ALONE.
    *
-   * WHY THE MARK CARRIES IT AT ALL, which the item's own documentation makes
-   * look redundant: the resolve half REBUILDS that block rather than appending
-   * to it, and the block names the source. What comes back from a client is the
-   * client's text, so the attribution has to arrive somewhere the answer is
-   * allowed to be built out of -- and the source is NOT derivable from the path,
-   * since one file is reachable from the document's directory, the cwd, a
-   * workspace folder and an absolute fragment at once.
+   * WHY THE MARK CARRIES IT AT ALL, which the item's own documentation makes look
+   * redundant: the resolve half REBUILDS that block rather than appending to it,
+   * so the attribution has to arrive somewhere the answer is allowed to be built
+   * out of -- and the source is NOT derivable from the path, since one file is
+   * reachable from the document's directory, the cwd, a workspace folder and an
+   * absolute fragment at once.
    *
-   * WHOLE-VALUE ON `data`, never a containment: the mark is what one module
-   * writes for another to read, and a test asserting only that the source
-   * appeared would stay green through the day the path stopped.
+   * WHOLE-VALUE ON `data`, never a containment: a test asserting only that the
+   * source appeared would stay green through the day the path stopped.
    */
   test("each item's mark names the source that produced it, for every source there is", async () => {
     const documentTree = tree(["notes/deep.txt"]);
@@ -788,9 +697,9 @@ describe("an item records the source it was produced under", () => {
         ...sourcesFor(relative, uri, cwdTree.root, folders),
         ...sourcesFor(absolute, uri, cwdTree.root, folders),
       ];
-      // The enumeration is asserted as a VALUE, so a source that stopped being
-      // offered reddens here instead of quietly leaving this claim covering
-      // three names while its name says every one.
+      // Asserted as a VALUE, so a source that stopped being offered reddens here
+      // instead of quietly leaving this claim covering three names while its own
+      // name says every one.
       expect(sources.map((source) => source.name)).toEqual([
         "document",
         "cwd",
@@ -806,8 +715,8 @@ describe("an item records the source it was produced under", () => {
         expect(items.length).toBeGreaterThan(0);
         for (const item of items) {
           expect(item.data).toEqual({
-            // The path as THIS TEST computes it from the root and the inserted
-            // text, never as the module reported it.
+            // As THIS TEST computes it from the root and the inserted text, never
+            // as the module reported it.
             pathCompletion: resolvesTo(source.root, item.insertText ?? ""),
             source: source.name,
           });
@@ -822,11 +731,8 @@ describe("an item records the source it was produced under", () => {
 });
 
 describe("items with identical inserted text collapse to one", () => {
-  // The collision built from sources this PBI actually has: the document's
-  // parent IS cwd, so two sources list the same directory and produce the same
-  // string. Dedup is by INSERTED TEXT and never by resolved file -- resolving
-  // first would force an arbitrary choice of which root to attribute the
-  // survivor to, which is the criterion above.
+  // THE FIXTURE IS THE COLLISION: the document's parent IS cwd, so two sources
+  // list the same directory and produce the same string.
   test("the document's parent being cwd yields ONE item, not two", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -843,13 +749,9 @@ describe("items with identical inserted text collapse to one", () => {
   });
 
   // THE DISCRIMINATOR between the two dedup rules, which the collision above
-  // cannot supply: there both rules collapse, because one directory reached
-  // twice has one path. Here the SAME directory is reached by two DIFFERENT
-  // absolute paths -- cwd is a symlink to the document's parent -- so the
-  // inserted text is one string while the roots are two.
-  //
-  // Dedup by resolved file would keep both and then have to pick a root to
-  // label the pair with, which is the arbitrary choice the criterion refuses.
+  // cannot supply: there both rules collapse, because one directory reached twice
+  // has one path. Here cwd is a SYMLINK to the document's parent, so the inserted
+  // text is one string while the roots are two.
   test("two roots reaching one directory by different paths still collapse", async () => {
     const fixture = tree(["notes/deep.txt"], [["mirror", "."]]);
     try {
@@ -863,32 +765,23 @@ describe("items with identical inserted text collapse to one", () => {
   });
 
   // THE SECOND DISCRIMINATOR, against a DIFFERENT wrong implementation: the
-  // symlink case above catches a resolved-path dedup that joins without
-  // realpath, and CANNOT catch one that calls realpath -- that one collapses
-  // the symlink case correctly. Only a case where one file has two DIFFERENT
-  // inserted texts separates them, and both texts must survive: they are two
-  // different edits, and the user picked the one they can read.
+  // symlink case above catches a resolved-path dedup that joins without realpath
+  // and CANNOT catch one that calls realpath. Only a case where one file has two
+  // DIFFERENT inserted texts separates them, and both texts must survive: they
+  // are two different edits, and the user picked the one they can read.
   //
-  // NESTED ROOTS, as the criterion asks: the document's parent is INSIDE cwd,
-  // which is what lets both roots see one file at all.
-  //
-  // HANDED BACK, not worked around: the criterion spells this `one file yields
-  // foo.ts and b/foo.ts`, and that pair CANNOT occur. Completion is per
-  // segment, so the typed fragment supplies ONE directory part to every source
-  // -- typing `fo` asks each root for its own `fo*`, typing `b/fo` asks each
-  // for `b/fo*`, and no single request asks one root for `foo.ts` while asking
-  // another for `b/foo.ts`. The property the criterion defends is reached by
-  // giving one file two NAMES instead, which is the only way two roots produce
-  // two strings for it.
+  // ONE FILE UNDER TWO NAMES RATHER THAN `foo.ts` AND `b/foo.ts`, WHICH CANNOT
+  // OCCUR: completion is per segment, so the typed fragment supplies ONE
+  // directory part to every source, and no single request asks one root for
+  // `foo.ts` while asking another for `b/foo.ts`.
   test("one file under two names in nested roots keeps BOTH items", async () => {
     const fixture = tree(["b/foo.ts"], [["foo-link.ts", "b/foo.ts"]]);
     try {
-      // The document's parent is `b`; cwd is the tree above it.
+      // The document's parent is `b`; cwd is the tree above it, which is what
+      // lets both roots see one file at all.
       const uri = pathToFileURL(join(fixture.root, "b", "doc.txt")).href;
       const items = await complete({ uri, line: "foo" }, fixture.root);
 
-      // Two strings, one file: `foo.ts` under the document's parent and
-      // `foo-link.ts` under cwd resolve to the same bytes on disk.
       expect(realpathSync(join(fixture.root, "b", "foo.ts"))).toBe(
         realpathSync(join(fixture.root, "foo-link.ts")),
       );
@@ -898,9 +791,8 @@ describe("items with identical inserted text collapse to one", () => {
     }
   });
 
-  // THE PERMANENT PAIR for the collapse above: the same measurement over two
-  // roots holding DIFFERENT names keeps both. Without it, `exactly one item`
-  // is equally satisfied by a module that drops everything but the first.
+  // THE PERMANENT PAIR for the collapse above: without it, `exactly one item` is
+  // equally satisfied by a module that drops everything but the first.
   test("two roots holding different names keep both items", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
@@ -917,15 +809,13 @@ describe("items with identical inserted text collapse to one", () => {
 });
 
 describe("a document with no parent directory contributes nothing", () => {
-  // THE GUARD IS `an unnamed document has no parent`, NEVER `reject / as a
-  // root`. The two degenerate URIs fail in OPPOSITE directions, measured on
-  // both runtimes: `file://` resolves to `/` silently, `untitled:` throws. So
-  // one of them needs a value check and the other needs a catch, and neither
-  // implies the other.
+  // THE TWO DEGENERATE URIS FAIL IN OPPOSITE DIRECTIONS: `file://` resolves to
+  // `/` silently and `untitled:` throws, so one needs a value check and the other
+  // a catch, and neither implies the other.
   //
-  // The fragment is chosen so that `/` REALLY HAS matches for it. With a
-  // fragment `/` cannot match, `no document-relative items` would be satisfied
-  // by a module with no guard at all.
+  // THE FRAGMENT IS CHOSEN SO THAT `/` REALLY HAS MATCHES FOR IT: with one `/`
+  // cannot match, `no document-relative items` would be satisfied by a module
+  // with no guard at all.
   test("file:// and untitled: yield no document-relative items, and still answer", async () => {
     const fixture = tree(["usable.txt"]);
     try {
@@ -933,8 +823,8 @@ describe("a document with no parent directory contributes nothing", () => {
         const items = await complete({ uri, line: "us" }, fixture.root);
 
         // ANSWERED, not merely quiet: cwd's own match is the evidence that the
-        // request survived, and `/usr` on this machine is what would arrive if
-        // the document source had fallen back to the filesystem root.
+        // request survived, and `/usr` is what would arrive if the document
+        // source had fallen back to the filesystem root.
         expect(inserted(items)).toEqual(["usable.txt"]);
         expect(documentationOf(items[0])).toContain("source: cwd");
       }
@@ -943,9 +833,9 @@ describe("a document with no parent directory contributes nothing", () => {
     }
   });
 
-  // THE PERMANENT PAIR, and the reason the guard is worded as it is: a
-  // document that really does sit at the filesystem root HAS a parent, and it
-  // is `/`. A guard spelled `reject /` passes the test above and deletes this.
+  // THE PERMANENT PAIR, and the reason the guard is `an unnamed document has no
+  // parent` rather than `reject / as a root`: one spelled the second way passes
+  // the test above and deletes this.
   test("a document that really sits at the filesystem root keeps / as its root", () => {
     expect(sourcesFor(only("us"), "file:///a.txt", "/somewhere")).toEqual([
       { name: "document", root: "/" },
@@ -955,14 +845,9 @@ describe("a document with no parent directory contributes nothing", () => {
 });
 
 describe("a filename containing a space is completed whole", () => {
-  // THE PO'S RULING, and it lands in OUR code rather than the client's: the
-  // natural way to find a path fragment is to split on whitespace, and that
-  // cuts `foo (1).png` at the space -- so the range would start after it and
-  // the item would insert half a name over the other half.
-  //
-  // The fixture holds NOTHING matching the narrower candidate `(1).p`. With
-  // one, the test would pass at the wrong candidate and never exercise the
-  // widening at all.
+  // THE FIXTURE HOLDS NOTHING MATCHING THE NARROWER CANDIDATE `(1).p`: with one,
+  // this would pass at the wrong candidate and never exercise the widening at
+  // all.
   test("the range starts at the filename, not after the space inside it", async () => {
     const fixture = tree(["foo (1).png"]);
     try {
@@ -981,27 +866,25 @@ describe("a filename containing a space is completed whole", () => {
       expect(both?.insert.start.character).toBe(4);
       expect(both?.replace.start.character).toBe(4);
 
-      // AND THE TWO ENDS DIFFER, which is the only place in this file they do.
-      // The cursor sits mid-word, so `insert` stops at it and leaves the `ng`
-      // standing while `replace` takes the whole word. WHICH ONE APPLIES IS
-      // THE USER'S SETTING TO MAKE: carrying a single range would decide it
-      // for them, and this user has already decided it.
+      // AND THE TWO ENDS DIFFER, which is the only place in this file they do:
+      // the cursor sits mid-word, so `insert` stops at it and leaves the `ng`
+      // standing while `replace` takes the whole word. WHICH ONE APPLIES IS THE
+      // USER'S SETTING TO MAKE, and carrying a single range would decide it.
       expect(both?.insert.end.character).toBe(cursor);
       expect(both?.replace.end.character).toBe(line.length);
       expect(applyAsClient(line, cursor, item, "replace")).toBe("see foo (1).png");
       expect(applyAsClient(line, cursor, item, "insert")).toBe("see foo (1).pngng");
-      // The same item on the line as far as the user has TYPED it, where the
-      // two coincide because there is nothing to the right of the cursor.
+      // The same item on the line as far as the user has TYPED it, where the two
+      // coincide because there is nothing to the right of the cursor.
       expect(applyAsClient("see foo (1).p", cursor, item, "insert")).toBe("see foo (1).png");
     } finally {
       fixture.dispose();
     }
   });
 
-  // THE OTHER HALF OF THE RULE: a fragment widens across a space ONLY when the
-  // narrower one names nothing. Without this, a line whose words BOTH match
-  // produces items replacing different spans of it in one response, and which
-  // one the user picks decides how much of their line disappears.
+  // WITHOUT THIS, a line whose words BOTH match produces items replacing
+  // different spans of it in one response, and which one the user picks decides
+  // how much of their line disappears.
   test("a fragment widens only when the narrower one names nothing", async () => {
     const fixture = tree(["foo.txt", "see foo.txt"]);
     try {
@@ -1033,15 +916,14 @@ function itemInserting(items: readonly CompletionItem[], text: string): Completi
 }
 
 describe("a replace range covers a filename the line already carries", () => {
-  // THE HARM, in the feature the stakeholder uses with the setting they set: a
-  // fragment's end stops at the first space, so a `replace` range ending there
-  // deletes `spaced` alone and inserts the whole filename over it -- leaving
-  // ` (1).txt` standing and writing a line NEITHER mode would produce.
+  // THE HARM: a fragment's end stops at the first space, so a `replace` range
+  // ending there deletes `spaced` alone and inserts the whole filename over it --
+  // leaving ` (1).txt` standing and writing a line NEITHER mode would produce.
   //
   // IT TAKES A REAL EDITOR TO SEE, so no red in this suite catches a regression
   // in it: an extended replace end is honoured at confirm by nvim + ddc +
-  // ddc-source-lsp, and a fragment-length end reproduces the mangled line
-  // there. Everything below rests on that, and it is not reproducible here.
+  // ddc-source-lsp, and a fragment-length end reproduces the mangled line there.
+  // Everything below rests on that, and it is not reproducible here.
   test("completing over the filename replaces the whole of it", async () => {
     const fixture = tree(["spaced (1).txt"]);
     try {
@@ -1050,7 +932,6 @@ describe("a replace range covers a filename the line already carries", () => {
       const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
       const item = itemInserting(items, "spaced (1).txt");
 
-      // The filename ALONE: no tail, and nothing of the old line left.
       expect(applyAsClient(line, cursor, item, "replace")).toBe("spaced (1).txt");
       expect(endsOf(item)?.replace).toBe(line.length);
     } finally {
@@ -1058,29 +939,28 @@ describe("a replace range covers a filename the line already carries", () => {
     }
   });
 
-  // WHAT MAKES THE EXTENSION SAFE IS THAT IT NEVER FIRES ON A LINE THAT DOES
-  // NOT ALREADY READ THE CANDIDATE, and the three tests below are the three
-  // ways `already reads it` can be relaxed. Each is a DIFFERENT wrong line, so
-  // each owns its own test rather than sharing one.
+  // WHAT MAKES THE EXTENSION SAFE IS THAT IT NEVER FIRES ON A LINE THAT DOES NOT
+  // ALREADY READ THE CANDIDATE, and the three tests below are the three ways
+  // `already reads it` can be relaxed. Each is a DIFFERENT wrong line, so each
+  // owns its own test rather than sharing one.
   //
-  // BORN GREEN, and measured as such: all three were written and run against
-  // the UNCHANGED module, where they pass because the whitespace end is the
-  // only end there is. They are here to stay green ACROSS the change.
+  // BORN GREEN: all three pass against the UNCHANGED module, because the
+  // whitespace end is the only end there is. They are here to stay green ACROSS
+  // the change.
   test("a line carrying a DIFFERENT candidate keeps today's end", async () => {
     const fixture = tree(["spaced (2).txt"]);
     try {
-      // The line reads `(1)` and the only candidate is `(2)`: same length,
-      // same prefix, different file.
+      // The line reads `(1)` and the only candidate is `(2)`: same length, same
+      // prefix, different file.
       const line = "spaced (1).txt";
       const cursor = "spa".length;
       const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
       const item = itemInserting(items, "spaced (2).txt");
 
       expect(endsOf(item)?.replace).toBe("spaced".length);
-      // DECLINED, NOT FIXED: the tail is still left behind here, and that is
-      // the point. A prefix match would extend to the common prefix and write
-      // `spaced (2).txt1).txt` instead -- worse than the defect, which is why
-      // the comparison is exact.
+      // DECLINED, NOT FIXED: the tail is still left behind here, and that is the
+      // point. A prefix match would extend to the common prefix and write
+      // `spaced (2).txt1).txt` instead -- worse than the defect.
       expect(applyAsClient(line, cursor, item, "replace")).toBe("spaced (2).txt (1).txt");
     } finally {
       fixture.dispose();
@@ -1088,14 +968,13 @@ describe("a replace range covers a filename the line already carries", () => {
   });
 
   // A SECOND HAZARD, and it needs its OWN line: on the line above, matching
-  // anywhere and matching at the fragment's start give the same answer, so
-  // that test cannot be the first thing a loosened START breaks.
+  // anywhere and matching at the fragment's start give the same answer, so that
+  // test cannot be the first thing a loosened START breaks.
   test("a candidate the line carries ELSEWHERE keeps today's end", async () => {
     const fixture = tree(["spaced (1).txt"]);
     try {
-      // The user is typing a NEW `sp` in front of a filename that is already
-      // there. The candidate does occur on this line -- just not where they
-      // are typing.
+      // A NEW `sp` typed in front of a filename that is already there: the
+      // candidate does occur on this line, just not where they are typing.
       const line = "sp spaced (1).txt";
       const cursor = "sp".length;
       const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
@@ -1110,10 +989,9 @@ describe("a replace range covers a filename the line already carries", () => {
     }
   });
 
-  // A THIRD HAZARD, and the only one that makes the rule SHRINK a range: the
-  // candidate is SHORTER than the word under the cursor. Nothing above can
-  // catch it -- there the comparison fails and today's end is reached by the
-  // other branch.
+  // A THIRD HAZARD, and the only one that makes the rule SHRINK a range: nothing
+  // above can catch it, because there the comparison fails and today's end is
+  // reached by the other branch.
   test("a candidate SHORTER than the word under the cursor keeps today's end", async () => {
     const fixture = tree(["foo", "foo.txt"]);
     try {
@@ -1122,7 +1000,7 @@ describe("a replace range covers a filename the line already carries", () => {
       const items = await complete({ ...elsewhere, line }, fixture.root, cursor);
       const item = itemInserting(items, "foo");
 
-      // 7, the whole word -- NOT 3, where `foo` stops. An end taken from the
+      // The whole word -- NOT 3, where `foo` stops. An end taken from the
       // candidate's length alone would pull the range BACK and leave `.txt`
       // standing behind the completion.
       expect(endsOf(item)?.replace).toBe(line.length);
@@ -1132,9 +1010,9 @@ describe("a replace range covers a filename the line already carries", () => {
     }
   });
 
-  // THE INSERT ARM, asserted rather than assumed. Extending it past the cursor
-  // would stop it being an insert at all and make the two arms one, which is
-  // exactly what carrying an InsertReplaceEdit exists to prevent.
+  // EXTENDING IT PAST THE CURSOR would stop it being an insert at all and make
+  // the two arms one, which is what carrying an InsertReplaceEdit exists to
+  // prevent.
   test("the insert arm still ends at the cursor", async () => {
     const fixture = tree(["spaced (1).txt"]);
     try {
@@ -1144,21 +1022,16 @@ describe("a replace range covers a filename the line already carries", () => {
       const item = itemInserting(items, "spaced (1).txt");
 
       expect(endsOf(item)?.insert).toBe(cursor);
-      // Everything right of the cursor stands, which is what the user asked
-      // for by choosing `insert`.
       expect(applyAsClient(line, cursor, item, "insert")).toBe("spaced (1).txtced (1).txt");
     } finally {
       fixture.dispose();
     }
   });
 
-  // BOTH ARMS IN ONE MEASUREMENT, AND THAT IS WHAT MAKES IT A MEASUREMENT AT
-  // ALL. `an InsertReplaceEdit is produced when the client supports it` passes
-  // unchanged against a module that produces one unconditionally -- which is
-  // exactly the specification violation this pair exists to close -- so the
-  // claim is only ever about the DIFFERENCE, and one request cannot carry it.
-  // The two completions below differ in ONE input, and each perturbation that
-  // collapses the module to a single shape reddens the other line.
+  // BOTH ARMS IN ONE MEASUREMENT: `an InsertReplaceEdit is produced when the
+  // client supports it` passes unchanged against a module that produces one
+  // unconditionally, so the claim is only ever about the DIFFERENCE and one
+  // request cannot carry it.
   //
   // ASSERTED BY DISCRIMINATOR, `range` versus `insert`, because that is what a
   // client switches on: the protocol distinguishes the two edits by which key is
@@ -1183,19 +1056,16 @@ describe("a replace range covers a filename the line already carries", () => {
       expect(supportedEdit !== undefined && "insert" in supportedEdit).toBe(true);
       expect(plainEdit !== undefined && "range" in plainEdit).toBe(true);
 
-      // AND THE PLAIN EDIT IS THE INSERT RANGE RATHER THAN THE REPLACE ONE,
-      // which is the half a shape check alone would miss: both are `TextEdit`s
-      // and only the end tells them apart. The replace end here reaches the end
-      // of the line, so a module that took it would put a number no client asked
-      // for on an edit the client cannot decline.
+      // AND THE PLAIN EDIT IS THE INSERT RANGE RATHER THAN THE REPLACE ONE, which
+      // is the half a shape check alone would miss: both are `TextEdit`s and only
+      // the end tells them apart.
       expect(
         plainEdit !== undefined && "range" in plainEdit ? plainEdit.range.end : undefined,
       ).toEqual({ line: 0, character: cursor });
 
-      // WHAT EACH CLIENT ACTUALLY GETS IN ITS BUFFER, so the ruling above is
-      // read as a consequence rather than as a preference: the supporting client
-      // that chose `replace` gets the clean line, and the client that could not
-      // choose gets the tail left standing -- visible, and deleted by typing.
+      // WHAT EACH CLIENT ACTUALLY GETS IN ITS BUFFER: the supporting client that
+      // chose `replace` gets the clean line, and the client that could not choose
+      // gets the tail left standing -- visible, and deleted by typing.
       expect(applyAsClient(line, cursor, supported, "replace")).toBe(line);
       expect(applyAsClient(line, cursor, plain)).toBe("spaced (1).txtced (1).txt");
     } finally {
@@ -1229,9 +1099,6 @@ function applyAsClient(
     );
   }
   if (edit !== undefined) {
-    // The client indexes the edit BY ITS OWN SETTING, which is the whole point
-    // of carrying both: `insert` leaves what is right of the cursor, `replace`
-    // takes the rest of the word with it.
     const range = edit[prefers];
     return line.slice(0, range.start.character) + edit.newText + line.slice(range.end.character);
   }
@@ -1243,9 +1110,8 @@ function applyAsClient(
 }
 
 describe("applying the item yields the path it names", () => {
-  // MULTI-SEGMENT, and the discriminator is that it must be: for a fragment
-  // with one segment the two client classes cannot be told apart, so a test
-  // written with one proves nothing at all. Its counterpart is below.
+  // MULTI-SEGMENT, AND IT MUST BE: for a fragment with one segment the two client
+  // classes cannot be told apart, so a test written with one proves nothing.
   test("a multi-segment fragment is replaced whole", async () => {
     const fixture = tree(["src/foo.ts"]);
     try {
@@ -1254,8 +1120,8 @@ describe("applying the item yields the path it names", () => {
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      // BOTH preferences: at the end of a line the two ranges coincide, and
-      // what this test claims is that each of them is WHOLE.
+      // BOTH preferences: at the end of a line the two ranges coincide, and what
+      // this claims is that each of them is WHOLE.
       expect(applyAsClient(line, line.length, item, "insert")).toBe("see src/foo.ts");
       expect(applyAsClient(line, line.length, item, "replace")).toBe("see src/foo.ts");
 
@@ -1270,8 +1136,7 @@ describe("applying the item yields the path it names", () => {
     }
   });
 
-  // THE PAIRED SINGLE-SEGMENT CASE, permanent: it is what makes the test above
-  // evidence rather than a coincidence. Both perturbations that redden the
+  // THE PAIRED SINGLE-SEGMENT CASE, permanent: both perturbations that redden the
   // multi-segment case leave this one green.
   test("a single-segment fragment is replaced whole too", async () => {
     const fixture = tree(["src/foo.ts"]);
@@ -1286,11 +1151,10 @@ describe("applying the item yields the path it names", () => {
     }
   });
 
-  // MEASURED against the target client, and this is the whole reason the range
-  // is constrained rather than merely present: an item whose range spans more
-  // than one line, or starts on a line other than the cursor's, or whose label
-  // is empty, is DISCARDED with no error and no fallback. The item does not
-  // arrive wrong -- it vanishes.
+  // WHY THE RANGE IS CONSTRAINED RATHER THAN MERELY PRESENT: against the target
+  // client, an item whose range spans more than one line, or starts on a line
+  // other than the cursor's, or whose label is empty, is DISCARDED with no error
+  // and no fallback. The item does not arrive wrong -- it vanishes.
   test("the range is one line, the cursor's own, and the label is never empty", async () => {
     const fixture = tree(["src/foo.ts"]);
     try {

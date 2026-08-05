@@ -190,8 +190,8 @@ const shapes: readonly (readonly [string, (path: string) => Promise<Listing>])[]
  * made it under the system temporary directory.
  *
  * A REFUSAL RATHER THAN A SKIP, and asked again at the delete rather than trusted
- * from the creation, for the reason `test/helpers/perturbation.ts` gives at
- * length: the guard that matters is the one standing at the MUTATION.
+ * from the creation, for the reason `test/helpers/perturbation.ts` gives: the
+ * guard that matters is the one standing at the MUTATION.
  */
 function throwawayOnly(path: string): string {
   const resolved = realpathSync(path);

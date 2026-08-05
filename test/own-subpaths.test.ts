@@ -71,10 +71,9 @@ const scope = "@atusy";
  * repository lost a working tree to is that no write takes its path from
  * configuration unchecked, not that some configuration is trustworthy.
  *
- * LEXICAL AND NOT `realpathSync`, for the reason its sibling in
- * test/helpers/perturbation.ts records: every destination here is a path that
- * does not exist yet, and a guard requiring existence could not stand in front
- * of one at all.
+ * LEXICAL AND NOT `realpathSync`: every destination here is a path that does not
+ * exist yet, and a guard requiring existence could not stand in front of one at
+ * all.
  */
 function inside(root: string, part: string): string {
   const path = join(root, part);
