@@ -60,11 +60,10 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
 };
 
 /**
- * COLLAPSING THIS INTO `(await readdir(path)).sort()` IS THE EDIT TO REFUSE, and
- * nothing reddens if you make it: the answer is identical. It would make the
- * whole directory this function's own working set, and it would leave the
- * cancellation check below nowhere to stand, `readdir` having no point between
- * the open and the first entry.
+ * COLLAPSING THIS INTO `(await readdir(path)).sort()` IS THE EDIT TO REFUSE. It
+ * would make the whole directory this function's own working set, and it would
+ * leave the cancellation check below nowhere to stand, `readdir` having no point
+ * between the open and the first entry.
  */
 async function listingOf(path: string, signal: AbortSignal): Promise<DirectoryListing | undefined> {
   try {

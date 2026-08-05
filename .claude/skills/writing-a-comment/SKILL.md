@@ -164,6 +164,19 @@ this file** grades X"; a byte-identity range was extended without re-measuring
 and was false by 30 lines; "every finding **this sprint**" became "MEASURED
 ACROSS SEVERAL SPRINTS" with neither a number nor a condition.
 
+**The tell is the TENSE and the QUANTIFIER, and you can check both without
+re-measuring anything.** `until this file` became `nothing but this file`;
+`this sprint` became `across several sprints`. _(sprint 65)_ **A superlative is
+the strongest thing you can write and the cheapest thing to write; when it is
+the part you did not measure, DROP THE WORD rather than substitute a
+comparative** -- `the only one` traded for `among the fewest` is the same defect
+at a lower volume.
+
+_(sprint 65)_ These two sentences were deleted as redundant and the deletion
+was followed, in the same sprint, by a new comment claiming an edit reddens
+nothing when it reddens a perturbation record that predated the work. A full
+suite run would have said so. **Restored, and the instance is the argument.**
+
 **A dangling reference asserts nothing**, so a sweep for false sentences walks
 past it — "the mapping asserted above", where no mapping is asserted above.
 Deleting removes the pointer; amending leaves it. No detector is proposed: a
