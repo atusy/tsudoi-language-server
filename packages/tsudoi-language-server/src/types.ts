@@ -348,8 +348,8 @@ export interface MethodMap {
 
   /**
    * Awaited once; the protocol declares no `partialResult` for it. The only one
-   * of the five whose params are not a document and a position, and it never
-   * touches the document store.
+   * of the five whose params name no document at all, and it never touches the
+   * document store.
    *
    * WHAT TO DO WITH AN ITEM YOU DO NOT RECOGNISE: RETURN IT UNCHANGED. A client
    * may send any item, and the response REPLACES that item in its list, so

@@ -6,7 +6,7 @@ import { frameworkRoot, repoRoot } from "./spawn.ts";
 /**
  * A copy of everything a runtime needs to start the server -- and nothing it
  * needs to RESOLVE the dependency. node_modules is added and removed by the
- * caller, which is the only way to observe where a dependency actually came
+ * caller, which is how this observes where a dependency actually came
  * from: inside the repo, node_modules is always present, so a green handshake
  * there is equally consistent with resolution via node_modules, via a global
  * cache, or via an import map.

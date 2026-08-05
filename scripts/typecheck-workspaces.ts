@@ -129,9 +129,9 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // `prepareWorkspace` in scripts/workspaces.ts.
 prepareWorkspace(root);
 // EVERY MEMBER AND NOT ONLY THE HANDLERS, which is the one enumeration in this
-// repository that may never narrow: this check is the ONLY thing type-checking a
-// package the root program excludes, so a member it skipped would be covered by
-// nothing at all while all five commands exit 0. The guards it runs read the
+// repository that may never narrow: `buildOrder` reads this same list, so a
+// member dropped from it is dropped from the test-time build too and is covered
+// by nothing at all while all five commands exit 0. The guards below read the
 // same list for the same reason.
 const members = declaredMembers(root);
 // HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND

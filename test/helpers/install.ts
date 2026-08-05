@@ -213,7 +213,7 @@ export interface InstallOptions {
   readonly editSource?: (srcDir: string) => void;
   /**
    * Leaves ONE NAMED handler package out of the install, which is criterion 1's
-   * negative control and nothing else's.
+   * negative control.
    *
    * A NAME AND NOT A FLAG, because with two members a flag withholds both and
    * the config then fails on whichever import the loader reached first -- so the

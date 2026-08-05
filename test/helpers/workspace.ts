@@ -24,10 +24,10 @@ import { dirname, join } from "node:path";
  * first.
  *
  * EVERY THROWAWAY IS A CHECKOUT, AND THAT IS ONE KIND OF THROWAWAY RATHER THAN
- * TWO. The fifth check asks git which files this tree owns -- it is the only
- * reader that can tell an installed stranger and a built artifact from a source
- * somebody wrote -- so a tree that is not a repository is a tree that check
- * cannot be measured on at all. Making it conditional would mean every future
+ * TWO. The fifth check asks git which files this tree owns -- the index is how
+ * it tells an installed stranger and a built artifact from a source somebody
+ * wrote -- so a tree that is not a repository is a tree that check cannot be
+ * measured on at all. Making it conditional would mean every future
  * caller choosing, and the arms that need a repository and the arms that do not
  * would drift apart with nothing saying which kind any given tree is.
  *

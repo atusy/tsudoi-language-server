@@ -72,7 +72,7 @@ import { MarkupKind } from "@atusy/tsudoi-language-server/deps/types";
  * worse: it would not un-cache anything, so every later hover would await the
  * same rejected promise, CATCH it, and answer `null`. That turns a permanent
  * loud failure into a permanent silent one -- a dictionary that says every word
- * is unknown, with nothing anywhere to say why.
+ * is unknown, with nothing to say why.
  *
  * The derived promise is what is stored AND what is returned, so the rejection
  * has a handler and the retry is the caller's next call rather than a loop.
@@ -208,9 +208,10 @@ export const hoverWordnet: MethodHandler<"textDocument/hover"> = async (context,
   return {
     contents: {
       kind: format,
-      // THE HEADING IS THE WORD THE USER POINTED AT, repeated because a hover
-      // window carries no other title. Its emphasis and the rule under it are
-      // markdown's alone: sent to a plaintext client they arrive as asterisks
+      // THE HEADING IS THE WORD THE USER POINTED AT, repeated because `Hover`
+      // is `contents` and a `range`, with no title arm to put it in. Its
+      // emphasis and the rule under it are markdown's alone: sent to a
+      // plaintext client they arrive as asterisks
       // and three hyphens, so that client gets the word on its own line and the
       // blank line already separating it from the senses below.
       value:

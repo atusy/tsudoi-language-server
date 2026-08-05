@@ -67,8 +67,8 @@ Running one check by hand is debugging; this is verification. It is named here r
 shown as a runnable block on purpose, and the reason is NOT that a block here must be run -- since
 this increment, a block may instead be accounted for over a named part of it, and a block pairing
 this command with one resolvable import would satisfy that without ever being run. The reason is
-that the only consumer this document has which would EXECUTE a command block is the quickstart's
-runner, and handing it this command runs the suite inside the suite.
+that the consumer which would EXECUTE a command block here is the quickstart's runner, and
+handing it this command runs the suite inside the suite.
 
 A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
 and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through
@@ -289,8 +289,7 @@ import type { DocumentView } from "@atusy/tsudoi-language-server/types";
 const document: DocumentView = { uri, languageId: "plaintext", version: 1, getText: () => "hello" };
 ```
 
-Build one instead. `TextDocument.create` is the remedy and the only supported way to make a
-document at all -- and what it builds satisfies both types:
+Build one instead. `TextDocument.create` is the remedy, and what it builds satisfies both types:
 
 <!-- snippet -->
 

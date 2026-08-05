@@ -18,7 +18,7 @@ separately from the outcome. MEASURED on a criterion whose failing case actually
 happened — the stakeholder removed the thing it named, and the executor recorded
 `unmet` beside the withdrawal rather than relabelling it `met differently`.
 THE DISCRIMINATOR IS WHETHER CONCEALMENT WAS AVAILABLE: there it was, and
-refusing it is the only reason the acceptance could be given.
+refusing it is why the acceptance could be given.
 
 ## Taking the reading
 

@@ -29,9 +29,7 @@ export function readReadme(): string {
 }
 
 /**
- * One workspace member's README -- the document a registry page would show, and
- * the only place a stranger who installed that package can read anything about
- * it.
+ * One workspace member's README -- the document a registry page would show.
  */
 export function readMemberReadme(member: string): string {
   return readFileSync(join(member, "README.md"), "utf8");

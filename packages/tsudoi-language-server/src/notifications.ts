@@ -144,8 +144,7 @@ export type RequestOnlyConnection = Omit<
  * there needs is a conspicuous act rather than a slip. WIDEN THE RETURN
  * ANNOTATION, OR LET startServer BIND A WIDE CONNECTION AGAIN, AND THAT
  * SUFFICIENCY ARGUMENT GOES WITH IT while the lint still passes and still reads
- * like a guard. NOTHING REDDENS ON THE ARGUMENT, so this paragraph is the only
- * thing that carries it.
+ * like a guard. NOTHING REDDENS ON THE ARGUMENT.
  *
  * WHAT NEITHER THE TYPE NOR THE LINT REACHES: `await import(...)`, and a WRAPPER
  * exported from this module. Both are the deliberate-evasion class, not slips.
