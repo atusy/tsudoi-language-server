@@ -44,10 +44,9 @@
 # `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from
 # packages/tsudoi-language-server/src/*.ts and never notices the artifact it was
 # promised is missing. THREE AND NOT TWO, because this trace is the UNION OVER
-# BOTH PACKS: the two-subpath list at `prepareWorkspace` in
-# scripts/workspaces.ts is a different measurement -- ONE handler's own build --
-# and both are right. After the first pack the root check is exit 1 with ONE
-# error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with
+# BOTH PACKS: ONE handler's own build answers fewer subpaths, which is a
+# different measurement, and both are right. After the first pack the root check
+# is exit 1 with ONE error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with
 # packages/tsudoi-language-server/dist/ still absent -- the residue above,
 # arrived at by two documented commands. THE FRAMEWORK MEMBER IS NAMED AND NOT
 # CALLED `this package`: this file sits at the CHECKOUT ROOT, whose own package

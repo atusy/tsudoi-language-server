@@ -126,7 +126,7 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // receives, and it greens it silently. That silence is why
 // `refuseSubpathsAnsweringFromSource` below reads what the build WROTE instead
 // of trusting the exit codes underneath it. The same correction is at
-// `prepareWorkspace` and `buildOrder` in scripts/workspaces.ts.
+// `prepareWorkspace` in scripts/workspaces.ts.
 prepareWorkspace(root);
 // EVERY MEMBER AND NOT ONLY THE HANDLERS, which is the one enumeration in this
 // repository that may never narrow: this check is the ONLY thing type-checking a

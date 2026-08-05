@@ -17,37 +17,18 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { fileURLToPath } from "node:url";
 
 /**
- * WHO THE WORKSPACE MEMBERS ARE, ANSWERED ONCE FOR EVERY TOOL THAT ASKS.
+ * WHO THE WORKSPACE MEMBERS ARE, ANSWERED ONCE FOR EVERY TOOL THAT ASKS: the
+ * fifth Definition-of-Done check, the guards it runs, and the `bun test`
+ * preload's build.
  *
- * TWO CALLERS AND THEY MUST NOT DISAGREE: scripts/typecheck-workspaces.ts, the
- * fifth Definition-of-Done check, and test/helpers/build.ts, which compiles what
- * `bun test` then loads. A member one of them found and the other did not would
- * be a member type-checked but never built, or built and never checked, and
- * either way NOTHING SAYS SO -- both commands exit 0 having each done their half.
- *
- * READ FROM `workspaces`, NEVER FROM A LIST HERE, for the reason the check
- * itself carries: with members outside the root type check's program, a member a
- * list forgot is covered by nothing at all.
+ * READ FROM `workspaces`, NEVER FROM A LIST HERE. With the members outside the
+ * root type check's program, a member a list forgot is covered by nothing at
+ * all, and both commands exit 0 having each done their half.
  */
 
 /**
  * Every directory the workspace configuration declares a member, expanded from
  * the `workspaces` patterns themselves.
- *
- * AN ABSENT OR EMPTY `workspaces` IS A FAILURE RATHER THAN AN EMPTY ANSWER, and
- * that asymmetry is the point: the callers are the only things looking at the
- * paths the root type check gave up, so `I found no members` and `I was given no
- * way to find them` must not produce the same silence.
- *
- * THE SORT STAYS HERE AND IS NOT THE BUILD ORDER, which is worth saying at this
- * site because `buildOrder` below sorts too and a reader who noticed both could
- * reasonably conclude one of them is redundant. A STABLE LIST AND A BUILD ORDER
- * ARE DIFFERENT QUESTIONS: this one's callers -- the fifth check, the guards it
- * runs -- want the same sequence twice running so a diagnostic naming `the
- * first offender` means something, and they ask nothing about what needs what.
- * Moving this sort into the orderer would leave those callers reading an order
- * derived from declarations they do not care about, and would make the
- * tie-break look like the answer rather than the fallback.
  */
 export function declaredMembers(root: string): readonly string[] {
   const manifestPath = join(root, "package.json");
@@ -73,27 +54,7 @@ export function declaredMembers(root: string): readonly string[] {
   return [...members].sort();
 }
 
-/**
- * The manifest fields a build edge is read out of.
- *
- * `devDependencies` IS ABSENT AND THAT IS A RULING RATHER THAN AN OVERSIGHT.
- * The root devDepends on both handler packages and both handler packages depend
- * back on the root, so an edge per devDependency would make this repository's
- * own graph hold two cycles -- and the refusal below runs inside the `bun test`
- * preload, so nothing would load. Substantively: the root's published artifact
- * is not compiled against either handler, so such an edge would order a build
- * against a dependency that build does not have. THE PRICE IS ACCEPTED AND
- * NAMED: a package that devDepends on another package for its TESTS gets no
- * ordering guarantee from here.
- *
- * `peerDependencies` IS PRESENT EVEN WHERE IT IS DECLARED OPTIONAL, and that is
- * the landmine rather than a detail: `peerDependenciesMeta.optional` buys
- * INSTALLABILITY while the peer is unpublished and says nothing about
- * compilation -- each of this repository's handlers imports values from the peer
- * it calls optional. Dropping optional peers leaves this graph with NO EDGES AT
- * ALL, and the order silently degenerates to the tie-break, which is the
- * alphabet wearing a topological sort's clothes.
- */
+/** The manifest fields a build edge is read out of. */
 const dependencyFields = ["dependencies", "peerDependencies"] as const;
 
 /** A package as the ordering sees it: where it is, what it is called, what it needs. */
@@ -103,22 +64,7 @@ interface OrderedPackage {
   readonly needs: readonly { readonly producer: string; readonly field: string }[];
 }
 
-/**
- * Reads one package as a node, WITH A MISSING `name` CARRIED RATHER THAN
- * REFUSED.
- *
- * A NAMELESS PACKAGE IS TOLERATED HERE AND REFUSED ELSEWHERE, which is an
- * ordering constraint between two guards and not a disagreement about the state:
- * `refuseMemberDirectoriesUnlikeTheUnscopedName` is the one that refuses it, and
- * it runs in the fifth check. This function runs in the `bun test` PRELOAD, so a
- * throw here would abort the suite before that guard could speak -- and the arm
- * that pins the refusal would go red still containing the word `name`, now
- * reddened by the wrong function.
- *
- * Nothing depends on a package that has no name, since an edge is a name found
- * in another package's declaration; such a node is ordered by the tie-break
- * alone.
- */
+/** Reads one package as a node, with a missing `name` carried rather than refused. */
 function orderedPackage(dir: string): OrderedPackage {
   const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as Record<
     string,
@@ -143,32 +89,9 @@ function orderedPackage(dir: string): OrderedPackage {
  * packages -- recognised by what they DECLARE rather than by a name written
  * here.
  *
- * WHY THE ENUMERATION SPLITS AT ALL, AND IT IS FORCED RATHER THAN CHOSEN. Once
- * the framework is a member like any other, every caller asking `who are the
- * members` gets it too -- and several of this repository's callers ask questions
- * THE FRAMEWORK CANNOT ANSWER ABOUT ITSELF: that it declares a peer on tsudoi,
- * that its README tells a stranger it needs tsudoi at run time, that its src/
- * holds a handler for an LSP method, that a consumer installs it BESIDE tsudoi.
- * Handed the framework, each of those goes green over a package its question
- * does not apply to, which is the for-want-of-a-subject shape this record keeps
- * catching.
- *
  * NO PACKAGE NAME IS SPELLED HERE, DELIBERATELY. A filter naming the framework
- * would be a second home for the published name, and it would quietly answer
- * `there are no handlers` the day that name changed -- every loop below it green
- * and empty. What is read instead is the SAME DECLARATION `buildOrder` reads an
- * edge out of, intersected with the packages this workspace holds: a handler is
- * exactly a member that needs something built here.
- *
- * THE ROOT COUNTS AS A PACKAGE OF THIS WORKSPACE THOUGH IT IS NOT A MEMBER,
- * which is what makes this return the same set before and after the framework
- * moves under packages/ -- the answer follows the declarations rather than the
- * layout.
- *
- * APPLIED PER SITE AND NEVER WHOLESALE. A caller whose question the framework
- * CAN answer -- what it publishes, which licence it ships, what order it is
- * built in, whether it type-checks -- keeps `declaredMembers` and carries the
- * reason at its own call.
+ * answers the same today and would quietly answer `there are no handlers` the
+ * day that name changed -- every loop below it green and empty.
  */
 export function handlerMembers(root: string): readonly string[] {
   const members = declaredMembers(root);
@@ -180,26 +103,12 @@ export function handlerMembers(root: string): readonly string[] {
   );
   return members.filter((member) => {
     const node = orderedPackage(member);
-    // `producer !== node.name` is not defensive: a package that declared itself
-    // would otherwise be its own consumer, and the one member this split exists
-    // to exclude is the one every other package names.
+    // A package that declared itself would otherwise be its own consumer.
     return node.needs.some((need) => need.producer !== node.name && named.has(need.producer));
   });
 }
 
-/**
- * Reports the packages that need each other, NAMING THE DECLARATIONS AND NOT
- * ONLY THE PACKAGES.
- *
- * `these form a cycle` LEAVES THE READER OPENING EVERY MANIFEST IN IT to find
- * which line to delete, and on a workspace holding more than two declarations
- * per package, which of the many. The line to delete is what the reader came
- * for, so it is what the message carries.
- *
- * ONLY THE PACKAGES IN THE CYCLE, WHICH IS WHY THE WALK IS TRIMMED rather than
- * the whole unplaced set reported: everything downstream of a cycle is unplaced
- * too, and naming those sends a reader to inspect manifests that are correct.
- */
+/** Reports the packages that need each other, naming the declarations and not only the packages. */
 function refuseCycle(
   root: string,
   pending: readonly OrderedPackage[],
@@ -242,58 +151,17 @@ function refuseCycle(
  * The order the packages of this workspace can be built in: every package after
  * everything it declares it needs.
  *
- * THE ROOT IS A NODE BECAUSE IT IS A BUILDABLE PACKAGE AND NOT BECAUSE IT IS THE
- * ROOT. That phrasing is what makes this survive the day the main package moves
- * under `packages/`: it stops being special with no edit here.
- *
- * A SEQUENCE IS RETURNED RATHER THAN A BUILD PERFORMED, and the reason is what
- * the callers cannot check for themselves: `build everything twice` and `build
- * in any order and retry until it goes green` leave exactly the artifacts a
- * correct order leaves. They differ from it only as a SEQUENCE, so the sequence
- * has to be a value somebody can read.
- *
  * THE TIE-BREAK IS NOT THE ORDER, and it is the one thing here a later reader
  * could mistake for the whole answer. Packages nothing separates are emitted by
  * path so two runs agree; packages a declaration separates are emitted by the
  * DECLARATION, which on this repository's own graph happens to agree with the
  * path order -- an accident of the names, pinned as an accident by an arm in
- * test/build-order.test.ts built on a tree where the two disagree. The member
- * enumeration above sorts for a different reason and keeps its own sort: its
- * callers want a stable LIST, and a stable list is not a build order.
+ * test/build-order.test.ts built on a tree where the two disagree.
  *
- * EDGES ARE INTERSECTED WITH THE NODES, so a dependency on a package outside
- * this workspace -- which is most of them -- constrains nothing here. It is
- * installed rather than built.
- *
- * A CYCLE THROWS RATHER THAN FALLING BACK TO THE TIE-BREAK. A cycle is
- * unbuildable, and the fallback picks one of its members and lets the rest
- * compile against an artifact that is absent or stale -- which under the
- * `default: ./src/*.ts` arm exits 0 reading a different file, the exact class
- * this derivation exists to end. THE THROW LANDS IN THE `bun test` PRELOAD, so
- * it must be reachable only from a state this repository can never be in: what
- * establishes that is the ruling above that dev edges are not build edges,
- * together with the arm asserting this workspace's order byte for byte.
+ * THE CYCLE THROW LANDS IN THE `bun test` PRELOAD, so it must stay reachable
+ * only from a state this repository can never be in.
  */
 export function buildOrder(root: string): readonly string[] {
-  // EVERY MEMBER AND NOT ONLY THE HANDLERS. A package left out of the order is a
-  // package never built, and the framework is the one every other package here
-  // compiles against -- so narrowing this to the consumers would leave the
-  // producer unbuilt. WHAT THAT COSTS IS WHAT THE CYCLE PARAGRAPH ABOVE ALREADY
-  // SAYS, and the sentence that stood here said the opposite: NOT `a TS2307 for
-  // a subpath that is fine`, but exit 0 through the `default: ./src/*.ts` arm.
-  // MEASURED FALSE at sprint 61 -- a member's own build in that state exits 0
-  // and emits -- and the prediction had been standing nine lines below its own
-  // correction.
-  //
-  // AND WHAT THAT EXIT 0 COSTS IS NOT THE ARTIFACT, WHICH IS THE HALF THIS
-  // PARAGRAPH GOT WRONG NEXT. It went on `every consumer's declarations graded
-  // against a file no consumer receives` -- true of WHICH FILE ANSWERED and
-  // wrong about the consequence, since a handler emits the same declarations
-  // from either state. The reading and everything it cannot separate are at
-  // `prepareWorkspace` below. WHAT LEAVING THE PRODUCER OUT WOULD REALLY COST IS
-  // CURRENCY: this order is what makes the framework's artifact freshly built
-  // before anything grades against it, and the state that hides a disagreement
-  // is an artifact that answers while STALE, not one that is absent.
   const nodes = [root, ...declaredMembers(root)].map(orderedPackage);
   const dirsByName = new Map<string, string>();
   for (const node of nodes) {
@@ -325,9 +193,6 @@ export function buildOrder(root: string): readonly string[] {
 /**
  * Every directory holding a package.json underneath `dir`, which is how a
  * package the root program cannot see is recognised without knowing its name.
- *
- * node_modules IS SKIPPED because it is full of other people's packages and none
- * of them is ours to check or to build.
  */
 function packagesUnder(dir: string): readonly string[] {
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
@@ -348,19 +213,6 @@ function packagesUnder(dir: string): readonly string[] {
 /**
  * Every package directory one `exclude` entry covers, the entry read as the
  * PATTERN tsconfig defines it to be.
- *
- * A MATCH THAT STARTS INSIDE node_modules IS NO LONGER DROPPED HERE, AND THAT IS
- * A CONSEQUENCE THAT MOVED RATHER THAN A GUARD DELETED. `packages/**` matches
- * straight into a member's installed dependencies, and a match beginning there
- * hands `packagesUnder` a directory whose package.json belongs to a stranger --
- * which used to be a permanent red about somebody else's file, because this
- * reader REPORTED what it found. It no longer reports anything: it refines a
- * fault the compilers' file lists found, and no file under an installed
- * dependency can be one of those. So a stranger's directory in this list is
- * scanned for an offender, never holds one, and is never named. The subtraction
- * that keeps that true lives beside the candidates, where an arm in
- * test/workspace-members.test.ts measures it; a second copy here would be an
- * unobservable branch carrying the reason its own removal made false.
  */
 function excludedDirectories(root: string, entry: string): readonly string[] {
   const found: string[] = [];
@@ -379,26 +231,10 @@ const compiler = join(toolRoot, "node_modules", ".bin", "tsc");
 /**
  * Compiles one package's published artifact, where one is configured.
  *
- * RUN FROM THE WORKSPACE ROOT WITH THE CONFIG NAMED RELATIVELY, which is the
- * same reason `typeCheckMember` in scripts/typecheck-workspaces.ts already
- * carries for its own half: tsc prints paths relative to the working directory,
- * so a build started inside the member reports `src/index.ts` -- and this
- * repository holds more than one `src/`, so that string identifies none of them.
- * THE COMPILER'S OWN DIAGNOSTIC CARRIES THE MEMBER, rather than a wrapper
- * printing the member on another line and leaving the joining to the reader.
- *
- * IT IS THIS CALL AND NOT THE PER-MEMBER CHECK THAT SPEAKS FIRST, which is why
- * the invocation is worth changing at all: `execFileSync` throws on a non-zero
- * exit, so a type error in a member's own source arrives HERE and the check
- * never runs -- and this function is reached by two Definition-of-Done checks,
- * the `bun test` preload as well as the fifth.
- *
- * NOT AN ARTIFACT CHANGE, and that is a property of the configs rather than of
- * tsc: no build config in this repository uses `extends`, so `rootDir`, `outDir`
- * and `include` resolve against the config file and not against the working
- * directory. Measured on the emitted bytes in test/build-diagnostics.test.ts,
- * because a config that gained an `extends` would move the artifact with every
- * check still green.
+ * THE INVOCATION IS NOT AN ARTIFACT CHANGE ONLY WHILE NO BUILD CONFIG USES
+ * `extends`: `rootDir`, `outDir` and `include` then resolve against the config
+ * file rather than against the working directory, and a config that gained one
+ * would move the artifact with every check still green.
  */
 function build(root: string, dir: string): void {
   const config = join(dir, "tsconfig.build.json");
@@ -413,155 +249,33 @@ function build(root: string, dir: string): void {
 
 /**
  * The state every tool in this repository needs before it can believe what it
- * reads: the root package reachable by name, and every published artifact built
- * from current source.
+ * reads: every published artifact built from current source, in the order
+ * `buildOrder` derives from the manifests.
  *
- * THE HANDLERS' dist/ IS NOT OPTIONAL AND NOT A CONVENIENCE. A handler publishes
- * dist/ and NOT src/ -- deno refuses to type-strip under node_modules -- so its
- * `exports` map names no source arm, and nothing resolves a handler by any other
- * route. NO `paths` MAPPING STANDS IN FOR THAT BUILD ANYWHERE, and since the
- * framework moved under packages/ there is not one in this repository at all:
- * the members are EXCLUDED from the root type check precisely so it cannot
- * answer for them, and a mapping added to spare this build would pull member
- * source back into the root program through module resolution, which `exclude`
- * does not stop.
+ * A HANDLER'S dist/ IS NOT OPTIONAL. A handler publishes dist/ and NOT src/ --
+ * deno refuses to type-strip under node_modules -- so its `exports` map names no
+ * source arm and nothing resolves it by any other route. The framework's map
+ * does end in one, which is why an absent dist/ is loud for a handler and silent
+ * for it.
  *
- * THE FRAMEWORK IS BUILT BEFORE THE HANDLERS AND IT IS NOT THIS FUNCTION SAYING
- * SO. What orders it is that BOTH HANDLERS DECLARE IT, read out of their
- * manifests by `buildOrder`. The loop knows nothing about which package is
- * which, which is what let the framework become a member with no edit here.
+ * WHAT THE ORDER IS FOR IS THE RUNTIMES AND CURRENCY, NOT THE COMPILER. A
+ * handler's own build falls through the framework's source arm and exits 0
+ * emitting the same declarations either way -- they name the framework BY
+ * SPECIFIER and never by structure, so which file answered cannot appear in them
+ * (test/handler-declaration-specifier.test.ts is the arm whose subject that
+ * indirection is). What source buys is the framework AS IT IS NOW; an artifact
+ * grades against whatever was last built.
  *
- * WHAT THAT ORDER IS FOR IS THE RUNTIMES AND NOT THE COMPILER, AND THIS IS A
- * CORRECTION CARRYING ITS OWN PROVENANCE BECAUSE IT IS ITSELF A MEASUREMENT.
- * This paragraph used to license the order with the compiler: a handler resolves
- * `@atusy/tsudoi-language-server/types` through the exports map to
- * dist/types.d.ts, so a handler compiled against an unbuilt framework fails at
- * TS2307 -- `an apparatus failure wearing a resolution failure's clothes`.
- * MEASURED FALSE at sprint 61, base 6d1c85d, tsc 7.0.2, on a staged tree with no
- * dist/ anywhere: a handler's own `tsc -p tsconfig.build.json` EXITS 0 AND
- * EMITS, with `@atusy/tsudoi-language-server/types` and `/deps/types` TRACED to
- * packages/tsudoi-language-server/src/*.ts. The framework's map ends in a source
- * arm, so the compiler falls through it and never asks for the artifact. THE
- * RUNTIMES DO ASK -- both take the `import` arm into dist/, and a handler's own
- * map names no source arm to fall through to -- WHICH IS WHY THE ORDER IS STILL
- * RIGHT AND ONLY THE REASON MOVED.
+ * WHAT WRITES A dist/ AND WHAT REMOVES ONE, because a reader who finds an
+ * artifact missing asks here first: WRITERS are this function and each member's
+ * own `prepack`; NOTHING REMOVES A dist/ IT DOES NOT REWRITE ON THE SAME LINE --
+ * and `rm -rf dist && tsc` is a conditional rather than an atomic swap, so a
+ * `prepack` whose clear ran and whose compiler did not leaves the directory
+ * gone.
  *
- * AND THE COMPILER'S INDIFFERENCE COSTS NOTHING IN THE ARTIFACT, WHICH IS THE
- * ANSWER TO THE QUESTION THIS PARAGRAPH USED TO FILE. It said the indifference
- * `is not free` -- a handler built in that state having its declarations graded
- * against a file no consumer receives -- and left the emitted declarations an
- * open question for the pack route's own backlog item. MEASURED at sprint 62, on
- * base c1979a4, in a `git clone --no-hardlinks` stage whose node_modules was
- * COPIED rather than symlinked and whose every @atusy entry was verified to
- * realpath INSIDE the stage before anything was built, the real checkout's dist/
- * never touched: each handler built with the framework's dist/ PRESENT and again
- * with it moved aside emits BYTE-FOR-BYTE IDENTICAL trees -- every emitted file,
- * both handlers, `diff -r` clean in both directions, and both builds exit 0 with
- * no output in the source-answered state.
- *
- * THE MECHANISM IS THE FINDING AND NOT THE NUMBER, which is what makes it
- * survive this base: a handler's emitted declarations name the framework BY
- * SPECIFIER and never by structure, so WHICH FILE ANSWERED CANNOT APPEAR IN THEM
- * while both files declare the same names.
- * test/handler-declaration-specifier.test.ts is the arm whose SUBJECT that
- * indirection is.
- *
- * `AND NOTHING ELSE IN THE TREE WOULD SAY SO` STOOD HERE AND WAS WITHDRAWN AS AN
- * UNREAD COVERAGE CLAIM. THE READING WAS THEN TAKEN AND BOTH HALVES ARE FALSE,
- * which is what replaces the withdrawal rather than standing beside it. OTHERS
- * DO SAY SO: with the specifier rewritten out of both handlers' declarations by
- * their own `prepack`, the suite is 933 pass / 5 fail and two of the five read
- * the EMITTED ARTIFACT independently of that arm. AND THE ARM DOES NOT ALWAYS
- * SAY SO: the same rewrite moved into `prepareWorkspace` -- this function, which
- * the `bun test` preload runs -- leaves the suite 938 pass / 0 fail, because a
- * top-level pack in test/packed-members.test.ts rebuilds both handlers' dist/
- * before any test body reads one. Both numbers, the base they were taken at, the
- * spelling of the rewrite and which of the five are disqualified as witnesses
- * are at that arm, which is the site that owns them.
- *
- * WHAT THAT INSTRUMENT CANNOT SEPARATE, owed by the label and NOT a hedge on the
- * result. IT IS IN-SYNC ONLY: it compares two spellings of the SAME content, so
- * it says nothing about an artifact that DISAGREES with the source it was built
- * from. Where they do disagree the source-answered state is the one that SPEAKS
- * -- MEASURED at base c1979a4 with tsc 7.0.2 in the same clone stage as the
- * byte-identity reading above, with a framework type renamed in src/ alone: the
- * handler built against the stale artifact exits 0 while the same build against
- * src/ exits 2 naming the missing member at TS2305 -- and WHAT THAT SUPPORTS IS CURRENCY AND NOT
- * STRICTNESS: source grades against the framework AS IT IS NOW, the artifact
- * against whatever was last built, and the reverse edit would put the strictness
- * on the artifact's side. It also cannot separate WHAT WAS EMITTED from WHAT WAS
- * CHECKED: `skipLibCheck: true` in each handler's build config skips the
- * framework's `.d.ts` and does not skip its `.ts`, so the two builds did
- * DIFFERENT AMOUNTS OF CHECKING and still agreed -- the asymmetry runs in the
- * safe direction, and `the outputs agree` is still not `the two builds are the
- * same build`. One compiler, one session, one machine, one base, so `identical
- * because this emit is deterministic here` and `identical for a reason that
- * survives a compiler upgrade` are one reading. AND THE STRUCTURAL CELL IS NO
- * LONGER UNTAKEN, AT ONE SHAPE AND IN ONE DIRECTION -- a NARROWED RETURN, the
- * handler type's return intersected with a required marker and its NAME kept.
- * MEASURED at base d2d6519, bun 1.3.13 / tsc 7.0.2: a handler builds at exit 0
- * against the framework artifact that predates the edit and at exit 2, TS2322
- * naming its own handler function, against one rebuilt after it, with the
- * resolution route identical in both. test/stale-framework-artifact.test.ts
- * stages that pair. WHAT IS STILL UNREAD IS NAMED RATHER THAN COVERED: the
- * EMITTED content of the green cell, any consumer-side compile of it, and the
- * resolution trace -- and a widened return, a changed parameter type, a renamed
- * property inside an object type and a changed generic constraint are
- * unmeasured, so what is held is a narrowed return type and not `a changed
- * shape`.
- *
- * NO PACKAGE IS LINKED INTO ANOTHER ANY MORE, AND THAT ABSENCE IS THE STORY THIS
- * FILE WAS THE LAST HOLDER OF. A `linkRootPackage` stood here writing an entry
- * bun would not, for one reason: the framework was the WORKSPACE ROOT and the
- * `workspaces` globs never match it. With the framework a member, `bun install`
- * writes those entries itself -- MEASURED, into each depending member's own
- * node_modules and RELATIVE, where the hand-written one was absolute. The
- * function's whole measured record is kept in the sprint 52 dashboard entry
- * rather than here: it is the evidence the move was worth making, and it is
- * about a route this repository no longer has.
- *
- * WHAT WRITES A dist/ AND WHAT REMOVES ONE, ENUMERATED RATHER THAN SAMPLED,
- * because a reader who finds an artifact missing asks this question here first
- * and there is no other site that can answer it. WRITERS: this function, through
- * `build` above -- reached from the `bun test` preload and from the fifth check
- * -- and each member's own `prepack`, reached by `bun pm pack` or `npm pack` run
- * in that member. REMOVERS: NOTHING REMOVES A dist/ IT DOES NOT REWRITE ON THE
- * SAME LINE. Both handler packages' `prepack` opens with `rm -rf dist` and
- * rebuilds in the same command; the framework's `prepack` removes nothing at
- * all; every other recursive delete in tracked code stands in a staged tree
- * under the temporary directory. SO AN ABSENT ARTIFACT IS USUALLY ONE NOTHING
- * HAS WRITTEN YET -- AND `NEVER ONE A COMMAND TOOK AWAY` IS WHAT THIS SAID AND IS
- * TOO WIDE BY THE TREE'S OWN RECORD. It is true of the DIRECTORY and false of the
- * artifacts in it, because `rm -rf dist && tsc` is a CONDITIONAL and not an
- * atomic swap. TWO EXCEPTIONS, both already written down elsewhere: a `prepack`
- * whose clear ran and whose compiler did not leaves the directory gone -- the
- * sibling of the hazard six lines below, where the compiler runs and leaves a
- * fresh wrong artifact -- and a source file RENAMED OR DELETED leaves an artifact
- * the same-line `tsc` will not rewrite, which is exactly the artifact the clear
- * exists to remove and which the rebuild no longer emits.
- * packages/tsudoi-completion-path/test/package-shape.test.ts carries that reason
- * and test/packed-members.test.ts measured it. WHICH ABSENCES ARE LOUD is
- * measured at test/helpers/build.ts.
- *
- * WHAT IT DOES NOT MAKE SAFE, unchanged from what the preload already records:
- * tsc writes dist/ and THEN exits non-zero, so a failed build leaves a fresh,
- * wrong artifact behind. Callers throw; nothing here cleans up.
- *
- * THAT STATE HAS A HANDLER-SIDE INSTANCE ON THE PACK ROUTE, AND ITS ENDING WAS
- * READ RATHER THAN INFERRED FROM THE FAMILY. With a handler's OWN `prepack`
- * compiler failing, `bun pm pack` EXITS 2 AND PRODUCES NO TARBALL, while that
- * member's dist/ is left holding the declarations the failed build wrote. So
- * `the build failed` and `no dist/ was written` are still two different states,
- * and the pack ABORTS between them -- nothing ships from a failed build. THE
- * SELF-HEAL IS WHAT KEEPS THIS FROM READING AS A BURIED HAZARD: `prepack` opens
- * with `rm -rf dist`, so the wrong artifact does not survive the next pack.
- *
- * AND IT IS NOT THE STALE-FRAMEWORK STATE, SEPARATED ON THE PRODUCER RATHER THAN
- * ON THE FAMILY: that one is a FRAMEWORK artifact grading a handler while it
- * disagrees with the framework's source; this is a WRONG-BUT-FRESH artifact of
- * the HANDLER'S OWN, left by its own compiler. Different package, different
- * producer, and folding them together is how one paragraph comes to stand for
- * two failures it cannot both describe.
+ * WHAT IT DOES NOT MAKE SAFE: tsc writes dist/ and THEN exits non-zero, so a
+ * failed build leaves a fresh, wrong artifact behind. Callers throw; nothing
+ * here cleans up.
  */
 export function prepareWorkspace(root: string): void {
   for (const dir of buildOrder(root)) {
@@ -581,21 +295,9 @@ interface PublishedSubpath {
 /**
  * Every published subpath this workspace declares, with the file each promises.
  *
- * THE `types` ARM IS THE SUBJECT AND A SUBPATH WITHOUT ONE IS SKIPPED RATHER
- * THAN GUESSED AT: what is being graded is where a TYPE CHECK lands, and a map
- * that names no declaration makes no promise for one to break.
- *
- * A WILDCARD SUBPATH IS READ LITERALLY, AND WHAT THAT PRODUCES IS MEASURED --
- * the reasoned version stood here and was wrong in the one detail a reader would
- * act on. `"./*"` becomes a specifier ending in a star, and the compiler DOES
- * attempt it: it substitutes nothing, finds no file under any arm, and the
- * refusal below reports `answers from NOTHING` against a promised path that
- * still carries the star. NOT `never reached the resolver` -- that pair does not
- * fire here, so a reader following the old sentence would have gone looking at
- * the probe for a fault that is in the map. Staged in
- * test/artifact-detector.test.ts, since no map in this workspace has one. The
- * day a map grows one, expand this function rather than reading its refusal as a
- * missing artifact.
+ * A SUBPATH WITHOUT A `types` ARM IS SKIPPED RATHER THAN GUESSED AT: what is
+ * being graded is where a TYPE CHECK lands, and a map that names no declaration
+ * makes no promise for one to break.
  */
 function publishedSubpaths(root: string, members: readonly string[]): PublishedSubpath[] {
   const found: PublishedSubpath[] = [];
@@ -630,11 +332,8 @@ function publishedSubpaths(root: string, members: readonly string[]): PublishedS
  * THE GUARD IS ON THE MUTATION AND NOT ON THE CALLER, which is this
  * repository's own finding paid for the worst way: a staging function that
  * returned the checkout root reached a recursive delete that validated nothing,
- * and the working tree went with it. The destructive end read the right
- * QUANTITY -- a path -- against a subject that could not tell a throwaway from
- * the repository, because nothing asked. The same shape as
- * test/helpers/perturbation.ts's `throwawayOnly`, written again here because a
- * script may not import out of the suite.
+ * and the working tree went with it. NO ARM CAN HOLD THIS, because an arm
+ * proving it would have to point a recursive delete at the tree it runs in.
  */
 function throwawayDirectory(path: string, root: string): string {
   const resolved = realpathSync(path);
@@ -652,23 +351,9 @@ function throwawayDirectory(path: string, root: string): string {
 }
 
 /**
- * WHERE A PUBLISHED SUBPATH ACTUALLY LANDS, ASKED OF THE COMPILER ITSELF.
- *
- * THE ROUTE IS node_modules AND THE EXPORTS MAP AND NOTHING ELSE. No `paths`
- * mapping, no project reference: there is none anywhere in this repository, a
- * refusal keeps it that way, and a diagnostic manufactured by either would grade
- * a resolution no stranger performs. The probe declares nothing and reaches each
- * package only through an entry under that package's own declared name.
- *
- * `--traceResolution` AND NOT AN EXIT CODE, which is the whole reason this
- * function exists: source and artifact both answer at 0 with nothing printed, so
- * the compiler's colour cannot separate the file we publish from the file we
- * happen to have. The trace names the file, which is the only reading that can.
- *
- * THE PROBE'S OWN DIAGNOSTICS ARE IGNORED ON PURPOSE. It carries no dependency
- * of any package it links, so a declaration re-exporting an upstream name
- * reports TS2307 -- about the probe's tree and never about the subpath under
- * reading, which the trace has already answered by then.
+ * Where a published subpath actually lands, asked of the compiler itself: the
+ * probe declares nothing and reaches each package only through an entry under
+ * that package's own declared name.
  */
 function whereSubpathsLand(
   root: string,
@@ -734,60 +419,15 @@ function whereSubpathsLand(
 
 /**
  * REFUSES A PUBLISHED SUBPATH THAT ANSWERS FROM ANYTHING BUT THE ARTIFACT,
- * NAMING THE FILE -- which is the state this repository has carried in prose and
- * pinned by nothing.
+ * NAMING THE FILE.
  *
- * WHAT IT IS FOR. tsudoi's `exports` map ends in a source arm, so with the
- * artifact missing or half written the compiler PROBES FOR THE FILE, FALLS
- * THROUGH AND READS A DIFFERENT ONE AT EXIT 0 -- while both runtimes fail
- * loudly. Two readers, one tree, different files, and no colour anywhere says
- * so. test/unbuilt-artifact.test.ts stages that disagreement; this is the thing
- * that ends it for a workspace this check is pointed at.
- *
- * WHAT IT DOES NOT RULE OUT, AND IT IS THE LARGER HALF. AS CALLED it runs AFTER
- * the build, so the state it catches is an artifact that SURVIVED one and still
- * does not answer -- a partial emit, a build skipped for a package with no build
- * config, a dist/ removed by hand between the build and the check. `AS CALLED`
- * IS LOAD-BEARING RATHER THAN A HEDGE, AND WAS MEASURED: called with no build in
- * front of it this function reports every framework subpath answering from src/,
- * so what bounds its subject is THE ORDER AT ITS ONE CALL SITE and nothing in
- * the function. The reading is written where the consequence is, at the trailer
- * below. IT DOES NOTHING FOR A
- * BARE `tsc --noEmit` ON A CHECKOUT NOBODY HAS BUILT: that command is the fourth
- * Definition-of-Done check, and the only invocation of it this repository owns
- * runs AFTER the first check has built -- scripts/definition-of-done.ts spawns it
- * from the dashboard's list, and that runner's one-step reading depends on the
- * order. The BARE, PRE-BUILD one is nobody's, and it is the one this paragraph is
- * about. Reaching it would take a `paths` mapping or a project reference, which
- * is the one manufacture this workspace refuses by name.
- *
- * AND A SECOND STATE PASSES UNDER THIS ENTIRELY, DISCLOSED HERE RATHER THAN LEFT
- * FOR THE NEXT READER TO DISCOVER AT THE WRONG MOMENT: A PACK ON AN UNBUILT
- * TREE. `bun pm pack` in a handler runs that package's `prepack`, whose compiler
- * answers the framework's subpaths from src/ and exits 0, and THIS REFUSAL
- * CANNOT SEE IT: the check that runs it calls `prepareWorkspace` BEFORE it calls
- * this, so by the time this reads, the artifact exists and the pack's own state
- * is gone. NOT `and every subpath answers from it`, which is what stood here and
- * reads this refusal as vacuous fifteen lines under the paragraph saying what it
- * is for -- the state it catches IS an artifact that survived a build and still
- * does not answer. What the scope above says about the fourth check is therefore
- * true of the pack too, and for the same reason -- this runs after a build, and
- * both of those states are before one.
- *
- * AND WHAT THAT PACK COSTS IS NOT THE TARBALL, WHICH IS WHAT THE SENTENCE ABOVE
- * USED TO SAY: `so the tarball's declarations are graded against a file nobody
- * receives` -- true of which file the compiler read, and wrong about the
- * consequence. The declarations are the same either way; `prepareWorkspace`
- * above carries that reading, its conditions and what it cannot separate, and
- * test/handler-declaration-specifier.test.ts holds the one structural fact it
- * rests on. WHAT THE PACK ROUTE IS STILL EXPOSED TO IS CURRENCY RATHER THAN
- * ABSENCE: a handler's own `prepack` freshens ITS OWN artifact and never the
- * framework's, so the state that hides a disagreement is a framework artifact
- * that answers WHILE STALE -- which this refusal cannot see either, and for the
- * same reason.
- *
- * IT NAMES THE FILE AND NEVER A COUNT: what a reader needs is which subpath,
- * which file answered, and which file was promised.
+ * WHAT BOUNDS IT IS THE ORDER AT ITS ONE CALL SITE AND NOTHING IN THE FUNCTION.
+ * scripts/typecheck-workspaces.ts runs `prepareWorkspace` first, so what this
+ * catches is an artifact that SURVIVED a build and still does not answer. A bare
+ * pre-build `tsc --noEmit`, and a pack on an unbuilt tree, both pass under it
+ * entirely -- and so does a framework artifact that answers WHILE STALE. A
+ * second caller placed before a build would reach a state this has never been
+ * pointed at.
  */
 export function refuseSubpathsAnsweringFromSource(root: string, members: readonly string[]): void {
   const subpaths = publishedSubpaths(root, members);
@@ -795,35 +435,14 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
     return;
   }
   const { answered, attempted } = whereSubpathsLand(root, subpaths);
-  // THE PAIR IS ABOUT THE DIAGNOSIS AND NOT ABOUT DETECTION, WHICH IS WEAKER
-  // THAN THE CLAIM THAT STOOD HERE AND IS WHAT IS TRUE. `an empty offender list
-  // is satisfied by a probe that resolved nothing at all` is false under the
-  // rule below: a specifier the compiler never reached HAS NO ANSWER, so it is
-  // already an offender, and such a probe is refused with this pair or without
-  // it. What the pair buys is the reader's next move -- `never reached the
-  // resolver` sends them to this probe, `answers from NOTHING` sends them to the
-  // artifact -- and sending them to the wrong one costs a search.
-  //
-  // AND NOTHING IN THIS REPOSITORY REACHES IT, DISCLOSED RATHER THAN LEFT TO BE
-  // REDISCOVERED. Made vacuous -- `subpaths.filter(() => false)` -- every arm
-  // stays green; the wildcard subpath was the documented reachable case and is
-  // measured ATTEMPTED. It is kept because it is what keeps the two diagnoses
-  // separable, and it is named unwitnessed BY ANY ARM rather than deleted for
-  // want of a red.
-  //
-  // WHAT MAKES IT FIRE IS NAMED, so a later reader can tell whether the state
-  // ever became reachable instead of inferring it from silence -- which is the
-  // gap the sentence above used to leave. THE PROBE WRITES EACH SPECIFIER INTO A
-  // DOUBLE-QUOTED `import`, so a subpath key carrying a character that does not
-  // survive that trip makes the probe source say something other than what the
-  // map says, and the specifier AS DECLARED never reaches the resolver. MEASURED
-  // BY HAND, one staged member declaring one such key at a time, each reporting
-  // `@staged/producer/... never reached the resolver`: `./a"b`, where the probe
-  // no longer parses; `./a\b`, where `\b` is an escape and a DIFFERENT specifier
-  // is attempted; and a key carrying a newline. No map in this workspace has
-  // one, so this is the shape to expand `publishedSubpaths` for the day one
-  // does -- and until then the pair sends a reader to the probe, which is where
-  // the fault would be.
+  // THE PAIR IS ABOUT THE DIAGNOSIS AND NOT ABOUT DETECTION: a specifier the
+  // compiler never reached has no answer, so it is already an offender with this
+  // pair or without it. What it buys is the reader's next move -- `never reached
+  // the resolver` sends them to this probe, `answers from NOTHING` to the
+  // artifact. WHAT MAKES IT FIRE IS A SUBPATH KEY CARRYING A CHARACTER THAT DOES
+  // NOT SURVIVE A DOUBLE-QUOTED `import`, and no map in this workspace has one --
+  // so nothing exercises this, and it is kept for the diagnosis rather than for a
+  // red.
   const unasked = subpaths.filter(({ specifier }) => !attempted.has(specifier));
   if (unasked.length > 0) {
     throw new Error(
@@ -847,36 +466,9 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
         const landed = answered.get(specifier);
         return `${specifier} answers from ${landed === undefined ? "NOTHING" : relative(root, landed)}, where its \`types\` arm promises ${relative(root, declaration)}.`;
       }),
-      // THIS TRAILER IS THE FOURTH PLACE `graded a file no consumer receives`
-      // WAS WRITTEN, AND THE ONLY ONE LEFT STANDING WHEN THE OTHER THREE WERE
-      // SUPERSEDED. The ground recorded for leaving it was that ITS SUBJECT IS
-      // DIFFERENT -- an artifact that SURVIVED a build and still does not
-      // answer, a fault on its own ground rather than the retired implicature.
-      // MEASURED FALSE ABOUT THIS FUNCTION at base 488787c: with
-      // packages/tsudoi-language-server/dist MOVED ASIDE with a literal `mv` and
-      // `refuseSubpathsAnsweringFromSource(root, declaredMembers(root))` called
-      // directly, it throws with ALL FOUR framework subpaths answering from
-      // src/*.ts and prints this trailer -- in a state where NO BUILD RAN AT
-      // ALL, which is the retired implicature firing in the retired state.
-      //
-      // SO THE GROUND IS THE CALL ORDER AND NOT A DIFFERENT SUBJECT, which is a
-      // narrower thing to rest on and is worth knowing before someone reuses
-      // this function. The sole caller is scripts/typecheck-workspaces.ts, which
-      // runs `prepareWorkspace` first; test/artifact-detector.test.ts drives
-      // THAT COMMAND rather than this function, so it inherits the same order.
-      // A second caller placed before a build would reach the unreachable state
-      // on its first run.
-      //
-      // THE SECOND SENTENCE IS TRUE OF TWO OF THE THREE OFFENDERS ABOVE AND NOT
-      // OF THE THIRD, said here because the trailer prints for all three. It
-      // describes an artifact that is MISSING OR HALF WRITTEN -- the realpath
-      // mismatch, and the declaration that does not exist. IT DOES NOT DESCRIBE
-      // `landed === undefined`, the subpath that never resolved at all: there no
-      // artifact was graded and no check below would have read a wrong file, so
-      // the offender line above it is the whole of what that state is. Kept
-      // rather than split because the remedy is the same one and a reader of the
-      // per-offender line is not misled; named so the trailer is not read as an
-      // enumeration.
+      // The trailer prints for every offender and describes two of the three: a
+      // subpath that resolved to NO FILE graded no artifact at all, so its own
+      // line above is the whole of what that state is.
       "A published subpath answering from anywhere but the artifact means the artifact is missing or half written, and every check below this one would have graded a file no consumer receives. Build the package, or repair its `exports` map.",
     ].join("\n"),
   );
@@ -887,50 +479,11 @@ export function refuseSubpathsAnsweringFromSource(root: string, members: readonl
  * what is really wrong is that a package sits somewhere the root type check
  * excludes and the workspace configuration does not declare.
  *
- * IT SPEAKS FOR THE FILES INSIDE SUCH A PACKAGE AND FOR NO OTHERS, which is why
- * it hands back WHICH offenders it accounted for instead of a bare sentence. The
- * first spelling returned as soon as one offender sat inside one undeclared
- * package and the caller then threw the rest away -- MEASURED, a tree holding
- * `packages/forgotten/src/index.ts` AND `tools/elsewhere.ts` printed the package
- * sentence alone and never named the second file. That is the outcome the file
- * list exists to prevent one line below: a reader told about one offender fixes
- * it and meets the next on the following run.
- *
- * IT DOES NOT REQUIRE THAT EVERY OFFENDER BE IN A PACKAGE, and that refusal is
- * what keeps the demotion's promise: gating on all of them would answer ONE
- * missing `workspaces` entry with a wall of file sentences the moment anything
- * else were uncovered too, which is the regression the message was kept for.
- *
- * IT REFINES A FAULT AND NO LONGER DECIDES ONE, which is the ruling and not a
- * tidy-up. Deciding coverage by walking directories that hold a manifest is the
- * UNFAITHFUL reading -- it is why a file planted one level inside a declared
- * member ran under it and it said nothing -- and leaving it deciding alongside
- * the compilers' own file lists would give this repository TWO ANSWERS TO ONE
- * QUESTION that can disagree with every check green. So the file lists decide,
- * and this says the actionable thing about what they found: a reader told to
- * widen an `include` would be applying the wrong repair to a package that should
- * have been declared.
- *
- * THE NARROWING IS DISCLOSED RATHER THAN DISCOVERED: an undeclared package
- * holding NO TypeScript is no longer refused, because nothing about it is
- * unchecked. Pinned as a decision in test/workspace-members.test.ts.
- *
- * IT READS THE EXCLUSION RATHER THAN RESTATING IT, so narrowing `workspaces`
- * while leaving `packages` excluded is caught here instead of going quiet.
- * `workspaces` IS ITSELF A LIST, merely one kept in another file, and the
- * criterion this closes is about a member no list names -- so trusting the two
- * keys to agree would leave exactly the gap the enumeration was chosen to avoid.
- * They are edited in different files for different reasons.
- *
- * AN ENTRY IS A PATTERN AND NOT A DIRECTORY NAME, which is what tsconfig means
- * by `exclude` and the one reading that does not lose a package quietly:
- * `packages/*` names nothing on disk, so joining it to the root and walking
- * finds nothing, reports nothing, and exits 0 -- with the uncovered package
- * missed by the only thing looking for it. EXPANDED RATHER THAN REFUSED, since a
- * glob there is legal tsconfig a reader writes the moment they want the children
- * excluded and the parent kept, and refusing it would trade a silent miss for a
- * red on a correct file. THE SAME ENUMERATOR `workspaces` IS READ WITH, so the
- * two keys this function compares cannot be interpreted differently.
+ * IT REFINES A FAULT AND NEVER DECIDES ONE. Deciding coverage by walking
+ * directories that hold a manifest is the UNFAITHFUL reading -- it runs straight
+ * over a file planted one level inside a declared member -- so the compilers'
+ * file lists decide and this only says the actionable thing about what they
+ * found.
  */
 function packageShapedFaults(
   root: string,
@@ -953,10 +506,9 @@ function packageShapedFaults(
         continue;
       }
       seen.add(found);
-      // ONE OF THE UNCOVERED FILES MUST BE INSIDE IT. An undeclared package the
-      // file lists had nothing to say about is not a fault this reader is
-      // allowed to invent -- that is exactly the second opinion the ruling
-      // withdrew.
+      // ONE OF THE UNCOVERED FILES MUST BE INSIDE IT: an undeclared package the
+      // file lists had nothing to say about is not a fault this reader may
+      // invent, which is exactly the second opinion the ruling above withdrew.
       const inside = offenders.filter((offender) => join(root, offender).startsWith(found + sep));
       if (inside.length === 0) {
         continue;
@@ -972,15 +524,7 @@ function packageShapedFaults(
   return { sentences, explained };
 }
 
-/**
- * A package name with any `@scope/` dropped, which is the whole of the relation
- * below.
- *
- * NO BRANCH FOR HAVING A SCOPE, and that is not brevity: an unscoped name holds
- * no separator, so `indexOf` answers -1 and the slice starts at 0 -- the same
- * expression reads both shapes. A branch here would be a second place for the
- * two shapes to be treated differently, which is what the relation is against.
- */
+/** A package name with any `@scope/` dropped, which is the whole of the relation below. */
 function unscopedName(name: string): string {
   return name.slice(name.indexOf("/") + 1);
 }
@@ -990,33 +534,10 @@ function unscopedName(name: string): string {
  * scope dropped -- one package spelled two ways, with nothing keeping the two
  * equal but whoever last edited one of them.
  *
- * THE RELATION IS `UNSCOPED` AND THE NAME SAYS SO. `packages/tsudoi-hover-wordnet`
- * and `@atusy/tsudoi-hover-wordnet` are not the same string and never can be, so
- * a guard called `member names agree` would state a class wider than anything it
- * could check -- and Sprint 49's remedy for that is to narrow the NAME rather
- * than to widen the matcher.
- *
- * ONE PREDICATE AND NOT TWO BRANCHES, which is a statement about the fault and
- * not about the code: `the manifest was edited` and `the directory was moved`
- * ARE THE SAME STATE ON DISK. Nothing here records which side moved, so a guard
- * with an arm per direction would be inventing that distinction and then
- * asserting it. The message therefore names BOTH spellings and offers BOTH
- * repairs, and the reader is the one who knows which they meant.
- *
- * THE VACUOUS IMPLEMENTATION IS THE ONE THAT SKIPS SCOPED NAMES, and it is worth
- * naming because it is the shape a guard drifts into and because probes do not
- * catch it: MEASURED with the predicate replaced by `pass anything holding a
- * scope`, the arms staged from unscoped throwaway members stay GREEN and the
- * fifth check on this repository -- where BOTH members are scoped -- reported
- * nothing at all, on the checkout where the two spellings still disagreed. That
- * is why the arms in test/workspace-members.test.ts include a SCOPED member
- * whose unscoped segment mismatches, which is the only one of them such an
- * implementation reddens.
- *
- * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION, and it
- * MUST NOT SPELL THE CONTAINER: a guard naming `packages/` would be invalidated
- * by the next move of the directory it names, and a guard naming a member would
- * leave every other member unpinned with nothing saying so.
+ * OVER MEMBERS AS A CLASS, AND IT MUST NOT SPELL THE CONTAINER: a guard naming
+ * `packages/` would be invalidated by the next move of that directory, and one
+ * naming a member would leave every other member unpinned with nothing saying
+ * so.
  */
 export function refuseMemberDirectoriesUnlikeTheUnscopedName(
   root: string,
@@ -1026,11 +547,6 @@ export function refuseMemberDirectoriesUnlikeTheUnscopedName(
     const manifestPath = join(member, "package.json");
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
     const name = manifest.name;
-    // A MEMBER DECLARING NO `name` IS REFUSED AND NOT PASSED OVER. `there is no
-    // second spelling to disagree with` is a defensible reading of it, and it is
-    // the reading that leaves `delete the name` as an edit which silences this
-    // guard rather than tripping it. Refusing costs one message and forecloses
-    // that.
     if (typeof name !== "string") {
       throw new Error(
         `${relative(root, manifestPath)} declares no \`name\`, so nothing says what the directory ${relative(root, member)} is the unscoped spelling of.`,
@@ -1048,50 +564,15 @@ export function refuseMemberDirectoriesUnlikeTheUnscopedName(
 /**
  * Throws when a workspace member's own tsconfig maps a specifier to a file --
  * the one edit that rebuilds, one directory down, the false green the members'
- * exclusion from the root type check exists to foreclose.
- *
- * WHY `paths` IS THE SUBJECT AND NOT A STYLE PREFERENCE: the root check answered
- * a member's `@atusy/tsudoi-language-server/*` import THROUGH THE ROOT'S OWN
- * MAPPING and reported success, so a member whose dependency resolution was
- * broken type-checked green. The members were excluded and this script took the
- * coverage over. A mapping in the MEMBER'S tsconfig answers the same specifier
- * the same way -- without the member's node_modules and without the framework's
- * `exports` map -- and every check in this repository stays green while the
- * resolution a stranger will actually take is the one nothing looked at.
- *
- * OVER MEMBERS AS A CLASS, ENUMERATED FROM THE WORKSPACE CONFIGURATION. A guard
- * naming packages/tsudoi-hover-wordnet would leave the second member unpinned and
- * NOTHING WOULD SAY SO -- the same reason the fifth check reads `workspaces`
- * rather than a list, applied to the shape of the member rather than to its
- * existence.
- *
- * THE EFFECTIVE CONFIGURATION AND NOT THE BYTES OF ONE FILE, which is the half a
- * reader of `tsconfig.json` alone would miss: `extends` puts the mapping in a
- * document whose name nobody greps for, and a member whose own file holds no
- * `paths` key still compiles with one. THE CHAIN IS RESOLVED BY UPSTREAM RATHER
- * THAN HERE -- `tsc --showConfig` flattens it, MEASURED, including `paths`
- * inherited from a base -- so a spelling of `extends` this repository has never
- * seen (an array, a bare package specifier, a directory) is handled by the
- * compiler that will read it rather than by a second implementation that agrees
- * with the compiler only until it does not.
- *
- * A CONFIG tsc CANNOT READ IS LOUD, BUT NOT ALWAYS HERE, and the distinction is
- * measured rather than assumed because a guard that answers `no mapping found`
- * for a file it failed to read reports the safe colour for the wrong reason.
- * `execFileSync` throws on a non-zero exit and the parse below throws on output
- * that is not a configuration -- but `--showConfig` on an UNRESOLVABLE `extends`
- * EXITS 0 and simply omits what it could not read, MEASURED, so this function
- * passes it. What refuses it is `typeCheckMember` immediately after: TS5083
- * naming the file, exit 1, pinned in test/workspace-members.test.ts. The
- * loudness is the pair's and not this function's, which is why it is written
- * here rather than assumed by whoever moves one of them.
+ * exclusion from the root type check exists to foreclose. A mapping answers the
+ * same specifier without the member's node_modules and without the framework's
+ * `exports` map, so every check stays green while the resolution a stranger will
+ * actually take is the one nothing looked at.
  */
 export function refuseMemberMappings(root: string, members: readonly string[]): void {
   for (const member of members) {
     const config = join(member, "tsconfig.json");
-    // Absent is NOT this function's to report: `typeCheckMember` refuses a
-    // member with no tsconfig by name, and a second message about the same
-    // directory would send a reader looking for two faults.
+    // Absent is `typeCheckMember`'s to report, by name.
     if (!existsSync(config)) {
       continue;
     }
@@ -1116,17 +597,11 @@ export function refuseMemberMappings(root: string, members: readonly string[]): 
 /**
  * What one enumeration of the checkout reports, as paths relative to the root.
  *
- * A FAILED ENUMERATION IS NOT AN EMPTY ONE, which is the same asymmetry
- * `declaredMembers` keeps for `workspaces` and matters more here: this is the
- * only thing that can tell a source somebody wrote from an installed stranger or
- * a built artifact, so a root where it cannot run is a root where the refusal
- * below inspects nothing AND SAYS NOTHING. `I found no files` and `I was given
- * no way to find them` would then be the same exit 0.
- *
  * THE SEPARATOR IS A NUL BECAUSE THE ALTERNATIVE IS SILENT: git QUOTES a path
  * holding a newline or a non-ASCII byte when it writes newline-separated output,
- * and a quoted path matches no file on disk -- so such a file would be enumerated
- * as a candidate, matched against nothing, and reported as uncovered forever.
+ * and a quoted path matches no file on disk -- so such a file would be
+ * enumerated as a candidate, matched against nothing, and reported as uncovered
+ * forever.
  */
 function checkoutPaths(root: string, args: readonly string[]): readonly string[] {
   const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
@@ -1141,38 +616,19 @@ function checkoutPaths(root: string, args: readonly string[]): readonly string[]
 /**
  * EVERY TRACKED README, AS THE CLASS A DOCUMENTATION SWEEP IS ABOUT.
  *
- * NOT `declaredMembers` AND NOT `handlerMembers`, and the reason is the question
- * rather than the convenience: those two answer WHICH PACKAGES, and a README
- * under `examples/`, `docs/` or the checkout root is neither. A sweep built on
- * them would inherit exactly the blind spot the documents have -- a guard over
- * the documents that exist today, which is what a guard over READMEs AS A CLASS
- * has to refuse.
- *
- * TRACKED, WHICH IS WHAT MAKES `A DOCUMENT NOBODY MEANT TO SHIP` NOT ONE OF
- * THESE. A file a build wrote, a scratch copy, a stranger's README inside a
- * vendored tree: none of them is a promise this repository made, and `git
- * ls-files` is the one reading that tells them apart without a name written
- * here.
- *
- * IT INHERITS BOTH OF `checkoutPaths`'s RULES VERBATIM by calling it, which is
- * the point of not spelling the spawn again: a failed enumeration is a THROW and
- * never an empty answer -- `this tree has no README` and `I could not be told`
- * must not read alike -- and the separator is a NUL, because git quotes a path
- * holding a newline or a non-ASCII byte and a quoted path matches no file.
+ * NOT `declaredMembers` AND NOT `handlerMembers`: those answer WHICH PACKAGES,
+ * and a README under `examples/`, `docs/` or the checkout root is neither. And
+ * TRACKED is what makes a build's output, a scratch copy or a vendored
+ * stranger's README not one of these.
  */
 export function trackedReadmes(root: string): readonly string[] {
   return checkoutPaths(root, ["ls-files", "-z"]).filter((path) => basename(path) === "README.md");
 }
 
 /**
- * The submodules this checkout mounts, which is where its subject STOPS.
- *
- * READ AS THE MODE AND NOT AS A DIRECTORY THAT LOOKS ODD: a submodule is one
- * index entry at mode 160000, and asking git for the mode is the only reading
- * that cannot be fooled by a tracked symlink or by a name.
- *
- * IT IS ASKED ONLY WHEN SOMETHING IS ALREADY BEING REPORTED, at the one call
- * below: a green run pays no spawn for a sentence it would not print.
+ * The submodules this checkout mounts, read as the MODE and not as a directory
+ * that looks odd: a submodule is one index entry at mode 160000, which is the
+ * only reading a tracked symlink or a name cannot fool.
  */
 function submodules(root: string): readonly string[] {
   return checkoutPaths(root, ["ls-files", "--stage", "-z"])
@@ -1209,33 +665,12 @@ interface Program {
 /**
  * Reads one program the way the compiler reads it.
  *
- * `--noResolve` IS THE WHOLE READING AND NOT AN OPTIMISATION: without it the
- * list is the IMPORT CLOSURE, and a file that no `include` reaches is reported
- * as covered for exactly as long as somebody imports it. The day that import
- * goes, the file stops being checked and nothing says so. What is durable is
- * that a program's own inputs reach the file, so the roots are the answer.
- *
- * AND THE FILE LIST RATHER THAN THE JSON GLOBS, MEASURED: the default include
- * does NOT reach a directory or a file whose name begins with a dot, so a
- * hand-written expansion of that wildcard says the opposite of what the compiler
- * does -- for a file nothing else in this repository would notice either.
- *
- * THE EXIT CODE IS DELIBERATELY NOT THE DISCRIMINATOR, and each half of that is
- * measured on tsc 7.0.2 -- BUT THE TWO HALVES DO NOT PRINT THE SAME THING, which
- * the first spelling of this paragraph claimed and a re-measurement refuted. A
- * config whose include matches NOTHING exits 1 with ONE LINE on stdout: the
- * TS18003 diagnostic, and no file at all -- not its own roots, which it has none
- * of, and not the default library either. A config with an unresolvable `extends`
- * exits 1 AND STILL LISTS the default library and its own roots, which the type
- * check right after this one refuses by name. So the two failures cost different
- * things to a reader keyed to the exit: the first has nothing to lose and both
- * files that spawn this check stage it in about twenty trees, while the second
- * would have its real roots thrown away. Aborting on either would abort on a
- * config the compiler read fine. What decides instead is whether the compiler
- * could READ THE CONFIG AT ALL, asked of the reader that answers it:
- * `--showConfig` exits 1 with TS5058 for a config it cannot open, and exits 0 --
- * MEASURED -- even for one whose JSON is malformed, which it recovers from as an
- * empty configuration.
+ * THE FILE LISTING'S EXIT CODE IS DELIBERATELY NOT THE DISCRIMINATOR, and both
+ * of its failures are ordinary here: a config whose include matches nothing
+ * exits 1 with the TS18003 diagnostic alone, and one with an unresolvable
+ * `extends` exits 1 while still listing its own roots -- which the type check
+ * right after this refuses by name. What decides instead is whether the compiler
+ * could READ THE CONFIG AT ALL, which `--showConfig` answers below.
  */
 function readProgram(root: string, config: string): Program {
   const absolute = join(root, config);
@@ -1256,14 +691,6 @@ function readProgram(root: string, config: string): Program {
     references?: unknown;
   };
   const outDir = effective.compilerOptions?.outDir;
-  // REPORTED RATHER THAN RE-READ FROM THE FILE, MEASURED: `--showConfig` echoes
-  // `references` with the path as the author wrote it, so the same reader that
-  // answers every other question here answers this one.
-  //
-  // A REFERENCE MAY NAME A DIRECTORY, which tsconfig defines as the
-  // `tsconfig.json` inside it. Both spellings are resolved to the config a
-  // reader would have to open, because what the caller compares them against is
-  // the list of configs this check enumerated.
   const references = Array.isArray(effective.references) ? effective.references : [];
   const listed = spawnSync(compiler, ["-p", absolute, "--listFilesOnly", "--noResolve"], {
     cwd: root,
@@ -1271,18 +698,10 @@ function readProgram(root: string, config: string): Program {
   });
   return {
     config,
-    // A DIAGNOSTIC IS NOT A PATH: the same stream carries both, so what is taken
-    // is what looks like an absolute path to a TypeScript file. A diagnostic
-    // about a config carries the config's name and a position, so it ends in
-    // neither.
     roots: listed.stdout
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => isAbsolute(line) && typeScriptFile.test(line)),
-    // RESOLVED AGAINST THE CONFIG AND NOT THE ROOT, which is what `outDir` means
-    // and what `prepareWorkspace` already relies on: no build config here uses
-    // `extends`, so a relative output directory is relative to the file holding
-    // it.
     outDir: typeof outDir === "string" ? resolve(dirname(absolute), outDir) : undefined,
     skipsLibCheck: effective.compilerOptions?.skipLibCheck === true,
     references: references.flatMap((reference) => {
@@ -1298,32 +717,13 @@ function readProgram(root: string, config: string): Program {
 
 /**
  * Whether this filesystem tells `Foo.ts` and `foo.ts` apart, ASKED OF THE TREE
- * BEING GRADED rather than read off the platform's name.
+ * BEING GRADED rather than read off the platform's name, and probed read-only so
+ * no candidate set measures this check's own footprint.
  *
- * WHY IT IS ASKED AT ALL: the compiler answers with the spelling ITS CONFIG
- * used and git answers with the spelling THE INDEX holds, and where the
- * filesystem folds case those two strings can denote ONE FILE and compare
- * unequal. MEASURED on this machine, whose checkout and whose temporary
- * directory both fold: a tracked `src/Foo.ts` under a config naming
- * `src/foo.ts` is compiled -- tsc exits 0 and lists `src/foo.ts` -- and was
- * reported as covered by nothing, with the repair named being to widen an
- * `include` that is already reaching the file. A FALSE RED, and the one thing
- * this check must never produce.
- *
- * FOLDING UNCONDITIONALLY IS THE FIX THAT BREAKS THE OTHER FILESYSTEM: where
- * case IS significant those two spellings are TWO FILES, one of them covered by
- * nothing, and a fold would turn a correct red green -- silently, and only on
- * the machines where it matters. So the fold is gated on the answer here.
- *
- * A READ-ONLY PROBE, AND IT WRITES NOTHING INTO THE TREE IT IS GRADING: a
- * candidate set that depended on a file this check had just created would be
- * measuring its own footprint. What is probed is the root's `package.json`,
- * asked for in a spelling no repository ships -- the fifth check has already
- * refused a root without one, so there is no case where this asks about a file
- * that is not there. THE ONE FALSE ANSWER IT CAN GIVE IS NAMED: a case-sensitive
- * checkout that really does hold a file called `PACKAGE.JSON` beside its
- * manifest would be read as folding, which costs this check the ability to
- * separate two spellings of one name in that tree alone.
+ * FOLDING UNCONDITIONALLY IS THE FIX THAT BREAKS THE OTHER FILESYSTEM, WHICH NO
+ * ARM ON A FOLDING MACHINE CAN REDDEN: where case IS significant those two
+ * spellings are TWO FILES, one of them covered by nothing, and a fold would turn
+ * a correct red green -- silently, and only on the machines where it matters.
  */
 function foldsCase(root: string): boolean {
   return existsSync(join(root, "PACKAGE.JSON"));
@@ -1334,153 +734,24 @@ function foldsCase(root: string): boolean {
  * -- the state in which a file is edited, run, and graded by nothing, while
  * every command in the Definition of Done exits 0.
  *
- * THE COMPILERS' OWN FILE LISTS ARE THE ONE DECIDER. Two readers answering `is
- * this file covered` is two answers to one question that can disagree with
- * everything green, and the JSON-glob reader is the unfaithful one: it walks
- * directories holding a manifest, so it ran straight over the file this refusal
- * was filed for and said nothing.
+ * THE COMPILERS' OWN FILE LISTS ARE THE ONE DECIDER, because two readers
+ * answering `is this file covered` is two answers to one question that can
+ * disagree with everything green.
  *
- * THE SUBJECT IS TRACKED AND UNTRACKED BUT NOT IGNORED, because the moment this
- * exists for is a file JUST ADDED: reading the index alone would leave the
- * refusal reddening one run AFTER the commit that introduced the hazard. The two
- * standing exclusions come free and are READ rather than restated -- the ignore
- * file already names the installed strangers and every built artifact, in a file
- * edited elsewhere for its own reasons. AND IT IS WHAT IS ON DISK: an index
- * entry outlives the file, so a candidate set that did not ask would name a path
- * that is not there. That arm and its reason sit beside the filter.
- *
- * AND IT STOPS AT A SUBMODULE, WHICH IS A RULING AND NOT THE ENUMERATOR'S
- * ACCIDENT. MEASURED on a checkout with a real submodule at `vendor/pkg` holding
- * `vendor/pkg/probe.ts`: both calls below report the GITLINK PATH ALONE, and
- * `--others` does not descend either, so a file inside a submodule -- tracked
- * there or just written -- is invisible to this refusal and this check exits 0
- * over it.
- *
- * IT IS RULED THAT WAY RATHER THAN REPAIRED, AND THE DECIDING FACT IS THE
- * ENUMERATOR'S: `git ls-files --recurse-submodules` WORKS, and the same flag
- * WITH `--others` IS REFUSED -- measured, exit 128, `unsupported mode`. So
- * recursing could only ever reach a submodule's TRACKED files, leaving one
- * subject with two rules: tracked-and-untracked outside a submodule, tracked
- * only inside it. The moment this whole refusal exists for is a file JUST ADDED,
- * and that is exactly the half a recursing subject would silently lose.
- * SUBSTANTIVELY: a submodule is somebody else's history at a commit this
- * checkout pins. No `include` here can be widened to cover it and no commit here
- * can move it, so a report about it would be a permanent red on a file no edit
- * in this tree repairs -- the reason already recorded beside the installed
- * strangers, arriving for a second class of file. Its own checkout grades it.
- *
- * SO THE REFUSAL SAYS SO WHEN IT SPEAKS AT ALL, because a subject that silently
- * excludes a whole class of file is the shape this refusal was built to close: a
- * run that reports anything, in a tree that mounts a submodule, names the
- * submodule and says its files were never candidates. It can also say that
- * nothing it named is inside one, which follows from the measurement above
- * rather than from a filter.
- *
- * A LINKED WORKTREE USED AS THE ROOT IS ENUMERATED NORMALLY and needs no arm:
- * its `.git` is a file rather than a directory, which changes nothing about what
- * `ls-files` answers.
- *
- * A PERSONAL IGNORE FILE MUST NOT SHRINK IT, measured: a global ignore can hide
- * a file that is tracked and visible in every other checkout, so a subject that
- * honoured one would differ per developer. RESIDUE, NAMED RATHER THAN FIXED: a
- * per-checkout `info/exclude` cannot be neutralised the same way, and a file
- * under an ignored directory is not seen at all -- which this repository has one
- * of, deliberately, to hold what it does not account for.
- *
- * PROGRAMS ARE ENUMERATED FROM TRACKED FILES ALONE AND THE ASYMMETRY IS THE
- * POINT: a program is part of the declared verification surface and must be
- * COMMITTED to count, where a candidate is a hazard the moment it exists. Taking
- * untracked configs too would let a stray `tsconfig.tmp.json` claiming the whole
- * tree mark everything covered -- a silent, permanent green. Tracked-only fails
- * the other way, reddening until the new config is added, which is loud and
- * self-correcting.
- *
- * TWO SUBTRACTIONS, EACH FORCED BY A MEASUREMENT. An UNTRACKED path under a
- * program's own output directory is left alone, because this check BUILDS
- * before it reads: without that, every throwaway tree that builds reddens,
- * since a throwaway carries no ignore file and its emitted declaration is
- * untracked and in no program's roots. A path under an installed-dependency
- * directory will never be ours to check, for the reason already recorded beside
- * the package walker.
- *
- * `UNTRACKED` IS THE WHOLE OF THE FIRST ONE'S CLAIM AND IT SHIPPED WITHOUT IT,
- * which made this an exemption list with no name in it -- any path under any
- * DECLARED output directory, whether or not that program emits and whether or
- * not a compiler wrote the file. MEASURED, with a member check config carrying
- * `noEmit` and `outDir: "../../vendor"`: a tracked `vendor/probe.ts` in no
- * program's list went unreported, and reporting resumed the moment the `outDir`
- * was deleted -- so one config key silently excused a directory.
- *
- * AND THE INDEX BUYS ONE DIRECTION RATHER THAN AN IDENTITY, which the repair's
- * own first spelling asserted and this one does not. A compiler-written artifact
- * is never committed, so BEING IN THE INDEX rules that reading out -- and
- * nothing here reads the other way, because nothing in a tree can: an untracked
- * HAND-WRITTEN file under a declared output directory is subtracted exactly like
- * an emitted one. WHAT THE SUBTRACTION ACTUALLY BUYS is therefore that no
- * COMMITTED file is ever excused by an `outDir`, which is the half that was
- * going wrong; the residue is a file somebody wrote there and has not committed,
- * and it self-corrects the moment they do. Asserting the converse would be the
- * same overclaim, one sentence smaller, that this repair was written to retire.
- *
- * DECLARATION FILES ARE THE ONE EXCLUSION AND IT IS READ, NOT NAMED. With
- * library checking skipped -- which every config here sets -- a `.d.ts` is in a
- * program's inputs and its body is checked by NOTHING, so membership is the
- * wrong question to ask about it; MEASURED, one carrying two errors exits 0 with
- * the setting on and exits 1 naming both with it off. So the exclusion is read
- * from the programs' own reported setting and lapses the moment any of them
- * stops skipping. WHAT THIS CANNOT SEPARATE, and the guard is named for the half
- * it has: `included in a program` is not `type-checked`.
- *
- * PROJECT REFERENCES ARE NOT FOLLOWED, AND THAT IS A RULING WITH A MEASUREMENT
- * UNDER IT. Programs are read ONE AT A TIME and never as a build graph, so a
- * referenced project's files do not enter its parent's list -- a root config
- * referencing `lib/project.json` leaves `lib/x.ts` reported, and that config's
- * own name fails the `tsconfig*.json` filter, so nothing enumerates it either.
- * WHAT DECIDES IT IS WHO ACTUALLY CHECKS THE FILE: MEASURED, `tsc -p` on the
- * PARENT -- which is the form the root check and every member check take --
- * reports NOTHING about a type error in the referenced project's source, where
- * `-p` on the referenced config and `tsc -b` on the parent each name it. So
- * following the reference would mark covered a file NO COMMAND IN THE DEFINITION
- * OF DONE READS, which is a false green about the exact state this refusal
- * exists for; and it would admit as a coverage source a config that need not be
- * tracked, which is the stray-config hazard arriving by another door.
- *
- * SO A REFERENCED CONFIG MUST BE ENUMERATED IN ITS OWN RIGHT -- tracked, and
- * named `tsconfig*.json`. One already named that way is covered today because it
- * is independently enumerated, which was luck and is hereby the rule. AND THE
- * REFUSAL SAYS SO WHERE IT WOULD OTHERWISE MISLEAD: a run that names files while
- * some enumerated program declares a reference nothing here reaches names that
- * reference too, and the RENAME, because `widen an include` is the wrong repair
- * for a file another project already holds.
- *
- * NO EXEMPTION LIST, AND SHIPPING WITHOUT ONE IS A DECISION. MEASURED: every
- * candidate in this checkout is matched by an include of at least one program,
- * so a list would ship with no member -- and a facility with no user is where a
- * name is appended later with no review. The day a file genuinely needs to be
- * uncovered, the repair is to widen the program that ought to hold it, and this
- * refusal is what forces that conversation.
+ * IT STOPS AT A SUBMODULE, AND THAT IS A RULING RATHER THAN THE ENUMERATOR'S
+ * ACCIDENT: `--recurse-submodules` works for tracked files and is REFUSED with
+ * `--others`, so recursing could only ever reach a submodule's committed half --
+ * and a file JUST ADDED is the moment this whole refusal exists for.
+ * Substantively, a submodule is somebody else's history at a commit this
+ * checkout pins, and no `include` here can be widened to reach it.
  *
  * WHAT IT DOES NOT DEFEND, DISCLOSED: a file covered by TWO programs stays green
- * when one stops covering it. The framework's source is in both its check config
- * and its build config, so narrowing one alone reddens nothing here. The
- * property is `some program includes it`, not per-program coverage.
- *
- * AND THE FAULT IT REPORTS IS NOT ALWAYS THE FAULT TO FIX: an uncovered file
- * inside a package the root excludes and `workspaces` does not declare is
- * answered by the package-shaped sentence instead of its own. Widening an
- * `include` is the wrong repair for a member nobody declared, and a missing
- * workspace entry answered with a wall of file sentences is a regression on the
- * message this check used to give. THE SUBSTITUTION IS PER FILE AND NOT PER RUN:
- * an offender that no `workspaces` entry would have covered is still named
- * beside the package sentence, because fixing the package would not have fixed
- * it.
+ * when one stops covering it. The property is `some program includes it`, not
+ * per-program coverage.
  */
 export function refuseUncoveredFiles(root: string, members: readonly string[]): void {
   const tracked = checkoutPaths(root, ["ls-files", "-z"]);
   const visible = checkoutPaths(root, [
-    // NOT DECORATION: this machine's own global ignore hides a file that is
-    // tracked in every checkout of this repository, and `--exclude-standard`
-    // would honour it.
     "-c",
     "core.excludesFile=/dev/null",
     "ls-files",
@@ -1490,21 +761,6 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     "-z",
   ]);
   const installed = (path: string): boolean => path.split("/").includes("node_modules");
-  // BOTH SIDES THROUGH ONE FUNCTION, WHICH IS THE HALF A FIX HERE GETS WRONG:
-  // the compiler's strings and the joined index paths agree today only because
-  // both are built from the same root, so canonicalising the candidate alone
-  // would move every prefix and redden the whole file.
-  //
-  // AND IT REACHES EVERY COMPARISON WITH TWO PRODUCERS, WHICH IS THE LINE AND
-  // NOT `the coverage one`. Two spellings can only disagree where two things
-  // produced them: the compiler's file list against the index, and the
-  // compiler's reported `outDir` against the index. MEASURED on the second,
-  // which the first spelling of this reason left out -- a build config carrying
-  // `outDir: "Out"` over a directory already on disk as `out` emits into `out`,
-  // and its declaration was reported as covered by nothing: the same false red,
-  // in the same function. What is left spelling-exact is every comparison with
-  // ONE producer -- the installed filter and the suffix tests match a git path
-  // against a literal written here, and a literal cannot be spelled two ways.
   const spelling: (path: string) => string = foldsCase(root)
     ? (path) => path.toLowerCase()
     : (path) => path;
@@ -1522,36 +778,12 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
       return false;
     }
     const absolute = join(root, path);
-    // GONE FROM THE WORKTREE AND STILL IN THE INDEX, WHICH IS A FALSE RED AND NOT
-    // A MISSED ONE. `--cached` reports a path whose file has been deleted, and no
-    // compiler's list can hold a file that is not on disk -- so the deletion
-    // alone made an offender, and the run names a path that does not exist and
-    // sends its reader to widen an `include` for it. Nothing here is unchecked:
-    // a file that is not there is run by nothing and graded by nothing, and the
-    // index agrees again the moment the deletion is committed.
-    //
-    // ITS OWN ARM AND NOT THE CONFIG ONE, which is the neighbouring state and a
-    // different answer: a tracked config gone from the worktree is refused BY
-    // NAME, because a program nobody can read turns every file it covered into
-    // an offender. There the absence is the fault; here it is the repair.
-    //
-    // A DANGLING SYMLINK GOES WITH THEM, disclosed rather than branched on:
-    // `existsSync` follows the link, so a `.ts` link pointing at nothing is
-    // dropped too. It is not a file any compiler could read either.
     if (!existsSync(absolute)) {
       return false;
     }
     if (declarationsAreCheckedByNothing && declarationFile.test(path)) {
       return false;
     }
-    // ONLY WHILE NOBODY COMMITTED IT, which is the difference between a
-    // subtraction and an exemption list: a compiler-written artifact is never in
-    // the index, so a path that IS in the index is somebody's file whatever
-    // directory it sits in, and excusing it would let one `outDir` -- on a
-    // program that need not even emit -- silence a whole directory with no name
-    // written anywhere. THE TEST READS ONLY THAT WAY: untracked here does not
-    // make a file one the compiler wrote, and a hand-written one nobody has
-    // committed is subtracted with the artifacts.
     if (
       !inTheIndex.has(path) &&
       written.some((outDir) => spelling(absolute).startsWith(spelling(outDir) + sep))
@@ -1564,16 +796,6 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
     return;
   }
   const { sentences, explained } = packageShapedFaults(root, members, offenders);
-  // EVERY OFFENDER AND NOT THE FIRST, which is the opposite of the choice
-  // `refuseMemberDirectoriesUnlikeTheUnscopedName` makes and for the reason that
-  // separates them: there the fault is one manifest and the rest are correct,
-  // where a directory nothing includes usually holds several files and a reader
-  // told about one of them would fix it and meet the next on the following run.
-  //
-  // AND THAT IS WHY A PACKAGE SENTENCE DOES NOT END THE MESSAGE. It replaces the
-  // files it SPEAKS FOR and nothing else; an offender somewhere no `workspaces`
-  // entry would have covered is still named, in the same run, because fixing the
-  // package would not have fixed it.
   const rest = offenders.filter((offender) => !explained.has(offender));
   const message = [...sentences];
   if (rest.length > 0) {
@@ -1581,11 +803,6 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
       `${rest.join(", ")} ${rest.length === 1 ? "is a TypeScript file" : "are TypeScript files"} in this checkout that no tsconfig includes, so nothing type-checks ${rest.length === 1 ? "it" : "them"}. Widen the \`include\` of the program that ought to hold what is named here -- there is deliberately no list to exempt a file from this check.`,
     );
   }
-  // AND THE ONE QUALIFICATION THIS CHECK OWES ITS OWN REPAIR. Everything above
-  // tells a reader to widen an `include`, which is the WRONG edit for a file
-  // some other project already covers -- and a project this enumeration cannot
-  // see is exactly what a reference to a config named anything else is. Named
-  // here rather than followed, for the ruling recorded above.
   const enumerated = new Set(programs.map((program) => spelling(join(root, program.config))));
   const unreachable = [
     ...new Set(
@@ -1594,21 +811,11 @@ export function refuseUncoveredFiles(root: string, members: readonly string[]): 
         .filter((reference) => !enumerated.has(spelling(reference))),
     ),
   ];
-  // AND THE OTHER BOUNDARY OF THE SUBJECT, SAID ONLY WHERE THERE IS ONE TO SAY
-  // IT ABOUT. A reader handed a file list reasonably takes it for the whole
-  // answer, and inside a submodule it is not the answer at all -- nothing there
-  // was ever a candidate. Asked here rather than beside the enumeration so a
-  // green run pays no spawn for it.
+  // Asked here rather than beside the enumeration so a green run pays no spawn
+  // for a sentence it would not print.
   const mounted = submodules(root);
   if (mounted.length > 0) {
     const one = mounted.length === 1;
-    // THE LAST CLAUSE IS DERIVED AND NOT ASSERTED, which is the difference
-    // between a sentence that is true and one that was true when it was
-    // measured. `nothing named above is inside one` is a claim about what git
-    // does at a gitlink, and it holds on git 2.54 for an INITIALISED submodule
-    // and for a DEINITIALISED one alike -- measured, `--others` descends into
-    // neither. Reading it off the offenders instead costs one pass and cannot go
-    // stale behind a version of git nobody here has run.
     const named = offenders.some((offender) =>
       mounted.some((at) => offender === at || offender.startsWith(`${at}/`)),
     );
