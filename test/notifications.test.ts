@@ -202,16 +202,22 @@ const RECORD_ANCHOR = "export function createGatedConnection";
 function recordBlockOf(source: string): string {
   const at = source.indexOf(RECORD_ANCHOR);
   if (at === -1) {
-    throw new Error(`src/notifications.ts: no \`${RECORD_ANCHOR}\` to read a record from`);
+    throw new Error(
+      `packages/tsudoi-language-server/src/notifications.ts: no \`${RECORD_ANCHOR}\` to read a record from`,
+    );
   }
   const before = source.slice(0, at);
   const closed = before.lastIndexOf("*/");
   const opened = before.lastIndexOf("/**");
   if (opened === -1 || closed < opened) {
-    throw new Error(`src/notifications.ts: no doc block precedes \`${RECORD_ANCHOR}\``);
+    throw new Error(
+      `packages/tsudoi-language-server/src/notifications.ts: no doc block precedes \`${RECORD_ANCHOR}\``,
+    );
   }
   if (before.slice(closed + 2).trim() !== "") {
-    throw new Error(`src/notifications.ts: the doc block does not immediately precede the anchor`);
+    throw new Error(
+      `packages/tsudoi-language-server/src/notifications.ts: the doc block does not immediately precede the anchor`,
+    );
   }
   return before.slice(opened, closed + 2);
 }

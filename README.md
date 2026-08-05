@@ -99,7 +99,7 @@ checked. For members that refusal is enforced by the fifth command above.
 Run it **from the repository root**. bun looks for `bunfig.toml` in the directory you are
 standing in and never searches upward, so a `bun test` started anywhere else runs the whole
 suite with no build -- the one route on which a stale `dist/` is still reachable, and the
-reason `test/package-shape.test.ts` still compares `dist/` against what `src/types.ts`
+reason `test/package-shape.test.ts` still compares `dist/` against what `packages/tsudoi-language-server/src/types.ts`
 re-exports.
 
 ## Quickstart
@@ -439,7 +439,7 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   what it publishes.
 
 - **The published type surface is four subpaths**, split by ORIGIN rather than by topic:
-  `@atusy/tsudoi-language-server/types` is tsudoi's own names, written in `src/types.ts`, and
+  `@atusy/tsudoi-language-server/types` is tsudoi's own names, written in `packages/tsudoi-language-server/src/types.ts`, and
   `@atusy/tsudoi-language-server/deps/protocol`, `@atusy/tsudoi-language-server/deps/types` and `@atusy/tsudoi-language-server/deps/textdocument`
   re-export the three packages tsudoi depends on, one subpath each. The line tsudoi draws is OURS
   versus THEIRS; the line between the three `deps/` subpaths is upstream's own packaging, which
