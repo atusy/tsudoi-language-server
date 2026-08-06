@@ -167,35 +167,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-63",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "trust that the tarball at the path the documentation names is the one it means",
-        benefit:
-          "the route a human follows by hand produces what the route the suite runs produces",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "The documented pack routes cannot leave one route's artifact standing where another route's install reads.",
-          verification:
-            "FIRST TASK IS THE MEASUREMENT AND NO FIX IS NAMED IN ADVANCE, because the obvious one is chosen by the answer: does installing the workspace tarball fail loudly, or install the private root quietly and leave a config's specifiers unresolved? THAT MEASUREMENT IS DEAD AND IS QUOTED RATHER THAN DELETED, BECAUSE HOW IT DIED IS THE USEFUL PART. It read: `a member pack and a root pack write THE SAME FILENAME TO THE SAME PATH`. THE RENAME OF THE ROOT TO @atusy/tsudoi-workspace KILLED IT, and the rename was made for another reason entirely. RE-MEASURED at sprint 72, bun 1.3.13, in a clone: the root packs atusy-tsudoi-workspace-0.0.0.tgz and the member packs atusy-tsudoi-language-server-0.0.0.tgz INTO THE MEMBER -- different names, different directories. SO THE CRITERION IS TRUE TODAY, AND WHAT HOLDS IT IS NOT WHAT A CLOSE ATTEMPT SAID. I WROTE `renaming the root back restores the collision with every check green` AND BOTH CLAUSES ARE FALSE, MEASURED AT REVIEW. No collision is restored -- the bare packs land on the SAME FILENAME IN DIFFERENT DIRECTORIES, which my own re-measurement had named and then dropped. And it is not green: 939 pass / 2 fail, because the publish sentinel refuses two manifests declaring one name and says it cannot tell which a publisher would edit. SO THE ROOT'S NAME IS CONSTRAINED BY THE TREE AFTER ALL -- as a NON-DUPLICATE rather than as a value -- and `asserted nowhere` was the wrong reading of a grep. AND THE COLLISION IS STILL REACHABLE FROM ONE SIDE. README's documented form is `bun pm pack --filename tsudoi.tgz` in the member, WHICH LANDS AT THE WORKSPACE ROOT and is what makes its install line one directory up resolve; the same flag at the CHECKOUT ROOT overwrites that artifact with the workspace tarball -- every tracked file including scrum.ts and the suite, and ZERO dist/ entries, which is what makes the poisoned artifact fatal rather than merely wrong. NO COUNT IS WRITTEN: this tarball's file count moved the day .claude/ was added. THE ROOT FORM WITH --filename IS DOCUMENTED NOWHERE, so it is not a documented route, and that is the whole of why the criterion reads met. WHAT WOULD MOVE THIS READING: the root manifest's name, the bun version, and whether a document ever names the root form",
-        },
-        {
-          criterion:
-            "What answers a member's specifier is read from the package that answered, not from the presence of an entry.",
-          verification:
-            "DONE AT SPRINT 72, and the re-measurement made the case stronger than the filing did. The move recorded the two states as producing BYTE-IDENTICAL failure text; MEASURED NOW on a staged clone, THEY ARE NOT SYMMETRIC AT ALL -- a REMOVED entry reddens two arms, and an entry pointing at THE SIBLING HANDLER reddens NOTHING, 5 pass / 0 fail. One of the two says nothing whatever. The arm follows the entry with realpath and reads the target manifest's declared name, and its negative control runs in both directions: the wrong package fails naming what it resolved to, and a removed entry reddens it too.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "RANKED LOW ON THE FIRST CRITERION AND NOT ON THE SECOND: the root is private for ever and the artifact is local, but the entry-name reading is the discrimination the move showed missing.",
-      ],
-    },
-
-    {
       id: "PBI-73",
       story: {
         role: "tsudoi maintainer",
@@ -298,6 +269,56 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 72,
+      pbi_id: "PBI-63",
+      goal: "What answers a member's specifier is read from the package that answered, and two documented pack routes landing on one path is refused rather than merely absent.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Force each entry state against the shipped assertion and read what it prints -- the premise being re-measured is the item's own, taken at the move and never re-read.",
+          implementation:
+            "An arm following the entry with realpath and reading the target manifest's declared name.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE PREMISE WAS WORSE THAN FILED, NOT STALE. The move recorded `resolves to the wrong package` and `no entry at all` as BYTE-IDENTICAL; measured on a staged clone they are NOT SYMMETRIC -- a removed entry reddens three tests, and an entry pointing at THE SIBLING HANDLER reddens NOTHING, 5 pass / 0 fail. One of the two says nothing whatever.",
+            "NEGATIVE CONTROL IN BOTH DIRECTIONS, because an arm never run against the no-entry degenerate reproduces the failure it exists to split: the wrong package fails naming what it resolved to, and a removed entry reddens it too.",
+            "AND THE ARM'S OWN CLAIM ABOUT ITSELF WAS TOO WIDE, CAUGHT AT REVIEW. It said the target name tells tsudoi apart from `something shaped like it`. A directory holding ONLY a manifest with that name passes the whole file, and with a member's entry pointing at such a stub NOTHING reddens, because the root's route answers for tsc. It reads the NAME. It also does not subsume the isSymbolicLink arm and is not subsumed: a real COPY passes this and reddens that one.",
+          ],
+        },
+        {
+          test: "Resolve the documented pack routes to absolute paths from the same extractors the neighbouring arms use, and refuse two landing on one.",
+          implementation: "An arm over the routes rather than a sentence about them.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE ITEM'S FIRST MEASUREMENT WAS DEAD AND IS QUOTED WITH ITS CAUSE. `a member pack and a root pack write THE SAME FILENAME TO THE SAME PATH` was killed by the rename of the checkout root to @atusy/tsudoi-workspace, made for an unrelated purpose.",
+            "AND THE COLLISION IS STILL REACHABLE FROM ONE SIDE: the documented member form is `--filename tsudoi.tgz`, WHICH LANDS AT THE WORKSPACE ROOT and is what makes the READMEs install line one directory up resolve; the same flag at the CHECKOUT ROOT overwrites it with the workspace tarball -- every tracked file, and ZERO dist/ entries, which is what makes it fatal rather than merely wrong. The root form with the flag is documented nowhere, which is the whole of why the criterion reads met.",
+            "THE ARM'S RESIDUE IS NAMED RATHER THAN LEFT: a route spelling ANOTHER package's default filename, beside a bare route in that package's own directory, both land on one path and this stays green. Review constructed it. What the arm does see is two bare routes in one directory, and any two --filename routes agreeing.",
+          ],
+        },
+        {
+          test: "None -- five documents stating a behaviour conditional on a flag none of them named.",
+          implementation:
+            "`bun pm pack` inside a member writes INTO the member; only --filename sends it to the workspace root. Narrowed at every site.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE SENTENCE WAS NOT CLAUDE.md's, WHICH IS WHY LOOKING THERE FIRST WAS THE WRONG MOVE. It is TRACKED at README.md, both handler READMEs, test/helpers/readme.ts and -- the site review found and the repair had missed -- .claude/skills/writing-a-comment/SKILL.md, the file about prose going false. Repairing the untracked copy alone would have reached one machine and left the document a stranger reads standing.",
+            "AND THE HALF NOBODY GRADED NOW HAS AN ASSERTION: the arms checked the tarball IS at the root and never that it is ABSENT from the member, which is the clause every one of those documents states. Review measured that the new assertion has no reachable positive control -- bun refuses --filename with --destination -- so it is a forward guard against a runtime change rather than against a document edit, and it is recorded as that.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "A GREP THAT FINDS NO EQUALITY ASSERTION HAS NOT FOUND AN ABSENCE OF CONSTRAINT. I wrote that the root manifest's name is asserted nowhere and that renaming it back restores the collision with every check green. Both false: the bare packs share a filename and differ by DIRECTORY -- which my own re-measurement had named one sentence earlier and then dropped -- and the publish sentinel refuses two manifests declaring one name, 939 pass / 2 fail. The name is constrained as a NON-DUPLICATE rather than as a value.",
+        "TWO OF THIS ITEM'S THREE RECORDED MEASUREMENTS WERE FALSE OF THE TREE, taken at the move and never re-read against what changed since. That is the third item in a row where the filing's evidence had been overtaken, and the shared shape is that each quoted a named code site whose behaviour moved while the prose kept pointing at the old one.",
+      ],
+    },
     {
       number: 71,
       pbi_id: "PBI-68",
