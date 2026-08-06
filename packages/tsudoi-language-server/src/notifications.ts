@@ -122,7 +122,11 @@ export function registerNotifications<P extends readonly unknown[]>(
  * moved`: growth under an EXISTING name reddens neither pin, which that pin's
  * own docblock says. WHICH IS WHY THE REVERSAL CONDITION NAMES THEM AND NOT
  * THIS PARAGRAPH'S HAZARD: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION
- * BECOMES REQUIRED. `Pick` needs neither of them.
+ * BECOMES REQUIRED. `Pick` needs neither of them. `TWO`, `EITHER` AND `NEITHER`
+ * STAY, over a reviewer's objection that they are written counts: both pins are
+ * NAMED in this paragraph, so a third arriving falsifies the naming whatever
+ * the quantifier says. The convention refuses a count that goes stale SILENTLY,
+ * which this one cannot.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
