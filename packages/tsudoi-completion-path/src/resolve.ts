@@ -54,6 +54,10 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
         context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
           ?.documentationFormat,
       ),
+      // A SAVED SYSCALL AND NOT WHAT KEEPS A FILE ANSWERING AS A FILE, which no
+      // arm says: with the test dropped, `opendir` fails on a file and
+      // `listingOf` catches, so resolve.test.ts reads 15 pass / 0 fail.
+      // Inverting it to `isFile()` reddens 13.
       stats.isDirectory() ? await listingOf(path, context.signal) : undefined,
     ),
   };
