@@ -259,12 +259,16 @@ the decision, the test carries the reason.
 **WHEN THE REASON IS NOT A COMMENT, TRY THESE IN ORDER AND TAKE THE FIRST THAT
 FITS.** _(sprint 81)_ **What this list adds is the RANKING; the entries are not
 all new, and saying so either way has now been wrong once in each direction.**
-THE COMMIT and THE SPRINT RECORD restate triggers the paragraph above already
-states — deliberately, because an ordering that omitted them could not rank
-them. AN ARM widens the machine-formatted-file case above rather than repeating
-it. **A SKILL and CLAUDE.md appear nowhere above; those two are genuinely new
-homes.** The site comment and the backlog item keep their homes above and are
-not superseded by being absent here.
+THE SPRINT RECORD and THE COMMIT'S MEASUREMENT TRIGGER restate what the
+paragraph above already states — deliberately, because an ordering that omitted
+them could not rank them. AN ARM widens the machine-formatted-file case above
+rather than repeating it. **A SKILL and CLAUDE.md appear nowhere above; those
+two are genuinely new homes.** The site comment and the backlog item keep their
+homes above and are not superseded by being absent here. **THE ONE ENTRY THIS
+PARAGRAPH CANNOT PLACE is THE COMMIT'S FORECLOSED-ALTERNATIVE TRIGGER**, which
+the paragraph above instead sends to a line at the site where someone would
+reintroduce it. Both are live and neither is a restatement of the other; the
+sprint record carries why it was not settled here.
 
 - **AN ARM**, if something can grade it. It outranks everything below because it
   is the only home that reddens the day the reason stops holding, which is also
