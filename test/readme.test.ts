@@ -10,6 +10,7 @@ import {
   extractExamplesInstall,
   extractFailureContract,
   extractHandlerPack,
+  type RunStep,
   extractQuickstart,
   installedPath,
   invocationOf,
@@ -216,6 +217,47 @@ test("a README with no examples-install marker states no install command, and sa
  * install are two commands in two directories joined by a PATH, and nothing but
  * this compares them.
  */
+/**
+ * NO TWO DOCUMENTED PACK ROUTES LAND ON ONE PATH, which is true today for a
+ * reason nothing holds: the checkout root was renamed to @atusy/tsudoi-workspace
+ * for an unrelated purpose, and that name is asserted NOWHERE ELSE in this tree.
+ * Rename it back and a member pack and a root pack collide again, silently.
+ *
+ * WHAT A COLLISION COSTS, and it is why this is worth an arm rather than a note:
+ * the root artifact is every tracked file including this suite, with NO dist/ at
+ * all, and the READMEs' install line reads the path a member pack writes. A
+ * reader who packed the root last installs the workspace and gets no framework.
+ *
+ * READ FROM THE DOCUMENTS rather than spelled here: the commands come from the
+ * same extractors the arms above use, so a document that changes its filename
+ * changes what this compares.
+ */
+test("no two documented pack routes write to the same path", () => {
+  // The quickstart's steps are relative to the PARENT of the checkout, so its
+  // pack step's directory is stripped back to this repository before joining.
+  const packs = extractQuickstart(readReadme(), QUICKSTART_STEPS)
+    .filter((step): step is RunStep => step.kind === "run" && step.command.includes("pm pack"))
+    .map((step) => ({ where: step.dir.split("/").slice(1).join("/"), command: step.command }));
+  const routes = [
+    ...packs,
+    ...memberReadmes.map((member) => {
+      const pack = extractHandlerPack(member.markdown);
+      return { where: pack.dir, command: pack.command };
+    }),
+  ];
+  expect(routes.length).toBeGreaterThan(1);
+
+  const landings = routes.map(({ where, command }) => {
+    const named = /--filename\s+(\S+)/.exec(command)?.[1];
+    // Without --filename bun writes beside the manifest it packed; with it, at
+    // the workspace root. MEASURED, and it is the whole reason the READMEs'
+    // install path resolves.
+    return named === undefined ? join(repoRoot, where, "<package>.tgz") : join(repoRoot, named);
+  });
+
+  expect(landings.length).toBe(new Set(landings).size);
+});
+
 test("each member's pack command runs, and writes the file its own install names", async () => {
   for (const member of memberReadmes) {
     const pack = extractHandlerPack(member.markdown);
