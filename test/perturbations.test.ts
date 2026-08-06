@@ -490,6 +490,30 @@ test("the report names the arm each record weakened, and no other", async () => 
  * AN ARM FILE THAT IS NOT TRACKED CANNOT BE RE-RUN HERE: the stage is built from
  * `git ls-files`, so a record naming a file that has never been committed fails
  * at the read, loudly, rather than reporting a colour.
+ *
+ * WHAT THIS REGISTRY CANNOT HOLD, AS A CLASS AND IN ONE PLACE, so that an arm
+ * file does not have to carry its own exemption and the class is not
+ * discoverable only by reading every file that has one. A record is applied by
+ * staging every TRACKED file and running the arm file inside that stage, so a
+ * weakening whose reading depends on something the stage does not reproduce is
+ * unrecordable. THREE MECHANISMS, AND ONLY THE FIRST IS DECIDABLE FROM THE ARM
+ * FILE:
+ *
+ * - IT IMPORTS helpers/perturbation.ts. `reRun` refuses that by name and throws,
+ *   because such a record runs a file that stages a tree and runs a file that
+ *   stages a tree. This is the half a reader can check without running anything.
+ * - WHAT THE STAGE LACKS: no `.git`, no build output, and a directory NAME that
+ *   is not this repository's. An arm reading any of the three is red AT THE
+ *   BASELINE rather than at its weakening, which is a colour about the stage.
+ * - WHAT THE STAGE GAINS: `mirrorInstalledDependencies` treats the real
+ *   framework as an INSTALLED dependency, its realpath being outside the stage,
+ *   and hands a probe a SECOND ROUTE -- so a weakening that removes the first
+ *   reads DISARMED.
+ *
+ * AND `THE ARM FILE STAGES A TREE OF ITS OWN` IS NOT THE PREDICATE, measured
+ * because it is the one a reader reaches for: it holds of seventeen root test
+ * files, and test/definition-of-done.test.ts is one of them while its records
+ * re-run and report HELD below.
  */
 const dodArms = "test/definition-of-done.test.ts";
 const dodRunner = "scripts/definition-of-done.ts";

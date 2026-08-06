@@ -306,9 +306,9 @@ test("a marker no test opens does not clear the document that carries it", () =>
  * files named README.md. It answers identically on every document this
  * repository ships and differs on exactly one thing -- a file the index has
  * never heard of -- so this pair is where it fails. It is recorded HERE, beside
- * the arm, rather than as a row in the perturbation registry: `reRun` refuses
- * any arm file that imports helpers/perturbation.ts, and this one must, so a row
- * naming an arm here could never be applied.
+ * the arm, rather than as a row in the perturbation registry: this file imports
+ * helpers/perturbation.ts and must, which is the one mechanism of that
+ * registry's stated class a reader can check from an arm file.
  */
 test("a README the index has never heard of is not swept, and is the moment it is added", () => {
   const stage = stageWithIndex();

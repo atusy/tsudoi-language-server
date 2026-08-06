@@ -197,9 +197,13 @@ const ignorePatternsLine = `pathIgnorePatterns = [${ignoredSegments
  * bunfig NAMES the segments, and a key bun stopped honouring would satisfy it
  * for ever. This spawns and reads what bun did.
  *
- * IT STAGES A TREE OF ITS OWN, which puts it in the class the perturbation
- * registry cannot re-run -- filed against PBI-72 rather than left to be
- * rediscovered.
+ * IT STAGES A TREE OF ITS OWN, AND THAT IS NOT AN EXEMPTION FROM THE
+ * PERTURBATION REGISTRY, which is what stood here and was measured false: the
+ * predicate is not staging -- that holds of seventeen root test files, most of
+ * which carry records. What IS decidable from this file is that it does not
+ * import helpers/perturbation.ts, so the one mechanism a reader can check does
+ * not apply. Whether a record over this arm survives a stage is UNREAD, which is
+ * the honest state: the registry's other two mechanisms are not readable here.
  */
 test("bun runs no test file under an ignored segment, and runs them without the key", async () => {
   const ignoring = scratchTree(`[test]\n${ignorePatternsLine}\n`);

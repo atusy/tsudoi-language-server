@@ -14,16 +14,13 @@ applySuiteDeadline();
  * its assertion needs besides the block, and this file takes the rows that need
  * nothing else. A row added tomorrow lands in the right file by saying so.
  *
- * WHAT THE SEPARATION BUYS, MEASURED RATHER THAN TIDY: the perturbation registry
- * re-runs a recorded weakening by staging a checkout of every TRACKED file --
- * with no build outputs, and under a temporary directory whose NAME is not this
- * repository's. Every other `read` row here reads one or the other: the install
- * row compares against `basename(repoRoot)`, which is the stage's own temporary
- * name there, and the snippet row resolves specifiers that answer out of `dist/`.
- * Their arms are legitimately red in such a stage, and a registry row over them
- * would fail at the baseline rather than at its weakening. These arms are not,
- * so a weakening of the layout account can be recorded as something the suite
- * RE-RUNS instead of as prose.
+ * WHAT THE SEPARATION BUYS, MEASURED RATHER THAN TIDY: it is what puts a
+ * weakening of the layout account inside the perturbation registry instead of in
+ * prose. Every other `read` row reads something the STAGE LACKS -- the install
+ * row compares against `basename(repoRoot)`, the snippet row resolves specifiers
+ * answering out of `dist/` -- which is the second of the three mechanisms
+ * test/perturbations.test.ts names, and their arms would be red at the baseline
+ * rather than at any weakening. These arms read neither.
  */
 const accounts = readAccounts(repoRoot).filter(
   (account) => account.form.needs === "the document alone",
