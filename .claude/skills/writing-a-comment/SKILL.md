@@ -202,8 +202,9 @@ dead sentence`. A comment that is STILL TRUE and no longer worth its lines has
 no entry point, so it stayed. Note that DELETE's stated reason is not that the
 fact moved but that **a reader at that line never needed it**, which is this
 section's reason too; what was missing was the trigger, not the argument. **The
-fourth disposition: WITHDRAW — the claim holds, and something else already
-reddens the day it stops holding, so the copy here goes and that one keeps it.**
+disposition that was missing is WITHDRAW — the claim holds, and something else
+already reddens the day it stops holding, so the copy here goes and that one
+keeps it.**
 
 **THE TEST IS NOT LENGTH, IT IS WHO GRADES IT, AND THAT IS MEASURED RATHER THAN
 NAMED.** _(sprint 81)_ Run the perturbation the claim describes and read which
