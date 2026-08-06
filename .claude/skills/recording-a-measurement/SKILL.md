@@ -74,16 +74,19 @@ is not written down, the sentence is wider than its reading.
 
 _(sprint 70)_ **`whose cost, at what size, on which runtime` STOOD HERE AS THE
 RULE AND IS DEMOTED TO AN EXAMPLE**, because it is one instrument's
-condition-spelling: 8 of this tree's 318 labels are a timing, and 148 carry
+condition-spelling: 8 of this tree's 318 MEASURED tokens are a timing -- re-derived independently at review and holding -- while most carry
 NEITHER A DIGIT NOR AN ADJACENT NAMED COMMAND — a text property, which is what a
 behaviour observation reads as here, and which sorts spelling rather than
-soundness, so a wrong sentence with no number in it is inside the 148. For those
+soundness, so a wrong sentence with no number in it is inside that set. NO COUNT IS WRITTEN FOR IT, AND THAT IS THE POINT: `148` stood here and REVIEW COULD NOT REPRODUCE IT -- 76 spellings of `adjacent` read between 11 and 223, with nothing within ten of 148. The refusal below holds at either end of that range, so the number was never load-bearing; a figure whose instrument nobody can re-run is this rule's own subject. For those
 cost and size have no referent to fill in, and an author either leaves them
-blank and fails the rule, or invents them. MEASURED against
-the four failures that prompted this edit: THREE OF THE FOUR SATISFIED THE
-FOUR-PART FORM, and the worst of them -- `940 tests across 69 files`, offered
-as evidence of a graded file when the same figure comes from an ungraded one --
-cites a size, a runtime and a cost-bearer. _(sprint 53)_ MEASURED, and the
+blank and fails the rule, or invents them. Against the four failures that
+prompted this edit: ZERO satisfied the four-part form, because its fourth part
+is what the instrument cannot separate and not one of them names that -- not
+naming it is what made each a failure. Only `940 tests across 69 files` cites
+any of cost, size or runtime, and it is the worst of the four: offered as
+evidence a file was graded, when the same figure comes from an ungraded one. A
+FORM THREE OF THEM WOULD HAVE PASSED IS WHAT THIS PARAGRAPH FIRST CLAIMED, and
+the claim grew across three re-authorings before review measured it. _(sprint 53)_ MEASURED, and the
 evidence is four wrong sentences in a row about one subject, three of them
 carrying this label: "the cost is linear" — true of the per-entry comparison,
 false of the sort beside it; "nothing of the directory's size is held or
