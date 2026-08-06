@@ -251,10 +251,12 @@ is what stops it needing to be seen.
 
 _(sprint 65)_ **First ask whether the reason needs a home in the tree at all.**
 This rule answers WHERE a reason goes and was read as saying every reason goes
-somewhere. Most do not. A measurement's home is the commit that took it; a
-review finding's is the sprint record; a foreclosed alternative earns a line
-only where someone would otherwise reintroduce it. Half this tree became
-comments under the wider reading.
+somewhere. Most do not. A measurement's home is the commit that took it —
+**unless it was taken to settle a REVIEW FINDING, and then the sprint record
+keeps it** _(sprint 81, measured against the sprint that wrote the list below,
+whose unrepaired measured findings are there)_; a review finding's is the sprint
+record; a foreclosed alternative earns a line only where someone would otherwise
+reintroduce it. Half this tree became comments under the wider reading.
 
 _(sprints 9, 40)_ A decision whose violation would be a CODE EDIT belongs in a
 comment AT THE SITE where that edit would be made. One that shapes WHAT TO BUILD
@@ -269,13 +271,11 @@ the decision, the test carries the reason.
   expensive to re-derive is mechanised rather than narrated. Wider than the
   machine-formatted-file case above.
 - **THE COMMIT** and **THE SPRINT RECORD**, on the triggers stated earlier in
-  this section. **WHERE BOTH FIT — a measurement taken to settle a review
-  finding — the sprint record takes it**, MEASURED against the sprint that wrote
-  this list, which had already put its unrepaired measured findings there. A
-  commit is IMMUTABLE and DATED, so a claim in it cannot be silently updated and
-  a reader always knows when it was written; **THAT IS NOT THE SAME AS
-  PAST-TENSE OR TRUE** — this sprint's own `72f93b9` carries a present-tense
-  claim its sprint record refutes.
+  this section, which already say which one takes a measurement that settles a
+  review finding. A commit is IMMUTABLE and DATED, so a claim in it cannot be
+  silently updated and a reader always knows when it was written; **THAT IS NOT
+  THE SAME AS PAST-TENSE OR TRUE** — this sprint's own `72f93b9` carries a
+  present-tense claim its sprint record refutes.
 - **A SKILL**, if the discipline is applied while WRITING and no arm reached it
   first. **That an arm often does not reach prose is not a rule** —
   `readmeCoverage` and `fenceForms` grade prose written long before they run, so
