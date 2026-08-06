@@ -112,12 +112,15 @@ export function registerNotifications<P extends readonly unknown[]>(
  *
  * A MISSPELLED KEY HERE IS A SILENT NO-OP: `Omit<T, K>` tolerates a key outside
  * `keyof T` where `Pick`'s `K extends keyof T` refuses one. SO `Pick` IS THE
- * BETTER INSTRUMENT FOR THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE, because
- * today's `Omit` is defended by two pins in test/notifications.test.ts,
- * `BoundaryIsTheObservingMembers` and `ProtocolConnectionHasTheseMembers`, and a
- * change with no defect to fix is churn. THE REVERSAL CONDITION, so this is a
- * decision and not an opinion: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION
- * BECOMES REQUIRED. `Pick` needs neither of them.
+ * BETTER INSTRUMENT FOR THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE,
+ * because a change with no defect to fix is churn and THIS hazard is already
+ * caught: MEASURED, the spawned probes in test/notifications.test.ts redden on
+ * a misspelled key with `BoundaryIsTheObservingMembers` deleted, and
+ * `ProtocolConnectionHasTheseMembers` is silent under one. THE TWO PINS EARN
+ * THEIR PLACE ELSEWHERE -- a SURPLUS key, and the dependency moving under the
+ * `Omit` -- WHICH IS WHY THE REVERSAL CONDITION NAMES THEM AND NOT THIS
+ * PARAGRAPH'S HAZARD: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES
+ * REQUIRED. `Pick` needs neither of them.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
