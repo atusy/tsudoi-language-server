@@ -255,14 +255,21 @@ NEXT belongs on the backlog item. One whose only home is a MACHINE-FORMATTED FIL
 that cannot carry comments belongs in a TEST THAT ASSERTS IT — the file carries
 the decision, the test carries the reason.
 
-**WHEN THE REASON IS NOT A COMMENT, THESE ARE THE HOMES, AND THE FIRST THAT FITS
-WINS.** _(sprint 81)_ The backlog item above is one of them; the rest:
+**WHEN THE REASON IS NOT A COMMENT, TRY THE HOMES IN THIS ORDER AND TAKE THE
+FIRST THAT FITS.** _(sprint 81)_ **This is an ORDERING over homes this section
+already names, not a new set** — the commit, the sprint record, the site
+comment, the backlog item and a test standing in for a machine-formatted file
+are all stated above, and a reader who reaches this list must not read them as
+superseded. What is added is the ranking and the trigger for each:
 
-- **AN ARM**, if something can grade it. It outranks the others because it is
-  the only home that reddens the day the reason stops holding, which is also why
-  a reason expensive to re-derive is mechanised rather than narrated.
+- **AN ARM**, if something can grade it. It outranks everything below because it
+  is the only home that reddens the day the reason stops holding, which is also
+  why a reason expensive to re-derive is mechanised rather than narrated. Wider
+  than the machine-formatted-file case above, which is one way of arriving here.
 - **THE COMMIT**, if it is a MEASUREMENT or a FORECLOSED ALTERNATIVE. A commit
   is past-tense and dated, so it cannot rot.
+- **THE SPRINT RECORD**, if it is a REVIEW FINDING — including one this sprint
+  decided not to repair, which no commit here took and no arm grades.
 - **A SKILL**, if the discipline is applied while WRITING rather than while
   RUNNING. Nothing is running at the moment a sentence is typed, so there is no
   run for an arm to hook — this file is that case.
