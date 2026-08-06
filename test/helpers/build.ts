@@ -17,10 +17,20 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * building the installed consumer`, TS2307 on both published subpaths, and
  * three arms down with it -- while the twin run beside it went green, which is
  * what makes the failure read as the tree's rather than the runner's. Alone on
- * the same commit: green, and in two thirds of the wall time. THE FAILURE IS
- * NOT THE DEADLINE even though an arm times out among the casualties; raising
- * it would buy a slower version of the same corruption. Use a `git worktree`
- * for a concurrent run -- each gets its own dist/.
+ * the same commit: green, and in two thirds of the wall time.
+ *
+ * IT DOES NOT ALWAYS LOOK LIKE THAT, WHICH IS THE HALF THAT WILL COST SOMEONE
+ * AN AFTERNOON. Three overlapping pairs were run and NO TWO FAILED ALIKE: the
+ * pack above; a lone `the root type check resolves the published subpaths
+ * through the exports map, to the built artifact`; and three spawn arms across
+ * BOTH runtimes reporting `the server never answered initialize within 8000ms`
+ * with the fake editor having read nothing. Only the first names dist/ out
+ * loud. The shared tell is a SECOND RUN, not a symptom -- so check for one
+ * before reading any red here as the tree's.
+ *
+ * AND IT IS NOT THE DEADLINE even though an arm times out among the casualties;
+ * raising it would buy a slower version of the same corruption. Use a `git
+ * worktree` for a concurrent run -- each gets its own dist/.
  *
  * SYNCHRONOUS ON PURPOSE, AND THE REASON IS A MEMBER'S TEST RATHER THAN A ROOT
  * ONE. The workspace members' own test files statically import
