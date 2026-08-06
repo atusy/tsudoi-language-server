@@ -829,7 +829,7 @@ const scrum: ScrumDashboard = {
       {
         test: "MISSPELL ONE KEY INSIDE THE `Omit` and read WHICH ARMS REDDEN AND IN WHICH CHECK, at base and again after the edit, requiring the same arms by name. The item's `three of the four are graded` is a READING until this runs, and the before/after pair is what makes `the arm keeps it` a measurement rather than an argument at review.",
         implementation:
-          "The narrowing at packages/tsudoi-language-server/src/notifications.ts:113-120. WHAT GOES: the consequence walk-through, which the pins and the probes grade. WHAT SURVIVES: the asymmetry clause, the `Pick` preference, the churn reasoning and the reversal condition -- a code-edit decision whose only legitimate home under the Lifetime Rule is that site -- with the two pins NAMED at :117. Zero edits at :176, at :264-267 and in test/notifications.test.ts.",
+          "The narrowing at packages/tsudoi-language-server/src/notifications.ts:113-120. WHAT GOES: the consequence walk-through, which the PROBES and `BoundaryIsTheObservingMembers` grade -- S2 corrected `the pins and the probes` here, because `ProtocolConnectionHasTheseMembers` is silent under a misspelling and grades none of it. WHAT SURVIVES: the asymmetry clause, the `Pick` preference, the churn reasoning and the reversal condition -- a code-edit decision whose only legitimate home under the Lifetime Rule is that site -- with the two pins NAMED at :117. Zero edits at :176, at :264-267 and in test/notifications.test.ts.",
         type: "structural",
         status: "completed",
         commits: [
