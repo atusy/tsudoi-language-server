@@ -167,36 +167,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-68",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read a park in a file that sets its own deadline as a wait that never completed, rather than as a number a busy machine tripped",
-        benefit:
-          "the eight files the suite deadline deliberately does not cover stop being the place a red still means the machine",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A park in a TEST that sets its own deadline fails naming the wait that never completed, without a wall-clock number a busy machine can trip. THE RESIDUE IS NARROWED TO THE PARKS WITH NO NAMED WAIT -- `waitForExit()` and `issue().response` -- because the stderr, write-failure, progress and pid waits already throw naming themselves and are recorded as bought rather than owed.",
-          verification:
-            "NO MECHANISM IS NAMED HERE, deliberately: naming one is how a criterion gets satisfied in letter. Both branches have measured evidence already and refinement decides between them -- two arms of one file died at 4008ms against that file's own 4000 at load 100-160, while every gated test in the tree read 12.8x headroom or better at load 3-9.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "SPRINT 54 STRENGTHENED THIS PREMISE RATHER THAN REMOVING IT, which is the opposite of what a close attempt concluded. Before it the ambient was bun's 5000, so 6000, 18000 and 20_000 RAISED a ceiling; with the ambient at 25_000 all eight UNDERCUT it. The files say so themselves -- cancellation.test.ts records that `BELOW bun test's DEFAULT` was false when written and is true again only because the suite now sets 25_000.",
-        "THE CRITERION IS ALREADY BOUGHT FOR MOST OF THE CLASS, AND THE RESIDUE IS WHERE THE ITEM'S OWN EVIDENCE LIVES. The stderr wait throws quoting both what it waited for and what stderr did say; the write-failure, progress and pid waits do the same. What has no named wait is `waitForExit()` -- literally `return this.#exited`, no deadline and no message -- and `issue().response`. THE 4008ms ARMS THIS ITEM WAS FILED ON ARE `await session.waitForExit()` UNDER hangTimeoutMs, which is that residue exactly.",
-        "AND IN THE FILES WHERE AN INNER WAIT IS 1000-2000 AGAINST A 6000 TEST CONSTANT, THE INNER ONE FIRES FIRST AND THE CONSTANT IS A BACKSTOP THAT NORMALLY NEVER SPEAKS. That is why the honest alternative shrank rather than died: permanent acceptance now defends the response-await class alone, where the wall-clock number is the ONLY thing that makes the park fail at all.",
-        "CLOSING ON `waitUntilGone` ALONE IS REFUSED BY NAME. One file's named wait does not cover a class of eight, and satisfying a criterion by finding the one compliant site is the letter-satisfaction this item's own verification note refuses. So is deleting the eight constants, which reinstates the pre-sprint-54 state where a park stalls the run with no diagnostic, and so is widening to the 60_000 and 120_000 sites, which raise a ceiling for real work.",
-        "THE HONEST ALTERNATIVE IS IN THE ITEM RATHER THAN OUTSIDE IT, because it may be the right outcome: ACCEPT THE EXPOSURE PERMANENTLY AND RECORD IT AS A DECISION. Each of the eight sets a deadline BELOW the ambient one on purpose, so that a park fails BY NAME in the file that owns it -- that is a property worth keeping, and a wall-clock number is how it is currently bought.",
-        "THE EIGHT, ENUMERATED BY READING CALL SITES RATHER THAN BY GREPPING A WORD -- AND AN ATTEMPT TO CLOSE THIS ITEM DID GREP A WORD AND CONCLUDED THE PREMISE WAS GONE. THE MECHANISM IS `test(name, fn, ms)`'S THIRD ARGUMENT AND NEVER `applySuiteDeadline()`, which takes no argument and sets one file-level default; reading the helper's signature and stopping there is what produced the false close. The eight, verified present at the filed values: protocol 4000, session 4000, completion 4000, cancel-parked-pull 6000, cancellation 6000, cleanup-drain 6000, cleanup 6000 and a second constant at 18000, and editor-death 20_000 -- THE LAST JOINED THIS CLASS BY SPRINT 54'S OWN CHOICE OF NUMBER, and its slowest arm has the least headroom in the tree.",
-        "AND THE TIGHTEST MARGIN IN THE TREE IS NOW THE FILE THAT MEASURES THE DEADLINE, at about four and a half times, refused its own allowance ON A PO RULING: an allowance there would exempt the file that measures the deadline from the deadline.",
-        "A SECOND MECHANISM IN THE SAME EIGHT FILES, FILED HERE UNDER THE BAR AND NOT REPAIRED IN SPRINT 57, WHOSE SUBJECT IT IS OUTSIDE OF. It is NOT a park and not a wall-clock number: `a completion handler that throws after yielding keeps the chunk it already sent` failed once in one Definition-of-Done run -- `expect(session.stderr).toContain(...)` against an EMPTY string -- and the arm awaits only THIS REQUEST'S RESPONSE before reading stderr, which arrives on a different pipe. So `the diagnostic was never written` and `the diagnostic has not been delivered yet` are one observation, which is this project's own two-states-one-red shape rather than a timing allowance. THE COMMITS AND THE BYTE-IDENTITY RESULT: `test/completion.test.ts`, `test/helpers/lsp.ts`, `test/helpers/fake-editor.ts` and the runtime's `methods.ts` are byte-identical between dd4fbd9 and 9258c02, so nothing this sprint wrote is in the program that assertion reads. WHAT IS NOT CLAIMED: it was not REPRODUCED at the base -- the file alone reads 58 pass / 0 fail on 10 of 10 runs there, and the whole suite was taken only twice at the base, both green, which cannot see an event this rare. The commit was not taken on the red; the next run read 874 pass / 0 fail.",
-      ],
-    },
-
-    {
       id: "PBI-63",
       story: {
         role: "tsudoi maintainer",
@@ -328,6 +298,46 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 71,
+      pbi_id: "PBI-68",
+      goal: "The two waits a test can park on with no message of their own say what did not happen, so a red in those files names the wait rather than a wall-clock number.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Force each park by replacing the underlying promise with one that never settles, and read what the failure says. Then measure the headroom the new deadline leaves, quiet and under load, because a deadline that trades an anonymous park for a real flake is worse than what it replaced.",
+          implementation:
+            "waitForExit() and issue().response race a named rejection at 3000ms, inside the tightest per-test constant in the tree.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "WHAT THEY SAID BEFORE AND SAY NOW. waitForExit was `return this.#exited` -- no deadline, no message -- and issue().response only ever resolves, so a park in either failed as bun's anonymous `timed out after Nms`, naming neither the wait nor the request. FORCED: `the server did not exit within 3000ms`, and `no response to textDocument/completion (id 2) within 3000ms`, which gives a reader the method and the id.",
+            "THE HEADROOM, MEASURED RATHER THAN ASSUMED, because this is the direction that would make the change worse than the defect. 202 waits observed across the whole suite on a quiet machine: SLOWEST RESPONSE 69ms, SLOWEST EXIT 95ms. Re-taken with eight spinners running at load 7: 67ms and 143ms. That is about twenty times the margin at the tail, against a 3000ms bound.",
+            "THE ITEM'S OWN EVIDENCE WAS PARKED IN THE FIRST OF THE TWO: the arms that died at 4008ms against a 4000 test constant were `await session.waitForExit()`.",
+            "AND THE OTHER WAITS WERE ALREADY BOUGHT, WHICH IS WHY THIS IS TWO SITES AND NOT EIGHT. The stderr wait throws quoting both what it waited for and what stderr did say; the write-failure, progress and pid waits do the same. Where an inner wait is 1000-2000 against a 6000 test constant, the inner one fires first and the constant is a backstop that normally never speaks.",
+          ],
+        },
+        {
+          test: "None -- a close attempt refused, and the reason it was wrong.",
+          implementation:
+            "The criterion's subject corrected from `a file that sets its own deadline` to `a test that sets its own deadline`, and the residue narrowed to the two unnamed parks.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "I GREPPED A WORD WHERE THE ITEM SAID IT HAD READ CALL SITES. `applySuiteDeadline()` takes no argument and sets one file-level default, so I concluded the eight per-file deadlines were gone and the item could close. THEY LIVE IN `test(name, fn, ms)`'S THIRD ARGUMENT AND ALWAYS DID -- the item's own note says it enumerated them by reading call sites RATHER THAN BY GREPPING A WORD, which is exactly the mistake it was warning against.",
+            "AND SPRINT 54 STRENGTHENED THE PREMISE RATHER THAN REMOVING IT, which is the opposite of what the close attempt concluded. Before it the ambient was bun's 5000, so 6000, 18000 and 20_000 RAISED a ceiling; with the ambient at 25_000 all eight UNDERCUT it. The files record their own correction -- one says `BELOW bun test's DEFAULT` was false when written and is true again only because the suite now sets 25_000.",
+            "THE PRODUCT OWNER REFUSED THE CLOSE ON A MEASUREMENT RATHER THAN ON A READING, and named what a green would have certified: nothing was edited, so all five checks would have passed while `hangTimeoutMs = 4000` sat at protocol.test.ts and the arms that died at 4008ms were still guarded by it.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THIS IS THE FIRST CODE CHANGE IN ELEVEN SPRINTS AND IT WAS MEASURED IN THE DIRECTION THAT WOULD MAKE IT HARMFUL. A deadline added to remove an anonymous park buys nothing if a legitimate wait can reach it; the reading that licenses it is the tail under load, not the mean when quiet.",
+        "A REVIEW WAS CUT OFF BY AN API ERROR WITH ITS FIRST TASK -- the headroom -- UNFINISHED, AND THAT TASK WAS TAKEN RATHER THAN SKIPPED. An unrun check on the one axis that decides whether a change is harmful is not a check that can be deferred to the record.",
+      ],
+    },
     {
       number: 70,
       pbi_id: "PBI-66",
