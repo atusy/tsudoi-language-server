@@ -291,6 +291,29 @@ export class LspSession {
    * Sends a request without awaiting it, exposing the id so it can be
    * cancelled while it is still running.
    */
+  /**
+   * A response that never arrives used to park with no message of its own --
+   * these promises only ever resolve, so the failure was bun's anonymous
+   * `timed out after Nms` and named neither the method nor the id. Every
+   * `.response` in the suite is awaited, so that park is reachable from all of
+   * them.
+   *
+   * INSIDE THE TIGHTEST TEST CONSTANT (4000) so this speaks first. A test that
+   * means to leave a request unanswered does not await it.
+   */
+  #named(id: number, method: string, response: Promise<ResponseMessage>): Promise<ResponseMessage> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const parked = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`no response to ${method} (id ${String(id)}) within 3000ms`)),
+        3000,
+      );
+    });
+    return Promise.race([response, parked]).finally(() => {
+      clearTimeout(timer);
+    });
+  }
+
   issue(method: string, params: unknown): InFlightRequest {
     const id = this.#nextId++;
     // The executor runs synchronously, so the frame is on the wire before this
@@ -299,7 +322,7 @@ export class LspSession {
       this.#pend(id, resolve);
       this.#send({ jsonrpc: "2.0", id, method, params });
     });
-    return { id, response };
+    return { id, response: this.#named(id, method, response) };
   }
 
   /**
@@ -465,8 +488,29 @@ export class LspSession {
     this.#child.stdin.end();
   }
 
-  waitForExit(): Promise<number | null> {
-    return this.#exited;
+  /**
+   * A PARK HERE USED TO FAIL AS bun's ANONYMOUS `timed out after Nms` and name
+   * nothing -- this was `return this.#exited`, with no deadline of its own. The
+   * arms that died at 4008ms against a 4000 test constant were parked exactly
+   * here, so the wall-clock number was the only thing that made them fail and
+   * the message said nothing about what had not happened.
+   *
+   * THE DEFAULT SITS INSIDE THE TIGHTEST TEST CONSTANT IN THE TREE (4000), so
+   * this speaks first and the constant goes back to being a backstop.
+   */
+  async waitForExit(timeoutMs = 3000): Promise<number | null> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const parked = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`the server did not exit within ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+    });
+    try {
+      return await Promise.race([this.#exited, parked]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /**
