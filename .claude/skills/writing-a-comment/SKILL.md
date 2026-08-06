@@ -215,8 +215,11 @@ arms and its compiler diagnostic, and the reading returned an arm nobody had
 named — one that stages an unbuilt checkout and runs `tsc` inside it, carrying
 the type-level half into `bun test` after all. The withdrawal was right and the
 argument offered for it was wrong about its own extent. **If nothing reddens,
-the sentence stays**; a withdrawal to an arm that does not exist is a deletion
-wearing a justification.
+WITHDRAW IS NOT AVAILABLE** — a withdrawal to an arm that does not exist is a
+deletion wearing a justification. **That is not a reason to keep the sentence**,
+and reading it as one inverts the Lifetime Rule below: the first question is
+whether the reason needs a home in the tree at all, and most do not. No red
+closes one exit; DELETE is still open.
 
 **WHAT MAY NOT BE WITHDRAWN IS THE PART A CODE EDIT WOULD VIOLATE.** That site
 kept its `Omit`-versus-`Pick` asymmetry, its preference and its reversal
