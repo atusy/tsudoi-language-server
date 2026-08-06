@@ -141,32 +141,36 @@ const scrum: ScrumDashboard = {
         "WHAT IT MUST NOT BECOME, INHERITED FROM THE ITEM IT LEFT: a standing `no false prose anywhere` item. It closes when the shapes above have been swept once, each hit either backed or narrowed, and the sweep's keys written down -- not when the tree is certified free of them.",
       ],
     },
-
-    {
-      id: "PBI-70b",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "know which of the arms already in this suite would notice their own predicate being weakened",
-        benefit: "the greens inherited from before the rule are worth what the new ones are worth",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "Each arm in the existing corpus either carries a recorded perturbation to the adjacent weaker reading of its predicate, or is recorded as one that does not.",
-          verification:
-            "The same procedure as the going-forward item, applied to what was already there. THE SCALE IS THE POINT AND IS WHY THIS IS SEPARATE: this suite holds hundreds of arms, and the value of the sweep DECAYS as the going-forward rule ages.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "RANKED LAST AND CARRYING ITS OWN CLOSURE CONDITION, WHICH IS THE POINT OF FILING IT RATHER THAN LEAVING IT IMPLIED: IT MAY CLOSE AS A RECORDED DECISION THAT GOING-FORWARD-ONLY SUFFICES. A backlog item that can only be closed by doing it is how a programme becomes unbounded.",
-        "NO RISK-RANKED COHORT IS PROMISED HERE, because nothing in the tree specifies one and inventing a ranking at filing time is the shape where a criterion gets satisfied by whichever subset was chosen.",
-        "ONE SEED FOR THIS ITEM WITH ITS COLLATERAL ALREADY MEASURED, FILED INTO PBI-70b BECAUSE WHAT ITS CLOSURE CONDITION NEEDS IS THE SWEEP BEING CHEAP ENOUGH TO DECIDE AGAINST. Sprint 57's standing re-run took the PREVIOUS increment's summary-word perturbation -- `scripts/definition-of-done.ts`'s verdict word hardwired to `PASSED` -- through this sprint's own instrument, against `test/definition-of-done.test.ts`. IT REDDENS THREE ARMS AND NOT ONE, and which three is the part a sweep would otherwise pay to rediscover: `the VERDICT WORD is the run's own, in BOTH directions`, which is the arm named for it, plus `a check that never started GATES the run, with every other check green` and `a `run` this runner cannot execute FAITHFULLY is refused, never misread`. THE REASON THE SECOND AND THIRD GO WITH IT is one mechanism and not a coincidence: each asserts the whole string `Definition of Done: FAILED` in its own failing report, so hardwiring the word reddens them for exactly the reason it reddens the first. Recorded with no second name the instrument reads DISARMED and says which reds it cannot account for; with the two measured in, HELD. WHAT THE SPRINT THAT FILED IT RECORDED INSTEAD was `12 pass / 0 fail` -- a size, taken before the arm existed, naming nothing and checkable against no tree -- which is the difference between a perturbation kept and a perturbation written up.",
-      ],
-    },
   ],
   completed: [
+    {
+      number: 79,
+      pbi_id: "PBI-70b",
+      goal: "The sweep over the inherited corpus is decided on a measured cost and a measured yield, not on how it feels to leave it undone.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Sample by a rule declared before looking, perturb each sampled arm to the adjacent weaker reading of its subject, and record what it cost and what it found.",
+          implementation: "One repair, at the arm the sample found not holding.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE RULE WAS DECLARED FIRST: the first arm of each of the first root test files in alphabetical order that neither the registry names nor imports helpers/perturbation.ts. Two were taken to a reading.",
+            "ONE HELD, CHEAPLY. Collapsing buildOrder to the alphabet reddens test/build-order.test.ts's first arm AND SIX MORE in the same file -- authoring about three minutes, the run one second. A record over it would be HELD with six collateral names.",
+            "ONE DID NOT HOLD, AND FINDING THAT COST FOUR PERTURBATION STATES. test/build-diagnostics.test.ts asserts the failing file is named WITH its member, by `toContain` over the joined path -- which an ABSOLUTE path contains. Running tsc with an absolute `-p` from inside the member passes the arm while printing the reader exactly the string the arm's own paragraph refuses. Anchored to the line now; both invocations redden it.",
+            "AND THE SAME SAMPLE MOVED A SECOND CLAIM: perturbing the CHECK's own cwd leaves that file green in every form tried. The line the arm reads is printed by `build` in scripts/workspaces.ts, which runs first. The arm is named for typecheck-workspaces.ts and held by the builder, and scripts/typecheck-workspaces.ts now says so where it makes the claim.",
+            "THE FIRST TWO READINGS WERE UNREADABLE ALONE, which is the method's cost showing up inside the method: a green under `absolute -p from the member` and a red under `member-relative from the member` say opposite things about the same weakening, and only the pair names the discriminator. A one-state sweep would have recorded the arm as holding.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "IT CLOSES AS THE RECORDED DECISION ITS OWN NOTE AUTHORISED: GOING-FORWARD-ONLY SUFFICES. The corpus is 945 arms. The sample's cheap end is minutes per arm and its expensive end took four states over one assertion, so a full sweep is not a thing anyone finishes -- and the item's own note says its value DECAYS as the going-forward rule ages.",
+        "THE YIELD IS NOT CLAIMED TO BE ZERO, WHICH IS THE PART THAT MAKES THE DECISION HONEST RATHER THAN CONVENIENT: one of two sampled arms did not hold, and its defect was real enough to repair. The reason to stop is COST, and a reader should expect the corpus to hold more of these.",
+        "WHAT SURVIVES THE CLOSURE IS THE CHEAP HALF, ALREADY IN PLACE: the going-forward rule, the registry that re-runs what is recorded, and the class statement saying what it cannot hold. An arm sampled by anyone who has a reason to doubt it is a few minutes of work, and this record says what that looked like twice.",
+      ],
+    },
     {
       number: 78,
       pbi_id: "PBI-74",
