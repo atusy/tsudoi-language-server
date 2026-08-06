@@ -262,36 +262,35 @@ NEXT belongs on the backlog item. One whose only home is a MACHINE-FORMATTED FIL
 that cannot carry comments belongs in a TEST THAT ASSERTS IT — the file carries
 the decision, the test carries the reason.
 
-**WHEN THE REASON IS NOT A COMMENT, TRY THESE IN ORDER AND TAKE THE FIRST THAT
-FITS.** _(sprint 81)_ **What this list adds is the RANKING; the entries are not
-all new, and saying so either way has now been wrong once in each direction.**
-THE SPRINT RECORD and THE COMMIT'S MEASUREMENT TRIGGER restate what the
-paragraph above already states — deliberately, because an ordering that omitted
-them could not rank them. AN ARM widens the machine-formatted-file case above
-rather than repeating it. **A SKILL and CLAUDE.md appear nowhere above; those
-two are genuinely new homes.** The site comment and the backlog item keep their
-homes above and are not superseded by being absent here. **THE COMMIT'S
-FORECLOSED-ALTERNATIVE TRIGGER IS NEITHER A RESTATEMENT NOR A RIVAL of the
-site-comment rule above — they are the two branches of one condition.** A
-foreclosed alternative someone would otherwise reintroduce earns its line at
-that site, which makes it a comment, so it never reaches this list; absent that
-risk it is not a comment, the list applies, and the commit is where it goes.
-**THE ENTRY CONDITION IS DOING THAT WORK.** Read the bullets without it and the
-two rules look like competing homes — which is how this paragraph came to say
-they were, in the repair of the last paragraph that got this section wrong.
+**WHEN THE REASON IS NOT A COMMENT, RANK THE HOMES.** _(sprint 81)_ **The
+triggers above are NOT restated below** — the ranking is by reference, which is
+the whole of what this adds beyond the two homes that paragraph does not name.
 
-- **AN ARM**, if something can grade it. It outranks everything below because it
-  is the only home that reddens the day the reason stops holding, which is also
-  why a reason expensive to re-derive is mechanised rather than narrated.
-- **THE COMMIT**, if it is a MEASUREMENT or a FORECLOSED ALTERNATIVE. A commit
-  is past-tense and dated, so it cannot rot.
-- **THE SPRINT RECORD**, if it is a REVIEW FINDING — including one this sprint
-  decided not to repair, which no commit here took and no arm grades.
-- **A SKILL**, if the discipline is applied while WRITING rather than while
-  RUNNING. Nothing is running at the moment a sentence is typed, so there is no
-  run for an arm to hook — this file is that case.
+- **AN ARM**, whenever something can grade the reason, outranks every home
+  below: it is the only one that reddens the day the reason stops holding, which
+  is also why a reason expensive to re-derive is mechanised rather than
+  narrated. Wider than the machine-formatted-file case above.
+- **THE COMMIT** and **THE SPRINT RECORD**, on the triggers the paragraph above
+  already gives them, outrank the two below. What the ranking adds is why a
+  commit is reached for at all: it is IMMUTABLE and DATED, so a claim in it
+  cannot be silently updated and a reader always knows when it was written.
+  **THAT IS NOT THE SAME AS PAST-TENSE OR TRUE** — this sprint's own `72f93b9`
+  carries a present-tense claim its sprint record refutes. Immutability
+  preserves what was written; it does not grade it.
+- **A SKILL**, if the discipline is applied while WRITING and no arm reached it
+  first. **That an arm often does not reach prose is not a rule** —
+  `readmeCoverage` and `fenceForms` grade prose written long before they run, so
+  machine-gradeable writing discipline belongs above, not here.
 - **CLAUDE.md**, if a human needs it BEFORE running a command: a constraint that
   makes a green meaningless or a red expected.
+
+**THE TRIGGERS OVERLAP, SO `TAKE THE FIRST THAT FITS` WAS WRONG. WHERE TWO FIT,
+THE ONE NAMING WHY THE REASON EXISTS BEATS THE ONE NAMING WHAT IT IS.** _(sprint
+81)_ A measurement taken to settle a review finding answers to both the commit
+and the sprint record; it goes to the sprint record. MEASURED AGAINST THE SPRINT
+THAT WROTE THIS LIST: read as first-fit the order sends its unrepaired,
+measured findings to the commit, and the sprint had already put them in the
+record.
 
 In this tree, concretely:
 
