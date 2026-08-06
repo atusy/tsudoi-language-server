@@ -91,7 +91,10 @@ _(sprint 47)_ **A non-executed block is indistinguishable from an executed one t
 a reader, so one such block silently withdraws the guarantee for the whole
 document.** MEASURED when an unexecuted block was finally run: the documented
 sequence DID NOT WORK, and the install path named a file that is never created —
-`bun pm pack` inside a workspace member writes the tarball to the WORKSPACE ROOT.
+`bun pm pack --filename` inside a workspace member writes the tarball to the
+WORKSPACE ROOT -- _(sprint 72)_ WITHOUT the flag it writes into the member, so
+the unconditional form this line carried was itself an instance of the class
+this file is about.
 Two defects behind one unexecuted block.
 
 **Extraction here is MARKER-DRIVEN, and since sprint 60 something DOES sweep for

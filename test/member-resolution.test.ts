@@ -172,9 +172,15 @@ test("there are members to make these claims about", () => {
  * measured by repointing a member's entry at its sibling handler and running
  * this file, 5 pass / 0 fail.
  *
- * So the discrimination is the TARGET MANIFEST'S DECLARED NAME, which is the
- * one reading that tells `answers from tsudoi` apart from `answers from
- * something shaped like it`. The move could only run this by hand.
+ * So the discrimination is the TARGET MANIFEST'S DECLARED NAME. IT DOES NOT
+ * TELL tsudoi APART FROM SOMETHING SHAPED LIKE IT, measured: a directory holding
+ * only a manifest with that name -- no src/, no dist/, no exports -- passes this
+ * whole file, and with a member's own entry pointing at such a stub NOTHING here
+ * reddens, because the root's route answers for tsc. What this reads is the
+ * NAME, and the name is all it reads.
+ *
+ * IT DOES NOT SUBSUME THE isSymbolicLink() ARM ABOVE AND IS NOT SUBSUMED BY IT:
+ * a real COPY in place of the link passes this and reddens that one.
  */
 test("each member's entry for tsudoi resolves to the package that declares that name", () => {
   expect(members.length).toBeGreaterThan(0);

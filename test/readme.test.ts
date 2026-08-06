@@ -218,10 +218,12 @@ test("a README with no examples-install marker states no install command, and sa
  * this compares them.
  */
 /**
- * NO TWO DOCUMENTED PACK ROUTES LAND ON ONE PATH, which is true today for a
- * reason nothing holds: the checkout root was renamed to @atusy/tsudoi-workspace
- * for an unrelated purpose, and that name is asserted NOWHERE ELSE in this tree.
- * Rename it back and a member pack and a root pack collide again, silently.
+ * NO TWO DOCUMENTED PACK ROUTES LAND ON ONE PATH.
+ *
+ * WHAT THIS DOES NOT SEE, measured rather than reasoned: a route naming another
+ * package's default filename with --filename, beside a bare route in that
+ * package's own directory. Both land on one path and this stays GREEN, because
+ * the bare route's landing place is modelled by a placeholder rather than read.
  *
  * WHAT A COLLISION COSTS, and it is why this is worth an arm rather than a note:
  * the root artifact is every tracked file including this suite, with NO dist/ at
@@ -252,7 +254,12 @@ test("no two documented pack routes write to the same path", () => {
     // Without --filename bun writes beside the manifest it packed; with it, at
     // the workspace root. MEASURED, and it is the whole reason the READMEs'
     // install path resolves.
-    return named === undefined ? join(repoRoot, where, "<package>.tgz") : join(repoRoot, named);
+    // A bare pack writes `<name>-<version>.tgz` beside the manifest it packed --
+    // MEASURED -- but the name is the manifest's, not the directory's, so this
+    // models it by directory alone. TWO BARE ROUTES IN ONE DIRECTORY COLLIDE AND
+    // ARE SEEN; a bare route colliding with a --filename that spells its name is
+    // NOT, and that gap is the arm's own residue.
+    return named === undefined ? join(repoRoot, where, "<bare pack>") : join(repoRoot, named);
   });
 
   expect(landings.length).toBe(new Set(landings).size);
