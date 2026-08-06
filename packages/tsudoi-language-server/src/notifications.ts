@@ -139,9 +139,11 @@ export type RequestOnlyConnection = Omit<
  * THIS FUNCTION. An `import { createProtocolConnection }` added to src/server.ts
  * puts a wide value back and no type notices, so .oxlintrc.json bans that import
  * in every file but this one. THAT LINT IS A ROT DETECTOR, NOT A BARRIER, and it
- * is adequate ONLY BECAUSE WHAT THIS FUNCTION RETURNS IS THE SOLE
- * CONNECTION-SHAPED VALUE IN startServer's SCOPE, so importing a factory nothing
- * there needs is a conspicuous act rather than a slip. WIDEN THE RETURN
+ * is adequate ONLY BECAUSE NO WIDE CONNECTION IS BOUND IN startServer's SCOPE.
+ * `SOLE CONNECTION-SHAPED VALUE` stood here and is false of that scope --
+ * `withFallback` is a second binding, this function's return re-typed -- and the
+ * argument never needed it: what would be conspicuous is a factory import
+ * nothing there needs, not a second name for the narrow handle. WIDEN THE RETURN
  * ANNOTATION, OR LET startServer BIND A WIDE CONNECTION AGAIN, AND THAT
  * SUFFICIENCY ARGUMENT GOES WITH IT while the lint still passes and still reads
  * like a guard. NOTHING REDDENS ON THE ARGUMENT.

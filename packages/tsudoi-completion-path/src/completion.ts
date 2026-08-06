@@ -338,9 +338,9 @@ export async function* itemsFrom(
         documentation: documentationFor(absolutePath, source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
-        // NO DETAIL IS READ HERE -- a size and a date per entry is what a
-        // directory of any size cannot afford -- so the item carries the path
-        // and that work is done for the ONE item the user highlights.
+        // NO DETAIL IS READ HERE -- a size and a date per entry is a stat per
+        // entry, refused on no figure -- so the item carries the path and that
+        // work is done for the ONE item the user highlights.
         data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });

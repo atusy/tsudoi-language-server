@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { prepareWorkspace } from "../../scripts/workspaces.ts";
 
-// import.meta.dir is Bun-only; the URL form is what every other helper uses.
+// import.meta.dir is Bun-only; the URL form works under both runtimes.
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 
 /**
