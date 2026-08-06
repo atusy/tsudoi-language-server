@@ -823,7 +823,7 @@ const scrum: ScrumDashboard = {
   sprint: {
     number: 81,
     pbi_id: "PBI-81",
-    goal: "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the analysis, the source keeps only the decision nothing can grade -- and the skill gains the exit a still-true comment has never had.",
+    goal: "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the CONSEQUENCE WALK-THROUGH, the source keeps the decision plus the asymmetry the decision rests on -- and the skill gains the exit a still-true comment has never had. S3: THIS GOAL SAID `the source keeps only the decision nothing can grade` AND THE INCREMENT REFUTED IT. src/notifications.ts:113 still states the hazard and the `Omit`/`Pick` asymmetry, both of which the probes and `BoundaryIsTheObservingMembers` also carry. THE ITEM'S OWN CONSTRAINT FALSIFIED THE ITEM'S OWN GOAL: criterion 1 required the referent of the pointer at :176 to survive, so the hazard sentence could not go. Corrected on the measurement rather than left, because a goal that misdescribes its increment is read as the increment.",
     status: "review",
     subtasks: [
       {
