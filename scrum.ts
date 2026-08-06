@@ -825,7 +825,7 @@ const scrum: ScrumDashboard = {
     pbi_id: "PBI-81",
     goal:
       "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the analysis, the source keeps only the decision nothing can grade -- and the skill gains the exit a still-true comment has never had.",
-    status: "planning",
+    status: "review",
     subtasks: [
       {
         test:
@@ -833,9 +833,23 @@ const scrum: ScrumDashboard = {
         implementation:
           "The narrowing at packages/tsudoi-language-server/src/notifications.ts:113-120. WHAT GOES: the consequence walk-through, which the pins and the probes grade. WHAT SURVIVES: the asymmetry clause, the `Pick` preference, the churn reasoning and the reversal condition -- a code-edit decision whose only legitimate home under the Lifetime Rule is that site -- with the two pins NAMED at :117. Zero edits at :176, at :264-267 and in test/notifications.test.ts.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "72f93b9",
+            message: "refactor(notifications): the Omit hazard's analysis lives where it reddens",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE READING BEAT THE PREDICTION AND THE READING WINS, WHICH IS WHY THE SUBTASK ASKED FOR ONE. Predicted at planning: two bun arms plus TS2344 under `tsc --noEmit`. MEASURED, `onUnhandledNotification` misspelled as `onUnhandledNotifcation` inside the `Omit`, at base ae35bb9 and again on the narrowed text -- IDENTICAL BOTH TIMES, 942 pass / 3 fail against a clean 945 / 0: `the narrowed connection rejects onUnhandledNotification and accepts onRequest, in one type-check` and `the same two outcomes hold for onUnhandledNotification through an alias under a different name`, both test/notifications.test.ts, AND A THIRD NOBODY NAMED -- `an unbuilt checkout's root type check is non-zero and names a workspace package it could not resolve`, test/unbuilt-checkout.test.ts, which stages a checkout and runs tsc inside it and so REPORTS THE TS2344 THROUGH bun test. `tsc --noEmit` separately: exit 1, TS2344 at test/notifications.test.ts(550,3), `BoundaryIsTheObservingMembers`.",
+          "THAT THIRD ARM QUALIFIES A PLANNING PREMISE WITHOUT REOPENING ITS DECISION. The reason given for building no perturbation record was that a record holds the bun half and not the TS2344 half; the TS2344 half turns out to be inside bun test already, through a second file. NO RECORD WAS BUILT ANYWAY and none is proposed -- the re-runner runs an arm file, and the arm that would carry this one is in test/unbuilt-checkout.test.ts, whose subject is the unbuilt checkout and not this boundary.",
+          "READING 2, THE RE-GREP OF `silent no-op` AND `MISSPELL` READ AS A LIST: unchanged in MEMBERSHIP, which is the correct outcome and not a failure of the narrowing. src/notifications.ts:113 still states the hazard because :176 POINTS AT IT and zero edits there were mandated; what left :113 is the consequence walk-through, which spells neither key word. The list is otherwise test/notifications.test.ts:506-507, :535, :663-664 -- the three graders -- plus test/package-shape.test.ts:60, WHICH IS A DIFFERENT SUBJECT AND NOT AN INSTANCE: it claims a misspelled key in either tsconfig is LOUD, the opposite claim about a different file class.",
+          "READING 3, THE SIXTH SITE AT src/notifications.ts:264-267, DECIDED EXPLICITLY BECAUSE THE RE-GREP PROVABLY CANNOT REACH IT: it RESTATES the premise -- `Pick` forecloses by what is LISTED rather than by what the base type happens to contain -- and does NOT dangle, since it points at nothing. Left untouched, and its existence is EVIDENCE THE NARROWING HAD TO KEEP THE ASYMMETRY CLAUSE: two live decisions, the `Pick` preference at :113-120 and the refusal to serve on `Connection` at :256-267, now both explain themselves by it.",
+          "FILED AND NOT REPAIRED, WHICH DECISION 6 RULED IN ADVANCE, AND NAMING THE PINS MADE IT SHARPER RATHER THAN NEUTRAL. `IF EITHER PIN IS REMOVED OR WEAKENED` is true, but the site now hands a reader two SYMBOLS and invites the check that planning refused to run: perturb `ProtocolConnectionHasTheseMembers` and, ON DECISION 2'S READING AND NOT ON ONE TAKEN HERE -- IT WAS FORBIDDEN AND WAS NOT RUN -- nothing about the misspelling hazard moves, so a reader checking that way reads the sentence as false. What THIS sprint measured is consistent with it and does not establish it: pin 2 is silent under the misspelling in every arm listed above. The pins are complementary along the OTHER axis -- `BoundaryIsTheObservingMembers` moves when the `Omit` moves, pin 2 when the DEPENDENCY moves -- and that argument still lives only at test/notifications.test.ts:565-570. The separating direction, unrun here: pin 2 deleted, a member planted on `ProtocolConnection`, read whether it lands silently on `RequestOnlyConnection`.",
+          "THE SITE DID NOT GET SHORTER, AGAINST DECISION 3'S PREDICTION: eight comment lines before and eight after. The walk-through's removal paid for the two pin names almost exactly. Recorded because the prediction is in the record.",
+          "ENVIRONMENT FINDING ON THE THIRD DoD CHECK, PRE-EXISTING AND OUT OF THIS SPRINT'S SUBJECT. `oxfmt --check .` exits 1 naming scrum.ts ALONE -- MEASURED at base ae35bb9 in a clean worktree with oxfmt 0.62.0, and scrum.ts is byte-identical between ae35bb9 and this sprint's source commits. That oxfmt collapses `key:` + wrapped-string onto one line where the tracked file breaks after the key, tree-wide in this file; reformatting to satisfy it would rewrite the dashboard to suit one toolchain version. The other four checks are green: 945 pass / 0 fail across 70 files, oxlint 0, `tsc --noEmit` 0, typecheck-workspaces 0.",
+        ],
       },
       {
         test:
@@ -843,9 +857,22 @@ const scrum: ScrumDashboard = {
         implementation:
           "`.claude/skills/writing-a-comment/SKILL.md`: a disposition for a comment STILL TRUE and no longer earning its lines, and the four-home rule for a reason that is not a comment.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "1e88941",
+            message:
+              "docs(skills): a still-true comment gains an exit, and a reason gains its homes",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE ORDERING CONSTRAINT HELD AND IT CAUGHT SOMETHING. Written after subtask 1, from the case subtask 1 executed, and subtask 1's disposition spells in the arm's own words: the claim held, three arms already reddened the perturbation it described, so the copy at the site went and they keep it. Keyed on WHO GRADES IT and not on length, because the executed case did not turn on length.",
+          "THE FIRST DRAFT OF THE ARM WAS FALSE ABOUT THE FILE IT WAS BEING ADDED TO, caught before it landed and rewritten rather than defended. It said DELETE, NARROW and SUPERSEDE all fire on a fact having CHANGED; DELETE's own text gives its reason as `a reader at that line never needed it`, which is WITHDRAW's reason too. What is actually missing from that section is the TRIGGER, not the argument -- its heading and every arm's wording enter through a CORRECTION. This is the file's own sprint-22 rule arriving inside the file that carries it, and the shipped arm says so.",
+          "WHAT THE ARM CARRIES BEYOND THE DISPOSITION, both from this sprint's own near-misses: a withdrawal is a MEASUREMENT and not a reading of an arm's name -- the prediction here named fewer arms than the reading returned -- and OVER-DELETION IS INVISIBLE TO THE INSTRUMENT THAT CERTIFIES THE WITHDRAWAL, because the re-grep's words are the ones being kept.",
+          "THE FOUR-HOME RULE WENT UNDER THE LIFETIME RULE AND NOT BESIDE IT: that section already states the backlog-item home, and a list restating its own section is this item's defect. The arm, the commit, a skill and CLAUDE.md are added; the arm is marked as outranking the rest because it is the only home that reddens.",
+          "NO ASSERTION EXISTS AND NONE WAS INVENTED, which the item discloses. A skill file cannot redden and nothing decides whether the arm is applied; what stands in its place is that this sprint is its first application, in the same item.",
+        ],
       },
     ],
     impediments: [],
