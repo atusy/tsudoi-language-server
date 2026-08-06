@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import {
   globSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -26,6 +27,29 @@ const repoRoot = fileURLToPath(new URL("../", import.meta.url));
  * from the module this repository actually calls would leave every arm green.
  */
 const deadlineModule = fileURLToPath(new URL("./helpers/deadline.ts", import.meta.url));
+
+/**
+ * The directory names bunfig.toml tells bun not to discover under.
+ *
+ * SPELLED AS SEGMENTS HERE AND AS GLOBS THERE, with an arm below refusing a
+ * disagreement, because the two consumers cannot share one spelling: a TOML file
+ * holds no TypeScript and a walk takes no glob. What the arm buys is that
+ * deleting the key leaves this constant grading files bun still runs, LOUDLY.
+ */
+const ignoredSegments = ["__ignored", "dist"];
+
+test("what bunfig takes out of the run is what these sweeps take out of the walk", () => {
+  const declared = /pathIgnorePatterns\s*=\s*\[([^\]]*)\]/.exec(
+    readFileSync(join(repoRoot, "bunfig.toml"), "utf8"),
+  )?.[1];
+  // A missing key and a key naming nothing are one reading without this, and
+  // `[...undefined]` is not a failure a reader can act on.
+  expect(declared).toBeDefined();
+
+  expect(
+    [...(declared ?? "").matchAll(/"\*\*\/([^/"*]+)\/\*\*"/g)].map((hit) => hit[1]).sort(),
+  ).toEqual([...ignoredSegments].sort());
+});
 
 /**
  * A tree bun will run `bun test` in. Every file is written by the caller, and
@@ -142,6 +166,65 @@ const invocationForms = [
   { name: "a name filter", args: ["deadline"], passes: 3, fails: 3 },
   { name: "the -t filter", args: ["-t", "the deadline"], passes: 3, fails: 3 },
 ] as const;
+
+/**
+ * A tree holding ONE FAILING TEST under each ignored segment and nothing else,
+ * so `did bun run it` is read off the run's own colour rather than off a count.
+ *
+ * THE bunfig BODY IS THE CALLER'S, because the negative control is the same tree
+ * WITHOUT the key: an arm that only ever writes the real body asserts bun's
+ * default discovery and calls it this repository's choice.
+ */
+function scratchTree(bunfigBody: string): { readonly root: string; dispose(): void } {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "tsudoi-ignored-")));
+  writeFileSync(join(root, "bunfig.toml"), bunfigBody);
+  for (const segment of ignoredSegments) {
+    mkdirSync(join(root, segment), { recursive: true });
+    writeFileSync(
+      join(root, segment, "scratch.test.ts"),
+      `import { expect, test } from "bun:test";\ntest("${segment} scratch", () => { expect(1).toBe(2); });\n`,
+    );
+  }
+  return { root, dispose: (): void => rmSync(root, { recursive: true, force: true }) };
+}
+
+const ignorePatternsLine = `pathIgnorePatterns = [${ignoredSegments
+  .map((segment) => JSON.stringify(`**/${segment}/**`))
+  .join(", ")}]`;
+
+/**
+ * THE HALF THE TEXT ARM ABOVE CANNOT REACH: that one says this repository's
+ * bunfig NAMES the segments, and a key bun stopped honouring would satisfy it
+ * for ever. This spawns and reads what bun did.
+ *
+ * IT STAGES A TREE OF ITS OWN, which puts it in the class the perturbation
+ * registry cannot re-run -- filed against PBI-72 rather than left to be
+ * rediscovered.
+ */
+test("bun runs no test file under an ignored segment, and runs them without the key", async () => {
+  const ignoring = scratchTree(`[test]\n${ignorePatternsLine}\n`);
+  try {
+    const run = await runBunTest(ignoring.root, [], null);
+    expect(run.stderr).not.toContain(" 1 fail");
+    expect(run.code).not.toBe(0);
+    // bun's own words for the state being asserted. An exit code alone does not
+    // say it: a run that found the files and failed on them exits non-zero too.
+    expect(run.stderr).toContain("0 test files matching");
+  } finally {
+    ignoring.dispose();
+  }
+
+  // THE NEGATIVE CONTROL, and it is what makes the arm about this repository:
+  // the same tree with the key gone runs both scratch files and fails on them.
+  const running = scratchTree("[test]\n");
+  try {
+    const run = await runBunTest(running.root, [], null);
+    expect(run.stderr).toContain(` ${String(ignoredSegments.length)} fail`);
+    expect(run.code).toBe(1);
+  } finally {
+    running.dispose();
+  }
+});
 
 /**
  * THE VALUE IS WHAT DISCRIMINATES AND THE TWO NUMBERS ARE CHOSEN FOR IT: bun
@@ -529,15 +612,22 @@ const testFileNames = /(?:\.|_)(?:test|spec)\.[cm]?[jt]sx?$/;
  * scripts/, or under a package's src/ is RUN by the suite, and a single
  * `readdirSync` of one directory saw none of them.
  *
- * THE PRUNE IS bun'S OWN RATHER THAN CHOSEN: probes under `node_modules/` and
- * under a DOT-DIRECTORY did not run, probes under `dist/` and `__ignored/` DID.
- * GITIGNORED IS NOT A THING BUN'S WALK KNOWS, so a scratch test file in an
- * ignored directory is swept here because it is also run there.
+ * THE PRUNE IS bun'S OWN RATHER THAN CHOSEN, AND HALF OF IT IS NOW THIS
+ * REPOSITORY'S CHOICE. `node_modules/` and DOT-DIRECTORIES bun skips by itself.
+ * `dist/` and `__ignored/` it once walked -- GITIGNORED IS NOT A THING BUN'S
+ * WALK KNOWS -- and bunfig.toml's `pathIgnorePatterns` now takes them out, so
+ * they are pruned here to keep this walk equal to what runs. Sweeping a file bun
+ * never reaches would demand `applySuiteDeadline()` of a scratch file for
+ * nothing.
  */
 function discoverTestFiles(dir: string): readonly string[] {
   return readdirSync(dir, { withFileTypes: true })
     .flatMap((entry) => {
-      if (entry.name.startsWith(".") || entry.name === "node_modules") {
+      if (
+        entry.name.startsWith(".") ||
+        entry.name === "node_modules" ||
+        ignoredSegments.includes(entry.name)
+      ) {
         return [];
       }
       const full = join(dir, entry.name);
@@ -574,7 +664,14 @@ test("the walk both sweeps read agrees with a second enumeration", () => {
   const globbed = globSync("**/*.test.ts", { cwd: repoRoot })
     .filter(
       (path) =>
-        !path.split(sep).some((segment) => segment === "node_modules" || segment.startsWith(".")),
+        !path
+          .split(sep)
+          .some(
+            (segment) =>
+              segment === "node_modules" ||
+              segment.startsWith(".") ||
+              ignoredSegments.includes(segment),
+          ),
     )
     .sort();
 

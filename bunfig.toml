@@ -164,5 +164,22 @@
 # REGISTERED, which is module-evaluation time for its own file. `[test] timeout`
 # here is ignored outright, which is the same silent-key shape recorded above for
 # a preload path that does not resolve -- except that this one is silent.
+#
+# A SCRATCH FILE IN AN IGNORED DIRECTORY IS NOT PART OF THIS SUITE, AND WITHOUT
+# THE KEY BELOW IT WAS. MEASURED on bun 1.3.13: a `.test.ts` planted under
+# packages/tsudoi-language-server/__ignored/ RAN in the root suite -- 943 tests
+# across 70 files -- while root `tsc --noEmit`, the per-member check, oxlint and
+# oxfmt all read it as absent. The globs carry no leading slash and match at any
+# depth, which is what `.gitignore`'s own two entries do.
+#
+# `pathIgnorePatterns` AND NOT `path-ignore-patterns`: the hyphenated form is the
+# CLI flag's spelling and this file accepts it in SILENCE, leaving the scratch
+# file running. Measured against the camelCase key, which removes it, and against
+# the CLI flag as the control that the pattern itself matches.
+#
+# THE SEGMENTS ARE TIED TO THE WALK THAT SWEEPS THIS SUITE rather than repeated
+# there: test/suite-deadline.test.ts reads this line and refuses a disagreement,
+# so an edit here cannot leave that walk grading files bun no longer runs.
 [test]
 preload = ["./test/helpers/build.ts"]
+pathIgnorePatterns = ["**/__ignored/**", "**/dist/**"]

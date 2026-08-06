@@ -60,6 +60,7 @@ const CITATION = /(bun|deno)[\s*]+v?(\d+\.\d+\.\d+)/gi;
 const accounted: ReadonlyArray<readonly [path: string, runtime: string, version: string]> = [
   ["README.md", "deno", "2.9.2"],
   ["bunfig.toml", "bun", "1.3.13"],
+  ["bunfig.toml", "bun", "1.3.13"],
   ["package.json", "bun", "1.3.13"],
   ["packages/tsudoi-completion-path/test/package-shape.test.ts", "bun", "1.3.13"],
   ["packages/tsudoi-completion-path/test/package-shape.test.ts", "bun", "1.3.13"],
