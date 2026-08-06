@@ -244,6 +244,41 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 74,
+      pbi_id: "PBI-77",
+      goal: "The definite article doing quantifier work is swept where sprint 66 could not see it, over a key and a file set declared before the search rather than after it.",
+      status: "in_progress",
+      subtasks: [
+        {
+          test: "For each hit, OPEN THE SET THE SENTENCE QUANTIFIES OVER and read it against the code. Repair in the criterion's order: drop, then back by an enumeration at the site, then narrow to what was read.",
+          implementation:
+            "KEY `\\bis what\\b`, case-insensitive. FILE SET packages/*/src/*.ts (20), scripts/*.ts (16), test/helpers/*.ts (30) -- 66 hits, counted with `grep -icE` over `git ls-files` before any of them was read.",
+          type: "structural",
+          status: "pending",
+          commits: [],
+          notes: [
+            "THIS KEY IS SPRINT 66'S OWN BLIND SPOT AND IT NAMED IT IN WRITING: that sweep's dominant repair turned `the only thing that notices it` into `what notices it`, roughly thirty times, which satisfies the criterion and is INVISIBLE to a `the only` key. The rule that these are one claim is already landed in .claude/skills/writing-a-comment/SKILL.md. So the key list was told to grow here; nothing had swept it.",
+            "THE KEY WAS CHOSEN ON A READING, DISCLOSED RATHER THAN IMPLIED: 30 of the 36 hits in the first two sets were read before the key was fixed, and 20-odd were definite descriptions with an openable set. `every` was the other candidate and was REFUSED on the same reading -- 127 hits in those sets, mostly prose cadence (`every session`, `every child`), where deciding quantifier-or-narration needs the surrounding paragraph and not the matched line. A partition a sweep cannot decide FROM THE LINE is the class disposition this project already measured hiding live sites twice.",
+            "test/helpers/ IS IN THE SET ON SPRINT 65'S MEASUREMENT, not for volume: in production code 8-9 of 10 comments restated what a test already held, and in the helpers it inverted -- readme.ts 24 weakenings with 9 catching nothing. The layer supporting the tests has no tests of its own, so an unbacked superlative there is held by the least.",
+          ],
+        },
+        {
+          test: "None -- the residue, measured at plan time so it cannot be assembled from what the sweep happened to reach.",
+          implementation:
+            "What this key does not reach, by area, on the instrument above: test/*.test.ts 262, test/fixtures/ 40, packages/*/test/ 29, READMEs and CLAUDE.md 17, .claude/skills/ 12, scrum.ts 59.",
+          type: "structural",
+          status: "pending",
+          commits: [],
+          notes: [
+            "THE TEST CORPUS HOLDS 262 OF THE 485 AND IS NOT SWEPT. Written as a number rather than left out, because silence over the largest area reads as coverage.",
+            "SPRINT 66'S RESIDUE FIGURES ARE SUPERSEDED, NOT CONTINUED. Its `every` 276 was taken inside its own declared set with an instrument this record cannot reproduce; a tree-wide substring count today reads 901, and the two are not the same measurement. Placing them in one table would be the defect this item exists to refuse. Its five keys re-measured over its pass-1 set TODAY read `the only` 30, `nothing else` 27, `no other` 4, `nothing anywhere` 1, `always` 9 -- and that is a WORD count after that sweep, so it says nothing about how many claims remain.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [],
+    },
+    {
       number: 73,
       pbi_id: "PBI-73",
       goal: "Every runtime version this tree cites is listed in one place, so an upgrade has somewhere to read rather than a tree to grep.",
