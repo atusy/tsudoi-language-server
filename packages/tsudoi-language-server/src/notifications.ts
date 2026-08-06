@@ -117,10 +117,12 @@ export function registerNotifications<P extends readonly unknown[]>(
  * caught: MEASURED, the spawned probes in test/notifications.test.ts redden on
  * a misspelled key with `BoundaryIsTheObservingMembers` deleted, and
  * `ProtocolConnectionHasTheseMembers` is silent under one. THE TWO PINS EARN
- * THEIR PLACE ELSEWHERE -- a SURPLUS key, and the dependency moving under the
- * `Omit` -- WHICH IS WHY THE REVERSAL CONDITION NAMES THEM AND NOT THIS
- * PARAGRAPH'S HAZARD: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES
- * REQUIRED. `Pick` needs neither of them.
+ * THEIR PLACE ELSEWHERE -- a SURPLUS key, and a member NAME arriving, going or
+ * being renamed upstream. That second one is narrower than `the dependency
+ * moved`: growth under an EXISTING name reddens neither pin, which that pin's
+ * own docblock says. WHICH IS WHY THE REVERSAL CONDITION NAMES THEM AND NOT
+ * THIS PARAGRAPH'S HAZARD: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION
+ * BECOMES REQUIRED. `Pick` needs neither of them.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
