@@ -265,9 +265,9 @@ the decision, the test carries the reason.
 **WHEN THE REASON IS NOT A COMMENT:**
 
 - **AN ARM**, whenever something can grade the reason, outranks every home
-  below: it is the only one that reddens the day the reason stops holding, which
-  is also why a reason expensive to re-derive is mechanised rather than
-  narrated. Wider than the machine-formatted-file case above.
+  below: it reddens the day the reason stops holding, which is also why a reason
+  expensive to re-derive is mechanised rather than narrated. Wider than the
+  machine-formatted-file case above.
 - **THE COMMIT** and **THE SPRINT RECORD**, on the triggers stated earlier in
   this section. **WHERE BOTH FIT — a measurement taken to settle a review
   finding — the sprint record takes it**, MEASURED against the sprint that wrote
