@@ -165,33 +165,35 @@ const scrum: ScrumDashboard = {
         "ONE SEED FOR THIS ITEM WITH ITS COLLATERAL ALREADY MEASURED, FILED INTO PBI-70b BECAUSE WHAT ITS CLOSURE CONDITION NEEDS IS THE SWEEP BEING CHEAP ENOUGH TO DECIDE AGAINST. Sprint 57's standing re-run took the PREVIOUS increment's summary-word perturbation -- `scripts/definition-of-done.ts`'s verdict word hardwired to `PASSED` -- through this sprint's own instrument, against `test/definition-of-done.test.ts`. IT REDDENS THREE ARMS AND NOT ONE, and which three is the part a sweep would otherwise pay to rediscover: `the VERDICT WORD is the run's own, in BOTH directions`, which is the arm named for it, plus `a check that never started GATES the run, with every other check green` and `a `run` this runner cannot execute FAITHFULLY is refused, never misread`. THE REASON THE SECOND AND THIRD GO WITH IT is one mechanism and not a coincidence: each asserts the whole string `Definition of Done: FAILED` in its own failing report, so hardwiring the word reddens them for exactly the reason it reddens the first. Recorded with no second name the instrument reads DISARMED and says which reds it cannot account for; with the two measured in, HELD. WHAT THE SPRINT THAT FILED IT RECORDED INSTEAD was `12 pass / 0 fail` -- a size, taken before the arm existed, naming nothing and checkable against no tree -- which is the difference between a perturbation kept and a perturbation written up.",
       ],
     },
-
-    {
-      id: "PBI-74",
-      story: {
-        role: "tsudoi maintainer",
-        capability: "trust that a documented example which teaches by FAILING still fails",
-        benefit:
-          "the one block whose whole lesson is that it does not compile cannot start compiling in silence",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A documented block whose didactic content is its own failure is refused the day it stops failing, naming the block and what it was supposed to fail with.",
-          verification:
-            "The block at README.md's `snippet` marker under the type-shape section is the subject: it annotates an object literal as the framework's document view and omits three members, and the prose beside it says so. Perturb the TYPE rather than the block -- give the omitted members defaults, or widen the annotation -- and require a named red. THE DEGENERATE FIRST: an implementation that only resolves the block's imports must leave that perturbation green, which is the state shipped today.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FILED AS A PRODUCT OWNER'S CONDITION ON ACCEPTING SPRINT 60, WHICH IS WHY IT IS NARROW: the sprint narrowed the snippet account from compiling the block to resolving its import specifiers, and that narrowing is disclosed to the reader in the document. DISCLOSED AND COVERED ARE DIFFERENT STATES and this block is currently neither -- if the view type ever gained defaults making that literal valid, the README would teach a falsehood with every check green.",
-        "THE OBVIOUS FIX IS NAMED SO IT IS NOT REDISCOVERED, AND SO IS ITS PRICE. `expect=error` -- a marker declaring the block fails and naming the diagnostic code it must fail with -- was designed and dropped in sprint 60. THE CODE IS NOT DECORATION: this tree's ambient failure is unresolved specifiers, so `it fails as promised` is otherwise satisfied by a checkout where the framework did not build, which is two states behind one red. PBI-60's record carries the instance -- an assertion demanding TS2322 RECEIVED TS2307 BESIDE IT under a staged state -- so a compile-based account here sits directly in front of the unbuilt-artifact residue and is not free.",
-        "RANKED LAST BY THE PRODUCT OWNER, ON CONSEQUENCE AND NOT ON AGE, WITH THE TRIGGER THAT MOVES IT. Against a route that publishes declarations graded against a file no consumer receives, this is a README block that would teach a falsehood only IF the view type gained defaults. FILING-ADJACENCY IS NOT A RANKING SIGNAL -- it arrived at rank two purely because it was filed beside the item it came from, and the order IS the priority, so an accident of filing had become a claim about value. FIRING CONDITION THAT RE-RANKS IT UP: the view type gaining an optional member, or the snippet's prose being edited. Written here so a low rank is a decision with a trigger rather than a silence. IT DOES NOT WAIT ON THE AMBIENT FAILURE DISAPPEARING: no item will ever remove it -- the ambient failure IS the source arm answering, and deleting that is foreclosed with measurement -- and a rank derived from a dependency that can never land is how an item becomes unrankable.",
-        "SCOPE THIS CANNOT QUIETLY BECOME: a general snippet-compilation harness over every marked block. One block is the subject; the criterion is about a block that teaches by failing, and the other marked snippets teach by working.",
-      ],
-    },
   ],
   completed: [
+    {
+      number: 78,
+      pbi_id: "PBI-74",
+      goal: "The one documented block whose lesson is that it does not compile is refused the day it compiles, naming the block and the members it was supposed to be missing.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Compile the block in a probe that resolves the framework, and require the CODE and the three member names -- with the working snippet beside it as the pair, and a red earned for another reason as the refusal.",
+          implementation:
+            "test/readme-snippet-types.test.ts, reading both blocks out of README.md.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE DEGENERATE THE ITEM ASKED FOR, TAKEN FIRST: with DocumentView's three members made optional -- the edit that makes the documented mock valid -- the SHIPPED accounts read 33 pass / 0 fail. The account asks that a block's imports resolve and says nothing about its types, so the README would have taught a falsehood with every check green.",
+            "`IT FAILS` IS NOT THE ASSERTION, WHICH IS THE ITEM'S OWN WARNING MADE CONCRETE. TWO other states redden this block and neither is the lesson: an unresolved specifier in an unbuilt checkout, and the bare `uri` a fragment spells, which is the reader's variable. The probe declares `uri` and the arm requires TS2739 plus lineCount, positionAt and offsetAt -- the three the block's OWN COMMENT lists.",
+            "MEASURED IN BOTH DIRECTIONS. The optional-members edit reads 0 pass / 1 fail. Dropping the block's import so it fails for another reason ALSO reads 0 pass / 1 fail, on TS2451 and TS2552 rather than being accepted as `it failed, as promised`.",
+            "AND WHAT IT DOES NOT CLAIM IS WRITTEN AT THE SITE: today's firing edit reddens `tsc --noEmit` too, in documents.ts's arms and with a message about assignability to TextDocument. What this adds is the DOCUMENT -- that red names a test file and a reader fixes the test file. The day DocumentView stops being handed where a TextDocument is wanted, the compiler goes quiet and this does not.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THE `expect=error` MARKER THE ITEM DESIGNED AND DROPPED STAYS DROPPED, and the reason it was dropped is what this sprint had to solve rather than avoid: a marker declaring `this block fails` is satisfied by the ambient failure of an unbuilt checkout. What replaces it is not a marker at all -- one arm over one block, requiring the diagnostic the prose itself describes, in a probe where the ambient failure cannot occur.",
+        "THE SCOPE THE ITEM FORBADE IS NOT TAKEN: no general snippet-compilation harness. Two blocks carry the marker, the arm knows which is which, and a THIRD reddens it rather than being graded by ordinal in silence.",
+      ],
+    },
     {
       number: 77,
       pbi_id: "PBI-72",
