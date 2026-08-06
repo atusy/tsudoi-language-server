@@ -820,7 +820,44 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 81,
+    pbi_id: "PBI-81",
+    goal:
+      "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the analysis, the source keeps only the decision nothing can grade -- and the skill gains the exit a still-true comment has never had.",
+    status: "planning",
+    subtasks: [
+      {
+        test:
+          "MISSPELL ONE KEY INSIDE THE `Omit` and read WHICH ARMS REDDEN AND IN WHICH CHECK, at base and again after the edit, requiring the same arms by name. The item's `three of the four are graded` is a READING until this runs, and the before/after pair is what makes `the arm keeps it` a measurement rather than an argument at review.",
+        implementation:
+          "The narrowing at packages/tsudoi-language-server/src/notifications.ts:113-120. WHAT GOES: the consequence walk-through, which the pins and the probes grade. WHAT SURVIVES: the asymmetry clause, the `Pick` preference, the churn reasoning and the reversal condition -- a code-edit decision whose only legitimate home under the Lifetime Rule is that site -- with the two pins NAMED at :117. Zero edits at :176, at :264-267 and in test/notifications.test.ts.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test:
+          "None, and the item discloses why: a skill file cannot redden and no check decides whether its new arm is applied. WHAT STANDS IN ITS PLACE IS AN ORDERING CONSTRAINT, not an assertion -- the arm is written AFTER subtask 1, from the case subtask 1 executed, and if subtask 1's disposition cannot be spelled in the arm's own words the ARM is wrong and gets rewritten rather than the case reinterpreted.",
+        implementation:
+          "`.claude/skills/writing-a-comment/SKILL.md`: a disposition for a comment STILL TRUE and no longer earning its lines, and the four-home rule for a reason that is not a comment.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE DEVELOPER FILED A TRUTH DEFECT AT THE SITE IT WAS SENT TO NARROW AND THE PRODUCT OWNER REFUTED IT, so the reading is recorded rather than the repair. `:117-119` says the `Omit` is defended by TWO PINS and that removing EITHER makes conversion required; the Developer read `pins` as the spawned probes and concluded only one defends the misspelling hazard. MEASURED: `\\bpins?\\b` occurs in test/notifications.test.ts at exactly :541 and :595, both inside the `Assert<Exact<...>>` docblocks, and the spawned ones are called `the two probes` and `the four probes` and never pins. THE CLAUSE THAT SETTLES IT is the last one -- `Pick needs neither of them` -- which is FALSE under the probes reading, because a `Pick` leaves those probes unchanged. The two pins are COMPLEMENTARY, one per blind spot of `Omit`, and the test file says so at :565-570. So `EITHER` is true, this is not PBI-77's class, and note 4 stands.",
+      "AND THE DISCRIMINATOR THE DEVELOPER PROPOSED WAS CONFOUNDED, WHICH IS THE HALF THAT MATTERS INDEPENDENTLY OF WHO WAS RIGHT. `Delete ProtocolConnectionHasTheseMembers and read whether anything about the misspelling hazard changes` returns NOTHING CHANGES under both hypotheses -- pin 2 was never the misspelling defender and its own docblock says so. Run as planned it yields a green that reads as proof, and the sprint narrows a true sentence into a false one on a measurement that could not have said otherwise. Sprint 73's class, arriving at plan time instead of at review. The direction that separates them is the DEPENDENCY side: pin 2 deleted, a member planted on `ProtocolConnection`, read whether it lands silently on `RequestOnlyConnection`.",
+      "WHAT THE REFUTED FINDING LEFT BEHIND IS IN SCOPE AND IS NOT A TRUTH REPAIR. `two pins` names neither pin, and the phrase was resolved wrong twice in two days -- once by criterion 1 itself, corrected at refinement, and once by the Developer reading the source directly. Prose two careful readers get wrong is under-specified, which is this item's subject; naming the two symbols at :117 is subtask 1's work, in the same commit, and the site still gets shorter.",
+      "NO PERTURBATION RECORD IS BUILT FOR SUBTASK 1, AND THE RESIDUE NAMED IS THE REGISTRY'S REACH RATHER THAN THE PERTURBATION'S. `alsoReddens` is same-file and the re-runner runs an ARM FILE, never `tsc --noEmit` -- so a record would hold the two bun arms and NOT the TS2344 half, which is the half licensing removal of the analysis from source. The header's second branch applies instead: the weakening is a reading of something an arm already holds, and `BoundaryIsTheObservingMembers` re-runs under the fourth check by existing.",
+      "THREE READINGS AND NOT ONE, BECAUSE THE ITEM'S OWN INSTRUMENT CANNOT REACH ITS OWN SIXTH SITE: the misspell perturbation at base and after; the re-grep of `silent no-op` and `MISSPELL` read as a LIST and not as a diff; and a separately named read of :264-267, which spells neither key word. The product owner added that site knowing the re-grep misses it, so the third reading is the honest consequence of the addition.",
+      "THE RISK ON THE RECORD IS THE DEVELOPER'S REPLACEMENT FOR THE ONE IT WITHDREW: the surviving text at :115-120 states a decision whose terms are resolved by reading two other files, and the narrowing makes it shorter without making it more self-contained. Naming the pins fixes the referent, not the fact that the reversal condition's truth rests on a complementarity argument living only at test/notifications.test.ts:565-570. IF THE EXECUTED NARROWING LEAVES A READER UNABLE TO CHECK `EITHER` FROM THE SITE, THAT IS FILED AND NOT REPAIRED HERE.",
+    ],
+  },
   retrospectives: [],
 };
 
