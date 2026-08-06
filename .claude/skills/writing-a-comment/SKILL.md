@@ -262,8 +262,7 @@ WINS.** _(sprint 81)_ The backlog item above is one of them; the rest:
   the only home that reddens the day the reason stops holding, which is also why
   a reason expensive to re-derive is mechanised rather than narrated.
 - **THE COMMIT**, if it is a MEASUREMENT or a FORECLOSED ALTERNATIVE. A commit
-  is past-tense and dated, so it cannot rot. Everything above in this file is
-  what a mutable present-tense home costs.
+  is past-tense and dated, so it cannot rot.
 - **A SKILL**, if the discipline is applied while WRITING rather than while
   RUNNING. Nothing is running at the moment a sentence is typed, so there is no
   run for an arm to hook — this file is that case.
