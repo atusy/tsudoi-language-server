@@ -143,36 +143,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-72",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "record a perturbation over an arm file that stages a checkout of its own, instead of finding out that the instrument cannot re-run it",
-        benefit:
-          "the registry's silence keeps meaning `nobody recorded this` rather than `nothing here could`",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A weakening whose arm file stages a checkout of its own is re-run by something -- or the registry states IN ITS OWN TEXT which shapes it cannot hold, as a class, rather than each such file naming its own exemption at its own site.",
-          verification:
-            "THREE MEASURED INSTANCES ALREADY EXIST AND ARE THE STARTING EVIDENCE; no fourth needs finding. (1) THE PUBLISHED-SPECIFIER ARMS: in a staged checkout `mirrorInstalledDependencies` treats the real framework as an INSTALLED dependency -- its realpath is outside the stage -- and hands the probe a SECOND ROUTE, so `the same config fails with TS2307 once the exports entry is removed` is DISARMED there and the baseline refuses the file. The same route is why sprint 58's blocker arm had to LEAVE test/artifact-detector.test.ts, which IS a registry arm file. (2) THIS SPRINT'S OWN-SUBPATHS ARM: test/own-subpaths.test.ts stages a copy of this checkout, and in that stage `repoRoot` IS the stage, which holds no `.git` -- MEASURED, both arms fail reading `git ls-files failed in /var/folders/...`, for a reason that is not the weakening. A SECOND AND INDEPENDENT REFUSAL stands behind it: `reRun` refuses any arm file importing helpers/perturbation.ts, which that file does for its write guard. (3) FOUND AT SPRINT 58'S ACCEPTANCE, WHILE REPAIRING THE BASELINE KEY'S OWN DISCLOSURE: the keyless-baseline degenerate is a source mutation in test/perturbations.test.ts itself, which `reRun` refuses outright for the same import -- so the registry cannot hold the perturbation over its OWN correctness either, and that reading is prose beside the code it measures.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "W1'S WEAKENING IS THE CONCRETE PERTURBATION THE REGISTRY CANNOT HOLD, which is what makes this an item rather than an observation: `publishedSubpaths` skipping any manifest whose name begins with this workspace's scope makes the detector blind to every package this repository ships, and it reads 5 pass / 1 fail over two files, the refusal arm ALONE. That is a real weakening, over shipped source, with a measured red -- and there is nowhere in the registry to put it.",
-        "AND THIS REPOSITORY KEEPS WRITING MORE OF THAT SHAPE, which is the argument for filing rather than accepting: the residue the detector exists for is a property of THIS workspace's own map, so the arms that measure it must stage THIS checkout -- and every one of them lands outside the instrument by construction, not by accident.",
-        "ONE FORECLOSURE, NAMED BECAUSE IT IS THE CHEAP MOVE AND THIS REPOSITORY HAS ALREADY PAID FOR IT: making the stage carry a `.git`, or pointing the stage at the real checkout, is refused. A staging function that returned the checkout root reached a recursive delete that validated nothing and the working tree went with it; `ThrowawayPath` and `throwawayOnly` exist because of that day, and a fix that widens what the stage may be is the same shape again.",
-        "IT MAY CLOSE AS A RECORDED DECISION THAT THE EXEMPTION-AT-THE-SITE IS THE ANSWER, and that is a legitimate outcome rather than a failure -- what the criterion refuses is the exemption being written once per file by whoever remembered, since the class is then discoverable only by reading every file that has one.",
-        "A FOURTH INSTANCE ARRIVED IN SPRINT 75 AND IS FILED RATHER THAN LEFT TO BE REDISCOVERED: the arm `bun runs no test file under an ignored segment` in test/suite-deadline.test.ts stages a tree of its own.",
-        "AND THE OBVIOUS PREDICATE IS REFUTED, MEASURED AT SPRINT 75 SO THE NEXT ATTEMPT DOES NOT SPEND ITS SPRINT ON IT. `the arm file stages a tree of its own` reaches SEVENTEEN root test files -- everything calling mkdtempSync or the checkout helper -- and test/definition-of-done.test.ts is one of them WHILE ITS RECORDS RE-RUN AND REPORT HELD TODAY. So staging is not what makes a record unholdable, and a class keyed on it would refuse eleven files the instrument handles.",
-        "WHAT THE THREE FILED INSTANCES ACTUALLY SHARE IS THREE DIFFERENT MECHANISMS, WHICH IS THE DIFFICULTY: `reRun` refuses an arm file IMPORTING helpers/perturbation.ts, loudly, and that is the ONE half decidable from the file -- SIX files match it. The other two are properties of what the stage LACKS (no `.git`, so a `repoRoot` read inside it fails) and of what it GAINS (mirrorInstalledDependencies hands a second route, so the weakening is DISARMED), and neither is readable off the arm file. A criterion met by one class statement therefore owes a disclosure about the two it cannot decide.",
-        "NOT RANKED AGAINST THE ITEMS ABOVE IT. It is placed here because the item below carries its own reason for staying last, and no other ordering claim is made.",
-      ],
-    },
-
-    {
       id: "PBI-70b",
       story: {
         role: "tsudoi maintainer",
@@ -222,6 +192,33 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 77,
+      pbi_id: "PBI-72",
+      goal: "The shapes the perturbation registry cannot hold are stated where the registry is, as a class, instead of once per file by whoever remembered.",
+      status: "done",
+      subtasks: [
+        {
+          test: "None -- four sites carrying one class, consolidated into the registry's own text.",
+          implementation:
+            "THREE MECHANISMS NAMED TOGETHER: the import `reRun` refuses, what the stage LACKS, what the stage GAINS -- with the disclosure that only the first is decidable from an arm file.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE OBVIOUS PREDICATE IS FALSE AND THE STATEMENT SAYS SO. `the arm file stages a tree of its own` holds of SEVENTEEN root test files, and test/definition-of-done.test.ts is one of them while its records re-run and report HELD. A class keyed on staging would refuse eleven files the instrument handles.",
+            "AND THE THREE ARE NOT ONE MECHANISM WEARING THREE COATS, WHICH IS WHY THE STATEMENT DISCLOSES RATHER THAN RULES: the import is readable off the arm file and `reRun` throws on it; the other two are properties of the STAGE -- no `.git`, no build output, a directory name that is not this repository's, and a second resolution route the real node_modules hands back -- and neither can be decided by reading the file a record names.",
+            "THE FOUR SITES KEEP ONLY WHAT IS LOCAL. own-subpaths says it is in the class on two mechanisms and points; readme-coverage names the one decidable mechanism; readme-layout keeps the split's own reason and points for the stage's properties.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "IT CLOSED ON THE CRITERION'S SECOND BRANCH RATHER THAN THE DISPOSITION ITS NOTES EXPECTED. The notes said it might close on `the exemption-at-the-site is the answer`; what the sprint did is the other thing, and the criterion's own words are met -- the class is stated in the registry's text and the sites point at it.",
+        "THE STATEMENT'S FIRST CATCH IS ONE SPRINT OLD AND IT IS MINE. Sprint 75's new arm in test/suite-deadline.test.ts claimed that staging a tree of its own put it in the class. Measured false in this sprint's own first step, and narrowed at the site to what a reader can decide there: it does not import the instrument, and whether a record over it survives a stage is UNREAD.",
+        "THE RESIDUE IS NAMED AND IS NOT SMALL: two of the three mechanisms remain undecidable from an arm file, so a future exemption still needs a person to measure which one applies. What the class buys is that they now know there are three and where to look, instead of finding out one file at a time.",
+      ],
+    },
     {
       number: 76,
       pbi_id: "PBI-80",
