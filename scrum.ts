@@ -167,38 +167,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-66",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read a claim labelled MEASURED and know what it was measured ABOUT, not only that a number was taken",
-        benefit:
-          "the label keeps meaning that the sentence was checked, instead of meaning that some number was",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A claim carrying the MEASURED label is stated NO WIDER THAN WHAT ITS INSTRUMENT OBSERVED: it names what was observed, under what condition, and what else would have produced the same reading.",
-          verification:
-            "NO DETECTOR IS BUILT AND THE VERIFICATION THAT ASKED FOR ONE IS WITHDRAWN. It said: plant a labelled claim missing each of the four in turn and require each to be reported. That stages a witness FOR A DETECTOR THAT CANNOT EXIST, and it is the more dangerous half because it reads as already designed -- an executor would build to it. The predicate is `does this sentence assert more than the reading beneath it`, which needs to know what the reading was, and the reading exists only in the prose. THE DECIDABLE PROXY IS REFUSED WITH A NUMBER: `a MEASURED label with no digit and no named command adjacent` flags most of the set -- every label carrying neither, which is a property of the TEXT and says nothing about whether those sentences are sound -- for the one instance it might catch. NO FIGURE IS GIVEN: `148` stood here and review could not reproduce it, 76 spellings of `adjacent` reading between 11 and 223. The refusal holds at either end, so the number was decoration on it, which is worse than the 251-for-0 rule the citation item measured and declined. INSTEAD, A BOUNDED SWEEP IN THE SHAPE THE SUPERLATIVE ITEM ESTABLISHED: keys and file set declared BEFORE searching, each hit dropped, narrowed, or given its boundary in writing, and the residue enumerated by key and path at close. THE SET IS .claude/skills/*.md, scrum.ts's product_backlog, and bunfig.toml -- roughly 81 labels. EXCLUDED WITH ITS REASON: scrum.ts's `completed`, about 83, because a MEASURED claim inside a closed sprint is a claim about what was observed THEN, and rewriting one edits a result. Excluded and to be re-argued the day this recurs: the thin spread over the remaining files. CLAUDE.md is MEASURED UNTRACKED here -- a global ignore holds it -- so its 6 labels reach one machine and it is out of the set.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "THE FOUR-PART CRITERION WAS ONE KIND'S VOCABULARY GENERALISED, AND IT IS THE WRONG SHAPE RATHER THAN A LOOSE ONE. `whose cost, at what size, on which runtime` spells the CONDITIONS of a performance reading, and 8 of 318 tokens are a timing; for a behaviour observed, cost and size have no referent to fill in, so a truthful author either leaves them blank and fails or invents them. THE CLAIM FIRST WRITTEN HERE -- that three of the four failures PASSED that form -- IS FALSE, AND IT ESCALATED ACROSS THREE RE-AUTHORINGS from `cite at least one of those`. The form is a CONJUNCTION whose fourth part is what the instrument cannot separate, and NOT ONE of the four names that; not naming it is what made each a failure. ZERO satisfy it. Only `940 tests across 69 files` cites any of cost, size or runtime at all -- and this record's own words about it are that a count which cannot separate the two states it is offered to distinguish is evidence for neither.",
-        "WHAT THE FOUR FAILURES SHARE, WHICH IS THE CRITERION: the sentence's SUBJECT IS WIDER THAN WHAT THE INSTRUMENT OBSERVED, and the label carries the warrant across the gap. `ACROSS SEVERAL SPRINTS` where one sprint was read; `940 tests across 69 files` offered for GRADING where DISCOVERY was measured, and the same figure comes from an ungraded file; `REMOVERS: NONE` from some readers of some manifests; a reading taken in a THROWAWAY and written as this tree's. NOT ONE IS REPAIRED BY ADDING COST, SIZE OR RUNTIME.",
-        "THE OPERATIONAL FORM, WHICH IS WHAT AN AUTHOR APPLIES AT THE KEYBOARD: name a state of this repository that would produce this same reading and make the sentence false. If one exists and is not written down, the sentence is wider than its reading. Cost, size and runtime survive as WHAT THAT QUESTION RESOLVES TO FOR A TIMING -- an example under the rule rather than the rule.",
-        "RE-MEASUREMENT IS REFUSED AS THE REPAIR. The finding is that a SUBJECT error survives confirmation, so a sprint that closes by re-taking its readings has done nothing this item asked for.",
-        "THREE OF THE FOUR FAILURES SIT IN THIS FILE'S OWN LIVE BACKLOG, AT TWO SITES -- one at PBI-77's verification and TWO at PBI-71's -- and all were caught AT REVIEW rather than by their author. `TWO` stood here, counting sites and saying failures, contradicting the enumeration one note above it. A declared set that did not contain them would have gone green on an empty region.",
-        "FILED OUT OF SPRINT 53, WHERE ONE PARAGRAPH NEEDED THREE CORRECTIONS AND EACH CORRECTION INTRODUCED THE NEXT ERROR. Four sentences in sequence: `the cost is linear` (true of the per-entry comparison, false of the sort beside it); `nothing of the directory's size is held or compared` (true of one function, false of the process); a reviewer's `a thirty-two entry buffer` (a real API default attributed to a code path that never reads it); and `what it buys is the disappearance of a superlinear term` (true on bun, and on deno the tail got slower).",
-        "THE NUMBERS WERE NEVER WRONG AND THE SUBJECT OF THE SENTENCE WAS WRONG FOUR TIMES, which is what makes this its own item: A SUBJECT ERROR IS INVISIBLE TO RE-MEASUREMENT. Take the reading again, at any size, on either runtime, confirm it, and the sentence stays false. THREE OF THE FOUR CARRIED THE `MEASURED` LABEL -- so in this codebase that label currently warrants the NUMBER and reads as a warrant for the SENTENCE.",
-        "THE FORM THIS ASKS FOR ALREADY EXISTS IN THE TREE, produced by the last of those repairs, and it is the exemplar rather than an invention: a reading that says where the allocation happens and never what stays, and that names what it cannot separate.",
-        "DELIBERATELY NOT FOLDED INTO THE CITATION CHECK: that item's own text warns that being read as coverage of a class it was not filed for is how it becomes worse than nothing, and `the subject of this sentence exceeds its measurement` is not a referent that resolves or fails to.",
-        "TWO INSTANCES FROM SPRINT 59, IN THE SAME PARAGRAPH-PAIR AND FOUND BY DIFFERENT READERS, WHICH IS THE EVIDENCE THIS ITEM COUNTS. SELF-CAUGHT: the ruling commit replaced a `51/135 ms` bare-`readdir` pair with two rows of its own session and called them the same subject -- but that instrument timed WHOLE SHAPES, so its nearest row still carries the gate running over the array. Retired with the reason rather than renumbered, which is this item's exemplar form arriving unprompted. FOUND AT ACCEPTANCE: `the ranking on bun FLIPS WITH SIZE`, offered as the reason one number per runtime could never settle the shape, rests on a -0.021 that the SAME RECORD twice says is inside its own null of +0.001 (-0.036..+0.016). BOTH ARE SUBJECT ERRORS AND NEITHER IS A WRONG NUMBER -- and the second one propagated no further than the dashboard, so a check reading only SHIPPED comments would not have seen it.",
-      ],
-    },
-
-    {
       id: "PBI-68",
       story: {
         role: "tsudoi maintainer",
@@ -356,6 +324,59 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 70,
+      pbi_id: "PBI-66",
+      goal: "The MEASURED label means the sentence is no wider than its reading -- rewritten where it is law, applied over a declared set, and with the item's own record swept for the class it is about.",
+      status: "done",
+      subtasks: [
+        {
+          test: "None -- the criterion itself, checked against the population it governs before any hit was touched.",
+          implementation:
+            "The four-part form (whose cost, at what size, on which runtime, what the instrument cannot separate) replaced by: stated no wider than what the instrument observed.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE CRITERION WAS ONE INSTRUMENT'S VOCABULARY GENERALISED. 318 MEASURED tokens; 8 are a timing, RE-DERIVED INDEPENDENTLY AT REVIEW AND HOLDING. For a behaviour observed -- most of the rest -- cost and size have no referent, so a truthful author leaves them blank and fails the rule or invents them.",
+            "AND IT WOULD NOT HAVE CAUGHT THE ITEM'S OWN EVIDENCE, WHICH IS THE ARGUMENT. What the four failures share is that THE SENTENCE'S SUBJECT IS WIDER THAN WHAT THE INSTRUMENT OBSERVED and the label carries the warrant across the gap: `ACROSS SEVERAL SPRINTS` where one sprint was read; `940 tests across 69 files` offered for GRADING where DISCOVERY was measured; `REMOVERS: NONE` from some readers of some manifests; a THROWAWAY checkout's reading written as this tree's. Not one is repaired by adding a size.",
+            "THE OPERATIONAL FORM IS A QUESTION AN AUTHOR CAN ANSWER AT THE KEYBOARD: name a state of this repository that would produce THIS SAME READING and make the sentence false. Cost, size and runtime survive as what that resolves to for a timing.",
+            "THE VERIFICATION WAS WITHDRAWN RATHER THAN NARROWED, and it was the more dangerous half because it read as already designed: it staged a witness for a detector that cannot exist. The decidable proxy is refused with a reading rather than an opinion -- it flags most of the set for the one instance it might catch.",
+          ],
+        },
+        {
+          test: "Per hit: name a state that would produce this same reading and make the sentence false. Set declared before searching -- the skills, this file's product_backlog, bunfig.toml.",
+          implementation: "82 hits. 71 sound, 10 narrowed, 1 bounded, 0 dropped.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "ZERO DROPS, FOR ONE REASON: in every wide case the reading was real and the label was doing work, so the width was in the SUBJECT and narrowing it was cheaper than removing the warrant.",
+            "TWO WERE FALSE RATHER THAN WIDE, AND BOTH WERE SOMETHING ELSE'S STARTING EVIDENCE. PBI-73's said every version in this tree is a prose literal compared with nothing -- test/package-shape.test.ts SPAWNS `tsc --version` and asserts it against the manifest's declared version, verified at review by degenerating it in two directions. And a skill said no check re-runs someone else's perturbation after one's own edit -- test/perturbations.test.ts re-runs every recorded weakening on each suite run, 24 pass and six HELD. The second was TRUE WHEN WRITTEN and falsified by a later increment, which no grep finds.",
+            "EXCLUDED WITH ITS REASON AND VERIFIED HELD: this file's `completed` array, 83 tokens byte-identical before and after, because rewriting a MEASURED claim inside a closed sprint edits a result. CLAUDE.md is measured untracked -- a global ignore holds it -- so its labels reach one machine.",
+            "RESIDUE, BY KEY AND PATH: `completed` (83), CLAUDE.md (6), and the thin spread over the remaining files. And ten lowercase-labelled readings inside the declared set that the sweep's own key did not treat as hits -- review named them, and the hit list itself was not kept, so that 82-against-119 split is unauditable.",
+          ],
+        },
+        {
+          test: "None -- the item's own record, swept for the class it is about.",
+          implementation: "Four instances found at review, all written while filing this item.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "`IT PASSED THREE OF THIS ITEM'S OWN FOUR PIECES OF EVIDENCE` IS FALSE ON THE CONJUNCTION -- ZERO PASS. The form's fourth part is what the instrument cannot separate, and not one of the four names it; NOT NAMING IT IS WHAT MADE EACH A FAILURE. The claim ESCALATED ACROSS THREE RE-AUTHORINGS, from `cite at least one of those`, which is the widening-while-re-authoring shape this project measured a sprint earlier.",
+            "`148` COULD NOT BE REPRODUCED: 76 spellings of `adjacent` read between 11 and 223, none within ten of it. The refusal it supported holds at either end, so the figure was decoration -- and a number whose instrument nobody can re-run is this item's own subject. Struck at both sites rather than re-taken.",
+            "A COMMIT SAID THE SAME ERROR WAS REPAIRED IN TWO PLACES AND REPAIRED ONE, the other sitting five lines away in the same file. And `TWO OF THE FOUR FAILURES SIT IN THE LIVE BACKLOG` is THREE, at two sites -- it counted sites and said failures, contradicting the enumeration one note above it.",
+            "ALL FOUR WERE CAUGHT AT REVIEW AND NOT BY THEIR AUTHOR, which is the discriminator this record uses on this class -- and the fourth sprint running to record that the prose ABOUT a measurement is where this project's remaining risk lives.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "A CRITERION IS CHECKED AGAINST THE POPULATION IT GOVERNS BEFORE THE SWEEP, NOT AFTER. This one was written from a sprint where all four parts were exactly right and would have greened three of the four failures it was filed on. What made that visible was measuring the population first -- 8 of 318 -- rather than starting to repair.",
+        "RE-MEASUREMENT IS REFUSED AS THE REPAIR FOR THIS CLASS, and the reason is the class's definition: a subject error survives confirmation. Take the reading again, at any size, on either runtime, and the sentence is still false.",
+      ],
+    },
     {
       number: 69,
       pbi_id: "PBI-57",
