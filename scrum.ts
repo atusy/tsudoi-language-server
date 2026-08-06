@@ -247,18 +247,24 @@ const scrum: ScrumDashboard = {
       number: 74,
       pbi_id: "PBI-77",
       goal: "The definite article doing quantifier work is swept where sprint 66 could not see it, over a key and a file set declared before the search rather than after it.",
-      status: "in_progress",
+      status: "done",
       subtasks: [
         {
           test: "For each hit, OPEN THE SET THE SENTENCE QUANTIFIES OVER and read it against the code. Repair in the criterion's order: drop, then back by an enumeration at the site, then narrow to what was read.",
           implementation:
             "KEY `\\bis what\\b`, case-insensitive. FILE SET packages/*/src/*.ts (20), scripts/*.ts (16), test/helpers/*.ts (30) -- 66 hits, counted with `grep -icE` over `git ls-files` before any of them was read.",
           type: "structural",
-          status: "pending",
+          status: "completed",
           commits: [],
           notes: [
             "THIS KEY IS SPRINT 66'S OWN BLIND SPOT AND IT NAMED IT IN WRITING: that sweep's dominant repair turned `the only thing that notices it` into `what notices it`, roughly thirty times, which satisfies the criterion and is INVISIBLE to a `the only` key. The rule that these are one claim is already landed in .claude/skills/writing-a-comment/SKILL.md. So the key list was told to grow here; nothing had swept it.",
             "THE KEY WAS CHOSEN ON A READING, DISCLOSED RATHER THAN IMPLIED: 30 of the 36 hits in the first two sets were read before the key was fixed, and 20-odd were definite descriptions with an openable set. `every` was the other candidate and was REFUSED on the same reading -- 127 hits in those sets, mostly prose cadence (`every session`, `every child`), where deciding quantifier-or-narration needs the surrounding paragraph and not the matched line. A partition a sweep cannot decide FROM THE LINE is the class disposition this project already measured hiding live sites twice.",
+            "THREE FALSE, AND THE DENOMINATOR IS SAID BESIDE THEM: 66 hits READ, about ten sets actually OPENED, three false. The rest fell out as identity or definitional uses -- `the derived promise is what is stored`, `WARM is what these rows are` -- and that fall-out IS decidable from the paragraph the hit sits in, which is the standard this project sets for a disposition.",
+            "(1) test/helpers/build.ts said the URL form `is what every other helper uses`. FALSE OVER A SET OF TEN: `import.meta.dir` occurs in code nowhere -- spawn.ts's mention is a comment -- and TWO helpers use the URL form, while the other nine import `repoRoot` from spawn.ts and use no form at all. Repaired to the sentence spawn.ts already carries at the site making the same choice.",
+            "(2) completion.ts called a size and a date per entry what `a directory of ANY SIZE cannot afford`. The instrument written to price exactly this says of itself that the refusal `stands on no figure at all`. Narrowed to `refused on no figure`, which is what was read.",
+            "AND THAT REPAIR'S FIRST FORM EARNED A RED, NAMED HERE BECAUSE THE RULE WAS ALREADY IN THIS TREE AND I WALKED INTO IT: pointing at `scripts/listing-shapes.ts` from a SHIPPED module reads 941 pass / 1 fail -- `@atusy/tsudoi-completion-path: dist/completion.js names scripts/listing-shapes.ts`. A shipped module may not name a repository file its reader does not have. The form that stands names no repository file at all.",
+            "(3) notifications.ts said what the gated-connection factory returns `IS THE SOLE CONNECTION-SHAPED VALUE IN startServer'S SCOPE`. FALSE: `withFallback` is a second binding inside that same function. The sufficiency argument it supports never needed it -- what would be conspicuous is a factory import nothing there needs -- so the claim is narrowed to `no WIDE connection is bound there`.",
+            "SIX OPENED AND CONFIRMED, WITH THE READING RATHER THAN A TICK, because a sweep that files only its hits cannot be told from one that stopped early. Both handler index.ts files: `exports` carries one key and each package's own package-shape arm asserts the map WHOLE, so the claim reddens if a subpath is added. server.ts's `of the four fields read off this message`: capabilities, rootUri, rootPath, workspaceFolders -- `trace` is a Connection member and `processId` is a vscode-jsonrpc hazard, neither read off initialize by tsudoi. methods.ts's `the second is what excludes textDocument/diagnostic`: DocumentDiagnosticParams is WorkDoneProgressParams & PartialResultParams & ..., so the FIRST condition does not exclude it and the second does. tsudoi.ts's `a member added to Tsudoi and forgotten here does not compile`: a planted member reads TS2741 at tsudoi.ts naming it. config.ts's `nothing reddens if you hand import the bare path`: MEASURED, 942 pass / 0 fail with pathToFileURL removed -- a claim that had stood unread since it was written.",
             "test/helpers/ IS IN THE SET ON SPRINT 65'S MEASUREMENT, not for volume: in production code 8-9 of 10 comments restated what a test already held, and in the helpers it inverted -- readme.ts 24 weakenings with 9 catching nothing. The layer supporting the tests has no tests of its own, so an unbacked superlative there is held by the least.",
           ],
         },
@@ -267,7 +273,7 @@ const scrum: ScrumDashboard = {
           implementation:
             "What this key does not reach, by area, on the instrument above: test/*.test.ts 262, test/fixtures/ 40, packages/*/test/ 29, READMEs and CLAUDE.md 17, .claude/skills/ 12, scrum.ts 59.",
           type: "structural",
-          status: "pending",
+          status: "completed",
           commits: [],
           notes: [
             "THE TEST CORPUS HOLDS 262 OF THE 485 AND IS NOT SWEPT. Written as a number rather than left out, because silence over the largest area reads as coverage.",
@@ -276,7 +282,11 @@ const scrum: ScrumDashboard = {
         },
       ],
       impediments: [],
-      decisions: [],
+      decisions: [
+        "THE KEY DELIVERS A READER TO A PARAGRAPH, NOT TO A SENTENCE, AND THAT IS THIS SPRINT'S TRANSFERABLE FINDING. The third repair is over `SOLE CONNECTION-SHAPED VALUE`, which `\bis what\b` DOES NOT MATCH; the hit that reached it sat in the same paragraph. Sprint 66 recorded that a superlative's refutation is adjacent to it; this sprint measured that the FINDING is adjacent too. So 66 hits bought 66 PARAGRAPHS, and a future sweep's hit count means that rather than 66 sentences.",
+        "A DATED PERTURBATION READING IS NOT A STALE CLAIM, ruled here rather than repaired: test/helpers/account-arms.ts carries `925 pass / 9 fail` where the suite now reads 942. It records what a named weakening produced, not what the suite is, and rewriting it to today's total would manufacture a reading nobody took -- which is sprint 73's provenance ruling applied to a number instead of a version. Read and left, named so the next sweep does not re-find it as a defect.",
+        "PBI-77 DOES NOT CLOSE, on the same disposition sprint 66 took: what is discharged is one key over three declared sets, and the residue was measured AT PLAN TIME and committed before the sweep, so it cannot have been assembled from whatever the sweep happened to reach. The test corpus holds 262 of the 485 and is untouched.",
+      ],
     },
     {
       number: 73,
