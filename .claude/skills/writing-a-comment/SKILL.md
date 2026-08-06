@@ -285,8 +285,7 @@ the whole of what this adds beyond the two homes that paragraph does not name.
   makes a green meaningless or a red expected.
 
 **THE TRIGGERS OVERLAP, SO `TAKE THE FIRST THAT FITS` WAS WRONG. WHERE TWO FIT,
-THE ONE NAMING WHY THE REASON EXISTS BEATS THE ONE NAMING WHAT IT IS.** _(sprint
-81)_ A measurement taken to settle a review finding answers to both the commit
+THE ONE NAMING WHY THE REASON EXISTS BEATS THE ONE NAMING WHAT IT IS.** _(sprint 81)_ A measurement taken to settle a review finding answers to both the commit
 and the sprint record; it goes to the sprint record. MEASURED AGAINST THE SPRINT
 THAT WROTE THIS LIST: read as first-fit the order sends its unrepaired,
 measured findings to the commit, and the sprint had already put them in the
