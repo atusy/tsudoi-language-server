@@ -29,7 +29,9 @@ await requireRuntime(denoRuntime);
 /**
  * A deno.json carrying an npm import map -- the file most likely to flip npm
  * resolution to deno's global cache, which is the argument the tests below
- * MEASURE. It does not hold at deno 2.9.2.
+ * MEASURE. It holds at neither deno 2.8.3 nor 2.9.2 -- the second was read
+ * when this was written, the first by re-running these arms here (4 pass /
+ * 0 fail on `deno 2.8.3 (stable, release, aarch64-apple-darwin)`).
  */
 const denoJsonWithNpmImports = `${JSON.stringify(
   {
@@ -114,6 +116,12 @@ test("the same checkout starts once node_modules is present", async () => {
 // `found it in a package.json` to `could not find it in a node_modules folder`
 // -- and the dependency is still demanded from node_modules. Both stderr
 // assertions below are coupled to that release's wording.
+//
+// WIDENED ONLY AS FAR AS WHAT WAS READ: these arms are green on
+// `deno 2.8.3 (stable, release, aarch64-apple-darwin)` too, but they assert the
+// SUBSTRING `node_modules` rather than the wording, so that green proves the
+// substring survives and says NOTHING about 2.8.3's phrasing. The wording claim
+// stays at 2.9.2 until someone reads that release's stderr.
 test("a deno.json with an npm import map does not make node_modules dispensable", async () => {
   checkout.write("deno.json", denoJsonWithNpmImports);
 

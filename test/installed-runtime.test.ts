@@ -339,7 +339,10 @@ test("a change to src/ reaches the installed copy with no rebuild step", async (
  * node_modules and bun does not`, NOT `the installed copy runs under deno` --
  * that one is defended by the handshake below and by nothing here.
  *
- * COUPLED, deliberately, to deno 2.9.2's restriction. If a later deno strips
+ * COUPLED, deliberately, to deno's restriction -- OBSERVED AT 2.8.3 AND AT
+ * 2.9.2, the citation widened only after re-running this arm on the runtime
+ * this checkout has (`deno 2.8.3 (stable, release, aarch64-apple-darwin)`,
+ * 1 pass / 0 fail). If a later deno strips
  * types under node_modules the first assertion will fail; the answer then is
  * to delete this test and keep the handshake, not to loosen it -- an
  * unnamed `it failed somehow` would pass for a broken helper too.
