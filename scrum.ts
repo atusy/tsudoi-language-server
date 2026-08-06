@@ -113,36 +113,35 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [
+  product_backlog: [],
+  completed: [
     {
-      id: "PBI-77",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "read `X is the only Y` in this tree and know that something reddens the day it stops being true",
-        benefit:
-          "the strongest claims this project makes stop being specifications with no compiler",
-      },
-      acceptance_criteria: [
+      number: 80,
+      pbi_id: "PBI-77",
+      goal: "The last shape of the superlative sweep is the one a test can settle -- who actually reddens -- and PBI-77 closes with its keys written down.",
+      status: "done",
+      subtasks: [
         {
-          criterion:
-            "A superlative or exhaustiveness claim shipped in this tree is DROPPED, or held by something that reddens when it becomes false, or narrowed to what was actually read -- in that order of preference.",
-          verification:
-            "THE SHAPES ARE NAMED BECAUSE THE SUBJECT IS THE SHAPE AND NOT THE TOPIC: `X is the only Y`, `nothing anywhere does Z`, `every W is V`. THE ITEM'S OWN DISCRIMINATOR, and it is why this left PBI-62 rather than closing with it: these have a MECHANISABLE CORE, where `this is so because` does not. `the only file that reads the artifact` is a claim a test can hold by enumerating the readers; a causal reason is not.\n\nSTARTING EVIDENCE, ALREADY MEASURED, so no fourth instance needs finding. (1) SPRINT 62: an arm's header said the day an inlining transform lands `nothing else would say so` -- a coverage claim over a tree nobody had read. Withdrawn in place, and THE WITHDRAWAL WAS ITSELF INCOMPLETE: the same claim had been written into two further sites in the same sprint and only the test file was touched, so a record asserted a repair the tree did not carry. Caught AT REVIEW and not by its author, twice. (2) THE PRODUCT GOAL'S OWN METRIC read `10 of 10` for thirty sprints with nothing anywhere enumerating the ten -- grepped, the only match was the metric -- and the fix was to ENUMERATE IN THE METRIC, which is this item's repair shape in miniature. (3) The tree is full of `the only`, `nothing else` and `every`, AND THE FOUR THIS ITEM FOUND GRADED ARE EACH HELD BY AN ENUMERATION AT THE SITE -- which is this item's repair shape, already practised: `refuseSubpathsAnsweringFromSource` holds a universal CLAUDE.md states in prose and reddens on the fifth check; `refuseMemberMappings` and `refuseUncoveredFiles` do the same over enumerated sets; and `no specifier the root check resolves is answered by a mapping` in test/package-shape.test.ts grades an exhaustiveness claim off a real `--traceResolution` run, with a vacuity pair beside it. FOUR NAMED AND NOT A CENSUS: what is unknown is how many ungraded ones there are, which is why the sweep is what closes this and not a count.\n\nWHAT MAY NOT BE BUILT, REFUSED BY NAME so it is not proposed as the obvious first move: a matcher over PROSE CONTENT that decides whether a claim is true. That is the same shape refused when the exempt tag list was killed and again when a dangling-reference detector was declined, and its failure mode is the one this project punishes -- a green certifying the class as watched. What is permitted is a claim REWRITTEN so that a real enumeration backs it, at the site, one claim at a time.\n\nAND READING DOES NOT FIND THEM, MEASURED ON THIS SPRINT'S OWN FINDINGS AND ON NO WIDER RANGE: every superlative that turned out false HERE was found by applying a degenerate to shipped code or by a reader arriving after the review stage, never by a careful re-read of the prose. THE SCOPE IS THE WHOLE CLAIM -- an earlier form of this sentence read `across several sprints` with neither a number nor a condition, which is the defect this item is about, committed inside the item filing it.",
+          test: "For each sole-detection claim, DELETE OR WEAKEN THE THING IT IS ABOUT and count the arms that redden. The claim is the count.",
+          implementation: "Three narrowings. One claim held.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE KEY IS `is what <detection verb>` AND IT IS DECIDABLE FROM THE MATCHED LINE, which is why it was taken and `is what a/the/this` was not: a transitive detection verb makes the sentence a claim about a SET OF ARMS, and a reader can open that set by perturbing the subject. Nineteen hits tree-wide; the rest of the family turned out to be DISCRIMINATOR claims -- what tells state A from state B -- which are local and not quantifiers.",
+            "ONE HELD: deleting the empty-contentChanges early return reddens EXACTLY the arm whose comment claims to notice it.",
+            "THREE DID NOT, AND ONE OF THEM FAILED IN BOTH DIRECTIONS AT ONCE. `push(...batch)` made a plain push reddens the aggregating drive across both runtimes and the installed consumer -- and the cell calling itself the noticer IS NOT AMONG THEM. It locks the guard's own behaviour and nothing about the spread. A planted `exports` subpath reddens THREE arms with three different reasons, not the one equality assertion. Dropping `openClose` reddens TWENTY-TWO, because every capability arm in that file asserts the whole value.",
+            "THE COUNTS ARE KEPT WHERE THIS PROJECT USUALLY REFUSES COUNTS, and the exception has a reason: what a reader trading one of these arms for another needs is HOW MANY WERE WATCHING. A count that goes stale here reddens nothing and misleads nobody, because the sentence beside it names the perturbation that produced it.",
+          ],
         },
       ],
-      status: "draft",
-      notes: [
-        "DROPPING THE WORD IS THE DEFAULT REPAIR AND IT WAS NOT IN THE CRITERION UNTIL SPRINT 65 MEASURED WHY. Backing a claim with an enumeration and narrowing it to what was read both ADD PROSE, and this tree had grown to half comments. A superlative here need not be load-bearing at all, and the instance that settled it is the facilitator's own -- a new comment claiming an edit reddens nothing, where the refusal's real reasons (the working set, the cancellation seam) never depended on the claim, and deleting the clause cost nothing.",
-        "SCOPE AFTER THE CUT, MEASURED: `the only` 154 and `nothing else` 102 across tracked .ts, down from 206 and 139 at sprint 65's base. THE KEY COUNTS WORDS AND NOT CLAIMS, which bounds both numbers: a record QUOTING a superlative reads the same as one MAKING it -- the note below quotes `THE ONLY ONES WITH NO ENFORCEMENT AT ALL` -- and a fall in the count is a deletion or a REWORDING indifferently, so what went with the cut is not readable from the pair. This item's subjects are inside these counts rather than equal to them.",
-        "MOVED OUT OF PBI-62 IN SPRINT 63, IN THE SAME EDIT THAT REMOVED IT THERE, and carried rather than summarised because the sentence is the item: WHAT THIS SAYS ABOUT WHERE THIS PROJECT'S PROSE SITS RELATIVE TO ITS CODE, and it is the reason this matters more than tidiness -- THE SUPERLATIVES ARE THE STRONGEST CLAIMS IN THE TREE. A false superlative is not a documentation defect; it is a specification with no compiler, read by the next contributor as settled. THE CLAUSE CALLING THEM `THE ONLY ONES WITH NO ENFORCEMENT AT ALL` IS STRUCK RATHER THAN SOFTENED, on the tree's own record: test/package-shape.test.ts says of a NON-superlative refusal that it is ENFORCED BY NOTHING, WHICH IS SAID OUT LOUD, and CLAUDE.md records the unbuilt-checkout residue as still detected by nothing. Trading it for `among the least enforced` would be the same unmeasured comparative at a lower volume; what carries this item is the cost above, which needs no ranking.",
-        "WHY IT HAD TO LEAVE AND WHY IT IS NOT DELETED. It sat in another item's notes for several sprints because it is true, important and HOMELESS -- and a homeless truth in a notes array is the first thing compaction takes. The rule this dashboard's header carries is that a decision may be compacted only into a home that OUTLIVES A CONTEXT WINDOW, and a PRODUCT BACKLOG ITEM is on that list where a note is not. It leaves as an item or it is deleted deliberately; it was not to be carried an eighth time.",
-        "RANKED ABOVE PBI-78 ON THE DISCRIMINATOR AND NOT ON THE TOPIC, which is worth stating because the two look like one item from a distance: this one has a shape a check can hold, PBI-78's instances are reasons that were never read against their code, and no check decides that class. Both sit below PBI-76, whose subject is the artifact a stranger installs rather than the record.",
-        "WHAT IT MUST NOT BECOME, INHERITED FROM THE ITEM IT LEFT: a standing `no false prose anywhere` item. It closes when the shapes above have been swept once, each hit either backed or narrowed, and the sweep's keys written down -- not when the tree is certified free of them.",
+      impediments: [],
+      decisions: [
+        "PBI-77 CLOSES ON ITS OWN CONDITION: the shapes are swept once, each hit backed or narrowed, and the keys are written down. `X is the only Y` and `nothing anywhere does Z` went at sprint 66 under five keys over two file sets. The definite article doing the same work went at sprint 74 under `is what`, over the production layers. The detection family went here, tree-wide. `every W is V` is RULED rather than swept -- refused at sprint 74 with its reading, because quantifier-or-narration is not decidable from the matched line and a partition a sweep cannot make from the line is the class disposition this project has measured hiding live sites twice.",
+        "WHAT IS NOT SWEPT IS STATED AS A NUMBER RATHER THAN LEFT OUT, and it is the condition the closure is honest under: `is what` in the test corpus reads 262, in test/fixtures/ 40, in the member tests 29, in the READMEs and CLAUDE.md 17, in the skills 12, in scrum.ts 59 -- taken at sprint 74's plan with one instrument. This closes because the SHAPES have been swept once, which is what the item asks, and NOT because the tree is certified free of them, which the item forbids claiming.",
+        "THE YIELD ARGUES AGAINST TREATING THE CLOSURE AS A CLEAN BILL: three of four opened claims were false, and one was false about itself. The rate is what a reader should carry, not the closure.",
       ],
     },
-  ],
-  completed: [
     {
       number: 79,
       pbi_id: "PBI-70b",
