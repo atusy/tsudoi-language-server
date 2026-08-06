@@ -223,6 +223,32 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 76,
+      pbi_id: "PBI-80",
+      goal: "The stakeholder's resolve request is a graded item rather than an absorbed one: what the path IS decides the answer, and a directory answers with the names it holds.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Perturb the branch three ways and read WHICH ARMS redden, rather than reading a green suite as evidence the criterion is met.",
+          implementation:
+            "None -- the capability shipped in sprint 53. This item exists because the request had no home in this dashboard, and an ungraded delivery is indistinguishable from an unread one.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE CRITERION IS MET AND NOW HAS ITS READING. `resolvePathStat` in packages/tsudoi-completion-path/src/resolve.ts stats the path and, for a directory, renders the names it holds; packages/tsudoi-completion-path/test/resolve.test.ts holds 15 arms over it, TWO OF WHICH ARE THE STAKEHOLDER'S DISCRIMINATION BY NAME -- `a file whose item claims to be a folder is still answered as a file` and `a directory whose item claims to be a file still comes back with its listing`.",
+            "NEVER LISTING READS 4 pass / 11 fail, naming the markup arms, both cancellation arms, the claims-a-file arm and all four bound arms. INVERTING THE TEST TO `isFile()` READS 2 pass / 13 fail, naming both discrimination arms and the stat-then-replaced arm besides. So the directory half is held from two directions and by name.",
+            "AND THE THIRD PERTURBATION FOUND A CELL NOTHING HOLDS, WHICH IS THE ITEM'S ONLY DELIVERABLE IN CODE: listing UNCONDITIONALLY -- for a file as well -- reads 15 pass / 0 fail. `opendir` fails on a file, `listingOf` catches, and the answer is unchanged. THE KIND TEST IS A SAVED SYSCALL AND NOT WHAT KEEPS A FILE ANSWERING AS A FILE, and the line now says so, because no arm does.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "FILED AND CLOSED IN ONE SPRINT, DELIBERATELY, AND THE REASON IS THE GAP IT CLOSES. The capability was verified as delivered early in this session and no item was raised, so the dashboard carried no record that the stakeholder had asked for it -- and this file is the single source of truth. A request absorbed into `already done` leaves nothing anyone can re-read.",
+        "WHAT IT IS NOT: a re-implementation. The one code change is a comment carrying a measurement nothing else in the tree holds.",
+      ],
+    },
+    {
       number: 75,
       pbi_id: "PBI-71",
       goal: "A scratch file goes where this repository says to put one without joining the suite, and the runner and the sweeps cannot disagree about which directories those are.",
