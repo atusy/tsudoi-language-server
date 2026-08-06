@@ -57,7 +57,8 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
       // A SAVED SYSCALL AND NOT WHAT KEEPS A FILE ANSWERING AS A FILE, which no
       // arm says: with the test dropped, `opendir` fails on a file and
       // `listingOf` catches, so resolve.test.ts reads 15 pass / 0 fail.
-      // Inverting it to `isFile()` reddens 13.
+      // Inverting THIS site to `isFile()` reddens 11 -- `13` stood here and was
+      // taken with a replace that hit `detailFor`'s test too.
       stats.isDirectory() ? await listingOf(path, context.signal) : undefined,
     ),
   };

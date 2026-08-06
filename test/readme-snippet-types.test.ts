@@ -50,9 +50,17 @@ test("the mock the README says satisfies nothing is refused, and it names the th
 
   const refused = await typeCheckProbe({ "snippet.ts": preamble + (blocks[0] ?? "") });
   expect(refused.code).toBe(1);
-  expect(refused.output).toContain("TS2739");
+
+  // ONE DIAGNOSTIC, AND NOT `the output somewhere contains TS2739`. The second
+  // review stage made the documented literal VALID and supplied the code and all
+  // three names from a decoy declaration beside it; every line below passed over
+  // a block that compiled. The count is what ties the diagnostic to the block.
+  const diagnostics = refused.output.trim().split("\n");
+  expect(diagnostics).toHaveLength(1);
+  expect(diagnostics[0]).toContain("TS2739");
+  expect(diagnostics[0]).toContain("DocumentView");
   for (const member of ["lineCount", "positionAt", "offsetAt"]) {
-    expect(refused.output).toContain(member);
+    expect(diagnostics[0]).toContain(member);
   }
 
   // THE PAIR, AND IT IS NOT DECORATION: a probe that refuses everything -- a

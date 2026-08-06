@@ -48,7 +48,13 @@ applySuiteDeadline();
 //
 // `.json` IS IN because package.json cannot carry comments, so this repository
 // puts its reasons in `//name`-style keys, and two of them cite a runtime.
-const CITATION = /(bun|deno)[\s*]+v?(\d+\.\d+\.\d+)/gi;
+//
+// THE WORD `version` IS ALLOWED BETWEEN THE TWO because English writes it there.
+// The second review stage planted a runtime name, that word and a number in a
+// tracked README, and the arm stayed green. WHAT IS STILL MISSED IS ANY OTHER
+// WORD IN THAT GAP: this reads a shape, not every sentence a person could write.
+// (Spelled without an example, for the reason the entry list is split in two.)
+const CITATION = /(bun|deno)[\s*]+(?:v|version[\s*]+)?(\d+\.\d+\.\d+)/gi;
 
 /**
  * THE RUNTIME AND THE VERSION ARE SEPARATE FIELDS BECAUSE THE SCAN READS THIS
