@@ -36,8 +36,10 @@ rationale, and the answer if the cost is ever questioned: IT ALSO DETECTS
 DISARMED CONTROLS. MEASURED: extracting a table to satisfy one requirement
 silently dropped the contextual typing that made a DIFFERENT control fire, and
 the Definition of Done STAYED GREEN THROUGHOUT — caught only by re-running
-someone else's perturbation after one's own edit, which no check in this project
-performs. It costs almost nothing and restores a second observer retroactively.
+someone else's perturbation after one's own edit, which nothing performed then.
+`test/perturbations.test.ts` now re-runs every RECORDED weakening on each suite
+run, over the arm files it can stage. It costs almost nothing and restores a
+second observer retroactively.
 
 _(sprint 43)_ **Ask FIRST which perturbation still HAS A TARGET in this tree.**
 After a shape change most have none left, so the default choice returns TARGET

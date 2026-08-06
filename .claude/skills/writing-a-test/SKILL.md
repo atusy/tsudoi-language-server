@@ -212,11 +212,13 @@ since a relative workspace link dangles the moment a member directory moves.
 **WHY THE DEGENERATE ARM EARNS ITS COST, ANSWERED FROM THIS RECORD RATHER THAN
 ASSERTED** _(sprint 44, closed sprint 52)_: the project asked whether it was
 producing more weak probes or merely detecting more of them. The discriminator
-is WHO CAUGHT IT, and since then every instance has been caught BY THE PERSON WHO
-RAN IT — a sweep on its own second run, an executor measuring before satisfying a
-criterion, degenerate readings taken before the arms were believed. Author-caught
-is detection, not defect. WHAT WOULD REFUTE IT: an instance found by someone
-other than its runner, or found after an increment closed.
+is WHO CAUGHT IT, and through that close every instance READ was caught BY THE
+PERSON WHO RAN IT — a sweep on its own second run, an executor measuring before
+satisfying a criterion, degenerate readings taken before the arms were believed.
+Author-caught is detection, not defect. WHAT WOULD REFUTE IT: an instance found
+by someone other than its runner, or found after an increment closed — and this
+paragraph carries no reading past that close, so a later one is outside it rather
+than absent.
 
 **The stakeholder-facing example is EXECUTED by the suite** — the config is
 loaded and driven, and a change that breaks it must redden a named assertion.

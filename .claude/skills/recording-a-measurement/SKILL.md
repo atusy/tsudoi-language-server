@@ -44,9 +44,9 @@ THE SAME SHAPE.
 names the one it ran on.** _(sprint 45)_ The suite runs both runtimes precisely
 because they differ; a hand-run probe does not. MEASURED: `import { type
 MethodHandler }` is ELIDED BY BUN and LOADED BY DENO, so deleting
-`dist/types.js` gives bun exit 0 and deno exit 1 naming that file. Every prior
-hand-run "MEASURED, EXIT 0" in this project's record is narrower than its
-wording for the same reason.
+`dist/types.js` gives bun exit 0 and deno exit 1 naming that file. A hand-run
+"MEASURED, EXIT 0" that names no runtime is narrower than its wording for the
+same reason — read off this one probe, not off a pass over the record.
 
 **Predict the diff AND its counterfactual before the work, in writing.**
 _(sprints 39, 40)_ A 0/0/0 reading with counts unchanged reads as CONFIRMATION
@@ -57,9 +57,8 @@ NON-ZERO, so a failed build leaves an artifact that is new, freshly written and
 WRONG — "rebuild before believing it" is the remedy for staleness and is useless
 here, because the rebuild is what produced it. A probe read against it returned
 exit 0 where 1 was predicted, and the mismatch was visible only because the
-prediction existed. Every automated route in this repository is covered; what
-remains exposed is HAND-RUN PROBE SEQUENCES — break source, run something,
-revert, read `dist/`.
+prediction existed. The exposure this leaves is HAND-RUN PROBE SEQUENCES — break
+source, run something, revert, read `dist/`.
 
 ## Labelling it
 
@@ -75,9 +74,12 @@ is not written down, the sentence is wider than its reading.
 
 _(sprint 70)_ **`whose cost, at what size, on which runtime` STOOD HERE AS THE
 RULE AND IS DEMOTED TO AN EXAMPLE**, because it is one instrument's
-condition-spelling: 8 of this tree's 318 labels are a timing, and 148 are a
-behaviour observed, where cost and size have no referent to fill in. An author
-either leaves them blank and fails the rule, or invents them. MEASURED against
+condition-spelling: 8 of this tree's 318 labels are a timing, and 148 carry
+NEITHER A DIGIT NOR AN ADJACENT NAMED COMMAND — a text property, which is what a
+behaviour observation reads as here, and which sorts spelling rather than
+soundness, so a wrong sentence with no number in it is inside the 148. For those
+cost and size have no referent to fill in, and an author either leaves them
+blank and fails the rule, or invents them. MEASURED against
 the four failures that prompted this edit: THREE OF THE FOUR SATISFIED THE
 FOUR-PART FORM, and the worst of them -- `940 tests across 69 files`, offered
 as evidence of a graded file when the same figure comes from an ungraded one --
@@ -121,9 +123,9 @@ original could not, AND THAT DIFFERENCE IS WHY THE ERROR SURVIVED A SPRINT.
 "the `default` exports arm now has no consumer in this repository" was reasoned
 from three comments, LABELLED REASONED-NOT-MEASURED, and routed rather than acted
 on. Measured within the hour: removing every `default` arm leaves `tsc` at exit 0
-— so the dependence really was gone — AND REDDENS FOUR TESTS, so the arm is still
-taken. The reasoning was half right and the action it would have justified was
-wrong. A routed question with a one-command answer becomes a standing uncertainty
+— so nothing on tsc's route took that arm — AND REDDENS FOUR TESTS, so the arm
+is still taken. The reasoning was half right and the action it would have
+justified was wrong. A routed question with a one-command answer becomes a standing uncertainty
 the moment nobody runs the command.
 
 **A claim about what the suite COVERS is checked against the suite, and it may
