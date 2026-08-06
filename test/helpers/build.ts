@@ -9,6 +9,19 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * module, and the reason it must run HERE rather than in a script is written
  * beside that preload.
  *
+ * TWO SUITES MUST NOT RUN AT ONCE ON ONE CHECKOUT, and it is written here
+ * because this preload is the mechanism: every run REBUILDS every dist/ in
+ * place, so a second run's pack or import reads a dist/ this one is midway
+ * through replacing. MEASURED sprint 81, two full suites started together:
+ * `bun pm pack (@atusy/tsudoi-hover-wordnet) failed with exit code 2 while
+ * building the installed consumer`, TS2307 on both published subpaths, and
+ * three arms down with it -- while the twin run beside it went green, which is
+ * what makes the failure read as the tree's rather than the runner's. Alone on
+ * the same commit: green, and in two thirds of the wall time. THE FAILURE IS
+ * NOT THE DEADLINE even though an arm times out among the casualties; raising
+ * it would buy a slower version of the same corruption. Use a `git worktree`
+ * for a concurrent run -- each gets its own dist/.
+ *
  * SYNCHRONOUS ON PURPOSE, AND THE REASON IS A MEMBER'S TEST RATHER THAN A ROOT
  * ONE. The workspace members' own test files statically import
  * `@atusy/tsudoi-language-server/deps/types` for its VALUES, and from inside a
