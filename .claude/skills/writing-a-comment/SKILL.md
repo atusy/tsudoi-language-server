@@ -247,6 +247,20 @@ was the commit boundary rather than the author's attention. It was seen when
 written and recorded rather than left, which is the behaviour to keep; the rule
 is what stops it needing to be seen.
 
+**AND THE SAME ARGUMENT ORDERS A WHOLE ROUND: PROSE ABOUT AN INCREMENT IS
+WRITTEN ONCE, AFTER THE INCREMENT STOPS MOVING.** _(sprint 81)_ MEASURED over
+eight review rounds on one prose-only change: two findings were in the
+increment, every other one was in prose describing it, and FIVE OF THE LAST
+EIGHT were the wake of the round's own repairs — a line moved and the record
+citing it went stale, a sentence deleted and the sentence describing it went
+false. **The wake share was growing, not flat**, so the loop was mostly
+reviewing itself. Four numbers were written without being measured in those
+rounds, each by the author who had just deleted someone else's: a number taken
+against a target still moving is one nobody could have measured yet, which is
+the same cause and not a second one. **What this does NOT license is `be more
+careful`** — it has five prior instances against it now, the fifth being that
+deleting an unmeasured number did not transfer the rule to the deleter.
+
 ## Where a reason belongs — the Lifetime Rule
 
 _(sprint 65)_ **First ask whether the reason needs a home in the tree at all.**

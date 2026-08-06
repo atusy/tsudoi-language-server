@@ -58,6 +58,16 @@ import { setDefaultTimeout } from "bun:test";
  * were added, landed on a tree that already ran more than that. This project
  * refuses counts for exactly that reason, and this one did not survive its own
  * increment.
+ *
+ * ONE ARM HAS BEEN SEEN AT 25007ms AGAINST THIS VALUE, sprint 81, under a
+ * PERTURBED full suite -- `a published subpath with no artifact at all is
+ * refused`. It did not reproduce in six further runs, clean and perturbed, alone
+ * and in the suite, so it is a boundary reading and not a defect anyone can open.
+ * IT IS WRITTEN HERE RATHER THAN IN THAT SPRINT'S RECORD BECAUSE THE TRIGGER IS
+ * AN EDIT TO THIS LINE: a dashboard note does not survive compaction, and the
+ * home that used to absorb a condition like this was struck from the header. A
+ * SECOND OCCURRENCE FILES IT, and so does lowering this value -- the margin the
+ * reading leaves is seven milliseconds.
  */
 export const suiteDeadlineMs = 25_000;
 
