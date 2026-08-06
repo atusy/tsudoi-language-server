@@ -272,10 +272,12 @@ the decision, the test carries the reason.
   machine-formatted-file case above.
 - **THE COMMIT** and **THE SPRINT RECORD**, on the triggers stated earlier in
   this section, which already say which one takes a measurement that settles a
-  review finding. A commit is IMMUTABLE and DATED, so a claim in it cannot be
-  silently updated and a reader always knows when it was written; **THAT IS NOT
-  THE SAME AS PAST-TENSE OR TRUE** — this sprint's own `72f93b9` carries a
-  present-tense claim its sprint record refutes.
+  review finding. **A FORECLOSED ALTERNATIVE SPLITS ON REINTRODUCTION RISK: with
+  one it takes the line at that site and never arrives here; without one, the
+  commit keeps it, which is the common case.** A commit is IMMUTABLE and DATED,
+  so a claim in it cannot be silently updated and a reader always knows when it
+  was written; **THAT IS NOT THE SAME AS PAST-TENSE OR TRUE** — this sprint's own
+  `72f93b9` carries a present-tense claim its sprint record refutes.
 - **A SKILL**, if the discipline is applied while WRITING and no arm reached it
   first. **That an arm often does not reach prose is not a rule** —
   `readmeCoverage` and `fenceForms` grade prose written long before they run, so
