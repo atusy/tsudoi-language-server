@@ -84,9 +84,14 @@ for (const runtime of runtimes) {
          *
          * The AGGREGATING cell is answered -32603 with or without the guard, by
          * `push(...batch)` throwing on something that is not iterable. It is
-         * asserted anyway, as a REGRESSION LOCK rather than a red-driven claim:
-         * with the guard in place the spread is not what refuses this, so this
-         * cell is what notices the spread being later replaced by a plain push.
+         * asserted anyway, as a REGRESSION LOCK rather than a red-driven claim.
+         *
+         * AND THE LOCK IT CLAIMED IS NOT ONE, MEASURED. This said the cell was
+         * what would notice the spread becoming a plain push. Made plain, the
+         * suite reddens across the aggregating drive and both runtimes -- the
+         * completion and resolve arms, the token arms, the workspace arms, the
+         * installed consumer -- and THIS CELL IS NOT AMONG THEM. It locks the
+         * guard's own behaviour and nothing about the spread.
          */
         test(`${mode.name}, ${shape.name} is refused, reported, and the handler's finally runs`, async () => {
           const session = LspSession.start(runtime, fixture(shape.config));

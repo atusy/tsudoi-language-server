@@ -63,9 +63,11 @@ await Promise.all(runtimes.map(requireRuntime));
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // EXACT EQUALITY, DELIBERATELY, however wide the value grows: openClose is
-    // what entitles a conforming client to send
-    // didOpen/didClose at all, so an equality assertion is what catches its
-    // loss. The capabilities are here because this file drives
+    // what entitles a conforming client to send didOpen/didClose at all, so an
+    // equality assertion refuses its loss. NOT ALONE, AND THE OLD `is what
+    // catches` WAS MEASURED FALSE: dropping openClose reddens twenty-two arms
+    // over both runtimes -- every capability arm in this file asserts the whole
+    // value. The capabilities are here because this file drives
     // examples/tsudoi.config.ts, and it advertises ONE FOR EACH METHOD THAT
     // CONFIG SUPPLIES -- so this value moves whenever the example gains or
     // loses a method, which is a DELIBERATE CHANGE TO A PINNED ARTIFACT rather
