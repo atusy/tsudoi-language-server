@@ -57,8 +57,8 @@ NON-ZERO, so a failed build leaves an artifact that is new, freshly written and
 WRONG — "rebuild before believing it" is the remedy for staleness and is useless
 here, because the rebuild is what produced it. A probe read against it returned
 exit 0 where 1 was predicted, and the mismatch was visible only because the
-prediction existed. The exposure this leaves is HAND-RUN PROBE SEQUENCES — break
-source, run something, revert, read `dist/`.
+prediction existed. HAND-RUN PROBE SEQUENCES are exposed — break source, run
+something, revert, read `dist/`.
 
 ## Labelling it
 

@@ -71,9 +71,9 @@
 # removed and this file absent, much of the suite does not merely fail: it never
 # RUNS, because test files fail to LOAD. Load errors standing beside assertion
 # failures are what a missing build reads as. THE EXCLUSIVE HALF IS STRUCK: this
-# reading took one fault's signature and no survey of faults, and a break in any
-# module every test file imports would read the same. With this file present and
-# no build run by hand, the same tree is green.
+# reading took one fault's signature and no survey of faults, and a break in a
+# module the test files import widely would read the same. With this file present
+# and no build run by hand, the same tree is green.
 #
 # AND THE FIRST FAILURE IS THE HALF WORTH KEEPING: it names the demo config
 # failing to load on `@atusy/tsudoi-completion-path`, a workspace member
