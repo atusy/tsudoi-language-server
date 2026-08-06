@@ -110,14 +110,14 @@ export function registerNotifications<P extends readonly unknown[]>(
  * The claim is bounded to what is ON THIS TYPE; what the VALUE carries beyond it
  * is at `ProtocolConnectionHasTheseMembers` in test/notifications.test.ts.
  *
- * A MISSPELLED KEY HERE IS A SILENT NO-OP: `Omit<T, K>` accepts a key that is
- * not in `keyof T` and hands back T unchanged, so the misspelling compiles at 0
- * with nothing objecting. AND THAT IS WHY `Pick` IS THE BETTER INSTRUMENT FOR
- * THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE, because today's `Omit` is
- * defended by two pins in test/notifications.test.ts and a change with no defect
- * to fix is churn. THE REVERSAL CONDITION, so this is a decision and not an
- * opinion: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION BECOMES REQUIRED.
- * `Pick` needs neither of them.
+ * A MISSPELLED KEY HERE IS A SILENT NO-OP: `Omit<T, K>` tolerates a key outside
+ * `keyof T` where `Pick`'s `K extends keyof T` refuses one. SO `Pick` IS THE
+ * BETTER INSTRUMENT FOR THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE, because
+ * today's `Omit` is defended by two pins in test/notifications.test.ts,
+ * `BoundaryIsTheObservingMembers` and `ProtocolConnectionHasTheseMembers`, and a
+ * change with no defect to fix is churn. THE REVERSAL CONDITION, so this is a
+ * decision and not an opinion: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION
+ * BECOMES REQUIRED. `Pick` needs neither of them.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
