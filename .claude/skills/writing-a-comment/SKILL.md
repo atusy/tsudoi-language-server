@@ -224,10 +224,13 @@ condition — nothing grades a preference, and the Lifetime Rule puts a decision
 at the line the violating edit lands on. So the split is: the CONSEQUENCE
 WALK-THROUGH goes to the arm that walks it, the DECISION stays. **And
 over-deletion is invisible to the instrument that checks the withdrawal.** The
-re-grep of the claim's words is what answers "is this list complete" — and it
-cannot see that the surviving sentence stopped parsing without the clause you
-took, because the words it greps for are exactly the ones you kept. Read the
-survivor whole.
+re-grep cannot see that the surviving sentence stopped parsing without the
+clause you took, because the words it greps for are exactly the ones you kept.
+**AND IT DOES NOT ANSWER `is this list complete` EITHER** — a site restating the
+claim in other words is unreachable by it, which is measured rather than
+feared: this sprint's sweep had exactly such a site NAMED FOR IT AT REFINEMENT,
+because the instrument could not find it. Read the survivor whole, and expect
+the sweep to miss siblings.
 
 ## Commit boundaries a comment decides
 
