@@ -823,13 +823,11 @@ const scrum: ScrumDashboard = {
   sprint: {
     number: 81,
     pbi_id: "PBI-81",
-    goal:
-      "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the analysis, the source keeps only the decision nothing can grade -- and the skill gains the exit a still-true comment has never had.",
+    goal: "The `Omit` hazard is decided site by site on a reading of who actually reddens -- the arms keep the analysis, the source keeps only the decision nothing can grade -- and the skill gains the exit a still-true comment has never had.",
     status: "review",
     subtasks: [
       {
-        test:
-          "MISSPELL ONE KEY INSIDE THE `Omit` and read WHICH ARMS REDDEN AND IN WHICH CHECK, at base and again after the edit, requiring the same arms by name. The item's `three of the four are graded` is a READING until this runs, and the before/after pair is what makes `the arm keeps it` a measurement rather than an argument at review.",
+        test: "MISSPELL ONE KEY INSIDE THE `Omit` and read WHICH ARMS REDDEN AND IN WHICH CHECK, at base and again after the edit, requiring the same arms by name. The item's `three of the four are graded` is a READING until this runs, and the before/after pair is what makes `the arm keeps it` a measurement rather than an argument at review.",
         implementation:
           "The narrowing at packages/tsudoi-language-server/src/notifications.ts:113-120. WHAT GOES: the consequence walk-through, which the pins and the probes grade. WHAT SURVIVES: the asymmetry clause, the `Pick` preference, the churn reasoning and the reversal condition -- a code-edit decision whose only legitimate home under the Lifetime Rule is that site -- with the two pins NAMED at :117. Zero edits at :176, at :264-267 and in test/notifications.test.ts.",
         type: "structural",
@@ -852,8 +850,7 @@ const scrum: ScrumDashboard = {
         ],
       },
       {
-        test:
-          "None, and the item discloses why: a skill file cannot redden and no check decides whether its new arm is applied. WHAT STANDS IN ITS PLACE IS AN ORDERING CONSTRAINT, not an assertion -- the arm is written AFTER subtask 1, from the case subtask 1 executed, and if subtask 1's disposition cannot be spelled in the arm's own words the ARM is wrong and gets rewritten rather than the case reinterpreted.",
+        test: "None, and the item discloses why: a skill file cannot redden and no check decides whether its new arm is applied. WHAT STANDS IN ITS PLACE IS AN ORDERING CONSTRAINT, not an assertion -- the arm is written AFTER subtask 1, from the case subtask 1 executed, and if subtask 1's disposition cannot be spelled in the arm's own words the ARM is wrong and gets rewritten rather than the case reinterpreted.",
         implementation:
           "`.claude/skills/writing-a-comment/SKILL.md`: a disposition for a comment STILL TRUE and no longer earning its lines, and the four-home rule for a reason that is not a comment.",
         type: "structural",
