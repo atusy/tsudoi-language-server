@@ -167,32 +167,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-73",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "learn from a check that a claim in this tree was measured on a runtime this checkout no longer has",
-        benefit:
-          "a ruling written so it can age ages when the ground moves, instead of when somebody happens to look",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A tracked claim whose warrant is a named runtime version is compared against the runtime present, and the comparison fails naming the claim and both versions -- or the tree records, in ONE place rather than once per site, which claims it cannot see age.",
-          verification:
-            "NO MECHANISM IS NAMED HERE, deliberately, since naming one is how this gets satisfied in letter -- and a check that reddens on every upgrade for every prose label is a plausible WRONG answer that refinement must weigh against the disclosure arm. STARTING EVIDENCE, MEASURED ON THREE KEYS: `Bun.version`, `Deno.version` and `process.versions` appear in this whole tree ONCE, in `runtimeVersion` inside scripts/listing-shapes.ts -- the instrument nothing runs. THE SENTENCE THAT STOOD HERE IS DEAD AND IS QUOTED SO IT IS NOT RE-DERIVED: `every other version in the tree is a literal token in prose, compared with nothing`. THE KEYS ARE WHY IT WAS FALSE -- a version reached by SPAWNING `<binary> --version` is outside all three, and test/package-shape.test.ts spawns exactly that for the compiler and asserts the output against the version the root manifest declares, inside the suite the Definition of Done runs. SO THE COMPARISON THIS ITEM ASKS FOR ALREADY EXISTS HERE, OVER A VERSION A MANIFEST DECLARES RATHER THAN ONE PROSE CARRIES: that arm reads `devDependencies.typescript` and asserts it against both the installed package and the running compiler. A RUNTIME version written as a prose token carries none, and that is this item's subject -- narrower than the filing read, and not an exclusive class, since the COMPILER version in prose (bunfig.toml's `tsc 7.0.2`) carries none either. Staged, because every such token is true today: rewrite one to a version this checkout does not have and require it reported naming the file; pair with the same tree unrewritten going green.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FILED OUT OF SPRINT 59, WHOSE RULING SAYS THIS OF ITSELF AT ITS OWN SITE: EVERY clause that would reopen it is a property of the RUNTIMES, no check reads what an `opendir` allocates or retains, no check re-runs the instrument, and the versions every number was taken on are read off a running binary only inside that instrument. So a runtime upgrade reddens nothing. THE RULING WAS ACCEPTED WITH THAT WRITTEN AT THE SITE -- which is the honest state and not the covered one, and disclosed and covered are different states.",
-        "AND `A PERSON RUNNING TWO LINES` IS NOT THE WHOLE OF WHAT MEETS IT, WHICH THIS NOTE SAID UNTIL SPRINT 59'S ACCEPTANCE ADDED A CLAUSE OF ANOTHER KIND. The timing clauses are met that way; the clause added at acceptance -- deno's `Dir` materialising the directory once iteration starts -- is a RETENTION question, and the instrument this item is about reads WALL-CLOCK ONLY, so re-running it answers that clause not at all. IT ALSO DIFFERS IN TENSE: the others are runtime changes that have not happened, and that one may be true TODAY. SO THIS ITEM'S SUBJECT DOES NOT COVER IT -- a version comparison would say the ground moved, and nothing here would say the ruling's basis was never read. Written in so refinement does not size this item against a condition it cannot see.",
-        "THE SECOND HALF IS THE INSTRUMENT ITSELF AND IT IS NOT THE SAME QUESTION: scripts/listing-shapes.ts is TRACKED and run by NOTHING, so it can stop executing without any red -- its imports, its guards and its pinned copy of the package's gate all rot in silence. A NON-TIMING SMOKE RUN IS THE MOVE THAT DOES NOT REOPEN THE REFUSAL: sprint 59 refused a WALL-CLOCK ASSERTION inside `bun test`, by name, and asserting that the instrument exits 0 and emits its rows at a tiny size asserts no duration. Whether that belongs here or in the ignored-and-ungraded item PBI-71 is refinement's call; it is written here because sprint 59 is where the file arrived.",
-        "IT MAY CLOSE AS A RECORDED DECISION THAT NOTHING SHOULD WATCH THIS, and that is a legitimate outcome: a version comparison that reddens the day a maintainer upgrades bun would trade a silent staleness for a red that means the machine, which is the shape PBI-68 is already about.",
-      ],
-    },
-
-    {
       id: "PBI-72",
       story: {
         role: "tsudoi maintainer",
@@ -269,6 +243,60 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 73,
+      pbi_id: "PBI-73",
+      goal: "Every runtime version this tree cites is listed in one place, so an upgrade has somewhere to read rather than a tree to grep.",
+      status: "done",
+      subtasks: [
+        {
+          test: "An unaccounted citation reddens naming it; an account with no citation reddens too; changing a cited version on the MACHINE reddens nothing.",
+          implementation:
+            "test/version-citations.test.ts -- a scan of the git index against a written list.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE COMPARISON BRANCH WAS REFUSED ON A PROPERTY OF THE TREE, NOT ON COST: nothing here declares a runtime version -- no `engines`, no `.tool-versions`, no `deno.json` -- so a comparison has NO SECOND SIDE that belongs to this repository and its red would be a property of whoever's laptop ran it. The compiler is the contrast and is why the asymmetry is real rather than an excuse: `tsc --version` IS compared, because the root manifest declares the version it is checked against.",
+            "IT SHIPPED RED, AND THE MECHANISM IS THE ARM'S OWN INPUT. The scan reads `git ls-files`, so while the file was UNTRACKED it was invisible to itself -- and bun runs an untracked test file anyway. The Definition of Done read 942 pass / 0 fail with the file present as a TEST and absent as a SUBJECT, and it read 942 pass / 0 fail again once tracked, so no number moved to give it away. WHAT MADE IT RED was its own docstring illustrating a citation beside a false sentence, with a literal version.",
+            "THE REPAIR WAS NOT AN ENTRY FOR ITSELF. An illustrative version here is a claim to the scan and to nothing else; an entry would have said this file cites a runtime when it does not. The prose spells no version now, which is FORCED rather than tidy.",
+          ],
+        },
+        {
+          test: "Plant a WRAPPED citation, and a `.json` one, in files the shipped filters could not see.",
+          implementation:
+            "`[\\s*]+` for prose wrapped inside JSDoc, and `.json` for the `//name`-style keys package.json carries instead of comments.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "BOTH HOLES HAD A PRESENT INSTANCE, WHICH IS WHY THEY ARE FIXES AND NOT WIDENINGS: `on bun\\n * 1.3.13` at test/readme-coverage.test.ts, and MEASURED on bun at both package.json files. A `\\s+` reader and a `ts|md|toml` reader were each green over a citation sitting in the tree.",
+            "THE FORWARD CONTROL IS THE ONE THAT MATTERS AND IT WAS TAKEN: a wrapped citation PLANTED in an unaccounted file reddens naming that file. Reverting the widening and watching the account go unmatched only shows the list disagrees with the scan.",
+          ],
+        },
+        {
+          test: "None -- the label was measured to assert nothing, and the boundary it names to be unstatable.",
+          implementation:
+            "The grain moved from the file to the citation, and the `provenance | warrant` label was dropped.",
+          type: "structural",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE LABEL WAS HELD BY NOTHING: relabelling EVERY warrant as provenance reads 1 pass / 0 fail. And classifying all 25 sites, the boundary would not hold on two of them -- bunfig.toml's `setDefaultTimeout` reading and wordnet.d.ts's 127ms are the same shape and either label survives an argument. A label nothing asserts, over a boundary nobody can state, is prose with a type annotation on it, so it went rather than being multiplied by 25.",
+            "THE GRAIN MOVED BECAUSE THE CRITERION SAYS `WHICH CLAIMS` AND THE FILE KEY ANSWERS `WHICH FILES`. Measured: 6 of 15 accounted files carry more than one citation, and test/resolution.test.ts carries FIVE -- where review's reading and mine both said three. A second citation inside a listed file was unseen, which is a claim going unlisted inside a list of claims.",
+            "THE ENTRY SHAPE WAS FORCED BY THE SCAN READING THIS FILE. Spelled as one string, every entry IS a citation this file makes; the docstring sentence explaining that fact contained one and reddened the arm as it was written. Runtime and version are separate fields for that reason alone.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "A GREEN DEGENERATE IS UNREADABLE UNTIL THE PERTURBATION IS SHOWN TO HAVE APPLIED. Editing a cited version to one this checkout does not have read GREEN, and the reading was of a perl pattern that never matched. Re-run with `git diff --stat` asserted first, it is RED and names both versions. The suite was never wrong; the instrument had not fired, and nothing in a pass/fail count says which.",
+        "AND THAT IS THE SAME SHAPE AS THE SPRINT'S OWN HEADLINE FAILURE, one level up: the Definition of Done ran an instrument whose subject was absent, and reported the number it would have reported either way. TWICE IN ONE SPRINT, over an arm whose whole subject is the difference between disclosed and covered.",
+        "THE `lastIndex` RESET WAS LOAD-BEARING UNDER `.test()` AND IS DEAD UNDER `matchAll`, measured rather than reasoned, and deleted. A line that was correct when written stops being correct when the call beside it changes, and nothing reddens.",
+        "WHAT THIS DOES NOT DO, SAID PLAINLY BECAUSE THE ITEM IS ABOUT EXACTLY THIS CONFUSION: it compares nothing. Every citation in the list is DISCLOSED and none is COVERED. What it buys is that the set is now a list a maintainer can read, and that editing prose to a version nobody ran is loud.",
+        "THE COMMIT THAT SHIPPED IT SAID `the four untouched` WHERE THERE ARE THREE (README.md, hover.ts, wordnet.d.ts). Corrected here rather than amended away, because the message is the record of what was believed at the time.",
+      ],
+    },
     {
       number: 72,
       pbi_id: "PBI-63",
