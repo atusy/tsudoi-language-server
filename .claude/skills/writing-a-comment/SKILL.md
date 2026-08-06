@@ -262,21 +262,20 @@ NEXT belongs on the backlog item. One whose only home is a MACHINE-FORMATTED FIL
 that cannot carry comments belongs in a TEST THAT ASSERTS IT — the file carries
 the decision, the test carries the reason.
 
-**WHEN THE REASON IS NOT A COMMENT, RANK THE HOMES.** _(sprint 81)_ **The
-triggers above are NOT restated below** — the ranking is by reference, which is
-the whole of what this adds beyond the two homes that paragraph does not name.
+**WHEN THE REASON IS NOT A COMMENT:**
 
 - **AN ARM**, whenever something can grade the reason, outranks every home
   below: it is the only one that reddens the day the reason stops holding, which
   is also why a reason expensive to re-derive is mechanised rather than
   narrated. Wider than the machine-formatted-file case above.
-- **THE COMMIT** and **THE SPRINT RECORD**, on the triggers the paragraph above
-  already gives them, outrank the two below. What the ranking adds is why a
-  commit is reached for at all: it is IMMUTABLE and DATED, so a claim in it
-  cannot be silently updated and a reader always knows when it was written.
-  **THAT IS NOT THE SAME AS PAST-TENSE OR TRUE** — this sprint's own `72f93b9`
-  carries a present-tense claim its sprint record refutes. Immutability
-  preserves what was written; it does not grade it.
+- **THE COMMIT** and **THE SPRINT RECORD**, on the triggers stated earlier in
+  this section. **WHERE BOTH FIT — a measurement taken to settle a review
+  finding — the sprint record takes it**, MEASURED against the sprint that wrote
+  this list, which had already put its unrepaired measured findings there. A
+  commit is IMMUTABLE and DATED, so a claim in it cannot be silently updated and
+  a reader always knows when it was written; **THAT IS NOT THE SAME AS
+  PAST-TENSE OR TRUE** — this sprint's own `72f93b9` carries a present-tense
+  claim its sprint record refutes.
 - **A SKILL**, if the discipline is applied while WRITING and no arm reached it
   first. **That an arm often does not reach prose is not a rule** —
   `readmeCoverage` and `fenceForms` grade prose written long before they run, so
@@ -284,12 +283,11 @@ the whole of what this adds beyond the two homes that paragraph does not name.
 - **CLAUDE.md**, if a human needs it BEFORE running a command: a constraint that
   makes a green meaningless or a red expected.
 
-**THE TRIGGERS OVERLAP, SO `TAKE THE FIRST THAT FITS` WAS WRONG. WHERE TWO FIT,
-THE ONE NAMING WHY THE REASON EXISTS BEATS THE ONE NAMING WHAT IT IS.** _(sprint 81)_ A measurement taken to settle a review finding answers to both the commit
-and the sprint record; it goes to the sprint record. MEASURED AGAINST THE SPRINT
-THAT WROTE THIS LIST: read as first-fit the order sends its unrepaired,
-measured findings to the commit, and the sprint had already put them in the
-record.
+_(sprint 81)_ **A paragraph describing how this list relates to the section
+above stood here and is DELETED, NOT REPAIRED. Do not restore it.** It was
+rewritten again and again and kept being found false on the next reading, while
+what a reader needs to route a reason — the triggers above, the ranking here —
+was never in it.
 
 In this tree, concretely:
 
