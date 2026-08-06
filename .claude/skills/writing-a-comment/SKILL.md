@@ -256,17 +256,19 @@ NEXT belongs on the backlog item. One whose only home is a MACHINE-FORMATTED FIL
 that cannot carry comments belongs in a TEST THAT ASSERTS IT — the file carries
 the decision, the test carries the reason.
 
-**WHEN THE REASON IS NOT A COMMENT, TRY THE HOMES IN THIS ORDER AND TAKE THE
-FIRST THAT FITS.** _(sprint 81)_ **This is an ORDERING over homes this section
-already names, not a new set** — the commit, the sprint record, the site
-comment, the backlog item and a test standing in for a machine-formatted file
-are all stated above, and a reader who reaches this list must not read them as
-superseded. What is added is the ranking and the trigger for each:
+**WHEN THE REASON IS NOT A COMMENT, TRY THESE IN ORDER AND TAKE THE FIRST THAT
+FITS.** _(sprint 81)_ **What this list adds is the RANKING; the entries are not
+all new, and saying so either way has now been wrong once in each direction.**
+THE COMMIT and THE SPRINT RECORD restate triggers the paragraph above already
+states — deliberately, because an ordering that omitted them could not rank
+them. AN ARM widens the machine-formatted-file case above rather than repeating
+it. **A SKILL and CLAUDE.md appear nowhere above; those two are genuinely new
+homes.** The site comment and the backlog item keep their homes above and are
+not superseded by being absent here.
 
 - **AN ARM**, if something can grade it. It outranks everything below because it
   is the only home that reddens the day the reason stops holding, which is also
-  why a reason expensive to re-derive is mechanised rather than narrated. Wider
-  than the machine-formatted-file case above, which is one way of arriving here.
+  why a reason expensive to re-derive is mechanised rather than narrated.
 - **THE COMMIT**, if it is a MEASUREMENT or a FORECLOSED ALTERNATIVE. A commit
   is past-tense and dated, so it cannot rot.
 - **THE SPRINT RECORD**, if it is a REVIEW FINDING — including one this sprint
