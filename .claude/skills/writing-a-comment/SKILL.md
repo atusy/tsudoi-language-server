@@ -193,6 +193,41 @@ Deleting removes the pointer; amending leaves it. No detector is proposed: a
 matcher deciding whether a reference still has a referent is a matcher over
 prose content.
 
+## When nothing changed: WITHDRAW to whatever grades it
+
+_(sprint 81)_ **The ordering above is ENTERED THROUGH A CORRECTION** — its
+heading scopes it to a fact having changed, and each arm is written over a
+sentence being corrected: `corrected sentences`, `the claim was too wide`, `the
+dead sentence`. A comment that is STILL TRUE and no longer worth its lines has
+no entry point, so it stayed. Note that DELETE's stated reason is not that the
+fact moved but that **a reader at that line never needed it**, which is this
+section's reason too; what was missing was the trigger, not the argument. **The
+fourth disposition: WITHDRAW — the claim holds, and something else already
+reddens the day it stops holding, so the copy here goes and that one keeps it.**
+
+**THE TEST IS NOT LENGTH, IT IS WHO GRADES IT, AND THAT IS MEASURED RATHER THAN
+NAMED.** _(sprint 81)_ Run the perturbation the claim describes and read which
+arms redden. MEASURED at the `Omit<T, K>` misspelling hazard in
+`packages/tsudoi-language-server/src/notifications.ts`, taken at the base commit
+and again on the narrowed text: the prediction written at planning named its
+arms and its compiler diagnostic, and the reading returned an arm nobody had
+named — one that stages an unbuilt checkout and runs `tsc` inside it, carrying
+the type-level half into `bun test` after all. The withdrawal was right and the
+argument offered for it was wrong about its own extent. **If nothing reddens,
+the sentence stays**; a withdrawal to an arm that does not exist is a deletion
+wearing a justification.
+
+**WHAT MAY NOT BE WITHDRAWN IS THE PART A CODE EDIT WOULD VIOLATE.** That site
+kept its `Omit`-versus-`Pick` asymmetry, its preference and its reversal
+condition — nothing grades a preference, and the Lifetime Rule puts a decision
+at the line the violating edit lands on. So the split is: the CONSEQUENCE
+WALK-THROUGH goes to the arm that walks it, the DECISION stays. **And
+over-deletion is invisible to the instrument that checks the withdrawal.** The
+re-grep of the claim's words is what answers "is this list complete" — and it
+cannot see that the surviving sentence stopped parsing without the clause you
+took, because the words it greps for are exactly the ones you kept. Read the
+survivor whole.
+
 ## Commit boundaries a comment decides
 
 **WHEN FIX A'S COMMENT DESCRIBES THE STATE FIX B CREATES, A AND B ARE ONE
@@ -219,6 +254,21 @@ comment AT THE SITE where that edit would be made. One that shapes WHAT TO BUILD
 NEXT belongs on the backlog item. One whose only home is a MACHINE-FORMATTED FILE
 that cannot carry comments belongs in a TEST THAT ASSERTS IT — the file carries
 the decision, the test carries the reason.
+
+**WHEN THE REASON IS NOT A COMMENT, THESE ARE THE HOMES, AND THE FIRST THAT FITS
+WINS.** _(sprint 81)_ The backlog item above is one of them; the rest:
+
+- **AN ARM**, if something can grade it. It outranks the others because it is
+  the only home that reddens the day the reason stops holding, which is also why
+  a reason expensive to re-derive is mechanised rather than narrated.
+- **THE COMMIT**, if it is a MEASUREMENT or a FORECLOSED ALTERNATIVE. A commit
+  is past-tense and dated, so it cannot rot. Everything above in this file is
+  what a mutable present-tense home costs.
+- **A SKILL**, if the discipline is applied while WRITING rather than while
+  RUNNING. Nothing is running at the moment a sentence is typed, so there is no
+  run for an arm to hook — this file is that case.
+- **CLAUDE.md**, if a human needs it BEFORE running a command: a constraint that
+  makes a green meaningless or a red expected.
 
 In this tree, concretely:
 
