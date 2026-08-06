@@ -143,30 +143,6 @@ const scrum: ScrumDashboard = {
     },
 
     {
-      id: "PBI-71",
-      story: {
-        role: "tsudoi maintainer",
-        capability:
-          "put a scratch file where this repository says to put scratch files without it running in the suite ungraded",
-        benefit:
-          "the one directory kept for what is not accounted for stops being a hole in the accounting",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "A TypeScript file under the directory this repository ignores is either not run by the suite, or is graded by something.",
-          verification:
-            "RE-MEASURED IN THIS CHECKOUT AT SPRINT 68, AND THE FILING IS HALF WRONG WHILE THE CRITERION STAYS UNMET. AT THE ROOT, `type-checked by nothing` is FALSE: tsconfig.json excludes dist and packages and NOT __ignored, and declares no `include`, so a type error, a syntax error and an unresolved import planted there are all reported -- and test/suite-deadline.test.ts's own sweep reddens on such a file besides. The original reading was taken in a THROWAWAY checkout whose tsconfig is not this one's. BUT A CLOSE ATTEMPT ON THAT BASIS WAS REFUSED AT REVIEW, HAVING MEASURED ONLY THE ROOT. `.gitignore`'s `__ignored/` carries NO LEADING SLASH and so matches AT ANY DEPTH: a test file under packages/tsudoi-language-server/__ignored/ runs and is graded by nothing -- root tsc excludes packages, every member tsconfig is include src or src+test, oxlint skips anything gitignored, and the deadline sweep filters members out. ITS TWIN IS packages/*/dist/, AND THAT ONE AROSE WITHOUT BEING PLANTED: a tracked control under src/ was compiled to dist/ by the preload, and after the source was deleted the emitted artifact went on being discovered and run alone. A stale build output reaching dist/ is ordinary rather than contrived. AND THE COUNT OFFERED AS EVIDENCE FOR THE CLOSE DOES NOT DISCRIMINATE: `940 tests across 69 files where the tree reads 939 across 68` was written as the graded case, and the same figure comes from an UNGRADED file under packages/*/dist/. It measures discovery and says nothing about grading. SO THE ITEM STAYS OPEN, and what it may close on is now narrower than what was filed: either the criterion narrows to the ROOT __ignored/, which claims 1 and 2 satisfy more thoroughly than the filing knew, or the class stands as written and the two member-level sites are its subject.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "WIDENING THE SUBJECT TO IGNORED FILES IS REFUSED IN ADVANCE, and the refusal is the point of filing this separately rather than as a gap in the guard: it would bring back every installed stranger and every built artifact, which the ignore file excludes for its own good reasons. WHAT IS OWED IS A DIFFERENT DISCRIMINATOR, NOT A LOOSER RULE.",
-        "AND THE ITEM IS FILED BECAUSE DISCLOSED AND COVERED ARE DIFFERENT STATES. The residue was named as a decision before its sprint closed rather than discovered at review, which is the standard; it is filed so the naming does not come to be read as the covering.",
-      ],
-    },
-
-    {
       id: "PBI-72",
       story: {
         role: "tsudoi maintainer",
@@ -243,6 +219,48 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 75,
+      pbi_id: "PBI-71",
+      goal: "A scratch file goes where this repository says to put one without joining the suite, and the runner and the sweeps cannot disagree about which directories those are.",
+      status: "done",
+      subtasks: [
+        {
+          test: "Plant a test file at each live site and read every check against it, rather than reasoning from configuration.",
+          implementation:
+            "None -- the measurement that decided which branch of the criterion to take.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "THE FILING WAS WRONG IN ONE DIRECTION: a SPAWNING `.test.ts` under a member's __ignored/ IS graded. `no member's own test spawns` reads every test file under a member AT ANY DEPTH and reddens naming it. `graded by nothing` was the premise and it is false.",
+            "AND RIGHT IN THE ONE THAT DECIDES THE ITEM: the same file WITHOUT a spawn is read by nothing. Root `tsc --noEmit` exit 0, the per-member check exit 0, oxlint and oxfmt reporting no such file, the deadline sweep green -- and the root suite RAN it, 943 tests across 70 files where the tree reads 942 across 69.",
+            "SO THE THIN GRADE IS NOT WHAT THE ITEM ASKED FOR, and closing on it was refused: an arm that reads one property of a scratch file is not the file being held to this suite's standards. What the story asks for is the OTHER branch -- that it not run.",
+          ],
+        },
+        {
+          test: "A staged tree with one FAILING test under each ignored segment: bun reports `0 test files matching`, and the same tree WITHOUT the key fails on both.",
+          implementation:
+            "bunfig's `pathIgnorePatterns`, plus the same segments pruned from both sweeps and an arm refusing a disagreement between the two spellings.",
+          type: "behavioral",
+          status: "completed",
+          commits: [],
+          notes: [
+            "`pathIgnorePatterns` AND NOT `path-ignore-patterns`, MEASURED IN THREE STATES because the first reading could not tell the two apart: the hyphenated form is the CLI flag's spelling and bunfig accepts it IN SILENCE, leaving the file running; the camelCase key removes it; the CLI flag is the control that the pattern itself matches. THE FIRST INSTRUMENT COUNTED MENTIONS OF THE PROBE IN A PASSING RUN and read 0 for all three -- excluded and ran-quietly are one reading there. Making the probe FAIL is what made the states separable.",
+            "THE SEGMENTS ARE DECLARED ONCE AND CONSUMED TWICE, which is the shape this repository already uses for the fence reader: a TOML file holds no TypeScript and a walk takes no glob, so the spellings cannot be shared -- but an arm reads bunfig and refuses a disagreement. Removing the key reddens it; naming one segment on either side reddens it.",
+            "AND THE SWEEPS HAD TO MOVE WITH IT RATHER THAN AFTER IT. `discoverTestFiles`'s docstring said probes under dist/ and __ignored/ DID run and were swept here BECAUSE they run there. The key makes that false, and a sweep left alone would demand `applySuiteDeadline()` of a scratch file bun never reaches.",
+            "THE TEXT ARM ALONE IS SATISFIED FOR EVER BY A KEY BUN STOPPED HONOURING, which is why the spawning arm exists beside it. ITS NEEDLE IS bun's OWN WORDS AND WAS READ OFF A RUN RATHER THAN GUESSED: `Tests need ...` is what bun prints with no --cwd, and `0 test files matching` is what it prints with one. The arm was written on the first and repaired to the second by running it.",
+            "IT STAGES A CHECKOUT OF ITS OWN, SO IT IS A FOURTH INSTANCE FOR PBI-72 and is filed there rather than left to be rediscovered: the perturbation registry cannot re-run a weakening whose arm file builds its own tree.",
+          ],
+        },
+      ],
+      impediments: [],
+      decisions: [
+        "THE CRITERION IS MET ON ITS FIRST BRANCH AND THE ITEM CLOSES. Both gitignored directories are out of discovery at any depth -- MEASURED, with a failing probe planted under a member's __ignored/ AND under a member's dist/, the root suite reads 69 files and neither runs. node_modules was already bun's own prune, so the three entries of .gitignore are covered by construction rather than by enumeration.",
+        "THE ROOT __ignored/ LOSES A GRADE AND GAINS THE BRANCH THAT MATTERS. It was type-checked by the root tsconfig and swept by the deadline walk; it is now not run, and still type-checked. Nothing is worse off and the file no longer joins the suite, which is the capability the story asks for.",
+        "THE CITATION ARM CAUGHT ITS FIRST LIVE CASE, one sprint after the grain moved. bunfig.toml's new paragraph cites a runtime and the file was ALREADY ACCOUNTED with one citation -- so a file-keyed list would have stayed green, and the citation-keyed one reddened naming the file. The grain move was argued from a criterion's wording; this is the reading behind it.",
+      ],
+    },
     {
       number: 74,
       pbi_id: "PBI-77",
