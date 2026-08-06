@@ -92,6 +92,11 @@ const toolRoot = fileURLToPath(new URL("../", import.meta.url));
  * name in tsc's own diagnostics: tsc prints paths relative to the working
  * directory, so a run from inside the member reports `src/index.ts` and a reader
  * of a two-member failure cannot tell whose it is.
+ *
+ * AND NOTHING GRADES THAT HERE. MEASURED: moving this cwd to the member leaves
+ * test/build-diagnostics.test.ts green in every form tried, because the line its
+ * arm reads is printed by `build` in scripts/workspaces.ts, which runs first.
+ * The arm is named for this check and held by that one.
  */
 function typeCheckMember(root: string, member: string): boolean {
   const config = join(member, "tsconfig.json");

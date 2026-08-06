@@ -117,7 +117,18 @@ test("a member whose source cannot compile is named beside the file", async () =
     // TOGETHER IN ONE PATH AND NOT ON TWO LINES: the criterion is that the
     // reader can act on this string alone, and a member printed elsewhere in the
     // output leaves them joining two facts by hand.
-    expect(result.stdout).toContain(join("packages", "emitter", "src", "index.ts"));
+    //
+    // ANCHORED TO THE LINE, WHICH `toContain` WAS NOT, AND THE DIFFERENCE IS A
+    // REAL INVOCATION: run with an ABSOLUTE `-p` from inside the member, tsc
+    // prints an absolute path, which contains this substring and satisfied the
+    // arm while handing the reader the string the paragraph above refuses.
+    // MEASURED, three states -- absolute from the member GREEN, member-relative
+    // from the member RED, and the check's own cwd moved GREEN in every form,
+    // because what prints this line is the BUILD in `prepareWorkspace` and not
+    // `typeCheckMember`.
+    expect(result.stdout).toMatch(
+      new RegExp(`^${join("packages", "emitter", "src", "index.ts").replaceAll(".", "\\.")}`, "m"),
+    );
     expect(result.stdout).toContain("TS2322");
     expect(result.code).not.toBe(0);
   } finally {
