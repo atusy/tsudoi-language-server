@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -160,6 +161,31 @@ test("there are members to make these claims about", () => {
   expect(members.length).toBeGreaterThan(0);
   for (const member of members) {
     expect(lstatSync(linkIn(member)).isSymbolicLink()).toBe(true);
+  }
+});
+
+/**
+ * WHAT ANSWERED, READ FROM THE PACKAGE THAT ANSWERED. `isSymbolicLink()` above
+ * says an entry is a link and nothing about where it points, and the two
+ * failures that separates are NOT symmetric: with the entry REMOVED two arms
+ * here redden, while an entry pointing at THE WRONG PACKAGE reddens NOTHING --
+ * measured by repointing a member's entry at its sibling handler and running
+ * this file, 5 pass / 0 fail.
+ *
+ * So the discrimination is the TARGET MANIFEST'S DECLARED NAME, which is the
+ * one reading that tells `answers from tsudoi` apart from `answers from
+ * something shaped like it`. The move could only run this by hand.
+ */
+test("each member's entry for tsudoi resolves to the package that declares that name", () => {
+  expect(members.length).toBeGreaterThan(0);
+  for (const member of members) {
+    const target = realpathSync(linkIn(member));
+    const manifest = JSON.parse(readFileSync(join(target, "package.json"), "utf8")) as {
+      name?: unknown;
+    };
+    expect(`${relative(repoRoot, member)}: ${String(manifest.name)}`).toBe(
+      `${relative(repoRoot, member)}: @atusy/tsudoi-language-server`,
+    );
   }
 });
 

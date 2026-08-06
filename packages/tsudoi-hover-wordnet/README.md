@@ -82,7 +82,7 @@ Then, in `tsudoi-language-server/packages/tsudoi-hover-wordnet/`:
 bun pm pack --filename tsudoi-hover-wordnet.tgz
 ```
 
-**The tarball does not land in that directory.** `bun pm pack` run inside a workspace member
+**With `--filename`, the tarball does not land in that directory.** `bun pm pack --filename` run inside a workspace member
 writes to the workspace **root**, so what you just built is
 `tsudoi-language-server/tsudoi-hover-wordnet.tgz`, not something under `packages/`. Then, in
 your own project:

@@ -129,8 +129,8 @@ bun pm pack --filename tsudoi.tgz
 `--filename` is not decoration: without it the tarball is named after the current version, and
 the next command would go stale at the next release.
 
-**The tarball does not land in that directory.** tsudoi is a workspace member, and `bun pm pack`
-run inside a member writes to the workspace root -- so what you get is
+**With `--filename`, the tarball does not land in that directory.** tsudoi is a workspace member,
+and `bun pm pack --filename` run inside a member writes to the workspace root -- so what you get is
 `tsudoi-language-server/tsudoi.tgz`, one directory above `packages/`, which is exactly the path
 the next step installs from. Running the same command at the checkout root instead packs the
 _workspace_, not tsudoi: every tracked file, this repository's own tests included, because the

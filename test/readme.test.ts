@@ -267,6 +267,15 @@ test("each member's pack command runs, and writes the file its own install names
       // NAMED rather than asserted as a boolean, so the failure says which path
       // was looked for instead of `expected true`.
       expect(existsSync(tarball) ? tarball : `${tarball} was never written`).toBe(tarball);
+      // AND NOT IN THE MEMBER, which is the half these documents state and
+      // nothing graded: each says the tarball does not land in the directory the
+      // command runs in. Asserting only that it IS at the root passes unchanged
+      // if bun wrote both places, and the document's whole point is that the
+      // install line one directory up can find it.
+      const inMember = join(repoRoot, pack.dir, basename(tarball));
+      expect(existsSync(inMember) ? `${inMember} was written too` : "only at the root").toBe(
+        "only at the root",
+      );
     } finally {
       // BOTH CANDIDATE LOCATIONS, and the second is not belt-and-braces: when
       // the README names the wrong path this test is RED, and a cleanup that

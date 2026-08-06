@@ -385,7 +385,9 @@ export interface QuickstartOutcome {
  * in the marker would be staged with no checkout, and the pack step would say so.
  *
  * WHAT IS STAGED IS A WORKSPACE AND NOT A PACKAGE, which the tarball's landing
- * place forces: `bun pm pack` inside a member writes to the WORKSPACE ROOT, so
+ * place forces: `bun pm pack --filename` inside a member writes to the WORKSPACE
+ * ROOT -- WITHOUT the flag it writes into the member, MEASURED, so the rule is
+ * the documented command's and not the subcommand's -- so
  * the documented `bun install ../tsudoi-language-server/tsudoi.tgz` is only true
  * of a stage where the framework really is a member of a workspace rooted at the
  * checkout. Staging the framework's three files at the checkout root instead
