@@ -264,11 +264,15 @@ paragraph above already states — deliberately, because an ordering that omitte
 them could not rank them. AN ARM widens the machine-formatted-file case above
 rather than repeating it. **A SKILL and CLAUDE.md appear nowhere above; those
 two are genuinely new homes.** The site comment and the backlog item keep their
-homes above and are not superseded by being absent here. **THE ONE ENTRY THIS
-PARAGRAPH CANNOT PLACE is THE COMMIT'S FORECLOSED-ALTERNATIVE TRIGGER**, which
-the paragraph above instead sends to a line at the site where someone would
-reintroduce it. Both are live and neither is a restatement of the other; the
-sprint record carries why it was not settled here.
+homes above and are not superseded by being absent here. **THE COMMIT'S
+FORECLOSED-ALTERNATIVE TRIGGER IS NEITHER A RESTATEMENT NOR A RIVAL of the
+site-comment rule above — they are the two branches of one condition.** A
+foreclosed alternative someone would otherwise reintroduce earns its line at
+that site, which makes it a comment, so it never reaches this list; absent that
+risk it is not a comment, the list applies, and the commit is where it goes.
+**THE ENTRY CONDITION IS DOING THAT WORK.** Read the bullets without it and the
+two rules look like competing homes — which is how this paragraph came to say
+they were, in the repair of the last paragraph that got this section wrong.
 
 - **AN ARM**, if something can grade it. It outranks everything below because it
   is the only home that reddens the day the reason stops holding, which is also
