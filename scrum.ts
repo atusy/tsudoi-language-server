@@ -449,9 +449,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "`flattened` in packages/tsudoi-completion-path/src/completion.ts applied where `itemsFrom` writes `detail`. AT THE WRITE AND NOT BY ROUTING THE PATH BACK THROUGH `documentationFor`, which no longer takes it: the composer is where flattening lived only because the path passed through it, and restoring that route to keep the sanitising would undo subtask 4. NOT DEFERRABLE -- THE PRODUCT OWNER MADE CRITERION 5 UNMET A BLOCK ON ACCEPTANCE, because a sprint cut short would leave the last green commit carrying a disclosed regression with no owner.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "58b5f8d",
+            message:
+              "fix(completion-path): the path is flattened where it is written, not where it was",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'THE RED WAS READ AND NOT INHERITED, WHICH IS WHAT THE SPLIT WAS FOR. MEASURED at d46b9b7 with the new completion-half arm added and no fix: `bun test packages/tsudoi-completion-path/test/completion.test.ts -t "forge an attribution line names it as one that cannot"` reports 0 pass / 1 fail, and the received value is the path carrying a RAW break -- three lines where one was expected, the middle one empty and the last one `source: workspace`. That file is re-run by no baseline, which is why the arm could be written and seen red rather than arriving green with the fix.',
+          "GREEN AFTER, FULL DEFINITION OF DONE: PASSED, all five checks exit 0, 948 pass / 0 fail over 70 files, 2903 expect() calls, 166.90s, ONE non-gating `eslint(require-yield)` warning. The delta over subtask 4's 947/2898 is the one new arm with its two assertions plus the three `detail` reads the resolve arm gained.",
+          "THE RESOLVE ARM'S WIDENING IS NOT A SECOND READING OF THE COMPLETION ARM, and it needed a construction the plan did not spell: resolve writes NO `detail`, so there is nothing there to read unless the arm SENDS one. It sends the field as the completion half writes it -- flattened -- and requires it back byte-identical from both markup arms. What that refuses is a handler rebuilding `detail` from the mark, which has none of the completion's context and would put the raw name back in front of the user.",
+          "WHAT IS STILL NOT CLOSED IS WRITTEN AT THE SITE RATHER THAN LEFT TO BE DISCOVERED, and one half of it is wider than the arms that predate this sprint said: markdown syntax inside a name still renders as syntax, AND `label` and `insertText` still carry the name RAW. That second half is not a gap this sprint opened and cannot be closed -- `insertText` is what is written into the buffer and `label` is what a client filters on, so flattening either would insert a file name that names no file.",
+        ],
       },
       {
         test: "THREE PERTURBATIONS, TAKEN AGAINST THE LANDED TEXT AND READ RATHER THAN PREDICTED -- a green without them does not meet criterion 3, 4 or 6, which is the item's own ruling. ONE: the stat composer's DIRECTORY arm made to report `stats.size` must redden `a directory item comes back saying it is a directory, and carrying no size`, and the arms it ALSO reddens are required by name, a red beside the arm rather than at it being the failure this instrument exists to refuse. TWO: `sourcesFor` keeping only the FIRST workspace folder must redden `every workspace folder is answered from, and its items name their root` -- the arm whose discriminator subtask 4 moved, and which stays GREEN under that perturbation if the move was not made. THREE, ADDED BY THE PRODUCT OWNER'S CHECKLIST AND NOT IN THE DEVELOPER'S PLAN: the composer emitting the stat BEFORE the source must redden the prefix arm, without which a prefix assertion over two values that are both correct today is satisfied by any implementation and the red is the whole of the evidence.",
