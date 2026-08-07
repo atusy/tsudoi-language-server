@@ -133,9 +133,9 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "THE STAKEHOLDER'S BLOCK, QUOTED RATHER THAN PARAPHRASED, because every open question below is a question about which bytes it does not show: `source: cwd` / `size: 1062 bytes` / `lastModified: 2024-06-19T12:00:00Z` / blank / `# Entries (first 20 of 67)` / blank / `- ...`. THREE THINGS CHANGE AT ONCE -- the facts become LABELLED and are separated by ONE newline rather than by a rule, the stat's three facts stop being one dot-separated sentence, and the listing gains a HEADING carrying `first N of M` in place of a sentence carrying `M entries, first N shown`.",
-        "THE ONE CONSEQUENCE THE BLOCK DOES NOT STATE, AND IT IS THE ITEM'S REAL DECISION. Today the stat line opens with the WORD `file` or `directory`, and sprint 82 landed two arms that tell a stat-driven answer from a `kind`-driven one by reading it. In the quoted block that word is GONE: a directory would carry no `size:` line, so the kind is legible only by ABSENCE, and absence is what a defect looks like. THE PROPOSAL THIS ITEM CARRIES INTO REFINEMENT is a `kind: file` / `kind: directory` line, which is the stakeholder's own label style applied to the fact their example happened not to need. IT IS NOT ASSUMED -- the alternative is to accept the weakening and say so at the arms.",
-        "WHAT THE PLAINTEXT SPELLING IS, WHICH THE BLOCK CANNOT SHOW BECAUSE IT IS THE MARKDOWN ONE. `# Entries` and `- ` are markdown; this package answers PLAINTEXT to any client that did not name markdown, and sprint 82 just migrated the arm grading that difference. A format whose two spellings differ only in bytes nobody looks at makes that arm vacuous again.",
-        "WHAT `lastModified` IS IN, WHICH THE EXAMPLE ANSWERS AMBIGUOUSLY. The quoted value has no fractional part; `Date.prototype.toISOString` always emits milliseconds. So either the value is truncated -- a decision, since it discards what the fixture's own stamp control relies on -- or the example is shorthand. Ruled at refinement, not guessed.",
+        "THE KIND IS RULED BY THE STAKEHOLDER AND THE RULING COSTS SOMETHING THIS ITEM MUST PAY. Asked directly, with the two blocks put side by side, they chose THE EXAMPLE AS WRITTEN: no `kind:` line, a directory legible by carrying no `size:`. So the word `file`/`directory` LEAVES, and the two arms sprint 82 landed to tell a stat-driven answer from a `kind`-driven one -- `a file whose item claims to be a folder is still answered as a file` and its twin -- lose the byte they read. RE-SITING THEM IS THIS ITEM'S WORK AND NOT A DETAIL: what survives is `size:` present against absent, plus the entries heading, and an arm resting on ABSENCE must be paired with one showing the present case, or a handler that emitted neither line would satisfy it. THE OBJECTION WAS PUT AND OVERRULED, which is recorded because the ruling is the stakeholder's to make and the consequence is ours to carry rather than to re-raise.",
+        "WHAT THE PLAINTEXT SPELLING IS, WHICH THE BLOCK CANNOT SHOW BECAUSE IT IS THE MARKDOWN ONE. `# Entries` and `- ` are markdown; this package answers PLAINTEXT to any client that did not name markdown, and sprint 82 just migrated the arm grading that difference. A format whose two spellings differ only in bytes nobody looks at makes that arm vacuous again. STILL OPEN, and the last one that is.",
+        "`lastModified` IS TRUNCATED TO THE SECOND, RULED BY THE STAKEHOLDER: `2024-06-19T12:00:00Z` is the value and not shorthand. `Date.prototype.toISOString` always emits milliseconds, so this is a composition step rather than a spelling. IT COSTS NOTHING THE FIXTURES RELY ON -- both stamp constants are already whole seconds, deliberately, because filesystems disagree about sub-second precision -- but the truncation must be in the COMPOSER and not in the fixture, or a real file's real mtime keeps its milliseconds and only the tests look right.",
         "AND THE HEADING WHEN NOTHING IS TRUNCATED. `first 20 of 67` reads badly at `first 67 of 67`, and today's sentence already switches spellings on that boundary. The empty directory is the same question one step further.",
         "WHAT THIS ITEM MUST NOT BREAK, EACH ONE LANDED BY SPRINT 82 AND EACH ONE CHEAP TO BREAK HERE. The PREFIX relation -- the completion block must stay a strict prefix of the resolved one, which survives a one-newline join and dies if anything is inserted before `source:`. The DIRECTORY-CARRIES-NO-BYTE-COUNT ruling, which `size:` makes easier to violate by making it uniform. And BOTH `listingSection` helpers, re-derived last sprint to locate the listing by its header -- a new heading moves that header and the helpers move with it, which is where the sprint-82 anchor showed that a wrong lookup goes GREEN.",
       ],
@@ -527,7 +527,35 @@ const scrum: ScrumDashboard = {
     ],
   },
   sprint: null,
-  retrospectives: [],
+  retrospectives: [
+    {
+      sprint: 82,
+      improvements: [
+        {
+          action:
+            "TWO NARROWED WEAKENINGS BESIDE THE UNIFORM ONE in test/perturbations.test.ts, both naming `what completion sent is a strict prefix of what resolve answers, for both kinds`: the source/stat reorder applied ONLY when the format is markdown, and ONLY when the source name is `workspace`. THE CLASS IS THE SPRINT'S LARGEST FINDING -- a relation asserted over ONE value of a discriminator the composer can read is a green about that value, and the UNIFORM record reported HELD both times because it was blind to the same axis the arm was. It would have caught both of the independent reviewer's findings at the round the arm was written rather than two rounds later, and it KEEPS the fix: narrow the sweep back to one format or one source in a year and the record reddens, where today the sweep is held by a docblock. WHAT IT DOES NOT COVER, so its green is not over-read: only the axes somebody enumerated -- `insertReplaceSupport`, an item's kind, listing-present-against-absent are equally readable by the composer and would have no record -- and nothing at all about arms carrying no record, the registry being a list rather than a class.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "`PerturbationRecord` GAINS AN OPTIONAL `redAt` in test/helpers/perturbation.ts: a fragment of the FAILURE TEXT -- never a line number, which this repository has measured going stale inside the sprint that wrote it -- and `read()` refuses a HELD whose red landed anywhere else. The reader already chunks bun's JUnit output per testcase and asks only whether a failure is present. IT WOULD HAVE CAUGHT THE WORKSPACE RECORD, whose own comment now confesses it: the arm asserts four source names before it reads any item, so the weakening reddens THERE and the discriminator criterion 6 is about is graded by nothing while the record says HELD. WHAT IT DOES NOT COVER: a red landing at the right assertion for the wrong reason, and it creates no weakening -- where the isolating state needs rewriting the write, `redAt` cannot conjure a record.",
+          timing: "sprint",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "AN ARM IN `.claude/skills/writing-a-test/SKILL.md`: when a subtask moves what a FIELD carries, grep that field's name across every test tree and write each hit's disposition into the subtask -- re-sited, deleted, or left green WITH the reason it still reads something -- before the commit. A hit with no disposition is unfinished work rather than a finding to weigh. IT WOULD HAVE CAUGHT THE THIRD SILENTLY-GREEN CLAIM, named in PBI-82's own criterion 7 at refinement and re-sited only at subtask 8, after four Definition-of-Done greens had been read as passing: it is a grep hit at subtask 4 and needed dispositioning, not re-discovering. WHAT IT DOES NOT COVER: any assertion naming no field -- the whole-value `toEqual` shapes this sprint's real strength ended up in are invisible to it -- and it fires only on a field LOSING a meaning, never on one quietly gaining a second.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "Applied within the retrospective, which is what `immediate` is for. The developer's reason for proposing nothing about the refuted records or the carried assertion count is recorded with it and is the retrospective's other half: `.claude/skills/recording-a-measurement/SKILL.md` already owns the base-plus-command rule, and a sixth restatement of a rule that exists is the ACTIVE INTENTION this dashboard's header strikes by name.",
+        },
+      ],
+    },
+  ],
 };
 
 // ============================================================
