@@ -697,9 +697,15 @@ const scrum: ScrumDashboard = {
         implementation:
           "The member README's `Which field carries what` paragraph and any block it pictures; the root README's sentence about what the resolution answers; `statLine`'s docblock, whose A DIRECTORY IS TOLD APART BY WHAT IT IS ruling survives while the bytes it cites do not, and which gains the stakeholder ruling that took the words out; `documentationFor`'s docblock on the two joins; both `listingSection` docblocks on the heading they now anchor to. LAST, because it describes what landed rather than what was intended.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
-        notes: [],
+        notes: [
+          "NOTHING REDDENED, AS THE SUBTASK REQUIRED, AND THE COUNTS SAY SO RATHER THAN THE COLOUR. MEASURED, full Definition of Done at a2d682d with the prose landed: PASSED, all five checks exit 0, 964 pass / 0 fail over 70 files, 3007 expect() calls, sixteen registry arms HELD, ONE non-gating `eslint(require-yield)` warning -- byte-identical counts to the reading taken before it. `readmeCoverage` accounts for FENCED BLOCKS and the member README's four are a config and three commands, none of which pictures a popup, so no marker and no `consumers` row moved.",
+          "WHAT WAS FALSE AND IS REPAIRED, EACH BECAUSE THE RULING FALSIFIED IT. The member README said a directory's stat line SAYS IT IS A DIRECTORY -- the words are gone, so the missing `size:` is what says it now, and the sentence says that instead. It said the block says HOW MANY ENTRIES THERE REALLY ARE WHEN IT SHOWS YOU FEWER, which was silent about the case where it shows you all of them; the heading's three spellings are written out, `(0)` included, with the reason it is not decoration. And the modification time being reported TO THE SECOND is stated, because nothing else a reader can see says so.",
+          "AND THE `Which field carries what` PARAGRAPH GAINED ONE CLAUSE AND NOT A REWRITE: it is about which FIELD is read at which moment, and that is untouched -- what moved is that every fact in the block is now LABELLED, which is the whole of what a user gets out of this sprint and belongs in the paragraph a user reads to find out what the block holds.",
+          "WHAT WAS LEFT STANDING, WITH THE REASON, RATHER THAN SWEPT: the root README's sentence about the two methods describes WHAT IS READ -- a size, a modification time, the names inside -- and never how any of it is spelled, so the ruling does not reach it. test/published-artifacts.test.ts's docblock naming `statLine` names an EXPORTED symbol that still exists and is still exported, and its sentence about `how many entries there really are` is still true of the heading.",
+          "NO SENTENCE HERE IS A CLAIM THE ARMS DO NOT ALREADY CARRY, which is what stands in for a red: the heading's three spellings are the boundary arm's, the missing `size:` is the two kind arms', the labels are the whole-value arms', and `to the second` is the fractional-mtime arm's. THE PROSE IS GRADED BY NOTHING AND THAT IS DISCLOSED RATHER THAN IMPLIED -- `readmeCoverage` accounts for fenced blocks and this claim sits in none, which is why it was in scope as WORK and out of scope as a CRITERION.",
+        ],
       },
     ],
     impediments: [],
