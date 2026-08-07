@@ -587,6 +587,86 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
+    // THE ONE FACT A DIRECTORY'S STAT HAS AND MUST NOT REPORT: its own directory
+    // ENTRY's size, 64 on one machine and 4096 on the next for the same children.
+    // The claim it falsifies is stated over the wire at the repository root, on
+    // two runtimes; the arm named here is the cheap statement of it, and the
+    // registry grades that one so no record spawns a server.
+    //
+    // IT REDDENS EIGHT ARMS BESIDE THE ONE IT IS ABOUT, and they are here rather
+    // than filtered out: nearly every arm in that file compares a block WHOLE, so
+    // a stat line that gained a number moves all of them. A red beside the arm is
+    // the failure this instrument exists to refuse reading as a red AT it.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/resolve.test.ts",
+      name: "a directory's stat line carries no byte count, where a file's carries one",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/completion.ts",
+      from: "    ? `directory · ${modified}`",
+      to: "    ? `directory · ${String(stats.size)} bytes · ${modified}`",
+    },
+    alsoReddens: [
+      "the markup a directory's block is built in follows the session, not the item",
+      "a name that would forge an attribution line renders as one that cannot",
+      "a path whose own name would forge an attribution line renders as one that cannot",
+      "a source name no completion of ours produced is left out of the answer",
+      "a resolve cancelled while its stat is pending answers without listing the directory",
+      "a resolve cancelled between the open and the first entry answers without reading it",
+      "a directory replaced by a file after the stat keeps the stat it took and renders no listing",
+      "a directory whose item claims to be a file still comes back with its listing",
+    ],
+  },
+  {
+    // THE ARRAY READ AS A SINGLETON: a client may hold several workspace folders,
+    // and keeping the first answers from whichever the editor happened to list
+    // first. WHAT MAKES THIS WORTH RECORDING IS WHERE THE ARM READS IT: before
+    // this sprint the two folders' items were told apart by the block, and the
+    // block now names the CLASS of root, so both carry the identical string
+    // `source: workspace`. Read there, the arm stays GREEN under this weakening
+    // and degenerates to `two items exist`.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "two workspace folders each contribute a source, and each item's detail names its own root",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/completion.ts",
+      from: "  for (const folder of folders) {",
+      to: "  for (const folder of folders.slice(0, 1)) {",
+    },
+    alsoReddens: [],
+  },
+  {
+    // THE ORDER OF TWO PARTS THAT ARE EACH CORRECT. Nothing about the CONTENT of
+    // either block changes, so every whole-value assertion over one answer at a
+    // time stays green -- which is exactly why a prefix relation over two values
+    // that are both right today says nothing until this is run. What it breaks is
+    // what a user watching a popup re-render sees: the line they were reading
+    // moves down.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "what completion sent is a strict prefix of what resolve answers, for both kinds",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/completion.ts",
+      from: `  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+  if (stat !== undefined) {
+    parts.push(stat);
+  }
+`,
+      to: `  if (stat !== undefined) {
+    parts.push(stat);
+  }
+  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+`,
+    },
+    alsoReddens: [],
+  },
+  {
     // THE DRAWING READ AS A LIST INSTEAD OF AS A TREE: every line still yields a
     // directory, the projection is unchanged, and only the NESTING is dropped --
     // the reading that cannot tell a README picturing `packages/` inside the

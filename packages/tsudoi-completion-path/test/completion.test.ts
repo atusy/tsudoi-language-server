@@ -32,6 +32,10 @@ import {
   type PathFragment,
   type PathSource,
 } from "../src/completion.ts";
+// THE OTHER HALF, REACHED FROM HERE FOR ONE ARM: what completion sends and what
+// resolve answers is a claim about the PAIR, and no file that drives one of them
+// alone can state it.
+import { resolvePathStat } from "../src/resolve.ts";
 
 /**
  * A client that named no `documentationFormat` at all, as a value a defaulted
@@ -646,6 +650,69 @@ describe("an item names the root that produced it", () => {
     }
   });
 
+  /**
+   * TWO FOLDERS, because the field is an ARRAY on the wire and a client may hold
+   * several: an implementation keeping only the first answers from whichever root
+   * the editor happened to list first, which is not a rule anyone chose.
+   *
+   * THE CHEAP STATEMENT OF A CLAIM THE ROOT SUITE MAKES OVER THE WIRE, so the
+   * perturbation registry can re-run it without spawning a server on two
+   * runtimes.
+   *
+   * `detail` IS THE DISCRIMINATOR AND THE BLOCK CANNOT BE: the block names the
+   * CLASS of root, so both folders' items carry the identical string
+   * `source: workspace` -- read there, this arm degenerates to `two items exist`
+   * while staying green. `insertText` does not save it either, both folders
+   * spelling the same relative text, and it is asserted here as the pair that
+   * says so.
+   */
+  test("two workspace folders each contribute a source, and each item's detail names its own root", async () => {
+    const cwdTree = tree(["notes/wide.txt"]);
+    const first = tree(["notes/first-only.txt"]);
+    const second = tree(["notes/second-only.txt"]);
+    try {
+      const fragment = only("notes/");
+      const folders = [
+        { uri: pathToFileURL(first.root).href, name: "first" },
+        { uri: pathToFileURL(second.root).href, name: "second" },
+      ];
+      const sources = sourcesFor(fragment, elsewhere.uri, cwdTree.root, folders);
+      expect(sources.map((source) => source.name)).toEqual([
+        "document",
+        "cwd",
+        "workspace",
+        "workspace",
+      ]);
+
+      const workspaceItems: CompletionItem[] = [];
+      for (const source of sources.filter((source) => source.name === "workspace")) {
+        const items = await fromSource(source, fragment);
+        // Not vacuous: a folder that produced nothing satisfies every equality
+        // below by contributing nothing to compare.
+        expect(items.length).toBeGreaterThan(0);
+        workspaceItems.push(...items);
+      }
+
+      expect(workspaceItems.map((item) => item.detail).sort()).toEqual(
+        [
+          join(first.root, "notes/first-only.txt"),
+          join(second.root, "notes/second-only.txt"),
+        ].sort(),
+      );
+      // THE PAIR: both other candidates for a discriminator are the SAME STRING
+      // across the two folders, so neither could have carried this claim.
+      expect(workspaceItems.map(documentationOf)).toEqual([
+        "source: workspace",
+        "source: workspace",
+      ]);
+      expect(inserted(workspaceItems)).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
+    } finally {
+      cwdTree.dispose();
+      first.dispose();
+      second.dispose();
+    }
+  });
+
   // THE MASKING CONTROL: `file://` resolves to `/` WITHOUT THROWING, so a
   // document-relative source that lost its parent produces items from exactly the
   // directory the absolute source legitimately produces them from.
@@ -659,6 +726,71 @@ describe("an item names the root that produced it", () => {
     // is the only thing that tells the two apart.
     expect(fallback.map((item) => item.label)).toEqual(legitimate.map((item) => item.label));
     expect(fallback.map(documentationOf)).not.toEqual(legitimate.map(documentationOf));
+  });
+});
+
+/**
+ * The session the RESOLVE half is handed, which needs no document at all: it is
+ * given an item rather than a position.
+ */
+function resolveSession(documentationFormat: MarkupKind[]): RequestContext {
+  return {
+    signal: new AbortController().signal,
+    tsudoi: {
+      documents: { get: () => undefined, values: () => [] },
+      workspaceFolders: { get: () => [], values: () => [] },
+      rootUri: null,
+      rootPath: null,
+      clientCapabilities: {
+        textDocument: { completion: { completionItem: { documentationFormat } } },
+      },
+    },
+  };
+}
+
+describe("the block a popup already shows only ever GAINS", () => {
+  /**
+   * THE CHEAP STATEMENT OF THE RELATION THE ROOT SUITE MAKES OVER THE WIRE, and
+   * it is here rather than there so the perturbation registry can re-run it: the
+   * root arm spawns a real server on both runtimes.
+   *
+   * WHAT IT IS FOR: a user watching a popup re-render must not have what they
+   * have already read MOVE POSITION, which is a claim about the ORDER the block
+   * is composed in and about nothing else. It is falsified by putting the stat in
+   * front of the source -- and by nothing a green over two separately correct
+   * values could notice, which is why the order is the thing asserted.
+   *
+   * BOTH KINDS, because the file half is the one that only became a claim with
+   * this change: a file's block used to come back byte-identical, so a strict
+   * extension of it was not something an implementation could get wrong.
+   *
+   * STRICT IN BOTH DIRECTIONS: `startsWith` alone is satisfied by an answer that
+   * added nothing at all, which is what a failed stat legitimately produces.
+   */
+  test("what completion sent is a strict prefix of what resolve answers, for both kinds", async () => {
+    const fixture = tree(["sample-dir/one.txt", "sample.txt"]);
+    try {
+      const items = await complete(
+        { ...elsewhere, line: "sample" },
+        fixture.root,
+        undefined,
+        true,
+        ["plaintext"],
+      );
+      expect(inserted(items)).toEqual(["sample-dir", "sample.txt"]);
+
+      for (const item of items) {
+        const answered = await resolvePathStat(resolveSession(["plaintext"]), item);
+        const sent = documentationOf(item);
+        const back = documentationOf(answered);
+
+        expect(sent).not.toBe("");
+        expect(back.startsWith(sent)).toBe(true);
+        expect(back.length).toBeGreaterThan(sent.length);
+      }
+    } finally {
+      fixture.dispose();
+    }
   });
 });
 

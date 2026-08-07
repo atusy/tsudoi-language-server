@@ -87,6 +87,56 @@ const directoryStat = `directory · modified ${fixtureStamp.toISOString()}`;
 const fileStat = `file · 0 bytes · modified ${fixtureStamp.toISOString()}`;
 
 /**
+ * The stat part of a block: the part that says what the path IS.
+ *
+ * FOUND BY WHAT IT SAYS AND NOT BY WHICH PART IT IS, for the reason
+ * `listingSection` below is: every part of this block is optional, so a fixed
+ * index is right only for the shape the arm that wrote it happened to produce. A
+ * directory arm that had started reporting a size is still FOUND here, which is
+ * what lets the arm about it refuse one.
+ *
+ * DUPLICATED AT THE REPOSITORY ROOT, and the two MUST NOT DISAGREE.
+ */
+function statSection(block: string): string {
+  return block.split("\n\n").find((part) => /^(?:file|directory) · /u.test(part)) ?? "";
+}
+
+describe("what a stat line says, and what it leaves out on purpose", () => {
+  /**
+   * THE CHEAP STATEMENT OF A CLAIM THE ROOT SUITE MAKES OVER THE WIRE, and it is
+   * here so that the claim can be re-run by the perturbation registry: the arm at
+   * the root spawns a real server on both runtimes, which is not a cost to put on
+   * every run of every record.
+   *
+   * A DIRECTORY'S `size` IS ITS OWN DIRECTORY ENTRY'S -- 64 on one machine and
+   * 4096 on the next for the same children -- so reporting it would put a number
+   * in front of a user that means nothing about what is inside.
+   *
+   * THE FILE IS THE PAIR AND IT IS NOT DECORATION: `no byte count on a directory`
+   * is satisfied completely by a handler that reports no size for anything.
+   */
+  test("a directory's stat line carries no byte count, where a file's carries one", async () => {
+    const fixture = tree(["listed/one.txt", "plain.txt"]);
+    try {
+      const context = contextDeclaring(["plaintext"]);
+      const directory = statSection(
+        blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "listed"), "cwd"))),
+      );
+      const file = statSection(
+        blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "plain.txt"), "cwd"))),
+      );
+
+      expect(directory).toBe(directoryStat);
+      expect(directory).not.toContain("bytes");
+      expect(file).toBe(fileStat);
+      expect(file).toContain("bytes");
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
+/**
  * THE PREMISE EVERY WHOLE-VALUE ASSERTION IN THIS FILE WILL REST ON once a
  * modification time is rendered anywhere the arms compare whole: that the
  * fixture's stamps come from a constant and not from the clock.
