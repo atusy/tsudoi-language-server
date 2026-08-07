@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 // `CompletionItemKind` IS A VALUE and the rest are types: the arm that hands the
@@ -161,10 +161,18 @@ describe("the fixture's stamps come from a constant, not from the clock", () => 
       const directory = statSync(join(first.root, "listed")).mtime;
       expect(directory).toEqual(fixtureStamp);
       expect(statSync(join(first.root, "listed", "one.txt")).mtime).toEqual(fixtureStamp);
-      // AND EQUAL TO THE SECOND BUILD'S, which is what `not the clock` means:
-      // equality to the constant alone would also hold of a fixture built at
-      // exactly that instant.
+      // AND EQUAL TO THE SECOND BUILD'S. THE REASON GIVEN HERE WAS WRONG -- it
+      // said equality to the constant alone would also hold of a fixture built
+      // at exactly that instant, a hazard a stamp in 2001 forecloses for ever.
+      // What this line alone can catch is a builder that is STATEFUL across
+      // calls: correct once and drifting on the second tree.
       expect(statSync(join(second.root, "listed")).mtime).toEqual(directory);
+      // THE WHOLE-SECOND DISCIPLINE, PINNED WHERE NOTHING PINNED IT: both
+      // expected stat lines are composed FROM this constant, so the two sides
+      // move together and an edit giving it a fractional part is absorbed
+      // silently here and reddens only on a filesystem with one-second
+      // granularity, which is nobody's development machine.
+      expect(fixtureStamp.getTime() % 1000).toBe(0);
     } finally {
       first.dispose();
       second.dispose();
@@ -351,18 +359,22 @@ describe("the block is rebuilt out of what the handler read", () => {
   test("a source name no completion of ours produced is left out of the answer", async () => {
     const fixture = tree(["listed/one.txt"]);
     const path = join(fixture.root, "listed");
+    // THE ITEM ARRIVES CARRYING A `detail`, WHICH `markedItem` DOES NOT WRITE:
+    // without one the reading below is `"" does not contain it`, true on every
+    // machine and for every implementation, and this arm asserted exactly that
+    // until a reviewer read it. The sibling arm above already had this shape.
+    const sent = { ...markedItem(path, "<script>alert(1)</script>"), detail: path };
     try {
-      const answered = await resolvePathStat(
-        contextDeclaring(["plaintext"]),
-        markedItem(path, "<script>alert(1)</script>"),
-      );
+      const answered = await resolvePathStat(contextDeclaring(["plaintext"]), sent);
 
       expect(blockOf(answered)).toBe(`${directoryStat}\n\n1 entry\n\none.txt`);
       // THE MARK ITSELF COMES BACK UNTOUCHED AND THAT IS NOT AN OVERSIGHT: the
       // answer REPLACES the item the client holds, so stripping `data` would
       // leave that item unresolvable ever again.
       expect(blockOf(answered)).not.toContain("<script>");
-      expect(answered.detail ?? "").not.toContain("<script>");
+      // AND THE FORGED NAME REACHES NO OTHER RENDERED FIELD: a handler
+      // synthesising `detail` from the mark reddens here and nowhere else.
+      expect(answered.detail).toBe(path);
       expect(answered.data).toEqual({ pathCompletion: path, source: "<script>alert(1)</script>" });
     } finally {
       fixture.dispose();
@@ -399,7 +411,6 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       const cancelled = await pending;
 
       expect(cancelled).toEqual(item);
-      expect(cancelled.detail).toBeUndefined();
 
       // THE PAIR THAT SEPARATES `THE LISTING WAS SKIPPED` FROM `THIS FIXTURE HAS
       // NOTHING TO SHOW`: the same item, the same directory, uncancelled.
@@ -835,7 +846,15 @@ describe("what one directory renders does not grow with what it holds", () => {
       mkdirSync(join(fixture.root, "edge"));
       for (const name of edge) {
         writeFileSync(join(fixture.root, "edge", name), "");
+        utimesSync(join(fixture.root, "edge", name), fixtureStamp, fixtureStamp);
       }
+      // STAGED AFTER THE FIXTURE RETURNED, SO ITS STAMP IS THIS ARM'S TO SET AND
+      // NOT `tree`'s. It reads GREEN unstamped today only because `sectionOf`
+      // projects the block to its listing and never compares the stat line -- so
+      // the one arm here that stages its own entries is also the one edit away
+      // from depending on the clock, which is what the fixture change existed to
+      // end. Children first, then the directory: writing into it bumps it.
+      utimesSync(join(fixture.root, "edge"), fixtureStamp, fixtureStamp);
 
       expect(await sectionOf("edge")).toEqual({ header: `${String(shown)} entries`, names: edge });
       expect(await sectionOf("under")).toEqual({

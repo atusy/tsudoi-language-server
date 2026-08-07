@@ -58,8 +58,9 @@ const prefix = "sample";
  * directory's entries reach the client would measure nothing.
  *
  * THEY ARE CREATED BEFORE THE TIMESTAMPS ARE FIXED, and the order is
- * load-bearing: writing into a directory bumps its mtime, and the expected
- * detail string below carries that stamp.
+ * load-bearing: writing into a directory bumps its mtime, and the expected STAT
+ * LINE below carries that stamp -- inside `documentation`, not inside `detail`,
+ * which the sentence still said after the stamp stopped being rendered there.
  *
  * NAMES WHOSE CREATION ORDER, FILESYSTEM ORDER AND RENDERED ORDER ALL DIFFER, so
  * an answer echoing either of the first two cannot pass the whole-value assertion

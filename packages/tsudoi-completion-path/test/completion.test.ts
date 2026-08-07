@@ -828,10 +828,15 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * first thing to fail there: that one drives a fixture of ordinary names, so
    * an unflattened write passes it unchanged.
    *
-   * BOTH READINGS, and they fail differently: the whole VALUE says which bytes
-   * the user is shown, and the line reading says the failure in the grammar's own
-   * terms -- no LINE of what this package renders may be an attribution it did
-   * not decide to make.
+   * BOTH READINGS, THE LINE ONE FIRST, and the order is what makes the claim
+   * true rather than decorative: a runner stops at the first failing assertion,
+   * so with the whole VALUE in front the line reading can never BE the failure a
+   * reader is shown, and `they fail differently` -- which stood here with the
+   * order the other way round -- describes nothing. The line reading says the
+   * failure in the grammar's own terms (no LINE of what this package renders may
+   * be an attribution it did not decide to make); the whole value then says which
+   * bytes the user is shown. The resolve half's twin has always been in this
+   * order.
    *
    * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
    * markdown syntax inside a name still renders as syntax, and `label` and
@@ -847,8 +852,8 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      expect(item.detail).toBe(join(fixture.root, flattened));
       expect((item.detail ?? "").split("\n")).not.toContain("source: workspace");
+      expect(item.detail).toBe(join(fixture.root, flattened));
     } finally {
       fixture.dispose();
     }
