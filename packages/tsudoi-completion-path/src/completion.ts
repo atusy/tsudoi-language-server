@@ -334,11 +334,10 @@ export async function* itemsFrom(
       const insertText = fragment.directory + entry.name;
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
-        // WHAT THE POPUP READS, AND IT IS THE ENTRY ALONE. The inserted text
-        // stood here and put the fragment's directory in front of every row of
-        // a listing -- the part the user has already typed, repeated as many
-        // times as the directory holds matches, with the bytes that tell two
-        // candidates apart beginning after it.
+        // WHAT THE POPUP RENDERS ON THE ONE CLIENT THIS WAS READ FROM --
+        // ddc-source-lsp's source, and no editor is spawned anywhere here --
+        // AND IT IS THE ENTRY ALONE. The inserted text stood here and put the
+        // fragment's directory in front of every row of a listing.
         //
         // AND NOT BY NARROWING THE EDIT RANGE TO THE LAST SEPARATOR, which would
         // make this name the whole item and need no `filterText` at all:

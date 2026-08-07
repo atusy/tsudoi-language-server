@@ -886,9 +886,8 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * markdown syntax inside a name still renders as syntax, and `label`,
    * `filterText` and `insertText` still carry the name RAW. The last two have to
    * -- one is written into the buffer and the other is matched against what the
-   * user typed. THE LABEL'S REASON IS NO LONGER FILTERING, WHICH `filterText`
-   * TOOK OVER: it is the arm below, and it belongs to the client rather than to
-   * this package.
+   * user typed. The label's reason is the arm below, and it belongs to the
+   * client rather than to this package.
    */
   test("an entry whose own name would forge an attribution line names it as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";
@@ -907,17 +906,22 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
   });
 
   /**
-   * WHAT KEEPS THE LABEL RAW NOW THAT `filterText` DOES ITS FILTERING, and it is
-   * a different reason rather than the same one restated. The label is no longer
-   * what a client matches the typed text against, so nothing in this package
-   * stops it being flattened like `detail` beside it -- the edit looks free.
+   * WHAT KEEPS THE LABEL RAW NOW THAT `filterText` DOES ITS FILTERING. Nothing
+   * in this package stops the label being flattened like the `detail` beside it
+   * -- the edit looks free.
    *
    * IT IS NOT, AND THE BOUND IS THE CLIENT'S: READ FROM ddc-source-lsp'S SOURCE
    * AND MEASURED NOWHERE HERE -- nothing in this repository spawns an editor --
-   * an item whose inserted word does not CONTAIN its label is dropped outright,
-   * under an option that defaults off. A flattened label is contained in no
-   * name it flattened, so that option would take the entry out of the list
-   * instead of showing it with a replacement character.
+   * an item whose label the client cannot find in the word it reconstructs from
+   * the edit range is dropped outright, under an option that defaults off. A
+   * flattened label is in no name it flattened, so that option would take the
+   * entry out of the list instead of showing it with a replacement character.
+   *
+   * WHAT IS ASSERTED HERE IS A PROXY FOR THAT AND IS NARROWER THAN IT: the
+   * client's word is a TAIL of the inserted text, re-cut at the position it
+   * began completing, so this relation is necessary for the client's rule and
+   * not sufficient for it. Stating the sufficient one would mean modelling that
+   * client's cut in this repository, which is the thing no check here can take.
    *
    * THE RELATION IS ASSERTED FIRST AND THE WHOLE VALUES AFTER, for the reason
    * the arm above records about its own order.
