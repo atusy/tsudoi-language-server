@@ -681,7 +681,13 @@ const scrum: ScrumDashboard = {
           "Records in test/perturbations.test.ts for every weakening expressible as one textual replacement in packages/tsudoi-completion-path/src/completion.ts, each declaring `redAt` and each naming its arm in packages/tsudoi-completion-path/test/resolve.test.ts, so no record spawns a server -- the wire claims are stated at the root on two runtimes and the member arm is the cheap statement of each. THE TWO HELPER NARROWINGS ARE NOT ORDINARY RECORDS AND THE REASON IS THE INSTRUMENT'S: the member's `listingSection` lives inside the arm file the record would run, and the root's arm file spawns both runtimes, which the registry deliberately holds no record for. Each is taken by hand, reverted, and its reading written into this subtask's notes at the shape this project records a measurement in -- base, exact edit, pass/fail with the arms named -- as is any other weakening one replacement cannot express.",
         type: "structural",
         status: "completed",
-        commits: [],
+        commits: [
+          {
+            hash: "a2d682d",
+            message: "test(perturbations): the five weakenings PBI-83 names, each sited at its red",
+            phase: "green",
+          },
+        ],
         notes: [
           "FIVE NEW RECORDS, EACH DECLARING WHERE ITS RED MUST FALL, AND EVERY ONE MEASURED HELD AGAINST THE LANDED TEXT. MEASURED at 217a106, `bun test test/perturbations.test.ts`: 36 pass / 0 fail, SIXTEEN registry arms HELD. (1) THE SIZE LINE WITHHELD FROM A FILE, red at `expect(file).toBe(fileFacts);` -- the other half of the ruling and the half it makes cheap to lose, a directory being legible only by that absence now. (2) THE TRUNCATION REMOVED, red at the fractional-mtime arm with `alsoReddens` EMPTY -- AND NO OTHER, which is the evidence that the arm and not a fixture grades the composer. (3) THE MARKDOWN FACT JOIN REPLACED BY THE PLAINTEXT ONE, red at `expect(fileAsMarkdown.documentation).toEqual({` -- the FILE half. (4) THE BOUNDARY SPELLING COLLAPSED TO THE TRUNCATED FORM, red at the EDGE assertion. (5) THE EMPTY DIRECTORY'S HEADING SUPPRESSED, red at the EMPTY assertion.",
           "THE EMPTY HALF NEEDED A WEAKENING OF ITS OWN AND THAT IS A CORRECTION TO THE CRITERION'S WORDING. Criterion 5 asks one perturbation to redden the arm AT ITS EDGE AND ITS EMPTY ASSERTIONS; a runner stops at the FIRST failing assertion, so under the collapse the edge fails and the empty assertion is never reached. Two records over one arm, at two sites, is what actually grades both -- and the second weakening is one criterion 5 itself lists (`by no heading for the empty directory`).",
@@ -698,7 +704,13 @@ const scrum: ScrumDashboard = {
           "The member README's `Which field carries what` paragraph and any block it pictures; the root README's sentence about what the resolution answers; `statLine`'s docblock, whose A DIRECTORY IS TOLD APART BY WHAT IT IS ruling survives while the bytes it cites do not, and which gains the stakeholder ruling that took the words out; `documentationFor`'s docblock on the two joins; both `listingSection` docblocks on the heading they now anchor to. LAST, because it describes what landed rather than what was intended.",
         type: "structural",
         status: "completed",
-        commits: [],
+        commits: [
+          {
+            hash: "b88dd10",
+            message: "docs(completion-path): the README stops saying the block names the kind",
+            phase: "refactoring",
+          },
+        ],
         notes: [
           "NOTHING REDDENED, AS THE SUBTASK REQUIRED, AND THE COUNTS SAY SO RATHER THAN THE COLOUR. MEASURED, full Definition of Done at a2d682d with the prose landed: PASSED, all five checks exit 0, 964 pass / 0 fail over 70 files, 3007 expect() calls, sixteen registry arms HELD, ONE non-gating `eslint(require-yield)` warning -- byte-identical counts to the reading taken before it. `readmeCoverage` accounts for FENCED BLOCKS and the member README's four are a config and three commands, none of which pictures a popup, so no marker and no `consumers` row moved.",
           "WHAT WAS FALSE AND IS REPAIRED, EACH BECAUSE THE RULING FALSIFIED IT. The member README said a directory's stat line SAYS IT IS A DIRECTORY -- the words are gone, so the missing `size:` is what says it now, and the sentence says that instead. It said the block says HOW MANY ENTRIES THERE REALLY ARE WHEN IT SHOWS YOU FEWER, which was silent about the case where it shows you all of them; the heading's three spellings are written out, `(0)` included, with the reason it is not decoration. And the modification time being reported TO THE SECOND is stated, because nothing else a reader can see says so.",
