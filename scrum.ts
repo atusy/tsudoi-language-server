@@ -387,9 +387,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "`tree` in packages/tsudoi-completion-path/test/helpers/tree.ts gains the fixed stamp, taking the shape test/resolve-path-stat.test.ts's `sampleTree` already has -- the root suite is immune to this change for exactly that reason. ITS OWN COMMIT AND NOT INSIDE SUBTASK 4, RULED BY THE PRODUCT OWNER: green before and green after makes it tidying, and folding it in is the one thing that would make subtask 4 too large to read. STRUCTURAL, ARGUED RATHER THAN ASSUMED: it changes no assertion, no answer and nothing shipped; it removes a dependence on the clock that today's arms do not have and that tomorrow's cannot avoid.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "142bbe5",
+            message:
+              "test(completion-path): the member fixture's stamps stop coming from the clock",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "NOTHING REDDENED, AS THE SUBTASK REQUIRED. MEASURED at 3ddccbd: member suite 61 pass / 0 fail over 3 files before the change; full suite from the root after it 947 pass / 0 fail over 70 files, 2888 expect() calls, 163.67s, six registry arms HELD. The delta over subtask 1's 946/2885 is the one probe and its three assertions.",
+          "THE PROBE WAS BORN GREEN AND ITS FIRST DRAFT WAS BORN VACUOUS, WHICH THE PERTURBATION CAUGHT AND NO GREEN WOULD HAVE. Drafted over `listed/one.txt`, it PASSED against the degenerate its own comment names -- entries stamped as they are created, with no final pass -- because with a SINGLE child there is no sibling left to write, so the directory's last bump is the one that stamped it. MEASURED, that same degenerate against the two-child fixture: red at the directory assertion, expected 2001-02-03T04:05:06.000Z and received the wall clock. It takes a sibling to bump a parent that has already been stamped, and that sentence is now at the site.",
+          "A SYMLINK IS NEITHER STAMPED NOR DESCENDED, AND BOTH HALVES ARE FORCED BY FIXTURES CALLERS ALREADY STAGE: `utimesSync` FOLLOWS a link and would throw ENOENT on the `dangling -> nowhere-at-all` the completion suite builds, and a walk that descended one would recurse forever on its `mirror -> .`. Nothing is lost -- the handler stats THROUGH a link, and the target is stamped wherever it really lives. `readdirSync(withFileTypes)` reports a symlink-to-directory as NOT a directory, so the descent guard and the stamp guard are the same test.",
+        ],
       },
       {
         test: "GREEN THROUGHOUT, AND THE ARMS THAT PROVE IT IS A MOVE ARE THE ONES LEFT UNTOUCHED: every reader that splits the stat line on the middle dot -- the two cancellation arms, the directory-replaced-by-a-file arm and the two kind-driven arms -- still reads the same bytes from the same field. A move that changed a byte reddens there before anything about composition is attempted.",
