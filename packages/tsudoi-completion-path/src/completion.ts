@@ -335,7 +335,11 @@ export async function* itemsFrom(
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
         label: insertText,
-        documentation: documentationFor(absolutePath, source.name, documentationFormat),
+        // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW: two
+        // same-named candidates offered by different roots are otherwise told
+        // apart only in the documentation popup, which is optional.
+        detail: absolutePath,
+        documentation: documentationFor(source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
         // NO DETAIL IS READ HERE -- a size and a date per entry is a stat per
@@ -367,15 +371,18 @@ export async function* itemsFrom(
  * own business and is gone by the time the item comes back.
  */
 export function documentationFor(
-  absolutePath: string,
   source: PathSourceName | undefined,
   format: MarkupKind,
+  stat?: string,
   listing?: DirectoryListing,
 ): MarkupContent {
   const markdown = format === MarkupKind.Markdown;
-  const parts = [flattened(absolutePath)];
+  const parts: string[] = [];
   if (source !== undefined) {
     parts.push(`source: ${source}`);
+  }
+  if (stat !== undefined) {
+    parts.push(stat);
   }
   if (listing !== undefined) {
     parts.push(listingText(listing, markdown));

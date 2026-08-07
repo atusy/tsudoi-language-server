@@ -36,14 +36,14 @@ const fileText = "サンプル\n";
 const mtime = new Date("2001-02-03T04:05:06.000Z");
 
 /**
- * What the example must put on a FILE item, WRITTEN OUT RATHER THAN COMPUTED:
- * both sides calling `stat` would make a correct reading and a consistently
- * broken one produce the same observation.
+ * The stat line a resolved FILE's block must carry, WRITTEN OUT RATHER THAN
+ * COMPUTED: both sides calling `stat` would make a correct reading and a
+ * consistently broken one produce the same observation.
  */
-const fileDetail = "file · 13 bytes · modified 2001-02-03T04:05:06.000Z";
+const fileStat = "file · 13 bytes · modified 2001-02-03T04:05:06.000Z";
 
-/** And what it must put on a DIRECTORY item. */
-const directoryDetail = "directory · modified 2001-02-03T04:05:06.000Z";
+/** And what a resolved DIRECTORY's must carry. */
+const directoryStat = "directory · modified 2001-02-03T04:05:06.000Z";
 
 /** What the document's one line reads: the prefix both entries share. */
 const prefix = "sample";
@@ -94,21 +94,29 @@ function sampleTree(): Tree {
 }
 
 /**
- * The multi-line block the answer must carry for the FILE item, WRITTEN OUT
- * rather than composed from the module's own parts.
+ * The block EVERY item this fixture's completion produces carries, and one
+ * string covers both because the completion half knows exactly one fact about
+ * an item: which root offered it.
  *
  * PLAINTEXT BECAUSE THE SESSION DECLARED NOTHING: this suite's initialize params
  * carry no capabilities at all, so the client named no documentation format.
  *
  * `source: document` AND NOT `cwd`, though both roots are this fixture: items
  * dedup by inserted text and the document's own directory is asked first.
+ *
+ * IT NO LONGER TELLS THE TWO ITEMS APART, which is why the arms that need them
+ * separated read `detail`: the file and the directory come out of one listing
+ * under one root, so their blocks are the SAME BYTES until resolve is asked.
  */
-function fileBlock(root: string): string {
-  return `${join(root, "sample.txt")}\n\nsource: document`;
+const completedBlock = "source: document";
+
+/** What a FILE's block grows into once resolve has stat-ed it. */
+function fileBlock(): string {
+  return `${completedBlock}\n\n${fileStat}`;
 }
 
 /**
- * And for the DIRECTORY item: the same two facts, plus what is inside it.
+ * And a DIRECTORY's: the same two facts, plus what is inside it.
  *
  * `alpha` IS A DIRECTORY, which is what makes `names alone` a decision rather
  * than an accident: dotfiles, files and a directory all come back spelled the
@@ -120,8 +128,8 @@ function fileBlock(root: string): string {
  * rather than sorted here, or a mistake in the comparator would be reproduced by
  * the expectation.
  */
-function directoryBlock(root: string): string {
-  return `${join(root, "sample-dir")}\n\nsource: document\n\n5 entries\n\nZeta.txt\nalpha\nbeta.txt\n.Zed\n.hidden`;
+function directoryBlock(): string {
+  return `${completedBlock}\n\n${directoryStat}\n\n5 entries\n\nZeta.txt\nalpha\nbeta.txt\n.Zed\n.hidden`;
 }
 
 /**
@@ -132,7 +140,12 @@ function directoryBlock(root: string): string {
 const crowd = Array.from({ length: 30 }, (_, index) => `c${String(index).padStart(3, "0")}.txt`);
 
 function crowdedTree(): Tree {
-  return tree(crowd.map((name) => `sample-crowd/${name}`));
+  const fixture = tree(crowd.map((name) => `sample-crowd/${name}`));
+  // STAMPED FOR THE SAME REASON sampleTree's ENTRIES ARE, and after its children
+  // for the same reason: the block this fixture's arm compares WHOLE now carries
+  // a modification time.
+  utimesSync(join(fixture.root, "sample-crowd"), mtime, mtime);
+  return fixture;
 }
 
 /**
@@ -146,6 +159,9 @@ function lockedTree(): Tree {
   const fixture = tree(["sample-locked/inside.txt", "sample-open/visible.txt"]);
   const locked = join(fixture.root, "sample-locked");
   utimesSync(locked, mtime, mtime);
+  // THE LISTABLE ONE IS STAMPED TOO, and it was not while the stat lived in
+  // `detail`: its block is compared whole and now carries a modification time.
+  utimesSync(join(fixture.root, "sample-open"), mtime, mtime);
   chmodSync(locked, 0o000);
   return {
     root: fixture.root,
@@ -154,6 +170,25 @@ function lockedTree(): Tree {
       fixture.dispose();
     },
   };
+}
+
+/** The block an item carries, as text, or "" when it carries none. */
+function blockOf(item: CompletionItem): string {
+  const documentation = item.documentation;
+  return typeof documentation === "string" ? documentation : (documentation?.value ?? "");
+}
+
+/**
+ * The stat part of a block: the part that says what the path IS.
+ *
+ * FOUND BY WHAT IT SAYS AND NOT BY WHICH PART IT IS, for the reason the reader
+ * below is: every part of this block is optional, so a fixed index is right only
+ * for the shape the arm that wrote it happened to produce. A directory arm that
+ * had started reporting a size is still FOUND here, which is what lets the arm
+ * about it refuse one.
+ */
+function statSection(block: string): string {
+  return block.split("\n\n").find((part) => /^(?:file|directory) · /u.test(part)) ?? "";
 }
 
 /**
@@ -249,23 +284,32 @@ const foreignItem = {
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     /**
-     * THE PAIR: completion answered WITHOUT the detail, so an example whose
+     * THE PAIR: completion answered WITHOUT the stat, so an example whose
      * completion already carried it would demonstrate nothing about resolve.
      *
-     * DEEP EQUALITY AGAINST THE ITEM AS IT WAS SENT, so `detail` is the ONLY
-     * difference: a handler that rebuilt the item, dropped its `textEdit` or
-     * re-encoded its documentation fails here rather than looking plausible.
+     * AND THE COMPLETION'S OWN `detail` IS ASSERTED AS A VALUE, not as `absent`
+     * and not as `a string`: it is the path the user is entitled to read before
+     * anything is resolved at all, and it is the FILE this session names.
+     *
+     * DEEP EQUALITY AGAINST THE ITEM AS IT WAS SENT, so `documentation` is the
+     * ONLY difference -- `detail` BYTE-IDENTICAL INCLUDED, which is the shape any
+     * `detail` written at resolve reddens. A handler that rebuilt the item,
+     * dropped its `textEdit` or re-encoded its block fails here rather than
+     * looking plausible.
      */
     test("a file item the example produced comes back from resolve carrying its size, its mtime and its kind", async () => {
       const fixture = sampleTree();
       const session = startDemo(runtime, fixture.root);
       try {
         const item = itemFor(await completedItems(session, fixture.root), "sample.txt");
-        expect(item.detail).toBeUndefined();
+        expect(item.detail).toBe(join(fixture.root, "sample.txt"));
 
         const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
 
-        expect(resolved).toEqual({ ...item, detail: fileDetail });
+        expect(resolved).toEqual({
+          ...item,
+          documentation: { kind: "plaintext", value: fileBlock() },
+        });
       } finally {
         session.dispose();
         fixture.dispose();
@@ -285,15 +329,19 @@ for (const runtime of runtimes) {
       const session = startDemo(runtime, fixture.root);
       try {
         const item = itemFor(await completedItems(session, fixture.root), "sample-dir");
-        expect(item.detail).toBeUndefined();
+        expect(item.detail).toBe(join(fixture.root, "sample-dir"));
 
         const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
 
-        expect(resolved.detail).toBe(directoryDetail);
+        // READ OFF THE STAT LINE INSIDE THE BLOCK, WHICH IS WHERE THE CLAIM NOW
+        // LIVES: left on `detail`, the refusal below would be reading an absolute
+        // PATH and would be true on every machine whatever the stat said.
+        const stat = statSection(blockOf(resolved));
+        expect(stat).toBe(directoryStat);
         // A directory's `size` is its directory ENTRY's -- 64 on one machine and
         // 4096 on the next for the same children -- so reporting it would put a
         // number in front of a user that means nothing about the files inside.
-        expect(resolved.detail).not.toContain("bytes");
+        expect(stat).not.toContain("bytes");
       } finally {
         session.dispose();
         fixture.dispose();
@@ -301,33 +349,45 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * BOTH KINDS IN ONE SESSION, AND WHAT THE PAIRING DOES AND DOES NOT ESTABLISH
-     * IS WRITTEN OUT BECAUSE THE OBVIOUS READING OF IT IS FALSE. The directory's
-     * block is observed CHANGING first, and what that buys is liveness: `the file
-     * came back with the block it went out with` is otherwise satisfied by a
-     * server that writes no block at all, and by one that was never asked.
+     * BOTH KINDS IN ONE SESSION, AND THE CLAIM INVERTED WITH THE CHANGE: a file's
+     * block is no longer unmoved, because resolve now learns a stat about EVERY
+     * kind. What replaces `unmoved` is the relation that matters to a reader
+     * watching a popup re-render -- THE BLOCK ONLY EVER GAINS. What they have
+     * already read does not move position.
      *
-     * IT DOES NOT ESTABLISH THAT A REBUILD RAN FOR THE FILE: an implementation
-     * that rebuilt for directories alone and PASSED A FILE'S BLOCK THROUGH stays
-     * green here, because a passthrough is byte-identical too. What establishes
-     * the rebuild is the tampering arm below.
+     * AND IT RETIRES AN ADMITTED WEAKNESS OF THE ARM IT REPLACES, which said in
+     * so many words that it could not establish a rebuild ran for the FILE: a
+     * passthrough was byte-identical there. It is not any more -- a file's block
+     * grows too -- so the file half is a claim rather than a shape.
      *
-     * WHOLE-VALUE ON THE NAMES, never a containment: a containment spelling would
-     * pass against an answer that had REPLACED the block with the listing --
-     * losing the path and the attribution the user still needs.
+     * WHOLE-VALUE ON BOTH ANSWERS, never a containment: a containment spelling
+     * would pass against an answer that had REPLACED the block with the listing,
+     * losing the attribution the user still needs. AND `{ ...item, documentation }`
+     * RATHER THAN A READ OF ONE FIELD, which is what makes it say that `detail`
+     * came back BYTE-IDENTICAL: any `detail` written at resolve reddens here.
+     *
+     * THE TWO ITEMS' BLOCKS ARE THE SAME BYTES AT COMPLETION TIME, so `detail` is
+     * asserted for both -- without it this arm stops telling a file from a
+     * directory before either is resolved, and the prefix relation below would
+     * hold of two items nobody could distinguish.
      *
      * THIS ARM IS THE MEMBERSHIP WITNESS FOR HIDDEN ENTRIES AND NOT THE ORDER
      * ONE: the starvation the order exists to refuse needs a directory holding
-     * more dotfiles than the bound, which this three-entry one is too small to be.
+     * more dotfiles than the bound, which this five-entry one is too small to be.
      */
-    test("a directory item's block carries what is inside it, while a file item's block is unmoved", async () => {
+    test("each kind's block only GAINS: what completion sent is a strict prefix of what resolve answers", async () => {
       const fixture = sampleTree();
       const session = startDemo(runtime, fixture.root);
       try {
         const items = await completedItems(session, fixture.root);
         const directory = itemFor(items, "sample-dir");
         const file = itemFor(items, "sample.txt");
-        expect(file.documentation).toEqual({ kind: "plaintext", value: fileBlock(fixture.root) });
+        expect(file.documentation).toEqual({ kind: "plaintext", value: completedBlock });
+        expect(directory.documentation).toEqual({ kind: "plaintext", value: completedBlock });
+        expect([file.detail, directory.detail]).toEqual([
+          join(fixture.root, "sample.txt"),
+          join(fixture.root, "sample-dir"),
+        ]);
 
         const resolvedDirectory = await session.request<CompletionItem>(
           "completionItem/resolve",
@@ -337,10 +397,24 @@ for (const runtime of runtimes) {
 
         expect(resolvedDirectory).toEqual({
           ...directory,
-          detail: directoryDetail,
-          documentation: { kind: "plaintext", value: directoryBlock(fixture.root) },
+          documentation: { kind: "plaintext", value: directoryBlock() },
         });
-        expect(resolvedFile).toEqual({ ...file, detail: fileDetail });
+        expect(resolvedFile).toEqual({
+          ...file,
+          documentation: { kind: "plaintext", value: fileBlock() },
+        });
+
+        // THE RELATION ITSELF, over the four values this session already holds,
+        // and STRICT in both directions: `startsWith` alone is satisfied by an
+        // answer that changed nothing, which is what the deleted-file arm's
+        // subject looks like.
+        for (const [sent, answered] of [
+          [file, resolvedFile],
+          [directory, resolvedDirectory],
+        ] as const) {
+          expect(blockOf(answered).startsWith(blockOf(sent))).toBe(true);
+          expect(blockOf(answered).length).toBeGreaterThan(blockOf(sent).length);
+        }
       } finally {
         session.dispose();
         fixture.dispose();
@@ -364,20 +438,18 @@ for (const runtime of runtimes) {
 
         const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
 
-        const section = listingSection(
-          typeof resolved.documentation === "string" ? "" : (resolved.documentation?.value ?? ""),
-        );
+        const section = listingSection(blockOf(resolved));
         // The pair for the bound: an answer carrying no names at all satisfies
         // every equality below.
         expect(section.names.length).toBeGreaterThan(0);
         expect(section.names.length).toBeLessThan(crowd.length);
         expect(section.header).toBe(`30 entries, first ${String(section.names.length)} shown`);
         expect(section.names).toEqual(crowd.slice(0, section.names.length));
-        // And the two facts the block carried before are still in front of the
+        // And the facts the block carried before are still in front of the
         // listing rather than displaced by it.
         expect(resolved.documentation).toEqual({
           kind: "plaintext",
-          value: `${join(fixture.root, "sample-crowd")}\n\nsource: document\n\n${section.header}\n\n${section.names.join("\n")}`,
+          value: `${completedBlock}\n\n${directoryStat}\n\n${section.header}\n\n${section.names.join("\n")}`,
         });
       } finally {
         session.dispose();
@@ -419,11 +491,11 @@ for (const runtime of runtimes) {
 
         expect(answeredDirectory.documentation).toEqual({
           kind: "plaintext",
-          value: directoryBlock(fixture.root),
+          value: directoryBlock(),
         });
         expect(answeredFile.documentation).toEqual({
           kind: "plaintext",
-          value: fileBlock(fixture.root),
+          value: fileBlock(),
         });
         expect(JSON.stringify([answeredDirectory, answeredFile])).not.toContain("forged");
       } finally {
@@ -474,7 +546,7 @@ for (const runtime of runtimes) {
      * PAIRED IN ONE SESSION WITH A LISTABLE DIRECTORY, because `no listing in the
      * block` is also what a server that never listed anything produces.
      */
-    test("a directory that cannot be listed keeps the detail its stat produced", async () => {
+    test("a directory that cannot be listed keeps the stat line its stat produced", async () => {
       const fixture = lockedTree();
       const session = startDemo(runtime, fixture.root);
       try {
@@ -504,12 +576,14 @@ for (const runtime of runtimes) {
         // session at all.
         expect(answeredOpen.documentation).toEqual({
           kind: "plaintext",
-          value: `${join(fixture.root, "sample-open")}\n\nsource: document\n\n1 entry\n\nvisible.txt`,
+          value: `${completedBlock}\n\n${directoryStat}\n\n1 entry\n\nvisible.txt`,
         });
         expect(answeredLocked).toEqual({
           ...lockedItem,
-          detail: directoryDetail,
-          documentation: { kind: "plaintext", value: `${locked}\n\nsource: document` },
+          documentation: {
+            kind: "plaintext",
+            value: `${completedBlock}\n\n${directoryStat}`,
+          },
         });
         // Nor was the failure narrated: a handler logging every unreadable
         // directory would put a line in the editor's log for each one a user
@@ -533,7 +607,7 @@ for (const runtime of runtimes) {
       try {
         const item = itemFor(await completedItems(session, fixture.root), "sample.txt");
         const enriched = await session.request<CompletionItem>("completionItem/resolve", item);
-        expect(enriched.detail).toBe(fileDetail);
+        expect(enriched.documentation).toEqual({ kind: "plaintext", value: fileBlock() });
 
         rmSync(join(fixture.root, "sample.txt"));
         const answered = await session.request<CompletionItem>("completionItem/resolve", item);

@@ -21,7 +21,14 @@ import {
   type DirectoryListing,
 } from "./completion.ts";
 
-/** A `completionItem/resolve` handler that fills in a path item's file detail. */
+/**
+ * A `completionItem/resolve` handler that adds what a `stat` found to a path
+ * item's block.
+ *
+ * `documentation` AND NOTHING ELSE, WHICH IS THE ONE PROPERTY A CLIENT IS ASKED
+ * TO HONOUR LATE: what a client accepts from a resolve answer is its own
+ * declaration to make, so every fact this handler adds arrives in one field.
+ */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
   if (path === undefined) {
@@ -40,14 +47,13 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
   // into somebody else's object.
   return {
     ...item,
-    detail: statLine(stats),
     documentation: documentationFor(
-      path,
       completedSource(item),
       preferredFormat(
         context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem
           ?.documentationFormat,
       ),
+      statLine(stats),
       // A SAVED SYSCALL AND NOT WHAT KEEPS A FILE ANSWERING AS A FILE, which no
       // arm says: with the test dropped, `opendir` fails on a file and
       // `listingOf` catches, so resolve.test.ts reads 15 pass / 0 fail.

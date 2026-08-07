@@ -1033,20 +1033,32 @@ for (const runtime of runtimes) {
             .sort(),
         ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
         // EACH ITEM NAMES ITS OWN ROOT, which is what makes two workspace
-        // folders legible rather than one indistinguishable pile: the
-        // documentation carries the absolute path it resolves to, so the two
-        // are told apart by the item itself and not only by which file it is.
+        // folders legible rather than one indistinguishable pile -- AND `detail`
+        // IS WHERE THAT NOW LIVES. The block says which CLASS of root offered
+        // the item, so both folders' items carry the identical string
+        // `source: workspace`: read there, this assertion degenerates to `two
+        // items exist` while staying green, and `insertText` does not save it
+        // either, both folders spelling the same relative text.
+        expect(
+          workspaceItems(items)
+            .map((item) => item.detail)
+            .sort(),
+        ).toEqual(
+          [
+            join(first.root, "notes/first-only.txt"),
+            join(second.root, "notes/second-only.txt"),
+          ].sort(),
+        );
+        // AND THE BLOCK IS STILL THE ATTRIBUTION, asserted whole so that a
+        // discriminator arriving back there is not read as this arm passing.
         //
         // PLAINTEXT BECAUSE THIS CLIENT DECLARED NOTHING: `initializeParams`
         // sends `capabilities: {}`, and the example answers markdown only to a
-        // client that named it. What that costs here is the rule between the
-        // two parts, which is not what this assertion is about.
-        expect(workspaceItems(items).map(documentationOf).sort()).toEqual(
-          [
-            `${join(first.root, "notes/first-only.txt")}\n\nsource: workspace`,
-            `${join(second.root, "notes/second-only.txt")}\n\nsource: workspace`,
-          ].sort(),
-        );
+        // client that named it.
+        expect(workspaceItems(items).map(documentationOf)).toEqual([
+          "source: workspace",
+          "source: workspace",
+        ]);
       } finally {
         session.dispose();
         cwd.dispose();

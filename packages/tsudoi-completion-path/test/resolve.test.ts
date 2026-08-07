@@ -75,6 +75,18 @@ function blockOf(item: CompletionItem): string {
 }
 
 /**
+ * The stat line every DIRECTORY of a fixture renders, and every FILE of one.
+ *
+ * COMPOSED FROM THE STAMP THE FIXTURE DECLARES rather than from a second `stat`,
+ * which is the difference that matters: the stamp is this suite's INPUT, so
+ * reading it back is an oracle, where a `stat` taken beside the handler's would
+ * make a correct answer and a consistently broken one look the same. Every file
+ * a fixture writes is EMPTY, which is where the zero comes from.
+ */
+const directoryStat = `directory · modified ${fixtureStamp.toISOString()}`;
+const fileStat = `file · 0 bytes · modified ${fixtureStamp.toISOString()}`;
+
+/**
  * THE PREMISE EVERY WHOLE-VALUE ASSERTION IN THIS FILE WILL REST ON once a
  * modification time is rendered anywhere the arms compare whole: that the
  * fixture's stamps come from a constant and not from the clock.
@@ -140,14 +152,14 @@ describe("the block is rebuilt out of what the handler read", () => {
 
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `${path}\n\n---\n\nsource: cwd\n\n---\n\n2 entries\n\n- one.txt\n- two.txt`,
+        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n2 entries\n\n- one.txt\n- two.txt`,
       });
       // NO MARKDOWN SYNTAX AT ALL for the client that named none: the names are
       // bare lines rather than bullets, since a client that renders no markdown
       // reads `- ` as punctuation.
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `${path}\n\nsource: cwd\n\n2 entries\n\none.txt\ntwo.txt`,
+        value: `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
       });
     } finally {
       fixture.dispose();
@@ -192,11 +204,11 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `${path}\n\nsource: cwd\n\n2 entries\n\none.txt\n${flattened}`,
+        value: `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\n${flattened}`,
       });
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `${path}\n\n---\n\nsource: cwd\n\n---\n\n2 entries\n\n- one.txt\n- ${flattened}`,
+        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n2 entries\n\n- one.txt\n- ${flattened}`,
       });
     } finally {
       fixture.dispose();
@@ -204,8 +216,18 @@ describe("the block is rebuilt out of what the handler read", () => {
   });
 
   /**
-   * THE ONE A READER WOULD NOT PREDICT: the absolute path at the TOP of the block
-   * comes off the MARK, which arrives from the client.
+   * ITS SUBJECT MOVED WITH THE PATH AND THE ARM IS KEPT RATHER THAN DELETED. The
+   * path came off the MARK, which arrives from the client, and this arm existed
+   * because the composer RENDERED it. It does not any more.
+   *
+   * WHAT IT REFUSES NOW: an implementation that left the path in the block after
+   * all. That is not a hypothetical -- it is the state that makes the popup's
+   * prefix relation hold vacuously, and this fixture's name is exactly the input
+   * under which leaving it there forges an attribution line.
+   *
+   * WHAT NOTHING HERE COVERS AT THIS COMMIT: the path is now rendered by the
+   * COMPLETION half, into `detail`, and it leaves the composer that owns the
+   * flattening on the way. Whether it survives that trip is asserted nowhere.
    *
    * IT IS A REAL DIRECTORY AND NOT A FORGED PATH, because a path nothing can be
    * stat-ed at is answered with the untouched item and would measure the
@@ -213,10 +235,8 @@ describe("the block is rebuilt out of what the handler read", () => {
    */
   test("a path whose own name would forge an attribution line renders as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";
-    const flattened = "x��source: workspace";
     const fixture = tree([`${forged}/child.txt`]);
     const path = join(fixture.root, forged);
-    const rendered = join(fixture.root, flattened);
     try {
       const asPlainText = await resolvePathStat(
         contextDeclaring(["plaintext"]),
@@ -231,11 +251,11 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `${rendered}\n\nsource: cwd\n\n1 entry\n\nchild.txt`,
+        value: `source: cwd\n\n${directoryStat}\n\n1 entry\n\nchild.txt`,
       });
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `${rendered}\n\n---\n\nsource: cwd\n\n---\n\n1 entry\n\n- child.txt`,
+        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n1 entry\n\n- child.txt`,
       });
     } finally {
       fixture.dispose();
@@ -258,7 +278,7 @@ describe("the block is rebuilt out of what the handler read", () => {
         markedItem(path, "<script>alert(1)</script>"),
       );
 
-      expect(blockOf(answered)).toBe(`${path}\n\n1 entry\n\none.txt`);
+      expect(blockOf(answered)).toBe(`${directoryStat}\n\n1 entry\n\none.txt`);
       // THE MARK ITSELF COMES BACK UNTOUCHED AND THAT IS NOT AN OVERSIGHT: the
       // answer REPLACES the item the client holds, so stripping `data` would
       // leave that item unresolvable ever again.
@@ -305,7 +325,9 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       // THE PAIR THAT SEPARATES `THE LISTING WAS SKIPPED` FROM `THIS FIXTURE HAS
       // NOTHING TO SHOW`: the same item, the same directory, uncancelled.
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
-      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd\n\n2 entries\n\none.txt\ntwo.txt`);
+      expect(blockOf(answered)).toBe(
+        `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
+      );
     } finally {
       fixture.dispose();
     }
@@ -327,10 +349,11 @@ describe("a cancelled highlight does not go on reading the directory", () => {
    * before `opendir` is even called, so an implementation checking the signal one
    * line EARLIER would pass this arm unchanged. Queued, it needs no timer.
    *
-   * THE PREMISE IS ASSERTED OUT OF THE ANSWER'S OWN `detail`: the stat is spent
-   * and its line is in the answer, which is what says the cancellation landed
+   * THE PREMISE IS ASSERTED OUT OF THE ANSWER'S OWN STAT LINE: the stat is spent
+   * and its line is in the block, which is what says the cancellation landed
    * AFTER the handler's first check rather than in front of it -- otherwise this
-   * arm would be a second reading of the arm above.
+   * arm would be a second reading of the arm above. A cancellation landing
+   * EARLIER answers the item untouched, and this item carries no block at all.
    */
   test("a resolve cancelled between the open and the first entry answers without reading it", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt"]);
@@ -340,14 +363,15 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       const signal = signalAbortingWhereItIsFirstRead();
       const cancelled = await resolvePathStat(contextDeclaring(["plaintext"], signal), item);
 
-      expect((cancelled.detail ?? "").split(" · ")[0]).toBe("directory");
       expect(signal.aborted).toBe(true);
-      expect(blockOf(cancelled)).toBe(`${path}\n\nsource: cwd`);
+      expect(blockOf(cancelled)).toBe(`source: cwd\n\n${directoryStat}`);
 
       // THE SAME PAIR THE ARM ABOVE CARRIES: without it, `the directory was not
       // read` and `this fixture has nothing in it` are one observation.
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
-      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd\n\n2 entries\n\none.txt\ntwo.txt`);
+      expect(blockOf(answered)).toBe(
+        `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
+      );
     } finally {
       fixture.dispose();
     }
@@ -390,8 +414,8 @@ describe("a path that stops being a directory between the two reads", () => {
    * second thread, and lands identically on every run.
    *
    * BOTH PREMISES ARE ASSERTED, because either alone would let this pass
-   * vacuously: the `detail` line says the snapshot predates the swap, and a fresh
-   * `statSync` says the swap really happened.
+   * vacuously: the block's stat line says the snapshot predates the swap, and a
+   * fresh `statSync` says the swap really happened.
    *
    * WHERE THE REJECTION SURFACES DIFFERS BY RUNTIME, and this file runs under bun
    * alone: bun's `opendir` RESOLVES on a regular file and the first read rejects,
@@ -401,7 +425,7 @@ describe("a path that stops being a directory between the two reads", () => {
    * tie what this arm constructs to whatever the cancellation seam is later ruled
    * to be, and the two use the same getter for opposite purposes.
    */
-  test("a directory replaced by a file after the stat keeps its detail and renders no listing", async () => {
+  test("a directory replaced by a file after the stat keeps the stat it took and renders no listing", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt"]);
     const path = join(fixture.root, "listed");
     try {
@@ -410,10 +434,11 @@ describe("a path that stops being a directory between the two reads", () => {
         markedItem(path, "cwd"),
       );
 
-      expect((answered.detail ?? "").split(" · ")[0]).toBe("directory");
       // Read off the filesystem rather than off the getter's intention.
       expect(statSync(path).isFile()).toBe(true);
-      expect(blockOf(answered)).toBe(`${path}\n\nsource: cwd`);
+      // The block still says DIRECTORY, which is the snapshot the handler took
+      // before the swap, and it carries no listing.
+      expect(blockOf(answered)).toBe(`source: cwd\n\n${directoryStat}`);
     } finally {
       fixture.dispose();
     }
@@ -456,11 +481,14 @@ describe("what the path is decides the answer, and never what the item claims", 
    * of the item and stale besides -- the path may have been replaced by one of
    * the other kind in between.
    *
-   * TWO TESTS AND NOT TWO ASSERTIONS, because the two directions FAIL IN
-   * DIFFERENT FIELDS: a `kind`-driven answer asked to list a FILE gets a
-   * rejection and quietly drops the listing, so that arm's whole visible defect
-   * is on `detail`, while the DIRECTORY arm's is the listing going missing.
-   * Sharing one test would mean the second could never be observed.
+   * TWO TESTS AND NOT TWO ASSERTIONS, AND THE REASON THAT SAID SO IS GONE: the
+   * two defects used to land in DIFFERENT FIELDS, one on `detail` and one on the
+   * block, and now both land in the block. What survives is the reason that never
+   * depended on that -- the two directions are different observations, and
+   * sharing one test would mean the second could never be the first thing to
+   * fail. A `kind`-driven answer asked to list a FILE gets a rejection and
+   * quietly drops the listing, so its block looks correct except for the stat
+   * line; the DIRECTORY direction's defect is the listing going missing.
    */
   test("a file whose item claims to be a folder is still answered as a file", async () => {
     const fixture = tree(["plain.txt"]);
@@ -471,11 +499,10 @@ describe("what the path is decides the answer, and never what the item claims", 
         kind: CompletionItemKind.Folder,
       });
 
-      // The detail line is where this direction shows: the block a `kind`-driven
-      // answer produces here looks correct, because listing a file rejects and
-      // the listing is dropped.
-      expect((answered.detail ?? "").split(" · ")[0]).toBe("file");
-      expect(blockOf(answered)).toBe(`${file}\n\nsource: cwd`);
+      // The stat line is where this direction shows: everything else a
+      // `kind`-driven answer produces here looks correct, because listing a file
+      // rejects and the listing is dropped.
+      expect(blockOf(answered)).toBe(`source: cwd\n\n${fileStat}`);
       // The claim itself comes back untouched: the answer REPLACES the item the
       // client holds, so correcting its `kind` is not this handler's business.
       expect(answered.kind).toBe(CompletionItemKind.Folder);
@@ -493,10 +520,9 @@ describe("what the path is decides the answer, and never what the item claims", 
         kind: CompletionItemKind.File,
       });
 
-      // THE LISTING FIRST, because it is what this direction costs the user: a
+      // THE LISTING, because it is what this direction costs the user: a
       // `kind`-driven answer never asks what is inside.
-      expect(blockOf(answered)).toBe(`${directory}\n\nsource: cwd\n\n1 entry\n\none.txt`);
-      expect((answered.detail ?? "").split(" · ")[0]).toBe("directory");
+      expect(blockOf(answered)).toBe(`source: cwd\n\n${directoryStat}\n\n1 entry\n\none.txt`);
       expect(answered.kind).toBe(CompletionItemKind.File);
     } finally {
       fixture.dispose();
@@ -746,7 +772,7 @@ describe("what one directory renders does not grow with what it holds", () => {
         context,
         markedItem(join(fixture.root, "plain.txt"), "cwd"),
       );
-      expect(blockOf(file)).toBe(`${join(fixture.root, "plain.txt")}\n\nsource: cwd`);
+      expect(blockOf(file)).toBe(`source: cwd\n\n${fileStat}`);
     } finally {
       fixture.dispose();
     }

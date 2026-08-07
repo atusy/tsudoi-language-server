@@ -586,12 +586,18 @@ describe("an item names the root that produced it", () => {
         const items = await fromSource(source, fragment);
         expect(items.length).toBeGreaterThan(0);
         for (const item of items) {
+          // THE PAIR, WHOLE-VALUE ON BOTH FIELDS AND NEVER A CONTAINMENT: a
+          // containment here would pass against an implementation that ALSO left
+          // the path in the block, which is the state that makes the popup's
+          // prefix relation hold vacuously -- two failures conspiring rather than
+          // two failures.
+          //
           // The absolute path as THIS TEST computes it, never as the module
           // reported it -- an oracle taken from the subject cannot disagree with
           // it.
-          expect(item.documentation).toEqual({
-            kind: "markdown",
-            value: `${join(source.root, item.insertText ?? "")}\n\n---\n\nsource: ${source.name}`,
+          expect({ detail: item.detail, documentation: item.documentation }).toEqual({
+            detail: join(source.root, item.insertText ?? ""),
+            documentation: { kind: "markdown", value: `source: ${source.name}` },
           });
           // LOAD-BEARING ORDER, not formatting: a client filters on the label
           // when the item carries no filterText, so a label that did not BEGIN
@@ -621,30 +627,20 @@ describe("an item names the root that produced it", () => {
       ): Promise<CompletionItem["documentation"]> =>
         (await complete(buffer, fixture.root, undefined, true, documentationFormat))[0]
           ?.documentation;
-      const absolutePath = join(fixture.root, "notes/deep.txt");
+      const block = "source: document";
 
-      expect(await documentationWhen(["markdown"])).toEqual({
-        kind: "markdown",
-        value: `${absolutePath}\n\n---\n\nsource: document`,
-      });
-      // The rule is GONE rather than sent as three hyphens.
-      expect(await documentationWhen(["plaintext"])).toEqual({
-        kind: "plaintext",
-        value: `${absolutePath}\n\nsource: document`,
-      });
+      expect(await documentationWhen(["markdown"])).toEqual({ kind: "markdown", value: block });
+      expect(await documentationWhen(["plaintext"])).toEqual({ kind: "plaintext", value: block });
 
       // THE ORDER IS THE CLIENT'S, and this is the arm that says so: a module
       // asking `does the list contain markdown` satisfies both lines above and
       // fails here, sending markdown to a client that put plaintext first.
       expect(await documentationWhen(["plaintext", "markdown"])).toEqual({
         kind: "plaintext",
-        value: `${absolutePath}\n\nsource: document`,
+        value: block,
       });
       // A client that declared no format at all declared no markdown support.
-      expect(await documentationWhen(undeclared)).toEqual({
-        kind: "plaintext",
-        value: `${absolutePath}\n\nsource: document`,
-      });
+      expect(await documentationWhen(undeclared)).toEqual({ kind: "plaintext", value: block });
     } finally {
       fixture.dispose();
     }

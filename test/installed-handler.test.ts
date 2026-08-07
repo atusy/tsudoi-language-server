@@ -165,10 +165,10 @@ test("an installed consumer answers a real hover, from a project holding no hand
  * reader would not invent -- the point of asking the flavour which characters
  * cut is that the two spellings must not be merged.
  *
- * A `detail` THAT NAMES A SIZE, not merely a non-empty one: the handler returns
- * the item UNCHANGED both for an item it did not produce and for a path that has
- * gone, so `an answer arrived` is satisfied by a handler that recognised
- * nothing.
+ * A STAT LINE THAT NAMES A SIZE, not merely a block that is non-empty: the
+ * handler returns the item UNCHANGED both for an item it did not produce and for
+ * a path that has gone, so `an answer arrived` is satisfied by a handler that
+ * recognised nothing.
  */
 test("an installed consumer answers a completion and then resolves one of its own items", async () => {
   const consumer = await consumerRunningTheExample();
@@ -217,8 +217,18 @@ test("an installed consumer answers a completion and then resolves one of its ow
 
       const resolved = await running.request<CompletionItem>("completionItem/resolve", file);
 
-      expect(`${String(resolved.detail)} | stderr: ${running.stderr}`).toContain("bytes");
-      expect(resolved.detail).toContain("modified ");
+      // READ OFF THE STAT LINE INSIDE THE BLOCK, AND NOT OFF `detail`: the
+      // completion half now writes the absolute path there, so `detail` is a
+      // string for an item this handler DECLINED as much as for one it enriched
+      // -- an assertion there would be satisfied by a handler that recognised
+      // nothing, which is the state the two arms below exist to tell apart.
+      const block =
+        typeof resolved.documentation === "string"
+          ? resolved.documentation
+          : (resolved.documentation?.value ?? "");
+      const stat = block.split("\n\n").find((part) => part.startsWith("file · ")) ?? "";
+      expect(`${stat} | stderr: ${running.stderr}`).toContain("bytes");
+      expect(stat).toContain("modified ");
       // The item came back, rather than being replaced by something else: an
       // answer that dropped the label would take the entry out of the user's
       // list.
