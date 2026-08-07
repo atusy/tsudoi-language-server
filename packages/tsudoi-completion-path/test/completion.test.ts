@@ -1418,10 +1418,12 @@ describe("an item shows the entry and inserts the path", () => {
    * -- so the arm below is a control and not a repetition: it must stay green
    * under the weakening that reddens this one.
    *
-   * AND THE FRAGMENT CARRIES TWO SEPARATORS, WHICH A REVIEWER HAD TO SUPPLY: a
-   * label cut at the FIRST separator is `deep.txt` here as well, so with one
-   * separator every label assertion in this file was green against a popup still
-   * repeating a directory segment the user had typed.
+   * AND THE FRAGMENT CARRIES TWO SEPARATORS, WHICH A REVIEWER HAD TO SUPPLY.
+   * Under ONE, a label cut at the first separator and one cut at the last are the
+   * SAME STRING, so every label assertion in this file was green against an
+   * implementation that leaves the popup repeating a segment the user had typed.
+   * Under two they differ -- `b/deep.txt` against `deep.txt` -- and this is where
+   * that difference reddens.
    */
   test("the label is the entry's own name, where what is inserted carries the directory typed", async () => {
     const fixture = tree(["a/b/deep.txt"]);
