@@ -159,14 +159,29 @@ function lockedTree(): Tree {
 /**
  * The listing part of a block: its header line, and the names under it.
  *
+ * FOUND BY WHAT THE HEADER SAYS AND NOT BY WHICH PART IT IS, because the block
+ * is composed of parts that are each OPTIONAL -- so a fixed index is right only
+ * for the shape the arm that wrote it happened to produce, and silently returns
+ * a neighbouring part for every other. ANCHORED AND FIRST-MATCH: an entry NAMED
+ * `3 entries` would otherwise let the names part answer as the header, and the
+ * real header is always the earlier of the two.
+ *
  * DUPLICATED IN THE MEMBER'S OWN SUITE, because a member reaching into the root's
  * helpers stops being checkable on its own. WHAT THE TWO MUST NOT DO IS DISAGREE:
  * an absent names part is NO names here, not one empty name, which is how the
- * empty-directory answer reads -- a case asserted there rather than here.
+ * empty-directory answer reads -- a case asserted there rather than here. THE
+ * INPUT THAT SEPARATES THIS READER FROM THE INDEX IT REPLACED IS STAGED THERE
+ * AND CANNOT BE STAGED HERE: it needs a FORGED source, and every item this file
+ * resolves came out of a real server.
  */
 function listingSection(block: string): { header: string; names: string[] } {
-  const [header = "", names] = block.split("\n\n").slice(2);
-  return { header, names: names === undefined ? [] : names.split("\n") };
+  const parts = block.split("\n\n");
+  const at = parts.findIndex((part) => /^\d+ (?:entry|entries)(?:, first \d+ shown)?$/u.test(part));
+  if (at === -1) {
+    return { header: "", names: [] };
+  }
+  const names = parts[at + 1];
+  return { header: parts[at] ?? "", names: names === undefined ? [] : names.split("\n") };
 }
 
 /** The demo config, started with its working directory INSIDE the fixture. */

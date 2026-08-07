@@ -481,12 +481,63 @@ function entryNames(prefix: string, count: number): string[] {
   );
 }
 
-/** The listing part of a block: its header line, and the names under it. */
+/**
+ * The listing part of a block: its header line, and the names under it.
+ *
+ * FOUND BY WHAT THE HEADER SAYS AND NOT BY WHICH PART IT IS, because the block
+ * is composed of parts that are each OPTIONAL -- so a fixed index is right only
+ * for the shape the arm that wrote it happened to produce, and silently returns
+ * a neighbouring part for every other. ANCHORED AND FIRST-MATCH: an entry NAMED
+ * `3 entries` would otherwise let the names part answer as the header, and the
+ * real header is always the earlier of the two.
+ *
+ * DUPLICATED AT THE REPOSITORY ROOT, and the two MUST NOT DISAGREE -- an absent
+ * names part is NO names here, not one empty name.
+ */
 function listingSection(block: string): { header: string; names: string[] } {
   const parts = block.split("\n\n");
-  const [header = "", names] = parts.slice(2);
-  return { header, names: names === undefined ? [] : names.split("\n") };
+  const at = parts.findIndex((part) => /^\d+ (?:entry|entries)(?:, first \d+ shown)?$/u.test(part));
+  if (at === -1) {
+    return { header: "", names: [] };
+  }
+  const names = parts[at + 1];
+  return { header: parts[at] ?? "", names: names === undefined ? [] : names.split("\n") };
 }
+
+describe("the listing is found by its own header, not by where it happens to sit", () => {
+  /**
+   * THE READER ABOVE IS WHAT THIS ARM IS ABOUT, and it is the one thing in this
+   * file whose defect every other arm is blind to: the arms that use it all
+   * supply a source the closed set accepts, so the listing lands where a fixed
+   * index expects it and a WRONG reader agrees with a right one everywhere they
+   * are exercised.
+   *
+   * THE INPUT IS NOT INVENTED FOR THE OCCASION: the composer pushes the source
+   * part only when the name is one it recognises, so a FORGED source makes the
+   * block one part shorter and everything after it moves. The arm beside this
+   * one already produces exactly that block and asserts it whole -- what it
+   * cannot do is notice that the reader misreads it.
+   *
+   * THE HEADER AND THE NAMES ARE ASSERTED TOGETHER, because a reader returning
+   * the names AS the header and no names at all satisfies either half alone.
+   */
+  test("a block whose source was forged still reads back as its header and its names", async () => {
+    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+    try {
+      const answered = await resolvePathStat(
+        contextDeclaring(["plaintext"]),
+        markedItem(join(fixture.root, "listed"), "<script>alert(1)</script>"),
+      );
+
+      expect(listingSection(blockOf(answered))).toEqual({
+        header: "2 entries",
+        names: ["one.txt", "two.txt"],
+      });
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
 
 describe("what one directory renders does not grow with what it holds", () => {
   /**
