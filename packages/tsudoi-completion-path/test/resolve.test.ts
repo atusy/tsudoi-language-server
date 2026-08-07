@@ -10,7 +10,7 @@ import {
   CompletionItemKind,
   type MarkupKind,
 } from "@atusy/tsudoi-language-server/deps/types";
-import { tree } from "./helpers/tree.ts";
+import { fixtureStamp, tree } from "./helpers/tree.ts";
 // RELATIVE, INTO src/, for the reason the completion suite beside this file
 // gives: the package publishes two names and everything else these arms reach
 // is deliberately absent from that surface.
@@ -73,6 +73,42 @@ function blockOf(item: CompletionItem): string {
   const documentation = item.documentation;
   return typeof documentation === "string" ? documentation : (documentation?.value ?? "");
 }
+
+/**
+ * THE PREMISE EVERY WHOLE-VALUE ASSERTION IN THIS FILE WILL REST ON once a
+ * modification time is rendered anywhere the arms compare whole: that the
+ * fixture's stamps come from a constant and not from the clock.
+ *
+ * IT IS ITS OWN ARM BECAUSE THE WAY IT BREAKS IS SILENT. A stamp set as each
+ * entry is created is correct for every FILE and wrong for every DIRECTORY --
+ * writing a sibling bumps the parent -- so a suite that read only a file's stat
+ * would go on passing while every directory in it carried the wall clock.
+ */
+describe("the fixture's stamps come from a constant, not from the clock", () => {
+  test("a directory built twice carries the same fixed stamp both times", () => {
+    // TWO CHILDREN AND NOT ONE, WHICH IS WHAT MAKES THE ARM DISCRIMINATING AT
+    // ALL: with a single child, an implementation stamping each entry as it is
+    // created leaves the directory correct too, and this arm passes against the
+    // very thing it exists to refuse. It takes a SIBLING to bump a parent that
+    // was already stamped.
+    const first = tree(["listed/one.txt", "listed/two.txt"]);
+    const second = tree(["listed/one.txt", "listed/two.txt"]);
+    try {
+      // THE DIRECTORY IS THE DISCRIMINATING ONE and the file beside it is the
+      // pair: with the stamping done at creation the file below still passes.
+      const directory = statSync(join(first.root, "listed")).mtime;
+      expect(directory).toEqual(fixtureStamp);
+      expect(statSync(join(first.root, "listed", "one.txt")).mtime).toEqual(fixtureStamp);
+      // AND EQUAL TO THE SECOND BUILD'S, which is what `not the clock` means:
+      // equality to the constant alone would also hold of a fixture built at
+      // exactly that instant.
+      expect(statSync(join(second.root, "listed")).mtime).toEqual(directory);
+    } finally {
+      first.dispose();
+      second.dispose();
+    }
+  });
+});
 
 describe("the block is rebuilt out of what the handler read", () => {
   /**
