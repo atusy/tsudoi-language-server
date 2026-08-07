@@ -48,16 +48,23 @@ sentence would contradict. Classifying an entry is cheaper but not free: an ordi
 directory is told apart from the directory listing alone, and a **symlink** costs one `stat`, to
 report the kind of what it points at.
 
-**Which field carries what**, because the two are read at different moments and by different
-parts of an editor. `detail` carries the **absolute path** the item completes to, on one line —
-a name holding a line break or a control character is rendered, not reproduced — and it is there
-the moment the list appears, in the field a client can show inline beside the label without
-opening anything. The documentation block carries **which root** offered the item, which no
-reading of the path recovers: one file is reachable from your document's directory, the process's
-own, a workspace folder and an absolute fragment at once. Every fact in that block is
-**labelled** — `source:`, `size:`, `lastModified:` — so you find the one you want by its name
-rather than by counting fields in a sentence. One caveat you may hit before we do: inline is
-where clients **truncate**, and a path's discriminating part is its tail.
+**Which field carries what**, because they are read at different moments and by different
+parts of an editor. The **label** is the entry's own name — `deep.txt`, never `notes/deep.txt`,
+so a listing does not spend its width repeating the directory you have already typed — while
+`filterText` carries what the item **inserts**, directory part and all. That pairing is not
+decoration: the item's edit range starts where the fragment does, and a client filters against
+the text that range covers, so an item filtering on the bare name would be dropped by the
+separator you just typed. Neither field is sanitised, and both have to stay that way: one is
+written into your buffer, and a client that matches the two against each other drops an item
+whose inserted text does not contain its label. `detail` carries the **absolute path** the item
+completes to, on one line — a name holding a line break or a control character is rendered, not
+reproduced — and it is there the moment the list appears, in the field a client can show inline
+beside the label without opening anything. The documentation block carries **which root** offered
+the item, which no reading of the path recovers: one file is reachable from your document's
+directory, the process's own, a workspace folder and an absolute fragment at once. Every fact in
+that block is **labelled** — `source:`, `size:`, `lastModified:` — so you find the one you want
+by its name rather than by counting fields in a sentence. One caveat you may hit before we do:
+inline is where clients **truncate**, and a path's discriminating part is its tail.
 
 **What resolving one item costs**, since it is no longer a single `stat`: a directory is also
 listed, in full, and the count you are shown is the whole of it. What resolve **changes** is the

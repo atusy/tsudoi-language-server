@@ -883,9 +883,12 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * order.
    *
    * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
-   * markdown syntax inside a name still renders as syntax, and `label` and
-   * `insertText` still carry the name RAW -- they have to, one being what is
-   * written into the buffer and the other what a client filters on.
+   * markdown syntax inside a name still renders as syntax, and `label`,
+   * `filterText` and `insertText` still carry the name RAW. The last two have to
+   * -- one is written into the buffer and the other is matched against what the
+   * user typed. THE LABEL'S REASON IS NO LONGER FILTERING, WHICH `filterText`
+   * TOOK OVER: it is the arm below, and it belongs to the client rather than to
+   * this package.
    */
   test("an entry whose own name would forge an attribution line names it as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";
