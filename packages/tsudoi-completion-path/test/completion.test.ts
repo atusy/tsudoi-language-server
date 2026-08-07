@@ -1020,8 +1020,9 @@ describe("an item records the source it was produced under", () => {
             source: source.name,
           });
           // THE TWO FIELDS THE LABEL SPLIT INTO, READ HERE BECAUSE THIS IS THE
-          // ONLY SWEEP THAT REACHES ALL FOUR SOURCE CLASSES: the arm that used
-          // to carry them drives a relative fragment with no folders, so it
+          // ONLY ALL-FOUR-SOURCE SWEEP THAT READS THEM -- the strict-prefix arm
+          // reaches the same four and reads the block. The arm that used to
+          // carry this pair drives a relative fragment with no folders, so it
           // offers `document` and `cwd` and nothing else.
           expect(item.filterText).toBe(item.insertText);
           expect(item.insertText).toBe(`${fragment.directory}${item.label}`);
