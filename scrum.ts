@@ -359,7 +359,7 @@ const scrum: ScrumDashboard = {
     number: 82,
     pbi_id: "PBI-82",
     goal: "The free fact goes to the eagerly-rendered field and the expensive one to the lazy field: `detail` names WHICH FILE from the completion list itself, `documentation` is the only property a late answer touches, and the block only ever GAINS -- with the two claims this change turns SILENTLY GREEN re-sited before any run can be read as passing.",
-    status: "planning",
+    status: "in_progress",
     subtasks: [
       {
         test: "GREEN BEFORE AND AFTER, WITH NO EXPECTED STRING TOUCHED -- the bound arms in both suites (`a directory holding far more entries than fit renders a bounded prefix and states its total`, and the member's edge, dotfile and two-directory arms) are the check that the new lookup finds the section `slice(2)` found. AND THE ANCHOR IS A FAILING INPUT THAT EXISTS TODAY RATHER THAN A PREDICTION ABOUT THE CHANGE: `documentationFor` pushes the source part ONLY WHEN DEFINED, so the block a FORGED source produces is `path, header, names` and `slice(2)` returns the NAMES as the header and no names at all. An arm handing today's helper that block must redden before the re-derivation and pass after -- which the part index cannot satisfy and a lookup can.",
