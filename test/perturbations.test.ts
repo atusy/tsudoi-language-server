@@ -958,6 +958,54 @@ const records: readonly PerturbationRecord[] = [
     },
     alsoReddens: [],
   },
+  {
+    // THE FIELD PUT BACK THE WAY THE STAKEHOLDER FOUND IT: the label carrying
+    // what the item INSERTS, so every row of a listing wears the directory that
+    // is already on the line.
+    //
+    // THE CONTROL IS THE ARM THIS RECORD DOES NOT NAME. The single-segment arm
+    // beside it -- where the entry name and the inserted text are the same
+    // string -- stays GREEN under this weakening, and that is what says the red
+    // is about the DIRECTORY PART rather than about the field being written at
+    // all.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "the label is the entry's own name, where what is inserted carries the directory typed",
+    },
+    weakening: {
+      file: composer,
+      from: "        label: entry.name,",
+      to: "        label: insertText,",
+    },
+    redAt: 'expect(items.map((item) => item.label)).toEqual(["deep.txt"]);',
+    // MEASURED: the containment arm reddens with it, and at its WHOLE-VALUE
+    // assertion rather than at the relation -- a label carrying the inserted
+    // text is still contained in it, so the relation survives what the value
+    // does not.
+    alsoReddens: ["what an item inserts contains the label it shows, raw on both sides"],
+  },
+  {
+    // THE EDIT THE COMMIT ABOVE MAKES LOOK FREE, WHICH IS THE ONLY REASON THIS
+    // RECORD EXISTS: with `filterText` doing the filtering, nothing in this
+    // package stops the label being flattened like the `detail` beside it. What
+    // stops it is the client -- an item whose inserted word does not contain its
+    // label is dropped, under an option that defaults off -- and an arm asserting
+    // a relation nothing weakens is a green about nobody's edit.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "what an item inserts contains the label it shows, raw on both sides",
+    },
+    weakening: {
+      file: composer,
+      from: "        label: entry.name,",
+      to: "        label: flattened(entry.name),",
+    },
+    redAt: 'expect(item.insertText ?? "").toContain(item.label);',
+    // MEASURED, AND THE EMPTINESS IS THE READING RATHER THAN AN OMISSION: a
+    // flattening is a no-op on every other fixture in that file, every one of
+    // which is an ordinary name.
+    alsoReddens: [],
+  },
 ];
 
 /**
