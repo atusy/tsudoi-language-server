@@ -335,9 +335,14 @@ export async function* itemsFrom(
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
         label: insertText,
-        // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW: two
-        // same-named candidates offered by different roots are otherwise told
-        // apart only in the documentation popup, which is optional.
+        // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW. NOT
+        // `two same-named candidates from different roots are told apart`, WHICH
+        // STOOD HERE AND NAMES A STATE THIS FUNCTION'S OWN CALLER FORECLOSES: the
+        // `seen` filter keys on the inserted text, which is identical across
+        // roots for one entry name, so the second root's item never reaches a
+        // client. What the block says is the CLASS of root -- two workspace
+        // folders both spell `source: workspace` -- and only this field says
+        // which file the surviving candidate resolves to.
         //
         // FLATTENED AT THE WRITE, AND NOT BY ROUTING THE PATH BACK THROUGH THE
         // COMPOSER, which no longer takes it: the composer owned the flattening
@@ -347,9 +352,12 @@ export async function* itemsFrom(
         documentation: documentationFor(source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
-        // NO STAT IS TAKEN HERE, WHICH IS THE REFUSAL AND NOT `no detail`: a size
-        // and a date per entry is one syscall per entry on every keystroke,
-        // refused on no figure. The MARK carries the path so that work can be
+        // NO SIZE AND NO DATE IS READ HERE, WHICH IS THE REFUSAL -- AND NOT `no
+        // stat`, WHICH STOOD HERE AND IS FALSE AT THIS VERY SITE: the line above
+        // stats every entry a listing reports as neither file nor directory, so a
+        // directory of symlinks costs one syscall per entry already. What is
+        // refused is a syscall per entry FOR A SIZE AND A DATE, on every
+        // keystroke, on no figure. The MARK carries the path so that work can be
         // done for the ONE item the user highlights.
         data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
@@ -502,8 +510,8 @@ function isUnopenable(error: unknown): boolean {
  * neither, and a symlink to a directory should complete as one.
  *
  * TAKES THE PATH THE CALLER ALREADY BUILT rather than rebuilding it from a
- * directory and the entry: the item's `data` and its documentation name that
- * same path, and a second join here is a second chance for the three to differ.
+ * directory and the entry: the item's `data` and its `detail` name that same
+ * path, and a second join here is a second chance for the three to differ.
  */
 async function entryKind(absolutePath: string, entry: Dirent): Promise<CompletionItemKind> {
   if (entry.isDirectory()) {

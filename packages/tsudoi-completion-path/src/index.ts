@@ -16,9 +16,11 @@
  *
  * TWO HANDLERS AND NOT ONE, AND THE PACKAGE NAME CANNOT SAY SO, which is why it
  * is said here and in the README. `pathCompletion` offers a directory's entries
- * and reads the DETAIL of none of them -- an ordinary file or directory is
- * classified from the listing alone, and only a symlink costs a stat, to report
- * the kind of what it points at; `resolvePathStat` answers for the ONE item the
+ * and reads NO SIZE AND NO DATE for any of them -- the word `detail` stood here
+ * and now names a FIELD this handler writes on every item, so the refusal has to
+ * be spelled by what is not read. An ordinary file or directory is classified
+ * from the listing alone, and only a symlink costs a stat, to report the kind of
+ * what it points at; `resolvePathStat` answers for the ONE item the
  * user highlights -- a file's size and date, and for a directory the names
  * inside it, which is a question the completion never asked at
  * all. They travel together because the

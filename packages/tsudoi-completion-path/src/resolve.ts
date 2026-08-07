@@ -1,8 +1,10 @@
 /**
- * Filesystem detail for a config author's own `completionItem/resolve` handler,
- * paired with the completion half beside it: work too expensive to do for every
- * item on every keystroke -- a stat, and for a directory one listing -- is done
- * for the one item the user highlights.
+ * What a `stat` finds, for a config author's own `completionItem/resolve`
+ * handler, paired with the completion half beside it: work too expensive to do
+ * for every item on every keystroke -- a stat, and for a directory one listing
+ * -- is done for the one item the user highlights. NOT `filesystem detail`,
+ * which headed this module until the field of that name stopped being the one it
+ * writes.
  *
  * The path comes off the item's `data`, which arrives from the client and can
  * be forged. That is why this handler stats and lists and nothing more: it will
@@ -22,12 +24,15 @@ import {
 } from "./completion.ts";
 
 /**
- * A `completionItem/resolve` handler that adds what a `stat` found to a path
- * item's block.
+ * A `completionItem/resolve` handler that adds what a `stat` found -- and, for a
+ * directory, what one listing found -- to a path item's block.
  *
- * `documentation` AND NOTHING ELSE, WHICH IS THE ONE PROPERTY A CLIENT IS ASKED
- * TO HONOUR LATE: what a client accepts from a resolve answer is its own
- * declaration to make, so every fact this handler adds arrives in one field.
+ * `documentation` AND NOTHING ELSE, WHICH IS THE ONE PROPERTY THIS HANDLER ASKS
+ * A CLIENT TO HONOUR LATE: what a client accepts from a resolve answer is its own
+ * declaration to make, so every fact this handler adds arrives in one field. THE
+ * SUBJECT IS THIS HANDLER AND NOT THE PROTOCOL, which the sentence read as until
+ * a reviewer took it that way -- the specification's own default resolvable set
+ * is `documentation` AND `detail`, and narrowing to one is this package's choice.
  */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
   const path = completedPath(item);
