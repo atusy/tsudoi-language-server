@@ -56,6 +56,20 @@ export interface PerturbationRecord {
   readonly weakening: Weakening;
   /** Arms other than `arm.name`, in the SAME file, measured to redden with it. */
   readonly alsoReddens: readonly string[];
+  /**
+   * A fragment of the ASSERTION the red was measured falling at, or absent when
+   * the record says nothing about where in its arm the red lands.
+   *
+   * A FRAGMENT OF THE SOURCE LINE AND NEVER A LINE NUMBER: this repository has
+   * measured line numbers going stale inside the sprint that wrote them, and a
+   * record pinned to one would report a moved assertion as a moved subject.
+   *
+   * WHAT IT BUYS, WHICH `alsoReddens` DOES NOT: in a file whose arms compare a
+   * block WHOLE, one weakening reddens most of the file, and a record that named
+   * only WHICH arms went red cannot tell an arm reddening at its own subject
+   * from the same arm reddening at a premise three assertions earlier.
+   */
+  readonly redAt?: string;
 }
 
 /** A `<testcase>`'s own result, which is what a record's required red is about. */
@@ -67,6 +81,19 @@ export interface ArmFileRun {
   readonly exit: number | null;
   /** Every arm the run reported, by name; `null` when no report was written. */
   readonly arms: ReadonlyMap<string, ArmResult> | null;
+  /**
+   * bun's own failure text for each arm that reddened, keyed as `arms` keys it.
+   *
+   * OPTIONAL RATHER THAN REQUIRED, so that a hand-built run -- the arms that
+   * drive `reRun` past its refusals pass `{ exit, arms }` literals -- does not
+   * have to carry a field it has nothing to say about.
+   *
+   * READ OFF THE CONSOLE AND NOT OFF THE REPORT, which is not a preference:
+   * MEASURED at bun 1.3.13, a `<testcase>` bun failed carries `<failure
+   * type="AssertionError" />` and NO message, so the report can say THAT an arm
+   * reddened and never where.
+   */
+  readonly failures?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -78,6 +105,31 @@ export interface ArmFileRun {
  * already red before the weakening, or reds nobody recorded stand beside it.
  */
 export type Verdict = "held" | "gone quiet" | "disarmed" | "refused";
+
+/**
+ * WHERE bun SAYS THE RED FELL, as the source line its caret sits under.
+ *
+ * THE CARET AND NOT THE FRAME AROUND IT, which is the difference a `redAt`
+ * depends on: bun prints the two lines before the failing one and the one after,
+ * so a fragment matched against the whole block is satisfied by an assertion a
+ * line away from the one that failed. The first record this was declared on has
+ * FOUR CONSECUTIVE assertion lines, two of them about a directory and two about
+ * a file, so a frame reading would certify the file half on a red at the
+ * directory half.
+ *
+ * A BLOCK WITH NO CARET ANSWERS WITH THE WHOLE OF ITSELF rather than with
+ * nothing: a red that is not an assertion -- a throw, a timeout -- still carries
+ * text a record can name, and answering "" would refuse every record over one.
+ */
+function siteOf(failure: string): string {
+  const lines = failure.split("\n");
+  const caret = lines.findIndex((line) => /^ *\^ *$/u.test(line));
+  if (caret < 1) {
+    return failure;
+  }
+  const framed = /^\s*\d+ \| (.*)$/u.exec(lines[caret - 1] ?? "");
+  return framed?.[1]?.trim() ?? failure;
+}
 
 /** What one record read, in enough detail for an arm to assert the discrimination. */
 export interface Reading {
@@ -91,6 +143,8 @@ export interface Reading {
   readonly exit: number | null;
   /** Every arm that failed under the weakening, the named one included, in report order. */
   readonly reddened: readonly string[];
+  /** Where the NAMED arm's red fell, as `siteOf` reads it; "" when it did not redden. */
+  readonly redFellAt: string;
   /** Why, when the verdict is not `held`. Empty otherwise. */
   readonly detail: string;
 }
@@ -123,6 +177,42 @@ function readReport(xml: string): Map<string, ArmResult> {
   return arms;
 }
 
+/**
+ * bun's console output split into one failure block per arm that reddened.
+ *
+ * THE ARM IS THE REPORTED NAME THE CONSOLE LABEL ENDS WITH, and the two spelling
+ * differently is the reason this is a lookup rather than a key: MEASURED, an arm
+ * inside a `describe` is `outer group > its own name` on the console and its own
+ * name alone in the report, and the duration suffix is printed for some arms and
+ * omitted for others. Matching the report's own names keeps the two readers from
+ * disagreeing about which arm a block belongs to.
+ *
+ * A LABEL MATCHING NOTHING IS DROPPED RATHER THAN THROWN OVER: the console is
+ * not this module's contract, and an unattributable block costs a record its
+ * `redAt` reading -- which is a REFUSED -- where a throw would cost every record
+ * over that file its verdict.
+ */
+function readFailures(stderr: string, failed: readonly string[]): Map<string, string> {
+  const texts = new Map<string, string>();
+  let block: string[] = [];
+  for (const line of stderr.split("\n")) {
+    const marked = /^\(fail\) (.*?)(?: \[[\d.]+\s*[a-z]+\])?$/u.exec(line);
+    if (marked === null) {
+      block.push(line);
+      continue;
+    }
+    const label = marked[1] ?? "";
+    const arm = failed
+      .filter((name) => label === name || label.endsWith(` > ${name}`))
+      .sort((left, right) => right.length - left.length)[0];
+    if (arm !== undefined) {
+      texts.set(arm, block.join("\n"));
+    }
+    block = [];
+  }
+  return texts;
+}
+
 /** The five entities an XML attribute value may carry, and no other rewriting. */
 function unescapeXml(text: string): string {
   return text
@@ -138,14 +228,29 @@ export function runArmFile(stage: ThrowawayPath, file: string): Promise<ArmFileR
   const report = throwawayTarget(stage, "perturbation-report.xml");
   rmSync(report, { force: true });
   return new Promise((settle) => {
+    // STDERR IS PIPED AND STDOUT IS NOT, because the failure text a record's
+    // `redAt` is read from is written there and the report carries none of it.
+    // `close` rather than `exit`, so the pipe is drained before it is parsed.
     const child = spawn("bun", ["test", file, "--reporter=junit", `--reporter-outfile=${report}`], {
       cwd: stage,
-      stdio: ["ignore", "ignore", "ignore"],
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+    let stderr = "";
+    child.stderr?.setEncoding("utf8");
+    child.stderr?.on("data", (chunk: string) => {
+      stderr += chunk;
     });
     child.on("close", (exit) => {
+      const arms = existsSync(report) ? readReport(readFileSync(report, "utf8")) : null;
       settle({
         exit,
-        arms: existsSync(report) ? readReport(readFileSync(report, "utf8")) : null,
+        arms,
+        failures: readFailures(
+          stderr,
+          [...(arms ?? new Map())]
+            .filter(([, result]) => result === "failed")
+            .map(([name]) => name),
+        ),
       });
     });
   });
@@ -272,7 +377,14 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
   const armBefore = before.arms?.get(record.arm.name) ?? null;
   const armAfter = after.arms?.get(record.arm.name) ?? null;
   const reddened = reddenedIn(after);
-  const base = { record, before: armBefore, after: armAfter, exit: after.exit, reddened };
+  const base = {
+    record,
+    before: armBefore,
+    after: armAfter,
+    exit: after.exit,
+    reddened,
+    redFellAt: siteOf(after.failures?.get(record.arm.name) ?? ""),
+  };
   if (before.arms === null || after.arms === null) {
     return {
       ...base,
@@ -308,6 +420,17 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
       ...base,
       verdict: "disarmed",
       detail: `the weakening reddens ${observed.join(", ")} where this record measured ${required.join(", ")}, so the red beside the named arm belongs to something else`,
+    };
+  }
+  // REFUSED AND NOT DISARMED, and the two are told apart by what the reader is
+  // being asked to do: an arm reddening at an assertion the record did not name
+  // is a record that describes its own arm wrongly, which is repaired HERE --
+  // where DISARMED sends a reader to the tree.
+  if (record.redAt !== undefined && !base.redFellAt.includes(record.redAt)) {
+    return {
+      ...base,
+      verdict: "refused",
+      detail: `${record.arm.name} reddened at \`${base.redFellAt}\` where this record names \`${record.redAt}\`, so the red it reports is not the one it measured`,
     };
   }
   return { ...base, verdict: "held", detail: "" };

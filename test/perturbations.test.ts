@@ -54,15 +54,26 @@ const probeArms = {
   beta: "beta requires the limit to be at least 1",
   broken: "broken is red before anything is weakened",
   entities: `entities <requires> the "limit" & it's exactly 2`,
+  pair: "pair requires the limit to be exactly 2, and then its successor to be 3",
 } as const;
 
 type ProbeTag = keyof typeof probeArms;
 
-const probeBodies: Record<ProbeTag, string> = {
-  alpha: "expect(limit).toBe(2);",
-  beta: "expect(limit >= 1).toBe(true);",
-  broken: "expect(limit).toBe(99);",
-  entities: "expect(limit).toBe(2);",
+/**
+ * ONE STATEMENT PER LINE, which is what makes a `redAt` reading possible at all:
+ * bun's caret names a SOURCE LINE, so two assertions sharing one line are one
+ * site and `pair` below would measure nothing.
+ */
+const probeBodies: Record<ProbeTag, readonly string[]> = {
+  alpha: ["expect(limit).toBe(2);"],
+  beta: ["expect(limit >= 1).toBe(true);"],
+  broken: ["expect(limit).toBe(99);"],
+  entities: ["expect(limit).toBe(2);"],
+  // TWO ASSERTIONS, ADJACENT, AND THE ADJACENCY IS THE POINT: bun's code frame
+  // prints the neighbouring lines, so a reader matching a record's `redAt`
+  // against the whole block holds a record naming EITHER of these against a red
+  // at the first -- which is the shape the registry's own records are in.
+  pair: ["expect(limit).toBe(2);", "expect(limit + 1).toBe(3);"],
 };
 
 /** The file a weakening edits in the probe, and the arm file that reads it. */
@@ -85,9 +96,11 @@ function stageProbe(tags: readonly ProbeTag[]): ThrowawayPath {
     [
       'import { expect, test } from "bun:test";',
       'import { limit } from "./target.ts";',
-      ...tags.map(
-        (tag) => `test(${JSON.stringify(probeArms[tag])}, () => { ${probeBodies[tag]} });`,
-      ),
+      ...tags.flatMap((tag) => [
+        `test(${JSON.stringify(probeArms[tag])}, () => {`,
+        ...probeBodies[tag].map((statement) => `  ${statement}`),
+        "});",
+      ]),
       "",
     ].join("\n"),
   );
@@ -206,6 +219,34 @@ test("a recorded collateral name that STOPPED reddening is disarmed, never held"
   expect(stale.verdict).toBe("disarmed");
   expect(stale.detail).toContain(probeArms.beta);
   expect(read(recordOver("alpha", weakenToOne), before, after).verdict).toBe("held");
+});
+
+test("a red that fell at another assertion of the named arm is refused, never held", async () => {
+  const root = stageProbe(["pair", "beta"]);
+  const { before, after } = await bothRuns(root, weakenToOne);
+  const elsewhere = read(
+    { ...recordOver("pair", weakenToOne), redAt: "expect(limit + 1).toBe(3);" },
+    before,
+    after,
+  );
+  // THE ARM THE RECORD NAMES REALLY IS RED, WHICH IS THE HALF THAT MAKES THIS A
+  // DISCRIMINATION RATHER THAN A REFUSAL OF EVERYTHING: without it, `refused` is
+  // what a reader that had lost the failure text altogether would answer.
+  expect(elsewhere.after).toBe("failed");
+  expect(elsewhere.redFellAt).toBe("expect(limit).toBe(2);");
+  expect(elsewhere.verdict).toBe("refused");
+  expect(elsewhere.detail).toContain("expect(limit + 1).toBe(3);");
+  // AND THE PAIR, OVER THE SAME TWO RUNS: the record naming the line the red
+  // really fell at is HELD. Without it a reader matching the FRAME rather than
+  // the caret is indistinguishable here, the two assertions being adjacent
+  // lines that bun prints together.
+  expect(
+    read({ ...recordOver("pair", weakenToOne), redAt: "expect(limit).toBe(2);" }, before, after)
+      .verdict,
+  ).toBe("held");
+  // AND A RECORD DECLARING NO `redAt` IS UNAFFECTED, which is what says the gate
+  // is a claim a record makes rather than one the instrument imposes.
+  expect(read(recordOver("pair", weakenToOne), before, after).verdict).toBe("held");
 });
 
 test("a weakening that stops the file being READ is refused, never read as the arm reddening", async () => {
@@ -606,6 +647,11 @@ const records: readonly PerturbationRecord[] = [
       from: "    ? `directory · ${modified}`",
       to: "    ? `directory · ${String(stats.size)} bytes · ${modified}`",
     },
+    // WHERE THE RED IS REQUIRED TO FALL, AND THIS RECORD IS THE ONE THAT MAKES
+    // THE FIELD WORTH HAVING: eight collateral arms redden with it, so `the
+    // named arm went red` was already true of a weakening that never reached the
+    // directory at all. The DIRECTORY value, not the file one two lines below.
+    redAt: "expect(directory).toBe(directoryStat);",
     alsoReddens: [
       "the markup a block is built in follows the session, not the item",
       "a name that would forge an attribution line renders as one that cannot",
@@ -638,6 +684,13 @@ const records: readonly PerturbationRecord[] = [
       from: "  for (const folder of folders) {",
       to: "  for (const folder of folders.slice(0, 1)) {",
     },
+    // THE PREMISE AND NOT THE DISCRIMINATOR, WHICH IS THIS RECORD'S OWN
+    // CONFESSION TURNED INTO SOMETHING THE INSTRUMENT GRADES. The comment above
+    // has said in prose since sprint 82 that the red lands at the four source
+    // names; declared at the `detail` assertion instead, this record reads
+    // REFUSED naming this very line -- MEASURED before it was written here, and
+    // that reading is what the field was added for.
+    redAt: "expect(sources.map((source) => source.name)).toEqual([",
     alsoReddens: [],
   },
   {

@@ -80,6 +80,7 @@ const accounted: ReadonlyArray<readonly [path: string, runtime: string, version:
   ["test/helpers/deadline.ts", "bun", "1.3.13"],
   ["test/helpers/deadline.ts", "bun", "1.3.13"],
   ["test/helpers/lsp.ts", "bun", "1.3.13"],
+  ["test/helpers/perturbation.ts", "bun", "1.3.13"],
   ["test/helpers/spawn.ts", "bun", "1.3.13"],
   ["test/installed-runtime.test.ts", "deno", "2.8.3"],
   ["test/readme-coverage.test.ts", "bun", "1.3.13"],
