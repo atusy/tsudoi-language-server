@@ -407,9 +407,20 @@ const scrum: ScrumDashboard = {
         implementation:
           "`detailFor` in packages/tsudoi-completion-path/src/resolve.ts moves beside `documentationFor` in src/completion.ts and loses the field name it is about to stop describing; resolve.ts imports it as it already imports the composer. src/index.ts's enumeration of the block the two handlers share gains the name, and so does the docblock in test/published-artifacts.test.ts naming `documentationFor` and `preferredFormat` as that surface. THE WHOLE-VALUE PUBLISHED ASSERTION STAYS GREEN PRECISELY BECAUSE THE NAME IS NOT RE-EXPORTED FROM index.ts -- publishing it would make how the two halves agree a compatibility question with a stranger, which is why the shared names are internal.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "cb6ac75",
+            message:
+              "refactor(completion-path): the stat line moves to the module that owns the block",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "GREEN THROUGHOUT AND NOT ONE EXPECTED STRING TOUCHED, which is the whole of the evidence that it was structural. MEASURED, full Definition of Done at 142bbe5 with the move landed: PASSED, all five checks exit 0, 947 pass / 0 fail over 70 files, 2888 expect() calls, 162.37s -- byte-identical counts to the reading taken before the move -- and ONE non-gating warning, `eslint(require-yield)` at test/fixtures/throws-on-cancel.ts. The arms the subtask named as the proof are among the greens: the two cancellation arms, the directory-replaced-by-a-file arm and the two kind-driven arms all still split the same bytes off the same field.",
+          "`Stats` STAYED IN resolve.ts RATHER THAN LEAVING WITH THE FUNCTION, and it is not a leftover: the handler declares the variable the `stat` lands in. What moved to completion.ts is the type as an IMPORT, beside `Dirent` which was already there.",
+          "THE MEASURED COUNTS IN resolve.ts NAMED `detailFor` AND WERE RE-POINTED RATHER THAN LEFT DANGLING, which subtask 9 then deletes outright: they are readings taken over arms this sprint rewrites, and a count taken against arms that no longer exist cannot be re-taken. Re-pointed here so no commit ships a comment naming a symbol the tree does not have.",
+        ],
       },
       {
         test: "THE REDS, NAMED BEFORE THE SOURCE EDIT SO THE ONE BIG GREEN COMMIT IS READABLE AFTERWARDS -- THE PRODUCT OWNER'S CONDITION FOR ACCEPTING IT UNSPLIT -- AND EVERY ONE OF THEM RED FOR THE COMPOSITION RATHER THAN FOR AN INDEX, WHICH IS WHAT SUBTASK 1 BOUGHT. `each item names the file it resolves to and the source that produced it` widens from `documentation` to THE PAIR, WHOLE-VALUE ON BOTH: a containment there lets an implementation that ALSO left the path in the block pass this and make the prefix criterion hold vacuously, which is two failures conspiring. The pre-resolve reads in test/resolve-path-stat.test.ts that today assert `detail` is ABSENT invert to assert the path is already there. The file arm and the directory arm are recast as `toEqual({ ...item, documentation })`, the shape ANY `detail` written at resolve reddens. `a directory item's block carries what is inside it, while a file item's block is unmoved` is renamed on the inversion -- the file's block now moves too -- and carries the PREFIX relation over the two values one session already holds, which also retires the passthrough weakness its own docblock admits. `a directory item comes back saying it is a directory, and carrying no size` is re-sited onto the stat line inside `documentation`: left where it is, `not.toContain(\"bytes\")` over an absolute path is TRUE ON EVERY MACHINE. The installed-consumer arm's two `detail` reads move to the stat line and NOT to `detail is non-empty`, which a DECLINED item now satisfies. `every workspace folder is answered from, and its items name their root` moves its discriminator onto `detail`, or the two folders' items become the identical string and the arm degenerates to `two items exist` while staying green -- and `insertText` does not save it, both folders spelling the same relative text. The kind-driven pair stays two arms, loses its recorded reason -- the two defects no longer land in DIFFERENT FIELDS -- and gains the one that survives.",
