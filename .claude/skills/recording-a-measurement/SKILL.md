@@ -215,6 +215,24 @@ still prefix-matches, and the fix for a prefix matcher is a BOUNDARY. The
 executor followed the remedy and the property went unmet, with the record then
 claiming it met.
 
+**WHEN A CRITERION'S PROPERTY AND ITS VERIFICATION DISAGREE, THEY ARE ABOUT TWO
+DIFFERENT EDITS — FIND WHICH TWO, AND REPAIR THE INSTRUMENT, NEVER THE PRODUCT.**
+_(sprint 83)_ The disagreement is real information and the temptation is to
+resolve it by shipping whichever half is cheaper to measure. MEASURED: a
+criterion asked that a rendered time carry no fractional part AND that removing
+the truncation redden its own arm AND NO OTHER. Those are `2001-02-03T04:05:06Z`
+and `...06.000Z` — cutting the STRING moves every rendered byte in two suites,
+FLOORING THE VALUE is byte-identical on a whole second. The floor shipped,
+because it made the perturbation cheap; the stakeholder had been shown both
+renderings and had DECLINED the one keeping milliseconds, so what shipped was the
+declined option wearing a constant. **THE DIRECTION IS THE WHOLE RULE, and it is
+what makes the later amendment honest rather than a criterion met by argument: a
+criterion amended so a failing increment passes is argument; one amended AFTER
+the increment was rebuilt to the stricter reading is a repaired instrument. Same
+edit, opposite orders.** And say what the amendment costs — striking a clause
+about what else may redden moves that criterion's whole discriminating power onto
+whatever names where the red landed.
+
 **A factual premise inside a criterion is measured BEFORE the criterion binds, by
 whoever has the shell; a count inside one is marked UNMEASURED by its author.**
 _(sprints 41, 43)_ MEASURED: a control was written as "the two NOT COMPLETE
