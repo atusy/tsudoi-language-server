@@ -107,28 +107,40 @@ export interface ArmFileRun {
 export type Verdict = "held" | "gone quiet" | "disarmed" | "refused";
 
 /**
- * WHERE bun SAYS THE RED FELL, as the source line its caret sits under.
+ * WHERE bun SAYS THE RED FELL: the source line its caret sits under, and the
+ * matcher's own report of what it expected and got.
  *
- * THE CARET AND NOT THE FRAME AROUND IT, which is the difference a `redAt`
- * depends on: bun prints the two lines before the failing one and the one after,
- * so a fragment matched against the whole block is satisfied by an assertion a
- * line away from the one that failed. The first record this was declared on has
- * FOUR CONSECUTIVE assertion lines, two of them about a directory and two about
- * a file, so a frame reading would certify the file half on a red at the
- * directory half.
+ * THE CARET AND NOT THE FRAME AROUND IT, which is one of the two differences a
+ * `redAt` depends on: bun prints the two lines before the failing one and the
+ * one after, so a fragment matched against the whole block is satisfied by an
+ * assertion a line away from the one that failed. The first record this was
+ * declared on has FOUR CONSECUTIVE assertion lines, two of them about a
+ * directory and two about a file, so a frame reading would certify the file half
+ * on a red at the directory half.
  *
- * A BLOCK WITH NO CARET ANSWERS WITH THE WHOLE OF ITSELF rather than with
- * nothing: a red that is not an assertion -- a throw, a timeout -- still carries
- * text a record can name, and answering "" would refuse every record over one.
+ * AND THE VALUES ARE KEPT, WHICH IS THE OTHER: an arm that SWEEPS -- the prefix
+ * relation runs over two formats and four source names -- spends one source line
+ * on every cell, so a line alone cannot say which cell reddened. What separates
+ * them is the value, and only for an arm that put the cell INTO the value it
+ * asserts, which is why the two go together and neither is enough.
+ *
+ * THE STACK TRACE IS CUT OFF, so that no record can be written against the
+ * `file.ts:4:21` at the end of it -- the line number this field exists to avoid.
+ *
+ * A BLOCK WITH NO CARET ANSWERS WITH WHAT IS LEFT rather than with nothing: a
+ * red that is not an assertion -- a throw, a timeout -- still carries text a
+ * record can name, and answering "" would refuse every record over one.
  */
 function siteOf(failure: string): string {
   const lines = failure.split("\n");
   const caret = lines.findIndex((line) => /^ *\^ *$/u.test(line));
+  const trace = lines.findIndex((line) => /^\s+at /u.test(line));
+  const end = trace === -1 ? lines.length : trace;
   if (caret < 1) {
-    return failure;
+    return lines.slice(0, end).join("\n").trim();
   }
   const framed = /^\s*\d+ \| (.*)$/u.exec(lines[caret - 1] ?? "");
-  return framed?.[1]?.trim() ?? failure;
+  return [framed?.[1]?.trim() ?? "", ...lines.slice(caret + 1, end)].join("\n").trim();
 }
 
 /** What one record read, in enough detail for an arm to assert the discrimination. */
@@ -437,7 +449,12 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
 }
 
 /**
- * One line per record, NAMING THE ARM IT WEAKENED.
+ * One line per record, NAMING THE ARM IT WEAKENED -- and, where the record says
+ * so, WHERE the red was required to fall.
+ *
+ * THE SITE IS PART OF THE NAME AND NOT DECORATION: three records now weaken ONE
+ * arm in three ways, so a report naming the arm alone prints the same line three
+ * times and a reader cannot tell which of them held.
  *
  * THE NAMES ARE THE REPORT AND A COUNT IS NOT, and nothing reddens if a count is
  * added: a green here must never be readable as a statement about arms outside
@@ -445,7 +462,12 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
  */
 export function line(reading: Reading): string {
   const held = reading.verdict === "held";
-  return `  [${reading.verdict.toUpperCase()}] ${reading.record.arm.name} -- ${reading.record.arm.file}${held ? "" : ` -- ${reading.detail}`}`;
+  return `  [${reading.verdict.toUpperCase()}] ${named(reading.record)} -- ${reading.record.arm.file}${held ? "" : ` -- ${reading.detail}`}`;
+}
+
+/** A record as the arm it weakens, and the site when it names one. */
+export function named(record: PerturbationRecord): string {
+  return record.redAt === undefined ? record.arm.name : `${record.arm.name} @ ${record.redAt}`;
 }
 
 /**

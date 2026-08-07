@@ -802,6 +802,13 @@ describe("the block a popup already shows only ever GAINS", () => {
    * EVERY SOURCE NAME, DRIVEN THROUGH `fromSource` RATHER THAN THROUGH THE
    * HANDLER: the handler's own `seen` filter collapses one entry name to one item
    * across roots, so the four classes cannot all be reached from one drive of it.
+   *
+   * AND EACH ASSERTION CARRIES ITS CELL IN THE VALUE IT COMPARES, which is not
+   * decoration and is what the sweep costs: eight cells share ONE source line, so
+   * a red here reports `Expected: true, Received: false` whichever cell produced
+   * it, and a perturbation gated on markdown alone is indistinguishable from one
+   * gated on `workspace`. Two records in the registry are declared at those two
+   * cells by name, and they can only be read off the value.
    */
   test("what completion sent is a strict prefix of what resolve answers, for both kinds", async () => {
     const fixture = tree(["sample-dir/one.txt", "sample.txt"]);
@@ -822,10 +829,17 @@ describe("the block a popup already shows only ever GAINS", () => {
             const answered = await resolvePathStat(resolveSession([format]), item);
             const sent = documentationOf(item);
             const back = documentationOf(answered);
+            const cell = `${format} from ${name}`;
 
-            expect(sent).not.toBe("");
-            expect(back.startsWith(sent)).toBe(true);
-            expect(back.length).toBeGreaterThan(sent.length);
+            expect(`${cell}: sent something ${String(sent !== "")}`).toBe(
+              `${cell}: sent something true`,
+            );
+            expect(
+              `${cell}: what was sent is still in front ${String(back.startsWith(sent))}`,
+            ).toBe(`${cell}: what was sent is still in front true`);
+            expect(`${cell}: and the block grew ${String(back.length > sent.length)}`).toBe(
+              `${cell}: and the block grew true`,
+            );
           }
         }
       }

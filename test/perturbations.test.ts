@@ -8,6 +8,7 @@ import {
   applyWeakening,
   type ArmFileRun,
   line,
+  named,
   type PerturbationRecord,
   read,
   reRun,
@@ -233,7 +234,13 @@ test("a red that fell at another assertion of the named arm is refused, never he
   // DISCRIMINATION RATHER THAN A REFUSAL OF EVERYTHING: without it, `refused` is
   // what a reader that had lost the failure text altogether would answer.
   expect(elsewhere.after).toBe("failed");
-  expect(elsewhere.redFellAt).toBe("expect(limit).toBe(2);");
+  expect(elsewhere.redFellAt).toContain("expect(limit).toBe(2);");
+  // THE FRAME IS EXCLUDED, ASSERTED AND NOT ASSUMED: bun prints the neighbouring
+  // source lines, and the second assertion is one of them.
+  expect(elsewhere.redFellAt).not.toContain("expect(limit + 1).toBe(3);");
+  // AND THE MATCHER'S OWN REPORT IS KEPT, which is what lets a sweeping arm's
+  // record name the CELL it reddened in rather than only the line.
+  expect(elsewhere.redFellAt).toContain("Received: 1");
   expect(elsewhere.verdict).toBe("refused");
   expect(elsewhere.detail).toContain("expect(limit + 1).toBe(3);");
   // AND THE PAIR, OVER THE SAME TWO RUNS: the record naming the line the red
@@ -724,6 +731,85 @@ const records: readonly PerturbationRecord[] = [
   }
 `,
     },
+    // THE FIRST CELL THE SWEEP REACHES, and it is declared for the reason the two
+    // records below exist: an unconditional reorder and a conditional one are ONE
+    // observation without it.
+    redAt: "plaintext from document",
+    alsoReddens: [],
+  },
+  {
+    // THE SAME REORDER, GATED ON THE COMPOSER'S OWN MARKDOWN FLAG -- and the
+    // falsifier is the state the arm was in two rounds ago. It swept PLAINTEXT
+    // alone, so this weakening passed it AND was reported HELD by the record
+    // above, which is format-agnostic: ten perspectives missed it twice and one
+    // reviewer found it twice. Narrow the sweep back and this record goes red
+    // saying the arm no longer reddens.
+    //
+    // ITS RED IS REQUIRED AT A MARKDOWN CELL AND THE UNGATED RECORD'S AT A
+    // PLAINTEXT ONE, so neither can be read as proof of the other.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "what completion sent is a strict prefix of what resolve answers, for both kinds",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/completion.ts",
+      from: `  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+  if (stat !== undefined) {
+    parts.push(stat);
+  }
+`,
+      to: `  if (stat !== undefined && markdown) {
+    parts.push(stat);
+  }
+  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+  if (stat !== undefined && !markdown) {
+    parts.push(stat);
+  }
+`,
+    },
+    redAt: "markdown from document",
+    alsoReddens: [],
+  },
+  {
+    // AND THE SAME REORDER GATED ON ONE SOURCE NAME, which is the same hole one
+    // axis over: every item that arm drove came from `cwd` until the second round
+    // widened it, so a composer reordering for `workspace` alone passed too. THE
+    // LESSON IS THE SHAPE AND NOT THE TWO PATCHES -- a relation asserted over one
+    // value of a discriminator the composer can read is a green about that value
+    // -- and these two records are what makes the shape re-run rather than
+    // remembered.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "what completion sent is a strict prefix of what resolve answers, for both kinds",
+    },
+    weakening: {
+      file: "packages/tsudoi-completion-path/src/completion.ts",
+      from: `  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+  if (stat !== undefined) {
+    parts.push(stat);
+  }
+`,
+      to: `  if (stat !== undefined && source === "workspace") {
+    parts.push(stat);
+  }
+  if (source !== undefined) {
+    parts.push(\`source: \${source}\`);
+  }
+  if (stat !== undefined && source !== "workspace") {
+    parts.push(stat);
+  }
+`,
+    },
+    // PLAINTEXT AND NOT MARKDOWN, because the sweep reaches plaintext first: this
+    // record's cell differs from the one above in BOTH axes, which is what makes
+    // the pair a discrimination rather than two spellings of one reading.
+    redAt: "plaintext from workspace",
     alsoReddens: [],
   },
   {
@@ -795,7 +881,7 @@ for (const file of new Set(records.map((record) => record.arm.file))) {
 }
 
 for (const record of records) {
-  test(`the recorded weakening still reddens: ${record.arm.name}`, async () => {
+  test(`the recorded weakening still reddens: ${named(record)}`, async () => {
     const reading = await reRun(record, await unweakened(record.arm.file));
     // THE REPORT, AND IT IS PRINTED RATHER THAN COUNTED: a green run of this
     // suite prints nothing per arm, so without this line the only naming a reader
