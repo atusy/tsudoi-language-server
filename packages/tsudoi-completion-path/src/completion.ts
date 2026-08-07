@@ -386,6 +386,16 @@ export async function* itemsFrom(
  * completion's block a strict PREFIX of the resolve answer's, so nothing the user
  * has already read moves position when the popup re-renders.
  *
+ * TWO JOINS AND THEY ANSWER TO DIFFERENT THINGS, WHICH USED TO BE ONE DECISION.
+ * The PART join is a blank line in BOTH formats -- the thematic rule that stood
+ * here is gone, the blank line separating a markdown block just as completely and
+ * being what the stakeholder's own drawing shows. The FACT join is the one that
+ * differs: bare newlines in plaintext, a bullet list in markdown, because a bare
+ * newline between facts is not a break in CommonMark at all. THE PREFIX RELATION
+ * IS WHY `source` GOES THROUGH THE FACT JOIN and not into a part of its own:
+ * the completion block is that one fact, and a part join in front of it would
+ * put a separator between what was sent and what came back.
+ *
  * THE SOURCE ARRIVES AS A NAME AND NOT AS A `PathSource` because that half has
  * only the name: the root is the completion's own business and is gone by the
  * time the item comes back.

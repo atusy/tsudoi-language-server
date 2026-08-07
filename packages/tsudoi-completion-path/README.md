@@ -54,22 +54,29 @@ a name holding a line break or a control character is rendered, not reproduced �
 the moment the list appears, in the field a client can show inline beside the label without
 opening anything. The documentation block carries **which root** offered the item, which no
 reading of the path recovers: one file is reachable from your document's directory, the process's
-own, a workspace folder and an absolute fragment at once. One caveat you may hit before we do:
-inline is where clients **truncate**, and a path's discriminating part is its tail.
+own, a workspace folder and an absolute fragment at once. Every fact in that block is
+**labelled** — `source:`, `size:`, `lastModified:` — so you find the one you want by its name
+rather than by counting fields in a sentence. One caveat you may hit before we do: inline is
+where clients **truncate**, and a path's discriminating part is its tail.
 
 **What resolving one item costs**, since it is no longer a single `stat`: a directory is also
 listed, in full, and the count you are shown is the whole of it. What resolve **changes** is the
 block and nothing else — the item's own `detail` comes back byte for byte as you sent it — so
 a client that honours only `documentation` from a late answer still gets everything that was
 learned. The block **only grows**: what you were already reading stays where it was, and the
-stat line and the listing arrive after it. The stat line: a file's says its size in bytes and its
-modification time; a directory's says it is a directory and when it changed, with **no byte
-count** — a directory's own size is its directory entry's, 64 on one machine and 4096 on the next
-for the same children.
+facts a `stat` found and the listing arrive after it. A file gains `size:` and `lastModified:`;
+a directory gains `lastModified:` and **no byte count** — a directory's own size is its directory
+entry's, 64 on one machine and 4096 on the next for the same children, so it would tell you
+nothing about the files inside. Nothing in the block names the **kind**: the missing `size:` is
+what says you are looking at a directory, and the entries below it are the other half. The
+modification time is reported **to the second**.
 
 The names **rendered** are bounded — a directory of thousands would otherwise put its whole
-contents in one popup — and the block says how many entries there really are when it shows you
-fewer. Hidden entries are shown, unfiltered, because the completion half offers them too —
+contents in one popup — and they arrive under a heading that says how many of how many you are
+being shown: `Entries (first 20 of 3184)` when it had to stop, `Entries (12)` when it did not,
+and `Entries (0)` for a directory holding nothing, which is otherwise the same bytes as a
+directory nobody listed. Hidden entries are shown, unfiltered, because the completion half offers
+them too —
 **after the ordinary ones**, since `.` sorts before every letter and a directory holding as many
 dotfiles as the bound would otherwise show you nothing else. The trade is stated rather than
 hidden: in a directory with more ordinary entries than fit, the dotfiles are what you do not see.
