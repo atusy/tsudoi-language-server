@@ -959,15 +959,13 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
-    // THE FIELD PUT BACK THE WAY THE STAKEHOLDER FOUND IT: the label carrying
-    // what the item INSERTS, so every row of a listing wears the directory that
-    // is already on the line.
+    // THE FIELD PUT BACK: the label carrying what the item INSERTS.
     //
     // THE CONTROL IS THE ARM THIS RECORD DOES NOT NAME. The single-segment arm
-    // beside it -- where the entry name and the inserted text are the same
-    // string -- stays GREEN under this weakening, and that is what says the red
-    // is about the DIRECTORY PART rather than about the field being written at
-    // all.
+    // stays GREEN under this weakening, and its green is enforced -- by absence
+    // from the set below, which `read` compares exactly. What is enforced by
+    // nothing is that arm's EXISTENCE: delete it and this record still reports
+    // HELD with the discrimination gone.
     arm: {
       file: "packages/tsudoi-completion-path/test/completion.test.ts",
       name: "the label is the entry's own name, where what is inserted carries the directory typed",
@@ -978,33 +976,57 @@ const records: readonly PerturbationRecord[] = [
       to: "        label: insertText,",
     },
     redAt: 'expect(items.map((item) => item.label)).toEqual(["deep.txt"]);',
-    // MEASURED: the containment arm reddens with it, and at its WHOLE-VALUE
-    // assertion rather than at the relation -- a label carrying the inserted
-    // text is still contained in it, so the relation survives what the value
-    // does not.
-    alsoReddens: ["what an item inserts contains the label it shows, raw on both sides"],
+    alsoReddens: [
+      "what an item inserts is the directory typed and the label it shows, raw on both sides",
+      "each item names the file it resolves to and the source that produced it",
+    ],
   },
   {
-    // THE EDIT THE COMMIT ABOVE MAKES LOOK FREE, WHICH IS THE ONLY REASON THIS
-    // RECORD EXISTS: with `filterText` doing the filtering, nothing in this
-    // package stops the label being flattened like the `detail` beside it. What
-    // stops it is the client -- an item whose inserted word does not contain its
-    // label is dropped, under an option that defaults off -- and an arm asserting
+    // THE EDIT THE RECORD ABOVE MAKES LOOK FREE: with `filterText` doing the
+    // filtering, nothing in this package stops the label being flattened like
+    // the `detail` beside it. What stops it is the client, and an arm asserting
     // a relation nothing weakens is a green about nobody's edit.
     arm: {
       file: "packages/tsudoi-completion-path/test/completion.test.ts",
-      name: "what an item inserts contains the label it shows, raw on both sides",
+      name: "what an item inserts is the directory typed and the label it shows, raw on both sides",
     },
     weakening: {
       file: composer,
       from: "        label: entry.name,",
       to: "        label: flattened(entry.name),",
     },
-    redAt: 'expect(item.insertText ?? "").toContain(item.label);',
-    // MEASURED, AND THE EMPTINESS IS THE READING RATHER THAN AN OMISSION: a
-    // flattening is a no-op on every other fixture in that file, every one of
-    // which is an ordinary name.
+    redAt: "expect(item.insertText).toBe(`a/b/${item.label}`);",
+    // MEASURED, AND THE REASON IS NOT `NO OTHER FIXTURE HOLDS A CONTROL
+    // CHARACTER`, WHICH IS FALSE AT THE ARM DIRECTLY ABOVE THIS ONE'S: the
+    // forgery arm builds the SAME name, and this weakening moves its label too.
+    // It stays green because it reads `detail` alone. No other arm in that file
+    // reads a label on a name the flattening rewrites.
     alsoReddens: [],
+  },
+  {
+    // THE THIRD FIELD, AND THE RECORD PBI-85's CRITERION 2 ASKED FOR: with the
+    // directory part gone from the label, `filterText` is the only thing left
+    // carrying it to a client that filters on the text its edit range covers.
+    //
+    // NARROWED RATHER THAN DROPPED, AND THE CRITERION SAID DROPPED -- both were
+    // measured and this is the one that discriminates. Dropping the field
+    // reddens the single-segment control too, since an absent field is absent
+    // for every fragment shape; narrowing it to the entry name leaves that arm
+    // GREEN, which is what makes the red about the DIRECTORY PART.
+    arm: {
+      file: "packages/tsudoi-completion-path/test/completion.test.ts",
+      name: "the label is the entry's own name, where what is inserted carries the directory typed",
+    },
+    weakening: {
+      file: composer,
+      from: "        filterText: insertText,",
+      to: "        filterText: entry.name,",
+    },
+    redAt: 'expect(items.map((item) => item.filterText)).toEqual(["a/b/deep.txt"]);',
+    alsoReddens: [
+      "what an item inserts is the directory typed and the label it shows, raw on both sides",
+      "each item names the file it resolves to and the source that produced it",
+    ],
   },
 ];
 

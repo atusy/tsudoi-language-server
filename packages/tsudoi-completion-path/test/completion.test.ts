@@ -612,12 +612,12 @@ describe("an item names the root that produced it", () => {
             detail: join(source.root, item.insertText ?? ""),
             documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
-          // LOAD-BEARING, and about `filterText` rather than the label, whose
-          // own precondition was `when the item carries no filterText`: a client
-          // filters against the text its edit RANGE covers, which begins where
-          // the fragment begins, so an item whose filter text did not carry the
-          // directory part would filter itself away at the next separator.
+          // LOAD-BEARING, and about `filterText` rather than the label: the
+          // assertion that stood here read the label, and this sweep is the only
+          // place ANY field is read from all four source classes, so both are
+          // read rather than one traded for the other.
           expect(item.filterText).toBe(item.insertText);
+          expect(item.insertText).toBe(`notes/${item.label}`);
         }
       }
     } finally {
@@ -919,26 +919,36 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * name it flattened, so that option would take the entry out of the list
    * instead of showing it with a replacement character.
    *
-   * THE RELATION IS ASSERTED FIRST AND THE TWO WHOLE VALUES AFTER, for the
-   * reason the arm above records about its own order: a runner stops at the
-   * first failure, so with the values in front the relation could never BE the
-   * failure a reader is shown, and it is the relation the client checks.
+   * THE RELATION IS ASSERTED FIRST AND THE WHOLE VALUES AFTER, for the reason
+   * the arm above records about its own order.
    *
-   * MULTI-SEGMENT, so the containment is a claim rather than an identity: for a
-   * fragment naming no directory the label and the inserted text are the same
-   * string, and `contains` over one string and itself grades nothing.
+   * AND IT IS AN EQUALITY RATHER THAN A CONTAINMENT, which is the correction a
+   * reviewer took against the first spelling: every string contains the EMPTY
+   * one, so `insertText contains label` was green for `label: ""` -- the one
+   * label value the client punishes hardest, since it discards an item carrying
+   * it outright.
+   *
+   * TWO SEPARATORS, NOT ONE, and that is the other half of the same correction:
+   * a label cut at the FIRST separator rather than the last satisfies every
+   * single-separator arm in this file, and leaves the popup repeating a
+   * directory segment the user has already typed.
    */
-  test("what an item inserts contains the label it shows, raw on both sides", async () => {
+  test("what an item inserts is the directory typed and the label it shows, raw on both sides", async () => {
     const forged = "x\n\nsource: workspace";
-    const fixture = tree([`notes/${forged}`]);
+    const fixture = tree([`a/b/${forged}`]);
     try {
-      const items = await complete({ ...elsewhere, line: "notes/x" }, fixture.root);
+      const items = await complete({ ...elsewhere, line: "a/b/x" }, fixture.root);
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      expect(item.insertText ?? "").toContain(item.label);
+      expect(item.insertText).toBe(`a/b/${item.label}`);
       expect(item.label).toBe(forged);
-      expect(item.insertText).toBe(`notes/${forged}`);
+      expect(item.insertText).toBe(`a/b/${forged}`);
+      // THE FIELD NOTHING ELSE READS ON A NAME WORTH READING IT ON: the two
+      // other `filterText` assertions drive an ordinary name, where flattening
+      // is a no-op, so `filterText: flattened(insertText)` was green across the
+      // whole suite.
+      expect(item.filterText).toBe(`a/b/${forged}`);
     } finally {
       fixture.dispose();
     }
@@ -1403,36 +1413,47 @@ describe("an item shows the entry and inserts the path", () => {
    * names no directory, the entry name and the inserted text are the SAME string
    * -- so the arm below is a control and not a repetition: it must stay green
    * under the weakening that reddens this one.
+   *
+   * AND THE FRAGMENT CARRIES TWO SEPARATORS, WHICH A REVIEWER HAD TO SUPPLY: a
+   * label cut at the FIRST separator is `deep.txt` here as well, so with one
+   * separator every label assertion in this file was green against a popup still
+   * repeating a directory segment the user had typed.
    */
   test("the label is the entry's own name, where what is inserted carries the directory typed", async () => {
-    const fixture = tree(["notes/deep.txt"]);
+    const fixture = tree(["a/b/deep.txt"]);
     try {
-      const items = await complete({ ...elsewhere, line: "notes/de" }, fixture.root);
+      const items = await complete({ ...elsewhere, line: "a/b/de" }, fixture.root);
 
+      expect(items).toHaveLength(1);
       expect(items.map((item) => item.label)).toEqual(["deep.txt"]);
       // THE THREE FIELDS IN ONE ARM, because a client reads whichever its own
       // class names and a drift between any two of them breaks one class
-      // silently. `filterText` is the one the label stopped being: a client
-      // filters against the text its edit RANGE covers, which begins where the
-      // fragment begins and so carries `notes/`.
-      expect(items.map((item) => item.insertText)).toEqual(["notes/deep.txt"]);
-      expect(items.map((item) => item.filterText)).toEqual(["notes/deep.txt"]);
+      // silently.
+      expect(items.map((item) => item.insertText)).toEqual(["a/b/deep.txt"]);
+      expect(items.map((item) => item.filterText)).toEqual(["a/b/deep.txt"]);
       const edit = items[0]?.textEdit;
       expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe(
-        "notes/deep.txt",
+        "a/b/deep.txt",
       );
     } finally {
       fixture.dispose();
     }
   });
 
+  // THE SAME FOUR FIELDS AS ITS TWIN AND NOT TWO, so that what stays green under
+  // the weakening covers what went red: read over fewer fields, a control is
+  // green for want of a subject.
   test("a fragment naming no directory shows what it inserts", async () => {
     const fixture = tree(["deep.txt"]);
     try {
       const items = await complete({ ...elsewhere, line: "de" }, fixture.root);
 
+      expect(items).toHaveLength(1);
       expect(items.map((item) => item.label)).toEqual(["deep.txt"]);
       expect(inserted(items)).toEqual(["deep.txt"]);
+      expect(items.map((item) => item.filterText)).toEqual(["deep.txt"]);
+      const edit = items[0]?.textEdit;
+      expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe("deep.txt");
     } finally {
       fixture.dispose();
     }
