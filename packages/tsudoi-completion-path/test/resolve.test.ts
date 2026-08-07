@@ -225,9 +225,13 @@ describe("the block is rebuilt out of what the handler read", () => {
    * prefix relation hold vacuously, and this fixture's name is exactly the input
    * under which leaving it there forges an attribution line.
    *
-   * WHAT NOTHING HERE COVERS AT THIS COMMIT: the path is now rendered by the
-   * COMPLETION half, into `detail`, and it leaves the composer that owns the
-   * flattening on the way. Whether it survives that trip is asserted nowhere.
+   * AND `detail` IS READ BESIDE THE BLOCK, WHICH IS WHERE THE PATH WENT. The
+   * item is handed the field as the completion half writes it -- FLATTENED, since
+   * that half is where the flattening now happens, and the pair for this arm is
+   * in that half's own suite -- and what is asserted here is that the answer
+   * hands it back BYTE-IDENTICAL. A handler that rebuilt `detail` from the mark
+   * would put the raw name back in front of the user, having none of the
+   * completion's context to know it had been sanitised.
    *
    * IT IS A REAL DIRECTORY AND NOT A FORGED PATH, because a path nothing can be
    * stat-ed at is answered with the untouched item and would measure the
@@ -235,20 +239,19 @@ describe("the block is rebuilt out of what the handler read", () => {
    */
   test("a path whose own name would forge an attribution line renders as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";
+    const flattened = "x��source: workspace";
     const fixture = tree([`${forged}/child.txt`]);
     const path = join(fixture.root, forged);
+    const rendered = join(fixture.root, flattened);
+    const sent = { ...markedItem(path, "cwd"), detail: rendered };
     try {
-      const asPlainText = await resolvePathStat(
-        contextDeclaring(["plaintext"]),
-        markedItem(path, "cwd"),
-      );
-      const asMarkdown = await resolvePathStat(
-        contextDeclaring(["markdown"]),
-        markedItem(path, "cwd"),
-      );
+      const asPlainText = await resolvePathStat(contextDeclaring(["plaintext"]), sent);
+      const asMarkdown = await resolvePathStat(contextDeclaring(["markdown"]), sent);
 
       expect(blockOf(asPlainText).split("\n")).not.toContain("source: workspace");
       expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
+      expect([asPlainText.detail, asMarkdown.detail]).toEqual([rendered, rendered]);
+      expect((asPlainText.detail ?? "").split("\n")).not.toContain("source: workspace");
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
         value: `source: cwd\n\n${directoryStat}\n\n1 entry\n\nchild.txt`,

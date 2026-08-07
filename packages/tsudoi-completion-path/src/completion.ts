@@ -338,7 +338,12 @@ export async function* itemsFrom(
         // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW: two
         // same-named candidates offered by different roots are otherwise told
         // apart only in the documentation popup, which is optional.
-        detail: absolutePath,
+        //
+        // FLATTENED AT THE WRITE, AND NOT BY ROUTING THE PATH BACK THROUGH THE
+        // COMPOSER, which no longer takes it: the composer owned the flattening
+        // only because the path passed through it, and restoring that route to
+        // keep the sanitising would put the path back in the block.
+        detail: flattened(absolutePath),
         documentation: documentationFor(source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,

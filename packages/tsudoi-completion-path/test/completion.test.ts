@@ -662,6 +662,46 @@ describe("an item names the root that produced it", () => {
   });
 });
 
+describe("a name that would break the line grammar is rendered so it cannot", () => {
+  /**
+   * THE COMPLETION HALF NOW RENDERS THE PATH, and it renders it OUTSIDE the
+   * composer that owns the flattening -- which is exactly how the hazard the
+   * resolve suite's forgery arms exist for reopens in a field nothing sanitises.
+   * A file called `x\n\nsource: workspace` puts a line into `detail` that is
+   * BYTE-IDENTICAL to an attribution this package emits, naming a source the
+   * closed-set check would have refused.
+   *
+   * ITS OWN ARM AND NOT A LINE IN THE ARM ABOVE, because it could never be the
+   * first thing to fail there: that one drives a fixture of ordinary names, so
+   * an unflattened write passes it unchanged.
+   *
+   * BOTH READINGS, and they fail differently: the whole VALUE says which bytes
+   * the user is shown, and the line reading says the failure in the grammar's own
+   * terms -- no LINE of what this package renders may be an attribution it did
+   * not decide to make.
+   *
+   * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
+   * markdown syntax inside a name still renders as syntax, and `label` and
+   * `insertText` still carry the name RAW -- they have to, one being what is
+   * written into the buffer and the other what a client filters on.
+   */
+  test("an entry whose own name would forge an attribution line names it as one that cannot", async () => {
+    const forged = "x\n\nsource: workspace";
+    const flattened = "x��source: workspace";
+    const fixture = tree([forged]);
+    try {
+      const items = await complete({ ...elsewhere, line: "x" }, fixture.root);
+
+      expect(items).toHaveLength(1);
+      const item = items[0] as CompletionItem;
+      expect(item.detail).toBe(join(fixture.root, flattened));
+      expect((item.detail ?? "").split("\n")).not.toContain("source: workspace");
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 describe("an item records the source it was produced under", () => {
   /**
    * ACROSS EVERY NAME THE CLOSED SET HOLDS, for the degenerate rather than for
