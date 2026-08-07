@@ -511,9 +511,20 @@ for (const runtime of runtimes) {
      * this process at all -- and the three produce THE SAME BYTES. So the
      * enrichment is observed FIRST, IN THIS SESSION.
      *
-     * THE FIRST ASSERTION IS DELIBERATELY WEAKER THAN THE PIN ABOVE: it says a
-     * detail appeared, not which, so this test's subject stays the item it
-     * declines rather than the string it composes.
+     * THE LIVENESS HALF IS A `documentation` DELTA, AND IT HAD TO MOVE FIELDS OR
+     * IT WOULD HAVE STOPPED MEASURING ANYTHING WITHOUT SAYING SO. It read `a
+     * detail appeared, not which` -- and completion now writes the path there, so
+     * that line is satisfied UNCONDITIONALLY, by a server whose resolve handler
+     * enriches nothing at all. MEASURED: with the handler answering every
+     * unaborted request untouched, this arm was one of two in this file that
+     * stayed green.
+     *
+     * DELIBERATELY WEAKER THAN THE PIN ABOVE AND NOT AN EQUALITY: it says the
+     * block GREW, not which bytes it grew by, so this test's subject stays the
+     * item it declines rather than the string the handler composes.
+     *
+     * STRICT, WHICH IS THE HALF THAT MAKES IT A MEASUREMENT: `startsWith` alone
+     * is satisfied by an empty delta, which is exactly the state above.
      */
     test("an item the example never produced is returned untouched, in a session where enrichment is happening", async () => {
       const fixture = sampleTree();
@@ -521,7 +532,8 @@ for (const runtime of runtimes) {
       try {
         const own = itemFor(await completedItems(session, fixture.root), "sample.txt");
         const enriched = await session.request<CompletionItem>("completionItem/resolve", own);
-        expect(typeof enriched.detail).toBe("string");
+        expect(blockOf(enriched).startsWith(blockOf(own))).toBe(true);
+        expect(blockOf(enriched).length).toBeGreaterThan(blockOf(own).length);
 
         const answered = await session.request<CompletionItem>(
           "completionItem/resolve",
@@ -597,9 +609,16 @@ for (const runtime of runtimes) {
 
     /**
      * ONE ITEM, ONE SESSION, READ BEFORE AND AFTER, so the only thing that changed
-     * between the two answers is that the file stopped existing. The first
-     * assertion is the liveness half: without it this passes against a server
+     * between the two answers is that the file stopped existing. The first two
+     * assertions are the liveness half: without them this passes against a server
      * whose handler was never called.
+     *
+     * A `documentation` DELTA AND DELIBERATELY NOT AN EQUALITY, for the reason the
+     * arm above gives: this test's subject is the answer for a path that has GONE,
+     * and pinning the bytes of the answer for the path that had not would make a
+     * change to the block's spelling redden here as well as where it belongs.
+     * What the delta needs is a state where it is EMPTY, and that state is this
+     * arm's own second half -- which is why the two are read the same way.
      */
     test("an item whose file is deleted between completion and resolve comes back unenriched rather than failing", async () => {
       const fixture = sampleTree();
@@ -607,7 +626,8 @@ for (const runtime of runtimes) {
       try {
         const item = itemFor(await completedItems(session, fixture.root), "sample.txt");
         const enriched = await session.request<CompletionItem>("completionItem/resolve", item);
-        expect(enriched.documentation).toEqual({ kind: "plaintext", value: fileBlock() });
+        expect(blockOf(enriched).startsWith(blockOf(item))).toBe(true);
+        expect(blockOf(enriched).length).toBeGreaterThan(blockOf(item).length);
 
         rmSync(join(fixture.root, "sample.txt"));
         const answered = await session.request<CompletionItem>("completionItem/resolve", item);
