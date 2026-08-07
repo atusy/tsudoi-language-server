@@ -146,7 +146,7 @@ const scrum: ScrumDashboard = {
           criterion:
             "WHAT IS WRITTEN INTO THE BUFFER DOES NOT MOVE: `insertText`, `textEdit.newText` and BOTH ranges are what they were, so no client's insertion changes and the widening-fragment reading of a filename holding a space is untouched.",
           verification:
-            "The `applying the item yields the path it names` arms stay GREEN across every commit of this item, and they are NAMED because a criterion asking only for a red asks for nothing. The `inserted()` helper reads `insertText ?? label` and cannot see this either way, which is why the arms and not the helper are what is named.",
+            'The `applying the item yields the path it names` arms stay GREEN across every commit of this item, and they are NAMED because a criterion asking only for a red asks for nothing. THE HELPER THOSE ARMS CALL IS `applyAsClient`, whose last resort is `insertText ?? label` and which no arm reaches, since every item this package builds carries `insertText` -- so the arms and not the helper are what is named. THIS CLAUSE FIRST NAMED `inserted()` AND WAS FALSE OF IT: that helper reads `insertText ?? ""` and holds no label at all. Corrected during the sprint rather than read past, the criterion being what the product owner grades against.',
         },
         {
           criterion:
@@ -470,7 +470,7 @@ const scrum: ScrumDashboard = {
             'THE RED WAS READ AND NOT INHERITED, WHICH IS WHAT THE SPLIT WAS FOR. MEASURED at d46b9b7 with the new completion-half arm added and no fix: `bun test packages/tsudoi-completion-path/test/completion.test.ts -t "forge an attribution line names it as one that cannot"` reports 0 pass / 1 fail, and the received value is the path carrying a RAW break -- three lines where one was expected, the middle one empty and the last one `source: workspace`. That file is re-run by no baseline, which is why the arm could be written and seen red rather than arriving green with the fix.',
             "GREEN AFTER, FULL DEFINITION OF DONE: PASSED, all five checks exit 0, 948 pass / 0 fail over 70 files, 2903 expect() calls, 166.90s, ONE non-gating `eslint(require-yield)` warning. The delta over subtask 4's 947/2898 is the one new arm with its THREE assertions plus the TWO the resolve arm gained. THE DECOMPOSITION READ `two` AND `three` THE OTHER WAY ROUND -- a total that was measured and constituents that were predicted, which is this project's own most-caught defect arriving inside the note reporting a measurement.",
             "THE RESOLVE ARM'S WIDENING IS NOT A SECOND READING OF THE COMPLETION ARM, and it needed a construction the plan did not spell: resolve writes NO `detail`, so there is nothing there to read unless the arm SENDS one. It sends the field as the completion half writes it -- flattened -- and requires it back byte-identical from both markup arms. What that refuses is a handler rebuilding `detail` from the mark, which has none of the completion's context and would put the raw name back in front of the user.",
-            "WHAT IS STILL NOT CLOSED IS WRITTEN AT THE SITE RATHER THAN LEFT TO BE DISCOVERED, and one half of it is wider than the arms that predate this sprint said: markdown syntax inside a name still renders as syntax, AND `label` and `insertText` still carry the name RAW. That second half is not a gap this sprint opened and cannot be closed -- `insertText` is what is written into the buffer and `label` is what a client filters on, so flattening either would insert a file name that names no file.",
+            "WHAT IS STILL NOT CLOSED IS WRITTEN AT THE SITE RATHER THAN LEFT TO BE DISCOVERED, and one half of it is wider than the arms that predate this sprint said: markdown syntax inside a name still renders as syntax, AND `label` and `insertText` still carry the name RAW. That second half is not a gap this sprint opened and cannot be closed -- `insertText` is what is written into the buffer and `label` is what a client filters on, so flattening either would insert a file name that names no file. AMENDED BY SPRINT 84, WHICH FALSIFIED THE REASON AND NOT THE REFUSAL: `filterText` carries the filtering now, so the label's rawness rests on the CLIENT dropping an item whose inserted word does not contain its label. Amended here rather than left standing, because a reader picks whichever sentence they reach first.",
           ],
         },
         {
@@ -700,7 +700,7 @@ const scrum: ScrumDashboard = {
     number: 84,
     pbi_id: "PBI-85",
     goal: "The popup names the ENTRY. `label` becomes the entry's own name, `filterText` takes over the filtering the label was doing for the clients that read it, and what is written into the buffer does not move a byte. The label stays RAW and keeps its refusal while LOSING its reason -- what replaces it is the client's containment check, asserted as an arm rather than argued in a docblock.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "A DESCRIBE OF TWO ARMS IN packages/tsudoi-completion-path/test/completion.test.ts, AND THE SECOND IS WHAT MAKES THE FIRST MEAN ANYTHING. The multi-segment arm drives a fragment carrying a directory part and compares the labels WHOLE against the entry names, then the pair `{ filterText, insertText }` and `textEdit.newText` whole -- three fields in one arm because a client reads whichever its own class names and a drift between them breaks one of them silently. The single-segment arm drives a fragment naming no directory and asserts the label and the inserted text are the SAME string, which is not a duplicate: it is the control that must stay GREEN under the perturbation that reddens the first, and without it `label: insertText` restored reddens an arm that was never about the directory part. AND THE INVARIANT AT `each item names the file it resolves to and the source that produced it` MIGRATES RATHER THAN BEING DELETED: `label.startsWith(insertText)` stands under a comment whose own precondition is `when the item carries no filterText`, which this subtask removes, so the assertion becomes `filterText === insertText` at the same site and the comment says which field the client now reads.",
@@ -725,27 +725,56 @@ const scrum: ScrumDashboard = {
         implementation:
           "Nothing in `src/`. The arm is the deliverable, and its reason is the client's: READ FROM ddc-source-lsp AND MEASURED NOWHERE HERE, an item whose inserted word does not contain its label is DROPPED rather than shown wrong, under an option that defaults off. The docblock over the forgery arm is where the reason goes, and it is the same docblock subtask 4 repairs -- so this arm is written and that sentence is left standing until then, deliberately, rather than half-edited twice.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "90bf97c",
+            message: "test(completion-path): the label stays raw for a reason the client owns",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE ARM IS MULTI-SEGMENT AND THE PLAN DID NOT SAY SO, which is the one thing that would have made it worthless: for a fragment naming no directory the label and the inserted text are the SAME string, and `contains` over one string and itself grades nothing. The fixture is the forgery arm's name under a directory.",
+          "THE RELATION IS ASSERTED BEFORE THE TWO WHOLE VALUES, on the ordering rule the forgery arm beside it already records: a runner stops at the first failing assertion, so with the values in front the relation could never BE the failure a reader is shown -- and the relation is what the client checks. MEASURED to matter, at subtask 3: under the flattening the red falls at the relation, and under the restored label it falls at the whole value.",
+        ],
       },
       {
         test: "TWO RECORDS IN test/perturbations.test.ts, EACH WITH `redAt`, and each measured against the landed source rather than predicted. ONE: `label: insertText` restored, which must redden the multi-segment arm AT ITS LABEL ASSERTION -- a red at the `filterText` pair beside it would mean the record grades the field's presence and not the directory part -- and must leave the single-segment arm GREEN. TWO: the label flattened, which must redden the containment arm and leave the forgery arm on `detail` green, that pair being the whole of what tells the two fields apart. `alsoReddens` is MEASURED for both, never predicted.",
         implementation:
           "Records only. THE `from` OF EACH NAMES A LINE OF `itemsFrom` THAT THIS SPRINT JUST WROTE, which is the arity guard's whole value here: reshape the item construction again and the record throws with 0 occurrences rather than reporting a silent HELD.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "df03638",
+            message: "test(perturbations): the two weakenings this sprint's arms are worth",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "BOTH MEASURED BY HAND FIRST, THE FILE RESTORED FROM A COPY AFTER EACH. `label: insertText` restored: 44 pass / 2 fail in the member completion file -- the multi-segment arm AT ITS LABEL ASSERTION and the containment arm AT ITS WHOLE VALUE, the single-segment control GREEN. The label flattened: 45 pass / 1 fail, the containment arm alone, AT THE RELATION. So the two records name DIFFERENT SITES IN THE SAME ARM, which is the discrimination `redAt` exists for.",
+          "`alsoReddens` IS ASYMMETRIC AND THAT IS THE MEASUREMENT RATHER THAN AN OVERSIGHT: the restored label reddens the containment arm too, because a label carrying the inserted text is still CONTAINED in it while no longer being the entry's name; the flattening reddens nothing else, being a no-op on every other fixture in that file, all of them ordinary names.",
+          "BOTH REPORTED HELD ON THE FIRST RUN OF THE REGISTRY AFTER LANDING, and the registry is eighteen arms where the sprint base had sixteen.",
+        ],
       },
       {
-        test: "THE SWEEP, under the skill arm sprint 82 left: `label`, `filterText` and `insertText` grepped across test/, packages/tsudoi-completion-path/test/, both READMEs and src/, every hit re-sited, deleted, or left green WITH the reason it still reads something. The known ones: the docblock over the forgery arm, whose `what a client filters on` half this sprint deletes; `test/installed-handler.test.ts`, which reads a label only for identity and stays as it is; and the `inserted()` helper, which reads `insertText ?? label` and now falls back to a string that is no longer a path -- left as it is, with the reason, since no arm reaches the fallback.",
+        test: "THE SWEEP, under the skill arm sprint 82 left: `label`, `filterText` and `insertText` grepped across test/, packages/tsudoi-completion-path/test/, both READMEs and src/, every hit re-sited, deleted, or left green WITH the reason it still reads something. The known ones: the docblock over the forgery arm, whose `what a client filters on` half this sprint deletes; `test/installed-handler.test.ts`, which reads a label only for identity and stays as it is; and the helper whose last resort is `insertText ?? label` -- `applyAsClient`, NOT `inserted()`, which this plan named and which holds no label at all -- left as it is, since every item this package builds carries `insertText` and no arm reaches the fallback.",
         implementation:
           "The member README's `Which field carries what` paragraph gains the third field: the label names the entry, `filterText` carries what is typed so the item survives its own filter, and `detail` keeps the absolute path. LAST, because it describes what landed rather than what was intended, and because the docblock's replacement reason is the arm subtask 2 shipped rather than a claim.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c2688e0",
+            message: "docs(completion-path): the label's reason changed, and the prose says which",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE SWEEP WAS RUN TWICE AND THE FIRST RUN COULD NOT SEE THIS TREE. Case-sensitive, over `filters on|filter on|filtered on`, it returned EMPTY and would have carried `no sentence in the tree gives filtering as the LABEL's reason` -- while the comment written minutes earlier at the `filterText` site reads `WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING`. This repository writes its reasons in capitals, so a case-sensitive sweep of its prose is blind by construction. Re-run with `-i` and widened to `filtering`, over packages/, test/, examples/, README.md AND scrum.ts.",
+          "WHAT THE SECOND SWEEP FOUND, EACH DISPOSITIONED. Four hits are this sprint's own repaired prose, at the composer, the docblock, the registry record and the README. Three are the word in another sense entirely -- test/published-artifacts.test.ts, test/helpers/snapshot.ts, test/helpers/lsp.ts -- and are left. TWO ARE IN THIS FILE AND ONE OF THEM WAS FALSE: sprint 82's note saying `label` is what a client filters on, amended in place with what sprint 84 falsified and what it did not, since a reader picks whichever sentence they reach first.",
+          "AND TWO CLAUSES OF THIS SPRINT'S OWN PLANNING NAMED THE WRONG HELPER, corrected in the criterion and in the subtask above: the `insertText ?? label` fallback is `applyAsClient`'s, where `inserted()` reads `insertText ?? \"\"` and holds no label at all. Nothing was graded on it -- the fallback is unreachable, every item this package builds carrying `insertText` -- which is exactly why it could stand unnoticed in the field the product owner grades against.",
+        ],
       },
     ],
     impediments: [],
@@ -753,6 +782,8 @@ const scrum: ScrumDashboard = {
       "THE BASE, MEASURED BEFORE ANYTHING MOVED: HEAD c355132, Definition of Done PASSED, all five checks exit 0, 964 pass / 0 fail over 70 files, 3008 expect() calls, 263.60s, SIXTEEN registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. Any red from here is this sprint's until measured otherwise against that.",
       "NO CHECK IN THIS REPOSITORY CAN SEE THE THING THE STAKEHOLDER REPORTED, AND THE PLAN SAYS SO RATHER THAN PRETENDING OTHERWISE. What they saw is a popup, and what an editor renders from an item is the editor's. Every criterion here is graded over the WIRE-LEVEL item, and the reading that connects the two -- the popup renders `label` -- is READ FROM ddc-source-lsp's source and is not a measurement. The stakeholder's own confirmation in their editor is the acceptance evidence for the popup itself, and it is asked for at review rather than assumed here.",
       "THE ORDER IS BEHAVIOUR, THEN THE ARM THAT FORECLOSES, THEN THE RECORDS, THEN THE PROSE. The prose repair is last because its replacement reason IS subtask 2's arm: written earlier it would be a claim about an arm that does not exist yet, which is the shape this project keeps catching.",
+      "THE CLOSING READING, TAKEN ON THE TREE THAT CLOSES. Definition of Done PASSED at c2688e0, all five checks exit 0: 969 pass / 0 fail over 70 files, 3020 expect() calls, 242.63s, EIGHTEEN registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. AND THE DELTA IS READ AGAINST THE ARITHMETIC RATHER THAN AGAINST THE COLOUR, which is this project's own rule about a green: base 964 / 3008 / sixteen, plus two arms and six assertions from subtask 1, one arm and four from subtask 2, two arms and two from subtask 3. That is 969 / 3020 / eighteen exactly, and nothing else moved.",
+      "WHAT NO CHECK HERE HAS SEEN, CARRIED TO REVIEW RATHER THAN SETTLED: the popup itself. Every criterion above is graded over the wire-level item, and the sprint's own planning decision says the stakeholder's confirmation in their editor is the acceptance evidence for what they reported. It is asked for at review.",
     ],
   },
   retrospectives: [
