@@ -91,6 +91,25 @@ false sentence survived in a file the sweep had opened. MEASURED — a skill fil
 inside the sweep's own declared universe, reached by two of its keys, carrying
 three present-tense claims false since the refactor, was never opened at all.
 
+**WHEN A SUBTASK MOVES WHAT A FIELD CARRIES, THE FIELD'S NAME IS SWEPT AND EVERY
+HIT DISPOSITIONED IN THAT SUBTASK — BEFORE THE COMMIT, NOT AT REVIEW.**
+_(sprint 82)_ Three dispositions and no fourth: re-sited, deleted, or LEFT GREEN
+WITH THE REASON IT STILL READS SOMETHING. A hit with no disposition is
+unfinished work, not a finding to weigh later. The trigger is mechanical — a
+field stops carrying X and starts carrying Y — so this is a rule and not an
+intention to be careful. MEASURED: three assertions read a field whose meaning
+had moved and went on passing; two were caught by reading, and the third was
+NAMED IN THE ITEM'S OWN ACCEPTANCE CRITERIA at refinement and still re-sited
+only four subtasks later, after four full green runs had been read as passing.
+It was a grep hit at the subtask that moved the field. It needed
+dispositioning, not discovering.
+
+**WHAT THE SWEEP CANNOT SEE, so its completion is not read as coverage:** an
+assertion naming no field. A whole-value `toEqual` over the answer is invisible
+to a grep on the field's name — and those are usually the arms carrying the
+real claim. It also fires only on a field LOSING a meaning; one quietly
+GAINING a second produces no hit at all.
+
 **A SWEEP'S KEY LIST IS DERIVED FROM THE ENUMERATION AND THE DERIVATION IS
 SHOWN.** _(sprint 63)_ Otherwise the two are different claims and "each key
 swept" says nothing about the enumeration. MEASURED: one enumerated mechanism
