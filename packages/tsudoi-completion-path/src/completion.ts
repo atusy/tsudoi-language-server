@@ -347,9 +347,10 @@ export async function* itemsFrom(
         documentation: documentationFor(source.name, documentationFormat),
         kind: await entryKind(absolutePath, entry),
         insertText,
-        // NO DETAIL IS READ HERE -- a size and a date per entry is a stat per
-        // entry, refused on no figure -- so the item carries the path and that
-        // work is done for the ONE item the user highlights.
+        // NO STAT IS TAKEN HERE, WHICH IS THE REFUSAL AND NOT `no detail`: a size
+        // and a date per entry is one syscall per entry on every keystroke,
+        // refused on no figure. The MARK carries the path so that work can be
+        // done for the ONE item the user highlights.
         data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });
@@ -365,15 +366,21 @@ export async function* itemsFrom(
 }
 
 /**
- * What the user is told about an item beyond the text it inserts: where the
- * file actually is, and which root offered it.
+ * What the user is told about an item in the popup: which root offered it, and
+ * -- once the resolve half has asked -- what the path IS and what is inside it.
  *
- * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED: that half REBUILDS this block
- * rather than appending to what came back from the client, so the two must agree
- * byte for byte about an item nothing was learned about -- which two spellings of
- * one string cannot be relied on to do. THE SOURCE ARRIVES AS A NAME AND NOT AS A
- * `PathSource` because that half has only the name: the root is the completion's
- * own business and is gone by the time the item comes back.
+ * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED, AND WHAT THAT BUYS IS NO
+ * LONGER BYTE-IDENTITY. It used to be: the two halves composed the same block for
+ * an item nothing had been learned about. There is no such item now, because a
+ * failed stat returns the item untouched and so every block this ever builds
+ * twice has learned something in between. What is shared is the SPELLING of each
+ * part and the markup rules, and the ORDER -- which is what makes the
+ * completion's block a strict PREFIX of the resolve answer's, so nothing the user
+ * has already read moves position when the popup re-renders.
+ *
+ * THE SOURCE ARRIVES AS A NAME AND NOT AS A `PathSource` because that half has
+ * only the name: the root is the completion's own business and is gone by the
+ * time the item comes back.
  */
 export function documentationFor(
   source: PathSourceName | undefined,

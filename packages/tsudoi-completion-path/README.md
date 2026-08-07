@@ -47,15 +47,31 @@ defers to the one item you highlight. Classifying an entry is cheaper but not fr
 file or directory is told apart from the directory listing alone, and a **symlink** costs one
 `stat`, to report the kind of what it points at.
 
+**Which field carries what**, because the two are read at different moments and by different
+parts of an editor. `detail` carries the **absolute path** the item completes to, and it is there
+the moment the list appears: two same-named candidates offered by different roots are told apart
+without opening anything, which is what most clients render inline beside the label. The
+documentation block carries **which root** offered the item — the one fact a path cannot supply,
+since one file is reachable from your document's directory, the process's own, a workspace folder
+and an absolute fragment at once. One caveat you may hit before we do: inline is where clients
+**truncate**, and a path's discriminating part is its tail.
+
 **What resolving one item costs**, since it is no longer a single `stat`: a directory is also
-listed, in full, and the count you are shown is the whole of it. The names **rendered** are
-bounded — a directory of thousands would otherwise put its whole contents in one popup — and the
-block says how many entries there really are when it shows you fewer. Hidden entries are shown,
-unfiltered, because the completion half offers them too — **after the ordinary ones**, since
-`.` sorts before every letter and a directory holding as many dotfiles as the bound would
-otherwise show you nothing else. The trade is stated rather than hidden: in a directory with more
-ordinary entries than fit, the dotfiles are what you do not see. Nothing recurses here either: one
-listing, one level, no walk.
+listed, in full, and the count you are shown is the whole of it. What resolve sends back is the
+block and **nothing else** — the item's own `detail` comes back byte for byte as you sent it — so
+a client that honours only `documentation` from a late answer still gets everything that was
+learned. The block **only grows**: what you were already reading stays where it was, and the
+stat and the listing arrive after it. A file's says its size in bytes and its modification time;
+a directory's says it is a directory and when it changed, with **no byte count** — a directory's
+own size is its directory entry's, 64 on one machine and 4096 on the next for the same children.
+
+The names **rendered** are bounded — a directory of thousands would otherwise put its whole
+contents in one popup — and the block says how many entries there really are when it shows you
+fewer. Hidden entries are shown, unfiltered, because the completion half offers them too —
+**after the ordinary ones**, since `.` sorts before every letter and a directory holding as many
+dotfiles as the bound would otherwise show you nothing else. The trade is stated rather than
+hidden: in a directory with more ordinary entries than fit, the dotfiles are what you do not see.
+Nothing recurses here either: one listing, one level, no walk.
 
 ## What bounds it
 

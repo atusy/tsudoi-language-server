@@ -577,8 +577,17 @@ describe("an item names the root that produced it", () => {
   // document-relative source that fell back to `/` is indistinguishable from the
   // absolute source's legitimate output.
   //
-  // THE CARRIER IS `documentation`, not the label and not `detail`, and the cost
-  // is that a client showing no documentation window shows no attribution at all.
+  // WHICH FIELD CARRIES WHAT, AND THIS SPRINT REVERSED IT. The path was in the
+  // block and is now in `detail`: it is the FREE fact -- known when the item is
+  // built, costing no syscall -- and `detail` renders INLINE, where a client shows
+  // it without the user opening anything. The block keeps the attribution, which
+  // is the one thing the path cannot supply: one file is reachable from the
+  // document's directory, the cwd, a workspace folder and an absolute fragment at
+  // once, so no reading of the path recovers which root offered it.
+  //
+  // WHAT THAT TRADES IS NOT DECIDABLE FROM INSIDE THIS REPOSITORY AND IS RECORDED
+  // RATHER THAN SETTLED: inline is where clients TRUNCATE, and an absolute path's
+  // discriminating part is its tail.
   test("each item names the file it resolves to and the source that produced it", async () => {
     const documentTree = tree(["notes/deep.txt"]);
     const cwdTree = tree(["notes/wide.txt"]);
@@ -854,12 +863,16 @@ describe("an item records the source it was produced under", () => {
    * FRAGMENT OF ITS OWN and cannot ride in the same list, since `sourcesFor`
    * answers an absolute fragment with the absolute source ALONE.
    *
-   * WHY THE MARK CARRIES IT AT ALL, which the item's own documentation makes look
-   * redundant: the resolve half REBUILDS that block rather than appending to it,
-   * so the attribution has to arrive somewhere the answer is allowed to be built
-   * out of -- and the source is NOT derivable from the path, since one file is
-   * reachable from the document's directory, the cwd, a workspace folder and an
-   * absolute fragment at once.
+   * WHY THE MARK CARRIES THE PATH AT ALL, NOW THAT `detail` DOES: `detail` is a
+   * DISPLAY field, which a client may rewrite and which this module writes
+   * FLATTENED, so reading the path back off it is the edit to refuse and the mark
+   * stays the sole key.
+   *
+   * AND WHY IT CARRIES THE SOURCE: the resolve half REBUILDS the block rather than
+   * appending to it, so the attribution has to arrive somewhere the answer is
+   * allowed to be built out of -- and it is NOT derivable from the path, since one
+   * file is reachable from the document's directory, the cwd, a workspace folder
+   * and an absolute fragment at once.
    *
    * WHOLE-VALUE ON `data`, never a containment: a test asserting only that the
    * source appeared would stay green through the day the path stopped.
