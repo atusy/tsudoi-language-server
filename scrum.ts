@@ -113,7 +113,76 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  product_backlog: [],
+  product_backlog: [
+    {
+      id: "PBI-82",
+      story: {
+        role: "editor user",
+        capability:
+          "read WHICH FILE a path candidate points at from the completion list itself, and read its size, its date and -- for a directory -- what is inside it in the popup when I highlight one",
+        benefit:
+          "two same-named candidates offered by different roots are told apart without a documentation window, and the only property my client has to honour when it arrives late is `documentation`",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "Every item `pathCompletion` yields carries the absolute path it completes to in `detail`, and carries the source that offered it in `documentation` AND NOTHING ELSE -- both present before any `completionItem/resolve` is sent, so a session that never resolves still names the file. Falsified by an item with no `detail`, and by one whose `documentation` still opens with the path.",
+          verification:
+            'bun test -t "each item names the file it resolves to and the source that produced it", whose whole-value equality widens from `documentation` to THE PAIR; plus the pre-resolve read in test/resolve-path-stat.test.ts, which asserts `detail` is absent today and must assert the path is already there.',
+        },
+        {
+          criterion:
+            "For an item this package's completion produced, the resolve answer differs from the item it was sent in `documentation` and IN NO OTHER PROPERTY -- `detail` byte-identical included. Falsified by a handler that writes any `detail` at resolve, by one that drops the `textEdit`, by one that re-encodes the mark.",
+          verification:
+            "bun test test/resolve-path-stat.test.ts on both runtimes: the file arm and the directory arm compare the WHOLE answer as `toEqual({ ...item, documentation })`, which is the shape a written `detail` reddens.",
+        },
+        {
+          criterion:
+            "A resolved FILE's `documentation` states its size in bytes and its modification time; a resolved DIRECTORY's states that it is a directory and its modification time, CARRIES NO BYTE COUNT, and then its listing. Falsified by a handler saying `file` about everything, and by one reporting a directory's own entry size -- 64 on one machine and 4096 on the next, which is the ruling the `not.toContain(\"bytes\")` line exists for and which goes SILENTLY GREEN if it is left reading a `detail` that is now a path.",
+          verification:
+            'bun test -t "a directory item comes back saying it is a directory, and carrying no size" re-sited onto the stat line inside `documentation`, THEN perturbed: `detailFor`\'s directory arm made to report `stats.size` must redden it. A green taken without that perturbation does not meet this criterion.',
+        },
+        {
+          criterion:
+            "The block only ever GAINS: the `documentation` the completion sent is a strict PREFIX of the `documentation` resolve answers with, for BOTH kinds -- so nothing the user has already read moves position when the popup re-renders. Falsified by putting the stat in front of the source. It also retires an admitted weakness: a file's block is no longer byte-identical across resolve, so `a directory item's block carries what is inside it` stops being satisfiable by a passthrough.",
+          verification:
+            "bun test -t \"a directory item's block carries what is inside it, while a file item's block is unmoved\" -- the arm holds the completed item and the resolved answer in one session, and the prefix relation is one assertion over the two values it already has. The title inverts and is renamed with it.",
+        },
+        {
+          criterion:
+            "A filename holding a line break or a control character cannot put a raw break into ANY field this package renders, `detail` now included. Falsified by handing the path to `detail` unflattened -- which is the default outcome, since the path leaves the composer that owns `flattened()`.",
+          verification:
+            'bun test -t "a path whose own name would forge an attribution line renders as one that cannot", widened to read `detail`, plus its completion-half pair, since the completion half now renders the path too.',
+        },
+        {
+          criterion:
+            "Two workspace folders' items are still told apart BY THE ITEM ITSELF. Falsified by the state this change produces if nothing is re-sited: both items' `documentation` becomes the identical string `source: workspace`, and the arm degenerates to `two items exist` while staying green.",
+          verification:
+            'bun test -t "every workspace folder is answered from, and its items name their root" with the discriminator moved onto `detail`, THEN perturbed: `sourcesFor` keeping only the first folder must redden it.',
+        },
+        {
+          criterion:
+            'An item this package did not produce, and an item whose path has gone, still come back byte-identical to what was sent, with nothing on stderr -- and the arms saying so still WITNESS THAT ENRICHMENT WAS HAPPENING IN THAT SESSION. Falsified by a handler enriching anything carrying `data`, and equally by a liveness half left reading `typeof detail === "string"`, which completion now satisfies unconditionally.',
+          verification:
+            'bun test -t "an item the example never produced is returned untouched, in a session where enrichment is happening" and bun test -t "an item whose file is deleted between completion and resolve comes back unenriched rather than failing", each liveness half re-read as a `documentation` DELTA and deliberately not as an equality -- the arm\'s own docblock rules it weaker than a pin on purpose.',
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE THREE QUESTIONS THE DEVELOPER SAID BLOCKED WRITING THE RED TESTS ARE RULED HERE, because two of them the stakeholder already answered and the third has only one safe answer. ONE, the post-resolve part order is `source -> stat -> listing`, which is what makes criterion 4's prefix relation true. TWO, the absolute path is NOT also left in the block -- `detailにパス` is the whole of the instruction, and a path in both fields would make criterion 4 hold vacuously. THREE, `detail` IS flattened: the path leaves the composer that owns `flattened()`, so the line-break injection the forgery arm exists to refuse reopens in a field nothing sanitises. That third is a behavioural ruling the proposal did not make and is taken as the conservative one.",
+        "TWO HELPERS ARE MIS-INDEXED BY THIS CHANGE AND BOTH GO GREEN WHEN THEY ARE WRONG. `listingSection` exists twice -- in the member suite and in test/resolve-path-stat.test.ts, duplicated deliberately with a docblock saying the two MUST NOT DISAGREE -- and both locate the listing as part index 2, derived from `path, source, listing`. Under `source, stat, listing` the index is right BY ACCIDENT. Re-deriving them to locate the listing by its own header, against TODAY's composition and before any behaviour moves, is the first subtask for that reason: without it a re-index defect and a composition defect are indistinguishable in every red that follows.",
+        'WHAT THE MEMBER SUITE\'S FIXTURE MUST GAIN, AND IT IS THE LARGEST PIECE OF WORK NOBODY WOULD PREDICT. Nearly every member arm compares WHOLE `MarkupContent` values and its own docblocks refuse weakening them. They are stable today only because the volatile part -- `modified <iso>` -- lives in `detail` and is read through `.split(" · ")[0]`, never whole-value. Put the stat in the block and every one depends on an mtime `test/helpers/tree.ts` does not control. The root suite is already immune: it fixes the stamp with `utimesSync`. SO THE FIXTURE CHANGES AND THE ASSERTIONS DO NOT -- children written FIRST and stamps set after, because writing into a directory bumps its mtime, and a whole second because filesystems disagree about sub-second precision.',
+        "ONE ARM'S SUBJECT DOES NOT SURVIVE AT COMPLETION TIME AND IS MIGRATED RATHER THAN REPAIRED. `the documentation format follows what the client declared, both ways` turns on a `---` rule appearing in markdown and not in plaintext; with the completion block reduced to ONE part there is no join to perform, so the two formats produce IDENTICAL value bytes and only `kind` discriminates. The claim moves to the resolve suite, where two or three parts remain. Recorded because the arm will otherwise be read as merely needing new expected strings.",
+        "`completedSource` STAYS, DECIDED BY AN EXISTING ARM RATHER THAN BY PREFERENCE. The source is not derivable from the path -- one file is reachable from the document's directory, the cwd, a workspace folder and an absolute fragment at once -- and the only way to drop it is to APPEND to the documentation the client sent back, which the tamper arm forbids for both kinds. The mark stays the sole key: READING THE PATH OFF `item.detail` NOW THAT IT IS THERE IS THE EDIT TO REFUSE, `detail` being a display field a client may rewrite.",
+        "`documentationFor`'s BYTE-FOR-BYTE CLAUSE IS DISSOLVED, NOT PATCHED. It says the two halves must agree byte for byte about an item nothing was learned about; under this change resolve ALWAYS learns the stat -- a failed stat returns the item untouched -- so there is no such item and the sentence has no referent. What replaces it is criterion 2 plus criterion 4, and the composer stays shared for the source line and the markup rules. The same claim is restated in `itemsFrom`'s comment and in the completion suite's mark docblock; all three move together.",
+        "THE ARGUMENT FOR, AT ITS STRONGEST: the free fact arrives late and the expensive one arrives early. Which of four roots offered a candidate, and which file it actually is, are known when the item is built and cost no syscall -- and are legible today only in a window the completion suite's own comment flags as optional. The stat is the only thing here costing a syscall. This puts the free fact in the eagerly-rendered field and the expensive one in the lazy one.",
+        "THE SECOND ARGUMENT IS REASONED AND ITS PREMISE WAS MEASURED. `textDocument.completion.completionItem.resolveSupport.properties` lists which properties a client honours when they arrive from resolve, so a client naming `documentation` alone silently drops a `detail` first appearing at resolve -- today's stat line. MEASURED, ripgrep over the whole checkout: `resolveSupport` has ZERO matches, so nothing here reads it and NO CRITERION MAY LEAN ON IT. Criterion 2 delivers the same robustness by asserting our own answer's shape instead.",
+        "THE STRONGEST RISK, AND IT IS NOT DECIDABLE FROM INSIDE THIS REPOSITORY, SO IT IS RECORDED RATHER THAN RESOLVED. `detail` renders INLINE, and inline is where clients truncate. An absolute path's discriminating part is its TAIL -- exactly what truncation eats -- so this can fail to deliver the disambiguation it is motivated by while giving up a stat line that fits inline well. THE PRODUCT OWNER HELD THE ITEM AT `refining` FOR THIS; the facilitator ruled it `ready` because the stakeholder stated the design as an instruction rather than as a question, and because the criteria's SHAPE does not depend on the answer. A SHORTENED path -- relative to the source's root -- is the alternative and is deliberately NOT drafted: it would make `detail` say something `data.pathCompletion` does not, and this item keeps the two identical. Reopen as a new item if the trade turns out badly in a real editor.",
+        "THE PLAIN READING OF `弄らず` IS TAKEN: resolve writes NO `detail` at all, rather than rebuilding an identical one from the mark. Rebuilding buys nothing -- the path in the block was ALREADY taken from the forgeable mark, which the member suite states as a deliberate position -- and the tamper arm corrupts `documentation` only. DISSENT-WORTHY BECAUSE IT MOVES A USER-VISIBLE FIELD OUT OF `the answer is built from what the handler read`: after this, one field the user reads is the client's own copy coming back.",
+        "WHAT NOTHING WILL CHECK, SAID SO THE GREENS ARE NOT OVER-READ. The member README's PROSE about which field carries what is graded by nothing -- `readmeCoverage` accounts for FENCED BLOCKS and this claim is not in one -- so it is in scope as WORK and out of scope as a CRITERION. `test/perturbations.test.ts` re-runs the member's resolve suite as a baseline, so that file may not be left red across a commit boundary.",
+      ],
+    },
+  ],
   completed: [
     {
       number: 81,
