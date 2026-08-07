@@ -788,35 +788,45 @@ describe("the block a popup already shows only ever GAINS", () => {
    * STRICT IN BOTH DIRECTIONS: `startsWith` alone is satisfied by an answer that
    * added nothing at all, which is what a failed stat legitimately produces.
    *
-   * AND BOTH FORMATS, WHICH THIS ARM PINNED IN PLAINTEXT ALONE UNTIL AN
-   * INDEPENDENT REVIEWER NAMED WHAT THAT LEAVES OUT. The two formats join their
+   * AND ACROSS EVERY AXIS THE COMPOSER BRANCHES ON, WHICH THIS ARM ACQUIRED ONE
+   * REVIEW ROUND AT A TIME AND IS THE REASON IT IS SPELLED AS A SWEEP. It pinned
+   * PLAINTEXT alone until a reviewer named the hole: the two formats join their
    * parts with different separators, and the registry's reorder weakening is
-   * format-agnostic -- so a composer putting the stat in front FOR MARKDOWN ONLY
-   * satisfied every assertion here AND was reported HELD by the record. The
-   * markdown half is where the separator itself is composed, so it is the half a
-   * format-blind green was least entitled to speak for.
+   * format-agnostic, so a composer putting the stat in front FOR MARKDOWN ONLY
+   * passed here AND was reported HELD by the record that exists to catch it. The
+   * same reviewer then named the same hole one axis over -- every item here came
+   * from `cwd`, so a composer reordering only for `workspace` passed too. THE
+   * LESSON IS THE SHAPE, NOT THE TWO PATCHES: a relation asserted over one value
+   * of a discriminator the composer can read is a green about that value.
+   *
+   * EVERY SOURCE NAME, DRIVEN THROUGH `fromSource` RATHER THAN THROUGH THE
+   * HANDLER: the handler's own `seen` filter collapses one entry name to one item
+   * across roots, so the four classes cannot all be reached from one drive of it.
    */
   test("what completion sent is a strict prefix of what resolve answers, for both kinds", async () => {
     const fixture = tree(["sample-dir/one.txt", "sample.txt"]);
     try {
-      for (const format of [["plaintext"], ["markdown"]] as const satisfies MarkupKind[][]) {
-        const items = await complete(
-          { ...elsewhere, line: "sample" },
-          fixture.root,
-          undefined,
-          true,
-          [...format],
-        );
-        expect(inserted(items)).toEqual(["sample-dir", "sample.txt"]);
+      const fragment = only("sample");
+      for (const format of ["plaintext", "markdown"] as const satisfies MarkupKind[]) {
+        for (const name of ["document", "cwd", "workspace", "absolute"] as const) {
+          const items = await fromSource(
+            { name, root: fixture.root },
+            fragment,
+            undefined,
+            true,
+            format,
+          );
+          expect(inserted(items)).toEqual(["sample-dir", "sample.txt"]);
 
-        for (const item of items) {
-          const answered = await resolvePathStat(resolveSession([...format]), item);
-          const sent = documentationOf(item);
-          const back = documentationOf(answered);
+          for (const item of items) {
+            const answered = await resolvePathStat(resolveSession([format]), item);
+            const sent = documentationOf(item);
+            const back = documentationOf(answered);
 
-          expect(sent).not.toBe("");
-          expect(back.startsWith(sent)).toBe(true);
-          expect(back.length).toBeGreaterThan(sent.length);
+            expect(sent).not.toBe("");
+            expect(back.startsWith(sent)).toBe(true);
+            expect(back.length).toBeGreaterThan(sent.length);
+          }
         }
       }
     } finally {

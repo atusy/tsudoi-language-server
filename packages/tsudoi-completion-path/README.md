@@ -41,11 +41,12 @@ resolve method with no completion handler beside it, so that arrangement is reje
 config loads rather than left to disappoint you at the first request.
 
 The completion **streams**: it yields the listing in batches, so a client that sent a
-`partialResultToken` sees the first entries while the rest is still being read. Nothing is read
-about an entry's own **contents or metadata** here — that is exactly the work `resolvePathStat`
-defers to the one item you highlight. Classifying an entry is cheaper but not free: an ordinary
-file or directory is told apart from the directory listing alone, and a **symlink** costs one
-`stat`, to report the kind of what it points at.
+`partialResultToken` sees the first entries while the rest is still being read. No entry's
+**size, modification time or contents** is read here — that is exactly the work `resolvePathStat`
+defers to the one item you highlight, and it is narrower than _no metadata_, which the next
+sentence would contradict. Classifying an entry is cheaper but not free: an ordinary file or
+directory is told apart from the directory listing alone, and a **symlink** costs one `stat`, to
+report the kind of what it points at.
 
 **Which field carries what**, because the two are read at different moments and by different
 parts of an editor. `detail` carries the **absolute path** the item completes to, on one line —
