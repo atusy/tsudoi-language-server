@@ -534,9 +534,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "`documentationFor`'s byte-for-byte clause in packages/tsudoi-completion-path/src/completion.ts -- DISSOLVED AND NOT PATCHED: it speaks of an item nothing was learned about, and under this change resolve ALWAYS learns the stat because a failed stat returns the item untouched, so the sentence has no referent; what replaces it is criteria 2 and 4, and the composer stays shared for the source line and the markup rules. `itemsFrom`'s NO DETAIL IS READ HERE, whose refusal survives and whose wording does not -- what is refused is a STAT per entry. The carrier comment in test/completion.test.ts reading THE CARRIER IS `documentation`, not the label and not `detail`, the exact ruling this sprint reverses and so where the reversal's reason belongs. The MEASURED pass/fail counts in src/resolve.ts, VOID once the arms they were taken over are rewritten -- DELETED rather than superseded, a count taken against arms that no longer exist being un-re-takeable. The member README's `What resolving one item costs` paragraph. LAST, because it describes what landed rather than what was intended.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "43aa575",
+            message:
+              "docs(completion-path): the prose about which field carries what follows the code",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "EVERY SENTENCE REWRITTEN HERE HAS AN ARM BEHIND IT, WHICH IS WHAT STANDS IN FOR A RED. `the block only ever GAINS` is criterion 4's arm at the root and its cheap twin in the member's completion suite; `documentation and nothing else` is the `toEqual({ ...item, documentation })` shape in two root arms; `no byte count on a directory` is the re-sited arm plus its registry record; `detail comes back byte for byte` is the forgery arm's widening. The one claim with NO arm is the trade -- inline truncation -- and it is written as a thing this repository cannot decide rather than as a fact.",
+          "THE COUNTS IN src/resolve.ts WENT AND WERE NOT RE-TAKEN, which is the disposition the item ruled: `15 pass / 0 fail` and `reddens 11` were readings over arms this sprint rewrote, so re-taking them would produce a different number over a different set and mean nothing to a reader comparing. The CLAIM they were attached to -- that the `isDirectory()` test saves a syscall and is not what keeps a file answering as a file -- survives without them.",
+          "FULL DEFINITION OF DONE: PASSED, all five checks exit 0, 955 pass / 0 fail over 70 files, 2933 expect() calls, 185.39s, nine registry arms HELD, ONE non-gating `eslint(require-yield)` warning. Byte-identical arm and assertion counts to subtask 8, which is what a documentation-only subtask should read.",
+          "THE README CHANGE IS GRADED BY NOTHING AND THE ITEM SAID SO IN ADVANCE: `readmeCoverage` accounts for FENCED BLOCKS, and none was added or edited -- the fenced snippet and its consumers are untouched, which is why test/readme-coverage.test.ts, test/readme-accounts.test.ts and test/readme-layout.test.ts are all green without an edit. In scope as work, out of scope as a criterion.",
+        ],
       },
     ],
     impediments: [],
