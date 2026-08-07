@@ -787,27 +787,37 @@ describe("the block a popup already shows only ever GAINS", () => {
    *
    * STRICT IN BOTH DIRECTIONS: `startsWith` alone is satisfied by an answer that
    * added nothing at all, which is what a failed stat legitimately produces.
+   *
+   * AND BOTH FORMATS, WHICH THIS ARM PINNED IN PLAINTEXT ALONE UNTIL AN
+   * INDEPENDENT REVIEWER NAMED WHAT THAT LEAVES OUT. The two formats join their
+   * parts with different separators, and the registry's reorder weakening is
+   * format-agnostic -- so a composer putting the stat in front FOR MARKDOWN ONLY
+   * satisfied every assertion here AND was reported HELD by the record. The
+   * markdown half is where the separator itself is composed, so it is the half a
+   * format-blind green was least entitled to speak for.
    */
   test("what completion sent is a strict prefix of what resolve answers, for both kinds", async () => {
     const fixture = tree(["sample-dir/one.txt", "sample.txt"]);
     try {
-      const items = await complete(
-        { ...elsewhere, line: "sample" },
-        fixture.root,
-        undefined,
-        true,
-        ["plaintext"],
-      );
-      expect(inserted(items)).toEqual(["sample-dir", "sample.txt"]);
+      for (const format of [["plaintext"], ["markdown"]] as const satisfies MarkupKind[][]) {
+        const items = await complete(
+          { ...elsewhere, line: "sample" },
+          fixture.root,
+          undefined,
+          true,
+          [...format],
+        );
+        expect(inserted(items)).toEqual(["sample-dir", "sample.txt"]);
 
-      for (const item of items) {
-        const answered = await resolvePathStat(resolveSession(["plaintext"]), item);
-        const sent = documentationOf(item);
-        const back = documentationOf(answered);
+        for (const item of items) {
+          const answered = await resolvePathStat(resolveSession([...format]), item);
+          const sent = documentationOf(item);
+          const back = documentationOf(answered);
 
-        expect(sent).not.toBe("");
-        expect(back.startsWith(sent)).toBe(true);
-        expect(back.length).toBeGreaterThan(sent.length);
+          expect(sent).not.toBe("");
+          expect(back.startsWith(sent)).toBe(true);
+          expect(back.length).toBeGreaterThan(sent.length);
+        }
       }
     } finally {
       fixture.dispose();
