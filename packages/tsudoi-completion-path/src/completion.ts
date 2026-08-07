@@ -4,7 +4,7 @@
  * fragment under the cursor names, yielded in batches.
  */
 
-import type { Dirent } from "node:fs";
+import type { Dirent, Stats } from "node:fs";
 import { opendir, stat } from "node:fs/promises";
 import nodePath, { basename, dirname, type PlatformPath } from "node:path";
 import process from "node:process";
@@ -403,6 +403,25 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
   return `${header}\n\n${listing.names
     .map((name) => (markdown ? `- ${flattened(name)}` : flattened(name)))
     .join("\n")}`;
+}
+
+/**
+ * One line's worth of what a `stat` found.
+ *
+ * BESIDE THE COMPOSER AND NOT BESIDE THE `stat` THAT PRODUCES IT, for the reason
+ * `listingText` above is here: what it spells is a PART, and how a part is spelled
+ * is the block's business even when the fact it renders is read in another module.
+ *
+ * A DIRECTORY IS TOLD APART BY WHAT IT IS AND NOT BY WHAT AN ITEM CLAIMED, and it
+ * reports NO SIZE: a directory's `size` is its own directory ENTRY's -- 64 on one
+ * machine and 4096 on the next for the same children -- so showing it would put a
+ * number in front of a user that means nothing about what is inside.
+ */
+export function statLine(stats: Stats): string {
+  const modified = `modified ${stats.mtime.toISOString()}`;
+  return stats.isDirectory()
+    ? `directory · ${modified}`
+    : `file · ${String(stats.size)} bytes · ${modified}`;
 }
 
 /**

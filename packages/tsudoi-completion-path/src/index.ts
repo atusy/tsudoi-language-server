@@ -38,7 +38,7 @@
  * `PathSource`, `PathSourceName`), the edit builder (`editFor`), the listing
  * (`listingDirectory`, `itemsFrom`), the option bag (`PathCompletionOptions`),
  * the item mark (`PathItemData`, `completedPath`, `completedSource`), the block
- * the two handlers share (`documentationFor`, `preferredFormat`,
+ * the two handlers share (`documentationFor`, `preferredFormat`, `statLine`,
  * `DirectoryListing`) and the resolve half's drain (`listingFrom`) are all
  * reachable from this package's own tests by relative import, so keeping them
  * internal costs no coverage and buys the freedom to change them. The batch size and the listing bound go one further

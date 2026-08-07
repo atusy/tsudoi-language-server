@@ -17,15 +17,9 @@ import {
   completedSource,
   documentationFor,
   preferredFormat,
+  statLine,
   type DirectoryListing,
 } from "./completion.ts";
-
-function detailFor(stats: Stats): string {
-  const modified = `modified ${stats.mtime.toISOString()}`;
-  return stats.isDirectory()
-    ? `directory · ${modified}`
-    : `file · ${String(stats.size)} bytes · ${modified}`;
-}
 
 /** A `completionItem/resolve` handler that fills in a path item's file detail. */
 export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (context, item) => {
@@ -46,7 +40,7 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
   // into somebody else's object.
   return {
     ...item,
-    detail: detailFor(stats),
+    detail: statLine(stats),
     documentation: documentationFor(
       path,
       completedSource(item),
@@ -58,7 +52,7 @@ export const resolvePathStat: MethodHandler<"completionItem/resolve"> = async (c
       // arm says: with the test dropped, `opendir` fails on a file and
       // `listingOf` catches, so resolve.test.ts reads 15 pass / 0 fail.
       // Inverting THIS site to `isFile()` reddens 11 -- `13` stood here and was
-      // taken with a replace that hit `detailFor`'s test too.
+      // taken with a replace that hit `statLine`'s test too.
       stats.isDirectory() ? await listingOf(path, context.signal) : undefined,
     ),
   };

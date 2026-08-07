@@ -813,11 +813,11 @@ test("the mark the two handlers share cannot be named by a consumer, by either r
  * ARRIVING there is the event worth reddening on, and a probe that asks about
  * one name at a time can only ever refuse the names somebody thought to list.
  *
- * THE SHARED NAMES ARE WHAT IT IS FOR: `documentationFor` and `preferredFormat`
- * are exported from the completion module so the resolve half can rebuild one
- * block rather than spelling a second, and publishing either would make how the
- * two agree a compatibility question with a stranger, exactly as the mark would.
- * A name-by-name probe would have to be edited for each of them.
+ * THE SHARED NAMES ARE WHAT IT IS FOR: `documentationFor`, `preferredFormat` and
+ * `statLine` are exported from the completion module so the resolve half can
+ * rebuild one block rather than spelling a second, and publishing any of them
+ * would make how the two agree a compatibility question with a stranger, exactly
+ * as the mark would. A name-by-name probe would have to be edited for each.
  *
  * WHAT IT CANNOT SEE IS A TYPE, BY CONSTRUCTION -- a module namespace object
  * carries runtime exports alone -- which is why the type-only member of the same
