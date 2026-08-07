@@ -115,6 +115,56 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-85",
+      story: {
+        role: "editor user",
+        capability:
+          "read a path completion popup whose rows name the ENTRY, with the directory part already on the line appearing in none of them",
+        benefit:
+          "the bytes that tell two candidates apart start at the left edge of every row instead of behind a prefix every row repeats -- and the deeper the directory, the more of the popup that prefix was taking",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "AN ITEM'S `label` IS THE ENTRY'S OWN NAME AND CARRIES NO PART OF THE FRAGMENT'S DIRECTORY. A MULTI-SEGMENT FRAGMENT IS THE ONLY THING THAT GRADES THIS: where the fragment names no directory, the entry name and the inserted text are the SAME STRING, so an arm written on one passes against the source this item exists to change.",
+          verification:
+            "An arm in packages/tsudoi-completion-path/test/completion.test.ts over a fragment carrying a directory part, comparing the labels WHOLE against the entry names -- never `not.toContain`, which the empty label also satisfies. PERTURBATION: `label: insertText` restored reddens it, and the single-segment arm beside it STAYS GREEN, which is what says the arm grades the directory part rather than the field.",
+        },
+        {
+          criterion:
+            "EVERY ITEM CARRIES `filterText`, BYTE FOR BYTE WHAT IT INSERTS. A client filters against the text its edit RANGE covers, and that range begins where the FRAGMENT begins -- so with the directory part gone from the label, an item filters itself away at the keystroke that types a separator. THE STAKEHOLDER'S OWN CLIENT IS NOT WHAT THIS BUYS, which is recorded rather than assumed: ddc-source-lsp reads `insertText` and passes `filterText` over with a comment saying why, so this criterion is what keeps the change from being a regression on the clients that do read it.",
+          verification:
+            "The whole-value pair `{ filterText, insertText }` on every item of a multi-segment fragment, beside `textEdit.newText`. PERTURBATION: the field dropped -- red.",
+        },
+        {
+          criterion:
+            "THE LABEL IS A SUBSTRING OF WHAT THE ITEM INSERTS, which is what forecloses the edit this change makes look free. `flattened()` is applied to `detail` and to the block and to NEITHER `label` NOR `insertText`; the recorded reason for the label half -- that a client filters on it -- stops holding the moment `filterText` exists, and what replaces it is the client's: READ FROM ddc-source-lsp's SOURCE AND MEASURED NOWHERE HERE, an item whose inserted word does not CONTAIN its label is DROPPED, under an option that defaults off.",
+          verification:
+            "An arm over the fixture whose name already holds a line break -- the one the forgery arm builds -- asserting the inserted text contains the label. PERTURBATION: the label flattened -- red there, while the forgery arm on `detail` stays green, which is what tells the two fields apart.",
+        },
+        {
+          criterion:
+            "WHAT IS WRITTEN INTO THE BUFFER DOES NOT MOVE: `insertText`, `textEdit.newText` and BOTH ranges are what they were, so no client's insertion changes and the widening-fragment reading of a filename holding a space is untouched.",
+          verification:
+            "The `applying the item yields the path it names` arms stay GREEN across every commit of this item, and they are NAMED because a criterion asking only for a red asks for nothing. The `inserted()` helper reads `insertText ?? label` and cannot see this either way, which is why the arms and not the helper are what is named.",
+        },
+        {
+          criterion:
+            "THE PROSE THIS FALSIFIES IS REPAIRED WHERE IT STANDS. The docblock over the forgery arm says `label` and `insertText` carry the name RAW because one is written into the buffer and THE OTHER IS WHAT A CLIENT FILTERS ON -- the second half is what this item deletes. The member README's `Which field carries what` paragraph names which field is read at which moment and now has a third field to name.",
+          verification:
+            "Read: no sentence in the tree gives filtering as the LABEL's reason, and the README paragraph names `label`, `filterText` and `detail`. No fenced block moves, so `readmeCoverage` needs no new marker and no new `consumers` row.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "THE REPORT, IN THE STAKEHOLDER'S OWN TERMS: `/Users/` typed into a buffer, and every row of the popup reading `/Users/.localized`, `/Users/Shared`, `/Users/atusy`. Their words were that this had been fixed before.",
+        "WHAT THE EARLIER FIX ACTUALLY DID, READ AND NOT INFERRED, because naming the wrong commit is a failure this project has already recorded. 4a1bdfa made the label `${insertText} (${source.name}: ${source.root})`; 9f35af2 took the decoration back off, its commit body naming the stakeholder as having removed the decorated label. The label was `insertText` before the first and after the second, so the DIRECTORY PART was never in either edit's scope -- what those two commits added and removed was the source and the root.",
+        "WHAT THE CLIENT DOES WITH EACH FIELD, READ FROM ITS SOURCE AND MEASURED NOWHERE: nothing in this repository spawns an editor, and no check here can. In ddc-source-lsp's denops/@ddc-sources/lsp/completion_item.ts the popup renders `abbr`, which is the item's `label`; what is inserted is `word`, taken from `insertText ?? label` and re-cut at the edit range; `filterText` is passed over deliberately, with the reason in a comment. So on the stakeholder's editor the label alone is what they saw, and moving it changes the display and nothing else.",
+        "WHY `filterText` RATHER THAN A NARROWER EDIT RANGE. Beginning the edit after the last separator would make the entry name the whole item and need no `filterText` at all -- REFUSED: it moves what is written into the buffer, which criterion 4 forbids, and the widening-fragment machinery that reaches a filename holding a space is built on the range beginning where the FRAGMENT begins.",
+        "WHAT IS NOT IN THIS ITEM. `CompletionItemLabelDetails.description`, which sprint 82's records weighed and deliberately left off the backlog -- it renders in the same inline region and would not escape the truncation that kept it off. And the completion's `isIncomplete` ruling, which is tsudoi's published type and not this package's.",
+      ],
+    },
+    {
       id: "PBI-84",
       story: {
         role: "editor user",
