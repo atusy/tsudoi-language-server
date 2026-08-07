@@ -355,7 +355,105 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 82,
+    pbi_id: "PBI-82",
+    goal: "The free fact goes to the eagerly-rendered field and the expensive one to the lazy field: `detail` names WHICH FILE from the completion list itself, `documentation` is the only property a late answer touches, and the block only ever GAINS -- with the two claims this change turns SILENTLY GREEN re-sited before any run can be read as passing.",
+    status: "planning",
+    subtasks: [
+      {
+        test: "GREEN BEFORE AND AFTER, WITH NO EXPECTED STRING TOUCHED -- the bound arms in both suites (`a directory holding far more entries than fit renders a bounded prefix and states its total`, and the member's edge, dotfile and two-directory arms) are the check that the new lookup finds the section `slice(2)` found. AND THE ANCHOR IS A FAILING INPUT THAT EXISTS TODAY RATHER THAN A PREDICTION ABOUT THE CHANGE: `documentationFor` pushes the source part ONLY WHEN DEFINED, so the block a FORGED source produces is `path, header, names` and `slice(2)` returns the NAMES as the header and no names at all. An arm handing today's helper that block must redden before the re-derivation and pass after -- which the part index cannot satisfy and a lookup can.",
+        implementation:
+          "Both copies of `listingSection` -- in packages/tsudoi-completion-path/test/resolve.test.ts and in test/resolve-path-stat.test.ts, duplicated deliberately under a docblock saying the two MUST NOT DISAGREE -- re-derived to locate the listing by its own header rather than by the part index that `path, source, listing` happens to put it at. AGAINST TODAY'S COMPOSITION AND FIRST: under `source, stat, listing` the index is right BY ACCIDENT and both helpers go GREEN when they are wrong, so without this a re-index defect and a composition defect are indistinguishable in every red that follows. The two move together or the docblock's own claim is false.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "NOTHING REDDENS AND NOTHING MAY: no member arm reads an mtime yet, so the whole member suite is green before and after. WHAT STANDS IN PLACE OF A RED IS THE ORDER, and it is the whole of the work -- children written FIRST and the stamp set AFTER, because writing into a directory bumps its mtime, and on a WHOLE SECOND, because filesystems disagree about sub-second precision. A probe stating the fixture's own premise goes with it: one directory stat-ed through the fixture twice reports the same stamp, which is the property every whole-value block assertion rests on from subtask 4 onward and which a stamp set before the children loses SILENTLY.",
+        implementation:
+          "`tree` in packages/tsudoi-completion-path/test/helpers/tree.ts gains the fixed stamp, taking the shape test/resolve-path-stat.test.ts's `sampleTree` already has -- the root suite is immune to this change for exactly that reason. ITS OWN COMMIT AND NOT INSIDE SUBTASK 4, RULED BY THE PRODUCT OWNER: green before and green after makes it tidying, and folding it in is the one thing that would make subtask 4 too large to read. STRUCTURAL, ARGUED RATHER THAN ASSUMED: it changes no assertion, no answer and nothing shipped; it removes a dependence on the clock that today's arms do not have and that tomorrow's cannot avoid.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "GREEN THROUGHOUT, AND THE ARMS THAT PROVE IT IS A MOVE ARE THE ONES LEFT UNTOUCHED: every reader that splits the stat line on the middle dot -- the two cancellation arms, the directory-replaced-by-a-file arm and the two kind-driven arms -- still reads the same bytes from the same field. A move that changed a byte reddens there before anything about composition is attempted.",
+        implementation:
+          "`detailFor` in packages/tsudoi-completion-path/src/resolve.ts moves beside `documentationFor` in src/completion.ts and loses the field name it is about to stop describing; resolve.ts imports it as it already imports the composer. src/index.ts's enumeration of the block the two handlers share gains the name, and so does the docblock in test/published-artifacts.test.ts naming `documentationFor` and `preferredFormat` as that surface. THE WHOLE-VALUE PUBLISHED ASSERTION STAYS GREEN PRECISELY BECAUSE THE NAME IS NOT RE-EXPORTED FROM index.ts -- publishing it would make how the two halves agree a compatibility question with a stranger, which is why the shared names are internal.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "THE REDS, NAMED BEFORE THE SOURCE EDIT SO THE ONE BIG GREEN COMMIT IS READABLE AFTERWARDS -- THE PRODUCT OWNER'S CONDITION FOR ACCEPTING IT UNSPLIT -- AND EVERY ONE OF THEM RED FOR THE COMPOSITION RATHER THAN FOR AN INDEX, WHICH IS WHAT SUBTASK 1 BOUGHT. `each item names the file it resolves to and the source that produced it` widens from `documentation` to THE PAIR, WHOLE-VALUE ON BOTH: a containment there lets an implementation that ALSO left the path in the block pass this and make the prefix criterion hold vacuously, which is two failures conspiring. The pre-resolve reads in test/resolve-path-stat.test.ts that today assert `detail` is ABSENT invert to assert the path is already there. The file arm and the directory arm are recast as `toEqual({ ...item, documentation })`, the shape ANY `detail` written at resolve reddens. `a directory item's block carries what is inside it, while a file item's block is unmoved` is renamed on the inversion -- the file's block now moves too -- and carries the PREFIX relation over the two values one session already holds, which also retires the passthrough weakness its own docblock admits. `a directory item comes back saying it is a directory, and carrying no size` is re-sited onto the stat line inside `documentation`: left where it is, `not.toContain(\"bytes\")` over an absolute path is TRUE ON EVERY MACHINE. The installed-consumer arm's two `detail` reads move to the stat line and NOT to `detail is non-empty`, which a DECLINED item now satisfies. `every workspace folder is answered from, and its items name their root` moves its discriminator onto `detail`, or the two folders' items become the identical string and the arm degenerates to `two items exist` while staying green -- and `insertText` does not save it, both folders spelling the same relative text. The kind-driven pair stays two arms, loses its recorded reason -- the two defects no longer land in DIFFERENT FIELDS -- and gains the one that survives.",
+        implementation:
+          "`itemsFrom` in packages/tsudoi-completion-path/src/completion.ts writes the absolute path to `detail` and hands `documentationFor` the source ALONE; `documentationFor` loses its mandatory path parameter, gains the stat line and composes `source` then `stat` then `listing`; `resolvePathStat` in src/resolve.ts answers `{ ...item, documentation }` and writes NO `detail` -- the plain reading of the instruction rather than rebuilding an identical one from the mark. The arms move in the same commit: packages/tsudoi-completion-path/test/completion.test.ts and test/resolve.test.ts, test/resolve-path-stat.test.ts's block and detail constants, test/installed-handler.test.ts, test/workspace.test.ts. WHERE THE BASELINE BINDS: test/perturbations.test.ts re-runs packages/tsudoi-completion-path/test/resolve.test.ts WHOLE and this project takes no red commit, so that file's rewritten arms and this source edit are ONE commit -- inseparable rather than convenient. THE COMMIT BODY NAMES THE STATE THIS LEAVES AND THE SUBTASK THAT CLOSES IT, which is the product owner's second condition. READING THE PATH OFF `item.detail` NOW THAT IT IS THERE IS THE EDIT TO REFUSE: `detail` is a display field a client may rewrite, and the mark stays the sole key.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A NEW COMPLETION-HALF ARM CARRIES THE RED, AND WHERE IT LIVES IS WHY THE SPLIT BUYS ANYTHING: packages/tsudoi-completion-path/test/completion.test.ts is re-run by no baseline, so an arm requiring that an entry whose own name holds a line break puts no raw break into the `detail` of the item completing to it can be written and READ RED before the fix. Then the member resolve arm `a path whose own name would forge an attribution line renders as one that cannot` widens to read `detail` beside the block -- that file's widening and the fix in one commit, for the reason subtask 4 gives. THE WINDOW IS DISCLOSED RATHER THAN HIDDEN: between subtask 4 and this one the shipped source writes an UNFLATTENED path into `detail`, which is a REGRESSION and not merely an absence, since the path is flattened in the block at base. WHAT IS STILL NOT CLOSED, as the arms already say: markdown syntax inside a name renders as syntax; what may not survive is a LINE BREAK, the line grammar being what carries meaning.",
+        implementation:
+          "`flattened` in packages/tsudoi-completion-path/src/completion.ts applied where `itemsFrom` writes `detail`. AT THE WRITE AND NOT BY ROUTING THE PATH BACK THROUGH `documentationFor`, which no longer takes it: the composer is where flattening lived only because the path passed through it, and restoring that route to keep the sanitising would undo subtask 4. NOT DEFERRABLE -- THE PRODUCT OWNER MADE CRITERION 5 UNMET A BLOCK ON ACCEPTANCE, because a sprint cut short would leave the last green commit carrying a disclosed regression with no owner.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "THREE PERTURBATIONS, TAKEN AGAINST THE LANDED TEXT AND READ RATHER THAN PREDICTED -- a green without them does not meet criterion 3, 4 or 6, which is the item's own ruling. ONE: the stat composer's DIRECTORY arm made to report `stats.size` must redden `a directory item comes back saying it is a directory, and carrying no size`, and the arms it ALSO reddens are required by name, a red beside the arm rather than at it being the failure this instrument exists to refuse. TWO: `sourcesFor` keeping only the FIRST workspace folder must redden `every workspace folder is answered from, and its items name their root` -- the arm whose discriminator subtask 4 moved, and which stays GREEN under that perturbation if the move was not made. THREE, ADDED BY THE PRODUCT OWNER'S CHECKLIST AND NOT IN THE DEVELOPER'S PLAN: the composer emitting the stat BEFORE the source must redden the prefix arm, without which a prefix assertion over two values that are both correct today is satisfied by any implementation and the red is the whole of the evidence.",
+        implementation:
+          "Each edit is made, read and REVERTED. THE SUBTASK DOES NOT CLOSE ON A NOTE -- the product owner applied this dashboard's own header, A PERTURBATION RECORDED ONLY AS PROSE IS NOT RECORDED -- so each reading ends as a record test/perturbations.test.ts RE-RUNS. WHERE THAT COLLIDES WITH THE INSTRUMENT, RESOLVED HERE RATHER THAN LEFT AS A CONFLICT: the registry re-runs an ARM FILE, and two of these three arms live in files that spawn real servers on both runtimes, which is not a cost to put on every run. So each record NAMES AN ARM IN A NON-SPAWNING FILE, and where none exists the subtask ADDS one in the member suite whose subject is the same claim -- the cheap arm being what the record grades and the spawning arm staying as the wire-level statement. A perturbation for which neither is possible is reported as such and its reading anchored as an assertion beside the arm, which is the header's own second branch.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "THE CLAIM IS MIGRATED, NOT REPAIRED, AND THE ARM THAT LOSES IT SAYS SO. `the documentation format follows what the client declared, both ways` turns on a rule appearing in markdown and not in plaintext; with the completion block reduced to ONE part there is no join to perform, the two formats produce IDENTICAL value bytes and only `kind` discriminates -- so that arm narrows to `kind` with the loss written at the site rather than being handed new expected strings. What replaces it is the FILE half added to the member resolve suite's `the markup a directory's block is built in follows the session, not the item`: a resolved file's block now carries two parts, so the rule is back. BORN GREEN, AND ITS FALSIFIER IS NAMED: fixing the composer's separator to the plaintext one reddens the new file half and leaves the plaintext arms untouched.",
+        implementation:
+          "packages/tsudoi-completion-path/test/completion.test.ts's format arm, narrowed with its reason; packages/tsudoi-completion-path/test/resolve.test.ts's markup arm, widened to the file kind and renamed off `directory`.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: 'THE HALF THAT WOULD NEVER HAVE ANNOUNCED ITSELF. `an item the example never produced is returned untouched, in a session where enrichment is happening` stays GREEN through everything above, because `typeof enriched.detail === "string"` is satisfied UNCONDITIONALLY by completion once it writes the path -- and its docblock is explicit that the line is the LIVENESS half, without which the arm is satisfied by three worlds at once, one of them being no handler called in this process at all. Re-read as a `documentation` DELTA and deliberately NOT as an equality, the docblock ruling it weaker than a pin on purpose. THE DISCRIMINATING PERTURBATION FOR BOTH LIVENESS HALVES, this one and the deleted-file arm\'s: `resolvePathStat` made to answer the item untouched must redden the delta and must LEAVE `typeof detail === "string"` green. AND THE DELTA\'S OWN DEGENERATION IS WHAT THE PRODUCT OWNER FLAGGED: it needs a state where the delta is EMPTY and the arm goes red, or it is the same defect wearing a different field\'s name.',
+        implementation:
+          "test/resolve-path-stat.test.ts, the foreign-item arm and the deleted-file arm. The foreign item's own claim -- byte-identical answer, nothing on stderr -- is untouched; what moves is only what witnesses that enrichment was happening in that session.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "NOTHING REDDENS HERE AND THE ITEM SAYS WHY: the member README's prose about which field carries what is graded by NOTHING -- `readmeCoverage` accounts for FENCED BLOCKS and this claim is not in one -- so it is in scope as WORK and out of scope as a CRITERION. WHAT STANDS IN FOR A RED is that every sentence rewritten below is checked against the arms that landed above, and a sentence with no arm behind it is not written.",
+        implementation:
+          "`documentationFor`'s byte-for-byte clause in packages/tsudoi-completion-path/src/completion.ts -- DISSOLVED AND NOT PATCHED: it speaks of an item nothing was learned about, and under this change resolve ALWAYS learns the stat because a failed stat returns the item untouched, so the sentence has no referent; what replaces it is criteria 2 and 4, and the composer stays shared for the source line and the markup rules. `itemsFrom`'s NO DETAIL IS READ HERE, whose refusal survives and whose wording does not -- what is refused is a STAT per entry. The carrier comment in test/completion.test.ts reading THE CARRIER IS `documentation`, not the label and not `detail`, the exact ruling this sprint reverses and so where the reversal's reason belongs. The MEASURED pass/fail counts in src/resolve.ts, VOID once the arms they were taken over are rewritten -- DELETED rather than superseded, a count taken against arms that no longer exist being un-re-takeable. The member README's `What resolving one item costs` paragraph. LAST, because it describes what landed rather than what was intended.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE BASE IS MEASURED AND NOT ASSUMED, WHICH THIS DASHBOARD'S FILING BAR REQUIRES BEFORE ANY RED CAN BE CALLED PRE-EXISTING. At 65ecc06, with `tsc` and `oxfmt` shimmed onto PATH from real binaries: Definition of Done PASSED, all five checks exit 0, 945 pass / 0 fail over 70 files and 2884 expect() calls in 179.59s, six registry arms HELD. ONE WARNING, reported and not gating: `eslint(require-yield)` at test/fixtures/throws-on-cancel.ts. ANY RED THIS SPRINT IS THIS SPRINT'S UNTIL MEASURED OTHERWISE AGAINST THAT.",
+      "THE THREE QUESTIONS THE DEVELOPER SAID BLOCKED WRITING THE RED TESTS WERE RULED AT REFINEMENT, TWO OF THEM BY THE STAKEHOLDER'S OWN INSTRUCTION. Order `source, stat, listing`; the path NOT also left in the block; `detail` flattened. Only the third was open, and it is taken as the conservative answer: the path leaves the composer that owns `flattened`, so the line-break injection the forgery arm exists to refuse reopens in a field nothing sanitises.",
+      "SUBTASK 4 IS ACCEPTED UNSPLIT, AND THE PRODUCT OWNER PRICED THE ALTERNATIVE RATHER THAN WAIVING IT. A split costs either a temporary second spelling of the composer -- dead code shipped then removed, graded by nothing -- or a RED test/perturbations.test.ts across a commit boundary, which this project forbids outright. THE CONDITION IS THAT ITS `test` FIELD NAMES WHICH ARMS MUST BE RED BEFORE THE SOURCE EDIT, so one big green commit is readable afterwards.",
+      "THE FLATTENING SPLIT IS RULED IN, AND WITH IT A DISCLOSED REGRESSION THAT NEEDED AN OWNER. Between subtask 4 and subtask 5 the shipped source writes an unflattened path into `detail`, and at base that path IS flattened in the block -- so this is a regression, not an absence. Folding it into subtask 4 recreates the exact entanglement subtask 1 exists to prevent, on the largest subtask in the sprint, and risks criterion 5 being met BY INHERITANCE rather than by a red anyone saw. Accepted because it is bounded and named, on an unpublished package nobody consumes per commit, under two conditions: subtask 4's commit body names the state it leaves and the subtask that closes it, and CRITERION 5 UNMET BLOCKS ACCEPTANCE -- a sprint cut short must not leave the last green commit carrying a disclosed regression with no owner.",
+      "A SUBTASK THAT SHIPS NOTHING IS ACCEPTED, AND THE PRODUCT OWNER'S CONDITION ON IT RESOLVED A CONFLICT THE DEVELOPER HAD LEFT OPEN. Three closed sprints ended on a subtask whose commits are empty and whose deliverable is a recorded reading. But the header says A PERTURBATION RECORDED ONLY AS PROSE IS NOT RECORDED, and the developer had proposed exactly a note, giving the instrument's reason: the registry re-runs an ARM FILE and two of these arms spawn real servers on both runtimes. THE RESOLUTION IS NEITHER SIDE'S -- each record names an arm in a NON-SPAWNING file, and where none exists the subtask ADDS one in the member suite carrying the same claim, so the cheap arm is what the registry grades and the spawning arm stays as the wire-level statement.",
+      "A THIRD PERTURBATION WAS ADDED BY THE PRODUCT OWNER'S CHECKLIST AND NOT BY THE PLAN. The prefix criterion is satisfied by ANY implementation whose two values are both correct today, so without a reorder perturbation -- the stat emitted before the source -- its green says nothing. The same checklist caught that the completion-half equality must be WHOLE-VALUE on both fields: a containment lets an implementation that also left the path in the block pass criterion 1 and make criterion 4 hold vacuously, which is two failures conspiring rather than two failures.",
+      "WHAT IS RULED OUT, EACH POINTING AT THE NOTE THAT ALREADY REFUSED IT: reading the path off `item.detail` in the resolve half; leaving the path in `documentation` as well; a shortened or root-relative `detail`, deferred to a new item; the root README's prose. The member README's field statement is IN as work and OUT as a criterion, since nothing grades it.",
+    ],
+  },
   retrospectives: [],
 };
 
