@@ -513,9 +513,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "test/resolve-path-stat.test.ts, the foreign-item arm and the deleted-file arm. The foreign item's own claim -- byte-identical answer, nothing on stderr -- is untouched; what moves is only what witnesses that enrichment was happening in that session.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "a2ce7e4",
+            message:
+              "test(resolve-path-stat): the liveness halves read a delta, not a field that is always there",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'THE SILENT GREEN WAS DEMONSTRATED AND NOT ARGUED, WHICH IS THE WHOLE OF THIS SUBTASK. MEASURED at d2f80d8, `resolvePathStat` inverted so every UNABORTED request answers the item untouched, with the arms as they then stood: 2 pass / 14 fail in test/resolve-path-stat.test.ts, and `an item the example never produced is returned untouched, in a session where enrichment is happening` was ONE OF THE TWO THAT STAYED GREEN, on both runtimes. Its liveness half read `typeof enriched.detail === "string"`, which completion now satisfies unconditionally. AFTER the re-read, under the same perturbation: 0 pass / 16 fail. That pair is the discriminating measurement the subtask asked for -- the same weakening, the same file, green before and red after.',
+          "THE PERTURBATION HAD TO BE RESHAPED TO COMPILE, AND THE SHAPE IS WORTH RECORDING BECAUSE THE OBVIOUS ONE IS NOT AVAILABLE HERE. `return item;` inserted above the composed answer is UNREACHABLE CODE, and the member's build refuses it -- `tsc -p packages/tsudoi-completion-path/tsconfig.build.json` exits 2 inside the `bun test` preload, so the arm file reports 0 pass / 1 fail / 1 error and NO arm has a result of its own. What was run instead is the abort check INVERTED, which is reachable, leaves every import used, and answers untouched for exactly the requests these arms make.",
+          "THE DELETED-FILE ARM'S HALF WAS ALREADY AN EQUALITY WHEN THIS SUBTASK REACHED IT, AND THAT WAS SUBTASK 4'S DOING RATHER THAN THE BASE'S: at base it read `expect(enriched.detail).toBe(fileDetail)` and subtask 4 had to make it true in the same commit as the source, so it became a `documentation` equality. Turned into a delta here for the reason the item gives -- the arm's subject is the answer for a path that has GONE, and pinning the bytes of the answer for the path that had not makes a change to the block's spelling redden in two places.",
+          "FULL DEFINITION OF DONE: PASSED, all five checks exit 0, 955 pass / 0 fail over 70 files, 2933 expect() calls, 178.23s, nine registry arms HELD, ONE non-gating warning. The expect() delta of four over subtask 7 is the two liveness halves becoming two assertions each.",
+        ],
       },
       {
         test: "NOTHING REDDENS HERE AND THE ITEM SAYS WHY: the member README's prose about which field carries what is graded by NOTHING -- `readmeCoverage` accounts for FENCED BLOCKS and this claim is not in one -- so it is in scope as WORK and out of scope as a CRITERION. WHAT STANDS IN FOR A RED is that every sentence rewritten below is checked against the arms that landed above, and a sentence with no arm behind it is not written.",
