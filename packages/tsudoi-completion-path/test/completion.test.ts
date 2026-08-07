@@ -613,9 +613,11 @@ describe("an item names the root that produced it", () => {
             documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
           // LOAD-BEARING, and about `filterText` rather than the label: the
-          // assertion that stood here read the label, and this sweep is the only
-          // place ANY field is read from all four source classes, so both are
-          // read rather than one traded for the other.
+          // assertion that stood here read the label, so both are read rather
+          // than one traded for the other. TWO SOURCE CLASSES AND NOT FOUR --
+          // a relative fragment with no folders offers `document` and `cwd`
+          // alone -- which is why the same pair is read again in the sweep that
+          // does reach all four.
           expect(item.filterText).toBe(item.insertText);
           expect(item.insertText).toBe(`notes/${item.label}`);
         }
@@ -1017,6 +1019,12 @@ describe("an item records the source it was produced under", () => {
             pathCompletion: resolvesTo(source.root, item.insertText ?? ""),
             source: source.name,
           });
+          // THE TWO FIELDS THE LABEL SPLIT INTO, READ HERE BECAUSE THIS IS THE
+          // ONLY SWEEP THAT REACHES ALL FOUR SOURCE CLASSES: the arm that used
+          // to carry them drives a relative fragment with no folders, so it
+          // offers `document` and `cwd` and nothing else.
+          expect(item.filterText).toBe(item.insertText);
+          expect(item.insertText).toBe(`${fragment.directory}${item.label}`);
         }
       }
     } finally {
