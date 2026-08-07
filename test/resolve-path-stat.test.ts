@@ -40,15 +40,15 @@ const mtime = new Date("2001-02-03T04:05:06.000Z");
  * COMPUTED: both sides calling `stat` would make a correct reading and a
  * consistently broken one produce the same observation.
  *
- * THE STAMP KEEPS ITS MILLISECONDS THOUGH THE COMPOSER TRUNCATES TO THE SECOND,
- * and the two agree because `mtime` above IS a whole second -- flooring one is a
- * no-op down to the byte. That is deliberate: it leaves the truncation graded by
- * the member arm that stages a sub-second stamp, and by nothing here.
+ * THE STAMP CARRIES NO FRACTIONAL PART though `mtime` above is written with one:
+ * the composer reports a modification time TO THE SECOND, and the stakeholder was
+ * shown the spelling that keeps the milliseconds and declined it. These bytes are
+ * the answer's, not the fixture's.
  */
-const fileStat = "size: 13 bytes\nlastModified: 2001-02-03T04:05:06.000Z";
+const fileStat = "size: 13 bytes\nlastModified: 2001-02-03T04:05:06Z";
 
 /** And what a resolved DIRECTORY's must carry: the same fact, with no size. */
-const directoryStat = "lastModified: 2001-02-03T04:05:06.000Z";
+const directoryStat = "lastModified: 2001-02-03T04:05:06Z";
 
 /** What the document's one line reads: the prefix both entries share. */
 const prefix = "sample";

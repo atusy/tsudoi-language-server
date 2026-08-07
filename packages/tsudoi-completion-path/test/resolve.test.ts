@@ -84,16 +84,20 @@ function blockOf(item: CompletionItem): string {
  * make a correct answer and a consistently broken one look the same. Every file
  * a fixture writes is EMPTY, which is where the zero comes from.
  *
- * SPELLED WITH ITS MILLISECONDS THOUGH THE COMPOSER TRUNCATES TO THE SECOND, and
- * the two agree because `fixtureStamp` IS a whole second: flooring it is a no-op
- * down to the byte. That is what leaves the truncation graded by the one arm
- * below that stages a sub-second stamp, and by no fixture here.
+ * SPELLED WITH NO FRACTIONAL PART, because that is what the composer renders --
+ * the stakeholder was shown a stamp keeping its milliseconds and declined it.
+ *
+ * THE FOUR BYTES ARE NAMED RATHER THAN MATCHED BY THE COMPOSER'S OWN PATTERN,
+ * which is what keeps this an oracle: it says the fixture's stamp is EXACTLY
+ * `.000Z` and that those bytes are what goes. Give `fixtureStamp` a fraction and
+ * this replacement stops firing, and every arm below reddens rather than
+ * quietly following the composer wherever it went.
  *
  * `cwd` AND PLAINTEXT, which is what almost every arm declares; the markdown
  * spellings beside them are the same facts as that format writes them, and the
  * two differing IS the claim the format arm makes.
  */
-const stamp = fixtureStamp.toISOString();
+const stamp = fixtureStamp.toISOString().replace(".000Z", "Z");
 const directoryFacts = `source: cwd\nlastModified: ${stamp}`;
 const fileFacts = `source: cwd\nsize: 0 bytes\nlastModified: ${stamp}`;
 const directoryFactsInMarkdown = `- source: cwd\n- lastModified: ${stamp}`;
@@ -245,11 +249,21 @@ describe("a modification time is reported to the second, whatever the disk kept"
         markedItem(path, "cwd"),
       );
 
-      // BOTH DIRECTIONS, because either alone is satisfiable by an answer that
-      // rendered no stamp at all: the second it fell in IS there, and what the
-      // disk actually kept is NOT.
-      expect(factsSection(blockOf(answered))).toContain(`lastModified: ${stamp}`);
+      // THREE DIRECTIONS, because no two of them are the same claim: the second
+      // it fell in IS there, what the disk actually kept is NOT, and NOTHING
+      // FRACTIONAL is rendered at all.
+      //
+      // THE THIRD IS THE ONE NO WHOLE-SECOND FIXTURE CAN MAKE, and it is what
+      // separates the two truncations this project once conflated: a composer
+      // that FLOORED THE VALUE satisfies the first two here -- the file's own
+      // milliseconds really are gone -- and renders `...06.000Z`, which is the
+      // spelling the stakeholder was shown and declined.
+      const rendered = factsSection(blockOf(answered));
+      expect(rendered).toContain(`lastModified: ${stamp}`);
       expect(blockOf(answered)).not.toContain(kept.toISOString());
+      expect(
+        `lastModified renders a fraction: ${String(/lastModified: \S*\.\d/u.test(rendered))}`,
+      ).toBe("lastModified renders a fraction: false");
     } finally {
       fixture.dispose();
     }

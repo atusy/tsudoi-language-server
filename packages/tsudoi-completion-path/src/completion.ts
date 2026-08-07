@@ -515,23 +515,24 @@ export function statLine(stats: Stats): readonly string[] {
 }
 
 /**
- * A moment as the SECOND it fell in, rendered.
+ * A moment as the SECOND it fell in, rendered with NO FRACTIONAL PART.
  *
  * TRUNCATED HERE AND IN NO FIXTURE, because the ISO rendering always emits
  * milliseconds: a fixture-side truncation would leave every real popup carrying
  * a figure the user cannot use and this repository cannot see.
  *
- * THE VALUE IS FLOORED AND THE STRING IS NOT CUT, WHICH IS THE DIFFERENCE THAT
- * MAKES THE RULING TESTABLE. Both stamp constants in this repository are whole
- * seconds by design -- filesystems disagree about sub-second precision -- and
- * flooring one is a NO-OP down to the byte, so removing this truncation leaves
- * every fixture here green and reddens only an arm that staged a sub-second
- * stamp of its own. Cutting `.mmm` off the string instead would move every
- * expected block in both suites, and the ruling would be graded by fixtures
- * rather than by the arm that tests it.
+ * THE STRING IS CUT AND THE VALUE IS NOT FLOORED, AND THE TWO ARE DIFFERENT
+ * EDITS RATHER THAN TWO SPELLINGS OF ONE -- which is the thing this project got
+ * wrong once and is written here so it is not got wrong again. Flooring the
+ * VALUE renders `...T04:05:06.000Z`: the file's own milliseconds are gone and a
+ * constant fraction stays, which is the option the stakeholder was shown and
+ * DECLINED. What they chose reads `...T04:05:06Z`. The floor was shipped for one
+ * commit because it made a perturbation cheap -- it is a no-op on every
+ * whole-second fixture here -- and that is the instrument deciding the product,
+ * which is backwards.
  */
 function toTheSecond(when: Date): string {
-  return new Date(Math.floor(when.getTime() / 1000) * 1000).toISOString();
+  return when.toISOString().replace(/\.\d+Z$/u, "Z");
 }
 
 /**

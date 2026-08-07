@@ -706,11 +706,15 @@ const records: readonly PerturbationRecord[] = [
     ],
   },
   {
-    // THE STAMP LEFT AS THE DISK KEPT IT. It is a NO-OP on every fixture in this
-    // repository -- both stamp constants are whole seconds by design, and
-    // flooring one is byte-identical -- which is exactly why the arm it names had
-    // to stage a sub-second stamp of its own, and why this record must redden
-    // that arm AND NOTHING ELSE.
+    // THE STAMP LEFT AS THE DISK KEPT IT, WHICH IS THE SPELLING THE STAKEHOLDER
+    // WAS SHOWN AND DECLINED. IT MOVES EVERY RENDERED BYTE and the collateral
+    // list below is long for that reason -- which is the correction to a claim
+    // this repository carried for one commit: a truncation is a NO-OP on a
+    // whole-second stamp only when it FLOORS THE VALUE, and this one cuts the
+    // string. What makes this record grade the ruling is therefore `redAt` and
+    // not a short list: the arm it names is the only one here that stages a
+    // sub-second stamp, so it is the only one whose red is about the FILE'S OWN
+    // milliseconds rather than about four constant bytes.
     arm: {
       file: memberArms,
       name: "a file stamped with milliseconds renders the second it fell in, not the milliseconds",
@@ -720,8 +724,21 @@ const records: readonly PerturbationRecord[] = [
       from: "  const lastModified = `lastModified: ${toTheSecond(stats.mtime)}`;",
       to: "  const lastModified = `lastModified: ${stats.mtime.toISOString()}`;",
     },
-    redAt: "expect(factsSection(blockOf(answered))).toContain(`lastModified: ${stamp}`);",
-    alsoReddens: [],
+    redAt: "expect(rendered).toContain(`lastModified: ${stamp}`);",
+    // MEASURED, and every one of them compares a block WHOLE.
+    alsoReddens: [
+      "a directory at or under the bound shows every entry, and an empty one says so",
+      "a directory replaced by a file after the stat keeps the stat it took and renders no listing",
+      "a directory whose item claims to be a file still comes back with its listing",
+      "a directory's stat line carries no byte count, where a file's carries one",
+      "a file whose item claims to be a folder is still answered as a file",
+      "a name that would forge an attribution line renders as one that cannot",
+      "a path whose own name would forge an attribution line renders as one that cannot",
+      "a resolve cancelled between the open and the first entry answers without reading it",
+      "a resolve cancelled while its stat is pending answers without listing the directory",
+      "a source name no completion of ours produced is left out of the answer",
+      "the markup a block is built in follows the session, not the item",
+    ],
   },
   {
     // THE MARKDOWN FACT JOIN REPLACED BY THE PLAINTEXT ONE, which is the state
