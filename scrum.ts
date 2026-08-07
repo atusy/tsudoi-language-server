@@ -492,9 +492,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "packages/tsudoi-completion-path/test/completion.test.ts's format arm, narrowed with its reason; packages/tsudoi-completion-path/test/resolve.test.ts's markup arm, widened to the file kind and renamed off `directory`.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "d2f80d8",
+            message:
+              "test(completion-path): the markup rule migrates to the half that still has parts",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE NARROWED ARM KEEPS THE IDENTITY IT NARROWED ONTO, WHICH THE PLAN DID NOT ASK FOR AND WHICH IS WHAT MAKES THE LOSS READABLE: after asserting `kind` four ways, the completion format arm asserts the two formats' VALUES are the same bytes. Without that line the narrowing reads as a weakening somebody chose; with it, it reads as a fact about a one-part block, and it is the line that stops being true the day the block gains a second part.",
+          "THE NAMED FALSIFIER FIRES AND DOES NOT ISOLATE THE NEW HALF, MEASURED RATHER THAN ASSUMED. The composer's separator fixed to the plaintext one: 62 pass / 3 fail in the member suite -- the migrated arm plus `a name that would forge an attribution line renders as one that cannot` and `a path whose own name would forge an attribution line renders as one that cannot`, and every plaintext arm green, which is the half the plan predicted. BUT THE MIGRATED ARM REDDENS AT ITS DIRECTORY HALF, which predates this sprint, so that reading says nothing about the FILE half it just gained. THE FALSIFIER THAT DOES: the rule dropped for a TWO-part block only -- `markdown && parts.length > 2` -- which reddens this arm ALONE out of the whole member suite, 64 pass / 1 fail. Recorded because the plan's falsifier was named before either half existed and turns out to grade the older one.",
+          "THE REGISTRY CAUGHT THE RENAME AND THAT IS THE INSTRUMENT WORKING, NOT AN ACCIDENT AVOIDED. Renaming `the markup a directory's block is built in follows the session, not the item` left record 1 naming it among its collateral, and the full run went 954 pass / 1 fail with `the recorded weakening still reddens: a directory's stat line carries no byte count, where a file's carries one` DISARMED -- the direction that fires when a recorded set is LONGER than what reddened, which is what a rename leaves behind. RE-MEASURED RATHER THAN EDITED BY EYE: the same nine arms under the same weakening, one of them renamed.",
+          "FULL DEFINITION OF DONE after the repair: PASSED, all five checks exit 0, 955 pass / 0 fail over 70 files, 2929 expect() calls, 192.66s, nine registry arms HELD, ONE non-gating warning. The arm count is unchanged from subtask 6 -- both arms here were narrowed or widened in place -- and the expect() delta of four is the file half's two assertions and the identity pair.",
+        ],
       },
       {
         test: 'THE HALF THAT WOULD NEVER HAVE ANNOUNCED ITSELF. `an item the example never produced is returned untouched, in a session where enrichment is happening` stays GREEN through everything above, because `typeof enriched.detail === "string"` is satisfied UNCONDITIONALLY by completion once it writes the path -- and its docblock is explicit that the line is the LIVENESS half, without which the arm is satisfied by three worlds at once, one of them being no handler called in this process at all. Re-read as a `documentation` DELTA and deliberately NOT as an equality, the docblock ruling it weaker than a pin on purpose. THE DISCRIMINATING PERTURBATION FOR BOTH LIVENESS HALVES, this one and the deleted-file arm\'s: `resolvePathStat` made to answer the item untouched must redden the delta and must LEAVE `typeof detail === "string"` green. AND THE DELTA\'S OWN DEGENERATION IS WHAT THE PRODUCT OWNER FLAGGED: it needs a state where the delta is EMPTY and the arm goes red, or it is the same defect wearing a different field\'s name.',
