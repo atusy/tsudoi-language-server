@@ -643,6 +643,11 @@ const scrum: ScrumDashboard = {
             message: "feat(completion-path): the block becomes labelled facts and a headed list",
             phase: "green",
           },
+          {
+            hash: "3fd2ee7",
+            message: "fix(completion-path): a modification time renders no fractional part at all",
+            phase: "green",
+          },
         ],
         notes: [
           "THE FLOOR WAS SHIPPED FIRST AND WAS SENT BACK, AND BOTH HALVES ARE KEPT BECAUSE THE MEASUREMENT IS WORTH MORE THAN THE OUTCOME. WHAT WAS FOUND, AND IT STANDS: criterion 3's PROSE (`renders no fractional part`) and its VERIFICATION (`AND NO OTHER`) cannot both be met, because they are about DIFFERENT EDITS -- MEASURED, `2001-02-03T04:05:06.000Z` FLOORED to the second renders byte-identically, where CUTTING the fraction renders `...06Z` and moves every expected block in both suites. Nobody had noticed the two readings were different, and the sprint decision that truncating a whole second is a no-op is written in the value reading. WHAT WAS DECIDED WRONGLY: the floor was shipped, because it made the `AND NO OTHER` perturbation cheap. THE STAKEHOLDER HAD BEEN SHOWN BOTH RENDERINGS AND DECLINED THE ONE THAT KEEPS THE MILLISECONDS, so `...06.000Z` is the declined option wearing a constant, and repairing the PRODUCT to fit the INSTRUMENT is backwards. WHAT SHIPPED IN THE END: the cut. Criterion 3's `AND NO OTHER` clause and the sprint decision are amended above rather than left contradicting the increment.",
