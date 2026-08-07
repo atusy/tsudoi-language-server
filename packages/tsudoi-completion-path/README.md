@@ -48,22 +48,23 @@ file or directory is told apart from the directory listing alone, and a **symlin
 `stat`, to report the kind of what it points at.
 
 **Which field carries what**, because the two are read at different moments and by different
-parts of an editor. `detail` carries the **absolute path** the item completes to, and it is there
-the moment the list appears: two same-named candidates offered by different roots are told apart
-without opening anything, which is what most clients render inline beside the label. The
-documentation block carries **which root** offered the item — the one fact a path cannot supply,
-since one file is reachable from your document's directory, the process's own, a workspace folder
-and an absolute fragment at once. One caveat you may hit before we do: inline is where clients
-**truncate**, and a path's discriminating part is its tail.
+parts of an editor. `detail` carries the **absolute path** the item completes to, on one line —
+a name holding a line break or a control character is rendered, not reproduced — and it is there
+the moment the list appears, in the field a client can show inline beside the label without
+opening anything. The documentation block carries **which root** offered the item, which no
+reading of the path recovers: one file is reachable from your document's directory, the process's
+own, a workspace folder and an absolute fragment at once. One caveat you may hit before we do:
+inline is where clients **truncate**, and a path's discriminating part is its tail.
 
 **What resolving one item costs**, since it is no longer a single `stat`: a directory is also
-listed, in full, and the count you are shown is the whole of it. What resolve sends back is the
-block and **nothing else** — the item's own `detail` comes back byte for byte as you sent it — so
+listed, in full, and the count you are shown is the whole of it. What resolve **changes** is the
+block and nothing else — the item's own `detail` comes back byte for byte as you sent it — so
 a client that honours only `documentation` from a late answer still gets everything that was
 learned. The block **only grows**: what you were already reading stays where it was, and the
-stat and the listing arrive after it. A file's says its size in bytes and its modification time;
-a directory's says it is a directory and when it changed, with **no byte count** — a directory's
-own size is its directory entry's, 64 on one machine and 4096 on the next for the same children.
+stat line and the listing arrive after it. The stat line: a file's says its size in bytes and its
+modification time; a directory's says it is a directory and when it changed, with **no byte
+count** — a directory's own size is its directory entry's, 64 on one machine and 4096 on the next
+for the same children.
 
 The names **rendered** are bounded — a directory of thousands would otherwise put its whole
 contents in one popup — and the block says how many entries there really are when it shows you

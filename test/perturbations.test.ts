@@ -620,11 +620,15 @@ const records: readonly PerturbationRecord[] = [
   {
     // THE ARRAY READ AS A SINGLETON: a client may hold several workspace folders,
     // and keeping the first answers from whichever the editor happened to list
-    // first. WHAT MAKES THIS WORTH RECORDING IS WHERE THE ARM READS IT: before
-    // this sprint the two folders' items were told apart by the block, and the
-    // block now names the CLASS of root, so both carry the identical string
-    // `source: workspace`. Read there, the arm stays GREEN under this weakening
-    // and degenerates to `two items exist`.
+    // first. WHAT THIS RECORD DOES NOT GRADE, SAID HERE BECAUSE THE SENTENCE
+    // THAT STOOD IN ITS PLACE CLAIMED THE OPPOSITE: the arm asserts the four
+    // source names before it reads any item, so a first-folder-only `sourcesFor`
+    // reddens THERE and never reaches the discriminator. So this weakening
+    // grades `the second folder was asked`, which is worth re-running and is not
+    // what the item was about. The reading that isolates the discriminator --
+    // both folders' items rendered with the identical `source: workspace`, told
+    // apart only by `detail` -- has no record, because nothing weaker than
+    // rewriting the write produces it.
     arm: {
       file: "packages/tsudoi-completion-path/test/completion.test.ts",
       name: "two workspace folders each contribute a source, and each item's detail names its own root",
@@ -638,9 +642,12 @@ const records: readonly PerturbationRecord[] = [
   },
   {
     // THE ORDER OF TWO PARTS THAT ARE EACH CORRECT. Nothing about the CONTENT of
-    // either block changes, so every whole-value assertion over one answer at a
-    // time stays green -- which is exactly why a prefix relation over two values
-    // that are both right today says nothing until this is run. What it breaks is
+    // either block changes, which is exactly why a prefix relation over two
+    // values that are both right today says nothing until this is run. NOT
+    // `every whole-value assertion over one answer at a time stays green`, which
+    // stood here and is false unscoped: the member's resolve arms spell the
+    // order literally and go red. It holds of the arm named below, whose file is
+    // the only one this record's reading is taken over. What it breaks is
     // what a user watching a popup re-render sees: the line they were reading
     // moves down.
     arm: {
