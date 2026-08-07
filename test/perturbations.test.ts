@@ -566,6 +566,13 @@ test("the report names the arm each record weakened, and no other", async () => 
 const dodArms = "test/definition-of-done.test.ts";
 const dodRunner = "scripts/definition-of-done.ts";
 
+// THE MEMBER ARM FILE AND THE MODULE THE BLOCK IS COMPOSED IN, spelled once
+// because the criteria of PBI-83 land almost entirely on the two: no record
+// below spawns a server, the wire claims being stated at the root on two
+// runtimes and the member arm being the cheap statement of each.
+const memberArms = "packages/tsudoi-completion-path/test/resolve.test.ts";
+const composer = "packages/tsudoi-completion-path/src/completion.ts";
+
 const records: readonly PerturbationRecord[] = [
   {
     // THE GATE NARROWED BY ONE WORD: `not passed` to `failed` leaves outcome,
@@ -669,6 +676,136 @@ const records: readonly PerturbationRecord[] = [
       "a directory replaced by a file after the stat keeps the stat it took and renders no listing",
       "a directory whose item claims to be a file still comes back with its listing",
     ],
+  },
+  {
+    // THE OTHER HALF OF THE RULING ABOVE, AND IT IS THE HALF THE RULING MAKES
+    // CHEAP TO LOSE: with the words `file` and `directory` gone from the block, a
+    // directory is legible ONLY by carrying no `size:` line -- so a composer that
+    // reports one for nothing at all reads as a tree of directories, and the
+    // refusal above is completely satisfied by it.
+    arm: {
+      file: memberArms,
+      name: "a directory's stat line carries no byte count, where a file's carries one",
+    },
+    weakening: {
+      file: composer,
+      from: "  return stats.isDirectory() ? [lastModified] : [`size: ${String(stats.size)} bytes`, lastModified];",
+      to: "  return stats.isDirectory() ? [lastModified] : [lastModified];",
+    },
+    // THE FILE VALUE, WHERE THE RECORD ABOVE NAMES THE DIRECTORY ONE: a red at
+    // one of the two says nothing about the other, and both are this arm's.
+    redAt: "expect(file).toBe(fileFacts);",
+    // MEASURED, AND THEY ARE HERE RATHER THAN FILTERED OUT: nearly every arm in
+    // that file compares a block WHOLE, so a file's facts that lost a line move
+    // all of them. A red beside the arm is the failure `redAt` exists to refuse
+    // reading as a red AT it.
+    alsoReddens: [
+      "a directory at or under the bound shows every entry, and an empty one says so",
+      "a file whose item claims to be a folder is still answered as a file",
+      "the markup a block is built in follows the session, not the item",
+    ],
+  },
+  {
+    // THE STAMP LEFT AS THE DISK KEPT IT. It is a NO-OP on every fixture in this
+    // repository -- both stamp constants are whole seconds by design, and
+    // flooring one is byte-identical -- which is exactly why the arm it names had
+    // to stage a sub-second stamp of its own, and why this record must redden
+    // that arm AND NOTHING ELSE.
+    arm: {
+      file: memberArms,
+      name: "a file stamped with milliseconds renders the second it fell in, not the milliseconds",
+    },
+    weakening: {
+      file: composer,
+      from: "  const lastModified = `lastModified: ${toTheSecond(stats.mtime)}`;",
+      to: "  const lastModified = `lastModified: ${stats.mtime.toISOString()}`;",
+    },
+    redAt: "expect(factsSection(blockOf(answered))).toContain(`lastModified: ${stamp}`);",
+    alsoReddens: [],
+  },
+  {
+    // THE MARKDOWN FACT JOIN REPLACED BY THE PLAINTEXT ONE, which is the state
+    // the first ruling on this went out in: three facts joined by a bare newline
+    // are ONE PARAGRAPH in CommonMark and render as one run-on line. THE RED IS
+    // REQUIRED AT THE FILE HALF -- a file has no listing, so the fact join is the
+    // whole of what discriminates its two formats, where the directory half
+    // reddens on bullets it already had before this ruling.
+    arm: {
+      file: memberArms,
+      name: "the markup a block is built in follows the session, not the item",
+    },
+    weakening: {
+      file: composer,
+      from: '  return facts.map((fact) => (markdown ? `- ${fact}` : fact)).join("\\n");',
+      to: '  return facts.map((fact) => fact).join("\\n");',
+    },
+    redAt: "expect(fileAsMarkdown.documentation).toEqual({",
+    // MEASURED, AND BOTH ARE THE MARKDOWN HALVES OF THE TWO FORGERY ARMS, which
+    // compare a markdown block whole. THE DIRECTORY HALF OF THIS ARM REDDENS
+    // TOO -- it is the same arm and a runner reports it once -- which is why the
+    // FILE assertion is written first and why `redAt` names it: a reading whose
+    // red landed at the directory half would be a reading of bullets that half
+    // had before this ruling.
+    alsoReddens: [
+      "a name that would forge an attribution line renders as one that cannot",
+      "a path whose own name would forge an attribution line renders as one that cannot",
+    ],
+  },
+  {
+    // THE BOUNDARY SPELLING COLLAPSED TO ONE FORM, which is the defect the two
+    // spellings exist for: `Entries (first 20 of 20)` answers the one question
+    // the parenthetical is there to answer with a word that means the opposite.
+    // IT MUST LEAVE THE OVER-BOUND ARM GREEN -- one that reddens the truncated
+    // case as well is grading the parenthetical rather than the boundary.
+    arm: {
+      file: memberArms,
+      name: "a directory at or under the bound shows every entry, and an empty one says so",
+    },
+    weakening: {
+      file: composer,
+      from: `  const counted =
+    shown < listing.total
+      ? \`first \${String(shown)} of \${String(listing.total)}\`
+      : String(listing.total);`,
+      to: "  const counted = `first ${String(shown)} of ${String(listing.total)}`;",
+    },
+    redAt: 'expect(await sectionOf("edge")).toEqual({',
+    // MEASURED. `a directory far past the bound renders twenty names and no more`
+    // is NOT among them, and its absence is the half criterion 5 turns on: a
+    // weakening that reddened the truncated case too would be grading the
+    // parenthetical rather than the boundary.
+    alsoReddens: [
+      "a directory holding an entry named like its own heading still reads back as both",
+      "a directory whose item claims to be a file still comes back with its listing",
+      "a name that would forge an attribution line renders as one that cannot",
+      "a path whose own name would forge an attribution line renders as one that cannot",
+      "a resolve cancelled between the open and the first entry answers without reading it",
+      "a resolve cancelled while its stat is pending answers without listing the directory",
+      "a source name no completion of ours produced is left out of the answer",
+      "the markup a block is built in follows the session, not the item",
+    ],
+  },
+  {
+    // THE EMPTY DIRECTORY SAYING NOTHING, which is a separate half of the same
+    // arm and needs its own weakening because a runner stops at the first failing
+    // assertion: under the collapse above the EDGE fails first and the empty
+    // assertion is never reached. With names alone, `this directory holds
+    // nothing` and `nothing was listed` are THE SAME BYTES.
+    arm: {
+      file: memberArms,
+      name: "a directory at or under the bound shows every entry, and an empty one says so",
+    },
+    weakening: {
+      file: composer,
+      from: `  if (shown === 0) {
+    return heading;
+  }`,
+      to: `  if (shown === 0) {
+    return "";
+  }`,
+    },
+    redAt: 'expect(await sectionOf("empty")).toEqual({ header: "Entries (0)", names: [] });',
+    alsoReddens: [],
   },
   {
     // THE ARRAY READ AS A SINGLETON: a client may hold several workspace folders,
