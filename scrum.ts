@@ -366,9 +366,21 @@ const scrum: ScrumDashboard = {
         implementation:
           "Both copies of `listingSection` -- in packages/tsudoi-completion-path/test/resolve.test.ts and in test/resolve-path-stat.test.ts, duplicated deliberately under a docblock saying the two MUST NOT DISAGREE -- re-derived to locate the listing by its own header rather than by the part index that `path, source, listing` happens to put it at. AGAINST TODAY'S COMPOSITION AND FIRST: under `source, stat, listing` the index is right BY ACCIDENT and both helpers go GREEN when they are wrong, so without this a re-index defect and a composition defect are indistinguishable in every red that follows. The two move together or the docblock's own claim is false.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "3ddccbd",
+            message:
+              "test(completion-path): the listing is located by its header, not by its index",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'THE ANCHOR WAS READ RED BEFORE THE RE-DERIVATION AND ITS SHAPE IS THE ONE THE ITEM PREDICTED, WHICH IS WHY IT COULD BE WRITTEN FROM TODAY\'S COMPOSITION RATHER THAN FROM AN INTENTION. MEASURED at base 2ed9d43 with the new arm alone added, `bun test packages/tsudoi-completion-path/test/resolve.test.ts`: 15 pass / 1 fail, the fail being `a block whose source was forged still reads back as its header and its names` and the received value being `header: "one.txt\\ntwo.txt", names: []` -- the NAMES returned as the header and no names at all, which is the failure `slice(2)` produces on a block of `path, header, names` and which no index can be moved to fix.',
+          "GREEN AFTER, WITH NO EXPECTED STRING TOUCHED. MEASURED, full suite from the root: 946 pass / 0 fail over 70 files, 2885 expect() calls, 169.88s, six registry arms HELD -- 945/2884 at the base plus this one arm and its one assertion, which is the whole of the delta. The bound arms the subtask named as the check are among them: `a directory holding far more entries than fit renders a bounded prefix and states its total`, and the member's edge, dotfile and two-directory arms.",
+          "THE ROOT COPY MOVED UNWITNESSED BY A RED OF ITS OWN, AND THAT IS A LIMIT RATHER THAN AN OVERSIGHT: the separating input is a FORGED source, and every item test/resolve-path-stat.test.ts resolves came out of a real server, which cannot be made to forge one. What carries it is the docblock's MUST NOT DISAGREE rule, and the docblock now says which half of the pair the witness lives in.",
+          "THE LOOKUP IS ANCHORED AND FIRST-MATCH, AND BOTH HALVES ANSWER A COLLISION THE INDEX DID NOT HAVE: a directory holding an entry NAMED `3 entries` renders a names part that matches the header pattern, so an unanchored or last-match reader would answer with the names. The real header is always the earlier of the two.",
+        ],
       },
       {
         test: "NOTHING REDDENS AND NOTHING MAY: no member arm reads an mtime yet, so the whole member suite is green before and after. WHAT STANDS IN PLACE OF A RED IS THE ORDER, and it is the whole of the work -- children written FIRST and the stamp set AFTER, because writing into a directory bumps its mtime, and on a WHOLE SECOND, because filesystems disagree about sub-second precision. A probe stating the fixture's own premise goes with it: one directory stat-ed through the fixture twice reports the same stamp, which is the property every whole-value block assertion rests on from subtask 4 onward and which a stamp set before the children loses SILENTLY.",
