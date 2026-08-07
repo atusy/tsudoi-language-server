@@ -393,7 +393,7 @@ export async function* itemsFrom(
 export function documentationFor(
   source: PathSourceName | undefined,
   format: MarkupKind,
-  stat?: string,
+  facts: readonly string[] = [],
   listing?: DirectoryListing,
 ): MarkupContent {
   const markdown = format === MarkupKind.Markdown;
@@ -401,13 +401,30 @@ export function documentationFor(
   if (source !== undefined) {
     parts.push(`source: ${source}`);
   }
-  if (stat !== undefined) {
-    parts.push(stat);
+  if (facts.length > 0) {
+    parts.push(factsText(facts));
   }
   if (listing !== undefined) {
     parts.push(listingText(listing, markdown));
   }
   return { kind: format, value: parts.join(markdown ? "\n\n---\n\n" : "\n\n") };
+}
+
+/**
+ * The facts a `stat` produced, as one part of the block.
+ *
+ * ITS OWN STEP BESIDE `listingText` AND NOT AN INLINE JOIN, because the join
+ * between FACTS and the join between PARTS are about to stop being one decision:
+ * today a single separator is chosen by format for every part alike, and the
+ * facts are one part with nothing inside it to separate.
+ *
+ * IT TAKES NO FORMAT YET AND THAT IS THE HONEST SPELLING RATHER THAN AN
+ * OVERSIGHT: with one fact, every join produces the same bytes, so a format
+ * parameter here today would be a branch whose two arms are one string -- a
+ * claim that this step reads the format, made where nothing can falsify it.
+ */
+function factsText(facts: readonly string[]): string {
+  return facts.join("\n");
 }
 
 /** What one resolved directory's entries look like in the block. */
@@ -433,7 +450,12 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
 }
 
 /**
- * One line's worth of what a `stat` found.
+ * What a `stat` found, as the facts the block spells it in.
+ *
+ * A LIST AND NOT A LINE, WHICH IS WHAT THE COMPOSER NOW TAKES: how many lines a
+ * kind's facts occupy, and what separates them, is the block's decision and not
+ * this function's -- and a pre-joined string forces that decision here, where the
+ * format is not known.
  *
  * BESIDE THE COMPOSER AND NOT BESIDE THE `stat` THAT PRODUCES IT, for the reason
  * `listingText` above is here: what it spells is a PART, and how a part is spelled
@@ -444,11 +466,11 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
  * machine and 4096 on the next for the same children -- so showing it would put a
  * number in front of a user that means nothing about what is inside.
  */
-export function statLine(stats: Stats): string {
+export function statLine(stats: Stats): readonly string[] {
   const modified = `modified ${stats.mtime.toISOString()}`;
   return stats.isDirectory()
-    ? `directory · ${modified}`
-    : `file · ${String(stats.size)} bytes · ${modified}`;
+    ? [`directory · ${modified}`]
+    : [`file · ${String(stats.size)} bytes · ${modified}`];
 }
 
 /**

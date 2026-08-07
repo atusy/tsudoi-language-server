@@ -651,8 +651,8 @@ const records: readonly PerturbationRecord[] = [
     },
     weakening: {
       file: "packages/tsudoi-completion-path/src/completion.ts",
-      from: "    ? `directory · ${modified}`",
-      to: "    ? `directory · ${String(stats.size)} bytes · ${modified}`",
+      from: "    ? [`directory · ${modified}`]",
+      to: "    ? [`directory · ${String(stats.size)} bytes · ${modified}`]",
     },
     // WHERE THE RED IS REQUIRED TO FALL, AND THIS RECORD IS THE ONE THAT MAKES
     // THE FIELD WORTH HAVING: eight collateral arms redden with it, so `the
@@ -719,12 +719,12 @@ const records: readonly PerturbationRecord[] = [
       from: `  if (source !== undefined) {
     parts.push(\`source: \${source}\`);
   }
-  if (stat !== undefined) {
-    parts.push(stat);
+  if (facts.length > 0) {
+    parts.push(factsText(facts));
   }
 `,
-      to: `  if (stat !== undefined) {
-    parts.push(stat);
+      to: `  if (facts.length > 0) {
+    parts.push(factsText(facts));
   }
   if (source !== undefined) {
     parts.push(\`source: \${source}\`);
@@ -756,18 +756,18 @@ const records: readonly PerturbationRecord[] = [
       from: `  if (source !== undefined) {
     parts.push(\`source: \${source}\`);
   }
-  if (stat !== undefined) {
-    parts.push(stat);
+  if (facts.length > 0) {
+    parts.push(factsText(facts));
   }
 `,
-      to: `  if (stat !== undefined && markdown) {
-    parts.push(stat);
+      to: `  if (facts.length > 0 && markdown) {
+    parts.push(factsText(facts));
   }
   if (source !== undefined) {
     parts.push(\`source: \${source}\`);
   }
-  if (stat !== undefined && !markdown) {
-    parts.push(stat);
+  if (facts.length > 0 && !markdown) {
+    parts.push(factsText(facts));
   }
 `,
     },
@@ -791,18 +791,18 @@ const records: readonly PerturbationRecord[] = [
       from: `  if (source !== undefined) {
     parts.push(\`source: \${source}\`);
   }
-  if (stat !== undefined) {
-    parts.push(stat);
+  if (facts.length > 0) {
+    parts.push(factsText(facts));
   }
 `,
-      to: `  if (stat !== undefined && source === "workspace") {
-    parts.push(stat);
+      to: `  if (facts.length > 0 && source === "workspace") {
+    parts.push(factsText(facts));
   }
   if (source !== undefined) {
     parts.push(\`source: \${source}\`);
   }
-  if (stat !== undefined && source !== "workspace") {
-    parts.push(stat);
+  if (facts.length > 0 && source !== "workspace") {
+    parts.push(factsText(facts));
   }
 `,
     },
