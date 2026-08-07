@@ -334,7 +334,23 @@ export async function* itemsFrom(
       const insertText = fragment.directory + entry.name;
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
-        label: insertText,
+        // WHAT THE POPUP READS, AND IT IS THE ENTRY ALONE. The inserted text
+        // stood here and put the fragment's directory in front of every row of
+        // a listing -- the part the user has already typed, repeated as many
+        // times as the directory holds matches, with the bytes that tell two
+        // candidates apart beginning after it.
+        //
+        // AND NOT BY NARROWING THE EDIT RANGE TO THE LAST SEPARATOR, which would
+        // make this name the whole item and need no `filterText` at all:
+        // refused, it moves what is written into the buffer, and the widening
+        // candidates that reach a filename holding a space are built on the
+        // range beginning where the FRAGMENT begins.
+        label: entry.name,
+        // WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING. A client
+        // matches against the text its edit RANGE covers, and that range starts
+        // at the fragment -- so an item whose filter text held the entry name
+        // alone would be filtered away by the separator the user just typed.
+        filterText: insertText,
         // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW. NOT
         // `two same-named candidates from different roots are told apart`, WHICH
         // STOOD HERE AND NAMES A STATE THIS FUNCTION'S OWN CALLER FORECLOSES: the

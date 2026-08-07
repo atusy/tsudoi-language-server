@@ -612,10 +612,12 @@ describe("an item names the root that produced it", () => {
             detail: join(source.root, item.insertText ?? ""),
             documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
-          // LOAD-BEARING ORDER, not formatting: a client filters on the label
-          // when the item carries no filterText, so a label that did not BEGIN
-          // with the text being typed would filter our own items away.
-          expect(item.label.startsWith(item.insertText ?? "")).toBe(true);
+          // LOAD-BEARING, and about `filterText` rather than the label, whose
+          // own precondition was `when the item carries no filterText`: a client
+          // filters against the text its edit RANGE covers, which begins where
+          // the fragment begins, so an item whose filter text did not carry the
+          // directory part would filter itself away at the next separator.
+          expect(item.filterText).toBe(item.insertText);
         }
       }
     } finally {
@@ -1348,6 +1350,53 @@ function applyAsClient(
   }
   return line.slice(0, start) + (item.insertText ?? item.label) + line.slice(character);
 }
+
+describe("an item shows the entry and inserts the path", () => {
+  /**
+   * WHAT THE USER READS AND WHAT THE BUFFER GETS ARE DIFFERENT STRINGS, and the
+   * popup is where the difference is paid: with the fragment's directory in the
+   * label, every row of a listing repeats the part already on the line, and the
+   * bytes that tell two candidates apart begin after it.
+   *
+   * A MULTI-SEGMENT FRAGMENT IS THE ONLY THING THAT SAYS SO. Where the fragment
+   * names no directory, the entry name and the inserted text are the SAME string
+   * -- so the arm below is a control and not a repetition: it must stay green
+   * under the weakening that reddens this one.
+   */
+  test("the label is the entry's own name, where what is inserted carries the directory typed", async () => {
+    const fixture = tree(["notes/deep.txt"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "notes/de" }, fixture.root);
+
+      expect(items.map((item) => item.label)).toEqual(["deep.txt"]);
+      // THE THREE FIELDS IN ONE ARM, because a client reads whichever its own
+      // class names and a drift between any two of them breaks one class
+      // silently. `filterText` is the one the label stopped being: a client
+      // filters against the text its edit RANGE covers, which begins where the
+      // fragment begins and so carries `notes/`.
+      expect(items.map((item) => item.insertText)).toEqual(["notes/deep.txt"]);
+      expect(items.map((item) => item.filterText)).toEqual(["notes/deep.txt"]);
+      const edit = items[0]?.textEdit;
+      expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe(
+        "notes/deep.txt",
+      );
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  test("a fragment naming no directory shows what it inserts", async () => {
+    const fixture = tree(["deep.txt"]);
+    try {
+      const items = await complete({ ...elsewhere, line: "de" }, fixture.root);
+
+      expect(items.map((item) => item.label)).toEqual(["deep.txt"]);
+      expect(inserted(items)).toEqual(["deep.txt"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
 
 describe("applying the item yields the path it names", () => {
   // MULTI-SEGMENT, AND IT MUST BE: for a fragment with one segment the two client
