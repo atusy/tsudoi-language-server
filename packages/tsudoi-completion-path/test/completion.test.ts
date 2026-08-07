@@ -610,7 +610,7 @@ describe("an item names the root that produced it", () => {
           // it.
           expect({ detail: item.detail, documentation: item.documentation }).toEqual({
             detail: join(source.root, item.insertText ?? ""),
-            documentation: { kind: "markdown", value: `source: ${source.name}` },
+            documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
           // LOAD-BEARING ORDER, not formatting: a client filters on the label
           // when the item carries no filterText, so a label that did not BEGIN
@@ -628,14 +628,12 @@ describe("an item names the root that produced it", () => {
   // supported` passes unchanged against a module that produces markdown for
   // everyone, so the claim is the DIFFERENCE and one request cannot carry it.
   //
-  // WHAT THIS ARM LOST, WRITTEN DOWN RATHER THAN HANDED NEW EXPECTED STRINGS.
-  // It used to compare the whole MarkupContent, because the rule BETWEEN two
-  // parts was the discriminator a `kind` of `plaintext` on a `---`-carrying value
-  // could not fake. The completion block is ONE part now -- the source, and
-  // nothing else -- so there is no join to perform and the two formats produce
-  // IDENTICAL value bytes. `kind` is the only discriminator left HERE, and the
-  // rule's own claim moved to the resolve suite, where two and three parts
-  // remain.
+  // WHAT THIS ARM GOT BACK, AND IT IS WHAT SPRINT 82 RECORDED LOSING. The
+  // completion block is ONE part -- the source and nothing else -- so while the
+  // facts were joined bare there was no join to perform and the two formats
+  // produced IDENTICAL value bytes, leaving `kind` the only discriminator here.
+  // The markdown fact spelling is a BULLET now, which one fact carries as well as
+  // three, so the value discriminates again.
   test("the documentation format follows what the client declared, both ways", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -646,7 +644,8 @@ describe("an item names the root that produced it", () => {
       ): Promise<CompletionItem["documentation"]> =>
         (await complete(buffer, fixture.root, undefined, true, documentationFormat))[0]
           ?.documentation;
-      const block = "source: document";
+      const inMarkdown = "- source: document";
+      const inPlainText = "source: document";
       const kindOf = (documentation: CompletionItem["documentation"]): string =>
         typeof documentation === "string" ? "" : (documentation?.kind ?? "");
 
@@ -660,12 +659,21 @@ describe("an item names the root that produced it", () => {
       // A client that declared no format at all declared no markdown support.
       expect(kindOf(await documentationWhen(undeclared))).toBe("plaintext");
 
-      // AND THE VALUE IS THE SAME BYTES EITHER WAY, ASSERTED RATHER THAN LEFT
-      // IMPLIED: it is what says the narrowing above is a fact about this block
-      // and not a weakening somebody chose, and it is what stops being true the
-      // day the completion block gains a second part.
-      expect(await documentationWhen(["markdown"])).toEqual({ kind: "markdown", value: block });
-      expect(await documentationWhen(["plaintext"])).toEqual({ kind: "plaintext", value: block });
+      // AND THE VALUES DIFFER, ASSERTED AS BYTES RATHER THAN LEFT TO `kind`: a
+      // module answering markdown to everyone passes every line above, and this
+      // is where it fails. The bullet is not decoration -- three facts joined by
+      // a bare newline are ONE PARAGRAPH in CommonMark and render as one run-on
+      // line, and a block whose one fact is spelled the plaintext way is a block
+      // that will do exactly that when the other two arrive.
+      expect(await documentationWhen(["markdown"])).toEqual({
+        kind: "markdown",
+        value: inMarkdown,
+      });
+      expect(await documentationWhen(["plaintext"])).toEqual({
+        kind: "plaintext",
+        value: inPlainText,
+      });
+      expect(inMarkdown).not.toBe(inPlainText);
     } finally {
       fixture.dispose();
     }
@@ -723,8 +731,8 @@ describe("an item names the root that produced it", () => {
       // THE PAIR: both other candidates for a discriminator are the SAME STRING
       // across the two folders, so neither could have carried this claim.
       expect(workspaceItems.map(documentationOf)).toEqual([
-        "source: workspace",
-        "source: workspace",
+        "- source: workspace",
+        "- source: workspace",
       ]);
       expect(inserted(workspaceItems)).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
     } finally {

@@ -75,19 +75,35 @@ function blockOf(item: CompletionItem): string {
 }
 
 /**
- * The stat line every DIRECTORY of a fixture renders, and every FILE of one.
+ * The labelled facts every DIRECTORY of a fixture renders, and every FILE of
+ * one: the source in front, then what the `stat` found.
  *
  * COMPOSED FROM THE STAMP THE FIXTURE DECLARES rather than from a second `stat`,
  * which is the difference that matters: the stamp is this suite's INPUT, so
  * reading it back is an oracle, where a `stat` taken beside the handler's would
  * make a correct answer and a consistently broken one look the same. Every file
  * a fixture writes is EMPTY, which is where the zero comes from.
+ *
+ * SPELLED WITH ITS MILLISECONDS THOUGH THE COMPOSER TRUNCATES TO THE SECOND, and
+ * the two agree because `fixtureStamp` IS a whole second: flooring it is a no-op
+ * down to the byte. That is what leaves the truncation graded by the one arm
+ * below that stages a sub-second stamp, and by no fixture here.
+ *
+ * `cwd` AND PLAINTEXT, which is what almost every arm declares; the markdown
+ * spellings beside them are the same facts as that format writes them, and the
+ * two differing IS the claim the format arm makes.
  */
-const directoryStat = `directory · modified ${fixtureStamp.toISOString()}`;
-const fileStat = `file · 0 bytes · modified ${fixtureStamp.toISOString()}`;
+const stamp = fixtureStamp.toISOString();
+const directoryFacts = `source: cwd\nlastModified: ${stamp}`;
+const fileFacts = `source: cwd\nsize: 0 bytes\nlastModified: ${stamp}`;
+const directoryFactsInMarkdown = `- source: cwd\n- lastModified: ${stamp}`;
+const fileFactsInMarkdown = `- source: cwd\n- size: 0 bytes\n- lastModified: ${stamp}`;
+
+/** And the facts an item whose source this package did not produce renders. */
+const unattributedFacts = `lastModified: ${stamp}`;
 
 /**
- * The stat part of a block: the part that says what the path IS.
+ * The facts part of a block: the part that says what the path IS.
  *
  * FOUND BY WHAT IT SAYS AND NOT BY WHICH PART IT IS, for the reason
  * `listingSection` below is: every part of this block is optional, so a fixed
@@ -95,10 +111,18 @@ const fileStat = `file · 0 bytes · modified ${fixtureStamp.toISOString()}`;
  * directory arm that had started reporting a size is still FOUND here, which is
  * what lets the arm about it refuse one.
  *
+ * ANCHORED AT A LINE, FIRST-MATCH, AND IN BOTH FORMAT SPELLINGS: an entry NAMED
+ * `lastModified: x` renders a names part whose line matches, and the real facts
+ * are always the earlier of the two.
+ *
  * DUPLICATED AT THE REPOSITORY ROOT, and the two MUST NOT DISAGREE.
  */
-function statSection(block: string): string {
-  return block.split("\n\n").find((part) => /^(?:file|directory) · /u.test(part)) ?? "";
+function factsSection(block: string): string {
+  const parts = block.split("\n\n");
+  const at = parts.findIndex((part) =>
+    part.split("\n").some((one) => /^(?:- )?lastModified: /u.test(one)),
+  );
+  return at === -1 ? "" : (parts[at] ?? "");
 }
 
 describe("what a stat line says, and what it leaves out on purpose", () => {
@@ -113,23 +137,26 @@ describe("what a stat line says, and what it leaves out on purpose", () => {
    * in front of a user that means nothing about what is inside.
    *
    * THE FILE IS THE PAIR AND IT IS NOT DECORATION: `no byte count on a directory`
-   * is satisfied completely by a handler that reports no size for anything.
+   * is satisfied completely by a handler that reports no size for anything -- and
+   * that costs more than it used to, the words `file` and `directory` having left
+   * the block, so the ABSENCE of this line is now the whole of what says which
+   * kind the user is looking at.
    */
   test("a directory's stat line carries no byte count, where a file's carries one", async () => {
     const fixture = tree(["listed/one.txt", "plain.txt"]);
     try {
       const context = contextDeclaring(["plaintext"]);
-      const directory = statSection(
+      const directory = factsSection(
         blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "listed"), "cwd"))),
       );
-      const file = statSection(
+      const file = factsSection(
         blockOf(await resolvePathStat(context, markedItem(join(fixture.root, "plain.txt"), "cwd"))),
       );
 
-      expect(directory).toBe(directoryStat);
-      expect(directory).not.toContain("bytes");
-      expect(file).toBe(fileStat);
-      expect(file).toContain("bytes");
+      expect(directory).toBe(directoryFacts);
+      expect(directory).not.toContain("size:");
+      expect(file).toBe(fileFacts);
+      expect(file).toContain("size:");
     } finally {
       fixture.dispose();
     }
@@ -180,6 +207,55 @@ describe("the fixture's stamps come from a constant, not from the clock", () => 
   });
 });
 
+/**
+ * THE ONE RULING NO FIXTURE IN THIS REPOSITORY CAN GRADE, WHICH IS THE WHOLE
+ * REASON THIS ARM EXISTS. Both stamp constants here are WHOLE SECONDS by design
+ * -- filesystems disagree about sub-second precision -- and truncating a whole
+ * second to the second is a NO-OP down to the byte. So an untruncated composer
+ * passes every other arm in both suites, and the stakeholder's ruling would ship
+ * with nothing at all standing over it.
+ *
+ * THE STAMP IS THIS ARM'S OWN AND IS SET AFTER `tree` HAS STAMPED EVERYTHING,
+ * following the arm below that stages its own entries: `tree` fixes a whole
+ * second on every entry it builds, which is exactly the value this arm must not
+ * have.
+ */
+describe("a modification time is reported to the second, whatever the disk kept", () => {
+  test("a file stamped with milliseconds renders the second it fell in, not the milliseconds", async () => {
+    const fixture = tree(["fractional.txt"]);
+    const path = join(fixture.root, "fractional.txt");
+    try {
+      // 2001-02-03T04:05:06.789Z, as seconds-with-a-fraction, which is what
+      // `utimesSync` takes.
+      const fractional = fixtureStamp.getTime() / 1000 + 0.789;
+      utimesSync(path, fractional, fractional);
+
+      // THE PREMISE FIRST, AND IT MUST SAY SO RATHER THAN PASS: a filesystem
+      // that keeps whole seconds only would hand back the same value `tree` set,
+      // and every assertion below would then be a second reading of the
+      // whole-second fixtures -- green, and measuring nothing about the
+      // composer. Read off the disk and not off the call.
+      const kept = statSync(path).mtime;
+      expect(`the disk kept a sub-second part: ${String(kept.getTime() % 1000 !== 0)}`).toBe(
+        "the disk kept a sub-second part: true",
+      );
+
+      const answered = await resolvePathStat(
+        contextDeclaring(["plaintext"]),
+        markedItem(path, "cwd"),
+      );
+
+      // BOTH DIRECTIONS, because either alone is satisfiable by an answer that
+      // rendered no stamp at all: the second it fell in IS there, and what the
+      // disk actually kept is NOT.
+      expect(factsSection(blockOf(answered))).toContain(`lastModified: ${stamp}`);
+      expect(blockOf(answered)).not.toContain(kept.toISOString());
+    } finally {
+      fixture.dispose();
+    }
+  });
+});
+
 describe("the block is rebuilt out of what the handler read", () => {
   /**
    * THE ITEM IS GIVEN A BLOCK IN THE OTHER FORMAT, so the two answers cannot both
@@ -192,13 +268,17 @@ describe("the block is rebuilt out of what the handler read", () => {
    * THE WHOLE MarkupContent IS COMPARED, kind AND value: a kind of `plaintext`
    * on a value still carrying `---` is the same defect wearing the right label.
    *
-   * A FILE HALF, AND IT IS NOT SYMMETRY FOR ITS OWN SAKE. The rule between parts
-   * is what this arm's `value` half is FOR, and a file's block used to be one
-   * part -- the path -- so only a directory could carry the claim. It has two
-   * now, the source and the stat, and the claim comes with it. The completion
-   * suite's format arm gave the same claim up in the same change, its block
-   * having gone the other way: down to one part, where the two formats produce
-   * identical bytes and only `kind` discriminates.
+   * THE FILE HALF IS ASSERTED FIRST, AND THE ORDER IS THE CLAIM RATHER THAN A
+   * TIDY-UP. A file has no listing, so the FACT JOIN is the whole of what
+   * discriminates its two formats -- where the directory half would be green on
+   * bullets it already had before this ruling, and a reading whose only red is
+   * there is a reading of those bullets. A runner stops at the first failing
+   * assertion, so putting the directory pair in front would make the file half
+   * unreachable in exactly the run that is supposed to report it.
+   *
+   * THE RULE BETWEEN PARTS IS GONE FROM BOTH FORMATS -- the blank line separates
+   * them now, as the stakeholder's own block shows -- so what this arm compares
+   * is the fact join and the heading, which is where the two formats now differ.
    */
   test("the markup a block is built in follows the session, not the item", async () => {
     const fixture = tree(["listed/one.txt", "listed/two.txt", "plain.txt"]);
@@ -207,43 +287,45 @@ describe("the block is rebuilt out of what the handler read", () => {
     try {
       const asMarkdown = await resolvePathStat(
         contextDeclaring(["markdown"]),
-        markedItem(path, "cwd", { kind: "plaintext", value: `${path}\n\nsource: cwd` }),
+        markedItem(path, "cwd", { kind: "plaintext", value: `${path}\nsource: cwd` }),
       );
       const asPlainText = await resolvePathStat(
         contextDeclaring(["plaintext"]),
         markedItem(path, "cwd", {
           kind: "markdown",
-          value: `${path}\n\n---\n\nsource: cwd`,
+          value: `- ${path}\n- source: cwd`,
         }),
       );
       const fileAsMarkdown = await resolvePathStat(
         contextDeclaring(["markdown"]),
-        markedItem(file, "cwd", { kind: "plaintext", value: `${file}\n\nsource: cwd` }),
+        markedItem(file, "cwd", { kind: "plaintext", value: `${file}\nsource: cwd` }),
       );
       const fileAsPlainText = await resolvePathStat(
         contextDeclaring(["plaintext"]),
-        markedItem(file, "cwd", { kind: "markdown", value: `${file}\n\n---\n\nsource: cwd` }),
+        markedItem(file, "cwd", { kind: "markdown", value: `- ${file}\n- source: cwd` }),
       );
 
-      expect(asMarkdown.documentation).toEqual({
-        kind: "markdown",
-        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n2 entries\n\n- one.txt\n- two.txt`,
-      });
-      // NO MARKDOWN SYNTAX AT ALL for the client that named none: the names are
-      // bare lines rather than bullets, since a client that renders no markdown
-      // reads `- ` as punctuation.
-      expect(asPlainText.documentation).toEqual({
-        kind: "plaintext",
-        value: `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
-      });
+      // THE FILE PAIR FIRST: its two formats differ at the fact join ALONE, and
+      // nothing else in a file's block can carry the claim.
       expect(fileAsMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `source: cwd\n\n---\n\n${fileStat}`,
+        value: fileFactsInMarkdown,
       });
-      // The rule is GONE rather than sent as three hyphens.
       expect(fileAsPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `source: cwd\n\n${fileStat}`,
+        value: fileFacts,
+      });
+      // NO MARKDOWN SYNTAX AT ALL for the client that named none: the facts are
+      // bare lines, the heading carries no `#`, and the names are not bullets --
+      // a client that renders no markdown reads every one of those as
+      // punctuation.
+      expect(asMarkdown.documentation).toEqual({
+        kind: "markdown",
+        value: `${directoryFactsInMarkdown}\n\n# Entries (2)\n\n- one.txt\n- two.txt`,
+      });
+      expect(asPlainText.documentation).toEqual({
+        kind: "plaintext",
+        value: `${directoryFacts}\n\nEntries (2)\n\none.txt\ntwo.txt`,
       });
     } finally {
       fixture.dispose();
@@ -288,11 +370,11 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(blockOf(asMarkdown).split("\n")).not.toContain("source: workspace");
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\n${flattened}`,
+        value: `${directoryFacts}\n\nEntries (2)\n\none.txt\n${flattened}`,
       });
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n2 entries\n\n- one.txt\n- ${flattened}`,
+        value: `${directoryFactsInMarkdown}\n\n# Entries (2)\n\n- one.txt\n- ${flattened}`,
       });
     } finally {
       fixture.dispose();
@@ -338,11 +420,11 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect((asPlainText.detail ?? "").split("\n")).not.toContain("source: workspace");
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
-        value: `source: cwd\n\n${directoryStat}\n\n1 entry\n\nchild.txt`,
+        value: `${directoryFacts}\n\nEntries (1)\n\nchild.txt`,
       });
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
-        value: `source: cwd\n\n---\n\n${directoryStat}\n\n---\n\n1 entry\n\n- child.txt`,
+        value: `${directoryFactsInMarkdown}\n\n# Entries (1)\n\n- child.txt`,
       });
     } finally {
       fixture.dispose();
@@ -367,7 +449,7 @@ describe("the block is rebuilt out of what the handler read", () => {
     try {
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), sent);
 
-      expect(blockOf(answered)).toBe(`${directoryStat}\n\n1 entry\n\none.txt`);
+      expect(blockOf(answered)).toBe(`${unattributedFacts}\n\nEntries (1)\n\none.txt`);
       // THE MARK ITSELF COMES BACK UNTOUCHED AND THAT IS NOT AN OVERSIGHT: the
       // answer REPLACES the item the client holds, so stripping `data` would
       // leave that item unresolvable ever again.
@@ -415,9 +497,7 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       // THE PAIR THAT SEPARATES `THE LISTING WAS SKIPPED` FROM `THIS FIXTURE HAS
       // NOTHING TO SHOW`: the same item, the same directory, uncancelled.
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
-      expect(blockOf(answered)).toBe(
-        `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
-      );
+      expect(blockOf(answered)).toBe(`${directoryFacts}\n\nEntries (2)\n\none.txt\ntwo.txt`);
     } finally {
       fixture.dispose();
     }
@@ -454,14 +534,12 @@ describe("a cancelled highlight does not go on reading the directory", () => {
       const cancelled = await resolvePathStat(contextDeclaring(["plaintext"], signal), item);
 
       expect(signal.aborted).toBe(true);
-      expect(blockOf(cancelled)).toBe(`source: cwd\n\n${directoryStat}`);
+      expect(blockOf(cancelled)).toBe(directoryFacts);
 
       // THE SAME PAIR THE ARM ABOVE CARRIES: without it, `the directory was not
       // read` and `this fixture has nothing in it` are one observation.
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), item);
-      expect(blockOf(answered)).toBe(
-        `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
-      );
+      expect(blockOf(answered)).toBe(`${directoryFacts}\n\nEntries (2)\n\none.txt\ntwo.txt`);
     } finally {
       fixture.dispose();
     }
@@ -528,7 +606,7 @@ describe("a path that stops being a directory between the two reads", () => {
       expect(statSync(path).isFile()).toBe(true);
       // The block still says DIRECTORY, which is the snapshot the handler took
       // before the swap, and it carries no listing.
-      expect(blockOf(answered)).toBe(`source: cwd\n\n${directoryStat}`);
+      expect(blockOf(answered)).toBe(directoryFacts);
     } finally {
       fixture.dispose();
     }
@@ -571,14 +649,23 @@ describe("what the path is decides the answer, and never what the item claims", 
    * of the item and stale besides -- the path may have been replaced by one of
    * the other kind in between.
    *
-   * TWO TESTS AND NOT TWO ASSERTIONS, AND THE REASON THAT SAID SO IS GONE: the
-   * two defects used to land in DIFFERENT FIELDS, one on `detail` and one on the
-   * block, and now both land in the block. What survives is the reason that never
-   * depended on that -- the two directions are different observations, and
-   * sharing one test would mean the second could never be the first thing to
-   * fail. A `kind`-driven answer asked to list a FILE gets a rejection and
-   * quietly drops the listing, so its block looks correct except for the stat
-   * line; the DIRECTORY direction's defect is the listing going missing.
+   * TWO TESTS AND NOT TWO ASSERTIONS, AND THE REASON IS REWRITTEN AGAIN BECAUSE
+   * THE RULING TOOK THE OLD ONE AWAY. The words `file` and `directory` have left
+   * the block, so a stat-driven answer is separable from a `kind`-driven one by
+   * exactly two things and they are in different places: the FILE direction shows
+   * at `size:`, which a directory has none of, and the DIRECTORY direction shows
+   * at the entries heading, which a `kind`-driven answer never asks for. Sharing
+   * one test would mean the second could never be the first thing to fail.
+   *
+   * EACH CARRIES ITS PRESENT CASE IN THE SAME ARM, and that is the half a reader
+   * will be tempted to drop as duplication. An arm resting on `no size: line`
+   * ALONE is satisfied completely by a handler that emitted no size line for
+   * anything -- or no block at all -- and the same is true of the heading. The
+   * absence only means something beside the presence.
+   *
+   * THE OBJECTION IS RECORDED AND NOT RE-RAISED: that these two arms read the
+   * word `file`/`directory` was put to the stakeholder and OVERRULED, and this is
+   * the consequence being paid rather than argued again.
    */
   test("a file whose item claims to be a folder is still answered as a file", async () => {
     const fixture = tree(["plain.txt"]);
@@ -589,10 +676,16 @@ describe("what the path is decides the answer, and never what the item claims", 
         kind: CompletionItemKind.Folder,
       });
 
-      // The stat line is where this direction shows: everything else a
-      // `kind`-driven answer produces here looks correct, because listing a file
-      // rejects and the listing is dropped.
-      expect(blockOf(answered)).toBe(`source: cwd\n\n${fileStat}`);
+      // `size:` IS WHERE THIS DIRECTION SHOWS: everything else a `kind`-driven
+      // answer produces here looks correct, because listing a file rejects and
+      // the listing is dropped quietly.
+      //
+      // THE WHOLE BLOCK RATHER THAN `it contains size:`, so the PRESENT case is
+      // stated as bytes: the directory arm below is the one resting on an
+      // absence, and this is the arm that stops a composer emitting no size line
+      // at all from satisfying it.
+      expect(blockOf(answered)).toBe(fileFacts);
+      expect(blockOf(answered)).toContain("size: ");
       // The claim itself comes back untouched: the answer REPLACES the item the
       // client holds, so correcting its `kind` is not this handler's business.
       expect(answered.kind).toBe(CompletionItemKind.Folder);
@@ -610,9 +703,14 @@ describe("what the path is decides the answer, and never what the item claims", 
         kind: CompletionItemKind.File,
       });
 
-      // THE LISTING, because it is what this direction costs the user: a
-      // `kind`-driven answer never asks what is inside.
-      expect(blockOf(answered)).toBe(`source: cwd\n\n${directoryStat}\n\n1 entry\n\none.txt`);
+      // THE HEADING AND THE LISTING UNDER IT, because that is what this
+      // direction costs the user: a `kind`-driven answer never asks what is
+      // inside, and there is no word left in the block that would say so.
+      //
+      // AND `size:` IS ABSENT HERE WHILE THE ARM ABOVE REQUIRES IT PRESENT --
+      // the pair, without which a handler emitting neither line satisfies both.
+      expect(blockOf(answered)).toBe(`${directoryFacts}\n\nEntries (1)\n\none.txt`);
+      expect(blockOf(answered)).not.toContain("size: ");
       expect(answered.kind).toBe(CompletionItemKind.File);
     } finally {
       fixture.dispose();
@@ -640,15 +738,21 @@ function entryNames(prefix: string, count: number): string[] {
  * is composed of parts that are each OPTIONAL -- so a fixed index is right only
  * for the shape the arm that wrote it happened to produce, and silently returns
  * a neighbouring part for every other. ANCHORED AND FIRST-MATCH: an entry NAMED
- * `3 entries` would otherwise let the names part answer as the header, and the
+ * `Entries (1)` would otherwise let the names part answer as the header, and the
  * real header is always the earlier of the two.
+ *
+ * BOTH FORMAT SPELLINGS, WHICH IS NOT SYMMETRY: a pattern matching only the
+ * markdown heading returns an EMPTY header and NO names for every plaintext arm
+ * -- green, empty and silent -- and this suite is plaintext almost everywhere.
+ * That is the sprint-82 anchor one level over, on the very helper it was written
+ * to fix, which is why each arm reading names asserts a NON-EMPTY header.
  *
  * DUPLICATED AT THE REPOSITORY ROOT, and the two MUST NOT DISAGREE -- an absent
  * names part is NO names here, not one empty name.
  */
 function listingSection(block: string): { header: string; names: string[] } {
   const parts = block.split("\n\n");
-  const at = parts.findIndex((part) => /^\d+ (?:entry|entries)(?:, first \d+ shown)?$/u.test(part));
+  const at = parts.findIndex((part) => /^(?:# )?Entries \((?:first \d+ of )?\d+\)$/u.test(part));
   if (at === -1) {
     return { header: "", names: [] };
   }
@@ -660,30 +764,46 @@ describe("the listing is found by its own header, not by where it happens to sit
   /**
    * THE READER ABOVE IS WHAT THIS ARM IS ABOUT, and it is the one thing in this
    * file whose defect every other arm is blind to: the arms that use it all
-   * supply a source the closed set accepts, so the listing lands where a fixed
-   * index expects it and a WRONG reader agrees with a right one everywhere they
-   * are exercised.
+   * produce a listing whose header sits where the reader expects it, so a WRONG
+   * reader agrees with a right one everywhere they are exercised.
    *
-   * THE INPUT IS NOT INVENTED FOR THE OCCASION: the composer pushes the source
-   * part only when the name is one it recognises, so a FORGED source makes the
-   * block one part shorter and everything after it moves. The arm beside this
-   * one already produces exactly that block and asserts it whole -- what it
-   * cannot do is notice that the reader misreads it.
+   * ITS INPUT MOVED WITH THE RULING AND THE ARM IS RE-POINTED RATHER THAN
+   * DELETED, WHICH IS THE RECORD OF WHY. It used to hand the reader a FORGED
+   * source: the composer pushed the source as its own PART, so an unrecognised
+   * name made the block one part shorter and everything after it moved. `source`
+   * is a FACT now and shares a part with the rest, so a forged one leaves the
+   * part COUNT unchanged and separates nothing. What is left is the collision an
+   * index never had: a directory holding an ENTRY NAMED LIKE THE HEADING.
+   *
+   * EXACTLY ONE ENTRY, WHICH IS WHAT MAKES IT A COLLISION AT ALL: the names are
+   * ONE part, and the header pattern is anchored at both ends, so with a sibling
+   * beside it the names part could never match however it were named. `Entries
+   * (1)` is what this directory's own heading reads, so the two parts are BYTE-
+   * IDENTICAL and only their order tells them apart.
    *
    * THE HEADER AND THE NAMES ARE ASSERTED TOGETHER, because a reader returning
    * the names AS the header and no names at all satisfies either half alone.
    */
-  test("a block whose source was forged still reads back as its header and its names", async () => {
-    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+  test("a directory holding an entry named like its own heading still reads back as both", async () => {
+    const imitator = "Entries (1)";
+    const fixture = tree([`listed/${imitator}`]);
     try {
       const answered = await resolvePathStat(
         contextDeclaring(["plaintext"]),
-        markedItem(join(fixture.root, "listed"), "<script>alert(1)</script>"),
+        markedItem(join(fixture.root, "listed"), "cwd"),
       );
 
+      // THE PREMISE, SO THE COLLISION IS STAGED RATHER THAN BELIEVED: the block
+      // really does carry that string twice, which is what a last-match or
+      // unanchored reader answers the second of.
+      expect(
+        blockOf(answered)
+          .split("\n\n")
+          .filter((part) => part === imitator).length,
+      ).toBe(2);
       expect(listingSection(blockOf(answered))).toEqual({
-        header: "2 entries",
-        names: ["one.txt", "two.txt"],
+        header: imitator,
+        names: [imitator],
       });
     } finally {
       fixture.dispose();
@@ -719,7 +839,7 @@ describe("what one directory renders does not grow with what it holds", () => {
       expect(section.names.length).toBe(20);
       // The number the USER is told is the same number, so a bound that moved
       // without the announcement moving reddens here too.
-      expect(section.header).toBe("25 entries, first 20 shown");
+      expect(section.header).toBe("Entries (first 20 of 25)");
     } finally {
       fixture.dispose();
     }
@@ -763,8 +883,8 @@ describe("what one directory renders does not grow with what it holds", () => {
 
       expect(manySection.names).toEqual(many.slice(0, shown));
       expect(moreSection.names).toEqual(more.slice(0, shown));
-      expect(manySection.header).toBe(`25 entries, first ${String(shown)} shown`);
-      expect(moreSection.header).toBe(`47 entries, first ${String(shown)} shown`);
+      expect(manySection.header).toBe(`Entries (first ${String(shown)} of 25)`);
+      expect(moreSection.header).toBe(`Entries (first ${String(shown)} of 47)`);
     } finally {
       fixture.dispose();
     }
@@ -806,7 +926,7 @@ describe("what one directory renders does not grow with what it holds", () => {
       expect(shown).toBeGreaterThan(ordinary.length);
 
       expect(await sectionOf("mixed")).toEqual({
-        header: `${String(ordinary.length + dotfiles.length)} entries, first ${String(shown)} shown`,
+        header: `Entries (first ${String(shown)} of ${String(ordinary.length + dotfiles.length)})`,
         names: [...ordinary, ...dotfiles.slice(0, shown - ordinary.length)],
       });
     } finally {
@@ -823,6 +943,12 @@ describe("what one directory renders does not grow with what it holds", () => {
    * AND AN EMPTY DIRECTORY IS ANSWERED RATHER THAN LEFT TO LOOK LIKE A FILE: with
    * names alone, `this directory holds nothing` and `nothing was listed` produce
    * THE SAME BYTES. The file beside it is the pair that makes that mean something.
+   *
+   * THE HEADING ANNOUNCES TRUNCATION AND NOTHING ELSE, WHICH IS WHY THE EDGE HAS
+   * A SPELLING OF ITS OWN: `Entries (first 20 of 20)` answers the one question
+   * the parenthetical exists to answer with a word that means the opposite. No
+   * new boundary is introduced -- the sentence this replaces switched at the same
+   * one -- so what this arm grades is unchanged.
    */
   test("a directory at or under the bound shows every entry, and an empty one says so", async () => {
     const overflow = entryNames("h", 40);
@@ -856,21 +982,25 @@ describe("what one directory renders does not grow with what it holds", () => {
       // end. Children first, then the directory: writing into it bumps it.
       utimesSync(join(fixture.root, "edge"), fixtureStamp, fixtureStamp);
 
-      expect(await sectionOf("edge")).toEqual({ header: `${String(shown)} entries`, names: edge });
+      expect(await sectionOf("edge")).toEqual({
+        header: `Entries (${String(shown)})`,
+        names: edge,
+      });
       expect(await sectionOf("under")).toEqual({
-        header: "2 entries",
+        header: "Entries (2)",
         names: ["one.txt", "two.txt"],
       });
-      expect(await sectionOf("empty")).toEqual({ header: "0 entries", names: [] });
+      expect(await sectionOf("empty")).toEqual({ header: "Entries (0)", names: [] });
 
-      // The pair: a FILE's answer carries no listing section at all, so `0
-      // entries` is a statement about a directory rather than the shape every
-      // answer happens to have.
+      // The pair: a FILE's answer carries no listing section at all, so
+      // `Entries (0)` is a statement about a directory rather than the shape
+      // every answer happens to have.
       const file = await resolvePathStat(
         context,
         markedItem(join(fixture.root, "plain.txt"), "cwd"),
       );
-      expect(blockOf(file)).toBe(`source: cwd\n\n${fileStat}`);
+      expect(blockOf(file)).toBe(fileFacts);
+      expect(listingSection(blockOf(file))).toEqual({ header: "", names: [] });
     } finally {
       fixture.dispose();
     }

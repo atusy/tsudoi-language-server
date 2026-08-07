@@ -393,38 +393,49 @@ export async function* itemsFrom(
 export function documentationFor(
   source: PathSourceName | undefined,
   format: MarkupKind,
-  facts: readonly string[] = [],
+  stat: readonly string[] = [],
   listing?: DirectoryListing,
 ): MarkupContent {
   const markdown = format === MarkupKind.Markdown;
   const parts: string[] = [];
-  if (source !== undefined) {
-    parts.push(`source: ${source}`);
-  }
+  const facts = [...(source === undefined ? [] : [`source: ${source}`]), ...stat];
   if (facts.length > 0) {
-    parts.push(factsText(facts));
+    parts.push(factsText(facts, markdown));
   }
   if (listing !== undefined) {
     parts.push(listingText(listing, markdown));
   }
-  return { kind: format, value: parts.join(markdown ? "\n\n---\n\n" : "\n\n") };
+  // THE SAME JOIN IN BOTH FORMATS NOW, AND THE THEMATIC RULE IS GONE: the rule
+  // was carrying the separation markdown needed between parts, and the blank
+  // line does it in both -- which is what the stakeholder's own block shows. What
+  // discriminates the two formats moved INTO the facts, where a file has
+  // something to discriminate.
+  return { kind: format, value: parts.join("\n\n") };
 }
 
 /**
- * The facts a `stat` produced, as one part of the block.
+ * The labelled facts as one part of the block, one fact to a line.
  *
- * ITS OWN STEP BESIDE `listingText` AND NOT AN INLINE JOIN, because the join
- * between FACTS and the join between PARTS are about to stop being one decision:
- * today a single separator is chosen by format for every part alike, and the
- * facts are one part with nothing inside it to separate.
+ * MARKDOWN BULLETS THEM AND PLAINTEXT DOES NOT, AND THE BULLET IS DOING THE WORK
+ * A BARE NEWLINE CANNOT: three lines joined by a single newline are ONE PARAGRAPH
+ * in CommonMark, so a markdown client shown the plaintext spelling renders
+ * `source: cwd size: 1062 bytes lastModified: ...` on one run-on line -- the
+ * exact thing labelling the facts exists to prevent.
  *
- * IT TAKES NO FORMAT YET AND THAT IS THE HONEST SPELLING RATHER THAN AN
- * OVERSIGHT: with one fact, every join produces the same bytes, so a format
- * parameter here today would be a branch whose two arms are one string -- a
- * claim that this step reads the format, made where nothing can falsify it.
+ * A BULLET LIST AND NOT A TRAILING-DOUBLE-SPACE HARD BREAK, WHICH IS REFUSED
+ * WITH A REASON: that break is invisible in the source AND in a diff, so one
+ * space stripped by any tool silently restores the run-on line -- in a repository
+ * that formats its whole tree. A backslash break is the same invisibility
+ * inverted, reading as punctuation; bold labels do not break a line at all, so
+ * the run-on survives wearing emphasis.
+ *
+ * AND IT BUYS BACK WHAT SPRINT 82 RECORDED AS A LOSS: the completion block is one
+ * fact, and one fact joined any way is that fact -- so until the bullet, a
+ * completion item's two formats were byte-identical and only `kind` told them
+ * apart.
  */
-function factsText(facts: readonly string[]): string {
-  return facts.join("\n");
+function factsText(facts: readonly string[], markdown: boolean): string {
+  return facts.map((fact) => (markdown ? `- ${fact}` : fact)).join("\n");
 }
 
 /** What one resolved directory's entries look like in the block. */
@@ -435,22 +446,37 @@ export interface DirectoryListing {
   readonly total: number;
 }
 
+/**
+ * The entries as a headed list, the heading announcing TRUNCATION and nothing
+ * else.
+ *
+ * `(first n of m)` WHEN FEWER ARE SHOWN THAN HELD AND `(m)` WHEN ALL ARE, which
+ * is the one question the parenthetical exists to answer: `first 67 of 67`
+ * answers it with a word that means the opposite. `(0)` for the empty directory
+ * is not decoration -- with names alone, `this directory holds nothing` and
+ * `nothing was listed` are the same bytes.
+ *
+ * A LEVEL-ONE HEADING IN MARKDOWN AND THE SAME WORDS BARE IN PLAINTEXT, because
+ * the label is CONTENT: a client that renders no markdown must still be told what
+ * the names underneath it are, and `#` in front of them is punctuation to it.
+ */
 function listingText(listing: DirectoryListing, markdown: boolean): string {
-  const entries = `${String(listing.total)} ${listing.total === 1 ? "entry" : "entries"}`;
-  const header =
-    listing.names.length < listing.total
-      ? `${entries}, first ${String(listing.names.length)} shown`
-      : entries;
-  if (listing.names.length === 0) {
-    return header;
+  const shown = listing.names.length;
+  const counted =
+    shown < listing.total
+      ? `first ${String(shown)} of ${String(listing.total)}`
+      : String(listing.total);
+  const heading = `${markdown ? "# " : ""}Entries (${counted})`;
+  if (shown === 0) {
+    return heading;
   }
-  return `${header}\n\n${listing.names
+  return `${heading}\n\n${listing.names
     .map((name) => (markdown ? `- ${flattened(name)}` : flattened(name)))
     .join("\n")}`;
 }
 
 /**
- * What a `stat` found, as the facts the block spells it in.
+ * What a `stat` found, as the labelled facts the block spells it in.
  *
  * A LIST AND NOT A LINE, WHICH IS WHAT THE COMPOSER NOW TAKES: how many lines a
  * kind's facts occupy, and what separates them, is the block's decision and not
@@ -464,13 +490,38 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
  * A DIRECTORY IS TOLD APART BY WHAT IT IS AND NOT BY WHAT AN ITEM CLAIMED, and it
  * reports NO SIZE: a directory's `size` is its own directory ENTRY's -- 64 on one
  * machine and 4096 on the next for the same children -- so showing it would put a
- * number in front of a user that means nothing about what is inside.
+ * number in front of a user that means nothing about what is inside. THE WORDS
+ * `file` AND `directory` ARE GONE FROM THE BLOCK BY THE STAKEHOLDER'S RULING, so
+ * that absence is now the ONLY thing saying which kind this is -- which is why
+ * the arms about it carry the present case beside the absent one.
+ *
+ * THE LABELS ARE THE STAKEHOLDER'S OWN SPELLING, `lastModified` in camelCase
+ * beside lowercase `source` and `size`: it is theirs, and consistency is not
+ * worth a silent edit to a thing they wrote out.
  */
 export function statLine(stats: Stats): readonly string[] {
-  const modified = `modified ${stats.mtime.toISOString()}`;
-  return stats.isDirectory()
-    ? [`directory · ${modified}`]
-    : [`file · ${String(stats.size)} bytes · ${modified}`];
+  const lastModified = `lastModified: ${toTheSecond(stats.mtime)}`;
+  return stats.isDirectory() ? [lastModified] : [`size: ${String(stats.size)} bytes`, lastModified];
+}
+
+/**
+ * A moment as the SECOND it fell in, rendered.
+ *
+ * TRUNCATED HERE AND IN NO FIXTURE, because the ISO rendering always emits
+ * milliseconds: a fixture-side truncation would leave every real popup carrying
+ * a figure the user cannot use and this repository cannot see.
+ *
+ * THE VALUE IS FLOORED AND THE STRING IS NOT CUT, WHICH IS THE DIFFERENCE THAT
+ * MAKES THE RULING TESTABLE. Both stamp constants in this repository are whole
+ * seconds by design -- filesystems disagree about sub-second precision -- and
+ * flooring one is a NO-OP down to the byte, so removing this truncation leaves
+ * every fixture here green and reddens only an arm that staged a sub-second
+ * stamp of its own. Cutting `.mmm` off the string instead would move every
+ * expected block in both suites, and the ruling would be graded by fixtures
+ * rather than by the arm that tests it.
+ */
+function toTheSecond(when: Date): string {
+  return new Date(Math.floor(when.getTime() / 1000) * 1000).toISOString();
 }
 
 /**

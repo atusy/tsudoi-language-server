@@ -226,9 +226,12 @@ test("an installed consumer answers a completion and then resolves one of its ow
         typeof resolved.documentation === "string"
           ? resolved.documentation
           : (resolved.documentation?.value ?? "");
-      const stat = block.split("\n\n").find((part) => part.startsWith("file · ")) ?? "";
-      expect(`${stat} | stderr: ${running.stderr}`).toContain("bytes");
-      expect(stat).toContain("modified ");
+      const facts =
+        block
+          .split("\n\n")
+          .find((part) => part.split("\n").some((one) => one.startsWith("size: "))) ?? "";
+      expect(`${facts} | stderr: ${running.stderr}`).toContain("bytes");
+      expect(facts).toContain("lastModified: ");
       // The item came back, rather than being replaced by something else: an
       // answer that dropped the label would take the entry out of the user's
       // list.

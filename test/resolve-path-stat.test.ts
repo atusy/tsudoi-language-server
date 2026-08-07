@@ -36,14 +36,19 @@ const fileText = "サンプル\n";
 const mtime = new Date("2001-02-03T04:05:06.000Z");
 
 /**
- * The stat line a resolved FILE's block must carry, WRITTEN OUT RATHER THAN
+ * The facts a resolved FILE's block must carry, WRITTEN OUT RATHER THAN
  * COMPUTED: both sides calling `stat` would make a correct reading and a
  * consistently broken one produce the same observation.
+ *
+ * THE STAMP KEEPS ITS MILLISECONDS THOUGH THE COMPOSER TRUNCATES TO THE SECOND,
+ * and the two agree because `mtime` above IS a whole second -- flooring one is a
+ * no-op down to the byte. That is deliberate: it leaves the truncation graded by
+ * the member arm that stages a sub-second stamp, and by nothing here.
  */
-const fileStat = "file · 13 bytes · modified 2001-02-03T04:05:06.000Z";
+const fileStat = "size: 13 bytes\nlastModified: 2001-02-03T04:05:06.000Z";
 
-/** And what a resolved DIRECTORY's must carry. */
-const directoryStat = "directory · modified 2001-02-03T04:05:06.000Z";
+/** And what a resolved DIRECTORY's must carry: the same fact, with no size. */
+const directoryStat = "lastModified: 2001-02-03T04:05:06.000Z";
 
 /** What the document's one line reads: the prefix both entries share. */
 const prefix = "sample";
@@ -113,7 +118,7 @@ const completedBlock = "source: document";
 
 /** What a FILE's block grows into once resolve has stat-ed it. */
 function fileBlock(): string {
-  return `${completedBlock}\n\n${fileStat}`;
+  return `${completedBlock}\n${fileStat}`;
 }
 
 /**
@@ -130,7 +135,7 @@ function fileBlock(): string {
  * the expectation.
  */
 function directoryBlock(): string {
-  return `${completedBlock}\n\n${directoryStat}\n\n5 entries\n\nZeta.txt\nalpha\nbeta.txt\n.Zed\n.hidden`;
+  return `${completedBlock}\n${directoryStat}\n\nEntries (5)\n\nZeta.txt\nalpha\nbeta.txt\n.Zed\n.hidden`;
 }
 
 /**
@@ -180,16 +185,24 @@ function blockOf(item: CompletionItem): string {
 }
 
 /**
- * The stat part of a block: the part that says what the path IS.
+ * The facts part of a block: the part that says what the path IS.
  *
  * FOUND BY WHAT IT SAYS AND NOT BY WHICH PART IT IS, for the reason the reader
  * below is: every part of this block is optional, so a fixed index is right only
  * for the shape the arm that wrote it happened to produce. A directory arm that
  * had started reporting a size is still FOUND here, which is what lets the arm
  * about it refuse one.
+ *
+ * ANCHORED AT A LINE, FIRST-MATCH, AND IN BOTH FORMAT SPELLINGS: an entry NAMED
+ * `lastModified: x` renders a names part whose line matches, and the real facts
+ * are always the earlier of the two.
  */
-function statSection(block: string): string {
-  return block.split("\n\n").find((part) => /^(?:file|directory) · /u.test(part)) ?? "";
+function factsSection(block: string): string {
+  const parts = block.split("\n\n");
+  const at = parts.findIndex((part) =>
+    part.split("\n").some((one) => /^(?:- )?lastModified: /u.test(one)),
+  );
+  return at === -1 ? "" : (parts[at] ?? "");
 }
 
 /**
@@ -199,20 +212,28 @@ function statSection(block: string): string {
  * is composed of parts that are each OPTIONAL -- so a fixed index is right only
  * for the shape the arm that wrote it happened to produce, and silently returns
  * a neighbouring part for every other. ANCHORED AND FIRST-MATCH: an entry NAMED
- * `3 entries` would otherwise let the names part answer as the header, and the
+ * `Entries (1)` would otherwise let the names part answer as the header, and the
  * real header is always the earlier of the two.
+ *
+ * BOTH FORMAT SPELLINGS, AND HERE THAT IS THE WHOLE OF WHAT KEEPS THIS FILE
+ * HONEST: this suite's `initializeParams` carry no capabilities at all, so every
+ * session in it is PLAINTEXT throughout. A pattern matching only the markdown
+ * heading returns an EMPTY header and NO names for every arm here -- green, empty
+ * and silent -- which is the sprint-82 anchor one level over, on the very helper
+ * that anchor was written to fix. The arm below reads a NON-EMPTY name count
+ * before anything else for that reason.
  *
  * DUPLICATED IN THE MEMBER'S OWN SUITE, because a member reaching into the root's
  * helpers stops being checkable on its own. WHAT THE TWO MUST NOT DO IS DISAGREE:
  * an absent names part is NO names here, not one empty name, which is how the
  * empty-directory answer reads -- a case asserted there rather than here. THE
  * INPUT THAT SEPARATES THIS READER FROM THE INDEX IT REPLACED IS STAGED THERE
- * AND CANNOT BE STAGED HERE: it needs a FORGED source, and every item this file
- * resolves came out of a real server.
+ * AND CANNOT BE STAGED HERE: it needs a directory holding an entry named like the
+ * heading, and every item this file resolves came out of a real server.
  */
 function listingSection(block: string): { header: string; names: string[] } {
   const parts = block.split("\n\n");
-  const at = parts.findIndex((part) => /^\d+ (?:entry|entries)(?:, first \d+ shown)?$/u.test(part));
+  const at = parts.findIndex((part) => /^(?:# )?Entries \((?:first \d+ of )?\d+\)$/u.test(part));
   if (at === -1) {
     return { header: "", names: [] };
   }
@@ -318,31 +339,50 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * ITS OWN TEST, because a handler that says `file` about everything satisfies
-     * the test above completely.
+     * ITS OWN TEST, because a handler that reported a size for everything
+     * satisfies the test above completely.
      *
-     * THE LINE ALONE IS THIS TEST'S SUBJECT, and the whole answer is compared in
-     * the listing test below rather than here: two tests asserting one deep
+     * ITS TITLE WAS FALSIFIED BY THE STAKEHOLDER'S RULING AND IS REPAIRED RATHER
+     * THAN KEPT: the block no longer SAYS it is a directory -- the words `file`
+     * and `directory` have left it -- so the absence of `size:` is the whole of
+     * what a user has to go on, and the arm has to say that rather than the old
+     * sentence.
+     *
+     * THE FILE IS IN THE SAME ARM AND IT IS NOT A SECOND READING OF THE TEST
+     * ABOVE. That one compares a file's whole answer; this one needs the PRESENT
+     * case beside the absent one, because `no size line on a directory` is
+     * satisfied completely by a handler that emits no size line for anything --
+     * which, with the words gone, is a state nothing else here would catch.
+     *
+     * THE FACTS ALONE ARE THIS TEST'S SUBJECT, and the whole answer is compared
+     * in the listing test below rather than here: two tests asserting one deep
      * equality would mean the second could never be the first thing to fail.
      */
-    test("a directory item comes back saying it is a directory, and carrying no size", async () => {
+    test("a directory item's facts carry no size, where a file's carry one", async () => {
       const fixture = sampleTree();
       const session = startDemo(runtime, fixture.root);
       try {
-        const item = itemFor(await completedItems(session, fixture.root), "sample-dir");
+        const items = await completedItems(session, fixture.root);
+        const item = itemFor(items, "sample-dir");
         expect(item.detail).toBe(join(fixture.root, "sample-dir"));
 
         const resolved = await session.request<CompletionItem>("completionItem/resolve", item);
+        const resolvedFile = await session.request<CompletionItem>(
+          "completionItem/resolve",
+          itemFor(items, "sample.txt"),
+        );
 
-        // READ OFF THE STAT LINE INSIDE THE BLOCK, WHICH IS WHERE THE CLAIM NOW
+        // READ OFF THE FACTS INSIDE THE BLOCK, WHICH IS WHERE THE CLAIM NOW
         // LIVES: left on `detail`, the refusal below would be reading an absolute
         // PATH and would be true on every machine whatever the stat said.
-        const stat = statSection(blockOf(resolved));
-        expect(stat).toBe(directoryStat);
+        const facts = factsSection(blockOf(resolved));
+        expect(facts).toBe(`${completedBlock}\n${directoryStat}`);
         // A directory's `size` is its directory ENTRY's -- 64 on one machine and
         // 4096 on the next for the same children -- so reporting it would put a
         // number in front of a user that means nothing about the files inside.
-        expect(stat).not.toContain("bytes");
+        expect(facts).not.toContain("size:");
+        // AND THE PAIR, IN THE SAME SESSION: the file's facts DO carry one.
+        expect(factsSection(blockOf(resolvedFile))).toBe(`${completedBlock}\n${fileStat}`);
       } finally {
         session.dispose();
         fixture.dispose();
@@ -441,16 +481,18 @@ for (const runtime of runtimes) {
 
         const section = listingSection(blockOf(resolved));
         // The pair for the bound: an answer carrying no names at all satisfies
-        // every equality below.
+        // every equality below -- AND SO DOES A READER THAT FOUND NO SECTION,
+        // which is what a heading pattern narrowed to the markdown spelling
+        // leaves this plaintext session with.
         expect(section.names.length).toBeGreaterThan(0);
         expect(section.names.length).toBeLessThan(crowd.length);
-        expect(section.header).toBe(`30 entries, first ${String(section.names.length)} shown`);
+        expect(section.header).toBe(`Entries (first ${String(section.names.length)} of 30)`);
         expect(section.names).toEqual(crowd.slice(0, section.names.length));
         // And the facts the block carried before are still in front of the
         // listing rather than displaced by it.
         expect(resolved.documentation).toEqual({
           kind: "plaintext",
-          value: `${completedBlock}\n\n${directoryStat}\n\n${section.header}\n\n${section.names.join("\n")}`,
+          value: `${completedBlock}\n${directoryStat}\n\n${section.header}\n\n${section.names.join("\n")}`,
         });
       } finally {
         session.dispose();
@@ -589,13 +631,13 @@ for (const runtime of runtimes) {
         // session at all.
         expect(answeredOpen.documentation).toEqual({
           kind: "plaintext",
-          value: `${completedBlock}\n\n${directoryStat}\n\n1 entry\n\nvisible.txt`,
+          value: `${completedBlock}\n${directoryStat}\n\nEntries (1)\n\nvisible.txt`,
         });
         expect(answeredLocked).toEqual({
           ...lockedItem,
           documentation: {
             kind: "plaintext",
-            value: `${completedBlock}\n\n${directoryStat}`,
+            value: `${completedBlock}\n${directoryStat}`,
           },
         });
         // Nor was the failure narrated: a handler logging every unreadable

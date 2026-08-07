@@ -651,14 +651,14 @@ const records: readonly PerturbationRecord[] = [
     },
     weakening: {
       file: "packages/tsudoi-completion-path/src/completion.ts",
-      from: "    ? [`directory · ${modified}`]",
-      to: "    ? [`directory · ${String(stats.size)} bytes · ${modified}`]",
+      from: "  return stats.isDirectory() ? [lastModified] : [",
+      to: "  return stats.isDirectory() ? [`size: ${String(stats.size)} bytes`, lastModified] : [",
     },
     // WHERE THE RED IS REQUIRED TO FALL, AND THIS RECORD IS THE ONE THAT MAKES
     // THE FIELD WORTH HAVING: eight collateral arms redden with it, so `the
     // named arm went red` was already true of a weakening that never reached the
     // directory at all. The DIRECTORY value, not the file one two lines below.
-    redAt: "expect(directory).toBe(directoryStat);",
+    redAt: "expect(directory).toBe(directoryFacts);",
     alsoReddens: [
       "the markup a block is built in follows the session, not the item",
       "a name that would forge an attribution line renders as one that cannot",
@@ -716,20 +716,8 @@ const records: readonly PerturbationRecord[] = [
     },
     weakening: {
       file: "packages/tsudoi-completion-path/src/completion.ts",
-      from: `  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-  if (facts.length > 0) {
-    parts.push(factsText(facts));
-  }
-`,
-      to: `  if (facts.length > 0) {
-    parts.push(factsText(facts));
-  }
-  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-`,
+      from: "  const facts = [...(source === undefined ? [] : [`source: ${source}`]), ...stat];",
+      to: "  const facts = [...stat, ...(source === undefined ? [] : [`source: ${source}`])];",
     },
     // THE FIRST CELL THE SWEEP REACHES, and it is declared for the reason the two
     // records below exist: an unconditional reorder and a conditional one are ONE
@@ -753,23 +741,10 @@ const records: readonly PerturbationRecord[] = [
     },
     weakening: {
       file: "packages/tsudoi-completion-path/src/completion.ts",
-      from: `  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-  if (facts.length > 0) {
-    parts.push(factsText(facts));
-  }
-`,
-      to: `  if (facts.length > 0 && markdown) {
-    parts.push(factsText(facts));
-  }
-  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-  if (facts.length > 0 && !markdown) {
-    parts.push(factsText(facts));
-  }
-`,
+      from: "  const facts = [...(source === undefined ? [] : [`source: ${source}`]), ...stat];",
+      to: `  const facts = markdown
+    ? [...stat, ...(source === undefined ? [] : [\`source: \${source}\`])]
+    : [...(source === undefined ? [] : [\`source: \${source}\`]), ...stat];`,
     },
     redAt: "markdown from document",
     alsoReddens: [],
@@ -788,23 +763,10 @@ const records: readonly PerturbationRecord[] = [
     },
     weakening: {
       file: "packages/tsudoi-completion-path/src/completion.ts",
-      from: `  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-  if (facts.length > 0) {
-    parts.push(factsText(facts));
-  }
-`,
-      to: `  if (facts.length > 0 && source === "workspace") {
-    parts.push(factsText(facts));
-  }
-  if (source !== undefined) {
-    parts.push(\`source: \${source}\`);
-  }
-  if (facts.length > 0 && source !== "workspace") {
-    parts.push(factsText(facts));
-  }
-`,
+      from: "  const facts = [...(source === undefined ? [] : [`source: ${source}`]), ...stat];",
+      to: `  const facts = source === "workspace"
+    ? [...stat, ...(source === undefined ? [] : [\`source: \${source}\`])]
+    : [...(source === undefined ? [] : [\`source: \${source}\`]), ...stat];`,
     },
     // PLAINTEXT AND NOT MARKDOWN, because the sweep reaches plaintext first: this
     // record's cell differs from the one above in BOTH axes, which is what makes
