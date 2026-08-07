@@ -115,6 +115,32 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-83",
+      story: {
+        role: "editor user",
+        capability:
+          "read a highlighted path item's popup as LABELLED FACTS and a headed list -- `source:`, `size:`, `lastModified:`, then the entries -- instead of a rule-separated pile whose middle line packs three facts into one dot-separated sentence",
+        benefit:
+          "the fact I want is found by its label rather than by counting fields, and a directory's contents are announced by a heading that says how many of how many I am being shown",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- THE SHAPE IS THE STAKEHOLDER'S AND THE CRITERIA ARE NOT WRITTEN YET. This item enters refinement with the target block quoted in note 1 and the open questions in notes 2 to 5; it may not be planned until each of those is ruled and the criteria replaced.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE STAKEHOLDER'S BLOCK, QUOTED RATHER THAN PARAPHRASED, because every open question below is a question about which bytes it does not show: `source: cwd` / `size: 1062 bytes` / `lastModified: 2024-06-19T12:00:00Z` / blank / `# Entries (first 20 of 67)` / blank / `- ...`. THREE THINGS CHANGE AT ONCE -- the facts become LABELLED and are separated by ONE newline rather than by a rule, the stat's three facts stop being one dot-separated sentence, and the listing gains a HEADING carrying `first N of M` in place of a sentence carrying `M entries, first N shown`.",
+        "THE ONE CONSEQUENCE THE BLOCK DOES NOT STATE, AND IT IS THE ITEM'S REAL DECISION. Today the stat line opens with the WORD `file` or `directory`, and sprint 82 landed two arms that tell a stat-driven answer from a `kind`-driven one by reading it. In the quoted block that word is GONE: a directory would carry no `size:` line, so the kind is legible only by ABSENCE, and absence is what a defect looks like. THE PROPOSAL THIS ITEM CARRIES INTO REFINEMENT is a `kind: file` / `kind: directory` line, which is the stakeholder's own label style applied to the fact their example happened not to need. IT IS NOT ASSUMED -- the alternative is to accept the weakening and say so at the arms.",
+        "WHAT THE PLAINTEXT SPELLING IS, WHICH THE BLOCK CANNOT SHOW BECAUSE IT IS THE MARKDOWN ONE. `# Entries` and `- ` are markdown; this package answers PLAINTEXT to any client that did not name markdown, and sprint 82 just migrated the arm grading that difference. A format whose two spellings differ only in bytes nobody looks at makes that arm vacuous again.",
+        "WHAT `lastModified` IS IN, WHICH THE EXAMPLE ANSWERS AMBIGUOUSLY. The quoted value has no fractional part; `Date.prototype.toISOString` always emits milliseconds. So either the value is truncated -- a decision, since it discards what the fixture's own stamp control relies on -- or the example is shorthand. Ruled at refinement, not guessed.",
+        "AND THE HEADING WHEN NOTHING IS TRUNCATED. `first 20 of 67` reads badly at `first 67 of 67`, and today's sentence already switches spellings on that boundary. The empty directory is the same question one step further.",
+        "WHAT THIS ITEM MUST NOT BREAK, EACH ONE LANDED BY SPRINT 82 AND EACH ONE CHEAP TO BREAK HERE. The PREFIX relation -- the completion block must stay a strict prefix of the resolved one, which survives a one-newline join and dies if anything is inserted before `source:`. The DIRECTORY-CARRIES-NO-BYTE-COUNT ruling, which `size:` makes easier to violate by making it uniform. And BOTH `listingSection` helpers, re-derived last sprint to locate the listing by its header -- a new heading moves that header and the helpers move with it, which is where the sprint-82 anchor showed that a wrong lookup goes GREEN.",
+      ],
+    },
+    {
       id: "PBI-82",
       story: {
         role: "editor user",
