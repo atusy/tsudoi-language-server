@@ -345,10 +345,13 @@ export async function* itemsFrom(
         // candidates that reach a filename holding a space are built on the
         // range beginning where the FRAGMENT begins.
         label: entry.name,
-        // WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING. A client
-        // matches against the text its edit RANGE covers, and that range starts
-        // at the fragment -- so an item whose filter text held the entry name
-        // alone would be filtered away by the separator the user just typed.
+        // WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING -- FOR THE
+        // CLIENTS THAT READ IT AND DERIVE THE TYPED TEXT FROM THE EDIT RANGE,
+        // WHICH IS NOT ALL OF THEM AND IS NOT A RULE THE SPECIFICATION STATES.
+        // Those clients match against text beginning where the fragment does,
+        // so an item whose filter text held the entry name alone would be
+        // filtered away by the separator the user just typed. The client this
+        // package's other readings come from ignores the field entirely.
         filterText: insertText,
         // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW. NOT
         // `two same-named candidates from different roots are told apart`, WHICH

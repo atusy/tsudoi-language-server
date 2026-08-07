@@ -886,10 +886,14 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    *
    * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
    * markdown syntax inside a name still renders as syntax, and `label`,
-   * `filterText` and `insertText` still carry the name RAW. The last two have to
-   * -- one is written into the buffer and the other is matched against what the
-   * user typed. The label's reason is the arm below, and it belongs to the
-   * client rather than to this package.
+   * `filterText` and `insertText` still carry the name RAW. `insertText` has to
+   * -- it is written into the buffer. `filterText` is raw because it must EQUAL
+   * what is inserted, which is a wire-shape policy and not a filtering
+   * consequence: the bytes a flattening would move sit after a line break, and
+   * the fragment scanner stops at whitespace, so no typed input reaches them and
+   * no arm here could show a flattened one filtering differently. The label's
+   * reason is the arm below, and it belongs to the client rather than to this
+   * package.
    */
   test("an entry whose own name would forge an attribution line names it as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";

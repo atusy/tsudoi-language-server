@@ -52,11 +52,13 @@ report the kind of what it points at.
 parts of an editor. The **label** is the entry's own name — `deep.txt`, never `notes/deep.txt`,
 so a listing does not spend its width repeating the directory you have already typed — while
 `filterText` and `insertText` both carry the whole thing, directory part and all. That is not
-duplication: the item's edit range starts where the fragment does, so a client filters against
-text that still includes `notes/`, and an item filtering on the bare name would be dropped by
-the separator you just typed. None of the three is sanitised — `insertText` is written into
-your buffer as it stands, `filterText` is matched against what you have typed, and a client can
-be configured to drop an item whose label it cannot find in the word it completes.
+duplication: the item's edit range starts where the fragment does, and an editor that reads
+`filterText` and derives the typed text from that range — which the specification does not
+require and not every editor does — is matching against text that still includes `notes/`, so
+an item filtering on the bare name would be dropped by the separator you just typed. None of
+the three is sanitised — `insertText` is written into your buffer as it stands, `filterText`
+must equal it, and a client can be configured to drop an item whose label it cannot find in the
+word it completes.
 `detail` carries the **absolute path** the item
 completes to, on one line — a name holding a line break or a control character is rendered, not
 reproduced — and it is there the moment the list appears, in the field a client can show inline
