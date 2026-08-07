@@ -902,6 +902,44 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
       fixture.dispose();
     }
   });
+
+  /**
+   * WHAT KEEPS THE LABEL RAW NOW THAT `filterText` DOES ITS FILTERING, and it is
+   * a different reason rather than the same one restated. The label is no longer
+   * what a client matches the typed text against, so nothing in this package
+   * stops it being flattened like `detail` beside it -- the edit looks free.
+   *
+   * IT IS NOT, AND THE BOUND IS THE CLIENT'S: READ FROM ddc-source-lsp'S SOURCE
+   * AND MEASURED NOWHERE HERE -- nothing in this repository spawns an editor --
+   * an item whose inserted word does not CONTAIN its label is dropped outright,
+   * under an option that defaults off. A flattened label is contained in no
+   * name it flattened, so that option would take the entry out of the list
+   * instead of showing it with a replacement character.
+   *
+   * THE RELATION IS ASSERTED FIRST AND THE TWO WHOLE VALUES AFTER, for the
+   * reason the arm above records about its own order: a runner stops at the
+   * first failure, so with the values in front the relation could never BE the
+   * failure a reader is shown, and it is the relation the client checks.
+   *
+   * MULTI-SEGMENT, so the containment is a claim rather than an identity: for a
+   * fragment naming no directory the label and the inserted text are the same
+   * string, and `contains` over one string and itself grades nothing.
+   */
+  test("what an item inserts contains the label it shows, raw on both sides", async () => {
+    const forged = "x\n\nsource: workspace";
+    const fixture = tree([`notes/${forged}`]);
+    try {
+      const items = await complete({ ...elsewhere, line: "notes/x" }, fixture.root);
+
+      expect(items).toHaveLength(1);
+      const item = items[0] as CompletionItem;
+      expect(item.insertText ?? "").toContain(item.label);
+      expect(item.label).toBe(forged);
+      expect(item.insertText).toBe(`notes/${forged}`);
+    } finally {
+      fixture.dispose();
+    }
+  });
 });
 
 describe("an item records the source it was produced under", () => {
