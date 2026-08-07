@@ -619,8 +619,14 @@ describe("an item names the root that produced it", () => {
   // supported` passes unchanged against a module that produces markdown for
   // everyone, so the claim is the DIFFERENCE and one request cannot carry it.
   //
-  // THE WHOLE MarkupContent IS COMPARED, kind AND value: a kind of `plaintext` on
-  // a value still carrying `---` is the same defect wearing the right label.
+  // WHAT THIS ARM LOST, WRITTEN DOWN RATHER THAN HANDED NEW EXPECTED STRINGS.
+  // It used to compare the whole MarkupContent, because the rule BETWEEN two
+  // parts was the discriminator a `kind` of `plaintext` on a `---`-carrying value
+  // could not fake. The completion block is ONE part now -- the source, and
+  // nothing else -- so there is no join to perform and the two formats produce
+  // IDENTICAL value bytes. `kind` is the only discriminator left HERE, and the
+  // rule's own claim moved to the resolve suite, where two and three parts
+  // remain.
   test("the documentation format follows what the client declared, both ways", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -632,19 +638,25 @@ describe("an item names the root that produced it", () => {
         (await complete(buffer, fixture.root, undefined, true, documentationFormat))[0]
           ?.documentation;
       const block = "source: document";
+      const kindOf = (documentation: CompletionItem["documentation"]): string =>
+        typeof documentation === "string" ? "" : (documentation?.kind ?? "");
 
-      expect(await documentationWhen(["markdown"])).toEqual({ kind: "markdown", value: block });
-      expect(await documentationWhen(["plaintext"])).toEqual({ kind: "plaintext", value: block });
+      expect(kindOf(await documentationWhen(["markdown"]))).toBe("markdown");
+      expect(kindOf(await documentationWhen(["plaintext"]))).toBe("plaintext");
 
       // THE ORDER IS THE CLIENT'S, and this is the arm that says so: a module
       // asking `does the list contain markdown` satisfies both lines above and
       // fails here, sending markdown to a client that put plaintext first.
-      expect(await documentationWhen(["plaintext", "markdown"])).toEqual({
-        kind: "plaintext",
-        value: block,
-      });
+      expect(kindOf(await documentationWhen(["plaintext", "markdown"]))).toBe("plaintext");
       // A client that declared no format at all declared no markdown support.
-      expect(await documentationWhen(undeclared)).toEqual({ kind: "plaintext", value: block });
+      expect(kindOf(await documentationWhen(undeclared))).toBe("plaintext");
+
+      // AND THE VALUE IS THE SAME BYTES EITHER WAY, ASSERTED RATHER THAN LEFT
+      // IMPLIED: it is what says the narrowing above is a fact about this block
+      // and not a weakening somebody chose, and it is what stops being true the
+      // day the completion block gains a second part.
+      expect(await documentationWhen(["markdown"])).toEqual({ kind: "markdown", value: block });
+      expect(await documentationWhen(["plaintext"])).toEqual({ kind: "plaintext", value: block });
     } finally {
       fixture.dispose();
     }

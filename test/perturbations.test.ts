@@ -607,7 +607,7 @@ const records: readonly PerturbationRecord[] = [
       to: "    ? `directory · ${String(stats.size)} bytes · ${modified}`",
     },
     alsoReddens: [
-      "the markup a directory's block is built in follows the session, not the item",
+      "the markup a block is built in follows the session, not the item",
       "a name that would forge an attribution line renders as one that cannot",
       "a path whose own name would forge an attribution line renders as one that cannot",
       "a source name no completion of ours produced is left out of the answer",

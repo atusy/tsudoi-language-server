@@ -183,10 +183,19 @@ describe("the block is rebuilt out of what the handler read", () => {
    *
    * THE WHOLE MarkupContent IS COMPARED, kind AND value: a kind of `plaintext`
    * on a value still carrying `---` is the same defect wearing the right label.
+   *
+   * A FILE HALF, AND IT IS NOT SYMMETRY FOR ITS OWN SAKE. The rule between parts
+   * is what this arm's `value` half is FOR, and a file's block used to be one
+   * part -- the path -- so only a directory could carry the claim. It has two
+   * now, the source and the stat, and the claim comes with it. The completion
+   * suite's format arm gave the same claim up in the same change, its block
+   * having gone the other way: down to one part, where the two formats produce
+   * identical bytes and only `kind` discriminates.
    */
-  test("the markup a directory's block is built in follows the session, not the item", async () => {
-    const fixture = tree(["listed/one.txt", "listed/two.txt"]);
+  test("the markup a block is built in follows the session, not the item", async () => {
+    const fixture = tree(["listed/one.txt", "listed/two.txt", "plain.txt"]);
     const path = join(fixture.root, "listed");
+    const file = join(fixture.root, "plain.txt");
     try {
       const asMarkdown = await resolvePathStat(
         contextDeclaring(["markdown"]),
@@ -199,6 +208,14 @@ describe("the block is rebuilt out of what the handler read", () => {
           value: `${path}\n\n---\n\nsource: cwd`,
         }),
       );
+      const fileAsMarkdown = await resolvePathStat(
+        contextDeclaring(["markdown"]),
+        markedItem(file, "cwd", { kind: "plaintext", value: `${file}\n\nsource: cwd` }),
+      );
+      const fileAsPlainText = await resolvePathStat(
+        contextDeclaring(["plaintext"]),
+        markedItem(file, "cwd", { kind: "markdown", value: `${file}\n\n---\n\nsource: cwd` }),
+      );
 
       expect(asMarkdown.documentation).toEqual({
         kind: "markdown",
@@ -210,6 +227,15 @@ describe("the block is rebuilt out of what the handler read", () => {
       expect(asPlainText.documentation).toEqual({
         kind: "plaintext",
         value: `source: cwd\n\n${directoryStat}\n\n2 entries\n\none.txt\ntwo.txt`,
+      });
+      expect(fileAsMarkdown.documentation).toEqual({
+        kind: "markdown",
+        value: `source: cwd\n\n---\n\n${fileStat}`,
+      });
+      // The rule is GONE rather than sent as three hyphens.
+      expect(fileAsPlainText.documentation).toEqual({
+        kind: "plaintext",
+        value: `source: cwd\n\n${fileStat}`,
       });
     } finally {
       fixture.dispose();
