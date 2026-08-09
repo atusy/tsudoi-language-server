@@ -120,6 +120,12 @@ for (const runtime of runtimes) {
       // `Object.freeze`, the top-level half stays refused and the nested half
       // LANDS -- which is why a single-depth arm cannot tell the two apart, and
       // why the four assertions above are one claim.
+      //
+      // AND ITS SUBJECT IS THE ENGINE, NOT tsudoi: this literal is built here, so
+      // NO change under src/ can redden it, and the per-runtime loop runs it
+      // twice against the one engine executing this suite rather than against
+      // both. That is not a gap -- the arm above discriminates on its own -- but
+      // it is the reason not to read a green here as covering the freeze.
       const shallow = Object.freeze({
         capabilities: { completionProvider: { resolveProvider: true } },
       });
