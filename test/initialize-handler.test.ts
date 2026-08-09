@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { ErrorCodes, type InitializeResult } from "vscode-languageserver-protocol";
 import { awaitedServerName } from "./fixtures/initialize-async.ts";
+import { entryCountKey } from "./fixtures/initialize-counts-entries.ts";
 import {
   forgedResolveProvider,
   type PreparedMutationReport,
@@ -232,6 +233,45 @@ for (const runtime of runtimes) {
 
         const second = await session.requestError("initialize", initializeParams);
         expect(second.code).toBe(ErrorCodes.InvalidRequest);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * TWO HANDSHAKES IN FLIGHT AT ONCE, WHICH IS WHAT THE ARM ABOVE MEASURES NONE
+     * OF: it awaits the first response before sending the second, so the phase
+     * has already moved by then and the refusal it reads is the one that was
+     * never in doubt. MEASURED before this was written, with the second frame
+     * sent while the author's handler was still suspended: BOTH handshakes were
+     * served, `handshake()` ran twice from concurrent flows and the author's
+     * handler ran twice, with nothing on stderr.
+     *
+     * THE ENTRY COUNT IS THE HALF A CODE CANNOT CARRY. A repair that SERIALISED
+     * the second handshake instead of refusing it answers -32600 as well -- late,
+     * once the first has moved the phase -- so a refusal alone is satisfied by an
+     * implementation that still ran an author's handler twice.
+     *
+     * AND THE MESSAGE IS READ RATHER THAN THE CODE ALONE, because `initializing`
+     * and `serving` refuse with the same -32600: a run whose second frame arrived
+     * too late to race anything would be indistinguishable from this one by code,
+     * and the sentence is what says the phase this repair added is the one that
+     * answered.
+     */
+    test("a second initialize sent while the first handler is still running is refused, and the handler runs once", async () => {
+      const session = LspSession.start(runtime, fixture("initialize-counts-entries.ts"));
+      try {
+        // NEITHER IS AWAITED BEFORE THE OTHER IS SENT. `issue` frames its message
+        // synchronously, so both are on the wire before the first suspension ends.
+        const first = session.issue("initialize", initializeParams);
+        const second = session.issue("initialize", initializeParams);
+        const [servedFirst, answeredSecond] = await Promise.all([first.response, second.response]);
+
+        expect(servedFirst.error).toBeUndefined();
+        expect((servedFirst.result as Record<string, unknown>)[entryCountKey]).toBe(1);
+
+        expect(answeredSecond.error?.code).toBe(ErrorCodes.InvalidRequest);
+        expect(answeredSecond.error?.message).toContain("already handling an initialize");
       } finally {
         session.dispose();
       }
