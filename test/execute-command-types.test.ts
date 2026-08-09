@@ -17,10 +17,15 @@ applySuiteDeadline();
  * THE BARE PACKAGE, which is the property this repository's `deps/` exists for:
  * a consumer never names a protocol package directly, and a probe that did would
  * say nothing about whether the name is reachable the way a consumer reaches it.
- * WHAT IT READS DEPENDS ON THE TREE and is stated so nobody over-reads the arms:
- * on any tree the test preload has built, that subpath answers from
- * packages/tsudoi-language-server/dist/, and on an unbuilt one the exports map
- * falls through to src/.
+ * WHAT IT NEVER REACHES IS THE ARTIFACT, stated so nobody reads these arms as
+ * covering the published one: typeCheckProbe stages a manifest, a symlinked
+ * `src/` and the mirrored dependencies, and no `dist/` at all, so the exports
+ * map's `types` and `import` arms both miss and `default: ./src/*.ts` answers.
+ * The checkout's own build state is invisible from in here -- MEASURED with
+ * --traceResolution on a staged probe while packages/tsudoi-language-server/dist
+ * WAS built, and the specifier still resolved to the probe's own
+ * src/deps/protocol.ts. What the artifact answers belongs to
+ * test/package-shape.test.ts.
  *
  * `UpstreamResult` IS DERIVED AND NEVER WRITTEN OUT, which is what pins the
  * premise the arm below rests on -- see there.
