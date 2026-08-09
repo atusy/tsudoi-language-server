@@ -135,8 +135,11 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // handler may still FAIL, and the catch below returns the phase to
       // uninitialized -- so the only correct disposal of everything queued is the
       // drop that already happens, arrived at later and with a buffer to explain.
-      // Note what this warns: nothing reddens if you widen this window, and
-      // nothing reddens if you close it.
+      // Note what this warns: nothing reddens if you drop a notification in here,
+      // which is the whole subject -- no arm sends one into this window. The
+      // WINDOW is a different question and does have colour now: CLOSING it, by
+      // moving the transition above the await, reddens the concurrency arm in
+      // test/initialize-handler.test.ts on the refusal's MESSAGE. MEASURED.
       //
       // NOTHING BOUNDS THIS CALL EITHER. The five table methods all run through
       // `answerUnlessCancelled`; this one runs through nothing, so a handler that

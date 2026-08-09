@@ -140,13 +140,20 @@ for (const runtime of runtimes) {
 
     /**
      * A FAILED HANDSHAKE HANDLER LEAVES THE SESSION UNINITIALIZED AND THE PROCESS
-     * ALIVE. The -32002 read is THE DISCRIMINATOR and not decoration: an
-     * implementation calling `lifecycle.initialize()` before the handler leaves
-     * every other assertion here green and reddens exactly there.
+     * ALIVE.
      *
-     * THE RETRY IS THE SAME READING FROM THE OTHER SIDE: a phase that moved would
-     * answer the second `initialize` -32600, so an error that is anything else
-     * says the handshake is still available to a client that fixes its config.
+     * THE -32002 READ WAS THE DISCRIMINATOR FOR `lifecycle.initialize()` BEFORE
+     * THE HANDLER AND IS NOT ANY LONGER, which is recorded rather than papered
+     * over: the catch now gives the admission BACK, so that implementation ends
+     * at `uninitialized` here too and this arm stays entirely green under it --
+     * MEASURED. What catches it is the concurrency arm at the foot of this file,
+     * on the refusal's message. The read stays because `serving` is still a state
+     * this arm must not be in.
+     *
+     * THE RETRY IS WHAT THE GIVING-BACK IS FOR, and it is this arm's own
+     * discriminator: delete `lifecycle.abandonInitialize()` and the session wedges
+     * at `initializing`, so the second `initialize` reads -32600 and exactly this
+     * line reddens -- MEASURED, with everything above it green.
      */
     test("a throwing handler is answered an error, leaves the next request -32002, and writes the failure to stderr", async () => {
       const session = LspSession.start(runtime, fixture("initialize-throws.ts"));
