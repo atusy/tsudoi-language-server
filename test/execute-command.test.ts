@@ -100,10 +100,14 @@ for (const runtime of runtimes) {
      * would satisfy no assertion here and would tell every client this server
      * executes commands.
      *
-     * IT OVERLAPS AN ASSERTION IN test/hover.test.ts, SAME FIXTURE AND ALL, AND
-     * IS KEPT DELIBERATELY. That one's subject is `hoverProvider` arriving; this
-     * one's is `executeCommandProvider` not arriving, and the two properties
-     * happen to be readable off one object.
+     * IT ADDS NO DISCRIMINATION AND IS KEPT ANYWAY, said plainly rather than
+     * dressed up as a second subject. test/hover.test.ts drives the same
+     * fixture to the same whole-object equality, so every weakening that
+     * reddens one reddens the other -- contributing `executeCommandProvider`
+     * unconditionally reddens BOTH -- and there is no perturbation this arm
+     * catches alone. WHAT KEEPS IT IS WHERE IT IS READ: the criterion asks for
+     * both directions of the capability, and a reader looking for the absence
+     * half should find it in the file about commands rather than under hover.
      */
     test("a config supplying no executeCommand handler advertises no command support at all", async () => {
       const session = LspSession.start(runtime, executeCommandAbsent);
