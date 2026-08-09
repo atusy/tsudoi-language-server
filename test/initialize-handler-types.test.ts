@@ -24,6 +24,7 @@ function typesProbe(body: string): Record<string, string> {
       "import type {",
       "  BaseRequestContext,",
       "  ConfigMethod,",
+      "  InitializeRequestContext,",
       "  Method,",
       "  MethodHandler,",
       "  RequestContext,",
@@ -40,9 +41,22 @@ function typesProbe(body: string): Record<string, string> {
   };
 }
 
-/** The handler every probe below writes when it needs a compiling one. */
+/**
+ * The handler every probe below writes when it needs a compiling one.
+ *
+ * IT READS `signal` AS WELL AS `preparedResult`, AND THAT LINE IS THE ONLY THING
+ * IN THE TREE THAT PINS `InitializeRequestContext extends BaseRequestContext`.
+ * MEASURED: standing the two beside each other instead reddens NOTHING otherwise
+ * -- src/server.ts builds the context with a SPREAD, and an object literal built
+ * that way suppresses excess-property checking, so the call site takes it. No
+ * fixture reads cancellation in a handshake handler either.
+ *
+ * WHICH MAKES IT THE ARM FOR A CLAIM MADE IN PROSE AT THE TYPE: `signal` is here
+ * too, which is what makes `Base` an honest name.
+ */
 const initializeHandler = [
   'const initialize: MethodHandler<"initialize"> = (context) => {',
+  "  void context.signal;",
   "  return Promise.resolve(context.preparedResult);",
   "};",
 ].join("\n");
