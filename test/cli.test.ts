@@ -199,7 +199,13 @@ for (const runtime of runtimes) {
      */
     for (const [name, expected] of [
       ["methods-not-an-object.ts", ["methods", "number"]],
-      ["handler-not-a-function.ts", ["textDocument/hover", "number"]],
+      // `advertises a capability` IS ON THIS ROW ALONE, and it is the ANCHOR for
+      // the negative one loop down: that absence is live only while some message
+      // is known to CARRY the phrase, and without this a reword of src/config.ts
+      // makes it permanently vacuous with nothing reddening anywhere. Per-row and
+      // not loop-wide -- `handler-getter-throws.ts` fails inside `readOrRefuse`
+      // and carries no such clause.
+      ["handler-not-a-function.ts", ["textDocument/hover", "number", "advertises a capability"]],
       ["handler-getter-throws.ts", ["textDocument/hover", getterFailure]],
     ] as const) {
       test(`${name} exits 1 naming the path and what is wrong, with no stdout`, async () => {
@@ -235,9 +241,16 @@ for (const runtime of runtimes) {
      * src/cli.ts rethrows, so the failure contract is lost rather than the
      * message.
      */
+    // NEITHER FRAGMENT IS THE BARE KEY NAME, AND THAT IS THE WHOLE OF WHY THEY
+    // ARE SPELLED THIS WAY. Both fixture paths END in `initialize-*.ts` and the
+    // assertion below already reads the path out of stderr, so `"initialize"`
+    // ALONE could not fail: a message that stopped naming the key entirely stayed
+    // green. The contrast that proves it is one loop up, where
+    // `"textDocument/hover"` appears nowhere in `handler-not-a-function.ts` and
+    // the identical construction IS load-bearing.
     for (const [name, expected] of [
-      ["initialize-not-a-function.ts", ["initialize", "number"]],
-      ["initialize-getter-throws.ts", ["initialize", initializeGetterFailure]],
+      ["initialize-not-a-function.ts", ["initialize instead of a function", "number"]],
+      ["initialize-getter-throws.ts", ["reading initialize from config", initializeGetterFailure]],
     ] as const) {
       test(`${name} exits 1 naming the path and what is wrong, with no stdout`, async () => {
         const path = fixture(name);
