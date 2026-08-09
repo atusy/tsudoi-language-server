@@ -17,6 +17,8 @@ import type {
   DocumentFormattingParams,
   Hover,
   HoverParams,
+  InitializeParams,
+  InitializeResult,
   Position,
   Range,
   TextEdit,
@@ -374,6 +376,38 @@ export interface MethodMap {
 export type Method = keyof MethodMap;
 
 /**
+ * EVERY KEY A CONFIG MAY DECLARE A HANDLER FOR: the request table above, PLUS
+ * `initialize`. Two enumerations rather than one, and this type is what keeps
+ * them apart -- a row of `MethodMap` contributes a capability and routes through
+ * `registerMethods`, and `initialize` does neither. It is wired directly in
+ * src/server.ts, beside the lifecycle's own refusal of a second handshake, so a
+ * row up there would have src/methods.ts advertise a capability nobody can ask
+ * for and src/config.ts refuse it with a sentence that is false of it.
+ *
+ * `Promise`, LIKE THE FIVE, and not `InitializeResult | Promise<…>`: one shape
+ * per row is what keeps `MethodHandler` readable, and an author whose answer is
+ * ready writes `Promise.resolve` here exactly as they do for hover.
+ *
+ * `DeepReadonly` ON THE RESULT IS WHAT LETS A HANDLER RETURN WHAT IT WAS HANDED,
+ * and the mutable spelling was MEASURED before being refused:
+ * `DeepReadonly<InitializeResult>` is NOT assignable to `InitializeResult` --
+ * `capabilities.notebookDocumentSync.notebookSelector` is a readonly array -- so
+ * `InitializeResult` here would refuse `return context.preparedResult` and every
+ * spread of it, leaving a cast as the only route to the thing this key exists
+ * for. Nothing is refused in the other direction: a bare literal, a spread of the
+ * prepared result, the prepared result itself and a custom top-level key all
+ * satisfy it.
+ */
+export interface ConfigMethodMap extends MethodMap {
+  initialize: {
+    params: InitializeParams;
+    result: Promise<DeepReadonly<InitializeResult>>;
+  };
+}
+
+export type ConfigMethod = keyof ConfigMethodMap;
+
+/**
  * WHAT THIS ONE REQUEST IS, and nothing that outlives it. Two members, and the
  * line between them is the whole of what this type says: the SIGNAL is about
  * this message and dies with it, while `tsudoi` is the SERVER -- the same object
@@ -392,8 +426,8 @@ export interface RequestContext {
 
 export type MethodHandler<M extends Method> = (
   context: RequestContext,
-  params: MethodMap[M]["params"],
-) => MethodMap[M]["result"];
+  params: ConfigMethodMap[M]["params"],
+) => ConfigMethodMap[M]["result"];
 
 export type TsudoiConfig = {
   methods?: Partial<{

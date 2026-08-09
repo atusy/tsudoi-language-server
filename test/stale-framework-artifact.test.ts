@@ -102,8 +102,8 @@ function consumerRoot(): string {
 
 /** The marker property the narrowing adds, and the string a reading looks for. */
 const marker = "staleFrameworkProbe";
-const currentReturn = `) => MethodMap[M]["result"];`;
-const narrowedReturn = `) => MethodMap[M]["result"] & { readonly ${marker}: true };`;
+const currentReturn = `) => ConfigMethodMap[M]["result"];`;
+const narrowedReturn = `) => ConfigMethodMap[M]["result"] & { readonly ${marker}: true };`;
 
 interface Stage {
   /** The handler package's copy -- where its own build config is run. */
