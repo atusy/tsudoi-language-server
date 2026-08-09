@@ -352,6 +352,34 @@ is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...`
 `@atusy/tsudoi-completion-path` reads exactly that chain to decide whether it may send an
 `InsertReplaceEdit`, which LSP permits only to a client that declared `insertReplaceSupport`.
 
+## What your server advertises
+
+tsudoi derives the server capabilities from the handlers you declared: a hover handler makes it
+claim `hoverProvider`, a resolve handler beside a completion one makes it claim `resolveProvider`.
+That is the whole of what handler presence can say. When you need to say more -- trigger
+characters, a diagnostic identifier, a position encoding -- declare an `initialize` handler beside
+the others.
+
+Yours is handed `context.preparedResult`, the `InitializeResult` tsudoi was about to send, and what
+you return is what your editor is told. tsudoi does not merge its own answer back over yours and
+does not put back a key you left out: withdrawing a capability tsudoi would otherwise have claimed
+is the point of the handler, and there would be no way to do it if the two were merged.
+
+Which is also the trap, so **spread what you were handed** rather than building a `capabilities`
+of your own. Assigning your own `completionProvider` is the cheapest way to see it:
+`completionItem/resolve` writes `resolveProvider` into the key `textDocument/completion` owns, so
+your answer withdraws the resolve support your config still declares. `textDocumentSync` and
+`workspace.workspaceFolders` cost more, because tsudoi writes those whatever your config says. An
+answer that omits `textDocumentSync` is an editor that sends no `didOpen` and no `didChange`, so
+`context.tsudoi.documents` stays empty for the whole session and every handler that reads a
+document answers about nothing -- silently, with no error anywhere.
+
+What you were handed is frozen at every depth, so editing it in place throws instead of
+half-working; take a `structuredClone` if you want one you own. And a handler that throws is
+answered as an error rather than taking the process down: the session stays uninitialized, every
+later request is refused until it is initialized, and an editor that corrects itself may send
+`initialize` again.
+
 ## Cleanup in a handler
 
 A `finally` inside a **completion handler** runs when the editor abandons the request -- which it

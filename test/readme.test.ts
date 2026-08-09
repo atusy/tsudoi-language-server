@@ -628,6 +628,31 @@ const facts: readonly ReadmeFact[] = [
     ],
   },
   {
+    // OWED BECAUSE IT CANNOT BE GUESSED AND IS EXPENSIVE TO LEARN. `preparedResult`
+    // is the only route to a capability handler presence cannot express, and the
+    // absence of a merge is what makes a WITHDRAWAL possible -- so a document
+    // naming the handler and not the no-merge rule describes a feature nobody
+    // could use for the thing it exists for.
+    //
+    // BOTH VICTIMS ARE TOKENS, AND THAT IS THE HALF A GREEN WOULD OTHERWISE HIDE.
+    // `resolveProvider` is the CHEAPEST to observe and is not the boundary:
+    // `textDocumentSync` is written unconditionally, so an answer that omits it
+    // costs a reader every document their handlers can see, with no error
+    // anywhere. A fact naming only the cheap one would let the expensive one be
+    // dropped from the prose in silence.
+    //
+    // `silently` IS A TOKEN because that is what makes the second hazard worth a
+    // paragraph: a failure a reader would have found is not what this section is
+    // for.
+    //
+    // SINGLE WORDS AND NO PHRASES, deliberately: the README is hard-wrapped, and
+    // a multi-word token straddling a line break fails against the document as
+    // written while passing against the reworded one -- a red in the pair that
+    // says nothing about the prose.
+    name: "an initialize handler is handed tsudoi's own answer, nothing is merged back, and what a replacement withdraws",
+    tokens: [/preparedResult/, /resolveProvider/, /textDocumentSync/, /withdraw/i, /silently/i],
+  },
+  {
     // The claim is that tsudoi CLOSES the generator, never that the author's
     // cleanup COMPLETES: a `finally` awaiting something that never settles never
     // finishes, and promising completion would document what the language
