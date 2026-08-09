@@ -115,6 +115,104 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-87",
+      story: {
+        role: "config author",
+        capability:
+          "shape the InitializeResult tsudoi is about to send, from a handler that RECEIVES the one tsudoi would otherwise have returned, instead of being limited to what handler PRESENCE can derive",
+        benefit:
+          "completionProvider.triggerCharacters, diagnosticProvider.identifier, positionEncoding and executeCommandProvider.commands all become settable from the config file through ONE mechanism, with nothing added to tsudoi per field",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "THE HANDLER SITS EXACTLY WHERE TSUDOI'S OWN ANSWER WAS FORMED: what it RECEIVES as `context.preparedResult` is the InitializeResult tsudoi would have sent had no handler been supplied, and what it RETURNS is what the client receives -- tsudoi neither merges its prepared result back over the answer nor restores a key the author dropped. A merge is the plausible wrong implementation and it would make the whole increment unfalsifiable: an author could not withdraw a capability.",
+          verification:
+            "Two arms over the wire, through the fake editor in test/helpers/lsp.ts. THE IDENTITY ARM: a fixture whose handler returns `context.preparedResult` unchanged serves a result equal to the one the SAME config serves with the handler removed -- so `preparedResult` is tsudoi's own answer and not something assembled for the handler. THE REPLACEMENT ARM: a fixture that shallow-spreads `preparedResult` and writes its own `completionProvider`, in a config that ALSO declares completionItem/resolve, is served with NO `resolveProvider` -- the paired direction being the same config without the handler, which is served `resolveProvider: true`. An implementation that merged reads `true` on both, which is the measurement saying this is worth asserting.",
+        },
+        {
+          criterion:
+            "`preparedResult` IS DEEP-FROZEN, SO AN IN-PLACE EDIT FAILS LOUDLY RATHER THAN HALF-WORKING. A shallow freeze is the plausible wrong implementation and it is the worst outcome available: the top-level write throws and the NESTED one succeeds, so an author's edit half-lands and the result they return disagrees with the object they inspected.",
+          verification:
+            "A fixture in the register of test/fixtures/capabilities-mutation.ts: both depths attempted THROUGH A CAST -- which is the only thing a compile-time `readonly` leaves open and exactly what shipped JavaScript does -- NESTED FIRST, because a successful top-level write replaces the object the nested write would have gone through. It reports both refusals AND reads the values back through the served result, so a freeze that throws while the value moved cannot pass. THE PAIR IS THE CONTROL AND IT IS AN ASSERTION BESIDE THE ARM RATHER THAN A REGISTRY RECORD, per this file's allowance for a weakening that is a reading of something the arm already holds: weaken the deep freeze to `Object.freeze(preparedResult)` and the nested half flips to `not refused` while the top-level half stays green, which no single-depth arm can tell apart.",
+        },
+        {
+          criterion:
+            "A HANDLER THAT THROWS LEAVES THE SESSION UNINITIALIZED, AND THE PROCESS ALIVE. The client receives an ERROR RESPONSE to `initialize`, no InitializeResult is served, stdout carries no unframed bytes, and the NEXT request is answered -32002 -- the phase never moved, so no rollback and no fourth phase. AND THE FAILURE CONTRACT IS NOT THIS SITE'S: `exit 1, stderr, zero bytes on stdout` belongs to config load in cli.ts, before any connection exists; by initialize time stdout is LSP's, so a handler failure that exited the process would be a worse answer than the error response. THE FAILURE IS ALSO REPORTED ON STDERR, for the reason src/methods.ts already gives at reportHandlerFailure: vscode-jsonrpc consults the connection logger for NOTIFICATION handlers only, so without a line here an author's handshake handler fails where they cannot see it.",
+          verification:
+            "Session arms on BOTH runtimes: a throwing-handler fixture, then a second request on the same session reading -32002, with `session.unframedStdoutBytes` 0 and a stderr line naming the handler -- the pair being that a fixture whose handler RETURNS is served, answers its next request normally, and writes nothing to stderr. THE -32002 READ IS THE DISCRIMINATOR AND NOT DECORATION: an implementation calling `lifecycle.initialize()` BEFORE the handler leaves every other assertion here green and reddens exactly there. A third arm for the async half: a handler that awaits before returning has ITS result served, not the prepared one.",
+        },
+        {
+          criterion:
+            "`initialize` IS A KEY OF `config.methods` AND NOT A ROW OF THE REQUEST TABLE. The two are different enumerations and this item keeps them apart: `Method` and `requestEntries` stay five, because their invariant is `contributes a capability, routes through registerMethods` and `initialize` does neither -- it is wired directly in src/server.ts with `lifecycle.initializeRejection()`, and src/config.ts's message `tsudoi advertises a capability for every method the config declares` would become false of it. SO AN INITIALIZE HANDLER CONTRIBUTES NO CAPABILITY KEY AND DISPLACES NO LIFECYCLE REFUSAL.",
+          verification:
+            "THREE READINGS. (1) WIRE, CAPABILITY: a config declaring ONLY an initialize handler that returns `preparedResult` unchanged is served a result identical to test/fixtures/no-methods.ts's -- an implementation that gave the key a table row with a contributor reddens here. (2) WIRE, LIFECYCLE, AND THIS IS THE DISCRIMINATOR: with an initialize handler declared, a SECOND `initialize` on the same session is still answered -32600 and a pre-handshake request still -32002. An implementation that routed the key through `registerMethods` would re-register `InitializeRequest.type`, and vscode-jsonrpc's `onRequest` REPLACES rather than chains -- src/notifications.ts records that measurement -- so the refusal would be silently gone while every capability arm stayed green. (3) TYPE, via typeCheckProbe in test/helpers/typecheck.ts, BOTH DIRECTIONS: `methods: { initialize }` against `TsudoiConfig` must COMPILE, and a probe asserting `\"initialize\"` is assignable to `Method` -- the request table's key type -- must FAIL.",
+        },
+        {
+          criterion:
+            'THE CONTEXT IS DERIVED FROM THE METHOD, NEVER CHOSEN BY THE AUTHOR, AND THE SHARED SHAPE IS NAMED. `BaseRequestContext` is what every handler gets; `RequestContext<M>` resolves it per method and DEFAULTS, so a bare `RequestContext` keeps meaning what it means today -- the name is published, and sites outside src/ write it bare, including hand-built object literals in both handler packages. `MethodHandler` takes ONE type parameter: a defaulted second one would let an author write `MethodHandler<"textDocument/hover", MyCtx>`, a shape tsudoi never supplies and cannot be made to supply, so the surface would type-check a handler that can only fail at run time.',
+          verification:
+            'typeCheckProbe, BOTH DIRECTIONS, FOUR probes: `MethodHandler<"textDocument/hover", SomeCtx>` must fail as a wrong arity; reading `context.preparedResult` inside a HOVER handler must fail; reading it inside the INITIALIZE handler must compile clean; and a bare `const context: RequestContext = { signal, tsudoi }` must still compile, which is the arm saying the default was not dropped. The third and fourth are the controls that say the first two refuse the parameter rather than the harness. THE STANDING CHECK IS ALREADY IN THE TREE: the hand-built context literals in the two handler packages are compiled by Definition of Done check 5, so losing the default reddens there without anyone writing an arm for it.',
+        },
+      ],
+      status: "ready",
+      notes: [
+        'WHAT THIS DOES NOT CLOSE, AND IT IS A LIVE AUTHOR-FACING TRAP: an author who shallow-spreads `preparedResult` and replaces `capabilities.completionProvider` DELETES `resolveProvider`, because completionItem/resolve writes into that same key -- measured, its mapping is `CM<"textDocument.completion.completionItem.resolveSupport", "completionProvider.resolveProvider">`, and src/methods.ts already records the hazard for tsudoi\'s own two contributors. TSUDOI WILL NOT GUARD IT, DELIBERATELY: restoring or refusing would be tsudoi overruling a withdrawal the author is entitled to make, which is the whole point of the increment. It is closed as a WITNESSED CONSEQUENCE of criterion 1\'s replacement arm -- the deletion is asserted to happen -- and as a sentence at the author-facing site, never as a check.',
+        "AND THE TRAP IS WIDER THAN `resolveProvider`, WHICH IS THE HALF A GREEN HERE WOULD HIDE. `textDocumentSync` and `workspace.workspaceFolders` are in the same blast radius and cost more: src/server.ts writes both UNCONDITIONALLY because tsudoi delivers them whatever the config says, so an author who replaces `capabilities` wholesale and omits `textDocumentSync` gets a client that sends no didOpen and no didChange -- `tsudoi.documents` is then empty for the whole session and every document-reading handler answers about nothing, silently, with no error anywhere. `resolveProvider` is the WITNESS because it is the cheapest to observe; it is not the boundary of the hazard.",
+        "ACCEPTED RESIDUE, THE STAKEHOLDER'S: the notification drop window. src/server.ts records that an `await` before `lifecycle.initialize()` opens a window in which a notification reads `uninitialized` and is dropped SILENTLY -- `acceptsNotification` is `phase === \"serving\"` -- and an async author handler widens that window from zero to the handler's duration. ACCEPTED because LSP forbids a client from sending anything before it receives the InitializeResult, so only a non-conforming or pipelining client can reach it. DO NOT BUILD QUEUEING. The comment at that site is a recorded refusal this item OVERTURNS, so it is rewritten from why-not into what-it-now-costs rather than deleted -- and note what it warns: nothing reddens.",
+        "`Tsudoi` IS NOT TOUCHED. `clientInfo` and `initializationOptions` on the session object were considered and DEFERRED by the stakeholder, so src/server.ts's `FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE` stays true as written and needs no edit. THE RULING'S SUBJECT IS THE SESSION OBJECT'S SHAPE AND NOT A FILE LIST: generalising `frozenCapabilities` in src/tsudoi.ts and exporting it adds no member to `Tsudoi`, no write end reachable from it and no getter, so it is permitted -- and preferred over a second copy, which would duplicate the iterative-not-recursive paragraph.",
+        "THE STAKEHOLDER RULED TWO SHAPES DIRECTLY. Naming: `BaseRequestContext` beside `RequestContext<M>`, not `ContextFor<M>`. Placement: the handler is declared at `config.methods.initialize`, so the CONFIG-FACING key domain widens while the request table does not -- which forces a second map (`Method` plus `initialize`) rather than the literal `Method` everywhere. A NAMED COST OF THAT SHAPE: test/stale-framework-artifact.test.ts pins the handler type's return spelling and THROWS rather than asserting when it finds none, in a file about tarballs; whoever changes the spelling updates that constant.",
+        "DYNAMIC CAPABILITY REGISTRATION IS DEFERRED BY THE STAKEHOLDER. Do not build it AND DO NOT LEAVE HOOKS FOR IT: a criterion here that anticipated it would be a hook. What is worth keeping if it is ever revived is recorded outside this dashboard.",
+        "TWO SMALLER RULINGS, TAKEN BY THE TEAM AND RECORDED SO A VETO HAS SOMEWHERE TO LAND. The initialize context EXTENDS the base and therefore carries `signal`, which is what makes `Base` an honest name. And the handler's RETURN is the result, with no fallback: a handler returning nothing has not returned an InitializeResult, and treating that as `send the prepared one` would make the one mistake unobservable.",
+      ],
+    },
+    {
+      id: "PBI-88",
+      story: {
+        role: "config author",
+        capability:
+          "serve `workspace/executeCommand` from the config, as a SIXTH ROW of the same request table the other five are rows of",
+        benefit:
+          "a command the editor user invokes -- from a code action, a keybinding, a palette -- reaches a handler the author wrote, with the same lifecycle gate, the same cancellation and the same params refusal every other method already gets, and none of that written a sixth time",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            'IT IS A ROW OF THE TABLE, WHICH IS WHY IT BELONGS THERE AND `initialize` DOES NOT: measured, `CM<"workspace.executeCommand", "executeCommandProvider">` is a 1:1 mapping, so a capability contributor can be written, and it routes through `registerMethods` like any other request. SO IT ANSWERS AS THE OTHER FIVE DO: -32002 before initialize, -32800 when cancelled, `null` when no handler is declared, -32602 naming the method when its params are not an object.',
+          verification:
+            "test/methods-table.test.ts iterates `requestEntries`, so the entry joins all of those arms BY EXISTING, with no assertion copied -- and the suite must be green with it in. THE -32800 ARM IS THE REGISTRATION DISCRIMINATOR, per that file's own docblock: inside the serving window an UNREGISTERED method reads -32601 where a registered one reads -32800, so an entry that reached the table and not `registerMethods` reddens exactly there. AND `paramsForAnyMethod()` GAINS `command`, for the reason `label` is already in it: `ExecuteCommandParams.command` is REQUIRED and nothing on the wire validates it, so without it that helper's docblock claim -- one params object every method in the table accepts -- goes false while every arm stays green.",
+        },
+        {
+          criterion:
+            "THE ADVERTISED COMMAND LIST IS EMPTY AND TSUDOI INVENTED NOTHING. `ExecuteCommandOptions.commands` is REQUIRED, so the contributor must write something; it writes `[]`, because the list is the AUTHOR'S -- set through PBI-87 -- and any name tsudoi put there would be a claim to a client that no config made.",
+          verification:
+            "An arm reading the served InitializeResult, BOTH DIRECTIONS: with an executeCommand handler declared and no initialize handler, `executeCommandProvider` is present and its `commands` is `[]`; with no handler declared the KEY IS ABSENT ENTIRELY, `contributeCapabilities` being presence-driven. An implementation synthesising names from anywhere reddens on the first half, and one contributing unconditionally on the second.",
+        },
+        {
+          criterion:
+            "CAPABILITY AND HANDLER ARE NOT TIED, AND UNKNOWN-COMMAND BEHAVIOUR IS THE AUTHOR'S. A command name that appears in no advertised list still reaches the handler; tsudoi does not filter on `commands`, does not answer on the handler's behalf, and does not decide what an unrecognised command means.",
+          verification:
+            "A fixture whose handler echoes `params.command` and `params.arguments` back as its result, in the register of test/fixtures/handshake-state.ts's report-through-the-wire shape. A request naming a command the config never advertised is answered BY THE HANDLER -- the echo is what says it ran -- rather than by an error tsudoi wrote. PROBE: add a filter over the advertised `commands` and this arm reddens while the capability arm above stays green. The paired direction is criterion 1's `null` arm: the same request against a config with NO handler is answered `null`, so the echo is attributable to the handler and not to the route.",
+        },
+        {
+          criterion:
+            "THE PUBLISHED RESULT TYPE IS `unknown`, NOT `any`. Measured: upstream declares `ProtocolRequestType<ExecuteCommandParams, any, never, void, ExecuteCommandRegistrationOptions>`, and `any` reaching src/types.ts DISABLES CHECKING IN THE AUTHOR'S OWN FILE, silently -- the exact defect `DeepReadonly`'s first arm exists to stop one type earlier, in a file whose every exported name is public API.",
+          verification:
+            "typeCheckProbe, BOTH DIRECTIONS: a probe assigning the awaited return of a `MethodHandler<\"workspace/executeCommand\">` to `string` must FAIL to compile, and the same probe written against a result declared `any` -- the shape a developer gets by naming upstream's type -- must compile clean. The second half is what says the criterion is worth meeting. The narrowing is available: `any` is assignable in both directions, so the table's pinned request type still accepts `ExecuteCommandRequest.type`.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "WHAT ITS GREEN DOES NOT MEAN, said plainly so nobody reads it as `commands work`: a config declaring an executeCommand handler and NO initialize handler advertises `commands: []`, so a conforming client will never send a command and that handler is unreachable. That is the stakeholder's ruling and not an oversight -- the list is the author's, through PBI-87 -- and it is the whole of why this item is ordered below that one. SEQUENCING IS THEREFORE A CONSTRAINT AND NOT A PREFERENCE: land this first and tsudoi advertises a permanently unreachable capability.",
+        "CAPABILITY/HANDLER CORRESPONDENCE IS NOT GUARANTEED, RULED BY THE STAKEHOLDER. Whether the handler serves a given advertised command is the author's business, and so is what an unrecognised command does. tsudoi refuses to decide either, which is what criterion 3 pins.",
+        "COMMAND NAMES SHARE ONE NAMESPACE ACROSS ALL OF A CLIENT'S SERVERS, so colliding with another server is the author's hazard. tsudoi cannot see the other servers and will not pretend to; the place for this sentence is the author-facing documentation, not a check -- a check would have to know what it cannot know.",
+        'NO `workspace/applyEdit`. Out of scope, ruled. Measured for the record: `CM<"workspace.applyEdit", undefined>` -- no server capability at all -- so adding it later costs ONE WRITE END on the session object and no capability plumbing. Which also says it is NOT unlocked by this item, however much `executeCommand` suggests it.',
+        "THE `unknown` NARROWING IN CRITERION 4 IS THE PRODUCT OWNER'S RULING AND NOT THE STAKEHOLDER'S, recorded here so a veto has somewhere to land. It rests on a convention already load-bearing in the tree rather than on taste.",
+        "MEASURED AND RECORDED SO NOBODY RE-DERIVES IT: `ExecuteCommandRegistrationOptions extends ExecuteCommandOptions {}` adds nothing -- no `documentSelector`, this not being a document-scoped feature. It matters only for dynamic registration, which the stakeholder DEFERRED; do not leave a hook for it here. AND `ExecuteCommandParams` carries no `partialResultToken`, so this row cannot take the stream drive even if someone wanted it to.",
+        "THE SIXTH ROW FALSIFIES PROSE ELSEWHERE, WHICH IS THIS ITEM'S BOOKKEEPING AND NOT AN AFTERTHOUGHT: this dashboard's success metric enumerates FIVE methods by name, and CLAUDE.md opens by saying five. Both are the stakeholder's five and stay the stakeholder's five; what changes is that tsudoi now serves a sixth nobody asked for as a product goal. Say that where each is written rather than editing the metric to match the code.",
+      ],
+    },
+    {
       id: "PBI-86",
       story: {
         role: "tsudoi maintainer",
