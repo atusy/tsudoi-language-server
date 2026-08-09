@@ -158,15 +158,51 @@ test("a bare RequestContext still takes the two members it takes today", async (
  * THE IDIOM IS TSC'S OWN INTERNAL IDENTITY CHECK: two generic signatures are
  * mutually assignable only when their conditional types are IDENTICAL, which
  * distinguishes `A` from `A | B` where assignability cannot.
+ *
+ * SPLICED FROM ONE PLACE, so that the obvious tidy is ONE edit and the control
+ * below sees it.
  */
+const identical = [
+  "type Identical<A, B> = (<T>() => T extends A ? 1 : 2) extends",
+  "  (<T>() => T extends B ? 1 : 2) ? true : false;",
+].join("\n");
+
 test("a bare RequestContext IS the base context, and not a union with the initialize one", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
-        "type Identical<A, B> = (<T>() => T extends A ? 1 : 2) extends",
-        "  (<T>() => T extends B ? 1 : 2) ? true : false;",
+        identical,
         "const bareIsBase: Identical<RequestContext, BaseRequestContext> = true;",
         "void bareIsBase;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(`exit ${String(result.code)}\n${result.output}`).toBe("exit 0\n");
+});
+
+/**
+ * THE CONTROL FOR THE IDIOM ITSELF, AND THE ARM ABOVE CANNOT BE ITS OWN. That one
+ * is sensitive to the default -- MEASURED, `= Method` exit 0 and `= ConfigMethod`
+ * exit 1 TS2322 -- but it says nothing about the HELPER: replacing the two lines
+ * above with `type Identical<A, B> = [A] extends [B] ? true : false` passes under
+ * BOTH defaults, and the whole file goes green over the vacuity this sprint
+ * already repaired once.
+ *
+ * A SUBTYPE IN POSITION A IS WHERE THE TWO SPELLINGS PART, which is why this
+ * names the initialize context first and the base second: the initialize context
+ * IS assignable to the base, so the tidy answers `true` and this arm's `= false`
+ * is refused, while the identity idiom answers `false` and it compiles. The other
+ * order is `false` under both and would not redden.
+ */
+test("the identity idiom separates the handshake context from its base, where assignability cannot", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        identical,
+        "const extendingIsNotIdentical: Identical<InitializeRequestContext, BaseRequestContext> =",
+        "  false;",
+        "void extendingIsNotIdentical;",
       ].join("\n"),
     ),
   );
