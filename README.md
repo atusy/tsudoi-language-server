@@ -419,9 +419,12 @@ an object, and answered `null` when you declared no handler at all.
 reading twice. Handler presence can say only that this server executes commands at all, so tsudoi
 advertises `executeCommandProvider` with an **empty** list; any name it invented would be a
 promise to your editor that no config of yours made. The list is yours to write, from an
-`initialize` handler that spreads `context.preparedResult` as the section above describes. Until
-you do, a conforming editor knows of no command and sends none, so the handler you declared can
-never run.
+`initialize` handler -- and spreading `context.preparedResult` at the top level does not reach it.
+The key lives inside `capabilities`, so spread that too and put your `executeCommandProvider` in
+the inner copy. Writing it beside the outer spread instead compiles and does nothing:
+`InitializeResult` accepts any key you like, so there is no diagnostic anywhere and your editor
+goes on reading the empty list tsudoi put where the key belongs. Until you do, a conforming editor
+knows of no command and sends none, so the handler you declared can never run.
 
 **tsudoi does not check an incoming name against that list either.** A request naming a command
 you never advertised still reaches your handler, and what an unrecognised command means is yours

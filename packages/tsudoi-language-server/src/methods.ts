@@ -147,8 +147,12 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // claim to a client that no config made, and handler presence -- all this
     // runs on -- cannot say which commands a handler serves. The author fills it
     // from an `initialize` handler, and until they do a conforming client sends
-    // nothing. NOT A REASON TO CONTRIBUTE NOTHING: without the key the author's
-    // own handler has no capability to write into.
+    // nothing. NOT A REASON TO CONTRIBUTE NOTHING: a config that declares this
+    // handler and no initialize handler would otherwise advertise no command
+    // support at all, and that a server executes commands is the one thing
+    // handler presence can say. An author's own handler needs nothing from
+    // here -- it returns its own InitializeResult and src/server.ts sends that
+    // verbatim, so the key is theirs to write whether or not this ran.
     capability: (capabilities) => {
       capabilities.executeCommandProvider = { commands: [] };
     },
