@@ -335,7 +335,7 @@ and mechanical; it is the thing the prose was one door away from.
 
 Two tells that you are writing this shape:
 
-- the sentence names a *duration* ("for as long as the handler runs", "between
+- the sentence names a _duration_ ("for as long as the handler runs", "between
   the await and the transition") rather than a message;
 - the sentence says a class is safe because the SPEC forbids the client from
   acting — which bounds who arrives, and says nothing about what happens when

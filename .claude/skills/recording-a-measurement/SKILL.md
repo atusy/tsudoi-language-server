@@ -304,5 +304,5 @@ is a different question from what it was.
 
 The reason it bites HERE specifically: this suite prints its per-file
 `[HELD]`/failure lines first and its counts last, so the tail is exactly the
-half that says *how many* and the head is exactly the half that says *which*.
+half that says _how many_ and the head is exactly the half that says _which_.
 A reader who kept only the tail has kept the half that cannot be acted on.
