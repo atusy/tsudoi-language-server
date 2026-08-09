@@ -11,7 +11,14 @@ export const replacedTriggerCharacters = ["/"];
 /**
  * THE AUTHOR EXERCISING THE WHOLE POINT OF THE HANDLER: they want trigger
  * characters, which handler presence alone cannot express, so they spread the
- * prepared result and write their own `completionProvider`.
+ * prepared result and write their own `completionProvider` -- and they WITHDRAW
+ * `hoverProvider`, a capability tsudoi claimed for a handler they do declare.
+ *
+ * TWO DEPTHS OF WITHDRAWAL, AND THE SECOND IS NOT DECORATION. `resolveProvider`
+ * goes from INSIDE a key the author replaced; `hoverProvider` is a TOP-LEVEL key
+ * they removed. MEASURED with the top-level half missing: an implementation
+ * merging the prepared capabilities UNDER the author's answer restores exactly
+ * that one and leaves every arm in the file green.
  *
  * AND THE TRAP FIRES, WHICH IS WHY THIS FIXTURE IS WORTH ONE:
  * `completionItem/resolve` had written `resolveProvider: true` into that same
@@ -27,12 +34,10 @@ export const replacedTriggerCharacters = ["/"];
  * or didChange for the rest of the session with nothing anywhere saying so.
  */
 const initialize: MethodHandler<"initialize"> = (context) => {
+  const { hoverProvider: _withdrawn, ...kept } = context.preparedResult.capabilities;
   return Promise.resolve({
     ...context.preparedResult,
-    capabilities: {
-      ...context.preparedResult.capabilities,
-      completionProvider: { triggerCharacters: replacedTriggerCharacters },
-    },
+    capabilities: { ...kept, completionProvider: { triggerCharacters: replacedTriggerCharacters } },
   });
 };
 

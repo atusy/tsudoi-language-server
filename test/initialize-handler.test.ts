@@ -68,7 +68,7 @@ for (const runtime of runtimes) {
      * author-facing trap, closed as a witnessed consequence and as a sentence in
      * the README, never as a guard.
      */
-    test("a handler that replaces completionProvider withdraws the resolveProvider tsudoi had claimed", async () => {
+    test("what the handler returns is served as written: the key it replaced and the key it removed are both withdrawn", async () => {
       const replaced = await served(runtime, "initialize-replaces-completion-provider.ts");
       const untouched = await served(runtime, "initialize-absent.ts");
 
@@ -76,8 +76,18 @@ for (const runtime of runtimes) {
         triggerCharacters: replacedTriggerCharacters,
       });
       expect(untouched.capabilities.completionProvider).toEqual({ resolveProvider: true });
-      // THE SPREAD'S OTHER HALF, asserted so the arm above cannot be read as `the
-      // whole answer was replaced`: what the author did not touch is still there.
+      // AND A TOP-LEVEL WITHDRAWAL, WHICH THE ARM ABOVE CANNOT SEE. The pair
+      // above is satisfied by an implementation merging the prepared
+      // capabilities UNDER the author's answer -- measured green -- because that
+      // merge cannot reach inside the key the author replaced. `hoverProvider`
+      // is a key it CAN reach, and this config declares the handler it was
+      // claimed for, so a restoration here would be tsudoi advertising something
+      // the author took back.
+      expect(replaced.capabilities.hoverProvider).toBeUndefined();
+      expect(untouched.capabilities.hoverProvider).toBe(true);
+      // THE SPREAD'S OTHER HALF, asserted so the arms above cannot be read as
+      // `the whole answer was replaced`: what the author did not touch is still
+      // there.
       expect(replaced.capabilities.textDocumentSync).toEqual(
         untouched.capabilities.textDocumentSync,
       );

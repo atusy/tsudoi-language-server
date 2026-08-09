@@ -11,6 +11,12 @@ import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/typ
  * `completionItem/resolve` writes `resolveProvider` INTO the key
  * `textDocument/completion` owns, so this is a config that has something to lose
  * when an author replaces `completionProvider` wholesale.
+ *
+ * AND HOVER, WHICH IS A WITHDRAWAL AT THE OTHER DEPTH. `hoverProvider` is a
+ * TOP-LEVEL key of `capabilities`, and a withdrawal of one is what a SHALLOW
+ * merge would silently restore -- MEASURED: with the resolve half alone, an
+ * implementation merging the prepared capabilities under the author's answer
+ * left every arm green.
  */
 export const sharedMethods: NonNullable<TsudoiConfig["methods"]> = {
   // COMPLETENESS RULING: COMPLETE. The handler takes no parameters at all, so
@@ -23,6 +29,7 @@ export const sharedMethods: NonNullable<TsudoiConfig["methods"]> = {
     yield [{ label: "one" }];
   },
   "completionItem/resolve": (_context, item) => Promise.resolve(item),
+  "textDocument/hover": () => Promise.resolve(null),
 };
 
 /**
