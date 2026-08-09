@@ -285,3 +285,24 @@ The oxlint override globs are pinned **by effect** in `test/guard.test.ts`,
 which lints violation probes under a copy of the config. The member `paths` is
 not pinned at all: it is **refused** by `refuseMemberMappings`, off
 `tsc --showConfig`, so an `extends` cannot smuggle one in.
+
+## A run you piped through `tail` is not a reading you took
+
+**MEASURED in sprint 85, and the cost was the whole finding.** A Definition-of-
+Done run reported `Tests pass -- exit 1` on content **byte-identical** to trees
+that ran green immediately before and twice after. Which test failed is
+unknown and now unknowable: the run had been piped through `tail`, so the
+named failures — which `bun test` prints ABOVE the summary — were discarded,
+and only the summary survived. There was nothing left to call a flake or a
+defect, so it could honestly be called neither.
+
+**Capture the whole run to a file and grep the file.** `> log 2>&1` then
+`grep`, never `| tail`, `| head` or `| grep` alone on the live stream. This is
+cheap and the failure it prevents is total: a red whose diagnostic is gone
+cannot be re-read, and re-running only tells you whether it reproduces, which
+is a different question from what it was.
+
+The reason it bites HERE specifically: this suite prints its per-file
+`[HELD]`/failure lines first and its counts last, so the tail is exactly the
+half that says *how many* and the head is exactly the half that says *which*.
+A reader who kept only the tail has kept the half that cannot be acted on.

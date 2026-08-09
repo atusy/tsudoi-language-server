@@ -315,3 +315,28 @@ In this tree, concretely:
 - `bunfig.toml` **can**, so a comment satisfies the rule there — and declining a
   test is a DECISION rather than an oversight **provided the comment says plainly
   that nothing asserts it** and names the measured reason.
+
+## A residue you accept is a question about a window, not about one message
+
+**MEASURED in sprint 85.** An accepted residue was written for the window a
+newly-`await`ing handshake opens: a notification arriving in it is dropped
+silently. The paragraph was true, argued, and named the one inhabitant its
+author had thought of. A **second `initialize`** arriving in that same window
+was accepted — both handshakes served, the client's handshake state written
+twice from concurrent flows, and the config author's own handler run twice
+with nothing on stderr. An `exit` in it kills the in-flight handler with no
+response and no cleanup. Neither was reached from the paragraph that had
+already been written about the window they arrive in.
+
+**So when a comment accepts a residue about a WINDOW, enumerate what can
+arrive in it before writing the acceptance** — every request, every
+notification, and the lifecycle's answer for each. The enumeration is short
+and mechanical; it is the thing the prose was one door away from.
+
+Two tells that you are writing this shape:
+
+- the sentence names a *duration* ("for as long as the handler runs", "between
+  the await and the transition") rather than a message;
+- the sentence says a class is safe because the SPEC forbids the client from
+  acting — which bounds who arrives, and says nothing about what happens when
+  a non-conforming client does.
