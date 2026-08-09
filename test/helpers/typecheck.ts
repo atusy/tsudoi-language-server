@@ -95,10 +95,6 @@ export type TscReportFlag = "--traceResolution" | "--listFiles";
  * writes nothing. A probe that emitted would leave a built artifact in the tree
  * it is reading, which is the one thing a probe about resolution must not do.
  *
- * THE TWO GUARANTEES HAVE DIFFERENT SCOPES AND NEITHER SUBSUMES THE OTHER,
- * which is why both are here and why the difference is spelled out rather than
- * collapsed into one sentence.
- *
  * THE ORDER IS UNCONDITIONAL AND IT IS ABOUT EMISSION ALONE: whatever argv
  * arrives, nothing is written -- `--listFiles` on its own emits ok.js,
  * measured, and `--listFiles --noEmit` does not.
@@ -234,11 +230,6 @@ export function mirrorInstalledDependencies(into: string): void {
  * prove nothing. Named that way rather than listed: the set of declared
  * dependencies grows, and a comment that spells it out goes stale at the next
  * one.
- *
- * MIRRORED AND NOT BORROWED, which is the difference this probe's controls rest
- * on: the whole directory used to be handed over, and it carried entries leading
- * back into this checkout that answered the very specifiers a probe had
- * perturbed.
  */
 export async function typeCheckProbe(
   files: Record<string, string>,

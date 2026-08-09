@@ -7,10 +7,10 @@ import type {
 import type { Tsudoi, WorkspaceFolderStore } from "./types.ts";
 
 /**
- * The workspace folder list, plus the handle that writes it. The same shape
- * documents.ts uses, and for the same reason: this is state a message WRITES and
- * a request READS, so the writers live on the handle while everything downstream
- * holds only the value.
+ * The workspace folder list, plus the handle that writes it -- the same split
+ * `DocumentStoreHandle` makes, and for the same reason: this is state a message
+ * WRITES and a request READS, so the writers live on the handle and the store
+ * everything downstream holds is read-only by construction.
  */
 export interface WorkspaceFoldersHandle {
   /** The folders as of NOW, as the store `Tsudoi` publishes them. */
@@ -187,11 +187,11 @@ export function createWorkspaceFolders(): WorkspaceFoldersHandle {
       params: Pick<InitializeParams, "workspaceFolders" | "rootUri" | "rootPath"> | null,
     ): void {
       // A NON-ABSOLUTE `rootPath` IS REFUSED HERE RATHER THAN FORWARDED, which is
-      // the one place this handle declines to pass something on. A RELATIVE PATH
-      // IS NOT A ROOT: it resolves only against a working directory THE CLIENT
-      // DOES NOT SHARE. NOT A BREACH OF THE MIRROR -- refusing to NORMALISE what
-      // a client meant does not oblige us to forward a value the author cannot
-      // correctly use, and `absence must never become a root` bounds the
+      // the one place this handle declines to pass something on. Why a relative
+      // path is not a root, and what the refusal costs an author, is at
+      // `Tsudoi.rootPath`. NOT A BREACH OF THE MIRROR -- refusing to NORMALISE
+      // what a client meant does not oblige us to forward a value the author
+      // cannot correctly use, and `absence must never become a root` bounds the
       // dangerous direction while this turns a root into absence.
       //
       // NOT EXTENDED TO `rootUri`, and nothing reddens if you extend it: a

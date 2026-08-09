@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -17,15 +16,12 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "y
 /**
  * A batch yielded FROM INSIDE THE `finally`. It is not an answer to anything --
  * the request it belongs to is already answered -32800 -- so tsudoi must
- * DISCARD it rather than forward it, and the test asserts exactly that by
- * counting `$/progress`.
+ * DISCARD it rather than forward it.
  */
 export const cleanupYield: CompletionItem[] = [{ label: "後始末中", detail: "yielded in cleanup" }];
 
-/** Written once tsudoi has taken the first chunk and asked for another. */
 export const parkedMarker = "completion-cleanup-yields: parked";
 
-/** Cleanup has STARTED -- the generator was closed rather than left suspended. */
 export const cleanupEntered = "completion-cleanup-yields: entered cleanup";
 
 /**
@@ -50,10 +46,8 @@ export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
-      // cancelled one. `returnedItems` is a module constant and the params are
-      // read only to poll the gate, so an answer that arrives is final. The
-      // cancelled path -- the one this fixture exists for -- is answered -32800
-      // with no result, so no completeness claim is reachable there.
+      // cancelled one -- `returnedItems` is a module constant and the params are
+      // read only to poll the gate, and a cancelled request carries no result.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

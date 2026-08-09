@@ -55,7 +55,6 @@ type EntryErrorPayload = unknown;
 type StreamChunk<M extends Method> =
   MethodMap[M]["result"] extends AsyncGenerator<infer C, unknown, unknown> ? C : never;
 
-/** A method whose handler is AWAITED ONCE. */
 interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
   readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
@@ -76,10 +75,6 @@ interface StreamDrivenEntry<M extends Method> {
   readonly capability: CapabilityContributor;
 }
 
-/**
- * One method tsudoi serves: what it is on the wire, how its handler is driven,
- * and what it entitles a client to ask for.
- */
 export type RequestEntry<M extends Method> = [StreamChunk<M>] extends [never]
   ? AwaitedOnceEntry<M>
   : StreamDrivenEntry<M>;
@@ -145,14 +140,13 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // EMPTY, AND TSUDOI HAS NOTHING TO PUT IN IT. `commands` is REQUIRED, so
     // this contributor must write a list; every name it could invent would be a
     // claim to a client that no config made, and handler presence -- all this
-    // runs on -- cannot say which commands a handler serves. The author fills it
-    // from an `initialize` handler, and until they do a conforming client sends
-    // nothing. NOT A REASON TO CONTRIBUTE NOTHING: a config that declares this
-    // handler and no initialize handler would otherwise advertise no command
-    // support at all, and that a server executes commands is the one thing
-    // handler presence can say. An author's own handler needs nothing from
-    // here -- it returns its own InitializeResult and src/server.ts sends that
-    // verbatim, so the key is theirs to write whether or not this ran.
+    // runs on -- cannot say which commands a handler serves. NOT A REASON TO
+    // CONTRIBUTE NOTHING: a config that declares this handler and no initialize
+    // handler would otherwise advertise no command support at all, and that a
+    // server executes commands is the one thing handler presence can say. What
+    // the author must then do about the empty list is at
+    // `MethodMap["workspace/executeCommand"]`; their own handler needs nothing
+    // from here, src/server.ts sending their InitializeResult verbatim.
     capability: (capabilities) => {
       capabilities.executeCommandProvider = { commands: [] };
     },
@@ -170,16 +164,13 @@ interface ErasedEntry {
   readonly capability: CapabilityContributor;
 }
 
-/** A handler awaited once, with the method's own params and result erased. */
 type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Promise<unknown>;
 
-/** A handler driven a batch at a time, with the method's own types erased. */
 type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
 ) => AsyncGenerator<unknown[], void, void>;
 
-/** The table as a list. */
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
 }
@@ -404,10 +395,6 @@ export function registerMethods(
   }
 }
 
-/**
- * The AWAITED-ONCE drive: call the handler once, race it against the abort,
- * answer what it produced.
- */
 async function driveAwaitedOnce(run: {
   method: Method;
   handler: ErasedAwaitedOnceHandler | undefined;
@@ -465,12 +452,18 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
 }
 
 /**
- * The STREAM-DRIVEN drive, and it is the whole of the streaming API. A config
- * author yields BATCHES OF ITEMS and says nothing at all about how they travel:
- * whether they leave as `$/progress` or as one aggregated response is decided
- * here, from the presence of `partialResultToken` and from nothing else. There is
- * no client capability declaring partial-result support, so a client that cannot
- * take them simply omits the token.
+ * The STREAM-DRIVEN drive. Whether batches leave as `$/progress` or are
+ * aggregated into one response is decided HERE, from the presence of
+ * `partialResultToken` and from nothing else -- what an author may rely on is
+ * stated at `MethodMap["textDocument/completion"]`. There is no client capability
+ * declaring partial-result support, so a client that cannot take them simply
+ * omits the token.
+ *
+ * A LOOK-AHEAD IS REFUSED HERE, and this is the loop that would grow one: it
+ * would spare a one-batch answer under a token its `$/progress` and its `null`
+ * response, and it can only tell a one-batch answer apart by pulling the SECOND
+ * batch before sending the FIRST -- a delay landing exactly when the first chunk
+ * is slow and streaming matters most.
  *
  * What a method picking this drive must satisfy: its params carry a
  * `partialResultToken`, and what it yields is ARRAYS, since aggregating

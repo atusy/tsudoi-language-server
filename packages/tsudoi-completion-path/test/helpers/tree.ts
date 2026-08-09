@@ -26,14 +26,10 @@ export const fixtureStamp = new Date("2001-02-03T04:05:06.000Z");
  * A throwaway directory tree, WITH NO DOTFILE IN IT THAT A CALLER DID NOT ASK
  * FOR.
  *
- * THE BLANKET REFUSAL IS NARROWED RATHER THAN DROPPED, AND THE REASON IT STOOD
- * HAS EXPIRED RATHER THAN BEEN OVERRULED. It said hidden-entry behaviour was
- * UNRULED, so a fixture that HAPPENED to hold one would pin a decision nobody
- * made. It is ruled now -- a resolved directory's listing SHOWS them,
- * unfiltered, AFTER the ordinary entries -- and a ruling whose witness no
- * fixture may hold is a ruling nothing can falsify. So a caller that names a
- * dotfile is asserting something, and bulk staging here adds none. The `./x`
- * and `../x` rule is untouched.
+ * NOTHING HERE STAGES A DOTFILE OF ITS OWN, so a caller that names one is
+ * asserting something: a resolved directory's listing SHOWS hidden entries,
+ * unfiltered, AFTER the ordinary ones, and an arm about that ruling must be able
+ * to say which dotfiles its fixture holds.
  *
  * realpathSync is not cosmetic: on macOS the system temp directory lives under
  * /var, which IS a symlink to /private/var, and a child process started with
@@ -44,10 +40,8 @@ export const fixtureStamp = new Date("2001-02-03T04:05:06.000Z");
  * OVERSIGHT. A member that reached up into the root's test helpers would stop
  * being checkable out on its own, and the file it reached for would become an
  * input to the type check that covers this package -- so a root helper's edit
- * would decide whether this package compiles. That independence costs one small
- * file, NAMED RATHER THAN COUNTED because a line count falsifies itself the day
- * a line is added, and the two are free to diverge: nothing here is shared with
- * the root's copy but the idea.
+ * would decide whether this package compiles. The two are free to diverge:
+ * nothing here is shared with the root's copy but the idea.
  */
 export interface Tree {
   readonly root: string;

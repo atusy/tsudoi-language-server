@@ -14,9 +14,7 @@ export const secondChunk: CompletionItem[] = [{ label: "二番目", detail: "yie
 /**
  * THE NAME IS STALE AND IS LEFT ALONE DELIBERATELY, flagged here rather than
  * fixed: nothing is RETURNED at all -- a completion generator's return carries
- * no content, so this is the third YIELD and not a return value. THE RENAME
- * WOULD TOUCH FIVE TEST FILES, which is why the flag is the cheaper half of the
- * trade and the fix waits for something that already opens those files.
+ * no content, so this is the third YIELD and not a return value.
  */
 export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "yielded last" }];
 
@@ -34,10 +32,6 @@ export default (): Promise<TsudoiConfig> => {
         _context: RequestContext,
         _params: CompletionParams,
       ) {
-        // THREE YIELDS AND NO RETURN VALUE, WHICH IS THE WHOLE SHAPE. The three
-        // payloads reach the wire in yield order and all three travel through
-        // ONE entrance -- none of them is an answer with the other two streaming
-        // beside it.
         yield firstChunk;
         yield secondChunk;
         yield returnedItems;

@@ -28,8 +28,8 @@ import type {
 
 /**
  * THE DOCUMENT A CONFIG AUTHOR IS HANDED: a LIVE, SEALED FACADE over one open
- * buffer, carrying the seven members upstream's `TextDocument` declares for
- * READING it and forwarding each one to that buffer AT THE MOMENT IT IS ASKED.
+ * buffer, carrying the members upstream's `TextDocument` declares for READING it
+ * and forwarding each one to that buffer AT THE MOMENT IT IS ASKED.
  *
  * THE LINE BETWEEN UPSTREAM'S HELPERS RUNS BETWEEN READING AND NEEDING THE
  * INSTANCE: `TextDocument.applyEdits` only reads the members and answers from
@@ -60,9 +60,7 @@ export interface DocumentView {
  * client sent at `didOpen`.
  *
  * A handler that needs the text it STARTED with must take a copy -- `getText()`
- * returns a string, and a string does not move. That is the general rule stated
- * at `Tsudoi` below, spelled out here for the one member on which HOLDING THE
- * REFERENCE IS NOT TAKING THE VALUE.
+ * returns a string, and a string does not move.
  */
 export interface DocumentStore {
   readonly get: (uri: string) => DocumentView | undefined;
@@ -87,6 +85,10 @@ export interface WorkspaceFolderStore {
   /**
    * EVERY FOLDER THE CLIENT HOLDS AT THE INNERMOST LOCATION COVERING `uri`, in
    * the order the client sent them -- or an EMPTY LIST where it holds none.
+   * Nothing you can pass throws, and the question is never put to the FILESYSTEM,
+   * so a folder that is on no disk still answers for the documents under it and a
+   * symlink is not followed. A FOLDER whose uri no parser accepts is unreachable
+   * HERE while `values()` still hands it over.
    *
    * NOT `EVERY ANCESTOR'S FOLDERS`, and that is the reading to guard against:
    * the walk climbs from `uri` and STOPS at the first location that holds
@@ -95,23 +97,9 @@ export interface WorkspaceFolderStore {
    * NAME ONE LOCATION -- a uri the client sent twice, `…/plain` beside
    * `…/plain/`, `file://LOCALHOST/a` beside `file:///a` -- and you are handed all
    * of them, because returning ONE would be tsudoi deciding on its own authority
-   * which of two things the client said it did not mean.
-   *
-   * MATCHED BY LOCATION AND NOT BY BYTES: both sides go through the SAME parse
-   * before they are compared, so spellings that differ where the URL Standard
-   * says they name one thing MEET, and a trailing slash is a thing neither side
-   * has to get right. THE PATH'S CASE IS NOT AMONG THEM. NORMALISING IS NOT
-   * LOOSENING either: `file:///home/me/proj` CANNOT ANSWER FOR a document in
-   * `file:///home/me/project`, since nothing here matches on prefixes.
-   *
-   * NOTHING YOU CAN PASS THROWS, and the answer is an EMPTY LIST rather than
-   * `undefined`, so `for (const folder of tsudoi.workspaceFolders.get(uri))`
-   * needs nothing in front of it. A FOLDER whose uri no parser accepts is
-   * unreachable HERE while `values()` still hands it over.
-   *
-   * WHAT IT DOES NOT ASK IS THE FILESYSTEM. This answers about the LIST the
-   * client sent, so a folder that does not exist on disk answers for the
-   * documents under it, and a symlink is not followed.
+   * which of two things the client said it did not mean. Both sides are compared
+   * as PARSED locations and never as bytes or prefixes, so a trailing slash is
+   * nobody's problem and THE PATH'S CASE IS NOT FORGIVEN.
    */
   readonly get: (uri: string) => readonly Readonly<WorkspaceFolder>[];
   /**
@@ -119,9 +107,7 @@ export interface WorkspaceFolderStore {
    * synthesised and nothing reordered.
    *
    * WHAT ONE CALL HANDED BACK IS THE LIST AS OF THAT CALL, FOR GOOD, and that is
-   * the one defence a handler has against the liveness rule at `Tsudoi`: the
-   * mirror is REPLACED on every change and never written into, so what you took
-   * can be iterated again later and still answers about the moment you took it.
+   * the one defence a handler has against the liveness rule at `Tsudoi`.
    */
   readonly values: () => Iterable<Readonly<WorkspaceFolder>>;
 }
@@ -164,19 +150,18 @@ export type DeepReadonly<T> = 0 extends 1 & T
  * HANDLER'S: a completion handler streams over time, and one that re-reads the
  * folder list mid-request can attribute items to a root the user has already
  * removed. A surface that took that decision would be wrong for the handler that
- * WANTS the latest folders.
- *
- * SO A HANDLER THAT NEEDS THE VALUE IT STARTED WITH TAKES IT BEFORE ITS FIRST
- * `await`, and what `taking` costs differs by member: for the FOLDERS, taking
- * `values()` is enough, since the mirror is replaced rather than written into.
- * For a DOCUMENT, holding the reference is not, because what it reads is the
- * buffer as it stands when it is asked.
+ * WANTS the latest folders. SO A HANDLER THAT NEEDS THE VALUE IT STARTED WITH
+ * TAKES IT BEFORE ITS FIRST `await`, and what `taking` costs is recorded at each
+ * member -- it is not the same for a folder list as for a document.
  */
 export interface Tsudoi {
   readonly documents: DocumentStore;
   /**
    * The workspace folders the client is holding NOW, or a store that yields
-   * NOTHING when it named none.
+   * NOTHING when it named none. THE ONE MEMBER HERE THAT ACTUALLY MOVES:
+   * `workspace/didChangeWorkspaceFolders` REPLACES what this store answers with
+   * mid-session, and a request already in flight sees the replacement on its next
+   * call.
    *
    * ABSENCE IS NEVER DEFAULTED -- not to the working directory, not to `/`, not
    * to anything this process could invent. An empty list means the editor opened
@@ -184,22 +169,12 @@ export interface Tsudoi {
    * shape refuses. Both of the protocol's absent states, the field omitted and
    * the field sent as null, arrive here as the same empty list.
    *
-   * THE ONE MEMBER HERE THAT ACTUALLY MOVES:
-   * `workspace/didChangeWorkspaceFolders` REPLACES what this store answers with
-   * mid-session, and a request already in flight sees the replacement on its next
-   * call.
-   *
-   * MIRRORED, NOT INTERPRETED: two spellings of one directory are TWO folders,
-   * and a URI added twice is held twice, because this is the CLIENT's state
-   * rather than the filesystem's. Nothing is synthesised into it either -- the
-   * protocol makes `name` the label the CLIENT uses in its UI, so a folder tsudoi
-   * built out of `rootUri` would carry a name no client ever said.
-   *
-   * WHICH MEANS AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and
-   * it is the one to think about: a client without the workspace-folders
-   * capability names its project in `rootUri` or `rootPath` and sends no folders
-   * at all. TSUDOI SHIPS NO REDUCTION OVER THE THREE -- any reduction has to put
-   * a `name` there that no client said -- so an author who wants one writes it.
+   * AN EMPTY LIST BESIDE A POPULATED `rootUri` IS A REAL STATE, and it is the one
+   * to think about: a client without the workspace-folders capability names its
+   * project in `rootUri` or `rootPath` and sends no folders at all. TSUDOI SHIPS
+   * NO REDUCTION OVER THE THREE -- the protocol makes `name` the label the CLIENT
+   * uses in its UI, so any reduction has to put a `name` there that no client
+   * said -- and an author who wants one writes it.
    */
   readonly workspaceFolders: WorkspaceFolderStore;
   /**
@@ -241,11 +216,6 @@ export interface Tsudoi {
    * WHAT THE CLIENT SAID IT CAN DO, exactly as it sent it, or an EMPTY OBJECT
    * where it said nothing.
    *
-   * UPSTREAM'S OWN TYPE, published through `@atusy/tsudoi-language-server/deps/protocol`, so
-   * tsudoi's surface does not widen by one name for this: every capability LSP
-   * defines is already reachable, and one tsudoi has never heard of arrives the
-   * day the dependency does.
-   *
    * `{}` WHEN THE CLIENT SENT NONE, AND NEVER `null` OR `undefined`. A HANDLER
    * NEED NOT DEFEND AGAINST IT: `clientCapabilities.textDocument?.completion
    * ?.completionItem?.insertReplaceSupport` answers `undefined` on an empty
@@ -283,7 +253,7 @@ export interface MethodMap {
    * selects how their items reach the client. A handler with nothing to say
    * yields nothing.
    *
-   * WHAT THE DRIVE DOES, and it is the whole of the streaming API:
+   * WHAT THE DRIVE DOES, AND THE TOKEN DECIDES IT WITH NOTHING ELSE:
    *
    *   partialResultToken present -> EVERY yield leaves as its own `$/progress`
    *                                 and the response is `null`. ALWAYS --
@@ -292,11 +262,9 @@ export interface MethodMap {
    *                                 is the response; a stream that yielded
    *                                 NOTHING is answered `null`.
    *
-   * THE TOKEN DECIDES, AND NOTHING ELSE DOES. THE COST IS ACCEPTED KNOWINGLY: a
-   * one-batch answer under a token spends a `$/progress` and a `null` response
-   * where a single response would have done. The look-ahead that would have saved
-   * it makes the FIRST batch wait on the SECOND pull -- a delay landing exactly
-   * when the first chunk is slow and streaming matters most.
+   * A one-batch answer under a token therefore spends a `$/progress` and a `null`
+   * response where a single response would have done; the look-ahead that would
+   * save it is refused at `driveStream` in src/methods.ts.
    *
    * `null` FOR A STREAM THAT YIELDED NOTHING IS A VALUE DECISION AND NOT A
    * CHANNEL ONE. `[]` is not available to mean this, because the specification
@@ -304,16 +272,14 @@ export interface MethodMap {
    * so `[]` tells the user there are NO CANDIDATES, which is a stronger statement
    * than `this server has no answer for that position`.
    *
-   * AND `return` CARRIES NO CONTENT, WHICH WAS DECLINED RATHER THAN OVERLOOKED.
-   * A content-bearing return makes a single-batch answer detectable in ONE pull,
-   * which is real. What it costs is TWO ENTRANCES FOR CONTENT -- `yield` and
-   * `return` -- with the author choosing between them per call, which is the
-   * weaker form of the very defect this shape exists to remove.
+   * AND `return` CARRIES NO CONTENT, DECLINED RATHER THAN OVERLOOKED: it would
+   * make a single-batch answer detectable in ONE pull, at the price of TWO
+   * ENTRANCES FOR CONTENT chosen between per call -- the weaker form of the very
+   * defect this shape exists to remove.
    *
    * WHAT THIS SHAPE CANNOT SAY, NAMED RATHER THAN LEFT TO BE REDISCOVERED:
    * `isIncomplete`. EVERY completion tsudoi answers claims its candidate set is
-   * final, and two configs in this repository rule that claim FALSE at their own
-   * sites. THE FUTURE PATH IS TO WIDEN THE YIELD TO `CompletionItem[] |
+   * final. THE FUTURE PATH IS TO WIDEN THE YIELD TO `CompletionItem[] |
    * CompletionList` AND NORMALISE A MID-STREAM `CompletionList` INTO ITEMS -- not
    * a tuple, which would make one slot's meaning depend on its neighbour. It is
    * NOT BUILT, and this is the line that would change.
@@ -329,8 +295,8 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once: a formatter has one answer for the whole document, and the
-   * protocol gives it no partialResultToken to stream under.
+   * A formatter has one answer for the whole document, and the protocol gives it
+   * no partialResultToken to stream under.
    */
   "textDocument/formatting": {
     params: DocumentFormattingParams;
@@ -338,7 +304,7 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once. Not stream-driven despite `DocumentDiagnosticRequest`
+   * Not stream-driven despite `DocumentDiagnosticRequest`
    * declaring `partialResult`: that drive concatenates chunks and requires
    * arrays, while `DocumentDiagnosticReportProgress` is a union of two object
    * types -- and the stream carries RELATED DOCUMENTS, which are out of scope,
@@ -360,9 +326,6 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once; the protocol declares no `partialResult` for it. Its params
-   * name no document at all, and it never touches the document store.
-   *
    * WHAT TO DO WITH AN ITEM YOU DO NOT RECOGNISE: RETURN IT UNCHANGED. A client
    * may send any item, and the response REPLACES that item in its list, so
    * answering with anything else drops the entry the user is looking at. tsudoi
@@ -383,7 +346,7 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once, and BY CONSTRUCTION rather than by choice: `ExecuteCommandParams`
+   * AWAITED ONCE BY CONSTRUCTION rather than by choice: `ExecuteCommandParams`
    * carries no `partialResultToken`, so the stream drive has nothing to travel
    * under even for an author who wanted it.
    *
@@ -395,21 +358,13 @@ export interface MethodMap {
    * it costs an author is a narrowing at the point they READ their own answer
    * back, which is where they know what it is.
    *
-   * THE RESULT AND NOT THE PARAMS, WHICH IS NARROWER THAN THE PARAGRAPH ABOVE
-   * SOUNDS AND IS THE WHOLE OF WHAT IS ENFORCED. `any` reaches an author on this
-   * same row through what they are HANDED: `LSPAny` is literally `any`, so
-   * `ExecuteCommandParams.arguments` is an array of it, `MethodHandler` passes
-   * params RAW with no `DeepReadonly` on them anywhere, and `const leaked:
-   * string = params.arguments![0]` compiles clean in a stranger's file. NOT
-   * INTRODUCED HERE -- `completionItem/resolve` already does it through
+   * THE RESULT AND NOT THE PARAMS, WHICH IS THE WHOLE OF WHAT IS ENFORCED: `any`
+   * still reaches an author on this same row through what they are HANDED, since
+   * `LSPAny` is literally `any` and `MethodHandler` passes params RAW, so `const
+   * leaked: string = params.arguments![0]` compiles clean in a stranger's file.
+   * NOT INTRODUCED HERE -- `completionItem/resolve` already does it through
    * `CompletionItem.data` -- and NOT REPAIRED HERE: reshaping what upstream
-   * declares a request CARRIES is a different decision from choosing what this
-   * row ANSWERS, and it would be taken for every row at once or not at all.
-   *
-   * WHAT TSUDOI DECIDES ABOUT A COMMAND IS NOTHING. It does not filter on the
-   * advertised list, does not answer on the handler's behalf, and has no opinion
-   * on a name it has never seen: which commands exist is the author's, and so is
-   * what an unrecognised one means.
+   * declares a request CARRIES would be taken for every row at once or not at all.
    *
    * AND THE ADVERTISED LIST IS EMPTY UNLESS THE AUTHOR FILLS IT, which is the
    * part a config declaring this handler alone will notice: handler presence
@@ -439,10 +394,9 @@ export type Method = keyof MethodMap;
  * has already answered, and src/config.ts to refusing it with a sentence that is
  * false of it.
  *
- * ADVERTISING A CAPABILITY NOBODY CAN ASK FOR NO LONGER DISCRIMINATES, and
- * `workspace/executeCommand` is the row that took it away: its `commands` is
- * empty, so what it advertises is unaskable too. WHAT SURVIVES IS WHEN: that
- * list is unaskable only UNTIL its author fills it, where `initialize` is sent
+ * WHAT SEPARATES IT FROM AN UNASKABLE ROW IS WHEN, and not that it is unaskable:
+ * `workspace/executeCommand` advertises an empty `commands` list, so it is
+ * unaskable too -- but only UNTIL its author fills it, where `initialize` is sent
  * once, before any registration is live, and is never askable at all.
  *
  * `Promise`, LIKE EVERY ROW OF THE TABLE, and not `InitializeResult |
@@ -471,9 +425,9 @@ export type ConfigMethod = keyof ConfigMethodMap;
 
 /**
  * WHAT THIS ONE REQUEST IS, and nothing that outlives it -- WHATEVER THE METHOD.
- * Two members, and the line between them is the whole of what this type says:
- * the SIGNAL is about this message and dies with it, while `tsudoi` is the
- * SERVER -- the same object every request is handed.
+ * The line between the members is the whole of what this type says: the SIGNAL is
+ * about this message and dies with it, while `tsudoi` is the SERVER, the same
+ * object every request is handed.
  *
  * A FIELD THAT DOES NOT CHANGE PER REQUEST DOES NOT BELONG HERE, and that is the
  * rule rather than a description of today's two members. The folder list, the
@@ -492,11 +446,9 @@ export interface BaseRequestContext {
 }
 
 /**
- * THE BASE PLUS THE ONE FIELD ONLY THE HANDSHAKE HAS.
- *
- * IT EXTENDS THE BASE RATHER THAN STANDING BESIDE IT, which is what makes `Base`
- * an honest name: `signal` is here too, so a handshake handler reads
- * cancellation exactly as every other handler does.
+ * THE BASE PLUS THE ONE FIELD ONLY THE HANDSHAKE HAS. It EXTENDS the base rather
+ * than standing beside it, which is what makes `Base` an honest name: a handshake
+ * handler reads cancellation exactly as every other handler does.
  *
  * AND THE FIELD BELOW IS A SESSION FACT ON A REQUEST CONTEXT, WHICH THE FIRST
  * RULE AT `BaseRequestContext` READ LITERALLY REFUSES. That rule's harm is a
@@ -543,12 +495,11 @@ export interface InitializeRequestContext extends BaseRequestContext {
    *
    * DEEP-FROZEN, so an in-place edit fails loudly instead of half-landing. The
    * spread above is what a handler wanting a modified copy writes, and
-   * `structuredClone` IS DELIBERATELY NOT OFFERED BESIDE IT: MEASURED, the clone
-   * comes back `DeepReadonly<InitializeResult>` -- `structuredClone<T>(v: T): T`
-   * hands back exactly what it was given -- so writing to its `capabilities` is
-   * TS2540, and the annotation that would fix that is TS2322 for the reason
-   * `ConfigMethodMap.initialize` records. The same freeze is on
-   * `clientCapabilities`, where the clone IS the route and costs a cast.
+   * `structuredClone` IS DELIBERATELY NOT OFFERED BESIDE IT: the clone comes back
+   * `DeepReadonly<InitializeResult>`, for the reason MEASURED at
+   * `Tsudoi.clientCapabilities`, so writing to its `capabilities` is TS2540 --
+   * and UNLIKE THERE no cast rescues it, the annotation that would fix TS2540
+   * being TS2322 for the reason `ConfigMethodMap.initialize` records.
    */
   readonly preparedResult: DeepReadonly<InitializeResult>;
 }
@@ -572,9 +523,8 @@ export interface InitializeRequestContext extends BaseRequestContext {
  * two are mutually assignable, so every bare literal outside src/ satisfies both,
  * and a bare-typed READ of `preparedResult` is TS2339 under both -- only the type
  * named in the message moves. WHAT THE WIDER SPELLING COSTS IS IDENTITY: this
- * published name stops BEING `BaseRequestContext`, which is why the arm that
- * catches it had to be a type-identity test and why the cast-based one written
- * first was vacuous.
+ * published name stops BEING `BaseRequestContext`, so the arm catching it must be
+ * a type-identity test and a cast-based one is vacuous.
  */
 export type RequestContext<M extends ConfigMethod = Method> = M extends "initialize"
   ? InitializeRequestContext

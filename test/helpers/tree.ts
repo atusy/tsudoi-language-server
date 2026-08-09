@@ -6,13 +6,10 @@ import { join } from "node:path";
  * A throwaway directory tree, WITH NO DOTFILE IN IT THAT A CALLER DID NOT ASK
  * FOR.
  *
- * THE BLANKET REFUSAL IS NARROWED RATHER THAN DROPPED, and the reason it stood
- * has expired rather than been overruled: hidden-entry behaviour was UNRULED, so
- * a fixture that HAPPENED to contain one would have pinned a decision nobody
- * made. It is ruled now -- a resolved directory's listing SHOWS them, unfiltered
- * -- and a ruling whose witness no fixture may hold is a ruling nothing can
- * falsify. So a caller that names a dotfile is asserting something; nothing here
- * adds one. The `./x` and `../x` rule is untouched.
+ * A RULING WHOSE WITNESS NO FIXTURE MAY HOLD IS A RULING NOTHING CAN FALSIFY:
+ * hidden entries are ruled -- a resolved directory's listing SHOWS them,
+ * unfiltered -- so a caller that names a dotfile is asserting something, and
+ * nothing here adds one. The `./x` and `../x` rule is untouched.
  *
  * realpathSync is not cosmetic: on macOS the system temp directory lives under
  * /var, which IS a symlink to /private/var, and a child process started with

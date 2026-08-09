@@ -55,8 +55,8 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   const lifecycle = createLifecycle();
 
   // EVERY notification tsudoi answers is declared here, and each one DECIDES
-  // when it may run. The gate is applied by the router, never by a handler
-  // body: a body that could consult it is a body that could forget to.
+  // when it may run; that the router applies the gate rather than the handler
+  // body is decided at `NotificationEntry.handler`.
   //
   // AND THE CONNECTION COMES BACK WITHOUT AN `onNotification` TO CALL. This
   // line is the only connection this file has, and `startServer` must NEVER
@@ -121,12 +121,12 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // handler run twice, with nothing on stderr. The fast path above never
       // yields, which is why no session without a handler could show it.
       lifecycle.beginInitialize();
-      // THIS HANDLER WAS SYNCHRONOUS AND IS NO LONGER, AND WHAT THAT COSTS IS
-      // RECORDED RATHER THAN REPAIRED. The transition below records that the
-      // handshake HAPPENED, so between the `await` and it there is a window in
-      // which `acceptsNotification` reads `serving` as false and a notification is
-      // DROPPED -- silently, there being no response to carry a refusal. It used to
-      // be zero and is now the author handler's duration. ACCEPTED because LSP
+      // A WINDOW IN WHICH A NOTIFICATION IS DROPPED, RECORDED RATHER THAN
+      // REPAIRED. The transition below records that the handshake HAPPENED, so
+      // between the `await` and it `acceptsNotification` reads `serving` as false
+      // and a notification is dropped -- silently, there being no response to
+      // carry a refusal. It was zero while this handler could not yield and is now
+      // the author handler's whole duration. ACCEPTED because LSP
       // forbids a conforming client from sending anything before it holds the
       // InitializeResult, so only a non-conforming or pipelining one can reach it.
       //
@@ -152,14 +152,13 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // the four fields above: that refusal is about what the SESSION OBJECT
       // RETAINS, and this argument is the message. Nothing here is retained.
       //
-      // BUT THE REFUSAL RESTED ON TWO LEGS AND ONLY ONE IS LEFT STANDING.
-      // `every field on that surface is one tsudoi then owes an answer about` is
-      // now delivered by another route: `ConfigMethodMap["initialize"].params` is
-      // `InitializeParams`, published, and reached by the cast above out of
-      // `unknown`. So tsudoi DOES owe an answer about every field of it -- and
-      // pays with the narrowest one available, that it read none of them. What
-      // it refuses to owe is a field a SESSION MEMBER would make it answer about
-      // for the whole run.
+      // WHICH LEAVES THAT REFUSAL ONE LEG. `every field on that surface is one
+      // tsudoi then owes an answer about` is delivered by another route now:
+      // `ConfigMethodMap["initialize"].params` is `InitializeParams`, published,
+      // and reached by the cast above out of `unknown`. So tsudoi DOES owe an
+      // answer about every field of it -- and pays with the narrowest one
+      // available, that it read none of them. What it refuses to owe is a field a
+      // SESSION MEMBER would make it answer about for the whole run.
       let answer: DeepReadonly<InitializeResult>;
       try {
         answer = await handler(
@@ -283,12 +282,8 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // in the suite ends by `exit` or by being killed, and neither notices a
   // lingering handle.
   //
-  // THAT PATH NOW RUNS A CONFIG AUTHOR'S OWN CODE, so the sentence above widened
-  // WITHOUT THE TEST MOVING: `unref()` is owed by anything an `initialize`
-  // handler opens too. What it actually observes did not widen at all -- the
-  // config it drives declares no such handler -- so the coverage claim is
-  // nominal, and a config that opened a handle in its handshake would be
-  // measured by nothing here.
+  // AND `unref()` IS OWED BY ANYTHING AN `initialize` HANDLER OPENS TOO, which
+  // the test observes nothing of: the config it drives declares no such handler.
   //
   // AND IF YOU EVER DO WANT A HOOK ON THAT CLOSE: `reader.onClose` FIRES ON BUN
   // AND NEVER ON DENO, so a handler installed there is silently inert on half the
@@ -301,9 +296,9 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
  * the handshake may proceed.
  *
  * WHAT IS CHECKED IS WHAT TSUDOI READS AND ANSWERS FOR, AND NOT
- * `InitializeParams` AS A WHOLE -- AND `what tsudoi publishes` IS THE WRONG RULE
- * NOW THAT `ConfigMethodMap["initialize"].params` PUBLISHES THE MESSAGE ENTIRE.
- * The rest of it reaches a config author's handshake handler UNCHECKED, declared
+ * `InitializeParams` AS A WHOLE. `what tsudoi publishes` WOULD BE THE WRONG RULE:
+ * `ConfigMethodMap["initialize"].params` publishes the message ENTIRE, and the
+ * rest of it reaches a config author's handshake handler UNCHECKED, declared
  * `InitializeParams` by a cast off `unknown` and inspected by nothing.
  *
  * Of the four fields read off this message, these are the ones whose PUBLISHED

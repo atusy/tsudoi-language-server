@@ -3,7 +3,6 @@ import process from "node:process";
 import type { CompletionItem } from "vscode-languageserver-protocol";
 import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The config author's cleanup, and the only evidence that it ran at all. */
 export const cleanupMarker = "completion-yields-bare-item: released";
 
 /**

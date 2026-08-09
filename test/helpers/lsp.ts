@@ -6,9 +6,8 @@ import { repoRoot } from "./spawn.ts";
  * Where the entry point sits RELATIVE TO THE DIRECTORY A SESSION STARTS IN, kept
  * relative so sessions run the acceptance criterion's own command form.
  *
- * IT GAINED A `packages/` PREFIX RATHER THAN LOSING ONE when the framework
- * became a workspace member: the default cwd is still the CHECKOUT, and the
- * entry point moved down inside it.
+ * THE PREFIX IS THERE BECAUSE THE DEFAULT CWD IS THE CHECKOUT, with the entry
+ * point down inside it.
  *
  * AND THE PREFIX IS OVERRIDABLE FOR ONE STAGED SHAPE THAT DELIBERATELY IS NOT
  * THE CHECKOUT'S. test/helpers/checkout.ts stages a copy of the PACKAGE ALONE,
@@ -82,12 +81,6 @@ export interface ProgressNotification {
  * result was is already asserted by the awaiting request, whereas the ORDER of
  * a response relative to the progress around it is not observable anywhere
  * else -- and progress-then-error is a criterion in its own right.
- *
- * EVERY server-initiated notification is recorded, not only `$/progress`.
- * Dropping the rest made `nothing else arrived` unfalsifiable here: a server
- * that logged on every keystroke was indistinguishable from one that said
- * nothing, and a test claiming not to care about message shape could not be
- * shown to mean it.
  */
 export type Arrival =
   | ({ readonly kind: "progress" } & ProgressNotification)
@@ -149,11 +142,6 @@ export class LspSession {
   /**
    * EVERY framed message, exactly as stdout carried it -- responses,
    * `$/progress` and any other server-initiated notification alike.
-   *
-   * DROPPING WHAT NOTHING AWAITS IS THE TEMPTING ECONOMY, AND IT COSTS BOTH
-   * CLAIMS: with `$/progress` left out, `zero $/progress` is an assertion a
-   * server streaming furiously satisfies; with the other notifications left
-   * out, `tolerates an unexpected notification` is unfalsifiable.
    *
    * Complete on purpose, and read through `arrivalsFor` on purpose: what a
    * claim is about is the CALLER's business, and a list that leaves things out
@@ -288,15 +276,9 @@ export class LspSession {
   }
 
   /**
-   * Sends a request without awaiting it, exposing the id so it can be
-   * cancelled while it is still running.
-   */
-  /**
-   * A response that never arrives used to park with no message of its own --
-   * these promises only ever resolve, so the failure was bun's anonymous
-   * `timed out after Nms` and named neither the method nor the id. Every
-   * `.response` in the suite is awaited, so that park is reachable from all of
-   * them.
+   * A response that never arrives would otherwise park with no message of its
+   * own -- these promises only ever resolve, so the failure would be bun's
+   * anonymous `timed out after Nms`, naming neither the method nor the id.
    *
    * INSIDE THE TIGHTEST TEST CONSTANT (4000) so this speaks first. A test that
    * means to leave a request unanswered does not await it.
@@ -433,9 +415,6 @@ export class LspSession {
    * requests are what they are, and that the server never speaks unprompted.
    * The first is why a `window/logMessage` would break tests about
    * cancellation; the second is hardcoded-id brittleness.
-   *
-   * Progress is deliberately NOT filtered by token: a server that streamed
-   * under a token it invented is exactly the cheat these tests exist to catch.
    */
   arrivalsFor(id: number): Arrival[] {
     return this.arrivals.filter(
@@ -489,11 +468,8 @@ export class LspSession {
   }
 
   /**
-   * A PARK HERE USED TO FAIL AS bun's ANONYMOUS `timed out after Nms` and name
-   * nothing -- this was `return this.#exited`, with no deadline of its own. The
-   * arms that died at 4008ms against a 4000 test constant were parked exactly
-   * here, so the wall-clock number was the only thing that made them fail and
-   * the message said nothing about what had not happened.
+   * A PARK HERE WITH NO DEADLINE OF ITS OWN FAILS AS bun's ANONYMOUS `timed out
+   * after Nms` and names nothing.
    *
    * THE DEFAULT SITS INSIDE THE TIGHTEST TEST CONSTANT IN THE TREE (4000), so
    * this speaks first and the constant goes back to being a backstop.
@@ -633,9 +609,12 @@ export class LspSession {
           }
         }
       }
-      // Recorded rather than dropped: nothing awaits it, but a test that means
-      // to tolerate it must be able to SEE it, or tolerance is not a property
-      // anyone can check.
+      // EVERY server-initiated message is recorded and none is dropped, which
+      // costs both claims if it stops: with `$/progress` left out, `zero
+      // $/progress` is an assertion a server streaming furiously satisfies, and
+      // with the other notifications left out `tolerates an unexpected
+      // notification` is unfalsifiable -- a test that means to tolerate one must
+      // be able to SEE it.
       this.arrivals.push({ kind: "notification", method: message.method ?? "" });
       return;
     }

@@ -90,9 +90,8 @@ function openGate(session: LspSession): void {
  * A test's own timeout, below the deadline this file's own
  * `applySuiteDeadline()` sets, so a park fails by name.
  *
- * IT SAID `BELOW bun test's DEFAULT` AND THAT WAS FALSE: 6000 is ABOVE bun's
- * 5000, so a park died at the ambient deadline first and this constant never
- * fired. True again only because the suite now sets 25_000.
+ * IT MUST STAY BELOW THE AMBIENT DEADLINE: at 6000 against an ambient 5000, a
+ * park died at the ambient one first and this constant never fired at all.
  */
 const gatedTimeoutMs = 6000;
 

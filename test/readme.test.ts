@@ -204,20 +204,6 @@ test("a README with no examples-install marker states no install command, and sa
 });
 
 /**
- * WHY IT IS WORTH RUNNING RATHER THAN MATCHING: the pack COMPILES the package, so
- * a wrong directory, a wrong subcommand, a wrong flag and a build that cannot
- * resolve are all one failure here.
- *
- * IN THE REAL MEMBER DIRECTORY AND NOT A STAGED COPY, deliberately: the
- * prerequisite this command needs is a link INSIDE the checkout, and a staged
- * tree would have to reproduce it -- which is supplying the very thing being
- * asked about.
- *
- * AND THE FILE IT PRODUCES IS THE ONE THE NEXT COMMAND NAMES: the pack and the
- * install are two commands in two directories joined by a PATH, and nothing but
- * this compares them.
- */
-/**
  * NO TWO DOCUMENTED PACK ROUTES LAND ON ONE PATH.
  *
  * WHAT THIS DOES NOT SEE, measured rather than reasoned: a route naming another
@@ -265,6 +251,16 @@ test("no two documented pack routes write to the same path", () => {
   expect(landings.length).toBe(new Set(landings).size);
 });
 
+/**
+ * IN THE REAL MEMBER DIRECTORY AND NOT A STAGED COPY, deliberately: the
+ * prerequisite this command needs is a link INSIDE the checkout, and a staged
+ * tree would have to reproduce it -- which is supplying the very thing being
+ * asked about.
+ *
+ * AND THE FILE IT PRODUCES IS THE ONE THE NEXT COMMAND NAMES: the pack and the
+ * install are two commands in two directories joined by a PATH, and nothing but
+ * this compares them.
+ */
 test("each member's pack command runs, and writes the file its own install names", async () => {
   for (const member of memberReadmes) {
     const pack = extractHandlerPack(member.markdown);

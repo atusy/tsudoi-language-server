@@ -4,12 +4,10 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The document the session opens, and what it edits the buffer to afterwards. */
 export const documentUri = "file:///workspace/a.txt";
 export const openedText = "genuine text";
 export const changedText = "edited text";
 
-/** What a handler reports of its own attempt, and of what it can still read. */
 export interface DocumentMutationReport {
   /** Whether THIS request is the one that tried the writes. */
   readonly attempted: boolean;

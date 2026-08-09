@@ -20,18 +20,13 @@ const manifest = JSON.parse(
  * decision here that protects something outside this package.
  *
  * tsudoi's own map carries a third arm, `default`, pointing into ./src -- and
- * copying that shape here would be actively harmful. THE REASON THIS PARAGRAPH
- * USED TO GIVE NAMED A MECHANISM THAT NO LONGER EXISTS: it said the root
- * tsconfig excludes packages/ so that its `paths` mapping cannot answer for a
- * member, and there is no mapping anywhere in that repository now -- the
- * framework is a workspace member like this one, and a refusal in
- * scripts/workspaces.ts keeps members from writing one. The exclusion is still
- * right and its reason is now the plain one: `exclude` filters the root FILE
- * GLOB ONLY and does not stop a file being pulled into the program by MODULE
- * RESOLUTION. examples/tsudoi.config.ts is in the root program and imports this
- * package, so a source arm here would give root tsc a route straight into
- * src/hover.ts -- graded by a program that excludes this package on purpose,
- * reporting success for a member whose own resolution nobody checked.
+ * copying that shape here would be actively harmful. The root tsconfig excludes
+ * packages/, and `exclude` filters the root FILE GLOB ONLY: it does not stop a
+ * file being pulled into the program by MODULE RESOLUTION.
+ * examples/tsudoi.config.ts is in the root program and imports this package, so
+ * a source arm here would give root tsc a route straight into src/hover.ts --
+ * graded by a program that excludes this package on purpose, reporting success
+ * for a member whose own resolution nobody checked.
  *
  * WHAT IT COSTS, so the next reader does not undo it looking for a quick fix:
  * everything resolves this package through dist/, so a checkout nothing has
@@ -143,25 +138,19 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  *
  * THE FRAMEWORK'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
  * ROUTE UNDER TEST rather than everywhere: the suite's own installer packs it
- * from a FRESH staging directory holding package.json, src/,
- * tsconfig.build.json AND A BORROWED node_modules SYMLINK -- the four entries
- * the pin in test/installed-specifier.test.ts names, where that file already had
- * to correct three to four. WHAT MATTERS HERE IS
- * WHICH ENTRY IS ABSENT rather than how many there are: no dist/ is staged, so
- * the framework's dist/ is built into an empty tree every time.
- * This package is packed FROM WHERE IT LIVES -- deliberately, so no probe has to
- * perturb a copy -- so its dist/ is the one that persists between packs.
+ * from a FRESH staging directory, pinned entry by entry in
+ * test/installed-specifier.test.ts. WHAT MATTERS HERE IS WHICH ENTRY IS ABSENT:
+ * no dist/ is staged, so the framework's dist/ is built into an empty tree every
+ * time. This package is packed FROM WHERE IT LIVES -- deliberately, so no probe
+ * has to perturb a copy -- so its dist/ is the one that persists between packs.
  *
- * IT WAS CALLED `THE ROOT PACKAGE` AND THE ROOT IS NOT THAT PACKAGE, which also
- * made the uncovered route wrong: this paragraph said a HUMAN running `bun pm
- * pack` AT THE REPOSITORY ROOT packs whatever dist/ is lying there. The root
- * package of that workspace is private, declares no `files` and has no build of
- * its own, so packing there collects tracked files and reaches no dist/ at all.
- *
- * WHAT THAT LEAVES UNCOVERED, RETARGETED AT THE ROUTE THAT EXISTS: the framework
- * is packed by hand from ITS OWN directory -- the command the workspace's README
- * gives for a manual runtime test -- and that pack carries whatever dist/ is lying
- * there, with the same staleness this clear removes here. NOTHING IN THE SUITE
+ * WHAT THAT LEAVES UNCOVERED, AND IT IS NOT A PACK AT THE REPOSITORY ROOT --
+ * that root is private, declares no `files` and has no build of its own, so
+ * packing there collects tracked files and reaches no dist/ at all. It is that
+ * the framework is packed by hand from ITS OWN directory -- the command the
+ * workspace's README gives for a manual runtime test -- and that pack carries
+ * whatever dist/ is lying there, with the same staleness this clear removes
+ * here. NOTHING IN THE SUITE
  * PACKS IT FROM A DIRECTORY WHERE A dist/ PERSISTS, which is the narrow thing
  * and not `the command is never run`: the README's pack step IS executed, as
  * every command block in that file is, but in a staged copy holding the

@@ -25,13 +25,9 @@ await Promise.all(runtimes.map(requireRuntime));
  * gate that swallowed the message it was supposed to let through fails THIS test
  * by name as a timeout rather than stalling the whole suite with no diagnostic.
  *
- * IT USED TO SAY `BELOW bun test's DEFAULT` AND THE SUBJECT HAS MOVED: the
- * ambient deadline is now this project's own 25_000 rather than bun's 5000, so
- * the margin this value buys is five times what the sentence used to describe.
- * AND THIS FILE IS WHERE THAT MATTERED MOST: at load 100-160 two of these arms
- * failed at 4008ms against this very constant while the rest of the suite was
- * being killed at 5000ms, which is the reading that made the ambient default a
- * backlog item.
+ * THIS FILE IS WHERE THE MARGIN MATTERS MOST: at load 100-160 two of these arms
+ * failed at 4008ms against this very constant, which is the reading that made
+ * the ambient deadline a backlog item.
  */
 const hangTimeoutMs = 4000;
 
@@ -523,11 +519,10 @@ for (const runtime of runtimes) {
           "textDocument/completion",
           completionWithToken("valid-token-1"),
         );
-        // THREE, not two: the handler's ANSWER is the first `$/progress`
-        // literal and its two streamed chunks follow it. What is CLAIMED is
-        // narrower than the number -- a valid token streams and an invalid one
-        // does not -- and the number is only how many literals this fixture
-        // happens to produce.
+        // THREE, one per batch: this handler yields three times and each batch
+        // leaves as its own `$/progress`. What is CLAIMED is narrower than the
+        // number -- a valid token streams and an invalid one does not -- and the
+        // number is only how many literals this fixture happens to produce.
         expect(valid.progressCount).toBe(3);
 
         // Reported, not silent: an invalid token LOSES the user items unless

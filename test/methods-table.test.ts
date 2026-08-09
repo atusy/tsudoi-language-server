@@ -107,10 +107,8 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in
  * the type system reads it. A dependency that changed the method name a request
  * constant carries while leaving its types alone would pass every compile check
- * and register completion's entry under another method's name. NAMED AS A
- * DIFFERENT CLAIM rather than left looking redundant: a control
- * that could never be first to fail is not a control, and this one can -- it
- * reads the wire name, which the type system does not.
+ * and register completion's entry under another method's name -- it reads the
+ * wire name, which the type system does not.
  *
  * WHY EITHER WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
  * with the entry's `type` and looks the config author's handler up BY THE KEY.
@@ -267,9 +265,8 @@ for (const runtime of runtimes) {
         }
 
         // EVERY METHOD IS COMPARED AT ONCE, NOT ONE ASSERTION PER ITERATION,
-        // AND THAT IS THIS TEST'S NEED RATHER THAN A RULE FOR THE FILE -- the
-        // test above keeps the per-iteration form and is right to. WHICH METHOD
-        // DIVERGES IS THE WHOLE SUBJECT HERE: the two drives disagreed about
+        // BECAUSE WHICH METHOD DIVERGES IS THE WHOLE SUBJECT HERE: the two
+        // drives disagreed about
         // exactly this answer, so a failure that printed -32800 against
         // undefined without naming the method would report the divergence
         // without saying where it is. The expected side is built from the
@@ -299,8 +296,8 @@ for (const runtime of runtimes) {
      * at once; each awaited-once row's own file carries a twin naming it for
      * that row alone.
      *
-     * WHAT `null` DOES NOT ATTRIBUTE, RECORDED RATHER THAN REPAIRED AND NOT NEW
-     * WITH THE SIXTH ROW. It says the ROUTE answered only because this fixture
+     * WHAT `null` DOES NOT ATTRIBUTE, RECORDED RATHER THAN REPAIRED. It says the
+     * ROUTE answered only because this fixture
      * declares no handler for anything; against a config that DID declare one it
      * would not tell the drive's `?? null` from a handler that returned null,
      * for any row whose result type admits null. `textDocument/hover` and

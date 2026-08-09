@@ -8,9 +8,8 @@ import type { Runtime } from "./lsp.ts";
 // import.meta.dir is Bun-only; the URL form works under both runtimes.
 
 /**
- * THE CHECKOUT -- WHICH IS NO LONGER THE FRAMEWORK'S DIRECTORY, and the two were
- * one path for fifty sprints, so every use of this name now has to say which of
- * them it means.
+ * THE CHECKOUT -- WHICH IS NO LONGER THE FRAMEWORK'S DIRECTORY, so every use of
+ * this name has to say which of them it means.
  *
  * THIS ONE IS THE CHECKOUT, AND ONLY THAT. What it answers: where a command is
  * run from (the five Definition-of-Done checks are spelled from here, which is
@@ -117,10 +116,8 @@ export function runCommand(
       env,
       stdio: ["pipe", "pipe", "pipe"],
     });
-    // Kept whole and undecoded until close. Decoding each chunk as it arrives
-    // turns any multi-byte character the pipe split into two U+FFFD -- silent
-    // for ASCII of any length, and wrong for exactly the Japanese messages a
-    // config author writes. This is the same rule LspSession.stderr follows.
+    // Kept whole and undecoded until close, which is the same rule
+    // LspSession.stderr follows and records.
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => {

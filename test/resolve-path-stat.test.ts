@@ -64,8 +64,7 @@ const prefix = "sample";
  *
  * THEY ARE CREATED BEFORE THE TIMESTAMPS ARE FIXED, and the order is
  * load-bearing: writing into a directory bumps its mtime, and the expected STAT
- * LINE below carries that stamp -- inside `documentation`, not inside `detail`,
- * which the sentence still said after the stamp stopped being rendered there.
+ * LINE below carries that stamp.
  *
  * NAMES WHOSE CREATION ORDER, FILESYSTEM ORDER AND RENDERED ORDER ALL DIFFER, so
  * an answer echoing either of the first two cannot pass the whole-value assertion
@@ -110,7 +109,7 @@ function sampleTree(): Tree {
  * `source: document` AND NOT `cwd`, though both roots are this fixture: items
  * dedup by inserted text and the document's own directory is asked first.
  *
- * IT NO LONGER TELLS THE TWO ITEMS APART, which is why the arms that need them
+ * IT DOES NOT TELL THE TWO ITEMS APART, which is why the arms that need them
  * separated read `detail`: the file and the directory come out of one listing
  * under one root, so their blocks are the SAME BYTES until resolve is asked.
  */
@@ -165,8 +164,8 @@ function lockedTree(): Tree {
   const fixture = tree(["sample-locked/inside.txt", "sample-open/visible.txt"]);
   const locked = join(fixture.root, "sample-locked");
   utimesSync(locked, mtime, mtime);
-  // THE LISTABLE ONE IS STAMPED TOO, and it was not while the stat lived in
-  // `detail`: its block is compared whole and now carries a modification time.
+  // THE LISTABLE ONE IS STAMPED TOO: its block is compared whole and carries a
+  // modification time.
   utimesSync(join(fixture.root, "sample-open"), mtime, mtime);
   chmodSync(locked, 0o000);
   return {
@@ -219,9 +218,8 @@ function factsSection(block: string): string {
  * HONEST: this suite's `initializeParams` carry no capabilities at all, so every
  * session in it is PLAINTEXT throughout. A pattern matching only the markdown
  * heading returns an EMPTY header and NO names for every arm here -- green, empty
- * and silent -- which is the sprint-82 anchor one level over, on the very helper
- * that anchor was written to fix. The arm below reads a NON-EMPTY name count
- * before anything else for that reason.
+ * and silent. The arm below reads a NON-EMPTY name count before anything else for
+ * that reason.
  *
  * DUPLICATED IN THE MEMBER'S OWN SUITE, because a member reaching into the root's
  * helpers stops being checkable on its own. WHAT THE TWO MUST NOT DO IS DISAGREE:
@@ -342,11 +340,9 @@ for (const runtime of runtimes) {
      * ITS OWN TEST, because a handler that reported a size for everything
      * satisfies the test above completely.
      *
-     * ITS TITLE WAS FALSIFIED BY THE STAKEHOLDER'S RULING AND IS REPAIRED RATHER
-     * THAN KEPT: the block no longer SAYS it is a directory -- the words `file`
-     * and `directory` have left it -- so the absence of `size:` is the whole of
-     * what a user has to go on, and the arm has to say that rather than the old
-     * sentence.
+     * THE BLOCK DOES NOT SAY IT IS A DIRECTORY -- the words `file` and
+     * `directory` are not in it -- so the absence of `size:` is the whole of what
+     * a user has to go on.
      *
      * THE FILE IS IN THE SAME ARM AND IT IS NOT A SECOND READING OF THE TEST
      * ABOVE. That one compares a file's whole answer; this one needs the PRESENT
@@ -390,16 +386,11 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * BOTH KINDS IN ONE SESSION, AND THE CLAIM INVERTED WITH THE CHANGE: a file's
-     * block is no longer unmoved, because resolve now learns a stat about EVERY
-     * kind. What replaces `unmoved` is the relation that matters to a reader
-     * watching a popup re-render -- THE BLOCK ONLY EVER GAINS. What they have
-     * already read does not move position.
-     *
-     * AND IT RETIRES AN ADMITTED WEAKNESS OF THE ARM IT REPLACES, which said in
-     * so many words that it could not establish a rebuild ran for the FILE: a
-     * passthrough was byte-identical there. It is not any more -- a file's block
-     * grows too -- so the file half is a claim rather than a shape.
+     * BOTH KINDS IN ONE SESSION. Resolve learns a stat about EVERY kind, so the
+     * relation that matters to a reader watching a popup re-render is THE BLOCK
+     * ONLY EVER GAINS: what they have already read does not move position. A
+     * file's block grows too, which is what makes the file half a claim rather
+     * than a shape -- a passthrough would once have been byte-identical there.
      *
      * WHOLE-VALUE ON BOTH ANSWERS, never a containment: a containment spelling
      * would pass against an answer that had REPLACED the block with the listing,

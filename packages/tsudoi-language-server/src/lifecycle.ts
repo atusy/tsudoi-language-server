@@ -9,15 +9,14 @@ import { ErrorCodes, ResponseError } from "vscode-languageserver-protocol/node";
  * reader to work out which of the four combinations are reachable. Naming the
  * phase makes the unreachable ones unrepresentable.
  *
- * `initializing` EXISTS BECAUSE THE HANDSHAKE CAN YIELD, and it was added on a
- * MEASURED regression rather than for symmetry: once a config's own `initialize`
- * handler is awaited, admission and the transition to `serving` are separated by
- * that handler's whole duration, and a second `initialize` arriving in the gap
- * read `uninitialized` and was ACCEPTED -- both handshakes served, `handshake()`
- * run twice from concurrent flows, and the author's handler run twice with
- * nothing on stderr. A no-handler session never yields and so never showed it.
- * It answers requests and notifications exactly as `uninitialized` does; the
- * ONLY question it answers differently is a second `initialize`.
+ * `initializing` EXISTS BECAUSE THE HANDSHAKE CAN YIELD, on a MEASURED
+ * regression rather than for symmetry: once a config's own `initialize` handler
+ * is awaited, admission and the transition to `serving` are separated by that
+ * handler's whole duration. What a second `initialize` arriving in the gap did
+ * before this phase existed is recorded where `beginInitialize` is CALLED, in
+ * src/server.ts. It answers requests and notifications exactly as
+ * `uninitialized` does; the ONLY question it answers differently is a second
+ * `initialize`.
  */
 type Phase = "uninitialized" | "initializing" | "serving" | "shutdown";
 
@@ -55,11 +54,9 @@ export interface Lifecycle {
    * requestRejection: one phase answers OPPOSITELY, since this is the request
    * that ADMITS a handshake.
    *
-   * `ADMITS` AND NOT `ENDS THE UNINITIALIZED PHASE`, which is what this said
-   * until a config could supply an `initialize` handler. Admission and the end
-   * of the phase were the same instant while the handler could not yield; they
-   * are now separated by that handler's whole duration, and the gap between them
-   * is precisely what `initializing` exists to answer for.
+   * `ADMITS` AND NOT `ENDS THE UNINITIALIZED PHASE`: a config `initialize`
+   * handler separates the two by its whole duration, and that gap is precisely
+   * what `initializing` exists to answer for.
    */
   initializeRejection(): ResponseError<void> | undefined;
   /**
@@ -115,9 +112,8 @@ export function createLifecycle(): Lifecycle {
     // ONE CODE AND THREE MESSAGES, because -32600 is what the specification
     // names for all of them while `already running one`, `already serving` and
     // `already shut down` are different things for a human reading their
-    // editor's LSP log to have done. THE FIRST IS THE ONE THIS PHASE EXISTS FOR
-    // -- it is the only question `initializing` answers differently from
-    // `uninitialized`, and answering it `undefined` was the measured regression.
+    // editor's LSP log to have done. THE FIRST IS THE ONE `initializing` EXISTS
+    // FOR, and answering it `undefined` was the measured regression.
     initializeRejection(): ResponseError<void> | undefined {
       if (phase === "uninitialized") {
         return undefined;

@@ -21,7 +21,6 @@ const hoverParams = {
   position: { line: 0, character: 0 },
 };
 
-/** What one config is served for its handshake, with the session closed after. */
 async function served(runtime: typeof bunRuntime, name: string): Promise<InitializeResult> {
   const session = LspSession.start(runtime, fixture(name));
   try {

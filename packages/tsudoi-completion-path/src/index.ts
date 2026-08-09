@@ -7,26 +7,17 @@
  * exports are incidental, because a reader copies the file and edits it; a
  * package's are a promise to a stranger who cannot.
  *
- * AND AN ASSERTION BACKS THAT COUNT NOW, which is worth saying because it did
- * not: the repository's published-artifacts suite reads the INSTALLED package's
- * runtime exports and compares them WHOLE against these two names, so a third
- * name appended here reddens rather than shipping. The type-only names the two
- * handlers share leave no runtime trace and have their own probe beside it --
- * measured, because the whole-value reading is blind to them by construction.
- *
  * TWO HANDLERS AND NOT ONE, AND THE PACKAGE NAME CANNOT SAY SO, which is why it
  * is said here and in the README. `pathCompletion` offers a directory's entries
- * and reads NO SIZE AND NO DATE for any of them -- the word `detail` stood here
- * and now names a FIELD this handler writes on every item, so the refusal has to
- * be spelled by what is not read. An ordinary file or directory is classified
- * from the listing alone, and only a symlink costs a stat, to report the kind of
- * what it points at; `resolvePathStat` answers for the ONE item the
- * user highlights -- a file's size and date, and for a directory the names
- * inside it, which is a question the completion never asked at
- * all. They travel together because the
- * second reads a mark the first writes onto its items, and tsudoi keeps no
- * record of what a completion handler produced -- so publishing the resolve half
- * separately would make that mark a compatibility surface between two packages.
+ * and reads NO SIZE AND NO DATE for any of them -- an ordinary file or directory
+ * is classified from the listing alone, and only a symlink costs a stat, to
+ * report the kind of what it points at. `resolvePathStat` answers for the ONE
+ * item the user highlights -- a file's size and date, and for a directory the
+ * names inside it, which is a question the completion never asked at all. They
+ * travel together because the second reads a mark the first writes onto its
+ * items, and tsudoi keeps no record of what a completion handler produced -- so
+ * publishing the resolve half separately would make that mark a compatibility
+ * surface between two packages.
  *
  * THEY ARE ALSO NOT OPTIONAL FOR EACH OTHER IN THE OTHER DIRECTION: tsudoi
  * REFUSES a config that supplies `completionItem/resolve` with no completion
@@ -34,18 +25,15 @@
  * used alone at all.
  *
  * EVERY OTHER NAME STAYS IN, AND THE OMISSION IS A CHOICE RATHER THAN AN
- * OVERSIGHT -- NAMED AND NEVER COUNTED, because a count silently falsifies the
- * day a name is added and this list has grown twice already. The line-scanner
- * (`pathFragments`, `PathFragment`), the root chooser (`sourcesFor`,
- * `PathSource`, `PathSourceName`), the edit builder (`editFor`), the listing
- * (`listingDirectory`, `itemsFrom`), the option bag (`PathCompletionOptions`),
- * the item mark (`PathItemData`, `completedPath`, `completedSource`), the block
- * the two handlers share (`documentationFor`, `preferredFormat`, `statLine`,
- * `DirectoryListing`) and the resolve half's drain (`listingFrom`) are all
- * reachable from this package's own tests by relative import, so keeping them
- * internal costs no coverage and buys the freedom to change them. The batch size and the listing bound go one further
- * and are not exported by their own modules at all -- what they decide is
- * visible on the wire, which is where they are asserted.
+ * OVERSIGHT. The line-scanner, the root chooser, the edit builder, the listing,
+ * the option bag, the item mark, the block the two halves share and the resolve
+ * half's drain are all reachable from this package's own tests by relative
+ * import, so keeping them internal costs no coverage and buys the freedom to
+ * change them. NEITHER SPELLED OUT NOR COUNTED HERE: both falsify themselves the
+ * day a name is added, and this list has grown twice already. The batch size and
+ * the listing bound go one further and are not exported by their own modules at
+ * all -- what they decide is visible on the wire, which is where they are
+ * asserted.
  *
  * THE MARK IS THE ONE WORTH NAMING. `completedPath` and `PathItemData` describe
  * how an item says `I came from here`, and the two handlers below agree about it

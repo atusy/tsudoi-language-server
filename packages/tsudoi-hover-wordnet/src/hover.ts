@@ -6,38 +6,14 @@
  * ELSE for its answer -- a dictionary here, a type checker or a project index in
  * a real language server. tsudoi does not care which, or how long it takes.
  *
- * WHAT A PACKAGE CHANGES ABOUT THE FILE IT WAS, and it is not merely where it
- * sits: a reader who took this as an example owned it and could edit any line,
- * where an installed copy is ours to keep working. So the surface is chosen in
- * the entry module rather than being whatever this file happens to export, and the
- * comments here address a MAINTAINER -- the reader whose questions this file
- * must answer is now the person changing it, not the person copying it.
+ * THE COMMENTS HERE ADDRESS A MAINTAINER. A reader who took this as an example
+ * owned it and could edit any line; an installed copy is ours to keep working,
+ * so the surface is chosen in the entry module rather than being whatever this
+ * file happens to export.
  *
- * IT RESOLVES tsudoi THE WAY A STRANGER'S PACKAGE DOES, through the member's own
- * node_modules and tsudoi's `exports` map, with no `paths` mapping and no
- * tsconfig of the parent's reaching it -- a mapping here is refused by
- * the repository's own workspace tooling rather than merely absent.
- *
- * A PEER AND NOT A DEPENDENCY BECAUSE THE FRAMEWORK IS THE HOST'S TO CHOOSE.
- * This handler is loaded into a server the consumer's own tsudoi is running, and
- * `context.tsudoi` is built by that copy; declaring tsudoi as a dependency would
- * let this package pin a range of its own and hand the consumer a second copy
- * their CLI never runs. A peer says the version is not ours to name.
- *
- * NOT BECAUSE TWO COPIES WOULD BE INCOMPATIBLE, which is the plausible reason to
- * reach for and is FALSE: `MethodHandler` is a plain function type alias and
- * TypeScript compares it structurally. MEASURED with two copies of tsudoi's
- * dist/ installed at DIFFERENT versions -- the same version is not a
- * measurement, tsc redirects the second by package id and there is literally one
- * declaration -- a handler typed against one assigns to the other's
- * `MethodHandler` and into `TsudoiConfig.methods`, exit 0; the same probe reports
- * TS2322 naming both paths once the shapes actually diverge. So a divergent
- * version is what produces the confusing error, and identity of version is what
- * `peer` is for.
- *
- * That is why this package is not a file move with a package.json on top, and
- * the manifest's reasons are asserted in the package-shape test beside this
- * file, since package.json cannot carry them itself.
+ * The manifest's reasons -- tsudoi as an optional peer above all -- are asserted
+ * in the package-shape test beside this file, since package.json cannot carry
+ * them itself.
  *
  * The dictionary is `wordnet`, which ships no types. The declaration that fixes
  * that is source-only and deliberately unshipped -- the reason is written there,

@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -15,7 +14,6 @@ export const beforeGate: CompletionItem[] = [
 export const afterGate: CompletionItem[] = [{ label: "失敗後", detail: "yielded after the gate" }];
 export const returnedItems: CompletionItem[] = [{ label: "二度目", detail: "answered later" }];
 
-/** Written once tsudoi has taken the first chunk and asked for another. */
 export const parkedMarker = "completion-cleanup-throws: parked";
 
 /**

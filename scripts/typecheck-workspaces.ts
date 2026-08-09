@@ -16,14 +16,12 @@ import {
  * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
  * ITS OWN tsconfig, because the root check must not and now cannot.
  *
- * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION. THE
- * REASON WRITTEN HERE THROUGH SPRINT 61 DESCRIBED A LAYOUT THAT IS GONE and is
- * superseded rather than amended: it said the root answered a member's
- * `@atusy/tsudoi-language-server/*` import through the root's own `paths`
- * MAPPING and reported success. THERE IS NO MAPPING ANYWHERE IN THIS
- * REPOSITORY -- `refuseMemberMappings` below enforces the absence for members,
- * and the root's own tsconfig carries none -- so a finding taken against the
- * mapped layout cannot be inherited by this one.
+ * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION, AND NOT
+ * FOR THE REASON A READER WILL REACH FOR: it is not that the root answers a
+ * member's `@atusy/tsudoi-language-server/*` import through a `paths` MAPPING.
+ * THERE IS NO MAPPING ANYWHERE IN THIS REPOSITORY -- `refuseMemberMappings`
+ * below enforces the absence for members, and the root's own tsconfig carries
+ * none.
  *
  * WHAT IS TRUE OF THE LAYOUT THAT EXISTS, MEASURED at base 954cc62 with
  * `tsc --noEmit --listFiles` and `--traceResolution` over a built tree rather
@@ -117,27 +115,24 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // before it reads, on the preload's own reasoning: a check run against a dist/
 // nobody rebuilt reports on a tree that no longer exists.
 //
-// WHAT THE ORDER SPARES IS NOT A RED, AND THIS IS A CORRECTION CARRYING ITS OWN
-// PROVENANCE BECAUSE IT IS ITSELF A MEASUREMENT. This used to license the order
-// with an INVENTED failure -- `TS2307 for a subpath that resolves perfectly
-// well`, exactly the one this check exists to distinguish. MEASURED FALSE at
-// sprint 61, base 6d1c85d, tsc 7.0.2, on a staged tree with no dist/ anywhere: a
-// member's own `tsc -p tsconfig.build.json` EXITS 0 AND EMITS, its
+// WHAT THE ORDER SPARES IS NOT A RED, AND A READER WHO EXPECTS ONE WILL DRAW
+// THE WRONG CONCLUSION FROM A GREEN. MEASURED at sprint 61, base 6d1c85d, tsc
+// 7.0.2, on a staged tree with no dist/ anywhere: a member's own
+// `tsc -p tsconfig.build.json` EXITS 0 AND EMITS, its
 // `@atusy/tsudoi-language-server/*` subpaths TRACED to
 // packages/tsudoi-language-server/src/*.ts, because the framework's map ends in
-// a source arm the compiler falls through to. There is no red to spare. WHAT THE
-// ORDER ACTUALLY BUYS IS WHICH FILE THE GRADE IS TAKEN AGAINST: unbuilt, this
-// check greens a member whose declarations were read against a file no consumer
-// receives, and it greens it silently. That silence is why
-// `refuseSubpathsAnsweringFromSource` below reads what the build WROTE instead
-// of trusting the exit codes underneath it. The same correction is at
-// `prepareWorkspace` in scripts/workspaces.ts.
+// a source arm the compiler falls through to. WHAT THE ORDER BUYS IS WHICH FILE
+// THE GRADE IS TAKEN AGAINST: unbuilt, this check greens a member whose
+// declarations were read against a file no consumer receives, and it greens it
+// silently. That silence is why `refuseSubpathsAnsweringFromSource` below reads
+// what the build WROTE instead of trusting the exit codes underneath it. The
+// same reading is at `prepareWorkspace` in scripts/workspaces.ts.
 prepareWorkspace(root);
 // EVERY MEMBER AND NOT ONLY THE HANDLERS: `buildOrder` reads this same list, so
-// narrowing it drops that member from the test-time build too. MEASURED, and it
-// refutes what stood here: dropping a handler from `workspaces` reddens 11 arms
-// with dist/ intact, so the narrowing is loud rather than silent. The guards
-// below read the same list for the same reason.
+// narrowing it drops that member from the test-time build too. MEASURED with
+// dist/ intact, dropping a handler from `workspaces` reddens the suite, so the
+// narrowing is loud rather than silent. The guards below read the same list for
+// the same reason.
 const members = declaredMembers(root);
 // HERE AND NOT IN `prepareWorkspace`, WHICH WOULD HAVE BEEN THE TIDIER HOME AND
 // IS THE WRONG ONE: that function is also what the `bun test` preload runs, so a
@@ -160,7 +155,7 @@ refuseMemberDirectoriesUnlikeTheUnscopedName(root, members);
 // type-checks GREEN, so running the checks first and the guard afterwards would
 // print a success no reader would then go back and disbelieve.
 refuseMemberMappings(root, members);
-// LAST AMONG THE REFUSALS, AND ITS REASON IS NOT THE OTHERS'. The two above are
+// AFTER THE TWO ABOVE, AND ITS REASON IS NOT THEIRS. Those two are
 // questions about the workspace's own DECLARATIONS -- what each member is
 // called, how each resolves -- and this one is a question about the TREE, which
 // is only worth asking once those answers are believed. It is also the widest:
@@ -168,27 +163,17 @@ refuseMemberMappings(root, members);
 // run that printed the list first would bury a one-line fault about a
 // declaration underneath it.
 //
-// AND IT IS WHERE THE UNCOVERED-PACKAGE REFUSAL WENT. That guard used to stand
-// above, deciding coverage by walking directories that hold a manifest -- the
-// reading that ran over the file this one was built for. It is now a REFINEMENT
-// inside this call: the same sentence, printed in place of the files it SPEAKS
-// FOR -- the ones inside a package nobody declared -- and beside the file list
-// for any offender it does not speak for, whose repair the package sentence
-// would not have been.
+// AND IT IS WHERE THE UNCOVERED-PACKAGE REFUSAL LIVES, as a REFINEMENT inside
+// this call rather than as a guard of its own: the package-shaped sentence is
+// printed in place of the files it SPEAKS FOR -- the ones inside a package
+// nobody declared -- and beside the file list for any offender it does not speak
+// for, whose repair the package sentence would not have been.
 //
-// THE MOVE COST A STATE AND NOT ONLY A CALL, WHICH BELONGS HERE RATHER THAN
-// ONLY IN THE FUNCTION IT MADE PRIVATE: what is refused NARROWED. An undeclared
-// package holding NO TypeScript used to be reported by the walker and is now
-// left alone, because the file lists find nothing there to refine and this
-// check is not allowed a second opinion about coverage. The narrowing is a
-// ruling -- nothing about such a package is unchecked -- and it is pinned as
-// one in test/workspace-members.test.ts, but a reader meets the ordering story
-// here and would otherwise read `the same sentence` as `the same states`.
-//
-// STILL NOT IN `prepareWorkspace`, for the reason already recorded beside the
-// name guard: that function is what the `bun test` preload runs, so a refusal
-// wired into it would abort every test run before a file loaded -- and the reds
-// this one must be watched producing would become unobservable.
+// WHAT THAT REFUSES IS NARROWER THAN A WALK OVER DIRECTORIES HOLDING A MANIFEST,
+// AND THE NARROWING IS A RULING: an undeclared package holding NO TypeScript is
+// left alone, because the file lists find nothing there to refine and this check
+// is not allowed a second opinion about coverage. Nothing about such a package
+// is unchecked. Pinned in test/workspace-members.test.ts.
 //
 // AND BEFORE ANY MEMBER IS CHECKED, because a member that type-checks green
 // says nothing about the files its config never looked at: printing that green

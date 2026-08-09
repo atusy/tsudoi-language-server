@@ -5,7 +5,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [{ label: "門前", detail: "yielded before the gate" }];
@@ -13,9 +12,8 @@ export const afterGate: CompletionItem[] = [{ label: "門後", detail: "yielded 
 export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "returned" }];
 
 /**
- * Yields, then parks until the test changes the document, then yields again.
- * The park is what makes incrementality observable: the first chunk has to
- * reach the client while this handler is provably still running.
+ * The park is what makes incrementality observable: the first chunk has to reach
+ * the client while this handler is provably still running.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({

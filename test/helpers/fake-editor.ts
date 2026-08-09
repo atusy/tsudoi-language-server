@@ -24,9 +24,8 @@ import { repoRoot } from "./spawn.ts";
  *                   ELSE ENTIRELY. Killing this closes nothing the server reads
  *                   from, so nothing about its input changes.
  *
- * Everything else is identical between the two runs, which is what makes them a
- * measurement rather than two stories: the only difference is the variable under
- * test, and the two answers are opposite.
+ * Everything else is identical between the two runs: the only difference is the
+ * variable under test, and the two answers are opposite.
  *
  * A FIFO RATHER THAN AN INHERITED fd 0, AND THE REASON IS MEASURED, NOT
  * STYLISTIC. Handing the server this process's own fd 0 LOOKS like leaving the

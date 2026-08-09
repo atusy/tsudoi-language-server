@@ -80,11 +80,6 @@ function didOpen(session: LspSession, text: string): void {
  * A test's own timeout, below the deadline this file's own
  * `applySuiteDeadline()` sets: a gate that never opens must fail this one test
  * by name rather than stall the suite.
- *
- * IT NAMED `bun test`'s DEFAULT UNTIL THE SUITE CHOSE ITS OWN, and the number
- * behind the phrase went from 5000 to 25_000 without a word of it changing --
- * which is why the subject is spelled out here rather than left to a reader to
- * infer from whichever default happens to be in force.
  */
 const gatedTimeoutMs = 4000;
 
@@ -128,11 +123,6 @@ for (const runtime of runtimes) {
     // produces the same three $/progress and is the exact opposite of what this
     // story is for, so what is measured is that a batch leaves WHILE THE HANDLER
     // IS STILL RUNNING.
-    //
-    // THE PROPERTY SURVIVED TWO SHAPE CHANGES UNTOUCHED, which is worth the
-    // sentence: these three literals were three yields, then an answer plus two
-    // chunks, and are three yields again. What has to leave early has never
-    // depended on which of them the handler called what.
     test(
       "each batch reaches the client as its own $/progress while the handler is still running",
       async () => {
@@ -408,14 +398,6 @@ for (const runtime of runtimes) {
     // through the same server everything else here goes through. A change that
     // breaks it -- its import, or what its handler does -- reddens THIS.
     //
-    // What it is NOT is the home of PBI-4's aggregation rule. That property
-    // lives on a purpose-built fixture above, because it is stable and the
-    // example is not: what the example demonstrates moves at the stakeholder's
-    // request, and a property whose only home moves with the example can be
-    // lost by a change that had nothing to do with it. `The example is
-    // executed` and `the example is the sole subject` are two different
-    // requirements, and only the first is load-bearing.
-    //
     // The document lives in a throwaway directory so the fixture is the test's
     // own: the example answers from the document's parent, and the session's
     // cwd is the repo, which holds nothing matching this fragment.
@@ -548,7 +530,6 @@ for (const runtime of runtimes) {
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
 
-        // The diagnosis went to stderr and stayed there.
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();

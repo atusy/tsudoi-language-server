@@ -5,9 +5,6 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * A probe project's source, with `body` spliced in under the published names and
- * two bound values.
- *
  * NOTHING HERE RUNS, which is the point: the claim is about what tsc accepts, so
  * `null as unknown as` is enough and a probe that had to build a real session
  * would be measuring the construction too. The same shape and the same reason as
@@ -186,8 +183,7 @@ test("a bare RequestContext IS the base context, and not a union with the initia
  * is sensitive to the default -- MEASURED, `= Method` exit 0 and `= ConfigMethod`
  * exit 1 TS2322 -- but it says nothing about the HELPER: replacing the two lines
  * above with `type Identical<A, B> = [A] extends [B] ? true : false` passes under
- * BOTH defaults, and the whole file goes green over the vacuity this sprint
- * already repaired once.
+ * BOTH defaults, and the whole file goes green.
  *
  * A SUBTYPE IN POSITION A IS WHERE THE TWO SPELLINGS PART, which is why this
  * names the initialize context first and the base second: the initialize context

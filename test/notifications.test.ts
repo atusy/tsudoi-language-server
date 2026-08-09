@@ -157,7 +157,6 @@ function withoutComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
-/** Every call of the notification gate in `source`. */
 function gateCalls(source: string): string[] {
   return [...withoutComments(source).matchAll(/\bacceptsNotification\s*\(/g)].map(
     (match) => match[0],
@@ -247,9 +246,8 @@ const RECORD_TOKENS: readonly { readonly defends: string; readonly token: RegExp
   { defends: "the FOR direction: the shutdown hook coexists with -32600", token: /onShutdown/ },
 ];
 
-// A LIST OF WHAT IS MISSING RATHER THAN FOUR INDEPENDENT `toContain`s, so the
-// failure NAMES THE CLAUSE that went rather than only saying a substring was
-// absent.
+// A LIST OF WHAT IS MISSING RATHER THAN INDEPENDENT `toContain`s, so the failure
+// NAMES THE CLAUSE that went rather than only saying a substring was absent.
 test("the record at createGatedConnection names what would let it be re-run, in both directions", () => {
   const block = recordBlockOf(readSource("notifications.ts"));
 
@@ -286,7 +284,6 @@ test("the same extractor throws when the record no longer sits against the ancho
   expect(() => recordBlockOf(detached)).toThrow("does not immediately precede");
 });
 
-/** A probe project's source, with `entry` spliced in as the only entry. */
 function entryProbe(entry: string): Record<string, string> {
   return {
     "probe.ts": [
@@ -383,8 +380,6 @@ test("exit's entry declares always, and every other entry declares lifecycle", (
  *
  * EVERY NAME A PROBE BODY COULD NEED IS IMPORTED HERE, and the ones any single
  * body leaves unused cost nothing: this tsconfig sets no `noUnusedLocals`.
- * `Tracer` is type-only; `ProgressType` and `Trace` are a class and an enum, so
- * they are values.
  */
 function narrowedSource(body: string[]): string {
   return [
@@ -633,10 +628,8 @@ test("the same two outcomes hold for onUnhandledNotification through an alias un
   expect(result.code).toBe(1);
 });
 
-/** Installing a `$/progress` handler under a token, as a probe body. */
 const onProgressCall = 'onProgress(new ProgressType<number>(), "token", () => {});';
 
-/** Handing the connection a `Tracer`, as a probe body. */
 const traceCall = "trace(Trace.Off, null as unknown as Tracer);";
 
 /**
@@ -659,10 +652,7 @@ test("the narrowed connection rejects onProgress and accepts onRequest, in one t
   });
 
   // BOUND TO THE FILE AND TO THE SYMBOL, for the two reasons recorded at the
-  // onUnhandledNotification probe: a bare non-zero exit goes green against a
-  // module with no narrowing at all, and a key MISSPELLED inside the `Omit` is a
-  // silent no-op that only a probe naming this symbol can tell from a real
-  // removal.
+  // onUnhandledNotification probe above.
   expect(result.output).toMatch(
     /forbids\.ts\(\d+,\d+\): error TS\d+: Property 'onProgress' does not exist/,
   );

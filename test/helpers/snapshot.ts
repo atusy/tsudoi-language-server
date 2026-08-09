@@ -18,7 +18,7 @@ export const snapshotMarker = "TSUDOI_SNAPSHOT ";
  *
  * A SECOND marker rather than a second field on the first, because the two
  * fixtures answer different questions and sync.test.ts asserts the snapshot
- * line by deep equality -- widening that line would move six tests that have no
+ * line by deep equality -- widening that line would move tests that have no
  * stake in the second question at all.
  */
 export const membersMarker = "TSUDOI_MEMBERS ";

@@ -6,10 +6,7 @@ import type {
 import type { DocumentFormattingParams, TextEdit } from "vscode-languageserver-protocol";
 
 /**
- * The edits this config answers with, whatever is asked. Written here as the
- * literal the test compares against, so anything tsudoi does to a range or to
- * newText on the way out shows up as an inequality rather than as a plausible
- * looking response.
+ * The edits this config answers with, whatever is asked.
  *
  * TWO EDITS, AND THE SECOND IS AN INSERT: upstream's TextEdit doc says an
  * insertion is a range whose start equals its end, so a serialisation that

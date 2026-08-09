@@ -19,10 +19,8 @@ import { sharedMethods } from "./initialize-absent.ts";
  */
 export const reportKey = "tsudoiPreparedMutationReport";
 
-/** What the handler tries to write over the prepared value. */
 export const forgedResolveProvider = false;
 
-/** What a handler reports of its own attempt, as the served result carries it. */
 export interface PreparedMutationReport {
   readonly nestedTargetPresent: boolean;
   readonly nestedRefused: boolean;

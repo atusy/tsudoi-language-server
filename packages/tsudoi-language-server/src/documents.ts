@@ -31,10 +31,6 @@ export interface DocumentStoreHandle {
  */
 interface OpenDocument {
   document: TextDocument;
-  /**
-   * What `DocumentStore` hands back: sealed, and forwarding every read to
-   * `document` AT THE MOMENT IT IS ASKED.
-   */
   readonly published: DocumentView;
 }
 

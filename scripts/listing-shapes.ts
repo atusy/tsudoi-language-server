@@ -339,9 +339,9 @@ async function runCell(fixture: Fixture) {
  * number for either of them, so this cell is where one is taken.
  *
  * GUARDED LIKE THE SHAPE CELLS, AND IT WAS NOT WHEN THE ROWS THE MODULE CITES
- * WERE TAKEN. What stood here observed that neither call RENDERS anything -- so
- * there is no total and no twenty to assert -- and stopped, which left two timed
- * calls asserting nothing at all. MEASURED, with the open replaced by a no-op
+ * WERE TAKEN. Neither call RENDERS anything, so there is no total and no twenty
+ * to assert, and two timed calls asserting nothing is what that leaves.
+ * MEASURED, with the open replaced by a no-op
  * handing back an empty handle: this cell reported a median of 0.000 ms and the
  * process exited 0 with a complete, publishable reading. What binds these two
  * rows now is THE FIXTURE rather than the call's own shape -- the handle is

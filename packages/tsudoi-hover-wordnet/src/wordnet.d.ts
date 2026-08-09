@@ -36,14 +36,6 @@
  * `MethodHandler<"textDocument/hover">` and `Definition` is reached only inside
  * `define`, which stays internal.
  *
- * ASSERTED ON THE ARTIFACT RATHER THAN REASONED FROM THIS FILE, because that is
- * where it would go wrong and reading src/ cannot see it. Both readings are
- * TESTS and neither is a note here: the packed declarations carry no
- * `declare module` (test/packed-members.test.ts), and a consumer resolves
- * `hoverWordnet` to the full `MethodHandler<"textDocument/hover">` -- shown by
- * assigning it to a `number` and reading TS2322, since a green there is equally
- * what `any` produces (test/published-artifacts.test.ts).
- *
  * PUBLISH ONE NAME FROM HERE AND THE ARGUMENT INVERTS: the emitted declaration
  * would reference a module the consumer has no declaration for, and the choice
  * would be between shipping this file and breaking them.

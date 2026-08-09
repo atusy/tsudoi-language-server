@@ -5,7 +5,6 @@ import type {
 } from "../../packages/tsudoi-language-server/src/types.ts";
 import { sharedMethods } from "./initialize-absent.ts";
 
-/** What the handler writes in place of the prepared completion provider. */
 export const replacedTriggerCharacters = ["/"];
 
 /**

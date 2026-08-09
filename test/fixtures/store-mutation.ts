@@ -4,12 +4,10 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The document the session opens, and the folder the client names over it. */
 export const documentUri = "file:///workspace/a.txt";
 export const documentText = "genuine text";
 export const folderUri = "file:///workspace";
 
-/** What a handler reports of its own attempt, and of what it can still read. */
 export interface StoreMutationReport {
   /** Whether THIS request is the one that tried the writes. */
   readonly attempted: boolean;

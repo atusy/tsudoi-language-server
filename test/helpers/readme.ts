@@ -475,7 +475,6 @@ async function shakeHands(
 }
 
 /**
-/**
  * Runs a documented sequence in a FRESH bare environment and reports what it
  * produced.
  */
@@ -1048,7 +1047,7 @@ export interface CoverageReading {
  * is the author's-intention failure with the marker swapped for the sweep's own
  * run. What decides is the TABLE, and the marker only says which block.
  *
- * FOUR REFUSALS, PRINTED DIFFERENTLY ON PURPOSE, because two states that produce
+ * EVERY REFUSAL PRINTS DIFFERENTLY ON PURPOSE, because two states that produce
  * byte-identical text are one red and not two.
  */
 export function readmeCoverage(root: string): CoverageReading {

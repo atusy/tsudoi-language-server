@@ -110,17 +110,15 @@ for (const runtime of runtimes) {
      * FIXTURE AND ALL, AND IT IS KEPT DELIBERATELY RATHER THAN BY OVERSIGHT.
      * That one's TITLE names completionProvider's PRESENCE; this one's names
      * resolveProvider's ABSENCE, and they are the two different properties one
-     * object happens to carry. A duplicate detection that arrives without
-     * naming its cause is the half of S9 that costs a real defence.
+     * object happens to carry.
      *
      * WHAT IT IS MEASURED TO CATCH: naming this method inside
      * contributeCapabilities' shared condition -- so resolveProvider is
      * contributed whether or not a handler exists -- reddens this assertion by
      * name, together with every other capability negative control in the suite
-     * and the demo config's pinned capabilities. TWENTY ASSERTIONS ACROSS FIVE
-     * FILES, both runtimes, with the number of tests RUN unchanged. So the
-     * `ONLY when a handler exists` half is MEASURED and is NOT isolated, which
-     * is a recognised shape in this suite and not a defect.
+     * and the demo config's pinned capabilities, on both runtimes and with the
+     * number of tests RUN unchanged. So the `ONLY when a handler exists` half is
+     * MEASURED and is NOT isolated.
      */
     test("a config supplying completion and no resolve handler advertises a completion provider with nothing inside it", async () => {
       const session = LspSession.start(runtime, resolveAbsent);
@@ -212,8 +210,6 @@ for (const runtime of runtimes) {
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
-        // The answers went out as JSON-RPC responses and nothing besides:
-        // stdout carries the protocol and not one byte more.
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();

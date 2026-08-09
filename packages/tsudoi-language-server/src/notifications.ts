@@ -25,9 +25,9 @@ export type NotificationGate = "lifecycle" | "always";
  * One notification tsudoi answers: what it is, what to do with it, and WHEN it
  * may run.
  *
- * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design: what it
- * replaced was a lifecycle check at the top of each handler body -- a
- * CONVENTION, which a fourth handler joins only if whoever writes it remembers.
+ * `gate` is REQUIRED AND HAS NO DEFAULT, and that is the whole design: the
+ * alternative is a lifecycle check at the top of each handler body -- a
+ * CONVENTION, which a new handler joins only if whoever writes it remembers.
  * An entry that decides nothing does not TYPE-CHECK, so the realistic failure --
  * a new notification whose author never thought about the lifecycle -- is a
  * compile error instead of a handler that silently runs in every state.
@@ -116,17 +116,13 @@ export function registerNotifications<P extends readonly unknown[]>(
  * because a change with no defect to fix is churn and THIS hazard is already
  * caught: MEASURED, the spawned probes in test/notifications.test.ts redden on
  * a misspelled key with `BoundaryIsTheObservingMembers` deleted, and
- * `ProtocolConnectionHasTheseMembers` is silent under one. THE TWO PINS EARN
+ * `ProtocolConnectionHasTheseMembers` is silent under one. THOSE TWO PINS EARN
  * THEIR PLACE ELSEWHERE -- a SURPLUS key, and a member NAME arriving, going or
  * being renamed upstream. That second one is narrower than `the dependency
  * moved`: growth under an EXISTING name reddens neither pin, which that pin's
  * own docblock says. WHICH IS WHY THE REVERSAL CONDITION NAMES THEM AND NOT
  * THIS PARAGRAPH'S HAZARD: IF EITHER PIN IS REMOVED OR WEAKENED, CONVERSION
- * BECOMES REQUIRED. `Pick` needs neither of them. `TWO`, `EITHER` AND `NEITHER`
- * STAY, over a reviewer's objection that they are written counts: both pins are
- * NAMED in this paragraph, so a third arriving falsifies the naming whatever
- * the quantifier says. The convention refuses a count that goes stale SILENTLY,
- * which this one cannot.
+ * BECOMES REQUIRED. `Pick` needs neither of them.
  */
 export type RequestOnlyConnection = Omit<
   ProtocolConnection,
@@ -148,11 +144,10 @@ export type RequestOnlyConnection = Omit<
  * THIS FUNCTION. An `import { createProtocolConnection }` added to src/server.ts
  * puts a wide value back and no type notices, so .oxlintrc.json bans that import
  * in every file but this one. THAT LINT IS A ROT DETECTOR, NOT A BARRIER, and it
- * is adequate ONLY BECAUSE NO WIDE CONNECTION IS BOUND IN startServer's SCOPE.
- * `SOLE CONNECTION-SHAPED VALUE` stood here and is false of that scope --
- * `withFallback` is a second binding, this function's return re-typed -- and the
- * argument never needed it: what would be conspicuous is a factory import
- * nothing there needs, not a second name for the narrow handle. WIDEN THE RETURN
+ * is adequate ONLY BECAUSE NO WIDE CONNECTION IS BOUND IN startServer's SCOPE:
+ * what would be conspicuous there is a factory import nothing needs. It is NOT
+ * that the narrow handle is the sole connection-shaped value -- `withFallback`
+ * is a second binding of this function's return, re-typed. WIDEN THE RETURN
  * ANNOTATION, OR LET startServer BIND A WIDE CONNECTION AGAIN, AND THAT
  * SUFFICIENCY ARGUMENT GOES WITH IT while the lint still passes and still reads
  * like a guard. NOTHING REDDENS ON THE ARGUMENT.
@@ -188,8 +183,7 @@ export type RequestOnlyConnection = Omit<
  * `Property 'X' does not exist`, and that diagnostic STILL APPEARS under
  * `Connection` -- not because the `Omit` removed anything but because the member
  * was never there. TWO OF THE FOUR PROBES DEFENDING THIS BOUNDARY WOULD GO GREEN
- * WHILE MEASURING NOTHING. TypeScript even offers `Did you mean 'tracer'?`, and
- * `tracer` IS on the handle.
+ * WHILE MEASURING NOTHING.
  *
  * TWO. NINE UNGATED NOTIFICATION REGISTRARS WOULD SURVIVE THAT `Omit` AT TOP
  * LEVEL, each taking a `NotificationHandler` at lib/common/server.d.ts:470-572
@@ -207,24 +201,22 @@ export type RequestOnlyConnection = Omit<
  * THREE. KEEPING THE GATE MEANS NOT USING THE FRAMEWORK'S LIFECYCLE HOOKS, AND
  * THAT TURNS OFF MOST OF WHAT THE FRAMEWORK IS FOR. src/server.ts must override
  * `InitializeRequest` -- the -32002 refusal lives there -- and vscode-jsonrpc's
- * `onRequest` REPLACES rather than chains. Overriding it skips
- * `watchDog.initialize(params)`, the `remote.initialize(capabilities)` loop and
- * the `fillServerCapabilities` loop, so `console`, `window`, `client` and
- * `workspace` never receive the client's capabilities at all. THE TRADE IS NOT
- * PARTIAL: keep the gate and the framework goes largely inert; take its
- * forty-odd typed registrations and the ungated registrars come with them.
+ * `onRequest` REPLACES rather than chains, so `watchDog.initialize(params)`, the
+ * `remote.initialize(capabilities)` loop and the `fillServerCapabilities` loop
+ * are all skipped. THE TRADE IS NOT PARTIAL: keep the gate and the framework
+ * goes largely inert; take its typed registrations and the ungated registrars
+ * come with them.
  *
- * FOUR. `createConnection` TAKES NO LOGGER ARGUMENT. Every overload's trailing
- * parameter is `options?: ConnectionStrategy | ConnectionOptions`; the framework
- * constructs a `RemoteConsoleImpl` and passes THAT as the connection's logger,
- * and its `error`/`warn`/`info`/`log` send `window/logMessage`. A notification
- * handler's failure would leave as a FRAMED PROTOCOL MESSAGE rather than on
- * stderr, which falsifies the first sentence of the logger block in
- * src/server.ts. `Features.console` restores it -- no cast, strict type-check at
- * 0 -- BUT IT MAKES STDOUT PURITY OPT-IN: omit the `features` argument and the
- * failure goes quiet AND onto the wire. THAT IS THE SAME SHAPE AS AN UNGATED
- * REGISTRAR, safe behaviour resting on memory rather than on structure, which is
- * why the remedy counts against rather than cancelling out.
+ * FOUR. `createConnection` TAKES NO LOGGER ARGUMENT; it constructs a
+ * `RemoteConsoleImpl` and passes THAT as the connection's logger, whose
+ * `error`/`warn`/`info`/`log` send `window/logMessage`. A notification handler's
+ * failure would leave as a FRAMED PROTOCOL MESSAGE rather than on stderr, which
+ * falsifies the first sentence of the logger block in src/server.ts.
+ * `Features.console` restores it BUT MAKES STDOUT PURITY OPT-IN: omit the
+ * `features` argument and the failure goes quiet AND onto the wire. THAT IS THE
+ * SAME SHAPE AS AN UNGATED REGISTRAR, safe behaviour resting on memory rather
+ * than on structure, which is why the remedy counts against rather than
+ * cancelling out.
  *
  * AND NOW THE OTHER COLUMN, WHICH IS NOT OPTIONAL: two rulings that stood
  * AGAINST adoption were measured FALSE, and they are recorded at the same weight
@@ -237,13 +229,12 @@ export type RequestOnlyConnection = Omit<
  * is load-bearing because `remote.initialize(capabilities)` runs BEFORE the fill
  * loop. STRUCTURAL RATHER THAN SAMPLED: every base remote's
  * `fillServerCapabilities` is empty, the single override in lib/common only READS
- * client capabilities to set an internal flag and writes nothing, and
- * `textDocumentSync` is filled only when it is undefined/null or its `.change` is
- * not numeric -- tsudoi clears both guards. SO src/server.ts's PER-METHOD
- * CAPABILITY DERIVATION WOULD SURVIVE ADOPTION INTACT. RESERVATION,
- * self-reported at the measurement: that is a property of 10.1.0's default remote
- * set and NOT an invariant, so a later release adding a remote that WRITES would
- * pass unnoticed.
+ * client capabilities, and `textDocumentSync` is filled only when it is
+ * undefined/null or its `.change` is not numeric -- tsudoi clears both guards. SO
+ * src/server.ts's PER-METHOD CAPABILITY DERIVATION WOULD SURVIVE ADOPTION INTACT.
+ * RESERVATION, self-reported at the measurement: that is a property of 10.1.0's
+ * default remote set and NOT an invariant, so a later release adding a remote
+ * that WRITES would pass unnoticed.
  *
  * SIX. `onShutdown` COEXISTS WITH THE -32600 REFUSAL. `watchDog.shutdownReceived
  * = true` is the FIRST STATEMENT of the framework's shutdown handler and runs

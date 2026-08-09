@@ -4,7 +4,8 @@ import { pathToFileURL } from "node:url";
 // THE ENUMERATION OF WHAT TSUDOI SERVES, taken from the TABLE rather than
 // restated here, so a method added there joins this check by existing. Only the
 // keys are read. NOT A CYCLE: src/methods.ts imports src/types.ts and
-// src/notifications.ts FOR TYPES ONLY and nothing in src/ imports this file back.
+// src/notifications.ts FOR TYPES ONLY, and nothing src/methods.ts reaches
+// imports this file back.
 //
 // `BY EXISTING` IS TRUE OF A TABLE ROW AND OF NOTHING ELSE. A key of
 // `ConfigMethodMap` that is NOT a row joins nothing here, because this is the
@@ -18,8 +19,8 @@ import type { TsudoiConfig, TsudoiConfigFactory } from "./types.ts";
 export class ConfigError extends Error {}
 
 /**
- * Resolves --config from argv, imports it, and calls its default-exported
- * factory. Every failure along the way surfaces as a ConfigError.
+ * Every failure between `--config` and a validated config surfaces as a
+ * ConfigError, which is the whole of what the CLI has to handle.
  */
 export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig> {
   const flagIndex = argv.indexOf("--config");

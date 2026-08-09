@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** Written once the handler is provably inside the wait that never settles. */
 export const parkedMarker = "hover-parks-forever: parked";
 
 /**

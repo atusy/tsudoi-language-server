@@ -50,7 +50,6 @@ test("what bunfig takes out of the run is what these sweeps take out of the walk
   // RATHER THAN A SKIP. `**/gen*/**` is a valid bun glob; the reader that stood
   // here matched only wildcard-free segments and DROPPED it, so bun could be
   // told to ignore a directory both sweeps went on grading, with this green.
-  // Found by the second review stage, which planted exactly that.
   const patterns = [...(declared ?? "").matchAll(/"([^"]*)"/g)].map((hit) => hit[1] ?? "");
   const segments = patterns.map((pattern) => /^\*\*\/([^/*]+)\/\*\*$/.exec(pattern)?.[1]);
   expect(patterns.filter((_, at) => segments[at] === undefined)).toEqual([]);
@@ -117,7 +116,6 @@ test("${tag} sleeps UNDER the deadline", async () => {
 
 interface Run {
   readonly code: number | null;
-  /** Every line these arms read -- the failure, the value, the counts. */
   readonly stderr: string;
 }
 
@@ -204,13 +202,11 @@ const ignorePatternsLine = `pathIgnorePatterns = [${ignoredSegments
  * bunfig NAMES the segments, and a key bun stopped honouring would satisfy it
  * for ever. This spawns and reads what bun did.
  *
- * IT STAGES A TREE OF ITS OWN, AND THAT IS NOT AN EXEMPTION FROM THE
- * PERTURBATION REGISTRY, which is what stood here and was measured false: the
- * predicate is not staging -- that holds of seventeen root test files, most of
- * which carry records. What IS decidable from this file is that it does not
+ * WHETHER A RECORD OVER THIS ARM SURVIVES A STAGE IS UNREAD, which is the honest
+ * state. Staging a tree of its own is not the predicate -- most root test files
+ * do that and carry records. What IS decidable from this file is that it does not
  * import helpers/perturbation.ts, so the one mechanism a reader can check does
- * not apply. Whether a record over this arm survives a stage is UNREAD, which is
- * the honest state: the registry's other two mechanisms are not readable here.
+ * not apply; the registry's other two are not readable here.
  */
 test("bun runs no test file under an ignored segment, and runs them without the key", async () => {
   const ignoring = scratchTree(`[test]\n${ignorePatternsLine}\n`);
@@ -883,8 +879,8 @@ const memberTestFiles = everyTestFile.filter(insideAMember);
  * so a member's file never enters a member's compiler program.
  */
 const spawningRoutes = [
-  // BARE, SO THE `node:` FORM IS COVERED BY THE SAME NEEDLE: the second review
-  // stage passed this sweep with `import { spawnSync } from "child_process"`.
+  // BARE, SO THE `node:` FORM IS COVERED BY THE SAME NEEDLE: MEASURED, a file
+  // importing `spawnSync` from `child_process` passed a sweep needling `node:`.
   "child_process",
   "Bun.spawn",
   "execFile",

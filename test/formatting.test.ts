@@ -198,8 +198,6 @@ for (const runtime of runtimes) {
 
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
-        // The answers went out as JSON-RPC responses and nothing besides:
-        // stdout carries the protocol and not one byte more.
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();

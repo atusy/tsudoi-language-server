@@ -9,13 +9,9 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 /**
- * The folders as items, so that WHAT A HANDLER COULD SEE arrives at the client
- * on the wire and in order.
- *
  * Exported so the test's expectation is built by the same function the fixture
  * answers with: the two cannot drift into disagreeing about the shape of an
  * item, which would make a mismatch look like a workspace failure.
@@ -25,10 +21,6 @@ export function itemsFor(folders: Iterable<WorkspaceFolder>): CompletionItem[] {
 }
 
 /**
- * Yields what the SERVER says the workspace is, parks until the test changes
- * the document, then yields that again AND yields the array it took before it
- * parked -- three batches carrying the two halves of one property.
- *
  * `tsudoi.workspaceFolders` IS A LIVE READ, so the second yield is the one that
  * must differ from the first once the test has changed the folders underneath.
  * THE READS ARE INSIDE THE GENERATOR AT EACH YIELD, never hoisted into a local

@@ -336,8 +336,8 @@ export async function* itemsFrom(
       items.push({
         // WHAT THE POPUP RENDERS ON THE ONE CLIENT THIS WAS READ FROM --
         // ddc-source-lsp's source, and no editor is spawned anywhere here --
-        // AND IT IS THE ENTRY ALONE. The inserted text stood here and put the
-        // fragment's directory in front of every row of a listing.
+        // AND IT IS THE ENTRY ALONE: the inserted text here puts the fragment's
+        // directory in front of every row of a listing.
         //
         // AND NOT BY NARROWING THE EDIT RANGE TO THE LAST SEPARATOR, which would
         // make this name the whole item and need no `filterText` at all:
@@ -353,14 +353,13 @@ export async function* itemsFrom(
         // filtered away by the separator the user just typed. The client this
         // package's other readings come from ignores the field entirely.
         filterText: insertText,
-        // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW. NOT
-        // `two same-named candidates from different roots are told apart`, WHICH
-        // STOOD HERE AND NAMES A STATE THIS FUNCTION'S OWN CALLER FORECLOSES: the
-        // `seen` filter keys on the inserted text, which is identical across
-        // roots for one entry name, so the second root's item never reaches a
-        // client. What the block says is the CLASS of root -- two workspace
-        // folders both spell `source: workspace` -- and only this field says
-        // which file the surviving candidate resolves to.
+        // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW.
+        // NOT `two same-named candidates from different roots are told apart`,
+        // which this function's own caller forecloses: the `seen` filter keys on
+        // the inserted text, identical across roots for one entry name, so the
+        // second root's item never reaches a client. What the block says is the
+        // CLASS of root -- two workspace folders both spell `source: workspace`
+        // -- and only this field says which file the survivor resolves to.
         //
         // FLATTENED AT THE WRITE, AND NOT BY ROUTING THE PATH BACK THROUGH THE
         // COMPOSER, which no longer takes it: the composer owned the flattening
@@ -371,12 +370,12 @@ export async function* itemsFrom(
         kind: await entryKind(absolutePath, entry),
         insertText,
         // NO SIZE AND NO DATE IS READ HERE, WHICH IS THE REFUSAL -- AND NOT `no
-        // stat`, WHICH STOOD HERE AND IS FALSE AT THIS VERY SITE: the line above
-        // stats every entry a listing reports as neither file nor directory, so a
-        // directory of symlinks costs one syscall per entry already. What is
-        // refused is a syscall per entry FOR A SIZE AND A DATE, on every
-        // keystroke, on no figure. The MARK carries the path so that work can be
-        // done for the ONE item the user highlights.
+        // stat`, which is false at this very site: the line above stats every
+        // entry a listing reports as neither file nor directory, so a directory
+        // of symlinks costs one syscall per entry already. What is refused is a
+        // syscall per entry FOR A SIZE AND A DATE, on every keystroke, on no
+        // figure. The MARK carries the path so that work can be done for the ONE
+        // item the user highlights.
         data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });
@@ -395,24 +394,21 @@ export async function* itemsFrom(
  * What the user is told about an item in the popup: which root offered it, and
  * -- once the resolve half has asked -- what the path IS and what is inside it.
  *
- * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED, AND WHAT THAT BUYS IS NO
- * LONGER BYTE-IDENTITY. It used to be: the two halves composed the same block for
- * an item nothing had been learned about. There is no such item now, because a
- * failed stat returns the item untouched and so every block this ever builds
- * twice has learned something in between. What is shared is the SPELLING of each
- * part and the markup rules, and the ORDER -- which is what makes the
- * completion's block a strict PREFIX of the resolve answer's, so nothing the user
- * has already read moves position when the popup re-renders.
+ * SHARED WITH THE RESOLVE HALF RATHER THAN COPIED, AND WHAT IT BUYS IS NOT
+ * BYTE-IDENTITY: a failed stat returns the item untouched, so every block this
+ * ever builds twice has learned something in between. What is shared is the
+ * SPELLING of each part, the markup rules, and the ORDER -- which is what makes
+ * the completion's block a strict PREFIX of the resolve answer's, so nothing the
+ * user has already read moves position when the popup re-renders.
  *
- * TWO JOINS AND THEY ANSWER TO DIFFERENT THINGS, WHICH USED TO BE ONE DECISION.
- * The PART join is a blank line in BOTH formats -- the thematic rule that stood
- * here is gone, the blank line separating a markdown block just as completely and
- * being what the stakeholder's own drawing shows. The FACT join is the one that
- * differs: bare newlines in plaintext, a bullet list in markdown, because a bare
- * newline between facts is not a break in CommonMark at all. THE PREFIX RELATION
- * IS WHY `source` GOES THROUGH THE FACT JOIN and not into a part of its own:
- * the completion block is that one fact, and a part join in front of it would
- * put a separator between what was sent and what came back.
+ * TWO JOINS AND THEY ANSWER TO DIFFERENT THINGS. The PART join is a blank line
+ * in BOTH formats, which separates a markdown block as completely as a thematic
+ * rule would and is what the stakeholder's own drawing shows. The FACT join is
+ * the one that differs: bare newlines in plaintext, a bullet list in markdown,
+ * because a bare newline between facts is not a break in CommonMark at all. THE
+ * PREFIX RELATION IS WHY `source` GOES THROUGH THE FACT JOIN and not into a part
+ * of its own: the completion block is that one fact, and a part join in front of
+ * it would put a separator between what was sent and what came back.
  *
  * THE SOURCE ARRIVES AS A NAME AND NOT AS A `PathSource` because that half has
  * only the name: the root is the completion's own business and is gone by the
@@ -433,11 +429,6 @@ export function documentationFor(
   if (listing !== undefined) {
     parts.push(listingText(listing, markdown));
   }
-  // THE SAME JOIN IN BOTH FORMATS NOW, AND THE THEMATIC RULE IS GONE: the rule
-  // was carrying the separation markdown needed between parts, and the blank
-  // line does it in both -- which is what the stakeholder's own block shows. What
-  // discriminates the two formats moved INTO the facts, where a file has
-  // something to discriminate.
   return { kind: format, value: parts.join("\n\n") };
 }
 
@@ -457,10 +448,9 @@ export function documentationFor(
  * inverted, reading as punctuation; bold labels do not break a line at all, so
  * the run-on survives wearing emphasis.
  *
- * AND IT BUYS BACK WHAT SPRINT 82 RECORDED AS A LOSS: the completion block is one
- * fact, and one fact joined any way is that fact -- so until the bullet, a
- * completion item's two formats were byte-identical and only `kind` told them
- * apart.
+ * AND IT IS WHAT MAKES A COMPLETION ITEM'S TWO FORMATS DIFFER AT ALL: the block
+ * that half sends is ONE fact, and one fact joined any way is that fact -- so
+ * without the bullet the two are byte-identical and only `kind` tells them apart.
  */
 function factsText(facts: readonly string[], markdown: boolean): string {
   return facts.map((fact) => (markdown ? `- ${fact}` : fact)).join("\n");

@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -22,15 +21,13 @@ export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "r
  */
 export const parkedMarker = "completion-cleanup: parked";
 
-/** The config author's cleanup, and the only evidence that it ran at all. */
 export const cleanupMarker = "completion-cleanup: released";
 
 /**
- * Yields, parks, then yields AGAIN -- and it yields that second batch whether or
- * not it was cancelled, which is what leaves the generator suspended at a
- * `yield` when tsudoi decides to abandon it. That shape is the one an early
- * close can reach: a generator parked inside its own `await` queues `return()`
- * behind the pending `next()` instead.
+ * The second batch is yielded whether or not it was cancelled, which is what
+ * leaves the generator suspended at a `yield` when tsudoi decides to abandon it.
+ * That shape is the one an early close can reach: a generator parked inside its
+ * own `await` queues `return()` behind the pending `next()` instead.
  *
  * The `finally` is the whole user story. A config author cannot watch it run --
  * the request is answered -32800 either way -- so nothing but this record says

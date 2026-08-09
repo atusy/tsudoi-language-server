@@ -21,12 +21,7 @@ applySuiteDeadline();
  */
 
 test("the derived order is the order this repository must be built in", () => {
-  // BYTE FOR BYTE, AND THIS SEQUENCE IS THE DERIVATION EARNING ITS KEEP. Until
-  // the framework moved under packages/ it read `[repoRoot,
-  // ...declaredMembers(repoRoot)]` -- the order the builder used to construct by
-  // hand -- and the move REDDENED THAT ARM BY CONSTRUCTION, which is why it was
-  // rewritten to the new derived sequence rather than generalised to a set,
-  // retargeted at a tree where the two orders agree, or deleted.
+  // BYTE FOR BYTE, AND THIS SEQUENCE IS THE DERIVATION EARNING ITS KEEP.
   //
   // WHAT DECIDES IT IS TWO DECLARATIONS AND NOTHING ABOUT THE LAYOUT: both
   // handlers name the framework in a peer they call optional, and the ROOT names
@@ -375,12 +370,6 @@ function whatTheConsumerSaw(files: Record<string, string>): string {
  * machine is worse than a slow one, since its pair then reads as `the consumer
  * compiled against the wrong file`, which is the one conclusion these arms exist
  * to make available.
- *
- * IT SAID 5000ms UNTIL THE SUITE CHOSE ITS OWN NUMBER, and the allowance stays
- * because the argument for it never depended on which ambient default was in
- * force: what it answers is that a compiler spawn's duration is a property of
- * the hardware, and five times more headroom does not make it one of the build
- * order.
  */
 const eachArmSpawnsACompilerPerPackage = 120_000;
 

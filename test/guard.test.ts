@@ -261,7 +261,7 @@ function factoryBanAt(path: string): RegExp {
  *
  * Not the bare path: the rule's own help text NAMES THE ONE MODULE that may
  * create a connection -- packages/tsudoi-language-server/src/notifications.ts,
- * spelled in full there since sprint 63 -- so a substring check reads that text
+ * spelled in full there -- so a substring check reads that text
  * out of ANOTHER file's diagnostic and reports the file as flagged while it is
  * perfectly clean. Two outcomes, one observation -- caught by running it. The
  * spelling is not what makes this anchored: any path in the message would do it.

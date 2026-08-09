@@ -66,33 +66,18 @@ applySuiteDeadline();
  * the stage, and every declared output directory to be absent, beside the
  * reading they explain.
  *
- * READ IN BOTH DIRECTIONS -- AND THE ORDER OF FAILURE IS THE HALF THAT NEEDED
- * REPAIRING, BECAUSE THE RECORDED ONE DOES NOT HOLD OF THE MINIMAL DEGENERATION.
- * As it stands, this file alone is 1 pass / 0 fail. THE SPRINT 61 RECORD REPORTS
- * 0 pass / 1 fail with THE STAGE-FAITHFULNESS GUARD FAILING FIRST, naming all
- * three entries before the exit code is read; that reading is kept as the
- * record's, AND THE RECORD DOES NOT SAY HOW IT SPELT THE DEGENERATION, which is
- * why nothing here reconstructs one. WHAT IS MEASURED HERE IS THE MINIMAL
- * SPELLING -- node_modules replaced by ONE SYMLINK and the member-link loop left
- * alone -- AND IN IT NOTHING IN THE ARM RUNS AT ALL: taken at sprint 61's review,
- * `stageUnbuiltCheckout` throws at the scope-directory guard naming
- * `<checkout>/node_modules/@atusy` as outside the stage, and the arm reports 0
- * expect() calls. SO THE EARLIER THROW IS NAMED RATHER THAN LEFT FOR WHOEVER
- * FIRST MEETS IT. Both routes agree on the half that matters: in a degenerate
- * stage the compiler reads exit 0 with zero bytes of output, so anything reaching
- * that exit code first would report a green apparatus failure, and neither route
- * gets there.
- *
- * AND THE WALL CLOCK WAS RE-TAKEN UNDER A FULL RUN rather than by hand, because
- * this project has a measured instance of a 0.046 s hand reading becoming 80
- * TimeoutErrors under the suite's concurrency: 0.6 s for this file alone, and a
- * whole-suite total unmoved from the same run without it -- 121.26 s against
- * 121.30 s, 0 fail either way.
+ * WHAT THE MINIMAL DEGENERATION DOES, NAMED SO IT IS NOT LEFT FOR WHOEVER FIRST
+ * MEETS IT: node_modules replaced by ONE SYMLINK, the member-link loop left
+ * alone, and NOTHING IN THE ARM RUNS AT ALL -- `stageUnbuiltCheckout` throws at
+ * the scope-directory guard naming `<checkout>/node_modules/@atusy` as outside
+ * the stage. That is the half that matters, because in a degenerate stage the
+ * compiler reads exit 0 with zero bytes of output, so anything reaching that
+ * exit code first would report a green apparatus failure.
  */
 
 /**
- * WHAT THIS ARM DOES NOT WATCH, four disclaimers, because sprint 9's rule
- * deletes a control that cannot say what it is blind to -- and every one of
+ * WHAT THIS ARM DOES NOT WATCH, disclaimer by disclaimer, because sprint 9's
+ * rule deletes a control that cannot say what it is blind to -- and every one of
  * these is a thing a reader would otherwise assume from a green.
  *
  * (1) IT DOES NOT WATCH THE FRAMEWORK'S SILENCE. The red it asserts is bought by
@@ -224,13 +209,11 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
   //
   // MEASURED RATHER THAN ARGUED, in a copy: with this set left EMPTY -- which is
   // exactly what `dirname` of an unscoped root name produces -- nothing keeps the
-  // borrow out of this workspace's own scope, the member links would land inside
-  // the REAL checkout's node_modules, and the arm reads 0 pass / 1 fail with
-  // nothing written anywhere. As it stands the same file is 1 pass / 0 fail. THAT
-  // REFUSAL IS NOW THE THROW BELOW AND NO LONGER THE PARENT RESOLUTION IN THE
-  // LINKING LOOP, which is a correction and not a move: the two refused with the
-  // SAME BYTES, and two states printing one message are one state a reader cannot
-  // act on.
+  // borrow out of this workspace's own scope, the member links land inside the
+  // REAL checkout's node_modules, and the arm reddens with nothing written
+  // anywhere. THAT REFUSAL IS THE THROW BELOW AND NOT THE PARENT RESOLUTION IN
+  // THE LINKING LOOP: the two refused with the SAME BYTES, and two states
+  // printing one message are one state a reader cannot act on.
   const memberDirs = declaredMembers(root);
   const scopes = new Set<string>();
   for (const member of memberDirs) {
@@ -245,8 +228,8 @@ function stageUnbuiltCheckout(): UnbuiltCheckout {
   // THE EMPTY SET SAYS WHAT IS TRUE OF ITSELF. The loop above refuses an unscoped
   // member outright, so an empty set means either that THE DERIVATION CAME OUT
   // WRONG or that there were NO MEMBERS TO DERIVE FROM -- and in neither case did
-  // a member misbehave. It used to arrive fifteen lines down wearing the borrow
-  // degeneration's own message, which sent a reader to the wrong half of this
+  // a member misbehave. Reported here rather than further down wearing the borrow
+  // degeneration's own message, which sends a reader to the wrong half of this
   // function.
   if (scopes.size === 0) {
     throw new Error(
@@ -390,8 +373,8 @@ test("an unbuilt checkout's root type check is non-zero and names a workspace pa
     // this line, and this line reports it under a test name about unresolved
     // workspace packages. Measured on the other half too, by the sprint 61
     // review: `tsc --noEmit --listFiles` over the tree and over the stage read
-    // IDENTICAL file sets, 160 against 160, so there is no state here that the
-    // fourth check misses.
+    // IDENTICAL file sets, so there is no state here that the fourth check
+    // misses.
     //
     // IT IS KEPT FOR THE ORDER AND THE STORY, WHICH IS THE WHOLE OF WHAT IT BUYS
     // and is worth more than it sounds. Alone, the red above says `non-zero` and

@@ -20,14 +20,12 @@ import { fileURLToPath } from "node:url";
  * A CORRECTION AND NOT A CONVENIENCE. Twice in one session a maintainer re-ran a
  * single check BY HAND and read it through `tail`, which showed a summary line
  * and hid the verdict above it, and a red check went out as the next sprint's
- * baseline -- once in the very commit that added a sentence forbidding exactly
- * that. The habit is not inattention: the sanctioned route had no answer for `I
- * only want that one check again`, so the unsanctioned one was the only one, and
- * what is left after a rule that was written and then broken by its own author
- * is not a third rule. A FILTERED RUN THEREFORE REPORTS WHOLE -- every part an
- * unfiltered one prints, in the same shape -- so that nothing about it invites a
- * pipe. What it must never be is mistakable for the whole, and the marker below
- * is where that is paid for.
+ * baseline. The habit is not inattention: the sanctioned route had no answer for
+ * `I only want that one check again`, so the unsanctioned one was the only one.
+ * A FILTERED RUN THEREFORE REPORTS WHOLE -- every part an unfiltered one prints,
+ * in the same shape -- so that nothing about it invites a pipe. What it must
+ * never be is mistakable for the whole, and the marker below is where that is
+ * paid for.
  *
  * IT IS NOT A SIXTH CHECK AND DOES NOT REPLACE THE FIVE. A check that runs every
  * check would run itself, unbounded; and the five are the list this reads. Every
@@ -41,40 +39,36 @@ import { fileURLToPath } from "node:url";
  * THE DASHBOARD LISTS, silently, because a sixth entry was added over there and
  * nobody remembered to edit this. There is no second list to drift. THE COST,
  * stated rather than discovered: this cannot report anything at all when the
- * dashboard does not RUN. What stood here said a type error in scrum.ts stops
- * the run instead of failing one check, and called that the trade taken. IT WAS
- * NEVER AVAILABLE TO TAKE. MEASURED on a throwaway whose dashboard's only
- * unusual property is a type error: `tsc --noEmit` there is exit 1, `bun run
- * scrum.ts` is exit 0 and prints its JSON, and this runner pointed at that tree
- * reads the checks, runs them and prints PASSED at exit 0. The runtime strips
- * types without checking them, so the failure this paragraph priced is one the
- * fourth check catches AFTERWARDS and this runner never sees. NOT BY THIS
- * RUNNER AND NOT BY THE ARMS THAT GRADE IT, which is the claim worth having and
- * the widest one this file may make: an earlier form said `and by nothing else`,
- * MEASURED FALSE -- a planted type error reddens `bun test` too, through
+ * dashboard does not RUN -- and A TYPE ERROR IN scrum.ts IS NOT THAT CASE.
+ * MEASURED on a throwaway whose dashboard's only unusual property is a type
+ * error: `tsc --noEmit` there is exit 1, `bun run scrum.ts` is exit 0 and prints
+ * its JSON, and this runner pointed at that tree reads the checks, runs them and
+ * prints PASSED at exit 0. The runtime strips types without checking them, so
+ * that failure is one the fourth check catches AFTERWARDS and this runner never
+ * sees. NOT BY THIS RUNNER AND NOT BY THE ARMS THAT GRADE IT, which is the
+ * widest claim this file may make -- `and by nothing else` is MEASURED FALSE, a
+ * planted type error reddening `bun test` too, through
  * test/unbuilt-checkout.test.ts comparing a staged tsc's output against `exit 0`
- * exactly, WHICH THAT FILE ALREADY SAID before this sentence was written. The
- * order is what makes the gap safe rather than a hole: the fourth check runs in
- * the same invocation, so nothing reaches a reader as green.
+ * exactly. The order is what makes the gap safe rather than a hole: the fourth
+ * check runs in the same invocation, so nothing reaches a reader as green.
  *
  * THE CHECKS RUN SEQUENTIALLY IN THE DECLARED ORDER, WHICH IS NOT COSMETIC: the
  * first builds every artifact the fourth reads. Nothing here parallelises them,
  * and the order is the dashboard's, never this file's.
  *
  * AND THAT ORDER IS WHAT LETS A READER DECIDE, IN ONE STEP, WHAT A GREEN FOURTH
- * CHECK MEANT -- which until sprint 61 took re-deriving four cells from the
- * dashboard, a file that is compacted on a schedule. The framework's `exports`
- * map ends in a source arm, so `tsc --noEmit` answers its published subpaths
- * from dist/ when the artifact is there and FROM src/ AT EXIT 0 WHEN IT IS NOT.
+ * CHECK MEANT. The framework's `exports` map ends in a source arm, so
+ * `tsc --noEmit` answers its published subpaths from dist/ when the artifact is
+ * there and FROM src/ AT EXIT 0 WHEN IT IS NOT.
  * A GREEN FOURTH CHECK PRINTED BY THIS RUNNER WAS READ FROM dist/ -- PROVIDED
  * THE FIRST CHECK WAS GREEN TOO, and that condition is the step rather than a
- * nicety. `A green printed by this runner` is what stood here and reads two ways:
- * the RUN was green, or THAT CELL printed green. They come apart in exactly the
+ * nicety. Unconditioned, `a green printed by this runner` reads two ways: the
+ * RUN was green, or THAT CELL printed green. They come apart in exactly the
  * state this procedure exists for -- the first check red because its preload
  * build threw, so no artifact was written, and the fourth green because the
  * compiler fell through to src/ and raised nothing, which is the silent cell
- * measured below -- and the unconditioned sentence sends that reader to `dist/`.
- * WITH BOTH GREEN the step holds: the first check builds every artifact before
+ * measured below -- and that reader is sent to `dist/`. WITH BOTH GREEN the
+ * step holds: the first check builds every artifact before
  * the fourth reads, and the fifth then refuses any published subpath answering
  * from anywhere but its `types` artifact. A GREEN FROM A BARE `tsc --noEmit` SAYS
  * NOTHING ABOUT WHICH FILE ANSWERED, and if it was src/ that is the half NOTHING
@@ -189,12 +183,10 @@ function readCommand(run: string): Command {
  *
  * MEASURED on oxlint 0.61.0, in a pipe and under a terminal alike: one line per
  * diagnostic, `path:line:col: <severity> <plugin>(<rule>): ...`, and no summary
- * line -- so the count comes from lines. Over all five checks of this repository
- * at the sprint's base it counts exactly ONE, the deliberate fixture warning,
- * and the looser reading of the bare word `warning` counted one there too; the
- * shape is taken because it cannot be tripped by a test that merely prints the
- * word. RE-MEASURING ON A VERSION BUMP IS THE MAINTENANCE THIS BUYS, and it is
- * the price of the count being a parse.
+ * line -- so the count comes from lines. The SHAPE is matched rather than the
+ * bare word `warning`, which agreed with it over this repository and can be
+ * tripped by a test that merely prints the word. RE-MEASURING ON A VERSION BUMP
+ * IS THE MAINTENANCE THIS BUYS, and it is the price of the count being a parse.
  */
 const warningLine = /^.+:\d+:\d+: warning\b/;
 
@@ -245,14 +237,12 @@ function readChecks(root: string): Check[] {
 /**
  * The checks a `--only` keeps, matched on the name and case-insensitively.
  *
- * A FILTER MATCHING NOTHING IS REFUSED, AND IT IS THE SAME HAZARD `readChecks`
- * REFUSES ONE SCREEN UP: a dashboard listing no checks and a filter selecting
- * none arrive at the identical degenerate, zero failures out of zero checks,
- * which every rule below calls green. The way in differs -- a mangled dashboard
- * there, a typo or a check since renamed here -- and a reader who typed a filter
- * has MORE reason to read the verdict as their check's, so the silent green
- * would be worse rather than milder. The declared names are printed because the
- * repair is to type one of them.
+ * A FILTER MATCHING NOTHING IS REFUSED: it arrives at the degenerate `readChecks`
+ * refuses one screen up -- zero failures out of zero checks, which every rule
+ * below calls green -- and a reader who typed a filter has MORE reason to read
+ * the verdict as their check's, so the silent green would be worse rather than
+ * milder. The declared names are printed because the repair is to type one of
+ * them.
  */
 function selection(checks: readonly Check[], only: string, dashboard: string): Check[] {
   const wanted = only.toLowerCase();

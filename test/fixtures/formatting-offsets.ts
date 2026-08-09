@@ -9,7 +9,6 @@
 // gone.
 import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** What this formatter rewrites, and what it rewrites it to. */
 export const target = "、";
 export const replacement = ", ";
 

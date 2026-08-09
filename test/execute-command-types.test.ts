@@ -5,9 +5,6 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * A probe project's source, with `body` spliced in under the published names and
- * the upstream names this row's params and its result declaration come from.
- *
  * NOTHING HERE RUNS, which is the point: the claim is about what tsc accepts, so
  * `declare const` is enough and a probe that had to build a real session would be
  * measuring the construction too. The same shape and the same reason as
@@ -63,8 +60,7 @@ function typesProbe(body: string): Record<string, string> {
  * THE ERROR COUNT IS PART OF THE ASSERTION, AND WITHOUT IT THIS PROBE IS
  * VACUOUS. Before the row existed at all, this same source failed TS2344 --
  * `'workspace/executeCommand'` not assignable to `ConfigMethod` -- so `exit 1`
- * alone is satisfied by a method tsudoi does not serve. MEASURED, and it is the
- * reading that decided this arm's shape.
+ * alone is satisfied by a method tsudoi does not serve. MEASURED.
  *
  * AND MEASURED THE OTHER WAY, which is what says the row's narrowing is where
  * this red comes from: the published result declared `Promise<any>` instead,
@@ -113,8 +109,8 @@ test("what an executeCommand handler answers is not assignable to a string", asy
  *
  * `any` IS WRITTEN INSIDE THE PROBE STRING and never in this repository's own
  * source, which is what keeps the lint guard out of it. It is a WILDCARD in the
- * extraction now rather than the control's result, so it no longer stands for
- * upstream's declaration anywhere.
+ * extraction rather than the control's result, so it stands for upstream's
+ * declaration nowhere.
  */
 test("the same probe against upstream's own declared result compiles, which is what the narrowing buys", async () => {
   const result = await typeCheckProbe(

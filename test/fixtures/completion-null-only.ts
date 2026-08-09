@@ -6,8 +6,6 @@ import type {
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
- * Says nothing at all: a generator that yields NOTHING.
- *
  * THE EMPTY BODY IS THE POINT, NOT AN OVERSIGHT, and there is exactly one
  * spelling of it because there is exactly one entrance for content.
  * `no answer` is `no yields`; it cannot be confused with an empty answer paired

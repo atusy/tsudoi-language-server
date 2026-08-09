@@ -8,11 +8,6 @@ import type {
 /** Distinctive enough that finding it on stderr cannot be a coincidence. */
 export const throwMessage = "completion-throws fixture: 意図的な失敗";
 
-/**
- * Distinguishable content, because `the chunk arrived and stayed` and `the
- * chunk was never sent` look identical from an error response onwards unless
- * the payload itself is asserted.
- */
 export const sentBeforeThrow: CompletionItem[] = [
   { label: "送信済み", detail: "yielded before the throw" },
 ];

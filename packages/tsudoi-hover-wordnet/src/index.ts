@@ -7,19 +7,12 @@
  * exports are incidental, because a reader copies the file and edits it; a
  * package's are a promise to a stranger who cannot.
  *
- * THE TWO THAT STAY IN, NAMED SO THE OMISSION READS AS A CHOICE. `define` is the
- * dictionary lookup and `wordAt` is the word rule, and both are tested through a
- * relative import in this package's own test, which is why keeping them internal
- * costs no coverage.
- *
- * `wordAt` IS THE ONE THAT COSTS SOMETHING, and the cost is stated rather than
- * bought off. A crude word rule is the line a reader of an example edits, and
- * withholding it takes that away: publishing it would not give it back, since an
- * author cannot make this handler call their version by importing ours. What
- * would is an option on the handler, and inventing one here to keep an
- * affordance nobody has asked for is a purchase this backlog refuses by name. So
- * whitespace is this package's word rule, full stop -- said at the function
- * itself, which is where a maintainer meets the question -- and an author who
- * needs another writes a handler rather than configuring this one.
+ * `define` AND `wordAt` STAY IN, AND `wordAt` IS THE OMISSION THAT COSTS
+ * SOMETHING. A crude word rule is the line a reader of an EXAMPLE edits, and
+ * publishing it would not give that line back: an author cannot make this
+ * handler call their version by importing ours. What would is an option on the
+ * handler, refused at `wordAt` itself. Keeping them internal costs no coverage:
+ * this package's own test reaches `define` by relative import into src/, and
+ * `wordAt` through the handler it drives.
  */
 export { hoverWordnet } from "./hover.ts";

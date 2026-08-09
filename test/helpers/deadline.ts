@@ -4,15 +4,11 @@ import { setDefaultTimeout } from "bun:test";
  * THE SUITE'S OWN TIME LIMIT, SO A RED IN THE FIRST DEFINITION-OF-DONE CHECK IS
  * A STATEMENT ABOUT tsudoi RATHER THAN ABOUT THE MACHINE IT RAN ON.
  *
- * WHAT IT REPLACES, AND SAYING SO IS THE POINT: `bun test --timeout 30000` on
- * the command line, which this project used through four sprints to tell a
- * machine's red from the code's. THE FLAG IS INERT FOR EVERY SWEPT FILE --
- * MEASURED IN BOTH DIRECTIONS rather than assumed from the preload precedence
- * this project recorded before, because that one turned out narrower than it
- * read: a file calling this with 20_000 passes a 6000ms test under `--timeout
- * 3000`, and a file calling it with 2000 FAILS the same test at 2002ms under
- * `--timeout 30000`. The call wins either way. The knob that still works is the
- * variable below.
+ * `bun test --timeout N` ON THE COMMAND LINE IS INERT FOR EVERY SWEPT FILE --
+ * MEASURED IN BOTH DIRECTIONS: a file calling this with 20_000 passes a 6000ms
+ * test under `--timeout 3000`, and a file calling it with 2000 FAILS the same
+ * test at 2002ms under `--timeout 30000`. The call wins either way. The knob
+ * that still works is the variable below.
  *
  * A HANG-CATCHER, NOT A PERFORMANCE BUDGET, and it may not become somewhere
  * slow code hides. Both bounds were read from this tree before the number was
@@ -43,29 +39,17 @@ import { setDefaultTimeout } from "bun:test";
  *
  * THE CEILING IS THE COST OF A GENUINE HANG AND IT IS NOT SMALL. bun runs this
  * suite in ONE process, file after file, so a subject that hangs parks every
- * test that waits on it, each for the full default. The largest single-subject
- * park in this tree is test/workspace.test.ts: 44 tests, every one of them
- * driving a live server, none carrying its own deadline -- 18m20s at this value
- * against 3m40s under bun's default; a count of one file's arms, re-read since,
- * and it is as perishable as the one below turned out to be. The whole-suite
+ * test that waits on it, each for the full default. The whole-suite
  * bound is EVERY TEST IN THE SUITE parked for the full default, WHICH IS WHY THE
  * MULTIPLIER AND NOT THE PRODUCT IS THE THING TO WEIGH, AND IT IS 5x. It is
  * accepted because the alternative is a value below the floor, which leaves the
  * whole class this exists to remove.
  *
- * THE PRODUCT USED TO BE WRITTEN HERE AS A NUMBER AND IT WENT STALE INSIDE THE
- * COMMIT THAT WROTE IT: `792 x the default`, taken before this sprint's own arms
- * were added, landed on a tree that already ran more than that. This project
- * refuses counts for exactly that reason, and this one did not survive its own
- * increment.
- *
  * ONE ARM HAS BEEN SEEN AT 25007ms AGAINST THIS VALUE, sprint 81, under a
  * PERTURBED full suite -- `a published subpath with no artifact at all is
  * refused`. It did not reproduce in six further runs, clean and perturbed, alone
  * and in the suite, so it is a boundary reading and not a defect anyone can open.
- * IT IS WRITTEN HERE RATHER THAN IN THAT SPRINT'S RECORD BECAUSE THE TRIGGER IS
- * AN EDIT TO THIS LINE: a dashboard note does not survive compaction, and the
- * home that used to absorb a condition like this was struck from the header. A
+ * A
  * SECOND OCCURRENCE FILES IT, and so does lowering this value -- the margin the
  * reading leaves is seven milliseconds.
  */
@@ -80,19 +64,16 @@ export const suiteDeadlineMs = 25_000;
  * throwaway tree runs the REAL module at values small enough that the reading is
  * unambiguous.
  *
- * THE STANDING OBJECTION TO ENV KNOBS IS ANSWERED RATHER THAN IGNORED: a key
- * that stops matching stops applying, silently. A typo in the spelling HERE
- * makes the over-arms in test/suite-deadline.test.ts pass, so every run of the
- * suite exercises this string. What that does not cover is a malformed VALUE,
- * which is what the refusal below is for.
+ * A KEY THAT STOPS MATCHING STOPS APPLYING, SILENTLY. A typo in the spelling
+ * HERE makes the over-arms in test/suite-deadline.test.ts pass, so every run of
+ * the suite exercises this string. What that does not cover is a malformed
+ * VALUE, which is what the refusal below is for.
  */
 const overrideName = "TSUDOI_TEST_TIMEOUT_MS";
 
 /**
  * READ ONCE PER PROCESS, AT IMPORT, AND THE FREEZE IS A DECISION RATHER THAN
- * THE ACCIDENTAL SHAPE OF THE CODE. `applySuiteDeadline` below closes over this
- * constant, so every file in a run is handed the value the FIRST evaluation of
- * this module saw -- one read for the run, not one per call site.
+ * THE ACCIDENTAL SHAPE OF THE CODE.
  *
  * MEASURED IN BOTH DIRECTIONS, BECAUSE NOTHING ELSE IN THIS REPOSITORY CAN TELL
  * THE TWO APART. Every arm in test/suite-deadline.test.ts pins the variable in
@@ -165,8 +146,8 @@ if (raw !== undefined && (!Number.isInteger(deadlineMs) || deadlineMs <= 0)) {
  * the preload defect wearing different clothes. The call is per file because the
  * thing being set is per file.
  *
- * ITS OWN MODULE AND NOT test/helpers/build.ts, and this route STRENGTHENS that
- * reason rather than retiring it: the build throws on a failed compile, and a
+ * ITS OWN MODULE AND NOT test/helpers/build.ts: the build throws on a failed
+ * compile, and a
  * policy welded to it would die with the build -- and every arm that verifies
  * this must run the REAL module in a throwaway tree, which is impossible if
  * importing it compiles the whole workspace.

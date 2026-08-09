@@ -20,7 +20,6 @@
 import { type TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 import { DiagnosticSeverity } from "../../packages/tsudoi-language-server/src/deps/types.ts";
 
-/** What this analysis complains about, and what it says about it. */
 export const target = "、";
 export const message = "読点が使われています";
 

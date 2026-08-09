@@ -21,13 +21,10 @@ export const beforeGate: CompletionItem[] = [
 export const afterGate: CompletionItem[] = [{ label: "停止後", detail: "yielded after the gate" }];
 export const returnedItems: CompletionItem[] = [{ label: "二度目", detail: "answered later" }];
 
-/** Written once tsudoi has taken the first chunk and asked for another. */
 export const parkedMarker = "completion-cleanup-hangs: parked";
 
-/** Cleanup has STARTED -- the generator was closed rather than left suspended. */
 export const cleanupEntered = "completion-cleanup-hangs: entered cleanup";
 
-/** Cleanup has FINISHED, and cannot be written until the test releases it. */
 export const cleanupFinished = "completion-cleanup-hangs: finished cleanup";
 
 /**
@@ -39,12 +36,9 @@ export const cleanupFinished = "completion-cleanup-hangs: finished cleanup";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: COMPLETE on the path that answers, and NO CLAIM ON
-      // THE PATH THIS FIXTURE IS FOR. `returnedItems` is a module constant and
-      // the params are read only to poll the gate, so an answer that arrives is
-      // final. The cancelled path -- the one every test here drives -- is
-      // answered -32800 with no result at all, so no completeness claim is
-      // reachable there and none is being made.
+      // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
+      // cancelled one -- `returnedItems` is a module constant and the params are
+      // read only to poll the gate, and a cancelled request carries no result.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

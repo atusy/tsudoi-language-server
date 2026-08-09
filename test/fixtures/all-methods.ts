@@ -28,10 +28,7 @@ import type {
  *   that load failure, and nothing about what this config serves moves either.
  *
  * ONE ARM READS THE COMPILE ERROR, WHICH IS WHY NO BULLET ABOVE SAYS `THE WHOLE
- * SUITE STAYS GREEN` ANY LONGER. They said it, on a mechanism that is true of
- * the two runtimes and false of the suite -- neither runtime type-checks, so a
- * compile error changes nothing THEY can see, and nothing here was ever about
- * what a spawned compiler can. MEASURED TWICE at 4a44404, whole suite, both
+ * SUITE STAYS GREEN`. MEASURED TWICE at 4a44404, whole suite, both
  * runtimes, once with executeCommand's handler deleted and once with hover's:
  * THE SAME SINGLE ARM RED EACH TIME -- `an unbuilt
  * checkout's root type check is non-zero and names a workspace package it could
@@ -41,29 +38,14 @@ import type {
  * which is not the property it was reaching for and cannot be mistaken for it.
  *
  * THE PRICE IS WHAT THE ANNOTATION MOVES, NOT THE RESULT. `tsc --noEmit` fails
- * TS2741 on each of those trees, so the perturbation costs a DoD check. IT IS
- * STILL PERFECTLY WRITABLE AND ITS RESULT STILL STANDS -- this is neither a
- * measurement gone stale nor a perturbation gone unconstructible, and it is not
- * one of the four outcomes either, since those answer why a standing re-run
- * goes GREEN and these go exactly as recorded. It is the point of the line at
- * the bottom of this file arriving as a side effect.
+ * TS2741 on each of those trees, so the perturbation costs a DoD check. It is
+ * the point of the line at the bottom of this file arriving as a side effect.
  *
  * SO NOTHING HERE IS DEFENDED BY ANY ASSERTION ABOUT WHAT IT ANSWERS, AND THE
  * `answered -32800 when cancelled` TEST IS NOT AN EXCEPTION: both drives answer
  * a cancelled request through the cancellation epilogue, so both answer -32800
  * whether or not this file supplies a completion handler. Deleting that handler
  * leaves that test nothing to observe.
- *
- * A CONTROL WITH NO TARGET BEHAVIOUR LEFT TO DETECT IS NOT A DEFENCE THAT WENT
- * MISSING, and the distinction is worth the sentence: the behaviour that
- * perturbation would catch is DELIBERATELY ABSENT under an accepted criterion,
- * so this is not a control gone quiet and not a perturbation whose edit needs a
- * second half.
- *
- * THE HANDLERS ARE NAMED AND THE TESTS ARE NOT COUNTED, which is a rule rather
- * than a style: the request table grows, and a count of a growing file
- * falsifies itself silently -- the exact failure the standing prose rule is
- * about.
  *
  * WHAT THIS FIXTURE ENFORCES IS A COMPILE-TIME PROPERTY RATHER THAN AN
  * ASSERTION: the handler literal below is checked against
@@ -83,11 +65,6 @@ import type {
  * NO ERRORS ANYWHERE. The annotation adds PRESENCE ONLY -- per-method typing is
  * contextual through the partial with or without it, measured by writing a
  * `Promise<Hover>` handler into `textDocument/completion` and watching it fail.
- *
- * WHAT IS UNDEFENDED IS EVERY ANSWER, AND THAT IS A RULING RATHER THAN A
- * RESIDUAL. THE PROPERTY RATHER THAN A FRACTION, because the paragraphs above
- * say why: no assertion anywhere pins what any handler in this file returns, and
- * that is true of every one of them rather than of a list.
  *
  * THE REASON THEY STAY THAT WAY IS RECORDED HERE BECAUSE OTHERWISE THE NEXT
  * PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI. Defending them means
@@ -109,9 +86,8 @@ import type {
  * `issueThenCancel`, which frames the request and its `$/cancelRequest`
  * together, so the token is already cancelled when the request reaches a drive
  * and the answer is decided WITHOUT ENTERING these handlers at all. A parking
- * handler per method would measure the same thing and would be one more copy --
- * THE PER-METHOD COPY, which is the shape the one-test-per-method paragraph
- * above refuses and refuses here for the same reason.
+ * handler per method would measure the same thing and would be one more copy of
+ * the per-method shape the paragraph above refuses.
  */
 export const hoverAnswer: Hover = {
   contents: { kind: "markdown", value: "表からの応答" },

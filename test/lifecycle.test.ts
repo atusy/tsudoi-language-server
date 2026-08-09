@@ -64,10 +64,10 @@ for (const runtime of runtimes) {
   describe(runtime.name, () => {
     // EXACT EQUALITY, DELIBERATELY, however wide the value grows: openClose is
     // what entitles a conforming client to send didOpen/didClose at all, so an
-    // equality assertion refuses its loss. NOT ALONE, AND THE OLD `is what
-    // catches` WAS MEASURED FALSE: dropping openClose reddens twenty-two arms
-    // over both runtimes -- every capability arm in this file asserts the whole
-    // value. The capabilities are here because this file drives
+    // equality assertion refuses its loss. NOT ALONE: MEASURED, dropping
+    // openClose reddens every capability arm in this file over both runtimes,
+    // each of them asserting the whole value. The capabilities are here because
+    // this file drives
     // examples/tsudoi.config.ts, and it advertises ONE FOR EACH METHOD THAT
     // CONFIG SUPPLIES -- so this value moves whenever the example gains or
     // loses a method, which is a DELIBERATE CHANGE TO A PINNED ARTIFACT rather
@@ -77,14 +77,11 @@ for (const runtime of runtimes) {
     //
     // ONE PER METHOD, NOT ONE TOP-LEVEL KEY PER METHOD:
     // `completionItem/resolve` contributes `resolveProvider` INSIDE the object
-    // `textDocument/completion` owns, which is why the value below has five
-    // methods behind four keys. That nesting is the protocol's, AND IT COSTS
-    // TSUDOI NO ORDERING CONSTRAINT BETWEEN THE TWO CONTRIBUTORS: both MERGE
-    // into that key, so neither has to run after the other, and the declaration
-    // order decides nothing here or in test/resolve.test.ts. What is asserted
-    // there rather than restated here is the property both of them serve --
-    // that a config supplying both handlers is told about resolve INSIDE the
-    // completion provider.
+    // `textDocument/completion` owns, which is why the value below carries
+    // fewer keys than the example has methods. That nesting is the protocol's.
+    // What test/resolve.test.ts asserts rather than this restating it is the
+    // property both contributors serve -- that a config supplying both handlers
+    // is told about resolve INSIDE the completion provider.
     //
     // THE SYNC KIND IS WHAT AN EDITOR READS TO DECIDE WHAT TO SEND, so this
     // value is the whole of the editor-user-facing half of incremental sync:
@@ -302,8 +299,8 @@ for (const runtime of runtimes) {
      * THE EXIT CODE IS THE HALF THAT MAKES THE REFUSALS MEAN SOMETHING, and it
      * is not decoration: -32602 measured alone is satisfied by a server that
      * moved to the shutdown phase and THEN refused, which is the failure this
-     * exists to catch. A phase that moved reads 0 here. Five refusals in one
-     * session also say the damage does not accumulate -- the first malformed
+     * exists to catch. A phase that moved reads 0 here. Every spelling refused in
+     * one session also says the damage does not accumulate -- the first malformed
      * shutdown does not poison the ones after it.
      */
     test("shutdown carrying params is refused -32602 in every spelling, and the phase does not move", async () => {

@@ -10,10 +10,8 @@ import type {
  */
 export const declaredSupport = false;
 
-/** What the handler tries to write over it. */
 export const forgedSupport = true;
 
-/** What a handler reports of its own attempt, as the hover contents. */
 export interface MutationReport {
   readonly nestedRefused: boolean;
   readonly topRefused: boolean;

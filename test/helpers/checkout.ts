@@ -63,8 +63,7 @@ export function isolatedCheckout(): IsolatedCheckout {
   // checkout with no node_modules therefore fails at those specifiers, and that
   // failure IS what the probes here read.
   cpSync(join(repoRoot, "examples"), join(dir, "examples"), { recursive: true });
-  // dist/ IS PART OF `what a runtime needs to start`, which is not obvious from
-  // the staging above and is why the witness is named. THE WITNESS IS A
+  // dist/ IS PART OF `what a runtime needs to start`. THE WITNESS IS A
   // DEPENDENCY VALUE ON A SIBLING SUBPATH:
   // examples/diagnostic-trailing-whitespace.ts takes
   // `DiagnosticSeverity` -- a VALUE -- from `@atusy/tsudoi-language-server/deps/types`, and
@@ -72,8 +71,7 @@ export function isolatedCheckout(): IsolatedCheckout {
   // `import` arm to ./dist/deps/types.js. A checkout without dist/ fails while
   // loading the config, with a resolve error NAMING `@atusy/tsudoi-language-server/deps/types`.
   //
-  // MEASURED rather than reasoned, because the conclusion and the reason move
-  // independently here and only running tells you which is which. Staging no
+  // MEASURED: staging no
   // dist/ at all reddens two tests in test/resolution.test.ts. Deleting
   // dist/deps/types.js from an otherwise complete dist/ reproduces the failure
   // above by name, under both runtimes.
@@ -95,12 +93,6 @@ export function isolatedCheckout(): IsolatedCheckout {
   // `@atusy/tsudoi-language-server/types`: tsudoi's own subpath is TYPE-ONLY, so it carries no
   // value an example could call, and naming it here would put a real conclusion
   // on a witness that does not exist.
-  //
-  // IT IS NOT THE THING BEING HELD AWAY, which is what keeps these probes
-  // honest: node_modules is, and it still is. Carrying dist/ here removes a
-  // failure whose cause is this helper's staging from tests whose whole subject
-  // is where a DEPENDENCY was resolved from -- two causes producing one
-  // observation is the degeneracy that would make them measure nothing.
   //
   // Copied only when it exists, so a checkout that has never run a build is
   // staged as a checkout that has never run a build. The test that names that

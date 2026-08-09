@@ -188,8 +188,6 @@ for (const runtime of runtimes) {
           session.notify("exit", null);
           expect(await session.waitForExit()).toBe(0);
 
-          // The diagnosis went to stderr and stayed there: stdout carries the
-          // JSON-RPC responses and not one byte besides.
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();
@@ -289,8 +287,6 @@ for (const runtime of runtimes) {
     test("the example config answers a client that declared no markdown in plaintext", async () => {
       const session = LspSession.start(runtime, demoConfig);
       try {
-        // `capabilities: {}` -- the client that declared nothing at all, which
-        // has declared no markdown support.
         await session.request<InitializeResult>("initialize", initializeParams);
         session.notify("initialized", {});
         session.notify("textDocument/didOpen", {

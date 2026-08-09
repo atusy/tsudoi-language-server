@@ -11,13 +11,9 @@ export const beforeGate: CompletionItem[] = [
 ];
 export const afterWait: CompletionItem[] = [{ label: "停止後", detail: "never reached" }];
 
-/** Written once tsudoi has taken the first chunk and asked for another. */
 export const parkedMarker = "completion-ignores-signal: parked";
 
 /**
- * The config author's cleanup, and the thing that must NOT appear while the
- * generator is parked.
- *
  * `.return()` CANNOT PREEMPT A PENDING `.next()` -- it is queued behind it by
  * the language -- so a generator suspended inside its own `await` runs no
  * cleanup until that await settles, and this one never does. That is a fact

@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let a LATER completion past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -14,10 +13,8 @@ export const beforeGate: CompletionItem[] = [
 ];
 export const returnedItems: CompletionItem[] = [{ label: "二度目", detail: "answered later" }];
 
-/** Written once tsudoi has taken the first chunk and asked for another. */
 export const parkedMarker = "completion-ignores-signal-rejects: parked";
 
-/** The config author's cleanup, which runs only once the await below settles. */
 export const cleanupMarker = "completion-ignores-signal-rejects: released";
 
 /**
@@ -46,10 +43,8 @@ export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
-      // cancelled one. `returnedItems` is a module constant and the params are
-      // read only to poll the gate, so an answer that arrives is final. The
-      // cancelled path -- the one this fixture exists for -- is answered -32800
-      // with no result, so no completeness claim is reachable there.
+      // cancelled one -- `returnedItems` is a module constant and the params are
+      // read only to poll the gate, and a cancelled request carries no result.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,
@@ -60,9 +55,6 @@ export default (): Promise<TsudoiConfig> => {
         try {
           yield beforeGate;
 
-          // The gate decides WHICH request this is. Closed, this is the request
-          // the test cancels, and it parks in a wait it will not survive; open,
-          // it is the later one that must answer normally.
           if (gateClosed()) {
             process.stderr.write(`${parkedMarker}\n`);
 

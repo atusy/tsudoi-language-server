@@ -110,8 +110,7 @@ export function deepFrozen<T>(value: T): T {
 
 /**
  * Builds the one server-lifetime `Tsudoi` and the handles that write what it
- * reads: the read-only view a config author meets through `RequestContext`, and
- * the writers the server feeds `initialize` and its notifications into.
+ * reads.
  *
  * EVERY MEMBER THAT IS NOT A STORE IS A GETTER, AND THAT IS A CORRECTNESS
  * REQUIREMENT RATHER THAN A STYLE. A store is exempt because it is an OBJECT

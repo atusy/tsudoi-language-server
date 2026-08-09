@@ -192,11 +192,9 @@ describe("the fixture's stamps come from a constant, not from the clock", () => 
       const directory = statSync(join(first.root, "listed")).mtime;
       expect(directory).toEqual(fixtureStamp);
       expect(statSync(join(first.root, "listed", "one.txt")).mtime).toEqual(fixtureStamp);
-      // AND EQUAL TO THE SECOND BUILD'S. THE REASON GIVEN HERE WAS WRONG -- it
-      // said equality to the constant alone would also hold of a fixture built
-      // at exactly that instant, a hazard a stamp in 2001 forecloses for ever.
-      // What this line alone can catch is a builder that is STATEFUL across
-      // calls: correct once and drifting on the second tree.
+      // AND EQUAL TO THE SECOND BUILD'S, which catches the one thing equality to
+      // the constant cannot: a builder STATEFUL across calls, correct once and
+      // drifting on the second tree.
       expect(statSync(join(second.root, "listed")).mtime).toEqual(directory);
       // THE WHOLE-SECOND DISCIPLINE, PINNED WHERE NOTHING PINNED IT: both
       // expected stat lines are composed FROM this constant, so the two sides
@@ -396,14 +394,10 @@ describe("the block is rebuilt out of what the handler read", () => {
   });
 
   /**
-   * ITS SUBJECT MOVED WITH THE PATH AND THE ARM IS KEPT RATHER THAN DELETED. The
-   * path came off the MARK, which arrives from the client, and this arm existed
-   * because the composer RENDERED it. It does not any more.
-   *
-   * WHAT IT REFUSES NOW: an implementation that left the path in the block after
-   * all. That is not a hypothetical -- it is the state that makes the popup's
-   * prefix relation hold vacuously, and this fixture's name is exactly the input
-   * under which leaving it there forges an attribution line.
+   * WHAT IT REFUSES: an implementation that put the path in the block. That is
+   * not a hypothetical -- it is the state that makes the popup's prefix relation
+   * hold vacuously, and this fixture's name is exactly the input under which
+   * leaving it there forges an attribution line.
    *
    * AND `detail` IS READ BESIDE THE BLOCK, WHICH IS WHERE THE PATH WENT. The
    * item is handed the field as the completion half writes it -- FLATTENED, since
@@ -457,8 +451,7 @@ describe("the block is rebuilt out of what the handler read", () => {
     const path = join(fixture.root, "listed");
     // THE ITEM ARRIVES CARRYING A `detail`, WHICH `markedItem` DOES NOT WRITE:
     // without one the reading below is `"" does not contain it`, true on every
-    // machine and for every implementation, and this arm asserted exactly that
-    // until a reviewer read it. The sibling arm above already had this shape.
+    // machine and for every implementation.
     const sent = { ...markedItem(path, "<script>alert(1)</script>"), detail: path };
     try {
       const answered = await resolvePathStat(contextDeclaring(["plaintext"]), sent);
@@ -663,9 +656,8 @@ describe("what the path is decides the answer, and never what the item claims", 
    * of the item and stale besides -- the path may have been replaced by one of
    * the other kind in between.
    *
-   * TWO TESTS AND NOT TWO ASSERTIONS, AND THE REASON IS REWRITTEN AGAIN BECAUSE
-   * THE RULING TOOK THE OLD ONE AWAY. The words `file` and `directory` have left
-   * the block, so a stat-driven answer is separable from a `kind`-driven one by
+   * TWO TESTS AND NOT TWO ASSERTIONS. The words `file` and `directory` are not
+   * in the block, so a stat-driven answer is separable from a `kind`-driven one by
    * exactly two things and they are in different places: the FILE direction shows
    * at `size:`, which a directory has none of, and the DIRECTORY direction shows
    * at the entries heading, which a `kind`-driven answer never asks for. Sharing
@@ -757,9 +749,8 @@ function entryNames(prefix: string, count: number): string[] {
  *
  * BOTH FORMAT SPELLINGS, WHICH IS NOT SYMMETRY: a pattern matching only the
  * markdown heading returns an EMPTY header and NO names for every plaintext arm
- * -- green, empty and silent -- and this suite is plaintext almost everywhere.
- * That is the sprint-82 anchor one level over, on the very helper it was written
- * to fix, which is why each arm reading names asserts a NON-EMPTY header.
+ * -- green, empty and silent -- and this suite is plaintext almost everywhere,
+ * which is why each arm reading names asserts a NON-EMPTY header.
  *
  * DUPLICATED AT THE REPOSITORY ROOT, and the two MUST NOT DISAGREE -- an absent
  * names part is NO names here, not one empty name.
@@ -781,13 +772,11 @@ describe("the listing is found by its own header, not by where it happens to sit
    * produce a listing whose header sits where the reader expects it, so a WRONG
    * reader agrees with a right one everywhere they are exercised.
    *
-   * ITS INPUT MOVED WITH THE RULING AND THE ARM IS RE-POINTED RATHER THAN
-   * DELETED, WHICH IS THE RECORD OF WHY. It used to hand the reader a FORGED
-   * source: the composer pushed the source as its own PART, so an unrecognised
-   * name made the block one part shorter and everything after it moved. `source`
-   * is a FACT now and shares a part with the rest, so a forged one leaves the
-   * part COUNT unchanged and separates nothing. What is left is the collision an
-   * index never had: a directory holding an ENTRY NAMED LIKE THE HEADING.
+   * ITS INPUT IS A COLLISION AND NOT A FORGED SOURCE, WHICH IS WORTH SAYING
+   * BECAUSE THE FORGED ONE IS WHAT A READER WOULD REACH FOR: `source` is a FACT
+   * and shares a part with the rest, so an unrecognised name leaves the part
+   * COUNT unchanged and separates a right reader from a wrong one nowhere. What
+   * does is a directory holding an ENTRY NAMED LIKE THE HEADING.
    *
    * EXACTLY ONE ENTRY, WHICH IS WHAT MAKES IT A COLLISION AT ALL: the names are
    * ONE part, and the header pattern is anchored at both ends, so with a sibling

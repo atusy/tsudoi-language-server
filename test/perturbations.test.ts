@@ -559,9 +559,9 @@ test("the report names the arm each record weakened, and no other", async () => 
  *   reads DISARMED.
  *
  * AND `THE ARM FILE STAGES A TREE OF ITS OWN` IS NOT THE PREDICATE, measured
- * because it is the one a reader reaches for: it holds of seventeen root test
- * files, and test/definition-of-done.test.ts is one of them while its records
- * re-run and report HELD below.
+ * because it is the one a reader reaches for: it holds of many root test files,
+ * and test/definition-of-done.test.ts is one of them while its records re-run
+ * and report HELD below.
  */
 const dodArms = "test/definition-of-done.test.ts";
 const dodRunner = "scripts/definition-of-done.ts";
@@ -665,7 +665,7 @@ const records: readonly PerturbationRecord[] = [
     // two runtimes; the arm named here is the cheap statement of it, and the
     // registry grades that one so no record spawns a server.
     //
-    // IT REDDENS EIGHT ARMS BESIDE THE ONE IT IS ABOUT, and they are here rather
+    // IT REDDENS MANY ARMS BESIDE THE ONE IT IS ABOUT, and they are here rather
     // than filtered out: nearly every arm in that file compares a block WHOLE, so
     // a stat line that gained a number moves all of them. A red beside the arm is
     // the failure this instrument exists to refuse reading as a red AT it.
@@ -679,7 +679,7 @@ const records: readonly PerturbationRecord[] = [
       to: "  return stats.isDirectory() ? [`size: ${String(stats.size)} bytes`, lastModified] : [",
     },
     // WHERE THE RED IS REQUIRED TO FALL, AND THIS RECORD IS THE ONE THAT MAKES
-    // THE FIELD WORTH HAVING: eight collateral arms redden with it, so `the
+    // THE FIELD WORTH HAVING: the collateral arms below redden with it, so `the
     // named arm went red` was already true of a weakening that never reached the
     // directory at all. The DIRECTORY value, not the file one two lines below.
     redAt: "expect(directory).toBe(directoryFacts);",
@@ -900,9 +900,8 @@ const records: readonly PerturbationRecord[] = [
     // THE SAME REORDER, GATED ON THE COMPOSER'S OWN MARKDOWN FLAG -- and the
     // falsifier is the state the arm was in two rounds ago. It swept PLAINTEXT
     // alone, so this weakening passed it AND was reported HELD by the record
-    // above, which is format-agnostic: ten perspectives missed it twice and one
-    // reviewer found it twice. Narrow the sweep back and this record goes red
-    // saying the arm no longer reddens.
+    // above, which is format-agnostic. Narrow the sweep back and this record goes
+    // red saying the arm no longer reddens.
     //
     // ITS RED IS REQUIRED AT A MARKDOWN CELL AND THE UNGATED RECORD'S AT A
     // PLAINTEXT ONE, so neither can be read as proof of the other.

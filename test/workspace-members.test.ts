@@ -25,7 +25,6 @@ applySuiteDeadline();
  * a red is reachable, which is what each pair below measures.
  */
 
-/** A source file that cannot type-check, and a `broken` a diagnostic can name. */
 const typeError = 'export const broken: number = "not a number";\n';
 
 /** A source file that type-checks, so a member built from it cannot be the red. */
@@ -450,9 +449,8 @@ const sharedModule = "shared/thing";
  * the exact shape the members' exclusion from the root type check forecloses.
  *
  * The root maps `shared/*` through `paths` and USES it from its own src/, so the
- * mapping is live rather than decorative. The member imports the same specifier
- * with no mapping of its own and no node_modules to walk to, so its resolution
- * is broken in the one way a root's `paths` would paper over.
+ * mapping is live rather than decorative -- the member's own resolution is then
+ * broken in the one way a root's `paths` would paper over.
  */
 function memberReachingPastItsOwnResolution(): Record<string, string> {
   return {
@@ -529,7 +527,6 @@ function memberMappingItsOwnResolution(mapping: Record<string, unknown>): Record
   };
 }
 
-/** The member's own options, plus whatever the mapping arrives by. */
 const mappedMemberOptions = {
   target: "esnext",
   module: "esnext",
@@ -539,7 +536,6 @@ const mappedMemberOptions = {
   types: [],
 };
 
-/** Where the mapping points, from a member's own directory. */
 const memberPaths = { [`${sharedModule.split("/")[0] ?? ""}/*`]: ["./shared/*.ts"] };
 
 /**

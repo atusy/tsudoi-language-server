@@ -11,7 +11,6 @@ import type {
  */
 export const secondReadFailure = "the hover handler is gone on the second read";
 
-/** What the FIRST read answers with, so a served hover is distinguishable. */
 export const hoverText = "one read is all this config affords";
 
 /**

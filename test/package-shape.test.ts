@@ -26,7 +26,6 @@ applySuiteDeadline();
  * someone violates the reason.
  */
 
-/** The repo's tsconfig.json, with the given keys replaced, in a throwaway tree. */
 async function typeCheckWith(
   config: Record<string, unknown>,
   dist: string,
@@ -119,7 +118,6 @@ const buildTsconfig = JSON.parse(
   readFileSync(join(frameworkRoot, "tsconfig.build.json"), "utf8"),
 ) as Record<string, unknown>;
 
-/** The settings half of each, which is where every claim below reads from. */
 const repoOptions = repoTsconfig.compilerOptions as Record<string, unknown>;
 const buildOptions = buildTsconfig.compilerOptions as Record<string, unknown>;
 
@@ -479,10 +477,8 @@ test("the repo depends on every member package for its own examples, at the vers
  * would ship nothing and still be the second declaration.
  */
 test("the dictionary belongs to the handler package, and neither manifest here declares it", () => {
-  // BOTH MANIFESTS, because the two fields the argument is about live in DIFFERENT
-  // FILES -- shipping it to a consumer would be the framework's `dependencies`,
-  // declaring it for the suite's convenience the workspace's `devDependencies` --
-  // so a reading of either alone leaves the other route open.
+  // BOTH MANIFESTS, because the two fields the argument is about live in
+  // DIFFERENT FILES, so a reading of either alone leaves the other route open.
   const dependencies = (packageJson.dependencies ?? {}) as Record<string, string>;
   const devDependencies = (workspaceJson.devDependencies ?? {}) as Record<string, string>;
 
@@ -581,7 +577,6 @@ test("the published surface is tsudoi's types beside the dependency subpaths, an
   expect(packageJson.bin).toBeUndefined();
 });
 
-/** The scripts the manifest declares, read at test time like everything else. */
 const scripts = packageJson.scripts as Record<string, string> | undefined;
 
 // A PUBLISH-TIME STEP, and the develop-time half lives in bunfig.toml. prepack

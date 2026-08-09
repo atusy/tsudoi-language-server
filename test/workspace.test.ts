@@ -142,7 +142,6 @@ interface Observation {
   rootPath?: unknown;
 }
 
-/** The fixture's whole report for the session as it now stands. */
 async function observed(session: LspSession): Promise<Observation> {
   const hover = await session.request<Hover>("textDocument/hover", {
     textDocument: { uri },
@@ -152,7 +151,6 @@ async function observed(session: LspSession): Promise<Observation> {
   return JSON.parse(contents.value ?? "{}") as Observation;
 }
 
-/** The folder list alone, which is what every change assertion below reads. */
 async function observedFolders(session: LspSession): Promise<unknown> {
   return (await observed(session)).workspaceFolders;
 }
@@ -248,12 +246,10 @@ async function completeAt(session: LspSession, line: string): Promise<Completion
   return result ?? [];
 }
 
-/** What each item puts in the buffer. */
 function inserted(items: readonly CompletionItem[]): string[] {
   return items.map((item) => item.insertText ?? "").sort();
 }
 
-/** An item's documentation as markdown text, or "" when it carries none. */
 function documentationOf(item: CompletionItem): string {
   const documentation = item.documentation;
   return typeof documentation === "string" ? documentation : (documentation?.value ?? "");
@@ -995,10 +991,8 @@ for (const runtime of runtimes) {
     // filter that could never match.
     //
     // cwd and the workspace are DIFFERENT DIRECTORIES holding DIFFERENT files,
-    // which is what tells which root produced an item. It is a
-    // SYNTHETIC ISOLATION STATE and no editor produces it -- nvim spawns the
-    // server with cwd = root_dir whenever it found a root -- and nobody should
-    // later read it as an observed one.
+    // which is what tells which root produced an item -- the synthetic isolation
+    // state recorded at `exampleSession`, never an observed editor one.
     test("every workspace folder is answered from, and its items name their root", async () => {
       const cwd = tree(["notes/cwd-only.txt"]);
       const first = tree(["notes/first-only.txt"]);

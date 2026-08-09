@@ -19,11 +19,10 @@ applySuiteDeadline();
  * THE ONE FORM FOR TAKING THE DEFINITION OF DONE, driven against throwaway
  * dashboards rather than against this repository's own.
  *
- * WHY NOT AGAINST THIS REPOSITORY: the runner's subject IS the five checks, so
- * an arm running it here would run `bun test` inside `bun test`. Every arm below
- * hands it a checkout whose checks are shell scripts that report a chosen exit
- * code, which is also what produces the states this is built for -- the five
- * here are green, and an instrument whose witness cannot fail measures nothing.
+ * WHY NOT AGAINST THIS REPOSITORY: every arm below hands it a checkout whose
+ * checks are shell scripts that report a chosen exit code, which is what
+ * produces the states this is built for -- the real five are green, and an
+ * instrument whose witness cannot fail measures nothing.
  *
  * WHAT IS DELIBERATELY NOT ASSERTED HERE: that the five real checks are those
  * five. The dashboard is where that list lives, and an arm pinning it here would
@@ -43,10 +42,8 @@ interface Tree {
    * A command that records its own invocation and then exits with `exit`,
    * optionally pausing that many seconds BEFORE it records itself.
    *
-   * THE PAUSE IS AN INSTRUMENT AND NOT A DELAY: it is what makes a log ORDER
-   * read as an order rather than as a coincidence, since three
-   * commands that each take milliseconds tend to finish in the order they were
-   * started even when nothing made them.
+   * THE PAUSE IS AN INSTRUMENT AND NOT A DELAY, and the arm that uses it says
+   * what it buys.
    */
   logged: (name: string, exit: number, pauseSeconds?: number) => string;
   /**

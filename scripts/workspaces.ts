@@ -26,10 +26,6 @@ import { fileURLToPath } from "node:url";
  * all, and both commands exit 0 having each done their half.
  */
 
-/**
- * Every directory the workspace configuration declares a member, expanded from
- * the `workspaces` patterns themselves.
- */
 export function declaredMembers(root: string): readonly string[] {
   const manifestPath = join(root, "package.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
@@ -57,7 +53,6 @@ export function declaredMembers(root: string): readonly string[] {
 /** The manifest fields a build edge is read out of. */
 const dependencyFields = ["dependencies", "peerDependencies"] as const;
 
-/** A package as the ordering sees it: where it is, what it is called, what it needs. */
 interface OrderedPackage {
   readonly dir: string;
   readonly name: string | undefined;

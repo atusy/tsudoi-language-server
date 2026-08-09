@@ -17,17 +17,11 @@ import type { RequestContext } from "@atusy/tsudoi-language-server/types";
  * alone.
  *
  * THE FAILURE ARM OF THE LAZY-INIT IDIOM, which is the one thing about
- * src/hover.ts that no session test can reach.
- *
- * Every other test that reaches this handler drives the demo config through a
- * real server under BOTH runtimes, and a real `init()` succeeds -- so the whole
- * suite observes the arm where nothing goes wrong. What is defended here is what
- * happens when the FIRST load fails: the promise is memoised, not the
- * resolution, so a single transient failure would be handed back to every later
- * hover for the life of the process. `await ready()` sits outside `define`'s own
- * try, so that rejection escapes `define`, escapes the handler, and each of
- * those hovers is answered -32603. A user restarts their editor to fix it,
- * having been told nothing.
+ * src/hover.ts that no session test can reach: every other test that reaches
+ * this handler drives the demo config through a real server under BOTH runtimes,
+ * where a real `init()` succeeds, so the whole suite observes the arm where
+ * nothing goes wrong. What the memo costs when the FIRST load fails is written
+ * at `ready()`.
  *
  * ONE RUNTIME, AND THE REASON IS THE APPARATUS RATHER THAN THE CLAIM: making
  * `init` fail exactly once requires replacing the `wordnet` module, and
@@ -74,7 +68,6 @@ test("a define whose first database load failed retries, instead of failing fore
   await expect(define("apple", "markdown")).rejects.toThrow(transientFailure);
   expect(initCalls).toBe(1);
 
-  // THE HEADLINE: the same process, the next hover, and the dictionary works.
   expect(await define("apple", "markdown")).toBe("*noun* — apple is a word");
   expect(initCalls).toBe(2);
 
@@ -85,7 +78,6 @@ test("a define whose first database load failed retries, instead of failing fore
   expect(initCalls).toBe(2);
 });
 
-/** The buffer every hover below is asked about: one word, at its first column. */
 const uri = "file:///workspace/a.txt";
 
 /**

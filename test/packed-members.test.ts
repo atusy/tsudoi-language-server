@@ -73,10 +73,6 @@ afterAll(() => {
  * be green in exactly the state this file exists to redden. It costs an edit
  * whenever the published surface changes on purpose, and that is the price of
  * noticing when it changes by accident.
- *
- * KEYED BY NAME so a member added under packages/ has to be written down here
- * before it can pass -- the pair below is what enforces that, and it is the
- * difference between a claim about members and a claim about one of them.
  */
 const publishedFiles: Record<string, readonly string[]> = {
   "@atusy/tsudoi-completion-path": [
@@ -225,17 +221,13 @@ function unfollowableLinks(root: string, markdown: string): string[] {
     if (target === undefined || /^(?:https?:|mailto:|#)/.test(target)) {
       continue;
     }
-    // The fragment is stripped before the target is judged: `guide.md#usage`
-    // names a file plus a heading, and only the file half is a path.
     const path = (target.split("#")[0] ?? "").trim();
     if (path === "") {
       continue;
     }
     const destination = resolve(root, path);
-    // OUT OF THE PACKAGE, OR MISSING INSIDE IT -- two different failures, both of
-    // them a link the reader cannot follow. The separator on the prefix is what
-    // stops a sibling directory whose name merely STARTS with the root's from
-    // counting as inside it.
+    // The separator on the prefix is what stops a sibling directory whose name
+    // merely STARTS with the root's from counting as inside it.
     if (!destination.startsWith(root + sep) || !existsSync(destination)) {
       broken.push(`[${text ?? ""}](${target})`);
     }
@@ -265,8 +257,6 @@ test("no member's packed README links somewhere its reader cannot follow", () =>
   expect(read).toBeGreaterThan(0);
 });
 
-// The instrument, proved on both answers: a link that escapes the package is
-// caught, and the absolute and in-package spellings that replace it are not.
 test("the link reading catches an escape and clears what a reader can follow", () => {
   const root = packed[0]?.dir ?? repoRoot;
 
@@ -290,11 +280,10 @@ test("the link reading catches an escape and clears what a reader can follow", (
 /**
  * NO SHIPPED MODULE MAY NAME A REPOSITORY FILE THE READER DOES NOT HAVE.
  *
- * THIS IS A MECHANISM GAP RATHER THAN A DILIGENCE ONE, and the record says so:
- * three consecutive sprints found a false claim in a shipped comment, one of
- * them AFTER the team's attention had been pointed at the class, so `be more
- * careful` is refuted by the evidence. THE ARTIFACT IS WHERE IT MATTERS AND
- * NOTHING READ IT. The build keeps comments, so a sentence citing
+ * THIS IS A MECHANISM GAP RATHER THAN A DILIGENCE ONE, and the record refutes
+ * `be more careful`: a false claim in a shipped comment was found again AFTER
+ * the team's attention had been pointed at the class. THE ARTIFACT IS WHERE IT
+ * MATTERS AND NOTHING READ IT. The build keeps comments, so a sentence citing
  * `test/package-shape.test.ts` compiles straight into dist/ and lands in a
  * consumer's node_modules, where that path names nothing.
  *
@@ -310,13 +299,6 @@ test("the link reading catches an escape and clears what a reader can follow", (
  * standing in a checkout, packing the tarball -- so a rule over the whole
  * archive would force that document to stop saying the one thing it is there to
  * say. dist/ is addressed to nobody but a consumer.
- *
- * THE INSTRUMENT IS A MATCHER AND IS THEREFORE BOUNDED BEFORE IT IS TRUSTED,
- * which is this project's standing rule about sweeping for a defect that is a
- * property of matching: the pattern requires a SEPARATOR and a source extension,
- * so a prose fragment like `src/fo` is not a claim, and the test below proves it
- * finds real claims in real prose rather than reporting that nothing was found
- * by something nobody checked.
  *
  * THE SEPARATOR IS IN THE TEST'S NAME BECAUSE A BARE FILENAME IS OUTSIDE THE
  * CLASS, and dropping it is MEASURED rather than argued -- a name claiming more
@@ -336,7 +318,6 @@ test("the link reading catches an escape and clears what a reader can follow", (
 const pathClaim =
   /(?:\.\/)?[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+\.(?:ts|js|mjs|cjs|json|toml|md)\b/g;
 
-/** Every path-shaped token in `text` that names no file inside `root`. */
 function unreachableClaims(root: string, text: string): string[] {
   const missing: string[] = [];
   for (const [token] of text.matchAll(pathClaim)) {
@@ -365,8 +346,7 @@ test("no member ships a module naming a directory-qualified repository file its 
     }
   }
 
-  // NAMED rather than counted, so the offending sentence is findable from the
-  // failure text.
+  // NAMED rather than counted, so the offending sentence is findable.
   expect(offenders).toEqual([]);
   // The pair for the absence: a reader that opened nothing satisfies the line
   // above on every repository ever written.
@@ -383,21 +363,15 @@ test("no member ships a module naming a directory-qualified repository file its 
  * cite repository paths on purpose: run against a tarball's dist/, its sentences
  * name files that are not there, which is exactly the condition above.
  *
- * THE TOKEN THIS ARM NAMES CHANGED WHEN THE FRAMEWORK BECAME A MEMBER, and the
- * change is worth recording rather than hiding: it used to be
- * test/helpers/typecheck.ts, cited inside `linkRootPackage` -- a function that
- * exists only while the main package is the workspace root, and which the move
- * retired along with its comment. A TOKEN AND NOT A COUNT IS STILL WHAT IS
- * ASSERTED: `it found something` is satisfied by a matcher that fires on any
- * word with a slash in it, which is the degenerate this half exists to refuse.
+ * A TOKEN AND NOT A COUNT IS WHAT IS ASSERTED: `it found something` is satisfied
+ * by a matcher that fires on any word with a slash in it, which is the degenerate
+ * this half exists to refuse.
  */
 test("the pattern that found nothing in the tarballs finds the claims in real prose", () => {
   const root = join(packed[0]?.dir ?? repoRoot, "dist");
   const source = readFileSync(join(repoRoot, "scripts", "workspaces.ts"), "utf8");
 
   expect(unreachableClaims(root, source)).toContain("test/build-order.test.ts");
-  // The shape rule, both ways: a separator and a source extension make a claim,
-  // and a bare prose fragment does not.
   expect(unreachableClaims(root, "see test/package-shape.test.ts for the reason")).toEqual([
     "test/package-shape.test.ts",
   ]);
@@ -444,9 +418,7 @@ test("no member ships a declaration that names a module in the global type space
  *
  * The absence above is worth nothing unless this pattern finds the statement
  * when it IS there, and the one place it is there is the unshipped source
- * declaration the whole arrangement exists to keep unshipped. So the negative
- * result names its instrument rather than asserting that nothing was found by
- * something nobody checked.
+ * declaration the whole arrangement exists to keep unshipped.
  */
 test("the pattern that found nothing in the tarballs finds the declaration in source", () => {
   const source = readFileSync(

@@ -37,23 +37,7 @@ applySuiteDeadline();
  * reach a registry without first deleting that key, and deleting it is what
  * reddens every member still carrying the flag.
  *
- * AND `TSUDOI'S MANIFEST` IS LOCATED RATHER THAN ASSUMED TO BE THE CHECKOUT
- * ROOT'S, which is the difference between a gate and a green. The two are the
- * same file today and are about to stop being: a workspace root that publishes
- * nothing keeps `private: true` FOREVER, so a reading keyed on the root would
- * answer `publication is forbidden` by construction -- for ever, measuring
- * nothing, while the edit that actually permits publication happens one
- * directory down and moves nothing here. The subject is THE MANIFEST WHOSE EDIT
- * PERMITS PUBLICATION, and the only thing that identifies it is the name it
- * declares.
- *
- * WHY NOT THE README, which is the obvious instrument and the weaker one: prose
- * is not on the publication path. A publisher who runs `bun publish` without
- * opening the document succeeds, and every member's manifest goes on saying
- * tsudoi is optional with nothing anywhere having moved. The manifest cannot be
- * bypassed that way, because the tool reads it.
- *
- * WHY NOT `prepublishOnly` EITHER: a guard script fires at publish time, which
+ * WHY NOT `prepublishOnly`: a guard script fires at publish time, which
  * is precisely when nobody is running this suite. It could not be exercised
  * without publishing, so its own correctness would go unmeasured -- and a guard
  * that has never been observed to fire is a guard on paper. `private` is read by
@@ -64,29 +48,21 @@ applySuiteDeadline();
  * repository's green depend on somebody else's uptime, and would redden for a
  * network fault as loudly as for a broken premise.
  *
- * OVER HANDLER PACKAGES AS A CLASS, ENUMERATED FROM THE WORKSPACE
- * CONFIGURATION, because two packages now repeat one falsehood and a third would
- * repeat it again. HANDLERS AND NOT MEMBERS, and the difference is not cosmetic:
- * the falsehood is `tsudoi is optional to me`, which tsudoi cannot say about
- * itself -- a member-wide enumeration would report the framework as an offender
- * for declaring no peer on the package it IS.
+ * HANDLERS AND NOT MEMBERS, enumerated from the workspace configuration so the
+ * next package repeating the falsehood is covered without an edit here. The
+ * difference is not cosmetic: the falsehood is `tsudoi is optional to me`, which
+ * tsudoi cannot say about itself -- a member-wide enumeration would report the
+ * framework as an offender for declaring no peer on the package it IS.
  *
- * WHAT THIS CATCHES: any route to publication that goes through THIS manifest,
- * which is every route a publisher standing in this repository can take.
- *
- * WHAT IT CANNOT SEE, said rather than left to be discovered. It reads a file,
- * not the world: a publish from a FORK, or under a DIFFERENT NAME, or from a
- * tree whose manifest was rewritten in flight, leaves this green because the
- * package it describes is no longer the one being published. It also cannot know
- * whether tsudoi is published -- only whether this repository still forbids it.
- * The two part company for exactly as long as it takes someone to delete the key
- * and not publish, and in that window the flag is a lie this file already names.
+ * WHAT THIS CATCHES is any route to publication that goes through THIS manifest,
+ * which is every route a publisher standing in this repository can take. WHAT IT
+ * CANNOT SEE: it reads a file, not the world -- a publish from a FORK, or under a
+ * DIFFERENT NAME, or from a tree whose manifest was rewritten in flight, leaves
+ * this green because the package it describes is no longer the one being
+ * published. It also cannot know whether tsudoi is published -- only whether this
+ * repository still forbids it.
  */
 
-/**
- * The name every handler declares its peer under, which is the published name
- * and the whole of the locator below.
- */
 const PUBLISHED_NAME = "@atusy/tsudoi-language-server";
 
 /**
@@ -171,20 +147,9 @@ function disagreeing(root: string, unpublished: boolean): string[] {
  * quietly dropped the flag while tsudoi is still unpublished is named here too,
  * because installing that package then 404s.
  *
- * AND ONE QUESTION IS PUT TO THE READER WHO REDDENS THIS ARM BY DELETING
- * TSUDOI'S `private`, WHICH IS ONE OF THE TWO READERS IT CAN HAVE AND NOT THE
- * ONLY ONE. `BECAUSE THEY ARE THE ONLY READER IT CAN BE PUT TO` STOOD HERE AND
- * CONTRADICTED THE PARAGRAPH ABOVE IT: this arm fires in both directions, and
- * MEASURED at base 488787c on bun test v1.3.13, `optional: true` dropped from
- * packages/tsudoi-hover-wordnet's `peerDependenciesMeta` with tsudoi's `private`
- * STILL IN PLACE reddens this same arm -- 5 pass / 2 fail on this file, this arm
- * naming `optional=false while tsudoi's own manifest forbids publication=true`,
- * and the control below red beside it. THAT READER IS NOT PUBLISHING and the
- * residual is not theirs: their repair is the flag, and the question below has
- * no subject for them at all. Deleting `private` is what makes it theirs,
- * because it is the residual's precondition.
- *
- * THE RESIDUAL. A handler's build reads the framework's SOURCE when the
+ * THE RESIDUAL, WHICH IS THE PUBLISHING READER'S AND NOT THE ONE WHO REDDENED
+ * THIS ARM BY DROPPING A FLAG -- deleting `private` is its precondition. A
+ * handler's build reads the framework's SOURCE when the
  * framework's artifact is absent, and a consumer receives the framework's
  * `dist/`. The declarations that ship are the same either way -- measured, and
  * the reading is at `prepareWorkspace` in scripts/workspaces.ts -- so what is
@@ -217,8 +182,8 @@ test("no member's optional-peer flag disagrees with what tsudoi's manifest says 
 });
 
 /**
- * THE CONTROL, AND IT IS THE WHOLE POINT OF THE FILE: the day the premise dies,
- * this reading names every member still carrying the flag.
+ * THE CONTROL: the day the premise dies, this reading names every member still
+ * carrying the flag.
  *
  * PERTURBING THE ANSWER RATHER THAN THE MANIFEST, deliberately. Rewriting a copy
  * of package.json and re-reading it would measure the JSON parser; what is under
@@ -238,16 +203,6 @@ test("the same reading names every member the moment the manifest permits public
   }
 });
 
-/**
- * THE OTHER HALF OF `where the publishing edit passes`: each member's OWN README
- * states the premise too, in the document a stranger who installed it reads.
- *
- * IT IS NOT A SECOND INSTRUMENT. The reading above is keyed on the root
- * document, which is where a publisher works; this asserts that the correction
- * a consumer meets carries the same premise, so the two cannot say different
- * things about when the flag is a lie. test/packed-members.test.ts reads the
- * same word off the TARBALL, which is where a registry reader meets it.
- */
 /**
  * THE DOCUMENT IS HELD TO THE GATE, which is what keeps the prose from drifting
  * once the machine reading above stopped depending on it.
@@ -321,7 +276,7 @@ test("deleting the sentinel from the manifest that declares the published name r
 });
 
 /**
- * THE CONTROL, AND IT IS THE HALF TODAY'S IMPLEMENTATION GETS BACKWARDS. A
+ * THE CONTROL, AND IT IS THE HALF A LOCATOR GETS BACKWARDS BY FALLING BACK. A
  * DIFFERENT manifest losing the sentinel must not move the reading -- and the
  * root's is the one that will lose it in practice, because a workspace root
  * nobody publishes is where a maintainer's eye lands first.
@@ -352,6 +307,14 @@ test("a workspace where nothing declares the published name is refused, naming i
   }
 });
 
+/**
+ * THE OTHER HALF OF `where the publishing edit passes`: each member's OWN README
+ * states the premise too, in the document a stranger who installed it reads. NOT
+ * A SECOND INSTRUMENT -- the machine reading is keyed on the manifest, and this
+ * only holds the correction a consumer meets to the same premise.
+ * test/packed-members.test.ts reads the same premise off the TARBALL -- as `peer`
+ * and `optional`, never this word -- which is where a registry reader meets it.
+ */
 test("every member's own README states the premise the flag is carried under", () => {
   const members = handlerMembers(repoRoot);
 

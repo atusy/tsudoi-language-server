@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -15,14 +14,12 @@ export const beforeGate: CompletionItem[] = [
 export const afterGate: CompletionItem[] = [{ label: "取消後", detail: "yielded after the gate" }];
 export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "returned" }];
 
-/** Written from the signal's own abort event -- a standard Web API, so Deno-safe. */
 export const abortedMarker = "completion-cancel: aborted";
 
 /**
- * Yields, parks, then yields again -- and it yields that second batch whether or
- * not it was cancelled. Stopping AFTER an abort is tsudoi's job here, not the
- * handler's: a fixture that returned early on abort would prove nothing about
- * what tsudoi suppresses.
+ * The second batch is yielded whether or not it was cancelled. Stopping AFTER an
+ * abort is tsudoi's job here, not the handler's: a fixture that returned early
+ * on abort would prove nothing about what tsudoi suppresses.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({

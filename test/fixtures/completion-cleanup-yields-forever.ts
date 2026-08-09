@@ -6,7 +6,6 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let the handler past its gate. */
 export const gateOpen = "release";
 
 export const beforeGate: CompletionItem[] = [
@@ -14,20 +13,17 @@ export const beforeGate: CompletionItem[] = [
 ];
 export const returnedItems: CompletionItem[] = [{ label: "戻り値", detail: "yielded last" }];
 
-/** The batch the `finally` yields, over and over, and which nothing may forward. */
 export const cleanupYield: CompletionItem[] = [{ label: "永久", detail: "yielded in cleanup" }];
 
-/** Cleanup has STARTED -- the generator was closed rather than left suspended. */
 export const cleanupEntered = "completion-cleanup-yields-forever: entered cleanup";
 
 /**
  * Cleanup that NEVER STOPS YIELDING -- the case that decides whether draining a
  * cleanup may be unbounded.
  *
- * A CONFIG AUTHOR REACHES THIS BY ACCIDENT, which is why it is worth a fixture:
- * a `finally` that flushes a buffer through a loop, over a buffer that refills
- * or a cursor that never advances, is one wrong condition away from every
- * correct version of the same code.
+ * A CONFIG AUTHOR REACHES THIS BY ACCIDENT: a `finally` that flushes a buffer
+ * through a loop, over a buffer that refills or a cursor that never advances, is
+ * one wrong condition away from every correct version of the same code.
  *
  * WHAT IT COSTS IF NOTHING BOUNDS IT: every one of these yields is answered by
  * a `next()` that settles as a microtask, so an unbounded drain never hands the
@@ -40,10 +36,8 @@ export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
       // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
-      // cancelled one. `returnedItems` is a module constant and the params are
-      // read only to poll the gate, so an answer that arrives is final. The
-      // cancelled path -- the one this fixture exists for -- is answered -32800
-      // with no result, so no completeness claim is reachable there.
+      // cancelled one -- `returnedItems` is a module constant and the params are
+      // read only to poll the gate, and a cancelled request carries no result.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

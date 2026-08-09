@@ -100,8 +100,7 @@ for (const runtime of runtimes) {
      * would satisfy no assertion here and would tell every client this server
      * executes commands.
      *
-     * IT ADDS NO DISCRIMINATION AND IS KEPT ANYWAY, said plainly rather than
-     * dressed up as a second subject. test/hover.test.ts drives the same
+     * IT ADDS NO DISCRIMINATION AND IS KEPT ANYWAY. test/hover.test.ts drives the same
      * fixture to the same whole-object equality, so every weakening that
      * reddens one reddens the other -- contributing `executeCommandProvider`
      * unconditionally reddens BOTH -- and there is no perturbation this arm
@@ -136,7 +135,7 @@ for (const runtime of runtimes) {
      *
      * MEASURED, THE FILTER ADDED TO THE ROUTER'S PROLOGUE -- an `InvalidRequest`
      * for any command not in a list that is empty -- and the reading is WIDER
-     * THAN THE ONE ARM, which is why it is written out: this arm reddens AND SO
+     * THAN THE ONE ARM: this arm reddens AND SO
      * DOES THE `null` ARM BELOW, on both runtimes, because the refusal is decided
      * before either the handler or its absence is reached. BOTH CAPABILITY ARMS
      * STAY GREEN, which is the half that says capability and handler are untied
@@ -174,11 +173,6 @@ for (const runtime of runtimes) {
      * row joins by existing. That one drives one shared params object across
      * every method; this one drives THIS request, which is what the attribution
      * needs.
-     *
-     * IT IS ALSO THE SECOND RED OF THE FILTER PERTURBATION recorded above, and
-     * that is not a duplicate reading: a filter refuses BEFORE the route reaches
-     * the absent handler, so the two arms move together and only the capability
-     * arms stay behind to discriminate.
      */
     test("the same command against a config with no handler is answered null", async () => {
       const session = LspSession.start(runtime, noMethods);

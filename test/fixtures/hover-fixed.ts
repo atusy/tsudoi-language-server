@@ -6,10 +6,7 @@ import type {
 import type { Hover, HoverParams } from "vscode-languageserver-protocol";
 
 /**
- * The Hover this config answers with, whatever is asked. Written here as the
- * literal the test compares against, so anything tsudoi does to contents or
- * range on the way out shows up as an inequality rather than as a plausible
- * looking response.
+ * The Hover this config answers with, whatever is asked.
  *
  * The value is Japanese because hover contents are markdown a human reads, and
  * a payload that survives ASCII proves nothing about the byte counting between

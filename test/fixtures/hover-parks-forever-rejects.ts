@@ -6,16 +6,13 @@ import type {
   TsudoiConfig,
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
-/** The buffer text the test writes to let a LATER hover past its gate. */
 export const gateOpen = "release";
 
 /** What the hover that DOES answer says, so the session is seen serving. */
 export const answeredValue = "hover-parks-forever-rejects: answered";
 
-/** Written once the handler is provably inside the wait that will fail. */
 export const parkedMarker = "hover-parks-forever-rejects: parked";
 
-/** Written after the wait fails, which is the only evidence it ever did. */
 export const failedMarker = "hover-parks-forever-rejects: the wait failed";
 
 /**
@@ -57,9 +54,6 @@ export default (): Promise<TsudoiConfig> => {
         const gateClosed =
           context.tsudoi.documents.get(params.textDocument.uri)?.getText() !== gateOpen;
 
-        // The gate decides WHICH request this is. Closed, this is the request
-        // the test cancels, and it parks in a wait it will not survive; open, it
-        // is the later one that must answer normally.
         if (gateClosed) {
           process.stderr.write(`${parkedMarker}\n`);
           try {

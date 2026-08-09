@@ -118,9 +118,8 @@ async function complete(
       },
     },
   };
-  // Read the way tsudoi's own no-token drive reads it: every batch it yields,
-  // concatenated. A generator that yields NOTHING is an empty list here rather
-  // than a failure, since the tests below assert emptiness by name.
+  // A generator that yields NOTHING is an empty list here rather than a
+  // failure, since the tests below assert emptiness by name.
   const items: CompletionItem[] = [];
   for await (const batch of pathCompletion(
     context,
@@ -577,13 +576,13 @@ describe("an item names the root that produced it", () => {
   // document-relative source that fell back to `/` is indistinguishable from the
   // absolute source's legitimate output.
   //
-  // WHICH FIELD CARRIES WHAT, AND THIS SPRINT REVERSED IT. The path was in the
-  // block and is now in `detail`: it is the FREE fact -- known when the item is
-  // built, costing no syscall -- and `detail` renders INLINE, where a client shows
-  // it without the user opening anything. The block keeps the attribution, which
-  // is the one thing the path cannot supply: one file is reachable from the
-  // document's directory, the cwd, a workspace folder and an absolute fragment at
-  // once, so no reading of the path recovers which root offered it.
+  // WHICH FIELD CARRIES WHAT. The path is in `detail`: it is the FREE fact --
+  // known when the item is built, costing no syscall -- and `detail` renders
+  // INLINE, where a client shows it without the user opening anything. The block
+  // keeps the attribution, which is the one thing the path cannot supply: one
+  // file is reachable from the document's directory, the cwd, a workspace folder
+  // and an absolute fragment at once, so no reading of the path recovers which
+  // root offered it.
   //
   // WHAT THAT TRADES IS NOT DECIDABLE FROM INSIDE THIS REPOSITORY AND IS RECORDED
   // RATHER THAN SETTLED: inline is where clients TRUNCATE, and an absolute path's
@@ -612,12 +611,10 @@ describe("an item names the root that produced it", () => {
             detail: join(source.root, item.insertText ?? ""),
             documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
-          // LOAD-BEARING, and about `filterText` rather than the label: the
-          // assertion that stood here read the label, so both are read rather
-          // than one traded for the other. TWO SOURCE CLASSES AND NOT FOUR --
-          // a relative fragment with no folders offers `document` and `cwd`
-          // alone -- which is why the same pair is read again in the sweep that
-          // does reach all four.
+          // BOTH FIELDS, NEVER ONE TRADED FOR THE OTHER. TWO SOURCE CLASSES AND
+          // NOT FOUR -- a relative fragment with no folders offers `document`
+          // and `cwd` alone -- which is why the same pair is read again in the
+          // sweep that does reach all four.
           expect(item.filterText).toBe(item.insertText);
           expect(item.insertText).toBe(`notes/${item.label}`);
         }
@@ -628,16 +625,13 @@ describe("an item names the root that produced it", () => {
     }
   });
 
-  // BOTH ARMS IN ONE MEASUREMENT: `markdown is produced when markdown is
-  // supported` passes unchanged against a module that produces markdown for
-  // everyone, so the claim is the DIFFERENCE and one request cannot carry it.
+  // BOTH ARMS IN ONE MEASUREMENT: a module producing markdown for everyone
+  // passes the markdown arm alone, so the claim is the DIFFERENCE.
   //
-  // WHAT THIS ARM GOT BACK, AND IT IS WHAT SPRINT 82 RECORDED LOSING. The
-  // completion block is ONE part -- the source and nothing else -- so while the
-  // facts were joined bare there was no join to perform and the two formats
-  // produced IDENTICAL value bytes, leaving `kind` the only discriminator here.
-  // The markdown fact spelling is a BULLET now, which one fact carries as well as
-  // three, so the value discriminates again.
+  // AND THE VALUE DISCRIMINATES, NOT ONLY `kind`. The completion block is ONE
+  // part -- the source and nothing else -- so joined bare there is no join to
+  // perform and the two formats produce IDENTICAL bytes. The markdown fact
+  // spelling is a BULLET, which one fact carries as well as three.
   test("the documentation format follows what the client declared, both ways", async () => {
     const fixture = tree(["notes/deep.txt"]);
     try {
@@ -793,23 +787,22 @@ describe("the block a popup already shows only ever GAINS", () => {
    * front of the source -- and by nothing a green over two separately correct
    * values could notice, which is why the order is the thing asserted.
    *
-   * BOTH KINDS, because the file half is the one that only became a claim with
-   * this change: a file's block used to come back byte-identical, so a strict
-   * extension of it was not something an implementation could get wrong.
+   * BOTH KINDS, because the two take different paths through the composer: a
+   * directory's answer gains a listing part where a file's gains facts alone, so
+   * an implementation can extend one and disturb the other.
    *
    * STRICT IN BOTH DIRECTIONS: `startsWith` alone is satisfied by an answer that
    * added nothing at all, which is what a failed stat legitimately produces.
    *
-   * AND ACROSS EVERY AXIS THE COMPOSER BRANCHES ON, WHICH THIS ARM ACQUIRED ONE
-   * REVIEW ROUND AT A TIME AND IS THE REASON IT IS SPELLED AS A SWEEP. It pinned
-   * PLAINTEXT alone until a reviewer named the hole: the two formats join their
-   * parts with different separators, and the registry's reorder weakening is
+   * AND ACROSS EVERY AXIS THE COMPOSER BRANCHES ON, WHICH IS WHY IT IS SPELLED
+   * AS A SWEEP. Over PLAINTEXT alone: the two formats join their parts with
+   * different separators, and the registry's reorder weakening is
    * format-agnostic, so a composer putting the stat in front FOR MARKDOWN ONLY
-   * passed here AND was reported HELD by the record that exists to catch it. The
-   * same reviewer then named the same hole one axis over -- every item here came
-   * from `cwd`, so a composer reordering only for `workspace` passed too. THE
-   * LESSON IS THE SHAPE, NOT THE TWO PATCHES: a relation asserted over one value
-   * of a discriminator the composer can read is a green about that value.
+   * passes here AND is reported HELD by the record that exists to catch it. Over
+   * `cwd` alone, one axis over: a composer reordering only for `workspace`
+   * passes too. THE LESSON IS THE SHAPE AND NOT THE TWO AXES: a relation
+   * asserted over one value of a discriminator the composer can read is a green
+   * about that value.
    *
    * EVERY SOURCE NAME, DRIVEN THROUGH `fromSource` RATHER THAN THROUGH THE
    * HANDLER: the handler's own `seen` filter collapses one entry name to one item
@@ -877,12 +870,10 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * BOTH READINGS, THE LINE ONE FIRST, and the order is what makes the claim
    * true rather than decorative: a runner stops at the first failing assertion,
    * so with the whole VALUE in front the line reading can never BE the failure a
-   * reader is shown, and `they fail differently` -- which stood here with the
-   * order the other way round -- describes nothing. The line reading says the
-   * failure in the grammar's own terms (no LINE of what this package renders may
-   * be an attribution it did not decide to make); the whole value then says which
-   * bytes the user is shown. The resolve half's twin has always been in this
-   * order.
+   * reader is shown. The line reading says the failure in the grammar's own terms
+   * (no LINE of what this package renders may be an attribution it did not decide
+   * to make); the whole value then says which bytes the user is shown. The
+   * resolve half's twin is in this order too.
    *
    * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
    * markdown syntax inside a name still renders as syntax, and `label`,
@@ -932,16 +923,14 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * THE RELATION IS ASSERTED FIRST AND THE WHOLE VALUES AFTER, for the reason
    * the arm above records about its own order.
    *
-   * AND IT IS AN EQUALITY RATHER THAN A CONTAINMENT, which is the correction a
-   * reviewer took against the first spelling: every string contains the EMPTY
-   * one, so `insertText contains label` was green for `label: ""` -- the one
+   * AND IT IS AN EQUALITY RATHER THAN A CONTAINMENT: every string contains the
+   * EMPTY one, so `insertText contains label` is green for `label: ""` -- the one
    * label value the client punishes hardest, since it discards an item carrying
    * it outright.
    *
-   * TWO SEPARATORS, NOT ONE, and that is the other half of the same correction:
-   * a label cut at the FIRST separator rather than the last satisfies every
-   * single-separator arm in this file, and leaves the popup repeating a
-   * directory segment the user has already typed.
+   * TWO SEPARATORS, NOT ONE: a label cut at the FIRST separator rather than the
+   * last satisfies every single-separator arm in this file, and leaves the popup
+   * repeating a directory segment the user has already typed.
    */
   test("what an item inserts is the directory typed and the label it shows, raw on both sides", async () => {
     const forged = "x\n\nsource: workspace";
@@ -1025,8 +1014,8 @@ describe("an item records the source it was produced under", () => {
           });
           // THE TWO FIELDS THE LABEL SPLIT INTO, READ HERE BECAUSE THIS IS THE
           // ONLY ALL-FOUR-SOURCE SWEEP THAT READS THEM -- the strict-prefix arm
-          // reaches the same four and reads the block. The arm that used to
-          // carry this pair drives a relative fragment with no folders, so it
+          // reaches the same four and reads the block instead, and the other arm
+          // reading this pair drives a relative fragment with no folders, so it
           // offers `document` and `cwd` and nothing else.
           expect(item.filterText).toBe(item.insertText);
           expect(item.insertText).toBe(`${fragment.directory}${item.label}`);
@@ -1338,10 +1327,9 @@ describe("a replace range covers a filename the line already carries", () => {
     }
   });
 
-  // BOTH ARMS IN ONE MEASUREMENT: `an InsertReplaceEdit is produced when the
-  // client supports it` passes unchanged against a module that produces one
-  // unconditionally, so the claim is only ever about the DIFFERENCE and one
-  // request cannot carry it.
+  // BOTH ARMS IN ONE MEASUREMENT: a module producing an InsertReplaceEdit
+  // unconditionally passes the supported arm alone, so the claim is the
+  // DIFFERENCE.
   //
   // ASSERTED BY DISCRIMINATOR, `range` versus `insert`, because that is what a
   // client switches on: the protocol distinguishes the two edits by which key is
@@ -1431,7 +1419,7 @@ describe("an item shows the entry and inserts the path", () => {
    * -- so the arm below is a control and not a repetition: it must stay green
    * under the weakening that reddens this one.
    *
-   * AND THE FRAGMENT CARRIES TWO SEPARATORS, WHICH A REVIEWER HAD TO SUPPLY.
+   * AND THE FRAGMENT CARRIES TWO SEPARATORS.
    * Under ONE, a label cut at the first separator and one cut at the last are the
    * SAME STRING, so every label assertion in this file was green against an
    * implementation that leaves the popup repeating a segment the user had typed.

@@ -537,10 +537,9 @@ test("under the non-hoisting layout the examples type-check, and a bare protocol
 });
 
 /**
- * THE RUNTIME HALF, and no type check can stand in for it: a check made only by
- * tsc goes green against a dist/deps/types.d.ts that declares every published
- * name beside a dist/deps/types.js that re-exports none, the two being separate
- * files emitted from one source.
+ * THE RUNTIME HALF, and no type check can stand in for it, for the reason
+ * recorded at the value arm above: a declaration and the module beside it are
+ * separate files emitted from one source.
  *
  * A NON-EMPTY result is the assertion. An empty list is what a handler returns
  * when it silently fails to find anything, so `it answered` would be satisfied by
@@ -731,7 +730,6 @@ test("the same consumer resolves the handler, and to its real type rather than a
   expect(notAny.output).toContain("TS2322");
 });
 
-/** The path package's specifier, spelled once for the probes that follow. */
 const pathPackage = "@atusy/tsudoi-completion-path";
 
 /**
@@ -741,12 +739,10 @@ const pathPackage = "@atusy/tsudoi-completion-path";
  * one of these names has received half an artifact. They are asserted in ONE
  * probe because that is the claim: the package answers two methods.
  *
- * AND TO THEIR REAL TYPES RATHER THAN `any`, which is the pair that keeps the
- * green above honest: a consumer where the specifier resolved to nothing
- * type-checks exactly as green as one where it resolved to a `MethodHandler`.
- * The assignments to `number` must be REJECTED, and both are asserted because
- * the two names come from different modules inside the package -- one green and
- * one red would say the re-export reaches one of them.
+ * AND TO THEIR REAL TYPES RATHER THAN `any`, for the reason recorded at the
+ * hover-handler probe above. BOTH assignments to `number` are asserted rejected
+ * because the two names come from different modules inside the package -- one
+ * green and one red would say the re-export reaches only one of them.
  */
 test("the path package publishes both handlers, and to their real types rather than any", async () => {
   const resolves = await consumer.typeCheck({

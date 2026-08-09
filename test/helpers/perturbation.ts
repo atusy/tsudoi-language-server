@@ -97,8 +97,8 @@ export interface ArmFileRun {
 }
 
 /**
- * The four things this can say about a record, and only two of them are colours
- * a caller should tolerate.
+ * What this can say about a record, and only two of them are colours a caller
+ * should tolerate.
  *
  * `disarmed` HAS TWO SPELLINGS AND ONE MEANING, which is why they share a name:
  * the required red is present and BELONGS TO SOMETHING ELSE -- either the arm was
@@ -452,9 +452,9 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
  * One line per record, NAMING THE ARM IT WEAKENED -- and, where the record says
  * so, WHERE the red was required to fall.
  *
- * THE SITE IS PART OF THE NAME AND NOT DECORATION: three records now weaken ONE
- * arm in three ways, so a report naming the arm alone prints the same line three
- * times and a reader cannot tell which of them held.
+ * THE SITE IS PART OF THE NAME AND NOT DECORATION: more than one record weakens
+ * ONE arm, so a report naming the arm alone prints the same line twice over and
+ * a reader cannot tell which of them held.
  *
  * THE NAMES ARE THE REPORT AND A COUNT IS NOT, and nothing reddens if a count is
  * added: a green here must never be readable as a statement about arms outside
