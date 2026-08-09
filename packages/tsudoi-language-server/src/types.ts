@@ -424,8 +424,15 @@ export type Method = keyof MethodMap;
  * them apart -- a row of `MethodMap` contributes a capability and routes through
  * `registerMethods`, and `initialize` does neither. It is wired directly in
  * src/server.ts, beside the lifecycle's own refusal of a second handshake, so a
- * row up there would have src/methods.ts advertise a capability nobody can ask
- * for and src/config.ts refuse it with a sentence that is false of it.
+ * row up there would put src/methods.ts to registering a method the handshake
+ * has already answered, and src/config.ts to refusing it with a sentence that is
+ * false of it.
+ *
+ * ADVERTISING A CAPABILITY NOBODY CAN ASK FOR NO LONGER DISCRIMINATES, and
+ * `workspace/executeCommand` is the row that took it away: its `commands` is
+ * empty, so what it advertises is unaskable too. WHAT SURVIVES IS WHEN: that
+ * list is unaskable only UNTIL its author fills it, where `initialize` is sent
+ * once, before any registration is live, and is never askable at all.
  *
  * `Promise`, LIKE EVERY ROW OF THE TABLE, and not `InitializeResult |
  * Promise<…>`: one shape

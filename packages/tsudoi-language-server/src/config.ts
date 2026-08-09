@@ -119,7 +119,7 @@ function validatedMethods(returned: object, absolutePath: string): TsudoiConfig[
       throw new ConfigError(
         `config ${absolutePath} supplies ${handler === null ? "null" : typeof handler} for ` +
           `${method} instead of a function; tsudoi advertises a capability for every method the ` +
-          `config declares, so this would invite requests nothing can answer`,
+          `config declares, so this would claim support the config cannot deliver`,
       );
     }
     validated[method] = handler;
@@ -143,6 +143,14 @@ function validatedMethods(returned: object, absolutePath: string): TsudoiConfig[
     // every method the config declares` is what makes it useful for a row of the
     // table and is false of this key, while what goes wrong HERE is the handshake, which
     // is true of no other key.
+    //
+    // THAT MESSAGE ONCE CLAIMED MORE AND CLAIMED IT FALSELY, recorded here
+    // because the sentence above rests on it: it closed `so this would invite
+    // requests nothing can answer`, which is false of `workspace/executeCommand`
+    // -- its advertised list is empty until an author fills it, so a conforming
+    // client is invited to send nothing. The clause was replaced by one true of
+    // every row rather than branched per row: a branch in an error message is a
+    // branch owing its own arm, for a clause no arm reads.
     if (typeof initialize !== "function") {
       throw new ConfigError(
         `config ${absolutePath} supplies ${initialize === null ? "null" : typeof initialize} for ` +
