@@ -28,6 +28,13 @@ export interface TsudoiRuntime {
    * and a HALF-MIRRORED SESSION would be the cost of forgetting either -- a
    * server answering from folders the client named while believing it declared
    * no capabilities at all.
+   *
+   * WHAT IT FORECLOSES IS FORGETTING A CALL AND NOT A THROW BETWEEN THE TWO
+   * WRITES, which the body still has: the folders go in first, so anything
+   * raised while freezing the capabilities leaves exactly the half-mirror above.
+   * UNOBSERVABLE TODAY and recorded anyway, because the reason it is
+   * unobservable is elsewhere -- the phase never moves on that path, and both
+   * writers overwrite unconditionally, so the client's retry repairs it.
    */
   readonly handshake: (
     params: Pick<
@@ -50,10 +57,25 @@ export interface TsudoiRuntime {
  * file as a throw rather than a diagnostic.
  *
  * ITERATIVE AND NOT RECURSIVE, AND THAT IS A CORRECTNESS REQUIREMENT RATHER THAN
- * A STYLE -- and nothing reddens if you make it recursive, since no test builds
- * the input: this runs inside the `initialize` handler, so a recursive walk over
+ * A STYLE -- and nothing reddens if you make it recursive, since no test builds a
+ * DEEP input: this runs inside the `initialize` handler, so a recursive walk over
  * deeply nested capabilities from a non-conforming client would exhaust the
  * stack THERE, answering the handshake -32603 out of a defence.
+ *
+ * ON BUN. MEASURED, and the requirement is a runtime's and not the language's: a
+ * recursive freeze died at 30k of nesting where `structuredClone` still returned,
+ * and structuredClone itself died at 44k -- so bun has a real window this buys.
+ * DENO HAS NONE. There the clone one line down throws first, fine at 2200 and
+ * RangeError by 2400, so no depth exists at which the iterative walk is what
+ * saves the handshake. It is kept for the runtime that has the window, and the
+ * sentence is qualified because an unqualified one sends a reader looking for a
+ * defence that is doing nothing where they are standing.
+ *
+ * AND THE CLONE IS INSIDE THE CALLER'S `try` AT THE HANDSHAKE HANDLER, WHICH
+ * MISATTRIBUTES ITS OWN FAILURES: put a function or a symbol into
+ * `preparedResult` and `structuredClone` raises DataCloneError into that catch,
+ * where tsudoi reports its OWN bug to a config author as `initialize handler
+ * failed`.
  *
  * `Object.isFrozen` IS THE TERMINATION GUARD as well as the skip, and nothing
  * reddens if you drop it either: a value already frozen has already had its
