@@ -28,26 +28,34 @@ const invalidParams = -32602;
 const uri = "file:///workspace/a.txt";
 
 /**
- * One params object every method in the table accepts on the wire: the
- * position the two positional methods read, the `options` formatting requires,
- * the `label` a CompletionItem requires and the `command` an executeCommand
+ * One params object carrying every REQUIRED member of every row's params type,
+ * so that no row is driven with something incomplete by omission: the position
+ * the two positional methods read, the `options` formatting requires, the
+ * `label` a CompletionItem requires and the `command` an executeCommand
  * requires. Shared BECAUSE THE TESTS BELOW ARE ABOUT THE PROLOGUE, which runs
  * before any handler looks at params -- a params shape per method would be a
  * per-method copy in the tests that exist to prove per-method copies are gone.
  *
- * `label` IS HERE AND NOTHING FAILS WITHOUT IT. `completionItem/resolve` takes
- * a CompletionItem rather than a document and a position, and `label` is its
- * one required member -- nothing on the wire validates that, so omitting it
- * leaves the sentence above FALSE while every test here stays green. It is here
- * to keep that claim true.
+ * COMPLETENESS IS ALL IT CLAIMS, AND FOR `completionItem/resolve` IT IS NOT A
+ * VALID PARAMS AT ALL. `CompletionItem.command` is a `Command` object where
+ * `ExecuteCommandParams.command` is a required string, so no one object can be
+ * both: MEASURED, annotating this return as the intersection is TS2322, `Type
+ * 'string' is not assignable to type 'Command & string'`. UNINHABITABLE, SO
+ * THERE IS NOTHING TO REPAIR -- what is chosen instead is to say so. UNSHARING
+ * THE OBJECT FOR THAT ONE ROW IS THE REFUSED ALTERNATIVE: it would put a
+ * per-method params shape back into the file whose subject is that per-method
+ * copies are gone, and buy nothing, no arm here reading params at all.
  *
- * `command` IS HERE FOR THE SAME REASON AND HAS THE SAME COLOUR, WHICH IS NONE
- * -- MEASURED rather than reasoned from `label`'s paragraph, since that one was
- * itself written from a reading. `ExecuteCommandParams.command` is REQUIRED,
- * `workspace/executeCommand` reads neither a document nor a position, and
- * nothing on the wire validates the member: with it deleted this whole file is
- * GREEN, every arm, both runtimes, while the sentence above has stopped being
- * true of one row of the table.
+ * NOTHING ON THE WIRE VALIDATES EITHER MEMBER, WHICH IS WHY BOTH HAVE NO
+ * COLOUR. MEASURED for `command` rather than reasoned from `label`'s paragraph,
+ * since that one was itself written from a reading: with it deleted this whole
+ * file is GREEN, every arm, both runtimes, while `workspace/executeCommand` is
+ * driven with its one required member missing.
+ *
+ * WHERE THAT ILL-FORMED `Command` ENDS UP, said so nobody discovers it as a
+ * surprise: test/fixtures/all-methods.ts's resolve handler answers with what it
+ * was handed, so the resolve response carries `command` as a string back to the
+ * fake editor -- read by nothing, asserted by nothing.
  */
 function paramsForAnyMethod(): unknown {
   return {
