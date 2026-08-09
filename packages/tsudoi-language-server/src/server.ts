@@ -1,5 +1,6 @@
 import process from "node:process";
 import {
+  type CancellationToken,
   DidChangeTextDocumentNotification,
   DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
@@ -22,10 +23,15 @@ import {
 } from "vscode-languageserver-protocol/node";
 import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
-import { contributeCapabilities, registerMethods } from "./methods.ts";
+import {
+  contributeCapabilities,
+  registerMethods,
+  reportHandlerFailure,
+  requestContext,
+} from "./methods.ts";
 import { createGatedConnection, defineNotifications } from "./notifications.ts";
-import type { TsudoiRuntime } from "./tsudoi.ts";
-import type { TsudoiConfig } from "./types.ts";
+import { deepFrozen, type TsudoiRuntime } from "./tsudoi.ts";
+import type { DeepReadonly, TsudoiConfig } from "./types.ts";
 import type { WorkspaceFoldersHandle } from "./workspace.ts";
 
 /**
@@ -72,41 +78,95 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // reddens if you annotate it, and that is the trouble -- declaring the wire's
   // bytes to be the shape a CONFORMING client sends makes every check on them
   // dead code to the type checker.
-  connection.onRequest(InitializeRequest.type, (params: unknown): InitializeResult => {
-    const rejection = lifecycle.initializeRejection();
-    if (rejection !== undefined) {
-      throw rejection;
-    }
-    const malformed = malformedInitializeParams(params);
-    if (malformed !== undefined) {
-      throw new ResponseError(ErrorCodes.InvalidParams, malformed);
-    }
-    const initializeParams = params as InitializeParams;
-    // FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE: the three the protocol lets a
-    // client name a ROOT in, and the CAPABILITIES the client declared. `params`
-    // is NOT retained -- doing that would put the whole of InitializeParams on
-    // tsudoi's surface as a side effect of needing four fields of it, and every
-    // field on that surface is one tsudoi then owes an answer about. A FIFTH
-    // FIELD IS THE SAME TRANSACTION AND NOT A PRECEDENT ALREADY SET: name the
-    // reader, or the field stays unread.
-    handshake(initializeParams);
-    const capabilities: ServerCapabilities = {
-      textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
-      // UNCONDITIONAL, and nothing reddens if you condition it on the config or
-      // on the client's own `workspace.workspaceFolders`: tsudoi mirrors the
-      // folders and populates Tsudoi.workspaceFolders whether or not any method
-      // is supplied, so this is a fact about tsudoi, and conditioning it would
-      // advertise less than tsudoi delivers.
-      workspace: { workspaceFolders: { supported: true, changeNotifications: true } },
-    };
-    contributeCapabilities(config, capabilities);
-    // THIS HANDLER IS SYNCHRONOUS, and nothing reddens if you make it async: the
-    // transition below records that the handshake HAPPENED, and an `await` above
-    // it opens a window in which a notification reads `uninitialized` and is
-    // DROPPED, silently, since there is no response to carry a refusal.
-    lifecycle.initialize();
-    return { capabilities, serverInfo: { name: "tsudoi" } };
-  });
+  connection.onRequest(
+    InitializeRequest.type,
+    async (params: unknown, cancellation: CancellationToken): Promise<InitializeResult> => {
+      const rejection = lifecycle.initializeRejection();
+      if (rejection !== undefined) {
+        throw rejection;
+      }
+      const malformed = malformedInitializeParams(params);
+      if (malformed !== undefined) {
+        throw new ResponseError(ErrorCodes.InvalidParams, malformed);
+      }
+      const initializeParams = params as InitializeParams;
+      // FOUR FIELDS, DELIBERATELY, AND NOT ONE MORE: the three the protocol lets a
+      // client name a ROOT in, and the CAPABILITIES the client declared. `params`
+      // is NOT retained -- doing that would put the whole of InitializeParams on
+      // tsudoi's surface as a side effect of needing four fields of it, and every
+      // field on that surface is one tsudoi then owes an answer about. A FIFTH
+      // FIELD IS THE SAME TRANSACTION AND NOT A PRECEDENT ALREADY SET: name the
+      // reader, or the field stays unread.
+      handshake(initializeParams);
+      const capabilities: ServerCapabilities = {
+        textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
+        // UNCONDITIONAL, and nothing reddens if you condition it on the config or
+        // on the client's own `workspace.workspaceFolders`: tsudoi mirrors the
+        // folders and populates Tsudoi.workspaceFolders whether or not any method
+        // is supplied, so this is a fact about tsudoi, and conditioning it would
+        // advertise less than tsudoi delivers.
+        workspace: { workspaceFolders: { supported: true, changeNotifications: true } },
+      };
+      contributeCapabilities(config, capabilities);
+      const preparedResult: InitializeResult = { capabilities, serverInfo: { name: "tsudoi" } };
+      const handler = config.methods?.initialize;
+      if (handler === undefined) {
+        lifecycle.initialize();
+        return preparedResult;
+      }
+      // THIS HANDLER WAS SYNCHRONOUS AND IS NO LONGER, AND WHAT THAT COSTS IS
+      // RECORDED RATHER THAN REPAIRED. The transition below records that the
+      // handshake HAPPENED, so between the `await` and it there is a window in
+      // which `acceptsNotification` reads `serving` as false and a notification is
+      // DROPPED -- silently, there being no response to carry a refusal. It used to
+      // be zero and is now the author handler's duration. ACCEPTED because LSP
+      // forbids a conforming client from sending anything before it holds the
+      // InitializeResult, so only a non-conforming or pipelining one can reach it,
+      // and QUEUEING IS DELIBERATELY NOT BUILT. Note what this warns: nothing
+      // reddens.
+      //
+      // NOTHING BOUNDS THIS CALL EITHER. The five table methods all run through
+      // `answerUnlessCancelled`; this one runs through nothing, so a handler that
+      // never settles hangs the handshake with no diagnostic anywhere. Same class,
+      // same acceptance: reachable only through the author's own code, and a
+      // deadline here would be tsudoi deciding how long a config may take to
+      // describe itself.
+      //
+      // THE WHOLE `InitializeParams` IS HANDED OVER, and that is NOT a way around
+      // the four fields above: that refusal is about what the SESSION OBJECT
+      // RETAINS, and this argument is the message. Nothing here is retained.
+      let answer: DeepReadonly<InitializeResult>;
+      try {
+        answer = await handler(
+          { ...requestContext(tsudoi, cancellation), preparedResult: deepFrozen(preparedResult) },
+          initializeParams,
+        );
+      } catch (error) {
+        // RETHROWS, so the phase never moves: the client is answered an error, the
+        // NEXT request reads -32002, and a corrected `initialize` is ACCEPTED
+        // rather than refused -32600. `handshake` has already run and is not undone
+        // -- both of its writers overwrite unconditionally, so the retry is clean
+        // and no rollback is owed.
+        reportHandlerFailure("initialize", error);
+      }
+      // AFTER `handshake`, AFTER the contributors, BEFORE this line -- each forced
+      // rather than chosen. Earlier than `handshake` the context's `tsudoi` reads
+      // the pre-handshake nulls; earlier than the contributors `preparedResult` is
+      // not yet what it is DEFINED as, the answer tsudoi would otherwise have sent.
+      lifecycle.initialize();
+      // WHAT THE HANDLER RETURNED IS THE RESULT, WITH NO FALLBACK: a handler
+      // returning nothing has not returned an InitializeResult, and treating that
+      // as `send the prepared one` would make the one mistake unobservable. THE
+      // RESIDUE BESIDE IT: a STRUCTURALLY INVALID result is unchecked at run time,
+      // src/config.ts having validated `typeof === "function"` and nothing more.
+      //
+      // THE CAST TAKES `readonly` BACK OFF AND DOES NOTHING ELSE. The published
+      // return is DeepReadonly so an author MAY return the very object they were
+      // handed; this value is serialised and never written, so widening it is a
+      // statement about tsudoi and not about them.
+      return answer as InitializeResult;
+    },
+  );
 
   registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection());
 
@@ -156,6 +216,13 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // shutdown path reddens NOTHING there or anywhere else -- every other session
   // in the suite ends by `exit` or by being killed, and neither notices a
   // lingering handle.
+  //
+  // THAT PATH NOW RUNS A CONFIG AUTHOR'S OWN CODE, so the sentence above widened
+  // WITHOUT THE TEST MOVING: `unref()` is owed by anything an `initialize`
+  // handler opens too. What it actually observes did not widen at all -- the
+  // config it drives declares no such handler -- so the coverage claim is
+  // nominal, and a config that opened a handle in its handshake would be
+  // measured by nothing here.
   //
   // AND IF YOU EVER DO WANT A HOOK ON THAT CLOSE: `reader.onClose` FIRES ON BUN
   // AND NEVER ON DENO, so a handler installed there is silently inert on half the
