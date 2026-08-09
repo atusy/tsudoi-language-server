@@ -357,13 +357,22 @@ is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...`
 tsudoi derives the server capabilities from the handlers you declared: a hover handler makes it
 claim `hoverProvider`, a resolve handler beside a completion one makes it claim `resolveProvider`.
 That is the whole of what handler presence can say. When you need to say more -- trigger
-characters, a diagnostic identifier, a position encoding -- declare an `initialize` handler beside
-the others.
+characters, a diagnostic identifier -- declare a handler at `config.methods.initialize`, beside the
+other five. It goes inside `methods`; a top-level `initialize` key is read by nothing and refused
+by nothing.
 
-Yours is handed `context.preparedResult`, the `InitializeResult` tsudoi was about to send, and what
-you return is what your editor is told. tsudoi does not merge its own answer back over yours and
-does not put back a key you left out: withdrawing a capability tsudoi would otherwise have claimed
-is the point of the handler, and there would be no way to do it if the two were merged.
+It takes two arguments and returns a **`Promise`**. There is no union with a bare result -- one
+shape for every handler was the choice -- so `(context) => ({ ...context.preparedResult })` does
+not type-check and `async (context) => ...` or `Promise.resolve(...)` is what you write.
+`context.preparedResult` is the `InitializeResult` tsudoi was about to send. The second argument is
+the whole `InitializeParams` your editor sent, unread by tsudoi past the four fields it mirrors.
+And `context.tsudoi` is ALREADY LIVE by the time you are called: `clientCapabilities`, `rootUri`,
+`rootPath` and `workspaceFolders` all answer here, which is usually the reason to write a handler
+at all -- you can decide what to claim from what the editor said it can do.
+
+What you return is what your editor is told. tsudoi does not merge its own answer back over yours
+and does not put back a key you left out: withdrawing a capability tsudoi would otherwise have
+claimed is the point of the handler, and there would be no way to do it if the two were merged.
 
 Which is also the trap, so **spread what you were handed** rather than building a `capabilities`
 of your own. Assigning your own `completionProvider` is the cheapest way to see it:
@@ -372,15 +381,31 @@ your answer withdraws the resolve support your config still declares. `textDocum
 `workspace.workspaceFolders` cost more, because tsudoi writes those whatever your config says. An
 answer that omits `textDocumentSync` is an editor that sends no `didOpen` and no `didChange`, so
 `context.tsudoi.documents` stays empty for the whole session and every handler that reads a
-document answers about nothing -- silently, with no error anywhere.
+document answers about nothing -- silently, with no error anywhere. Omitting
+`workspace.workspaceFolders` is the same loss one door along: your editor stops sending
+`workspace/didChangeWorkspaceFolders`, so `context.tsudoi.workspaceFolders` freezes at whatever the
+handshake set and never moves again, just as quietly.
+
+`positionEncoding` is a field to leave alone rather than one this handler unlocks. tsudoi's
+documents are UTF-16 throughout -- every offset and every position, from the buffer implementation
+underneath -- and nothing in tsudoi reads what you put in that key. Declaring `"utf-8"` changes no
+computation; it tells your editor to send positions tsudoi will then read as if they were UTF-16,
+for the whole session, with nothing to show for it. LSP also permits only `utf-16` back when the
+editor named no encodings, and tsudoi does not read the list it named.
 
 What you were handed is frozen at every depth, so editing it in place throws instead of
 half-working -- spread it and change the copy. `structuredClone` is not the way out and reads like
 it should be: the clone keeps the `readonly`, so assigning to its `capabilities` is a compile
-error. And a handler that throws is
-answered as an error rather than taking the process down: the session stays uninitialized, every
-later request is refused until it is initialized, and an editor that corrects itself may send
-`initialize` again.
+error. And a handler that throws is answered as an error rather than taking the process down: the
+session stays uninitialized, every later request is refused until it is initialized, and an editor
+that corrects itself may send `initialize` again. The reason is on stderr as `tsudoi: initialize
+handler failed: ...`, carrying the stack that names the line in your file -- the same `tsudoi: `
+prefix every other message here is found by.
+
+One last thing this handler owes, which the other five owe too and are less likely to reach for:
+anything you open -- a timer, a watcher, a socket, a subscription -- must be `unref()`'d. Nothing
+else holds this process open, so a handle left referenced does not slow your server down, it keeps
+one alive after your editor is gone.
 
 ## Cleanup in a handler
 
