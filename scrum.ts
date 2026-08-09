@@ -104,7 +104,7 @@ const scrum: ScrumDashboard = {
         metric:
           "The five methods the stakeholder named respond per the specification: textDocument/completion, textDocument/hover, textDocument/diagnostic (pull), textDocument/formatting, completionItem/resolve",
         target:
-          "5 of 5. ENUMERATED IN THE METRIC ITSELF because `10 of 10` stood for thirty sprints with NOTHING ANYWHERE ENUMERATING THE TEN -- grepped, the only match was the metric. A fraction whose denominator nobody can name cannot be met, and the PO twice reported `2 of 10` as fact. The five were set by the stakeholder, not invented to make the metric satisfiable.",
+          "5 of 5. ENUMERATED IN THE METRIC ITSELF because `10 of 10` stood for thirty sprints with NOTHING ANYWHERE ENUMERATING THE TEN -- grepped, the only match was the metric. A fraction whose denominator nobody can name cannot be met, and the PO twice reported `2 of 10` as fact. The five were set by the stakeholder, not invented to make the metric satisfiable. AND TSUDOI NOW SERVES MORE THAN FIVE -- `workspace/executeCommand` since sprint 86, and `initialize` is a sixth key a config may declare though it is not a row of the request table. THE DENOMINATOR DOES NOT MOVE FOR THEM, deliberately: this metric asks whether what the STAKEHOLDER ASKED FOR responds, and a denominator that grew every time the product did would be a fraction nobody could fail. What the code serves is counted by the request table and by nothing here.",
       },
       {
         metric: "The CLI starts under both Bun and Deno",
@@ -114,52 +114,6 @@ const scrum: ScrumDashboard = {
     ],
   },
   product_backlog: [
-    {
-      id: "PBI-88",
-      story: {
-        role: "config author",
-        capability:
-          "serve `workspace/executeCommand` from the config, as a SIXTH ROW of the same request table the other five are rows of",
-        benefit:
-          "a command the editor user invokes -- from a code action, a keybinding, a palette -- reaches a handler the author wrote, with the same lifecycle gate, the same cancellation and the same params refusal every other method already gets, and none of that written a sixth time",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            'IT IS A ROW OF THE TABLE, WHICH IS WHY IT BELONGS THERE AND `initialize` DOES NOT: measured, `CM<"workspace.executeCommand", "executeCommandProvider">` is a 1:1 mapping, so a capability contributor can be written, and it routes through `registerMethods` like any other request. SO IT ANSWERS AS THE OTHER FIVE DO: -32002 before initialize, -32800 when cancelled, `null` when no handler is declared, -32602 naming the method when its params are not an object.',
-          verification:
-            "test/methods-table.test.ts iterates `requestEntries`, so the entry joins all of those arms BY EXISTING, with no assertion copied -- and the suite must be green with it in. THE -32800 ARM IS THE REGISTRATION DISCRIMINATOR, per that file's own docblock: inside the serving window an UNREGISTERED method reads -32601 where a registered one reads -32800, so an entry that reached the table and not `registerMethods` reddens exactly there. AND `paramsForAnyMethod()` GAINS `command`, for the reason `label` is already in it: `ExecuteCommandParams.command` is REQUIRED and nothing on the wire validates it, so without it that helper's docblock claim -- one params object every method in the table accepts -- goes false while every arm stays green.",
-        },
-        {
-          criterion:
-            "THE ADVERTISED COMMAND LIST IS EMPTY AND TSUDOI INVENTED NOTHING. `ExecuteCommandOptions.commands` is REQUIRED, so the contributor must write something; it writes `[]`, because the list is the AUTHOR'S -- set through PBI-87 -- and any name tsudoi put there would be a claim to a client that no config made.",
-          verification:
-            "An arm reading the served InitializeResult, BOTH DIRECTIONS: with an executeCommand handler declared and no initialize handler, `executeCommandProvider` is present and its `commands` is `[]`; with no handler declared the KEY IS ABSENT ENTIRELY, `contributeCapabilities` being presence-driven. An implementation synthesising names from anywhere reddens on the first half, and one contributing unconditionally on the second.",
-        },
-        {
-          criterion:
-            "CAPABILITY AND HANDLER ARE NOT TIED, AND UNKNOWN-COMMAND BEHAVIOUR IS THE AUTHOR'S. A command name that appears in no advertised list still reaches the handler; tsudoi does not filter on `commands`, does not answer on the handler's behalf, and does not decide what an unrecognised command means.",
-          verification:
-            "A fixture whose handler echoes `params.command` and `params.arguments` back as its result, in the register of test/fixtures/handshake-state.ts's report-through-the-wire shape. A request naming a command the config never advertised is answered BY THE HANDLER -- the echo is what says it ran -- rather than by an error tsudoi wrote. PROBE: add a filter over the advertised `commands` and this arm reddens while the capability arm above stays green. The paired direction is criterion 1's `null` arm: the same request against a config with NO handler is answered `null`, so the echo is attributable to the handler and not to the route.",
-        },
-        {
-          criterion:
-            "THE PUBLISHED RESULT TYPE IS `unknown`, NOT `any`. Measured: upstream declares `ProtocolRequestType<ExecuteCommandParams, any, never, void, ExecuteCommandRegistrationOptions>`, and `any` reaching src/types.ts DISABLES CHECKING IN THE AUTHOR'S OWN FILE, silently -- the exact defect `DeepReadonly`'s first arm exists to stop one type earlier, in a file whose every exported name is public API.",
-          verification:
-            "typeCheckProbe, BOTH DIRECTIONS: a probe assigning the awaited return of a `MethodHandler<\"workspace/executeCommand\">` to `string` must FAIL to compile, and the same probe written against a result declared `any` -- the shape a developer gets by naming upstream's type -- must compile clean. The second half is what says the criterion is worth meeting. The narrowing is available: `any` is assignable in both directions, so the table's pinned request type still accepts `ExecuteCommandRequest.type`.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "WHAT ITS GREEN DOES NOT MEAN, said plainly so nobody reads it as `commands work`: a config declaring an executeCommand handler and NO initialize handler advertises `commands: []`, so a conforming client will never send a command and that handler is unreachable. That is the stakeholder's ruling and not an oversight -- the list is the author's, through PBI-87 -- and it is the whole of why this item is ordered below that one. SEQUENCING IS THEREFORE A CONSTRAINT AND NOT A PREFERENCE: land this first and tsudoi advertises a permanently unreachable capability.",
-        "CAPABILITY/HANDLER CORRESPONDENCE IS NOT GUARANTEED, RULED BY THE STAKEHOLDER. Whether the handler serves a given advertised command is the author's business, and so is what an unrecognised command does. tsudoi refuses to decide either, which is what criterion 3 pins.",
-        "COMMAND NAMES SHARE ONE NAMESPACE ACROSS ALL OF A CLIENT'S SERVERS, so colliding with another server is the author's hazard. tsudoi cannot see the other servers and will not pretend to; the place for this sentence is the author-facing documentation, not a check -- a check would have to know what it cannot know.",
-        'NO `workspace/applyEdit`. Out of scope, ruled. Measured for the record: `CM<"workspace.applyEdit", undefined>` -- no server capability at all -- so adding it later costs ONE WRITE END on the session object and no capability plumbing. Which also says it is NOT unlocked by this item, however much `executeCommand` suggests it.',
-        "THE `unknown` NARROWING IN CRITERION 4 IS THE PRODUCT OWNER'S RULING AND NOT THE STAKEHOLDER'S, recorded here so a veto has somewhere to land. It rests on a convention already load-bearing in the tree rather than on taste.",
-        "MEASURED AND RECORDED SO NOBODY RE-DERIVES IT: `ExecuteCommandRegistrationOptions extends ExecuteCommandOptions {}` adds nothing -- no `documentSelector`, this not being a document-scoped feature. It matters only for dynamic registration, which the stakeholder DEFERRED; do not leave a hook for it here. AND `ExecuteCommandParams` carries no `partialResultToken`, so this row cannot take the stream drive even if someone wanted it to.",
-        "THE SIXTH ROW FALSIFIES PROSE ELSEWHERE, WHICH IS THIS ITEM'S BOOKKEEPING AND NOT AN AFTERTHOUGHT: this dashboard's success metric enumerates FIVE methods by name, and CLAUDE.md opens by saying five. Both are the stakeholder's five and stay the stakeholder's five; what changes is that tsudoi now serves a sixth nobody asked for as a product goal. Say that where each is written rather than editing the metric to match the code.",
-      ],
-    },
     {
       id: "PBI-86",
       story: {
@@ -228,6 +182,25 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 86,
+      pbi_id: "PBI-88",
+      goal: "`workspace/executeCommand` becomes a SIXTH ROW of the request table the other five are rows of, so a command reaches a handler the author wrote with the same lifecycle gate, the same cancellation and the same params refusal every other method already gets -- and none of it written a sixth time.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "ACCEPTED BY THE PRODUCT OWNER WITH TWO CONDITIONS ON THE RECORD AND NONE ON THE INCREMENT.",
+        "CONDITION ONE, AND THE PRODUCT OWNER RULED IT RATHER THAN ASKED FOR IT: the success metric STAYS AT FIVE and the sentence at the site says why the five is not a denominator. The five are the ones the STAKEHOLDER NAMED; a sixth served method does not make the metric `5 of 6`, and adding one would be the Product Owner inventing a target nobody set. The annotation is required rather than optional because of this file's own history -- `10 of 10` stood for thirty sprints with nothing anywhere enumerating the ten, and the Product Owner twice reported `2 of 10` as fact.",
+        "CONDITION TWO, AND IT IS A RULING AGAINST THE OBVIOUS ANSWER. A truncated capture destroyed a verdict for the SECOND consecutive sprint, and this instance was worse than the first in a specific way: the mechanism existed, the actor had written it, and it was in the very commit being closed -- a red `oxfmt --check` shipped as this sprint's baseline because the run was read through `tail` and the verdict prints ABOVE the summary. THAT IS EVIDENCE ABOUT DELIVERY AND NOT ABOUT ATTENTION, which is the distinction this file's header rests on when it argues a skill counts as a mechanism. SO IT IS NOT ANSWERED WITH A THIRD SKILL. The runner already reports whole; running a bare check by hand and piping it is the unsanctioned route, so the fix is runner-shaped -- make the sanctioned route cover the case that drove people off it.",
+        "THE PRODUCT OWNER REFUSED A FINDING OF ITS OWN, WITH THE REASON, RATHER THAN FILING IT: the `unknown` ruling closed the RESULT and left `any` reaching authors through `ExecuteCommandParams.arguments`. Narrowing params would mean tsudoi declaring its own shape for a type upstream owns and publishing a second name for it -- which is what the `deps/` split exists to prevent. Pre-existing through `CompletionItem.data`, refused here, reason stated.",
+        "WHAT REVIEW FOUND WAS NEVER BROKEN BEHAVIOUR, AND THAT IS THE READING TO CARRY. Three reviewers, thirteen findings, every one GREEN-PASSING: a params field that made the shared object invalid for a DIFFERENT row (`CompletionItem.command` is a Command OBJECT, so the intersection is uninhabitable and there was no make-it-compile fix); a FALSE why-not in the new row's own comment claiming an author's handler needs tsudoi's key to write into, which it does not; a README fact whose token was satisfied by prose asserting its own INVERSE; and a control faithful today with nothing keeping it faithful. The suite was green before review and green after.",
+        "THE DEVELOPER CORRECTED TWO OF ITS OWN CLAIMS AND ONE OF A REVIEWER'S, WHICH IS WORTH MORE THAN THE RESIDUES COST. It wrote that an ill-formed `Command` reaches the fake editor, traced the arms, found it reaches no handler at all, and repaired the note. It claimed a probe answers from `dist/`, ran `--traceResolution`, found it falls through to `src/` ALWAYS because a probe stages no `dist/`, and repaired that. And a reviewer's premise -- that the five original rows prove `null` is the router's because their results declare no null arm -- is simply false: `hover` and `formatting` are `Promise<... | null>` and were already in that position.",
+        "WHAT THE ACCEPTANCE DOES NOT CERTIFY. That any INDIVIDUAL COMMIT here is green -- four combined runs, then a split by file path, so a bisect across this sprint can land on a tree never claimed green. That `null` still tells the router from the handler for this row; it does not, and nothing replaces that control. That `any` is off the author's surface; it is off the RESULT. That the README's prose is compiled by anything. That the type probe reads what SHIPS. That a command reaches anything in a REAL EDITOR -- an author must set `commands` through the initialize handler and NO ARM DOES BOTH HALVES IN ONE SESSION, which is the seam between PBI-87 and PBI-88 and is unwitnessed.",
+        "THAT LAST ONE IS A REFINEMENT CANDIDATE AND NOT A DEFECT, ruled by the Product Owner: an example config where the two increments are shown working together in a file a stranger reads.",
+        "THE CLOSING READING, TAKEN BY THE SCRUM MASTER ON THE TREE THAT CLOSES: Definition of Done PASSED, all five checks exit 0, 1019 pass / 0 fail over 74 files. The base was 1005 / 72.",
+      ],
+    },
     {
       number: 85,
       pbi_id: "PBI-87",
@@ -435,6 +408,27 @@ const scrum: ScrumDashboard = {
   },
   sprint: null,
   retrospectives: [
+    {
+      sprint: 86,
+      improvements: [
+        {
+          action:
+            "`--only <substring>` ON `scripts/definition-of-done.ts`, AND IT IS DELIBERATELY NOT A THIRD SKILL. Sprint 85's retrospective answered a truncated capture with a skill arm; sprint 86 broke that arm IN THE COMMIT THAT ADDED IT, shipping a red `oxfmt --check` as the next sprint's baseline. The Product Owner ruled that as evidence about DELIVERY rather than attention -- the distinction this file's header rests on -- so the answer is runner-shaped. The runner already reports whole; what it had no answer for was `I only want to re-run one check`, so the route that loses verdicts was the only route there was. It reports exactly as a whole run does, and it MUST NOT pass for one: the declared order is load-bearing, the first check building what the fourth reads, so no subset's green is this Definition of Done's green. The marker is in the SUMMARY line as well as the header, because the reader it is built for is the one who took the LAST lines -- and it breaks the bytes `Definition of Done: PASSED`, so a habit built on grepping those finds nothing rather than a subset's answer. A substring matching no check is REFUSED for the reason an empty dashboard already is.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "Applied within the retrospective. Five arms, each written RED first with the red observed; one weakening entered the perturbation registry and reads HELD. MEASURED against the real dashboard: `--only format` exits 0 running that check alone with both lines marked, and `--only nosuchcheck` exits 1 naming the substring and listing every declared check. The sprint's own failure is now servable by the sanctioned route.",
+        },
+        {
+          action:
+            "WHAT IS NOT MECHANISED, NAMED SO ITS ABSENCE IS NOT READ AS COVERAGE: nothing forces the sanctioned route. `--only` removes the REASON to run a bare check by hand; it cannot stop anyone. Per this file's header the alternative was to delete the improvement rather than write a rule nobody enforces -- the breach is survivable and was caught inside the sprint both times -- and what is done instead is the smaller, honest half: the cheap route now exists and is discoverable. If a third instance arrives, the next answer is not another rule either.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "Recorded rather than built, with the reason, per the header's mechanise-or-delete rule.",
+        },
+      ],
+    },
     {
       sprint: 85,
       improvements: [
