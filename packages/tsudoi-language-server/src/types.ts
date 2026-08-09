@@ -408,30 +408,102 @@ export interface ConfigMethodMap extends MethodMap {
 export type ConfigMethod = keyof ConfigMethodMap;
 
 /**
- * WHAT THIS ONE REQUEST IS, and nothing that outlives it. Two members, and the
- * line between them is the whole of what this type says: the SIGNAL is about
- * this message and dies with it, while `tsudoi` is the SERVER -- the same object
- * every request is handed.
+ * WHAT THIS ONE REQUEST IS, and nothing that outlives it -- WHATEVER THE METHOD.
+ * Two members, and the line between them is the whole of what this type says:
+ * the SIGNAL is about this message and dies with it, while `tsudoi` is the
+ * SERVER -- the same object every request is handed.
  *
  * A FIELD THAT DOES NOT CHANGE PER REQUEST DOES NOT BELONG HERE, and that is the
  * rule rather than a description of today's two members. The folder list, the
  * client's roots and its capabilities are facts about the SESSION; carried here
  * they would say, by their position alone, that a request could see something
  * different from its neighbour.
+ *
+ * A FIELD ONLY ONE METHOD HAS DOES NOT BELONG HERE EITHER, which is the OTHER
+ * rule and the one that made this type gain a name: it goes on that method's own
+ * context below, so a handler reading it in the wrong place is refused in the
+ * author's file rather than handed `undefined` at run time.
  */
-export interface RequestContext {
+export interface BaseRequestContext {
   readonly signal: AbortSignal;
   readonly tsudoi: Tsudoi;
 }
 
-export type MethodHandler<M extends Method> = (
-  context: RequestContext,
+/**
+ * THE BASE PLUS THE ONE FIELD ONLY THE HANDSHAKE HAS.
+ *
+ * IT EXTENDS THE BASE RATHER THAN STANDING BESIDE IT, which is what makes `Base`
+ * an honest name: `signal` is here too, so a handshake handler reads
+ * cancellation exactly as every other handler does.
+ */
+export interface InitializeRequestContext extends BaseRequestContext {
+  /**
+   * THE ANSWER TSUDOI WOULD HAVE SENT HAD YOU SUPPLIED NO HANDLER: every
+   * capability contributor already run, the client's handshake already mirrored
+   * into `tsudoi`.
+   *
+   * WHAT YOU RETURN IS WHAT THE CLIENT IS TOLD. tsudoi does not merge this back
+   * over your answer and does not restore a key you dropped -- withdrawing a
+   * capability tsudoi would have claimed is the point of the handler, and a
+   * merge would make it impossible.
+   *
+   * SO THE HAZARD IS WIDER THAN THE CAPABILITY YOU MEANT TO CHANGE, and it is
+   * silent. `completionProvider.resolveProvider` is the cheapest one to notice:
+   * `completionItem/resolve` writes into the same key `textDocument/completion`
+   * owns, so replacing `completionProvider` wholesale deletes it. The one that
+   * costs more is `textDocumentSync` -- tsudoi writes it and
+   * `workspace.workspaceFolders` UNCONDITIONALLY, because it delivers both
+   * whatever the config says, so an author who replaces `capabilities` and omits
+   * `textDocumentSync` gets a client that sends no didOpen and no didChange,
+   * `tsudoi.documents` empty for the whole session, and every document-reading
+   * handler answering about nothing with no error anywhere. SPREAD WHAT YOU WERE
+   * GIVEN rather than building a `capabilities` from scratch.
+   *
+   * DEEP-FROZEN, so an in-place edit fails loudly instead of half-landing: a
+   * handler wanting a modified copy takes one -- `structuredClone` -- and owns
+   * it. Which is the same rule, and the same reason, as `clientCapabilities`.
+   */
+  readonly preparedResult: DeepReadonly<InitializeResult>;
+}
+
+/**
+ * THE CONTEXT ONE METHOD'S HANDLER RECEIVES, DERIVED FROM THE METHOD AND NEVER
+ * CHOSEN BY THE AUTHOR. `MethodHandler` resolves it, so nothing an author writes
+ * selects the shape they are handed.
+ *
+ * IT DEFAULTS, AND WHAT THE DEFAULT BUYS IS THAT `RequestContext` STAYS WRITABLE
+ * BARE: the name is published, and sites outside src/ write it with no argument
+ * -- including the hand-built context literals in both handler packages, which
+ * Definition of Done check 5 compiles. Dropping the default breaks all of them
+ * by arity.
+ *
+ * `= Method` AND NOT `= ConfigMethod`, AND THE DIFFERENCE IS MEASURED RATHER THAN
+ * ASSUMED. A naked type parameter distributes, so `= Method` collapses over the
+ * five to exactly `BaseRequestContext`, and a bare `RequestContext` keeps meaning
+ * today's two members. `= ConfigMethod` yields `BaseRequestContext |
+ * InitializeRequestContext` -- WHICH THE BARE LITERALS STILL SATISFY, so that
+ * spelling is NOT caught by an assignment: what it costs is every bare-typed
+ * READ of `preparedResult`, TS2339 against the union, and a name whose meaning
+ * moved without any site saying so.
+ */
+export type RequestContext<M extends ConfigMethod = Method> = M extends "initialize"
+  ? InitializeRequestContext
+  : BaseRequestContext;
+
+/**
+ * ONE TYPE PARAMETER, AND A SECOND IS REFUSED RATHER THAN DEFAULTED. A defaulted
+ * context parameter would let an author write `MethodHandler<"textDocument/
+ * hover", MyCtx>`: a shape tsudoi never supplies and cannot be made to supply,
+ * so the surface would type-check a handler that can only fail at run time.
+ */
+export type MethodHandler<M extends ConfigMethod> = (
+  context: RequestContext<M>,
   params: ConfigMethodMap[M]["params"],
 ) => ConfigMethodMap[M]["result"];
 
 export type TsudoiConfig = {
   methods?: Partial<{
-    [M in Method]: MethodHandler<M>;
+    [M in ConfigMethod]: MethodHandler<M>;
   }>;
 };
 
