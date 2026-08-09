@@ -239,6 +239,25 @@ by someone other than its runner, or found after an increment closed — and thi
 paragraph carries no reading past that close, so a later one is outside it rather
 than absent.
 
+**THE REFUTER ARRIVED** _(sprint 84)_: the fixture blindness below was found by an
+INDEPENDENT REVIEWER reading arms someone else had written, run and believed —
+and then a second one, on the round after, in prose the first round's repair had
+just introduced. So `author-caught is detection` is no longer the whole of it:
+what the runner catches is detection, and what a reader catches is the part the
+runner could not see from inside. The two are different populations and the
+project has now measured both.
+
+**A FIXTURE THAT CANNOT DISTINGUISH THE TRANSFORMATION IS AN ARM ABOUT NOTHING,
+AND THE COMMONEST SHAPE IS ONE OCCURRENCE OF A DELIMITER** _(sprint 84)_: an arm
+asserting a value CUT from a string at a delimiter must drive a fixture holding
+that delimiter at least TWICE, or a cut at the first and a cut at the last are
+the same string and the arm grades neither. MEASURED: with `notes/deep.txt` every
+label assertion in a suite passed against `everything after the FIRST slash`,
+which leaves a path popup repeating a directory segment the user has typed — the
+exact defect the sprint existed to remove. WHAT IT DOES NOT COVER: any
+transformation that is not a cut, and the general case of a fixture too simple to
+exercise what an arm claims, which nothing here reduces to a rule.
+
 **The stakeholder-facing example is EXECUTED by the suite** — the config is
 loaded and driven, and a change that breaks it must redden a named assertion.
 Two negative controls, because they are different failures: breaking its IMPORT
