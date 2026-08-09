@@ -118,6 +118,35 @@ function validatedMethods(returned: object, absolutePath: string): TsudoiConfig[
     }
     validated[method] = handler;
   }
+  // BESIDE THE LOOP AND NEVER INSIDE IT, because `initialize` is a key of
+  // `config.methods` and NOT a row of the request table: it contributes no
+  // capability and routes through no registration, so a row for it would make
+  // contributeCapabilities claim one and the refusal above say something false.
+  //
+  // AND WITHOUT THIS READ THE KEY HAD NO COLOUR AT ALL: this function builds a
+  // FRESH object out of the table's keys, so a key that is not one of them was
+  // copied nowhere and refused nowhere -- MEASURED, a config supplying `5` here
+  // exited 0 with empty stderr, an author's handler silently dropped and never
+  // run.
+  const initialize = readOrRefuse(absolutePath, "initialize", () => {
+    return (methods as Record<string, unknown>)["initialize"];
+  });
+  if (initialize !== undefined) {
+    // A SIBLING SENTENCE AND NOT THE ONE ABOVE, and generalising the two into
+    // one is the edit to refuse: that message's `advertises a capability for
+    // every method the config declares` is what makes it useful for the five and
+    // is false of this key, while what goes wrong HERE is the handshake, which
+    // is true of no other key.
+    if (typeof initialize !== "function") {
+      throw new ConfigError(
+        `config ${absolutePath} supplies ${initialize === null ? "null" : typeof initialize} for ` +
+          `initialize instead of a function; tsudoi calls it with the InitializeResult it would ` +
+          `otherwise have sent and answers the handshake with what it returns, so this would fail ` +
+          `the handshake itself`,
+      );
+    }
+    validated["initialize"] = initialize;
+  }
   return validated as TsudoiConfig["methods"];
 }
 

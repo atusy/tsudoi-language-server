@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { japaneseFailure } from "./fixtures/factory-rejects-japanese.ts";
 import { getterFailure } from "./fixtures/handler-getter-throws.ts";
+import { initializeGetterFailure } from "./fixtures/initialize-getter-throws.ts";
 import { bunRuntime, denoRuntime } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { type CliResult, fixture, runCli } from "./helpers/spawn.ts";
@@ -211,6 +212,44 @@ for (const runtime of runtimes) {
         for (const fragment of expected) {
           expect(result.stderr).toContain(fragment);
         }
+      });
+    }
+
+    /**
+     * `methods.initialize` IS REFUSED THE SAME WAY AND FOR A DIFFERENT REASON,
+     * which is the whole of why it is a loop of its own rather than two more rows
+     * above. The five up there are refused because tsudoi ADVERTISES a capability
+     * for each key the config declares; this key contributes none, so that
+     * sentence is false of it. What it costs instead is THE HANDSHAKE -- tsudoi
+     * answers `initialize` with whatever this handler returns -- and the negative
+     * assertion below is what keeps the two messages from being merged into one
+     * that is wrong for whichever key it was not written for.
+     *
+     * BEFORE THIS THE FAILURE HAD NO COLOUR ANYWHERE: `validatedMethods` builds a
+     * fresh object out of `Object.keys(requestEntries)`, so a key of
+     * `config.methods` that is not a row of that table was copied nowhere and
+     * refused nowhere -- the handler loaded without complaint and never ran.
+     *
+     * THE GETTER TWIN IS WHAT SAYS THE READ GOES THROUGH `readOrRefuse`: with a
+     * bare property access the author's own Error leaves loadConfig as something
+     * src/cli.ts rethrows, so the failure contract is lost rather than the
+     * message.
+     */
+    for (const [name, expected] of [
+      ["initialize-not-a-function.ts", ["initialize", "number"]],
+      ["initialize-getter-throws.ts", ["initialize", initializeGetterFailure]],
+    ] as const) {
+      test(`${name} exits 1 naming the path and what is wrong, with no stdout`, async () => {
+        const path = fixture(name);
+
+        const result = await runCli(runtime, ["--config", path]);
+
+        expectFailureContract(result);
+        expect(result.stderr).toContain(path);
+        for (const fragment of expected) {
+          expect(result.stderr).toContain(fragment);
+        }
+        expect(result.stderr).not.toContain("advertises a capability");
       });
     }
 
