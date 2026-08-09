@@ -189,8 +189,7 @@ export type RequestRejection = () => ResponseError<void> | undefined;
  * the connection's logger for NOTIFICATION handlers only, so without this line a
  * config author's handler fails where they cannot see it.
  *
- * `ConfigMethod` AND NOT `Method`, WHICH IS THE ONE THING THIS FILE SAYS ABOUT A
- * KEY IT DOES NOT ROUTE: the handshake handler in src/server.ts fails the same
+ * `ConfigMethod` AND NOT `Method`: the handshake handler in src/server.ts fails the same
  * way and is owed the same line, and a second reporter written there would be a
  * second answer to `where does a config author read this`.
  */
@@ -230,8 +229,8 @@ function requestCancelled(): never {
  * already has, one controller per request.
  *
  * EXPORTED FOR THE ONE HANDLER THAT IS NOT A ROW OF THE TABLE: the handshake's
- * context extends this one, and duplicating four lines there would put the
- * bridge's only record beside a second copy of it.
+ * context extends this one, and duplicating the bridge there would put its only
+ * record beside a second copy of it.
  */
 export function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
   const controller = new AbortController();
@@ -244,9 +243,14 @@ export function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken):
 
 /**
  * Runs one config handler to the answer the client receives, under that
- * request's cancellation. Everything cancellation changes about a request is
- * here and nowhere else, which is why every drive answers through it -- including
- * for a request it has no handler for.
+ * request's cancellation. Everything cancellation changes about a TABLE request
+ * is here and nowhere else, which is why every drive answers through it --
+ * including for a request it has no handler for.
+ *
+ * `TABLE` IS THE WORD THAT MAKES IT TRUE. The handshake handler is bounded by
+ * none of this: src/server.ts calls it directly and records there that it runs
+ * through nothing, so a `signal` is handed over and no deadline, no
+ * short-circuit and no -32800 follow it.
  */
 async function answerUnlessCancelled<T>(
   method: Method,
