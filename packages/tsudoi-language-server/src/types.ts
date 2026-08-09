@@ -254,9 +254,15 @@ export interface Tsudoi {
    * check exists to serve.
    *
    * NOT NORMALISED AND NOT INTERPRETED, the same mirror the folder list is, and
-   * FROZEN AT EVERY DEPTH so that a handler wanting a modified copy takes one --
-   * `structuredClone` -- and owns it. WHAT THAT PROTECTS IS NOT YOUR HANDLER BUT
-   * THE NEXT ONE.
+   * FROZEN AT EVERY DEPTH so that a handler wanting a modified copy takes one and
+   * owns it. WHAT THAT PROTECTS IS NOT YOUR HANDLER BUT THE NEXT ONE.
+   *
+   * AND TAKING ONE COSTS A CAST, said here because the obvious spelling does not
+   * compile and the reader would meet TS2540 with no route out: MEASURED,
+   * `structuredClone<T>(v: T): T` hands back the `readonly` it was given, so
+   * `structuredClone(clientCapabilities)` is another `DeepReadonly` and every
+   * write to it is refused. `as ClientCapabilities` on the clone is the route; a
+   * spread unfreezes the top level and nothing under it.
    *
    * WHAT IT IS NOT IS A ROUTE TO THE REST OF `InitializeParams`. This is one
    * field, opened because one reader needed it; the others are still unread, and
@@ -459,9 +465,14 @@ export interface InitializeRequestContext extends BaseRequestContext {
    * handler answering about nothing with no error anywhere. SPREAD WHAT YOU WERE
    * GIVEN rather than building a `capabilities` from scratch.
    *
-   * DEEP-FROZEN, so an in-place edit fails loudly instead of half-landing: a
-   * handler wanting a modified copy takes one -- `structuredClone` -- and owns
-   * it. Which is the same rule, and the same reason, as `clientCapabilities`.
+   * DEEP-FROZEN, so an in-place edit fails loudly instead of half-landing. The
+   * spread above is what a handler wanting a modified copy writes, and
+   * `structuredClone` IS DELIBERATELY NOT OFFERED BESIDE IT: MEASURED, the clone
+   * comes back `DeepReadonly<InitializeResult>` -- `structuredClone<T>(v: T): T`
+   * hands back exactly what it was given -- so writing to its `capabilities` is
+   * TS2540, and the annotation that would fix that is TS2322 for the reason
+   * `ConfigMethodMap.initialize` records. The same freeze is on
+   * `clientCapabilities`, where the clone IS the route and costs a cast.
    */
   readonly preparedResult: DeepReadonly<InitializeResult>;
 }

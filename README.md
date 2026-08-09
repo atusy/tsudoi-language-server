@@ -375,7 +375,9 @@ answer that omits `textDocumentSync` is an editor that sends no `didOpen` and no
 document answers about nothing -- silently, with no error anywhere.
 
 What you were handed is frozen at every depth, so editing it in place throws instead of
-half-working; take a `structuredClone` if you want one you own. And a handler that throws is
+half-working -- spread it and change the copy. `structuredClone` is not the way out and reads like
+it should be: the clone keeps the `readonly`, so assigning to its `capabilities` is a compile
+error. And a handler that throws is
 answered as an error rather than taking the process down: the session stays uninitialized, every
 later request is refused until it is initialized, and an editor that corrects itself may send
 `initialize` again.
