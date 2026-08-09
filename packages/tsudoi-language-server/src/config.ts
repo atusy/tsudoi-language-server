@@ -5,6 +5,12 @@ import { pathToFileURL } from "node:url";
 // restated here, so a method added there joins this check by existing. Only the
 // keys are read. NOT A CYCLE: src/methods.ts imports src/types.ts and
 // src/notifications.ts FOR TYPES ONLY and nothing in src/ imports this file back.
+//
+// `BY EXISTING` IS TRUE OF A TABLE ROW AND OF NOTHING ELSE. A key of
+// `ConfigMethodMap` that is NOT a row joins nothing here, because this is the
+// only enumeration read: it needs a read written for it by hand, as
+// `initialize`'s is below, and until one exists the key is copied nowhere and
+// refused nowhere.
 import { requestEntries } from "./methods.ts";
 import type { TsudoiConfig, TsudoiConfigFactory } from "./types.ts";
 
@@ -152,8 +158,8 @@ function validatedMethods(returned: object, absolutePath: string): TsudoiConfig[
 
 /**
  * One property read, with an access that THROWS reported as the config problem
- * it is. A thunk rather than an object and a key, so the two callers name what
- * they are reading in the words the author will recognise.
+ * it is. A thunk rather than an object and a key, so each caller names what it
+ * is reading in the words the author will recognise.
  */
 function readOrRefuse(absolutePath: string, what: string, read: () => unknown): unknown {
   try {
