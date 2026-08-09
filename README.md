@@ -433,9 +433,11 @@ one **namespace** across every server your editor is talking to, so a name some 
 already answers is a hazard nothing here can see.
 
 What your handler answers is typed `unknown` rather than the protocol's `any`, so you narrow it
-where you read it back rather than losing the compiler in your own file. It reaches your editor as
-data and is not applied to anything: tsudoi never sends `workspace/applyEdit`, so a command that
-has to change a buffer has no route through tsudoi today.
+where you read it back rather than losing the compiler in your own file. tsudoi applies none of
+it: it never sends `workspace/applyEdit`, so a command of yours that has to change a buffer has no
+route through tsudoi today. What your editor does with the answer after that is between it and the
+protocol -- LSP contemplates a client applying a workspace edit a command returned, and tsudoi
+neither arranges that nor prevents it.
 
 ## Cleanup in a handler
 
