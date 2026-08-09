@@ -38,8 +38,12 @@ export interface TsudoiRuntime {
 }
 
 /**
- * The client's own statement, AS A VALUE NOTHING CAN REWRITE: a clone of what
- * arrived, frozen at every depth.
+ * A VALUE NOTHING CAN REWRITE: a clone of what came in, frozen at every depth.
+ *
+ * A CLONE AND NOT A FREEZE IN PLACE, which both callers depend on and neither
+ * would notice losing today. The caller keeps a mutable original, so freezing
+ * what a handler is SHOWN never forecloses what tsudoi may still do with its own
+ * copy afterwards.
  *
  * ITERATIVE AND NOT RECURSIVE, AND THAT IS A CORRECTNESS REQUIREMENT RATHER THAN
  * A STYLE -- and nothing reddens if you make it recursive, since no test builds
@@ -53,8 +57,8 @@ export interface TsudoiRuntime {
  * structuredClone would faithfully preserve if one ever arrived -- cannot loop
  * here.
  */
-function frozenCapabilities(capabilities: ClientCapabilities): ClientCapabilities {
-  const clone = structuredClone(capabilities);
+export function deepFrozen<T>(value: T): T {
+  const clone = structuredClone(value);
   const pending: unknown[] = [clone];
   while (pending.length > 0) {
     const current = pending.pop();
@@ -106,7 +110,7 @@ export function createTsudoi(): TsudoiRuntime {
     workspaceFolders,
     handshake(params): void {
       workspaceFolders.initialize(params);
-      clientCapabilities = frozenCapabilities(params?.capabilities ?? {});
+      clientCapabilities = deepFrozen(params?.capabilities ?? {});
     },
   };
 }

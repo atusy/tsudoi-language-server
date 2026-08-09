@@ -24,7 +24,14 @@ import {
   type ServerCapabilities,
 } from "vscode-languageserver-protocol/node";
 import type { RequestOnlyConnection } from "./notifications.ts";
-import type { Method, MethodMap, RequestContext, Tsudoi, TsudoiConfig } from "./types.ts";
+import type {
+  ConfigMethod,
+  Method,
+  MethodMap,
+  RequestContext,
+  Tsudoi,
+  TsudoiConfig,
+} from "./types.ts";
 
 /** Which drive a method needs, derived from whether its result yields batches. */
 type DriveKind<M extends Method> = [StreamChunk<M>] extends [never]
@@ -181,8 +188,13 @@ export type RequestRejection = () => ResponseError<void> | undefined;
  * Reports a config handler's failure and rethrows it. vscode-jsonrpc consults
  * the connection's logger for NOTIFICATION handlers only, so without this line a
  * config author's handler fails where they cannot see it.
+ *
+ * `ConfigMethod` AND NOT `Method`, WHICH IS THE ONE THING THIS FILE SAYS ABOUT A
+ * KEY IT DOES NOT ROUTE: the handshake handler in src/server.ts fails the same
+ * way and is owed the same line, and a second reporter written there would be a
+ * second answer to `where does a config author read this`.
  */
-function reportHandlerFailure(method: Method, error: unknown): never {
+export function reportHandlerFailure(method: ConfigMethod, error: unknown): never {
   process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
   throw error;
 }
@@ -216,8 +228,12 @@ function requestCancelled(): never {
 /**
  * Bridges the connection's CancellationToken onto the AbortSignal a config author
  * already has, one controller per request.
+ *
+ * EXPORTED FOR THE ONE HANDLER THAT IS NOT A ROW OF THE TABLE: the handshake's
+ * context extends this one, and duplicating four lines there would put the
+ * bridge's only record beside a second copy of it.
  */
-function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
+export function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken): RequestContext {
   const controller = new AbortController();
   if (cancellation.isCancellationRequested) {
     controller.abort();
