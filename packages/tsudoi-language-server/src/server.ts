@@ -114,6 +114,13 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
         lifecycle.initialize();
         return preparedResult;
       }
+      // ADMITTED BEFORE THE AWAIT, AND THIS LINE IS A REPAIR RATHER THAN A
+      // PRECAUTION. Without it a second `initialize` arriving while the handler
+      // runs reads `uninitialized` and is ACCEPTED -- MEASURED, both handshakes
+      // served, `handshake` run twice from concurrent flows and the author's
+      // handler run twice, with nothing on stderr. The fast path above never
+      // yields, which is why no session without a handler could show it.
+      lifecycle.beginInitialize();
       // THIS HANDLER WAS SYNCHRONOUS AND IS NO LONGER, AND WHAT THAT COSTS IS
       // RECORDED RATHER THAN REPAIRED. The transition below records that the
       // handshake HAPPENED, so between the `await` and it there is a window in
@@ -142,17 +149,23 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
           initializeParams,
         );
       } catch (error) {
-        // RETHROWS, so the phase never moves: the client is answered an error, the
-        // NEXT request reads -32002, and a corrected `initialize` is ACCEPTED
-        // rather than refused -32600. `handshake` has already run and is not undone
-        // -- both of its writers overwrite unconditionally, so the retry is clean
-        // and no rollback is owed.
+        // THE ADMISSION IS GIVEN BACK BEFORE THE RETHROW, and the order is the
+        // whole of it: `reportHandlerFailure` returns `never`, so a line after it
+        // would leave the session wedged at `initializing` -- every later
+        // `initialize` refused -32600 and every request -32002, with no way out.
+        // Giving it back is what keeps the client answered an error, the NEXT
+        // request reading -32002, and a corrected `initialize` ACCEPTED. THE ONE
+        // THING NOT UNDONE IS `handshake`, and it is not owed: both of its
+        // writers overwrite unconditionally, so the retry is clean.
+        lifecycle.abandonInitialize();
         reportHandlerFailure("initialize", error);
       }
       // AFTER `handshake`, AFTER the contributors, BEFORE this line -- each forced
       // rather than chosen. Earlier than `handshake` the context's `tsudoi` reads
       // the pre-handshake nulls; earlier than the contributors `preparedResult` is
-      // not yet what it is DEFINED as, the answer tsudoi would otherwise have sent.
+      // not yet what it is DEFINED as, the answer tsudoi would otherwise have sent;
+      // and LATER than this line the phase would already have moved when a handler
+      // throws, which is exactly what the catch above depends on.
       lifecycle.initialize();
       // WHAT THE HANDLER RETURNED IS THE RESULT, WITH NO FALLBACK: a handler
       // returning nothing has not returned an InitializeResult, and treating that
