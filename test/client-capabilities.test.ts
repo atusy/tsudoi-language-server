@@ -25,6 +25,19 @@ const hoverParams = {
   position: { line: 0, character: 0 },
 };
 
+/**
+ * HOW MANY MEMBERS ONE CLIENT-SUPPLIED ARRAY CARRIES, chosen from a measurement
+ * and not for roundness: the freeze walk used to hand its members on as an
+ * ARGUMENT LIST, and an argument list is a stack frame. Deno threw RangeError at
+ * 150k where bun held to 500k, so this sits above the one and below the other.
+ *
+ * WHICH MAKES THE ARM BELOW DISCRIMINATE ON DENO AND NOT ON BUN, said plainly
+ * rather than left as a surprise: raise it past 500k and it discriminates on
+ * both, at the price of a frame nobody wants to reread. The per-runtime loop is
+ * what makes one runtime enough.
+ */
+const wideCapabilityMembers = 200_000;
+
 /** The one report every handler in this file must produce, at every request. */
 const untouched: MutationReport = {
   nestedRefused: true,
@@ -219,6 +232,38 @@ for (const runtime of runtimes) {
           topRefused: true,
           insertReplaceSupport: undefined,
         });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * A WIDE CAPABILITY IS AS REACHABLE AS A DEEP ONE, AND THE DEFENCE ONLY
+     * COVERED DEPTH. `experimental` is `LSPAny`, so what arrives here is whatever
+     * the client sent -- and the freeze walk handed each object's members on as an
+     * argument list, which is a stack frame per member. MEASURED end to end
+     * BEFORE the repair, with this many members: deno answered the handshake
+     * -32603 and bun served it, NOTHING on stderr either way, the RangeError
+     * escaping at `handshake()` outside the try that would have reported it.
+     *
+     * SERVED IS HALF THE CLAIM AND THE REPORT IS THE OTHER HALF. A walk that gave
+     * up quietly would also be `served`; the nested refusal says it reached the
+     * bottom of a message this wide and froze what it found there.
+     */
+    test("a client capability wide enough to overflow an argument list is served, and still frozen", async () => {
+      const session = LspSession.start(runtime, fixture("capabilities-mutation.ts"));
+      try {
+        const result = await session.request<InitializeResult>("initialize", {
+          ...initializeParams,
+          capabilities: {
+            ...capabilities,
+            experimental: new Array<number>(wideCapabilityMembers).fill(0),
+          },
+        });
+        expect(result.serverInfo?.name).toBe("tsudoi");
+        session.notify("initialized", {});
+
+        expect(await reportFrom(session)).toEqual(untouched);
       } finally {
         session.dispose();
       }

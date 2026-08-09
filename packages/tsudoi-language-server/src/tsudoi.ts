@@ -70,7 +70,18 @@ export function deepFrozen<T>(value: T): T {
       continue;
     }
     Object.freeze(current);
-    pending.push(...Object.values(current));
+    // A LOOP AND NOT `push(...values)`, which is the SAME BUG THE WALK ITSELF
+    // AVOIDS, reintroduced one line down: a spread is an argument list, and an
+    // argument list is a stack frame. MEASURED, and the runtimes are far apart:
+    // deno threw RangeError at a 150k-element array where bun held to 500k and
+    // threw at 1M. Reachable from the WIRE -- this walks client-supplied
+    // capabilities -- and measured end to end, a client sending 200k elements
+    // inside `capabilities` was answered -32603 on deno, served on bun, with
+    // NOTHING on stderr either way, the throw escaping at `handshake()` outside
+    // the try below.
+    for (const member of Object.values(current)) {
+      pending.push(member);
+    }
   }
   return clone;
 }
