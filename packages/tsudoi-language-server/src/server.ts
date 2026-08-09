@@ -172,6 +172,16 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
         // request reading -32002, and a corrected `initialize` ACCEPTED. THE ONE
         // THING NOT UNDONE IS `handshake`, and it is not owed: both of its
         // writers overwrite unconditionally, so the retry is clean.
+        //
+        // AND WHAT AN AUTHOR CANNOT THROW HERE IS RECORDED RATHER THAN FIXED: a
+        // conformant `InitializeError { retry }` needs a `ResponseError`, and
+        // none of the four published subpaths hands one over -- `deps/protocol`
+        // is type-only and `deps/types` carries no such value -- so reaching it
+        // means naming vscode-jsonrpc directly, which is the one thing `deps/`
+        // exists to spare a config. Exporting the class as a VALUE is the fix
+        // and it widens the published surface, so it waits for someone who wants
+        // the field. Until then every handshake failure the author raises is
+        // -32603 with their own message.
         lifecycle.abandonInitialize();
         reportHandlerFailure("initialize", error);
       }
