@@ -659,21 +659,28 @@ const facts: readonly ReadmeFact[] = [
     // command. Nothing anywhere reports that, and nothing can -- the list is the
     // author's by ruling -- so this document is the only place it is said.
     //
-    // `empty` IS A TOKEN AND THE HANDLER KEY IS NOT ENOUGH ON ITS OWN: a section
-    // naming the method and the capability while dropping what is IN the
-    // capability describes a feature that works, which is the reading this entry
-    // exists against.
+    // `never run` IS THE TOKEN AND `empty` WAS THE ONE THAT DID NOT WORK. The
+    // handler key with the capability beside it is not enough on its own -- a
+    // section naming the method and the capability while dropping what is IN the
+    // capability describes a feature that works -- but a BARE WORD cannot tell
+    // `empty` from `never empty`: prose rewritten to `advertises
+    // executeCommandProvider with the commands you declared, never empty`
+    // satisfies that token, in the one section, while stating the inverse of this
+    // fact. `never run` names the TRAP rather than a property of the list, so the
+    // inverted prose loses it.
     //
     // `namespace` IS THE HALF NO CHECK COULD EVER TAKE OVER, which is what makes
     // it belong to prose rather than to an arm: tsudoi cannot see the other
     // servers an editor is talking to, so a check for a colliding command name
     // would have to know what it cannot know.
     //
-    // SINGLE WORDS AND NO PHRASES, for the reason the initialize entry above
+    // THE OTHER THREE ARE SINGLE WORDS, for the reason the initialize entry above
     // gives: this README is hard-wrapped, and a multi-word token straddling a
-    // line break fails against the document as written.
+    // line break fails against the document as written. `never run` is the
+    // exception because those two words sit on one line as the document is
+    // written, and `memberFacts` below already trusts that exact spelling.
     name: "an executeCommand handler is unreachable until the author advertises a name, and names collide across servers",
-    tokens: [/workspace\/executeCommand/, /executeCommandProvider/, /empty/i, /namespace/i],
+    tokens: [/workspace\/executeCommand/, /executeCommandProvider/, /never run/i, /namespace/i],
   },
   {
     // The claim is that tsudoi CLOSES the generator, never that the author's
