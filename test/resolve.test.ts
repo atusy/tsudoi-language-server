@@ -17,7 +17,7 @@ applySuiteDeadline();
 const resolveDetail = fixture("resolve-detail.ts");
 /**
  * Supplies completion and NOT resolve, and THAT PAIRING IS THE POINT. The other
- * four methods take their capability negative control from a hover-only config,
+ * methods take their capability negative control from a hover-only config,
  * which cannot work here: `resolveProvider` lives INSIDE `completionProvider`,
  * so a config with no completion at all would leave the whole key absent and
  * would be satisfied by a tsudoi that contributed `resolveProvider` whenever

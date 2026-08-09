@@ -18,24 +18,27 @@ import type {
  * writing it from expectation is how it comes out wrong. MEASURED by deleting
  * one handler at a time and reverting between, whole suite on both runtimes:
  *
- * - delete hover's, formatting's, diagnostic's or resolve's, and EVERY TEST IN
- *   THE SUITE STAYS GREEN;
+ * - delete hover's, formatting's, diagnostic's, resolve's or executeCommand's,
+ *   and NO ASSERTION ABOUT WHAT THIS CONFIG SERVES MOVES;
  * - delete completion's ALONE and four tests redden -- for a reason that is not
  *   about the handler at all. `completionItem/resolve` without
  *   `textDocument/completion` is refused at CONFIG LOAD, so this config stops
  *   loading and the session tests fail at `initialize`;
  * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
- *   that load failure, and EVERY TEST IN THE SUITE STAYS GREEN TOO.
+ *   that load failure, and nothing about what this config serves moves either.
  *
- * THOSE DELETIONS DO NOT TYPE-CHECK, AND THE MEASUREMENT ABOVE HOLDS ANYWAY --
- * said here rather than left for whoever tries to repeat it, because the two
- * are easy to confuse. RE-RUN on the two bullets that carry information rather
- * than on all four. MEASURED: hover's handler deleted, THE WHOLE SUITE GREEN;
- * completion's deleted ALONE, FOUR RED on both runtimes -- the second is the
- * one worth spending a run on, being the only bullet whose reading is not
- * `green`. The other two follow from the first, which establishes
- * the mechanism: NEITHER RUNTIME TYPE-CHECKS, so a compile error changes
- * nothing a test can see.
+ * ONE ARM READS THE COMPILE ERROR, WHICH IS WHY NO BULLET ABOVE SAYS `THE WHOLE
+ * SUITE STAYS GREEN` ANY LONGER. They said it, on a mechanism that is true of
+ * the two runtimes and false of the suite -- neither runtime type-checks, so a
+ * compile error changes nothing THEY can see, and nothing here was ever about
+ * what a spawned compiler can. MEASURED TWICE at 4a44404, whole suite, both
+ * runtimes, once with executeCommand's handler deleted and once with hover's:
+ * 1015 pass / 1 fail each time, THE SAME ARM BOTH TIMES -- `an unbuilt
+ * checkout's root type check is non-zero and names a workspace package it could
+ * not resolve` in test/unbuilt-checkout.test.ts, which runs `tsc` over a staged
+ * copy of this tree and reports the TS2741 AT THIS FILE. So the deletion costs
+ * one arm whose message names the file, which is not the property it was
+ * reaching for and cannot be mistaken for it.
  *
  * THE PRICE IS WHAT THE ANNOTATION MOVES, NOT THE RESULT. `tsc --noEmit` fails
  * TS2741 on each of those trees, so the perturbation costs a DoD check. IT IS
@@ -83,18 +86,19 @@ import type {
  *
  * WHAT IS UNDEFENDED IS EVERY ANSWER, AND THAT IS A RULING RATHER THAN A
  * RESIDUAL. THE PROPERTY RATHER THAN A FRACTION, because the paragraphs above
- * say why: no assertion anywhere pins what any handler in this file returns --
- * hover's, completion's, formatting's, diagnostic's and resolve's alike.
+ * say why: no assertion anywhere pins what any handler in this file returns, and
+ * that is true of every one of them rather than of a list.
  *
  * THE REASON THEY STAY THAT WAY IS RECORDED HERE BECAUSE OTHERWISE THE NEXT
  * PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI. Defending them means
  * one test per method asserting what a handler that exists only to be routed to
- * happens to return: FIVE NEAR-IDENTICAL TESTS that would redden on any
- * legitimate change to this file while defending no requirement of tsudoi's --
- * the pin-everything pressure S7 exists to bound. THE FIXTURE'S JOB IS TO EXIST
- * AND TO ROUTE, NOT TO ANSWER. And the risk this file actually carries was never
- * a wrong answer: it is this file SILENTLY STOPPING SHORT OF A METHOD, so tests
- * that believe they exercise five exercise four and stay green. THAT is what the
+ * happens to return: ONE NEAR-IDENTICAL TEST PER METHOD, a set that grows with
+ * the table, each of which would redden on any legitimate change to this file
+ * while defending no requirement of tsudoi's -- the pin-everything pressure S7
+ * exists to bound. THE FIXTURE'S JOB IS TO EXIST AND TO ROUTE, NOT TO ANSWER.
+ * And the risk this file actually carries was never a wrong answer: it is this
+ * file SILENTLY STOPPING SHORT OF A METHOD, so tests that believe they exercise
+ * the whole table exercise all but one of it and stay green. THAT is what the
  * line below closes, which is why closing it needed no assertion at all.
  *
  * WHAT DOES NOT DEPEND ON THIS FILE AT ALL: the no-handler half of those tests,
@@ -106,8 +110,8 @@ import type {
  * together, so the token is already cancelled when the request reaches a drive
  * and the answer is decided WITHOUT ENTERING these handlers at all. A parking
  * handler per method would measure the same thing and would be one more copy --
- * THE PER-METHOD COPY, which is the shape the five-tests paragraph above
- * refuses and refuses here for the same reason.
+ * THE PER-METHOD COPY, which is the shape the one-test-per-method paragraph
+ * above refuses and refuses here for the same reason.
  */
 export const hoverAnswer: Hover = {
   contents: { kind: "markdown", value: "表からの応答" },

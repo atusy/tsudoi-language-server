@@ -360,9 +360,8 @@ export interface MethodMap {
   };
 
   /**
-   * Awaited once; the protocol declares no `partialResult` for it. The only one
-   * of the five whose params name no document at all, and it never touches the
-   * document store.
+   * Awaited once; the protocol declares no `partialResult` for it. Its params
+   * name no document at all, and it never touches the document store.
    *
    * WHAT TO DO WITH AN ITEM YOU DO NOT RECOGNISE: RETURN IT UNCHANGED. A client
    * may send any item, and the response REPLACES that item in its list, so
@@ -428,7 +427,8 @@ export type Method = keyof MethodMap;
  * row up there would have src/methods.ts advertise a capability nobody can ask
  * for and src/config.ts refuse it with a sentence that is false of it.
  *
- * `Promise`, LIKE THE FIVE, and not `InitializeResult | Promise<…>`: one shape
+ * `Promise`, LIKE EVERY ROW OF THE TABLE, and not `InitializeResult |
+ * Promise<…>`: one shape
  * per row is what keeps `MethodHandler` readable, and an author whose answer is
  * ready writes `Promise.resolve` here exactly as they do for hover.
  *
@@ -548,7 +548,7 @@ export interface InitializeRequestContext extends BaseRequestContext {
  *
  * `= Method` AND NOT `= ConfigMethod`, AND THE DIFFERENCE WAS MEASURED RATHER
  * THAN ASSUMED -- it is NARROWER THAN IT LOOKS. A naked type parameter
- * distributes, so `= Method` collapses over the five to exactly
+ * distributes, so `= Method` collapses over the table's rows to exactly
  * `BaseRequestContext` while `= ConfigMethod` yields `BaseRequestContext |
  * InitializeRequestContext`. NOTHING ASSIGNABILITY CAN SEE TELLS THEM APART: the
  * two are mutually assignable, so every bare literal outside src/ satisfies both,

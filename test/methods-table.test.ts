@@ -129,8 +129,8 @@ describe("the request table", () => {
    * one of them would pass on a table with no stream-driven entry in it,
    * while measuring nothing at all about the drive whose answer this is about.
    *
-   * NOT A COUNT AND NOT AN INDEX: it says the kind is REPRESENTED, so a sixth
-   * method joining or `textDocument/completion` moving does not touch it.
+   * NOT A COUNT AND NOT AN INDEX: it says the kind is REPRESENTED, so a method
+   * joining or `textDocument/completion` moving does not touch it.
    */
   test("the table declares a stream-driven entry, so the drives below are both exercised", () => {
     const drives = Object.values(requestEntries).map((entry) => entry.drive);
@@ -322,7 +322,7 @@ for (const runtime of runtimes) {
      * library check for a shape it was not sent. The text is tsudoi's, and it
      * NAMES THE METHOD, so this also says the refusal is the ROUTER'S rather
      * than one drive's -- a guard written into `driveStream` alone passes for
-     * `textDocument/completion` and reddens for the other four.
+     * `textDocument/completion` and reddens for every other row.
      *
      * WHAT SAYS THE REFUSAL IS NOT OVER-BROAD is the rest of the suite: every
      * other session test sends a params OBJECT and expects an answer, so a

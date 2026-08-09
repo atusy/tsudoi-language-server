@@ -224,7 +224,7 @@ for (const runtime of runtimes) {
     /**
      * `methods.initialize` IS REFUSED THE SAME WAY AND FOR A DIFFERENT REASON,
      * which is the whole of why it is a loop of its own rather than two more rows
-     * above. The five up there are refused because tsudoi ADVERTISES a capability
+     * above. The keys up there are refused because tsudoi ADVERTISES a capability
      * for each key the config declares; this key contributes none, so that
      * sentence is false of it. What it costs instead is THE HANDSHAKE -- tsudoi
      * answers `initialize` with whatever this handler returns -- and the negative

@@ -233,8 +233,8 @@ for (const runtime of runtimes) {
      * gone while every capability arm above stayed green.
      *
      * BOTH REFUSALS IN ONE SESSION, and the pre-handshake one is read FIRST
-     * because it is the half that says the gate is still in front of the other
-     * five as well.
+     * because it is the half that says the gate is still in front of the table's
+     * own methods as well.
      */
     test("with an initialize handler declared, a pre-handshake request is still -32002 and a second initialize still -32600", async () => {
       const session = LspSession.start(runtime, fixture("initialize-identity.ts"));

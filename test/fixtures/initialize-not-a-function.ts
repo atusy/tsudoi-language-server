@@ -4,7 +4,7 @@
  * otherwise have sent and answers `initialize` with whatever comes back, so `5`
  * fails the one request a session cannot do without.
  *
- * THE CAPABILITY SENTENCE THE FIVE METHOD KEYS ARE REFUSED WITH IS FALSE OF THIS
+ * THE CAPABILITY SENTENCE A TABLE METHOD'S KEY IS REFUSED WITH IS FALSE OF THIS
  * ONE, which is why the message it earns is a sibling rather than a reuse: this
  * key contributes no capability, and no client sends `initialize` because it was
  * invited to.

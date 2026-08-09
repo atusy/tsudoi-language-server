@@ -141,7 +141,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // moving the transition above the await, reddens the concurrency arm in
       // test/initialize-handler.test.ts on the refusal's MESSAGE. MEASURED.
       //
-      // NOTHING BOUNDS THIS CALL EITHER. The five table methods all run through
+      // NOTHING BOUNDS THIS CALL EITHER. Every table method runs through
       // `answerUnlessCancelled`; this one runs through nothing, so a handler that
       // never settles hangs the handshake with no diagnostic anywhere. Same class,
       // same acceptance: reachable only through the author's own code, and a

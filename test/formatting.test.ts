@@ -131,7 +131,7 @@ for (const runtime of runtimes) {
 
     /**
      * THE AFFORDABILITY CLAIM, MEASURED HERE RATHER THAN ASSERTED FOR THE
-     * REMAINING FOUR METHODS. A handler emits Positions from whatever OFFSETS
+     * REMAINING METHODS. A handler emits Positions from whatever OFFSETS
      * its analysis produced, which is `positionAt` -- a member this project's
      * document has only because upstream's TextDocument sits behind it.
      *

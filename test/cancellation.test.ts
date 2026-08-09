@@ -280,7 +280,7 @@ for (const runtime of runtimes) {
     // THE REST IS COVERED ELSEWHERE AND BY CONSTRUCTION, said here so this file
     // is not read as the whole of it: test/methods-table.test.ts asserts that
     // EVERY method in the request table is answered -32800 when cancelled, so a
-    // sixth is covered the moment it is declared.
+    // method joining it is covered the moment it is declared.
     //
     // WHAT IS PER-METHOD HERE AND NOT THERE, said precisely so the division of
     // labour does not blur: those table tests cancel BEFORE DISPATCH, where no

@@ -143,7 +143,7 @@ test("a bare RequestContext still takes the two members it takes today", async (
 
 /**
  * WHAT THE DEFAULT'S VALUE DECIDES, AND THE ARM THE PROBE ABOVE CANNOT BE. With
- * `= Method` the conditional distributes over the five, every arm answers
+ * `= Method` the conditional distributes over the table's rows, every arm answers
  * `BaseRequestContext`, and a bare `RequestContext` IS that type. With
  * `= ConfigMethod` it is `BaseRequestContext | InitializeRequestContext`.
  *

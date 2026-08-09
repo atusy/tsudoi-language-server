@@ -140,8 +140,8 @@ function validatedMethods(returned: object, absolutePath: string): TsudoiConfig[
   if (initialize !== undefined) {
     // A SIBLING SENTENCE AND NOT THE ONE ABOVE, and generalising the two into
     // one is the edit to refuse: that message's `advertises a capability for
-    // every method the config declares` is what makes it useful for the five and
-    // is false of this key, while what goes wrong HERE is the handshake, which
+    // every method the config declares` is what makes it useful for a row of the
+    // table and is false of this key, while what goes wrong HERE is the handshake, which
     // is true of no other key.
     if (typeof initialize !== "function") {
       throw new ConfigError(
