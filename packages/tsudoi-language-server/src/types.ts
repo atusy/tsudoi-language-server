@@ -131,8 +131,8 @@ export interface WorkspaceFolderStore {
  *
  * A TYPE AND NOT A GUARANTEE. `readonly` is erased at run time, so this stops
  * the mistake in a config that is TYPE-CHECKED and stops nothing in the
- * JavaScript an author actually ships; the freeze at the ingress in
- * src/tsudoi.ts is the half that runs.
+ * JavaScript an author actually ships; the freeze in src/tsudoi.ts is the half
+ * that runs.
  *
  * `any` IS REDUCED TO `unknown` BY THE FIRST ARM. NOTHING CAN MAKE `any`
  * READONLY -- a mapped type over it yields members that are `any` again -- so
@@ -264,9 +264,13 @@ export interface Tsudoi {
    * write to it is refused. `as ClientCapabilities` on the clone is the route; a
    * spread unfreezes the top level and nothing under it.
    *
-   * WHAT IT IS NOT IS A ROUTE TO THE REST OF `InitializeParams`. This is one
-   * field, opened because one reader needed it; the others are still unread, and
-   * the reason is at the `initialize` handler in src/server.ts.
+   * WHAT IT IS NOT IS A ROUTE TO THE REST OF `InitializeParams` ON THIS SURFACE.
+   * This is one field, opened because one reader needed it; the others are
+   * unread HERE, and the reason is the `FOUR FIELDS` refusal in src/server.ts,
+   * which is about what the SESSION retains. It is NOT a statement about what
+   * the message reaches: a config's own `initialize` handler is handed the whole
+   * of `InitializeParams`, which is a different question with a different
+   * answer.
    */
   readonly clientCapabilities: DeepReadonly<ClientCapabilities>;
 }
@@ -441,6 +445,14 @@ export interface BaseRequestContext {
  * IT EXTENDS THE BASE RATHER THAN STANDING BESIDE IT, which is what makes `Base`
  * an honest name: `signal` is here too, so a handshake handler reads
  * cancellation exactly as every other handler does.
+ *
+ * AND THE FIELD BELOW IS A SESSION FACT ON A REQUEST CONTEXT, WHICH THE FIRST
+ * RULE AT `BaseRequestContext` READ LITERALLY REFUSES. That rule's harm is a
+ * field whose POSITION says a request could see something different from its
+ * neighbour -- and the handshake happens once, so there is no neighbour for it to
+ * mislead. What decides the placement is the OTHER rule, `a field only one method
+ * has`. A reader applying the first alone concludes this belongs on `Tsudoi`,
+ * where it would be a second answer tsudoi owed for the whole session.
  */
 export interface InitializeRequestContext extends BaseRequestContext {
   /**
