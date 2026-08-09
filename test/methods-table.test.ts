@@ -52,10 +52,13 @@ const uri = "file:///workspace/a.txt";
  * file is GREEN, every arm, both runtimes, while `workspace/executeCommand` is
  * driven with its one required member missing.
  *
- * WHERE THAT ILL-FORMED `Command` ENDS UP, said so nobody discovers it as a
- * surprise: test/fixtures/all-methods.ts's resolve handler answers with what it
- * was handed, so the resolve response carries `command` as a string back to the
- * fake editor -- read by nothing, asserted by nothing.
+ * WHERE THAT ILL-FORMED `Command` ENDS UP IS NOWHERE, TODAY. No arm here
+ * reaches a resolve handler with it: of the three driving
+ * test/fixtures/all-methods.ts, one is refused before initialize, one is
+ * cancelled in the prologue without the handler being entered, and one sends
+ * params that are not an object at all. An arm that DID reach it would get the
+ * member straight back -- that fixture answers resolve with what it was handed
+ * -- into a response read by nothing and asserted by nothing.
  */
 function paramsForAnyMethod(): unknown {
   return {
