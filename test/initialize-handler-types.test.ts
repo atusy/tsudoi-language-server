@@ -137,9 +137,9 @@ test("a bare RequestContext still takes the two members it takes today", async (
  * WRITTEN THIS WAY: the union and the base are mutually ASSIGNABLE -- the
  * initialize context extends the base -- so every readable probe is exit 0 under
  * both spellings, and reading `preparedResult` off a bare context is TS2339
- * under both as well. The first spelling of this arm read the field through a
- * cast and was measured VACUOUS: the whole file stayed green with the default
- * widened.
+ * under both as well, only the type named in the message moving. The first
+ * spelling of this arm read the field through a cast and was measured VACUOUS:
+ * the whole file stayed green with the default widened.
  *
  * THE IDIOM IS TSC'S OWN INTERNAL IDENTITY CHECK: two generic signatures are
  * mutually assignable only when their conditional types are IDENTICAL, which

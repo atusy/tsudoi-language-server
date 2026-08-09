@@ -477,14 +477,17 @@ export interface InitializeRequestContext extends BaseRequestContext {
  * Definition of Done check 5 compiles. Dropping the default breaks all of them
  * by arity.
  *
- * `= Method` AND NOT `= ConfigMethod`, AND THE DIFFERENCE IS MEASURED RATHER THAN
- * ASSUMED. A naked type parameter distributes, so `= Method` collapses over the
- * five to exactly `BaseRequestContext`, and a bare `RequestContext` keeps meaning
- * today's two members. `= ConfigMethod` yields `BaseRequestContext |
- * InitializeRequestContext` -- WHICH THE BARE LITERALS STILL SATISFY, so that
- * spelling is NOT caught by an assignment: what it costs is every bare-typed
- * READ of `preparedResult`, TS2339 against the union, and a name whose meaning
- * moved without any site saying so.
+ * `= Method` AND NOT `= ConfigMethod`, AND THE DIFFERENCE WAS MEASURED RATHER
+ * THAN ASSUMED -- it is NARROWER THAN IT LOOKS. A naked type parameter
+ * distributes, so `= Method` collapses over the five to exactly
+ * `BaseRequestContext` while `= ConfigMethod` yields `BaseRequestContext |
+ * InitializeRequestContext`. NOTHING ASSIGNABILITY CAN SEE TELLS THEM APART: the
+ * two are mutually assignable, so every bare literal outside src/ satisfies both,
+ * and a bare-typed READ of `preparedResult` is TS2339 under both -- only the type
+ * named in the message moves. WHAT THE WIDER SPELLING COSTS IS IDENTITY: this
+ * published name stops BEING `BaseRequestContext`, which is why the arm that
+ * catches it had to be a type-identity test and why the cast-based one written
+ * first was vacuous.
  */
 export type RequestContext<M extends ConfigMethod = Method> = M extends "initialize"
   ? InitializeRequestContext
