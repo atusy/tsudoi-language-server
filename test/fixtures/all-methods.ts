@@ -20,8 +20,8 @@ import type {
  *
  * - delete hover's, formatting's, diagnostic's, resolve's or executeCommand's,
  *   and NO ASSERTION ABOUT WHAT THIS CONFIG SERVES MOVES;
- * - delete completion's ALONE and four tests redden -- for a reason that is not
- *   about the handler at all. `completionItem/resolve` without
+ * - delete completion's ALONE and the session arms redden -- for a reason that
+ *   is not about the handler at all. `completionItem/resolve` without
  *   `textDocument/completion` is refused at CONFIG LOAD, so this config stops
  *   loading and the session tests fail at `initialize`;
  * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
@@ -33,12 +33,12 @@ import type {
  * compile error changes nothing THEY can see, and nothing here was ever about
  * what a spawned compiler can. MEASURED TWICE at 4a44404, whole suite, both
  * runtimes, once with executeCommand's handler deleted and once with hover's:
- * 1015 pass / 1 fail each time, THE SAME ARM BOTH TIMES -- `an unbuilt
+ * THE SAME SINGLE ARM RED EACH TIME -- `an unbuilt
  * checkout's root type check is non-zero and names a workspace package it could
  * not resolve` in test/unbuilt-checkout.test.ts, which runs `tsc` over a staged
- * copy of this tree and reports the TS2741 AT THIS FILE. So the deletion costs
- * one arm whose message names the file, which is not the property it was
- * reaching for and cannot be mistaken for it.
+ * copy of this tree and reports the TS2741 AT THIS FILE. ONE ARM AND NOTHING
+ * ELSE, both times. So the deletion costs an arm whose message names this file,
+ * which is not the property it was reaching for and cannot be mistaken for it.
  *
  * THE PRICE IS WHAT THE ANNOTATION MOVES, NOT THE RESULT. `tsc --noEmit` fails
  * TS2741 on each of those trees, so the perturbation costs a DoD check. IT IS

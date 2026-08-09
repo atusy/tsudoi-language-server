@@ -41,11 +41,13 @@ const uri = "file:///workspace/a.txt";
  * leaves the sentence above FALSE while every test here stays green. It is here
  * to keep that claim true.
  *
- * `command` IS HERE FOR THE SAME REASON AND HAS THE SAME COLOUR, WHICH IS NONE.
- * `ExecuteCommandParams.command` is REQUIRED, `workspace/executeCommand` reads
- * neither a document nor a position, and nothing on the wire validates the
- * member either -- so a run with it deleted stays green all the way through
- * while the sentence above has stopped being true of one row of the table.
+ * `command` IS HERE FOR THE SAME REASON AND HAS THE SAME COLOUR, WHICH IS NONE
+ * -- MEASURED rather than reasoned from `label`'s paragraph, since that one was
+ * itself written from a reading. `ExecuteCommandParams.command` is REQUIRED,
+ * `workspace/executeCommand` reads neither a document nor a position, and
+ * nothing on the wire validates the member: with it deleted this whole file is
+ * GREEN, every arm, both runtimes, while the sentence above has stopped being
+ * true of one row of the table.
  */
 function paramsForAnyMethod(): unknown {
   return {

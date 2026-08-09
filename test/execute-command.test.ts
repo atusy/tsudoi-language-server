@@ -129,8 +129,14 @@ for (const runtime of runtimes) {
      * THE ECHO IS WHAT SAYS THE HANDLER RAN. tsudoi keeps no record of a command
      * name and could not have written this answer: an error tsudoi decided on,
      * an empty result, or a filter over the advertised list all redden here.
-     * MEASURED, adding that filter: this arm reddens and the capability arm
-     * above stays green, which is the pair that says the two are untied.
+     *
+     * MEASURED, THE FILTER ADDED TO THE ROUTER'S PROLOGUE -- an `InvalidRequest`
+     * for any command not in a list that is empty -- and the reading is WIDER
+     * THAN THE ONE ARM, which is why it is written out: this arm reddens AND SO
+     * DOES THE `null` ARM BELOW, on both runtimes, because the refusal is decided
+     * before either the handler or its absence is reached. BOTH CAPABILITY ARMS
+     * STAY GREEN, which is the half that says capability and handler are untied
+     * rather than merely that something broke.
      *
      * THE ARGUMENTS TRAVEL UNREAD, which is the same ruling
      * `completionItem/resolve` carries: tsudoi does not know what a command
@@ -164,6 +170,11 @@ for (const runtime of runtimes) {
      * row joins by existing. That one drives one shared params object across
      * every method; this one drives THIS request, which is what the attribution
      * needs.
+     *
+     * IT IS ALSO THE SECOND RED OF THE FILTER PERTURBATION recorded above, and
+     * that is not a duplicate reading: a filter refuses BEFORE the route reaches
+     * the absent handler, so the two arms move together and only the capability
+     * arms stay behind to discriminate.
      */
     test("the same command against a config with no handler is answered null", async () => {
       const session = LspSession.start(runtime, noMethods);

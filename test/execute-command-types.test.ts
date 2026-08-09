@@ -42,6 +42,11 @@ function typesProbe(body: string): Record<string, string> {
  * `'workspace/executeCommand'` not assignable to `ConfigMethod` -- so `exit 1`
  * alone is satisfied by a method tsudoi does not serve. MEASURED, and it is the
  * reading that decided this arm's shape.
+ *
+ * AND MEASURED THE OTHER WAY, which is what says the row's narrowing is where
+ * this red comes from: the published result declared `Promise<any>` instead,
+ * this arm alone reddens -- exit 0 where it expects one error -- while the two
+ * arms below stay green, the `any` control included.
  */
 test("what an executeCommand handler answers is not assignable to a string", async () => {
   const result = await typeCheckProbe(
