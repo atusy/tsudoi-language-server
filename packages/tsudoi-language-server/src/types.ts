@@ -474,8 +474,20 @@ export interface InitializeRequestContext extends BaseRequestContext {
    * whatever the config says, so an author who replaces `capabilities` and omits
    * `textDocumentSync` gets a client that sends no didOpen and no didChange,
    * `tsudoi.documents` empty for the whole session, and every document-reading
-   * handler answering about nothing with no error anywhere. SPREAD WHAT YOU WERE
-   * GIVEN rather than building a `capabilities` from scratch.
+   * handler answering about nothing with no error anywhere. Dropping
+   * `workspace.workspaceFolders` is the same loss one door along: the client
+   * stops sending `didChangeWorkspaceFolders`, so `tsudoi.workspaceFolders`
+   * freezes at whatever the handshake set and the liveness rule at `Tsudoi` goes
+   * quietly false for it. SPREAD WHAT YOU WERE GIVEN rather than building a
+   * `capabilities` from scratch.
+   *
+   * AND `positionEncoding` IS A FIELD TO LEAVE ALONE RATHER THAN ONE THIS KEY
+   * UNLOCKS, said here because it sits in the same object and reads like a knob:
+   * tsudoi's document layer is UTF-16 for every offset and every position, the
+   * name appears NOWHERE in src/, and writing `"utf-8"` changes no computation --
+   * it asks the client to send positions tsudoi will read as UTF-16 for the whole
+   * session. The protocol also permits only `utf-16` back where the client named
+   * no encodings, and `general.positionEncodings` is not read.
    *
    * DEEP-FROZEN, so an in-place edit fails loudly instead of half-landing. The
    * spread above is what a handler wanting a modified copy writes, and
