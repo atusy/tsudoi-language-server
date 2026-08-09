@@ -388,12 +388,23 @@ export interface MethodMap {
    * under even for an author who wanted it.
    *
    * `unknown` AND NOT `any`, WHICH IS THIS ROW'S ONE DEPARTURE FROM UPSTREAM.
-   * The protocol declares the result `any`, and `any` on this surface DISABLES
-   * CHECKING IN A STRANGER'S OWN FILE, silently -- the exact defect
-   * `DeepReadonly`'s first arm exists to stop one type earlier. Nothing is lost
-   * going the other way: a handler may still answer anything, and what it costs
-   * an author is a narrowing at the point they READ their own answer back, which
-   * is where they know what it is.
+   * The protocol declares the result `any`, and `any` ANSWERED BACK OUT OF A
+   * HANDLER DISABLES CHECKING IN A STRANGER'S OWN FILE, silently -- the exact
+   * defect `DeepReadonly`'s first arm exists to stop one type earlier. Nothing
+   * is lost going the other way: a handler may still answer anything, and what
+   * it costs an author is a narrowing at the point they READ their own answer
+   * back, which is where they know what it is.
+   *
+   * THE RESULT AND NOT THE PARAMS, WHICH IS NARROWER THAN THE PARAGRAPH ABOVE
+   * SOUNDS AND IS THE WHOLE OF WHAT IS ENFORCED. `any` reaches an author on this
+   * same row through what they are HANDED: `LSPAny` is literally `any`, so
+   * `ExecuteCommandParams.arguments` is an array of it, `MethodHandler` passes
+   * params RAW with no `DeepReadonly` on them anywhere, and `const leaked:
+   * string = params.arguments![0]` compiles clean in a stranger's file. NOT
+   * INTRODUCED HERE -- `completionItem/resolve` already does it through
+   * `CompletionItem.data` -- and NOT REPAIRED HERE: reshaping what upstream
+   * declares a request CARRIES is a different decision from choosing what this
+   * row ANSWERS, and it would be taken for every row at once or not at all.
    *
    * WHAT TSUDOI DECIDES ABOUT A COMMAND IS NOTHING. It does not filter on the
    * advertised list, does not answer on the handler's behalf, and has no opinion
