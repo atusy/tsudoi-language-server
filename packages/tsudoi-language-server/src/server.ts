@@ -128,9 +128,15 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // DROPPED -- silently, there being no response to carry a refusal. It used to
       // be zero and is now the author handler's duration. ACCEPTED because LSP
       // forbids a conforming client from sending anything before it holds the
-      // InitializeResult, so only a non-conforming or pipelining one can reach it,
-      // and QUEUEING IS DELIBERATELY NOT BUILT. Note what this warns: nothing
-      // reddens.
+      // InitializeResult, so only a non-conforming or pipelining one can reach it.
+      //
+      // AND QUEUEING IS DELIBERATELY NOT BUILT, WHICH IS AN ARGUMENT AND NOT AN
+      // ASSERTION: a queue would hold notifications against a session this
+      // handler may still FAIL, and the catch below returns the phase to
+      // uninitialized -- so the only correct disposal of everything queued is the
+      // drop that already happens, arrived at later and with a buffer to explain.
+      // Note what this warns: nothing reddens if you widen this window, and
+      // nothing reddens if you close it.
       //
       // NOTHING BOUNDS THIS CALL EITHER. The five table methods all run through
       // `answerUnlessCancelled`; this one runs through nothing, so a handler that
@@ -142,6 +148,15 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // THE WHOLE `InitializeParams` IS HANDED OVER, and that is NOT a way around
       // the four fields above: that refusal is about what the SESSION OBJECT
       // RETAINS, and this argument is the message. Nothing here is retained.
+      //
+      // BUT THE REFUSAL RESTED ON TWO LEGS AND ONLY ONE IS LEFT STANDING.
+      // `every field on that surface is one tsudoi then owes an answer about` is
+      // now delivered by another route: `ConfigMethodMap["initialize"].params` is
+      // `InitializeParams`, published, and reached by the cast above out of
+      // `unknown`. So tsudoi DOES owe an answer about every field of it -- and
+      // pays with the narrowest one available, that it read none of them. What
+      // it refuses to owe is a field a SESSION MEMBER would make it answer about
+      // for the whole run.
       let answer: DeepReadonly<InitializeResult>;
       try {
         answer = await handler(
@@ -247,9 +262,14 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
  * The sentence a malformed `initialize` must be refused with, or undefined where
  * the handshake may proceed.
  *
- * WHAT IS CHECKED IS WHAT TSUDOI PUBLISHES, AND NOT `InitializeParams` AS A
- * WHOLE. Of the four fields read off this message, these are the ones whose
- * PUBLISHED TYPE is the promise being kept: `Tsudoi` declares `rootUri` as
+ * WHAT IS CHECKED IS WHAT TSUDOI READS AND ANSWERS FOR, AND NOT
+ * `InitializeParams` AS A WHOLE -- AND `what tsudoi publishes` IS THE WRONG RULE
+ * NOW THAT `ConfigMethodMap["initialize"].params` PUBLISHES THE MESSAGE ENTIRE.
+ * The rest of it reaches a config author's handshake handler UNCHECKED, declared
+ * `InitializeParams` by a cast off `unknown` and inspected by nothing.
+ *
+ * Of the four fields read off this message, these are the ones whose PUBLISHED
+ * TYPE is the promise being kept: `Tsudoi` declares `rootUri` as
  * `string | null` and `clientCapabilities` as an object, and nothing downstream
  * inspects either. `rootPath` and `workspaceFolders` fall on the other side
  * because src/workspace.ts REDUCES both to states they already have and that
