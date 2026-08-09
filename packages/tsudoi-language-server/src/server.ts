@@ -176,6 +176,10 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
         // THING NOT UNDONE IS `handshake`, and it is not owed: both of its
         // writers overwrite unconditionally, so the retry is clean.
         //
+        // ALL OF WHICH IS ABOUT A HANDLER THAT THREW, AND ONLY THAT. A handler
+        // that RETURNS badly is answered an error too and is NOT retryable; the
+        // residue is recorded at the return below, where it happens.
+        //
         // AND WHAT AN AUTHOR CANNOT THROW HERE IS RECORDED RATHER THAN FIXED: a
         // conformant `InitializeError { retry }` needs a `ResponseError`, and
         // none of the four published subpaths hands one over -- `deps/protocol`
@@ -200,6 +204,27 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // as `send the prepared one` would make the one mistake unobservable. THE
       // RESIDUE BESIDE IT: a STRUCTURALLY INVALID result is unchecked at run time,
       // src/config.ts having validated `typeof === "function"` and nothing more.
+      //
+      // AND A SECOND RESIDUE THAT IS NOT THAT ONE: an UNSERIALIZABLE result --
+      // a BigInt, a cycle, a getter that throws -- is the one failure that
+      // WEDGES THE SESSION. vscode-jsonrpc stringifies AFTER this function
+      // returns, so the phase has already moved: MEASURED on both runtimes, the
+      // client is answered -32603 and the retry it would make is refused -32600
+      // `already initialized`. WHAT IT COSTS THE AUTHOR IS THE SILENCE: the
+      // failure happens past this function, so `reportHandlerFailure` never
+      // runs and stderr stays EMPTY -- measured, beside zero unframed bytes on
+      // stdout -- so this is the one handler failure in the tree with no
+      // `tsudoi: ` line locating it. A structurally invalid
+      // result serializes perfectly, so the residue above does not cover it, and
+      // `abandonInitialize` cannot: the try completed successfully.
+      //
+      // RECORDED AND NOT CAUGHT, WHICH IS A CHOICE AND NOT AN OVERSIGHT. Catching
+      // it means stringifying every handshake answer HERE, before the transition,
+      // and throwing away the result -- one full serialization of every session's
+      // handshake, on every run, to convert a config author's own bug from an
+      // unretryable -32603 into a retryable one. NO ARM EITHER, deliberately: an
+      // arm would pin the wedge as the promised behaviour, and this is the half
+      // whoever catches it should be free to delete.
       //
       // THE CAST TAKES `readonly` BACK OFF AND DOES NOTHING ELSE. The published
       // return is DeepReadonly so an author MAY return the very object they were
