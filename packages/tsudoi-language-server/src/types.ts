@@ -15,6 +15,7 @@ import type {
   DocumentDiagnosticParams,
   DocumentDiagnosticReport,
   DocumentFormattingParams,
+  ExecuteCommandParams,
   Hover,
   HoverParams,
   InitializeParams,
@@ -380,6 +381,39 @@ export interface MethodMap {
   "completionItem/resolve": {
     params: CompletionItem;
     result: Promise<CompletionItem>;
+  };
+
+  /**
+   * Awaited once, and BY CONSTRUCTION rather than by choice: `ExecuteCommandParams`
+   * carries no `partialResultToken`, so the stream drive has nothing to travel
+   * under even for an author who wanted it.
+   *
+   * `unknown` AND NOT `any`, WHICH IS THIS ROW'S ONE DEPARTURE FROM UPSTREAM.
+   * The protocol declares the result `any`, and `any` on this surface DISABLES
+   * CHECKING IN A STRANGER'S OWN FILE, silently -- the exact defect
+   * `DeepReadonly`'s first arm exists to stop one type earlier. Nothing is lost
+   * going the other way: a handler may still answer anything, and what it costs
+   * an author is a narrowing at the point they READ their own answer back, which
+   * is where they know what it is.
+   *
+   * WHAT TSUDOI DECIDES ABOUT A COMMAND IS NOTHING. It does not filter on the
+   * advertised list, does not answer on the handler's behalf, and has no opinion
+   * on a name it has never seen: which commands exist is the author's, and so is
+   * what an unrecognised one means.
+   *
+   * AND THE ADVERTISED LIST IS EMPTY UNLESS THE AUTHOR FILLS IT, which is the
+   * part a config declaring this handler alone will notice: handler presence
+   * claims `executeCommandProvider` and can say nothing about WHICH commands, so
+   * a conforming client is told of none and sends none. The list is set from a
+   * `config.methods.initialize` handler, through `preparedResult`.
+   *
+   * COMMAND NAMES SHARE ONE NAMESPACE ACROSS ALL OF A CLIENT'S SERVERS, so a
+   * name colliding with another server's is the author's hazard. tsudoi cannot
+   * see the other servers and will not pretend to.
+   */
+  "workspace/executeCommand": {
+    params: ExecuteCommandParams;
+    result: Promise<unknown>;
   };
 }
 

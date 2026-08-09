@@ -13,6 +13,7 @@ import {
   DocumentDiagnosticRequest,
   DocumentFormattingRequest,
   ErrorCodes,
+  ExecuteCommandRequest,
   HoverRequest,
   integer,
   LSPErrorCodes,
@@ -136,6 +137,20 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
         interFileDependencies: true,
         workspaceDiagnostics: false,
       };
+    },
+  },
+  "workspace/executeCommand": {
+    drive: "awaited-once",
+    type: ExecuteCommandRequest.type,
+    // EMPTY, AND TSUDOI HAS NOTHING TO PUT IN IT. `commands` is REQUIRED, so
+    // this contributor must write a list; every name it could invent would be a
+    // claim to a client that no config made, and handler presence -- all this
+    // runs on -- cannot say which commands a handler serves. The author fills it
+    // from an `initialize` handler, and until they do a conforming client sends
+    // nothing. NOT A REASON TO CONTRIBUTE NOTHING: without the key the author's
+    // own handler has no capability to write into.
+    capability: (capabilities) => {
+      capabilities.executeCommandProvider = { commands: [] };
     },
   },
 };

@@ -148,6 +148,13 @@ export default (): Promise<TsudoiConfig> => {
       // neither inspects it nor invents one.
       "completionItem/resolve": (_context: RequestContext, item: CompletionItem) =>
         Promise.resolve(item),
+      // DOES NOT LOOK AT ITS PARAMS EITHER, and for the sibling reason: the
+      // by-construction tests drive every method with ONE shared params object,
+      // so the command name that arrives here names nothing this file could
+      // recognise. What a command MEANS is asserted against
+      // test/fixtures/execute-command-echo.ts instead, which is where an author
+      // deciding it belongs.
+      "workspace/executeCommand": () => Promise.resolve(null),
       // THE LINE THAT MAKES THIS FILE COMPLETE BY CONSTRUCTION. `TsudoiConfig`
       // declares `methods` PARTIAL, correctly -- a config author supplies the
       // methods they serve. This fixture is the one config that must serve them

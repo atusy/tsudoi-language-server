@@ -30,16 +30,22 @@ const uri = "file:///workspace/a.txt";
 /**
  * One params object every method in the table accepts on the wire: the
  * position the two positional methods read, the `options` formatting requires,
- * and the `label` a CompletionItem requires. Shared BECAUSE THE TESTS BELOW ARE
- * ABOUT THE PROLOGUE, which runs before any handler looks at params -- a params
- * shape per method would be a per-method copy in the tests that exist to prove
- * per-method copies are gone.
+ * the `label` a CompletionItem requires and the `command` an executeCommand
+ * requires. Shared BECAUSE THE TESTS BELOW ARE ABOUT THE PROLOGUE, which runs
+ * before any handler looks at params -- a params shape per method would be a
+ * per-method copy in the tests that exist to prove per-method copies are gone.
  *
  * `label` IS HERE AND NOTHING FAILS WITHOUT IT. `completionItem/resolve` takes
  * a CompletionItem rather than a document and a position, and `label` is its
  * one required member -- nothing on the wire validates that, so omitting it
  * leaves the sentence above FALSE while every test here stays green. It is here
  * to keep that claim true.
+ *
+ * `command` IS HERE FOR THE SAME REASON AND HAS THE SAME COLOUR, WHICH IS NONE.
+ * `ExecuteCommandParams.command` is REQUIRED, `workspace/executeCommand` reads
+ * neither a document nor a position, and nothing on the wire validates the
+ * member either -- so a run with it deleted stays green all the way through
+ * while the sentence above has stopped being true of one row of the table.
  */
 function paramsForAnyMethod(): unknown {
   return {
@@ -47,6 +53,7 @@ function paramsForAnyMethod(): unknown {
     position: { line: 0, character: 0 },
     options: { tabSize: 2, insertSpaces: true },
     label: "表",
+    command: "tsudoi.表",
   };
 }
 
