@@ -115,8 +115,8 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
  * reaches nothing at all -- and every capability test would stay green, since
  * capabilities are contributed by key too.
  *
- * ONE ASSERTION, EVERY ENTRY, BY CONSTRUCTION: a fourth method joins this the
- * moment it joins the table.
+ * ONE ASSERTION, EVERY ENTRY, BY CONSTRUCTION: a method joins this the moment it
+ * joins the table, and no roster here has to be kept in step with one.
  */
 describe("the request table", () => {
   test("every entry's key is its own request type's method", () => {
@@ -159,8 +159,8 @@ for (const runtime of runtimes) {
      * hand-written rejection check left THE WHOLE SUITE green, and so did
      * deleting completion's: only hover's was defended. The remedy the PBI
      * chose is the router rather than two more hand-written assertions, so
-     * this test iterates the TABLE -- a fourth method is covered the moment it
-     * is declared, which is the property, and hand-copying an assertion per
+     * this test iterates the TABLE -- a method is covered the moment it is
+     * declared, which is the property, and hand-copying an assertion per
      * method would have been the convention this work exists to retire.
      *
      * WHAT IT NO LONGER SAYS ON ITS OWN, because two different answers are now
@@ -293,8 +293,21 @@ for (const runtime of runtimes) {
      *
      * BORN GREEN, DECLARED. It is not a red-driven claim, and it is kept
      * because it is the only assertion that names this property for every entry
-     * at once; the per-method twins in
-     * hover, formatting, diagnostic and resolve's files each name one.
+     * at once; each awaited-once row's own file carries a twin naming it for
+     * that row alone.
+     *
+     * WHAT `null` DOES NOT ATTRIBUTE, RECORDED RATHER THAN REPAIRED AND NOT NEW
+     * WITH THE SIXTH ROW. It says the ROUTE answered only because this fixture
+     * declares no handler for anything; against a config that DID declare one it
+     * would not tell the drive's `?? null` from a handler that returned null,
+     * for any row whose result type admits null. `textDocument/hover` and
+     * `textDocument/formatting` have declared theirs from the start, and
+     * `workspace/executeCommand` joins them through `Promise<unknown>` -- with
+     * test/fixtures/all-methods.ts's handler for it answering literally
+     * `Promise.resolve(null)`. THE ATTRIBUTION THAT NEEDS A HANDLER IS DONE PER
+     * ROW, by an echo arm paired against its own no-handler `null` in
+     * test/execute-command.test.ts, and narrowing a published result type to
+     * make this arm read better is refused.
      */
     test("every method in the table is answered null with no handler and no cancellation", async () => {
       const session = LspSession.start(runtime, noMethods);
@@ -336,9 +349,9 @@ for (const runtime of runtimes) {
      *
      * WHAT SAYS THE REFUSAL IS NOT OVER-BROAD is the rest of the suite: every
      * other session test sends a params OBJECT and expects an answer, so a
-     * guard that refused those reddens in hover, completion, formatting,
-     * diagnostic and resolve's own files at once. No control is written here
-     * for a property every other session assertion in the suite already holds.
+     * guard that refused those reddens in every row's own file at once. No
+     * control is written here for a property every other session assertion in
+     * the suite already holds.
      */
     test("every method in the table refuses params that are not an object", async () => {
       const session = LspSession.start(runtime, allMethods);

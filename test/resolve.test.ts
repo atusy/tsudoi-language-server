@@ -188,10 +188,10 @@ for (const runtime of runtimes) {
      * the request table exists to retire.
      *
      * BORN GREEN, DECLARED RATHER THAN LEFT TO BE INFERRED. It rides the
-     * awaited-once drive's `?? null`, which hover, formatting and diagnostic
-     * already ride, so NOTHING RESOLVE-SPECIFIC DEFENDS IT and no perturbation
-     * reddens it without reddening those three together. It is here on the same
-     * footing formatting's and diagnostic's twins are: it says what the wire
+     * awaited-once drive's `?? null`, which every other awaited-once row rides
+     * too, so NOTHING RESOLVE-SPECIFIC DEFENDS IT and no perturbation reddens it
+     * without reddening all of them together. It is here on the same
+     * footing every one of those twins is: it says what the wire
      * answer IS for a method whose result type declares no null arm.
      */
     test("a resolve request with no handler configured is answered null, twice over", async () => {

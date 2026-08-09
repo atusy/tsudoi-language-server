@@ -274,8 +274,8 @@ for (const runtime of runtimes) {
     // client has already discarded the request's context.
     //
     // `both` NAMES THE METHODS THIS FILE DRIVES AND IS NOT AN ENUMERATION OF
-    // TSUDOI'S. Formatting, diagnostic and resolve are cancellable too, and
-    // every one of them goes through the same `answerUnlessCancelled`.
+    // TSUDOI'S. Every other row of the request table is cancellable too, both
+    // drives answering through the same `answerUnlessCancelled`.
     //
     // THE REST IS COVERED ELSEWHERE AND BY CONSTRUCTION, said here so this file
     // is not read as the whole of it: test/methods-table.test.ts asserts that
