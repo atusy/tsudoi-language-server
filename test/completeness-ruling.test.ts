@@ -115,7 +115,22 @@ function handlerDirectories(): string[] {
   ];
 }
 
-/** Every file under the config directories that names the completion method. */
+/**
+ * Every file under the config directories that NAMES the completion method.
+ *
+ * NAMING IS NOT SERVING IN BOTH DIRECTIONS NOW, AND ONLY ONE OF THEM HAS AN
+ * EXCLUSION. A per-file grep is fooled the other way too, and this repository
+ * grew its first instance with the handshake handler: three `initialize-*`
+ * fixtures SPREAD another fixture's exported `methods` object, so they SERVE
+ * completion while containing zero occurrences of the string. The class of
+ * configs serving it grew and the class this scan can see did not move.
+ *
+ * THE RULING IS NOT LOST AND THIS IS NOT REPAIRED HERE: it lives at the
+ * definition site those three import from, which is where the return value that
+ * would violate it is written. What nothing notices is a config spreading a
+ * handler out of a file that carries NO ruling -- so a new shared `methods`
+ * export owes one at its own site, and this paragraph is the only thing asking.
+ */
 function scanned(): string[] {
   return handlerDirectories()
     .flatMap((dir) =>
