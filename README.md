@@ -63,7 +63,14 @@ runtimes" is a promise the suite must not be able to stop checking quietly.
 project's dashboard declares, in the order declared, and prints each one's own exit status
 beside the command that produced it -- so a failure cannot be missed by reading the part of the
 output that happened to be on screen, which is how four commits were once taken on a red tree.
-Running one check by hand is debugging; this is verification. It is named here rather than
+Running one check by hand is debugging; this is verification. **Re-running one check is
+`--only <substring>`** -- matched against the check names, case-insensitively, and composing with
+the optional root in either order. A filtered run prints the same report in the same shape, so
+there is still nothing to pipe; its header and its verdict line both say it was filtered, because
+the declared order is load-bearing and no subset's green is this Definition of Done's green; and a
+substring no check matches is refused rather than reported green over nothing. That option exists
+because the route it replaces cost this project a red format check, run by hand and read through
+`tail`, which showed a summary line and hid the verdict above it. It is named here rather than
 shown as a runnable block on purpose, and the reason is NOT that a block here must be run -- since
 this increment, a block may instead be accounted for over a named part of it, and a block pairing
 this command with one resolvable import would satisfy that without ever being run. The reason is

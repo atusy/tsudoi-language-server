@@ -73,8 +73,24 @@ interface Tree {
    * `standalone` runs the tree's own copy of the runner with NO ARGUMENT, which
    * is the only way to measure the other half of the root rule -- a runner
    * invoked with a root can never show where it would have looked without one.
+   * It takes no other argument BY CONSTRUCTION: the moment it carried one it
+   * would stop being the no-argument reading it exists to take.
+   *
+   * `only` is passed as the shipped option, and `optionFirst` puts it BEFORE the
+   * root -- an order a reader will type and one a parser reading `argv[2]` gets
+   * wrong while every other arm here stays green.
+   *
+   * `args` hands the whole argument list over verbatim, and it exists for the
+   * malformed ones: an option with its value MISSING is not a value `only` can
+   * express, and it is the argument most likely to be typed by accident.
    */
-  run: (options?: { cwd?: string; standalone?: boolean }) => Promise<CliResult>;
+  run: (options?: {
+    cwd?: string;
+    standalone?: boolean;
+    only?: string;
+    optionFirst?: boolean;
+    args?: readonly string[];
+  }) => Promise<CliResult>;
 }
 
 const staged: string[] = [];
@@ -166,16 +182,33 @@ function stageTree(): Tree {
       readFileSync(log, "utf8")
         .split("\n")
         .filter((line) => line !== ""),
-    run: (options) =>
-      options?.standalone === true
-        ? runCommand(`bun run ${standalone}`, options.cwd ?? root)
-        : runCommand(`bun run ${runner}`, options?.cwd ?? root, [root]),
+    run: (options) => {
+      if (options?.standalone === true) {
+        return runCommand(`bun run ${standalone}`, options.cwd ?? root);
+      }
+      const filter = options?.only === undefined ? [] : ["--only", options.only];
+      const composed = options?.optionFirst === true ? [...filter, root] : [root, ...filter];
+      return runCommand(`bun run ${runner}`, options?.cwd ?? root, options?.args ?? composed);
+    },
   };
 }
 
 /** The report is read off both streams, because a reader of one command reads both. */
 function report(result: CliResult): string {
   return `${result.stdout}${result.stderr}`;
+}
+
+/**
+ * What a filtered run wears where an unfiltered one wears nothing.
+ *
+ * SPELLED HERE AND NOT IMPORTED FROM THE RUNNER, deliberately against this
+ * project's rule about two producers, for the reason that rule already carries
+ * an exception for: the second producer IS the specification. A marker read out
+ * of the runner moves with it, so the day it stops saying anything the arms
+ * below move with it and stay green.
+ */
+function filterMark(only: string): string {
+  return ` (FILTERED to the checks matching \`${only}\`, so NOT the whole)`;
 }
 
 test("a run in which every check passes is the only green", async () => {
@@ -512,4 +545,183 @@ test("a dashboard listing no checks is refused rather than reported green", asyn
   // exits non-zero -- a runner that does not exist at all exits non-zero, and
   // this arm would then pass while measuring nothing.
   expect(report(result)).toContain("lists no checks");
+});
+
+/**
+ * THE FILTERED RUN, WHICH EXISTS SO THAT `I ONLY WANT ONE CHECK AGAIN` IS A
+ * ROUTE THIS RUNNER OWNS. Twice in one session a maintainer ran a check by hand
+ * and read it through `tail`, which showed a summary and hid the verdict above
+ * it, and a red check shipped as a baseline. The habit is not inattention: the
+ * sanctioned route had no answer for re-running one check, so people left it.
+ * The arms below grade the two halves that make the filtered route safe -- it
+ * still reports WHOLE, and it cannot be mistaken for the whole Definition.
+ */
+
+test("a filtered run runs ONLY the matching checks and still reports WHOLE", async () => {
+  const tree = stageTree();
+  // THE MATCHING NAME IS CAPITALISED AND THE FILTER IS NOT, which is the only
+  // arrangement in which the case fold is graded: with both spelled alike, a
+  // runner comparing bytes passes every assertion below.
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "Lint passes", run: tree.logged("lint", 0) },
+    { name: "beta", run: tree.logged("beta", 0) },
+  ]);
+  const result = await tree.run({ only: "lint" });
+  expect(result.code).toBe(0);
+  // WHOLE-VALUE, BECAUSE `ONLY` IS WHAT IS BEING ASSERTED: `contains lint` is
+  // satisfied by a runner that ignored the option and ran all three.
+  expect(tree.invocations()).toEqual(["lint"]);
+  // AND THE REPORT IS STILL THE WHOLE REPORT, which is the half that makes the
+  // filter a replacement for the pipe rather than another way to lose a verdict.
+  // Every part a reader of an unfiltered run gets, named one by one: where it
+  // ran, the check's own banner, its output's place, the summary, the per-check
+  // line with the command as run, and the warnings count.
+  expect(report(result)).toContain("tsudoi: taking the Definition of Done");
+  expect(report(result)).toContain(tree.root);
+  // THE SUMMARY LINE, READ WITHOUT ITS MARKER: what the marker says is the next
+  // arm's subject, and asserting it here would make this arm redden for two
+  // unrelated reasons. What this needs is that a filtered run HAS a summary at
+  // all -- the one line a reader who scrolls to the bottom is looking for.
+  expect(report(result)).toContain(": PASSED\n");
+  expect(report(result)).toContain(`--- Lint passes -- $ ${tree.logged("lint", 0)}`);
+  expect(report(result)).toContain(`[PASSED] Lint passes -- exit 0 -- $ ${tree.logged("lint", 0)}`);
+  expect(report(result)).toContain("warnings: 0 (reported, not gating)");
+  // AND THE CHECKS IT LEFT OUT ARE NOT REPORTED AS ANYTHING. A runner printing
+  // a line for every declared check and running only the matching ones would
+  // hand its reader four greens over one run.
+  expect(report(result)).not.toContain("alpha");
+  expect(report(result)).not.toContain("beta");
+});
+
+test("a filter matching NO check is refused, where the same tree unfiltered is green", async () => {
+  const tree = stageTree();
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "beta", run: tree.logged("beta", 0) },
+  ]);
+  // THE CONTROL FIRST, AND ITS ORDER IS FORCED: what a check records is read out
+  // of a log file that does not exist until a check has run, so a refusal taken
+  // first would leave the reading below to fail on the file's absence and read
+  // like a broken fixture.
+  const unfiltered = await tree.run();
+  expect(unfiltered.code).toBe(0);
+  expect(report(unfiltered)).toContain("Definition of Done: PASSED");
+  const ran = tree.invocations();
+  const result = await tree.run({ only: "gamma" });
+  // THE COLOUR IS ATTRIBUTABLE TO THE FILTER AND TO NOTHING ELSE, which is what
+  // the control above buys: the same dashboard, the same checks, the same tree.
+  expect(result.code).not.toBe(0);
+  // THE TEXT AND NOT ONLY THE COLOUR, for the reason the empty-dashboard arm
+  // above gives: everything that goes wrong here exits non-zero, a runner that
+  // does not exist at all included.
+  expect(report(result)).toContain("gamma");
+  // AND THE NAMES A READER CAN ACTUALLY TYPE. A refusal that does not say what
+  // there was to match sends them back to running the check by hand, which is
+  // the habit this option exists to replace.
+  expect(report(result)).toContain("alpha");
+  expect(report(result)).toContain("beta");
+  expect(report(result)).not.toContain("Definition of Done: PASSED");
+  // AND NOTHING RAN ON ITS ACCOUNT. A runner that selected nothing and reported
+  // green over zero checks leaves this log untouched too, so the pair is the
+  // exit code beside the log rather than either alone.
+  expect(tree.invocations()).toEqual(ran);
+});
+
+test("a filtered green cannot be read as the Definition of Done's own green", async () => {
+  const tree = stageTree();
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "Lint passes", run: tree.logged("lint", 0) },
+  ]);
+  const filtered = await tree.run({ only: "lint" });
+  const whole = await tree.run();
+  expect(filtered.code).toBe(0);
+  expect(whole.code).toBe(0);
+  // THE VERDICT LINE IS WHERE THIS HAS TO LAND, AND THE HEADER IS NOT ENOUGH:
+  // the reader this sprint is about is the one who took the LAST lines of a run,
+  // and a marker at the top is exactly what that reading loses. So the filtered
+  // run's summary is not a superstring of the whole run's -- the bytes a reader
+  // greps for, `Definition of Done: PASSED`, are absent from it.
+  expect(report(filtered)).not.toContain("Definition of Done: PASSED");
+  expect(report(filtered)).toContain(`${filterMark("lint")}: PASSED`);
+  // AND THE HEADER CARRIES IT TOO, for the reader who starts at the top and
+  // never reaches the end -- a long red check's output sits between them.
+  expect(report(filtered)).toContain(`taking the Definition of Done${filterMark("lint")} in `);
+  // BOTH DIRECTIONS, OR THE THREE ABOVE ARE SATISFIED BY A RUNNER THAT MARKS
+  // EVERY RUN FILTERED: the same tree, unfiltered, says the plain thing and says
+  // nothing about a filter.
+  expect(report(whole)).toContain("Definition of Done: PASSED");
+  expect(report(whole)).not.toContain("FILTERED");
+});
+
+test("`--only` and the root compose in EITHER order, and read the same", async () => {
+  const tree = stageTree();
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "Lint passes", run: tree.logged("lint", 0) },
+  ]);
+  const rootFirst = await tree.run({ only: "lint" });
+  const afterRootFirst = tree.invocations();
+  const optionFirst = await tree.run({ only: "lint", optionFirst: true });
+  expect(rootFirst.code).toBe(0);
+  expect(afterRootFirst).toEqual(["lint"]);
+  // WHOLE-VALUE ON THE REPORT, WHICH IS THE ONLY READING THAT SAYS `THE SAME`:
+  // the root is printed in it, so a parser that took `--only` for a path and the
+  // path for a filter differs here even where both runs exit 0.
+  expect(optionFirst.code).toBe(rootFirst.code);
+  expect(report(optionFirst)).toBe(report(rootFirst));
+  expect(report(rootFirst)).toContain(`${filterMark("lint")}: PASSED`);
+  // AND THE SECOND ORDER RAN THE SAME ONE CHECK, which the report comparison
+  // above cannot say on its own: a runner printing a report and running nothing
+  // prints two identical ones.
+  expect(tree.invocations()).toEqual([...afterRootFirst, ...afterRootFirst]);
+});
+
+test("an argument this runner cannot read is refused, never guessed at", async () => {
+  const tree = stageTree();
+  tree.declare([
+    { name: "alpha", run: tree.logged("alpha", 0) },
+    { name: "beta", run: tree.logged("beta", 0) },
+  ]);
+  // THE POSITIVE CONTROL FIRST, AND IT IS ALSO THE LOG THE READING BELOW NEEDS:
+  // without it a parser refusing every argument list would ship green here and
+  // take `bun run scripts/definition-of-done.ts <root>` with it.
+  const control = await tree.run();
+  expect(control.code).toBe(0);
+  const ran = tree.invocations();
+  const malformed: readonly { args: readonly string[]; mentions: string }[] = [
+    // A VALUE THAT IS NOT THERE. Read as `no filter`, this is the whole
+    // Definition of Done answering a request for one check -- slow, and honest
+    // only by accident. Read as `the next argument`, `--only <root>` filters on
+    // a path and matches nothing.
+    { args: [tree.root, "--only"], mentions: "--only" },
+    // A FILTER MATCHING EVERY CHECK, WHICH IS THE HAZARD OF THIS OPTION
+    // INVERTED: the empty substring is in every name, so the whole run goes out
+    // wearing a marker that says a subset of it was taken.
+    { args: [tree.root, "--only", ""], mentions: "--only" },
+    // AN OPTION NOBODY SHIPPED, `--only=lint` AMONG THEM: guessed at, it is a
+    // positional root, and the reader is told there is no dashboard at
+    // `--only=lint` -- a message about the tree for a mistake in the argument.
+    { args: [tree.root, "--only=lint"], mentions: "--only=lint" },
+    // A SECOND ROOT. Taking the last silently runs the Definition of Done of a
+    // tree the reader named first and stopped meaning.
+    { args: [tree.root, tree.root], mentions: tree.root },
+  ];
+  for (const { args, mentions } of malformed) {
+    const result = await tree.run({ args });
+    expect(result.code).not.toBe(0);
+    // THE OFFENDING ARGUMENT IS NAMED, so the reader repairs the command line
+    // rather than going looking at the tree. A refusal saying only `bad
+    // arguments` over four different mistakes is one state printed four times.
+    expect(report(result)).toContain(mentions);
+    // AND THE FORM THAT WOULD HAVE WORKED, which is the whole repair for three
+    // of the four and is what keeps `--only` discoverable at the one moment a
+    // reader is looking for it.
+    expect(report(result)).toContain("--only <substring>");
+    expect(report(result)).not.toContain("PASSED");
+  }
+  // AND NOT ONE CHECK RAN ON ANY OF THEIR ACCOUNT. The refusal is read before
+  // the dashboard is, so this is the order as much as the colour.
+  expect(tree.invocations()).toEqual(ran);
 });

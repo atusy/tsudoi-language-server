@@ -16,6 +16,19 @@ import { fileURLToPath } from "node:url";
  * and matched on description, AND THE DEFECT HAPPENED ANYWAY. What is left after
  * that is not another sentence: it is an exit code.
  *
+ * AND IT TAKES `--only <substring>` FOR THAT SAME REASON, WHICH MAKES THE OPTION
+ * A CORRECTION AND NOT A CONVENIENCE. Twice in one session a maintainer re-ran a
+ * single check BY HAND and read it through `tail`, which showed a summary line
+ * and hid the verdict above it, and a red check went out as the next sprint's
+ * baseline -- once in the very commit that added a sentence forbidding exactly
+ * that. The habit is not inattention: the sanctioned route had no answer for `I
+ * only want that one check again`, so the unsanctioned one was the only one, and
+ * what is left after a rule that was written and then broken by its own author
+ * is not a third rule. A FILTERED RUN THEREFORE REPORTS WHOLE -- every part an
+ * unfiltered one prints, in the same shape -- so that nothing about it invites a
+ * pipe. What it must never be is mistakable for the whole, and the marker below
+ * is where that is paid for.
+ *
  * IT IS NOT A SIXTH CHECK AND DOES NOT REPLACE THE FIVE. A check that runs every
  * check would run itself, unbounded; and the five are the list this reads. Every
  * `run` stays a line a maintainer can type at a prompt when debugging one of
@@ -230,6 +243,29 @@ function readChecks(root: string): Check[] {
 }
 
 /**
+ * The checks a `--only` keeps, matched on the name and case-insensitively.
+ *
+ * A FILTER MATCHING NOTHING IS REFUSED, AND IT IS THE SAME HAZARD `readChecks`
+ * REFUSES ONE SCREEN UP: a dashboard listing no checks and a filter selecting
+ * none arrive at the identical degenerate, zero failures out of zero checks,
+ * which every rule below calls green. The way in differs -- a mangled dashboard
+ * there, a typo or a check since renamed here -- and a reader who typed a filter
+ * has MORE reason to read the verdict as their check's, so the silent green
+ * would be worse rather than milder. The declared names are printed because the
+ * repair is to type one of them.
+ */
+function selection(checks: readonly Check[], only: string, dashboard: string): Check[] {
+  const wanted = only.toLowerCase();
+  const matching = checks.filter((check) => check.name.toLowerCase().includes(wanted));
+  if (matching.length === 0) {
+    throw new Error(
+      `no check declared by the dashboard at ${dashboard} has \`${only}\` in its name, so a green run here would mean nothing was verified. It declares: ${checks.map((check) => check.name).join(", ")}`,
+    );
+  }
+  return matching;
+}
+
+/**
  * Runs one check to completion, echoing every byte it writes as it arrives.
  *
  * ECHOED LIVE AND COLLECTED AT ONCE: the reader of a seventy-second suite needs
@@ -320,15 +356,90 @@ function line(result: CheckResult): string {
   return `  ${verdict(result)} -- $ ${result.check.run}`;
 }
 
-const root = resolve(process.argv[2] ?? fileURLToPath(new URL("../", import.meta.url)));
+/** Printed with every argument refusal, because the repair is a command line. */
+const usage = "usage: bun run scripts/definition-of-done.ts [<root>] [--only <substring>]";
+
+/**
+ * The root to take the Definition of Done in, and the filter to take part of it.
+ *
+ * WALKED RATHER THAN INDEXED, because a reader types the two in whichever order
+ * they think of them, and a runner reading the root at a FIXED POSITION takes
+ * `--only` for a directory in one of those orders -- failing as `no dashboard
+ * there`, a message about the tree for a mistake in the argument.
+ *
+ * EVERY ARGUMENT IT CANNOT READ IS REFUSED RATHER THAN GUESSED AT, and the three
+ * it refuses are the three whose guess is a wrong reading nobody would see. An
+ * `--only` WITH NO SUBSTRING read as `no filter` runs the whole Definition of
+ * Done for a reader who asked for one check. An EMPTY substring is in every
+ * name, so it selects everything and the whole run goes out wearing a marker
+ * saying a subset of it was taken -- this option's own hazard, inverted. A
+ * SECOND ROOT taken as the later one runs the checks of a tree the reader named
+ * first and stopped meaning. An unknown `-…`, `--only=lint` among them, would
+ * become a positional root and produce the message this walk exists to avoid.
+ */
+function readArguments(argv: readonly string[]): { root: string | null; only: string | null } {
+  let root: string | null = null;
+  let only: string | null = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index] ?? "";
+    if (argument === "--only") {
+      const substring = argv[index + 1];
+      if (substring === undefined || substring === "") {
+        throw new Error(
+          `\`--only\` was given no substring to match, and an empty one is in every name, so it would take the whole Definition of Done and report it as a part -- ${usage}`,
+        );
+      }
+      only = substring;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("-")) {
+      throw new Error(`\`${argument}\` is not an option this runner has -- ${usage}`);
+    }
+    if (root !== null) {
+      throw new Error(
+        `two roots were named, \`${root}\` and \`${argument}\`, and this takes the Definition of Done in one tree -- ${usage}`,
+      );
+    }
+    root = argument;
+  }
+  return { root, only };
+}
+
+let root: string;
+let only: string | null;
 let checks: Check[];
 try {
+  const given = readArguments(process.argv.slice(2));
+  only = given.only;
+  root = resolve(given.root ?? fileURLToPath(new URL("../", import.meta.url)));
   checks = readChecks(root);
+  if (only !== null) {
+    checks = selection(checks, only, join(root, "scrum.ts"));
+  }
 } catch (cause) {
   process.stderr.write(`tsudoi: ${cause instanceof Error ? cause.message : String(cause)}\n`);
   process.exit(1);
 }
-process.stdout.write(`tsudoi: taking the Definition of Done in ${root}\n`);
+/**
+ * WHAT A FILTERED RUN WEARS SO THAT IT CANNOT PASS FOR THE WHOLE ONE, and the
+ * claim is not decoration: the declared ORDER is load-bearing -- the first check
+ * builds the artifacts the fourth reads -- so a subset's green is not this
+ * Definition of Done's green whatever the subset is.
+ *
+ * IN THE SUMMARY AND NOT ONLY IN THE HEADER, WHICH IS THE WHOLE POINT OF THE
+ * OPTION EXISTING. The reader it is built for is the one who took the LAST lines
+ * of a run, and a marker at the top is exactly what that reading loses. It goes
+ * in the header too, for the reader who starts there and never reaches the end
+ * because a check's own output stands between them.
+ *
+ * AND IT BREAKS THE BYTES A READER GREPS FOR: `Definition of Done: PASSED` does
+ * not occur in a filtered report at all, so a habit built on the unfiltered line
+ * finds nothing rather than finding a subset's answer.
+ */
+const filtering =
+  only === null ? "" : ` (FILTERED to the checks matching \`${only}\`, so NOT the whole)`;
+process.stdout.write(`tsudoi: taking the Definition of Done${filtering} in ${root}\n`);
 const results: CheckResult[] = [];
 for (const check of checks) {
   process.stdout.write(`\n--- ${check.name} -- $ ${check.run}\n`);
@@ -336,7 +447,9 @@ for (const check of checks) {
 }
 const failed = results.filter((result) => result.outcome !== "passed");
 const warnings = results.reduce((total, result) => total + result.warnings, 0);
-process.stdout.write(`\n=== Definition of Done: ${failed.length === 0 ? "PASSED" : "FAILED"}\n`);
+process.stdout.write(
+  `\n=== Definition of Done${filtering}: ${failed.length === 0 ? "PASSED" : "FAILED"}\n`,
+);
 for (const result of results) {
   process.stdout.write(`${line(result)}\n`);
 }

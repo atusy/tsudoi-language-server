@@ -601,6 +601,23 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
+    // THE REFUSAL MOVED ONE NOUN, WHICH IS THE ADJACENT READING A REVIEWER
+    // NODS AT: guard the CHECKS being empty instead of the MATCHES being empty.
+    // `readChecks` already refuses an empty dashboard, so the moved guard never
+    // fires again -- and a filter matching nothing runs no check and reports
+    // green, which is the degenerate both refusals exist for.
+    arm: {
+      file: dodArms,
+      name: "a filter matching NO check is refused, where the same tree unfiltered is green",
+    },
+    weakening: {
+      file: dodRunner,
+      from: "  if (matching.length === 0) {",
+      to: "  if (checks.length === 0) {",
+    },
+    alsoReddens: [],
+  },
+  {
     // THE ADJACENT WEAKER READING IS THE ONE A REVIEWER WOULD ACCEPT WITHOUT
     // NOTICING: read THAT the subpath resolved rather than WHICH FILE answered.
     // Source and artifact both resolve, so the weakened detector is silent over
