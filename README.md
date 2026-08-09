@@ -1,9 +1,9 @@
 # tsudoi
 
 tsudoi assembles a Language Server out of one TypeScript file. You write handlers for LSP
-methods -- hover, completion, formatting, pull diagnostics and completion-item resolution -- and
-tsudoi speaks the protocol, manages the document store and answers the lifecycle requests an
-editor expects.
+methods -- hover, completion, formatting, pull diagnostics, completion-item resolution and
+command execution -- and tsudoi speaks the protocol, manages the document store and answers the
+lifecycle requests an editor expects.
 
 The server runs under [bun](https://bun.sh/docs/installation) and under
 [deno](https://docs.deno.com/runtime/getting_started/installation/), from the same installed
@@ -357,9 +357,9 @@ is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...`
 tsudoi derives the server capabilities from the handlers you declared: a hover handler makes it
 claim `hoverProvider`, a resolve handler beside a completion one makes it claim `resolveProvider`.
 That is the whole of what handler presence can say. When you need to say more -- trigger
-characters, a diagnostic identifier -- declare a handler at `config.methods.initialize`, beside the
-other five. It goes inside `methods`; a top-level `initialize` key is read by nothing and refused
-by nothing.
+characters, a diagnostic identifier, the command names below -- declare a handler at
+`config.methods.initialize`, beside the others. It goes inside `methods`; a top-level `initialize`
+key is read by nothing and refused by nothing.
 
 It takes two arguments and returns a **`Promise`**. There is no union with a bare result -- one
 shape for every handler was the choice -- so `(context) => ({ ...context.preparedResult })` does
@@ -402,10 +402,37 @@ that corrects itself may send `initialize` again. The reason is on stderr as `ts
 handler failed: ...`, carrying the stack that names the line in your file -- the same `tsudoi: `
 prefix every other message here is found by.
 
-One last thing this handler owes, which the other five owe too and are less likely to reach for:
-anything you open -- a timer, a watcher, a socket, a subscription -- must be `unref()`'d. Nothing
-else holds this process open, so a handle left referenced does not slow your server down, it keeps
-one alive after your editor is gone.
+One last thing this handler owes, which every other handler owes too and is less likely to reach
+for: anything you open -- a timer, a watcher, a socket, a subscription -- must be `unref()`'d.
+Nothing else holds this process open, so a handle left referenced does not slow your server down,
+it keeps one alive after your editor is gone.
+
+## Commands your editor can invoke
+
+tsudoi serves `workspace/executeCommand` as one more handler key, so a command your user invokes
+-- from a code action, a keybinding, a palette -- reaches a handler you wrote. It gets the
+treatment every other method gets and none of it written again: refused before the handshake,
+answered `RequestCancelled` when the editor abandons it, refused by name when its params are not
+an object, and answered `null` when you declared no handler at all.
+
+**Declaring the handler is not the same as offering a command**, and that is the half worth
+reading twice. Handler presence can say only that this server executes commands at all, so tsudoi
+advertises `executeCommandProvider` with an **empty** list; any name it invented would be a
+promise to your editor that no config of yours made. The list is yours to write, from an
+`initialize` handler that spreads `context.preparedResult` as the section above describes. Until
+you do, a conforming editor knows of no command and sends none, so the handler you declared can
+never run.
+
+**tsudoi does not check an incoming name against that list either.** A request naming a command
+you never advertised still reaches your handler, and what an unrecognised command means is yours
+to decide -- tsudoi has no way to know. Nor can it help you with collisions: command names share
+one **namespace** across every server your editor is talking to, so a name some other server
+already answers is a hazard nothing here can see.
+
+What your handler answers is typed `unknown` rather than the protocol's `any`, so you narrow it
+where you read it back rather than losing the compiler in your own file. It reaches your editor as
+data and is not applied to anything: tsudoi never sends `workspace/applyEdit`, so a command that
+has to change a buffer has no route through tsudoi today.
 
 ## Cleanup in a handler
 

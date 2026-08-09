@@ -653,6 +653,29 @@ const facts: readonly ReadmeFact[] = [
     tokens: [/preparedResult/, /resolveProvider/, /textDocumentSync/, /withdraw/i, /silently/i],
   },
   {
+    // OWED BECAUSE THE GREEN PATH IS THE TRAP. A config that declares this
+    // handler and nothing else LOADS, ADVERTISES and SERVES, and the handler can
+    // never run: the advertised list is empty, so a conforming editor sends no
+    // command. Nothing anywhere reports that, and nothing can -- the list is the
+    // author's by ruling -- so this document is the only place it is said.
+    //
+    // `empty` IS A TOKEN AND THE HANDLER KEY IS NOT ENOUGH ON ITS OWN: a section
+    // naming the method and the capability while dropping what is IN the
+    // capability describes a feature that works, which is the reading this entry
+    // exists against.
+    //
+    // `namespace` IS THE HALF NO CHECK COULD EVER TAKE OVER, which is what makes
+    // it belong to prose rather than to an arm: tsudoi cannot see the other
+    // servers an editor is talking to, so a check for a colliding command name
+    // would have to know what it cannot know.
+    //
+    // SINGLE WORDS AND NO PHRASES, for the reason the initialize entry above
+    // gives: this README is hard-wrapped, and a multi-word token straddling a
+    // line break fails against the document as written.
+    name: "an executeCommand handler is unreachable until the author advertises a name, and names collide across servers",
+    tokens: [/workspace\/executeCommand/, /executeCommandProvider/, /empty/i, /namespace/i],
+  },
+  {
     // The claim is that tsudoi CLOSES the generator, never that the author's
     // cleanup COMPLETES: a `finally` awaiting something that never settles never
     // finishes, and promising completion would document what the language
