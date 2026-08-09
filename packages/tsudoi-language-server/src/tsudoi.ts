@@ -40,10 +40,14 @@ export interface TsudoiRuntime {
 /**
  * A VALUE NOTHING CAN REWRITE: a clone of what came in, frozen at every depth.
  *
- * A CLONE AND NOT A FREEZE IN PLACE, which both callers depend on and neither
- * would notice losing today. The caller keeps a mutable original, so freezing
- * what a handler is SHOWN never forecloses what tsudoi may still do with its own
- * copy afterwards.
+ * A CLONE AND NOT A FREEZE IN PLACE, AND WHAT IT BUYS IS ABOUT THE INPUT RATHER
+ * THAN THE OUTPUT. Neither caller keeps its input to work on afterwards, so
+ * `tsudoi may still edit its own copy` is the reason to strike rather than the
+ * one to give. What the capabilities caller DOES with its input is HAND IT ON:
+ * the same `InitializeParams` reaches the config's own `initialize` handler as
+ * `params`, so freezing in place would freeze a member of the object THEY are
+ * given -- a `readonly` tsudoi never declared on that surface, arriving in their
+ * file as a throw rather than a diagnostic.
  *
  * ITERATIVE AND NOT RECURSIVE, AND THAT IS A CORRECTNESS REQUIREMENT RATHER THAN
  * A STYLE -- and nothing reddens if you make it recursive, since no test builds
