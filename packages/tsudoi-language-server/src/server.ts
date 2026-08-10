@@ -203,11 +203,24 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // moved by then. A wedged session and nothing anywhere saying why.
       //
       // THE STAKEHOLDER RULED THAT UNACCEPTABLE AND THE PRICE ACCEPTABLE: one
-      // stringify of one small object, on the handshake path, once a session.
-      // The failure leaves as a `window/logMessage` because that is where a
-      // config author reads their own server, and the process then ends
-      // ABNORMALLY -- a config whose handshake cannot be sent has no session to
-      // go on with.
+      // stringify of one small object, on the handshake path, once a session
+      // THAT DECLARES THIS HANDLER -- the fast path above returns before it. The
+      // failure leaves as a `window/logMessage` because that is where a config
+      // author reads their own server, and the process then ends ABNORMALLY -- a
+      // config whose handshake cannot be sent has no session to go on with.
+      //
+      // AND WHAT SURVIVES THE CHECK IS ONE READ AWAY. This stringify and
+      // vscode-jsonrpc's own are TWO READS of the same value, so an answer that
+      // serialises once and not twice -- a getter counting its calls, a proxy,
+      // the shape test/fixtures/handler-proxy-throws-on-second-read.ts already
+      // builds for another seam -- passes here and wedges the session. MEASURED
+      // on both runtimes: -32603, the retry refused -32600, stderr EMPTY and no
+      // logMessage at all, which is the paragraph above intact. NOT ARMED,
+      // on the argument the overturned record made and that still holds for this
+      // narrower door -- an arm would pin the wedge as promised behaviour. AND
+      // `JSON.parse(JSON.stringify(answer))` IS THE FIX AND IS NOT TAKEN: it
+      // makes the two reads one by putting a COPY on the wire, which is a change
+      // to what the client is served and not what was ruled on here.
       //
       // AWAITED BEFORE THE EXIT, and that is the repair rather than tidiness:
       // `process.exit` takes an unflushed frame with it, so an unawaited
