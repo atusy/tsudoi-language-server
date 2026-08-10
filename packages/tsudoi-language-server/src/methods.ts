@@ -7,6 +7,7 @@
 import process from "node:process";
 import {
   type CancellationToken,
+  CodeActionRequest,
   type CompletionItem,
   CompletionRequest,
   CompletionResolveRequest,
@@ -149,6 +150,21 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     // from here, src/server.ts sending their InitializeResult verbatim.
     capability: (capabilities) => {
       capabilities.executeCommandProvider = { commands: [] };
+    },
+  },
+  "textDocument/codeAction": {
+    drive: "awaited-once",
+    type: CodeActionRequest.type,
+    // `true` AND NOT AN OPTIONS OBJECT, WHICH IS THE CONTRAST WITH THE ROW
+    // ABOVE AND NOT AN ECONOMY. `ExecuteCommandOptions.commands` is REQUIRED, so
+    // that contributor had to write a list it could not know and wrote an empty
+    // one; `CodeActionOptions.codeActionKinds` is OPTIONAL, so handler presence
+    // can decline to name kinds instead of naming wrong ones. `{ codeActionKinds:
+    // [] }` reads like a harmless spelling of this and is not: it tells a
+    // conforming client this server produces NO kinds, which is the promise the
+    // row above could not avoid making and this one can.
+    capability: (capabilities) => {
+      capabilities.codeActionProvider = true;
     },
   },
 };

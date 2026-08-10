@@ -10,6 +10,9 @@
 // packaging, which an author reaches past rather than reasons about.
 import type {
   ClientCapabilities,
+  CodeAction,
+  CodeActionParams,
+  Command,
   CompletionItem,
   CompletionParams,
   DocumentDiagnosticParams,
@@ -379,6 +382,49 @@ export interface MethodMap {
   "workspace/executeCommand": {
     params: ExecuteCommandParams;
     result: Promise<unknown>;
+  };
+
+  /**
+   * AWAITED ONCE BY RULING, WHICH IS WHAT SEPARATES THIS ROW FROM THE SIX ABOVE
+   * IT. Every one of those had its drive settled before anyone had a preference:
+   * `textDocument/diagnostic` fails the ARRAY condition -- its partial results
+   * are objects carrying OTHER documents -- and `workspace/executeCommand` fails
+   * the TOKEN one, its params carrying none. MEASURED here:
+   * `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and
+   * `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]`.
+   * Both of `driveStream`'s stated conditions hold, so THE STREAM DRIVE IS
+   * AVAILABLE TO THIS ROW AND IS DECLINED.
+   *
+   * WHAT THE STREAM DRIVE BUYS IS A PARTIAL ANSWER BEING USEFUL BEFORE THE REST
+   * ARRIVES, and that is true of a completion popup and false of this menu. A
+   * completion list is FILTERED as the user keeps typing, so an item arriving
+   * late lands where it belongs; a code-action menu is opened, read, and chosen
+   * from as a whole, and an action appended after it is on screen moves the row
+   * under the user's cursor.
+   *
+   * AND THE COST IS ASYMMETRIC RATHER THAN A WASH, which is the half a reader
+   * weighing this will otherwise supply for themselves: the drive decides what
+   * an author WRITES, and awaiting once lets one whose actions are a fixed list
+   * answer `Promise.resolve(actions)` where the stream drive would make them
+   * write a generator to yield it once. NOBODY IS SPARED ANYTHING IN THE OTHER
+   * DIRECTION -- an author with actions to compute may still compute them all
+   * before answering.
+   *
+   * NEITHER RULING IS THE REVERSIBLE ONE, which is why this paragraph exists
+   * instead of the decision alone. `Promise<...>` and `AsyncGenerator<...>` are
+   * different things to write in every config that declares this key, so
+   * widening later breaks the same authors narrowing later would. A CLIENT'S
+   * `partialResultToken` IS THEREFORE READ BY NOTHING on this row, which is
+   * conforming: partial results are the server's to offer.
+   *
+   * `| null` FOR NOTHING TO SAY, the shape `textDocument/formatting` carries and
+   * for the protocol's own reason rather than a strictness chosen here -- and
+   * `[]` is available and means something ELSE, `I looked and there is nothing
+   * you can do here`, which a client may render as a menu with no entries.
+   */
+  "textDocument/codeAction": {
+    params: CodeActionParams;
+    result: Promise<(Command | CodeAction)[] | null>;
   };
 }
 

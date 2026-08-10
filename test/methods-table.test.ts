@@ -31,8 +31,9 @@ const uri = "file:///workspace/a.txt";
  * One params object carrying every REQUIRED member of every row's params type,
  * so that no row is driven with something incomplete by omission: the position
  * the two positional methods read, the `options` formatting requires, the
- * `label` a CompletionItem requires and the `command` an executeCommand
- * requires. Shared BECAUSE THE TESTS BELOW ARE ABOUT THE PROLOGUE, which runs
+ * `label` a CompletionItem requires, the `command` an executeCommand requires
+ * and the `range` and `context` a codeAction requires.
+ * Shared BECAUSE THE TESTS BELOW ARE ABOUT THE PROLOGUE, which runs
  * before any handler looks at params -- a params shape per method would be a
  * per-method copy in the tests that exist to prove per-method copies are gone.
  *
@@ -67,6 +68,8 @@ function paramsForAnyMethod(): unknown {
     options: { tabSize: 2, insertSpaces: true },
     label: "表",
     command: "tsudoi.表",
+    range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+    context: { diagnostics: [] },
   };
 }
 

@@ -135,6 +135,11 @@ export default (): Promise<TsudoiConfig> => {
       // test/fixtures/execute-command-echo.ts instead, which is where an author
       // deciding it belongs.
       "workspace/executeCommand": () => Promise.resolve(null),
+      // `null` FOR THE SAME REASON THE ROW ABOVE ANSWERS IT: this file's job is
+      // to EXIST and to ROUTE. What a code action MEANS is asserted against
+      // test/fixtures/code-action.ts instead, which is the file an author
+      // deciding it belongs in.
+      "textDocument/codeAction": () => Promise.resolve(null),
       // THE LINE THAT MAKES THIS FILE COMPLETE BY CONSTRUCTION. `TsudoiConfig`
       // declares `methods` PARTIAL, correctly -- a config author supplies the
       // methods they serve. This fixture is the one config that must serve them
