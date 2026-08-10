@@ -38,6 +38,7 @@ import {
 } from "./notifications.ts";
 import { deepFrozen, type TsudoiRuntime } from "./tsudoi.ts";
 import type { DeepReadonly, TsudoiConfig } from "./types.ts";
+import { type EditorWatch, watchEditor, watchStdin } from "./watchdog.ts";
 import type { WorkspaceFoldersHandle } from "./workspace.ts";
 
 /**
@@ -59,6 +60,30 @@ const stderrLogger: Logger = {
 export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void {
   const { tsudoi, documents, workspaceFolders, handshake, connect } = runtime;
   const lifecycle = createLifecycle();
+  let editorWatch: EditorWatch = watchEditor(null, () => undefined);
+
+  /**
+   * How a session that nobody ended ENDS: say why on stderr, then leave with the
+   * code the lifecycle already decides for an `exit` that arrived without a
+   * `shutdown`.
+   *
+   * THE CODE IS NOT INVENTED HERE. `lifecycle.exitCode()` is 0 once a `shutdown`
+   * has been seen and 1 otherwise, which is the protocol's own rule for `exit` --
+   * and a client that vanished mid-session is exactly the ungraceful case that
+   * rule is about. A second numbering would make tsudoi answer two ways for one
+   * situation.
+   *
+   * `process.exit` AND NOT `exitCode`, WHICH IS THE OPPOSITE OF THE HANDSHAKE
+   * FAILURE'S CHOICE ONE SCREEN DOWN, and the difference is who is still
+   * listening: that path has a RESPONSE TO FLUSH and must not lose it, where
+   * this one runs because there is nobody left to flush to. Waiting for a loop
+   * to empty is the very thing that failed here.
+   */
+  function endSession(why: string): never {
+    editorWatch.stop();
+    process.stderr.write(`tsudoi: exiting because ${why}\n`);
+    return process.exit(lifecycle.exitCode());
+  }
 
   // EVERY notification tsudoi answers is declared here, and each one DECIDES
   // when it may run; that the router applies the gate rather than the handler
@@ -111,6 +136,18 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // FIELD IS THE SAME TRANSACTION AND NOT A PRECEDENT ALREADY SET: name the
       // reader, or the field stays unread.
       handshake(initializeParams);
+      // THE FIFTH FIELD, AND IT IS READ RATHER THAN RETAINED, which is what the
+      // paragraph above asks of anyone who names one: `processId` is handed to
+      // the watchdog and reaches `Tsudoi` nowhere, so tsudoi owes a config author
+      // no answer about it. WHY IT IS READ AT ALL: the protocol says a server
+      // SHOULD exit once the parent it was told about is gone, and a server whose
+      // stdin never reaches EOF -- because some surviving process still holds the
+      // write end -- otherwise waits for ever. One was found at 99.4% of a core
+      // five days after its parent died.
+      editorWatch.stop();
+      editorWatch = watchEditor(initializeParams.processId, () => {
+        endSession("its editor's process is gone");
+      });
       const capabilities: ServerCapabilities = {
         textDocumentSync: { openClose: true, change: TextDocumentSyncKind.Incremental },
         // UNCONDITIONAL, and nothing reddens if you condition it on the config or
@@ -315,6 +352,15 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // AND IF YOU EVER DO WANT A HOOK ON THAT CLOSE: `reader.onClose` FIRES ON BUN
   // AND NEVER ON DENO, so a handler installed there is silently inert on half the
   // supported runtimes. `process.stdin.on("end", ...)` fires on both.
+  // THE END OF STDIN IS THE END OF THE SESSION, AS A DECISION RATHER THAN AS A
+  // CONSEQUENCE. The unref requirement above buys the exit only while EVERY
+  // handle obeys it, and the paragraph itself records that a handle opened
+  // inside a config author's own handler is observed by nothing -- so one timer
+  // in a hover handler is one orphaned server per crash, exactly the state this
+  // is here to foreclose.
+  watchStdin(() => {
+    endSession("its client closed the connection");
+  });
   connection.listen();
 }
 
