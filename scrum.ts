@@ -138,7 +138,7 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
-            "THE INHERITED PLUMBING IS WITNESSED BY CONSTRUCTION AND NOT BY A SEVENTH COPY OF IT. test/methods-table.test.ts iterates `requestEntries` and builds its expectation FROM the table, so a row joins the ServerNotInitialized, RequestCancelled and InvalidParams arms the moment it is declared, and test/fixtures/all-methods.ts fails TS2741 NAMING the method until it supplies a handler. WHAT MUST MOVE FOR THAT TO BE TRUE RATHER THAN MERELY GREEN IS `paramsForAnyMethod`, which carries no `range` and no `context` -- both REQUIRED by `CodeActionParams` -- under a docblock recording that NOTHING ON THE WIRE VALIDATES a member it holds. So a member added there is green whether it is right or not, and that is the trap this criterion names.",
+            "THE INHERITED PLUMBING IS WITNESSED BY CONSTRUCTION AND NOT BY ANOTHER COPY OF IT. test/methods-table.test.ts iterates `requestEntries` and builds its expectation FROM the table, so a row joins the ServerNotInitialized, RequestCancelled and InvalidParams arms the moment it is declared, and test/fixtures/all-methods.ts fails TS2741 NAMING the method until it supplies a handler. WHAT MUST MOVE FOR THAT TO BE TRUE RATHER THAN MERELY GREEN IS `paramsForAnyMethod`, which carries no `range` and no `context` -- both REQUIRED by `CodeActionParams` -- under a docblock recording that NOTHING ON THE WIRE VALIDATES a member it holds. So a member added there is green whether it is right or not, and that is the trap this criterion names.",
           verification:
             "The whole-table arms re-read after the row lands, and the codeAction key READ OUT OF what those arms compare rather than inferred from the file staying green.",
         },
@@ -543,7 +543,7 @@ const scrum: ScrumDashboard = {
   sprint: {
     number: 87,
     pbi_id: "PBI-89",
-    goal: "`textDocument/codeAction` becomes a SEVENTH ROW of the request table the other six are rows of -- and the FIRST row whose drive is a choice rather than one the protocol already made, so what ships is a RULING WITH ITS REASON AT THE SITE as much as it is a method.",
+    goal: "`textDocument/codeAction` becomes a NEW ROW of the request table `textDocument/hover` and the rest are rows of -- and the FIRST row whose drive is a choice rather than one the protocol already made, so what ships is a RULING WITH ITS REASON AT THE SITE as much as it is a method.",
     status: "review",
     subtasks: [
       {
@@ -575,7 +575,7 @@ const scrum: ScrumDashboard = {
       {
         test: "ONE RECORD IN test/perturbations.test.ts, MEASURED against the landed source and not predicted: `codeActionProvider` written as `{ codeActionKinds: [] }` instead of `true`, which must redden the PRESENCE arm at its whole-object equality and leave the ABSENCE arm green. That is criterion 2's discriminator and this row's alone -- `claims no kinds` is the half the contrast with `executeCommandProvider.commands` rests on.",
         implementation:
-          "The record only. AND THE SECOND RECORD A READER WILL EXPECT IS REFUSED WITH ITS REASON, rather than shipped to make a pair: emptying this row's contributor reddens the SAME arm at the SAME assertion, and what it would grade is the presence check in `contributeCapabilities`, which is one loop over six other rows that six other arms already hold. A record naming this row for it would report a property of the loop under this row's name.",
+          "The record only. AND THE SECOND RECORD A READER WILL EXPECT IS REFUSED WITH ITS REASON, rather than shipped to make a pair: emptying this row's contributor reddens the SAME arm at the SAME assertion, and what it would grade is the presence check in `contributeCapabilities`, which is one loop over every other row and which every other row's own arm already holds. A record naming this row for it would report a property of the loop under this row's name.",
         type: "structural",
         status: "completed",
         commits: [
