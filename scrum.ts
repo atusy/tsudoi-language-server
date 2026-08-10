@@ -619,7 +619,19 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 89,
+    pbi_id: "PBI-95",
+    goal: "`context.tsudoi.notify(method, params)` sends a notification to the client, so a config author can say `window/showMessage` -- or anything else the protocol lets a server initiate -- from inside a handler.",
+    status: "in_progress",
+    subtasks: [],
+    impediments: [],
+    decisions: [
+      "THIS OPENS A WRITE END ON `Tsudoi`, WHICH THAT TYPE'S OWN RUNTIME COMMENT SAYS IS DELIBERATELY CLOSED -- so the refusal is NARROWED rather than overturned. What `TsudoiRuntime` refuses to expose is the STORE, the FOLDER MIRROR and the HANDSHAKE: the writers of state tsudoi MIRRORS FROM THE CLIENT, where a second writer would make the mirror disagree with the thing it mirrors. A notification writes none of that. It is tsudoi SPEAKING to the client rather than rewriting what the client said, so the reason those three are closed says nothing about this one, and the comment is amended to say which it was about.",
+      "THE METHOD IS A STRING AND THE PARAMS ARE `unknown`, WHICH IS THE `deps/` RULING APPLIED RATHER THAN A GAP. tsudoi could enumerate the server-initiated notifications and type each one's params -- and that would be tsudoi publishing a second name for a shape upstream owns, which the `deps/` split exists to prevent. An author who wants the protocol's own type imports it from `@atusy/tsudoi-language-server/deps/protocol` and annotates their own value. WHAT IT COSTS THEM is that a misspelled method name is not a compile error, and that is stated at the site.",
+      "THE LIFECYCLE IS THE PROTOCOL'S AND TSUDOI APPLIES NONE OF IT. LSP forbids a server sending most notifications before it has answered `initialize`, with `window/showMessage`, `window/logMessage` and `telemetry/event` named as the exceptions -- so a rule enforced here would have to know that list, would go stale with the specification, and would refuse the one call an author most wants during a handshake. What tsudoi owes instead is that the failure is VISIBLE: a send on a connection that is gone rejects, and the rejection is the author's to see.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 87,
