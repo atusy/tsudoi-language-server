@@ -158,29 +158,6 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-96",
-      story: {
-        role: "editor user",
-        capability:
-          "close my editor and have the language server it started go with it, rather than leave one spinning a core until I next reboot",
-        benefit:
-          "a machine that has run this server for a week is not slower for it, and the suite that spawns servers is not competing with its own leftovers",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "PLACEHOLDER -- NOT REFINED. What the server does when its stdin goes away is the item, and whether the spin is tsudoi's loop or the reader's is not yet known.",
-          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
-        },
-      ],
-      status: "draft",
-      notes: [
-        "FOUND ON THE STAKEHOLDER'S OWN MACHINE ON 2026-08-11, NOT BY A TEST, AND IT IS A LIVE INSTANCE RATHER THAN A THEORY. `ps` reported a tsudoi server -- `src/cli.ts --config examples/tsudoi.config.ts` -- at pid 26678, state R, **99.4% CPU, FIVE DAYS ELAPSED**, with PPID 1: its parent is gone, so nothing was talking to it and it went on burning a core anyway. NINETEEN such servers were on that machine at once, aged from nineteen seconds to five days, TOTALLING 106% CPU -- so one is wedged and the rest are merely leaked.",
-        "IT IS THE PRODUCT AND NOT THE SUITE, WHICH IS WHAT MAKES IT A PBI. The suite's own `dispose` kills what it spawns, and a test that TIMES OUT may leave one -- that half is the suite's. But a server whose parent has died should not be RUNNABLE at all: an orphan reading a closed stdin has nothing left to serve, and `test/editor-death.test.ts` exists because that is already known to be a hazard. WHAT NO ARM HERE COVERS is the state five days later.",
-        "AND IT EXPLAINS A READING THIS PROJECT HAS BEEN BLAMING ON PBI-93. Sprint 89's Definition of Done failed on FOUR arms, all at the 25s ceiling and a DIFFERENT four each run, over a suite that took 1397s where sprint 88's took 270s. A permanently missing core is not the whole of that, and it is the first cause found that is a DEFECT rather than a budget.",
-      ],
-    },
-    {
       id: "PBI-94",
       story: {
         role: "config author",
@@ -286,6 +263,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "FOUND BY AN INDEPENDENT REVIEWER AGAINST SPRINT 82'S INCREMENT AND PRE-EXISTING TO IT, which is why it is a backlog item rather than that sprint's repair. THE FIRST STATEMENT OF THIS WAS FALSE AND A REVIEWER TOOK IT AGAINST THE DIFF: it said the range touches ONE line of that function's file region, an import, which is what a grep for four control-flow words returned rather than what the diff says -- `itemsFrom`'s ITEM CONSTRUCTION changed on several lines, this sprint's whole subject. WHAT IS ACTUALLY UNCHANGED, AND IT IS THE PART THAT CARRIES THE CLAIM: the `opendir`, the iteration and the yield are byte-identical to base 2ed9d43, and on the input that exhibits this -- a fragment matching nothing -- the changed construction is never reached at all.",
+        "SPRINT 90 SHARPENED THIS AND PARTLY REFUTED IT. With the five-day orphan killed, this machine's load fell from 15.7 to about 2.0 and the registry came back with only its two long-standing refusals where it had been throwing three to eight -- SO PART OF WHAT WAS FILED HERE WAS PBI-96 ALL ALONG. What survives is worse than a budget, and is the measurement this item now carries: THE SUITE TAKES 1328s WHERE SPRINT 88'S CLOSE TOOK 270s, and neither the increment (the three files added since were timed at about 24s together) nor the orphan (alive during that 270s run too) explains it. Something made this suite five times slower between two green readings and nothing here knows what.",
         "THE MECHANISM, AND THE PART THAT MAKES IT MORE THAN A MISSING CHECK. `itemsFrom` never reads `context.signal`; cancellation closes the OUTER generator, and a generator's `return()` cannot take effect while an outstanding `next()` is still running. A batch is yielded only when it FILLS, so a fragment matching nothing in a huge directory reaches no yield point at all: the scan runs to EOF, holding the handle, after the client has already been answered -32800 through tsudoi's own race. The user sees a prompt cancellation and the process goes on working.",
         "WHY IT IS NOT A ONE-LINE FIX, WHICH IS WHY THIS IS A DRAFT RATHER THAN A TASK -- and it said `REFINED` in an item whose own criterion says it is not. Abandoning a half-read directory LEAKS ITS DESCRIPTOR ON ONE OF THE TWO RUNTIMES -- the resolve half already carries that finding at its own cancellation seam and declines to honour a late cancellation for it. So the release strategy is the item, not the signal read: a signal-aware drain that stops classifying and batching while still exhausting or explicitly closing the iterator.",
         "AND ONE CHEAP HALF THAT MAY BE WORTH SPLITTING OUT: `entryKind` stats every entry a listing reports as neither file nor directory, so a directory of symlinks costs one syscall per entry per keystroke. That is disclosed at the site and is a separate trade from cancellation, but the same scan is where it is paid.",
@@ -293,6 +271,26 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 90,
+      pbi_id: "PBI-96",
+      goal: "A tsudoi server whose editor is gone EXITS -- by watching the `processId` the editor named, and by reading the end of stdin as the end of the session -- so a crash leaves no process behind and no core spinning.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 0cab02d, and the ONLY commit after it is the one carrying this sentence. Definition of Done FAILED and is recorded as failed: 1105 pass / 6 fail over 81 files in 1328.22s, with `Lint`, `Format check`, `Type check` and the workspace check all exit 0. EVERY ONE OF THE SIX IS A TIMEOUT -- four at the 25s ceiling, one at 34s, one at 55s -- and a DIFFERENT six than the previous run's five. THE EXIT-CODE REGRESSION IS GONE from that list, which is the half that says this run graded the repair.",
+        "AND THE SUITE IS FIVE TIMES SLOWER THAN AT SPRINT 88'S CLOSE -- 1328s against 270s -- WHICH THIS SPRINT'S OWN WORK DOES NOT EXPLAIN, measured rather than assumed: the three files added across sprints 89 and 90 were timed individually and total about 24 SECONDS, most of it the deliberate waits in test/orphaned-server.test.ts. NOR IS IT THE ZOMBIE, which was alive during sprint 88's 270s run too. So the cause is neither the increment nor the defect this sprint fixed, and PBI-93 now has a measurement it did not have: the suite got slow between two greens and nobody knows why.",
+        "THE FIX IS VERIFIED AGAINST THE ZOMBIE'S OWN SHAPE AND NOT ONLY AGAINST AN ARM, which matters because the arm and the reproduction were written from one idea and could have shared a mistake: a probe spawns a real parent, spawns a server naming it in `processId`, kills the parent with SIGKILL, and DELIBERATELY HOLDS THE PIPE OPEN so stdin never reaches EOF. Before, the server stays. After: `tsudoi: exiting because its editor's process is gone`, and it leaves.",
+        "THE EXIT CODE WAS WRONG FIRST AND AN ARM THAT ALREADY EXISTED CAUGHT IT, which is the finding worth more than the fix. `endSession` reused `lifecycle.exitCode()`, reasoning that a session nobody ended is the ungraceful case that rule is about. IT IS NOT: that function grades the `exit` NOTIFICATION -- whether a client that ASKED to exit had shut down first -- and a client that vanished never sent `exit` at all. Borrowing it reported the CLIENT'S ABSENCE AS TSUDOI'S FAILURE. test/editor-death.test.ts states the contract in its own name, `stdin reaching EOF ends the session at code 0`, and reddened on both runtimes in 40ms.",
+        "AND THE WEAKENING IS MEASURED BUT NOT REGISTERED, a departure from this project's rule recorded rather than slipped past. `watchEditor(null, ...)` -- the state tsudoi shipped in for its whole life -- reddens the parent-dies arm on BOTH runtimes and leaves the other four green. IT IS NOT IN THE REGISTRY BECAUSE THE REGISTRY CANNOT AFFORD IT: an arm file is re-run TWICE inside a 25s budget, and a WEAKENED run spends the whole `waitForExit` bound on each runtime BY CONSTRUCTION, the server it waits for never leaving. Registering it would put a timing arm into the instrument this project has already filed as timing out under load. WHAT THAT COSTS is written at the arm file: if these arms stop discriminating, nothing will say so.",
+        "THE LOAD READING THAT REFRAMES PBI-93: with the orphan killed this machine's load average fell from 15.7 to about 2.0, and the perturbation registry -- which had been refusing three records at the 25s ceiling -- came back with only the two it has always had. SO PART OF WHAT WAS FILED AS A BUDGET WAS THIS DEFECT ALL ALONG, AND PART WAS NOT. The two survivors are still PBI-93's.",
+        "THE ZOMBIE WAS REAL AND IS GONE: pid 26678, orphaned at PPID 1, state R, 99.4% CPU, FIVE DAYS, killed by SIGTERM on 2026-08-11, after which this machine's tsudoi servers went from 106% CPU to 0.9%. NINETEEN OTHERS SURVIVED AND WERE LEFT ALONE, measured rather than assumed: every one is a live child of the stakeholder's own `kakehashi` multiplexer, so `kill them` meant the ORPHAN and not the population.",
+        "THE ORDINARY DEATH ALREADY WORKS, MEASURED BEFORE ANYTHING CHANGED, which is what makes this sprint about the OTHER cases rather than the obvious one: a server spawned over pipes whose parent exits without a `shutdown` is gone within seconds -- stdin reaches EOF, the reader's handle goes, the loop empties. The leak is NOT `tsudoi ignores its editor dying`.",
+        "TWO NETS FOR THE TWO WAYS THAT MECHANISM FAILS, AND NEITHER IS THE OTHER'S DUPLICATE. ONE, THE `processId` WATCHDOG: LSP says a server SHOULD exit once the parent it was told about is no longer alive, and tsudoi reads `processId` NOWHERE today -- so a server whose stdin never reaches EOF, because some surviving process still holds the write end, waits for ever. That is the shape a multiplexer produces and the likeliest origin of a five-day orphan. TWO, THE END OF STDIN: the exit today depends on the event loop EMPTYING, so ONE un-`unref`ed handle anywhere -- including inside a config author's own handler, which src/server.ts records as checked by nothing -- strands the process even after EOF.",
+        "THE WATCHDOG'S OWN TIMER IS `unref`ed, which is not a detail but the exact hazard already written down here: src/notifications.ts records that the FRAMEWORK's own `watchDog.initialize` starts an UN-`unref`ed three-second interval on a numeric `processId`. The reference implementation of this feature is itself an instance of the bug being fixed, and a watchdog that keeps the process alive is the thing it exists to prevent.",
+      ],
+    },
     {
       number: 89,
       pbi_id: "PBI-95",
@@ -659,20 +657,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 90,
-    pbi_id: "PBI-96",
-    goal: "A tsudoi server whose editor is gone EXITS -- by watching the `processId` the editor named, and by reading the end of stdin as the end of the session -- so a crash leaves no process behind and no core spinning.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "THE ZOMBIE WAS REAL AND IS GONE: pid 26678, orphaned at PPID 1, state R, 99.4% CPU, FIVE DAYS, killed by SIGTERM on 2026-08-11, after which this machine's tsudoi servers went from 106% CPU to 0.9%. NINETEEN OTHERS SURVIVED AND WERE LEFT ALONE, measured rather than assumed: every one is a live child of the stakeholder's own `kakehashi` multiplexer, so `kill them` meant the ORPHAN and not the population.",
-      "THE ORDINARY DEATH ALREADY WORKS, MEASURED BEFORE ANYTHING CHANGED, which is what makes this sprint about the OTHER cases rather than the obvious one: a server spawned over pipes whose parent exits without a `shutdown` is gone within seconds -- stdin reaches EOF, the reader's handle goes, the loop empties. The leak is NOT `tsudoi ignores its editor dying`.",
-      "TWO NETS FOR THE TWO WAYS THAT MECHANISM FAILS, AND NEITHER IS THE OTHER'S DUPLICATE. ONE, THE `processId` WATCHDOG: LSP says a server SHOULD exit once the parent it was told about is no longer alive, and tsudoi reads `processId` NOWHERE today -- so a server whose stdin never reaches EOF, because some surviving process still holds the write end, waits for ever. That is the shape a multiplexer produces and the likeliest origin of a five-day orphan. TWO, THE END OF STDIN: the exit today depends on the event loop EMPTYING, so ONE un-`unref`ed handle anywhere -- including inside a config author's own handler, which src/server.ts records as checked by nothing -- strands the process even after EOF.",
-      "THE WATCHDOG'S OWN TIMER IS `unref`ed, which is not a detail but the exact hazard already written down here: src/notifications.ts records that the FRAMEWORK's own `watchDog.initialize` starts an UN-`unref`ed three-second interval on a numeric `processId`. The reference implementation of this feature is itself an instance of the bug being fixed, and a watchdog that keeps the process alive is the thing it exists to prevent.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 87,
