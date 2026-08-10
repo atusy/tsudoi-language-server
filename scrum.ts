@@ -294,6 +294,23 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 89,
+      pbi_id: "PBI-95",
+      goal: "`context.tsudoi.notify(method, params)` sends a notification to the client, so a config author can say `window/showMessage` -- or anything else the protocol lets a server initiate -- from inside a handler.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 7bf4871. Definition of Done FAILED, and it is recorded as failed rather than smoothed: 1101 pass / 4 fail over 80 files in 1397s, with `Lint`, `Format check`, `Type check` and the workspace check all exit 0. EVERY ONE OF THE FOUR IS A TIMEOUT AT THE 25s CEILING and a DIFFERENT four each run -- PBI-93 -- over a suite that took 270s at sprint 88's close. WHAT WAS VERIFIED DIRECTLY INSTEAD: the notify arms 4/4, the type arms 5/5, the whole perturbation registry HELD.",
+        "AND THE REASON THAT RUN TOOK FIVE TIMES AS LONG TURNED OUT TO BE A DEFECT RATHER THAN A BUDGET, which is PBI-96 and was found by `ps` rather than by any check: a tsudoi server orphaned at PPID 1 had been at 99.4% CPU FOR FIVE DAYS. Attributing the four reds to PBI-93 alone was incomplete, and this entry is where that is corrected.",
+        "ADDING A MEMBER TO `Tsudoi` BREAKS EVERY HAND-BUILT LITERAL, and the FIFTH check is the only thing that says so -- `tsc --noEmit` excludes `packages/`. Four sites in the two handler packages and the adapter each take a stub that REJECTS rather than resolves, so a package cannot start notifying by accident.",
+        "AND `oxlint` LEFT THE MACHINE MID-SPRINT, which cost a 31-minute run and 66 phantom failures before the tell was found -- `exec: oxlint: not found`, buried in one staged arm's expected-versus-received dump. The lint check's own colour does not report it, because the staged Definition-of-Done arms WRAP the binary. It is the same impediment sprint 87 filed for `oxfmt` and now names both.",
+        "THIS OPENS A WRITE END ON `Tsudoi`, WHICH THAT TYPE'S OWN RUNTIME COMMENT SAYS IS DELIBERATELY CLOSED -- so the refusal is NARROWED rather than overturned. What `TsudoiRuntime` refuses to expose is the STORE, the FOLDER MIRROR and the HANDSHAKE: the writers of state tsudoi MIRRORS FROM THE CLIENT, where a second writer would make the mirror disagree with the thing it mirrors. A notification writes none of that. It is tsudoi SPEAKING to the client rather than rewriting what the client said, so the reason those three are closed says nothing about this one, and the comment is amended to say which it was about.",
+        "THE METHOD IS A STRING AND THE PARAMS ARE `unknown`, WHICH IS THE `deps/` RULING APPLIED RATHER THAN A GAP. tsudoi could enumerate the server-initiated notifications and type each one's params -- and that would be tsudoi publishing a second name for a shape upstream owns, which the `deps/` split exists to prevent. An author who wants the protocol's own type imports it from `@atusy/tsudoi-language-server/deps/protocol` and annotates their own value. WHAT IT COSTS THEM is that a misspelled method name is not a compile error, and that is stated at the site.",
+        "THE LIFECYCLE IS THE PROTOCOL'S AND TSUDOI APPLIES NONE OF IT. LSP forbids a server sending most notifications before it has answered `initialize`, with `window/showMessage`, `window/logMessage` and `telemetry/event` named as the exceptions -- so a rule enforced here would have to know that list, would go stale with the specification, and would refuse the one call an author most wants during a handshake. What tsudoi owes instead is that the failure is VISIBLE: a send on a connection that is gone rejects, and the rejection is the author's to see.",
+      ],
+    },
+    {
       number: 88,
       pbi_id: "PBI-90",
       goal: "`loadEfmConfig()` finds the efm-langserver `config.yaml` already on this machine, reads it, and hands back the tsudoi handlers it describes -- so an efm user's own linters and formatters run under tsudoi with not one tool definition restated.",
@@ -643,16 +660,17 @@ const scrum: ScrumDashboard = {
     ],
   },
   sprint: {
-    number: 89,
-    pbi_id: "PBI-95",
-    goal: "`context.tsudoi.notify(method, params)` sends a notification to the client, so a config author can say `window/showMessage` -- or anything else the protocol lets a server initiate -- from inside a handler.",
+    number: 90,
+    pbi_id: "PBI-96",
+    goal: "A tsudoi server whose editor is gone EXITS -- by watching the `processId` the editor named, and by reading the end of stdin as the end of the session -- so a crash leaves no process behind and no core spinning.",
     status: "in_progress",
     subtasks: [],
     impediments: [],
     decisions: [
-      "THIS OPENS A WRITE END ON `Tsudoi`, WHICH THAT TYPE'S OWN RUNTIME COMMENT SAYS IS DELIBERATELY CLOSED -- so the refusal is NARROWED rather than overturned. What `TsudoiRuntime` refuses to expose is the STORE, the FOLDER MIRROR and the HANDSHAKE: the writers of state tsudoi MIRRORS FROM THE CLIENT, where a second writer would make the mirror disagree with the thing it mirrors. A notification writes none of that. It is tsudoi SPEAKING to the client rather than rewriting what the client said, so the reason those three are closed says nothing about this one, and the comment is amended to say which it was about.",
-      "THE METHOD IS A STRING AND THE PARAMS ARE `unknown`, WHICH IS THE `deps/` RULING APPLIED RATHER THAN A GAP. tsudoi could enumerate the server-initiated notifications and type each one's params -- and that would be tsudoi publishing a second name for a shape upstream owns, which the `deps/` split exists to prevent. An author who wants the protocol's own type imports it from `@atusy/tsudoi-language-server/deps/protocol` and annotates their own value. WHAT IT COSTS THEM is that a misspelled method name is not a compile error, and that is stated at the site.",
-      "THE LIFECYCLE IS THE PROTOCOL'S AND TSUDOI APPLIES NONE OF IT. LSP forbids a server sending most notifications before it has answered `initialize`, with `window/showMessage`, `window/logMessage` and `telemetry/event` named as the exceptions -- so a rule enforced here would have to know that list, would go stale with the specification, and would refuse the one call an author most wants during a handshake. What tsudoi owes instead is that the failure is VISIBLE: a send on a connection that is gone rejects, and the rejection is the author's to see.",
+      "THE ZOMBIE WAS REAL AND IS GONE: pid 26678, orphaned at PPID 1, state R, 99.4% CPU, FIVE DAYS, killed by SIGTERM on 2026-08-11, after which this machine's tsudoi servers went from 106% CPU to 0.9%. NINETEEN OTHERS SURVIVED AND WERE LEFT ALONE, measured rather than assumed: every one is a live child of the stakeholder's own `kakehashi` multiplexer, so `kill them` meant the ORPHAN and not the population.",
+      "THE ORDINARY DEATH ALREADY WORKS, MEASURED BEFORE ANYTHING CHANGED, which is what makes this sprint about the OTHER cases rather than the obvious one: a server spawned over pipes whose parent exits without a `shutdown` is gone within seconds -- stdin reaches EOF, the reader's handle goes, the loop empties. The leak is NOT `tsudoi ignores its editor dying`.",
+      "TWO NETS FOR THE TWO WAYS THAT MECHANISM FAILS, AND NEITHER IS THE OTHER'S DUPLICATE. ONE, THE `processId` WATCHDOG: LSP says a server SHOULD exit once the parent it was told about is no longer alive, and tsudoi reads `processId` NOWHERE today -- so a server whose stdin never reaches EOF, because some surviving process still holds the write end, waits for ever. That is the shape a multiplexer produces and the likeliest origin of a five-day orphan. TWO, THE END OF STDIN: the exit today depends on the event loop EMPTYING, so ONE un-`unref`ed handle anywhere -- including inside a config author's own handler, which src/server.ts records as checked by nothing -- strands the process even after EOF.",
+      "THE WATCHDOG'S OWN TIMER IS `unref`ed, which is not a detail but the exact hazard already written down here: src/notifications.ts records that the FRAMEWORK's own `watchDog.initialize` starts an UN-`unref`ed three-second interval on a numeric `processId`. The reference implementation of this feature is itself an instance of the bug being fixed, and a watchdog that keeps the process alive is the thing it exists to prevent.",
     ],
   },
   retrospectives: [
