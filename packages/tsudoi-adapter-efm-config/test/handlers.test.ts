@@ -166,6 +166,38 @@ describe("the handlers a config describes", () => {
   });
 
   /**
+   * `lint-stdin` DEFAULTS TO **TRUE**, WHICH IS EFM'S SCHEMA AND NOT A GUESS --
+   * and it differs from `format-stdin`, which documents no default at all. THE
+   * ARM EXISTS BECAUSE THE OPPOSITE READING SHIPPED and was found only by driving
+   * a real server: a linter reading stdin, whose config omits the key, was handed
+   * NOTHING, exited clean, and the editor showed a file with no problems. A
+   * LINTER THAT FOUND NOTHING AND A LINTER NEVER GIVEN THE DOCUMENT ARE THE SAME
+   * PICTURE, which is why no other arm here could have noticed.
+   *
+   * THE COMMAND READS ONLY STDIN, deliberately: one that could fall back to the
+   * path would pass under either reading.
+   */
+  test("a lint tool is fed the document by default, and only `false` withholds it", async () => {
+    const yaml = (stdin: string) =>
+      `languages:\n  plaintext:\n    - lint-command: "cat"\n${stdin}      lint-formats:\n        - '%m'\n`;
+    const byDefault = stage(yaml(""), "only line");
+    const withheld = stage(yaml("      lint-stdin: false\n"), "only line");
+
+    const ask = async (config: string, uri: string) =>
+      (await (loadEfmConfig({ path: config }).methods ?? {})["textDocument/diagnostic"]?.(
+        contextFor(uri, "only line", "plaintext"),
+        { textDocument: { uri } },
+      )) as { items: readonly { message: string }[] };
+
+    expect((await ask(byDefault.config, byDefault.uri)).items.map((one) => one.message)).toEqual([
+      "only line",
+    ]);
+    // THE PAIR, AND IT IS WHAT MAKES THE DEFAULT A DEFAULT: an explicit `false`
+    // withholds the document, so the same command reports nothing.
+    expect((await ask(withheld.config, withheld.uri)).items).toEqual([]);
+  });
+
+  /**
    * A BROKEN `lint-formats` IS REFUSED WHEN THE CONFIG LOADS, which is where the
    * author is standing: `loadEfmConfig` runs inside their config factory, so
    * tsudoi reports it as a config failure and the server does not start.

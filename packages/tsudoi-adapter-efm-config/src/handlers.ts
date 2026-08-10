@@ -248,7 +248,14 @@ export function handlersFor(
         const result = await runCommand({
           command: interpolate(command, path, {}),
           cwd: options.cwd,
-          stdin: tool["lint-stdin"] === true ? document.getText() : undefined,
+          // `lint-stdin` DEFAULTS TO **TRUE** IN EFM'S SCHEMA, unlike
+          // `format-stdin`, which documents no default at all. Reading absence as
+          // false here is the defect this line exists to name: MEASURED against a
+          // real server, a tool whose `lint-command` reads stdin and whose config
+          // omits the key was handed NOTHING, exited clean, and the editor showed
+          // a file with no problems. A linter reporting nothing and a linter never
+          // given the document are the same picture.
+          stdin: tool["lint-stdin"] === false ? undefined : document.getText(),
           env: tool.env,
           signal: context.signal,
         });
