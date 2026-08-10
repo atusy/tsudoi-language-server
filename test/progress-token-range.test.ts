@@ -134,8 +134,9 @@ for (const runtime of runtimes) {
      * session-wide flag: the first refusal silences the OTHER row for the rest of
      * the session, so an author who saw the line for completion never learns
      * their code actions were aggregated too. And a hard-coded method in the
-     * sentence: the line then tells a client that refused a code action's token
-     * that its COMPLETION was aggregated.
+     * sentence: tsudoi refuses the token and writes to stderr, which is the
+     * CONFIG AUTHOR's channel and not the client's, so the line then tells the
+     * author that a COMPLETION was aggregated when it was their code action.
      *
      * THE SECOND REQUEST PER ROW IS WHAT KEEPS `once per method` FROM MEANING
      * `once per request`: without it, a tsudoi that reported EVERY refusal

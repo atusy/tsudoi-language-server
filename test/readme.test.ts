@@ -701,8 +701,8 @@ const facts: readonly ReadmeFact[] = [
     // line of the document going missing: `tsudoi advertises codeActionKinds:
     // []` and `tsudoi resolves code actions` read as fluently as the truth.
     //
-    // TWO OF THE FOUR TOKENS CARRY A DIRECTION, AND THE FIRST SPELLING OF THIS
-    // ENTRY HAD NONE -- MEASURED, a section asserting tsudoi advertises
+    // TWO TOKENS CARRY A DIRECTION, AND THE FIRST SPELLING OF THIS ENTRY HAD
+    // NONE -- MEASURED, a section asserting tsudoi advertises
     // `codeActionKinds: []` and RESOLVES code actions satisfied every token it
     // then had. It certified the VOCABULARY of the paragraph and nothing about
     // what the paragraph said, which is this repository's own recorded failure

@@ -250,8 +250,12 @@ for (const runtime of runtimes) {
      * which is exactly where the two drives can disagree: a
      * stream drive returning `null` AHEAD of the epilogue answers differently
      * from an awaited-once drive that builds its context either way and answers
-     * -32800. MEASURED by restoring that early return: this test reddens at
-     * `textDocument/completion` and at no other method.
+     * -32800. MEASURED ON THIS TREE by restoring that early return: this test
+     * reddens at EVERY STREAM-DRIVEN ROW -- `textDocument/completion` and
+     * `textDocument/codeAction`, both answering `undefined` where -32800 is
+     * required -- and at no awaited-once one. THE READING WAS TAKEN AGAIN WHEN
+     * THE SECOND STREAM ROW LANDED, having been true of completion alone and
+     * silently narrower than the property it is written under.
      *
      * LSP 3.17 PERMITS EITHER ANSWER, so this pins a CHOICE rather than a
      * requirement -- the same choice `requestCancelled` in
@@ -296,7 +300,7 @@ for (const runtime of runtimes) {
      * IT IS ALSO WHAT BOUNDS PBI-40 TO ONE ANSWER AND NOT TWO. Making the
      * cancelled answer agree across the drives must leave the UNCANCELLED
      * no-handler answer where it is -- `null`, on both drives -- and answering
-     * `[]` for the stream-driven one instead reddens here.
+     * `[]` for the stream-driven rows instead reddens here.
      *
      * BORN GREEN, DECLARED. It is not a red-driven claim, and it is kept
      * because it is the only assertion that names this property for every entry

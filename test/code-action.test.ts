@@ -128,10 +128,12 @@ for (const runtime of runtimes) {
      *
      * EXACT EQUALITY ON THE WHOLE LIST rather than a read of one title: an
      * implementation that reordered, that collapsed the two entries sharing a
-     * title, or that filled in a `kind` for a command reddens here, and none of
-     * those would move a length or a title alone. THE FIXTURE IS WHAT MAKES THE
-     * MIDDLE ONE GRADEABLE -- it holds two entries a collapse could merge, and
-     * with every entry distinct that clause would have been green about nothing.
+     * title, or that filled in a `kind` for a command reddens here. A LENGTH
+     * WOULD CATCH ONLY THE COLLAPSE, and a list of titles only the collapse and
+     * the reorder; what the whole-value comparison adds is the reshaping of a
+     * member that leaves both alone. THE FIXTURE IS WHAT MAKES THE COLLAPSE
+     * GRADEABLE AT ALL -- it holds two entries a merge could join, and with
+     * every entry distinct that clause would have been green about nothing.
      *
      * NO `partialResultToken`, SO WHAT IS COMPARED IS THE AGGREGATE. That is the
      * arm saying the stream drive costs a client NOTHING it did not ask for: the
@@ -202,10 +204,15 @@ for (const runtime of runtimes) {
     );
 
     /**
-     * THE PAIRED DIRECTION, and without it the arm above is a claim about a
-     * ROUTE that might answer that way for anybody: the SAME request against a
-     * config with no handler is answered `null`, so what came back up there is
+     * THE PAIRED DIRECTION, and without it the FIRST arm is a claim about a
+     * ROUTE that might answer that way for anybody: the same request THAT ARM
+     * SENDS -- no token, so the aggregate is what comes back -- against a config
+     * with no handler is answered `null`, so what came back up there is
      * attributable to the handler rather than to the registration.
+     *
+     * IT PAIRS WITH THE NO-TOKEN ARM AND NOT WITH THE ONE DIRECTLY ABOVE IT,
+     * which sends a token; the no-handler answer under a token is the drive's
+     * and is stated over the whole table in test/methods-table.test.ts.
      */
     test(
       named(runtime, "the same request against a config with no handler is answered null"),

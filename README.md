@@ -492,8 +492,9 @@ is no second call in which to fill in an edit you deferred.
 A `finally` inside a **completion or code-action handler** runs when the editor abandons the
 request -- which, for completion, it does on every keystroke that supersedes the last one. Both
 handlers ARE async generators, so the body outlives the first batch it yields;
-tsudoi **closes the generator** then, so the cleanup written there happens. One drive runs both,
-so this is the same behaviour rather than two -- though what the suite exercises is completion.
+tsudoi **closes the generator** then, which is what runs the cleanup written there. One drive runs
+both, so this is the same behaviour rather than two -- though what the suite exercises is
+completion.
 
 **Closing is requested, not imposed**, and the difference is one your handler controls. If the
 abandonment arrives while tsudoi is waiting on a batch from you, the close queues behind that
