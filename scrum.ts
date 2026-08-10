@@ -224,6 +224,28 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
+      id: "PBI-94",
+      story: {
+        role: "config author",
+        capability:
+          "have the PARAMS my handler is handed be graded by something, so a row whose params type widened is caught before it reaches my editor",
+        benefit:
+          "the surface tsudoi publishes keeps saying what it says today, rather than only what any assignable type would let it say",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. Whether one probe covers the table or each row owes its own is the item.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FOUND BY THE INDEPENDENT REVIEW STAGE IN SPRINT 87 AND PRE-EXISTING TO IT: `MethodMap[M][\"params\"]` is graded by nothing for ANY row. Every fixture handler in this repository either ignores its params or is contextually typed, so a params type that widened -- `CodeActionParams` to something it is assignable to, losing `range` and `context` in a stranger's editor -- reddens no arm. NOT INTRODUCED BY THE CODE-ACTION ROW, which is why it is an item rather than that sprint's repair.",
+        "THE SHAPE ALREADY EXISTS TWICE: test/execute-command-types.test.ts and test/initialize-handler-types.test.ts stage a consumer-shaped probe and read the COMPILER's own errors. What is unsettled is whether one probe reading every row from the table beats one file per row, and this repository has a rule about that -- a check whose green certifies a class as watched is refused by name here, so a probe iterating the table must fail loudly when it reaches a row it cannot construct params for.",
+      ],
+    },
+    {
       id: "PBI-93",
       story: {
         role: "tsudoi maintainer",
@@ -635,6 +657,9 @@ const scrum: ScrumDashboard = {
       "THE CLOSING READING, RE-TAKEN AFTER THE REVIEW ROUND ON THE TREE THAT CLOSES -- 5dc7864, and the ONLY commit after it is the one carrying this sentence, which no check but test/definition-of-done.test.ts reads. Definition of Done PASSED, all five checks exit 0: 1044 pass / 0 fail over 75 files, 3293 expect() calls, 302.06s, TWENTY-ONE registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. THE DELTA OVER THE PRE-REVIEW READING DECOMPOSES EXACTLY: three arms and three assertions from the README fact the round found missing, and two assertions from the `progressCount` guard added to the no-token arm on each runtime. 1041 + 3 and 3288 + 5, and nothing else moved.",
       "THE REVIEW ROUND'S YIELD, WITH THE DENOMINATOR THIS PROJECT REQUIRES. Eight independent reviewers over one increment. EVERY ACTIONABLE FINDING WAS IN THE INCREMENT rather than in a previous round's wake, which is what a first round should look like -- and TWO OF THEM WERE DEFECTS IN THE PRODUCT rather than in prose, which is what separates this round from sprint 84's. THE STDERR LINE TELLING AN AUTHOR THEIR ITEMS WERE AGGREGATED SAID `this completion` AND IS REACHED FROM EVERY STREAM-DRIVEN ROW, so a refused token on a code-action request reported a completion; and the once-per-session flag behind it was ONE BOOLEAN ACROSS ALL ROWS, so whichever row refused first silenced the other for the session. Both were harmless while completion was the only stream-driven row and became wrong at the moment this sprint made a second -- which no arm here noticed, and which the sprint's own criteria could not have asked for.",
       "AND THE PUBLISHED SURFACE WAS CARRYING SPRINT POLITICS, WHICH IS THE FINDING THIS PROJECT SHOULD HAVE PREDICTED AND DID NOT. `MethodMap` compiles to `dist/types.d.ts`, which `./types` publishes, so a config author hovering the new row in their editor read `THE RULING OVERTURNED THIS SPRINT'S OWN`. No sibling comment on a published subpath names a sprint; the veto record belongs in this file and in the commits, and the technical reason is what stays at the site.",
+      "THE INDEPENDENT STAGE RAN FIVE TIMES, EACH A FRESH SESSION, AND IT WAS STOPPED ON THE MEASURED SHARE RATHER THAN ON A CLEAN ANSWER -- which is this project's own recorded stop condition and not a shortcut. THE FIRST TWO FOUND DEFECTS THE MULTI-PERSPECTIVE STAGE HAD MISSED: that both of that stage's own product fixes were UNGUARDED -- reverting either left the suite green, every invalid-token arm driving completion alone -- and that the new fixture yielded a `CodeAction` to a client sending `capabilities: {}`, which is the exact mistake the README section written two commits earlier tells an author to avoid. BY THE FIFTH, five of seven findings were against prose the ROUND BEFORE IT had written, and the last round's single HIGH was a record broken by the round before that. THE SHARE IS THE SIGNAL: a sixth session would mostly grade the fifth's wording.",
+      "AND THE STAGE CAUGHT ONE THING NOTHING ELSE COULD HAVE, WORTH SEPARATING FROM THE PROSE: deriving the stream-driven rows from the table changed the assertion a registry record anchors to, and the record kept naming the literal it replaced. It would have read REFUSED -- a record reporting its arm as GONE when the arm was fine -- and the shape of that failure is the one this instrument exists to make loud rather than silent, so it would have been found. What review bought was finding it one commit later instead of at the next full run.",
+      "ONE FINDING IS REFUSED WITH ITS REASON RATHER THAN FIXED. The capability arm pins `codeActionProvider: true` exactly, and `{}` is a conforming `CodeActionOptions` saying the same thing -- so an implementation spelling it that way reddens an arm while breaking nothing. THE WHOLE-OBJECT EQUALITY IS WHAT IS BEING BOUGHT: it is what refuses `{ codeActionKinds: [] }` and what refuses a key nobody expected, and an arm accepting either spelling would have to compare the object minus that key and lose both. The limitation is declared at the arm, which is this repository's own idiom for a pin that is narrower than the property.",
       "THREE OF THE ROUND'S FINDINGS WERE AGAINST THIS RECORD, AND THEY ARE REPAIRED ABOVE RATHER THAN LISTED HERE: a field named wrong (`CodeAction.data`, which is result-side and inert, for `Diagnostic.data`, which is the params-side leak), a past tense asserting a repair that had not happened (CLAUDE.md), and a hand count taken on eight arms where the file had ten. A FOURTH IS THE SWEEP'S OWN NOTE, which claimed exactly one sentence went false where four did.",
       "AND THE RUN BEFORE IT WAS RED ON PBI-93 AND ON NOTHING ELSE, recorded rather than quietly re-run away: at the same tree, the three `dodArms` records timed out at 25s in a run that took 441.84s where the green one took 251.94s. EVERY OTHER ARM, INCLUDING THIS SPRINT'S OWN RECORD, WAS GREEN IN BOTH. What a reader should take from the pair is the filed item and not a doubt about the increment.",
       "CLAUDE.md's OPENING WAS FALSE AND IS NOT THIS INCREMENT. It read `handlers for five LSP methods` and enumerated exactly five, was recorded as false at sprint 85, and that file is UNTRACKED here. IT NOW ENUMERATES THE TABLE AND WRITES NO COUNT, done in the working tree after the review round; nothing this sprint commits carries it, and no reader of this history can verify it. THE RECORD SAID `SO IT IS REPAIRED LOCALLY` BEFORE THE REPAIR EXISTED, which a reviewer caught -- a past tense asserting an accomplished edit that had not happened. The arity sweep in subtask 3 is over TRACKED prose, which is why CLAUDE.md was outside it and why the stale count sat exactly where the sweep could not reach.",
