@@ -385,33 +385,28 @@ export interface MethodMap {
   };
 
   /**
-   * STREAM-DRIVEN BY THE STAKEHOLDER'S RULING, AND THE RULING OVERTURNED THIS
-   * SPRINT'S OWN. What separates this row from the six above it is that its drive
-   * was a CHOICE at all: each of those was settled before anyone had a
-   * preference, `textDocument/diagnostic` failing the ARRAY condition -- its
-   * partial results are objects carrying OTHER documents -- and
-   * `workspace/executeCommand` failing the TOKEN one, its params carrying none.
+   * STREAM-DRIVEN BY RULING RATHER THAN BY CONSTRUCTION, WHICH IS WHAT SEPARATES
+   * THIS ROW FROM THE SIX ABOVE IT. Each of those had its drive settled before
+   * anyone had a preference: `textDocument/diagnostic` fails the ARRAY condition
+   * -- its partial results are objects carrying OTHER documents -- and
+   * `workspace/executeCommand` fails the TOKEN one, its params carrying none.
    * MEASURED here: `CodeActionParams extends WorkDoneProgressParams,
    * PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is
-   * `(Command | CodeAction)[]`. Both of `driveStream`'s stated conditions hold,
-   * so the drive is AVAILABLE, and it is taken.
+   * `(Command | CodeAction)[]`. Both of `driveStream`'s conditions hold, so the
+   * awaited drive was available to this row and was declined.
    *
-   * THE REASON IS WHAT THE SHAPE KEEPS OPEN AND NOT WHAT IT DOES TODAY: with no
-   * `partialResultToken` a client's answer is identical either way, so this costs
-   * nothing NOW and is the only spelling from which partial results can ever be
-   * served. THE ALTERNATIVE WAS ARGUED AND LOST, and it is written down because
-   * the argument is still true: a completion list is FILTERED as the user keeps
-   * typing, so a late item lands where it belongs, while a code-action menu is
-   * opened, read, and chosen from as a whole -- an action appended after it is on
-   * screen moves the row under the user's cursor. THAT IS AN ARGUMENT ABOUT WHAT
-   * A SERVER SHOULD SEND, and this type decides only what it CAN; an author who
-   * agrees with it yields once and is indistinguishable on the wire.
-   *
-   * WHICH IS THE HALF THAT MADE THE RULING RIGHT AND THE REFUSAL WRONG: the two
-   * spellings are NOT symmetric in what they foreclose. `Promise<...>` and
+   * THE REASON IS WHAT THE SHAPE KEEPS OPEN AND NOT WHAT IT DOES TODAY. The two
+   * spellings are NOT symmetric in what they foreclose: `Promise<...>` and
    * `AsyncGenerator<...>` are equally breaking to swap in every config declaring
-   * this key, so a wrong choice costs the same either way -- but only one of them
+   * this key, so a wrong choice costs the same either way -- and only one of them
    * can ever grow partial results without being swapped.
+   *
+   * THE ARGUMENT AGAINST IT IS STILL TRUE AND IS ABOUT A DIFFERENT QUESTION,
+   * which is why an author should usually yield ONCE: a completion list is
+   * FILTERED as the user keeps typing, so a late item lands where it belongs,
+   * while a code-action menu is opened, read, and chosen from as a whole -- an
+   * action appended after it is on screen moves the row under the user's cursor.
+   * That decides what a server SHOULD send; this type decides only what it CAN.
    *
    * WHAT IT COSTS AN AUTHOR WITH A FIXED LIST IS ONE `yield`, which is the price
    * `textDocument/completion` already charges, and the drive's own contract --
@@ -419,10 +414,18 @@ export interface MethodMap {
    * say yields nothing and is answered `null` -- is stated once at
    * `MethodMap["textDocument/completion"]` and is not restated per row.
    *
-   * `[]` IS AVAILABLE AND MEANS SOMETHING ELSE, said here because this row's
-   * union makes it easy to reach for: yielding an empty batch says `I looked and
-   * there is nothing you can do here`, which a client may render as a menu with
-   * no entries, where yielding nothing at all is answered `null`.
+   * THE ONE OBLIGATION THIS ROW PUTS ON YOU THAT NOTHING HERE ENFORCES: a client
+   * announces whether it can read CODE ACTION LITERALS, and one that has not may
+   * be sent `Command` literals ONLY. Read
+   * `clientCapabilities.textDocument?.codeAction?.codeActionLiteralSupport`
+   * before yielding a `CodeAction`; tsudoi passes what you yield through
+   * unexamined and will not narrow it for you.
+   *
+   * `[]` IS AVAILABLE AND MEANS SOMETHING ELSE -- `I looked and there is nothing
+   * you can do here`, which a client may render as a menu with no entries, where
+   * yielding nothing at all is answered `null`. THE DISTINCTION IS ONLY VISIBLE
+   * WITHOUT A `partialResultToken`: under one the response is `null` either way
+   * and the client assembles the same list from the `$/progress` it received.
    */
   "textDocument/codeAction": {
     params: CodeActionParams;
@@ -447,7 +450,7 @@ export type Method = keyof MethodMap;
  * unaskable too -- but only UNTIL its author fills it, where `initialize` is sent
  * once, before any registration is live, and is never askable at all.
  *
- * `Promise`, LIKE EVERY ROW OF THE TABLE, and not `InitializeResult |
+ * `Promise`, LIKE EVERY AWAITED-ONCE ROW OF THE TABLE, and not `InitializeResult |
  * Promise<…>`: one shape
  * per row is what keeps `MethodHandler` readable, and an author whose answer is
  * ready writes `Promise.resolve` here exactly as they do for hover.

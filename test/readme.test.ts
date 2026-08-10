@@ -693,6 +693,25 @@ const facts: readonly ReadmeFact[] = [
     name: "cleanup runs because tsudoi closes the generator, and completion is not promised",
     tokens: [/closes the generator/i, /finally/, /does not promise/i, /completes/i],
   },
+  {
+    // THE TWO CLAIMS A READER CANNOT CHECK FOR THEMSELVES, which is what earns
+    // this entry: that tsudoi declines to name kinds -- so an editor's own
+    // pre-filtering will always invoke the provider -- and that there is no
+    // second call in which to complete an action. Both are INVERTIBLE without a
+    // line of the document going missing: `tsudoi advertises codeActionKinds:
+    // []` and `tsudoi resolves code actions` read as fluently as the truth.
+    //
+    // `codeActionLiteralSupport` IS NOT A TOKEN HERE, DELIBERATELY. It is an
+    // obligation on the AUTHOR rather than a fact about tsudoi, and a token
+    // demanding it would pin the wording of advice this document is free to
+    // move or improve. The rule this repository already records applies: a token
+    // nothing in the document should say is a test that forces false prose, and
+    // its converse is that a token should hold a fact, not a paragraph.
+    //
+    // SINGLE WORDS, on the hard-wrap rule the entries above record.
+    name: "a codeAction handler claims the provider and no kinds, and nothing resolves an action later",
+    tokens: [/codeActionProvider/, /codeActionKinds/, /optional/i, /codeAction\/resolve/],
+  },
 ];
 
 /**

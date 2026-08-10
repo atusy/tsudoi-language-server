@@ -27,6 +27,11 @@ import type {
  * - delete completion's TOGETHER WITH resolve's, which is the edit that removes
  *   that load failure, and nothing about what this config serves moves either.
  *
+ * THE LIST STOPS ONE ROW SHORT OF THE FILE, SAID SO IT IS NOT READ AS COVERING
+ * IT: `textDocument/codeAction` joined after those readings were taken and its
+ * deletion was never measured. The compile-time property below covers its
+ * PRESENCE; what an assertion would do about its absence is unmeasured.
+ *
  * ONE ARM READS THE COMPILE ERROR, WHICH IS WHY NO BULLET ABOVE SAYS `THE WHOLE
  * SUITE STAYS GREEN`. MEASURED TWICE at 4a44404, whole suite, both
  * runtimes, once with executeCommand's handler deleted and once with hover's:

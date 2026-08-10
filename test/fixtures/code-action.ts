@@ -37,6 +37,13 @@ export const codeActionAnswer: (Command | CodeAction)[] = [
     },
   },
   { title: "コマンドを実行する", command: "tsudoi.試験.コマンド", arguments: [{ at: 3 }, 5] },
+  // A SECOND ENTRY SHARING THE FIRST COMMAND'S TITLE, AND IT IS WHAT MAKES THE
+  // WORD `collapsed` GRADEABLE. With every entry distinct, no deduplication --
+  // by title, by command name or by whole value -- can move this list, so an
+  // arm claiming a collapse would redden reddens for nothing. Two entries that
+  // differ only in their arguments is also the realistic shape: one action per
+  // target, offered under one name.
+  { title: "コマンドを実行する", command: "tsudoi.試験.コマンド", arguments: [{ at: 9 }] },
 ];
 
 /**

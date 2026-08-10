@@ -334,7 +334,7 @@ function isProgressToken(value: unknown): value is ProgressToken {
 }
 
 /**
- * The token this completion may stream under, or undefined when it must be
+ * The token this request may stream under, or undefined when it must be
  * aggregated into one response instead.
  */
 function streamingToken(
@@ -370,17 +370,23 @@ export function registerMethods(
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
 ): void {
-  let invalidTokenReported = false;
+  // PER METHOD AND NOT PER SESSION, and a single boolean here is the spelling
+  // that looks right and silently loses a diagnostic: one flag for the whole
+  // session means the first refusal on ANY stream-driven row permanently
+  // silences every other row, so an author who saw the line once for completion
+  // never learns their code actions were aggregated too. Harmless while
+  // completion was the only such row; wrong the moment there were two.
+  const invalidTokenReported = new Set<Method>();
 
-  /** Names a refused token on stderr ONCE per session. */
-  function reportInvalidToken(requested: unknown): void {
-    if (invalidTokenReported === true) {
+  /** Names a refused token on stderr ONCE per method per session. */
+  function reportInvalidToken(method: Method, requested: unknown): void {
+    if (invalidTokenReported.has(method)) {
       return;
     }
-    invalidTokenReported = true;
+    invalidTokenReported.add(method);
     process.stderr.write(
       `tsudoi: ignoring an invalid partialResultToken ${JSON.stringify(requested)}; ` +
-        `a ProgressToken is an integer or a string, so this completion is answered ` +
+        `a ProgressToken is an integer or a string, so this ${method} is answered ` +
         `as one aggregated response.\n`,
     );
   }
@@ -500,11 +506,12 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
  * partial results are objects carrying OTHER documents' reports rather than more
  * of the one that was asked for.
  *
- * TWO ROWS SATISFY BOTH, AND ONLY ONE OF THEM HAD NO ALTERNATIVE.
- * `textDocument/completion` is here because nothing else would serve it;
- * `textDocument/codeAction` could have been awaited once and was RULED here, so a
- * reader who arrives at these conditions looking for what forced each row will
- * find the second one's reason at `MethodMap["textDocument/codeAction"]` instead.
+ * TWO ROWS SATISFY BOTH, AND THE CONDITIONS DO NOT SAY WHY EITHER IS HERE.
+ * `textDocument/completion` predates the split and no ruling anywhere records an
+ * alternative being weighed for it; `textDocument/codeAction` could have been
+ * awaited once and was RULED into this drive, its reason at
+ * `MethodMap["textDocument/codeAction"]`. So a reader arriving here to learn what
+ * forced a row will not find it here for either of them.
  */
 async function driveStream(run: {
   method: Method;
@@ -514,7 +521,7 @@ async function driveStream(run: {
   entry: ErasedEntry;
   connection: RequestOnlyConnection;
   tsudoi: Tsudoi;
-  reportInvalidToken: (requested: unknown) => void;
+  reportInvalidToken: (method: Method, requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
   const context = requestContext(run.tsudoi, run.cancellation);
@@ -522,11 +529,13 @@ async function driveStream(run: {
     return answerUnlessCancelled(run.method, context.signal, () => Promise.resolve(null));
   }
   // BELOW THE NO-HANDLER RETURN, and nothing reddens if you lift it above: a
-  // config that cannot answer completion at all has no business reporting the
+  // config that cannot answer this method at all has no business reporting the
   // client's token on stderr, since that line exists to say the items were
   // aggregated rather than streamed and here there are none.
   const requestedToken: unknown = (run.params as PartialResultParams).partialResultToken;
-  const token = streamingToken(requestedToken, run.reportInvalidToken);
+  const token = streamingToken(requestedToken, (requested) => {
+    run.reportInvalidToken(run.method, requested);
+  });
   const progress = run.entry.progress;
   return answerUnlessCancelled(run.method, context.signal, async () => {
     const collected: unknown[] = [];

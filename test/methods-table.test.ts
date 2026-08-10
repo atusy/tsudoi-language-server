@@ -47,8 +47,12 @@ const uri = "file:///workspace/a.txt";
  * per-method params shape back into the file whose subject is that per-method
  * copies are gone, and buy nothing, no arm here reading params at all.
  *
- * NOTHING ON THE WIRE VALIDATES EITHER MEMBER, WHICH IS WHY BOTH HAVE NO
- * COLOUR. MEASURED for `command` rather than reasoned from `label`'s paragraph,
+ * NOTHING ON THE WIRE VALIDATES `label` OR `command`, WHICH IS WHY NEITHER HAS
+ * A COLOUR -- AND THE SAME IS TRUE OF `range` AND `context` BY THE SAME ROUTE,
+ * SAID SEPARATELY BECAUSE THE MEASUREMENT BELOW WAS NEVER TAKEN ON THEM. What
+ * covers those two is the argument and not a reading: no arm in this file looks
+ * at params at all.
+ * MEASURED for `command` rather than reasoned from `label`'s paragraph,
  * since that one was itself written from a reading: with it deleted this whole
  * file is GREEN, every arm, both runtimes, while `workspace/executeCommand` is
  * driven with its one required member missing.
@@ -348,7 +352,9 @@ for (const runtime of runtimes) {
      * library check for a shape it was not sent. The text is tsudoi's, and it
      * NAMES THE METHOD, so this also says the refusal is the ROUTER'S rather
      * than one drive's -- a guard written into `driveStream` alone passes for
-     * `textDocument/completion` and reddens for every other row.
+     * the STREAM-DRIVEN rows and reddens for every awaited-once one. Spelled by
+     * the drive rather than by naming completion, which was the whole set of
+     * them until this table grew a second.
      *
      * WHAT SAYS THE REFUSAL IS NOT OVER-BROAD is the rest of the suite: every
      * other session test sends a params OBJECT and expects an answer, so a

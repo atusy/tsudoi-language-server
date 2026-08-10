@@ -1,9 +1,9 @@
 # tsudoi
 
 tsudoi assembles a Language Server out of one TypeScript file. You write handlers for LSP
-methods -- hover, completion, formatting, pull diagnostics, completion-item resolution and
-command execution -- and tsudoi speaks the protocol, manages the document store and answers the
-lifecycle requests an editor expects.
+methods -- hover, completion, formatting, pull diagnostics, completion-item resolution, command
+execution and code actions -- and tsudoi speaks the protocol, manages the document store and
+answers the lifecycle requests an editor expects.
 
 The server runs under [bun](https://bun.sh/docs/installation) and under
 [deno](https://docs.deno.com/runtime/getting_started/installation/), from the same installed
@@ -461,24 +461,36 @@ promise about what you produce, so it stays yours to make from an `initialize` h
 reason that has nothing to do with how many actions you have. An editor naming a
 `partialResultToken` receives every batch you yield as its own `$/progress`; one that names none
 receives them concatenated into a single response, byte for byte what returning the list would
-have sent. So a handler with a fixed list yields once and is indistinguishable on the wire from
-one that could never have streamed. Yielding nothing at all is answered `null` -- _this server has
-no answer here_ -- where yielding `[]` says _I looked and there is nothing you can do_, which your
-editor may render as an empty menu.
+have sent. So a handler with a fixed list yields once and, for an editor that named no token, is
+indistinguishable on the wire from one that could never have streamed. **Without a token**,
+yielding nothing at all is answered `null` -- _this server has no answer here_ -- where yielding
+`[]` says _I looked and there is nothing you can do_, which your editor may render as an empty
+menu. Under a token the response is `null` either way and your editor assembles the same list out
+of the `$/progress` it received, so that distinction is one you can only draw for the client that
+did not ask to stream.
 
-What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi neither validates them
-nor fills anything in, so what your editor receives is what you wrote: a `CodeAction` carrying an
-`edit` is your editor's to apply, and one carrying a `command` comes back to you as the
-`workspace/executeCommand` above. **tsudoi does not resolve code actions.** `codeAction/resolve`
-is not a handler key, so an action you offer has to arrive complete -- there is no second call in
-which to fill in an edit you deferred.
+What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi checks that the batch is
+an array -- yield anything else and the request fails -- and looks at nothing inside it, so what
+your editor receives is what you wrote. **Which leaves you one obligation tsudoi does not
+enforce**: a client announces whether it can read code action _literals_, and one that has not may
+be sent `Command` literals only. Read
+`context.tsudoi.clientCapabilities.textDocument?.codeAction?.codeActionLiteralSupport` before you
+yield a `CodeAction`.
+
+A `CodeAction` carrying an `edit` is your editor's to apply. One carrying a `command` comes back
+to you as the `workspace/executeCommand` above **only once you have declared that handler and
+advertised the name** -- until then a conforming editor knows of no such command and will not send
+it, for the reason the section above gives. **tsudoi does not resolve code actions.**
+`codeAction/resolve` is not a handler key, so an action you offer has to arrive complete -- there
+is no second call in which to fill in an edit you deferred.
 
 ## Cleanup in a handler
 
 A `finally` inside a **completion or code-action handler** runs when the editor abandons the
 request -- which, for completion, it does on every keystroke that supersedes the last one. Both
 handlers ARE async generators, so the body outlives the first batch it yields;
-tsudoi **closes the generator** then, so the cleanup written there happens.
+tsudoi **closes the generator** then, so the cleanup written there happens. One drive runs both,
+so this is the same behaviour rather than two -- though what the suite exercises is completion.
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
 something which never settles never finishes, and no server can change that; the request is

@@ -73,10 +73,13 @@ function named(runtime: { name: string }, what: string): string {
 }
 
 /**
- * A RANGE AND A CONTEXT, BOTH REQUIRED BY `CodeActionParams` AND VALIDATED BY
- * NOTHING ON THE WIRE. They are written out because the request is what a client
- * would send, not because anything here would notice their absence -- the same
- * reading test/methods-table.test.ts MEASURED for its own shared params object.
+ * A RANGE AND A CONTEXT, BOTH REQUIRED BY `CodeActionParams` AND GRADED BY
+ * NOTHING HERE. They are written out because the request is what a client would
+ * send, not because anything would notice their absence: the only params check
+ * on this route is `typeof params === "object"`, and the fixture's handler reads
+ * no params at all. NOT INHERITED FROM test/methods-table.test.ts's OWN
+ * MEASUREMENT, which was taken by deleting a DIFFERENT member in a DIFFERENT
+ * file -- the reason here is the one above and it is this file's.
  */
 function codeActionParams(token?: string): unknown {
   const params = {
@@ -100,8 +103,11 @@ for (const runtime of runtimes) {
      * it recognised would drop.
      *
      * EXACT EQUALITY ON THE WHOLE LIST rather than a read of one title: an
-     * implementation that reordered, deduplicated, or filled in a `kind` for the
-     * command reddens here, and none of those would move a length or a title.
+     * implementation that reordered, that collapsed the two entries sharing a
+     * title, or that filled in a `kind` for a command reddens here, and none of
+     * those would move a length or a title alone. THE FIXTURE IS WHAT MAKES THE
+     * MIDDLE ONE GRADEABLE -- it holds two entries a collapse could merge, and
+     * with every entry distinct that clause would have been green about nothing.
      *
      * NO `partialResultToken`, SO WHAT IS COMPARED IS THE AGGREGATE. That is the
      * arm saying the stream drive costs a client NOTHING it did not ask for: the
@@ -123,6 +129,12 @@ for (const runtime of runtimes) {
           );
 
           expect(answered).toEqual(codeActionAnswer);
+          // THE HALF THE DOCBLOCK'S CLAIM RESTS ON THAT THE AGGREGATE DOES NOT
+          // SHOW: `$/progress` is FRAMED, so `unframedStdoutBytes` stays zero
+          // for a tsudoi that streamed under a token it invented AND aggregated
+          // the response. A client that named no token must receive nothing on
+          // the progress channel at all.
+          expect(session.progressCount).toBe(0);
           expect(session.unframedStdoutBytes).toBe(0);
         } finally {
           session.dispose();

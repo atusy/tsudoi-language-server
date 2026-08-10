@@ -567,9 +567,12 @@ const dodArms = "test/definition-of-done.test.ts";
 const dodRunner = "scripts/definition-of-done.ts";
 
 // THE MEMBER ARM FILE AND THE MODULE THE BLOCK IS COMPOSED IN, spelled once
-// because the criteria of PBI-83 land almost entirely on the two: no record
-// below spawns a server, the wire claims being stated at the root on two
-// runtimes and the member arm being the cheap statement of each.
+// because the criteria of PBI-83 land almost entirely on the two: the wire
+// claims are stated at the root on two runtimes and the member arm is the cheap
+// statement of each, so none of PBI-83's records spawns a server. THAT WAS
+// WRITTEN AS A CLAIM OVER EVERY RECORD BELOW AND IS NOT ONE: the code-action
+// record at the end of this list spawns one, having no cheaper site to point at,
+// and says so where it stands.
 const memberArms = "packages/tsudoi-completion-path/test/resolve.test.ts";
 const composer = "packages/tsudoi-completion-path/src/completion.ts";
 
