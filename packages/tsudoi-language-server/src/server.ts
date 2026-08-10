@@ -197,10 +197,12 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // stringify of one small object, on the handshake path, once a session
       // THAT DECLARES THIS HANDLER -- the fast path above returns before it.
       //
-      // A `ResponseError` AND NOT THE ENGINE'S OWN, because this is the one
-      // failure whose error the client cannot be told in the author's words: the
-      // engines disagree on the wording for a BigInt and for a cycle, and the
-      // sentence below is the one the report already carries.
+      // THE CLIENT IS ANSWERED THE SENTENCE AND NOT WHAT WAS CAUGHT, which is
+      // where this path parts from the one above: what is caught here is a
+      // SERIALISATION failure -- sometimes the author's own getter, sometimes the
+      // engine's words for a BigInt or a cycle, which the two runtimes word
+      // differently -- so rethrowing it would answer with a sentence saying
+      // nothing about what tsudoi was doing with their answer.
       //
       // AND WHAT SURVIVES THE CHECK IS ONE READ AWAY. This stringify and
       // vscode-jsonrpc's own are TWO READS of the same value, so an answer that
