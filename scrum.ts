@@ -115,31 +115,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-90",
-      story: {
-        role: "config author",
-        capability:
-          "call `loadEfmConfig()` in a tsudoi config and have the efm-langserver `config.yaml` already on this machine answer `textDocument/formatting`, without restating one tool definition",
-        benefit:
-          "the formatter set an efm user already maintains runs under tsudoi, and tsudoi's surface is shown against a config format SOMEBODY ELSE OWNS rather than one shaped to fit it",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "PLACEHOLDER -- THE SLICE IS NAMED AND THE CRITERIA ARE NOT WRITTEN. What a FOURTH MEMBER fires is enumerated in the notes and each site is a decision rather than a fix; the YAML dependency is a ruling; and which efm keys this slice honours is not settled. Not planned until those three are.",
-          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
-        },
-      ],
-      status: "refining",
-      notes: [
-        "WHAT A FOURTH MEMBER FIRES, ENUMERATED IN ADVANCE SO IT DOES NOT ARRIVE ONE RED AT A TIME. `test/build-order.test.ts` pins the derived order BYTE FOR BYTE and is a guaranteed red. `handlerMembers` in scripts/workspaces.ts recognises a member by what it DECLARES, so an adapter declaring tsudoi joins it SILENTLY and widens every site taking it -- including a scan of its `src/` for a handler, which may be FALSE of a package whose handlers are built from YAML at run time. CLAUDE.md's rule is `never applied wholesale; each call carries its reason`, so every call site is VISITED and ruled, and a widening that is wrong is answered at the site rather than by narrowing the enumeration. Then: `readmeCoverage` wants a marker AND a `consumers` row per fenced block; `test/member-resolution.test.ts` enumerates BOTH routes to tsudoi, so the root's `devDependencies` must declare this package; `refuseMemberDirectoriesUnlikeTheUnscopedName` fixes the name at `@atusy/tsudoi-adapter-efm-config`; `refuseSubpathsAnsweringFromSource` wants an `exports` map shaped like the HANDLERS' -- no source arm, so tsc fails loudly -- and not like tsudoi's, which ends in `default: ./src/*.ts`; and the package needs a `prepack` and a `tsconfig.build.json` or the preload build skips it.",
-        "THE YAML READER IS A RULING AND NOT AN IMPLEMENTATION DETAIL. It must work under BOTH runtimes and pass `.oxlintrc.json`, which is a deno-compatibility guard, DEFAULT-DENY across the whole tree. Hand-rolling a subset is the alternative and it is the WORSE failure: efm's own documented example uses ANCHORS and MERGE KEYS (`&name`, `<<: *name`), which a subset parser mis-reads into a tool definition missing half its keys rather than refusing the file. Decide the dependency, or decide to refuse a document a subset cannot read.",
-        "`languages` IS KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`. They agree often and not always, and efm's `=` key means ANY language. NO TRANSLATION TABLE IS INVENTED HERE -- a table tsudoi wrote would be tsudoi deciding what an editor meant -- so what this package does with the mismatch is the item's own decision and its README is the authority on it.",
-        "AN UNIMPLEMENTED `${...}` MUST BE REFUSED BY NAME AND NEVER PASSED THROUGH. efm's format-command interpolates `${INPUT}`, `${--flag:key}`, `${--flag=key}` and `${--flag:!key}` over `FormattingOptions` plus its own `charStart`/`charEnd`/`rowStart`/`rowEnd`/`colStart`/`colEnd`. A slice that implements some of those and passes the rest through hands the formatter a LITERAL `${--tab-width:tabWidth}` argument, and what comes back is a file formatted wrong with nothing saying so.",
-        "`symbol-command` MAPS TO `textDocument/documentSymbol`, WHICH TSUDOI DOES NOT SERVE. That is a written why-not in this package's README and NOT a gap in this item, and the same goes for `log-file`, `log-level` and `provide-definition`, which are efm PROCESS concerns rather than handler ones.",
-      ],
-    },
-    {
       id: "PBI-91",
       story: {
         role: "editor user",
@@ -295,6 +270,23 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 88,
+      pbi_id: "PBI-90",
+      goal: "`loadEfmConfig()` finds the efm-langserver `config.yaml` already on this machine, reads it, and hands back the tsudoi handlers it describes -- so an efm user's own linters and formatters run under tsudoi with not one tool definition restated.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 3b383b1, and the ONLY commit after it is the one carrying this sentence. Definition of Done PASSED, all five checks exit 0: 1096 pass / 0 fail over 78 files, 3406 expect() calls, 296.51s, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. The base was sprint 87's close at 1049 / 3310 over 75 files.",
+        "THE DEFECT THAT MATTERED WAS FOUND BY DRIVING A REAL SERVER AND BY NOTHING ELSE, which is the reading to carry out of this sprint. efm's schema documents `lint-stdin` DEFAULTING TO TRUE -- unlike `format-stdin`, which documents no default -- and this adapter read absence as false. A tool whose `lint-command` reads stdin and whose config omits the key was handed NOTHING, exited clean, and the editor showed a file with no problems. NO ARM HERE COULD HAVE NOTICED: a linter that found nothing and a linter never given the document are the same picture, and every arm written before it drove commands that ignore their input. The arm that holds it now drives a command reading ONLY stdin, so neither reading passes for the other.",
+        "WHAT A FOURTH MEMBER FIRED, MEASURED AGAINST PBI-90'S OWN PREDICTION. Predicted and red: the build order, where the new member sorts between the framework and the two handlers by PATH -- a tie-break rather than a dependency; both per-member tables in test/packed-members.test.ts; and `readmeCoverage`, which the new README joined only when it was TRACKED and not when it was written. NOT PREDICTED: the two STAGING arms, and that is the finding. bun placed `yaml` in the member that declares it rather than hoisting, and test/unbuilt-checkout.test.ts and test/own-subpaths.test.ts borrow node_modules ENTRY BY ENTRY FROM THE ROOT -- so a member's own runtime dependency living only under packages/ makes every staged build fail TS2307 on it. Declared at the root with that reason, which is a fact about this repository's apparatus rather than about the package.",
+        "`handlerMembers` TOOK THE NEW MEMBER SILENTLY AND EVERY SITE WAS RIGHT TO, which PBI-90's notes had flagged as needing a per-site ruling. Its `src/` holds handlers, it declares tsudoi as an optional peer, it ships a README a stranger acts on, and it is installable beside tsudoi -- so all four sites apply. THE PREDICTED MISMATCH DID NOT MATTER: those sites ask about the PACKAGE, not about where its handlers come from, so a package building them at run time from YAML is no exception.",
+        "WHAT THIS INCREMENT DOES NOT DO, listed rather than left to be discovered: multi-line errorformats, refused BY NAME at load; `symbol-command`, which is a method tsudoi does not serve; efm's scheduling keys, which describe a PUSH model tsudoi has no equivalent of; and range formatting. Each is in the package's README, which is the document a stranger reads.",
+        'THE YAML READER IS `yaml` AT `merge: true`, AND THE FLAG IS THE WHOLE RULING RATHER THAN A SETTING. MEASURED at yaml 2.9.0: with the default options, efm\'s own documented example parses a tool definition into `{ "<<": { ... } }` -- the merge key ARRIVES AS A LITERAL KEY and none of the merged tool\'s own keys are present. That is the silent mis-read PBI-90\'s notes predicted for a hand-rolled subset, and the library does it too unless told not to. A config using anchors would produce handlers for nothing, with no error anywhere. `merge: true` and `version: "1.1"` both fix it; the flag is chosen because it says what it does.',
+        "efm's `languages` ARE KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`, AND NO TRANSLATION TABLE IS INVENTED. The key is matched against `languageId` as the client sent it, plus efm's `=` any-language key, and where they disagree the author's own config is where it is repaired -- a table tsudoi wrote would be tsudoi deciding what an editor meant. The README is the authority on it.",
+      ],
+    },
     {
       number: 87,
       pbi_id: "PBI-89",
@@ -627,18 +619,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 88,
-    pbi_id: "PBI-90",
-    goal: "`loadEfmConfig()` finds the efm-langserver `config.yaml` already on this machine, reads it, and hands back the tsudoi handlers it describes -- so an efm user's own linters and formatters run under tsudoi with not one tool definition restated.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      'THE YAML READER IS `yaml` AT `merge: true`, AND THE FLAG IS THE WHOLE RULING RATHER THAN A SETTING. MEASURED at yaml 2.9.0: with the default options, efm\'s own documented example parses a tool definition into `{ "<<": { ... } }` -- the merge key ARRIVES AS A LITERAL KEY and none of the merged tool\'s own keys are present. That is the silent mis-read PBI-90\'s notes predicted for a hand-rolled subset, and the library does it too unless told not to. A config using anchors would produce handlers for nothing, with no error anywhere. `merge: true` and `version: "1.1"` both fix it; the flag is chosen because it says what it does.',
-      "efm's `languages` ARE KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`, AND NO TRANSLATION TABLE IS INVENTED. The key is matched against `languageId` as the client sent it, plus efm's `=` any-language key, and where they disagree the author's own config is where it is repaired -- a table tsudoi wrote would be tsudoi deciding what an editor meant. The README is the authority on it.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 87,
