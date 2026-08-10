@@ -115,6 +115,47 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-97",
+      story: {
+        role: "config author",
+        capability:
+          "offer the words already in the buffer around the cursor as completions, by installing a package rather than by writing a scanner",
+        benefit:
+          "the completion every editor has had for thirty years works in a tsudoi server for any language, including one with no analysis at all",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "THE WORDS COME FROM A BOUNDED WINDOW AROUND THE CURSOR AND NOT FROM THE DOCUMENT. `maxSize` lines above and below, clamped to the buffer, which is what makes this cheap enough to run on every keystroke in a file of any size. A handler that scanned the whole buffer would answer the same thing for a small file and would be the wrong shape for a large one.",
+          verification:
+            "An arm driving a document long enough for the window to EXCLUDE something, asserting a word outside it is absent and a word inside it is present. A window equal to the document grades nothing.",
+        },
+        {
+          criterion:
+            "THE THREE FILTERS ARE THE REFERENCE'S AND EACH IS GRADED SEPARATELY: a line at or over the column bound is SKIPPED WHOLE, a match shorter than `minLength` is dropped, and duplicates collapse to the FIRST SEEN. Read from ddc-source-around's own source rather than its README, which documents a `maxSize` default the code does not use.",
+          verification:
+            "One arm per filter, each over a fixture that only that filter moves. The order arm needs a word repeated LATER as well as earlier, or first-seen and last-seen are the same list.",
+        },
+        {
+          criterion:
+            "WHAT DECIDES A WORD IS THE AUTHOR'S, WITH A DEFAULT THAT IS NOT ASCII-ONLY. ddc takes vim's `iskeyword`; tsudoi has no such thing, so the pattern is an option and its default must not silently drop the buffer's own language.",
+          verification:
+            "An arm over a buffer whose words are not ASCII, under the default pattern.",
+        },
+        {
+          criterion:
+            "IT IS A WORKSPACE MEMBER SHAPED LIKE THE OTHERS, and everything a fifth member fires is answered per site rather than discovered one red at a time.",
+          verification:
+            "The Definition of Done, with the build order, both per-member tables and `readmeCoverage` accounted for.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "MODELLED ON ddc-source-around AND READ FROM ITS SOURCE: `COLUMNS_MAX = 200` skips a line at or over that length, `minLength` defaults to 2, `maxSize` defaults to 200 IN THE CODE where the README says 500, and `Array.from(new Set(...))` is what makes the order first-seen. The reference also carries its own unit tests, which is where those readings come from.",
+        "WHAT DOES NOT TRANSLATE, NAMED SO IT IS NOT MISSED: ddc FILTERS candidates itself, where LSP leaves that to the CLIENT -- so this package offers the window's words and lets the editor narrow them, and the word under the cursor is among them rather than being excluded.",
+      ],
+    },
+    {
       id: "PBI-91",
       story: {
         role: "editor user",
@@ -657,7 +698,18 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 91,
+    pbi_id: "PBI-97",
+    goal: "`packages/tsudoi-completion-around` offers the words already around the cursor, modelled on ddc-source-around and faithful to what its SOURCE does rather than to what its README says.",
+    status: "in_progress",
+    subtasks: [],
+    impediments: [],
+    decisions: [
+      "THE REFERENCE'S README AND ITS CODE DISAGREE, AND THE CODE WINS. `maxSize` is documented as 500 and defaults to 200 in `params()`. Taking the README's number would make this package's own default a claim nobody could check against the thing it was modelled on.",
+      "IT DEPENDS ON NOTHING -- not a package, not a `node:` builtin. That is what sprint 88 measured the cost of: bun placed the efm adapter's own `yaml` in the member rather than hoisting, and this repository's staging arms borrow node_modules ENTRY BY ENTRY FROM THE ROOT, so a member's own runtime dependency living only under packages/ fails every staged build. A member with no dependency pays none of that.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 87,
