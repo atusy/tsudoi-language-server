@@ -67,11 +67,15 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
    * code the lifecycle already decides for an `exit` that arrived without a
    * `shutdown`.
    *
-   * THE CODE IS NOT INVENTED HERE. `lifecycle.exitCode()` is 0 once a `shutdown`
-   * has been seen and 1 otherwise, which is the protocol's own rule for `exit` --
-   * and a client that vanished mid-session is exactly the ungraceful case that
-   * rule is about. A second numbering would make tsudoi answer two ways for one
-   * situation.
+   * ZERO, AND `lifecycle.exitCode()` IS THE WRONG ANSWER HERE -- WRITTEN THAT WAY
+   * FIRST AND CAUGHT BY AN ARM THAT ALREADY PINNED IT. That function answers 0
+   * once a `shutdown` has been seen and 1 otherwise, which is the protocol's rule
+   * for the `exit` NOTIFICATION: it grades whether a client that asked to exit
+   * did so politely. A CLIENT THAT VANISHED NEVER SENT `exit` AT ALL, so that
+   * rule has nothing to say about it, and reusing it reports the client's absence
+   * as tsudoi's failure. test/editor-death.test.ts states the contract in its own
+   * name -- EOF ends the session at code 0 -- and the parent going is the same
+   * event one door along.
    *
    * `process.exit` AND NOT `exitCode`, WHICH IS THE OPPOSITE OF THE HANDSHAKE
    * FAILURE'S CHOICE ONE SCREEN DOWN, and the difference is who is still
@@ -82,7 +86,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   function endSession(why: string): never {
     editorWatch.stop();
     process.stderr.write(`tsudoi: exiting because ${why}\n`);
-    return process.exit(lifecycle.exitCode());
+    return process.exit(0);
   }
 
   // EVERY notification tsudoi answers is declared here, and each one DECIDES
