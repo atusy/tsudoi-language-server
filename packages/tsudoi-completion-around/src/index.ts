@@ -12,6 +12,6 @@
  * selection -- can have them without reimplementing the filters. There is
  * nothing left over to keep private.
  */
-export { completionAround } from "./completion.ts";
-export type { AroundOptions } from "./around.ts";
+export { aroundCompletion } from "./completion.ts";
+export type { AroundCompletionOptions } from "./around.ts";
 export { windowAround, wordsIn } from "./around.ts";

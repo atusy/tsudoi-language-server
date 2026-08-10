@@ -13,11 +13,11 @@ and the code wins.
 
 ```ts
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
-import { completionAround } from "@atusy/tsudoi-completion-around";
+import { aroundCompletion } from "@atusy/tsudoi-completion-around";
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
-    methods: { "textDocument/completion": completionAround() },
+    methods: { "textDocument/completion": aroundCompletion },
   });
 
 export default config;
@@ -40,6 +40,11 @@ Every distinct word in a window of lines around the cursor, in the order each wa
 | `minLength`   | `2`                  | the shortest match worth offering                                |
 | `maxColumns`  | `200`                | a line at or over this length is skipped **whole**               |
 | `wordPattern` | `/[\p{L}\p{N}_]+/gu` | what counts as a word                                            |
+
+Options are the **third argument**, so the handler goes in as it stands when the defaults suit you
+and behind one arrow when they do not:
+`(context, params) => aroundCompletion(context, params, { maxSize: 50 })`. That is the same shape
+`pathCompletion` has in the sibling package, so installing both means learning one convention.
 
 `wordsIn` and `windowAround` are exported too, so a handler of your own can take the words with a
 different window — the whole buffer, one function, a selection — without reimplementing the

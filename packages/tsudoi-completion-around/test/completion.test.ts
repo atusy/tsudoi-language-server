@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { completionAround } from "../src/completion.ts";
+import { aroundCompletion } from "../src/completion.ts";
 
 const uri = "file:///workspace/a.txt";
 
@@ -44,13 +44,14 @@ function contextFor(text: string): RequestContext {
 async function offered(
   text: string,
   line: number,
-  options: Parameters<typeof completionAround>[0] = {},
+  options: Parameters<typeof aroundCompletion>[2] = {},
 ): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
-  for await (const batch of completionAround(options)(contextFor(text), {
-    textDocument: { uri },
-    position: { line, character: 0 },
-  })) {
+  for await (const batch of aroundCompletion(
+    contextFor(text),
+    { textDocument: { uri }, position: { line, character: 0 } },
+    options,
+  )) {
     items.push(...batch);
   }
   return items;
@@ -107,7 +108,7 @@ describe("completing from around the cursor", () => {
    */
   test("a document the store does not hold yields no batch at all", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of completionAround()(contextFor("alpha"), {
+    for await (const batch of aroundCompletion(contextFor("alpha"), {
       textDocument: { uri: "file:///workspace/never-opened.txt" },
       position: { line: 0, character: 0 },
     })) {
@@ -125,10 +126,11 @@ describe("completing from around the cursor", () => {
    */
   test("a window whose words are all too short yields no batch", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of completionAround({ minLength: 5 })(contextFor("a b c"), {
-      textDocument: { uri },
-      position: { line: 0, character: 0 },
-    })) {
+    for await (const batch of aroundCompletion(
+      contextFor("a b c"),
+      { textDocument: { uri }, position: { line: 0, character: 0 } },
+      { minLength: 5 },
+    )) {
       batches.push(batch);
     }
 
@@ -136,14 +138,14 @@ describe("completing from around the cursor", () => {
   });
 
   /**
-   * ONE BATCH AND NOT ONE PER LINE, which is the ruling at `completionAround`
+   * ONE BATCH AND NOT ONE PER LINE, which is the ruling at `aroundCompletion`
    * made checkable: this answer is read out of a buffer already in memory, so
    * there is no moment at which a partial list is more useful than none, and a
    * yield per line would spend a `$/progress` per line to say the same thing.
    */
   test("the whole answer arrives in one batch", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of completionAround()(contextFor("alpha beta\ngamma delta"), {
+    for await (const batch of aroundCompletion(contextFor("alpha beta\ngamma delta"), {
       textDocument: { uri },
       position: { line: 0, character: 0 },
     })) {
