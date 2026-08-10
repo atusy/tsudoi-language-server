@@ -115,47 +115,6 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
-      id: "PBI-97",
-      story: {
-        role: "config author",
-        capability:
-          "offer the words already in the buffer around the cursor as completions, by installing a package rather than by writing a scanner",
-        benefit:
-          "the completion every editor has had for thirty years works in a tsudoi server for any language, including one with no analysis at all",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "THE WORDS COME FROM A BOUNDED WINDOW AROUND THE CURSOR AND NOT FROM THE DOCUMENT. `maxSize` lines above and below, clamped to the buffer, which is what makes this cheap enough to run on every keystroke in a file of any size. A handler that scanned the whole buffer would answer the same thing for a small file and would be the wrong shape for a large one.",
-          verification:
-            "An arm driving a document long enough for the window to EXCLUDE something, asserting a word outside it is absent and a word inside it is present. A window equal to the document grades nothing.",
-        },
-        {
-          criterion:
-            "THE THREE FILTERS ARE THE REFERENCE'S AND EACH IS GRADED SEPARATELY: a line at or over the column bound is SKIPPED WHOLE, a match shorter than `minLength` is dropped, and duplicates collapse to the FIRST SEEN. Read from ddc-source-around's own source rather than its README, which documents a `maxSize` default the code does not use.",
-          verification:
-            "One arm per filter, each over a fixture that only that filter moves. The order arm needs a word repeated LATER as well as earlier, or first-seen and last-seen are the same list.",
-        },
-        {
-          criterion:
-            "WHAT DECIDES A WORD IS THE AUTHOR'S, WITH A DEFAULT THAT IS NOT ASCII-ONLY. ddc takes vim's `iskeyword`; tsudoi has no such thing, so the pattern is an option and its default must not silently drop the buffer's own language.",
-          verification:
-            "An arm over a buffer whose words are not ASCII, under the default pattern.",
-        },
-        {
-          criterion:
-            "IT IS A WORKSPACE MEMBER SHAPED LIKE THE OTHERS, and everything a fifth member fires is answered per site rather than discovered one red at a time.",
-          verification:
-            "The Definition of Done, with the build order, both per-member tables and `readmeCoverage` accounted for.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MODELLED ON ddc-source-around AND READ FROM ITS SOURCE: `COLUMNS_MAX = 200` skips a line at or over that length, `minLength` defaults to 2, `maxSize` defaults to 200 IN THE CODE where the README says 500, and `Array.from(new Set(...))` is what makes the order first-seen. The reference also carries its own unit tests, which is where those readings come from.",
-        "WHAT DOES NOT TRANSLATE, NAMED SO IT IS NOT MISSED: ddc FILTERS candidates itself, where LSP leaves that to the CLIENT -- so this package offers the window's words and lets the editor narrow them, and the word under the cursor is among them rather than being excluded.",
-      ],
-    },
-    {
       id: "PBI-91",
       story: {
         role: "editor user",
@@ -304,6 +263,7 @@ const scrum: ScrumDashboard = {
       status: "draft",
       notes: [
         "FOUND BY AN INDEPENDENT REVIEWER AGAINST SPRINT 82'S INCREMENT AND PRE-EXISTING TO IT, which is why it is a backlog item rather than that sprint's repair. THE FIRST STATEMENT OF THIS WAS FALSE AND A REVIEWER TOOK IT AGAINST THE DIFF: it said the range touches ONE line of that function's file region, an import, which is what a grep for four control-flow words returned rather than what the diff says -- `itemsFrom`'s ITEM CONSTRUCTION changed on several lines, this sprint's whole subject. WHAT IS ACTUALLY UNCHANGED, AND IT IS THE PART THAT CARRIES THE CLAIM: the `opendir`, the iteration and the yield are byte-identical to base 2ed9d43, and on the input that exhibits this -- a fragment matching nothing -- the changed construction is never reached at all.",
+        "AND SPRINT 91 RETRACTED THE SLOWNESS HALF OUTRIGHT: the suite ran 1146 tests in 190s, over MORE tests than either reading below, so `five times slower between two greens` was TRANSIENT LOAD and is withdrawn. THE 25s CEILING IS NOT WITHDRAWN -- it still refuses arms on a busy machine, which is what remains of this item.",
         "SPRINT 90 SHARPENED THIS AND PARTLY REFUTED IT. With the five-day orphan killed, this machine's load fell from 15.7 to about 2.0 and the registry came back with only its two long-standing refusals where it had been throwing three to eight -- SO PART OF WHAT WAS FILED HERE WAS PBI-96 ALL ALONG. What survives is worse than a budget, and is the measurement this item now carries: THE SUITE TAKES 1328s WHERE SPRINT 88'S CLOSE TOOK 270s, and neither the increment (the three files added since were timed at about 24s together) nor the orphan (alive during that 270s run too) explains it. Something made this suite five times slower between two green readings and nothing here knows what.",
         "THE MECHANISM, AND THE PART THAT MAKES IT MORE THAN A MISSING CHECK. `itemsFrom` never reads `context.signal`; cancellation closes the OUTER generator, and a generator's `return()` cannot take effect while an outstanding `next()` is still running. A batch is yielded only when it FILLS, so a fragment matching nothing in a huge directory reaches no yield point at all: the scan runs to EOF, holding the handle, after the client has already been answered -32800 through tsudoi's own race. The user sees a prompt cancellation and the process goes on working.",
         "WHY IT IS NOT A ONE-LINE FIX, WHICH IS WHY THIS IS A DRAFT RATHER THAN A TASK -- and it said `REFINED` in an item whose own criterion says it is not. Abandoning a half-read directory LEAKS ITS DESCRIPTOR ON ONE OF THE TWO RUNTIMES -- the resolve half already carries that finding at its own cancellation seam and declines to honour a late cancellation for it. So the release strategy is the item, not the signal read: a signal-aware drain that stops classifying and batching while still exhausting or explicitly closing the iterator.",
@@ -312,6 +272,26 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 91,
+      pbi_id: "PBI-97",
+      goal: "`packages/tsudoi-completion-around` offers the words already around the cursor, modelled on ddc-source-around and faithful to what its SOURCE does rather than to what its README says.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 30effd8, and the ONLY commit after it is the one carrying this sentence. Definition of Done PASSED, all five checks exit 0: 1146 pass / 0 fail over 83 files, 190.11s, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts.",
+        "AND 190s IS THE READING THAT PARTLY RETRACTS SPRINT 90'S. That sprint recorded the suite at 1328s against sprint 88's 270s and filed `something made this suite five times slower between two greens` into PBI-93. It is now 190s over MORE tests than either -- so the slowdown was TRANSIENT LOAD and not structural, and the sentence in PBI-93 is corrected there rather than left to be read as current. What is NOT retracted is the 25s ceiling itself, which still refuses arms on a busy machine.",
+        "THE STAKEHOLDER RULED THE SHAPE MID-SPRINT AND THE FIRST SPELLING WAS REFUSED. It was `completionAround(options)` returning a handler; the sibling package has `pathCompletion(context, params, options)`. Neither the NAME nor the SHAPE agreed, and an author who installs both would be called two different ways for no reason either could give -- the options argument doing exactly what the closure did. IT IS NOW `aroundCompletion(context, params, options = {})`, and BOTH consumer spellings were type-checked from a throwaway that reaches the packages BY BARE SPECIFIER, which is the route a stranger takes and the one an in-repo import cannot stand for.",
+        "AND MATCHING THE SIBLING CAUGHT A DEFECT THE RENAME WAS NOT ABOUT: it splits lines on `\\r?\\n` where this split on `\\n`. A CRLF document otherwise leaves a carriage return at the end of every line -- unmatched by the word pattern, and counted toward the 200-column bound, so a long line in a CRLF file was skipped one character early.",
+        "THE COMPLETENESS RULING WAS OWED AND NOT WRITTEN, AND AN ARM THAT ALREADY EXISTED ASKED FOR IT. This repository requires every completion handler to state whether its candidate set is FINAL, because the specification reads a supplied `CompletionItem[]` as `do not re-query, filter what you were given` whether or not anyone chose that. THIS ONE IS COMPLETE AND THE REASON IS STRUCTURAL RATHER THAN A PREFERENCE: the handler never looks at what was typed, so a narrower prefix cannot produce a candidate the answer did not already carry. WHAT WOULD OVERTURN IT IS AN EDIT AND NOT A KEYSTROKE -- typing changes the buffer's words, and `didChange` plus a fresh request is how every source is refreshed.",
+        "AND `around.ts` JOINED THE NAMES-WITHOUT-SERVING LIST, which was a list of ONE and whose comment said so. It holds the word scanner and names the method only to say which handler calls it, so a ruling there would be a sentence about a return value that does not exist in that file. The comment now says why its two members are prose FOR DIFFERENT REASONS -- the fixture's subject is the ABSENCE of a handler, this one's is a scanner one file along -- so neither stands for the other.",
+        "WHAT A FIFTH MEMBER FIRED, AND IT IS THE SAME LIST SPRINT 88 ENUMERATED PLUS ONE NOBODY HAD MET: the build order, both per-member tables, `readmeCoverage`, the root `devDependencies` and the root README's package table. THE NEW ONE IS THE COMPLETENESS ENUMERATION, which is not about MEMBERSHIP at all -- it scans every handler directory for the method's NAME, so a package is caught by what its prose says rather than by being a package.",
+        "AND A ROOT README SENTENCE HAD BEEN STALE SINCE SPRINT 88, found by this member rather than by the sweep that should have caught it: it enumerated the handler packages BY PATH and named two of what were already four. Rewritten to name one as an example and point at the table, which is the shape that does not stale with the next member.",
+        "THE REFERENCE'S README AND ITS CODE DISAGREE, AND THE CODE WINS. `maxSize` is documented as 500 and defaults to 200 in `params()`. Taking the README's number would make this package's own default a claim nobody could check against the thing it was modelled on.",
+        "IT DEPENDS ON NOTHING -- not a package, not a `node:` builtin. That is what sprint 88 measured the cost of: bun placed the efm adapter's own `yaml` in the member rather than hoisting, and this repository's staging arms borrow node_modules ENTRY BY ENTRY FROM THE ROOT, so a member's own runtime dependency living only under packages/ fails every staged build. A member with no dependency pays none of that.",
+      ],
+    },
     {
       number: 90,
       pbi_id: "PBI-96",
@@ -698,18 +678,7 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 91,
-    pbi_id: "PBI-97",
-    goal: "`packages/tsudoi-completion-around` offers the words already around the cursor, modelled on ddc-source-around and faithful to what its SOURCE does rather than to what its README says.",
-    status: "in_progress",
-    subtasks: [],
-    impediments: [],
-    decisions: [
-      "THE REFERENCE'S README AND ITS CODE DISAGREE, AND THE CODE WINS. `maxSize` is documented as 500 and defaults to 200 in `params()`. Taking the README's number would make this package's own default a claim nobody could check against the thing it was modelled on.",
-      "IT DEPENDS ON NOTHING -- not a package, not a `node:` builtin. That is what sprint 88 measured the cost of: bun placed the efm adapter's own `yaml` in the member rather than hoisting, and this repository's staging arms borrow node_modules ENTRY BY ENTRY FROM THE ROOT, so a member's own runtime dependency living only under packages/ fails every staged build. A member with no dependency pays none of that.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
     {
       sprint: 87,
