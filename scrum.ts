@@ -158,6 +158,29 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
+      id: "PBI-96",
+      story: {
+        role: "editor user",
+        capability:
+          "close my editor and have the language server it started go with it, rather than leave one spinning a core until I next reboot",
+        benefit:
+          "a machine that has run this server for a week is not slower for it, and the suite that spawns servers is not competing with its own leftovers",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. What the server does when its stdin goes away is the item, and whether the spin is tsudoi's loop or the reader's is not yet known.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FOUND ON THE STAKEHOLDER'S OWN MACHINE ON 2026-08-11, NOT BY A TEST, AND IT IS A LIVE INSTANCE RATHER THAN A THEORY. `ps` reported a tsudoi server -- `src/cli.ts --config examples/tsudoi.config.ts` -- at pid 26678, state R, **99.4% CPU, FIVE DAYS ELAPSED**, with PPID 1: its parent is gone, so nothing was talking to it and it went on burning a core anyway. NINETEEN such servers were on that machine at once, aged from nineteen seconds to five days, TOTALLING 106% CPU -- so one is wedged and the rest are merely leaked.",
+        "IT IS THE PRODUCT AND NOT THE SUITE, WHICH IS WHAT MAKES IT A PBI. The suite's own `dispose` kills what it spawns, and a test that TIMES OUT may leave one -- that half is the suite's. But a server whose parent has died should not be RUNNABLE at all: an orphan reading a closed stdin has nothing left to serve, and `test/editor-death.test.ts` exists because that is already known to be a hazard. WHAT NO ARM HERE COVERS is the state five days later.",
+        "AND IT EXPLAINS A READING THIS PROJECT HAS BEEN BLAMING ON PBI-93. Sprint 89's Definition of Done failed on FOUR arms, all at the 25s ceiling and a DIFFERENT four each run, over a suite that took 1397s where sprint 88's took 270s. A permanently missing core is not the whole of that, and it is the first cause found that is a DEFECT rather than a budget.",
+      ],
+    },
+    {
       id: "PBI-94",
       story: {
         role: "config author",
