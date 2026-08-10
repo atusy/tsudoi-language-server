@@ -90,8 +90,10 @@ for (const runtime of runtimes) {
         expect(session.stderr).toContain(`${invalidTokenTrace} ${maxInRange + 1};`);
 
         for (const token of outOfRange.slice(1)) {
-          // Once per SESSION, so the later refusals are silent by design and
-          // the trace above is a claim about the first one only.
+          // Once per METHOD per session, so the later refusals are silent by
+          // design and the trace above is a claim about the first one only.
+          // Every refusal in this arm is a completion's; that the count is per
+          // METHOD rather than per session is the arm at the end of this file.
           expect(session.stderr).not.toContain(`${invalidTokenTrace} ${token};`);
         }
 
@@ -116,6 +118,66 @@ for (const runtime of runtimes) {
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(0);
         expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * ONE SESSION, BOTH STREAM-DRIVEN ROWS, AND THE DIAGNOSTIC BELONGS TO
+     * WHICHEVER ROW EARNED IT. This is the arm the sprint that made a SECOND
+     * stream-driven row owed and did not write: both defects it guards shipped,
+     * were found by review rather than by anything here, and the suite was green
+     * across both.
+     *
+     * WHAT IT REFUSES, AND NEITHER IS VISIBLE FROM ONE ROW ALONE. A single
+     * session-wide flag: the first refusal silences the OTHER row for the rest of
+     * the session, so an author who saw the line for completion never learns
+     * their code actions were aggregated too. And a hard-coded method in the
+     * sentence: the line then tells a client that refused a code action's token
+     * that its COMPLETION was aggregated.
+     *
+     * THE SECOND REQUEST PER ROW IS WHAT KEEPS `once per method` FROM MEANING
+     * `once per request`: without it, a tsudoi that reported EVERY refusal
+     * satisfies every assertion above it.
+     */
+    // THE ONLY ARM IN THIS FILE WHOSE NAME CARRIES ITS RUNTIME, and the reason
+    // is that it is the only one the perturbation registry points at. bun's
+    // report keys an arm by its `test()` string alone -- the `describe` goes to
+    // `classname` -- so two runtimes sharing a name collapse to one result and a
+    // record would grade whichever was written last. The three arms above are
+    // graded by no record, so the collapse costs them nothing.
+    test(`a refused token is reported once for each stream-driven row, naming that row (${runtime.name})`, async () => {
+      const session = LspSession.start(runtime, fixture("all-methods.ts"));
+      try {
+        await session.request("initialize", initializeParams);
+        session.notify("initialized", {});
+
+        const refused = { bad: "not a ProgressToken" };
+        const codeActionWithToken = {
+          textDocument: { uri },
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+          context: { diagnostics: [] },
+          partialResultToken: refused,
+        };
+
+        for (const _attempt of [0, 1]) {
+          await session.request<unknown>("textDocument/completion", completionWithToken(refused));
+          await session.request<unknown>("textDocument/codeAction", codeActionWithToken);
+        }
+
+        const lines = session.stderr
+          .split("\n")
+          .filter((line) => line.startsWith(invalidTokenTrace));
+
+        expect(lines).toHaveLength(2);
+        expect(lines.filter((line) => line.includes("this textDocument/completion"))).toHaveLength(
+          1,
+        );
+        expect(lines.filter((line) => line.includes("this textDocument/codeAction"))).toHaveLength(
+          1,
+        );
+        expect(session.progressCount).toBe(0);
       } finally {
         session.dispose();
       }

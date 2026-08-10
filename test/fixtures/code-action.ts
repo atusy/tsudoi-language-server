@@ -7,11 +7,12 @@ import type {
 
 /**
  * ONE OF EACH MEMBER OF THE RESULT'S UNION, WHICH IS THE WHOLE REASON THIS
- * FIXTURE IS NOT A ONE-ITEM ONE. `(Command | CodeAction)[]` is two shapes
- * sharing a `title` and nothing else that matters, so a list of CodeActions
- * alone cannot tell tsudoi handing an author's answer through from tsudoi
- * rebuilding it out of the members it recognises -- and the `Command` member is
- * the one a rebuild would drop, since it carries no field the other has.
+ * FIXTURE IS NOT A ONE-ITEM ONE. `(Command | CodeAction)[]` is two shapes that
+ * OVERLAP RATHER THAN DIVERGE -- both carry a `title` and a `command`, the
+ * `Command`'s a string where the `CodeAction`'s is a nested `Command` -- so a
+ * tsudoi normalising the answer onto the members it recognised has a plausible
+ * wrong reading available to it, and a list of CodeActions alone could not tell
+ * that from a faithful passthrough.
  *
  * THE CodeAction CARRIES A WORKSPACE EDIT AND THE Command CARRIES ARGUMENTS,
  * for the reason test/fixtures/execute-command-echo.ts gives at its own: a flat
@@ -38,11 +39,11 @@ export const codeActionAnswer: (Command | CodeAction)[] = [
   },
   { title: "コマンドを実行する", command: "tsudoi.試験.コマンド", arguments: [{ at: 3 }, 5] },
   // A SECOND ENTRY SHARING THE FIRST COMMAND'S TITLE, AND IT IS WHAT MAKES THE
-  // WORD `collapsed` GRADEABLE. With every entry distinct, no deduplication --
-  // by title, by command name or by whole value -- can move this list, so an
-  // arm claiming a collapse would redden reddens for nothing. Two entries that
-  // differ only in their arguments is also the realistic shape: one action per
-  // target, offered under one name.
+  // WORD `collapsed` GRADEABLE. With every entry distinct, a collapse BY TITLE
+  // or BY COMMAND NAME moves nothing, so an arm claiming one would redden was
+  // green about nothing. NOT BY WHOLE VALUE, which these two do not grade and
+  // no entry here does: they differ in their arguments, deliberately, that
+  // being the realistic shape -- one action per target, offered under one name.
   { title: "コマンドを実行する", command: "tsudoi.試験.コマンド", arguments: [{ at: 9 }] },
 ];
 

@@ -414,12 +414,17 @@ export interface MethodMap {
    * say yields nothing and is answered `null` -- is stated once at
    * `MethodMap["textDocument/completion"]` and is not restated per row.
    *
-   * THE ONE OBLIGATION THIS ROW PUTS ON YOU THAT NOTHING HERE ENFORCES: a client
-   * announces whether it can read CODE ACTION LITERALS, and one that has not may
-   * be sent `Command` literals ONLY. Read
+   * WHAT YOU YIELD IS CHECKED FOR BEING AN ARRAY AND FOR NOTHING ELSE, so every
+   * rule about what a code action may CONTAIN is yours to keep. The one most
+   * likely to catch you is a CAPABILITY: a client announces whether it can read
+   * code action LITERALS, and one that has not may be sent `Command` literals
+   * only -- read
    * `clientCapabilities.textDocument?.codeAction?.codeActionLiteralSupport`
-   * before yielding a `CodeAction`; tsudoi passes what you yield through
-   * unexamined and will not narrow it for you.
+   * before yielding a `CodeAction`. IT IS NOT THE ONLY ONE, and this list is not
+   * offered as complete: the protocol also requires a `CodeAction` to carry an
+   * `edit`, a `command`, or both, where this type makes each optional, and
+   * `disabled`, `isPreferred` and the richer `WorkspaceEdit` forms are each
+   * gated on a capability of their own.
    *
    * `[]` IS AVAILABLE AND MEANS SOMETHING ELSE -- `I looked and there is nothing
    * you can do here`, which a client may render as a menu with no entries, where

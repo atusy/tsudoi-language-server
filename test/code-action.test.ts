@@ -93,14 +93,39 @@ function codeActionParams(token?: string): unknown {
 /** A client that wants partial results names a token; one that does not omits it. */
 const partialResultToken = "code-action-partial-1";
 
+/**
+ * A CLIENT THAT ANNOUNCED IT CAN READ CODE ACTION LITERALS, which the shared
+ * `initializeParams` does not: it sends `capabilities: {}`, and LSP permits a
+ * server to send only `Command` literals to such a client. The fixture yields a
+ * `CodeAction`, so driving these arms with the bare params would make this file
+ * a worked example of the one obligation the README hands the author -- a
+ * demonstration of the mistake, in the suite that documents it.
+ *
+ * NO ARM DRIVES THE OTHER DIRECTION, and that is a statement about tsudoi rather
+ * than an omission: tsudoi does not read this capability and does not narrow
+ * what a handler yields, so an arm with the capability withheld would assert what
+ * the FIXTURE chose to yield and nothing about tsudoi at all.
+ */
+const readsCodeActionLiterals = {
+  ...initializeParams,
+  capabilities: {
+    textDocument: {
+      codeAction: { codeActionLiteralSupport: { codeActionKind: { valueSet: [] } } },
+    },
+  },
+};
+
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     /**
      * WHAT THE AUTHOR WROTE IS WHAT THE CLIENT RECEIVES, ASSERTED WHOLE AND OVER
      * BOTH MEMBERS OF THE UNION. tsudoi neither validates a code action nor
-     * reshapes one, so a `Command` -- which shares no field with a `CodeAction`
-     * beyond `title` -- is what a tsudoi rebuilding the list out of the members
-     * it recognised would drop.
+     * reshapes one, and the two shapes overlap in a way that makes a rebuild
+     * plausible rather than obvious: both carry a `title` AND a `command`, the
+     * `Command`'s being a string where the `CodeAction`'s is a nested `Command`.
+     * A tsudoi normalising the list onto the members it recognised would land on
+     * one of those readings, and the whole-value comparison is what refuses
+     * both.
      *
      * EXACT EQUALITY ON THE WHOLE LIST rather than a read of one title: an
      * implementation that reordered, that collapsed the two entries sharing a
@@ -120,7 +145,7 @@ for (const runtime of runtimes) {
       async () => {
         const session = LspSession.start(runtime, codeActionFixture);
         try {
-          await session.request("initialize", initializeParams);
+          await session.request("initialize", readsCodeActionLiterals);
           session.notify("initialized", {});
 
           const answered = await session.request<(Command | CodeAction)[] | null>(
@@ -159,7 +184,7 @@ for (const runtime of runtimes) {
       async () => {
         const session = LspSession.start(runtime, codeActionFixture);
         try {
-          await session.request("initialize", initializeParams);
+          await session.request("initialize", readsCodeActionLiterals);
           session.notify("initialized", {});
 
           const answered = await session.request<unknown>(

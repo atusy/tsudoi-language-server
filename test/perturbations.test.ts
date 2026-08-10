@@ -1089,6 +1089,35 @@ const records: readonly PerturbationRecord[] = [
       "a config supplying a codeAction handler advertises the provider and no kinds (deno)",
     ],
   },
+  {
+    // ONE SESSION-WIDE FLAG WHERE THE COUNT IS PER METHOD, which is the spelling
+    // this file's own subject shipped in and which nothing here caught: the
+    // first refused token on ANY stream-driven row silences every other row for
+    // the session, so an author who saw the line once never learns their other
+    // handler's items were aggregated too. INVISIBLE FROM ONE ROW ALONE, and
+    // there was only one row until the sprint that wrote this.
+    //
+    // THE ARM IT NAMES IS THE ONE THAT DID NOT EXIST WHEN THE DEFECT SHIPPED.
+    // Review found it, not the suite; the record is what stops the next reader
+    // deleting the arm as a duplicate of the completion-only ones beside it.
+    arm: {
+      file: "test/progress-token-range.test.ts",
+      name: "a refused token is reported once for each stream-driven row, naming that row (bun)",
+    },
+    // THE WEAKENING KEEPS THE SET AND ASKS IT THE SESSION-WIDE QUESTION, which
+    // is what makes it the adjacent reading rather than a rewrite: the container
+    // is per method and the GUARD is not, so the type says one thing and the
+    // behaviour the other.
+    weakening: {
+      file: "packages/tsudoi-language-server/src/methods.ts",
+      from: "    if (invalidTokenReported.has(method)) {",
+      to: "    if (invalidTokenReported.size > 0) {",
+    },
+    redAt: "expect(lines).toHaveLength(2);",
+    alsoReddens: [
+      "a refused token is reported once for each stream-driven row, naming that row (deno)",
+    ],
+  },
 ];
 
 /**

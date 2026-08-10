@@ -471,11 +471,13 @@ did not ask to stream.
 
 What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi checks that the batch is
 an array -- yield anything else and the request fails -- and looks at nothing inside it, so what
-your editor receives is what you wrote. **Which leaves you one obligation tsudoi does not
-enforce**: a client announces whether it can read code action _literals_, and one that has not may
-be sent `Command` literals only. Read
+your editor receives is what you wrote. **Which leaves every rule about what an action may contain
+to you.** The one most likely to catch you is a capability: a client announces whether it can read
+code action _literals_, and one that has not may be sent `Command` literals only, so read
 `context.tsudoi.clientCapabilities.textDocument?.codeAction?.codeActionLiteralSupport` before you
-yield a `CodeAction`.
+yield a `CodeAction`. It is not the only one -- the protocol wants a `CodeAction` to carry an
+`edit`, a `command`, or both, where the type makes each optional, and `disabled`, `isPreferred`
+and the richer `WorkspaceEdit` forms are each gated on a capability of their own.
 
 A `CodeAction` carrying an `edit` is your editor's to apply. One carrying a `command` comes back
 to you as the `workspace/executeCommand` above **only once you have declared that handler and
@@ -491,6 +493,12 @@ request -- which, for completion, it does on every keystroke that supersedes the
 handlers ARE async generators, so the body outlives the first batch it yields;
 tsudoi **closes the generator** then, so the cleanup written there happens. One drive runs both,
 so this is the same behaviour rather than two -- though what the suite exercises is completion.
+
+**Closing is requested, not imposed**, and the difference is one your handler controls. If the
+abandonment arrives while tsudoi is waiting on a batch from you, the close queues behind that
+wait -- the language gives a generator's `return()` no way to interrupt a pull already running --
+so your `finally` does not begin until the batch you were producing settles. A handler that
+ignores `context.signal` and awaits something that never settles never reaches its own cleanup.
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
 something which never settles never finishes, and no server can change that; the request is
