@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ErrorCodes, type InitializeResult } from "vscode-languageserver-protocol";
+import { ErrorCodes, type InitializeResult, MessageType } from "vscode-languageserver-protocol";
 import { awaitedServerName } from "./fixtures/initialize-async.ts";
 import { entryCountKey } from "./fixtures/initialize-counts-entries.ts";
 import {
@@ -9,7 +9,8 @@ import {
 } from "./fixtures/initialize-mutates-prepared-result.ts";
 import { replacedTriggerCharacters } from "./fixtures/initialize-replaces-completion-provider.ts";
 import { handshakeFailure } from "./fixtures/initialize-throws.ts";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { unserializableFailure } from "./fixtures/initialize-unserializable.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
@@ -197,6 +198,73 @@ for (const runtime of runtimes) {
         session.notify("exit", null);
         expect(await session.waitForExit()).toBe(1);
         expect(session.stderr).toBe("");
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * AN ANSWER THAT CANNOT BE SERIALISED IS REPORTED WHERE THE AUTHOR READS IT,
+     * AND THE PROCESS DIES. What it did before the stakeholder ruled on it is at
+     * the serialize check in packages/tsudoi-language-server/src/server.ts.
+     *
+     * THE UNANSWERED HANDSHAKE IS THIS ARM'S DISCRIMINATOR AND NOT A DETAIL. The
+     * behaviour this replaces let vscode-jsonrpc stringify the answer and so
+     * answered -32603, with the phase already moved; a session that both logged
+     * and answered would satisfy every other line here. The exit code cannot
+     * carry it -- a session torn down without a shutdown exits 1 whatever
+     * happened.
+     *
+     * 1 AND NOT MERELY `NOT 0`, which is more than the ruling asked: `not 0` is
+     * satisfied by a session killed by a signal, where `waitForExit` answers
+     * null.
+     */
+    test("a handler whose answer cannot be serialised is logged to the client at Error level, and the process dies unanswered", async () => {
+      const session = LspSession.start(runtime, fixture("initialize-unserializable.ts"));
+      try {
+        // AWAITED, THOUGH NOTHING IT CARRIES IS ASSERTED: the helper parks a
+        // rejecting timer behind every issued request, and an abandoned one
+        // rejects into whichever test is running by then.
+        const handshake = session.issue("initialize", initializeParams);
+        expect(await session.waitForExit()).toBe(1);
+        await handshake.response;
+
+        const [logged, ...beyond] = session.logMessages;
+        expect(logged?.type).toBe(MessageType.Error);
+        expect(logged?.message).toContain("initialize");
+        expect(logged?.message).toContain(unserializableFailure);
+        // ONE MESSAGE AND NOT AT LEAST ONE: a server that logged its way through
+        // every handshake would satisfy the reading above.
+        expect(beyond).toEqual([]);
+        expect(session.arrivals.some((arrival) => arrival.kind === "response")).toBe(false);
+        // THE REPORT LEAVES AS A FRAMED NOTIFICATION, so this says the report
+        // itself did not desync the editor it was written for.
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * THE PAIR, and it is what says the check above is a CHECK rather than a
+     * refusal every handshake meets: a handler whose answer serialises is served,
+     * the session ends the way LSP asks, and the client is told nothing.
+     *
+     * SHUTDOWN-THEN-EXIT AND NOT THE BARE `exit` ITS NEIGHBOURS SEND, because
+     * that is the ending which exits 0 -- with a bare one both halves of this
+     * pair exit 1 and the code discriminates nothing.
+     */
+    test("a handler whose answer serialises is served, ends at 0, and logs nothing to the client", async () => {
+      const session = LspSession.start(runtime, fixture("initialize-identity.ts"));
+      try {
+        const result = await session.request<InitializeResult>("initialize", initializeParams);
+        expect(result.serverInfo?.name).toBe("tsudoi");
+
+        expect(await session.request<null>("shutdown", noParams)).toBeNull();
+        session.notify("exit", null);
+        expect(await session.waitForExit()).toBe(0);
+        expect(session.logMessages).toEqual([]);
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
         session.dispose();

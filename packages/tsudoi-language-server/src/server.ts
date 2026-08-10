@@ -13,6 +13,8 @@ import {
   InitializeRequest,
   type InitializeResult,
   type Logger,
+  LogMessageNotification,
+  MessageType,
   ResponseError,
   type ServerCapabilities,
   ShutdownRequest,
@@ -176,8 +178,8 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
         // writers overwrite unconditionally, so the retry is clean.
         //
         // ALL OF WHICH IS ABOUT A HANDLER THAT THREW, AND ONLY THAT. A handler
-        // that RETURNS badly is answered an error too and is NOT retryable; the
-        // residue is recorded at the return below, where it happens.
+        // that RETURNS an answer nothing can serialise is not answered at all
+        // and has no retry to be offered one: the check below ends the process.
         //
         // AND WHAT AN AUTHOR CANNOT THROW HERE IS RECORDED RATHER THAN FIXED: a
         // conformant `InitializeError { retry }` needs a `ResponseError`, and
@@ -191,6 +193,41 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
         lifecycle.abandonInitialize();
         reportHandlerFailure("initialize", error);
       }
+      // STRINGIFIED HERE BECAUSE PAST THIS FUNCTION NOBODY CAN REPORT IT.
+      // vscode-jsonrpc serialises the answer after `initialize` returns, and
+      // WHAT THAT COST, MEASURED ON BOTH RUNTIMES BEFORE THIS CHECK EXISTED: the
+      // client was answered -32603, stderr stayed EMPTY -- the failure happens
+      // past `reportHandlerFailure`, so this was the one handler failure in the
+      // tree with no `tsudoi: ` line locating it -- and the retry the client
+      // would make was refused -32600 `already initialized`, the phase having
+      // moved by then. A wedged session and nothing anywhere saying why.
+      //
+      // THE STAKEHOLDER RULED THAT UNACCEPTABLE AND THE PRICE ACCEPTABLE: one
+      // stringify of one small object, on the handshake path, once a session.
+      // The failure leaves as a `window/logMessage` because that is where a
+      // config author reads their own server, and the process then ends
+      // ABNORMALLY -- a config whose handshake cannot be sent has no session to
+      // go on with.
+      //
+      // AWAITED BEFORE THE EXIT, and that is the repair rather than tidiness:
+      // `process.exit` takes an unflushed frame with it, so an unawaited
+      // notification is the same silence in a different costume.
+      //
+      // BEFORE THE TRANSITION, AND NOTHING OBSERVES THAT IT IS: the process dies
+      // either way, so the placement buys no behaviour and is not what any arm
+      // reads. What it keeps is the record -- a session that never served must
+      // not have recorded a completed handshake on its way out.
+      try {
+        JSON.stringify(answer);
+      } catch (error) {
+        await connection.sendNotification(LogMessageNotification.type, {
+          type: MessageType.Error,
+          message:
+            `tsudoi: the config's initialize handler returned a value that cannot be ` +
+            `serialised: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        process.exit(1);
+      }
       // AFTER `handshake`, AFTER the contributors, BEFORE this line -- each forced
       // rather than chosen. Earlier than `handshake` the context's `tsudoi` reads
       // the pre-handshake nulls; earlier than the contributors `preparedResult` is
@@ -201,29 +238,10 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // WHAT THE HANDLER RETURNED IS THE RESULT, WITH NO FALLBACK: a handler
       // returning nothing has not returned an InitializeResult, and treating that
       // as `send the prepared one` would make the one mistake unobservable. THE
-      // RESIDUE BESIDE IT: a STRUCTURALLY INVALID result is unchecked at run time,
-      // src/config.ts having validated `typeof === "function"` and nothing more.
-      //
-      // AND A SECOND RESIDUE THAT IS NOT THAT ONE: an UNSERIALIZABLE result --
-      // a BigInt, a cycle, a getter that throws -- is the one failure that
-      // WEDGES THE SESSION. vscode-jsonrpc stringifies AFTER this function
-      // returns, so the phase has already moved: MEASURED on both runtimes, the
-      // client is answered -32603 and the retry it would make is refused -32600
-      // `already initialized`. WHAT IT COSTS THE AUTHOR IS THE SILENCE: the
-      // failure happens past this function, so `reportHandlerFailure` never
-      // runs and stderr stays EMPTY -- measured, beside zero unframed bytes on
-      // stdout -- so this is the one handler failure in the tree with no
-      // `tsudoi: ` line locating it. A structurally invalid
-      // result serializes perfectly, so the residue above does not cover it, and
-      // `abandonInitialize` cannot: the try completed successfully.
-      //
-      // RECORDED AND NOT CAUGHT, WHICH IS A CHOICE AND NOT AN OVERSIGHT. Catching
-      // it means stringifying every handshake answer HERE, before the transition,
-      // and throwing away the result -- one full serialization of every session's
-      // handshake, on every run, to convert a config author's own bug from an
-      // unretryable -32603 into a retryable one. NO ARM EITHER, deliberately: an
-      // arm would pin the wedge as the promised behaviour, and this is the half
-      // whoever catches it should be free to delete.
+      // RESIDUE BESIDE IT, AND THE CHECK ABOVE DOES NOT COVER IT: a STRUCTURALLY
+      // INVALID result is unchecked at run time, src/config.ts having validated
+      // `typeof === "function"` and nothing more -- and such a result SERIALISES
+      // PERFECTLY, so it reaches the client as an answer nobody graded.
       //
       // THE CAST TAKES `readonly` BACK OFF AND DOES NOTHING ELSE. The published
       // return is DeepReadonly so an author MAY return the very object they were

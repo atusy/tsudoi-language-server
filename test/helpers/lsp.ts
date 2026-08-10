@@ -93,6 +93,12 @@ export type Arrival =
       readonly method: string;
     };
 
+/** One `window/logMessage` as it arrived: the level, and the sentence. */
+export interface LoggedMessage {
+  readonly type: number;
+  readonly message: string;
+}
+
 interface ProgressWaiter {
   readonly count: number;
   readonly release: () => void;
@@ -150,6 +156,16 @@ export class LspSession {
   readonly arrivals: Arrival[] = [];
   /** Every message stdout carried, as it was framed. */
   readonly frames: Frame[] = [];
+  /**
+   * Every `window/logMessage`, WITH ITS PARAMS, where `arrivals` keeps the
+   * method name alone.
+   *
+   * A claim about a failure REPORTED TO THE CLIENT is a claim about the LEVEL
+   * and the SENTENCE -- an editor shows an Error and buries an Info -- and a
+   * list of method names cannot tell those apart. Read after the process has
+   * exited, for the reason `unframedStdoutBytes` gives.
+   */
+  readonly logMessages: LoggedMessage[] = [];
   /**
    * Every failure the child's stdin reported, in order. Empty for the whole
    * life of a healthy session, which is what makes a non-empty one evidence.
@@ -608,6 +624,9 @@ export class LspSession {
             waiter.release();
           }
         }
+      }
+      if (message.method === "window/logMessage") {
+        this.logMessages.push(message.params as LoggedMessage);
       }
       // EVERY server-initiated message is recorded and none is dropped, which
       // costs both claims if it stops: with `$/progress` left out, `zero
