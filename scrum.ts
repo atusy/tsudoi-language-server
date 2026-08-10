@@ -517,7 +517,61 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 87,
+    pbi_id: "PBI-89",
+    goal: "`textDocument/codeAction` becomes a SEVENTH ROW of the request table the other six are rows of -- and the FIRST row whose drive is a choice rather than one the protocol already made, so what ships is a RULING WITH ITS REASON AT THE SITE as much as it is a method.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "A NEW test/code-action.test.ts, THREE ARMS ON BOTH RUNTIMES, and the second is what the sprint is graded through. ONE: a fixture config declaring the handler, driven through a real server, and the answer read back WHOLE -- carrying BOTH a `CodeAction` and a `Command`, since the result type is a UNION and an arm reading one member cannot tell tsudoi passing an author's answer through from tsudoi rebuilding it. TWO: the capability read WHOLE off the handshake, `toEqual({ textDocumentSync, workspace, codeActionProvider: true })` -- WHOLE and not `toBeTruthy`, which is the property subtask 2's record needs and which nothing else in this file would give it. THREE: the ABSENCE half against a config declaring no codeAction handler; it adds no discrimination its neighbours lack, and is kept for WHERE IT IS READ, the criterion asking for both directions -- the same reasoning test/execute-command.test.ts already writes at its own absence arm.",
+        implementation:
+          '`MethodMap["textDocument/codeAction"]` in packages/tsudoi-language-server/src/types.ts carrying the drive ruling; `requestEntries["textDocument/codeAction"]` in src/methods.ts with `CodeActionRequest.type` and a contributor writing `codeActionProvider = true`; a fixture; and test/fixtures/all-methods.ts, which FORCES ITSELF -- a method in `MethodMap` and not in that literal is TS2741 naming it. `paramsForAnyMethod` gains the `range` and `context` `CodeActionParams` requires, AND THAT ADDITION IS GRADED BY NOTHING, on that function\'s own docblock: nothing on the wire validates a member it holds, MEASURED there by deleting `command` and finding the file green.',
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "ONE RECORD IN test/perturbations.test.ts, MEASURED against the landed source and not predicted: `codeActionProvider` written as `{ codeActionKinds: [] }` instead of `true`, which must redden the PRESENCE arm at its whole-object equality and leave the ABSENCE arm green. That is criterion 2's discriminator and this row's alone -- `claims no kinds` is the half the contrast with `executeCommandProvider.commands` rests on.",
+        implementation:
+          "The record only. AND THE SECOND RECORD A READER WILL EXPECT IS REFUSED WITH ITS REASON, rather than shipped to make a pair: emptying this row's contributor reddens the SAME arm at the SAME assertion, and what it would grade is the presence check in `contributeCapabilities`, which is one loop over six other rows that six other arms already hold. A record naming this row for it would report a property of the loop under this row's name.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "THE SWEEP, WHICH IS THE WHOLE OF THIS SUBTASK'S GRADING. `readmeCoverage` is untouched BY CONSTRUCTION and that is a ruling rather than an omission: the section carries NO FENCED BLOCK, following `Commands your editor can invoke`, which is prose-only for the reason that applies here too -- this row's handler shape is `textDocument/formatting`'s, already shown in the Quickstart block, so a block would need a marker AND a `consumers` row naming a SUBJECT and would buy a reader nothing they read forty lines up. Then a CASE-INSENSITIVE sweep for the arity words over README.md, packages/, examples/ and scrum.ts, every hit re-sited, deleted, or left green WITH the reason it still reads something.",
+        implementation:
+          "The README section, placed beside `Commands your editor can invoke` because for a user the two are ONE workflow -- an action offers a command and a command runs it. LAST, because it describes what landed rather than what was intended.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [
+      {
+        description:
+          "`oxfmt` IS NAMED BY THE DEFINITION OF DONE AND INSTALLED BY NOTHING IN THIS CHECKOUT. MEASURED at f34a76b: the third check came back UNRUNNABLE -- `Executable not found in $PATH` -- while the other four ran, so the run reported FAILED for a reason that was the ENVIRONMENT. It is not in the root `devDependencies` and not in node_modules/.bin, unlike `tsc`, which `bun run` puts on PATH from there. Installed globally at 0.62.0 to take this sprint's base, and THE VERSION WAS CHOSEN BY NOTHING.",
+        impact:
+          "None on this Sprint Goal -- the base at a6e699e is green under 0.62.0, all five checks. What it costs is that this project's whole-tree formatting is graded by whatever version whoever ran it last happened to have, and a default that moved between versions would reformat files a sprint never touched.",
+        request:
+          "Decide whether `oxfmt` is pinned in the root `devDependencies` -- and at which version -- or whether it stays an environment assumption a fresh checkout discovers as an UNRUNNABLE check.",
+        status: "waiting_human",
+        notes: [],
+      },
+    ],
+    decisions: [
+      "THE BASE, MEASURED BEFORE ANYTHING MOVED: HEAD a6e699e, Definition of Done PASSED, all five checks exit 0, 1029 pass / 0 fail over 74 files, 3264 expect() calls, 407.71s, TWENTY registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. Any red from here is this sprint's until measured otherwise against that.",
+      "AND THAT BASE IS THE FIRST IN THIS PROJECT'S RECORD WHERE ALL FIVE CHECKS ACTUALLY RAN, which is why the impediment above is filed rather than mentioned: the format check had been UNRUNNABLE in this environment, and an UNRUNNABLE check reports non-green while measuring nothing.",
+      "ONE ARM FAILED ONCE AND IS NOT CALLED A FLAKE, WITH THE EVIDENCE RATHER THAN THE WORD. At f34a76b, whole suite, `test/protocol.test.ts > a fallback for unknown methods shadows none of initialize, hover or shutdown` timed out at its 4000ms `hangTimeoutMs` in a run that took 464s. Re-run ALONE: 32 pass / 0 fail in 7.94s -- which is the WEAKER reading, a single file not reproducing whole-suite load. Re-run as the WHOLE SUITE at a6e699e: green. So what is recorded is what was seen -- named, failed once under load, did not reproduce in the same conditions -- and NOT `flake`, which would be a claim about a cause nothing here measured.",
+      "THE DRIVE IS RULED AWAITED-ONCE, AND THE RULING IS THE SPRINT. MEASURED in protocol.d.ts: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so both of `driveStream`'s stated conditions hold, which is true of NO row tsudoi serves today. WHAT THE STREAM DRIVE BUYS IS A PARTIAL ANSWER BEING USEFUL BEFORE THE REST ARRIVES, true of a completion popup and false of this menu: a completion list is FILTERED as the user keeps typing, so a late item lands where it belongs, while a code-action menu is opened, read, and chosen from as a whole -- an action appended after it is on screen moves the row under the user's cursor. AND THE COST IS ASYMMETRIC RATHER THAN A WASH: awaited-once lets an author with a fixed list write `Promise.resolve(actions)`, where the stream drive would force a generator on them to yield it once. BOTH RULINGS ARE BREAKING TO REVERSE -- `Promise` and `AsyncGenerator` are different things to write in every config declaring the key -- so neither is the safe default, which is exactly why the reason is written at the site instead of the decision alone.",
+      "THE ORDER IS THE ROW, THEN THE RECORD, THEN THE PROSE, on this project's own rule that a prose repair written before the arm it cites is a claim about an arm that does not exist yet.",
+      "CLAUDE.md's OPENING IS FALSE AND IS NOT THIS INCREMENT. It still reads `handlers for five LSP methods`, was recorded as false at sprint 85, and that file is UNTRACKED here -- so it is repaired locally, and nothing this sprint commits can carry the repair. The arity sweep in subtask 3 is over TRACKED prose for that reason.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 86,
