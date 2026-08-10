@@ -670,6 +670,34 @@ const scrum: ScrumDashboard = {
   },
   retrospectives: [
     {
+      sprint: 87,
+      improvements: [
+        {
+          action:
+            "THE RUNNER PRINTS THE TREE IT GRADED, AND IT IS RUNNER-SHAPED FOR SPRINT 86'S REASON. A closing reading must name the commit it graded; THAT RULE FAILED TWICE IN THIS SPRINT and a REVIEWER caught it both times, which is evidence about DELIVERY and not about attention -- the rule was written down, in this file, and the hash simply was not to hand at the moment the sentence was written, so it was written from memory. A third rule would have the same delivery. What had no answer was `what did I just grade`, and now the report says. DIRTY IS PART OF THE READING RATHER THAN A WARNING ABOUT IT: a hash alone on a tree that does not match it reads as provenance for a green belonging to a state no commit holds, which is the harder error to notice afterwards. A directory outside git gets SILENCE, because this runner grades a directory.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "Applied within the retrospective. One arm over all three states, written RED first. MEASURED against the real dashboard: a clean checkout prints `tree: <hash>` alone, and this tree mid-retrospective printed the DIRTY marker. THE STAGE HAD TO BE ISOLATED FROM THE MACHINE'S OWN GIT, measured rather than foreseen -- a bare `git init` there inherits the developer's GLOBAL hooks, and this repository's own commit hook refused the stage's commit over a file the stage does not contain.",
+        },
+        {
+          action:
+            "AN ARM IN `.claude/skills/writing-a-comment/SKILL.md`: the day a category gains its SECOND member, every sentence and every session-scoped flag written while it had one is suspect. THIS SPRINT'S TWO REAL DEFECTS ARE BOTH THAT SHAPE and both SHIPPED -- a stderr line reading `so this completion is answered` reached from every stream-driven row, and a `let reported = false` scoped to the session where the count is per method. Beside them, four sentences naming completion where a KIND was meant, and a MEASURED reading that had been true and became narrower than the property it sat under. THE ARM SAYS WHAT FINDS THEM: grep the FIRST member's NAME in the module that now serves both, and sweep every once-per-session flag, counter and cache there. AND IT SAYS WHAT DOES NOT -- this sprint ran a case-insensitive arity sweep over `five|six|seven` and not one of those sentences contains a number, because they ENUMERATE WITHOUT COUNTING.",
+          timing: "immediate",
+          status: "completed",
+          outcome: "Applied within the retrospective, being a skill arm on non-production text.",
+        },
+        {
+          action:
+            "WHAT IS NOT MECHANISED, NAMED SO ITS ABSENCE IS NOT READ AS COVERAGE. Nothing makes an author COPY the tree line into the record, and nothing compares a recorded hash against HEAD -- a check that parsed prose for a hash would be a green certifying that a sentence has provenance, which is the detector shape this project refuses by name. What is done is the smaller honest half: the hash is now in front of the reader at the moment they write the sentence. IF IT GOES STALE A THIRD TIME the answer is still not a rule -- it is that the record should quote the runner's own line rather than restate it.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "Recorded rather than built, with the reason, per the header's mechanise-or-delete rule.",
+        },
+      ],
+    },
+    {
       sprint: 86,
       improvements: [
         {
