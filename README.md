@@ -448,12 +448,37 @@ route through tsudoi today. What your editor does with the answer after that is 
 protocol -- LSP contemplates a client applying a workspace edit a command returned, and tsudoi
 neither arranges that nor prevents it.
 
+## Actions your editor can offer
+
+`textDocument/codeAction` is the menu your user opens on a diagnostic, a selection or a cursor
+position, and tsudoi serves it as one more handler key. Declaring it claims `codeActionProvider`
+and **claims no kinds**. `codeActionKinds` is optional, so tsudoi says this server produces code
+actions and stays quiet about which categories -- unlike the command list above, which the
+protocol makes required and which tsudoi therefore has to advertise empty. Naming kinds is a
+promise about what you produce, so it stays yours to make from an `initialize` handler.
+
+**The handler is an async generator**, the same shape `textDocument/completion` has, and for a
+reason that has nothing to do with how many actions you have. An editor naming a
+`partialResultToken` receives every batch you yield as its own `$/progress`; one that names none
+receives them concatenated into a single response, byte for byte what returning the list would
+have sent. So a handler with a fixed list yields once and is indistinguishable on the wire from
+one that could never have streamed. Yielding nothing at all is answered `null` -- *this server has
+no answer here* -- where yielding `[]` says *I looked and there is nothing you can do*, which your
+editor may render as an empty menu.
+
+What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi neither validates them
+nor fills anything in, so what your editor receives is what you wrote: a `CodeAction` carrying an
+`edit` is your editor's to apply, and one carrying a `command` comes back to you as the
+`workspace/executeCommand` above. **tsudoi does not resolve code actions.** `codeAction/resolve`
+is not a handler key, so an action you offer has to arrive complete -- there is no second call in
+which to fill in an edit you deferred.
+
 ## Cleanup in a handler
 
-A `finally` inside a **completion handler** runs when the editor abandons the request -- which it
-does on every keystroke that supersedes the last one. A completion handler IS an async generator,
-so its body outlives the first batch it yields; tsudoi **closes the generator** then, so the
-cleanup written there happens.
+A `finally` inside a **completion or code-action handler** runs when the editor abandons the
+request -- which, for completion, it does on every keystroke that supersedes the last one. Both
+handlers ARE async generators, so the body outlives the first batch it yields;
+tsudoi **closes the generator** then, so the cleanup written there happens.
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
 something which never settles never finishes, and no server can change that; the request is
