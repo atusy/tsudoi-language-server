@@ -211,8 +211,10 @@ for (const runtime of runtimes) {
      * attributable to the handler rather than to the registration.
      *
      * IT PAIRS WITH THE NO-TOKEN ARM AND NOT WITH THE ONE DIRECTLY ABOVE IT,
-     * which sends a token; the no-handler answer under a token is the drive's
-     * and is stated over the whole table in test/methods-table.test.ts.
+     * which sends a token. WHAT A NO-HANDLER CONFIG ANSWERS UNDER A TOKEN IS
+     * ASSERTED NOWHERE, here or over the table -- every no-handler arm sends
+     * none -- and it is the drive's answer rather than this row's: `driveStream`
+     * returns before it reads the token at all.
      */
     test(
       named(runtime, "the same request against a config with no handler is answered null"),

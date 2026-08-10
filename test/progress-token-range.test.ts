@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { requestEntries } from "../packages/tsudoi-language-server/src/methods.ts";
 import type { CompletionItem } from "vscode-languageserver-protocol";
 import { firstChunk, returnedItems, secondChunk } from "./fixtures/completion-chunks.ts";
 import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
@@ -124,23 +125,30 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * ONE SESSION, BOTH STREAM-DRIVEN ROWS, AND THE DIAGNOSTIC BELONGS TO
+     * ONE SESSION, EVERY STREAM-DRIVEN ROW, AND THE DIAGNOSTIC BELONGS TO
      * WHICHEVER ROW EARNED IT. This is the arm the sprint that made a SECOND
      * stream-driven row owed and did not write: both defects it guards shipped,
      * were found by review rather than by anything here, and the suite was green
      * across both.
      *
      * WHAT IT REFUSES, AND NEITHER IS VISIBLE FROM ONE ROW ALONE. A single
-     * session-wide flag: the first refusal silences the OTHER row for the rest of
-     * the session, so an author who saw the line for completion never learns
+     * session-wide flag: the first refusal silences the OTHER rows for the rest
+     * of the session, so an author who saw the line for completion never learns
      * their code actions were aggregated too. And a hard-coded method in the
      * sentence: tsudoi refuses the token and writes to stderr, which is the
      * CONFIG AUTHOR's channel and not the client's, so the line then tells the
      * author that a COMPLETION was aggregated when it was their code action.
      *
+     * THE ROWS ARE DERIVED FROM THE TABLE AND NEVER NAMED HERE, which is what
+     * keeps the claim honest as the table grows: a third stream-driven row joins
+     * this arm the moment it is declared, where a written pair would leave the
+     * arm green and its own name false. It is also why ONE params object serves
+     * them all -- nothing on this route reads params past `typeof params ===
+     * "object"`, and the token is read off whatever arrives.
+     *
      * THE SECOND REQUEST PER ROW IS WHAT KEEPS `once per method` FROM MEANING
      * `once per request`: without it, a tsudoi that reported EVERY refusal
-     * satisfies every assertion above it.
+     * satisfies every assertion below.
      */
     // THE ONLY ARM IN THIS FILE WHOSE NAME CARRIES ITS RUNTIME, and the reason
     // is that it is the only one the perturbation registry points at. bun's
@@ -155,29 +163,33 @@ for (const runtime of runtimes) {
         session.notify("initialized", {});
 
         const refused = { bad: "not a ProgressToken" };
-        const codeActionWithToken = {
-          textDocument: { uri },
-          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-          context: { diagnostics: [] },
-          partialResultToken: refused,
-        };
+        const streamRows = Object.entries(requestEntries)
+          .filter(([, entry]) => entry.drive === "stream-driven")
+          .map(([method]) => method);
+        // The pair every derived loop owes: a table with no stream-driven row
+        // would satisfy every assertion below while measuring nothing.
+        expect(streamRows.length).toBeGreaterThan(0);
 
         for (const _attempt of [0, 1]) {
-          await session.request<unknown>("textDocument/completion", completionWithToken(refused));
-          await session.request<unknown>("textDocument/codeAction", codeActionWithToken);
+          for (const method of streamRows) {
+            await session.request<unknown>(method, {
+              textDocument: { uri },
+              position: { line: 0, character: 0 },
+              range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+              context: { diagnostics: [] },
+              partialResultToken: refused,
+            });
+          }
         }
 
         const lines = session.stderr
           .split("\n")
           .filter((line) => line.startsWith(invalidTokenTrace));
 
-        expect(lines).toHaveLength(2);
-        expect(lines.filter((line) => line.includes("this textDocument/completion"))).toHaveLength(
-          1,
-        );
-        expect(lines.filter((line) => line.includes("this textDocument/codeAction"))).toHaveLength(
-          1,
-        );
+        expect(lines).toHaveLength(streamRows.length);
+        expect(
+          lines.map((line) => streamRows.find((method) => line.includes(`this ${method} `))),
+        ).toEqual(streamRows);
         expect(session.progressCount).toBe(0);
       } finally {
         session.dispose();

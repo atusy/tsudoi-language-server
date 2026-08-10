@@ -461,14 +461,15 @@ promise about what you produce, so it stays yours to make from an `initialize` h
 reason that has nothing to do with how many actions you have. An editor naming a
 `partialResultToken` receives every batch you yield as its own `$/progress`; one that names none
 receives them concatenated into a single response, byte for byte what returning the list would
-have sent. So a handler with a fixed list yields once and, for an editor that named no token, is
+have sent. Both hold **until the request is abandoned** -- after that a batch already in hand is
+dropped rather than sent, which is the point of abandoning it. So a handler with a fixed list yields once and, for an editor that named no token, is
 indistinguishable on the wire from one that could never have streamed. **Without a token**,
 yielding nothing at all is answered `null` -- _this server has no answer here_ -- where yielding
 `[]` says _I looked and there is nothing you can do_, which your editor may render as an empty
-menu. **Under a token, half of that distinction survives**: the response is `null` either way and
-your editor assembles the same list, but an empty batch still leaves as its own `$/progress` where
-yielding nothing sends none -- so an editor reading only its assembled result cannot tell them
-apart, and one counting notifications can.
+menu. **Under a token, half of that distinction survives on the wire**: the response is `null`
+either way, but an empty batch still leaves as its own `$/progress` where yielding nothing sends
+none. What your editor makes of that pair is your editor's; what tsudoi sends is the whole of what
+this promises.
 
 What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi checks that the batch is
 an array -- yield anything else and the request fails -- and looks at nothing inside it, so what

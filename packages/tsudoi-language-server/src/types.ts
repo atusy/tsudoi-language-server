@@ -385,9 +385,10 @@ export interface MethodMap {
   };
 
   /**
-   * STREAM-DRIVEN BY RULING RATHER THAN BY CONSTRUCTION, WHICH IS WHAT SEPARATES
-   * THIS ROW FROM EVERY ROW ABOVE IT. Each of those had its drive settled before
-   * anyone had a preference: `textDocument/diagnostic` fails the ARRAY condition
+   * STREAM-DRIVEN BY A RULING WRITTEN DOWN, WHICH IS WHAT SEPARATES THIS ROW
+   * FROM EVERY ROW ABOVE IT -- not that nobody preferred anything for those, but
+   * that no ruling records a drive being WEIGHED for one. Two of them could not
+   * have been: `textDocument/diagnostic` fails the ARRAY condition
    * -- its partial results are objects carrying OTHER documents -- and
    * `workspace/executeCommand` fails the TOKEN one, its params carrying none.
    * MEASURED here: `CodeActionParams extends WorkDoneProgressParams,
@@ -430,10 +431,11 @@ export interface MethodMap {
    * you can do here`, which a client may render as a menu with no entries, where
    * yielding nothing at all is answered `null`. WHAT A TOKEN CHANGES IS WHICH
    * HALF OF THAT SURVIVES, and the narrower reading is the true one: the
-   * ASSEMBLED LIST and the `null` response are identical either way, while the
-   * NOTIFICATIONS are not -- an empty batch still leaves as its own `$/progress`
-   * and yielding nothing sends none at all. So a client reading only its
-   * assembled result cannot tell them apart, and one counting notifications can.
+   * `null` RESPONSE IS IDENTICAL EITHER WAY, while the NOTIFICATIONS are not --
+   * an empty batch still leaves as its own `$/progress` and yielding nothing
+   * sends none at all. WHAT A CLIENT MAKES OF THAT PAIR IS THE CLIENT'S, and no
+   * claim about it belongs here: what tsudoi sends is the whole of what this
+   * type can promise.
    */
   "textDocument/codeAction": {
     params: CodeActionParams;
