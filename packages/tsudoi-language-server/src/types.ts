@@ -385,46 +385,48 @@ export interface MethodMap {
   };
 
   /**
-   * AWAITED ONCE BY RULING, WHICH IS WHAT SEPARATES THIS ROW FROM THE SIX ABOVE
-   * IT. Every one of those had its drive settled before anyone had a preference:
-   * `textDocument/diagnostic` fails the ARRAY condition -- its partial results
-   * are objects carrying OTHER documents -- and `workspace/executeCommand` fails
-   * the TOKEN one, its params carrying none. MEASURED here:
-   * `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and
-   * `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]`.
-   * Both of `driveStream`'s stated conditions hold, so THE STREAM DRIVE IS
-   * AVAILABLE TO THIS ROW AND IS DECLINED.
+   * STREAM-DRIVEN BY THE STAKEHOLDER'S RULING, AND THE RULING OVERTURNED THIS
+   * SPRINT'S OWN. What separates this row from the six above it is that its drive
+   * was a CHOICE at all: each of those was settled before anyone had a
+   * preference, `textDocument/diagnostic` failing the ARRAY condition -- its
+   * partial results are objects carrying OTHER documents -- and
+   * `workspace/executeCommand` failing the TOKEN one, its params carrying none.
+   * MEASURED here: `CodeActionParams extends WorkDoneProgressParams,
+   * PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is
+   * `(Command | CodeAction)[]`. Both of `driveStream`'s stated conditions hold,
+   * so the drive is AVAILABLE, and it is taken.
    *
-   * WHAT THE STREAM DRIVE BUYS IS A PARTIAL ANSWER BEING USEFUL BEFORE THE REST
-   * ARRIVES, and that is true of a completion popup and false of this menu. A
-   * completion list is FILTERED as the user keeps typing, so an item arriving
-   * late lands where it belongs; a code-action menu is opened, read, and chosen
-   * from as a whole, and an action appended after it is on screen moves the row
-   * under the user's cursor.
+   * THE REASON IS WHAT THE SHAPE KEEPS OPEN AND NOT WHAT IT DOES TODAY: with no
+   * `partialResultToken` a client's answer is identical either way, so this costs
+   * nothing NOW and is the only spelling from which partial results can ever be
+   * served. THE ALTERNATIVE WAS ARGUED AND LOST, and it is written down because
+   * the argument is still true: a completion list is FILTERED as the user keeps
+   * typing, so a late item lands where it belongs, while a code-action menu is
+   * opened, read, and chosen from as a whole -- an action appended after it is on
+   * screen moves the row under the user's cursor. THAT IS AN ARGUMENT ABOUT WHAT
+   * A SERVER SHOULD SEND, and this type decides only what it CAN; an author who
+   * agrees with it yields once and is indistinguishable on the wire.
    *
-   * AND THE COST IS ASYMMETRIC RATHER THAN A WASH, which is the half a reader
-   * weighing this will otherwise supply for themselves: the drive decides what
-   * an author WRITES, and awaiting once lets one whose actions are a fixed list
-   * answer `Promise.resolve(actions)` where the stream drive would make them
-   * write a generator to yield it once. NOBODY IS SPARED ANYTHING IN THE OTHER
-   * DIRECTION -- an author with actions to compute may still compute them all
-   * before answering.
+   * WHICH IS THE HALF THAT MADE THE RULING RIGHT AND THE REFUSAL WRONG: the two
+   * spellings are NOT symmetric in what they foreclose. `Promise<...>` and
+   * `AsyncGenerator<...>` are equally breaking to swap in every config declaring
+   * this key, so a wrong choice costs the same either way -- but only one of them
+   * can ever grow partial results without being swapped.
    *
-   * NEITHER RULING IS THE REVERSIBLE ONE, which is why this paragraph exists
-   * instead of the decision alone. `Promise<...>` and `AsyncGenerator<...>` are
-   * different things to write in every config that declares this key, so
-   * widening later breaks the same authors narrowing later would. A CLIENT'S
-   * `partialResultToken` IS THEREFORE READ BY NOTHING on this row, which is
-   * conforming: partial results are the server's to offer.
+   * WHAT IT COSTS AN AUTHOR WITH A FIXED LIST IS ONE `yield`, which is the price
+   * `textDocument/completion` already charges, and the drive's own contract --
+   * every yield is CONTENT, the return carries NOTHING, a handler with nothing to
+   * say yields nothing and is answered `null` -- is stated once at
+   * `MethodMap["textDocument/completion"]` and is not restated per row.
    *
-   * `| null` FOR NOTHING TO SAY, the shape `textDocument/formatting` carries and
-   * for the protocol's own reason rather than a strictness chosen here -- and
-   * `[]` is available and means something ELSE, `I looked and there is nothing
-   * you can do here`, which a client may render as a menu with no entries.
+   * `[]` IS AVAILABLE AND MEANS SOMETHING ELSE, said here because this row's
+   * union makes it easy to reach for: yielding an empty batch says `I looked and
+   * there is nothing you can do here`, which a client may render as a menu with
+   * no entries, where yielding nothing at all is answered `null`.
    */
   "textDocument/codeAction": {
     params: CodeActionParams;
-    result: Promise<(Command | CodeAction)[] | null>;
+    result: AsyncGenerator<(Command | CodeAction)[], void, void>;
   };
 }
 

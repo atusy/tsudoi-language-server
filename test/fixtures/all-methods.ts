@@ -135,11 +135,17 @@ export default (): Promise<TsudoiConfig> => {
       // test/fixtures/execute-command-echo.ts instead, which is where an author
       // deciding it belongs.
       "workspace/executeCommand": () => Promise.resolve(null),
-      // `null` FOR THE SAME REASON THE ROW ABOVE ANSWERS IT: this file's job is
-      // to EXIST and to ROUTE. What a code action MEANS is asserted against
-      // test/fixtures/code-action.ts instead, which is the file an author
-      // deciding it belongs in.
-      "textDocument/codeAction": () => Promise.resolve(null),
+      // YIELDS NOTHING, WHICH IS THIS DRIVE'S SPELLING OF THE `null` EVERY ROW
+      // ABOVE ANSWERS: this file's job is to EXIST and to ROUTE. What a code
+      // action MEANS is asserted against test/fixtures/code-action.ts instead,
+      // which is the file an author deciding it belongs in.
+      //
+      // AND IT COSTS NO `require-yield` WARNING, MEASURED RATHER THAN ASSUMED,
+      // because the claim at test/fixtures/throws-on-cancel.ts depends on it:
+      // that file says its warning is the suite's ONLY one, so a second yieldless
+      // generator here would have falsified it. oxlint's rule wants a generator
+      // whose BODY DOES SOMETHING without yielding, and this body does nothing.
+      "textDocument/codeAction": async function* () {},
       // THE LINE THAT MAKES THIS FILE COMPLETE BY CONSTRUCTION. `TsudoiConfig`
       // declares `methods` PARTIAL, correctly -- a config author supplies the
       // methods they serve. This fixture is the one config that must serve them

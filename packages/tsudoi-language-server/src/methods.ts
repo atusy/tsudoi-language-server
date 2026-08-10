@@ -7,7 +7,9 @@
 import process from "node:process";
 import {
   type CancellationToken,
+  type CodeAction,
   CodeActionRequest,
+  type Command,
   type CompletionItem,
   CompletionRequest,
   CompletionResolveRequest,
@@ -153,8 +155,9 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     },
   },
   "textDocument/codeAction": {
-    drive: "awaited-once",
+    drive: "stream-driven",
     type: CodeActionRequest.type,
+    progress: new ProgressType<(Command | CodeAction)[]>(),
     // `true` AND NOT AN OPTIONS OBJECT, WHICH IS THE CONTRAST WITH THE ROW
     // ABOVE AND NOT AN ECONOMY. `ExecuteCommandOptions.commands` is REQUIRED, so
     // that contributor had to write a list it could not know and wrote an empty

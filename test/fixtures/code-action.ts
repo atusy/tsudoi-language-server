@@ -49,9 +49,16 @@ export const codeActionAnswer: (Command | CodeAction)[] = [
  * is the ROUTE and the answer's fidelity, and a handler that decided its actions
  * from a range would put a second thing in front of the assertion -- the same
  * ruling test/fixtures/all-methods.ts writes over the whole table.
+ *
+ * AND IT YIELDS ONCE, WHICH IS AN AUTHOR'S ORDINARY CASE AND NOT A SIMPLIFIED
+ * ONE: a handler whose actions are a fixed list has one batch to give. The arms
+ * driving it send NO `partialResultToken`, so what a client receives is the
+ * aggregate -- identical to what the awaited drive would have sent, which is the
+ * whole reason the stream drive costs nothing here.
  */
 export default (): Promise<TsudoiConfig> => {
-  const codeAction: MethodHandler<"textDocument/codeAction"> = () =>
-    Promise.resolve(codeActionAnswer);
+  const codeAction: MethodHandler<"textDocument/codeAction"> = async function* () {
+    yield codeActionAnswer;
+  };
   return Promise.resolve({ methods: { "textDocument/codeAction": codeAction } });
 };

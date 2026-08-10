@@ -47,18 +47,48 @@ const workspace: ServerCapabilities["workspace"] = {
 const uri = "file:///workspace/a.txt";
 
 /**
+ * EVERY ARM HERE CARRIES ITS RUNTIME IN ITS OWN NAME, WHICH NO SIBLING FILE DOES
+ * AND WHICH IS NOT A STYLE. MEASURED at bun 1.3.13: a `<testcase>` in bun's
+ * JUnit report carries the `describe` in `classname` and ONLY the `test()` string
+ * in `name` -- and the perturbation registry's reader builds a run into a Map
+ * KEYED BY `name`. So two arms differing only by their describe collapse to ONE
+ * result, last write winning, and a record naming such an arm reports whichever
+ * runtime bun wrote last while saying nothing about the other.
+ *
+ * THIS IS THE FIRST PER-RUNTIME ARM FILE THE REGISTRY POINTS AT, which is why it
+ * is closed here and not everywhere: every other file in this shape is graded by
+ * no record, so the collapse costs them nothing today. The day one of them gains
+ * a record is the day it needs this line too.
+ *
+ * AND NOTHING IN THIS FILE MAY SPELL THAT HELPER'S PATH, PROSE INCLUDED. The
+ * refusal keeping a record from re-running a file that itself re-runs
+ * perturbations -- which would spawn without bound -- is a SUBSTRING TEST over
+ * the arm file's whole text. MEASURED: an earlier spelling of the paragraph
+ * above named the path in a comment, and this file's record was refused with
+ * `re-runs perturbations itself`. The over-refusal is the safe direction and is
+ * not a defect to repair here; it is a trap to write down.
+ */
+function named(runtime: { name: string }, what: string): string {
+  return `${what} (${runtime.name})`;
+}
+
+/**
  * A RANGE AND A CONTEXT, BOTH REQUIRED BY `CodeActionParams` AND VALIDATED BY
  * NOTHING ON THE WIRE. They are written out because the request is what a client
  * would send, not because anything here would notice their absence -- the same
  * reading test/methods-table.test.ts MEASURED for its own shared params object.
  */
-function codeActionParams(): unknown {
-  return {
+function codeActionParams(token?: string): unknown {
+  const params = {
     textDocument: { uri },
     range: { start: { line: 0, character: 0 }, end: { line: 0, character: 3 } },
     context: { diagnostics: [] },
   };
+  return token === undefined ? params : { ...params, partialResultToken: token };
 }
+
+/** A client that wants partial results names a token; one that does not omits it. */
+const partialResultToken = "code-action-partial-1";
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
@@ -72,24 +102,68 @@ for (const runtime of runtimes) {
      * EXACT EQUALITY ON THE WHOLE LIST rather than a read of one title: an
      * implementation that reordered, deduplicated, or filled in a `kind` for the
      * command reddens here, and none of those would move a length or a title.
+     *
+     * NO `partialResultToken`, SO WHAT IS COMPARED IS THE AGGREGATE. That is the
+     * arm saying the stream drive costs a client NOTHING it did not ask for: the
+     * response is byte-identical to what awaiting the handler once would have
+     * sent, and the arm below drives the same handler with a token to show the
+     * other half.
      */
-    test("a config's code actions reach the client as the author wrote them", async () => {
-      const session = LspSession.start(runtime, codeActionFixture);
-      try {
-        await session.request("initialize", initializeParams);
-        session.notify("initialized", {});
+    test(
+      named(runtime, "a config's code actions reach the client as the author wrote them"),
+      async () => {
+        const session = LspSession.start(runtime, codeActionFixture);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
 
-        const answered = await session.request<(Command | CodeAction)[] | null>(
-          "textDocument/codeAction",
-          codeActionParams(),
-        );
+          const answered = await session.request<(Command | CodeAction)[] | null>(
+            "textDocument/codeAction",
+            codeActionParams(),
+          );
 
-        expect(answered).toEqual(codeActionAnswer);
-        expect(session.unframedStdoutBytes).toBe(0);
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(answered).toEqual(codeActionAnswer);
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
+
+    /**
+     * THE SAME ACTIONS UNDER A TOKEN, WHICH IS THE WHOLE OF WHY THIS ROW IS
+     * STREAM-DRIVEN. The stakeholder ruled the generator shape so partial
+     * results stay reachable, and the arm above -- driving the identical handler
+     * with NO token -- is what says the aggregate answer did not change to buy
+     * it. Here the batch leaves as its own `$/progress` and the response is
+     * `null`, ALWAYS, including for a stream that yielded once.
+     *
+     * THE TOKEN IS READ OFF THE NOTIFICATION rather than assumed: a drive that
+     * streamed under a token of its own invention would satisfy a count and
+     * leave the client unable to attribute the batch to its request.
+     */
+    test(
+      named(runtime, "the same actions travel as progress when the client names a token"),
+      async () => {
+        const session = LspSession.start(runtime, codeActionFixture);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
+
+          const answered = await session.request<unknown>(
+            "textDocument/codeAction",
+            codeActionParams(partialResultToken),
+          );
+
+          expect(answered).toBeNull();
+          expect(session.progress).toEqual([
+            { token: partialResultToken, value: codeActionAnswer },
+          ]);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
 
     /**
      * THE PAIRED DIRECTION, and without it the arm above is a claim about a
@@ -97,22 +171,25 @@ for (const runtime of runtimes) {
      * config with no handler is answered `null`, so what came back up there is
      * attributable to the handler rather than to the registration.
      */
-    test("the same request against a config with no handler is answered null", async () => {
-      const session = LspSession.start(runtime, noMethods);
-      try {
-        await session.request("initialize", initializeParams);
-        session.notify("initialized", {});
+    test(
+      named(runtime, "the same request against a config with no handler is answered null"),
+      async () => {
+        const session = LspSession.start(runtime, noMethods);
+        try {
+          await session.request("initialize", initializeParams);
+          session.notify("initialized", {});
 
-        const answered = await session.request<unknown>(
-          "textDocument/codeAction",
-          codeActionParams(),
-        );
+          const answered = await session.request<unknown>(
+            "textDocument/codeAction",
+            codeActionParams(),
+          );
 
-        expect(answered).toBeNull();
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(answered).toBeNull();
+        } finally {
+          session.dispose();
+        }
+      },
+    );
 
     /**
      * `codeActionProvider: true` AND NOT AN OPTIONS OBJECT, WHICH IS THIS ROW'S
@@ -129,20 +206,26 @@ for (const runtime of runtimes) {
      * produces NO kinds at all -- reddens here and would satisfy any read of the
      * key alone.
      */
-    test("a config supplying a codeAction handler advertises the provider and no kinds", async () => {
-      const session = LspSession.start(runtime, codeActionFixture);
-      try {
-        const result = await session.request<InitializeResult>("initialize", initializeParams);
+    test(
+      named(
+        runtime,
+        "a config supplying a codeAction handler advertises the provider and no kinds",
+      ),
+      async () => {
+        const session = LspSession.start(runtime, codeActionFixture);
+        try {
+          const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({
-          textDocumentSync,
-          workspace,
-          codeActionProvider: true,
-        });
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(result.capabilities).toEqual({
+            textDocumentSync,
+            workspace,
+            codeActionProvider: true,
+          });
+        } finally {
+          session.dispose();
+        }
+      },
+    );
 
     /**
      * THE OTHER DIRECTION, AND THE KEY IS ABSENT ENTIRELY RATHER THAN `false`.
@@ -156,19 +239,22 @@ for (const runtime of runtimes) {
      * READ -- a reader looking for the absence half should find it in the file
      * about code actions.
      */
-    test("a config supplying no codeAction handler advertises no code-action support", async () => {
-      const session = LspSession.start(runtime, codeActionAbsent);
-      try {
-        const result = await session.request<InitializeResult>("initialize", initializeParams);
+    test(
+      named(runtime, "a config supplying no codeAction handler advertises no code-action support"),
+      async () => {
+        const session = LspSession.start(runtime, codeActionAbsent);
+        try {
+          const result = await session.request<InitializeResult>("initialize", initializeParams);
 
-        expect(result.capabilities).toEqual({
-          textDocumentSync,
-          workspace,
-          hoverProvider: true,
-        });
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(result.capabilities).toEqual({
+            textDocumentSync,
+            workspace,
+            hoverProvider: true,
+          });
+        } finally {
+          session.dispose();
+        }
+      },
+    );
   });
 }
