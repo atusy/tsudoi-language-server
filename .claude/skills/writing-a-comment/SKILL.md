@@ -340,3 +340,45 @@ Two tells that you are writing this shape:
 - the sentence says a class is safe because the SPEC forbids the client from
   acting — which bounds who arrives, and says nothing about what happens when
   a non-conforming client does.
+
+## The day a category gains its second member, everything written for the first is suspect
+
+**MEASURED in sprint 87**, which added `textDocument/codeAction` beside
+`textDocument/completion` as the second STREAM-DRIVEN row of the request
+table. Nothing about the new row was wrong. What went wrong is everything the
+module already said and did while that category had ONE member:
+
+- a stderr line reading `so this **completion** is answered as one aggregated
+response`, reached from every stream-driven row, so a client whose CODE
+  ACTION token was refused was told about a completion;
+- a `let reported = false` scoped to the SESSION, so the first refusal on
+  either row silenced the other for good;
+- `The token this **completion** may stream under`, and `a config that cannot
+answer **completion** at all`, on functions now serving two rows;
+- an arm's `MEASURED` reading — _"reddens at `textDocument/completion` and at
+  no other method"_ — which had been true and became narrower than the
+  property it was written under;
+- `**Promise**, LIKE EVERY ROW OF THE TABLE`, which had been false since the
+  FIRST generator row and got worse.
+
+None of it was found by the suite. All of it was found by review, and the two
+behavioural ones shipped.
+
+**So when a change makes something that was "the only X" into "one of two X",
+grep the module for the FIRST member's name before writing anything new.**
+Every hit is either about that member specifically — fine — or was using its
+name to mean the category, which is now false. The same sweep is owed to any
+once-per-session flag, counter or cache in that module: a flag keyed to the
+category was indistinguishable from a flag keyed to the member while there was
+only one.
+
+Two tells that you are making this transition:
+
+- a docblock nearby says "the only", "which is the whole set of them", or
+  names one member where a KIND is meant;
+- the change adds a second value satisfying a predicate some code branches on.
+
+**And an arity sweep does not find this.** Sprint 87 ran one, case-insensitively,
+over `five|six|seven` — and not one of the sentences above contains a number.
+They enumerate without counting. What finds them is grepping the first member's
+NAME.

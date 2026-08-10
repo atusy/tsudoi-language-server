@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import {
   chmodSync,
   copyFileSync,
@@ -721,4 +722,92 @@ test("an argument this runner cannot read is refused, never guessed at", async (
   // AND NOT ONE CHECK RAN ON ANY OF THEIR ACCOUNT. The refusal is read before
   // the dashboard is, so this is the order as much as the colour.
   expect(tree.invocations()).toEqual(ran);
+});
+
+/**
+ * THE TREE A READING WAS TAKEN ON, PRINTED, AND THE THREE STATES IT HAS.
+ *
+ * WHY THE RUNNER SAYS THIS AT ALL: this project requires a sprint's closing
+ * reading to name the commit it graded, and sprint 87 measured that rule failing
+ * TWICE IN ONE SPRINT -- each reading named a tree the repairs after it
+ * overtook, and a reviewer caught it both times. The rule was never missing; the
+ * hash was not to hand when the sentence was written.
+ *
+ * THE DIRTY ARM IS THE ONE THAT EARNS THE FEATURE. A hash alone is WORSE than
+ * nothing on a tree that does not match it: it reads as provenance for a green
+ * that belongs to a state no commit holds. `git init` with a commit and then one
+ * byte written is exactly that state.
+ *
+ * AND THE THIRD IS SILENCE, over a directory that is no checkout: this runner
+ * grades a DIRECTORY, and inventing a fault for a tree outside git would fail
+ * every other arm in this file -- which is where that arm lives, by being every
+ * other arm in this file.
+ */
+test("the report names the tree it graded, and says so when the tree is not the commit", async () => {
+  const tree = stageTree();
+  tree.declare([{ name: "Lint passes", run: tree.logged("lint", 0) }]);
+
+  // NO CHECKOUT: silent, and the whole report otherwise intact.
+  const outside = await tree.run({});
+  expect(outside.code).toBe(0);
+  expect(report(outside)).not.toContain("tree: ");
+  expect(report(outside)).toContain(": PASSED\n");
+
+  /**
+   * THE STAGE IS ISOLATED FROM THE MACHINE'S OWN GIT, AND THAT IS NOT TIDINESS.
+   * MEASURED: without `core.hooksPath`, a `git init` here inherits the developer's
+   * GLOBAL hooks, and this repository's own commit hook refused the stage's
+   * commit -- an arm failing on a rule about a file the stage does not contain.
+   * The identity is supplied for the same reason: a machine with no `user.email`
+   * cannot commit at all, and an arm may not require one.
+   */
+  const git = (...args: string[]): void => {
+    const run = spawnSync(
+      "git",
+      [
+        "-C",
+        tree.root,
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-c",
+        "user.email=stage@example.invalid",
+        "-c",
+        "user.name=stage",
+        ...args,
+      ],
+      { encoding: "utf8" },
+    );
+    if (run.status !== 0) {
+      throw new Error(`git ${args.join(" ")} in the stage: ${run.stderr}`);
+    }
+  };
+  git("init", "-q");
+  git("commit", "-q", "--allow-empty", "-m", "staged");
+  const head = spawnSync("git", ["-C", tree.root, "rev-parse", "--short", "HEAD"], {
+    encoding: "utf8",
+  }).stdout.trim();
+
+  // DIRTY FIRST, because `git init` leaves every staged file untracked -- so the
+  // clean arm below has to be MADE clean, and taking the dirty reading first is
+  // what says the marker is not simply always printed.
+  const dirty = await tree.run({});
+  expect(report(dirty)).toContain(`tree: ${head} (WORKING TREE DIRTY`);
+  expect(report(dirty)).toContain("names no commit");
+
+  // THE RUN ITSELF WRITES INTO THE TREE, so `clean` here means clean APART FROM
+  // what a check produced -- which is the faithful parallel and not a dodge: the
+  // real repository's own first check writes every `dist/`, and every one of them
+  // is gitignored there for the same reason.
+  writeFileSync(join(tree.root, ".gitignore"), "invocations.log\n");
+  git("add", "-A");
+  git("commit", "-q", "-m", "everything");
+  const clean = spawnSync("git", ["-C", tree.root, "rev-parse", "--short", "HEAD"], {
+    encoding: "utf8",
+  }).stdout.trim();
+
+  const settled = await tree.run({});
+  // WHOLE LINE, so a runner that printed the hash AND the warning on a clean
+  // tree reddens: the marker's absence is the assertion, and `toContain` on the
+  // hash alone is satisfied by both states.
+  expect(report(settled)).toContain(`\ntree: ${clean}\n`);
 });

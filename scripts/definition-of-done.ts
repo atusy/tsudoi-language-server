@@ -449,6 +449,30 @@ for (const result of results) {
 // tree retires itself. It is printed because the linter's exit code does not
 // move on warnings, so five exit codes is not the whole reading.
 process.stdout.write(`warnings: ${warnings} (reported, not gating)\n`);
+/**
+ * THE TREE THIS READING WAS TAKEN ON, PRINTED SO A RECORD OF IT CANNOT BE
+ * WRITTEN FROM MEMORY. This project requires a sprint's closing reading to name
+ * the commit it graded, and MEASURED IN SPRINT 87 that rule failed TWICE IN ONE
+ * SPRINT -- each reading named a tree the repairs that followed it overtook, and
+ * a REVIEWER caught it both times. What was missing was never the rule; it was
+ * the hash being to hand at the moment the sentence is written.
+ *
+ * DIRTY IS PART OF THE READING AND NOT A WARNING ABOUT IT: a green taken on a
+ * working tree that does not match its commit is a green for a state no commit
+ * holds, which is the harder error to notice afterwards.
+ *
+ * IT PRINTS BELOW THE VERDICT SO IT CANNOT DISPLACE IT, and it is silent about a
+ * tree that is no checkout at all -- this runner grades a directory, and being
+ * outside git is not a fault it may invent.
+ */
+const head = spawnSync("git", ["-C", root, "rev-parse", "--short", "HEAD"], { encoding: "utf8" });
+if (head.status === 0) {
+  const dirty = spawnSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8" });
+  const clean = dirty.status === 0 && dirty.stdout.trim() === "";
+  process.stdout.write(
+    `tree: ${head.stdout.trim()}${clean ? "" : " (WORKING TREE DIRTY, so this reading names no commit)"}\n`,
+  );
+}
 if (failed.length !== 0) {
   process.exitCode = 1;
 }
