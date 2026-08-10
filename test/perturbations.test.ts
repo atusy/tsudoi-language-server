@@ -1046,6 +1046,46 @@ const records: readonly PerturbationRecord[] = [
       "each item's mark names the source that produced it, for every source there is",
     ],
   },
+  {
+    // THE OPTIONS OBJECT THAT READS LIKE A SPELLING OF `true`, WHICH IS THE
+    // ADJACENT WEAKER READING A REVIEWER NODS AT. `{ codeActionKinds: [] }` is a
+    // legal `ServerCapabilities` value meaning `no kinds to declare` -- and what
+    // it actually tells a conforming client is that this server produces NONE.
+    // That destroys the whole contrast the row is built on: `codeActionKinds` is
+    // OPTIONAL where `ExecuteCommandOptions.commands` is REQUIRED, which is why
+    // this contributor can decline to name kinds and the one above it could not
+    // decline to name commands. ANY READ OF THE KEY ALONE STAYS GREEN UNDER IT,
+    // which is what the arm's whole-object equality exists for.
+    //
+    // THE FIRST RECORD HERE WHOSE ARM FILE SPAWNS A SERVER, and the note at
+    // `memberArms` above says the others deliberately do not. It is not avoidable
+    // for this one: an advertised capability exists only in a handshake, so there
+    // is no cheaper statement of it to point at.
+    //
+    // AND IT IS NOT WHAT MAKES THE THREE `dodArms` RECORDS INTERMITTENT, MEASURED
+    // RATHER THAN ARGUED, because that is what a reader meeting them will blame:
+    // with this record stashed out, the same two runs of this file reported the
+    // same three REFUSED and then all of them HELD. Those arms re-run a file
+    // measured at fourteen seconds alone against a twenty-five second budget, and
+    // nothing in this sprint touched either number.
+    arm: {
+      file: "test/code-action.test.ts",
+      name: "a config supplying a codeAction handler advertises the provider and no kinds (bun)",
+    },
+    weakening: {
+      file: "packages/tsudoi-language-server/src/methods.ts",
+      from: "      capabilities.codeActionProvider = true;",
+      to: "      capabilities.codeActionProvider = { codeActionKinds: [] };",
+    },
+    redAt: "expect(result.capabilities).toEqual({",
+    // THE OTHER RUNTIME, AND IT IS A COLLATERAL RED ONLY BECAUSE THE ARM NAMES
+    // CARRY THEIR RUNTIME. Sharing one name would have collapsed the two into a
+    // single result in bun's report, and this record would have graded whichever
+    // was written last; the reason is at the top of the arm file.
+    alsoReddens: [
+      "a config supplying a codeAction handler advertises the provider and no kinds (deno)",
+    ],
+  },
 ];
 
 /**
