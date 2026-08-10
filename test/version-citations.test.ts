@@ -77,6 +77,7 @@ const accounted: ReadonlyArray<readonly [path: string, runtime: string, version:
   ["packages/tsudoi-hover-wordnet/test/package-shape.test.ts", "bun", "1.3.13"],
   ["packages/tsudoi-hover-wordnet/test/package-shape.test.ts", "bun", "1.3.13"],
   ["packages/tsudoi-language-server/package.json", "bun", "1.3.13"],
+  ["test/code-action.test.ts", "bun", "1.3.13"],
   ["test/helpers/deadline.ts", "bun", "1.3.13"],
   ["test/helpers/deadline.ts", "bun", "1.3.13"],
   ["test/helpers/lsp.ts", "bun", "1.3.13"],

@@ -462,8 +462,8 @@ reason that has nothing to do with how many actions you have. An editor naming a
 `partialResultToken` receives every batch you yield as its own `$/progress`; one that names none
 receives them concatenated into a single response, byte for byte what returning the list would
 have sent. So a handler with a fixed list yields once and is indistinguishable on the wire from
-one that could never have streamed. Yielding nothing at all is answered `null` -- *this server has
-no answer here* -- where yielding `[]` says *I looked and there is nothing you can do*, which your
+one that could never have streamed. Yielding nothing at all is answered `null` -- _this server has
+no answer here_ -- where yielding `[]` says _I looked and there is nothing you can do_, which your
 editor may render as an empty menu.
 
 What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi neither validates them
