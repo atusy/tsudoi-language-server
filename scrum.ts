@@ -627,7 +627,18 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 88,
+    pbi_id: "PBI-90",
+    goal: "`loadEfmConfig()` finds the efm-langserver `config.yaml` already on this machine, reads it, and hands back the tsudoi handlers it describes -- so an efm user's own linters and formatters run under tsudoi with not one tool definition restated.",
+    status: "in_progress",
+    subtasks: [],
+    impediments: [],
+    decisions: [
+      'THE YAML READER IS `yaml` AT `merge: true`, AND THE FLAG IS THE WHOLE RULING RATHER THAN A SETTING. MEASURED at yaml 2.9.0: with the default options, efm\'s own documented example parses a tool definition into `{ "<<": { ... } }` -- the merge key ARRIVES AS A LITERAL KEY and none of the merged tool\'s own keys are present. That is the silent mis-read PBI-90\'s notes predicted for a hand-rolled subset, and the library does it too unless told not to. A config using anchors would produce handlers for nothing, with no error anywhere. `merge: true` and `version: "1.1"` both fix it; the flag is chosen because it says what it does.',
+      "efm's `languages` ARE KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`, AND NO TRANSLATION TABLE IS INVENTED. The key is matched against `languageId` as the client sent it, plus efm's `=` any-language key, and where they disagree the author's own config is where it is repaired -- a table tsudoi wrote would be tsudoi deciding what an editor meant. The README is the authority on it.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 87,
