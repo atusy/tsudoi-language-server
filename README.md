@@ -472,8 +472,10 @@ none. What your editor makes of that pair is your editor's; what tsudoi sends is
 this promises.
 
 What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi checks that the batch is
-an array -- yield anything else and the request fails -- and looks at nothing inside it, so what
-your editor receives is what you wrote. **Which leaves every rule about what an action may contain
+an array -- yield anything else and the request fails -- and looks at nothing inside it, so
+nothing here reshapes an action or fills a field in. What crosses the wire is still JSON, so what
+your editor receives is what you wrote **for anything JSON carries**; a value it does not, from a
+cycle to a `BigInt` reached through `LSPAny`, is between you and the encoder. **Which leaves every rule about what an action may contain
 to you.** The one most likely to catch you is a capability: a client announces whether it can read
 code action _literals_, and one that has not may be sent `Command` literals only, so read
 `context.tsudoi.clientCapabilities.textDocument?.codeAction?.codeActionLiteralSupport` before you

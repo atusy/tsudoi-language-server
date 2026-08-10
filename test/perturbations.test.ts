@@ -1113,7 +1113,7 @@ const records: readonly PerturbationRecord[] = [
       from: "    if (invalidTokenReported.has(method)) {",
       to: "    if (invalidTokenReported.size > 0) {",
     },
-    redAt: "expect(lines).toHaveLength(2);",
+    redAt: "expect(lines).toHaveLength(streamRows.length);",
     alsoReddens: [
       "a refused token is reported once for each stream-driven row, naming that row (deno)",
     ],

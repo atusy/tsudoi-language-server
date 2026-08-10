@@ -695,8 +695,7 @@ const facts: readonly ReadmeFact[] = [
   },
   {
     // THE TWO CLAIMS A READER CANNOT CHECK FOR THEMSELVES, which is what earns
-    // this entry: that tsudoi declines to name kinds -- so an editor's own
-    // pre-filtering will always invoke the provider -- and that there is no
+    // this entry: that tsudoi declines to name kinds, and that there is no
     // second call in which to complete an action. Both are INVERTIBLE without a
     // line of the document going missing: `tsudoi advertises codeActionKinds:
     // []` and `tsudoi resolves code actions` read as fluently as the truth.
@@ -710,9 +709,10 @@ const facts: readonly ReadmeFact[] = [
     // resolve` are the two phrases only the true reading contains, and both sit
     // whole on one line as the document is written.
     //
-    // WHAT DECLINING TO NAME KINDS COSTS IS NOT PINNED HERE and is deliberately
-    // not claimed anywhere: it advertises no kind RESTRICTION, and what a client
-    // does with that -- pre-filter, or ask every time -- is the client's.
+    // WHAT DECLINING TO NAME KINDS DOES is advertise no kind RESTRICTION, and
+    // that is the whole of it: what a client then does -- pre-filter, or ask
+    // every time -- is the client's, and no sentence here or in the README may
+    // say otherwise.
     //
     // `codeActionLiteralSupport` IS NOT A TOKEN HERE, DELIBERATELY. It is an
     // obligation on the AUTHOR rather than a fact about tsudoi, and a token
