@@ -158,14 +158,18 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     drive: "stream-driven",
     type: CodeActionRequest.type,
     progress: new ProgressType<(Command | CodeAction)[]>(),
-    // `true` AND NOT AN OPTIONS OBJECT, WHICH IS THE CONTRAST WITH THE ROW
-    // ABOVE AND NOT AN ECONOMY. `ExecuteCommandOptions.commands` is REQUIRED, so
-    // that contributor had to write a list it could not know and wrote an empty
-    // one; `CodeActionOptions.codeActionKinds` is OPTIONAL, so handler presence
-    // can decline to name kinds instead of naming wrong ones. `{ codeActionKinds:
-    // [] }` reads like a harmless spelling of this and is not: it tells a
-    // conforming client this server produces NO kinds, which is the promise the
-    // row above could not avoid making and this one can.
+    // NAMES NO KINDS, WHICH IS THE CONTRAST WITH THE ROW ABOVE AND NOT AN
+    // ECONOMY. `ExecuteCommandOptions.commands` is REQUIRED, so that contributor
+    // had to write a list it could not know and wrote an empty one;
+    // `CodeActionOptions.codeActionKinds` is OPTIONAL, so handler presence can
+    // decline to name kinds instead of naming wrong ones.
+    //
+    // WHAT IS REFUSED IS `{ codeActionKinds: [] }` AND NOT AN OPTIONS OBJECT AS
+    // SUCH: `{}` is a legal `CodeActionOptions` that says exactly what `true`
+    // says, so the boolean is a spelling and carries no claim of its own. The
+    // empty LIST is the one that reads like a harmless spelling and is not --
+    // it tells a conforming client this server produces NO kinds, which is the
+    // promise the row above could not avoid making and this one can.
     capability: (capabilities) => {
       capabilities.codeActionProvider = true;
     },

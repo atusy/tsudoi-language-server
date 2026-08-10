@@ -701,16 +701,28 @@ const facts: readonly ReadmeFact[] = [
     // line of the document going missing: `tsudoi advertises codeActionKinds:
     // []` and `tsudoi resolves code actions` read as fluently as the truth.
     //
+    // TWO OF THE FOUR TOKENS CARRY A DIRECTION, AND THE FIRST SPELLING OF THIS
+    // ENTRY HAD NONE -- MEASURED, a section asserting tsudoi advertises
+    // `codeActionKinds: []` and RESOLVES code actions satisfied every token it
+    // then had. It certified the VOCABULARY of the paragraph and nothing about
+    // what the paragraph said, which is this repository's own recorded failure
+    // shape one layer up from an assertion. `claims no kinds` and `does not
+    // resolve` are the two phrases only the true reading contains, and both sit
+    // whole on one line as the document is written.
+    //
     // `codeActionLiteralSupport` IS NOT A TOKEN HERE, DELIBERATELY. It is an
     // obligation on the AUTHOR rather than a fact about tsudoi, and a token
     // demanding it would pin the wording of advice this document is free to
     // move or improve. The rule this repository already records applies: a token
-    // nothing in the document should say is a test that forces false prose, and
-    // its converse is that a token should hold a fact, not a paragraph.
-    //
-    // SINGLE WORDS, on the hard-wrap rule the entries above record.
+    // nothing in the document should say is a test that forces false prose.
     name: "a codeAction handler claims the provider and no kinds, and nothing resolves an action later",
-    tokens: [/codeActionProvider/, /codeActionKinds/, /optional/i, /codeAction\/resolve/],
+    tokens: [
+      /codeActionProvider/,
+      /claims no kinds/i,
+      /codeActionKinds/,
+      /codeAction\/resolve/,
+      /does not resolve/i,
+    ],
   },
 ];
 

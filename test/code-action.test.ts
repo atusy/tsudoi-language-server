@@ -228,19 +228,21 @@ for (const runtime of runtimes) {
     );
 
     /**
-     * `codeActionProvider: true` AND NOT AN OPTIONS OBJECT, WHICH IS THIS ROW'S
-     * CONTRAST WITH THE ONE BEFORE IT. `ExecuteCommandOptions.commands` is
-     * REQUIRED, so that contributor had to write a list and could only write an
-     * empty one; `CodeActionOptions.codeActionKinds` is OPTIONAL, so handler
-     * presence can decline to name kinds instead of naming wrong ones. Claiming
-     * a kind would be a promise to a client that no config made -- the identical
-     * failure, avoidable here where it was not there.
+     * THE ADVERTISED CAPABILITY NAMES NO KINDS, WHICH IS THIS ROW'S CONTRAST
+     * WITH THE ONE BEFORE IT. `ExecuteCommandOptions.commands` is REQUIRED, so
+     * that contributor had to write a list and could only write an empty one;
+     * `CodeActionOptions.codeActionKinds` is OPTIONAL, so handler presence can
+     * decline to name kinds instead of naming wrong ones. Claiming a kind would
+     * be a promise to a client that no config made -- the identical failure,
+     * avoidable here where it was not there.
      *
-     * EXACT EQUALITY ON THE WHOLE OBJECT rather than a read of the one key: an
-     * implementation writing `{ codeActionKinds: [] }` -- which reads like a
-     * harmless spelling of `true` and tells a conforming client this server
-     * produces NO kinds at all -- reddens here and would satisfy any read of the
-     * key alone.
+     * THE VALUE PINNED IS `true` AND THE PROPERTY IS NOT ABOUT THE BOOLEAN:
+     * `{}` is a legal `CodeActionOptions` saying exactly what `true` says, so an
+     * implementation spelling it that way would redden this arm while breaking
+     * nothing. WHAT THE ARM IS FOR is the whole-object equality, which refuses
+     * `{ codeActionKinds: [] }` -- the spelling that reads harmless and tells a
+     * conforming client this server produces NO kinds at all, and that would
+     * satisfy any read of the key alone.
      */
     test(
       named(
