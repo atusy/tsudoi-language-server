@@ -23,15 +23,20 @@ applySuiteDeadline();
 test("the derived order is the order this repository must be built in", () => {
   // BYTE FOR BYTE, AND THIS SEQUENCE IS THE DERIVATION EARNING ITS KEEP.
   //
-  // WHAT DECIDES IT IS TWO DECLARATIONS AND NOTHING ABOUT THE LAYOUT: both
-  // handlers name the framework in a peer they call optional, and the ROOT names
+  // WHAT DECIDES IT IS THE DECLARATIONS AND NOTHING ABOUT THE LAYOUT: every
+  // member names the framework in a peer it calls optional, and the ROOT names
   // it in `devDependencies`, which is deliberately NOT a build edge. Move that
   // one declaration up a field and the framework is ordered BEFORE the root and
   // this line reddens -- so this arm is also where the field ruling is checked,
   // and no separate test asserts it.
+  //
+  // AND THE MEMBERS AFTER THE FRAMEWORK ARE IN PATH ORDER AMONG THEMSELVES,
+  // which is the TIE-BREAK rather than the order: nothing separates them, so a
+  // reader taking this sequence as a dependency chain between them has it wrong.
   expect(buildOrder(repoRoot)).toEqual([
     repoRoot,
     join(repoRoot, "packages", "tsudoi-language-server"),
+    join(repoRoot, "packages", "tsudoi-adapter-efm-config"),
     join(repoRoot, "packages", "tsudoi-completion-path"),
     join(repoRoot, "packages", "tsudoi-hover-wordnet"),
   ]);

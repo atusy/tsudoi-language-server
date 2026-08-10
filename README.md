@@ -542,10 +542,11 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   however its manifest reads, what bounds it, and the route for getting it — and that document,
   rather than this one, is what a registry page would show:
 
-  | package                                                                      | answers                                             |
-  | ---------------------------------------------------------------------------- | --------------------------------------------------- |
-  | [`@atusy/tsudoi-hover-wordnet`](packages/tsudoi-hover-wordnet/README.md)     | `textDocument/hover`                                |
-  | [`@atusy/tsudoi-completion-path`](packages/tsudoi-completion-path/README.md) | `textDocument/completion`, `completionItem/resolve` |
+  | package                                                                            | answers                                             |
+  | ---------------------------------------------------------------------------------- | --------------------------------------------------- |
+  | [`@atusy/tsudoi-hover-wordnet`](packages/tsudoi-hover-wordnet/README.md)           | `textDocument/hover`                                |
+  | [`@atusy/tsudoi-completion-path`](packages/tsudoi-completion-path/README.md)       | `textDocument/completion`, `completionItem/resolve` |
+  | [`@atusy/tsudoi-adapter-efm-config`](packages/tsudoi-adapter-efm-config/README.md) | whatever an efm `config.yaml` describes             |
 
   **Neither brings tsudoi, and neither manifest will warn you.** Both declare
   `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a

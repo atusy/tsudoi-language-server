@@ -1,0 +1,32 @@
+{
+  "name": "@atusy/tsudoi-adapter-efm-config",
+  "version": "0.0.0",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prepack": "rm -rf dist && tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  },
+  "peerDependencies": {
+    "@atusy/tsudoi-language-server": "*"
+  },
+  "peerDependenciesMeta": {
+    "@atusy/tsudoi-language-server": {
+      "optional": true
+    }
+  }
+}

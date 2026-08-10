@@ -95,6 +95,23 @@ const publishedFiles: Record<string, readonly string[]> = {
     "dist/index.js",
     "package.json",
   ],
+  "@atusy/tsudoi-adapter-efm-config": [
+    "LICENSE",
+    "README.md",
+    "dist/config.d.ts",
+    "dist/config.js",
+    "dist/errorformat.d.ts",
+    "dist/errorformat.js",
+    "dist/handlers.d.ts",
+    "dist/handlers.js",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "dist/load.d.ts",
+    "dist/load.js",
+    "dist/run.d.ts",
+    "dist/run.js",
+    "package.json",
+  ],
 };
 
 // The pair for the table, and without it the per-member assertions below are a
@@ -156,6 +173,18 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /optional/,
     /Cannot find module/,
     /Whitespace is its word rule/i,
+  ],
+  // THE THIRD THING THIS MEMBER MUST SAY IS NOT A DOCUMENT RULE BUT A TRUST ONE,
+  // which is what `WHAT BOUNDS IT` comes to for an adapter: the others decide
+  // which documents they serve, and this one decides to EXECUTE TEXT OUT OF A
+  // FILE IT FOUND ITSELF. A stranger installing it cannot act on that unless the
+  // README says so, and no maintainer's source comment reaches them.
+  "@atusy/tsudoi-adapter-efm-config": [
+    /textDocument\/diagnostic/,
+    /peer/i,
+    /optional/,
+    /Cannot find module/,
+    /through a shell/i,
   ],
 };
 

@@ -5,6 +5,7 @@
     "": {
       "name": "@atusy/tsudoi-language-server",
       "devDependencies": {
+        "@atusy/tsudoi-adapter-efm-config": "0.0.0",
         "@atusy/tsudoi-completion-path": "0.0.0",
         "@atusy/tsudoi-hover-wordnet": "0.0.0",
         "@atusy/tsudoi-language-server": "0.0.0",
@@ -14,7 +15,24 @@
         "vscode-languageserver-protocol": "^3.17.5",
         "vscode-languageserver-textdocument": "^1.0.12",
         "vscode-languageserver-types": "^3.18.0",
+        "yaml": "^2.9.0",
       },
+    },
+    "packages/tsudoi-adapter-efm-config": {
+      "name": "@atusy/tsudoi-adapter-efm-config",
+      "version": "0.0.0",
+      "dependencies": {
+        "yaml": "^2.9.0",
+      },
+      "devDependencies": {
+        "@types/node": "^24.0.0",
+      },
+      "peerDependencies": {
+        "@atusy/tsudoi-language-server": "*",
+      },
+      "optionalPeers": [
+        "@atusy/tsudoi-language-server",
+      ],
     },
     "packages/tsudoi-completion-path": {
       "name": "@atusy/tsudoi-completion-path",
@@ -57,6 +75,8 @@
     },
   },
   "packages": {
+    "@atusy/tsudoi-adapter-efm-config": ["@atusy/tsudoi-adapter-efm-config@workspace:packages/tsudoi-adapter-efm-config"],
+
     "@atusy/tsudoi-completion-path": ["@atusy/tsudoi-completion-path@workspace:packages/tsudoi-completion-path"],
 
     "@atusy/tsudoi-hover-wordnet": ["@atusy/tsudoi-hover-wordnet@workspace:packages/tsudoi-hover-wordnet"],
@@ -122,5 +142,7 @@
     "vscode-languageserver-types": ["vscode-languageserver-types@3.18.0", "", {}, "sha512-8TsGPNMIMiiBdkORgRSvLjuiEIiAFtO+KssmYWxQ+uSVvlf7RjK8YKCOjPzZ+YA04jXEV7+7LvkSmHkhpNS99g=="],
 
     "wordnet": ["wordnet@2.0.0", "", {}, "sha512-VQOEUBHU6drwXGQx37bVaRqi042IZ8NwJiT9qLtM2x1QzqgIJIRoyZa++rWrUvICK+tYz9ttfYFk1c8IiN6DVQ=="],
+
+    "yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
   }
 }
