@@ -506,7 +506,8 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
  * partial results are objects carrying OTHER documents' reports rather than more
  * of the one that was asked for.
  *
- * TWO ROWS SATISFY BOTH, AND THE CONDITIONS DO NOT SAY WHY EITHER IS HERE.
+ * THE CONDITIONS DO NOT SAY WHY A ROW THAT MEETS THEM IS HERE, which is the
+ * reading to carry away rather than the conditions themselves.
  * `textDocument/completion` predates the split and no ruling anywhere records an
  * alternative being weighed for it; `textDocument/codeAction` could have been
  * awaited once and was RULED into this drive, its reason at

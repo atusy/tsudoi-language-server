@@ -120,12 +120,11 @@ for (const runtime of runtimes) {
     /**
      * WHAT THE AUTHOR WROTE IS WHAT THE CLIENT RECEIVES, ASSERTED WHOLE AND OVER
      * BOTH MEMBERS OF THE UNION. tsudoi neither validates a code action nor
-     * reshapes one, and the two shapes overlap in a way that makes a rebuild
-     * plausible rather than obvious: both carry a `title` AND a `command`, the
-     * `Command`'s being a string where the `CodeAction`'s is a nested `Command`.
+     * reshapes one, and the two shapes are close enough to make a rebuild
+     * plausible: each declares a `title` and a `command`, the `Command`'s a
+     * required string where the `CodeAction`'s is an optional nested `Command`.
      * A tsudoi normalising the list onto the members it recognised would land on
-     * one of those readings, and the whole-value comparison is what refuses
-     * both.
+     * one reading or the other, and the whole-value comparison refuses both.
      *
      * EXACT EQUALITY ON THE WHOLE LIST rather than a read of one title: an
      * implementation that reordered, that collapsed the two entries sharing a

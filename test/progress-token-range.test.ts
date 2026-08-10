@@ -145,8 +145,8 @@ for (const runtime of runtimes) {
     // is that it is the only one the perturbation registry points at. bun's
     // report keys an arm by its `test()` string alone -- the `describe` goes to
     // `classname` -- so two runtimes sharing a name collapse to one result and a
-    // record would grade whichever was written last. The three arms above are
-    // graded by no record, so the collapse costs them nothing.
+    // record would grade whichever was written last. What stands above it here
+    // is graded by no record, so the collapse costs it nothing.
     test(`a refused token is reported once for each stream-driven row, naming that row (${runtime.name})`, async () => {
       const session = LspSession.start(runtime, fixture("all-methods.ts"));
       try {

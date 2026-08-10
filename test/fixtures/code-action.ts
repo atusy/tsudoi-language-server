@@ -6,13 +6,16 @@ import type {
 } from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
- * ONE OF EACH MEMBER OF THE RESULT'S UNION, WHICH IS THE WHOLE REASON THIS
- * FIXTURE IS NOT A ONE-ITEM ONE. `(Command | CodeAction)[]` is two shapes that
- * OVERLAP RATHER THAN DIVERGE -- both carry a `title` and a `command`, the
- * `Command`'s a string where the `CodeAction`'s is a nested `Command` -- so a
- * tsudoi normalising the answer onto the members it recognised has a plausible
- * wrong reading available to it, and a list of CodeActions alone could not tell
- * that from a faithful passthrough.
+ * BOTH MEMBERS OF THE RESULT'S UNION, WHICH IS THE WHOLE REASON THIS FIXTURE IS
+ * NOT A ONE-ITEM ONE. `(Command | CodeAction)[]` is two shapes a normaliser
+ * could plausibly confuse: each declares a `title` and a `command`, the
+ * `Command`'s a required string where the `CodeAction`'s is an optional nested
+ * `Command`. A list of CodeActions alone could not tell a tsudoi rebuilding the
+ * answer onto the members it recognised from a faithful passthrough.
+ *
+ * THE `CodeAction` HERE CARRIES NO `command` AT ALL, deliberately: an action
+ * whose whole content is an `edit` is the shape with the least in common with a
+ * `Command`, so it is the one a normaliser is likeliest to mangle.
  *
  * THE CodeAction CARRIES A WORKSPACE EDIT AND THE Command CARRIES ARGUMENTS,
  * for the reason test/fixtures/execute-command-echo.ts gives at its own: a flat
