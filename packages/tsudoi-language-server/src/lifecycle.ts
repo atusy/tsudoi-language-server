@@ -1,8 +1,9 @@
 import { ErrorCodes, ResponseError } from "vscode-languageserver-protocol/node";
 
 /**
- * The states an LSP session passes through, in order -- except `initializing`,
- * which is the one a session can leave BACKWARDS.
+ * The states an LSP session passes through, in order, and STRICTLY FORWARD:
+ * there is no edge back. What one was for, and why it was removed, is at the
+ * handshake's failure path in src/server.ts.
  *
  * ONE value rather than two booleans: `initialized && !hasShutdown` spreads a
  * single fact across two flags that are free to disagree, and leaves every
@@ -32,13 +33,6 @@ export interface Lifecycle {
    * `initialize` handler, because that handler is awaited between the two.
    */
   beginInitialize(): void;
-  /**
-   * Records that an admitted handshake did NOT complete, returning the session
-   * to `uninitialized` so the client may try again. The ONLY backwards edge, and
-   * it exists because a failed handshake must not consume the one `initialize`
-   * LSP permits -- `InitializeError.retry` is unimplementable otherwise.
-   */
-  abandonInitialize(): void;
   /** Records the client's initialize request. */
   initialize(): void;
   /** Records the client's shutdown request. */
@@ -75,10 +69,6 @@ export function createLifecycle(): Lifecycle {
   return {
     beginInitialize(): void {
       phase = "initializing";
-    },
-
-    abandonInitialize(): void {
-      phase = "uninitialized";
     },
 
     initialize(): void {

@@ -11,11 +11,12 @@ import type {
 export const handshakeFailure = "the handshake handler had nothing to answer with";
 
 /**
- * A HANDSHAKE HANDLER THAT FAILS, WHICH IS THE ONE FAILURE THAT MUST NOT TAKE THE
- * PROCESS WITH IT. `exit 1, stderr, zero bytes on stdout` is the CONFIG LOAD
- * contract and belongs to a moment before any connection exists; by the time this
- * runs stdout is LSP's, so the answer is an error RESPONSE and a session left
- * exactly where it was.
+ * A HANDSHAKE HANDLER THAT FAILS, WHICH TAKES THE PROCESS WITH IT. It is NOT the
+ * config-load contract wearing a second hat: `exit 1, stderr, zero bytes on
+ * stdout` belongs to a moment before any connection exists, and by the time this
+ * runs stdout is LSP's -- so the failure is ALSO answered and ALSO logged to the
+ * client, and it is the death rather than the exit code that this fixture is
+ * spawned to show.
  */
 const initialize: MethodHandler<"initialize"> = () => {
   throw new Error(handshakeFailure);

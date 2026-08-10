@@ -403,11 +403,13 @@ editor named no encodings, and tsudoi does not read the list it named.
 What you were handed is frozen at every depth, so editing it in place throws instead of
 half-working -- spread it and change the copy. `structuredClone` is not the way out and reads like
 it should be: the clone keeps the `readonly`, so assigning to its `capabilities` is a compile
-error. And a handler that throws is answered as an error rather than taking the process down: the
-session stays uninitialized, every later request is refused until it is initialized, and an editor
-that corrects itself may send `initialize` again. The reason is on stderr as `tsudoi: initialize
-handler failed: ...`, carrying the stack that names the line in your file -- the same `tsudoi: `
-prefix every other message here is found by.
+error. And a handshake that does not complete takes the process down, with no second chance: LSP
+permits one `initialize` per session, so tsudoi refuses every later one whatever became of the
+first. A handler that throws, and a handler whose answer cannot be JSON, both end the same way --
+your editor gets a `window/logMessage` at Error level saying what happened, the `initialize` it is
+waiting on is answered as an error, and the server exits 1. The reason is also on stderr, as
+`tsudoi: initialize handler failed: ...` carrying the stack that names the line in your file -- the
+same `tsudoi: ` prefix every other message here is found by.
 
 One last thing this handler owes, which every other handler owes too and is less likely to reach
 for: anything you open -- a timer, a watcher, a socket, a subscription -- must be `unref()`'d.

@@ -139,41 +139,51 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * A FAILED HANDSHAKE HANDLER LEAVES THE SESSION UNINITIALIZED AND THE PROCESS
-     * ALIVE.
+     * A HANDSHAKE THAT DOES NOT COMPLETE KILLS THE SERVER, which is the ruling
+     * this arm exists for. What stood here asserted the OPPOSITE -- the next
+     * request reading -32002 and a corrected `initialize` ACCEPTED -- off a
+     * backwards edge whose stated reason (`InitializeError.retry` is
+     * unimplementable otherwise) was measured false; the reason it was false is
+     * at `endFailedHandshake` in packages/tsudoi-language-server/src/server.ts.
      *
-     * THE -32002 READ WAS THE DISCRIMINATOR FOR `lifecycle.initialize()` BEFORE
-     * THE HANDLER AND IS NOT ANY LONGER, which is recorded rather than papered
-     * over: the catch now gives the admission BACK, so that implementation ends
-     * at `uninitialized` here too and this arm stays entirely green under it --
-     * MEASURED. What catches it is the concurrency arm at the foot of this file,
-     * on the refusal's message. The read stays because `serving` is still a state
-     * this arm must not be in.
+     * NOTHING ASKS THIS SERVER TO EXIT, and that is the discriminator no code
+     * carries: `exit` is never sent, so a session that merely answered an error
+     * and stayed up parks here until `waitForExit` gives up. The code 1 beside it
+     * is the second half -- a server may not report a handshake it never made as
+     * a clean end.
      *
-     * THE RETRY IS WHAT THE GIVING-BACK IS FOR, and it is this arm's own
-     * discriminator: delete `lifecycle.abandonInitialize()` and the session wedges
-     * at `initializing`, so the second `initialize` reads -32600 and exactly this
-     * line reddens -- MEASURED, with everything above it green.
+     * ARRIVALS WHOLE, IN ORDER, and not two independent reads: the report has to
+     * be on the wire BEFORE the death, and the answer has to survive it. A run
+     * that logged after answering, or that logged twice, satisfies every looser
+     * reading of this.
      */
-    test("a throwing handler is answered an error, leaves the next request -32002, and writes the failure to stderr", async () => {
+    test("a throwing handler is logged to the client at Error level, answered, and takes the process down unasked", async () => {
       const session = LspSession.start(runtime, fixture("initialize-throws.ts"));
       try {
-        const refusal = await session.requestError("initialize", initializeParams);
-        expect(refusal.code).toBe(ErrorCodes.InternalError);
-
-        const next = await session.requestError("textDocument/hover", hoverParams);
-        expect(next.code).toBe(ErrorCodes.ServerNotInitialized);
-
-        const retry = await session.requestError("initialize", initializeParams);
-        expect(retry.code).not.toBe(ErrorCodes.InvalidRequest);
-
-        await session.waitForStderr(handshakeFailure);
-        expect(session.stderr).toContain("initialize handler failed");
-
-        session.notify("exit", null);
+        const handshake = session.issue("initialize", initializeParams);
         expect(await session.waitForExit()).toBe(1);
-        // STDOUT IS LSP'S BY NOW, which is the whole reason this failure is a
-        // response rather than an exit: a byte written here desyncs a real editor
+
+        const answered = await handshake.response;
+        expect(answered.error?.code).toBe(ErrorCodes.InternalError);
+        // THE AUTHOR'S OWN WORDS REACH THE CLIENT on this path, which is what
+        // says tsudoi rethrew what they raised rather than inventing a sentence
+        // -- the half the serialisation failure below cannot have.
+        expect(answered.error?.message).toContain(handshakeFailure);
+
+        expect(session.arrivals).toEqual([
+          { kind: "notification", method: "window/logMessage" },
+          { kind: "response", id: handshake.id },
+        ]);
+        const [logged] = session.logMessages;
+        expect(logged?.type).toBe(MessageType.Error);
+        expect(logged?.message).toContain("initialize handler failed");
+        expect(logged?.message).toContain(handshakeFailure);
+
+        // AND THE SAME FAILURE ON stderr, which is where a config author reads a
+        // server their editor has already given up on.
+        expect(session.stderr).toContain("initialize handler failed");
+        expect(session.stderr).toContain(handshakeFailure);
+        // STDOUT IS LSP'S BY NOW: a byte written here desyncs a real editor
         // instead of failing loudly.
         expect(session.unframedStdoutBytes).toBe(0);
       } finally {
@@ -205,39 +215,40 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * AN ANSWER THAT CANNOT BE SERIALISED IS REPORTED WHERE THE AUTHOR READS IT,
-     * AND THE PROCESS DIES. What it did before the stakeholder ruled on it is at
-     * the serialize check in packages/tsudoi-language-server/src/server.ts.
+     * THE SAME ENDING FOR THE OTHER FAILURE, which is what says the two are one
+     * disposition and not two that resemble each other: the arm above and this
+     * one read the same list. What this path did before the stakeholder ruled on
+     * it is at the serialize check in packages/tsudoi-language-server/src/server.ts.
      *
-     * THE UNANSWERED HANDSHAKE IS THIS ARM'S DISCRIMINATOR AND NOT A DETAIL. The
-     * behaviour this replaces let vscode-jsonrpc stringify the answer and so
-     * answered -32603, with the phase already moved; a session that both logged
-     * and answered would satisfy every other line here. The exit code cannot
-     * carry it -- a session torn down without a shutdown exits 1 whatever
-     * happened.
+     * ITS DISCRIMINATOR IS THE DEATH NOBODY ASKED FOR, since the answer no longer
+     * is one. Remove the check and vscode-jsonrpc stringifies the value itself:
+     * the client is answered -32603 all the same, and the session STAYS UP with
+     * the phase already moved -- so `waitForExit` is what fails, not the code.
      *
      * 1 AND NOT MERELY `NOT 0`, which is more than the ruling asked: `not 0` is
      * satisfied by a session killed by a signal, where `waitForExit` answers
      * null.
      */
-    test("a handler whose answer cannot be serialised is logged to the client at Error level, and the process dies unanswered", async () => {
+    test("a handler whose answer cannot be serialised is logged to the client at Error level, answered, and the process dies", async () => {
       const session = LspSession.start(runtime, fixture("initialize-unserializable.ts"));
       try {
-        // AWAITED, THOUGH NOTHING IT CARRIES IS ASSERTED: the helper parks a
-        // rejecting timer behind every issued request, and an abandoned one
-        // rejects into whichever test is running by then.
         const handshake = session.issue("initialize", initializeParams);
         expect(await session.waitForExit()).toBe(1);
-        await handshake.response;
 
-        const [logged, ...beyond] = session.logMessages;
+        const answered = await handshake.response;
+        expect(answered.error?.code).toBe(ErrorCodes.InternalError);
+        expect(answered.error?.message).toContain(unserializableFailure);
+
+        expect(session.arrivals).toEqual([
+          { kind: "notification", method: "window/logMessage" },
+          { kind: "response", id: handshake.id },
+        ]);
+        const [logged] = session.logMessages;
         expect(logged?.type).toBe(MessageType.Error);
         expect(logged?.message).toContain("initialize");
         expect(logged?.message).toContain(unserializableFailure);
-        // ONE MESSAGE AND NOT AT LEAST ONE: a server that logged its way through
-        // every handshake would satisfy the reading above.
-        expect(beyond).toEqual([]);
-        expect(session.arrivals.some((arrival) => arrival.kind === "response")).toBe(false);
+
+        expect(session.stderr).toContain(unserializableFailure);
         // THE REPORT LEAVES AS A FRAMED NOTIFICATION, so this says the report
         // itself did not desync the editor it was written for.
         expect(session.unframedStdoutBytes).toBe(0);

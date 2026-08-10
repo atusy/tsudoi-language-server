@@ -27,11 +27,15 @@ import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import {
   contributeCapabilities,
+  handlerFailure,
   registerMethods,
-  reportHandlerFailure,
   requestContext,
 } from "./methods.ts";
-import { createGatedConnection, defineNotifications } from "./notifications.ts";
+import {
+  createGatedConnection,
+  defineNotifications,
+  type RequestOnlyConnection,
+} from "./notifications.ts";
 import { deepFrozen, type TsudoiRuntime } from "./tsudoi.ts";
 import type { DeepReadonly, TsudoiConfig } from "./types.ts";
 import type { WorkspaceFoldersHandle } from "./workspace.ts";
@@ -134,9 +138,9 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       //
       // AND QUEUEING IS DELIBERATELY NOT BUILT, WHICH IS AN ARGUMENT AND NOT AN
       // ASSERTION: a queue would hold notifications against a session this
-      // handler may still FAIL, and the catch below returns the phase to
-      // uninitialized -- so the only correct disposal of everything queued is the
-      // drop that already happens, arrived at later and with a buffer to explain.
+      // handler may still FAIL, and a failed handshake now takes the PROCESS with
+      // it -- so the only correct disposal of everything queued is the drop that
+      // already happens, arrived at later and with a buffer to explain.
       // Note what this warns: nothing reddens if you drop a notification in here,
       // which is the whole subject -- no arm sends one into this window. The
       // WINDOW is a different question and does have colour now: CLOSING it, by
@@ -168,85 +172,68 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
           initializeParams,
         );
       } catch (error) {
-        // THE ADMISSION IS GIVEN BACK BEFORE THE RETHROW, and the order is the
-        // whole of it: `reportHandlerFailure` returns `never`, so a line after it
-        // would leave the session wedged at `initializing` -- every later
-        // `initialize` refused -32600 and every request -32002, with no way out.
-        // Giving it back is what keeps the client answered an error, the NEXT
-        // request reading -32002, and a corrected `initialize` ACCEPTED. THE ONE
-        // THING NOT UNDONE IS `handshake`, and it is not owed: both of its
-        // writers overwrite unconditionally, so the retry is clean.
-        //
-        // ALL OF WHICH IS ABOUT A HANDLER THAT THREW, AND ONLY THAT. A handler
-        // that RETURNS an answer nothing can serialise is not answered at all
-        // and has no retry to be offered one: the check below ends the process.
-        //
-        // AND WHAT AN AUTHOR CANNOT THROW HERE IS RECORDED RATHER THAN FIXED: a
-        // conformant `InitializeError { retry }` needs a `ResponseError`, and
-        // none of the four published subpaths hands one over -- `deps/protocol`
-        // is type-only and `deps/types` carries no such value -- so reaching it
-        // means naming vscode-jsonrpc directly, which is the one thing `deps/`
-        // exists to spare a config. Exporting the class as a VALUE is the fix
-        // and it widens the published surface, so it waits for someone who wants
-        // the field. Until then every handshake failure the author raises is
-        // -32603 with their own message.
-        lifecycle.abandonInitialize();
-        reportHandlerFailure("initialize", error);
+        // THE AUTHOR'S OWN ERROR IS WHAT THE CLIENT IS ANSWERED WITH, which is
+        // how every other handler failure in this tree ends and the one thing
+        // this path does not share with the one below. It arrives as a bare
+        // -32603 carrying their message: a conformant `InitializeError { retry }`
+        // would need a `ResponseError`, and none of the four published subpaths
+        // hands one over -- `deps/protocol` is type-only and `deps/types` carries
+        // no such value -- so an author reaching it must name vscode-jsonrpc
+        // directly, the one thing `deps/` exists to spare a config. Exporting the
+        // class as a VALUE is the fix and it widens the published surface, so it
+        // waits for someone who wants the field.
+        return await endFailedHandshake(connection, handlerFailure("initialize", error), error);
       }
       // STRINGIFIED HERE BECAUSE PAST THIS FUNCTION NOBODY CAN REPORT IT.
       // vscode-jsonrpc serialises the answer after `initialize` returns, and
       // WHAT THAT COST, MEASURED ON BOTH RUNTIMES BEFORE THIS CHECK EXISTED: the
       // client was answered -32603, stderr stayed EMPTY -- the failure happens
-      // past `reportHandlerFailure`, so this was the one handler failure in the
-      // tree with no `tsudoi: ` line locating it -- and the retry the client
-      // would make was refused -32600 `already initialized`, the phase having
-      // moved by then. A wedged session and nothing anywhere saying why.
+      // past the catch above, so this was the one handler failure in the tree
+      // with no `tsudoi: ` line locating it -- and a client sending `initialize`
+      // again was refused -32600 `already initialized`, the phase having moved by
+      // then. A wedged session and nothing anywhere saying why.
       //
       // THE STAKEHOLDER RULED THAT UNACCEPTABLE AND THE PRICE ACCEPTABLE: one
       // stringify of one small object, on the handshake path, once a session
-      // THAT DECLARES THIS HANDLER -- the fast path above returns before it. The
-      // failure leaves as a `window/logMessage` because that is where a config
-      // author reads their own server, and the process then ends ABNORMALLY -- a
-      // config whose handshake cannot be sent has no session to go on with.
+      // THAT DECLARES THIS HANDLER -- the fast path above returns before it.
+      //
+      // A `ResponseError` AND NOT THE ENGINE'S OWN, because this is the one
+      // failure whose error the client cannot be told in the author's words: the
+      // engines disagree on the wording for a BigInt and for a cycle, and the
+      // sentence below is the one the report already carries.
       //
       // AND WHAT SURVIVES THE CHECK IS ONE READ AWAY. This stringify and
       // vscode-jsonrpc's own are TWO READS of the same value, so an answer that
       // serialises once and not twice -- a getter counting its calls, a proxy,
       // the shape test/fixtures/handler-proxy-throws-on-second-read.ts already
       // builds for another seam -- passes here and wedges the session. MEASURED
-      // on both runtimes: -32603, the retry refused -32600, stderr EMPTY and no
-      // logMessage at all, which is the paragraph above intact. NOT ARMED,
-      // on the argument the overturned record made and that still holds for this
-      // narrower door -- an arm would pin the wedge as promised behaviour. AND
-      // `JSON.parse(JSON.stringify(answer))` IS THE FIX AND IS NOT TAKEN: it
-      // makes the two reads one by putting a COPY on the wire, which is a change
-      // to what the client is served and not what was ruled on here.
-      //
-      // AWAITED BEFORE THE EXIT, and that is the repair rather than tidiness:
-      // `process.exit` takes an unflushed frame with it, so an unawaited
-      // notification is the same silence in a different costume.
-      //
-      // BEFORE THE TRANSITION, AND NOTHING OBSERVES THAT IT IS: the process dies
-      // either way, so the placement buys no behaviour and is not what any arm
-      // reads. What it keeps is the record -- a session that never served must
-      // not have recorded a completed handshake on its way out.
+      // on both runtimes: -32603, a further `initialize` refused -32600, stderr
+      // EMPTY and no logMessage at all, which is the paragraph above intact. NOT
+      // ARMED, on the argument the overturned record made and that still holds
+      // for this narrower door -- an arm would pin the wedge as promised
+      // behaviour. AND `JSON.parse(JSON.stringify(answer))` IS THE FIX AND IS NOT
+      // TAKEN: it makes the two reads one by putting a COPY on the wire, which is
+      // a change to what the client is served and not what was ruled on here.
       try {
         JSON.stringify(answer);
       } catch (error) {
-        await connection.sendNotification(LogMessageNotification.type, {
-          type: MessageType.Error,
-          message:
-            `tsudoi: the config's initialize handler returned a value that cannot be ` +
-            `serialised: ${error instanceof Error ? error.message : String(error)}`,
-        });
-        process.exit(1);
+        const sentence =
+          `the config's initialize handler returned a value that cannot be ` +
+          `serialised: ${error instanceof Error ? error.message : String(error)}`;
+        return await endFailedHandshake(
+          connection,
+          sentence,
+          new ResponseError(ErrorCodes.InternalError, sentence),
+        );
       }
       // AFTER `handshake`, AFTER the contributors, BEFORE this line -- each forced
       // rather than chosen. Earlier than `handshake` the context's `tsudoi` reads
       // the pre-handshake nulls; earlier than the contributors `preparedResult` is
       // not yet what it is DEFINED as, the answer tsudoi would otherwise have sent;
-      // and LATER than this line the phase would already have moved when a handler
-      // throws, which is exactly what the catch above depends on.
+      // and LATER THAN BOTH FAILURE PATHS, which no longer DEPEND on it -- they end
+      // the process, so nothing reads the phase after them. What keeps it last is
+      // the record: a session that never served must not have written down a
+      // completed handshake on its way out.
       lifecycle.initialize();
       // WHAT THE HANDLER RETURNED IS THE RESULT, WITH NO FALLBACK: a handler
       // returning nothing has not returned an InitializeResult, and treating that
@@ -320,6 +307,54 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   // AND NEVER ON DENO, so a handler installed there is silently inert on half the
   // supported runtimes. `process.stdin.on("end", ...)` fires on both.
   connection.listen();
+}
+
+/**
+ * How a handshake that cannot complete ends, whatever made it fail: the failure
+ * is written where a config author reads their own server -- stderr AND
+ * `window/logMessage` -- the client's `initialize` is ANSWERED, and the process
+ * dies. ONE function and not two that resemble each other, because a handshake
+ * that does not complete does the same thing in every case; what the two callers
+ * supply is the sentence and the answer, which are the only things that differ.
+ *
+ * THE PROCESS DIES BECAUSE THE STAKEHOLDER RULED A SECOND `initialize` REFUSED
+ * WITH NO EXCEPTION, and a session that cannot hand back the handshake has
+ * nothing left to serve. What stood here was a backwards edge to `uninitialized`
+ * -- `abandonInitialize` -- justified as `a failed handshake must not consume the
+ * one initialize LSP permits, InitializeError.retry is unimplementable
+ * otherwise`. THAT JUSTIFICATION WAS ALREADY FALSE WHEN IT WAS WRITTEN, which is
+ * worth more than the deletion: MEASURED, tsudoi never produces an
+ * `InitializeError` at all -- the failure goes out as a bare -32603 with no
+ * `data`, and no value route from the four published subpaths reaches a
+ * `ResponseError` -- so no conforming client was ever told by tsudoi that it
+ * might retry. The edge served a client retrying on its OWN initiative, which
+ * the specification's `The initialize request may only be sent once` forbids.
+ *
+ * `exitCode` AND A PAUSED READER RATHER THAN `process.exit`, and that is what
+ * buys the ANSWER: `process.exit` takes the unflushed response frame with it,
+ * and a timer racing it is a race whichever way it lands. Pausing the reader
+ * releases the one handle holding the loop open (see `connection.listen`) while
+ * leaving the connection able to write, so the process ends of itself once the
+ * answer has gone. MEASURED on both runtimes, every run: the logMessage, then
+ * the response, then exit 1.
+ *
+ * THE NOTIFICATION IS AWAITED, and that is the repair rather than tidiness: an
+ * unawaited frame is not on the wire when the loop empties, which is the same
+ * silence in a different costume.
+ */
+async function endFailedHandshake(
+  connection: Pick<RequestOnlyConnection, "sendNotification">,
+  sentence: string,
+  answer: unknown,
+): Promise<never> {
+  process.stderr.write(`tsudoi: ${sentence}\n`);
+  await connection.sendNotification(LogMessageNotification.type, {
+    type: MessageType.Error,
+    message: `tsudoi: ${sentence}`,
+  });
+  process.exitCode = 1;
+  process.stdin.pause();
+  throw answer;
 }
 
 /**

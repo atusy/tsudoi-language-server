@@ -195,16 +195,26 @@ export function contributeCapabilities(
 export type RequestRejection = () => ResponseError<void> | undefined;
 
 /**
+ * What a config author is told their handler did, as a SENTENCE and not as a
+ * report -- because the handshake's failure in src/server.ts has the same words
+ * and a different disposition: it cannot rethrow, it ends the process. Spelling
+ * the sentence twice is how the two come to disagree about a failure that is one
+ * thing.
+ *
+ * `ConfigMethod` AND NOT `Method`: the handshake handler is one, and every
+ * caller of this is reporting a config author's own code.
+ */
+export function handlerFailure(method: ConfigMethod, error: unknown): string {
+  return `${method} handler failed: ${failureDetail(error)}`;
+}
+
+/**
  * Reports a config handler's failure and rethrows it. vscode-jsonrpc consults
  * the connection's logger for NOTIFICATION handlers only, so without this line a
  * config author's handler fails where they cannot see it.
- *
- * `ConfigMethod` AND NOT `Method`: the handshake handler in src/server.ts fails the same
- * way and is owed the same line, and a second reporter written there would be a
- * second answer to `where does a config author read this`.
  */
 export function reportHandlerFailure(method: ConfigMethod, error: unknown): never {
-  process.stderr.write(`tsudoi: ${method} handler failed: ${failureDetail(error)}\n`);
+  process.stderr.write(`tsudoi: ${handlerFailure(method, error)}\n`);
   throw error;
 }
 

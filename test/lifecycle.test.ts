@@ -406,6 +406,12 @@ for (const runtime of runtimes) {
      * THE HANDSHAKE IS THE ONE REQUEST WHOSE REFUSAL MUST LEAVE THE SESSION
      * USABLE, which is why this asserts the retry and not merely the code.
      *
+     * REFUSED AND NOT FAILED IN FLIGHT, and the two now end OPPOSITELY: a
+     * handshake that was ADMITTED and did not complete kills the process
+     * (test/initialize-handler.test.ts owns that). This message is turned away
+     * before admission -- nothing was mirrored, no author's handler ran, and the
+     * phase never moved -- so there is nothing for the client to have consumed.
+     *
      * `"params": null` IS WHAT ARRIVES, and it is not conforming: JSON-RPC 2.0
      * says params is `A Structured value` that `MAY be omitted`, and its
      * Parameter Structures section says `If present, parameters for the rpc call
