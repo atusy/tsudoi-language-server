@@ -18,6 +18,20 @@ import { type AroundOptions, windowAround, wordsIn } from "./around.ts";
  * would be wrong about `filterText`, fuzzy matching and case, none of which it
  * can see.
  *
+ * COMPLETENESS RULING: COMPLETE, and it follows from what this handler READS
+ * rather than from a preference. The specification treats a supplied
+ * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query, filter
+ * what you were given -- and that is TRUE HERE because THIS HANDLER NEVER LOOKS
+ * AT WHAT WAS TYPED: the window is chosen by the cursor's LINE alone, and every
+ * word in it is offered. A narrower prefix cannot produce a candidate this answer
+ * did not already carry, which is exactly what `do not re-query` promises.
+ *
+ * WHAT WOULD OVERTURN IT IS AN EDIT AND NOT A KEYSTROKE, said because the two
+ * look alike from a popup: typing inserts text, so the buffer's words really do
+ * change -- and the client sends `didChange` and asks again, which is the route
+ * every source is refreshed by. `isIncomplete` is about the PREFIX, and the
+ * prefix is what this ignores.
+ *
  * A DOCUMENT THE STORE DOES NOT HOLD YIELDS NOTHING rather than answering
  * emptily, and the difference reaches the client: a stream that yields nothing
  * is answered `null` -- `this server has no answer here` -- where an empty batch
