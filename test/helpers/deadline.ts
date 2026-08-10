@@ -48,10 +48,16 @@ import { setDefaultTimeout } from "bun:test";
  * ONE ARM HAS BEEN SEEN AT 25007ms AGAINST THIS VALUE, sprint 81, under a
  * PERTURBED full suite -- `a published subpath with no artifact at all is
  * refused`. It did not reproduce in six further runs, clean and perturbed, alone
- * and in the suite, so it is a boundary reading and not a defect anyone can open.
- * A
- * SECOND OCCURRENCE FILES IT, and so does lowering this value -- the margin the
- * reading leaves is seven milliseconds.
+ * and in the suite, so it read as a boundary reading rather than a defect.
+ *
+ * THE SECOND OCCURRENCE ARRIVED AND IT IS FILED, WHICH IS WHY THE PARAGRAPH
+ * ABOVE IS IN THE PAST TENSE. Sprint 87 measured the three records re-running
+ * test/definition-of-done.test.ts timing out against this value on some
+ * whole-suite runs and not others, and MEASURED that file at 14.17s ALONE --
+ * against a 25s ceiling, on a suite bun runs in ONE process. That is PBI-93.
+ * It is not the same arm as sprint 81's, and it is the same cause: this value
+ * bounds a hang, and it is also all the room a slow-but-correct arm has.
+ * LOWERING IT REMAINS THE OTHER FILING TRIGGER.
  */
 export const suiteDeadlineMs = 25_000;
 
