@@ -51,10 +51,12 @@ export const codeActionAnswer: (Command | CodeAction)[] = [
  * ruling test/fixtures/all-methods.ts writes over the whole table.
  *
  * AND IT YIELDS ONCE, WHICH IS AN AUTHOR'S ORDINARY CASE AND NOT A SIMPLIFIED
- * ONE: a handler whose actions are a fixed list has one batch to give. The arms
- * driving it send NO `partialResultToken`, so what a client receives is the
- * aggregate -- identical to what the awaited drive would have sent, which is the
- * whole reason the stream drive costs nothing here.
+ * ONE: a handler whose actions are a fixed list has one batch to give. THAT IS
+ * WHAT LETS ONE FIXTURE SERVE BOTH HALVES OF THE DRIVE -- the arms drive it with
+ * a `partialResultToken` and without one, and the pair is the whole claim that
+ * the stream drive costs a client nothing it did not ask for: without the token
+ * the aggregate is what the awaited drive would have sent, and with it the same
+ * batch leaves as `$/progress`.
  */
 export default (): Promise<TsudoiConfig> => {
   const codeAction: MethodHandler<"textDocument/codeAction"> = async function* () {

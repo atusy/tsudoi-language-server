@@ -499,6 +499,12 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
  * concatenates them. The second is what excludes `textDocument/diagnostic`, whose
  * partial results are objects carrying OTHER documents' reports rather than more
  * of the one that was asked for.
+ *
+ * TWO ROWS SATISFY BOTH, AND ONLY ONE OF THEM HAD NO ALTERNATIVE.
+ * `textDocument/completion` is here because nothing else would serve it;
+ * `textDocument/codeAction` could have been awaited once and was RULED here, so a
+ * reader who arrives at these conditions looking for what forced each row will
+ * find the second one's reason at `MethodMap["textDocument/codeAction"]` instead.
  */
 async function driveStream(run: {
   method: Method;
