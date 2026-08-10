@@ -104,7 +104,7 @@ const scrum: ScrumDashboard = {
         metric:
           "The five methods the stakeholder named respond per the specification: textDocument/completion, textDocument/hover, textDocument/diagnostic (pull), textDocument/formatting, completionItem/resolve",
         target:
-          "5 of 5. ENUMERATED IN THE METRIC ITSELF because `10 of 10` stood for thirty sprints with NOTHING ANYWHERE ENUMERATING THE TEN -- grepped, the only match was the metric. A fraction whose denominator nobody can name cannot be met, and the PO twice reported `2 of 10` as fact. The five were set by the stakeholder, not invented to make the metric satisfiable. AND TSUDOI NOW SERVES MORE THAN FIVE -- `workspace/executeCommand` since sprint 86, and `initialize` is a sixth key a config may declare though it is not a row of the request table. THE DENOMINATOR DOES NOT MOVE FOR THEM, deliberately: this metric asks whether what the STAKEHOLDER ASKED FOR responds, and a denominator that grew every time the product did would be a fraction nobody could fail. What the code serves is counted by the request table and by nothing here.",
+          "5 of 5. ENUMERATED IN THE METRIC ITSELF because `10 of 10` stood for thirty sprints with NOTHING ANYWHERE ENUMERATING THE TEN -- grepped, the only match was the metric. A fraction whose denominator nobody can name cannot be met, and the PO twice reported `2 of 10` as fact. The five were set by the stakeholder, not invented to make the metric satisfiable. AND TSUDOI NOW SERVES MORE THAN FIVE -- `workspace/executeCommand` since sprint 86 and `textDocument/codeAction` since sprint 87, with `initialize` a further key a config may declare though it is not a row of the request table. THE DENOMINATOR DOES NOT MOVE FOR THEM, deliberately: this metric asks whether what the STAKEHOLDER ASKED FOR responds, and a denominator that grew every time the product did would be a fraction nobody could fail. What the code serves is counted by the request table and by nothing here.",
       },
       {
         metric: "The CLI starts under both Bun and Deno",
@@ -126,7 +126,7 @@ const scrum: ScrumDashboard = {
       acceptance_criteria: [
         {
           criterion:
-            "THE ROW EXISTS AND ITS DRIVE IS RULED RATHER THAN DEFAULTED INTO. This is the FIRST row where the choice is REAL, and neither row that looks like precedent is one: `textDocument/diagnostic` was excluded because its partial results are OBJECTS carrying OTHER documents, `workspace/executeCommand` because its params carry no token at all. MEASURED in vscode-languageserver-protocol's protocol.d.ts on this tree: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so BOTH conditions `driveStream`'s docblock states are satisfied, and tsudoi either takes the drive or declines it on a reason. WHICHEVER IS RULED, THE REASON GOES AT THE SITE AND SAYS WHAT IS GIVEN UP.",
+            "THE ROW EXISTS AND ITS DRIVE IS RULED RATHER THAN DEFAULTED INTO -- AND THE STAKEHOLDER RULED IT STREAM-DRIVEN, overturning the sprint's own answer so that partial results stay reachable. WHAT THE CRITERION ASKS IS UNCHANGED BY THAT, which is why it is amended here rather than rewritten: the reason at the site, and what the reason says is given up. This is the FIRST row where the choice is REAL, and neither row that looks like precedent is one: `textDocument/diagnostic` was excluded because its partial results are OBJECTS carrying OTHER documents, `workspace/executeCommand` because its params carry no token at all. MEASURED in vscode-languageserver-protocol's protocol.d.ts on this tree: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so BOTH conditions `driveStream`'s docblock states are satisfied, and tsudoi either takes the drive or declines it on a reason. WHICHEVER IS RULED, THE REASON GOES AT THE SITE AND SAYS WHAT IS GIVEN UP.",
           verification:
             "A fixture config declaring the handler, SPAWNED AS A REAL SERVER on both runtimes, the actions read off the wire WHOLE. The drive word itself is pinned by the COMPILER -- `DriveKind<M>` derives `drive` from the result type, so the transposed spelling is a type error at the table and not a red -- which is why this criterion asks for the REASON and not for a perturbation of the word.",
         },
@@ -221,6 +221,29 @@ const scrum: ScrumDashboard = {
       notes: [
         "THIS IS THE SEAM SPRINT 86 LEFT UNWITNESSED, AND THE PRODUCT OWNER ALREADY RULED WHAT WOULD CLOSE IT: `an example config where the two increments are shown working together in a file a stranger reads`. A config declaring `initialize` (to fill `executeCommandProvider.commands`, which tsudoi advertises EMPTY), `workspace/executeCommand` (to run them) and `textDocument/codeAction` (to offer them) IS that file -- so this item discharges a refinement candidate rather than only adding a feature.",
         "efm's command definition carries `command`, `arguments`, `title` and `os`, and `${INPUT}` appears in the ARGUMENTS. `os` filters by platform, and a command list that ignores it offers the user an action that cannot run.",
+      ],
+    },
+    {
+      id: "PBI-93",
+      story: {
+        role: "tsudoi maintainer",
+        capability:
+          "read a REFUSED verdict as a statement about the arm it names, rather than as the registry having run out of seconds",
+        benefit:
+          "a record that has genuinely stopped discriminating is told apart from a machine that was busy, instead of both arriving as the same red on alternate runs",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. Whether the answer is a larger budget, a budget derived from a measured baseline, or a REFUSED that distinguishes `timed out` from `wrote no report` is the item, and none of the three is obviously right.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FOUND IN SPRINT 87 AND MEASURED AS PRE-EXISTING TO IT, TO THIS PROJECT'S OWN FILING BAR. Two runs of test/perturbations.test.ts with sprint 87's own record STASHED OUT, at c004410: one reported the three `dodArms` records REFUSED with `the arm file did not run to a report`, the next reported every record HELD. AND c004410 GRADES THE BASE a6e699e FOR THIS: test/perturbations.test.ts, test/definition-of-done.test.ts, scripts/definition-of-done.ts and the registry's own reader are BYTE-IDENTICAL between the two, `git diff` empty over all four.",
+        "THE MECHANISM, WHICH IS WHY THIS IS NOT A FLAKE TO SHRUG AT: those records re-run test/definition-of-done.test.ts, MEASURED at 14.17s alone, against a 25s ceiling. That is not a wide margin, and the file spawns real check runs, so the margin closes whenever the machine is busy -- which is precisely when a whole-suite run is happening.",
+        "WHAT MAKES IT WORSE THAN AN ORDINARY TIMEOUT IS THE VERDICT IT PRODUCES. A record that times out reads REFUSED, which is the same word this instrument uses for a record whose arm no longer exists -- a real staleness. So the one reading that should send a maintainer to repair a record is also the one a busy machine emits, and the two are told apart today by re-running and seeing whether it goes away.",
       ],
     },
     {
@@ -528,27 +551,63 @@ const scrum: ScrumDashboard = {
         implementation:
           '`MethodMap["textDocument/codeAction"]` in packages/tsudoi-language-server/src/types.ts carrying the drive ruling; `requestEntries["textDocument/codeAction"]` in src/methods.ts with `CodeActionRequest.type` and a contributor writing `codeActionProvider = true`; a fixture; and test/fixtures/all-methods.ts, which FORCES ITSELF -- a method in `MethodMap` and not in that literal is TS2741 naming it. `paramsForAnyMethod` gains the `range` and `context` `CodeActionParams` requires, AND THAT ADDITION IS GRADED BY NOTHING, on that function\'s own docblock: nothing on the wire validates a member it holds, MEASURED there by deleting `command` and finding the file green.',
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "c004410",
+            message:
+              "feat(methods): code actions reach a config author, and the drive is a decision",
+            phase: "green",
+          },
+          {
+            hash: "97d73dd",
+            message:
+              "feat(methods)!: the stakeholder overturned the drive, so partial results stay reachable",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "THE RED, MEASURED AND NOT PREDICTED. With all four arms written and `src/` untouched: 2 pass / 6 fail. THE TWO GREEN WERE THE ABSENCE ARMS, which is what makes them controls rather than duplicates -- they assert the capability is NOT advertised, and that was already true. The six red are three per runtime: the answer arm and the null arm both at `-32601 Unhandled method textDocument/codeAction`, and the capability arm at its whole-object equality, one key short.",
+          "THE STAKEHOLDER OVERTURNED THE DRIVE MID-SUBTASK, WHICH IS WHY THIS ONE CARRIES TWO GREEN COMMITS. The first landed awaited-once with the argument at the site; the second replaced it with the generator. NOTHING A CLIENT RECEIVES MOVED BETWEEN THEM for a request carrying no `partialResultToken` -- which is a claim, so the subtask grew a FIFTH arm per runtime rather than asserting it: the same handler driven WITH a token, the batch read off the wire as `$/progress` and the response `null`.",
+          "AND THE ARM NAMES GAINED THEIR RUNTIME, WHICH THE PLAN DID NOT ASK FOR AND SUBTASK 2 COULD NOT DO WITHOUT. MEASURED at bun 1.3.13: a `<testcase>` carries the `describe` in `classname` and ONLY the `test()` string in `name`, and the registry's reader keys a run BY `name` -- so two arms differing only by their describe collapse to one result, last write winning, and a record on one of them would have graded whichever bun wrote last. EVERY SIBLING FILE IN THIS SHAPE HAS THE SAME COLLAPSE and is graded by no record, which is why it is closed here and not everywhere.",
+        ],
       },
       {
         test: "ONE RECORD IN test/perturbations.test.ts, MEASURED against the landed source and not predicted: `codeActionProvider` written as `{ codeActionKinds: [] }` instead of `true`, which must redden the PRESENCE arm at its whole-object equality and leave the ABSENCE arm green. That is criterion 2's discriminator and this row's alone -- `claims no kinds` is the half the contrast with `executeCommandProvider.commands` rests on.",
         implementation:
           "The record only. AND THE SECOND RECORD A READER WILL EXPECT IS REFUSED WITH ITS REASON, rather than shipped to make a pair: emptying this row's contributor reddens the SAME arm at the SAME assertion, and what it would grade is the presence check in `contributeCapabilities`, which is one loop over six other rows that six other arms already hold. A record naming this row for it would report a property of the loop under this row's name.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "391e17c",
+            message: "test(perturbations): the options object that reads like a spelling of true",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "MEASURED BY HAND FIRST, THE FILE RESTORED FROM A COPY AFTER: the weakening reddens 2 of the arm file's 8 arms at that point, and they are the PRESENCE arm on each runtime, at `expect(result.capabilities).toEqual({`, receiving `codeActionKinds: []`. The answer arm, the null arm and both absence arms stayed GREEN, so `alsoReddens` is the deno twin and nothing else.",
+          "THE FIRST ATTEMPT WAS REFUSED BY A GUARD READING THIS SPRINT'S OWN PROSE, WHICH IS THE FINDING WORTH CARRYING. The registry refuses a record whose arm file `re-runs perturbations itself` -- it would spawn without bound -- and that refusal is a SUBSTRING TEST over the arm file's whole text. The arm file imports nothing of the sort; a COMMENT in it named the helper's path, and the record was refused. Reworded, and the trap is written down at the site. THE OVER-REFUSAL IS THE SAFE DIRECTION and is not repaired here.",
+          "AND THE THREE `dodArms` RECORDS ARE INTERMITTENT, MEASURED AS NOT THIS SPRINT'S. Two runs of the registry with this record present: one reported those three REFUSED with `the arm file did not run to a report`, the next reported every record HELD. THE SAME TWO RUNS WITH THIS RECORD STASHED OUT gave the same two results at c004410, so the arm file this record adds is not the cause. AND c004410 GRADES THE BASE FOR THIS, WHICH IS WHAT MAKES IT PRE-EXISTING RATHER THAN MERELY OLDER: the four files the reading depends on -- test/perturbations.test.ts, test/definition-of-done.test.ts, scripts/definition-of-done.ts and the registry's own reader -- are BYTE-IDENTICAL between a6e699e and c004410, `git diff` empty over all four. THE MECHANISM IS A BUDGET: those records re-run a file measured at 14.17s alone against a 25s ceiling, and nothing in this sprint touched either number. Filed as PBI-93 rather than repaired.",
+        ],
       },
       {
         test: "THE SWEEP, WHICH IS THE WHOLE OF THIS SUBTASK'S GRADING. `readmeCoverage` is untouched BY CONSTRUCTION and that is a ruling rather than an omission: the section carries NO FENCED BLOCK, following `Commands your editor can invoke`, which is prose-only for the reason that applies here too -- this row's handler shape is `textDocument/formatting`'s, already shown in the Quickstart block, so a block would need a marker AND a `consumers` row naming a SUBJECT and would buy a reader nothing they read forty lines up. Then a CASE-INSENSITIVE sweep for the arity words over README.md, packages/, examples/ and scrum.ts, every hit re-sited, deleted, or left green WITH the reason it still reads something.",
         implementation:
           "The README section, placed beside `Commands your editor can invoke` because for a user the two are ONE workflow -- an action offers a command and a command runs it. LAST, because it describes what landed rather than what was intended.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "76e2bed",
+            message: "docs: the actions section says what the capability declines to claim",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE SWEEP FOUND EXACTLY ONE SENTENCE GOING FALSE, and it is in this file: the metric's own annotation named `workspace/executeCommand` as the whole of what tsudoi serves beyond the five. Repaired in place rather than corrected below it. EVERY OTHER HIT WAS DISPOSITIONED AND LEFT: the README's `seven members` is `DocumentView`'s and its `five members` is `Tsudoi`'s, `notifications.ts` numbers a list, and every arity in a COMPLETED sprint's record is a quotation of what was true then.",
+          "AND THE README REPAIR BROKE A FACT BY REWRAPPING IT, WHICH NO REVIEW WOULD HAVE SEEN. test/readme.test.ts requires `closes the generator` in the cleanup section, and the rewrap put a newline between `the` and `generator` -- so the token stopped matching while every word survived. Two arms red, repaired by moving the line break. A DOCUMENTATION EDIT THAT CHANGES NO WORD CAN STILL BREAK A TOKEN.",
+        ],
       },
     ],
     impediments: [
@@ -567,6 +626,9 @@ const scrum: ScrumDashboard = {
       "THE BASE, MEASURED BEFORE ANYTHING MOVED: HEAD a6e699e, Definition of Done PASSED, all five checks exit 0, 1029 pass / 0 fail over 74 files, 3264 expect() calls, 407.71s, TWENTY registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. Any red from here is this sprint's until measured otherwise against that.",
       "AND THAT BASE IS THE FIRST IN THIS PROJECT'S RECORD WHERE ALL FIVE CHECKS ACTUALLY RAN, which is why the impediment above is filed rather than mentioned: the format check had been UNRUNNABLE in this environment, and an UNRUNNABLE check reports non-green while measuring nothing.",
       "ONE ARM FAILED ONCE AND IS NOT CALLED A FLAKE, WITH THE EVIDENCE RATHER THAN THE WORD. At f34a76b, whole suite, `test/protocol.test.ts > a fallback for unknown methods shadows none of initialize, hover or shutdown` timed out at its 4000ms `hangTimeoutMs` in a run that took 464s. Re-run ALONE: 32 pass / 0 fail in 7.94s -- which is the WEAKER reading, a single file not reproducing whole-suite load. Re-run as the WHOLE SUITE at a6e699e: green. So what is recorded is what was seen -- named, failed once under load, did not reproduce in the same conditions -- and NOT `flake`, which would be a claim about a cause nothing here measured.",
+      "THE STAKEHOLDER OVERTURNED THE DRIVE IN FLIGHT, AND THIS IS WHERE THAT LANDS. Their words: `codeAction result should be async generator like completion so that we can support partial result in the future`. The row is STREAM-DRIVEN. THE ARGUMENT BELOW IS KEPT RATHER THAN DELETED because it is still true and is still the reason an author should usually yield once -- but it argues about WHAT A SERVER SHOULD SEND, and the type decides only what it CAN, which is the distinction the sprint's own ruling missed. THE HALF THAT DECIDES IT: the two spellings are NOT symmetric in what they foreclose. Both are equally breaking to swap in every config declaring the key, so a wrong choice costs the same either way -- and only one of them can ever grow partial results without being swapped. THE SPRINT'S OWN PARAGRAPH HAD SAID `NEITHER IS THE SAFE DEFAULT` AND STOPPED THERE, having weighed reversibility and never asked which shape has a future the other has not.",
+      "AND THE VETO COST ONE ARM RATHER THAN A SUBTASK, which is the reading that says the plan was sound even though its ruling was not. Everything the arms assert about the ROW -- fidelity, the capability, both directions, the null answer -- was untouched by the drive. What had to be ADDED is the arm stating that a client sees no difference: the same handler under a `partialResultToken`, the batch arriving as `$/progress` and the response `null`.",
+      "THE SUPERSEDED RULING, KEPT FOR ITS ARGUMENT.",
       "THE DRIVE IS RULED AWAITED-ONCE, AND THE RULING IS THE SPRINT. MEASURED in protocol.d.ts: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so both of `driveStream`'s stated conditions hold, which is true of NO row tsudoi serves today. WHAT THE STREAM DRIVE BUYS IS A PARTIAL ANSWER BEING USEFUL BEFORE THE REST ARRIVES, true of a completion popup and false of this menu: a completion list is FILTERED as the user keeps typing, so a late item lands where it belongs, while a code-action menu is opened, read, and chosen from as a whole -- an action appended after it is on screen moves the row under the user's cursor. AND THE COST IS ASYMMETRIC RATHER THAN A WASH: awaited-once lets an author with a fixed list write `Promise.resolve(actions)`, where the stream drive would force a generator on them to yield it once. BOTH RULINGS ARE BREAKING TO REVERSE -- `Promise` and `AsyncGenerator` are different things to write in every config declaring the key -- so neither is the safe default, which is exactly why the reason is written at the site instead of the decision alone.",
       "THE ORDER IS THE ROW, THEN THE RECORD, THEN THE PROSE, on this project's own rule that a prose repair written before the arm it cites is a claim about an arm that does not exist yet.",
       "CLAUDE.md's OPENING IS FALSE AND IS NOT THIS INCREMENT. It still reads `handlers for five LSP methods`, was recorded as false at sprint 85, and that file is UNTRACKED here -- so it is repaired locally, and nothing this sprint commits can carry the repair. The arity sweep in subtask 3 is over TRACKED prose for that reason.",
