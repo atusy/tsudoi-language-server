@@ -95,6 +95,17 @@ const publishedFiles: Record<string, readonly string[]> = {
     "dist/index.js",
     "package.json",
   ],
+  "@atusy/tsudoi-completion-around": [
+    "LICENSE",
+    "README.md",
+    "dist/around.d.ts",
+    "dist/around.js",
+    "dist/completion.d.ts",
+    "dist/completion.js",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "package.json",
+  ],
   "@atusy/tsudoi-adapter-efm-config": [
     "LICENSE",
     "README.md",
@@ -173,6 +184,17 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /optional/,
     /Cannot find module/,
     /Whitespace is its word rule/i,
+  ],
+  // THE THIRD THING THIS MEMBER MUST SAY IS THAT ITS ANSWER IS BOUNDED BY A
+  // WINDOW, which is the whole reason to prefer it over reading the buffer: a
+  // stranger who does not know a word far away is deliberately absent will read
+  // that as the package being broken.
+  "@atusy/tsudoi-completion-around": [
+    /textDocument\/completion/,
+    /peer/i,
+    /optional/,
+    /Cannot find module/,
+    /The window is the point/i,
   ],
   // THE THIRD THING THIS MEMBER MUST SAY IS NOT A DOCUMENT RULE BUT A TRUST ONE,
   // which is what `WHAT BOUNDS IT` comes to for an adapter: the others decide
