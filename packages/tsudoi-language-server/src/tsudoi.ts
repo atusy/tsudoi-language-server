@@ -7,11 +7,32 @@ export interface TsudoiRuntime {
   /** What every `RequestContext` carries as its `tsudoi`, and the only route a
    * config has to the session. */
   readonly tsudoi: Tsudoi;
+  /**
+   * Hands the runtime the connection `tsudoi.notify` speaks on.
+   *
+   * A SEAM AND NOT A CONSTRUCTOR ARGUMENT, forced by the order things exist in:
+   * `createTsudoi()` runs in src/cli.ts BEFORE the config is loaded, and the
+   * connection is created inside `startServer` -- so there is no moment at which
+   * both are in hand except this one.
+   *
+   * NARROWED TO `sendNotification`, for the reason the folder handle above is
+   * narrowed to `change`: a runtime holding the whole connection would leave
+   * every request-side member callable from the object whose job is to expose
+   * one write, which is an argument for the seam and an open route around it in
+   * the same value.
+   */
+  readonly connect: (send: (method: string, params?: unknown) => Promise<void>) => void;
   /** The server's end of the document store. Never reachable from `tsudoi`. */
   readonly documents: DocumentStoreHandle;
   /**
    * The server's end of the folder mirror, for the ONE message that writes it
    * after the handshake. Never reachable from `tsudoi`.
+   *
+   * `NEVER REACHABLE` IS ABOUT THE MIRRORS AND NOT ABOUT WRITING AS SUCH, which
+   * `Tsudoi.notify` is what makes worth saying: this handle and the store's
+   * write state tsudoi MIRRORS FROM THE CLIENT, so a second writer would make
+   * the mirror disagree with the thing it mirrors. Sending a notification
+   * rewrites nothing the client said.
    *
    * NARROWED TO `change` ALONE, WHICH FORECLOSES THE HALF-MIRROR RATHER THAN
    * MERELY DESCRIBING IT: a runtime handing out the WHOLE handle would leave
@@ -127,6 +148,7 @@ export function createTsudoi(): TsudoiRuntime {
   const documents = createDocumentStore();
   const workspaceFolders = createWorkspaceFolders();
   let clientCapabilities: ClientCapabilities = {};
+  let send: ((method: string, params?: unknown) => Promise<void>) | undefined;
   const tsudoi: Tsudoi = Object.freeze({
     documents: documents.documents,
     workspaceFolders: workspaceFolders.folders,
@@ -139,11 +161,36 @@ export function createTsudoi(): TsudoiRuntime {
     get clientCapabilities(): DeepReadonly<ClientCapabilities> {
       return clientCapabilities;
     },
+    /**
+     * READ AT CALL TIME AND NOT CAPTURED, which is the same requirement every
+     * getter above is under: this object is built before the connection exists,
+     * so a `send` bound here would be the `undefined` of that moment for the life
+     * of the session.
+     *
+     * THE REFUSAL NAMES THE STATE RATHER THAN THE SYMPTOM, and it is UNREACHABLE
+     * FROM A HANDLER: `startServer` connects before it registers anything, and a
+     * config factory is handed no `tsudoi` at all. It is kept because the
+     * alternative to a sentence is a `TypeError` about `undefined`, which sends
+     * a reader looking at their own handler.
+     */
+    notify(method: string, params?: unknown): Promise<void> {
+      if (send === undefined) {
+        return Promise.reject(
+          new Error(
+            `tsudoi.notify("${method}") was called before this server had a connection to send on`,
+          ),
+        );
+      }
+      return send(method, params);
+    },
   });
   return {
     tsudoi,
     documents,
     workspaceFolders,
+    connect(connected): void {
+      send = connected;
+    },
     handshake(params): void {
       workspaceFolders.initialize(params);
       clientCapabilities = deepFrozen(params?.capabilities ?? {});

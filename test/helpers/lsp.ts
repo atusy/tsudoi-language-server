@@ -167,6 +167,19 @@ export class LspSession {
    */
   readonly logMessages: LoggedMessage[] = [];
   /**
+   * Every server-initiated notification WITH ITS PARAMS, where `arrivals` keeps
+   * the method name alone.
+   *
+   * BESIDE `arrivals` RATHER THAN INSTEAD OF ITS `method`, which is a decision
+   * about the ARMS that already exist: two of them compare `arrivals` WHOLE, so
+   * a params member added there would redden a claim about ORDER for a reason
+   * that has nothing to do with order. This list is what a claim about CONTENT
+   * reads, and `logMessages` above stays as it is -- a typed projection of one
+   * method, whose readers want the level and the sentence rather than a shape to
+   * narrow.
+   */
+  readonly notifications: { readonly method: string; readonly params: unknown }[] = [];
+  /**
    * Every failure the child's stdin reported, in order. Empty for the whole
    * life of a healthy session, which is what makes a non-empty one evidence.
    */
@@ -634,6 +647,7 @@ export class LspSession {
       // with the other notifications left out `tolerates an unexpected
       // notification` is unfalsifiable -- a test that means to tolerate one must
       // be able to SEE it.
+      this.notifications.push({ method: message.method ?? "", params: message.params });
       this.arrivals.push({ kind: "notification", method: message.method ?? "" });
       return;
     }

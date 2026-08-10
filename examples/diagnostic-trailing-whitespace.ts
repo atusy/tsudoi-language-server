@@ -14,8 +14,9 @@
  * the demo, sees the warnings, formats, and watches them clear -- and the loop
  * closes only because one analysis feeds both answers.
  */
-import { type MethodHandler } from "@atusy/tsudoi-language-server/types";
+
 import { DiagnosticSeverity } from "@atusy/tsudoi-language-server/deps/types";
+import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 
 /** What the warning says. Exported so a test can assert it without copying it. */
 export const warning = "trailing whitespace";

@@ -101,6 +101,10 @@ async function hoverWhen(contentFormat: MarkupKind[] | undefined): Promise<unkno
       workspaceFolders: { get: () => [], values: () => [] },
       rootUri: null,
       rootPath: null,
+      // PRESENT AND REFUSING, which is what a hand-built context owes a member
+      // this package never exercises: no handler here notifies, and a stub that
+      // RESOLVED would let one start doing so silently.
+      notify: () => Promise.reject(new Error("this context sends no notifications")),
       // WHAT THE CLIENT DECLARED, SPELLED AS A CLIENT SPELLS IT -- the whole
       // chain, so a rename anywhere along it reddens here rather than silently
       // reading `undefined` and testing the fallback arm four times.

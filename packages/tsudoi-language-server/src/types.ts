@@ -23,8 +23,12 @@ import type {
   HoverParams,
   InitializeParams,
   InitializeResult,
+  LogMessageParams,
+  LSPAny,
   Position,
+  PublishDiagnosticsParams,
   Range,
+  ShowMessageParams,
   TextEdit,
   WorkspaceFolder,
 } from "vscode-languageserver-protocol";
@@ -247,7 +251,87 @@ export interface Tsudoi {
    * answer.
    */
   readonly clientCapabilities: DeepReadonly<ClientCapabilities>;
+  /**
+   * SENDS A NOTIFICATION TO THE CLIENT -- `tsudoi.notify("window/showMessage",
+   * { type: 1, message: "..." })` -- and it is the ONE MEMBER HERE THAT WRITES
+   * RATHER THAN READS.
+   *
+   * WHY THAT DOES NOT BREACH THE RULE THE OTHERS ARE UNDER, since a reader who
+   * knows the runtime keeps its write ends away from this object will look for
+   * the breach: what is kept away is the document store, the folder mirror and
+   * the handshake -- the writers of state tsudoi MIRRORS FROM THE CLIENT, where
+   * a second writer would make the mirror disagree with the thing it mirrors.
+   * This writes none of that. It is tsudoi SPEAKING to the client rather than
+   * rewriting what the client said.
+   *
+   * THE METHOD IS A STRING AND THE PARAMS ARE `unknown`, WHICH IS A RULING AND
+   * NOT A GAP. Typing each server-initiated notification would have tsudoi
+   * publish a second name for a shape upstream already owns -- the thing the
+   * `deps/` split exists to prevent. AN AUTHOR WHO WANTS THE PROTOCOL'S OWN TYPE
+   * IMPORTS IT: `import type { ShowMessageParams } from
+   * "@atusy/tsudoi-language-server/deps/protocol"` and annotate the value you
+   * pass. WHAT IT COSTS YOU, said plainly: a MISSPELLED METHOD NAME IS NOT A
+   * COMPILE ERROR and is not a run-time one either -- it goes out on the wire and
+   * a conforming client ignores it, so the symptom is silence.
+   *
+   * THE LIFECYCLE IS THE PROTOCOL'S AND TSUDOI APPLIES NONE OF IT. LSP forbids a
+   * server sending most notifications before it has answered `initialize`, and
+   * names `window/showMessage`, `window/logMessage` and `telemetry/event` as the
+   * exceptions. A rule enforced here would have to carry that list, would go
+   * stale with the specification, and would refuse the one call an author most
+   * wants from inside a handshake handler. So the rule is yours to keep.
+   *
+   * WHAT THE PROMISE IS FOR IS THE WRITE AND NOT AN ANSWER -- a notification has
+   * no reply, so this resolves once the bytes are handed to the connection.
+   * AWAIT IT ANYWAY WHEN ORDER MATTERS: dropping it lets your handler's own
+   * answer overtake the notification. And it REJECTS on a connection that is
+   * gone, which is the state after `exit`.
+   */
+  readonly notify: <M extends ServerNotification | (string & {})>(
+    method: M,
+    ...params: M extends ServerNotification ? [params: ServerNotifications[M]] : [params?: unknown]
+  ) => Promise<void>;
 }
+
+/**
+ * THE NOTIFICATIONS TSUDOI TYPES THE PARAMS OF -- tsudoi's own reading of which
+ * ones a SERVER may send, since upstream marks the direction only as a run-time
+ * value and no type can derive it.
+ *
+ * THE KEYS ARE SPELLED HERE AND THE SHAPES ARE NOT, which is where the `deps/`
+ * ruling actually bites: a wire method NAME is a string this module already
+ * writes down all over `MethodMap`, where a hand-written `{ type: number;
+ * message: string }` would be a SECOND NAME for a shape upstream owns and would
+ * go stale in silence. So every value here is upstream's own type.
+ *
+ * DERIVING THE KEYS TOO WAS TRIED AND REFUSED, MEASURED: upstream carries them
+ * as `ShowMessageNotification.method`, a literal type on a NAMESPACE -- and
+ * `typeof` on a namespace needs a VALUE import, which this module does not have
+ * and must not gain. `dist/types.js` is `export {}` today, and a value import
+ * would make the published types module pull the protocol package in at RUN
+ * TIME for a type that vanishes at compile time.
+ *
+ * IT IS NOT A LIMIT ON WHAT YOU MAY SEND, which is the half to read twice.
+ * `Tsudoi.notify` accepts ANY string, and a method absent from here simply takes
+ * `unknown` params -- so a custom extension your own client understands is a
+ * first-class thing to send rather than a cast.
+ *
+ * `$/progress` AND `$/cancelRequest` ARE LEFT OUT DELIBERATELY rather than
+ * overlooked. Both are protocol machinery tsudoi drives itself -- the completion
+ * and code-action drives own the progress channel -- so typing them here would
+ * present as ordinary a call that races tsudoi's own. They stay SENDABLE, as any
+ * string is; an author reaching for one is doing something this surface declines
+ * to make comfortable.
+ */
+export interface ServerNotifications {
+  "window/showMessage": ShowMessageParams;
+  "window/logMessage": LogMessageParams;
+  "textDocument/publishDiagnostics": PublishDiagnosticsParams;
+  "telemetry/event": LSPAny;
+}
+
+/** A method name `Tsudoi.notify` can type the params of. */
+export type ServerNotification = keyof ServerNotifications & string;
 
 export interface MethodMap {
   /**

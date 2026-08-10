@@ -57,7 +57,7 @@ const stderrLogger: Logger = {
  * that no failure path can put bytes on stdout.
  */
 export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void {
-  const { tsudoi, documents, workspaceFolders, handshake } = runtime;
+  const { tsudoi, documents, workspaceFolders, handshake, connect } = runtime;
   const lifecycle = createLifecycle();
 
   // EVERY notification tsudoi answers is declared here, and each one DECIDES
@@ -78,6 +78,13 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     lifecycle,
     notificationEntries(documents, lifecycle, workspaceFolders),
   );
+
+  // BEFORE ANYTHING IS REGISTERED, WHICH IS WHAT MAKES `tsudoi.notify`'s OWN
+  // REFUSAL UNREACHABLE FROM A HANDLER: every route into a config author's code
+  // is opened below this line, so no handler can run while the runtime still has
+  // no connection. Move this after the registrations and that refusal becomes
+  // reachable for exactly the requests that arrive first.
+  connect((method, params) => connection.sendNotification(method, params));
 
   // `unknown` AND NOT `InitializeParams`, AND THE CAST IS DELAYED past the check
   // below for the reason src/config.ts records at its own delayed cast: nothing

@@ -324,6 +324,7 @@ the request:
 | `workspaceFolders`    | the folders the client holds, as a store like `documents`            |
 | `rootUri`, `rootPath` | the deprecated roots, as the client spelled them, or `null`          |
 | `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
+| `notify`              | sends a notification to the client -- the one member that WRITES     |
 
 `workspaceFolders` answers two questions. `values()` yields every folder the client holds, in the
 order it sent them; `get(uri)` answers with the folders at the INNERMOST location covering that
@@ -354,10 +355,27 @@ when you ask it, which moves as the user types. A handler that needs the value i
 writing into it, while a document needs `getText()`, since a string does not move. The two
 deprecated roots and the capabilities are written once at `initialize` and never move at all.
 
-Building a context by hand in your own tests means supplying all five members. `clientCapabilities`
-is `{}` and never `null`, so reading `capabilities.textDocument?.completion?...` needs no guard;
-`@atusy/tsudoi-completion-path` reads exactly that chain to decide whether it may send an
-`InsertReplaceEdit`, which LSP permits only to a client that declared `insertReplaceSupport`.
+Building a context by hand in your own tests means supplying every member of that table -- the
+compiler names the one you forgot. `clientCapabilities` is `{}` and never `null`, so reading
+`capabilities.textDocument?.completion?...` needs no guard; `@atusy/tsudoi-completion-path` reads
+exactly that chain to decide whether it may send an `InsertReplaceEdit`, which LSP permits only to
+a client that declared `insertReplaceSupport`.
+
+**`notify` is the one member that speaks rather than answers.**
+`await context.tsudoi.notify("window/showMessage", { type: 1, message: "..." })` puts a
+notification on the wire, which is the only way a handler can tell the user something its own
+answer has no room for -- a request result cannot say _I declined, and here is why_. The method is
+a plain string and the params are `unknown`: tsudoi neither validates nor reshapes them, so a
+**misspelled method name is not an error anywhere** -- it goes out and a conforming editor ignores
+it. Import the protocol's own params type from `@atusy/tsudoi-language-server/deps/protocol` and
+annotate what you pass if you want the compiler's help.
+
+**When you may send is the protocol's rule, not tsudoi's.** LSP forbids a server sending most
+notifications before it has answered `initialize` -- `window/showMessage`, `window/logMessage` and
+`telemetry/event` are the exceptions -- and tsudoi enforces none of that, because a list carried
+here would go stale with the specification and would refuse the one call an author most wants from
+inside a handshake handler. Await the promise when order matters: it resolves once the bytes are
+handed to the connection, and dropping it lets your own answer overtake the notification.
 
 ## What your server advertises
 
