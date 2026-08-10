@@ -115,6 +115,115 @@ const scrum: ScrumDashboard = {
   },
   product_backlog: [
     {
+      id: "PBI-89",
+      story: {
+        role: "config author",
+        capability:
+          "answer `textDocument/codeAction` from a handler key -- a SEVENTH ROW of the request table the other six are rows of, with the same lifecycle gate, the same cancellation and the same params refusal, and none of it written a seventh time",
+        benefit:
+          "the menu an editor user opens on a diagnostic is served by the config they wrote, and a handler package can offer an ACTION rather than only text",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "THE ROW EXISTS AND ITS DRIVE IS RULED RATHER THAN DEFAULTED INTO. This is the FIRST row where the choice is REAL, and neither row that looks like precedent is one: `textDocument/diagnostic` was excluded because its partial results are OBJECTS carrying OTHER documents, `workspace/executeCommand` because its params carry no token at all. MEASURED in vscode-languageserver-protocol's protocol.d.ts on this tree: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so BOTH conditions `driveStream`'s docblock states are satisfied, and tsudoi either takes the drive or declines it on a reason. WHICHEVER IS RULED, THE REASON GOES AT THE SITE AND SAYS WHAT IS GIVEN UP.",
+          verification:
+            "A fixture config declaring the handler, SPAWNED AS A REAL SERVER on both runtimes, the actions read off the wire WHOLE. The drive word itself is pinned by the COMPILER -- `DriveKind<M>` derives `drive` from the result type, so the transposed spelling is a type error at the table and not a red -- which is why this criterion asks for the REASON and not for a perturbation of the word.",
+        },
+        {
+          criterion:
+            "`codeActionProvider` IS CLAIMED FROM HANDLER PRESENCE AND CLAIMS NO KINDS. MEASURED: `ServerCapabilities.codeActionProvider` is `boolean | CodeActionOptions` and `CodeActionOptions.codeActionKinds` is OPTIONAL -- which is the CONTRAST that makes this contributor honest where the row above it could not be. `executeCommandProvider.commands` is REQUIRED, so that contributor had to invent an empty list and say so at the site; nothing forces a kind list here, so tsudoi claims NONE rather than claiming a wrong one.",
+          verification:
+            "Two arms over one assertion: the advertised capability read WHOLE from a handshake with the handler declared, and its ABSENCE from a handshake with a config that declares none. WHOLE and not `toBeTruthy`, so a contributor that grows a key reddens.",
+        },
+        {
+          criterion:
+            "THE INHERITED PLUMBING IS WITNESSED BY CONSTRUCTION AND NOT BY A SEVENTH COPY OF IT. test/methods-table.test.ts iterates `requestEntries` and builds its expectation FROM the table, so a row joins the ServerNotInitialized, RequestCancelled and InvalidParams arms the moment it is declared, and test/fixtures/all-methods.ts fails TS2741 NAMING the method until it supplies a handler. WHAT MUST MOVE FOR THAT TO BE TRUE RATHER THAN MERELY GREEN IS `paramsForAnyMethod`, which carries no `range` and no `context` -- both REQUIRED by `CodeActionParams` -- under a docblock recording that NOTHING ON THE WIRE VALIDATES a member it holds. So a member added there is green whether it is right or not, and that is the trap this criterion names.",
+          verification:
+            "The whole-table arms re-read after the row lands, and the codeAction key READ OUT OF what those arms compare rather than inferred from the file staying green.",
+        },
+        {
+          criterion:
+            "THE PROSE SAYS WHAT THE PRODUCT SERVES, AND THE SUCCESS METRIC DOES NOT MOVE. The root README gains the row where it enumerates handler keys. THE METRIC STAYS AT FIVE, on sprint 86's ruling and for its reason: the five are the ones the STAKEHOLDER NAMED, and a denominator that grew every time the product did would be a fraction nobody could fail.",
+          verification:
+            "`readmeCoverage` over the tracked READMEs, any new fenced block carrying its marker AND a row in `consumers` naming a SUBJECT. Plus a CASE-INSENSITIVE sweep for the arity words across README.md, packages/, examples/ and scrum.ts -- this repository writes its reasons in capitals, and sprint 84 measured a case-sensitive sweep of its own prose returning EMPTY against a tree that held the sentence.",
+        },
+      ],
+      status: "ready",
+      notes: [
+        "`codeAction/resolve` IS OUT, NAMED SO IT IS NOT REDISCOVERED AS A GAP. It needs `resolveProvider` INSIDE `CodeActionOptions` -- so claiming it re-creates the shared-key hazard `completionItem/resolve` already carries at `completionProvider` -- and it carries the same requires-its-parent coupling, which for resolve is refused when the config LOADS, in src/config.ts. A candidate for its own item; not this one.",
+        "`CodeAction.data` IS `LSPAny`, WHICH IS LITERALLY `any`, so this row leaks `any` onto an author's surface exactly as `CompletionItem.data` and `ExecuteCommandParams.arguments` already do. PRE-EXISTING AND REFUSED HERE FOR SPRINT 86'S REASON: reshaping what upstream declares a request CARRIES would be taken for every row at once or not at all, and doing it for one row would have tsudoi publish a second name for a type upstream owns -- which is what the `deps/` split exists to prevent.",
+        "THIS ROW IS WHAT PBI-92 NEEDS. efm's `commands` become code actions that invoke `workspace/executeCommand`, so the adapter is the first config in this repository to declare `initialize`, `workspace/executeCommand` AND this row together -- which is the seam sprint 86 closed its acceptance by recording as UNWITNESSED.",
+      ],
+    },
+    {
+      id: "PBI-90",
+      story: {
+        role: "config author",
+        capability:
+          "call `loadEfmConfig()` in a tsudoi config and have the efm-langserver `config.yaml` already on this machine answer `textDocument/formatting`, without restating one tool definition",
+        benefit:
+          "the formatter set an efm user already maintains runs under tsudoi, and tsudoi's surface is shown against a config format SOMEBODY ELSE OWNS rather than one shaped to fit it",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- THE SLICE IS NAMED AND THE CRITERIA ARE NOT WRITTEN. What a FOURTH MEMBER fires is enumerated in the notes and each site is a decision rather than a fix; the YAML dependency is a ruling; and which efm keys this slice honours is not settled. Not planned until those three are.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "refining",
+      notes: [
+        "WHAT A FOURTH MEMBER FIRES, ENUMERATED IN ADVANCE SO IT DOES NOT ARRIVE ONE RED AT A TIME. `test/build-order.test.ts` pins the derived order BYTE FOR BYTE and is a guaranteed red. `handlerMembers` in scripts/workspaces.ts recognises a member by what it DECLARES, so an adapter declaring tsudoi joins it SILENTLY and widens every site taking it -- including a scan of its `src/` for a handler, which may be FALSE of a package whose handlers are built from YAML at run time. CLAUDE.md's rule is `never applied wholesale; each call carries its reason`, so every call site is VISITED and ruled, and a widening that is wrong is answered at the site rather than by narrowing the enumeration. Then: `readmeCoverage` wants a marker AND a `consumers` row per fenced block; `test/member-resolution.test.ts` enumerates BOTH routes to tsudoi, so the root's `devDependencies` must declare this package; `refuseMemberDirectoriesUnlikeTheUnscopedName` fixes the name at `@atusy/tsudoi-adapter-efm-config`; `refuseSubpathsAnsweringFromSource` wants an `exports` map shaped like the HANDLERS' -- no source arm, so tsc fails loudly -- and not like tsudoi's, which ends in `default: ./src/*.ts`; and the package needs a `prepack` and a `tsconfig.build.json` or the preload build skips it.",
+        "THE YAML READER IS A RULING AND NOT AN IMPLEMENTATION DETAIL. It must work under BOTH runtimes and pass `.oxlintrc.json`, which is a deno-compatibility guard, DEFAULT-DENY across the whole tree. Hand-rolling a subset is the alternative and it is the WORSE failure: efm's own documented example uses ANCHORS and MERGE KEYS (`&name`, `<<: *name`), which a subset parser mis-reads into a tool definition missing half its keys rather than refusing the file. Decide the dependency, or decide to refuse a document a subset cannot read.",
+        "`languages` IS KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`. They agree often and not always, and efm's `=` key means ANY language. NO TRANSLATION TABLE IS INVENTED HERE -- a table tsudoi wrote would be tsudoi deciding what an editor meant -- so what this package does with the mismatch is the item's own decision and its README is the authority on it.",
+        "AN UNIMPLEMENTED `${...}` MUST BE REFUSED BY NAME AND NEVER PASSED THROUGH. efm's format-command interpolates `${INPUT}`, `${--flag:key}`, `${--flag=key}` and `${--flag:!key}` over `FormattingOptions` plus its own `charStart`/`charEnd`/`rowStart`/`rowEnd`/`colStart`/`colEnd`. A slice that implements some of those and passes the rest through hands the formatter a LITERAL `${--tab-width:tabWidth}` argument, and what comes back is a file formatted wrong with nothing saying so.",
+        "`symbol-command` MAPS TO `textDocument/documentSymbol`, WHICH TSUDOI DOES NOT SERVE. That is a written why-not in this package's README and NOT a gap in this item, and the same goes for `log-file`, `log-level` and `provide-definition`, which are efm PROCESS concerns rather than handler ones.",
+      ],
+    },
+    {
+      id: "PBI-91",
+      story: {
+        role: "editor user",
+        capability:
+          "see the diagnostics my efm linters already produce, under tsudoi, with the `lint-formats` errorformats from my own config.yaml doing the parsing",
+        benefit:
+          "the linter set is the value of efm, and an adapter that formats but does not lint has not adapted efm",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. The errorformat parser is the item and its scope is not settled.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THE COST IS THE ERRORFORMAT PARSER AND IT IS NOT SMALL. `lint-formats` is a list of VIM errorformats -- `%f:%l:%c: %m`, and also the multi-line stack forms efm's own README uses for eslint (`%+P%f`, `%-O`, `%*[ ]`). efm delegates it to reviewdog/errorformat, a Go implementation; nothing in this workspace parses one today. A slice honouring only the single-line forms is defensible and MUST REFUSE the rest rather than silently drop the lines it cannot match.",
+        "AND THE SURROUNDING KEYS ARE EACH A DECISION: `lint-offset`, `lint-offset-columns`, `lint-severity`, `lint-category-map`, `lint-source`, `prefix`, `lint-ignore-exit-code`, `lint-stdin`, `lint-workspace`, `require-marker` and `root-markers`. tsudoi serves PULL diagnostics; efm's `lint-debounce`, `lint-after-open` and `lint-on-save` are about a PUSH schedule tsudoi does not have, and saying so is part of the item.",
+      ],
+    },
+    {
+      id: "PBI-92",
+      story: {
+        role: "editor user",
+        capability: "invoke the `commands` from my efm config.yaml out of the code-action menu",
+        benefit:
+          "efm's commands are the half of it that DOES something, and this is also the first file in this repository where the initialize handler, the command row and the code-action row are shown working together",
+      },
+      acceptance_criteria: [
+        {
+          criterion: "PLACEHOLDER -- NOT REFINED, AND IT DEPENDS ON PBI-89 LANDING.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "THIS IS THE SEAM SPRINT 86 LEFT UNWITNESSED, AND THE PRODUCT OWNER ALREADY RULED WHAT WOULD CLOSE IT: `an example config where the two increments are shown working together in a file a stranger reads`. A config declaring `initialize` (to fill `executeCommandProvider.commands`, which tsudoi advertises EMPTY), `workspace/executeCommand` (to run them) and `textDocument/codeAction` (to offer them) IS that file -- so this item discharges a refinement candidate rather than only adding a feature.",
+        "efm's command definition carries `command`, `arguments`, `title` and `os`, and `${INPUT}` appears in the ARGUMENTS. `os` filters by platform, and a command list that ignores it offers the user an action that cannot run.",
+      ],
+    },
+    {
       id: "PBI-86",
       story: {
         role: "tsudoi maintainer",
