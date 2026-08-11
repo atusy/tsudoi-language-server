@@ -167,7 +167,9 @@ for (const one of packed) {
  * OVER MEMBERS AS A CLASS, with the tokens per member because the third thing is
  * a DIFFERENT sentence in each: whitespace as a word rule bounds one, whitespace
  * as a path terminator bounds the other, and a token shared between them would
- * be satisfied by whichever member happened to carry it.
+ * be satisfied by whichever member happened to carry it. THREE IS A FLOOR AND
+ * NOT A COUNT -- a member that bounds itself twice owes both sentences, and one
+ * of them does.
  */
 const readmeTokens: Record<string, readonly RegExp[]> = {
   "@atusy/tsudoi-completion-path": [
@@ -189,12 +191,20 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   // WINDOW, which is the whole reason to prefer it over reading the buffer: a
   // stranger who does not know a word far away is deliberately absent will read
   // that as the package being broken.
+  //
+  // AND IT IS THE ONE MEMBER WITH A SECOND BOUND, which is here because a
+  // stakeholder hit it: this package OFFERS NOTHING AT ALL from a language that
+  // does not space its words, and a user writing Japanese sees an empty popup
+  // where every other source still answers. The window's absence is at least
+  // explicable from the option's name; this one is explicable from nowhere but
+  // the README, so the same reason that put the window here puts it here too.
   "@atusy/tsudoi-completion-around": [
     /textDocument\/completion/,
     /peer/i,
     /optional/,
     /Cannot find module/,
     /The window is the point/i,
+    /only where the writing system puts spaces/i,
   ],
   // THE THIRD THING THIS MEMBER MUST SAY IS NOT A DOCUMENT RULE BUT A TRUST ONE,
   // which is what `WHAT BOUNDS IT` comes to for an adapter: the others decide
