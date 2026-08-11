@@ -104,21 +104,28 @@ export function regexScanner(pattern: RegExp = defaultWordPattern): Scanner {
  * WHAT COUNTS AS A WORD ONCE `Intl.Segmenter` HAS DECIDED WHERE ONE ENDS.
  *
  * `isWordLike` IS NOT CONSULTED, AND THAT IS THE DECISION THIS CONSTANT CARRIES.
- * MEASURED at bun 1.3.13 and deno 2.9.4, one fixture, all four of `undefined`,
- * `en-US`, `ja` and `ja-JP`: bun reports `isWordLike: false` for EVERY segment
- * containing a digit -- `sha256`, `utf8`, `v2`, `a1b2`, `123`, `42.5` -- where
- * deno reports true for all of them. The flag is the only thing that differed;
- * THE SEGMENT BOUNDARIES AGREED EXACTLY, which is what makes reading the
- * boundaries and ignoring the flag a repair rather than a guess.
+ * MEASURED at bun 1.3.13 and deno 2.9.4, IN TWO READINGS RATHER THAN ONE, because
+ * a single sentence covering both would claim more than either took:
+ *
+ * ONE, THE FLAG. On a short fixture, under each of `undefined`, `en-US`, `ja` and
+ * `ja-JP`, bun reports `isWordLike: false` for EVERY segment containing a digit --
+ * `sha256`, `utf8`, `v2`, `a1b2`, `123`, `42.5` -- where deno reports true for all
+ * of them. The locale changed neither runtime's answer.
+ *
+ * TWO, THE BOUNDARIES. On a wider fixture -- Japanese, Thai, Korean, Devanagari,
+ * pointed Hebrew, halfwidth katakana, identifiers and punctuation -- at locale
+ * `ja` ALONE, the two runtimes segmented IDENTICALLY and disagreed only on the
+ * flag. That is what makes reading the boundaries and ignoring the flag a repair
+ * rather than a guess, and it is a reading at ONE locale rather than four.
  *
  * SO A FILTER ON THE FLAG WOULD DROP THE COMMONEST IDENTIFIERS IN A CODEBASE
  * UNDER ONE OF THE TWO RUNTIMES THIS PROJECT PROMISES, and the popup would differ
  * by runtime for one config. THAT IS AN ENGINE BUG AND MAY BE FIXED, which is why
- * the versions are written down; this test admits everything the flag admits, over
- * the fixture measured, so a fixed engine changes nothing here.
+ * the versions are written down; the class below admits everything the flag admits,
+ * over the fixture measured, so a fixed engine changes nothing here.
  *
  * IT IS ALSO WHY THE FLAG IS NOT KEPT AS A REDUNDANT FIRST CLAUSE: no segment in
- * that fixture was `isWordLike` WITHOUT matching this, on either runtime, so
+ * that fixture was `isWordLike` WITHOUT matching the class, on either runtime, so
  * `isWordLike ||` would decide nothing while reading as though it did.
  */
 const wordish = /[\p{L}\p{N}\p{M}_]/u;
@@ -128,9 +135,11 @@ const wordish = /[\p{L}\p{N}\p{M}_]/u;
  *
  * WHAT IT BUYS OVER `regexScanner` IS BOUNDARIES IN A LANGUAGE THAT WRITES NONE:
  * `こんにちは世界` becomes `こんにちは` and `世界`, which no character class can
- * do. So this REVERSES the ruling `defaultWordPattern` carries for Japanese,
- * Thai, Khmer and the rest -- not by widening that pattern, which cannot express
- * it, but by asking something that already knows.
+ * do. So this REVERSES the ruling `defaultWordPattern` carries for the scripts it
+ * subtracts -- not by widening that pattern, which cannot express it, but by asking
+ * something that already knows. ARMED FOR JAPANESE AND THAI AND NOT FOR THE REST OF
+ * THAT LIST: what the arms read is that those two are segmented, and Lao, Khmer and
+ * Myanmar are covered by the same mechanism and by no assertion.
  *
  * `locales` IS WORTH SUPPLYING. MEASURED, the default resolved differently per
  * RUNTIME on one machine -- `en-US` under bun, `ja-JP` under deno -- because each
@@ -138,9 +147,12 @@ const wordish = /[\p{L}\p{N}\p{M}_]/u;
  * it, but a language whose segmentation is dictionary-driven is exactly where it
  * would, so a config that names its locale does not depend on either.
  *
- * ONE SEGMENTER FOR THE SCANNER'S WHOLE LIFE, which is what makes this a factory:
- * constructing one is the expensive part, and a scanner is called once per line of
- * every document read.
+ * ONE SEGMENTER FOR THE SCANNER'S WHOLE LIFE, which is what makes this a factory
+ * rather than a bare function -- a scanner is called once per line of every
+ * document read, and this way the segmenter is built once per config instead.
+ * NOTHING HERE MEASURES WHAT THAT SAVES, and a per-line segmenter would be
+ * CORRECT, so the arm beside it can only say that reuse does not corrupt the
+ * answer.
  */
 export function segmentScanner(locales?: Intl.LocalesArgument): Scanner {
   const segmenter = new Intl.Segmenter(locales, { granularity: "word" });
