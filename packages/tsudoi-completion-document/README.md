@@ -1,4 +1,4 @@
-# @atusy/tsudoi-completion-around
+# @atusy/tsudoi-completion-document
 
 Completes from the words already written **around the cursor** in the buffer being edited — the
 completion every editor has had for thirty years, for a
@@ -13,7 +13,7 @@ and the code wins.
 
 ```ts
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
-import { completeAround } from "@atusy/tsudoi-completion-around";
+import { completeAround } from "@atusy/tsudoi-completion-document";
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
@@ -102,23 +102,23 @@ Packing compiles the package, and its build reaches tsudoi through a link inside
 source for a fault that lives in `node_modules`. `bun test` in the checkout writes the link and
 clears it; so does `bun run scripts/typecheck-workspaces.ts`.
 
-Then, in `tsudoi-language-server/packages/tsudoi-completion-around/`:
+Then, in `tsudoi-language-server/packages/tsudoi-completion-document/`:
 
-<!-- handler-pack in=packages/tsudoi-completion-around -->
+<!-- handler-pack in=packages/tsudoi-completion-document -->
 
 ```sh
-bun pm pack --filename tsudoi-completion-around.tgz
+bun pm pack --filename tsudoi-completion-document.tgz
 ```
 
 **With `--filename`, the tarball does not land in that directory.** `bun pm pack --filename` run inside a workspace member
 writes to the workspace **root**, so what you just built is
-`tsudoi-language-server/tsudoi-completion-around.tgz`, not something under `packages/`. Then, in
+`tsudoi-language-server/tsudoi-completion-document.tgz`, not something under `packages/`. Then, in
 your own project:
 
 <!-- examples-install -->
 
 ```sh
-bun install ../tsudoi-language-server/tsudoi-completion-around.tgz
+bun install ../tsudoi-language-server/tsudoi-completion-document.tgz
 ```
 
 **Which of these the test suite runs**, so you know what the commands above are worth: the **pack**

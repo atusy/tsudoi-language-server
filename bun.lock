@@ -6,7 +6,7 @@
       "name": "@atusy/tsudoi-language-server",
       "devDependencies": {
         "@atusy/tsudoi-adapter-efm-config": "0.0.0",
-        "@atusy/tsudoi-completion-around": "0.0.0",
+        "@atusy/tsudoi-completion-document": "0.0.0",
         "@atusy/tsudoi-completion-path": "0.0.0",
         "@atusy/tsudoi-hover-wordnet": "0.0.0",
         "@atusy/tsudoi-language-server": "0.0.0",
@@ -35,8 +35,8 @@
         "@atusy/tsudoi-language-server",
       ],
     },
-    "packages/tsudoi-completion-around": {
-      "name": "@atusy/tsudoi-completion-around",
+    "packages/tsudoi-completion-document": {
+      "name": "@atusy/tsudoi-completion-document",
       "version": "0.0.0",
       "devDependencies": {
         "@types/node": "^24.0.0",
@@ -91,7 +91,7 @@
   "packages": {
     "@atusy/tsudoi-adapter-efm-config": ["@atusy/tsudoi-adapter-efm-config@workspace:packages/tsudoi-adapter-efm-config"],
 
-    "@atusy/tsudoi-completion-around": ["@atusy/tsudoi-completion-around@workspace:packages/tsudoi-completion-around"],
+    "@atusy/tsudoi-completion-document": ["@atusy/tsudoi-completion-document@workspace:packages/tsudoi-completion-document"],
 
     "@atusy/tsudoi-completion-path": ["@atusy/tsudoi-completion-path@workspace:packages/tsudoi-completion-path"],
 

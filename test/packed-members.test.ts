@@ -95,7 +95,7 @@ const publishedFiles: Record<string, readonly string[]> = {
     "dist/index.js",
     "package.json",
   ],
-  "@atusy/tsudoi-completion-around": [
+  "@atusy/tsudoi-completion-document": [
     "LICENSE",
     "README.md",
     "dist/around.d.ts",
@@ -198,7 +198,7 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   // where every other source still answers. The window's absence is at least
   // explicable from the option's name; this one is explicable from nowhere but
   // the README, so the same reason that put the window here puts it here too.
-  "@atusy/tsudoi-completion-around": [
+  "@atusy/tsudoi-completion-document": [
     /textDocument\/completion/,
     /peer/i,
     /optional/,

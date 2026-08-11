@@ -49,7 +49,7 @@ const rulingMarker = "COMPLETENESS RULING:";
  */
 const ruled = [
   "examples/tsudoi.config.ts",
-  "packages/tsudoi-completion-around/src/completion.ts",
+  "packages/tsudoi-completion-document/src/completion.ts",
   "packages/tsudoi-completion-path/src/completion.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
@@ -93,7 +93,7 @@ const ruled = [
  * along.
  */
 const namesTheMethodWithoutServingIt = [
-  "packages/tsudoi-completion-around/src/around.ts",
+  "packages/tsudoi-completion-document/src/around.ts",
   "test/fixtures/resolve-without-completion.ts",
 ];
 
