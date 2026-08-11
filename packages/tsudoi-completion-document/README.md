@@ -33,9 +33,9 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
-**Both at once, nearest first.** A completion handler is one row of the request table, so offering
-both means one handler that delegates to each in turn. Yield `completeAround` first and the words
-you can see arrive at the top of the list:
+**Both at once.** A completion handler is one row of the request table, so offering both means one
+handler that delegates to each in turn. Yield `completeAround` first and its words are the ones
+tsudoi sends first — what your editor then shows first is its own decision, as below:
 
 <!-- snippet -->
 
@@ -100,9 +100,11 @@ the handler for that word.
 **`completeCorpus` bounds nothing and remembers instead.** There is no limit on how many documents
 it reads, because every rule for choosing which to drop — most recently opened, nearest the
 cursor's file, largest first — is a guess about your attention that this package cannot check.
-What keeps it off the keystroke is a memo: a document is scanned when its **version** changes and
-not otherwise, so the files you are not typing in are not rescanned. Changing `minLength`,
-`maxColumns` or `wordPattern` between requests rescans, since those change the answer too.
+What keeps it off the keystroke is a memo: a document is scanned again when its **version** moves,
+so the files you are not typing in are not rescanned. Reopening a file rescans it too, even at the
+same version number — a version counts within one `didOpen` and not across the session. So does
+changing `minLength`, `maxColumns` or `wordPattern` between requests, since those change the answer
+without the document moving at all.
 
 **Neither says _ask me again_.** Both hand over a complete list, and there is no way for a tsudoi
 handler to say otherwise — the protocol's `isIncomplete` is not something this framework's

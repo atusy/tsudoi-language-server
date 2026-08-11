@@ -76,6 +76,12 @@ interface Scan {
  * handler packages called two different ways -- and it is SAFE here because the
  * keys are view objects, which belong to one session's store: two sessions in one
  * process share no key, so there is nothing for them to read of each other's.
+ *
+ * MEASURED, THAT LAST CLAIM DEMONSTRATING ITSELF: rebuilt as a uri-keyed `Map`,
+ * this table reddened six of this package's own corpus arms where one was
+ * predicted, and the five extra were each an arm reading a document at a uri
+ * another arm had already opened. Sharing a process is enough to share a uri; it
+ * is not enough to share a view.
  */
 const scans = new WeakMap<DocumentView, Scan>();
 
