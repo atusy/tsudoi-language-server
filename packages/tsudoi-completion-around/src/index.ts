@@ -14,4 +14,4 @@
  */
 export { aroundCompletion } from "./completion.ts";
 export type { AroundCompletionOptions } from "./around.ts";
-export { windowAround, wordsIn } from "./around.ts";
+export { defaultWordPattern, windowAround, wordsIn } from "./around.ts";

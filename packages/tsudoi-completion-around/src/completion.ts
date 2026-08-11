@@ -1,6 +1,11 @@
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { type AroundCompletionOptions, windowAround, wordsIn } from "./around.ts";
+import {
+  type AroundCompletionOptions,
+  defaultWordPattern,
+  windowAround,
+  wordsIn,
+} from "./around.ts";
 
 /**
  * A `textDocument/completion` handler offering the words around the cursor.
@@ -69,7 +74,7 @@ export async function* aroundCompletion(
   const lines = document.getText().split(/\r?\n/);
   const { from, to } = windowAround(params.position.line, lines.length, options.maxSize ?? 200);
   const words = wordsIn(lines.slice(from, to), {
-    pattern: options.wordPattern ?? /[\p{L}\p{N}_]+/gu,
+    pattern: options.wordPattern ?? defaultWordPattern,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   });

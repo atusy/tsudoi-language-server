@@ -39,7 +39,7 @@ Every distinct word in a window of lines around the cursor, in the order each wa
 | `maxSize`     | `200`                | lines read above **and** below the cursor, clamped to the buffer |
 | `minLength`   | `2`                  | the shortest match worth offering                                |
 | `maxColumns`  | `200`                | a line at or over this length is skipped **whole**               |
-| `wordPattern` | `/[\p{L}\p{N}_]+/gu` | what counts as a word                                            |
+| `wordPattern` | `defaultWordPattern` | what counts as a word                                            |
 
 Options are the **third argument**, so the handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
@@ -66,15 +66,24 @@ also why the word under your cursor is among them — excluding it would be this
 decision your editor already makes, and would be wrong when you are retyping a word that appears
 elsewhere.
 
-**The default pattern is this package's, not the reference's.** What is inherited from
-ddc-source-around is the `gu` flags; the pattern is not. That source has no default of its own — it
-takes ddc's `keywordPattern` source option, documented as `\k*`, and ddc rewrites `\k` into a class
-built from the buffer's `iskeyword`. tsudoi has no such setting to read, so something had to be
-chosen, and an ASCII default would offer nothing at all in a Japanese, Greek or Cyrillic buffer —
-failing as an empty popup rather than an error. **This default is more permissive than vim's own**:
-`iskeyword` covers roughly ASCII plus Latin-1, so a vim user who has not widened it would not get
-those words out of the reference either. It is also `+` where `\k*` is `*`, which matches the empty
-string — the reference's own tests record `minLength` as what removes the empties.
+**A run of letters is a word only where the writing system puts spaces between them**, and the
+default knows that. Han, Hiragana, Katakana, Thai, Lao, Khmer and Myanmar are left out, so
+`[NeovimのLSPで誰にどうして怒られたのかを確認するための設定]` offers `Neovim` and `LSP` instead of
+thirty characters of prose as a single candidate — which is what the first version of this default
+did, swallowing both Latin words in the process.
+
+**That is about segmentation, not about being non-Latin.** Korean, Greek, Cyrillic, Hebrew, Arabic
+and the Indic scripts all separate their words, so theirs survive. Combining marks count as part of
+a word, which is what keeps `हिन्दी` and a pointed `שָׁלוֹם` whole rather than splitting them at
+every mark.
+
+`defaultWordPattern` is exported, so widening it is a line rather than a rewrite — build a new
+`RegExp` from its `source` with your own alternative appended, and Han characters are back.
+
+**The pattern is this package's, not the reference's** — what is inherited is the `gu` flags.
+ddc-source-around has no default of its own: it takes ddc's `keywordPattern` source option,
+documented as `\k*`, and ddc rewrites `\k` into a class built from the buffer's `iskeyword`. tsudoi
+has no such setting to read, so something had to be chosen.
 
 **It knows no language, and says so.** Every item is `CompletionItemKind.Text` and carries
 `detail: "around"`, so a popup fed by several sources shows which suggestions are guesses from the

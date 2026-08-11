@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { windowAround, wordsIn } from "../src/around.ts";
+import { defaultWordPattern, windowAround, wordsIn } from "../src/around.ts";
 
 const ascii = { pattern: /[A-Za-z0-9_]+/gu, minLength: 1, maxColumns: 200 };
 
@@ -51,21 +51,73 @@ describe("the words a window holds", () => {
   });
 
   /**
-   * THE DEFAULT PATTERN IS NOT ASCII-ONLY, which is this package's one departure
-   * from the reference and the one a Japanese buffer would otherwise discover as
-   * an empty popup. THE ASCII PATTERN IS DRIVEN BESIDE IT so the arm reads as a
-   * property of the DEFAULT rather than of the fixture.
+   * THE POPUP THIS DEFAULT WAS REWRITTEN FOR, AS THE LINE IT CAME FROM. A run of
+   * letters is a WORD only where the writing system puts spaces between them,
+   * and the first spelling of this default -- `[\p{L}\p{N}_]+` -- did not know
+   * that: it matched THIRTY CHARACTERS OF JAPANESE PROSE as one candidate, and
+   * swallowed `Neovim` and `LSP` doing it, so neither was offered at all.
+   *
+   * BOTH HALVES ARE THE ASSERTION AND THE SECOND IS THE ONE THAT MATTERS: the
+   * phrase is absent, AND the two Latin words abutting it are present. An
+   * implementation that dropped every line holding Japanese would pass the first
+   * half alone.
    */
-  test("the default pattern finds words the ASCII one cannot", () => {
-    const line = ["こんにちは world Ελλάδа"];
-    const byDefault = { pattern: /[\p{L}\p{N}_]+/gu, minLength: 1, maxColumns: 200 };
+  test("a Latin word touching Japanese is offered, and the Japanese run is not", () => {
+    const line = ["[NeovimのLSPで誰にどうして怒られたのかを確認するための設定](https://x.jp/a)"];
 
-    expect(wordsIn(line, byDefault)).toContain("こんにちは");
-    expect(wordsIn(line, ascii)).not.toContain("こんにちは");
-    // AND THE PAIR: the ASCII pattern is not simply broken -- it still finds the
-    // Latin word, so the difference above is about the alphabet and not about
-    // the fixture failing to parse.
-    expect(wordsIn(line, ascii)).toContain("world");
+    const words = wordsIn(line, { pattern: defaultWordPattern, minLength: 2, maxColumns: 200 });
+
+    expect(words).toContain("Neovim");
+    expect(words).toContain("LSP");
+    expect(words.some((word) => word.includes("誰"))).toBe(false);
+  });
+
+  /**
+   * GIVING UP IS ABOUT SEGMENTATION AND NOT ABOUT BEING NON-LATIN, which is the
+   * reading this arm exists to pin: Greek, Cyrillic and KOREAN all put spaces
+   * between words, so their words survive where Japanese does not. Korean is the
+   * one that would go if somebody "fixed" this by excluding CJK as a block.
+   */
+  test("scripts that do use spaces keep their words", () => {
+    const words = wordsIn(["Ελλάδα Привет 한국어 단어"], {
+      pattern: defaultWordPattern,
+      minLength: 2,
+      maxColumns: 200,
+    });
+
+    expect(words).toEqual(["Ελλάδα", "Привет", "한국어", "단어"]);
+  });
+
+  /**
+   * A COMBINING MARK IS PART OF ITS WORD, MEASURED: without `\p{M}` in the
+   * pattern `हिन्दी` breaks into `शब`, `और`, `वन`, `गर` -- the marks are not
+   * `\p{L}`, so each one splits the run it sits in. Devanagari and pointed
+   * Hebrew are the scripts where that is the ordinary case rather than an edge.
+   */
+  test("a word carrying combining marks stays whole", () => {
+    const words = wordsIn(["हिन्दी शब्द שָׁלוֹם"], {
+      pattern: defaultWordPattern,
+      minLength: 2,
+      maxColumns: 200,
+    });
+
+    expect(words).toEqual(["हिन्दी", "शब्द", "שָׁלוֹם"]);
+  });
+
+  /**
+   * THE PROLONGED SOUND MARK IS PART OF THE KATAKANA IT FOLLOWS, and it is why
+   * the pattern asks for `scx` rather than `sc`: U+30FC is Script=COMMON, so
+   * `\p{sc=Katakana}` leaves it behind as a candidate of its own once the
+   * カタカナ around it has been dropped.
+   */
+  test("the prolonged sound mark does not leak out of katakana", () => {
+    const words = wordsIn(["コンピューターー"], {
+      pattern: defaultWordPattern,
+      minLength: 1,
+      maxColumns: 200,
+    });
+
+    expect(words).toEqual([]);
   });
 
   /**
