@@ -125,17 +125,28 @@ export function regexScanner(pattern: RegExp = defaultWordPattern): Scanner {
  * over the fixture measured, so a fixed engine changes nothing here.
  *
  * IT IS ALSO WHY THE FLAG IS NOT KEPT AS A REDUNDANT FIRST CLAUSE: no segment in
- * that fixture was `isWordLike` WITHOUT matching the class, on either runtime, so
+ * that fixture was `isWordLike` WITHOUT matching this, on either runtime, so
  * `isWordLike ||` would decide nothing while reading as though it did.
+ *
+ * IT MATCHES RUNS RATHER THAN TESTING WHOLE SEGMENTS, AND THAT IS A REPAIR WITH A
+ * MEASUREMENT BEHIND IT. `Intl.Segmenter` is a PROSE segmenter, so it reports
+ * `context.tsudoi.doc`, `obj.pro` and `np.array` as ONE word each -- the same rule
+ * that makes `42.5` one word. Admitting whole segments therefore offered a popup
+ * full of dotted chains instead of the identifiers in them, and a user who had
+ * typed `obj.pro` matched nothing at all. Taking the RUNS inside each segment keeps
+ * every boundary ICU found -- `こんにちは`/`世界` and `コーパス` are unchanged,
+ * MEASURED -- and recovers `context`, `tsudoi`, `doc`. What it gives up is `42.5`,
+ * which becomes `42` and `5`.
  */
-const wordish = /[\p{L}\p{N}\p{M}_]/u;
+const wordRuns = /[\p{L}\p{N}\p{M}_]+/gu;
 
 /**
  * A scanner that asks `Intl.Segmenter` where the words are.
  *
  * WHAT IT BUYS OVER `regexScanner` IS BOUNDARIES IN A LANGUAGE THAT WRITES NONE:
  * `こんにちは世界` becomes `こんにちは` and `世界`, which no character class can
- * do. So this REVERSES the ruling `defaultWordPattern` carries for the scripts it
+ * do. THE BOUNDARIES ARE ICU'S AND THE WORD CHARACTERS ARE THIS PACKAGE'S -- see
+ * `wordRuns` for why taking whole segments was wrong for code. So this REVERSES the ruling `defaultWordPattern` carries for the scripts it
  * subtracts -- not by widening that pattern, which cannot express it, but by asking
  * something that already knows. ARMED FOR JAPANESE AND THAI AND NOT FOR THE REST OF
  * THAT LIST: what the arms read is that those two are segmented, and Lao, Khmer and
@@ -158,8 +169,8 @@ export function segmentScanner(locales?: Intl.LocalesArgument): Scanner {
   const segmenter = new Intl.Segmenter(locales, { granularity: "word" });
   return function* (line: string): Iterable<string> {
     for (const { segment } of segmenter.segment(line)) {
-      if (wordish.test(segment)) {
-        yield segment;
+      for (const run of segment.matchAll(wordRuns)) {
+        yield run[0];
       }
     }
   };

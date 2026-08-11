@@ -15,8 +15,9 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { DocumentView, RequestContext } from "@atusy/tsudoi-language-server/types";
+import { applyFilters, defaultFilters } from "./filters.ts";
 import { defaultScanner, type Scanner } from "./scanners.ts";
-import { type WordOptions, wordsIn } from "./words.ts";
+import { type WordOptions, typedWord, wordsIn } from "./words.ts";
 
 /**
  * What counts as a word, and nothing about which lines are read.
@@ -25,13 +26,15 @@ import { type WordOptions, wordsIn } from "./words.ts";
  * THAN AN OMISSION: there is no line to centre a window on, because the corpus is
  * every open document and the cursor's position decides nothing here.
  *
- * NOR IS THERE A BOUND ON HOW MANY DOCUMENTS ARE READ, and that is declined
- * rather than overlooked: a limit would have to pick WHICH documents to drop, and
- * every rule for that -- most recently opened, nearest the cursor's file, largest
- * first -- is a guess about the user's attention that this package cannot check.
- * The memo below is what keeps the cost off the keystroke instead. AN AUTHOR WHO
- * NEEDS A BOUND HAS `wordsIn` AND THE STORE: `context.tsudoi.documents.values()`
- * is theirs to filter before scanning.
+ * NOR IS THERE A BOUND ON HOW MANY DOCUMENTS ARE READ, and that is still declined
+ * rather than overlooked: a limit on DOCUMENTS would have to pick which to drop,
+ * and every rule for that -- most recently opened, nearest the cursor's file,
+ * largest first -- is a guess about the user's attention that this package cannot
+ * check. WHAT BOUNDS THE ANSWER INSTEAD IS THE PIPELINE: `filters` decides what is
+ * worth sending and `maxItems` caps what survives, and the memo keeps the scanning
+ * off the keystroke. AN AUTHOR WHO REALLY WANTS FEWER DOCUMENTS HAS `wordsIn` AND
+ * THE STORE: `context.tsudoi.documents.values()` is theirs to filter before
+ * scanning.
  */
 export type CompleteCorpusOptions = WordOptions;
 
@@ -39,10 +42,12 @@ export type CompleteCorpusOptions = WordOptions;
  * The words last read out of one open document, WITH EVERYTHING THAT WOULD MAKE
  * THEM THE WRONG ANSWER TODAY.
  *
- * THE FILTERS ARE PART OF THE KEY AND NOT DECORATION: nothing about a document
- * changes between two requests that pass different `minLength`s, so a memo
+ * THE SCAN OPTIONS ARE PART OF THE KEY AND NOT DECORATION: nothing about a
+ * document changes between two requests that pass different `minLength`s, so a memo
  * consulting the version alone answers the second request with the first one's
- * words.
+ * words. `filters` AND `maxItems` ARE DELIBERATELY ABSENT FROM IT -- they run on
+ * what was remembered rather than deciding it, so changing one re-reads nothing,
+ * which is what lets the prefix change on every keystroke for free.
  *
  * THE SCANNER IS COMPARED BY IDENTITY BECAUSE IT IS A FUNCTION, AND THAT IS A
  * COST OF THE OPTION BEING A CALLBACK RATHER THAN A CHOICE MADE HERE. While it
@@ -93,8 +98,9 @@ interface Scan {
  */
 const scans = new WeakMap<DocumentView, Scan>();
 
-/** The resolved filters one request scans under. */
-interface Filters {
+/** The resolved options one request SCANS under -- the pipeline is applied after,
+ * and is deliberately not part of this or of the memo key. */
+interface ScanFilters {
   readonly scanner: Scanner;
   readonly minLength: number;
   readonly maxColumns: number;
@@ -111,7 +117,7 @@ interface Filters {
  * re-scanned a request later, where a version newer than the text it is stored
  * under is served as current for as long as the document sits still.
  */
-function wordsOf(document: DocumentView, filters: Filters): readonly string[] {
+function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[] {
   const version = document.version;
   const cached = scans.get(document);
   if (
@@ -145,10 +151,11 @@ function wordsOf(document: DocumentView, filters: Filters): readonly string[] {
  * `"textDocument/completion": completeCorpus` type-checks with no wrapper and an
  * author who wants options writes the arrow that supplies them.
  *
- * THE PARAMS ARE READ FOR NOTHING, WHICH IS DELIBERATE AND NOT DEAD WEIGHT. This
- * handler answers the same list wherever the cursor is, and it keeps the
- * parameter because the shape is what the row's type requires and what its
- * siblings take -- an author composing the two writes one call twice.
+ * THE CURSOR DECIDES WHAT IS SENT BUT NOT WHAT IS SCANNED, which is the whole of
+ * what `params` is read for: the corpus is every open document wherever the cursor
+ * is, and `params.position` is consulted only to find the WORD BEING TYPED for the
+ * pipeline to filter against. This docblock used to say the params were read for
+ * nothing, and that stopped being true when the filters arrived.
  *
  * SO A REQUEST NAMING A BUFFER THE STORE DOES NOT HOLD IS STILL ANSWERED, where
  * `completeAround` has nothing to say about one: the answer never depended on
@@ -170,43 +177,76 @@ function wordsOf(document: DocumentView, filters: Filters): readonly string[] {
  * sent, so the client ranks the list -- a package-chosen order would be a guess
  * competing with the editor's own fuzzy score.
  *
- * NOTHING IS FILTERED AGAINST WHAT THE USER TYPED, on the ruling at
- * `completeAround`: the client narrows the list, and it knows about `filterText`,
- * fuzzy matching and case, none of which a handler can see.
+ * WHAT THE USER TYPED IS NOW FILTERED AGAINST, WHICH REVERSES WHAT THIS DOCBLOCK
+ * USED TO SAY. It said the client narrows the list and a handler must not --
+ * right about whose JOB it is, wrong about what sending everything costs.
+ * MEASURED in a real editor: this handler over five open files sent 3341 items and
+ * 155 KiB ON EVERY KEYSTROKE to a client capped at 500, and the editor's
+ * completion stopped answering while this server stayed healthy at 3-28ms.
+ * `filters` is the remedy and `defaultFilters` applies it.
  *
- * COMPLETENESS RULING: COMPLETE, and it follows from what this handler READS.
- * The specification treats a supplied `CompletionItem[]` as
- * `{ isIncomplete: false, items }` -- do not re-query, filter what you were
- * given -- and that is TRUE HERE because THIS HANDLER NEVER LOOKS AT WHAT WAS
- * TYPED: every word of every open document is offered whatever the prefix, so a
- * narrower one cannot produce a candidate this answer did not already carry.
+ * COMPLETENESS RULING: COMPLETE FOR A CLIENT THAT NARROWS BY PREFIX, AND THAT IS
+ * NARROWER THAN THE RULING IT REPLACES. The specification treats a supplied
+ * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query, filter
+ * what you were given -- and under `prefixFilter` that stays TRUE AS THE USER
+ * TYPES: the words matching a LONGER prefix are a SUBSET of the ones sent for the
+ * shorter one, so no candidate the client would show is missing. A DELETION is an
+ * edit, so `didChange` and a fresh request restore the wider set.
  *
- * WHAT WOULD OVERTURN IT IS AN EDIT OR AN OPEN, AND NOT A KEYSTROKE: a
- * `didChange` or a `didOpen` really does change the corpus, and the client sends
- * one and asks again, which is the route every source is refreshed by. AND THE
- * MEMO IS NOT AN EXCEPTION TO THAT -- it is keyed on the version, so the next
- * request after an edit re-scans what the edit touched.
+ * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT, and this is a real cost rather than a
+ * caveat: `cmpl` reaching `completion` needs a candidate the prefix rejected, and
+ * it was never sent -- while the answer still claims to be final, because tsudoi's
+ * completion row CANNOT express `isIncomplete`. AN AUTHOR WITH A FUZZY MATCHER
+ * SHOULD SAY SO IN `filters`: their own filter, or none of them and a `maxItems`.
+ *
+ * AND AN EDIT OR AN OPEN OVERTURNS THE ANSWER TOO: a `didChange` or a `didOpen`
+ * really does change the corpus, and the client sends one and asks again, which is
+ * the route every source is refreshed by. THE MEMO IS NOT AN EXCEPTION -- it is
+ * keyed on the version, so the next request after an edit re-scans what it touched.
  */
 export async function* completeCorpus(
   context: RequestContext,
   params: CompletionParams,
   options: CompleteCorpusOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
-  const filters: Filters = {
+  const scanFilters: ScanFilters = {
     scanner: options.scanner ?? defaultScanner,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   };
-  const found = new Set<string>();
+  const scanned: string[] = [];
   for (const document of context.tsudoi.documents.values()) {
-    for (const word of wordsOf(document, filters)) {
-      found.add(word);
-    }
+    scanned.push(...wordsOf(document, scanFilters));
   }
-  if (found.size === 0) {
+  // THE PREFIX COMES FROM THE ASKED DOCUMENT IF THE STORE HOLDS IT, and from
+  // NOTHING if it does not -- which is the one place this handler's `answered even
+  // for a buffer we were never sent` ruling costs something: with no line to read,
+  // there is no word being typed, so the pipeline filters on `""` and the answer is
+  // the whole corpus. That is the old unbounded answer, in the one case where a
+  // better one is unavailable rather than unchosen.
+  const asked = context.tsudoi.documents.get(params.textDocument.uri);
+  const typed =
+    asked === undefined
+      ? ""
+      : typedWord(
+          scanFilters.scanner,
+          // THE CURSOR'S LINE ALONE, AS A RANGE: reading the whole document again just
+          // to look at one line would spend exactly what the memo above just saved.
+          asked.getText({
+            start: { line: params.position.line, character: 0 },
+            end: params.position,
+          }),
+        );
+  const words = applyFilters(
+    scanned,
+    options.filters ?? defaultFilters,
+    { typed },
+    options.maxItems,
+  );
+  if (words.length === 0) {
     return;
   }
-  yield [...found].map(
+  yield words.map(
     (word) =>
       ({
         label: word,

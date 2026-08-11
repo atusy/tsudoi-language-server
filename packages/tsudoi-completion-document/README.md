@@ -80,6 +80,12 @@ top-down, for `completeCorpus` it is the documents in the order your client open
 | `minLength`  | `2`              | yes      | yes      | the shortest match worth offering                                |
 | `maxColumns` | `200`            | yes      | yes      | a line at or over this length is skipped **whole**               |
 | `scanner`    | `defaultScanner` | yes      | yes      | where one line's words come from                                 |
+| `filters`    | `defaultFilters` | yes      | yes      | which scanned words are worth sending                            |
+| `maxItems`   | unbounded        | yes      | yes      | a cap on what survives the filters                               |
+
+The first four decide what is **scanned**, so changing one makes `completeCorpus`
+re-read the documents it had remembered. The last two run afterwards on what it
+remembered, which is why the prefix can change on every keystroke for free.
 
 Options are the **third argument**, so a handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
@@ -142,6 +148,56 @@ bun calls every segment containing a digit — `sha256`, `utf8`, `v2`, `123` —
 deno calls them all word-like. The **boundaries** agreed exactly, so this reads those and decides
 admission itself, and `sha256` is offered under both.
 
+**A dot is a boundary here even though ICU says otherwise.** `Intl.Segmenter` is a _prose_
+segmenter: it reports `context.tsudoi.doc` and `np.array` as **one** word, by the same rule that
+makes `42.5` one word. So `segmentScanner` takes the runs of word characters _inside_ each segment —
+every boundary ICU found is kept, `こんにちは`/`世界` and `コーパス` unchanged, and `context`,
+`tsudoi`, `doc` are recovered. What it gives up is `42.5`, which becomes `42` and `5`.
+
+## Which of them to send
+
+`filters` is a **list** of `(words, { typed }) => Iterable<string>`, run in order. Two are shipped,
+and `defaultFilters` is both of them:
+
+| filter         | keeps                                                    |
+| -------------- | -------------------------------------------------------- |
+| `prefixFilter` | words starting with the word under your cursor, any case |
+| `dedupFilter`  | the first occurrence of each word                        |
+
+`typed` is the word under the cursor **as your scanner sees it** — `typedWord` is exported if you
+want it yourself. That is deliberately not your editor's idea of a word: measured, ddc's default
+finds no word at all before a Japanese cursor, where `segmentScanner` finds `コー`.
+
+**A prefix filter defeats a fuzzy client.** If your editor matches `cmpl` against `completion`, it
+can no longer do it through this — the candidate was never sent, and the answer still claims to be
+final because a tsudoi handler cannot say `isIncomplete`. That is why `filters` is a list rather
+than a flag: give it a fuzzy filter of your own, or empty it and set `maxItems` instead.
+
+<!-- snippet -->
+
+```ts
+import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
+import { completeCorpus, dedupFilter } from "@atusy/tsudoi-completion-document";
+
+// A fuzzy editor wants candidates a prefix would reject, so the prefix filter
+// comes out and a bound goes in. Hoisted, like a scanner: the memo keys on it.
+const filters = [dedupFilter];
+
+const config: TsudoiConfigFactory = () =>
+  Promise.resolve({
+    methods: {
+      "textDocument/completion": (context, params) =>
+        completeCorpus(context, params, { filters, maxItems: 500 }),
+    },
+  });
+
+export default config;
+```
+
+**`wordsIn` yields repeats on purpose**, which is what makes `dedupFilter` load-bearing rather than
+a safety net: uniqueness is decided in one place you can reorder or remove — to weight a popup by
+frequency, say.
+
 ## What bounds it
 
 **The window is the point, for `completeAround`.** Reading `maxSize` lines either side rather than
@@ -169,9 +225,15 @@ break up.
 exactly the lines whose "words" nobody wants and whose scan costs the most, so a line at or over
 `maxColumns` contributes nothing at all.
 
-**Nothing is filtered against what you have typed.** ddc narrows candidates itself; LSP gives that
-job to your editor, so these hand over their words and let the editor match them. That is also why
-the word under your cursor is among them — excluding it would be this package overruling a
+**What you have typed is filtered against, and it did not used to be.** These handlers sent every
+word they scanned and let the editor narrow the list — which is whose job it is, and which ignored
+what sending everything costs: measured, `completeCorpus` over five open files sent **3341 items and
+155 KiB on every keystroke** to a client whose own cap is 500, and completion stopped working while
+the server stayed healthy at 3–28 ms a request. So the default pipeline keeps the words starting
+with the word under your cursor, and drops repeats. `filters` is where you change your mind about
+that; see below.
+
+The word under your cursor is still **among** the candidates — excluding it would overrule a
 decision your editor already makes, and would be wrong when you are retyping a word that appears
 elsewhere. Nothing is sorted either, and no `sortText` is sent: your editor ranks the list, and an
 order chosen here would compete with its own fuzzy score.

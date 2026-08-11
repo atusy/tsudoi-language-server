@@ -27,12 +27,17 @@ import * as surface from "../src/index.ts";
  */
 test("every value the README tells a reader to import is exported by name", () => {
   const promised = [
+    "applyFilters",
     "completeAround",
     "completeCorpus",
+    "dedupFilter",
+    "defaultFilters",
     "defaultScanner",
     "defaultWordPattern",
+    "prefixFilter",
     "regexScanner",
     "segmentScanner",
+    "typedWord",
     "wordsIn",
     "windowAround",
   ];

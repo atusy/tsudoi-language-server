@@ -23,8 +23,9 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
+import { applyFilters, defaultFilters } from "./filters.ts";
 import { defaultScanner } from "./scanners.ts";
-import { type WordOptions, wordsIn } from "./words.ts";
+import { type WordOptions, typedWord, wordsIn } from "./words.ts";
 
 /**
  * How the window is chosen, on top of what counts as a word.
@@ -87,25 +88,29 @@ export function windowAround(
  * moment at which a partial answer is more useful than no answer, and yielding
  * per line would spend a `$/progress` per line to say the same thing.
  *
- * NOTHING IS FILTERED AGAINST WHAT THE USER TYPED, which is the LSP half of the
- * ruling at `CompleteAroundOptions`: the client narrows the list, and a handler
- * that narrowed it first would be guessing at a rule the editor already has --
- * and would be wrong about `filterText`, fuzzy matching and case, none of which
- * it can see.
+ * WHAT THE USER TYPED IS FILTERED AGAINST, WHICH REVERSES WHAT THIS DOCBLOCK USED
+ * TO SAY. It said the client narrows the list and a handler must not -- right about
+ * whose JOB it is, wrong about what sending everything costs. The reading that
+ * overturned it is at `filters`, and it was taken on the corpus handler, whose
+ * answer is bigger; the window keeps the same pipeline so that an author composing
+ * both learns one behaviour.
  *
- * COMPLETENESS RULING: COMPLETE, and it follows from what this handler READS
- * rather than from a preference. The specification treats a supplied
- * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query,
- * filter what you were given -- and that is TRUE HERE because THIS HANDLER NEVER
- * LOOKS AT WHAT WAS TYPED: the window is chosen by the cursor's LINE alone, and
- * every word in it is offered. A narrower prefix cannot produce a candidate this
- * answer did not already carry, which is exactly what `do not re-query` promises.
+ * COMPLETENESS RULING: COMPLETE FOR A CLIENT THAT NARROWS BY PREFIX, AND THAT IS
+ * NARROWER THAN THE RULING IT REPLACES. The specification treats a supplied
+ * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query, filter
+ * what you were given -- and under `prefixFilter` that stays TRUE AS THE USER
+ * TYPES: the words matching a LONGER prefix are a SUBSET of the ones sent for the
+ * shorter one. A DELETION is an edit, so `didChange` and a fresh request restore
+ * the wider set.
  *
- * WHAT WOULD OVERTURN IT IS AN EDIT AND NOT A KEYSTROKE, said because the two
- * look alike from a popup: typing inserts text, so the buffer's words really do
- * change -- and the client sends `didChange` and asks again, which is the route
- * every source is refreshed by. `isIncomplete` is about the PREFIX, and the
- * prefix is what this ignores.
+ * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT: `cmpl` reaching `completion` needs a
+ * candidate the prefix rejected, and it was never sent -- while the answer still
+ * claims to be final, because tsudoi's completion row cannot express
+ * `isIncomplete`. `filters` is where an author says otherwise.
+ *
+ * AND AN EDIT OVERTURNS THE ANSWER WHATEVER THE PIPELINE DOES: typing changes the
+ * buffer's words, the client sends `didChange` and asks again, and that is the
+ * route every source is refreshed by.
  *
  * A DOCUMENT THE STORE DOES NOT HOLD YIELDS NOTHING rather than answering
  * emptily, and the difference reaches the client: a stream that yields nothing
@@ -131,12 +136,26 @@ export async function* completeAround(
   // CRLF document otherwise leaves a `\r` at the end of every line, which the
   // word pattern does not match but which counts toward the column bound.
   const lines = document.getText().split(/\r?\n/);
+  const scanner = options.scanner ?? defaultScanner;
   const { from, to } = windowAround(params.position.line, lines.length, options.maxSize ?? 200);
-  const words = wordsIn(lines.slice(from, to), {
-    scanner: options.scanner ?? defaultScanner,
+  const scanned = wordsIn(lines.slice(from, to), {
+    scanner,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   });
+  // THE CURSOR'S OWN LINE OUT OF THE STRING TAKEN ABOVE, and not a second
+  // `getText`: the liveness rule means a second read could be of a later buffer,
+  // and then the prefix would be from one buffer and the candidates from another.
+  const typed = typedWord(
+    scanner,
+    (lines[params.position.line] ?? "").slice(0, params.position.character),
+  );
+  const words = applyFilters(
+    scanned,
+    options.filters ?? defaultFilters,
+    { typed },
+    options.maxItems,
+  );
   if (words.length === 0) {
     return;
   }

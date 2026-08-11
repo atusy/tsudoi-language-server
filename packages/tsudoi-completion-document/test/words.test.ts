@@ -25,8 +25,8 @@ describe("the words a set of lines holds", () => {
    * from the END would answer `bar baz foo` -- the same SET, a different popup.
    * A fixture whose repeats were adjacent could not tell the two apart.
    */
-  test("a repeat keeps the place where it was first seen", () => {
-    expect(wordsIn(["foo bar foo", "bar baz foo"], ascii)).toEqual(["foo", "bar", "baz"]);
+  test("a repeat is yielded again, because uniqueness is not decided here", () => {
+    expect(wordsIn(["foo bar foo", "bar baz"], ascii)).toEqual(["foo", "bar", "foo", "bar", "baz"]);
   });
 
   /**

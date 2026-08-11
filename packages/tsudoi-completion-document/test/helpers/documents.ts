@@ -1,3 +1,4 @@
+import type { Range } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { DocumentView, RequestContext } from "@atusy/tsudoi-language-server/types";
 
 /**
@@ -27,7 +28,7 @@ export interface FakeDocuments {
   /** A `didClose`. */
   close(uri: string): void;
   /**
-   * How many times a handler has asked `uri` for its text SINCE IT WAS OPENED.
+   * How many times a handler has read `uri` WHOLE since it was opened -- a scan.
    *
    * THE READING A MEMO ARM TAKES, and it counts what the handler actually did
    * rather than what a cache reports about itself: a memo that stores an entry
@@ -91,9 +92,20 @@ export function fakeDocuments(): FakeDocuments {
           get lineCount(): number {
             return entry.text.split("\n").length;
           },
-          getText: (): string => {
-            entry.reads += 1;
-            return entry.text;
+          getText: (range?: Range): string => {
+            if (range === undefined) {
+              // COUNTED ONLY FOR A WHOLE READ, because that is what a SCAN costs.
+              // A handler asking for one line -- the cursor's, to find the word
+              // being typed -- has not rescanned anything, and counting it would
+              // make the memo arms redden over work the memo never claimed to save.
+              entry.reads += 1;
+              return entry.text;
+            }
+            const lines = entry.text.split(/\r?\n/);
+            const line = lines[range.start.line] ?? "";
+            return range.start.line === range.end.line
+              ? line.slice(range.start.character, range.end.character)
+              : line.slice(range.start.character);
           },
           positionAt: () => ({ line: 0, character: 0 }),
           offsetAt: () => 0,
