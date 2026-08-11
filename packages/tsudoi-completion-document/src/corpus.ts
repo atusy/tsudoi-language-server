@@ -15,7 +15,8 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { DocumentView, RequestContext } from "@atusy/tsudoi-language-server/types";
-import { defaultWordPattern, type WordOptions, wordsIn } from "./words.ts";
+import { defaultScanner, type Scanner } from "./scanners.ts";
+import { type WordOptions, wordsIn } from "./words.ts";
 
 /**
  * What counts as a word, and nothing about which lines are read.
@@ -41,16 +42,23 @@ export type CompleteCorpusOptions = WordOptions;
  * THE FILTERS ARE PART OF THE KEY AND NOT DECORATION: nothing about a document
  * changes between two requests that pass different `minLength`s, so a memo
  * consulting the version alone answers the second request with the first one's
- * words. `pattern` is compared by SOURCE AND FLAGS because a `RegExp` is an
- * object -- an author's arrow that builds one per call would never hit a cache
- * keyed on identity, and a cache that ignored the pattern would hit it wrongly.
+ * words.
+ *
+ * THE SCANNER IS COMPARED BY IDENTITY BECAUSE IT IS A FUNCTION, AND THAT IS A
+ * COST OF THE OPTION BEING A CALLBACK RATHER THAN A CHOICE MADE HERE. While it
+ * was a `RegExp` this compared SOURCE AND FLAGS, so two equivalent patterns were
+ * one key; two equivalent closures cannot be told apart by anything. SO AN AUTHOR
+ * WHO BUILDS THEIR SCANNER INSIDE THE ARROW THAT CALLS THIS HANDLER GETS A NEW KEY
+ * ON EVERY KEYSTROKE and every open document is rescanned every time -- correct
+ * answers, no memo, and nothing anywhere to say so. `defaultScanner` is a
+ * module-level value for exactly that reason, and the option's own documentation
+ * is where an author is told to hoist theirs.
  */
 interface Scan {
   readonly version: number;
   readonly minLength: number;
   readonly maxColumns: number;
-  readonly patternSource: string;
-  readonly patternFlags: string;
+  readonly scanner: Scanner;
   readonly words: readonly string[];
 }
 
@@ -87,7 +95,7 @@ const scans = new WeakMap<DocumentView, Scan>();
 
 /** The resolved filters one request scans under. */
 interface Filters {
-  readonly pattern: RegExp;
+  readonly scanner: Scanner;
   readonly minLength: number;
   readonly maxColumns: number;
 }
@@ -111,21 +119,19 @@ function wordsOf(document: DocumentView, filters: Filters): readonly string[] {
     cached.version === version &&
     cached.minLength === filters.minLength &&
     cached.maxColumns === filters.maxColumns &&
-    cached.patternSource === filters.pattern.source &&
-    cached.patternFlags === filters.pattern.flags
+    cached.scanner === filters.scanner
   ) {
     return cached.words;
   }
   // SPLIT ON `\r?\n` AND NOT `\n`, the same reading its sibling takes: a CRLF
   // document otherwise leaves a `\r` at the end of every line, which the word
-  // pattern does not match but which counts toward the column bound.
+  // pattern matches but which counts toward the column bound.
   const words = wordsIn(document.getText().split(/\r?\n/), filters);
   scans.set(document, {
     version,
     minLength: filters.minLength,
     maxColumns: filters.maxColumns,
-    patternSource: filters.pattern.source,
-    patternFlags: filters.pattern.flags,
+    scanner: filters.scanner,
     words,
   });
   return words;
@@ -187,7 +193,7 @@ export async function* completeCorpus(
   options: CompleteCorpusOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   const filters: Filters = {
-    pattern: options.wordPattern ?? defaultWordPattern,
+    scanner: options.scanner ?? defaultScanner,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   };

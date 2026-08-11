@@ -74,12 +74,12 @@ except this paragraph.
 Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
 top-down, for `completeCorpus` it is the documents in the order your client opened them.
 
-| option        | default              | `around` | `corpus` | what it decides                                                  |
-| ------------- | -------------------- | -------- | -------- | ---------------------------------------------------------------- |
-| `maxSize`     | `200`                | yes      | —        | lines read above **and** below the cursor, clamped to the buffer |
-| `minLength`   | `2`                  | yes      | yes      | the shortest match worth offering                                |
-| `maxColumns`  | `200`                | yes      | yes      | a line at or over this length is skipped **whole**               |
-| `wordPattern` | `defaultWordPattern` | yes      | yes      | what counts as a word                                            |
+| option       | default          | `around` | `corpus` | what it decides                                                  |
+| ------------ | ---------------- | -------- | -------- | ---------------------------------------------------------------- |
+| `maxSize`    | `200`            | yes      | —        | lines read above **and** below the cursor, clamped to the buffer |
+| `minLength`  | `2`              | yes      | yes      | the shortest match worth offering                                |
+| `maxColumns` | `200`            | yes      | yes      | a line at or over this length is skipped **whole**               |
+| `scanner`    | `defaultScanner` | yes      | yes      | where one line's words come from                                 |
 
 Options are the **third argument**, so a handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
@@ -89,6 +89,58 @@ and behind one arrow when they do not:
 `wordsIn` and `windowAround` are exported too, so a handler of your own can take the words over
 lines neither of these would choose — one function, a selection, a file nobody has opened —
 without reimplementing the filters.
+
+## Which words, and how to change your mind about it
+
+`scanner` is a **function**, `(line: string) => Iterable<string>`, and it is the one thing here you
+are most likely to replace. Two are shipped:
+
+| scanner                    | finds words by                             | good for                                               |
+| -------------------------- | ------------------------------------------ | ------------------------------------------------------ |
+| `regexScanner(pattern?)`   | matching a `RegExp` (`defaultWordPattern`) | code and any language that puts spaces between words   |
+| `segmentScanner(locales?)` | asking `Intl.Segmenter`                    | Japanese, Thai, Khmer — languages that write no spaces |
+
+**`segmentScanner` is how you get Japanese completion**, and it is why `scanner` is a callback
+rather than a pattern: no character class can find a word boundary in text that writes none.
+
+<!-- snippet -->
+
+```ts
+import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
+import { completeCorpus, segmentScanner } from "@atusy/tsudoi-completion-document";
+
+// BUILT ONCE, OUTSIDE THE HANDLER. See below -- inside it, the memo never hits.
+const scanner = segmentScanner("ja");
+
+const config: TsudoiConfigFactory = () =>
+  Promise.resolve({
+    methods: {
+      "textDocument/completion": (context, params) =>
+        completeCorpus(context, params, { scanner, minLength: 1 }),
+    },
+  });
+
+export default config;
+```
+
+**Build your scanner once, outside the handler.** `completeCorpus` remembers each document's words
+and keys that memory on your scanner **by identity** — a function is not comparable any other way.
+A scanner built inside the arrow that calls the handler is therefore a new key on every keystroke,
+and every open document is rescanned every time. The answers stay right; the memo is simply gone,
+and nothing warns you.
+
+**Name the locale.** With none, the default is resolved by the runtime — measured on one machine as
+`en-US` under bun and `ja-JP` under deno, because each picks its own fallback.
+
+**`minLength: 1` if you want single-character Japanese words.** The default of `2` is measured in
+characters, and `誰`, `本`, `人` are ordinary words; the cost is that one-letter Latin candidates
+come back too.
+
+**A digit does not stop a segment being a word.** `Intl.Segmenter` reports an `isWordLike` flag and
+this scanner ignores it, because the two runtimes disagree: measured at bun 1.3.13 and deno 2.9.4,
+bun calls every segment containing a digit — `sha256`, `utf8`, `v2`, `123` — not word-like where
+deno calls them all word-like. The **boundaries** agreed exactly, so this reads those and decides
+admission itself, and `sha256` is offered under both.
 
 ## What bounds it
 
@@ -103,8 +155,9 @@ cursor's file, largest first — is a guess about your attention that this packa
 What keeps it off the keystroke is a memo: a document is scanned again when its **version** moves,
 so the files you are not typing in are not rescanned. Reopening a file rescans it too, even at the
 same version number — a version counts within one `didOpen` and not across the session. So does
-changing `minLength`, `maxColumns` or `wordPattern` between requests, since those change the answer
-without the document moving at all.
+changing `minLength`, `maxColumns` or `scanner` between requests, since those change the answer
+without the document moving at all — and a scanner counts as changed whenever it is a different
+function, which is why you build it once.
 
 **Neither says _ask me again_.** Both hand over a complete list, and there is no way for a tsudoi
 handler to say otherwise — the protocol's `isIncomplete` is not something this framework's
@@ -124,7 +177,9 @@ elsewhere. Nothing is sorted either, and no `sortText` is sent: your editor rank
 order chosen here would compete with its own fuzzy score.
 
 **A run of letters is a word only where the writing system puts spaces between them**, and the
-default knows that. Han, Hiragana, Katakana, Thai, Lao, Khmer and Myanmar are left out, so
+default pattern knows that — which is the bound on `regexScanner`, not on this package: reach for
+`segmentScanner` and these languages are segmented properly rather than skipped. Han, Hiragana,
+Katakana, Thai, Lao, Khmer and Myanmar are left out of `defaultWordPattern`, so
 `[NeovimのLSPで誰にどうして怒られたのかを確認するための設定]` offers `Neovim` and `LSP` instead of
 thirty characters of prose as a single candidate — which is what the first version of this default
 did, swallowing both Latin words in the process.
@@ -134,8 +189,10 @@ and the Indic scripts all separate their words, so theirs survive. Combining mar
 a word, which is what keeps `हिन्दी` and a pointed `שָׁלוֹם` whole rather than splitting them at
 every mark.
 
-`defaultWordPattern` is exported, so widening it is a line rather than a rewrite — build a new
-`RegExp` from its `source` with your own alternative appended, and Han characters are back.
+`defaultWordPattern` is exported, so widening it is a line rather than a rewrite —
+`regexScanner(new RegExp(`${defaultWordPattern.source}|\p{scx=Han}+`, "gu"))` puts Han characters
+back as single candidates. That is worth knowing and is the lesser answer: `segmentScanner` finds
+the actual words instead of longer runs of them.
 
 **The pattern is this package's, not the reference's** — what is inherited is the `gu` flags.
 ddc-source-around has no default of its own: it takes ddc's `keywordPattern` source option,

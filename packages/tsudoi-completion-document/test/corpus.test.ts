@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
 import { completeCorpus } from "../src/corpus.ts";
+import { regexScanner, segmentScanner } from "../src/scanners.ts";
 import { type FakeDocuments, fakeDocuments } from "./helpers/documents.ts";
 
 const asked = "file:///workspace/asked.txt";
@@ -218,39 +219,61 @@ describe("what the memo may and may not serve again", () => {
   });
 
   /**
-   * AND A DIFFERENT PATTERN IS SCANNED AGAIN TOO, asserted apart from the length
-   * because a memo could compare the numbers and not the regex -- a `RegExp` is
-   * an object, so the cheap comparison is identity and the honest one is source
-   * and flags.
+   * AND A DIFFERENT SCANNER IS SCANNED AGAIN TOO, asserted apart from the length
+   * because a memo could compare the numbers and not the scanner. The fixture is
+   * Japanese on purpose: the default scanner refuses it by design, so a memo that
+   * ignored the scanner would go on refusing it under one that can read it.
    */
-  test("a widened pattern after the default offers what the default refused", async () => {
+  test("a segmenting scanner after the default offers what the default refused", async () => {
     const documents = fakeDocuments();
-    documents.open(asked, "日本語");
+    documents.open(asked, "こんにちは世界");
 
     expect(await batchesFor(documents)).toEqual([]);
-    expect(await offered(documents, asked, { wordPattern: /\p{scx=Han}+/gu })).toEqual(["日本語"]);
+    expect(await offered(documents, asked, { scanner: segmentScanner("ja") })).toEqual([
+      "こんにちは",
+      "世界",
+    ]);
   });
 
   /**
-   * TWO PATTERNS THAT MATCH THE SAME THING ARE ONE KEY, and the arm above cannot
-   * say so: it changes the pattern, so a memo comparing regexes by IDENTITY
-   * re-scans and answers correctly for the wrong reason.
+   * A SCANNER REBUILT PER REQUEST IS A DIFFERENT KEY, AND THIS ARM IS WHERE THAT
+   * COST IS WRITTEN DOWN RATHER THAN DISCOVERED.
    *
-   * WHY THE CHEAP COMPARISON WOULD BITE A REAL AUTHOR RATHER THAN A TEST: options
-   * reach this handler through an arrow the config writes, so
-   * `(c, p) => completeCorpus(c, p, { wordPattern: /.../gu })` BUILDS A NEW REGEXP
-   * ON EVERY KEYSTROKE. Under identity the memo would then miss every time and
-   * cost a full re-scan of every open document, silently -- every arm in this file
-   * would stay green, and the answers would all be right.
+   * IT REPLACES ITS OWN OPPOSITE. While the option was a `RegExp` this file
+   * asserted that two equivalent patterns were ONE key -- source and flags are
+   * comparable, so an author's arrow rebuilding one per keystroke still hit the
+   * memo. A CALLBACK IS NOT COMPARABLE: two closures doing the same thing are two
+   * values, and nothing can say otherwise, so the guarantee is GONE rather than
+   * merely narrowed.
+   *
+   * WHAT THAT COSTS AN AUTHOR WHO DOES NOT KNOW: correct answers, no memo, every
+   * open document rescanned on every keystroke, and every other arm in this file
+   * green. HOISTING IS THE WHOLE REMEDY -- build the scanner once, outside the
+   * handler -- and the arm below is the same fixture doing that.
    */
-  test("an equivalent pattern rebuilt per request is still the same key", async () => {
+  test("a scanner rebuilt per request misses the memo, and rescans", async () => {
     const documents = fakeDocuments();
     documents.open(asked, "alpha");
 
-    expect(await offered(documents, asked, { wordPattern: /[a-z]+/gu })).toEqual(["alpha"]);
+    await offered(documents, asked, { scanner: regexScanner(/[a-z]+/gu) });
+    await offered(documents, asked, { scanner: regexScanner(/[a-z]+/gu) });
+
+    expect(documents.reads(asked)).toBe(2);
+  });
+
+  /**
+   * AND ONE HOISTED SCANNER HITS IT, which is the pair without which the arm above
+   * reads as a defect rather than as the reason to hoist.
+   */
+  test("a scanner built once and reused hits the memo", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+    const scanner = regexScanner(/[a-z]+/gu);
+
+    expect(await offered(documents, asked, { scanner })).toEqual(["alpha"]);
     expect(documents.reads(asked)).toBe(1);
 
-    await offered(documents, asked, { wordPattern: /[a-z]+/gu });
+    await offered(documents, asked, { scanner });
 
     expect(documents.reads(asked)).toBe(1);
   });

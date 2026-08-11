@@ -27,5 +27,7 @@ export { completeAround, windowAround } from "./around.ts";
 export type { CompleteAroundOptions } from "./around.ts";
 export { completeCorpus } from "./corpus.ts";
 export type { CompleteCorpusOptions } from "./corpus.ts";
+export type { Scanner } from "./scanners.ts";
+export { defaultScanner, defaultWordPattern, regexScanner, segmentScanner } from "./scanners.ts";
 export type { WordOptions } from "./words.ts";
-export { defaultWordPattern, wordsIn } from "./words.ts";
+export { wordsIn } from "./words.ts";

@@ -29,7 +29,10 @@ test("every value the README tells a reader to import is exported by name", () =
   const promised = [
     "completeAround",
     "completeCorpus",
+    "defaultScanner",
     "defaultWordPattern",
+    "regexScanner",
+    "segmentScanner",
     "wordsIn",
     "windowAround",
   ];

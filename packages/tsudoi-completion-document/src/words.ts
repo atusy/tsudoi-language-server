@@ -1,57 +1,14 @@
-/**
- * Scripts written WITHOUT SPACES BETWEEN WORDS, which this package gives up on.
- *
- * WHY GIVING UP BEATS TRYING, MEASURED ON A REAL POPUP: a run of letters is a
- * WORD only where the writing system separates them, and Japanese does not. With
- * these included, `[NeovimのLSPで誰にどうして怒られたのかを確認するための設定]`
- * matched as ONE candidate -- thirty characters of prose offered as a completion,
- * and `Neovim` and `LSP` NOT offered at all, because they were swallowed by it.
- * Splitting these out recovers both.
- *
- * WHAT IS NOT HERE IS AS DELIBERATE: Korean, Greek, Cyrillic, Hebrew, Arabic and
- * the Indic scripts all put spaces between words, so their words survive. This
- * list is about SEGMENTATION and not about being non-Latin.
- *
- * `scx` AND NOT `sc`, MEASURED: `ー` (U+30FC, the prolonged sound mark) is
- * Script=Common, so `\p{sc=Katakana}` does not cover it and it leaks out of
- * カタカナ words as a candidate of its own. Its Script_EXTENSIONS include
- * Katakana, so `scx` catches it.
- */
-const unsegmentedScripts = ["Han", "Hiragana", "Katakana", "Thai", "Lao", "Khmer", "Myanmar"];
+import type { Scanner } from "./scanners.ts";
 
 /**
- * What this package calls a word when the author names no pattern of their own.
+ * WHICH MATCHES SURVIVE A SCAN, and where the scan comes from -- the part of a
+ * handler's options that is about WORDS rather than about which lines it reads.
  *
- * READ IT AS THREE DECISIONS RATHER THAN AS A REGEX. A letter counts unless its
- * script is one nobody writes with spaces; a digit or an underscore counts
- * anywhere; and a COMBINING MARK counts, which is what keeps `हिन्दी` and a
- * pointed `שָׁלוֹם` whole -- MEASURED, without `\p{M}` the first breaks into
- * `शब`, `और`, `वन`, `गर` and the second into fragments, because the marks are
- * not `\p{L}` and each split the run.
- *
- * THE DOUBLE NEGATION IS FORCED BY THE LANGUAGE and is not cleverness for its
- * own sake: `[^\P{L}…]` is `a letter AND none of these`, which is set
- * subtraction -- and JavaScript has no subtraction in a `u`-mode class. The `v`
- * flag does, and is declined: it is newer than the runtimes this package
- * promises, and a pattern that throws on one of them is worse than a long one.
- *
- * EXPORTED so an author can widen it rather than rewrite it -- `new
- * RegExp(`${defaultWordPattern.source}|\\p{scx=Han}+`, "gu")` puts Han back for
- * somebody who wants single characters.
- */
-export const defaultWordPattern: RegExp = new RegExp(
-  `(?:[^\\P{L}${unsegmentedScripts.map((script) => `\\p{scx=${script}}`).join("")}]|[\\p{N}\\p{M}_])+`,
-  "gu",
-);
-
-/**
- * WHICH MATCHES SURVIVE, and what counts as a match -- the part of a handler's
- * options that is about WORDS rather than about which lines it reads.
- *
- * IT LIVES WITH THE SCANNER AND NOT WITH EITHER HANDLER, so that a handler's own
- * options type is exactly the question that handler answers on its own. The
- * defaults are the ddc-source-around reference's, taken from its code; a handler
- * that chose its own would be a second set of numbers an author has to learn.
+ * IT LIVES WITH `wordsIn` AND NOT WITH EITHER HANDLER, so that a handler's own
+ * options type is exactly the question that handler answers on its own. The two
+ * numeric defaults are the ddc-source-around reference's, taken from its code; a
+ * handler that chose its own would be a second set of numbers an author has to
+ * learn.
  *
  * EVERY FIELD IS OPTIONAL HERE AND RESOLVED AT THE HANDLER: `wordsIn` takes the
  * resolved triple, so the defaults are written once, at the site that applies
@@ -64,6 +21,11 @@ export interface WordOptions {
    * TWO IS THE REFERENCE'S DEFAULT, and the reason is what a one-character
    * candidate costs: it matches nearly everything the user has typed so far, so
    * it fills the popup while telling them nothing.
+   *
+   * IT IS MEASURED IN CODE UNITS AND THAT BITES A SEGMENTED LANGUAGE, said here
+   * because `segmentScanner` makes it reachable: Japanese words of one character
+   * are ordinary -- `誰`, `本`, `人` -- so a config segmenting Japanese and wanting
+   * them needs `minLength: 1`, and pays for it in one-letter Latin candidates.
    */
   readonly minLength?: number;
   /**
@@ -76,13 +38,20 @@ export interface WordOptions {
    */
   readonly maxColumns?: number;
   /**
-   * What counts as a word. Defaults to `defaultWordPattern`.
+   * Where one line's words come from. Defaults to `defaultScanner`.
    *
-   * SUPPLY YOUR OWN AND IT IS USED AS GIVEN: the flags are yours too, and a
-   * pattern without `g` matches once per line, which is almost certainly not
-   * what you meant.
+   * THIS REPLACED A `wordPattern` OPTION AND THE CHANGE IS NOT COSMETIC: a regex
+   * can only offer what a character class expresses, and no character class finds
+   * a word boundary in a language that writes none. `regexScanner(yours)` is the
+   * old option spelled through the new one; `segmentScanner()` is the thing the
+   * old one could not be widened into.
+   *
+   * SUPPLY IT FROM OUTSIDE YOUR HANDLER, NOT INSIDE. The corpus memo keys on this
+   * value's IDENTITY -- a callback cannot be compared any other way -- so a
+   * scanner built inside the arrow that calls a handler is a new key on every
+   * keystroke, and every document is rescanned every time with nothing to say so.
    */
-  readonly wordPattern?: RegExp;
+  readonly scanner?: Scanner;
 }
 
 /**
@@ -92,7 +61,7 @@ export interface WordOptions {
  * WHICH LINES REACH THIS -- a window either side of the cursor, or every open
  * document -- and each handler's own arms assert its own choice.
  *
- * ITS FILTERS ARRIVE RESOLVED, with no defaults reachable from here: a handler
+ * ITS OPTIONS ARRIVE RESOLVED, with no defaults reachable from here: a handler
  * has already defaulted them against its own options, and a second set beside
  * this signature is how the two come to disagree.
  *
@@ -100,22 +69,21 @@ export interface WordOptions {
  * reference relies on: of two occurrences the earlier in `lines` wins its place,
  * and an implementation that rebuilt the list from the end would offer the same
  * SET in a different order, which an editor shows as a different popup.
+ *
+ * THE COLUMN BOUND IS APPLIED BEFORE THE SCANNER RUNS, which is the one ordering
+ * decision here: a scanner is the expensive part -- a segmenter above all -- and
+ * the line this bound exists to refuse is the most expensive line in the file.
  */
 export function wordsIn(
   lines: readonly string[],
-  options: { pattern: RegExp; minLength: number; maxColumns: number },
+  options: { scanner: Scanner; minLength: number; maxColumns: number },
 ): string[] {
   const found = new Set<string>();
-  // REBUILT PER CALL, NOT PER LINE, and never the caller's own instance: a `g`
-  // regex is stateful through `lastIndex`, so reusing the object a caller handed
-  // in would make this function's answer depend on what they did with it last.
-  const pattern = new RegExp(options.pattern.source, options.pattern.flags);
   for (const line of lines) {
     if (line.length >= options.maxColumns) {
       continue;
     }
-    for (const match of line.matchAll(pattern)) {
-      const word = match[0];
+    for (const word of options.scanner(line)) {
       if (word.length >= options.minLength) {
         found.add(word);
       }

@@ -104,6 +104,8 @@ const publishedFiles: Record<string, readonly string[]> = {
     "dist/corpus.js",
     "dist/index.d.ts",
     "dist/index.js",
+    "dist/scanners.d.ts",
+    "dist/scanners.js",
     "dist/words.d.ts",
     "dist/words.js",
     "package.json",

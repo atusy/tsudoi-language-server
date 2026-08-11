@@ -23,7 +23,8 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { defaultWordPattern, type WordOptions, wordsIn } from "./words.ts";
+import { defaultScanner } from "./scanners.ts";
+import { type WordOptions, wordsIn } from "./words.ts";
 
 /**
  * How the window is chosen, on top of what counts as a word.
@@ -132,7 +133,7 @@ export async function* completeAround(
   const lines = document.getText().split(/\r?\n/);
   const { from, to } = windowAround(params.position.line, lines.length, options.maxSize ?? 200);
   const words = wordsIn(lines.slice(from, to), {
-    pattern: options.wordPattern ?? defaultWordPattern,
+    scanner: options.scanner ?? defaultScanner,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   });
