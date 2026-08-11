@@ -158,6 +158,28 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
+      id: "PBI-99",
+      story: {
+        role: "config author",
+        capability:
+          "have a handler package's EXPORTED NAMES graded through the route I actually take, so a rename that misses one reaches me as `has no exported member` rather than passing every check here",
+        benefit: "the names a member's README tells me to import are the names its tarball carries",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. Whether the path package's probes are generalised over members or each member owes its own file is the item.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "FOUND BY WALKING THROUGH IT IN SPRINT 93 AND PRE-EXISTING TO IT. `test/published-artifacts.test.ts` names `completePath` and `resolvePathStat` as literal strings and type-checks them from a staged consumer -- and NO SUCH ARM EXISTS FOR THE OTHER THREE MEMBERS. Renaming `aroundCompletion` reddened nothing on the published route; what caught the in-repo callers was `tsc` and the workspace check, which read `src/` and not a tarball.",
+        'AND THE README SNIPPET IS NOT THE MISSING ARM, which is the reading a later reader will reach for. The `ts snippets` row\'s SUBJECT is the SPECIFIERS -- its own comment says a block whose imports resolve and whose body is wrong is accounted for and unchecked -- so `import { neverExported } from "@atusy/tsudoi-completion-around"` satisfies it. The row is not weak; it is about a different question.',
+        "WHAT MAKES THIS MORE THAN SYMMETRY: a member's README is the ONLY instruction a stranger gets, and the name in its snippet is the one thing in it that must match the artifact exactly. `packed-members` already reads the tarball -- it grades the FILE LIST and the README's tokens, never a single exported name.",
+      ],
+    },
+    {
       id: "PBI-94",
       story: {
         role: "config author",
@@ -272,6 +294,22 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 93,
+      pbi_id: "PBI-98",
+      goal: "The two completion handlers are named for what they DO -- `completeAround` and `completePath` -- so an author reads a verb where they register a verb.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 3ca6034`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1149 pass / 0 fail over 83 files, 190.47s, the one long-standing non-gating `eslint(require-yield)` warning. FOURTH ~190s READING IN A ROW.",
+        "THE OPTION BAGS FOLLOWED AND THAT WAS NOT A CHOICE MADE HERE: `AroundCompletionOptions` carries a comment saying it is NAMED FOR THE HANDLER IT BELONGS TO. Leaving the two types behind would have left that sentence false at the site that states the rule.",
+        "AND ONE `pathCompletion` DELIBERATELY DID NOT MOVE -- `item.data.pathCompletion`, which shares the old name and is not it. IT IS A KEY ON THE WIRE: the client hands the item's `data` back at `completionItem/resolve`, so a server that renamed the mark and then resolved an item OFFERED BY THE VERSION BEFORE IT would read `undefined` and answer an item with no path. A rename is invisible to a client; this is not. The refusal is written at the field rather than here.",
+        "THE RENAME WALKED THROUGH A HOLE AND THAT IS THE FINDING WORTH MORE THAN THE RENAME -- PBI-99. `test/published-artifacts.test.ts` names the PATH package's exports as literal strings from a staged consumer; NO MEMBER BUT THAT ONE HAS SUCH AN ARM. Renaming `aroundCompletion` reddened NOTHING on the published route. What caught the callers was `tsc` and the workspace check, and both read `src/`.",
+        "AND THE README SNIPPET DOES NOT COVER IT, checked rather than assumed: the `ts snippets` account's SUBJECT is the SPECIFIERS, and its own comment says a block whose imports resolve and whose body is wrong is accounted for and unchecked. It would have been satisfied by a name the package never exported.",
+        "THE ONE CONSUMER OF THE OLD NAMES IS THE STAKEHOLDER'S OWN EDITOR, and it is safe by accident rather than by design: their dotfiles pin every `@atusy/tsudoi-*` specifier to raw GitHub URLs at 30effd8, so they still resolve `aroundCompletion` from the commit that had it. THE PINS AND THE CONFIG MUST MOVE TOGETHER -- bumping one without the other is what breaks their editor, and neither this repository nor any check in it can see that file.",
+      ],
+    },
     {
       number: 92,
       pbi_id: "PBI-98",
