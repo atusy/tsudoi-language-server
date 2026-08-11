@@ -58,12 +58,26 @@ export interface AroundCompletionOptions {
   /**
    * What counts as a word.
    *
-   * THE DEFAULT IS NOT ASCII-ONLY, AND THAT IS A DEPARTURE THE REFERENCE COULD
-   * NOT MAKE: ddc takes vim's `iskeyword`, so a buffer's own language is already
-   * accounted for by the time its source runs. tsudoi has nothing equivalent, so
-   * a default of `[A-Za-z0-9_]+` would silently offer nothing at all in a
-   * Japanese, Greek or Cyrillic buffer -- the failure mode being an empty popup
-   * rather than an error.
+   * THE PATTERN IS NOT THE REFERENCE'S AND THE FLAGS ARE, said this precisely
+   * because `modelled on ddc-source-around` invites the opposite reading. What
+   * is inherited is `gu` -- that source builds `new RegExp(pattern, "gu")`. What
+   * is NOT is the pattern itself: ddc-source-around HAS no default of its own,
+   * it takes ddc's `keywordPattern` SOURCE OPTION, whose documented default is
+   * `\k*`, and `convertKeywordPattern` in ddc.vim rewrites `\k` into a class
+   * built from the buffer's `iskeyword`.
+   *
+   * SO THE REFERENCE'S ANSWER IS THE EDITOR'S SETTING AND TSUDOI HAS NO SUCH
+   * SETTING TO READ. Something had to be chosen here, and `[A-Za-z0-9_]+` would
+   * offer nothing at all in a Japanese, Greek or Cyrillic buffer -- failing as
+   * an empty popup rather than as an error. THIS DEFAULT IS THEREFORE MORE
+   * PERMISSIVE THAN VIM'S OWN: `iskeyword` defaults to roughly ASCII plus
+   * Latin-1, so a vim user who has not widened it would NOT get those words out
+   * of the reference either.
+   *
+   * AND IT IS `+` WHERE THE REFERENCE'S DEFAULT IS `*`, which is why `minLength`
+   * does less work here: `\k*` MATCHES THE EMPTY STRING, and that source's own
+   * tests record `minLength` as what removes the empties. One-or-more cannot
+   * produce one.
    *
    * SUPPLY YOUR OWN AND IT IS USED AS GIVEN: the flags are yours too, and a
    * pattern without `g` matches once per line, which is almost certainly not

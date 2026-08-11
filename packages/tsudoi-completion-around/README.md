@@ -66,10 +66,15 @@ also why the word under your cursor is among them — excluding it would be this
 decision your editor already makes, and would be wrong when you are retyping a word that appears
 elsewhere.
 
-**The default pattern is not ASCII-only**, which is this package's one departure from the
-reference. ddc takes vim's `iskeyword`, so a buffer's own language is accounted for before its
-source runs; tsudoi has no equivalent, and an ASCII default would offer nothing at all in a
-Japanese, Greek or Cyrillic buffer — failing as an empty popup rather than as an error.
+**The default pattern is this package's, not the reference's.** What is inherited from
+ddc-source-around is the `gu` flags; the pattern is not. That source has no default of its own — it
+takes ddc's `keywordPattern` source option, documented as `\k*`, and ddc rewrites `\k` into a class
+built from the buffer's `iskeyword`. tsudoi has no such setting to read, so something had to be
+chosen, and an ASCII default would offer nothing at all in a Japanese, Greek or Cyrillic buffer —
+failing as an empty popup rather than an error. **This default is more permissive than vim's own**:
+`iskeyword` covers roughly ASCII plus Latin-1, so a vim user who has not widened it would not get
+those words out of the reference either. It is also `+` where `\k*` is `*`, which matches the empty
+string — the reference's own tests record `minLength` as what removes the empties.
 
 **It knows no language, and says so.** Every item is `CompletionItemKind.Text` and carries
 `detail: "around"`, so a popup fed by several sources shows which suggestions are guesses from the
