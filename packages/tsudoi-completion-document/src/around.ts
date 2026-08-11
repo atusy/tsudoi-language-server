@@ -24,15 +24,20 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { defaultWordPattern, wordsIn } from "./words.ts";
+import { defaultWordPattern, type WordOptions, wordsIn } from "./words.ts";
 
 /**
- * How the window, the filters and what counts as a word are chosen.
+ * How the window is chosen, on top of what counts as a word.
  *
  * NAMED FOR THE HANDLER IT BELONGS TO, matching `CompletePathOptions` in the
  * sibling package: an author installing both reads one convention.
+ *
+ * THE WINDOW IS THE ONLY FIELD THIS TYPE ADDS, and that is the layering rather
+ * than a small type: `WordOptions` carries what any scan in this package asks,
+ * and `maxSize` is the one question that only a handler reading AROUND a cursor
+ * has to answer.
  */
-export interface CompleteAroundOptions {
+export interface CompleteAroundOptions extends WordOptions {
   /**
    * How many lines above AND below the cursor are read. Clamped to the buffer.
    *
@@ -41,35 +46,6 @@ export interface CompleteAroundOptions {
    * size, so it is the option most worth an author's attention.
    */
   readonly maxSize?: number;
-  /**
-   * The shortest match worth offering.
-   *
-   * TWO IS THE REFERENCE'S DEFAULT, and the reason is what a one-character
-   * candidate costs: it matches nearly everything the user has typed so far, so
-   * it fills the popup while telling them nothing.
-   */
-  readonly minLength?: number;
-  /**
-   * A line AT OR OVER this many characters is skipped WHOLE -- not truncated.
-   *
-   * 200 IS THE REFERENCE'S `COLUMNS_MAX`, and the bound is on the LINE rather
-   * than on the scan because of what a very long line is: minified output, a
-   * base64 blob, a generated table. Its "words" are not words anyone will want,
-   * and it is exactly the line whose scan costs the most.
-   */
-  readonly maxColumns?: number;
-  /**
-   * What counts as a word. Defaults to `defaultWordPattern`.
-   *
-   * SUPPLY YOUR OWN AND IT IS USED AS GIVEN: the flags are yours too, and a
-   * pattern without `g` matches once per line, which is almost certainly not
-   * what you meant.
-   *
-   * THE DEFAULTS ARE WRITTEN AT `completeAround` AND NOT HERE, deliberately:
-   * one place decides them, and a second copy beside the documentation is how
-   * the two come to disagree.
-   */
-  readonly wordPattern?: RegExp;
 }
 
 /**

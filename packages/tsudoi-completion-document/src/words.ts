@@ -45,6 +45,47 @@ export const defaultWordPattern: RegExp = new RegExp(
 );
 
 /**
+ * WHICH MATCHES SURVIVE, and what counts as a match -- the part of a handler's
+ * options that is about WORDS rather than about which lines it reads.
+ *
+ * IT LIVES WITH THE SCANNER AND NOT WITH EITHER HANDLER, so that a handler's own
+ * options type is exactly the question that handler answers on its own. The
+ * defaults are the ddc-source-around reference's, taken from its code; a handler
+ * that chose its own would be a second set of numbers an author has to learn.
+ *
+ * EVERY FIELD IS OPTIONAL HERE AND RESOLVED AT THE HANDLER: `wordsIn` takes the
+ * resolved triple, so the defaults are written once, at the site that applies
+ * them, rather than a second time beside this documentation.
+ */
+export interface WordOptions {
+  /**
+   * The shortest match worth offering.
+   *
+   * TWO IS THE REFERENCE'S DEFAULT, and the reason is what a one-character
+   * candidate costs: it matches nearly everything the user has typed so far, so
+   * it fills the popup while telling them nothing.
+   */
+  readonly minLength?: number;
+  /**
+   * A line AT OR OVER this many characters is skipped WHOLE -- not truncated.
+   *
+   * 200 IS THE REFERENCE'S `COLUMNS_MAX`, and the bound is on the LINE rather
+   * than on the scan because of what a very long line is: minified output, a
+   * base64 blob, a generated table. Its "words" are not words anyone will want,
+   * and it is exactly the line whose scan costs the most.
+   */
+  readonly maxColumns?: number;
+  /**
+   * What counts as a word. Defaults to `defaultWordPattern`.
+   *
+   * SUPPLY YOUR OWN AND IT IS USED AS GIVEN: the flags are yours too, and a
+   * pattern without `g` matches once per line, which is almost certainly not
+   * what you meant.
+   */
+  readonly wordPattern?: RegExp;
+}
+
+/**
  * Every distinct word in `lines`, in the order each was first seen.
  *
  * EXPORTED so the arms can drive the filters directly. What the handler adds is
