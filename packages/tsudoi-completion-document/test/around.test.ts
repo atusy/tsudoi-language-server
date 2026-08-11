@@ -1,60 +1,42 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
-import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import { completeAround, windowAround } from "../src/around.ts";
+import { fakeDocuments } from "./helpers/documents.ts";
 
 const uri = "file:///workspace/a.txt";
 
 /**
- * THE CONTEXT A HANDLER IS HANDED, BUILT BY HAND. tsudoi publishes the type, so
- * this is the shape a stranger's own tests take -- and building it here rather
- * than spawning a server keeps these arms about THIS PACKAGE. That the handler
- * routes at all is tsudoi's claim, asserted in tsudoi's own suite.
+ * Every item the handler yielded, flattened, for a cursor on `line` of a document
+ * holding `text` AND NOTHING ELSE OPEN.
+ *
+ * ONE DOCUMENT IS THE WHOLE FIXTURE HERE, which is what tells these arms apart
+ * from the corpus ones: this handler is meant to answer from the buffer it was
+ * given, so a second open document would make an arm about the WINDOW pass or
+ * fail for a reason the window did not decide.
  */
-function contextFor(text: string): RequestContext {
-  const document = {
-    uri,
-    languageId: "plaintext",
-    version: 1,
-    lineCount: text.split("\n").length,
-    getText: () => text,
-    positionAt: () => ({ line: 0, character: 0 }),
-    offsetAt: () => 0,
-  };
-  return {
-    signal: new AbortController().signal,
-    tsudoi: {
-      documents: {
-        get: (asked: string) => (asked === uri ? document : undefined),
-        values: () => [],
-      },
-      workspaceFolders: { get: () => [], values: () => [] },
-      rootUri: null,
-      rootPath: null,
-      clientCapabilities: {},
-      // PRESENT AND REFUSING, which is what a hand-built context owes a member
-      // this package never exercises: nothing here notifies, and a stub that
-      // RESOLVED would let it start doing so silently.
-      notify: () => Promise.reject(new Error("this context sends no notifications")),
-    },
-  };
-}
-
-/** Every item the handler yielded, flattened, for a cursor on `line`. */
 async function offered(
   text: string,
   line: number,
   options: Parameters<typeof completeAround>[2] = {},
 ): Promise<CompletionItem[]> {
+  const documents = fakeDocuments();
+  documents.open(uri, text);
   const items: CompletionItem[] = [];
   for await (const batch of completeAround(
-    contextFor(text),
+    documents.context,
     { textDocument: { uri }, position: { line, character: 0 } },
     options,
   )) {
     items.push(...batch);
   }
   return items;
+}
+
+/** A context holding exactly one open document at `uri`. */
+function contextFor(text: string) {
+  const documents = fakeDocuments();
+  documents.open(uri, text);
+  return documents.context;
 }
 
 describe("completing from around the cursor", () => {
