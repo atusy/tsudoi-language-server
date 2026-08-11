@@ -17,7 +17,8 @@ bound. They take the same arguments, so learning one is learning both.
 
 `completeAround` is modelled on [ddc-source-around](https://github.com/Shougo/ddc-source-around),
 and faithful to what that source's **code** does rather than to what its README says: the two
-disagree about `maxSize`, and the code wins.
+disagree about `maxSize`, and the code wins. That option is called `maxLines` here, because a
+`maxItems` sits beside it and the two are different bounds — lines scanned, candidates sent.
 
 <!-- snippet -->
 
@@ -74,14 +75,14 @@ except this paragraph.
 Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
 top-down, for `completeCorpus` it is the documents in the order your client opened them.
 
-| option       | default          | `around` | `corpus` | what it decides                                                  |
-| ------------ | ---------------- | -------- | -------- | ---------------------------------------------------------------- |
-| `maxSize`    | `200`            | yes      | —        | lines read above **and** below the cursor, clamped to the buffer |
-| `minLength`  | `2`              | yes      | yes      | the shortest match worth offering                                |
-| `maxColumns` | `200`            | yes      | yes      | a line at or over this length is skipped **whole**               |
-| `scanner`    | `defaultScanner` | yes      | yes      | where one line's words come from                                 |
-| `filters`    | `defaultFilters` | yes      | yes      | which scanned words are worth sending                            |
-| `maxItems`   | unbounded        | yes      | yes      | a cap on what survives the filters                               |
+| option       | default          | `around` | `corpus` | what it decides                                                 |
+| ------------ | ---------------- | -------- | -------- | --------------------------------------------------------------- |
+| `maxLines`   | `200`            | yes      | —        | lines read **either side** of the cursor, clamped to the buffer |
+| `minLength`  | `2`              | yes      | yes      | the shortest match worth offering                               |
+| `maxColumns` | `200`            | yes      | yes      | a line at or over this length is skipped **whole**              |
+| `scanner`    | `defaultScanner` | yes      | yes      | where one line's words come from                                |
+| `filters`    | `defaultFilters` | yes      | yes      | which scanned words are worth sending                           |
+| `maxItems`   | unbounded        | yes      | yes      | a cap on what survives the filters                              |
 
 The first four decide what is **scanned**, so changing one makes `completeCorpus`
 re-read the documents it had remembered. The last two run afterwards on what it
@@ -89,7 +90,7 @@ remembered, which is why the prefix can change on every keystroke for free.
 
 Options are the **third argument**, so a handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
-`(context, params) => completeAround(context, params, { maxSize: 50 })`. That is the same shape
+`(context, params) => completeAround(context, params, { maxLines: 50 })`. That is the same shape
 `completePath` has in the sibling package, so installing both means learning one convention.
 
 `wordsIn` and `windowAround` are exported too, so a handler of your own can take the words over
@@ -204,7 +205,7 @@ your pipeline shows them.
 
 ## What bounds it
 
-**The window is the point, for `completeAround`.** Reading `maxSize` lines either side rather than
+**The window is the point, for `completeAround`.** Reading `maxLines` lines either side rather than
 the whole buffer is what makes it cheap enough to run on every keystroke of a file of any size, and
 it is why a word far away is not offered even though it is in the same file. `completeCorpus` is
 the handler for that word.

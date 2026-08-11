@@ -44,7 +44,7 @@ describe("completing from around the cursor", () => {
    * THE WINDOW EXCLUDES SOMETHING, WHICH IS THE WHOLE OF THIS ARM. A document
    * short enough for the window to cover would give the same answer for a
    * handler that read the WHOLE buffer, so the fixture is built taller than the
-   * window on purpose: with the cursor in the middle and `maxSize: 1`, `near` is
+   * window on purpose: with the cursor in the middle and `maxLines: 1`, `near` is
    * in and `far` is out on BOTH sides.
    *
    * BOTH DIRECTIONS, because an off-by-one at one end alone is a real defect and
@@ -53,7 +53,7 @@ describe("completing from around the cursor", () => {
   test("a word outside the window is not offered, and one inside it is", async () => {
     const text = ["farAbove", "nearAbove", "cursorLine", "nearBelow", "farBelow"].join("\n");
 
-    const words = (await offered(text, 2, { maxSize: 1 })).map((item) => item.label);
+    const words = (await offered(text, 2, { maxLines: 1 })).map((item) => item.label);
 
     expect(words).toEqual(["nearAbove", "cursorLine", "nearBelow"]);
   });
@@ -64,7 +64,7 @@ describe("completing from around the cursor", () => {
    * `nearBelow`.
    */
   test("the cursor's own line contributes its words", async () => {
-    expect((await offered("alpha", 0, { maxSize: 0 })).map((item) => item.label)).toEqual([
+    expect((await offered("alpha", 0, { maxLines: 0 })).map((item) => item.label)).toEqual([
       "alpha",
     ]);
   });
@@ -141,11 +141,11 @@ describe("completing from around the cursor", () => {
 
 describe("the window a cursor sees", () => {
   /**
-   * `maxSize` EITHER SIDE AND THE CURSOR'S OWN LINE, which is three bounds in
+   * `maxLines` EITHER SIDE AND THE CURSOR'S OWN LINE, which is three bounds in
    * one arm because they are one arithmetic: the cursor at line 10 with a window
    * of 2 sees 8 through 12, and the half-open end is 13.
    */
-  test("the cursor's line and maxSize either side", () => {
+  test("the cursor's line and maxLines either side", () => {
     expect(windowAround(10, 100, 2)).toEqual({ from: 8, to: 13 });
   });
 

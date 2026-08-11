@@ -11,7 +11,9 @@
  * README. The two disagree: the README documents `maxSize: 500` where `params()`
  * returns 200. Every default below is the code's, because a default taken from
  * the prose would be a claim nobody could check against the thing this was
- * modelled on.
+ * modelled on. THE REFERENCE'S NAME FOR IT IS `maxSize`, WHICH THIS PACKAGE DOES
+ * NOT USE: `maxItems` arrived beside it and the two were read as one bound, so the
+ * option says its UNIT instead. The provenance of the NUMBER is unaffected.
  *
  * WHAT DOES NOT TRANSLATE, NAMED SO IT IS NOT MISTAKEN FOR AN OMISSION: ddc
  * NARROWS the candidates itself against what the user has typed. LSP gives that
@@ -35,35 +37,43 @@ import { type WordOptions, typedWord, wordsIn } from "./words.ts";
  *
  * THE WINDOW IS THE ONLY FIELD THIS TYPE ADDS, and that is the layering rather
  * than a small type: `WordOptions` carries what any scan in this package asks,
- * and `maxSize` is the one question that only a handler reading AROUND a cursor
+ * and `maxLines` is the one question that only a handler reading AROUND a cursor
  * has to answer.
  */
 export interface CompleteAroundOptions extends WordOptions {
   /**
-   * How many lines above AND below the cursor are read. Clamped to the buffer.
+   * How many lines are read EITHER SIDE of the cursor -- so `maxLines: 50` reads
+   * up to 101 lines, not 50. Clamped to the buffer.
+   *
+   * IT IS A LINE COUNT AND `maxItems` IS A CANDIDATE COUNT, and they are named
+   * apart because they were read as one bound: this decides WHAT IS SCANNED and
+   * that decides WHAT IS SENT. MEASURED on one five-line buffer, cursor in the
+   * middle: `maxLines: 1` offers the words of the three nearest lines, where
+   * `maxItems: 3` offers three words FROM THE FARTHEST -- it scans everything and
+   * then cuts. Setting both is meaningful.
    *
    * 200 IS THE REFERENCE'S `params()` VALUE AND NOT ITS README'S 500. The window
    * is what makes this cheap enough to run on every keystroke of a file of any
    * size, so it is the option most worth an author's attention.
    */
-  readonly maxSize?: number;
+  readonly maxLines?: number;
 }
 
 /**
  * The lines a cursor on `line` can see, as HALF-OPEN bounds into the buffer.
  *
- * INCLUSIVE OF THE CURSOR'S OWN LINE AND `maxSize` EITHER SIDE, which is the
+ * INCLUSIVE OF THE CURSOR'S OWN LINE AND `maxLines` EITHER SIDE, which is the
  * reference's arithmetic with its one-based lines translated: it clamps to
  * `[1, $]`, this clamps to `[0, lines.length]`.
  */
 export function windowAround(
   line: number,
   lineCount: number,
-  maxSize: number,
+  maxLines: number,
 ): { readonly from: number; readonly to: number } {
   return {
-    from: Math.max(0, line - maxSize),
-    to: Math.min(lineCount, line + maxSize + 1),
+    from: Math.max(0, line - maxLines),
+    to: Math.min(lineCount, line + maxLines + 1),
   };
 }
 
@@ -137,7 +147,7 @@ export async function* completeAround(
   // word pattern does not match but which counts toward the column bound.
   const lines = document.getText().split(/\r?\n/);
   const scanner = options.scanner ?? defaultScanner;
-  const { from, to } = windowAround(params.position.line, lines.length, options.maxSize ?? 200);
+  const { from, to } = windowAround(params.position.line, lines.length, options.maxLines ?? 200);
   const scanned = wordsIn(lines.slice(from, to), {
     scanner,
     minLength: options.minLength ?? 2,
