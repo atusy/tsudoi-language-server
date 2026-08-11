@@ -108,7 +108,17 @@ function fragmentAt(
  * produced, so a handler can only read what it wrote onto the item itself.
  */
 export interface PathItemData {
-  /** The absolute path the item completes to. */
+  /**
+   * The absolute path the item completes to.
+   *
+   * IT KEEPS THE HANDLER'S OLD NAME, AND THAT IS DELIBERATE RATHER THAN MISSED
+   * BY THE RENAME: this is a key on the WIRE, not an identifier. An item already
+   * in a user's popup carries it, and the client hands that same object back at
+   * `completionItem/resolve` -- so a server that renamed the mark and then
+   * resolved an item offered by the version before it would read `undefined` and
+   * answer an item with no path. Nothing about `completePath` reaches a client,
+   * and nothing about this reaches an author.
+   */
   readonly pathCompletion: string;
   /** Which root offered it, as the item's own documentation spells it. */
   readonly source: PathSourceName;
@@ -167,7 +177,7 @@ export interface PathSource {
 }
 
 /** What the caller may override; everything else is read from the request. */
-export interface PathCompletionOptions {
+export interface CompletePathOptions {
   /**
    * The directory a bare relative path is read against. Defaults to the server's
    * own, read LAZILY inside the handler: reading it at import time would turn a
@@ -637,10 +647,10 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
  * differently -- produces the same aggregated array, and an array IS the claim.
  * The edit is tsudoi's to make at the method map its own types declare.
  */
-export async function* pathCompletion(
+export async function* completePath(
   context: RequestContext,
   params: CompletionParams,
-  options: PathCompletionOptions = {},
+  options: CompletePathOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {

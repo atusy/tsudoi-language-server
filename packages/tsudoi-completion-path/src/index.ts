@@ -8,7 +8,7 @@
  * package's are a promise to a stranger who cannot.
  *
  * TWO HANDLERS AND NOT ONE, AND THE PACKAGE NAME CANNOT SAY SO, which is why it
- * is said here and in the README. `pathCompletion` offers a directory's entries
+ * is said here and in the README. `completePath` offers a directory's entries
  * and reads NO SIZE AND NO DATE for any of them -- an ordinary file or directory
  * is classified from the listing alone, and only a symlink costs a stat, to
  * report the kind of what it points at. `resolvePathStat` answers for the ONE
@@ -41,5 +41,5 @@
  * be a compatibility question with a stranger who never needed to know there was
  * a mark at all.
  */
-export { pathCompletion } from "./completion.ts";
+export { completePath } from "./completion.ts";
 export { resolvePathStat } from "./resolve.ts";

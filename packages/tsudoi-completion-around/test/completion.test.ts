@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { aroundCompletion } from "../src/completion.ts";
+import { completeAround } from "../src/completion.ts";
 
 const uri = "file:///workspace/a.txt";
 
@@ -44,10 +44,10 @@ function contextFor(text: string): RequestContext {
 async function offered(
   text: string,
   line: number,
-  options: Parameters<typeof aroundCompletion>[2] = {},
+  options: Parameters<typeof completeAround>[2] = {},
 ): Promise<CompletionItem[]> {
   const items: CompletionItem[] = [];
-  for await (const batch of aroundCompletion(
+  for await (const batch of completeAround(
     contextFor(text),
     { textDocument: { uri }, position: { line, character: 0 } },
     options,
@@ -108,7 +108,7 @@ describe("completing from around the cursor", () => {
    */
   test("a document the store does not hold yields no batch at all", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of aroundCompletion(contextFor("alpha"), {
+    for await (const batch of completeAround(contextFor("alpha"), {
       textDocument: { uri: "file:///workspace/never-opened.txt" },
       position: { line: 0, character: 0 },
     })) {
@@ -126,7 +126,7 @@ describe("completing from around the cursor", () => {
    */
   test("a window whose words are all too short yields no batch", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of aroundCompletion(
+    for await (const batch of completeAround(
       contextFor("a b c"),
       { textDocument: { uri }, position: { line: 0, character: 0 } },
       { minLength: 5 },
@@ -138,14 +138,14 @@ describe("completing from around the cursor", () => {
   });
 
   /**
-   * ONE BATCH AND NOT ONE PER LINE, which is the ruling at `aroundCompletion`
+   * ONE BATCH AND NOT ONE PER LINE, which is the ruling at `completeAround`
    * made checkable: this answer is read out of a buffer already in memory, so
    * there is no moment at which a partial list is more useful than none, and a
    * yield per line would spend a `$/progress` per line to say the same thing.
    */
   test("the whole answer arrives in one batch", async () => {
     const batches: CompletionItem[][] = [];
-    for await (const batch of aroundCompletion(contextFor("alpha beta\ngamma delta"), {
+    for await (const batch of completeAround(contextFor("alpha beta\ngamma delta"), {
       textDocument: { uri },
       position: { line: 0, character: 0 },
     })) {

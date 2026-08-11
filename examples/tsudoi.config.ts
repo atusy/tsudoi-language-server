@@ -1,4 +1,4 @@
-import { pathCompletion, resolvePathStat } from "@atusy/tsudoi-completion-path";
+import { completePath, resolvePathStat } from "@atusy/tsudoi-completion-path";
 import { hoverWordnet } from "@atusy/tsudoi-hover-wordnet";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
@@ -131,7 +131,7 @@ const config: TsudoiConfigFactory = () => {
           // every batch AND the close -- tsudoi's `.return()` on cancellation
           // reaches the delegate through it, which is what runs the `finally`
           // that lives with the work inside `@atusy/tsudoi-completion-path`.
-          yield* pathCompletion(context, params);
+          yield* completePath(context, params);
         }
       },
 

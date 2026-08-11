@@ -733,7 +733,7 @@ test("the same consumer resolves the handler, and to its real type rather than a
 const pathPackage = "@atusy/tsudoi-completion-path";
 
 /**
- * BOTH HANDLERS OR NEITHER. `resolvePathStat` reads a mark `pathCompletion`
+ * BOTH HANDLERS OR NEITHER. `resolvePathStat` reads a mark `completePath`
  * writes onto its items, and tsudoi refuses a config that supplies the resolve
  * method with no completion handler beside it, so a consumer who received only
  * one of these names has received half an artifact. They are asserted in ONE
@@ -746,10 +746,10 @@ const pathPackage = "@atusy/tsudoi-completion-path";
  */
 test("the path package publishes both handlers, and to their real types rather than any", async () => {
   const resolves = await consumer.typeCheck({
-    "path-probe.ts": `import { pathCompletion, resolvePathStat } from "${pathPackage}";\nexport const handlers = { pathCompletion, resolvePathStat };\n`,
+    "path-probe.ts": `import { completePath, resolvePathStat } from "${pathPackage}";\nexport const handlers = { completePath, resolvePathStat };\n`,
   });
   const completionNotAny = await consumer.typeCheck({
-    "path-completion-any-probe.ts": `import { pathCompletion } from "${pathPackage}";\nexport const wrong: number = pathCompletion;\n`,
+    "path-completion-any-probe.ts": `import { completePath } from "${pathPackage}";\nexport const wrong: number = completePath;\n`,
   });
   const resolveNotAny = await consumer.typeCheck({
     "path-resolve-any-probe.ts": `import { resolvePathStat } from "${pathPackage}";\nexport const wrong: number = resolvePathStat;\n`,
@@ -822,7 +822,7 @@ test("the mark the two handlers share cannot be named by a consumer, by either r
 test("the path package's published values are exactly its two handlers", async () => {
   const published = await runtimeKeysOf(pathPackage, "path-surface.js");
 
-  expect(published.sort()).toEqual(["pathCompletion", "resolvePathStat"]);
+  expect(published.sort()).toEqual(["completePath", "resolvePathStat"]);
 });
 
 /**
@@ -855,7 +855,7 @@ test("the listing type the two handlers share cannot be named by a consumer", as
  * THAN ARGUED -- because this is the one classification where withholding a name
  * could have taken a capability away with it.
  *
- * `PathCompletionOptions` is the third parameter of `pathCompletion`, so a
+ * `CompletePathOptions` is the third parameter of `completePath`, so a
  * config author who wants to name the directory a bare relative path is read
  * against must be able to PASS one. They can: the value is an object literal,
  * and the parameter's type is reached through the declaration's own relative
@@ -872,17 +872,17 @@ test("the listing type the two handlers share cannot be named by a consumer", as
  */
 test("a consumer can pass options without naming their type, and a misspelled member is refused", async () => {
   const notNamed = await consumer.typeCheck({
-    "options-name-probe.ts": `import type { PathCompletionOptions } from "${pathPackage}";\nexport type Options = PathCompletionOptions;\n`,
+    "options-name-probe.ts": `import type { CompletePathOptions } from "${pathPackage}";\nexport type Options = CompletePathOptions;\n`,
   });
   const passed = await consumer.typeCheck({
-    "options-probe.ts": `import { pathCompletion } from "${pathPackage}";\nconst options: Parameters<typeof pathCompletion>[2] = { cwd: "/somewhere" };\nexport const chosen = options;\n`,
+    "options-probe.ts": `import { completePath } from "${pathPackage}";\nconst options: Parameters<typeof completePath>[2] = { cwd: "/somewhere" };\nexport const chosen = options;\n`,
   });
   const misspelled = await consumer.typeCheck({
-    "options-misspelled-probe.ts": `import { pathCompletion } from "${pathPackage}";\nconst options: Parameters<typeof pathCompletion>[2] = { cdw: "/somewhere" };\nexport const chosen = options;\n`,
+    "options-misspelled-probe.ts": `import { completePath } from "${pathPackage}";\nconst options: Parameters<typeof completePath>[2] = { cdw: "/somewhere" };\nexport const chosen = options;\n`,
   });
 
   expect(notNamed.code).not.toBe(0);
-  expect(notNamed.output).toContain("PathCompletionOptions");
+  expect(notNamed.output).toContain("CompletePathOptions");
   expect(passed.output).toBe("");
   expect(passed.code).toBe(0);
   expect(misspelled.code).not.toBe(0);

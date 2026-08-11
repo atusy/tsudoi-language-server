@@ -26,10 +26,10 @@
 /**
  * How the window, the filters and what counts as a word are chosen.
  *
- * NAMED FOR THE HANDLER IT BELONGS TO, matching `PathCompletionOptions` in the
+ * NAMED FOR THE HANDLER IT BELONGS TO, matching `CompletePathOptions` in the
  * sibling package: an author installing both reads one convention.
  */
-export interface AroundCompletionOptions {
+export interface CompleteAroundOptions {
   /**
    * How many lines above AND below the cursor are read. Clamped to the buffer.
    *
@@ -62,7 +62,7 @@ export interface AroundCompletionOptions {
    * pattern without `g` matches once per line, which is almost certainly not
    * what you meant.
    *
-   * THE DEFAULTS ARE WRITTEN AT `aroundCompletion` AND NOT HERE, deliberately:
+   * THE DEFAULTS ARE WRITTEN AT `completeAround` AND NOT HERE, deliberately:
    * one place decides them, and a second copy beside the documentation is how
    * the two come to disagree.
    */

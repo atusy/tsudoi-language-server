@@ -9,20 +9,20 @@ config, with the item-resolution half in the same package.
 
 | method                    | export            | what it does                                                                             |
 | ------------------------- | ----------------- | ---------------------------------------------------------------------------------------- |
-| `textDocument/completion` | `pathCompletion`  | offers the entries of the one directory the fragment under the cursor names              |
+| `textDocument/completion` | `completePath`    | offers the entries of the one directory the fragment under the cursor names              |
 | `completionItem/resolve`  | `resolvePathStat` | when you highlight an entry: a file's size and modification date, a directory's contents |
 
 <!-- snippet -->
 
 ```ts
-import { pathCompletion, resolvePathStat } from "@atusy/tsudoi-completion-path";
+import { completePath, resolvePathStat } from "@atusy/tsudoi-completion-path";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
     methods: {
       "textDocument/completion": async function* (context, params) {
-        yield* pathCompletion(context, params);
+        yield* completePath(context, params);
       },
       "completionItem/resolve": resolvePathStat,
     },
@@ -31,14 +31,14 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
-**The dependence runs one way**, and that is why they ship together. `pathCompletion` stands on
-its own: register it, leave the resolve half out, and you get the listing — only with nothing
-added to the item you highlight, neither a file's size and date nor a directory's contents. The
-resolve half is the one that cannot. It recognises an
-item by a mark the completion handler wrote onto it, and that mark is not published — it is an
-agreement between two modules, not a promise to you. tsudoi refuses a config supplying the
-resolve method with no completion handler beside it, so that arrangement is rejected when the
-config loads rather than left to disappoint you at the first request.
+**The dependence runs one way**, and that is why they ship together. `completePath` stands on its
+own: register it, leave the resolve half out, and you get the listing — only with nothing added to
+the item you highlight, neither a file's size and date nor a directory's contents. The resolve half
+is the one that cannot. It recognises an item by a mark the completion handler wrote onto it, and
+that mark is not published — it is an agreement between two modules, not a promise to you. tsudoi
+refuses a config supplying the resolve method with no completion handler beside it, so that
+arrangement is rejected when the config loads rather than left to disappoint you at the first
+request.
 
 The completion **streams**: it yields the listing in batches, so a client that sent a
 `partialResultToken` sees the first entries while the rest is still being read. No entry's

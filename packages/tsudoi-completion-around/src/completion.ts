@@ -1,23 +1,18 @@
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import {
-  type AroundCompletionOptions,
-  defaultWordPattern,
-  windowAround,
-  wordsIn,
-} from "./around.ts";
+import { type CompleteAroundOptions, defaultWordPattern, windowAround, wordsIn } from "./around.ts";
 
 /**
  * A `textDocument/completion` handler offering the words around the cursor.
  *
- * THE SAME SHAPE AS `pathCompletion` IN THE SIBLING PACKAGE, and that is a
+ * THE SAME SHAPE AS `completePath` IN THE SIBLING PACKAGE, and that is a
  * decision rather than a coincidence: `(context, params, options)`, an async
  * generator, options LAST and defaulted. A factory returning a handler was the
  * first spelling and is refused -- two handler packages an author installs side
  * by side would then be called two different ways for no reason either of them
  * could give, and the options argument buys the same thing a closure would.
  *
- * IT IS USABLE WITH NO WRAPPER: `"textDocument/completion": aroundCompletion`
+ * IT IS USABLE WITH NO WRAPPER: `"textDocument/completion": completeAround`
  * type-checks, the third parameter being optional, and an author who wants
  * options writes the arrow that supplies them.
  *
@@ -29,7 +24,7 @@ import {
  * per line would spend a `$/progress` per line to say the same thing.
  *
  * NOTHING IS FILTERED AGAINST WHAT THE USER TYPED, which is the LSP half of the
- * ruling at `AroundCompletionOptions`: the client narrows the list, and a handler
+ * ruling at `CompleteAroundOptions`: the client narrows the list, and a handler
  * that narrowed it first would be guessing at a rule the editor already has --
  * and would be wrong about `filterText`, fuzzy matching and case, none of which
  * it can see.
@@ -54,10 +49,10 @@ import {
  * would say `there are no candidates`, which is a stronger claim than tsudoi can
  * make about a buffer it was never sent.
  */
-export async function* aroundCompletion(
+export async function* completeAround(
   context: RequestContext,
   params: CompletionParams,
-  options: AroundCompletionOptions = {},
+  options: CompleteAroundOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {

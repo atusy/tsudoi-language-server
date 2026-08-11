@@ -26,7 +26,7 @@ import {
   editFor,
   itemsFrom,
   listingDirectory,
-  pathCompletion,
+  completePath,
   pathFragments,
   sourcesFor,
   type PathFragment,
@@ -125,7 +125,7 @@ async function complete(
   // A generator that yields NOTHING is an empty list here rather than a
   // failure, since the tests below assert emptiness by name.
   const items: CompletionItem[] = [];
-  for await (const batch of pathCompletion(
+  for await (const batch of completePath(
     context,
     {
       textDocument: { uri: buffer.uri },
@@ -158,12 +158,12 @@ function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemK
 }
 
 // IT REACHES WHAT A CONSUMER CANNOT: every name imported from src/ above except
-// `pathCompletion` is absent from index.ts, so this is the only place they are
+// `completePath` is absent from index.ts, so this is the only place they are
 // exercised at all -- which is what makes keeping them internal cost no coverage.
 // What a consumer DOES receive is driven over the wire from the repository root.
 describe("path fragments", () => {
   // The candidates are shortest-first: a fragment widens across a space ONLY when
-  // the narrower one names nothing, which is a property of pathCompletion and not
+  // the narrower one names nothing, which is a property of completePath and not
   // of this function. Here only the LIST is asserted.
   test("the fragment under the cursor carries its directory part and its filter", () => {
     expect(pathFragments("foo/ba", 6)).toEqual([
