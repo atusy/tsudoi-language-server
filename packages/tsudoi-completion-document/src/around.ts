@@ -10,9 +10,9 @@
  *
  * MODELLED ON ddc-source-around, AND READ FROM ITS SOURCE RATHER THAN ITS
  * README. The two disagree: the README documents `maxSize: 500` where `params()`
- * returns 200. Every default and every filter below is the code's, because a
- * default taken from the prose would be a claim nobody could check against the
- * thing this was modelled on.
+ * returns 200. Every default below is the code's, because a default taken from
+ * the prose would be a claim nobody could check against the thing this was
+ * modelled on.
  *
  * WHAT DOES NOT TRANSLATE, NAMED SO IT IS NOT MISTAKEN FOR AN OMISSION: ddc
  * NARROWS the candidates itself against what the user has typed. LSP gives that
@@ -22,6 +22,9 @@
  * the editor already decides, and would be wrong for the user who is retyping a
  * word that appears elsewhere.
  */
+import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
+import type { RequestContext } from "@atusy/tsudoi-language-server/types";
+import { defaultWordPattern, wordsIn } from "./words.ts";
 
 /**
  * How the window, the filters and what counts as a word are chosen.
@@ -70,86 +73,6 @@ export interface CompleteAroundOptions {
 }
 
 /**
- * Scripts written WITHOUT SPACES BETWEEN WORDS, which this package gives up on.
- *
- * WHY GIVING UP BEATS TRYING, MEASURED ON A REAL POPUP: a run of letters is a
- * WORD only where the writing system separates them, and Japanese does not. With
- * these included, `[NeovimのLSPで誰にどうして怒られたのかを確認するための設定]`
- * matched as ONE candidate -- thirty characters of prose offered as a completion,
- * and `Neovim` and `LSP` NOT offered at all, because they were swallowed by it.
- * Splitting these out recovers both.
- *
- * WHAT IS NOT HERE IS AS DELIBERATE: Korean, Greek, Cyrillic, Hebrew, Arabic and
- * the Indic scripts all put spaces between words, so their words survive. This
- * list is about SEGMENTATION and not about being non-Latin.
- *
- * `scx` AND NOT `sc`, MEASURED: `ー` (U+30FC, the prolonged sound mark) is
- * Script=Common, so `\p{sc=Katakana}` does not cover it and it leaks out of
- * カタカナ words as a candidate of its own. Its Script_EXTENSIONS include
- * Katakana, so `scx` catches it.
- */
-const unsegmentedScripts = ["Han", "Hiragana", "Katakana", "Thai", "Lao", "Khmer", "Myanmar"];
-
-/**
- * What this package calls a word when the author names no pattern of their own.
- *
- * READ IT AS THREE DECISIONS RATHER THAN AS A REGEX. A letter counts unless its
- * script is one nobody writes with spaces; a digit or an underscore counts
- * anywhere; and a COMBINING MARK counts, which is what keeps `हिन्दी` and a
- * pointed `שָׁלוֹם` whole -- MEASURED, without `\p{M}` the first breaks into
- * `शब`, `और`, `वन`, `गर` and the second into fragments, because the marks are
- * not `\p{L}` and each split the run.
- *
- * THE DOUBLE NEGATION IS FORCED BY THE LANGUAGE and is not cleverness for its
- * own sake: `[^\P{L}…]` is `a letter AND none of these`, which is set
- * subtraction -- and JavaScript has no subtraction in a `u`-mode class. The `v`
- * flag does, and is declined: it is newer than the runtimes this package
- * promises, and a pattern that throws on one of them is worse than a long one.
- *
- * EXPORTED so an author can widen it rather than rewrite it -- `new
- * RegExp(`${defaultWordPattern.source}|\\p{scx=Han}+`, "gu")` puts Han back for
- * somebody who wants single characters.
- */
-export const defaultWordPattern: RegExp = new RegExp(
-  `(?:[^\\P{L}${unsegmentedScripts.map((script) => `\\p{scx=${script}}`).join("")}]|[\\p{N}\\p{M}_])+`,
-  "gu",
-);
-
-/**
- * Every distinct word in `lines`, in the order each was first seen.
- *
- * EXPORTED so the arms can drive the filters directly. What the handler adds is
- * the WINDOW, and that is asserted through the handler.
- *
- * FIRST-SEEN AND NOT LAST-SEEN, which is what a `Set` gives and what the
- * reference relies on: the word nearest the top of the window wins its place,
- * and an implementation that rebuilt the list from the end would offer the same
- * SET in a different order, which an editor shows as a different popup.
- */
-export function wordsIn(
-  lines: readonly string[],
-  options: { pattern: RegExp; minLength: number; maxColumns: number },
-): string[] {
-  const found = new Set<string>();
-  // REBUILT PER CALL, NOT PER LINE, and never the caller's own instance: a `g`
-  // regex is stateful through `lastIndex`, so reusing the object a caller handed
-  // in would make this function's answer depend on what they did with it last.
-  const pattern = new RegExp(options.pattern.source, options.pattern.flags);
-  for (const line of lines) {
-    if (line.length >= options.maxColumns) {
-      continue;
-    }
-    for (const match of line.matchAll(pattern)) {
-      const word = match[0];
-      if (word.length >= options.minLength) {
-        found.add(word);
-      }
-    }
-  }
-  return [...found];
-}
-
-/**
  * The lines a cursor on `line` can see, as HALF-OPEN bounds into the buffer.
  *
  * INCLUSIVE OF THE CURSOR'S OWN LINE AND `maxSize` EITHER SIDE, which is the
@@ -165,4 +88,95 @@ export function windowAround(
     from: Math.max(0, line - maxSize),
     to: Math.min(lineCount, line + maxSize + 1),
   };
+}
+
+/**
+ * A `textDocument/completion` handler offering the words around the cursor.
+ *
+ * THE SAME SHAPE AS `completePath` IN THE SIBLING PACKAGE, and that is a
+ * decision rather than a coincidence: `(context, params, options)`, an async
+ * generator, options LAST and defaulted. A factory returning a handler was the
+ * first spelling and is refused -- two handler packages an author installs side
+ * by side would then be called two different ways for no reason either of them
+ * could give, and the options argument buys the same thing a closure would.
+ *
+ * IT IS USABLE WITH NO WRAPPER: `"textDocument/completion": completeAround`
+ * type-checks, the third parameter being optional, and an author who wants
+ * options writes the arrow that supplies them.
+ *
+ * IT YIELDS ONCE, AND THAT IS A RULING RATHER THAN A SHORTCUT. tsudoi's
+ * completion drive lets a handler stream, and streaming exists for an answer
+ * that ARRIVES OVER TIME -- a directory being walked, an index being consulted.
+ * This one reads a bounded slice of a buffer already in memory: there is no
+ * moment at which a partial answer is more useful than no answer, and yielding
+ * per line would spend a `$/progress` per line to say the same thing.
+ *
+ * NOTHING IS FILTERED AGAINST WHAT THE USER TYPED, which is the LSP half of the
+ * ruling at `CompleteAroundOptions`: the client narrows the list, and a handler
+ * that narrowed it first would be guessing at a rule the editor already has --
+ * and would be wrong about `filterText`, fuzzy matching and case, none of which
+ * it can see.
+ *
+ * COMPLETENESS RULING: COMPLETE, and it follows from what this handler READS
+ * rather than from a preference. The specification treats a supplied
+ * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query,
+ * filter what you were given -- and that is TRUE HERE because THIS HANDLER NEVER
+ * LOOKS AT WHAT WAS TYPED: the window is chosen by the cursor's LINE alone, and
+ * every word in it is offered. A narrower prefix cannot produce a candidate this
+ * answer did not already carry, which is exactly what `do not re-query` promises.
+ *
+ * WHAT WOULD OVERTURN IT IS AN EDIT AND NOT A KEYSTROKE, said because the two
+ * look alike from a popup: typing inserts text, so the buffer's words really do
+ * change -- and the client sends `didChange` and asks again, which is the route
+ * every source is refreshed by. `isIncomplete` is about the PREFIX, and the
+ * prefix is what this ignores.
+ *
+ * A DOCUMENT THE STORE DOES NOT HOLD YIELDS NOTHING rather than answering
+ * emptily, and the difference reaches the client: a stream that yields nothing
+ * is answered `null` -- `this server has no answer here` -- where an empty batch
+ * would say `there are no candidates`, which is a stronger claim than tsudoi can
+ * make about a buffer it was never sent.
+ */
+export async function* completeAround(
+  context: RequestContext,
+  params: CompletionParams,
+  options: CompleteAroundOptions = {},
+): AsyncGenerator<CompletionItem[], void, void> {
+  const document = context.tsudoi.documents.get(params.textDocument.uri);
+  if (document === undefined) {
+    return;
+  }
+  // TAKEN AS A STRING BEFORE ANYTHING ELSE, on the liveness rule tsudoi's own
+  // surface states: a document answers from the buffer AS IT STANDS WHEN ASKED,
+  // so reading it twice across the work below could scan two different buffers.
+  // A string does not move.
+  //
+  // SPLIT ON `\r?\n` AND NOT `\n`, the same reading the sibling package takes: a
+  // CRLF document otherwise leaves a `\r` at the end of every line, which the
+  // word pattern does not match but which counts toward the column bound.
+  const lines = document.getText().split(/\r?\n/);
+  const { from, to } = windowAround(params.position.line, lines.length, options.maxSize ?? 200);
+  const words = wordsIn(lines.slice(from, to), {
+    pattern: options.wordPattern ?? defaultWordPattern,
+    minLength: options.minLength ?? 2,
+    maxColumns: options.maxColumns ?? 200,
+  });
+  if (words.length === 0) {
+    return;
+  }
+  yield words.map(
+    (word) =>
+      ({
+        label: word,
+        // `Text` AND NOT `Keyword` OR `Variable`: this package knows nothing
+        // about the language and cannot tell one from the other, so any narrower
+        // kind would be an icon in the user's popup asserting something nobody
+        // checked.
+        kind: 1,
+        // WHERE IT CAME FROM, because a user looking at a popup fed by several
+        // sources has no other way to tell this one's guesses from a real
+        // analysis's answers.
+        detail: "around",
+      }) satisfies CompletionItem,
+  );
 }

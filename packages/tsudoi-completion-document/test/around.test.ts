@@ -1,140 +1,159 @@
 import { describe, expect, test } from "bun:test";
-import { defaultWordPattern, windowAround, wordsIn } from "../src/around.ts";
+import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
+import type { RequestContext } from "@atusy/tsudoi-language-server/types";
+import { completeAround, windowAround } from "../src/around.ts";
 
-const ascii = { pattern: /[A-Za-z0-9_]+/gu, minLength: 1, maxColumns: 200 };
+const uri = "file:///workspace/a.txt";
 
-describe("the words a window holds", () => {
+/**
+ * THE CONTEXT A HANDLER IS HANDED, BUILT BY HAND. tsudoi publishes the type, so
+ * this is the shape a stranger's own tests take -- and building it here rather
+ * than spawning a server keeps these arms about THIS PACKAGE. That the handler
+ * routes at all is tsudoi's claim, asserted in tsudoi's own suite.
+ */
+function contextFor(text: string): RequestContext {
+  const document = {
+    uri,
+    languageId: "plaintext",
+    version: 1,
+    lineCount: text.split("\n").length,
+    getText: () => text,
+    positionAt: () => ({ line: 0, character: 0 }),
+    offsetAt: () => 0,
+  };
+  return {
+    signal: new AbortController().signal,
+    tsudoi: {
+      documents: {
+        get: (asked: string) => (asked === uri ? document : undefined),
+        values: () => [],
+      },
+      workspaceFolders: { get: () => [], values: () => [] },
+      rootUri: null,
+      rootPath: null,
+      clientCapabilities: {},
+      // PRESENT AND REFUSING, which is what a hand-built context owes a member
+      // this package never exercises: nothing here notifies, and a stub that
+      // RESOLVED would let it start doing so silently.
+      notify: () => Promise.reject(new Error("this context sends no notifications")),
+    },
+  };
+}
+
+/** Every item the handler yielded, flattened, for a cursor on `line`. */
+async function offered(
+  text: string,
+  line: number,
+  options: Parameters<typeof completeAround>[2] = {},
+): Promise<CompletionItem[]> {
+  const items: CompletionItem[] = [];
+  for await (const batch of completeAround(
+    contextFor(text),
+    { textDocument: { uri }, position: { line, character: 0 } },
+    options,
+  )) {
+    items.push(...batch);
+  }
+  return items;
+}
+
+describe("completing from around the cursor", () => {
   /**
-   * THE REFERENCE'S OWN UNIT TEST, TRANSLATED, so that a reader can hold the two
-   * side by side: `allWords(["asdf _w2er", "223r wawer"], "[a-zA-Z0-9_]+", 1)`.
-   * Its answer is the value asserted here.
+   * THE WINDOW EXCLUDES SOMETHING, WHICH IS THE WHOLE OF THIS ARM. A document
+   * short enough for the window to cover would give the same answer for a
+   * handler that read the WHOLE buffer, so the fixture is built taller than the
+   * window on purpose: with the cursor in the middle and `maxSize: 1`, `near` is
+   * in and `far` is out on BOTH sides.
+   *
+   * BOTH DIRECTIONS, because an off-by-one at one end alone is a real defect and
+   * a one-sided fixture cannot see it.
    */
-  test("every match on every line, in document order", () => {
-    expect(wordsIn(["asdf _w2er", "223r wawer"], ascii)).toEqual([
-      "asdf",
-      "_w2er",
-      "223r",
-      "wawer",
+  test("a word outside the window is not offered, and one inside it is", async () => {
+    const text = ["farAbove", "nearAbove", "cursorLine", "nearBelow", "farBelow"].join("\n");
+
+    const words = (await offered(text, 2, { maxSize: 1 })).map((item) => item.label);
+
+    expect(words).toEqual(["nearAbove", "cursorLine", "nearBelow"]);
+  });
+
+  /**
+   * THE CURSOR'S OWN LINE IS IN THE WINDOW, asserted separately because a window
+   * that dropped it would still pass the arm above for `nearAbove` and
+   * `nearBelow`.
+   */
+  test("the cursor's own line contributes its words", async () => {
+    expect((await offered("alpha", 0, { maxSize: 0 })).map((item) => item.label)).toEqual([
+      "alpha",
     ]);
   });
 
   /**
-   * FIRST-SEEN AND NOT MERELY DISTINCT, WHICH NEEDS A REPEAT THAT COMES LATER.
-   * `foo` appears on both lines and `baz` only on the second, so a list built
-   * from the END would answer `bar baz foo` -- the same SET, a different popup.
-   * A fixture whose repeats were adjacent could not tell the two apart.
+   * EVERY ITEM SAYS WHERE IT CAME FROM AND CLAIMS NO LANGUAGE, and the pair is
+   * one claim: a user whose popup is fed by several sources needs this one's
+   * guesses distinguishable from a real analysis's answers, and a `kind` narrower
+   * than Text would be an icon asserting something nobody checked.
    */
-  test("a repeat keeps the place where it was first seen", () => {
-    expect(wordsIn(["foo bar foo", "bar baz foo"], ascii)).toEqual(["foo", "bar", "baz"]);
+  test("an item is Text, and names this source", async () => {
+    const [item] = await offered("alpha", 0);
+
+    expect(item).toEqual({ label: "alpha", kind: 1, detail: "around" });
   });
 
   /**
-   * THE LENGTH FILTER, AT ITS BOUNDARY ON BOTH SIDES: `ab` is dropped and `abc`
-   * is kept at `minLength: 3`, so an off-by-one in either direction reddens. A
-   * fixture whose words were all far from the bound would grade nothing.
+   * A DOCUMENT THE STORE DOES NOT HOLD YIELDS NOTHING, AND NOT AN EMPTY BATCH.
+   * The difference reaches the client: yielding nothing is answered `null` --
+   * `no answer here` -- where an empty batch says `there are no candidates`,
+   * which is a stronger claim than this package can make about a buffer it was
+   * never sent.
    */
-  test("a match shorter than the bound is dropped, and one exactly at it is kept", () => {
-    expect(wordsIn(["a ab abc abcd"], { ...ascii, minLength: 3 })).toEqual(["abc", "abcd"]);
+  test("a document the store does not hold yields no batch at all", async () => {
+    const batches: CompletionItem[][] = [];
+    for await (const batch of completeAround(contextFor("alpha"), {
+      textDocument: { uri: "file:///workspace/never-opened.txt" },
+      position: { line: 0, character: 0 },
+    })) {
+      batches.push(batch);
+    }
+
+    expect(batches).toEqual([]);
   });
 
   /**
-   * THE LINE BOUND IS `>=` AND THE LINE IS SKIPPED WHOLE. Both halves are the
-   * assertion: the 199-character line survives ENTIRE, and the 200-character one
-   * contributes NOTHING rather than a truncated prefix -- which is what a reader
-   * who assumed a scan bound would expect instead.
+   * AND A WINDOW HOLDING NO WORD YIELDS NOTHING EITHER, for the same reason one
+   * door along: the document IS open, and there is still nothing to say. Without
+   * this the arm above is a claim about a missing document rather than about the
+   * empty answer.
    */
-  test("a line at the column bound is skipped whole, and one under it is kept", () => {
-    const kept = "a".repeat(199);
-    const skipped = "b".repeat(200);
+  test("a window whose words are all too short yields no batch", async () => {
+    const batches: CompletionItem[][] = [];
+    for await (const batch of completeAround(
+      contextFor("a b c"),
+      { textDocument: { uri }, position: { line: 0, character: 0 } },
+      { minLength: 5 },
+    )) {
+      batches.push(batch);
+    }
 
-    expect(wordsIn([kept, skipped], ascii)).toEqual([kept]);
+    expect(batches).toEqual([]);
   });
 
   /**
-   * THE POPUP THIS DEFAULT WAS REWRITTEN FOR, AS THE LINE IT CAME FROM. A run of
-   * letters is a WORD only where the writing system puts spaces between them,
-   * and the first spelling of this default -- `[\p{L}\p{N}_]+` -- did not know
-   * that: it matched THIRTY CHARACTERS OF JAPANESE PROSE as one candidate, and
-   * swallowed `Neovim` and `LSP` doing it, so neither was offered at all.
-   *
-   * BOTH HALVES ARE THE ASSERTION AND THE SECOND IS THE ONE THAT MATTERS: the
-   * phrase is absent, AND the two Latin words abutting it are present. An
-   * implementation that dropped every line holding Japanese would pass the first
-   * half alone.
+   * ONE BATCH AND NOT ONE PER LINE, which is the ruling at `completeAround`
+   * made checkable: this answer is read out of a buffer already in memory, so
+   * there is no moment at which a partial list is more useful than none, and a
+   * yield per line would spend a `$/progress` per line to say the same thing.
    */
-  test("a Latin word touching Japanese is offered, and the Japanese run is not", () => {
-    const line = ["[NeovimのLSPで誰にどうして怒られたのかを確認するための設定](https://x.jp/a)"];
+  test("the whole answer arrives in one batch", async () => {
+    const batches: CompletionItem[][] = [];
+    for await (const batch of completeAround(contextFor("alpha beta\ngamma delta"), {
+      textDocument: { uri },
+      position: { line: 0, character: 0 },
+    })) {
+      batches.push(batch);
+    }
 
-    const words = wordsIn(line, { pattern: defaultWordPattern, minLength: 2, maxColumns: 200 });
-
-    expect(words).toContain("Neovim");
-    expect(words).toContain("LSP");
-    expect(words.some((word) => word.includes("誰"))).toBe(false);
-  });
-
-  /**
-   * GIVING UP IS ABOUT SEGMENTATION AND NOT ABOUT BEING NON-LATIN, which is the
-   * reading this arm exists to pin: Greek, Cyrillic and KOREAN all put spaces
-   * between words, so their words survive where Japanese does not. Korean is the
-   * one that would go if somebody "fixed" this by excluding CJK as a block.
-   */
-  test("scripts that do use spaces keep their words", () => {
-    const words = wordsIn(["Ελλάδα Привет 한국어 단어"], {
-      pattern: defaultWordPattern,
-      minLength: 2,
-      maxColumns: 200,
-    });
-
-    expect(words).toEqual(["Ελλάδα", "Привет", "한국어", "단어"]);
-  });
-
-  /**
-   * A COMBINING MARK IS PART OF ITS WORD, MEASURED: without `\p{M}` in the
-   * pattern `हिन्दी` breaks into `शब`, `और`, `वन`, `गर` -- the marks are not
-   * `\p{L}`, so each one splits the run it sits in. Devanagari and pointed
-   * Hebrew are the scripts where that is the ordinary case rather than an edge.
-   */
-  test("a word carrying combining marks stays whole", () => {
-    const words = wordsIn(["हिन्दी शब्द שָׁלוֹם"], {
-      pattern: defaultWordPattern,
-      minLength: 2,
-      maxColumns: 200,
-    });
-
-    expect(words).toEqual(["हिन्दी", "शब्द", "שָׁלוֹם"]);
-  });
-
-  /**
-   * THE PROLONGED SOUND MARK IS PART OF THE KATAKANA IT FOLLOWS, and it is why
-   * the pattern asks for `scx` rather than `sc`: U+30FC is Script=COMMON, so
-   * `\p{sc=Katakana}` leaves it behind as a candidate of its own once the
-   * カタカナ around it has been dropped.
-   */
-  test("the prolonged sound mark does not leak out of katakana", () => {
-    const words = wordsIn(["コンピューターー"], {
-      pattern: defaultWordPattern,
-      minLength: 1,
-      maxColumns: 200,
-    });
-
-    expect(words).toEqual([]);
-  });
-
-  /**
-   * A CALLER'S OWN REGEX IS NOT CONSUMED, and this is the arm for a defect that
-   * is invisible on a single call: a `g` regex carries `lastIndex`, so passing
-   * one instance twice would make the SECOND answer depend on where the first
-   * stopped. The same object is deliberately reused here.
-   */
-  test("the same pattern object answers the same twice", () => {
-    const shared = { pattern: /[A-Za-z]+/gu, minLength: 1, maxColumns: 200 };
-
-    expect(wordsIn(["alpha beta"], shared)).toEqual(wordsIn(["alpha beta"], shared));
-  });
-
-  /** An empty window is not an error, and yields nothing to offer. */
-  test("no lines yield no words", () => {
-    expect(wordsIn([], ascii)).toEqual([]);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toHaveLength(4);
   });
 });
 

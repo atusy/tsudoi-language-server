@@ -100,10 +100,10 @@ const publishedFiles: Record<string, readonly string[]> = {
     "README.md",
     "dist/around.d.ts",
     "dist/around.js",
-    "dist/completion.d.ts",
-    "dist/completion.js",
     "dist/index.d.ts",
     "dist/index.js",
+    "dist/words.d.ts",
+    "dist/words.js",
     "package.json",
   ],
   "@atusy/tsudoi-adapter-efm-config": [

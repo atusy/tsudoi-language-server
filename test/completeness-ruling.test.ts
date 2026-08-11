@@ -49,7 +49,7 @@ const rulingMarker = "COMPLETENESS RULING:";
  */
 const ruled = [
   "examples/tsudoi.config.ts",
-  "packages/tsudoi-completion-document/src/completion.ts",
+  "packages/tsudoi-completion-document/src/around.ts",
   "packages/tsudoi-completion-path/src/completion.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
@@ -82,20 +82,12 @@ const ruled = [
  * so each exclusion is a decision rather than a gap in a regex.
  *
  * THIS IS ALSO WHY A SCAN FOR THE METHOD NAME AND A COUNT OF HANDLERS DISAGREE.
- * Each of these mentions `textDocument/completion` only in PROSE, and a ruling
- * in either would be a sentence about a return value that does not exist there.
- *
- * THE TWO ARE PROSE FOR DIFFERENT REASONS, which is why neither stands for the
- * other. The fixture says it deliberately HAS no completion handler -- the
- * absence is its subject. The around package's `around.ts` holds the word
- * scanner a handler in its sibling module calls, and names the method only to
- * say which handler that is; the RULING lives with the return value, one file
- * along.
+ * The entry below mentions `textDocument/completion` only in PROSE, and a ruling
+ * in it would be a sentence about a return value that does not exist there: the
+ * fixture says it deliberately HAS no completion handler, and that absence is its
+ * subject.
  */
-const namesTheMethodWithoutServingIt = [
-  "packages/tsudoi-completion-document/src/around.ts",
-  "test/fixtures/resolve-without-completion.ts",
-];
+const namesTheMethodWithoutServingIt = ["test/fixtures/resolve-without-completion.ts"];
 
 /**
  * Every directory a completion handler can live in, WITH THE WORKSPACE MEMBERS
