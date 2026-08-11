@@ -23,6 +23,8 @@ import { tree } from "./helpers/tree.ts";
 // what index.ts publishes -- which is what lets all but one of the names below
 // stay unpublished.
 import {
+  completedPath,
+  completedSource,
   editFor,
   itemsFrom,
   listingDirectory,
@@ -1015,10 +1017,12 @@ describe("an item records the source it was produced under", () => {
         expect(items.length).toBeGreaterThan(0);
         for (const item of items) {
           expect(item.data).toEqual({
-            // As THIS TEST computes it from the root and the inserted text, never
-            // as the module reported it.
-            pathCompletion: resolvesTo(source.root, item.insertText ?? ""),
-            source: source.name,
+            tsudoiCompletionPath: {
+              // As THIS TEST computes it from the root and the inserted text, never
+              // as the module reported it.
+              path: resolvesTo(source.root, item.insertText ?? ""),
+              source: source.name,
+            },
           });
           // THE TWO FIELDS THE LABEL SPLIT INTO, READ HERE BECAUSE THIS IS THE
           // ONLY ALL-FOUR-SOURCE SWEEP THAT READS THEM -- the strict-prefix arm
@@ -1541,5 +1545,85 @@ describe("applying the item yields the path it names", () => {
     } finally {
       fixture.dispose();
     }
+  });
+});
+
+/**
+ * WHAT THE MARK READERS DO WITH WHAT A CLIENT ACTUALLY SENDS, which is the half
+ * the round-trip arms cannot reach: those drive a real client, so every item
+ * they resolve carries a mark THIS CODE WROTE. Nothing there ever hands back a
+ * `data` that is a number, or a mark that is a string.
+ *
+ * EVERY ARM IS `undefined` AND NEVER A THROW, because a resolve handler that
+ * throws answers -32603 and takes away the popup the user is reading. So the
+ * assertion is not `it coped` -- it is that each malformation is TOLD APART from
+ * a real mark, which is what the last row supplies.
+ *
+ * THE NESTED ROW IS WHY THIS EXISTS AT ALL. Qualifying the mark under one key
+ * put a SECOND value from the wire in the path -- `data.tsudoiCompletionPath`
+ * arrives from the client too -- and a reader that trusted it because `data` was
+ * an object would throw on `mark.path` for a client that round-tripped it
+ * through anything lossy.
+ */
+describe("what the mark reader believes off the wire", () => {
+  const wire: readonly (readonly [string, unknown])[] = [
+    ["no data at all", undefined],
+    ["data that is not an object", 7],
+    ["data that is null", null],
+    ["an object carrying no mark", { source: "cwd", pathCompletion: "/tmp/x" }],
+    ["a mark that is not an object", { tsudoiCompletionPath: "/tmp/x" }],
+    ["a mark that is null", { tsudoiCompletionPath: null }],
+  ];
+
+  for (const [what, data] of wire) {
+    test(`${what} is read as no mark, and not thrown on`, () => {
+      const item = { label: "x", data } as CompletionItem;
+
+      expect(completedPath(item)).toBeUndefined();
+      expect(completedSource(item)).toBeUndefined();
+    });
+  }
+
+  /**
+   * A PRESENT MARK IS READ MEMBER BY MEMBER, AND THE ARM ABOVE CANNOT SAY SO:
+   * every row up there has no mark, so BOTH readers owe `undefined` together.
+   * Here the mark IS this package's, and one member of it is malformed -- which
+   * the first draft of this test got wrong, asserting both undefined and
+   * reddening, because a broken `path` says nothing about a sound `source`.
+   *
+   * WHY THAT MATTERS RATHER THAN BEING A TIDINESS: the two feed DIFFERENT fields
+   * of the answer -- the path decides whether the item is enriched at all, the
+   * source only how the block attributes it -- so a reader that discarded the
+   * whole mark on one bad member would drop a stat line this handler could have
+   * produced.
+   */
+  test("a mark whose path is unusable still yields its source, and the reverse", () => {
+    const badPath = {
+      label: "x",
+      data: { tsudoiCompletionPath: { path: 7, source: "cwd" } },
+    } as CompletionItem;
+    const badSource = {
+      label: "x",
+      data: { tsudoiCompletionPath: { path: "/tmp/x", source: "not a root of ours" } },
+    } as CompletionItem;
+
+    expect(completedPath(badPath)).toBeUndefined();
+    expect(completedSource(badPath)).toBe("cwd");
+    expect(completedPath(badSource)).toBe("/tmp/x");
+    expect(completedSource(badSource)).toBeUndefined();
+  });
+
+  // THE PAIR, AND WITHOUT IT EVERY ROW ABOVE IS SATISFIED BY A READER THAT
+  // ANSWERS `undefined` TO EVERYTHING. `pathCompletion` at the top level is the
+  // spelling this package wrote BEFORE the mark was qualified, and it sits among
+  // the rows above deliberately: it must now read as no mark.
+  test("a real mark is told apart from all of them", () => {
+    const item = {
+      label: "x",
+      data: { tsudoiCompletionPath: { path: "/tmp/x", source: "cwd" } },
+    } as CompletionItem;
+
+    expect(completedPath(item)).toBe("/tmp/x");
+    expect(completedSource(item)).toBe("cwd");
   });
 });

@@ -106,39 +106,62 @@ function fragmentAt(
  * What this module writes onto every item it produces, and the only thing the
  * resolve half can key off: tsudoi keeps no record of what a completion handler
  * produced, so a handler can only read what it wrote onto the item itself.
+ *
+ * ONE KEY NAMING THIS PACKAGE, AND EVERYTHING UNDER IT. `data` is a single slot
+ * the SPECIFICATION gives the server and nobody partitions -- so a top-level
+ * `source`, which is what this wrote before, is a word any other server writing
+ * items into the same popup could plausibly choose. It cannot collide with
+ * another server's `data` because a client hands each item back to the server
+ * that made it; WHAT IT COLLIDES WITH IS THIS PACKAGE'S OWN FUTURE, and the
+ * config author who wants to add a field of their own to an item we produced.
+ * Under one qualified key both of those are answerable.
+ *
+ * THE SHAPE CHANGE COSTS ONE POPUP, DISCLOSED RATHER THAN DISCOVERED: an item
+ * offered by the version before this one comes back at resolve with the old
+ * spelling, reads as unmarked, and is answered unchanged -- no size, no date, no
+ * listing. That is the failure this deliberately accepts, and it is bounded by
+ * the restart that changed the code.
  */
 export interface PathItemData {
-  /**
-   * The absolute path the item completes to.
-   *
-   * IT KEEPS THE HANDLER'S OLD NAME, AND THAT IS DELIBERATE RATHER THAN MISSED
-   * BY THE RENAME: this is a key on the WIRE, not an identifier. An item already
-   * in a user's popup carries it, and the client hands that same object back at
-   * `completionItem/resolve` -- so a server that renamed the mark and then
-   * resolved an item offered by the version before it would read `undefined` and
-   * answer an item with no path. Nothing about `completePath` reaches a client,
-   * and nothing about this reaches an author.
-   */
-  readonly pathCompletion: string;
-  /** Which root offered it, as the item's own documentation spells it. */
-  readonly source: PathSourceName;
+  readonly tsudoiCompletionPath: {
+    /** The absolute path the item completes to. */
+    readonly path: string;
+    /** Which root offered it, as the item's own documentation spells it. */
+    readonly source: PathSourceName;
+  };
 }
 
 /**
- * The absolute path THIS MODULE recorded on an item, or undefined for an item it
- * did not produce.
+ * The mark THIS MODULE wrote, or an EMPTY object for an item it did not produce
+ * -- so each reader below asks about the member it wants and never about whether
+ * there was a mark at all.
  *
  * EVERY ARM RETURNS undefined RATHER THAN THROWING, because what arrives is
  * whatever the client sent -- `data` may be absent, may be a number, may be an
  * object from another server -- and a resolve handler that throws answers -32603
  * and takes away the popup the user is reading.
+ *
+ * NESTING ADDED A SECOND VALUE FROM THE WIRE AND NOT A SECOND GUARD, MEASURED:
+ * a `typeof mark === "object" && mark !== null` test between the two levels was
+ * written here first and DELETED because deleting it changed no answer -- `?.`
+ * yields `undefined` for a null, a number and a string alike, and what actually
+ * decides is the `typeof` each reader applies to the value IT wants. A guard
+ * that cannot change an answer reads as a live safety net to the next person.
+ */
+function markOn(item: CompletionItem): { readonly path?: unknown; readonly source?: unknown } {
+  const data = item.data as
+    | { tsudoiCompletionPath?: { path?: unknown; source?: unknown } }
+    | null
+    | undefined;
+  return data?.tsudoiCompletionPath ?? {};
+}
+
+/**
+ * The absolute path THIS MODULE recorded on an item, or undefined for an item it
+ * did not produce.
  */
 export function completedPath(item: CompletionItem): string | undefined {
-  const data: unknown = item.data;
-  if (typeof data !== "object" || data === null) {
-    return undefined;
-  }
-  const path: unknown = (data as { pathCompletion?: unknown }).pathCompletion;
+  const path: unknown = markOn(item).path;
   return typeof path === "string" ? path : undefined;
 }
 
@@ -147,11 +170,7 @@ export function completedPath(item: CompletionItem): string | undefined {
  * none this module offers.
  */
 export function completedSource(item: CompletionItem): PathSourceName | undefined {
-  const data: unknown = item.data;
-  if (typeof data !== "object" || data === null) {
-    return undefined;
-  }
-  const source: unknown = (data as { source?: unknown }).source;
+  const source: unknown = markOn(item).source;
   return sourceNames.find((name) => name === source);
 }
 
@@ -386,7 +405,9 @@ export async function* itemsFrom(
         // syscall per entry FOR A SIZE AND A DATE, on every keystroke, on no
         // figure. The MARK carries the path so that work can be done for the ONE
         // item the user highlights.
-        data: { pathCompletion: absolutePath, source: source.name } satisfies PathItemData,
+        data: {
+          tsudoiCompletionPath: { path: absolutePath, source: source.name },
+        } satisfies PathItemData,
         textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
       });
     }

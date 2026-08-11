@@ -67,7 +67,7 @@ function contextDeclaring(
 function markedItem(path: string, source: string, documentation?: unknown): CompletionItem {
   return {
     label: path,
-    data: { pathCompletion: path, source },
+    data: { tsudoiCompletionPath: { path, source } },
     ...(documentation === undefined ? {} : { documentation }),
   } as CompletionItem;
 }
@@ -468,7 +468,9 @@ describe("the block is rebuilt out of what the handler read", () => {
       // AND THE FORGED NAME REACHES NO OTHER RENDERED FIELD: a handler
       // synthesising `detail` from the mark reddens here and nowhere else.
       expect(answered.detail).toBe(path);
-      expect(answered.data).toEqual({ pathCompletion: path, source: "<script>alert(1)</script>" });
+      expect(answered.data).toEqual({
+        tsudoiCompletionPath: { path, source: "<script>alert(1)</script>" },
+      });
     } finally {
       fixture.dispose();
     }
