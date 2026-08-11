@@ -295,6 +295,22 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 94,
+      pbi_id: "PBI-98",
+      goal: "The mark a completed item carries names the package that wrote it -- `data.tsudoiCompletionPath` -- so `data` stops being a slot two bare words were dropped into.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 9057eb0`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1157 pass / 0 fail over 83 files, 191.00s, the one long-standing non-gating `eslint(require-yield)` warning.",
+        "`source` MOVED TOO, WHICH THE STAKEHOLDER DID NOT ASK FOR AND THE REASON THEY GAVE REQUIRES. They named `data.tsudoiCompletionPath.path`; `source` was sitting beside it, equally bare, and is the more ordinary word of the two -- so qualifying half of the mark would have left the collision the change is about. WHAT IT CANNOT COLLIDE WITH is another server's `data`, since a client hands each item back to the server that made it. WHAT IT CAN is this package's own future and a config author adding a field to an item we produced.",
+        "THE COST WAS ARGUED AGAINST THE CHANGE AND IS NOW DISCLOSED AT THE TYPE: an item offered by the version before this one comes back at resolve with the old spelling, reads as UNMARKED, and is answered unchanged -- no size, no date, no listing. Bounded by the restart that changed the code, which is what makes it a disclosure rather than a defect.",
+        'WRITING THE ARMS MEASURED THE GUARD DEAD, and it is the finding this sprint would not have had without them. Nesting looked like it owed a `typeof mark === "object" && mark !== null` between the two levels; DELETING IT CHANGED NO ANSWER -- `?.` yields `undefined` for a null, a number and a string alike, and what decides is the `typeof` each reader applies to the value IT wants. A guard that cannot change an answer reads as a live safety net to the next person, so it is gone and the measurement is at the site.',
+        "AND THE FIRST DRAFT OF THOSE ARMS WAS WRONG IN A WAY WORTH KEEPING: a row asserting BOTH readers `undefined` for a mark whose `path` is a number reddened, because a broken `path` says nothing about a sound `source`. The two feed different fields -- the path decides whether the item is enriched at all, the source only how the block attributes it -- so a reader that discarded the whole mark on one bad member would drop a stat line it could have produced. That is now its own arm.",
+        "THE READERS' TOLERANCE HAD BEEN GRADED BY NOTHING, which the round-trip arms cannot fix by construction: they drive a real client, so every item they resolve carries a mark THIS CODE WROTE. Nothing there ever hands back a `data` that is a number or a mark that is a string. The new arms are measured to discriminate -- reading the mark unqualified reddens three of them.",
+      ],
+    },
+    {
       number: 93,
       pbi_id: "PBI-98",
       goal: "The two completion handlers are named for what they DO -- `completeAround` and `completePath` -- so an author reads a verb where they register a verb.",
@@ -304,7 +320,7 @@ const scrum: ScrumDashboard = {
       decisions: [
         "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 3ca6034`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1149 pass / 0 fail over 83 files, 190.47s, the one long-standing non-gating `eslint(require-yield)` warning. FOURTH ~190s READING IN A ROW.",
         "THE OPTION BAGS FOLLOWED AND THAT WAS NOT A CHOICE MADE HERE: `AroundCompletionOptions` carries a comment saying it is NAMED FOR THE HANDLER IT BELONGS TO. Leaving the two types behind would have left that sentence false at the site that states the rule.",
-        "AND ONE `pathCompletion` DELIBERATELY DID NOT MOVE -- `item.data.pathCompletion`, which shares the old name and is not it. IT IS A KEY ON THE WIRE: the client hands the item's `data` back at `completionItem/resolve`, so a server that renamed the mark and then resolved an item OFFERED BY THE VERSION BEFORE IT would read `undefined` and answer an item with no path. A rename is invisible to a client; this is not. The refusal is written at the field rather than here.",
+        "AND ONE `pathCompletion` DELIBERATELY DID NOT MOVE -- `item.data.pathCompletion`, which shares the old name and is not it. IT IS A KEY ON THE WIRE: the client hands the item's `data` back at `completionItem/resolve`, so a server that renamed the mark and then resolved an item OFFERED BY THE VERSION BEFORE IT would read `undefined` and answer an item with no path. A rename is invisible to a client; this is not. THE STAKEHOLDER OVERTURNED THIS THE SAME DAY -- `item.data.tsudoiCompletionPath.path` -- and the cost stands as stated rather than being talked down: one popup, bounded by the restart that changed the code, against a name that was wrong for as long as it lived. It is now disclosed at the type instead of refused there.",
         "THE RENAME WALKED THROUGH A HOLE AND THAT IS THE FINDING WORTH MORE THAN THE RENAME -- PBI-99. `test/published-artifacts.test.ts` names the PATH package's exports as literal strings from a staged consumer; NO MEMBER BUT THAT ONE HAS SUCH AN ARM. Renaming `aroundCompletion` reddened NOTHING on the published route. What caught the callers was `tsc` and the workspace check, and both read `src/`.",
         "AND THE README SNIPPET DOES NOT COVER IT, checked rather than assumed: the `ts snippets` account's SUBJECT is the SPECIFIERS, and its own comment says a block whose imports resolve and whose body is wrong is accounted for and unchecked. It would have been satisfied by a name the package never exported.",
         "THE ONE CONSUMER OF THE OLD NAMES IS THE STAKEHOLDER'S OWN EDITOR, and it is safe by accident rather than by design: their dotfiles pin every `@atusy/tsudoi-*` specifier to raw GitHub URLs at 30effd8, so they still resolve `aroundCompletion` from the commit that had it. THE PINS AND THE CONFIG MUST MOVE TOGETHER -- bumping one without the other is what breaks their editor, and neither this repository nor any check in it can see that file.",
