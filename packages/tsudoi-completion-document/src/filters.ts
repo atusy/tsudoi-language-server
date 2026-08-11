@@ -14,6 +14,11 @@
  * SO THE CLIENT STILL DECIDES WHAT TO SHOW; THIS DECIDES WHAT IS WORTH SENDING.
  * The two are different questions and only the second is about bandwidth.
  *
+ * ONE THING HERE IS NOT AN OPTION: `applyFilters` ALWAYS DEDUPLICATES. A filter for
+ * it was written and then thrown away -- a popup offering one word twice is not a
+ * behaviour anybody would choose, so making it choosable only created a way to get
+ * it wrong.
+ *
  * WHAT IT COSTS, NAMED BECAUSE IT IS A REAL LOSS: a client with a FUZZY matcher
  * can no longer offer what a prefix rejected -- `cmpl` will not reach
  * `completion` through this. That is why `filters` is a LIST an author replaces
@@ -68,44 +73,40 @@ export const prefixFilter: Filter = function* (words, input) {
 };
 
 /**
- * Drops repeats, keeping each word where it was FIRST seen.
- *
- * IT IS WHERE UNIQUENESS IS DECIDED, AND `wordsIn` DELIBERATELY DOES NOT: a scan
- * yields every occurrence in order, so this filter is load-bearing rather than a
- * safety net, and an author who wants repeats -- to weight a popup by frequency,
- * say -- takes it out of the list instead of fighting it.
- *
- * FIRST-SEEN AND NOT LAST-SEEN: the same SET in another order is another popup,
- * and the earlier occurrence is the one nearer where the user is looking.
- */
-export const dedupFilter: Filter = function* (words) {
-  const seen = new Set<string>();
-  for (const word of words) {
-    if (!seen.has(word)) {
-      seen.add(word);
-      yield word;
-    }
-  }
-};
-
-/**
  * The pipeline both handlers use when an author names none.
  *
- * PREFIX THEN DEDUP, AND THE ORDER IS FOR COST RATHER THAN FOR THE ANSWER: either
- * order offers the same words, and this one hashes only what survived the prefix.
+ * THE PREFIX FILTER AND NOTHING ELSE. Deduplication is NOT in this list and is not
+ * a filter at all -- `applyFilters` always does it, so no pipeline an author writes
+ * can offer the same word twice.
  *
  * ONE VALUE FOR THE LIFE OF THE MODULE, for the reason `defaultScanner` is: a
  * handler called with no options must not look different from one call to the next.
  */
-export const defaultFilters: readonly Filter[] = Object.freeze([prefixFilter, dedupFilter]);
+export const defaultFilters: readonly Filter[] = Object.freeze([prefixFilter]);
 
 /**
- * Drives the pipeline and applies the item bound.
+ * Drives the pipeline, DEDUPLICATES, and applies the item bound -- in that order.
  *
- * THE BOUND IS APPLIED LAST, AND THAT ORDERING IS THE WHOLE OF ITS USEFULNESS:
- * bounding the SCAN would spend the budget on words the prefix was about to
- * reject, so a popup could be empty while the buffer held matches. Bounding what
- * SURVIVED means the bound only ever removes candidates the user could have seen.
+ * DEDUPLICATION IS UNCONDITIONAL AND IS NOT A FILTER, WHICH IS THE STAKEHOLDER'S
+ * RULING RATHER THAN A CONVENIENCE. A popup with one word in it twice is never what
+ * anybody wanted, so it is not a thing to opt into: no pipeline an author writes can
+ * produce one, including one whose own stages introduce a duplicate.
+ *
+ * IT RUNS AFTER THE AUTHOR'S FILTERS AND NOT BEFORE, AND THE ORDER IS LOAD-BEARING
+ * IN BOTH DIRECTIONS. After, so a stage that REWRITES words -- lowercasing them,
+ * stripping a sigil -- cannot smuggle a duplicate past it. After, also, so a stage
+ * that wants to WEIGHT a popup by frequency can still see the repeats `wordsIn`
+ * yields; deduplicating first would take that information away from every filter
+ * before any of them ran.
+ *
+ * FIRST-SEEN AND NOT LAST-SEEN: the same SET in another order is another popup, and
+ * the earlier occurrence is the one nearer where the user is looking.
+ *
+ * THE BOUND IS APPLIED LAST OF ALL, AND THAT ORDERING IS THE WHOLE OF ITS
+ * USEFULNESS: bounding the SCAN would spend the budget on words the prefix was
+ * about to reject, so a popup could be empty while the buffer held matches, and
+ * bounding before the dedup would spend it on repeats. Bounding what SURVIVED
+ * means the bound only ever removes candidates the user could have seen.
  *
  * IT IS A BACKSTOP RATHER THAN THE DESIGN. The prefix filter is what makes an
  * answer small; this is what keeps a pathological buffer -- a generated table, a
@@ -124,14 +125,16 @@ export function applyFilters(
   for (const filter of filters) {
     flowing = filter(flowing, input);
   }
-  if (maxItems === undefined) {
-    return [...flowing];
-  }
   const kept: string[] = [];
+  const seen = new Set<string>();
   for (const word of flowing) {
-    if (kept.length >= maxItems) {
+    if (seen.has(word)) {
+      continue;
+    }
+    if (maxItems !== undefined && kept.length >= maxItems) {
       break;
     }
+    seen.add(word);
     kept.push(word);
   }
   return kept;

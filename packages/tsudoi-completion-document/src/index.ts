@@ -29,7 +29,7 @@ export type { CompleteAroundOptions } from "./around.ts";
 export { completeCorpus } from "./corpus.ts";
 export type { CompleteCorpusOptions } from "./corpus.ts";
 export type { Filter, FilterInput } from "./filters.ts";
-export { applyFilters, dedupFilter, defaultFilters, prefixFilter } from "./filters.ts";
+export { applyFilters, defaultFilters, prefixFilter } from "./filters.ts";
 export type { Scanner } from "./scanners.ts";
 export { defaultScanner, defaultWordPattern, regexScanner, segmentScanner } from "./scanners.ts";
 export type { WordOptions } from "./words.ts";

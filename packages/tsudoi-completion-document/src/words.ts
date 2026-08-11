@@ -121,9 +121,10 @@ export function typedWord(scanner: Scanner, before: string): string {
  * Every word in `lines`, IN ORDER AND WITH REPEATS, one scan per line.
  *
  * IT DOES NOT DEDUPLICATE, AND THAT IS A DECISION RATHER THAN AN OMISSION.
- * Uniqueness is `dedupFilter`'s, so that it is decided in ONE place an author can
- * reorder or remove -- to weight a popup by frequency, say. A scan that deduped for
- * itself would leave that filter a no-op reading as though it did something.
+ * `applyFilters` always does it, LAST, so uniqueness is decided in one place no
+ * pipeline can get wrong -- and keeping the repeats until then is what lets a
+ * filter WEIGHT a popup by how often a word occurs. A scan that deduped for itself
+ * would take that information away from every filter before any of them ran.
  *
  * EXPORTED so the arms can drive the filters directly. WHAT A HANDLER ADDS IS
  * WHICH LINES REACH THIS -- a window either side of the cursor, or every open

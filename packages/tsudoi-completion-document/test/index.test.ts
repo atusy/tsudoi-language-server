@@ -30,7 +30,6 @@ test("every value the README tells a reader to import is exported by name", () =
     "applyFilters",
     "completeAround",
     "completeCorpus",
-    "dedupFilter",
     "defaultFilters",
     "defaultScanner",
     "defaultWordPattern",

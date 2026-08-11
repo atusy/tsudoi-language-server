@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { applyFilters, dedupFilter, defaultFilters, prefixFilter } from "../src/filters.ts";
+import { applyFilters, defaultFilters, prefixFilter } from "../src/filters.ts";
 
 describe("the prefix filter", () => {
   /**
@@ -45,14 +45,15 @@ describe("the prefix filter", () => {
   });
 });
 
-describe("the dedup filter", () => {
+describe("deduplication, which is not a filter", () => {
   /**
-   * FIRST-SEEN WINS, which is what an editor shows as a stable popup: the same SET
-   * in another order is another popup, and the word nearest where the user is
-   * looking is the one worth the top slot.
+   * IT HAPPENS WITH NO FILTERS AT ALL, which is the whole of the stakeholder's
+   * ruling made checkable: a popup with one word in it twice is not a behaviour
+   * anybody would choose, so it is not one to opt into. A `dedupFilter` was written
+   * and thrown away, and this arm is what a reader gets instead of it.
    */
-  test("a repeat keeps the place where it was first seen", () => {
-    expect([...dedupFilter(["foo", "bar", "foo", "baz", "bar"], { typed: "" })]).toEqual([
+  test("an empty pipeline still offers each word once", () => {
+    expect(applyFilters(["foo", "bar", "foo", "baz", "bar"], [], { typed: "" })).toEqual([
       "foo",
       "bar",
       "baz",
@@ -60,35 +61,41 @@ describe("the dedup filter", () => {
   });
 
   /**
-   * IT IS LOAD-BEARING RATHER THAN A SAFETY NET, and this arm is what says so:
-   * `wordsIn` yields EVERY OCCURRENCE in order, deliberately, so that uniqueness is
-   * decided in one place an author can replace. A scan that deduped for itself
-   * would make this filter a no-op that reads as though it did something.
+   * AND IT HAPPENS AFTER THE AUTHOR'S FILTERS, WHICH IS THE ARM THE ORDER TURNS ON:
+   * a stage that REWRITES words can make two of them equal, and dedup running first
+   * would let that pair through. Lower-casing is the realistic instance.
    */
-  test("without it a scan's repeats reach the popup", () => {
-    expect([...prefixFilter(["foo", "foo"], { typed: "f" })]).toEqual(["foo", "foo"]);
-  });
-});
+  test("a filter that rewrites words cannot smuggle a duplicate past it", () => {
+    const lower = function* (words: Iterable<string>): Iterable<string> {
+      for (const word of words) {
+        yield word.toLowerCase();
+      }
+    };
 
-describe("the default pipeline", () => {
-  /** Prefix THEN dedup: the same answer either way, and fewer strings to hash. */
-  test("the defaults are the prefix filter and then dedup", () => {
-    expect(defaultFilters).toEqual([prefixFilter, dedupFilter]);
-  });
-
-  test("driving them together narrows and deduplicates", () => {
-    expect(applyFilters(["foo", "foobar", "foo", "bar"], defaultFilters, { typed: "fo" })).toEqual([
-      "foo",
-      "foobar",
-    ]);
+    expect(applyFilters(["Foo", "foo"], [lower], { typed: "" })).toEqual(["foo"]);
   });
 
   /**
-   * `defaultFilters` IS ONE VALUE, for the reason `defaultScanner` is: a handler
-   * called with no options must not look different from one call to the next.
+   * THE OTHER HALF OF THAT ORDER: a filter still SEES the repeats `wordsIn` yields,
+   * so one weighting a popup by frequency has the counts to weight it by.
+   * Deduplicating first would take that away from every stage before any ran.
    */
-  test("the default pipeline is one value rather than one per read", () => {
-    expect(defaultFilters).toBe(defaultFilters);
+  test("a filter sees the repeats, and only the answer is deduplicated", () => {
+    const counted: string[] = [];
+    const spy = function* (words: Iterable<string>): Iterable<string> {
+      for (const word of words) {
+        counted.push(word);
+        yield word;
+      }
+    };
+
+    expect(applyFilters(["foo", "foo", "bar"], [spy], { typed: "" })).toEqual(["foo", "bar"]);
+    expect(counted).toEqual(["foo", "foo", "bar"]);
+  });
+
+  /** FIRST-SEEN AND NOT LAST-SEEN: the same set in another order is another popup. */
+  test("the surviving occurrence is the first one", () => {
+    expect(applyFilters(["b", "a", "b"], [], { typed: "" })).toEqual(["b", "a"]);
   });
 });
 
@@ -118,6 +125,15 @@ describe("the item bound", () => {
     const scanned = ["zzz", "zzy", "foo", "foobar", "foobaz"];
 
     expect(applyFilters(scanned, defaultFilters, { typed: "foo" }, 2)).toEqual(["foo", "foobar"]);
+  });
+
+  /**
+   * AND IT COUNTS DISTINCT WORDS, because the bound is applied after the dedup:
+   * spending it on repeats would offer a user two candidates where they had asked
+   * for two and could have had two DIFFERENT ones.
+   */
+  test("the bound counts distinct words rather than occurrences", () => {
+    expect(applyFilters(["foo", "foo", "bar"], [], { typed: "" }, 2)).toEqual(["foo", "bar"]);
   });
 
   /** A bound of zero is a bound rather than an absent one. */

@@ -156,13 +156,18 @@ every boundary ICU found is kept, `こんにちは`/`世界` and `コーパス` 
 
 ## Which of them to send
 
-`filters` is a **list** of `(words, { typed }) => Iterable<string>`, run in order. Two are shipped,
-and `defaultFilters` is both of them:
+`filters` is a **list** of `(words, { typed }) => Iterable<string>`, run in order. One is shipped,
+and it is what `defaultFilters` holds:
 
 | filter         | keeps                                                    |
 | -------------- | -------------------------------------------------------- |
 | `prefixFilter` | words starting with the word under your cursor, any case |
-| `dedupFilter`  | the first occurrence of each word                        |
+
+**Repeats are always dropped, whatever your pipeline is.** That is not a filter you can remove: a
+popup offering one word twice is not a behaviour anybody would choose. It happens **after** your
+filters, so a stage that rewrites words cannot smuggle a pair past it — and so a stage that wants to
+weight a popup by how often a word occurs still sees the repeats. `maxItems` then counts the
+distinct words.
 
 `typed` is the word under the cursor **as your scanner sees it** — `typedWord` is exported if you
 want it yourself. That is deliberately not your editor's idea of a word: measured, ddc's default
@@ -177,11 +182,11 @@ than a flag: give it a fuzzy filter of your own, or empty it and set `maxItems` 
 
 ```ts
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
-import { completeCorpus, dedupFilter } from "@atusy/tsudoi-completion-document";
+import { completeCorpus } from "@atusy/tsudoi-completion-document";
 
-// A fuzzy editor wants candidates a prefix would reject, so the prefix filter
-// comes out and a bound goes in. Hoisted, like a scanner: the memo keys on it.
-const filters = [dedupFilter];
+// A fuzzy editor wants candidates a prefix would reject, so the pipeline is
+// emptied and a bound goes in instead. Repeats are still dropped for you.
+const filters = [];
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
@@ -194,9 +199,8 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
-**`wordsIn` yields repeats on purpose**, which is what makes `dedupFilter` load-bearing rather than
-a safety net: uniqueness is decided in one place you can reorder or remove — to weight a popup by
-frequency, say.
+**`wordsIn` yields repeats on purpose**, so a filter of yours can count them. Nothing downstream of
+your pipeline shows them.
 
 ## What bounds it
 
