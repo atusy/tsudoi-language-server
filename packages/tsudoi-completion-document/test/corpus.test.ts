@@ -1,0 +1,257 @@
+import { describe, expect, test } from "bun:test";
+import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
+import { completeCorpus } from "../src/corpus.ts";
+import { type FakeDocuments, fakeDocuments } from "./helpers/documents.ts";
+
+const asked = "file:///workspace/asked.txt";
+
+/** Every batch the handler yielded for a request against `uri`. */
+async function batchesFor(
+  documents: FakeDocuments,
+  uri = asked,
+  options: Parameters<typeof completeCorpus>[2] = {},
+): Promise<CompletionItem[][]> {
+  const batches: CompletionItem[][] = [];
+  for await (const batch of completeCorpus(
+    documents.context,
+    { textDocument: { uri }, position: { line: 0, character: 0 } },
+    options,
+  )) {
+    batches.push(batch);
+  }
+  return batches;
+}
+
+/** The labels offered, flattened. */
+async function offered(
+  documents: FakeDocuments,
+  uri = asked,
+  options: Parameters<typeof completeCorpus>[2] = {},
+): Promise<string[]> {
+  const batches = await batchesFor(documents, uri, options);
+  return batches.flat().map((item) => item.label);
+}
+
+describe("completing from every open document", () => {
+  /**
+   * A WORD FROM A DOCUMENT THE REQUEST DID NOT NAME IS OFFERED, WHICH IS THE
+   * WHOLE OF THIS HANDLER. The fixture gives the OTHER document a word the asked
+   * one does not hold, so a handler reading only the buffer under the cursor --
+   * which is what its sibling does -- cannot pass.
+   *
+   * AND THE ASKED DOCUMENT'S OWN WORD IS OFFERED TOO, asserted in the same arm
+   * because it is one decision: this handler reads EVERY open document and does
+   * not carve out the one it was asked about. Skipping it would make the answer
+   * depend on what else the author installed.
+   */
+  test("a word from another open document is offered, and so is the asked one's", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "askedWord");
+    documents.open("file:///workspace/other.txt", "otherWord");
+
+    expect(await offered(documents)).toEqual(["askedWord", "otherWord"]);
+  });
+
+  /**
+   * A WORD IN TWO DOCUMENTS IS OFFERED ONCE, and the popup is what makes it
+   * matter: a candidate repeated per document would push everything else off the
+   * list in a workspace where every file imports the same name.
+   */
+  test("a word two documents share is offered once", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "shared askedOnly");
+    documents.open("file:///workspace/other.txt", "shared otherOnly");
+
+    expect(await offered(documents)).toEqual(["shared", "askedOnly", "otherOnly"]);
+  });
+
+  /**
+   * EVERY ITEM SAYS WHERE IT CAME FROM AND CLAIMS NO LANGUAGE. The detail is
+   * `corpus` AND NOT `around`: a user whose popup is fed by both handlers of this
+   * package cannot otherwise tell a word from the line above from one in a file
+   * they have not looked at today.
+   */
+  test("an item is Text, and names this source rather than its sibling", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+
+    const [item] = (await batchesFor(documents)).flat();
+
+    expect(item).toEqual({ label: "alpha", kind: 1, detail: "corpus" });
+  });
+
+  /**
+   * ONE BATCH AND NOT ONE PER DOCUMENT, which is the ruling at `completeCorpus`
+   * made checkable. THE FIXTURE HOLDS THREE DOCUMENTS ON PURPOSE: with one, a
+   * yield per document and a single yield are the same reading.
+   */
+  test("the whole answer arrives in one batch, however many documents there are", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+    documents.open("file:///workspace/b.txt", "beta");
+    documents.open("file:///workspace/c.txt", "gamma");
+
+    const batches = await batchesFor(documents);
+
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toHaveLength(3);
+  });
+
+  /**
+   * AN EMPTY STORE YIELDS NOTHING, AND NOT AN EMPTY BATCH. The difference reaches
+   * the client: yielding nothing is answered `null` -- `no answer here` -- where
+   * an empty batch says `there are no candidates`, which is a stronger claim than
+   * this package can make about a session whose documents it was never sent.
+   *
+   * ITS PAIR IS THE ARM ABOVE: an empty list and a handler that never offers
+   * anything are the same reading without it.
+   */
+  test("no open documents yield no batch at all", async () => {
+    expect(await batchesFor(fakeDocuments())).toEqual([]);
+  });
+
+  /**
+   * AND A CORPUS HOLDING NO WORD YIELDS NOTHING EITHER, for the same reason one
+   * door along: the documents ARE open, and there is still nothing to say.
+   * Without this the arm above is a claim about an empty store rather than about
+   * an empty answer.
+   */
+  test("documents whose words are all too short yield no batch", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "a b c");
+
+    expect(await batchesFor(documents, asked, { minLength: 5 })).toEqual([]);
+  });
+
+  /**
+   * THE REQUEST NEED NOT NAME AN OPEN DOCUMENT AT ALL, which is where this
+   * handler parts company with its sibling: `completeAround` has nothing to say
+   * about a buffer it was never sent, and this one still has every OTHER document.
+   * A handler that looked the asked uri up first and returned early would pass
+   * every arm above.
+   */
+  test("a request naming a document the store does not hold is still answered", async () => {
+    const documents = fakeDocuments();
+    documents.open("file:///workspace/other.txt", "otherWord");
+
+    expect(await offered(documents, "file:///workspace/never-opened.txt")).toEqual(["otherWord"]);
+  });
+});
+
+describe("what the memo may and may not serve again", () => {
+  /**
+   * AN UNCHANGED DOCUMENT IS SCANNED ONCE ACROSS TWO REQUESTS, which is the whole
+   * point of memoising: a completion runs on a keystroke, and the documents a
+   * user is not typing in did not move.
+   *
+   * IT READS WHAT THE HANDLER DID rather than what a cache says about itself --
+   * `reads` counts calls to `getText`.
+   */
+  test("a second request does not scan a document that has not changed", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+
+    await offered(documents);
+    expect(documents.reads(asked)).toBe(1);
+
+    await offered(documents);
+    expect(documents.reads(asked)).toBe(1);
+  });
+
+  /**
+   * AND AN EDITED ONE IS SCANNED AGAIN, which is this memo's pair: a cache that
+   * never invalidated would pass the arm above and offer a word the user deleted
+   * for the rest of the session.
+   */
+  test("an edit at a new version is scanned again, and its new word is offered", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+
+    await offered(documents);
+    documents.change(asked, "beta", 2);
+
+    expect(await offered(documents)).toEqual(["beta"]);
+    expect(documents.reads(asked)).toBe(2);
+  });
+
+  /**
+   * A REOPENED DOCUMENT AT THE SAME VERSION NUMBER IS SCANNED AGAIN, AND THIS IS
+   * THE ARM THE CACHE KEY WAS CHOSEN FOR.
+   *
+   * A VERSION IS NOT A SESSION-WIDE CLOCK: tsudoi's own `DocumentStore`
+   * documentation says a reopened document numbers from whatever the client sent
+   * at `didOpen`, so a client that closes a file, something rewrites it on disk,
+   * and it is reopened AT VERSION 1 AGAIN is ordinary rather than adversarial.
+   *
+   * SO A MEMO KEYED ON `uri` AND VERSION SERVES THE OLD FILE'S WORDS FOR THE REST
+   * OF THE SESSION, and every other arm in this file stays green while it does.
+   * What refuses it is keying on the VIEW OBJECT, which tsudoi builds fresh per
+   * open.
+   */
+  test("a document reopened at the same version offers the new text, not the old", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha", 1);
+
+    await offered(documents);
+    documents.close(asked);
+    documents.open(asked, "beta", 1);
+
+    expect(await offered(documents)).toEqual(["beta"]);
+  });
+
+  /**
+   * A REQUEST UNDER DIFFERENT FILTERS IS SCANNED AGAIN, and this is the second
+   * thing the version alone cannot answer for: nothing about the DOCUMENT changed
+   * between these two requests, so a memo consulting only `uri` and version
+   * answers the second question with the first one's answer.
+   *
+   * THE DIRECTION IS THE ONE THAT SHOWS: asking for a LONGER minimum after a
+   * shorter one must drop the short word. The other direction could pass by
+   * accident on a cache that stored the unfiltered scan.
+   */
+  test("a longer minimum length after a shorter one drops the short word", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "ab abcdef");
+
+    expect(await offered(documents)).toEqual(["ab", "abcdef"]);
+    expect(await offered(documents, asked, { minLength: 3 })).toEqual(["abcdef"]);
+  });
+
+  /**
+   * AND A DIFFERENT PATTERN IS SCANNED AGAIN TOO, asserted apart from the length
+   * because a memo could compare the numbers and not the regex -- a `RegExp` is
+   * an object, so the cheap comparison is identity and the honest one is source
+   * and flags.
+   */
+  test("a widened pattern after the default offers what the default refused", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "日本語");
+
+    expect(await batchesFor(documents)).toEqual([]);
+    expect(await offered(documents, asked, { wordPattern: /\p{scx=Han}+/gu })).toEqual(["日本語"]);
+  });
+
+  /**
+   * TWO PATTERNS THAT MATCH THE SAME THING ARE ONE KEY, and the arm above cannot
+   * say so: it changes the pattern, so a memo comparing regexes by IDENTITY
+   * re-scans and answers correctly for the wrong reason.
+   *
+   * WHY THE CHEAP COMPARISON WOULD BITE A REAL AUTHOR RATHER THAN A TEST: options
+   * reach this handler through an arrow the config writes, so
+   * `(c, p) => completeCorpus(c, p, { wordPattern: /.../gu })` BUILDS A NEW REGEXP
+   * ON EVERY KEYSTROKE. Under identity the memo would then miss every time and
+   * cost a full re-scan of every open document, silently -- every arm in this file
+   * would stay green, and the answers would all be right.
+   */
+  test("an equivalent pattern rebuilt per request is still the same key", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+
+    expect(await offered(documents, asked, { wordPattern: /[a-z]+/gu })).toEqual(["alpha"]);
+    expect(documents.reads(asked)).toBe(1);
+
+    await offered(documents, asked, { wordPattern: /[a-z]+/gu });
+
+    expect(documents.reads(asked)).toBe(1);
+  });
+});

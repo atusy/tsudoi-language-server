@@ -2,11 +2,10 @@
  * Buffer-local completion for a config author's own `textDocument/completion`
  * handler: the words already written AROUND the cursor.
  *
- * WHAT THIS IS: a PACKAGE a config author INSTALLS, and not a line of it lives in
- * tsudoi. It is also the worked shape of a handler that answers FROM THE
- * DOCUMENT IT WAS GIVEN and goes nowhere else -- no subprocess, no index, no
- * dictionary -- which is what makes it the completion a server can offer for a
- * language it understands nothing about.
+ * THE NARROWER OF THIS PACKAGE'S TWO HANDLERS, and the pair is the point: this
+ * one answers FROM THE BUFFER UNDER THE CURSOR and reads a bounded slice of it,
+ * where `completeCorpus` answers from every document the client has opened. An
+ * author installs whichever question they have, or both.
  *
  * MODELLED ON ddc-source-around, AND READ FROM ITS SOURCE RATHER THAN ITS
  * README. The two disagree: the README documents `maxSize: 500` where `params()`

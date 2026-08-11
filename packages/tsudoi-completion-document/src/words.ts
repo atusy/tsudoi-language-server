@@ -88,15 +88,16 @@ export interface WordOptions {
 /**
  * Every distinct word in `lines`, in the order each was first seen.
  *
- * EXPORTED so the arms can drive the filters directly. What the handler adds is
- * the WINDOW, and that is asserted through the handler.
+ * EXPORTED so the arms can drive the filters directly. WHAT A HANDLER ADDS IS
+ * WHICH LINES REACH THIS -- a window either side of the cursor, or every open
+ * document -- and each handler's own arms assert its own choice.
  *
  * ITS FILTERS ARRIVE RESOLVED, with no defaults reachable from here: a handler
  * has already defaulted them against its own options, and a second set beside
  * this signature is how the two come to disagree.
  *
  * FIRST-SEEN AND NOT LAST-SEEN, which is what a `Set` gives and what the
- * reference relies on: the word nearest the top of the window wins its place,
+ * reference relies on: of two occurrences the earlier in `lines` wins its place,
  * and an implementation that rebuilt the list from the end would offer the same
  * SET in a different order, which an editor shows as a different popup.
  */

@@ -100,6 +100,8 @@ const publishedFiles: Record<string, readonly string[]> = {
     "README.md",
     "dist/around.d.ts",
     "dist/around.js",
+    "dist/corpus.d.ts",
+    "dist/corpus.js",
     "dist/index.d.ts",
     "dist/index.js",
     "dist/words.d.ts",

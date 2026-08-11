@@ -1,13 +1,23 @@
 # @atusy/tsudoi-completion-document
 
-Completes from the words already written **around the cursor** in the buffer being edited — the
-completion every editor has had for thirty years, for a
+Completes from the words **already written in the documents you have open** — the completion every
+editor has had for thirty years, for a
 [tsudoi](https://github.com/atusy/tsudoi-language-server) server that understands nothing about
 the language it is serving.
 
-Modelled on [ddc-source-around](https://github.com/Shougo/ddc-source-around), and faithful to what
-that source's **code** does rather than to what its README says: the two disagree about `maxSize`,
-and the code wins.
+| handler          | answers                   | reads                                                |
+| ---------------- | ------------------------- | ---------------------------------------------------- |
+| `completeAround` | `textDocument/completion` | a window of lines either side of the cursor          |
+| `completeCorpus` | `textDocument/completion` | every document the client has opened, cursor ignored |
+
+**One source, two amounts of it.** `completeAround` answers _what am I writing about here_;
+`completeCorpus` answers _what do we call things in this project_. The second cannot be had from a
+window and the first is drowned by a corpus, so they are two handlers rather than one with a wider
+bound. They take the same arguments, so learning one is learning both.
+
+`completeAround` is modelled on [ddc-source-around](https://github.com/Shougo/ddc-source-around),
+and faithful to what that source's **code** does rather than to what its README says: the two
+disagree about `maxSize`, and the code wins.
 
 <!-- snippet -->
 
@@ -23,48 +33,93 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
+**Both at once, nearest first.** A completion handler is one row of the request table, so offering
+both means one handler that delegates to each in turn. Yield `completeAround` first and the words
+you can see arrive at the top of the list:
+
+<!-- snippet -->
+
+```ts
+import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
+import { completeAround, completeCorpus } from "@atusy/tsudoi-completion-document";
+
+const config: TsudoiConfigFactory = () =>
+  Promise.resolve({
+    methods: {
+      "textDocument/completion": async function* (context, params) {
+        yield* completeAround(context, params);
+        yield* completeCorpus(context, params);
+      },
+    },
+  });
+
+export default config;
+```
+
+**The overlap is yours to keep or drop.** `completeCorpus` reads every open document **including
+the one under your cursor**, so a word near the cursor is offered by both — once as `around`, once
+as `corpus`. Neither handler drops it: skipping the cursor's document would make `completeCorpus`
+answer differently depending on what else you installed, and clients do not merge items by label.
+If the duplicate bothers you, filter the second stream in the arrow above.
+
 **It needs tsudoi at run time, whatever the manifest says.** `@atusy/tsudoi-language-server` is
 declared an **optional** peer here, and that is knowingly false — this package imports from it and
-its handler is meaningful nowhere else. The flag buys installability while tsudoi is
+its handlers are meaningful nowhere else. The flag buys installability while tsudoi is
 **unpublished**; install this without it and the first thing you see is
 `Cannot find module '@atusy/tsudoi-language-server/types'`. Nothing corrects the manifest anywhere
 except this paragraph.
 
 ## What it offers
 
-Every distinct word in a window of lines around the cursor, in the order each was **first seen**.
+Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
+top-down, for `completeCorpus` it is the documents in the order your client opened them.
 
-| option        | default              | what it decides                                                  |
-| ------------- | -------------------- | ---------------------------------------------------------------- |
-| `maxSize`     | `200`                | lines read above **and** below the cursor, clamped to the buffer |
-| `minLength`   | `2`                  | the shortest match worth offering                                |
-| `maxColumns`  | `200`                | a line at or over this length is skipped **whole**               |
-| `wordPattern` | `defaultWordPattern` | what counts as a word                                            |
+| option        | default              | `around` | `corpus` | what it decides                                                  |
+| ------------- | -------------------- | -------- | -------- | ---------------------------------------------------------------- |
+| `maxSize`     | `200`                | yes      | —        | lines read above **and** below the cursor, clamped to the buffer |
+| `minLength`   | `2`                  | yes      | yes      | the shortest match worth offering                                |
+| `maxColumns`  | `200`                | yes      | yes      | a line at or over this length is skipped **whole**               |
+| `wordPattern` | `defaultWordPattern` | yes      | yes      | what counts as a word                                            |
 
-Options are the **third argument**, so the handler goes in as it stands when the defaults suit you
+Options are the **third argument**, so a handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
 `(context, params) => completeAround(context, params, { maxSize: 50 })`. That is the same shape
 `completePath` has in the sibling package, so installing both means learning one convention.
 
-`wordsIn` and `windowAround` are exported too, so a handler of your own can take the words with a
-different window — the whole buffer, one function, a selection — without reimplementing the
-filters.
+`wordsIn` and `windowAround` are exported too, so a handler of your own can take the words over
+lines neither of these would choose — one function, a selection, a file nobody has opened —
+without reimplementing the filters.
 
 ## What bounds it
 
-**The window is the point.** Reading `maxSize` lines either side rather than the whole buffer is
-what makes this cheap enough to run on every keystroke of a file of any size, and it is why a word
-far away is not offered even though it is in the same file.
+**The window is the point, for `completeAround`.** Reading `maxSize` lines either side rather than
+the whole buffer is what makes it cheap enough to run on every keystroke of a file of any size, and
+it is why a word far away is not offered even though it is in the same file. `completeCorpus` is
+the handler for that word.
+
+**`completeCorpus` bounds nothing and remembers instead.** There is no limit on how many documents
+it reads, because every rule for choosing which to drop — most recently opened, nearest the
+cursor's file, largest first — is a guess about your attention that this package cannot check.
+What keeps it off the keystroke is a memo: a document is scanned when its **version** changes and
+not otherwise, so the files you are not typing in are not rescanned. Changing `minLength`,
+`maxColumns` or `wordPattern` between requests rescans, since those change the answer too.
+
+**Neither says _ask me again_.** Both hand over a complete list, and there is no way for a tsudoi
+handler to say otherwise — the protocol's `isIncomplete` is not something this framework's
+completion row can express. So `completeCorpus` cannot offer a partial answer while it finishes
+indexing: it scans, then answers. Everything it reads is already in memory, so there is no wait to
+break up.
 
 **A long line is skipped, not truncated.** Minified output, a base64 blob and a generated table are
 exactly the lines whose "words" nobody wants and whose scan costs the most, so a line at or over
 `maxColumns` contributes nothing at all.
 
 **Nothing is filtered against what you have typed.** ddc narrows candidates itself; LSP gives that
-job to your editor, so this hands over the window's words and lets the editor match them. That is
-also why the word under your cursor is among them — excluding it would be this package overruling a
+job to your editor, so these hand over their words and let the editor match them. That is also why
+the word under your cursor is among them — excluding it would be this package overruling a
 decision your editor already makes, and would be wrong when you are retyping a word that appears
-elsewhere.
+elsewhere. Nothing is sorted either, and no `sortText` is sent: your editor ranks the list, and an
+order chosen here would compete with its own fuzzy score.
 
 **A run of letters is a word only where the writing system puts spaces between them**, and the
 default knows that. Han, Hiragana, Katakana, Thai, Lao, Khmer and Myanmar are left out, so
@@ -85,9 +140,10 @@ ddc-source-around has no default of its own: it takes ddc's `keywordPattern` sou
 documented as `\k*`, and ddc rewrites `\k` into a class built from the buffer's `iskeyword`. tsudoi
 has no such setting to read, so something had to be chosen.
 
-**It knows no language, and says so.** Every item is `CompletionItemKind.Text` and carries
-`detail: "around"`, so a popup fed by several sources shows which suggestions are guesses from the
-buffer and which came from a real analysis.
+**They know no language, and say so.** Every item is `CompletionItemKind.Text` and carries
+`detail: "around"` or `detail: "corpus"`, so a popup fed by several sources shows which suggestions
+are guesses from a buffer, which are guesses from the whole session, and which came from a real
+analysis.
 
 ## Installing it
 

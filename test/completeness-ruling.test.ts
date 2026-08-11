@@ -50,6 +50,7 @@ const rulingMarker = "COMPLETENESS RULING:";
 const ruled = [
   "examples/tsudoi.config.ts",
   "packages/tsudoi-completion-document/src/around.ts",
+  "packages/tsudoi-completion-document/src/corpus.ts",
   "packages/tsudoi-completion-path/src/completion.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
