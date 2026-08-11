@@ -47,10 +47,9 @@ describe("the prefix filter", () => {
 
 describe("deduplication, which is not a filter", () => {
   /**
-   * IT HAPPENS WITH NO FILTERS AT ALL, which is the whole of the stakeholder's
-   * ruling made checkable: a popup with one word in it twice is not a behaviour
-   * anybody would choose, so it is not one to opt into. A `dedupFilter` was written
-   * and thrown away, and this arm is what a reader gets instead of it.
+   * IT HAPPENS WITH NO FILTERS AT ALL, which is the ruling made checkable: a popup
+   * with one word in it twice is not a behaviour anybody would choose, so it is not
+   * one to opt into.
    */
   test("an empty pipeline still offers each word once", () => {
     expect(applyFilters(["foo", "bar", "foo", "baz", "bar"], [], { typed: "" })).toEqual([

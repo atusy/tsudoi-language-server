@@ -14,10 +14,9 @@
  * SO THE CLIENT STILL DECIDES WHAT TO SHOW; THIS DECIDES WHAT IS WORTH SENDING.
  * The two are different questions and only the second is about bandwidth.
  *
- * ONE THING HERE IS NOT AN OPTION: `applyFilters` ALWAYS DEDUPLICATES. A filter for
- * it was written and then thrown away -- a popup offering one word twice is not a
- * behaviour anybody would choose, so making it choosable only created a way to get
- * it wrong.
+ * ONE THING HERE IS NOT AN OPTION: `applyFilters` ALWAYS DEDUPLICATES. A popup
+ * offering one word twice is not a behaviour anybody would choose, so it is not one
+ * to opt into.
  *
  * WHAT IT COSTS, NAMED BECAUSE IT IS A REAL LOSS: a client with a FUZZY matcher
  * can no longer offer what a prefix rejected -- `cmpl` will not reach
@@ -87,10 +86,10 @@ export const defaultFilters: readonly Filter[] = Object.freeze([prefixFilter]);
 /**
  * Drives the pipeline, DEDUPLICATES, and applies the item bound -- in that order.
  *
- * DEDUPLICATION IS UNCONDITIONAL AND IS NOT A FILTER, WHICH IS THE STAKEHOLDER'S
- * RULING RATHER THAN A CONVENIENCE. A popup with one word in it twice is never what
- * anybody wanted, so it is not a thing to opt into: no pipeline an author writes can
- * produce one, including one whose own stages introduce a duplicate.
+ * DEDUPLICATION IS UNCONDITIONAL AND IS NOT A FILTER, WHICH IS A RULING RATHER THAN
+ * A CONVENIENCE. A popup with one word in it twice is never what anybody wanted, so
+ * no pipeline an author writes can produce one -- including one whose own stages
+ * introduce a duplicate.
  *
  * IT RUNS AFTER THE AUTHOR'S FILTERS AND NOT BEFORE, AND THE ORDER IS LOAD-BEARING
  * IN BOTH DIRECTIONS. After, so a stage that REWRITES words -- lowercasing them,
