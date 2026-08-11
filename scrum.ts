@@ -273,6 +273,23 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 92,
+      pbi_id: "PBI-98",
+      goal: "`aroundCompletion` offers WORDS. The stakeholder's own popup was offering `NeovimのLSPで誰にどうして怒られたのかを確認するための設定` as one candidate, and the two Latin words inside it as none.",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 0a4d6fb plus this file's own change. Definition of Done PASSED, all five checks exit 0: 1149 pass / 0 fail over 83 files, 191.63s, the one long-standing non-gating `eslint(require-yield)` warning. THAT IS THE SECOND 190s READING IN A ROW, which is what makes sprint 91's retraction of the slowdown hold rather than have been one lucky run.",
+        "THE DEFECT WAS THE DEFAULT PATTERN AND IT WAS MINE, not the reference's: `[\\p{L}\\p{N}_]+` treats every letter as word-forming, and JAPANESE PUTS NO SPACES BETWEEN ITS WORDS -- so a run of prose matched as ONE candidate, and swallowed the Latin words abutting it on the way. The stakeholder ruled the scope: `分かち書きが必要な言語は諦めていいよ`.",
+        "SO THE UNSEGMENTED SCRIPTS ARE SUBTRACTED FROM `\\p{L}` -- Han, Hiragana, Katakana, Thai, Lao, Khmer, Myanmar -- and NOT `CJK` as a block, which is the mistake this arm exists to refuse: KOREAN SPACES ITS WORDS and would have gone with them. What decides membership is segmentation, so Greek, Cyrillic, Hebrew, Arabic and the Indic scripts all stay.",
+        "`scx` AND NOT `sc`, MEASURED, and the difference is visible in a popup rather than theoretical: U+30FC `ー` is Script=COMMON, so `\\p{sc=Katakana}` drops the カタカナ around it and LEAVES THE PROLONGED SOUND MARK BEHIND as a candidate of its own. Script_Extensions carries it.",
+        "AND `\\p{M}` IS LOAD-BEARING RATHER THAN THOROUGHNESS, measured on the way: without it `हिन्दी` breaks into `शब`, `और`, `वन`, `गर` -- a combining mark is not `\\p{L}`, so every mark splits the run it sits in. Devanagari and pointed Hebrew are where that is the ordinary case.",
+        "THE DEFAULT IS EXPORTED, WHICH IS THE ANSWER TO GIVING UP ON A LANGUAGE RATHER THAN AN EXTRA: an author who wants Han back builds a `RegExp` from `defaultWordPattern.source` with their own alternative appended. Refusing by default and permitting by a line beats guessing at a segmenter this package cannot carry.",
+        "AND THE `v` FLAG WAS REFUSED, which would have written the subtraction as `[\\p{L}--[\\p{scx=Han}...]]` and read far better. It is too new to spend a runtime floor on for legibility; the double negation `[^\\P{L}\\p{scx=Han}...]` says the same thing under `u`, and the comment at the site is what carries the reading.",
+      ],
+    },
+    {
       number: 91,
       pbi_id: "PBI-97",
       goal: "`packages/tsudoi-completion-around` offers the words already around the cursor, modelled on ddc-source-around and faithful to what its SOURCE does rather than to what its README says.",
