@@ -524,8 +524,8 @@ export function customNotifications(
           reportNotificationOnce(
             reported,
             method,
-            `notification handler answered with a ${typeof answered}; a notification has no ` +
-              `response, so the value was discarded`,
+            `notification handler answered with ${answered === null ? "null" : typeof answered}; a ` +
+              `notification has no response, so the value was discarded`,
           );
         }
       },

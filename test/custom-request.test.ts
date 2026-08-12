@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
+  ErrorCodes,
   type InitializeResult,
   type ServerCapabilities,
   type TextDocumentSyncOptions,
   TextDocumentSyncKind,
 } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { echoMark } from "./fixtures/custom-method-echo.ts";
@@ -61,6 +62,59 @@ for (const runtime of runtimes) {
 
         expect(answer.mark).toBe(echoMark);
         expect(answer.params).toEqual({ textDocument: { uri: "file:///w/a.txt" } });
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * A REQUEST CARRYING NO PARAMS AT ALL, and this is the branch that fails
+     * SILENTLY AND WRONGLY rather than loudly: upstream calls a handler
+     * registered BY NAME with the CANCELLATION TOKEN as its only argument when
+     * the message carries no params -- there being no request type to say how
+     * many it takes -- so a reading that took the first argument unconditionally
+     * hands a config author the token in the params slot. It has a `_type` and an
+     * `isCancellationRequested`, so it is object-shaped and survives every guard
+     * a handler is likely to write.
+     *
+     * THE MARK IS ASSERTED BESIDE THE ABSENCE, because an answer that failed to
+     * arrive at all has no `params` either.
+     */
+    test("a custom request carrying no params hands its handler none, and not the token", async () => {
+      const session = LspSession.start(runtime, fixture("custom-method-echo.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+
+        const answer = await session.request<{ mark: string; params: unknown }>(
+          "textDocument/didFocus",
+          noParams,
+        );
+
+        expect(answer.mark).toBe(echoMark);
+        expect(answer.params).toBeUndefined();
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * AND A CUSTOM REQUEST IS UNDER THE LIFECYCLE LIKE EVERY OTHER ONE. Deleting
+     * the refusal from the registration reddens this and NOTHING else in the
+     * suite: every other arm here holds the handshake first, so the branch would
+     * ship uncovered and a client's pre-handshake request would reach a config
+     * author's handler against a session whose documents are empty and whose
+     * roots are null.
+     *
+     * THE CODE IS ASSERTED AND NOT MERELY A FAILURE: a name registered nowhere is
+     * refused too, with MethodNotFound, so an arm reading `it failed` cannot tell
+     * the lifecycle from a registration that never happened.
+     */
+    test("a custom request arriving before the handshake is refused by the lifecycle", async () => {
+      const session = LspSession.start(runtime, fixture("custom-method-answers-null.ts"));
+      try {
+        const refusal = await session.requestError(nullAnswering, {});
+
+        expect(refusal.code).toBe(ErrorCodes.ServerNotInitialized);
       } finally {
         session.dispose();
       }

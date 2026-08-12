@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { ErrorCodes, type InitializeResult } from "vscode-languageserver-protocol";
-import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
@@ -45,6 +45,34 @@ for (const runtime of runtimes) {
         const seen = await session.request<Recorded[]>(seenReader, {});
 
         expect(seen).toEqual([{ method: gatedNotification, params: { at: "b" } }]);
+      } finally {
+        session.dispose();
+      }
+    });
+
+    /**
+     * A NOTIFICATION CARRYING NO PARAMS AT ALL, AND THIS IS THE ARM THE
+     * `BARE STRING` RULING RESTS ON. MEASURED in upstream's own handling: with a
+     * NAME, no request or notification type is consulted and the handler is
+     * simply called with no argument -- while a SYNTHESIZED `NotificationType`
+     * declares one param, so the same message is logged as `defines 1 params but
+     * received none` through tsudoi's stderr logger before the handler runs.
+     *
+     * SO BOTH HALVES ARE ASSERTED: the handler is reached, AND the session wrote
+     * NO `tsudoi: ` line. Either alone is satisfied by the shape the ruling
+     * refuses -- upstream's complaint is a log and not a refusal, so the handler
+     * still runs under it.
+     */
+    test("a custom notification carrying no params reaches its handler, with nothing said about it", async () => {
+      const session = LspSession.start(runtime, fixture("custom-method-kinds.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+
+        session.notify(ungatedNotification, noParams);
+        const seen = await session.request<Recorded[]>(seenReader, {});
+
+        expect(seen.map((entry) => entry.method)).toEqual([ungatedNotification]);
+        expect(session.stderr).not.toContain("tsudoi: ");
       } finally {
         session.dispose();
       }

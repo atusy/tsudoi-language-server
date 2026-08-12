@@ -35,15 +35,30 @@ const record = (method: string) => {
   };
 };
 
+/**
+ * THE SAME RECORDER FOR A NOTIFICATION, RETURNING NOTHING -- which is not
+ * tidiness: a notification handler that ANSWERS is named on stderr once per
+ * method, so a fixture whose notifications all answered would put a `tsudoi: `
+ * line into every session here and no arm could then read stderr for anything
+ * else. `flippable` keeps the answering one, since the kind it is flipped to has
+ * to be the only thing that changes.
+ */
+const note = (method: string) => {
+  return (_context: unknown, params: unknown): Promise<void> => {
+    seen.push({ method, params });
+    return Promise.resolve();
+  };
+};
+
 export default () => ({
   customMethod: {
     "textDocument/didFocus": { kind: "request", handler: record("textDocument/didFocus") },
     "textDocument/didBlur": {
       kind: "notification",
       gate: "lifecycle",
-      handler: record("textDocument/didBlur"),
+      handler: note("textDocument/didBlur"),
     },
-    "tsudoi/ping": { kind: "notification", gate: "always", handler: record("tsudoi/ping") },
+    "tsudoi/ping": { kind: "notification", gate: "always", handler: note("tsudoi/ping") },
     "tsudoi/seen": { kind: "request", handler: () => Promise.resolve({ result: seen }) },
   },
 });
