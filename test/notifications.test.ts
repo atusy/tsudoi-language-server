@@ -41,10 +41,16 @@ function recordingConnection(): {
   const registered = new Map<string, (params: unknown) => void>();
   return {
     connection: {
-      onNotification<P>(type: NotificationType<P>, handler: (params: P) => void): Disposable {
+      // BOTH REGISTRATION SHAPES THROUGH ONE MAP, keyed by the name either one
+      // arrives under, so `deliver` cannot tell which was used -- which is what
+      // makes it able to grade a router that mixed them up.
+      onNotification(
+        type: NotificationType<unknown> | string,
+        handler: (params: unknown) => void,
+      ): Disposable {
         // The one cast, and it is the stub's: the map holds handlers for
         // several params types at once, exactly as the real connection does.
-        registered.set(type.method, handler as (params: unknown) => void);
+        registered.set(typeof type === "string" ? type : type.method, handler);
         return { dispose: () => {} };
       },
     },

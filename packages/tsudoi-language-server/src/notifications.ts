@@ -52,6 +52,15 @@ export interface NotificationEntry<P> {
  */
 export interface NotificationRegistrar {
   onNotification<P>(type: NotificationType<P>, handler: (params: P) => void): Disposable;
+  /**
+   * THE SAME DOOR, FOR A NAME TSUDOI DOES NOT KNOW. A config may declare a
+   * notification tsudoi never enumerated; there is no `NotificationType` to
+   * register it under, only the name the author wrote. It enters HERE rather
+   * than through a connection of its own, because the gate is applied where
+   * registration happens and a second registrar would be a second place to
+   * forget it.
+   */
+  onNotification(method: string, handler: (params: unknown) => void): Disposable;
 }
 
 /**
