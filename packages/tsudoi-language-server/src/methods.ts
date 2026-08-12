@@ -478,10 +478,11 @@ function erasedCustomEntries(
  * every other module sees -- so what crosses is DATA. This module knows what a
  * handler is handed; that one knows when a message may run.
  *
- * A GATE IS NOT DEFAULTED IF IT IS MISSING, the entry is DROPPED: src/config.ts
- * refuses a notification whose gate is neither value, so an entry reaching here
- * without one came past no reader at all, and registering it under a gate tsudoi
- * chose is the silent default both layers exist to refuse.
+ * EVERY NAME THE CONFIG DECLARED, AND NEVER THE ONES THAT SAID `notification`:
+ * a name carries no kind, and asking it for one is what sprint 96 was cancelled
+ * for. Upstream keeps its request and notification handlers in SEPARATE MAPS, so
+ * the same name on both collides with nothing and the JSON-RPC id decides which
+ * one a message reaches -- beneath tsudoi, which therefore never asks.
  */
 export function customNotifications(
   config: TsudoiConfig,
@@ -495,12 +496,9 @@ export function customNotifications(
   const reported = new Set<string>();
   const entries: CustomNotificationEntry[] = [];
   for (const [method, entry] of erasedCustomEntries(config)) {
-    if (entry.kind !== "notification" || entry.gate === undefined) {
-      continue;
-    }
     entries.push({
       method,
-      gate: entry.gate,
+      gate: entry.gate ?? "lifecycle",
       run: async (params: unknown): Promise<void> => {
         let answered: unknown;
         try {
@@ -582,8 +580,13 @@ function customParams(args: readonly unknown[]): unknown {
 }
 
 /**
- * Registers the custom methods the config declared as REQUESTS -- by NAME, which
- * is all upstream needs and all tsudoi has.
+ * Registers every custom method the config declared on the REQUEST side -- by
+ * NAME, which is all upstream needs and all tsudoi has.
+ *
+ * EVERY NAME AND NOT THE ONES THAT CALLED THEMSELVES REQUESTS, for the reason
+ * `customNotifications` records at the other half of the same pair: the two
+ * registrations are separate maps, so a name lands on both and the id a message
+ * carries decides which is reached.
  *
  * NOT REGISTERED FOR A NAME THE CONFIG DID NOT DECLARE, which is the opposite of
  * what the table above does and is forced rather than chosen: the table
@@ -604,9 +607,6 @@ function registerCustomRequests(
   requestRejection: RequestRejection,
 ): void {
   for (const [method, entry] of erasedCustomEntries(config)) {
-    if (entry.kind !== "request") {
-      continue;
-    }
     connection.onRequest(method, async (...args: readonly unknown[]): Promise<unknown> => {
       const rejection = requestRejection();
       if (rejection !== undefined) {

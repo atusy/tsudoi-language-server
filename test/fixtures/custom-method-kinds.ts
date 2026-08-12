@@ -3,22 +3,19 @@
  * the notifications did -- a notification has no response, so its effect is
  * observable only through a LATER message.
  *
- * NO TYPE ANNOTATION, AND THE REASON IS THE PERTURBATION THIS FIXTURE EXISTS TO
- * PERMIT rather than the ones the other unannotated fixtures give: AC1's control
- * FLIPS `textDocument/didFocus` from `request` to `notification` in one line, and
- * an annotated config refuses that -- the two kinds resolve different returns, so
- * the shared recorder below type-checks under exactly one of them. That refusal
- * is asserted in test/custom-method-types.test.ts; what is measured here is the
- * RUNTIME, which needs the flip to be one line.
+ * NO TYPE ANNOTATION, for the reason test/fixtures/custom-method-collides.ts
+ * gives: src/config.ts reaches an author's config through a cast from `unknown`,
+ * so what this measures is the runtime every author gets whether or not they
+ * annotated.
  *
- * ONE RECORDER FOR EVERY ENTRY, which is what makes the flip a change of KIND and
- * of nothing else: a control that also rewrote the handler would grade the
- * rewrite.
+ * ONE RECORDER FOR EVERY ENTRY, so a name driven in two forms differs from its
+ * neighbour in the FORM and in nothing else: a fixture that also rewrote the
+ * handler would grade the rewrite.
  */
 const seen: unknown[] = [];
 
-/** Declared a REQUEST today. AC1's control flips this entry and nothing else. */
-export const flippable = "textDocument/didFocus";
+/** The name driven in BOTH forms, whose handler answers either way. */
+export const bothForms = "textDocument/didFocus";
 /** A notification tsudoi may run only inside the initialized window. */
 export const gatedNotification = "textDocument/didBlur";
 /** A notification its author says a client may send at any moment. */
@@ -40,8 +37,8 @@ const record = (method: string) => {
  * tidiness: a notification handler that ANSWERS is named on stderr once per
  * method, so a fixture whose notifications all answered would put a `tsudoi: `
  * line into every session here and no arm could then read stderr for anything
- * else. `flippable` keeps the answering one, since the kind it is flipped to has
- * to be the only thing that changes.
+ * else. `bothForms` keeps the answering one, that being the whole of what a name
+ * driven in both forms has to do.
  */
 const note = (method: string) => {
   return (_context: unknown, params: unknown): Promise<void> => {

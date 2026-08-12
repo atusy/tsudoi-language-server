@@ -4,7 +4,7 @@ import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from 
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
-  flippable,
+  bothForms,
   gatedNotification,
   seenReader,
   undeclared,
@@ -107,26 +107,40 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * THE KIND AN ENTRY DECLARED IS THE ONLY FORM IT ANSWERS, and this is where
-     * AC1's control lands: `textDocument/didFocus` is declared a REQUEST in this
-     * fixture, so the same name delivered as a notification reaches nothing.
+     * ONE NAME IN BOTH FORMS, AND TSUDOI NEVER ASKS WHICH A MESSAGE IS. The name
+     * is registered on each of upstream's two handler maps -- they are separate
+     * maps, so one name on both collides with nothing -- and the JSON-RPC id is
+     * what picks between them, at a layer beneath tsudoi.
      *
-     * WHAT THE CONTROL MEASURED, flipping that one entry to `notification` and
-     * reverting: this arm goes red -- the handler IS reached -- AND the request
-     * form goes from `answered` to -32601, both in one edit, while the undeclared
-     * name below answers -32601 and reaches nothing in BOTH states. The pair
-     * moving together is what says the kind decides the registration, since the
-     * request half alone is satisfied by a name registered nowhere at all.
+     * THE ANSWER AND THE EFFECT ARE ONE MEASUREMENT, because either half alone is
+     * satisfied by a name registered on ONE side: the request half passes with no
+     * notification handler anywhere, and the notification half passes with no
+     * request handler anywhere. The undeclared name below is the control that says
+     * a green here is not what every name does.
+     *
+     * AND NOTHING GOES BACK FOR THE NOTIFICATION, read on the arrival list rather
+     * than inferred: a reply to a message carrying no id is a frame a conforming
+     * client cannot dispose of, and the handler answering `{ result }` is exactly
+     * the state in which a router that could not tell the forms apart would send
+     * one.
      */
-    test("a name declared as a request is reached by nothing when delivered as a notification", async () => {
+    test("one name is answered as a request and runs as a notification, with nothing written back for the notification", async () => {
       const session = LspSession.start(runtime, fixture("custom-method-kinds.ts"));
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
 
-        session.notify(flippable, { at: "wrong form" });
-        const seen = await session.request<Recorded[]>(seenReader, {});
+        const answered = await session.request<number>(bothForms, { as: "request" });
+        const before = session.arrivals.length;
+        session.notify(bothForms, { as: "notification" });
+        const { id, response } = session.issue(seenReader, {});
+        const seen = (await response).result as Recorded[];
 
-        expect(seen).toEqual([]);
+        expect(answered).toBe(1);
+        expect(seen).toEqual([
+          { method: bothForms, params: { as: "request" } },
+          { method: bothForms, params: { as: "notification" } },
+        ]);
+        expect(session.arrivals.slice(before)).toEqual([{ kind: "response", id }]);
       } finally {
         session.dispose();
       }
