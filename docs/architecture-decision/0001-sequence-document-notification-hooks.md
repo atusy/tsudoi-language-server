@@ -28,7 +28,7 @@ serializes the lifecycle for each document.
   same notification.
 - `didOpen`, `didChange`, and `didClose` for one document must run in arrival order because
   incremental changes depend on preceding document state.
-- Work for independent documents should remain concurrent.
+- Waiting work for one document should impose no promise dependency on another document.
 - A rejected operation must not permanently block later operations for the same document.
 - Completed document queues must not accumulate for the lifetime of the server.
 
@@ -55,7 +55,8 @@ operation terminates the process and cannot fulfill before a hook starts.
 For `textDocument/didOpen`, `textDocument/didChange`, and `textDocument/didClose`, this entire
 built-in-to-custom chain is one task in a FIFO queue keyed by `textDocument.uri`. The next lifecycle
 notification for that URI does not start until the preceding task settles. A different URI uses a
-different queue and may run concurrently.
+different queue and may run while the first hook is asynchronously waiting. CPU-bound work and
+work before a hook first yields still block the shared JavaScript event loop.
 
 The custom view of the document store is consequently defined as:
 
@@ -75,13 +76,15 @@ only if no newer tail for the same URI has replaced it.
 - Declaring a built-in notification under `customMethod` no longer disables tsudoi's state update.
 - Custom handlers always observe the post-operation document state.
 - Incremental changes for a document cannot overtake one another.
-- Slow handlers for one document do not delay lifecycle notifications for other documents.
+- An asynchronously waiting handler for one document imposes no queue dependency on another.
 
 **Negative:**
 
 - A slow custom handler delays later lifecycle notifications for the same document.
 - The server owns a small amount of mutable scheduler state keyed by active document URI.
 - A custom handler that never settles prevents later lifecycle work for that document.
+- CPU-bound custom work, or custom work before its first yield, can delay every document on the
+  shared JavaScript event loop.
 
 **Neutral:**
 

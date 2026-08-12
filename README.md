@@ -590,9 +590,11 @@ changed text, and a `didClose` hook sees the document absent.
 
 The complete built-in-to-custom chain for `didOpen`, `didChange`, and `didClose` is queued by
 document URI. A slow hook delays later lifecycle notifications for that document -- including
-incremental changes -- while another document has its own queue and continues independently. A
-hook that never settles therefore stops further lifecycle work for its document, a cost accepted
-to keep the document state ordered.
+incremental changes -- while another document has its own queue and carries no promise dependency
+on it. A hook that yields while waiting therefore lets another document continue, but CPU-bound
+work or work before the first yield still blocks the shared JavaScript event loop. A hook that
+never settles stops further lifecycle work for its document, a cost accepted to keep the document
+state ordered.
 
 `exit` is the exception and is refused under `customMethod`: its built-in handler terminates the
 process and cannot fulfill before any custom handler starts.

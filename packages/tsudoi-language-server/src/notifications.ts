@@ -48,7 +48,8 @@ export interface NotificationEntry<P> {
   /**
    * Which state owns this operation, when later notifications for that state
    * must wait for the complete built-in-to-custom chain. Entries without one
-   * retain upstream's unconstrained concurrency.
+   * retain upstream's scheduling, and different keys impose no promise
+   * dependency on each other.
    */
   readonly queue?: (params: P) => string;
 }
