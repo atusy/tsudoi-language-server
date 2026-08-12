@@ -158,82 +158,6 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
-      id: "PBI-101",
-      story: {
-        role: "config author",
-        capability:
-          "register a handler for a method tsudoi does not define -- `textDocument/didFocus` and its like, as a request or as a notification, declared in my config beside the rows tsudoi enumerated",
-        benefit:
-          "the methods a config can answer stop being the ones tsudoi enumerated, and the answer a custom request gives is distinguishable from having given none",
-      },
-      acceptance_criteria: [
-        {
-          criterion:
-            "BOTH KINDS REACH A HANDLER UNDER ONE BARE NAME, AND TSUDOI NEVER ASKS WHICH IT IS. Each `customMethod` name is registered on BOTH sides, and upstream's own dispatch discriminates by the presence of the JSON-RPC id. THE DEFECT THIS PREVENTS IS A DECLARED KIND: sprint 96 required one and was cancelled for it, on the measurement that `requestHandlers` and `notificationHandlers` are SEPARATE MAPS, so one name on both sides collides with nothing.",
-          verification:
-            "Fixture configs spawned as real servers under the fake editor. PROBE: one name sent as a request is answered; the SAME name sent as a notification runs the handler and nothing is written back -- the effect read through a LATER request, a notification having no response. NEGATIVE CONTROL: registering on ONE side only leaves the other form reaching nothing, read against a name absent from the map where NEITHER form reaches anything.",
-        },
-        {
-          criterion:
-            "THE CONTEXTS ARE SPLIT AND THE ANNOTATION IS THE SUPPORTED WAY TO WRITE ONE, which is a stakeholder ruling taken WITH its cost rather than around it: a bare arrow in the map is TS7006 under `--strict`, MEASURED FOUR TIMES, because TypeScript will not infer a parameter from a union of signatures whose parameters disagree. WHAT THE COST BUYS IS TWO CLOSED AXES: `NotificationContext` HAS NO `signal`, so a notification handler cannot reach cancellation at all, and the `{ result: unknown }` wrapper refuses `Promise<void>`, so the two published names are MUTUALLY non-assignable in BOTH directions. Neither axis is closed by the unified-context spelling, and the `unknown` and `LSPAny` spellings each collapse the second one.",
-          verification:
-            "Consumer-shaped probe through the built `./types` artifact, with the annotated form compiling and every refusal expressed as a `@ts-expect-error` that must stay SATISFIED -- notification-as-request, request-as-notification, and a notification context reaching `signal`. THE THREE MEASURED COLLAPSES ARE THE NEGATIVE CONTROLS AND EACH MUST REDDEN THIS ARM WHEN APPLIED: unifying the two context types (loses the signal axis), returning `Promise<unknown>` and returning `Promise<LSPAny>` (each makes a notification handler satisfy the request type, `void` fitting inside a top type -- and upstream maps `LSPAny` to `any` today, which is why it is named rather than assumed).",
-        },
-        {
-          criterion:
-            "A REQUEST ANSWERING `{ result: null }` REACHES THE CLIENT AS A NULL RESULT, AND ANSWERING NOTHING IS A FAILURE. The wrapper is what separates the two, and `unknown` inside it rather than `LSPAny` -- MEASURED, upstream maps `LSPAny` to `any` today, which makes `Promise<void>` assignable to it and collapses the discrimination the two names rest on.",
-          verification:
-            "Fake-editor arms on the RAW response. NEGATIVE CONTROL: an implementation sending the return bare makes the two arms indistinguishable on the wire.",
-        },
-        {
-          criterion:
-            "A NOTIFICATION HANDLER THAT ANSWERED IS NAMED ON STDERR ONCE PER METHOD PER SESSION, WITH STDOUT UNTOUCHED. The core knows which path the message took, so it can see a `{ result }` returned where nothing goes back. THIS IS THE ONLY ENFORCEMENT: src/config.ts reaches the config through a cast from `unknown`, so the published types constrain a real config nowhere.",
-          verification:
-            "One fixture, two custom notifications, driven repeatedly. CONTROLS: a session-wide flag loses the second method's line; and tsudoi must SWALLOW a rejection rather than let it propagate, since upstream logs an escaping one unconditionally and once per message.",
-        },
-        {
-          criterion:
-            "A NAME OF THE REQUEST TABLE IS REFUSED BY A MESSAGE NAMING THE METHOD AND THE RULE, AT COMPILE TIME AND AT LOAD. Sprint 96 built this and it survives the redesign unchanged: the colliding key\'s type IS the sentence tsc prints.",
-          verification:
-            "Compile probe capturing the compiler\'s TEXT, plus a config fixture refused by src/config.ts with exit 1, `tsudoi: ` on stderr and zero bytes on stdout. CONTROL: the bare `never` spelling passes the refusal arm and FAILS the text arm, reading `not assignable to type \'undefined\'`.",
-        },
-        {
-          criterion:
-            "A CUSTOM METHOD DECLARES NO GATE, AND TSUDOI APPLIES THE LIFECYCLE ITSELF. The stakeholder ruled the author declares none; a custom notification outside the initialized window is dropped exactly as a built-in one is, and a custom REQUEST before `initialize` takes the SAME `ServerNotInitialized` path a table row takes -- which is not the gate and must not be forgotten with it.",
-          verification:
-            "Runtime arms both sides of the handshake, for both kinds. CONTROL: an ungated custom notification reaches its handler before `initialize`, with `tsudoi.documents` empty -- the state the gate exists to prevent.",
-        },
-      ],
-      status: "ready",
-      notes: [
-        "MEASURED, AND IT REFUTES THE HANDLER TYPE AS FIRST DRAWN: `customMethodHandler<C> = C extends BaseNotificationContext ? Promise<void> : Promise<unknown>` TAKES THE NOTIFICATION ARM FOR BOTH KINDS. A notification context is the WIDER type -- it has fewer members -- so `BaseRequestContext` SATISFIES it and the conditional never reaches its second arm. Probe at `--strict`, exit 0 with `Eq<AsWritten<BaseRequestContext>, Promise<void>>` asserted TRUE, nothing objecting. THE DISCRIMINATION MUST NAME THE MEMBER THAT EXISTS ON ONLY ONE SIDE: `C extends BaseRequestContext ? Promise<unknown> : Promise<void>`, arms swapped, which the same probe confirms on both arms. THE SPELLING THAT READS CORRECTLY IS THE BROKEN ONE, which is why this is a note and not left to be discovered.",
-        "MEASURED: A NOTIFICATION CONTEXT THAT ADDS NOTHING IS THE SUPERTYPE, not a sibling of it. The strictest identity instrument in the tree -- the invariance trick in test/initialize-handler-types.test.ts -- reports an empty extension IDENTICAL to `BaseMethodContext`, while reporting `BaseRequestContext` DISTINCT from it. That second reading is the negative control: the instrument does discriminate, so the first is not vacuous. CONSEQUENCE FOR THIS ITEM: no test can defend a `BaseNotificationContext` that adds nothing, so either it carries a member the request context lacks, or the notification side takes the supertype directly and the name is not published.",
-        "THE RESULT WRAPPER IS ACCEPTED AND ITS ARMS WERE MEASURED INVERTED, the second time this conditional has been drawn the wrong way round and by the opposite mistake -- so the shape is recorded rather than the correction. THE MOTIVE IS SOUND AND IS THE TABLE'S OWN PROBLEM ONE DOOR ALONG: a typed row says `Hover | null`, so ANSWERING null is distinguishable from answering nothing BY THE ROW'S TYPE, while a custom method's result is `unknown` and cannot say it -- hence `Promise<{ result: unknown }>`, where returning `{ result: null }` IS an answer and falling off the end is not. THE ARMS GO REQUEST TO `{ result }` AND NOTIFICATION TO `void`: MEASURED, the sketched pairing binds a REQUEST handler to `Promise<void>` and a NOTIFICATION handler to `Promise<{ result: unknown }>`, both arms exactly backwards, with nothing objecting because the condition itself is now correct.",
-        'AND PARAMETERISING BY THE CONTEXT TYPE CONTRADICTS THE RULING BELOW, which is why the handler type takes the KIND instead. `customMethodHandler<C extends … | BaseRequestContext>` requires an author to NAME the type argument, and under `neither base name is published` the notification one cannot be named -- so the surface would be writable for requests and unwritable for notifications. `customMethodHandler<K extends "request" | "notification">`, resolving both the context AND the return from `K`, is the same discrimination with nothing unpublished: MEASURED, both arms resolve correctly, and a handler of each kind compiles INLINE with the author naming no context type.',
-        "AND THE CORE CAN WARN ON A NOTIFICATION HANDLER THAT ANSWERED, WHICH NARROWS THE NOTE BELOW RATHER THAN BEING ADDED BESIDE IT. That note says tsudoi cannot read the kind off the wire, and that is true AT THE HANDLER; it does not follow that the core does not know, and the core does -- IT REGISTERED THE THING. So the kind is available at dispatch by RECALL OF A DECLARATION rather than by inspection, which is one more thing the declared kind buys.",
-        "AND THAT WARNING IS NOT BELT-AND-BRACES, IT IS THE ONLY ENFORCEMENT THERE IS, which is what makes it worth the code. `Promise<void>` constrains a real config NOWHERE: src/config.ts reaches the config through a cast from `unknown`, and types.ts already records that nothing type-checks an author's own config against these types -- so an author whose notification handler returns a value gets no diagnostic from anything today, and the runtime check is the first and last chance to say so.",
-        "AND TSUDOI MUST CATCH THE REJECTION RATHER THAN LET IT PROPAGATE, OR UPSTREAM DEFEATS THE CADENCE BELOW -- MEASURED, and it is the one finding here that changes code rather than a test. Upstream's `handleNotification` already wraps the awaited handler in a `try/catch` calling `logger.error`, UNCONDITIONALLY AND ONCE PER OCCURRENCE, and tsudoi's logger writes stderr. So a rejecting hook that propagates is reported by upstream on EVERY message -- one line per keystroke on a `didChange` hook -- and the per-method `Set` this item builds never sees it. The rejection must be swallowed inside tsudoi's own handler and reported by tsudoi's own budget.",
-        "THE FORK COSTS A PUBLISHED NAME, which is surface growth and therefore has arms of its own: `NotificationEntry` cannot be reused for a config-supplied entry -- its `type` is a PROTOCOL VALUE an author cannot construct (`deps/protocol` is type-only), and its `handler` is synchronous `void` where the ruling gives `(context, params) => Promise<void>`. Only `gate` survives, so `NotificationGate` becomes a published name and test/package-shape.test.ts, test/own-subpaths.test.ts and test/published-artifacts.test.ts all read the wider surface. AND ONE EXISTING ARM IS TRIPPED BY THE COMPOSITION RATHER THAN BY THE SURFACE: test/notifications.test.ts asserts the router makes EXACTLY ONE gate call, so a second gate inside the merged handler reddens it -- and the hazard is that the next reader fixes the test instead of the code.",
-        "THE SHAPE AND THE CADENCE ARE ALREADY DECIDED IN THIS REPOSITORY, so this should be copied rather than designed: `reportInvalidToken` in src/methods.ts writes to STDERR with the `tsudoi: ` prefix, ONCE PER METHOD PER SESSION, keyed by a `Set` -- and its comment records why a single session-wide flag was refused, namely that the first report on any row permanently silences every other. STDERR IS NOT A CHOICE among channels: cli.ts owes zero bytes on stdout, which belongs to LSP. AND THE PER-METHOD KEYING BITES HARDER HERE THAN WHERE IT WAS WRITTEN: a hook on `textDocument/didChange` runs on every keystroke, so an unconditional warning is a flooded stderr rather than a louder one.",
-        "THE REJECTION RULING IS CLOSED BY THE SAME MECHANISM, and NOT because inspecting the result requires awaiting -- a floating `.then` observes the resolved value and a `.catch` the rejection without blocking anything, which is the stakeholder's correction to an earlier claim here that said otherwise. Both land on stderr, once per method per session. THE STAKEHOLDER HAS RULED `AWAIT` ANYWAY, with a future `tsudoi.schedule(callback)` as the escape hatch for a handler wanting to outlive the dispatch -- so the ruling is about the SHAPE tsudoi offers and not about what it can observe.",
-        "THE RUNTIME HALF DOES NOT WORK THE WAY IT WAS DRAWN, AND THE CORRECTION STRENGTHENS THE CONFIG-SIDE CONCLUSION RATHER THAN COSTING ANYTHING. Deciding request-versus-notification FROM THE JSON-RPC `id` AT RUN TIME is not available at tsudoi's layer: upstream has already dispatched by the time a handler is reached, and MEASURED, it hands `onRequest` only `(params, cancellation)` with no id anywhere. What upstream offers for arbitrary names is a REGISTRATION-TIME CHOICE -- `onRequest(method: string, …)` and `onNotification(method: string, …)`, both taking a bare string, so custom names ARE registrable -- and tsudoi must know which of the two to call BEFORE any message arrives. So the kind is not detected, it is DECLARED, which is the entry shape this item already carries.",
-        "THE STAKEHOLDER HAS RULED THE CONTEXT SURFACE, `FOR NOW` IN THEIR WORDS AND SO CARRIED WITH ITS REVERSAL CONDITION: NEITHER BASE NAME IS PUBLISHED. `BaseMethodContext` stays unexported and the notification context IS that type, so `customMethodHandler` RESOLVES what a handler receives exactly as `MethodHandler` already does -- the discipline `RequestContext`'s docblock states as `nothing an author writes selects the shape they are handed`. The two rejected options are recorded because each will look obvious again: exporting an empty `BaseNotificationContext` as a name for authors to write, and exporting the supertype instead. REVERSAL CONDITION: an author who factors a custom handler out into its own FILE has no name to annotate the parameter with -- contextual typing covers the inline case and not that one -- so the day that is reported, the name to publish is the notification context and this ruling is what to revisit.",
-        "AND THAT RULING FORCES THE ENTRY SHAPE, which is why it is not merely a naming decision: A CUSTOM METHOD NAME CARRIES NO KIND. `MethodHandler<M>` can derive a context because `M` comes from a table that already knows what each row is, while `textDocument/didFocus` tells tsudoi NOTHING about whether it is a request or a notification -- so resolution needs the kind as an INPUT, and each `customMethod` entry must DECLARE it rather than being a bare name-to-function map. WHICH LANDS ON THE DISCIPLINE THIS REPOSITORY ALREADY CHOSE ONE DOOR ALONG: `NotificationEntry.gate` is required with no default so that an entry deciding nothing does not type-check, and a custom entry declaring its kind -- plus its gate, where the kind is notification -- is that same argument applied to the config side.",
-        "AND `requestId` AS A REQUIRED MEMBER OF `BaseRequestContext` HAS NOW BEEN COSTED, the stakeholder having drawn it there once the phantom was dropped. APPLIED TO THE TREE AND REVERTED, two readings: (1) TSUDOI ITSELF CANNOT FILL IT -- `tsc --noEmit` stops at src/methods.ts inside `requestContext`, TS2741, because upstream hands that function `(params, cancellation)` and no id, so the field needs a NEW MECHANISM and not a line. (2) WITH THAT ERROR STUBBED SO THE DOWNSTREAM BECOMES VISIBLE -- and it is masked until then, the root tsconfig excluding `packages/` -- EVERY HAND-BUILT CONTEXT LITERAL IN EVERY HANDLER PACKAGE BREAKS, across four of them, which are precisely the sites Definition of Done check 5 compiles. THE FIELD IS NOT REFUSED, only priced: it is a published surface change with its own mechanism, and `string` is still narrower than the `number | string` upstream declares.",
-        "AND THE PHANTOM-FIELD ROUTE OUT OF THAT FORK IS MEASURED AND REFUSED, all three readings against it. A `requestId: never` on the notification context, as the stakeholder drew it: (1) REQUIRED `never` MAKES THE TYPE UNINHABITABLE -- TS2741, `requestId` missing but required, so TSUDOI ITSELF CAN NEVER CONSTRUCT ONE, no value of type `never` existing to supply. (2) It names a field THE DESIGN NO LONGER HAS: `requestId` was withdrawn once measured that upstream hands a request handler `(params, cancellation)` and no id at all, so the guard forbids reading something no context carries. (3) THE OPTIONAL IDIOM IS CONSTRUCTIBLE AND STILL WORSE, which is the reading that inverts the intuition: `signal?: never` DOES restore discrimination in the original direction and DOES type-check, but it TRADES A COMPILE ERROR FOR SILENCE -- MEASURED, reading `context.signal` in a notification handler is TS2339 `Property 'signal' does not exist` with the field ABSENT, and NO ERROR AT ALL with `signal?: never` present, the read simply typing as `undefined`. So the phantom field makes the exact mistake it appears to prevent go from loud to silent, and the discrimination it would buy is already free by naming `BaseRequestContext` in the conditional instead.",
-        "MEASURED: THE TYPE-LEVEL COLLISION GUARD WORKS, AND IT DOES NOT COST THE HOOK CASE -- which is the reading that looks contradictory and is not. `Partial<Record<ConfigMethod, never>> & Record<string, Handler>` refuses `textDocument/hover` (exit 1) and accepts both `textDocument/didFocus` AND `textDocument/didOpen` (exit 0). The reason the hook survives is that `ConfigMethod` IS THE REQUEST TABLE PLUS `initialize`, and the built-in NOTIFICATIONS are not in it at all. SO THE STAKEHOLDER'S TWO OPTIONS ARE NOT A CHOICE: the type can forbid the colliding names outright, and the config-time warning is only needed for whatever the type is decided not to cover. RESIDUE, AND IT IS AUTHOR-FACING: the refusal arrives as TS2322 `not assignable to type 'undefined'`, which names neither the collision nor the rule. AND THE READING WAS TAKEN WITH A FUNCTION-VALUED MAP WHILE THE RULED ENTRY IS AN OBJECT: an object literal assigned to `never` is refused too, so the REFUSAL is expected to survive the entry shape and the MESSAGE is not the one measured -- and the message is the whole subject of the criterion this residue became. Re-take it under the entry shape before either arm is believed.",
-        "THE PREREQUISITE TIDY IS SMALL AND MEASURED NON-BREAKING, and it is what makes the two kinds expressible: extract the session half of `BaseRequestContext` into a NON-EXPORTED `BaseMethodContext { readonly tsudoi }`, leaving `BaseRequestContext extends` it with `signal` alone. MEASURED WITH IT IN THE TREE: full Definition of Done green, every check exit 0, nothing named on any of them. The hand-built context literals in both handler packages satisfy it UNCHANGED (inherited members count), and the `Identical<RequestContext, BaseRequestContext>` pin holds. Declaration emit was the one hazard worth probing, since each `prepack` emits `.d.ts`: exit 0, the non-exported supertype emitted into the file, NO TS4020. NOT EXPORTED, the stakeholder's ruling -- no author writes the name, so publishing it would widen tsudoi's surface for a supertype nobody spells.",
-        "WHAT THE TIDY PAYS FOR TODAY, so it is not carried as speculation: `BaseRequestContext`'s docblock ASSERTS the line between session and message in prose, and the extraction makes that line STRUCTURAL -- above it the session, below it the message. So the paragraph goes rather than being superseded, which is the direction this project's comment convention asks for.",
-        "THE TIDY IS THIS ITEM'S FIRST SUBTASK AND IT IS STRUCTURAL, NOT ITS OWN BACKLOG ITEM. Product Owner ruling: an item whose criterion would read `a non-exported type exists` is falsifiable by nothing a config author can observe, and this project refuses criteria met by argument. It is a Tidy First extraction that the two kinds cannot be expressed without, it is measured non-breaking, and it lands in its own commit ahead of any behaviour.",
-        "REFINED TO `ready` BY THE PRODUCT OWNER, AND WHAT WAS CHECKED FOR MISSING HUMAN INPUT IS NAMED SO THE VERDICT IS NOT READ AS A SHRUG. The stakeholder has ruled the context surface, the entry declaring its kind, the gate, `await`, and the published-name question; the ORDER ruling was the last one needing a measurement and it belongs to the hook item now. WHAT IS DELIBERATELY NOT RULED HERE: the spelling of the config key and of the entry type, which are the Developer's -- only the criteria bind. The one Product Owner ruling this refinement added is the missing-`result` case, and it carries its reversal condition in the criterion itself.",
-        "AN ARCHITECTURAL CONSTRAINT THIS ITEM MUST ROUTE THROUGH RATHER THAN AROUND, named because the edit that breaks it is the obvious one: only src/notifications.ts may create a connection or register a notification -- `RequestOnlyConnection` removes `onNotification` from the type every other module sees, and .oxlintrc.json bans the connection factory by import name everywhere else. A `customMethod` surface that registers its own notifications from a new module UNDOES that foreclosure, and the lint entry's own comment records what was measured before it existed: an ungated `onNotification` beside the table ran green on every check with nothing objecting.",
-        "THE SEAM WAS TAKEN AT REFINEMENT AND THE HOOK IS PBI-102, which is why this item's story no longer names one. The seam is the one the notes recorded in advance rather than one invented under pressure: the REAL custom method has nothing built-in to order against, so it carries none of the ordering questions, while a hook beside a built-in carries all of them. WHAT THE SPLIT COSTS AND WHY IT IS PAID ANYWAY: the SURFACE is shared, so PBI-102 adds no published name and depends on this item shipping first -- a dependency in one direction, against six criteria that would otherwise be graded in the same sprint as a document store that can be silently corrupted.",
-        "AND REGISTERING A CUSTOM METHOD ADVERTISES NOTHING, which is the expectation to set before an author reports it as a bug: `initialize` has no capability to claim for `textDocument/didFocus`, so no client sends one unless it already knew to.",
-        "REBUILT IN SPRINT 97 ON THE SETTLED SURFACE, AND EVERY NOTE BELOW THAT ARGUES FOR THE ENTRY SHAPE IS DEAD -- named here rather than deleted, because each was reasoned from a real measurement and a reader will otherwise re-derive it. `neither base name is published` is REVERSED (`NotificationContext` is published, since the author annotates with it); `a custom method name carries no kind, so the entry must DECLARE it` is REFUTED (the two registration maps are separate, so one name goes on both and the id discriminates beneath tsudoi); `customMethodHandler<K>` and the kind-keyed conditional, with the two notes about its arms being drawn backwards, HAVE NO SUBJECT (the two handler types are written out); and `the core knows the kind by RECALL OF A DECLARATION` is FALSE -- there is no declaration to recall, and the stderr budget instead reports on the form the message ARRIVED in. What survives unchanged: the result wrapper's motive, the `LSPAny` reading, the swallow finding, the stderr cadence, the collision guard, and the eviction a built-in notification's name still buys.",
-        "BUILT IN SPRINT 96, ALL SIX CRITERIA MET, and the two readings that differed from what these notes predicted are worth carrying: the collision refusal CAN name the rule under the object entry shape, a per-key template-literal sentinel printing the sentence in full where the bare `never` reads `not assignable to type 'undefined'`; and the unpublished notification context is refused through the artifact as TS2459 `declares it locally, but it is not exported` rather than TS2305, because declaration emit puts the supertype into `dist/types.d.ts` for `BaseRequestContext` to extend.",
-      ],
-    },
-    {
       id: "PBI-102",
       story: {
         role: "config author",
@@ -400,6 +324,21 @@ const scrum: ScrumDashboard = {
   ],
   completed: [
     {
+      number: 97,
+      pbi_id: "PBI-101",
+      goal: "Sprint 97",
+      status: "done",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "THE CLOSING READING, TAKEN BY THE SCRUM MASTER RATHER THAN QUOTED FROM THE DEVELOPER, on the clean tree `3a73e17` WITH scrum.ts's own commit ALREADY IN IT -- a tighter tree than the Developer's own `60f1e7a` reading rather than a looser one. Definition of Done PASSED, all five checks exit 0: 1264 pass / 0 fail over 92 files, 410.08s, 5 non-gating warnings. The published surface was read directly: `NotificationContext`, `CustomRequestHandler`, `CustomNotificationHandler` and `CustomMethodMap` exported, and `CustomMethodEntry`, the declared `kind` and the required `gate` ABSENT.",
+        "THE ITEM SHIPPED ON ITS SECOND SPRINT AND THE FIRST WAS NEVER RED. Sprint 96 was cancelled on shape with a green increment; sprint 97 kept its config refusal, stderr budget, registration plumbing, fixtures and the `BaseMethodContext` extraction, and replaced only the surface. The sentence-typed collision guard crossed unchanged and was RE-MEASURED under the function-valued map, which sprint 96's own note had asked for and which its entry shape had made impossible.",
+        "TWO DEVIATIONS DISCLOSED BY THE DEVELOPER RATHER THAN FOUND AT REVIEW, and both are accepted as forced. Subtasks 1 and 2 SHARE a commit because no ordering leaves the suite green between them -- the type refuses every entry-object fixture the moment it changes, and config refuses every bare-function fixture until it changes. And subtask 4 carries NO commit, because every arm it owned already existed and passed once rewired; what it owed was a reading, which was taken.",
+        "A DEFECT THE DEVELOPER CAUGHT ON ITSELF, recorded because the mechanism is the lesson: a docblock citing a tool version tripped `test/version-citations.test.ts`, and it was found by running the FULL suite rather than by re-running the two files that had changed. A targeted re-run would have shipped it.",
+        "AND A PREDICTION CORRECTED BY MEASUREMENT: the `Promise<unknown>` weakening was expected to redden the map arm as well and does not, so its `alsoReddens` is empty. Recorded because the expectation was written before the reading.",
+      ],
+    },
+    {
       number: 96,
       pbi_id: "PBI-101",
       goal: "A config author can declare `textDocument/didFocus` in their config and have tsudoi serve it -- as a request whose `null` answer is distinguishable from no answer, or as a gated notification -- while a name tsudoi already owns is refused before the server starts instead of silently shadowing a built-in.",
@@ -436,439 +375,8 @@ const scrum: ScrumDashboard = {
         "THE STAKEHOLDER'S OWN EDITOR IS THE ONE CONSUMER AND THIS SPRINT MOVES MORE THAN A NAME UNDER IT -- sprint 93 filed that their dotfiles pin every `@atusy/tsudoi-*` specifier to raw GitHub URLs and that the pins and the config must move together. A RENAME MAKES THAT SHARPER: the import map KEY changes, the URL PATH changes and the commit changes, so a partial bump is a resolution failure rather than a missing export. Neither this repository nor any check in it can see that file.",
       ],
     },
-    {
-      number: 94,
-      pbi_id: "PBI-98",
-      goal: "The mark a completed item carries names the package that wrote it -- `data.tsudoiCompletionPath` -- so `data` stops being a slot two bare words were dropped into.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 9057eb0`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1157 pass / 0 fail over 83 files, 191.00s, the one long-standing non-gating `eslint(require-yield)` warning.",
-        "`source` MOVED TOO, WHICH THE STAKEHOLDER DID NOT ASK FOR AND THE REASON THEY GAVE REQUIRES. They named `data.tsudoiCompletionPath.path`; `source` was sitting beside it, equally bare, and is the more ordinary word of the two -- so qualifying half of the mark would have left the collision the change is about. WHAT IT CANNOT COLLIDE WITH is another server's `data`, since a client hands each item back to the server that made it. WHAT IT CAN is this package's own future and a config author adding a field to an item we produced.",
-        "THE COST WAS ARGUED AGAINST THE CHANGE AND IS NOW DISCLOSED AT THE TYPE: an item offered by the version before this one comes back at resolve with the old spelling, reads as UNMARKED, and is answered unchanged -- no size, no date, no listing. Bounded by the restart that changed the code, which is what makes it a disclosure rather than a defect.",
-        'WRITING THE ARMS MEASURED THE GUARD DEAD, and it is the finding this sprint would not have had without them. Nesting looked like it owed a `typeof mark === "object" && mark !== null` between the two levels; DELETING IT CHANGED NO ANSWER -- `?.` yields `undefined` for a null, a number and a string alike, and what decides is the `typeof` each reader applies to the value IT wants. A guard that cannot change an answer reads as a live safety net to the next person, so it is gone and the measurement is at the site.',
-        "AND THE FIRST DRAFT OF THOSE ARMS WAS WRONG IN A WAY WORTH KEEPING: a row asserting BOTH readers `undefined` for a mark whose `path` is a number reddened, because a broken `path` says nothing about a sound `source`. The two feed different fields -- the path decides whether the item is enriched at all, the source only how the block attributes it -- so a reader that discarded the whole mark on one bad member would drop a stat line it could have produced. That is now its own arm.",
-        "THE READERS' TOLERANCE HAD BEEN GRADED BY NOTHING, which the round-trip arms cannot fix by construction: they drive a real client, so every item they resolve carries a mark THIS CODE WROTE. Nothing there ever hands back a `data` that is a number or a mark that is a string. The new arms are measured to discriminate -- reading the mark unqualified reddens three of them.",
-      ],
-    },
-    {
-      number: 93,
-      pbi_id: "PBI-98",
-      goal: "The two completion handlers are named for what they DO -- `completeAround` and `completePath` -- so an author reads a verb where they register a verb.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 3ca6034`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1149 pass / 0 fail over 83 files, 190.47s, the one long-standing non-gating `eslint(require-yield)` warning. FOURTH ~190s READING IN A ROW.",
-        "THE OPTION BAGS FOLLOWED AND THAT WAS NOT A CHOICE MADE HERE: `AroundCompletionOptions` carries a comment saying it is NAMED FOR THE HANDLER IT BELONGS TO. Leaving the two types behind would have left that sentence false at the site that states the rule.",
-        "AND ONE `pathCompletion` DELIBERATELY DID NOT MOVE -- `item.data.pathCompletion`, which shares the old name and is not it. IT IS A KEY ON THE WIRE: the client hands the item's `data` back at `completionItem/resolve`, so a server that renamed the mark and then resolved an item OFFERED BY THE VERSION BEFORE IT would read `undefined` and answer an item with no path. A rename is invisible to a client; this is not. THE STAKEHOLDER OVERTURNED THIS THE SAME DAY -- `item.data.tsudoiCompletionPath.path` -- and the cost stands as stated rather than being talked down: one popup, bounded by the restart that changed the code, against a name that was wrong for as long as it lived. It is now disclosed at the type instead of refused there.",
-        "THE RENAME WALKED THROUGH A HOLE AND THAT IS THE FINDING WORTH MORE THAN THE RENAME -- PBI-99. `test/published-artifacts.test.ts` names the PATH package's exports as literal strings from a staged consumer; NO MEMBER BUT THAT ONE HAS SUCH AN ARM. Renaming `aroundCompletion` reddened NOTHING on the published route. What caught the callers was `tsc` and the workspace check, and both read `src/`.",
-        "AND THE README SNIPPET DOES NOT COVER IT, checked rather than assumed: the `ts snippets` account's SUBJECT is the SPECIFIERS, and its own comment says a block whose imports resolve and whose body is wrong is accounted for and unchecked. It would have been satisfied by a name the package never exported.",
-        "THE ONE CONSUMER OF THE OLD NAMES IS THE STAKEHOLDER'S OWN EDITOR, and it is safe by accident rather than by design: their dotfiles pin every `@atusy/tsudoi-*` specifier to raw GitHub URLs at 30effd8, so they still resolve `aroundCompletion` from the commit that had it. THE PINS AND THE CONFIG MUST MOVE TOGETHER -- bumping one without the other is what breaks their editor, and neither this repository nor any check in it can see that file.",
-      ],
-    },
-    {
-      number: 92,
-      pbi_id: "PBI-98",
-      goal: "`aroundCompletion` offers WORDS. The stakeholder's own popup was offering `NeovimのLSPで誰にどうして怒られたのかを確認するための設定` as one candidate, and the two Latin words inside it as none.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 39f1f9d`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1149 pass / 0 fail over 83 files, 191.45s, the one long-standing non-gating `eslint(require-yield)` warning. THE FIRST SPELLING OF THIS SENTENCE NAMED A TREE NOBODY GRADED and is corrected here rather than quietly: it cited 0a4d6fb `plus this file's own change`, where the run had actually printed `WORKING TREE DIRTY, so this reading names no commit` over five modified files NOT INCLUDING THIS ONE. A reading whose own instrument refuses to name a commit cannot be written down as one.",
-        "AND THAT IS THE THIRD ~191s READING IN A ROW, which is what makes sprint 91's retraction of the slowdown hold rather than have been one lucky run.",
-        "THE DEFECT WAS THE DEFAULT PATTERN AND IT WAS MINE, not the reference's: `[\\p{L}\\p{N}_]+` treats every letter as word-forming, and JAPANESE PUTS NO SPACES BETWEEN ITS WORDS -- so a run of prose matched as ONE candidate, and swallowed the Latin words abutting it on the way. The stakeholder ruled the scope: `分かち書きが必要な言語は諦めていいよ`.",
-        "SO THE UNSEGMENTED SCRIPTS ARE SUBTRACTED FROM `\\p{L}` -- Han, Hiragana, Katakana, Thai, Lao, Khmer, Myanmar -- and NOT `CJK` as a block, which is the mistake this arm exists to refuse: KOREAN SPACES ITS WORDS and would have gone with them. What decides membership is segmentation, so Greek, Cyrillic, Hebrew, Arabic and the Indic scripts all stay.",
-        "`scx` AND NOT `sc`, MEASURED, and the difference is visible in a popup rather than theoretical: U+30FC `ー` is Script=COMMON, so `\\p{sc=Katakana}` drops the カタカナ around it and LEAVES THE PROLONGED SOUND MARK BEHIND as a candidate of its own. Script_Extensions carries it.",
-        "AND `\\p{M}` IS LOAD-BEARING RATHER THAN THOROUGHNESS, measured on the way: without it `हिन्दी` breaks into `शब`, `और`, `वन`, `गर` -- a combining mark is not `\\p{L}`, so every mark splits the run it sits in. Devanagari and pointed Hebrew are where that is the ordinary case.",
-        "AND GIVING UP ON A LANGUAGE WAS GRADED BY NOTHING UNTIL A REVIEWER ASKED. The README says this member now offers NOTHING from an unsegmented language, which is a bound a stranger cannot get anywhere else -- and `readmeCoverage` reaches FENCED BLOCKS, never prose, so a green Definition of Done detects a MISSING token and never an UNGRADED PARAGRAPH. The member's fact-token row grew a sixth entry, measured to discriminate: rewording that one sentence reddens the arm.",
-        "THE DEFAULT IS EXPORTED, WHICH IS THE ANSWER TO GIVING UP ON A LANGUAGE RATHER THAN AN EXTRA: an author who wants Han back builds a `RegExp` from `defaultWordPattern.source` with their own alternative appended. Refusing by default and permitting by a line beats guessing at a segmenter this package cannot carry.",
-        "AND THE `v` FLAG WAS REFUSED, which would have written the subtraction as `[\\p{L}--[\\p{scx=Han}...]]` and read far better. It is too new to spend a runtime floor on for legibility; the double negation `[^\\P{L}\\p{scx=Han}...]` says the same thing under `u`, and the comment at the site is what carries the reading.",
-      ],
-    },
-    {
-      number: 91,
-      pbi_id: "PBI-97",
-      goal: "`packages/tsudoi-completion-around` offers the words already around the cursor, modelled on ddc-source-around and faithful to what its SOURCE does rather than to what its README says.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 30effd8, and the ONLY commit after it is the one carrying this sentence. Definition of Done PASSED, all five checks exit 0: 1146 pass / 0 fail over 83 files, 190.11s, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts.",
-        "AND 190s IS THE READING THAT PARTLY RETRACTS SPRINT 90'S. That sprint recorded the suite at 1328s against sprint 88's 270s and filed `something made this suite five times slower between two greens` into PBI-93. It is now 190s over MORE tests than either -- so the slowdown was TRANSIENT LOAD and not structural, and the sentence in PBI-93 is corrected there rather than left to be read as current. What is NOT retracted is the 25s ceiling itself, which still refuses arms on a busy machine.",
-        "THE STAKEHOLDER RULED THE SHAPE MID-SPRINT AND THE FIRST SPELLING WAS REFUSED. It was `completionAround(options)` returning a handler; the sibling package has `pathCompletion(context, params, options)`. Neither the NAME nor the SHAPE agreed, and an author who installs both would be called two different ways for no reason either could give -- the options argument doing exactly what the closure did. IT IS NOW `aroundCompletion(context, params, options = {})`, and BOTH consumer spellings were type-checked from a throwaway that reaches the packages BY BARE SPECIFIER, which is the route a stranger takes and the one an in-repo import cannot stand for.",
-        "AND MATCHING THE SIBLING CAUGHT A DEFECT THE RENAME WAS NOT ABOUT: it splits lines on `\\r?\\n` where this split on `\\n`. A CRLF document otherwise leaves a carriage return at the end of every line -- unmatched by the word pattern, and counted toward the 200-column bound, so a long line in a CRLF file was skipped one character early.",
-        "THE COMPLETENESS RULING WAS OWED AND NOT WRITTEN, AND AN ARM THAT ALREADY EXISTED ASKED FOR IT. This repository requires every completion handler to state whether its candidate set is FINAL, because the specification reads a supplied `CompletionItem[]` as `do not re-query, filter what you were given` whether or not anyone chose that. THIS ONE IS COMPLETE AND THE REASON IS STRUCTURAL RATHER THAN A PREFERENCE: the handler never looks at what was typed, so a narrower prefix cannot produce a candidate the answer did not already carry. WHAT WOULD OVERTURN IT IS AN EDIT AND NOT A KEYSTROKE -- typing changes the buffer's words, and `didChange` plus a fresh request is how every source is refreshed.",
-        "AND `around.ts` JOINED THE NAMES-WITHOUT-SERVING LIST, which was a list of ONE and whose comment said so. It holds the word scanner and names the method only to say which handler calls it, so a ruling there would be a sentence about a return value that does not exist in that file. The comment now says why its two members are prose FOR DIFFERENT REASONS -- the fixture's subject is the ABSENCE of a handler, this one's is a scanner one file along -- so neither stands for the other.",
-        "WHAT A FIFTH MEMBER FIRED, AND IT IS THE SAME LIST SPRINT 88 ENUMERATED PLUS ONE NOBODY HAD MET: the build order, both per-member tables, `readmeCoverage`, the root `devDependencies` and the root README's package table. THE NEW ONE IS THE COMPLETENESS ENUMERATION, which is not about MEMBERSHIP at all -- it scans every handler directory for the method's NAME, so a package is caught by what its prose says rather than by being a package.",
-        "AND A ROOT README SENTENCE HAD BEEN STALE SINCE SPRINT 88, found by this member rather than by the sweep that should have caught it: it enumerated the handler packages BY PATH and named two of what were already four. Rewritten to name one as an example and point at the table, which is the shape that does not stale with the next member.",
-        "THE REFERENCE'S README AND ITS CODE DISAGREE, AND THE CODE WINS. `maxSize` is documented as 500 and defaults to 200 in `params()`. Taking the README's number would make this package's own default a claim nobody could check against the thing it was modelled on.",
-        "IT DEPENDS ON NOTHING -- not a package, not a `node:` builtin. That is what sprint 88 measured the cost of: bun placed the efm adapter's own `yaml` in the member rather than hoisting, and this repository's staging arms borrow node_modules ENTRY BY ENTRY FROM THE ROOT, so a member's own runtime dependency living only under packages/ fails every staged build. A member with no dependency pays none of that.",
-      ],
-    },
-    {
-      number: 90,
-      pbi_id: "PBI-96",
-      goal: "A tsudoi server whose editor is gone EXITS -- by watching the `processId` the editor named, and by reading the end of stdin as the end of the session -- so a crash leaves no process behind and no core spinning.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 0cab02d, and the ONLY commit after it is the one carrying this sentence. Definition of Done FAILED and is recorded as failed: 1105 pass / 6 fail over 81 files in 1328.22s, with `Lint`, `Format check`, `Type check` and the workspace check all exit 0. EVERY ONE OF THE SIX IS A TIMEOUT -- four at the 25s ceiling, one at 34s, one at 55s -- and a DIFFERENT six than the previous run's five. THE EXIT-CODE REGRESSION IS GONE from that list, which is the half that says this run graded the repair.",
-        "AND THE SUITE IS FIVE TIMES SLOWER THAN AT SPRINT 88'S CLOSE -- 1328s against 270s -- WHICH THIS SPRINT'S OWN WORK DOES NOT EXPLAIN, measured rather than assumed: the three files added across sprints 89 and 90 were timed individually and total about 24 SECONDS, most of it the deliberate waits in test/orphaned-server.test.ts. NOR IS IT THE ZOMBIE, which was alive during sprint 88's 270s run too. So the cause is neither the increment nor the defect this sprint fixed, and PBI-93 now has a measurement it did not have: the suite got slow between two greens and nobody knows why.",
-        "THE FIX IS VERIFIED AGAINST THE ZOMBIE'S OWN SHAPE AND NOT ONLY AGAINST AN ARM, which matters because the arm and the reproduction were written from one idea and could have shared a mistake: a probe spawns a real parent, spawns a server naming it in `processId`, kills the parent with SIGKILL, and DELIBERATELY HOLDS THE PIPE OPEN so stdin never reaches EOF. Before, the server stays. After: `tsudoi: exiting because its editor's process is gone`, and it leaves.",
-        "THE EXIT CODE WAS WRONG FIRST AND AN ARM THAT ALREADY EXISTED CAUGHT IT, which is the finding worth more than the fix. `endSession` reused `lifecycle.exitCode()`, reasoning that a session nobody ended is the ungraceful case that rule is about. IT IS NOT: that function grades the `exit` NOTIFICATION -- whether a client that ASKED to exit had shut down first -- and a client that vanished never sent `exit` at all. Borrowing it reported the CLIENT'S ABSENCE AS TSUDOI'S FAILURE. test/editor-death.test.ts states the contract in its own name, `stdin reaching EOF ends the session at code 0`, and reddened on both runtimes in 40ms.",
-        "AND THE WEAKENING IS MEASURED BUT NOT REGISTERED, a departure from this project's rule recorded rather than slipped past. `watchEditor(null, ...)` -- the state tsudoi shipped in for its whole life -- reddens the parent-dies arm on BOTH runtimes and leaves the other four green. IT IS NOT IN THE REGISTRY BECAUSE THE REGISTRY CANNOT AFFORD IT: an arm file is re-run TWICE inside a 25s budget, and a WEAKENED run spends the whole `waitForExit` bound on each runtime BY CONSTRUCTION, the server it waits for never leaving. Registering it would put a timing arm into the instrument this project has already filed as timing out under load. WHAT THAT COSTS is written at the arm file: if these arms stop discriminating, nothing will say so.",
-        "THE LOAD READING THAT REFRAMES PBI-93: with the orphan killed this machine's load average fell from 15.7 to about 2.0, and the perturbation registry -- which had been refusing three records at the 25s ceiling -- came back with only the two it has always had. SO PART OF WHAT WAS FILED AS A BUDGET WAS THIS DEFECT ALL ALONG, AND PART WAS NOT. The two survivors are still PBI-93's.",
-        "THE ZOMBIE WAS REAL AND IS GONE: pid 26678, orphaned at PPID 1, state R, 99.4% CPU, FIVE DAYS, killed by SIGTERM on 2026-08-11, after which this machine's tsudoi servers went from 106% CPU to 0.9%. NINETEEN OTHERS SURVIVED AND WERE LEFT ALONE, measured rather than assumed: every one is a live child of the stakeholder's own `kakehashi` multiplexer, so `kill them` meant the ORPHAN and not the population.",
-        "THE ORDINARY DEATH ALREADY WORKS, MEASURED BEFORE ANYTHING CHANGED, which is what makes this sprint about the OTHER cases rather than the obvious one: a server spawned over pipes whose parent exits without a `shutdown` is gone within seconds -- stdin reaches EOF, the reader's handle goes, the loop empties. The leak is NOT `tsudoi ignores its editor dying`.",
-        "TWO NETS FOR THE TWO WAYS THAT MECHANISM FAILS, AND NEITHER IS THE OTHER'S DUPLICATE. ONE, THE `processId` WATCHDOG: LSP says a server SHOULD exit once the parent it was told about is no longer alive, and tsudoi reads `processId` NOWHERE today -- so a server whose stdin never reaches EOF, because some surviving process still holds the write end, waits for ever. That is the shape a multiplexer produces and the likeliest origin of a five-day orphan. TWO, THE END OF STDIN: the exit today depends on the event loop EMPTYING, so ONE un-`unref`ed handle anywhere -- including inside a config author's own handler, which src/server.ts records as checked by nothing -- strands the process even after EOF.",
-        "THE WATCHDOG'S OWN TIMER IS `unref`ed, which is not a detail but the exact hazard already written down here: src/notifications.ts records that the FRAMEWORK's own `watchDog.initialize` starts an UN-`unref`ed three-second interval on a numeric `processId`. The reference implementation of this feature is itself an instance of the bug being fixed, and a watchdog that keeps the process alive is the thing it exists to prevent.",
-      ],
-    },
-    {
-      number: 89,
-      pbi_id: "PBI-95",
-      goal: "`context.tsudoi.notify(method, params)` sends a notification to the client, so a config author can say `window/showMessage` -- or anything else the protocol lets a server initiate -- from inside a handler.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 7bf4871. Definition of Done FAILED, and it is recorded as failed rather than smoothed: 1101 pass / 4 fail over 80 files in 1397s, with `Lint`, `Format check`, `Type check` and the workspace check all exit 0. EVERY ONE OF THE FOUR IS A TIMEOUT AT THE 25s CEILING and a DIFFERENT four each run -- PBI-93 -- over a suite that took 270s at sprint 88's close. WHAT WAS VERIFIED DIRECTLY INSTEAD: the notify arms 4/4, the type arms 5/5, the whole perturbation registry HELD.",
-        "AND THE REASON THAT RUN TOOK FIVE TIMES AS LONG TURNED OUT TO BE A DEFECT RATHER THAN A BUDGET, which is PBI-96 and was found by `ps` rather than by any check: a tsudoi server orphaned at PPID 1 had been at 99.4% CPU FOR FIVE DAYS. Attributing the four reds to PBI-93 alone was incomplete, and this entry is where that is corrected.",
-        "ADDING A MEMBER TO `Tsudoi` BREAKS EVERY HAND-BUILT LITERAL, and the FIFTH check is the only thing that says so -- `tsc --noEmit` excludes `packages/`. Four sites in the two handler packages and the adapter each take a stub that REJECTS rather than resolves, so a package cannot start notifying by accident.",
-        "AND `oxlint` LEFT THE MACHINE MID-SPRINT, which cost a 31-minute run and 66 phantom failures before the tell was found -- `exec: oxlint: not found`, buried in one staged arm's expected-versus-received dump. The lint check's own colour does not report it, because the staged Definition-of-Done arms WRAP the binary. It is the same impediment sprint 87 filed for `oxfmt` and now names both.",
-        "THIS OPENS A WRITE END ON `Tsudoi`, WHICH THAT TYPE'S OWN RUNTIME COMMENT SAYS IS DELIBERATELY CLOSED -- so the refusal is NARROWED rather than overturned. What `TsudoiRuntime` refuses to expose is the STORE, the FOLDER MIRROR and the HANDSHAKE: the writers of state tsudoi MIRRORS FROM THE CLIENT, where a second writer would make the mirror disagree with the thing it mirrors. A notification writes none of that. It is tsudoi SPEAKING to the client rather than rewriting what the client said, so the reason those three are closed says nothing about this one, and the comment is amended to say which it was about.",
-        "THE METHOD IS A STRING AND THE PARAMS ARE `unknown`, WHICH IS THE `deps/` RULING APPLIED RATHER THAN A GAP. tsudoi could enumerate the server-initiated notifications and type each one's params -- and that would be tsudoi publishing a second name for a shape upstream owns, which the `deps/` split exists to prevent. An author who wants the protocol's own type imports it from `@atusy/tsudoi-language-server/deps/protocol` and annotates their own value. WHAT IT COSTS THEM is that a misspelled method name is not a compile error, and that is stated at the site.",
-        "THE LIFECYCLE IS THE PROTOCOL'S AND TSUDOI APPLIES NONE OF IT. LSP forbids a server sending most notifications before it has answered `initialize`, with `window/showMessage`, `window/logMessage` and `telemetry/event` named as the exceptions -- so a rule enforced here would have to know that list, would go stale with the specification, and would refuse the one call an author most wants during a handshake. What tsudoi owes instead is that the failure is VISIBLE: a send on a connection that is gone rejects, and the rejection is the author's to see.",
-      ],
-    },
-    {
-      number: 88,
-      pbi_id: "PBI-90",
-      goal: "`loadEfmConfig()` finds the efm-langserver `config.yaml` already on this machine, reads it, and hands back the tsudoi handlers it describes -- so an efm user's own linters and formatters run under tsudoi with not one tool definition restated.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "THE CLOSING READING, ON THE TREE THAT CLOSES -- 3b383b1, and the ONLY commit after it is the one carrying this sentence. Definition of Done PASSED, all five checks exit 0: 1096 pass / 0 fail over 78 files, 3406 expect() calls, 296.51s, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. The base was sprint 87's close at 1049 / 3310 over 75 files.",
-        "THE DEFECT THAT MATTERED WAS FOUND BY DRIVING A REAL SERVER AND BY NOTHING ELSE, which is the reading to carry out of this sprint. efm's schema documents `lint-stdin` DEFAULTING TO TRUE -- unlike `format-stdin`, which documents no default -- and this adapter read absence as false. A tool whose `lint-command` reads stdin and whose config omits the key was handed NOTHING, exited clean, and the editor showed a file with no problems. NO ARM HERE COULD HAVE NOTICED: a linter that found nothing and a linter never given the document are the same picture, and every arm written before it drove commands that ignore their input. The arm that holds it now drives a command reading ONLY stdin, so neither reading passes for the other.",
-        "WHAT A FOURTH MEMBER FIRED, MEASURED AGAINST PBI-90'S OWN PREDICTION. Predicted and red: the build order, where the new member sorts between the framework and the two handlers by PATH -- a tie-break rather than a dependency; both per-member tables in test/packed-members.test.ts; and `readmeCoverage`, which the new README joined only when it was TRACKED and not when it was written. NOT PREDICTED: the two STAGING arms, and that is the finding. bun placed `yaml` in the member that declares it rather than hoisting, and test/unbuilt-checkout.test.ts and test/own-subpaths.test.ts borrow node_modules ENTRY BY ENTRY FROM THE ROOT -- so a member's own runtime dependency living only under packages/ makes every staged build fail TS2307 on it. Declared at the root with that reason, which is a fact about this repository's apparatus rather than about the package.",
-        "`handlerMembers` TOOK THE NEW MEMBER SILENTLY AND EVERY SITE WAS RIGHT TO, which PBI-90's notes had flagged as needing a per-site ruling. Its `src/` holds handlers, it declares tsudoi as an optional peer, it ships a README a stranger acts on, and it is installable beside tsudoi -- so all four sites apply. THE PREDICTED MISMATCH DID NOT MATTER: those sites ask about the PACKAGE, not about where its handlers come from, so a package building them at run time from YAML is no exception.",
-        "WHAT THIS INCREMENT DOES NOT DO, listed rather than left to be discovered: multi-line errorformats, refused BY NAME at load; `symbol-command`, which is a method tsudoi does not serve; efm's scheduling keys, which describe a PUSH model tsudoi has no equivalent of; and range formatting. Each is in the package's README, which is the document a stranger reads.",
-        'THE YAML READER IS `yaml` AT `merge: true`, AND THE FLAG IS THE WHOLE RULING RATHER THAN A SETTING. MEASURED at yaml 2.9.0: with the default options, efm\'s own documented example parses a tool definition into `{ "<<": { ... } }` -- the merge key ARRIVES AS A LITERAL KEY and none of the merged tool\'s own keys are present. That is the silent mis-read PBI-90\'s notes predicted for a hand-rolled subset, and the library does it too unless told not to. A config using anchors would produce handlers for nothing, with no error anywhere. `merge: true` and `version: "1.1"` both fix it; the flag is chosen because it says what it does.',
-        "efm's `languages` ARE KEYED BY VIM FILETYPE AND TSUDOI HANDS A CLIENT'S `languageId`, AND NO TRANSLATION TABLE IS INVENTED. The key is matched against `languageId` as the client sent it, plus efm's `=` any-language key, and where they disagree the author's own config is where it is repaired -- a table tsudoi wrote would be tsudoi deciding what an editor meant. The README is the authority on it.",
-      ],
-    },
-    {
-      number: 87,
-      pbi_id: "PBI-89",
-      goal: "`textDocument/codeAction` becomes a NEW ROW of the request table `textDocument/hover` and the rest are rows of -- and the FIRST row whose drive is a choice rather than one the protocol already made, so what ships is a RULING WITH ITS REASON AT THE SITE as much as it is a method.",
-      status: "done",
-      subtasks: [
-        {
-          test: "A NEW test/code-action.test.ts, THREE ARMS ON BOTH RUNTIMES, and the second is what the sprint is graded through. ONE: a fixture config declaring the handler, driven through a real server, and the answer read back WHOLE -- carrying BOTH a `CodeAction` and a `Command`, since the result type is a UNION and an arm reading one member cannot tell tsudoi passing an author's answer through from tsudoi rebuilding it. TWO: the capability read WHOLE off the handshake, `toEqual({ textDocumentSync, workspace, codeActionProvider: true })` -- WHOLE and not `toBeTruthy`, which is the property subtask 2's record needs and which nothing else in this file would give it. THREE: the ABSENCE half against a config declaring no codeAction handler; it adds no discrimination its neighbours lack, and is kept for WHERE IT IS READ, the criterion asking for both directions -- the same reasoning test/execute-command.test.ts already writes at its own absence arm.",
-          implementation:
-            '`MethodMap["textDocument/codeAction"]` in packages/tsudoi-language-server/src/types.ts carrying the drive ruling; `requestEntries["textDocument/codeAction"]` in src/methods.ts with `CodeActionRequest.type` and a contributor writing `codeActionProvider = true`; a fixture; and test/fixtures/all-methods.ts, which FORCES ITSELF -- a method in `MethodMap` and not in that literal is TS2741 naming it. `paramsForAnyMethod` gains the `range` and `context` `CodeActionParams` requires, AND THAT ADDITION IS GRADED BY NOTHING, on that function\'s own docblock: nothing on the wire validates a member it holds, MEASURED there by deleting `command` and finding the file green.',
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "c004410",
-              message:
-                "feat(methods): code actions reach a config author, and the drive is a decision",
-              phase: "green",
-            },
-            {
-              hash: "97d73dd",
-              message:
-                "feat(methods)!: the stakeholder overturned the drive, so partial results stay reachable",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE RED, MEASURED AND NOT PREDICTED. With all four arms written and `src/` untouched: 2 pass / 6 fail. THE TWO GREEN WERE THE ABSENCE ARMS, which is what makes them controls rather than duplicates -- they assert the capability is NOT advertised, and that was already true. The six red are three per runtime: the answer arm and the null arm both at `-32601 Unhandled method textDocument/codeAction`, and the capability arm at its whole-object equality, one key short.",
-            "THE STAKEHOLDER OVERTURNED THE DRIVE MID-SUBTASK, WHICH IS WHY THIS ONE CARRIES TWO GREEN COMMITS. The first landed awaited-once with the argument at the site; the second replaced it with the generator. NOTHING A CLIENT RECEIVES MOVED BETWEEN THEM for a request carrying no `partialResultToken` -- which is a claim, so the subtask grew an arm per runtime rather than asserting it: the same handler driven WITH a token, the batch read off the wire as `$/progress` and the response `null`. THAT ARM SHOWS THE DELIVERY CHANGING AND THE CONTENT NOT, which is the precise reading and not `a client sees no difference`: under a token the actions arrive as a notification and the response is `null`, where the awaited drive would have put them in the response.",
-            "AND THE ARM NAMES GAINED THEIR RUNTIME, WHICH THE PLAN DID NOT ASK FOR AND SUBTASK 2 COULD NOT DO WITHOUT. MEASURED at bun 1.3.13: a `<testcase>` carries the `describe` in `classname` and ONLY the `test()` string in `name`, and the registry's reader keys a run BY `name` -- so two arms differing only by their describe collapse to one result, last write winning, and a record on one of them would have graded whichever bun wrote last. EVERY SIBLING FILE IN THIS SHAPE HAS THE SAME COLLAPSE and is graded by no record, which is why it is closed here and not everywhere.",
-          ],
-        },
-        {
-          test: "ONE RECORD IN test/perturbations.test.ts, MEASURED against the landed source and not predicted: `codeActionProvider` written as `{ codeActionKinds: [] }` instead of `true`, which must redden the PRESENCE arm at its whole-object equality and leave the ABSENCE arm green. That is criterion 2's discriminator and this row's alone -- `claims no kinds` is the half the contrast with `executeCommandProvider.commands` rests on.",
-          implementation:
-            "The record only. AND THE SECOND RECORD A READER WILL EXPECT IS REFUSED WITH ITS REASON, rather than shipped to make a pair: emptying this row's contributor reddens the SAME arm at the SAME assertion, and what it would grade is the presence check in `contributeCapabilities`, which is one loop over every other row and which every other row's own arm already holds. A record naming this row for it would report a property of the loop under this row's name.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "391e17c",
-              message: "test(perturbations): the options object that reads like a spelling of true",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "MEASURED BY HAND FIRST, THE FILE RESTORED FROM A COPY AFTER: the weakening reddens 2 arms, and they are the PRESENCE arm on each runtime, at `expect(result.capabilities).toEqual({`, receiving `codeActionKinds: []`. The answer arm, the null arm and both absence arms stayed GREEN, so `alsoReddens` is the deno twin and nothing else. AND THE READING WAS TAKEN ON EIGHT ARMS WHERE THE COMMITTED FILE HAS TEN, which a reviewer caught: the fifth arm -- the one under a `partialResultToken` -- landed between the measurement and the commit this subtask names, so the two progress arms are in neither the count nor the green enumeration. What carries them is the REGISTRY, which grades an unrecorded red as `disarmed`, and not this note.",
-            "THE FIRST ATTEMPT WAS REFUSED BY A GUARD READING THIS SPRINT'S OWN PROSE, WHICH IS THE FINDING WORTH CARRYING. The registry refuses a record whose arm file `re-runs perturbations itself` -- it would spawn without bound -- and that refusal is a SUBSTRING TEST over the arm file's whole text. The arm file imports nothing of the sort; a COMMENT in it named the helper's path, and the record was refused. Reworded, and the trap is written down at the site. THE OVER-REFUSAL IS THE SAFE DIRECTION and is not repaired here.",
-            "AND THE THREE `dodArms` RECORDS ARE INTERMITTENT, MEASURED AS NOT THIS SPRINT'S. Two runs of the registry with this record present: one reported those three REFUSED with `the arm file did not run to a report`, the next reported every record HELD. THE SAME TWO RUNS WITH THIS RECORD STASHED OUT gave the same two results at c004410, so the arm file this record adds is not the cause. AND c004410 GRADES THE BASE FOR THIS, WHICH IS WHAT MAKES IT PRE-EXISTING RATHER THAN MERELY OLDER: the four files the reading depends on -- test/perturbations.test.ts, test/definition-of-done.test.ts, scripts/definition-of-done.ts and the registry's own reader -- are BYTE-IDENTICAL between a6e699e and c004410, `git diff` empty over all four. THE MECHANISM IS A BUDGET: those records re-run a file measured at 14.17s alone against a 25s ceiling, and nothing in this sprint touched either number. Filed as PBI-93 rather than repaired.",
-          ],
-        },
-        {
-          test: "THE SWEEP, WHICH IS THE WHOLE OF THIS SUBTASK'S GRADING. `readmeCoverage` is untouched BY CONSTRUCTION and that is a ruling rather than an omission: the section carries NO FENCED BLOCK, following `Commands your editor can invoke`, which is prose-only for the reason that applies here too -- this row's handler shape is `textDocument/formatting`'s, already shown in the Quickstart block, so a block would need a marker AND a `consumers` row naming a SUBJECT and would buy a reader nothing they read forty lines up. Then a CASE-INSENSITIVE sweep for the arity words over README.md, packages/, examples/ and scrum.ts, every hit re-sited, deleted, or left green WITH the reason it still reads something.",
-          implementation:
-            "The README section, placed beside `Commands your editor can invoke` because for a user the two are ONE workflow -- an action offers a command and a command runs it. LAST, because it describes what landed rather than what was intended.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "76e2bed",
-              message: "docs: the actions section says what the capability declines to claim",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "THE SWEEP FOUND ONE SENTENCE GOING FALSE AND THE REVIEW ROUND FOUND THREE MORE, WHICH IS THE READING TO CARRY ABOUT THE SWEEP RATHER THAN ABOUT THE SENTENCES. What it found: the metric's annotation naming `workspace/executeCommand` as the whole of what tsudoi serves beyond the five. WHAT IT MISSED, ALL OF IT INSIDE ITS OWN DECLARED SCOPE: `types.ts`'s ``Promise`, LIKE EVERY ROW OF THE TABLE``, false since completion and now doubly so; `methods-table.test.ts`'s guard claim passing `for textDocument/completion and reddening for every other row`, short one row; and `perturbations.test.ts`'s categorical `no record below spawns a server`, which this sprint's own record contradicts. THE SWEEP WAS OVER ARITY WORDS -- `five`, `six`, `seven` -- and not one of the three contains one. A SWEEP FINDS THE SENTENCES THAT COUNT; the ones that ENUMERATE without counting are found by reading. EVERY OTHER HIT WAS DISPOSITIONED AND LEFT: the README's `seven members` is `DocumentView`'s and its `five members` is `Tsudoi`'s, `notifications.ts` numbers a list, and every arity in a COMPLETED sprint's record is a quotation of what was true then.",
-            "AND THE README REPAIR BROKE A FACT BY REWRAPPING IT, WHICH NO REVIEW WOULD HAVE SEEN. test/readme.test.ts requires `closes the generator` in the cleanup section, and the rewrap put a newline between `the` and `generator` -- so the token stopped matching while every word survived. Two arms red, repaired by moving the line break. A DOCUMENTATION EDIT THAT CHANGES NO WORD CAN STILL BREAK A TOKEN.",
-          ],
-        },
-      ],
-      impediments: [
-        {
-          description:
-            "`oxfmt` IS NAMED BY THE DEFINITION OF DONE AND INSTALLED BY NOTHING IN THIS CHECKOUT. MEASURED at f34a76b: the third check came back UNRUNNABLE -- `Executable not found in $PATH` -- while the other four ran, so the run reported FAILED for a reason that was the ENVIRONMENT. It is not in the root `devDependencies` and not in node_modules/.bin, unlike `tsc`, which `bun run` puts on PATH from there. Installed globally at 0.62.0 to take this sprint's base, and THE VERSION WAS CHOSEN BY NOTHING.",
-          impact:
-            "None on this Sprint Goal -- the base at a6e699e is green under 0.62.0, all five checks. What it costs is that this project's whole-tree formatting is graded by whatever version whoever ran it last happened to have, and a default that moved between versions would reformat files a sprint never touched.",
-          request:
-            "Decide whether `oxfmt` is pinned in the root `devDependencies` -- and at which version -- or whether it stays an environment assumption a fresh checkout discovers as an UNRUNNABLE check.",
-          status: "waiting_human",
-          notes: [],
-        },
-      ],
-      decisions: [
-        "THE BASE, MEASURED BEFORE ANYTHING MOVED: HEAD a6e699e, Definition of Done PASSED, all five checks exit 0, 1029 pass / 0 fail over 74 files, 3264 expect() calls, 407.71s, TWENTY registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. Any red from here is this sprint's until measured otherwise against that.",
-        "AND THAT BASE IS THE FIRST IN THIS PROJECT'S RECORD WHERE ALL FIVE CHECKS ACTUALLY RAN, which is why the impediment above is filed rather than mentioned: the format check had been UNRUNNABLE in this environment, and an UNRUNNABLE check reports non-green while measuring nothing.",
-        "ONE ARM FAILED ONCE AND IS NOT CALLED A FLAKE, WITH THE EVIDENCE RATHER THAN THE WORD. At f34a76b, whole suite, `test/protocol.test.ts > a fallback for unknown methods shadows none of initialize, hover or shutdown` timed out at its 4000ms `hangTimeoutMs` in a run that took 464s. Re-run ALONE: 32 pass / 0 fail in 7.94s -- which is the WEAKER reading, a single file not reproducing whole-suite load. Re-run as the WHOLE SUITE at a6e699e: green. So what is recorded is what was seen -- named, failed once under load, did not reproduce in the same conditions -- and NOT `flake`, which would be a claim about a cause nothing here measured.",
-        "THE STAKEHOLDER OVERTURNED THE DRIVE IN FLIGHT, AND THIS IS WHERE THAT LANDS. Their words: `codeAction result should be async generator like completion so that we can support partial result in the future`. The row is STREAM-DRIVEN. THE ARGUMENT BELOW IS KEPT RATHER THAN DELETED because it is still true and is still the reason an author should usually yield once -- but it argues about WHAT A SERVER SHOULD SEND, and the type decides only what it CAN, which is the distinction the sprint's own ruling missed. THE HALF THAT DECIDES IT: the two spellings are NOT symmetric in what they foreclose. Both are equally breaking to swap in every config declaring the key, so a wrong choice costs the same either way -- and only one of them can ever grow partial results without being swapped. THE SPRINT'S OWN PARAGRAPH HAD SAID `NEITHER IS THE SAFE DEFAULT` AND STOPPED THERE, having weighed reversibility and never asked which shape has a future the other has not.",
-        "AND THE VETO COST ONE ARM RATHER THAN A SUBTASK, which is the reading that says the plan was sound even though its ruling was not. Everything the arms assert about the ROW -- fidelity, the capability, both directions, the null answer -- was untouched by the drive. What had to be ADDED is the arm showing what the drive DOES change: the same handler under a `partialResultToken`, the batch arriving as `$/progress` and the response `null` where the awaited drive would have put the actions in the response. THE CONTENT IS PRESERVED AND THE DELIVERY IS NOT, and `a client sees no difference` -- which this sentence first said -- is true only of a client reading its assembled result.",
-        "THE SUPERSEDED RULING, KEPT FOR ITS ARGUMENT.",
-        "THE SPRINT RULED THE DRIVE AWAITED-ONCE, AND EVERY SENTENCE FROM HERE TO THE END OF THIS ENTRY IS THAT SUPERSEDED RULING IN ITS OWN WORDS -- kept for its argument, which still stands, and not as a statement of what the row does. MEASURED in protocol.d.ts: `CodeActionParams extends WorkDoneProgressParams, PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is `(Command | CodeAction)[]` -- so both of `driveStream`'s stated conditions hold, which no OTHER row had while being free to decline them. THAT CLAUSE FIRST READ `TRUE OF NO ROW TSUDOI SERVES TODAY` AND WAS SIMPLY FALSE -- `textDocument/completion` satisfies both and is served, being the drive's original inhabitant -- and it is corrected in place rather than left standing inside a superseded ruling, because what is superseded is the RULING and not a statement of fact about the tree. WHAT THE STREAM DRIVE BUYS IS A PARTIAL ANSWER BEING USEFUL BEFORE THE REST ARRIVES, true of a completion popup and false of this menu: a completion list is FILTERED as the user keeps typing, so a late item lands where it belongs, while a code-action menu is opened, read, and chosen from as a whole -- an action appended after it is on screen moves the row under the user's cursor. AND THE COST IS ASYMMETRIC RATHER THAN A WASH: awaited-once lets an author with a fixed list write `Promise.resolve(actions)`, where the stream drive would force a generator on them to yield it once. BOTH RULINGS ARE BREAKING TO REVERSE -- `Promise` and `AsyncGenerator` are different things to write in every config declaring the key -- so neither is the safe default, which is exactly why the reason is written at the site instead of the decision alone.",
-        "THE ORDER IS THE ROW, THEN THE RECORD, THEN THE PROSE, on this project's own rule that a prose repair written before the arm it cites is a claim about an arm that does not exist yet.",
-        "THE READING BEFORE THE REVIEW ROUND, KEPT BECAUSE ITS DECOMPOSITION IS THE ONE THAT CHECKS -- 2aff727. Definition of Done PASSED, all five checks exit 0: 1041 pass / 0 fail over 75 files, 3288 expect() calls, 251.94s, TWENTY-ONE registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. AND THE DELTA IS READ AGAINST THE ARITHMETIC RATHER THAN AGAINST THE COLOUR, every term MEASURED and none inferred as a residue: base 1029 / 3264 / 74 / twenty, plus ten arms and fourteen assertions and one file from test/code-action.test.ts, plus SEVEN assertions and NO arm from test/methods-table.test.ts -- whose per-entry loops grow with the table, measured 61 to 68 by running that file with the change stashed -- plus two arms, three assertions and one registry record from test/perturbations.test.ts, measured 40/99 to 42/102 the same way. That is 1041 / 3288 / 75 / twenty-one exactly, and nothing else moved.",
-        "THE CLOSING READING, TAKEN AFTER THE REVIEW STAGES CONVERGED, ON THE TREE THAT CLOSES -- 4c9d9e6, and the ONLY commit after it is the one carrying this sentence, which no check but test/definition-of-done.test.ts reads. Definition of Done PASSED, all five checks exit 0: 1048 pass / 0 fail over 75 files, 3304 expect() calls, 242.17s, TWENTY-TWO registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. THE DELTA OVER THE BASE DECOMPOSES, and every term of it was measured by running a file with its own change stashed rather than inferred as a residue: base 1029 / 3264 / 74 files / twenty arms, plus the code-action arm file, plus the assertions test/methods-table.test.ts's per-entry loops gain from a row joining the table, plus the README fact and the `progressCount` guard the multi-perspective stage required, plus the cross-row token arm and the two registry records. 1048 / 3304 / 75 / twenty-two, and nothing else moved.",
-        "THREE CLOSING READINGS WERE TAKEN AND TWO OF THEM WENT STALE BEFORE THEY WERE READ, which is the reading to carry rather than the number: each named a tree that the next round of repairs overtook. THE RULE THIS PROJECT ALREADY WROTE IS WHAT CAUGHT BOTH -- a closing reading is only one while it names HEAD, or names what stands between and why nothing there can move it -- and it caught them from a REVIEWER each time rather than from the author. What that says about the practice is that the reading must be the LAST thing taken and not the last thing planned.",
-        "THE REVIEW ROUND'S YIELD, WITH THE DENOMINATOR THIS PROJECT REQUIRES. Eight independent reviewers over one increment. EVERY ACTIONABLE FINDING WAS IN THE INCREMENT rather than in a previous round's wake, which is what a first round should look like -- and TWO OF THEM WERE DEFECTS IN THE PRODUCT rather than in prose, which is what separates this round from sprint 84's. THE STDERR LINE TELLING AN AUTHOR THEIR ITEMS WERE AGGREGATED SAID `this completion` AND IS REACHED FROM EVERY STREAM-DRIVEN ROW, so a refused token on a code-action request reported a completion; and the once-per-session flag behind it was ONE BOOLEAN ACROSS ALL ROWS, so whichever row refused first silenced the other for the session. Both were harmless while completion was the only stream-driven row and became wrong at the moment this sprint made a second -- which no arm here noticed, and which the sprint's own criteria could not have asked for.",
-        "AND THE PUBLISHED SURFACE WAS CARRYING SPRINT POLITICS, WHICH IS THE FINDING THIS PROJECT SHOULD HAVE PREDICTED AND DID NOT. `MethodMap` compiles to `dist/types.d.ts`, which `./types` publishes, so a config author hovering the new row in their editor read `THE RULING OVERTURNED THIS SPRINT'S OWN`. No sibling comment on a published subpath names a sprint; the veto record belongs in this file and in the commits, and the technical reason is what stays at the site.",
-        "THE INDEPENDENT STAGE RAN FIVE TIMES, EACH A FRESH SESSION, AND IT WAS STOPPED ON THE MEASURED SHARE RATHER THAN ON A CLEAN ANSWER -- which is this project's own recorded stop condition and not a shortcut. THE FIRST TWO FOUND DEFECTS THE MULTI-PERSPECTIVE STAGE HAD MISSED: that both of that stage's own product fixes were UNGUARDED -- reverting either left the suite green, every invalid-token arm driving completion alone -- and that the new fixture yielded a `CodeAction` to a client sending `capabilities: {}`, which is the exact mistake the README section written two commits earlier tells an author to avoid. BY THE FIFTH, five of seven findings were against prose the ROUND BEFORE IT had written, and the last round's single HIGH was a record broken by the round before that. THE SHARE IS THE SIGNAL: a sixth session would mostly grade the fifth's wording.",
-        "AND THE STAGE CAUGHT ONE THING NOTHING ELSE COULD HAVE, WORTH SEPARATING FROM THE PROSE: deriving the stream-driven rows from the table changed the assertion a registry record anchors to, and the record kept naming the literal it replaced. It would have read REFUSED -- a record reporting its arm as GONE when the arm was fine -- and the shape of that failure is the one this instrument exists to make loud rather than silent, so it would have been found. What review bought was finding it one commit later instead of at the next full run.",
-        "ONE FINDING IS REFUSED WITH ITS REASON RATHER THAN FIXED. The capability arm pins `codeActionProvider: true` exactly, and `{}` is a conforming `CodeActionOptions` saying the same thing -- so an implementation spelling it that way reddens an arm while breaking nothing. THE WHOLE-OBJECT EQUALITY IS WHAT IS BEING BOUGHT: it is what refuses `{ codeActionKinds: [] }` and what refuses a key nobody expected, and an arm accepting either spelling would have to compare the object minus that key and lose both. The limitation is declared at the arm, which is this repository's own idiom for a pin that is narrower than the property.",
-        "THREE OF THE ROUND'S FINDINGS WERE AGAINST THIS RECORD, AND THEY ARE REPAIRED ABOVE RATHER THAN LISTED HERE: a field named wrong (`CodeAction.data`, which is result-side and inert, for `Diagnostic.data`, which is the params-side leak), a past tense asserting a repair that had not happened (CLAUDE.md), and a hand count taken on eight arms where the file had ten. A FOURTH IS THE SWEEP'S OWN NOTE, which claimed exactly one sentence went false where four did.",
-        "AND THE RUN BEFORE IT WAS RED ON PBI-93 AND ON NOTHING ELSE, recorded rather than quietly re-run away: at the same tree, the three `dodArms` records timed out at 25s in a run that took 441.84s where the green one took 251.94s. EVERY OTHER ARM, INCLUDING THIS SPRINT'S OWN RECORD, WAS GREEN IN BOTH. What a reader should take from the pair is the filed item and not a doubt about the increment.",
-        "ACCEPTED, ALL FOUR CRITERIA MET, WITH NO FIX SUBTASKS. Criterion 1 by the row with its ruling at the site and the arms driving a real server on both runtimes -- AND THE RULING IS THE STAKEHOLDER'S, the sprint's own having been overturned, which the criterion was amended to record rather than quietly satisfied. Criterion 2 by the capability read WHOLE in both directions and by the record that reddens it under `{ codeActionKinds: [] }`. Criterion 3 by the row joining the whole-table arms the moment it was declared, TS2741 forcing the fixture, and the shared params object gaining what `CodeActionParams` requires. Criterion 4 by the README section, the case-insensitive arity sweep with every hit dispositioned, and the `facts` entry the review round found missing -- which is the criterion's own verification, `readmeCoverage`, turning out to be silent about prose.",
-        'WHAT THE ACCEPTANCE DOES NOT CERTIFY. That a code action reaches a MENU in a real editor -- every arm here is graded over the wire-level answer, and no stakeholder confirmation was taken for this row. That an author who yields a `CodeAction` to a client which never announced `codeActionLiteralSupport` is stopped, or warned: tsudoi reads that capability nowhere, the obligation is documented and enforced by nothing. That `MethodMap[M]["params"]` is graded at all, for THIS row or any other -- PBI-94. That a cancelled code-action request has ever been driven; the drive is shared and completion\'s arms cover it, and no arm cancels this row. That the `edit`/`command` invariant, `disabled` or `isPreferred` are checked; they are not, and the README says so. And that any INDIVIDUAL commit here is green -- the readings are whole-tree.',
-        "CLAUDE.md's OPENING WAS FALSE AND IS NOT THIS INCREMENT. It read `handlers for five LSP methods` and enumerated exactly five, was recorded as false at sprint 85, and that file is UNTRACKED here. IT NOW ENUMERATES THE TABLE AND WRITES NO COUNT, done in the working tree after the review round; nothing this sprint commits carries it, and no reader of this history can verify it. THE RECORD SAID `SO IT IS REPAIRED LOCALLY` BEFORE THE REPAIR EXISTED, which a reviewer caught -- a past tense asserting an accomplished edit that had not happened. The arity sweep in subtask 3 is over TRACKED prose, which is why CLAUDE.md was outside it and why the stale count sat exactly where the sweep could not reach.",
-      ],
-    },
-    {
-      number: 86,
-      pbi_id: "PBI-88",
-      goal: "`workspace/executeCommand` becomes a SIXTH ROW of the request table the other five are rows of, so a command reaches a handler the author wrote with the same lifecycle gate, the same cancellation and the same params refusal every other method already gets -- and none of it written a sixth time.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "ACCEPTED BY THE PRODUCT OWNER WITH TWO CONDITIONS ON THE RECORD AND NONE ON THE INCREMENT.",
-        "CONDITION ONE, AND THE PRODUCT OWNER RULED IT RATHER THAN ASKED FOR IT: the success metric STAYS AT FIVE and the sentence at the site says why the five is not a denominator. The five are the ones the STAKEHOLDER NAMED; a sixth served method does not make the metric `5 of 6`, and adding one would be the Product Owner inventing a target nobody set. The annotation is required rather than optional because of this file's own history -- `10 of 10` stood for thirty sprints with nothing anywhere enumerating the ten, and the Product Owner twice reported `2 of 10` as fact.",
-        "CONDITION TWO, AND IT IS A RULING AGAINST THE OBVIOUS ANSWER. A truncated capture destroyed a verdict for the SECOND consecutive sprint, and this instance was worse than the first in a specific way: the mechanism existed, the actor had written it, and it was in the very commit being closed -- a red `oxfmt --check` shipped as this sprint's baseline because the run was read through `tail` and the verdict prints ABOVE the summary. THAT IS EVIDENCE ABOUT DELIVERY AND NOT ABOUT ATTENTION, which is the distinction this file's header rests on when it argues a skill counts as a mechanism. SO IT IS NOT ANSWERED WITH A THIRD SKILL. The runner already reports whole; running a bare check by hand and piping it is the unsanctioned route, so the fix is runner-shaped -- make the sanctioned route cover the case that drove people off it.",
-        "THE PRODUCT OWNER REFUSED A FINDING OF ITS OWN, WITH THE REASON, RATHER THAN FILING IT: the `unknown` ruling closed the RESULT and left `any` reaching authors through `ExecuteCommandParams.arguments`. Narrowing params would mean tsudoi declaring its own shape for a type upstream owns and publishing a second name for it -- which is what the `deps/` split exists to prevent. Pre-existing through `CompletionItem.data`, refused here, reason stated.",
-        "WHAT REVIEW FOUND WAS NEVER BROKEN BEHAVIOUR, AND THAT IS THE READING TO CARRY. Three reviewers, thirteen findings, every one GREEN-PASSING: a params field that made the shared object invalid for a DIFFERENT row (`CompletionItem.command` is a Command OBJECT, so the intersection is uninhabitable and there was no make-it-compile fix); a FALSE why-not in the new row's own comment claiming an author's handler needs tsudoi's key to write into, which it does not; a README fact whose token was satisfied by prose asserting its own INVERSE; and a control faithful today with nothing keeping it faithful. The suite was green before review and green after.",
-        "THE DEVELOPER CORRECTED TWO OF ITS OWN CLAIMS AND ONE OF A REVIEWER'S, WHICH IS WORTH MORE THAN THE RESIDUES COST. It wrote that an ill-formed `Command` reaches the fake editor, traced the arms, found it reaches no handler at all, and repaired the note. It claimed a probe answers from `dist/`, ran `--traceResolution`, found it falls through to `src/` ALWAYS because a probe stages no `dist/`, and repaired that. And a reviewer's premise -- that the five original rows prove `null` is the router's because their results declare no null arm -- is simply false: `hover` and `formatting` are `Promise<... | null>` and were already in that position.",
-        "WHAT THE ACCEPTANCE DOES NOT CERTIFY. That any INDIVIDUAL COMMIT here is green -- four combined runs, then a split by file path, so a bisect across this sprint can land on a tree never claimed green. That `null` still tells the router from the handler for this row; it does not, and nothing replaces that control. That `any` is off the author's surface; it is off the RESULT. That the README's prose is compiled by anything. That the type probe reads what SHIPS. That a command reaches anything in a REAL EDITOR -- an author must set `commands` through the initialize handler and NO ARM DOES BOTH HALVES IN ONE SESSION, which is the seam between PBI-87 and PBI-88 and is unwitnessed.",
-        "THAT LAST ONE IS A REFINEMENT CANDIDATE AND NOT A DEFECT, ruled by the Product Owner: an example config where the two increments are shown working together in a file a stranger reads.",
-        "THE CLOSING READING, TAKEN BY THE SCRUM MASTER ON THE TREE THAT CLOSES: Definition of Done PASSED, all five checks exit 0, 1019 pass / 0 fail over 74 files. The base was 1005 / 72.",
-      ],
-    },
-    {
-      number: 85,
-      pbi_id: "PBI-87",
-      goal: "A config author decides what their server advertises: `config.methods.initialize` receives the InitializeResult tsudoi was about to send -- deep-frozen -- and whatever that handler returns is what the editor is told, including a capability tsudoi would have claimed and the author withdrew.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "ACCEPTED BY THE PRODUCT OWNER WITH THREE CONDITIONS ON THE RECORD AND NONE ON THE INCREMENT. All three are discharged below or at the code site named.",
-        "AND THE STAKEHOLDER LATER OVERTURNED THE UNSERIALIZABLE RESIDUE, SO THE ENTRY BELOW SAYING THE ACCEPTANCE DOES NOT CERTIFY IT IS AMENDED HERE RATHER THAN LEFT TO READ AS CURRENT. What was recorded-and-not-caught is now CAUGHT: the answer is serialised before the phase moves, a failure is reported to the client as a `window/logMessage` at Error level -- where a config author actually reads it, unlike stderr -- the request is ANSWERED, a `tsudoi: ` line goes to stderr, and the process then terminates non-zero. THE THROW PATH TOOK THE SAME SHAPE when the backwards edge went, so there is now ONE disposition for a handshake that cannot complete and not two that resemble each other -- they differ only in what the client is answered: the author's own error where they threw, tsudoi's sentence where a serialisation failed, since the runtimes word that differently and the author's words would say nothing about what tsudoi was doing with their answer. ANSWERED RATHER THAN VANISHED IS A MEASURED CHOICE: `process.exit` takes the unflushed frame with it, so the exit is `process.exitCode` plus releasing the one handle holding the loop open, and the process ends of itself once the frame is gone -- no timer and no race. THE COST ARGUMENT THAT JUSTIFIED NOT CATCHING IT WAS OVERSTATED, which is why it fell: it is ONE `JSON.stringify` of one small object ONCE PER SESSION on the handshake path, not per request, and the record had framed it as a per-session tax without saying how small a session's one was.",
-        "WHAT THAT CATCH STILL DOES NOT CLOSE, MEASURED WHEN IT LANDED: the check and vscode-jsonrpc's encoder are TWO READS OF THE SAME VALUE, so a getter that throws only on its SECOND read passes the check and wedges exactly as before -- -32603, retry -32600, stderr empty, no logMessage. Recorded at the check and deliberately UNARMED, because an arm there would pin the wedge as promised behaviour. `JSON.parse(JSON.stringify(answer))` closes it and is FORECLOSED: it puts a copy on the wire, changing what the client is served, which is not what was ruled.",
-        "THE STAKEHOLDER'S RULING WAS OVERTURNED IN FLIGHT AND THIS IS WHERE A VETO LANDS. The design brief ruled `no rollback, no fourth phase, no break of the three-states-in-order invariant`. There is now a fourth phase, `initializing`. THERE WAS ALSO A BACKWARDS EDGE OUT OF IT AND THE STAKEHOLDER HAS SINCE REMOVED IT: `2回目以降のinitializeは即刻拒否すべき`, with no carve-out for a handshake that failed. `Phase` is strictly forward again. THE JUSTIFICATION THAT DIED WITH IT WAS ALREADY WEAK, which is why it is written down rather than merely deleted: the edge was argued from `InitializeError.retry` being unimplementable otherwise -- but MEASURED, tsudoi never produces an `InitializeError` at all, the error leaving as a bare -32603 with no `data` and no value route from the published surface to a `ResponseError`. No conforming client was ever going to retry on tsudoi's say-so, so the edge served only a client retrying on its own initiative, which `The initialize request may only be sent once` already forbids. WHAT FORCED IT, MEASURED: with the handshake awaiting an author's handler, a second `initialize` arriving in that window read `uninitialized` and was ACCEPTED -- both handshakes served, `handshake()` run twice from concurrent flows, the author's handler run twice, nothing on stderr. A no-handler session never yields, which is why nothing before this sprint could show it. THE RULING'S PREMISE WAS INCOMPLETE RATHER THAN ITS CONCLUSION WRONG: it reasoned about the THROW path, and the defect was CONCURRENCY. If the stakeholder vetoes, the answer is not three phases again -- it is serialising the handshake another way, and that is a new item.",
-        "THE ARM THAT NOW CATCHES A TRANSPOSED TRANSITION IS NAMED, because criterion 3's own discriminator died with the repair and a criterion met by argument is forbidden here. MEASURED, three perturbations against the landed source: deleting `beginInitialize()` reddens the concurrency arm on both runtimes with the served entry count reading 2; deleting `abandonInitialize()` reddens the retry line of the throwing-handler arm; replacing `beginInitialize()` with `initialize()` -- the transposition criterion 3 used to catch -- reddens the concurrency arm on the refusal's MESSAGE, on both runtimes, while the throwing-handler arm stays ENTIRELY GREEN. So the property is pinned, and it is pinned somewhere other than where the criterion says to look; the criterion was amended in place rather than corrected below.",
-        "THE DEFECT WAS FORESEEABLE FROM A RESIDUE ALREADY WRITTEN DOWN, WHICH IS THE FINDING WORTH CARRYING. The brief's own accepted-residue paragraph was about a window opened by the very `await` that opened this one -- a second `initialize` arriving in it is one door away. Review caught it, which is the system working; that nobody reached it from the residue they had already written is not.",
-        "WHAT THE ACCEPTANCE DOES NOT CERTIFY, IN THE PRODUCT OWNER'S WORDS. That an author's initialize handler ever RUNS -- a TOP-LEVEL `initialize` key is read by nothing and refused by nothing, documented and not caught, the placement ruling having moved that risk rather than removed it. Anything about an unserializable return -- AMENDED TWICE SINCE, and it is now caught, answered, logged to the client and fatal. That the notification drop window is closed -- it is wider now by the handler's duration. That the capability trap is guarded -- nothing detects an author withdrawing `resolveProvider`, `textDocumentSync` or `workspace.workspaceFolders`. That `executeCommandProvider.commands` reaches anything, which is PBI-88. That `CLAUDE.md` is true; it still opens `handlers for five LSP methods` and is not committable here.",
-        "AND IT DOES NOT CERTIFY SUITE DETERMINISM. One run reported `Tests pass -- exit 1` on content byte-identical to trees green immediately before and twice after, and the diagnostic was destroyed by piping through `tail`. NOT CALLED A FLAKE, because no test was named. It was one of the slow runs, as was a separate `test/completion.test.ts` red that cleared three ways and IS the known pre-existing stderr-flush race. THE CHEAP RULE THAT FALLS OUT: a Definition-of-Done run is captured WHOLE, never piped through anything that discards the head.",
-        "THE CLOSING READING, TAKEN BY THE SCRUM MASTER ON THE TREE THAT CLOSES: Definition of Done PASSED, all five checks exit 0, 1005 pass / 0 fail over 72 files, one non-gating `require-yield` warning unchanged from base. The base was 970 / 70.",
-      ],
-    },
-    {
-      number: 84,
-      pbi_id: "PBI-85",
-      goal: "The popup names the ENTRY. `label` becomes the entry's own name, `filterText` takes over the filtering the label was doing for the clients that read it, and what is written into the buffer does not move a byte. The label stays RAW and keeps its refusal while LOSING its reason -- what replaces it is the client's containment check, asserted as an arm rather than argued in a docblock.",
-      status: "done",
-      subtasks: [
-        {
-          test: "A DESCRIBE OF TWO ARMS IN packages/tsudoi-completion-path/test/completion.test.ts, AND THE SECOND IS WHAT MAKES THE FIRST MEAN ANYTHING. The multi-segment arm drives a fragment carrying a directory part and compares the labels WHOLE against the entry names, then the pair `{ filterText, insertText }` and `textEdit.newText` whole -- three fields in one arm because a client reads whichever its own class names and a drift between them breaks one of them silently. The single-segment arm drives a fragment naming no directory and asserts the label and the inserted text are the SAME string, which is not a duplicate: it is the control that must stay GREEN under the perturbation that reddens the first, and without it `label: insertText` restored reddens an arm that was never about the directory part. AND THE INVARIANT AT `each item names the file it resolves to and the source that produced it` MIGRATES RATHER THAN BEING DELETED: `label.startsWith(insertText)` stands under a comment whose own precondition is `when the item carries no filterText`, which this subtask removes, so the assertion becomes `filterText === insertText` at the same site and the comment says which field the client now reads.",
-          implementation:
-            "`itemsFrom` in packages/tsudoi-completion-path/src/completion.ts writes `label: entry.name` and `filterText: insertText`, and `insertText`, `textEdit` and `detail` are untouched. THE COMMENT AT THE SITE CARRIES THE TWO REFUSALS AND NOT THE MECHANICS: not the whole inserted text in the label, which is the prefix every row of the popup was repeating; and not a narrower edit range, which would make the label the whole item and need no `filterText` at all -- refused because it moves what is written into the buffer and because the widening-fragment reading of a filename holding a space is built on the range beginning where the FRAGMENT begins.",
-          type: "behavioral",
-          status: "completed",
-          commits: [
-            {
-              hash: "930ceb2",
-              message:
-                "feat(completion-path): the popup names the entry, the filter keeps the path",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE RED, MEASURED AND NOT PREDICTED. With both arms written and `src/` untouched, `bun test packages/tsudoi-completion-path/test/completion.test.ts`: 43 pass / 2 fail. The two are the multi-segment arm AT ITS LABEL ASSERTION (`Expected [deep.txt] / Received [notes/deep.txt]`) and the migrated invariant at `expect(item.filterText).toBe(item.insertText)`, receiving `undefined`. THE SINGLE-SEGMENT ARM WAS GREEN IN THAT SAME RUN, which is the reading that makes it a control rather than a duplicate -- it is green before the change and after it, and its job is the perturbation subtask 3 takes.",
-            "GREEN AFTER, OVER THE WHOLE SUITE AND NOT THE ONE FILE: 966 pass / 0 fail over 70 files, 3014 expect() calls, 240.74s, sixteen registry arms HELD. Against the sprint base's 964 / 3008 the delta is the two new arms and their six assertions exactly -- the migrated invariant is a replacement and adds none, which is what says nothing else moved.",
-          ],
-        },
-        {
-          test: "THE ARM THAT FORECLOSES THE NEXT EDIT, over the fixture the forgery arm already builds -- a name holding a line break: the inserted text CONTAINS the label. It is green the moment it is written, which is why it is a subtask of its own rather than a line in the one above: what grades it is its perturbation, and a green arm shipped without one asserts nothing about the day someone flattens the label.",
-          implementation:
-            "Nothing in `src/`. The arm is the deliverable, and its reason is the client's: READ FROM ddc-source-lsp AND MEASURED NOWHERE HERE, an item whose inserted word does not contain its label is DROPPED rather than shown wrong, under an option that defaults off. The docblock over the forgery arm is where the reason goes, and it is the same docblock subtask 4 repairs -- so this arm is written and that sentence is left standing until then, deliberately, rather than half-edited twice.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "90bf97c",
-              message: "test(completion-path): the label stays raw for a reason the client owns",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "THE ARM IS MULTI-SEGMENT AND THE PLAN DID NOT SAY SO, which is the one thing that would have made it worthless: for a fragment naming no directory the label and the inserted text are the SAME string, and `contains` over one string and itself grades nothing. The fixture is the forgery arm's name under a directory.",
-            "THE RELATION IS ASSERTED BEFORE THE TWO WHOLE VALUES, on the ordering rule the forgery arm beside it already records: a runner stops at the first failing assertion, so with the values in front the relation could never BE the failure a reader is shown -- and the relation is what the client checks. MEASURED to matter, at subtask 3: under the flattening the red falls at the relation, and under the restored label it falls at the whole value.",
-          ],
-        },
-        {
-          test: "TWO RECORDS IN test/perturbations.test.ts, EACH WITH `redAt`, and each measured against the landed source rather than predicted. ONE: `label: insertText` restored, which must redden the multi-segment arm AT ITS LABEL ASSERTION -- a red at the `filterText` pair beside it would mean the record grades the field's presence and not the directory part -- and must leave the single-segment arm GREEN. TWO: the label flattened, which must redden the containment arm and leave the forgery arm on `detail` green, that pair being the whole of what tells the two fields apart. `alsoReddens` is MEASURED for both, never predicted.",
-          implementation:
-            "Records only. THE `from` OF EACH NAMES A LINE OF `itemsFrom` THAT THIS SPRINT JUST WROTE, which is the arity guard's whole value here: reshape the item construction again and the record throws with 0 occurrences rather than reporting a silent HELD.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "df03638",
-              message: "test(perturbations): the two weakenings this sprint's arms are worth",
-              phase: "green",
-            },
-          ],
-          notes: [
-            "BOTH MEASURED BY HAND FIRST, THE FILE RESTORED FROM A COPY AFTER EACH, and each red read at the assertion it fell on rather than at the arm. The restored label reddens the treatment arm at its LABEL assertion and the containment arm at a WHOLE VALUE, with the single-segment control green; the flattening reddens the containment arm alone, at its RELATION. So the two weakenings redden ONE SHARED ARM AT DIFFERENT ASSERTIONS -- and only the flattening's site is machine-checked, `redAt` reading the NAMED arm's failure while `alsoReddens` carries names with no site. THE FIRST SPELLING OF THIS SENTENCE SAID `THE SAME ARM`, which was false of the arms the records name.",
-            "`alsoReddens` IS ASYMMETRIC AND THAT IS THE MEASUREMENT RATHER THAN AN OVERSIGHT. THE REASON FIRST GIVEN FOR THE FLATTENING'S EMPTY SET WAS FALSE AND A REVIEWER TOOK IT AT THE ARM ABOVE ITS OWN: it said no other fixture in that file holds a control character, and the forgery arm builds the SAME name -- the flattening moves that arm's label too, and it stays green because it reads `detail` alone. What is true is narrower: no other arm in that file reads a LABEL on a name the flattening rewrites.",
-            "EVERY RECORD REPORTED HELD ON THE FIRST RUN OF THE REGISTRY AFTER LANDING, and the registry is nineteen arms where the sprint base had sixteen -- the third being the `filterText` record the review round found criterion 2 had asked for and this subtask had not shipped.",
-          ],
-        },
-        {
-          test: "THE SWEEP, under the skill arm sprint 82 left: `label`, `filterText` and `insertText` grepped across test/, packages/tsudoi-completion-path/test/, both READMEs and src/, every hit re-sited, deleted, or left green WITH the reason it still reads something. The known ones: the docblock over the forgery arm, whose `what a client filters on` half this sprint deletes; `test/installed-handler.test.ts`, which reads a label only for identity and stays as it is; and the helper whose last resort is `insertText ?? label` -- `applyAsClient`, NOT `inserted()`, which this plan named and which holds no label at all -- left as it is, since every item this package builds carries `insertText` and no arm reaches the fallback.",
-          implementation:
-            "The member README's `Which field carries what` paragraph gains the third field: the label names the entry, `filterText` carries what is typed so the item survives its own filter, and `detail` keeps the absolute path. LAST, because it describes what landed rather than what was intended, and because the docblock's replacement reason is the arm subtask 2 shipped rather than a claim.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "c2688e0",
-              message:
-                "docs(completion-path): the label's reason changed, and the prose says which",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "THE SWEEP WAS RUN TWICE AND THE FIRST RUN COULD NOT SEE THIS TREE. Case-sensitive, over `filters on|filter on|filtered on`, it returned EMPTY and would have carried `no sentence in the tree gives filtering as the LABEL's reason` -- while the comment written minutes earlier at the `filterText` site reads `WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING`. This repository writes its reasons in capitals, so a case-sensitive sweep of its prose is blind by construction. Re-run with `-i` and widened to `filtering`, over packages/, test/, examples/, README.md AND scrum.ts.",
-            "WHAT THE SECOND SWEEP FOUND, EACH DISPOSITIONED AND NO TALLY WRITTEN -- a count here was taken against a tree that has since moved, and a reviewer re-took it and got a different one. This sprint's own repaired prose, at the composer, the docblock, the registry records and the README: left. The word in another sense entirely, in test/published-artifacts.test.ts, test/helpers/snapshot.ts and test/helpers/lsp.ts: left. This file's own hits are QUOTATIONS of the sentence being deleted, except sprint 82's note, which was a standing assertion and was FALSE -- narrowed in place, since a correction several lines below the sentence it corrects is read second or not at all.",
-            "AND TWO CLAUSES OF THIS SPRINT'S OWN PLANNING NAMED THE WRONG HELPER, corrected in the criterion and in the subtask above: the `insertText ?? label` fallback is `applyAsClient`'s, where `inserted()` reads `insertText ?? \"\"` and holds no label at all. Nothing was graded on it -- the fallback is unreachable, every item this package builds carrying `insertText` -- which is exactly why it could stand unnoticed in the field the product owner grades against.",
-          ],
-        },
-        {
-          test: "THE REVIEW ROUND'S REPAIRS, AND THEY ARE ALL IN THE INSTRUMENT AND THE PROSE: not one finding required a change to what the handler produces. THE THREE THAT MATTER, each measured before and after. A label cut at the FIRST separator rather than the last passed every label assertion in the tree, every fixture holding at most one separator -- the treatment fixture becomes `a/b/deep.txt` and that implementation reddens two arms. `insertText contains label` was satisfied by the EMPTY label, the one value the client discards outright -- the relation becomes an equality against the typed directory. And nothing read `filterText` on a name worth reading it on, both readers driving an ordinary name where flattening is a no-op, so `filterText: flattened(insertText)` was green everywhere -- the forged-name arm reads it now. Beside them: the per-source sweep gets its label reading back, the single-segment control reads the same four fields as its twin, and both new arms assert their premise.",
-          implementation:
-            "The third perturbation record, and the prose repairs. THE RECORD IS CRITERION 2'S, which subtask 3 did not ship: `filterText` narrowed to the entry name, red at the treatment arm with the control green. THE PROSE: the README sentence attaching `one is written into your buffer` to two fields that are not, found INDEPENDENTLY BY THREE REVIEWERS; the client claims hedged to what was read, including that the client matches against the word it reconstructs from the edit range rather than against the inserted text, so the arm's relation is a PROXY and narrower than the rule; the popup reading attributed at the source site; and this file's own false clauses -- the `SAME ARM` sentence, the flattening's `no other fixture holds a control character`, and a tally taken against a tree that had moved.",
-          type: "structural",
-          status: "completed",
-          commits: [
-            {
-              hash: "41bd5ab",
-              message: "test(completion-path): three ways the label arms were green about nothing",
-              phase: "green",
-            },
-            {
-              hash: "59babeb",
-              message: "docs(completion-path): the reason was attached to the wrong pair of fields",
-              phase: "refactoring",
-            },
-          ],
-          notes: [
-            "THE ROUND'S YIELD, WITH THE DENOMINATOR THIS PROJECT REQUIRES. Ten independent reviewers over one increment, and EVERY actionable finding was in the increment rather than in a previous round's wake, which is what a first round should look like. THREE reviewers reported the README sentence independently. NOT ONE FINDING REQUIRED A CHANGE TO THE SOURCE'S BEHAVIOUR -- the two-line increment survived untouched, and everything repaired was an arm that graded less than it claimed or a sentence that said more than was read.",
-            "AND THE STRONGEST FINDING IS THE ONE THE SPRINT COULD NOT HAVE FOUND FOR ITSELF, because it is a property of the FIXTURES rather than of any assertion: every fixture that PRODUCES AN ITEM carried at most one separator, so every label assertion was blind to the difference between the first separator and the last. The arms all said `the label is the entry's own name` and none of them could tell that from `the label is everything after the first slash`. NOT `EVERY PATH IN THE SUITE`, WHICH WAS THE FIRST SPELLING AND WHICH THE SECOND REVIEW STAGE REFUTED: the win32 arms carry `C:\\Users\\fo` and a UNC path, and they drive the fragment reader rather than item construction.",
-            "THE ROUND ALSO SURVEYED ELEVEN EDITOR CLIENTS, AND WHAT IT FOUND THERE IS DELIBERATELY NOT RECORDED. THE STAKEHOLDER RULED IT: a defect in a client is the client's, and this dashboard is not where another project's bugs are tracked. What survives from that survey is only what is true of THIS package's own prose -- the range-derived filtering rule is a client's convention and not the specification's, which is why criteria 2 and 4 are qualified above.",
-          ],
-        },
-      ],
-      impediments: [],
-      decisions: [
-        "THE BASE, MEASURED BEFORE ANYTHING MOVED: HEAD c355132, Definition of Done PASSED, all five checks exit 0, 964 pass / 0 fail over 70 files, 3008 expect() calls, 263.60s, SIXTEEN registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts. Any red from here is this sprint's until measured otherwise against that.",
-        "NO CHECK IN THIS REPOSITORY CAN SEE THE THING THE STAKEHOLDER REPORTED, AND THE PLAN SAYS SO RATHER THAN PRETENDING OTHERWISE. What they saw is a popup, and what an editor renders from an item is the editor's. Every criterion here is graded over the WIRE-LEVEL item, and the reading that connects the two -- the popup renders `label` -- is READ FROM ddc-source-lsp's source and is not a measurement. The stakeholder's own confirmation in their editor is the acceptance evidence for the popup itself, and it is asked for at review rather than assumed here.",
-        "THE ORDER IS BEHAVIOUR, THEN THE ARM THAT FORECLOSES, THEN THE RECORDS, THEN THE PROSE. The prose repair is last because its replacement reason IS subtask 2's arm: written earlier it would be a claim about an arm that does not exist yet, which is the shape this project keeps catching.",
-        "THE CLOSING READING, RE-TAKEN AT THE END OF THE REVIEW STAGES ON THE TREE THAT CLOSES -- 28a2cc2, and the ONLY commit after it is the one carrying this sentence, which no check but test/definition-of-done.test.ts reads. Definition of Done PASSED, all five checks exit 0: 970 pass / 0 fail over 70 files, 3036 expect() calls, 322.53s, NINETEEN registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. AN EARLIER SPELLING OF THIS DECISION NAMED A COMMIT THAT THREE MORE HAD OVERTAKEN, WHICH THE FRESH REVIEW SESSION CAUGHT: a closing reading is only a closing reading while it names HEAD, or names what stands between and why nothing there can move it. THE ARM DELTA IS DECOMPOSED AND THE ASSERTION DELTA IS NOT, which is a limit of the count rather than a gap in the reading: the arms over the sprint base are the two of subtask 1, the one of subtask 2 and the three registry records, and the assertions land partly inside sweeps that run once per source and per item -- so `expect() calls` is a RUNTIME count and no source-side decomposition of it would be checkable.",
-        "THE READING BEFORE THE REVIEW ROUND, KEPT BECAUSE ITS DECOMPOSITION IS THE ONE THAT CHECKS. Definition of Done PASSED at c2688e0, all five checks exit 0: 969 pass / 0 fail over 70 files, 3020 expect() calls, 242.63s, EIGHTEEN registry arms HELD, ONE non-gating `eslint(require-yield)` warning at test/fixtures/throws-on-cancel.ts -- the same warning as at base. AND THE DELTA IS READ AGAINST THE ARITHMETIC RATHER THAN AGAINST THE COLOUR, which is this project's own rule about a green: base 964 / 3008 / sixteen, plus two arms and six assertions from subtask 1, one arm and four from subtask 2, two arms and two from subtask 3. That is 969 / 3020 / eighteen exactly, and nothing else moved.",
-        "AND THE POPUP WAS CONFIRMED BY THE STAKEHOLDER IN THEIR OWN EDITOR, which is the only evidence that exists for the thing they reported: they ran the rebuilt server and said it works. It is recorded as their reading and not as a measurement of this repository -- nothing here can take it, and the sentence below says why.",
-        "THE REVIEW STAGES WERE STOPPED ON THE MEASURED SHARE AND NOT ON A COLOUR, which is this project's own recorded stop condition rather than a shortcut. Findings caused by the PREVIOUS ROUND'S OWN REPAIRS: none of the multi-perspective stage's, since it read the increment; then two of the independent thread's last two; then the fresh session's stale-count finding, which was about a decision the round before it had written. THE SHARE ROSE, so a fourth session would mostly grade the wording of the third's repairs. The skill's convergence condition -- a FRESH session answering `no comments` first -- is therefore NOT met, and that is recorded rather than smoothed: what stopped the stages is the ratio.",
-        "ACCEPTED, ALL FIVE CRITERIA MET, WITH NO FIX SUBTASKS. Criterion 1 by the label arm over two directory segments, red under the restored label with the single-segment control green; criterion 2 by the `filterText` pair and its own record, the narrowing rather than the drop and the reason written at both; criterion 3 by the equality over the forged name, red under the flattening at the relation; criterion 4 by the three arms under the apply describe, green at every commit, and by the narrowing the criterion itself needed; criterion 5 by a case-insensitive sweep with every hit dispositioned. THE ONE THING NO CRITERION COULD REACH -- the popup -- is the stakeholder's own confirmation, recorded above as theirs.",
-        "WHAT NO CHECK HERE HAS SEEN: the popup itself. Every criterion above is graded over the wire-level item, and the sprint's own planning decision says the stakeholder's confirmation in their editor is the acceptance evidence for what they reported. It was asked for, and the decision above records the answer.",
-      ],
-    },
-    {
-      number: 83,
-      pbi_id: "PBI-83",
-      goal: "The popup becomes labelled facts and a headed list, IN TWO SPELLINGS -- the stakeholder's quoted block being the PLAINTEXT one, since three lines joined by a bare newline are one CommonMark paragraph and would render as a run-on.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "COMPACTED AFTER SPRINT 85, AND WHAT LEFT IS NAMED SO THE GAP IS NOT MISREAD AS `NOTHING HAPPENED`: the subtask records and their MEASURED counts went, being readings of moments this file's own header says a note cannot be a home for. What they measured lives in the tree -- the two spellings in the composer, the arms in both resolve suites, the member README's repaired sentences. Only rulings are kept below.",
-        "THE MARKDOWN BREAK IS A BULLET LIST, AND THE ALTERNATIVES ARE REFUSED WITH REASONS THAT STILL BIND. A trailing-double-space hard break is invisible in the source AND in a diff, so one space stripped by any tool silently restores the run-on the ruling exists to prevent -- in a repository that formats its whole tree. A backslash break is the same invisibility inverted. Bold labels do not break a line at all. AND BULLETS BUY BACK what sprint 82 recorded as a loss: the one-fact completion block stops being byte-identical across formats.",
-        "TRUNCATING WHOLE SECONDS IS A NO-OP OF THE VALUE AND NOT OF THE STRING, and conflating the two is what sent an increment back. The stakeholder was shown both and DECLINED the one that keeps the milliseconds.",
-      ],
-    },
-    {
-      number: 82,
-      pbi_id: "PBI-82",
-      goal: "The free fact goes to the eagerly-rendered field and the expensive one to the lazy field: `detail` names WHICH FILE from the completion list itself, `documentation` is the only property a late answer touches, and the block only ever GAINS.",
-      status: "done",
-      subtasks: [],
-      impediments: [],
-      decisions: [
-        "COMPACTED AFTER SPRINT 85 on the same terms as sprint 83 above.",
-        "THE GOAL SAID `THE TWO` AND `BEFORE ANY RUN CAN BE READ AS PASSING`, AND THE INCREMENT REFUTED BOTH HALVES -- there were THREE claims turning silently green, the third named in the item's own criterion at refinement, and it was re-sited only after four full Definition-of-Done greens had been read. KEPT BECAUSE IT IS THE FAILURE MODE AND NOT THE FEATURE: a sprint goal describes an intention, and reading one back as a record of what happened is the mistake this line exists to make expensive.",
-      ],
-    },
   ],
-  // THIS LIST IS DATA, AND `bun run scripts/definition-of-done.ts` IS THE ONE
-  // FORM FOR TAKING IT. That runner EXECUTES this file and reads the checks
-  // below out of the JSON it prints, so an entry added here runs with no edit
-  // anywhere else -- which is the whole point, and the reason a copy of this
-  // list may not be written into the runner. WHAT THIS FIELD MUST STAY: `run`
-  // is A COMMAND LINE THE RUNNER SPAWNS -- a program and its space-separated
-  // arguments -- so nothing a command cannot verify belongs in it, and the
-  // runner is NOT added here as a sixth entry: a check that runs every check
-  // would run itself, unbounded.
-  //
-  // AND IT IS NOT A SHELL COMMAND, WHICH THIS COMMENT CALLED IT UNTIL A
-  // REVIEWER MEASURED THE DIFFERENCE: `run: "true && false"` spawned `true`
-  // with the arguments `&&` and `false` and REPORTED PASSED. No shell is
-  // involved, deliberately -- through one, a missing binary arrives as exit 127
-  // and cannot be told from a check that ran and said no -- so a `run` carrying
-  // a pipe, a redirection, a quoted argument, a glob or an operator is now
-  // REFUSED and reported non-green rather than misread. A check needing any of
-  // those goes in a script, and the script is what is named here.
+
   definition_of_done: {
     checks: [
       {
@@ -893,219 +401,43 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 97,
-    pbi_id: "PBI-101",
-    goal: "The custom-method surface an author writes is a BARE FUNCTION PER NAME with its context annotated -- what sprint 96 was cancelled for not being -- reusing that sprint's config refusal, stderr budget and registration plumbing rather than rebuilding them.",
-    status: "review",
-    subtasks: [
-      {
-        test: "RED FIRST: consumer-shaped probe through the built `./types` artifact. Every refusal as a `@ts-expect-error` that must stay SATISFIED -- notification-as-request, request-as-notification, notification context reaching `signal`. The three collapses applied and reverted as controls.",
-        implementation:
-          "Replace the entry-object surface with the split-context union: `CustomRequestHandler`, `CustomNotificationHandler`, `CustomMethodMap`. `NotificationContext` MUST BE PUBLISHED -- the author annotates with it, which REVERSES sprint 96's `neither base name is published` ruling and is the one place this redesign GROWS the surface rather than shrinking it. Keep the sentence-typed collision guard unchanged.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "`CustomMethodEntry`, the declared `kind` and the required `gate` are DELETED here, not deprecated -- nothing outside this repository has ever seen them.",
-          "AND `NotificationGate` WENT THE OTHER WAY, back into src/notifications.ts. It was published in sprint 96 for one reason -- an author declared a gate -- and that reason died with the entry, so a published name nobody outside src/ can write would be surface tsudoi owes an answer about. Neither test/own-subpaths.test.ts nor test/package-shape.test.ts enumerates the subpath's names, so nothing had to be told; the move is the Developer's placement of an internal type.",
-          "THE THREE COLLAPSES WERE APPLIED TO THE BUILT ARTIFACT AND REVERTED, AND THEY DO NOT SHARE A DIRECTIVE: `Promise<unknown>` and `Promise<LSPAny>` each redden the notification-as-request `@ts-expect-error` (TS2578 at the same line, `void` fitting inside a top type), and UNIFYING THE CONTEXTS reddens the `signal` directive ALONE -- the request-as-notification directive stays satisfied under it, the wrapper still refusing `Promise<void>`. So no single directive grades all three, which is why they sit in one arm.",
-          "AND THE PUBLICATION HALF IS MEASURED RATHER THAN TAKEN ON CONSTRUCTION, the arm having lost the withheld name it used to be paired against: with `export` removed from `NotificationContext`, the consumer probe reads TS2459 `declares 'NotificationContext' locally, but it is not exported` -- the same diagnostic sprint 96 recorded for the withheld supertype, now the shape of this arm's own failure.",
-        ],
-      },
-      {
-        test: "RED FIRST: fixture configs -- a colliding name, a non-function value, a name declared twice.",
-        implementation:
-          "config.ts drops the `kind`/`gate` validation and reads a bare function per name, keeping its own refusal block beside `initialize`'s. The collision refusal and its message survive unchanged.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ONE COMMIT WITH THE SUBTASK ABOVE, AND THE TREE FORCED IT rather than convenience: the moment the type takes a bare function it refuses every entry-object fixture, and until config.ts takes one it refuses every bare-function fixture. There is no ordering of the two that leaves the suite green in between, and a transitional config accepting both shapes would be a branch nobody wants and nothing would ask for again.",
-          "THE COLLISION MESSAGE SURVIVED THE FUNCTION-VALUED MAP AND SPRINT 96'S NOTE ASKED FOR THE RE-MEASUREMENT, its own reading having been taken under the object shape: TS2322, `Type '(_context: BaseRequestContext, _params: unknown) => Promise<{ result: null; }>' is not assignable to type '\"textDocument/hover is a method tsudoi serves itself; declare its handler under methods, not customMethod\"'`. The sentence prints in full, so criterion 5 is met by the same sentinel.",
-          "A NAME DECLARED TWICE SHIPPED NO FIXTURE, AND THE READING IS WHY RATHER THAN AN OMISSION. MEASURED, both halves: tsc refuses it as TS1117 `An object literal cannot have multiple properties with the same name`, and at RUN TIME config.ts sees ONE key whose value is the SECOND handler -- the literal has collapsed before tsudoi is handed anything, so there is no state left for a loader to refuse. A fixture would assert TypeScript's own behaviour and nothing of tsudoi's.",
-        ],
-      },
-      {
-        test: "RED FIRST: one name sent as a request is answered; the SAME name sent as a notification runs the handler and nothing goes back. Control: registering on one side only leaves the other form reaching nothing, read against a name absent from the map.",
-        implementation:
-          "Register every custom name on BOTH `onRequest` and `onNotification`, so upstream's dispatch discriminates by the id. The notification half still routes through notifications.ts and its single gated loop.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "d7eb6cc",
-            message:
-              "feat(methods): one name reaches both of upstream's maps, so tsudoi never asks which kind a message is",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "The exactly-one-`gateCalls` arm stayed green.",
-          "TAKEN FIRST, AHEAD OF THE TWO SUBTASKS WRITTEN BEFORE IT, and the reason is the same one that fused those two: registering every name on both sides is expressible WHILE the entry still declares a kind -- the kind simply stops deciding anything -- so it lands as its own green commit with its own red. Run in the record's order it would have had to share the surface commit, and the sprint's headline finding would have arrived buried in it.",
-          "THE RED THAT PRECEDED IT, on both runtimes: the same name delivered as a notification reached nothing, the recorder holding only the request's entry.",
-        ],
-      },
-      {
-        test: "RED FIRST: fake-editor arms on the RAW response. Control: sending the return bare makes the two arms indistinguishable on the wire.",
-        implementation:
-          "Request path: `{ result: x }` answers with `x`; resolving `undefined` is `answered nothing` and takes reportHandlerFailure's route. Notification path: a handler that answered is named on stderr once per method per session, and a rejection is SWALLOWED and budgeted by tsudoi rather than left to upstream's unconditional log.",
-        type: "behavioral",
-        status: "completed",
-        commits: [],
-        notes: [
-          "Most of this shipped in sprint 96 and was REWIRED, not rebuilt. Its swallow measurement stands.",
-          "NO COMMIT OF ITS OWN, AND THAT IS THE HONEST ENTRY: every arm this subtask owns was already in the tree and passed once the surface commit rewired the fixtures under it. What it owed was a reading, not code.",
-          "SO ITS NEGATIVE CONTROL WAS RE-TAKEN RATHER THAN INHERITED, because the fixture driving it CHANGED KIND: `custom-method-answers-nothing.ts` is now a notification-shaped handler reached as a request, which is not the path sprint 96 measured. MEASURED under the new shape, with the wrapper removed from the registration and the null-answering fixture returning its value bare: the `answering nothing is a failure` arm goes RED with `error` undefined and `result` null -- byte-identical to the message the null-answering arm asserts, which stays GREEN. The two states are one message on the wire and the wrapper is the whole of what separates them. THE ECHO ARMS REDDEN TOO under this spelling and that is the perturbation's own artefact rather than a finding: that fixture answers `{ result }`, so passing the return through sends the wrapper itself to the client.",
-        ],
-      },
-      {
-        test: "RED FIRST: runtime arms both sides of the handshake, for both kinds. Control: an ungated custom notification reaches its handler before `initialize` with `tsudoi.documents` empty.",
-        implementation:
-          "The author declares no gate; tsudoi applies the lifecycle itself. A custom REQUEST before `initialize` takes the same `ServerNotInitialized` path a table row takes -- a different mechanism from the gate and easy to lose with it.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-          {
-            hash: "252eea5",
-            message:
-              "test(custom-method): the gate tsudoi now rules is re-run as a weakening, because nothing else would notice it moving",
-            phase: "green",
-          },
-        ],
-        notes: [
-          'THE BEHAVIOUR RODE IN WITH THE SURFACE AND ONLY THE CONTROL IS ITS OWN COMMIT: `gate: "lifecycle"` had to be written the moment the entry stopped carrying one, so the ruling landed where the entry died.',
-          "THE CONTROL IS A RECORDED WEAKENING RATHER THAN A SENTENCE, which is the change of status the ruling forces: while the gate was the author's, `always` was one of two things they could write and a fixture could carry it; now it is an edit nobody would make by accident, so the registry is the only thing that keeps re-running it. MEASURED: `always` at that line reddens the pre-handshake arm on BOTH runtimes and nothing else in its file, with both handlers reaching a session whose documents are empty.",
-          "AND THE REQUEST HALF WAS RE-MEASURED RATHER THAN INHERITED, this sprint having changed what the request side registers: deleting the lifecycle refusal from the custom-request registration reddens the two pre-handshake REQUEST arms and NOTHING ELSE IN THE SUITE -- 1261 pass / 3 fail, the third red being a defect of this sprint's own, below.",
-        ],
-      },
-      {
-        test: "The suite passes with every fixture rewritten; `oxlint` stays clean, which for unused handler parameters means `_context` / `_params`.",
-        implementation:
-          "Rewrite the sprint 96 fixtures and tests to the annotated bare-function form, and delete the arms that graded the entry object.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "A STRUCTURAL SUBTASK INSIDE A BEHAVIOURAL COMMIT, DISCLOSED RATHER THAN SPLIT: a fixture IS a config, so rewriting it is the same edit as changing the shape a config may have. The rule this project keeps -- structural and behavioural never share a commit -- has no reading here in which the two are separable, and pretending otherwise would have meant a commit whose suite was red.",
-          "TWO FIXTURES WERE DELETED WITH THE FIELDS THEY EXISTED TO GET WRONG: the bad kind and the missing gate. `oxlint` stayed clean, which for the handlers that read neither parameter means `_context` / `_params`.",
-        ],
-      },
-      {
-        test: "Surface arms read the wider surface; the README block gains its marker and a `consumers` row, with the corrupt-inside / corrupt-outside arms.",
-        implementation:
-          "Published surface and README. State that a custom method advertises NOTHING, and that taking a built-in notification name REPLACES the handler that fills the document store.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-          {
-            hash: "60f1e7a",
-            message:
-              "docs(types): the resolve-never-annotate discipline is scoped, because it now has an exception beside it",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE MARKER AND THE `consumers` ROW WERE ALREADY THERE, sprint 96 having added them with the block; what this owed was the block's new BYTES and a check that the corrupt-inside arm still says no over them. It does, and by construction rather than by luck: that row's subject is the block's IMPORT SPECIFIERS, and the new block still imports -- three names now where it imported one.",
-          "AND THE AUTHOR-FACING EXAMPLES CHANGED NAMES ON THE STAKEHOLDER'S OWN CORRECTION, arriving mid-execution: `textDocument/didFocus` is a NOTIFICATION a real editor extension defines, so a document teaching it as a request teaches a name that is taken. The request example is now an obviously-invented `tsudoi/status` and didFocus is the notification. WHAT IS NOT WRITTEN IS WHICH extension, because that half was handed over rather than measured here. The fixture driving didFocus in BOTH forms is kept deliberately: with the name really being a notification, a test that also sends it as a request is exactly the sprint's claim.",
-          "CLAUDE.md WAS UPDATED AND IS NOT IN ANY COMMIT: it is globally gitignored on this machine, so the architecture note ships nothing and the next reader of a fresh checkout sees the old entry-object block. Recorded rather than worked around.",
-        ],
-      },
-      {
-        test: "Each record MEASURED rather than transcribed.",
-        implementation:
-          "Sprint 96's two perturbation records grade a surface that no longer exists. Re-measure them against the new one, or delete them and say which.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "7e49ab4",
-            message:
-              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
-            phase: "green",
-          },
-          {
-            hash: "252eea5",
-            message:
-              "test(custom-method): the gate tsudoi now rules is re-run as a weakening, because nothing else would notice it moving",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "ONE REWRITTEN, ONE RE-MEASURED AS IT STOOD, ONE ADDED -- and which is which is the point of this subtask. THE CONDITIONAL-SWAP RECORD IS TARGET DELIBERATELY REMOVED: there is no conditional left to draw backwards, the two handler types being written out. What replaced it at the same arm is the adjacent weakening the new shape does have, `Promise<{ result: unknown }>` traded for `Promise<unknown>` -- one of the three collapses the surface was chosen over, so the registry now re-runs a control the criterion itself names.",
-          "AND ITS `alsoReddens` IS EMPTY, MEASURED AND NOT ASSUMED: the collapse is on the RETURN alone, so every context arm in that file survives it and so does the collision arm, whose refusal is about the NAME. A first prediction that the map arm would redden with it was WRONG and was corrected by the run rather than carried.",
-          "THE STDERR-BUDGET RECORD NEEDED NO EDIT AND READS HELD, its subject -- one session-wide flag where the budget is per method -- having survived the surface change untouched.",
-        ],
-      },
-      {
-        test: "All five checks exit 0 from a clean tree, the reading recorded against the tree the instrument names.",
-        implementation: "Definition of Done, then scrum.ts alone and last.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "THE CLOSING READING IS IN THIS SPRINT'S DECISIONS, quoted from the runner's own line rather than restated.",
-        ],
-      },
-    ],
-    impediments: [
-      {
-        description:
-          "THE STAKEHOLDER HAD FORBIDDEN IMPLEMENTATION -- `勝手に実装しないで`, after this Scrum Master announced entry into execution three times without being asked.",
-        impact:
-          "Sprint 97 could not leave `planning`, and PBI-86 was no way around it: its migration would have rewritten the two perturbation records sprint 96 wrote against the surface being replaced.",
-        request:
-          "Say whether to start sprint 97, and whether sprint 96's commits are the differential base or are reverted first.",
-        status: "resolved",
-        notes: [
-          "RESOLVED BY THE STAKEHOLDER RE-SETTING THE `/agentic-scrum:go` GOAL immediately after settling the last design question. The differential base is kept; nothing is reverted.",
-        ],
-      },
-    ],
-    decisions: [
-      "THE SURFACE IS SETTLED AND EVERY ARM OF IT WAS MEASURED, ACROSS FOUR SPELLINGS THE STAKEHOLDER TRIED IN ORDER. Split contexts with an ANNOTATED bare function per name, `Promise<{ result: unknown }>` for a request and `Promise<void>` for a notification. The annotation is a COST TAKEN KNOWINGLY: a bare arrow is TS7006 because TypeScript will not infer a parameter from a union of signatures whose parameters disagree.",
-      "WHAT THE COST BUYS IS TWO INDEPENDENT CLOSED AXES, which is why this spelling beat the three that preceded it. The split context means a notification handler CANNOT REACH `signal` at all; the `{ result }` wrapper refuses `Promise<void>`, so the two names are mutually non-assignable in BOTH directions. Unifying the context loses the first. `Promise<unknown>` and `Promise<LSPAny>` each lose the second, `void` fitting inside a top type -- and upstream maps `LSPAny` to `any` today, so that one is measured rather than assumed.",
-      "THE RUNTIME NEVER ASKS WHICH KIND A MESSAGE IS, because it does not have to: one name is registered on both sides and upstream dispatches by the presence of the id. The stakeholder said this first and was argued down with a measurement that did not cover it, which is what cancelled sprint 96.",
-      "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 60f1e7a`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1264 pass / 0 fail over 92 files, 388.13s, the five long-standing non-gating warnings. THE DURATION IS RECORDED WITHOUT AN EXPLANATION, per sprint 95's own entry: four readings this sprint ran 447s, 411s, 406s and 388s with one at 504s in the middle, and the 504 was taken on a machine that had just run a full suite under a perturbation. That is a candidate and not a finding.",
-      "ALL SIX CRITERIA MET, AND THE TWO THAT SPRINT 96 CANCELLED ARE THE TWO NOW MEASURED HARDEST. Criterion 1: one name answered as a request AND run as a notification in one session, with the arrival list showing nothing written back for the notification, read against a name for which neither form reaches anything. Criterion 2: through the built `./types` artifact, the annotated form compiling and three `@ts-expect-error` refusals staying satisfied, with all three collapses applied and reverted. Criterion 3: the wrapper's own control re-taken under the new fixture. Criterion 4: the budget arms, unchanged and green. Criterion 5: the collision sentence re-measured under a function-valued map. Criterion 6: the gate now a recorded weakening, and the request half re-measured.",
-      "THE ONE DEFECT THIS SPRINT SHIPPED INTO ITS OWN WORKING TREE WAS FOUND BY RUNNING THE SUITE AND NOT BY READING IT: a docblock added to test/custom-notification.test.ts cites `bun 1.3.13`, and test/version-citations.test.ts requires every citing file to be accounted for. It reddened in the same run as a perturbation and was fixed before the commit. WHAT IT COST TO CATCH: nothing, because that run was a full suite -- a targeted re-run of the two custom files would have missed it entirely.",
-      "AND THE SUBTASK ORDER WAS CHANGED, WITH THE TREE AS THE REASON RATHER THAN PREFERENCE. Subtask 3 ran FIRST, because both-sides registration is expressible while the entry still declares a kind and so earns its own red and its own commit. Subtasks 1 and 2 then landed as ONE commit, there being no ordering of type and config that leaves the suite green in between. Subtask 4 has no commit at all and subtask 6's structural work sits inside a behavioural commit; both are disclosed at the subtasks rather than smoothed over.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 97,
+      improvements: [
+        {
+          action:
+            "SPRINT 96'S FIRST IMPROVEMENT WAS APPLIED AND IT IS WHAT PRODUCED THIS SURFACE, so it is closed rather than carried. The rule was to render the author-facing surface as a config an author would write BEFORE building it. Four spellings were rendered and measured in the order the stakeholder proposed them -- a union with split contexts, one with a unified context, `Promise<unknown>`, `Promise<LSPAny>` -- and each was decided by a reading rather than by argument. THE COST OF THE RULE IS A FEW MINUTES OF PROBES; the cost of not having it was a cancelled sprint.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "The surface was settled before any of it was built, and the sprint that built it passed its Definition of Done on the first reading. The rule also caught what the stakeholder could not see from the type declarations alone: their own file type-checked because it had no USE SITE, and the failure appeared only once a config was written against it.",
+        },
+        {
+          action:
+            "SPRINT 96'S SECOND IMPROVEMENT WAS ALSO APPLIED -- state what a measurement does NOT cover in the same breath as what it does. Each of the four readings above was reported with its scope: `LSPAny` collapses the return axis and says nothing about the context axis; unifying the contexts closes the annotation cost and says nothing about `signal`. THE PROOF THAT IT MATTERED is that no single negative control grades all three collapses, which the Developer measured directly: unifying the contexts reddens the `signal` directive alone.",
+          timing: "immediate",
+          status: "completed",
+          outcome:
+            "The inference that cancelled sprint 96 -- a true id measurement licensing `the kind must be declared` -- was not repeated. The stakeholder's original intuition, that the runtime can tell by the id, is what the shipped design rests on.",
+        },
+        {
+          action:
+            "RUN THE FULL SUITE BEFORE BELIEVING A TARGETED GREEN, and this sprint produced a fresh instance rather than a restatement: a docblock citing a tool version tripped `test/version-citations.test.ts`, a file the change had no obvious relation to, and it was found ONLY because the whole suite ran. A re-run of the two files that had changed would have shipped it. THE CLASS IS `a check that grades a property of the tree rather than of a module`, and this repository has several -- readme coverage, version citations, uncovered files, the guard.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "THE PROJECT'S OWN GUIDANCE FILE CANNOT CARRY WHAT THIS SPRINT LEARNED, and that is now measured rather than suspected: `CLAUDE.md` is matched by a GLOBAL gitignore on this machine, so every correction made to it this sprint -- the customMethod surface, the annotation rule, the eviction trap, and five stale counts that had gone false -- is in NO COMMIT and reaches no other checkout. A fresh clone still reads the entry-object shape. THE TRACKABLE HOME IS `.claude/skills/`, which this repository already uses for exactly this purpose. Decide whether the load-bearing half moves there or whether the file is un-ignored.",
+          timing: "product",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 96,
       improvements: [
