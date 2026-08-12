@@ -66,30 +66,84 @@ export function defineNotifications<P extends readonly unknown[]>(entries: {
 }
 
 /**
- * Registers every notification tsudoi answers, applying each entry's gate
- * around its handler.
+ * ONE NOTIFICATION A CONFIG DECLARED, as the router needs it: a NAME, a gate,
+ * and something to run.
+ *
+ * A NAME AND NOT A `NotificationType`, which is the shape that looks equivalent
+ * and is not: upstream reads a request or notification type's declared arity
+ * before dispatching, so a synthesized type would have tsudoi decide how many
+ * params a method it never designed carries -- and refuse the client's message
+ * when it decided wrong. A bare name leaves that to the author and their client,
+ * who are the two parties that agreed on it.
+ *
+ * THE HANDLER IS ALREADY BOUND TO ITS CONTEXT by whoever built this, because
+ * this module must not know what a config author receives -- it knows WHEN a
+ * message may run, and nothing else.
+ */
+export interface CustomNotificationEntry {
+  readonly method: string;
+  readonly gate: NotificationGate;
+  readonly run: (params: unknown) => Promise<void>;
+}
+
+/**
+ * Registers every notification tsudoi answers -- its own table AND whatever the
+ * config declared -- applying each entry's gate around its handler.
  *
  * THE ROUTER KNOWS NOTHING ABOUT ANY PARTICULAR NOTIFICATION -- no name, no
  * carve-out, no set of exceptions. `exit` survives the gate because ITS ENTRY
  * says `always`, at one site, with the reason beside it. A second place that
  * knew which messages are special would be a second place to get it wrong.
+ *
+ * ONE LOOP AND ONE GATE FOR BOTH SOURCES, which is the whole reason a config's
+ * notifications arrive here rather than being registered wherever they were
+ * read. A second registrar would be a second place to forget the gate, and the
+ * lint entry banning the connection factory records what was MEASURED before it
+ * existed: an ungated `onNotification` beside the table ran green on every check
+ * with nothing objecting.
  */
 export function registerNotifications<P extends readonly unknown[]>(
   connection: NotificationRegistrar,
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
+  custom: readonly CustomNotificationEntry[] = [],
 ): void {
   // THE ONE ERASURE, and it is confined to this loop. `gate` is deliberately
   // outside it -- it is a string on every entry, so the required-field check
   // above survives this cast.
   const erased = entries as unknown as readonly NotificationEntry<unknown>[];
-  for (const entry of erased) {
-    connection.onNotification(entry.type as NotificationType<unknown>, (params: unknown) => {
+  const merged: readonly {
+    readonly key: NotificationType<unknown> | string;
+    readonly gate: NotificationGate;
+    readonly run: (params: unknown) => unknown;
+  }[] = [
+    ...erased.map((entry) => ({
+      key: entry.type as NotificationType<unknown>,
+      gate: entry.gate,
+      run: entry.handler,
+    })),
+    ...custom.map((entry) => ({ key: entry.method, gate: entry.gate, run: entry.run })),
+  ];
+  for (const entry of merged) {
+    // RETURNED RATHER THAN DROPPED, and it is the one thing this wrapper does
+    // besides gating: upstream AWAITS what a notification handler hands back, so
+    // a config's promise returned here is observed and a promise dropped here
+    // rejects with nobody listening. tsudoi's own table entries return nothing,
+    // and returning nothing is what upstream then awaits.
+    const gated = (params: unknown): unknown => {
       if (entry.gate === "lifecycle" && lifecycle.acceptsNotification() === false) {
-        return;
+        return undefined;
       }
-      entry.handler(params);
-    });
+      return entry.run(params);
+    };
+    // BRANCHED ON THE KEY AND NOT ON THE ENTRY'S ORIGIN, because the two calls
+    // differ only in which OVERLOAD they reach: a union satisfies neither, and
+    // resolving it here is what keeps the gate above written once.
+    if (typeof entry.key === "string") {
+      connection.onNotification(entry.key, gated);
+    } else {
+      connection.onNotification(entry.key, gated);
+    }
   }
 }
 
@@ -271,8 +325,9 @@ export function createGatedConnection<P extends readonly unknown[]>(
   logger: Logger,
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
+  custom: readonly CustomNotificationEntry[] = [],
 ): RequestOnlyConnection {
   const connection = createProtocolConnection(reader, writer, logger);
-  registerNotifications(connection, lifecycle, entries);
+  registerNotifications(connection, lifecycle, entries, custom);
   return connection;
 }

@@ -27,7 +27,7 @@ import {
   ResponseError,
   type ServerCapabilities,
 } from "vscode-languageserver-protocol/node";
-import type { RequestOnlyConnection } from "./notifications.ts";
+import type { CustomNotificationEntry, RequestOnlyConnection } from "./notifications.ts";
 import type {
   ConfigMethod,
   Method,
@@ -459,13 +459,48 @@ interface ErasedCustomEntry {
   readonly handler: (context: unknown, params: unknown) => Promise<unknown>;
 }
 
-export function erasedCustomEntries(
+function erasedCustomEntries(
   config: TsudoiConfig,
 ): readonly (readonly [string, ErasedCustomEntry])[] {
   return Object.entries(config.customMethod ?? {}) as unknown as readonly (readonly [
     string,
     ErasedCustomEntry,
   ])[];
+}
+
+/**
+ * The config's custom NOTIFICATIONS, each already bound to the session its
+ * handler receives, for src/notifications.ts to gate and register.
+ *
+ * BUILT HERE AND REGISTERED THERE, which is the routing this feature has to take
+ * rather than the one that would be convenient: only the router may register a
+ * notification -- `RequestOnlyConnection` removes `onNotification` from the type
+ * every other module sees -- so what crosses is DATA. This module knows what a
+ * handler is handed; that one knows when a message may run.
+ *
+ * A GATE IS NOT DEFAULTED IF IT IS MISSING, the entry is DROPPED: src/config.ts
+ * refuses a notification whose gate is neither value, so an entry reaching here
+ * without one came past no reader at all, and registering it under a gate tsudoi
+ * chose is the silent default both layers exist to refuse.
+ */
+export function customNotifications(
+  config: TsudoiConfig,
+  tsudoi: Tsudoi,
+): readonly CustomNotificationEntry[] {
+  const entries: CustomNotificationEntry[] = [];
+  for (const [method, entry] of erasedCustomEntries(config)) {
+    if (entry.kind !== "notification" || entry.gate === undefined) {
+      continue;
+    }
+    entries.push({
+      method,
+      gate: entry.gate,
+      run: async (params: unknown): Promise<void> => {
+        await entry.handler({ tsudoi }, params);
+      },
+    });
+  }
+  return entries;
 }
 
 /**

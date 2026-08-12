@@ -27,6 +27,7 @@ import type { DocumentStoreHandle } from "./documents.ts";
 import { createLifecycle, type Lifecycle } from "./lifecycle.ts";
 import {
   contributeCapabilities,
+  customNotifications,
   handlerFailure,
   registerMethods,
   requestContext,
@@ -106,6 +107,11 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     stderrLogger,
     lifecycle,
     notificationEntries(documents, lifecycle, workspaceFolders),
+    // THE CONFIG'S OWN NOTIFICATIONS ARRIVE AS AN ARGUMENT rather than being
+    // registered where they were read, and that is the whole of what keeps this
+    // feature inside the existing foreclosure: the router applies one gate in one
+    // loop, and a module registering its own would need a connection of its own.
+    customNotifications(config, tsudoi),
   );
 
   // BEFORE ANYTHING IS REGISTERED, WHICH IS WHAT MAKES `tsudoi.notify`'s OWN
