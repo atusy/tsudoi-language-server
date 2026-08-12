@@ -184,6 +184,52 @@ test("a custom didOpen observes the document after the built-in opens it", async
   expect(observed).toBe("opened");
 });
 
+test("a didChange waits for the preceding didOpen hook on the same document", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const documents = createDocumentStore();
+  const workspaceFolders = createWorkspaceFolders();
+  const { connection, deliver } = recordingConnection();
+  const uri = "file:///queued.ts";
+  let releaseOpen = () => {};
+  const openHeld = new Promise<void>((resolve) => {
+    releaseOpen = resolve;
+  });
+  let markOpenStarted = () => {};
+  const openStarted = new Promise<void>((resolve) => {
+    markOpenStarted = resolve;
+  });
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+    [
+      {
+        method: "textDocument/didOpen",
+        gate: "lifecycle",
+        run: async () => {
+          markOpenStarted();
+          await openHeld;
+        },
+      },
+    ],
+  );
+
+  const opening = deliver("textDocument/didOpen", {
+    textDocument: { uri, languageId: "typescript", version: 1, text: "opened" },
+  });
+  await openStarted;
+  const changing = deliver("textDocument/didChange", {
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "changed" }],
+  });
+
+  expect(documents.documents.get(uri)?.getText()).toBe("opened");
+  releaseOpen();
+  await Promise.all([opening, changing]);
+  expect(documents.documents.get(uri)?.getText()).toBe("changed");
+});
+
 /**
  * Source with its comments removed, so that a check QUOTED in a comment -- as
  * the deleted one is, in notifications.ts -- is not counted as a call. The `//`

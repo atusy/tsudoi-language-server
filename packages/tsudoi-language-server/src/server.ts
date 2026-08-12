@@ -498,16 +498,19 @@ export function notificationEntries(
       type: DidOpenTextDocumentNotification.type,
       handler: (params) => documents.open(params),
       gate: "lifecycle",
+      queue: (params) => params.textDocument.uri,
     },
     {
       type: DidChangeTextDocumentNotification.type,
       handler: (params) => documents.change(params),
       gate: "lifecycle",
+      queue: (params) => params.textDocument.uri,
     },
     {
       type: DidCloseTextDocumentNotification.type,
       handler: (params) => documents.close(params),
       gate: "lifecycle",
+      queue: (params) => params.textDocument.uri,
     },
     {
       type: DidChangeWorkspaceFoldersNotification.type,

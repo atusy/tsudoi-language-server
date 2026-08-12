@@ -45,6 +45,8 @@ export interface NotificationEntry<P> {
    */
   readonly handler: (params: P) => void;
   readonly gate: NotificationGate;
+  /** Serializes the complete built-in-to-custom operation for one state key. */
+  readonly queue?: (params: P) => string;
 }
 
 /**
@@ -127,16 +129,18 @@ export function registerNotifications<P extends readonly unknown[]>(
   // above survives this cast.
   const erased = entries as unknown as readonly NotificationEntry<unknown>[];
   const customByMethod = new Map(custom.map((entry) => [entry.method, entry]));
+  const queueTails = new Map<string, Promise<void>>();
   const merged: readonly {
     readonly key: NotificationType<unknown> | string;
     readonly gate: NotificationGate;
     readonly run: (params: unknown) => unknown;
+    readonly queue?: (params: unknown) => string;
   }[] = [
     ...erased.map((entry) => {
       const key = entry.type as NotificationType<unknown>;
       const hook = customByMethod.get(key.method);
       if (hook === undefined) {
-        return { key, gate: entry.gate, run: entry.handler };
+        return { key, gate: entry.gate, run: entry.handler, queue: entry.queue };
       }
       customByMethod.delete(key.method);
       return {
@@ -146,6 +150,7 @@ export function registerNotifications<P extends readonly unknown[]>(
           Promise.resolve()
             .then(() => entry.handler(params))
             .then(() => hook.run(params)),
+        queue: entry.queue,
       };
     }),
     ...[...customByMethod.values()].map((entry) => ({
@@ -154,6 +159,33 @@ export function registerNotifications<P extends readonly unknown[]>(
       run: entry.run,
     })),
   ];
+
+  const enqueue = (key: string, run: () => unknown): Promise<unknown> => {
+    const preceding = queueTails.get(key) ?? Promise.resolve();
+    const operation = preceding.then(run);
+    const tail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    queueTails.set(key, tail);
+
+    const release = (): void => {
+      if (queueTails.get(key) === tail) {
+        queueTails.delete(key);
+      }
+    };
+    return operation.then(
+      (value) => {
+        release();
+        return value;
+      },
+      (error: unknown) => {
+        release();
+        throw error;
+      },
+    );
+  };
+
   for (const entry of merged) {
     // RETURNED RATHER THAN DROPPED, and it is the one thing this wrapper does
     // besides gating: upstream AWAITS what a notification handler hands back, so
@@ -163,6 +195,9 @@ export function registerNotifications<P extends readonly unknown[]>(
     const gated = (params: unknown): unknown => {
       if (entry.gate === "lifecycle" && lifecycle.acceptsNotification() === false) {
         return undefined;
+      }
+      if (entry.queue !== undefined) {
+        return enqueue(entry.queue(params), () => entry.run(params));
       }
       return entry.run(params);
     };
