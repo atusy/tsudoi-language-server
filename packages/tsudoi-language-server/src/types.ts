@@ -697,10 +697,113 @@ export type MethodHandler<M extends ConfigMethod> = (
   params: ConfigMethodMap[M]["params"],
 ) => ConfigMethodMap[M]["result"];
 
+/**
+ * WHEN a notification may reach its handler.
+ *
+ * `lifecycle` is what LSP asks for: outside the initialized window the message
+ * is dropped, SILENTLY, because a notification has no response through which a
+ * client could be told anything. `always` is for the messages a client is
+ * entitled to send at any moment.
+ */
+export type NotificationGate = "lifecycle" | "always";
+
+/**
+ * A HANDLER FOR A METHOD TSUDOI NEVER ENUMERATED. What it is handed and what it
+ * owes back are both RESOLVED FROM THE KIND, so nothing an author writes selects
+ * the shape they receive -- the same discipline `RequestContext` states for the
+ * table's own rows, carried onto a name only the config knows.
+ *
+ * KEYED ON THE KIND AND NOT ON THE CONTEXT, WHICH IS THE SPELLING THAT READS
+ * CORRECTLY AND IS THE BROKEN ONE. A conditional written on the context type
+ * takes the NOTIFICATION arm for both kinds: a notification context has FEWER
+ * members, so the request context satisfies it and the second arm is never
+ * reached. MEASURED at `--strict`, exit 0, with the request kind asserted to
+ * resolve to `Promise<void>` and nothing objecting. Parameterising by the context
+ * would also make the surface unwritable for one kind, the notification context
+ * having no published name to pass.
+ *
+ * AND THE ARMS HAVE BEEN DRAWN BACKWARDS TWICE, by opposite mistakes, which is
+ * why the shape is recorded rather than the correction: with the condition itself
+ * correct, binding REQUEST to `Promise<void>` and NOTIFICATION to the result
+ * wrapper type-checks and nothing objects.
+ *
+ * WHY THE RESULT IS WRAPPED AT ALL, since a bare `unknown` is the obvious
+ * spelling: a typed row says `Hover | null`, so ANSWERING null is distinguishable
+ * from answering nothing BY THE ROW'S OWN TYPE. A custom method's result is
+ * `unknown` and cannot say it. Returning `{ result: null }` IS an answer;
+ * falling off the end is not, and what tsudoi does with that is at the
+ * registration in src/methods.ts.
+ */
+export type CustomMethodHandler<K extends "request" | "notification"> = (
+  context: K extends "request" ? BaseRequestContext : BaseMethodContext,
+  params: unknown,
+) => K extends "request" ? Promise<{ result: unknown }> : Promise<void>;
+
+/**
+ * ONE CUSTOM METHOD AS A CONFIG DECLARES IT: what kind of message it is, when it
+ * may run, and what to do with it.
+ *
+ * THE KIND IS DECLARED AND NOT INFERRED FROM THE NAME, and it cannot be
+ * otherwise: `textDocument/didFocus` says nothing about whether a client sends it
+ * as a request or as a notification, and by the time tsudoi sees a message
+ * upstream has already dispatched it -- MEASURED, a request handler is handed
+ * `(params, cancellation)` and no id at all. What upstream offers for a name it
+ * does not know is a REGISTRATION-TIME choice between two functions, so tsudoi
+ * must be told which one before any message arrives.
+ */
+export type CustomMethodEntry =
+  | {
+      readonly kind: "request";
+      readonly handler: CustomMethodHandler<"request">;
+    }
+  | {
+      readonly kind: "notification";
+      /**
+       * REQUIRED WITH NO DEFAULT, which is `NotificationEntry.gate`'s own
+       * discipline applied to the AUTHOR instead of the maintainer: an entry that
+       * decides nothing is a compile error rather than a handler silently running
+       * in every lifecycle state. A gate defaulted on the config side re-creates
+       * exactly the convention that refusal exists to remove, one door along.
+       */
+      readonly gate: NotificationGate;
+      readonly handler: CustomMethodHandler<"notification">;
+    };
+
+/**
+ * THE METHODS A CONFIG SERVES THAT TSUDOI DID NOT ENUMERATE, keyed by the name
+ * they travel under on the wire.
+ *
+ * A NAME TSUDOI ALREADY SERVES IS REFUSED HERE, AND THE REFUSAL SAYS SO. Each key
+ * of the request table -- and `initialize` -- maps to a SENTENCE, so what tsc
+ * prints names the method and where the handler belongs. THE BARE `never`
+ * SPELLING IS WHAT THIS REPLACES, and it is what a reader will reach for:
+ * MEASURED, an optional `never` reads back as `undefined`, so the refusal arrived
+ * as `not assignable to type 'undefined'` -- naming neither the collision nor the
+ * rule, which an author reads as a mistake in their own handler.
+ *
+ * THE SENTENCE IS NOT A VALUE ANYONE CAN SUPPLY TO GET PAST IT: MEASURED, writing
+ * the sentence itself is refused by the index signature instead, and so is
+ * `undefined`.
+ *
+ * A BUILT-IN NOTIFICATION NAME IS NOT REFUSED, AND THAT IS ROOM LEFT OPEN RATHER
+ * THAN SLACK: `ConfigMethod` is the request table plus `initialize`, and
+ * `textDocument/didOpen` is in neither. What running a handler BESIDE a built-in
+ * means is not decided here, and nothing about this type claims it works.
+ */
+export type CustomMethodMap = {
+  [M in ConfigMethod]?: `${M} is served by tsudoi's own request table; declare it under methods, not customMethod`;
+} & Record<string, CustomMethodEntry>;
+
 export type TsudoiConfig = {
   methods?: Partial<{
     [M in ConfigMethod]: MethodHandler<M>;
   }>;
+  /**
+   * REGISTERING ONE ADVERTISES NOTHING, which is the first thing an author will
+   * file as a bug: `initialize` has no capability to claim for
+   * `textDocument/didFocus`, so no client sends one unless it already knew to.
+   */
+  customMethod?: CustomMethodMap;
 };
 
 /**
