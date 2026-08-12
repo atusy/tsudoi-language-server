@@ -43,7 +43,7 @@ export interface NotificationEntry<P> {
    * What to do with it. Deliberately NOT handed the lifecycle: a handler that
    * could consult the gate is a handler that could forget to.
    */
-  readonly handler: (params: P) => void;
+  readonly handler: (params: P) => void | PromiseLike<void>;
   readonly gate: NotificationGate;
   /**
    * Which state owns this operation, when later notifications for that state
@@ -108,6 +108,50 @@ export interface CustomNotificationEntry {
 }
 
 /**
+ * Orders operations that observe the same mutable state. Notifications append
+ * work; requests wait for the work already admitted for their key.
+ */
+export interface KeyedOperationQueue {
+  enqueue(key: string, operation: () => unknown): Promise<unknown>;
+  wait(key: string): Promise<void>;
+}
+
+export function createKeyedOperationQueue(): KeyedOperationQueue {
+  const tails = new Map<string, Promise<void>>();
+
+  return {
+    enqueue(key: string, run: () => unknown): Promise<unknown> {
+      const preceding = tails.get(key) ?? Promise.resolve();
+      const operation = preceding.then(async () => await run());
+      const tail = operation.then(
+        () => undefined,
+        () => undefined,
+      );
+      tails.set(key, tail);
+
+      const release = (): void => {
+        if (tails.get(key) === tail) {
+          tails.delete(key);
+        }
+      };
+      return operation.then(
+        (value) => {
+          release();
+          return value;
+        },
+        (error: unknown) => {
+          release();
+          throw error;
+        },
+      );
+    },
+    wait(key: string): Promise<void> {
+      return tails.get(key) ?? Promise.resolve();
+    },
+  };
+}
+
+/**
  * Registers every notification tsudoi answers -- its own table AND whatever the
  * config declared -- composing equal names, applying each entry's gate and
  * serializing entries that declare a queue key.
@@ -134,13 +178,13 @@ export function registerNotifications<P extends readonly unknown[]>(
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
   custom: readonly CustomNotificationEntry[] = [],
+  queue?: KeyedOperationQueue,
 ): void {
   // THE ONE ERASURE, and it is confined to this loop. `gate` is deliberately
   // outside it -- it is a string on every entry, so the required-field check
   // above survives this cast.
   const erased = entries as unknown as readonly NotificationEntry<unknown>[];
   const customByMethod = new Map(custom.map((entry) => [entry.method, entry]));
-  const queueTails = new Map<string, Promise<void>>();
   const merged: readonly {
     readonly key: NotificationType<unknown> | string;
     readonly gate: NotificationGate;
@@ -171,32 +215,6 @@ export function registerNotifications<P extends readonly unknown[]>(
     })),
   ];
 
-  const enqueue = (key: string, run: () => unknown): Promise<unknown> => {
-    const preceding = queueTails.get(key) ?? Promise.resolve();
-    const operation = preceding.then(run);
-    const tail = operation.then(
-      () => undefined,
-      () => undefined,
-    );
-    queueTails.set(key, tail);
-
-    const release = (): void => {
-      if (queueTails.get(key) === tail) {
-        queueTails.delete(key);
-      }
-    };
-    return operation.then(
-      (value) => {
-        release();
-        return value;
-      },
-      (error: unknown) => {
-        release();
-        throw error;
-      },
-    );
-  };
-
   for (const entry of merged) {
     // RETURNED RATHER THAN DROPPED: upstream AWAITS what a notification handler
     // hands back, so a composed or queued promise returned here is observed and a
@@ -206,8 +224,8 @@ export function registerNotifications<P extends readonly unknown[]>(
       if (entry.gate === "lifecycle" && lifecycle.acceptsNotification() === false) {
         return undefined;
       }
-      if (entry.queue !== undefined) {
-        return enqueue(entry.queue(params), () => entry.run(params));
+      if (entry.queue !== undefined && queue !== undefined) {
+        return queue.enqueue(entry.queue(params), () => entry.run(params));
       }
       return entry.run(params);
     };
@@ -401,8 +419,9 @@ export function createGatedConnection<P extends readonly unknown[]>(
   lifecycle: Lifecycle,
   entries: { readonly [K in keyof P]: NotificationEntry<P[K]> },
   custom: readonly CustomNotificationEntry[] = [],
+  queue?: KeyedOperationQueue,
 ): RequestOnlyConnection {
   const connection = createProtocolConnection(reader, writer, logger);
-  registerNotifications(connection, lifecycle, entries, custom);
+  registerNotifications(connection, lifecycle, entries, custom, queue);
   return connection;
 }

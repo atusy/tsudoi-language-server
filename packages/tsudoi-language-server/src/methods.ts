@@ -27,7 +27,11 @@ import {
   ResponseError,
   type ServerCapabilities,
 } from "vscode-languageserver-protocol/node";
-import type { CustomNotificationEntry, RequestOnlyConnection } from "./notifications.ts";
+import type {
+  CustomNotificationEntry,
+  KeyedOperationQueue,
+  RequestOnlyConnection,
+} from "./notifications.ts";
 import type {
   ConfigMethod,
   Method,
@@ -62,6 +66,7 @@ interface AwaitedOnceEntry<M extends Method> {
   readonly drive: DriveKind<M>;
   readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
   readonly capability: CapabilityContributor;
+  readonly queue?: (params: MethodMap[M]["params"]) => string;
 }
 
 /**
@@ -76,6 +81,7 @@ interface StreamDrivenEntry<M extends Method> {
   /** What the streamed chunks travel as. */
   readonly progress: ProgressType<StreamChunk<M>>;
   readonly capability: CapabilityContributor;
+  readonly queue?: (params: MethodMap[M]["params"]) => string;
 }
 
 export type RequestEntry<M extends Method> = [StreamChunk<M>] extends [never]
@@ -87,6 +93,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/hover": {
     drive: "awaited-once",
     type: HoverRequest.type,
+    queue: (params) => params.textDocument.uri,
     capability: (capabilities) => {
       capabilities.hoverProvider = true;
     },
@@ -94,6 +101,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/completion": {
     drive: "stream-driven",
     type: CompletionRequest.type,
+    queue: (params) => params.textDocument.uri,
     progress: new ProgressType<CompletionItem[]>(),
     // MERGED AND NEVER ASSIGNED, and nothing reddens if you write `= {}`:
     // `completionItem/resolve` writes into this same key, so an assignment here
@@ -119,6 +127,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/formatting": {
     drive: "awaited-once",
     type: DocumentFormattingRequest.type,
+    queue: (params) => params.textDocument.uri,
     capability: (capabilities) => {
       capabilities.documentFormattingProvider = true;
     },
@@ -126,6 +135,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/diagnostic": {
     drive: "awaited-once",
     type: DocumentDiagnosticRequest.type,
+    queue: (params) => params.textDocument.uri,
     // `workspaceDiagnostics` is FORCED by tsudoi not serving
     // `workspace/diagnostic`; `interFileDependencies` is CHOSEN, on the two
     // errors not being symmetric -- a redundant pull is visible and costs, where
@@ -157,6 +167,7 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
   "textDocument/codeAction": {
     drive: "stream-driven",
     type: CodeActionRequest.type,
+    queue: (params) => params.textDocument.uri,
     progress: new ProgressType<(Command | CodeAction)[]>(),
     // NAMES NO KINDS, WHICH IS THE CONTRAST WITH THE ROW ABOVE AND NOT AN
     // ECONOMY. `ExecuteCommandOptions.commands` is REQUIRED, so that contributor
@@ -185,6 +196,7 @@ interface ErasedEntry {
   readonly type: RequestType<unknown, unknown, EntryErrorPayload>;
   readonly progress: ProgressType<unknown>;
   readonly capability: CapabilityContributor;
+  readonly queue?: (params: unknown) => string;
 }
 
 type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Promise<unknown>;
@@ -384,6 +396,7 @@ export function registerMethods(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
+  documentQueue?: KeyedOperationQueue,
 ): void {
   // PER METHOD AND NOT PER SESSION, and a single boolean here is the spelling
   // that looks right and silently loses a diagnostic: one flag for the whole
@@ -419,6 +432,9 @@ export function registerMethods(
             ErrorCodes.InvalidParams,
             `${method} params must be an object; received ${JSON.stringify(params)}`,
           );
+        }
+        if (entry.queue !== undefined && documentQueue !== undefined) {
+          await documentQueue.wait(entry.queue(params));
         }
         const handler = config.methods?.[method];
         if (entry.drive === "stream-driven") {

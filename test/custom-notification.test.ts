@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ErrorCodes, type InitializeResult } from "vscode-languageserver-protocol";
+import { ErrorCodes, type Hover, type InitializeResult } from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -11,6 +11,12 @@ import {
   undeclared,
 } from "./fixtures/custom-method-kinds.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
+import {
+  changedText,
+  documentUri,
+  openedText,
+  releaseLifecycle,
+} from "./fixtures/document-lifecycle-request-barrier.ts";
 
 applySuiteDeadline();
 
@@ -39,6 +45,36 @@ function named(runtime: { name: string }, what: string): string {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
+    test("a document request waits for an earlier queued change on the same URI", async () => {
+      const session = LspSession.start(runtime, fixture("document-lifecycle-request-barrier.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("textDocument/didOpen", {
+          textDocument: {
+            uri: documentUri,
+            languageId: "typescript",
+            version: 1,
+            text: openedText,
+          },
+        });
+        session.notify("textDocument/didChange", {
+          textDocument: { uri: documentUri, version: 2 },
+          contentChanges: [{ text: changedText }],
+        });
+
+        const pending = session.issue("textDocument/hover", {
+          textDocument: { uri: documentUri },
+          position: { line: 0, character: 0 },
+        });
+        session.notify(releaseLifecycle, {});
+        const hover = (await pending.response).result as Hover;
+
+        expect(hover.contents).toEqual({ kind: "plaintext", value: changedText });
+      } finally {
+        session.dispose();
+      }
+    });
+
     /**
      * A NOTIFICATION HAS NO RESPONSE, so its handler running is observable only
      * through a LATER message -- which is what makes the reader request part of

@@ -34,6 +34,7 @@ import {
 } from "./methods.ts";
 import {
   createGatedConnection,
+  createKeyedOperationQueue,
   defineNotifications,
   type RequestOnlyConnection,
 } from "./notifications.ts";
@@ -61,6 +62,17 @@ const stderrLogger: Logger = {
 export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void {
   const { tsudoi, documents, workspaceFolders, handshake, connect } = runtime;
   const lifecycle = createLifecycle();
+  const configuredNotifications = customNotifications(config, tsudoi);
+  const documentLifecycleMethods: ReadonlySet<string> = new Set([
+    DidOpenTextDocumentNotification.method,
+    DidChangeTextDocumentNotification.method,
+    DidCloseTextDocumentNotification.method,
+  ]);
+  const documentQueue = configuredNotifications.some((entry) =>
+    documentLifecycleMethods.has(entry.method),
+  )
+    ? createKeyedOperationQueue()
+    : undefined;
   let editorWatch: EditorWatch = watchEditor(null, () => undefined);
 
   /**
@@ -111,7 +123,8 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     // registered where they were read, and that is the whole of what keeps this
     // feature inside the existing foreclosure: the router applies one gate in one
     // loop, and a module registering its own would need a connection of its own.
-    customNotifications(config, tsudoi),
+    configuredNotifications,
+    documentQueue,
   );
 
   // BEFORE ANYTHING IS REGISTERED, WHICH IS WHAT MAKES `tsudoi.notify`'s OWN
@@ -307,7 +320,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
     },
   );
 
-  registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection());
+  registerMethods(connection, config, tsudoi, () => lifecycle.requestRejection(), documentQueue);
 
   connection.onRequest(ShutdownRequest.type, (...args: readonly unknown[]): void => {
     const rejection = lifecycle.requestRejection();

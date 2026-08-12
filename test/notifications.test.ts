@@ -11,6 +11,7 @@ import { createDocumentStore } from "../packages/tsudoi-language-server/src/docu
 import { createLifecycle } from "../packages/tsudoi-language-server/src/lifecycle.ts";
 import * as router from "../packages/tsudoi-language-server/src/notifications.ts";
 import {
+  createKeyedOperationQueue,
   type NotificationRegistrar,
   registerNotifications,
   type RequestOnlyConnection,
@@ -67,6 +68,25 @@ function recordingConnection(): {
 /** Two notifications of tsudoi's own invention: the router knows no names. */
 const gatedType = new NotificationType<{ mark: string }>("test/gated");
 const ungatedType = new NotificationType<{ mark: string }>("test/ungated");
+
+test("document built-ins remain synchronous when no lifecycle hook requires a queue", () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const documents = createDocumentStore();
+  const { connection, deliver } = recordingConnection();
+  const uri = "file:///synchronous.ts";
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, createWorkspaceFolders()),
+  );
+
+  deliver("textDocument/didOpen", {
+    textDocument: { uri, languageId: "typescript", version: 1, text: "ready now" },
+  });
+
+  expect(documents.documents.get(uri)?.getText()).toBe("ready now");
+});
 
 // THE HANDLER BODIES ARE EMPTY OF ANY LIFECYCLE KNOWLEDGE ON PURPOSE: whoever
 // writes a notification cannot make it run at a moment the entry did not allow,
@@ -191,6 +211,7 @@ test("custom document hooks observe the state after each built-in operation", as
         },
       },
     ],
+    createKeyedOperationQueue(),
   );
 
   await deliver("textDocument/didOpen", {
@@ -238,6 +259,7 @@ test("an asynchronous built-in fulfills before its custom hook starts", async ()
         },
       },
     ],
+    createKeyedOperationQueue(),
   );
 
   let deliverySettled = false;
@@ -294,6 +316,7 @@ test("a didChange waits for the preceding didOpen hook on the same document", as
         },
       },
     ],
+    createKeyedOperationQueue(),
   );
 
   const opening = deliver("textDocument/didOpen", {
@@ -347,6 +370,7 @@ test("a held document hook does not delay a lifecycle operation for another docu
         },
       },
     ],
+    createKeyedOperationQueue(),
   );
 
   const holding = deliver("textDocument/didOpen", {
@@ -404,6 +428,7 @@ test("a reopen waits for the preceding didClose hook on the same document", asyn
         },
       },
     ],
+    createKeyedOperationQueue(),
   );
 
   await deliver("textDocument/didOpen", {
@@ -433,24 +458,30 @@ test("a rejected queued operation does not prevent the next operation", async ()
   const first = new NotificationType<{ uri: string }>("test/queuedFailure");
   const second = new NotificationType<{ uri: string }>("test/afterQueuedFailure");
   const seen: string[] = [];
-  registerNotifications(connection, lifecycle, [
-    {
-      type: first,
-      handler: () => {
-        throw new Error("queued failure");
+  registerNotifications(
+    connection,
+    lifecycle,
+    [
+      {
+        type: first,
+        handler: () => {
+          throw new Error("queued failure");
+        },
+        gate: "lifecycle",
+        queue: (params) => params.uri,
       },
-      gate: "lifecycle",
-      queue: (params) => params.uri,
-    },
-    {
-      type: second,
-      handler: (params) => {
-        seen.push(params.uri);
+      {
+        type: second,
+        handler: (params) => {
+          seen.push(params.uri);
+        },
+        gate: "lifecycle",
+        queue: (params) => params.uri,
       },
-      gate: "lifecycle",
-      queue: (params) => params.uri,
-    },
-  ]);
+    ],
+    [],
+    createKeyedOperationQueue(),
+  );
 
   const failed = Promise.resolve(deliver(first.method, { uri: "file:///same.ts" }));
   const followed = deliver(second.method, { uri: "file:///same.ts" });
@@ -484,34 +515,40 @@ test("an older completion cannot detach a newer tail for the same queue key", as
     markSecondStarted = resolve;
   });
   const seen: string[] = [];
-  registerNotifications(connection, lifecycle, [
-    {
-      type: first,
-      handler: async () => {
-        markFirstStarted();
-        await firstHeld;
+  registerNotifications(
+    connection,
+    lifecycle,
+    [
+      {
+        type: first,
+        handler: async () => {
+          markFirstStarted();
+          await firstHeld;
+        },
+        gate: "lifecycle",
+        queue: (params) => params.uri,
       },
-      gate: "lifecycle",
-      queue: (params) => params.uri,
-    },
-    {
-      type: second,
-      handler: async () => {
-        markSecondStarted();
-        await secondHeld;
+      {
+        type: second,
+        handler: async () => {
+          markSecondStarted();
+          await secondHeld;
+        },
+        gate: "lifecycle",
+        queue: (params) => params.uri,
       },
-      gate: "lifecycle",
-      queue: (params) => params.uri,
-    },
-    {
-      type: third,
-      handler: () => {
-        seen.push("third");
+      {
+        type: third,
+        handler: () => {
+          seen.push("third");
+        },
+        gate: "lifecycle",
+        queue: (params) => params.uri,
       },
-      gate: "lifecycle",
-      queue: (params) => params.uri,
-    },
-  ]);
+    ],
+    [],
+    createKeyedOperationQueue(),
+  );
   const params = { uri: "file:///same.ts" };
 
   const firstRun = deliver(first.method, params);
