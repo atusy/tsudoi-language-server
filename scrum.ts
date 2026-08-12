@@ -874,7 +874,151 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 96,
+    pbi_id: "PBI-101",
+    goal: "A config author can declare `textDocument/didFocus` in their config and have tsudoi serve it -- as a request whose `null` answer is distinguishable from no answer, or as a gated notification -- while a name tsudoi already owns is refused before the server starts instead of silently shadowing a built-in.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "None -- full Definition of Done green, no test changes.",
+        implementation:
+          "Extract a NON-EXPORTED `BaseMethodContext { readonly tsudoi }` in types.ts; `BaseRequestContext extends` it with `signal` alone. DELETE the prose paragraph asserting the session/message line -- the structure says it now.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "TIDY FIRST, ALONE, AHEAD OF ANY BEHAVIOUR. Measured non-breaking already; a RED here means this is not the extraction that was measured.",
+        ],
+      },
+      {
+        test: "No call site's behaviour changes; full DoD green.",
+        implementation:
+          "Widen the method-name parameters in methods.ts to admit a bare string -- `handlerFailure`, `reportHandlerFailure` (also called from server.ts), `reportCleanupFailure`, `answerUnlessCancelled`, `invalidTokenReported`. One named alias rather than five spellings.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Doing this structurally is what keeps it out of the behavioural commits; it must NOT be smuggled into the custom-request subtask.",
+        ],
+      },
+      {
+        test: "The recording connection stub in test/notifications.test.ts still satisfies the type; the exactly-one-`gateCalls` arm and `BoundaryIsTheObservingMembers` stay green.",
+        implementation:
+          "`NotificationRegistrar` gains the bare-string `onNotification` overload, which `ProtocolConnection` already declares so it survives the `Omit`. Type only, no caller yet.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "A measurement, neither red nor green. Do not commit the probe.",
+        implementation:
+          "MEASURE the collision refusal's compiler text under the OBJECT entry shape. The earlier reading was taken with a FUNCTION-valued map and the ruled entry is an object, so AC6 requires this before either of its arms is believed. Record which half can carry the legible sentence.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "IF this shows the type cannot name the rule, the legible refusal is config.ts's alone and the config subtask grows -- one of the two triggers for taking the second cut.",
+        ],
+      },
+      {
+        test: "RED FIRST: consumer-shaped identity probe in the register of test/initialize-handler-types.test.ts. Both negative controls applied and reverted with the reading recorded -- arms swapped must redden, and the conditional rewritten on the context type must redden.",
+        implementation:
+          "`customMethodHandler<K>` keyed on the KIND, resolving context and return from `K`. Graded BY IDENTITY, never by assignability -- that is what makes both known mistakes silent. Surface arm taken through the built `./types` artifact, not src/.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "RED FIRST: compile probe -- a notification entry with no `gate` exits 1 with the diagnostic naming `gate`; a request entry with no gate exits 0. Control: a defaulted gate makes the first probe pass, which is the whole distance the criterion travels.",
+        implementation:
+          "Fork the entry type for config-supplied entries -- `NotificationEntry` cannot cross, its `type` being a protocol value an author cannot construct and its handler synchronous. `NotificationGate` becomes a published name.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "RED FIRST: fixture configs -- a colliding name, a malformed kind, a missing gate at run time, a non-function handler.",
+        implementation:
+          "config.ts reads and refuses `customMethod` in its OWN hand-written block beside `initialize`'s, never as a row of the requestEntries loop -- that site records the measurement that a key outside it is copied nowhere and refused nowhere. Refusal names the method and the rule.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE PRODUCT OWNER RULED THIS THE REQUIRED HALF OF AC6: the run-time refusal is what every author receives regardless of whether they annotate, so the legible sentence belongs here and the compile-text arm is the half that slips if the sprint runs short.",
+        ],
+      },
+      {
+        test: "RED FIRST: fake-editor arms reading the RAW response. Control: an implementation sending the return bare makes the two arms indistinguishable on the wire.",
+        implementation:
+          "Register custom REQUESTS by bare string, reusing requestContext and answerUnlessCancelled. `{ result: null }` answers null with no error; returning nothing is a handler failure taking reportHandlerFailure's existing route. Plus an arm that a customMethod-only config's InitializeResult is UNCHANGED -- a custom method advertises nothing.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "RED FIRST: the handler's effect read back through a LATER request, since a notification has no response. AC1's control is THREE ARMS MOVING TOGETHER -- kind flipped leaves the request unanswered AND the same name as a notification now reaches the handler, read against a name absent from the map where neither form reaches anything.",
+        implementation:
+          "Custom notifications register through notifications.ts -- the custom table reaches createGatedConnection and merges into registerNotifications's SINGLE loop. No new module, no lint exemption, RequestOnlyConnection untouched. Bare string and NOT a synthesized NotificationType, which would make upstream emit a params-shape error for a params-less message.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "The exactly-one-`gateCalls` arm must stay green. The hazard is that the next reader fixes the test instead of the code.",
+        ],
+      },
+      {
+        test: "MEASURE FIRST, before the arm is believed: with the report removed, confirm a rejecting handler is observable by NOTHING -- tsudoi awaits it, so the awaiting frame catches it. RED: one fixture, two custom notifications, one answering and one rejecting, each driven REPEATEDLY. Control: a session-wide flag loses the second method's line.",
+        implementation:
+          "tsudoi CATCHES the rejection inside its own handler and reports on its own per-method-per-session budget. Letting it propagate hands the report to upstream's unconditional logger.error -- one line per message. Arms: exactly one `tsudoi: ` line per method, the session still answers afterwards, no non-LSP byte on stdout.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "THE SUBTASK MOST LIKELY TO LAND GREEN MEASURING NOTHING, which is why the silence is measured before the arm is trusted.",
+        ],
+      },
+      {
+        test: "The surface tests read the wider surface; the README block gains its marker AND a `consumers` row, plus the corrupt-inside-subject (must go false) and corrupt-outside-subject (must stay true) arms.",
+        implementation:
+          "Published surface and README. State in prose that a custom method ADVERTISES NOTHING -- the first thing an author will file as a bug.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Each record MEASURED rather than transcribed.",
+        implementation:
+          "Perturbation records for the two new weakenings: the handler type's arms swapped, and a session-wide flag in place of the per-method Set.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [
+          "PBI-86 is `ready` and rewrites the record shape. If it lands first these are written in the new shape; otherwise they join its migration, which that item says must be re-measured rather than transcribed.",
+        ],
+      },
+      {
+        test: "All five checks exit 0 from a clean tree; the reading recorded against the tree the instrument names.",
+        implementation: "Definition of Done, then scrum.ts alone and last.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
+    impediments: [],
+    decisions: [
+      "THE ITEM WAS SPLIT IN REFINEMENT AND THIS SPRINT TAKES THE HALF WITH NO OPEN SEMANTICS. PBI-102 holds the hook, and with it the ordering ruling, the eviction it implies and the gate question. The seam was recorded in the notes BEFORE refinement rather than invented under pressure.",
+      "THE PRODUCT OWNER NAMED WHAT MAY NOT SLIP: criteria 1, 2, 3, 5 and the REFUSAL half of 6. What may slip without the increment becoming dishonest: criterion 4's stderr budget and 6's legibility half -- provided no README or docblock claims tsudoi budgets the report this sprint. A slipped 4 fails LOUD, through upstream's own unconditional log, rather than silently.",
+      "THE SECOND CUT IS NAMED IN ADVANCE, between the REQUEST kind and the NOTIFICATION kind, and it falls between subtasks 9 and 10 so nothing needs re-planning to take it. Its triggers: the collision measurement showing the type cannot name the rule at all, or the swallow measurement coming back differently from what the notes predict.",
+      "THE PRODUCT OWNER ALSO RULED PBI-102's OPEN GATE QUESTION, recorded here so it is not lost and ATTRIBUTED because it is the PO's and not the human stakeholder's: a hook takes THE BUILT-IN'S GATE and an author declares none for one. An `always` hook on lifecycle-gated `didOpen` is precisely the fires-for-a-document-the-store-never-opened defect. That ruling is PBI-102's to carry into its own refinement, where the human may overturn it.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 87,
