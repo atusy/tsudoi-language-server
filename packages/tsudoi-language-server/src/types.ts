@@ -790,8 +790,16 @@ export type CustomMethodEntry =
  *
  * A BUILT-IN NOTIFICATION NAME IS NOT REFUSED, AND THAT IS ROOM LEFT OPEN RATHER
  * THAN SLACK: `ConfigMethod` is the request table plus `initialize`, and
- * `textDocument/didOpen` is in neither. What running a handler BESIDE a built-in
- * means is not decided here, and nothing about this type claims it works.
+ * `textDocument/didOpen` is in neither.
+ *
+ * WHAT TAKING ONE COSTS TODAY, MEASURED RATHER THAN LEFT TO BE DISCOVERED,
+ * because the room being open reads as the case being served: upstream registers
+ * a notification by MAP ASSIGNMENT and not by chaining, so a config's
+ * `textDocument/didOpen` REPLACES the handler that fills the document store --
+ * the hook runs with the right params, `tsudoi.documents` stays EMPTY for the
+ * whole session, and nothing is written anywhere. Running a handler BESIDE a
+ * built-in is a separate thing and is not built; this type forecloses it rather
+ * than serving it, which is why the refusal is not widened to cover it.
  */
 export type CustomMethodMap = {
   [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;

@@ -249,6 +249,74 @@ test("every published protocol name type-checks from the installed copy", async 
 });
 
 /**
+ * WHAT A CUSTOM METHOD'S AUTHOR MAY NAME, AND THE ONE THING THEY MAY NOT, in a
+ * SINGLE type check -- which is the whole of why the two halves share a file
+ * rather than an assertion each. An absence read on its own is satisfied by a
+ * probe that resolved nothing at all; here the names that MUST arrive are in the
+ * same import statement as the one that must not, so a subpath answering from
+ * nowhere reddens on them.
+ *
+ * `BaseMethodContext` IS THE TYPE A CUSTOM NOTIFICATION HANDLER RECEIVES and it
+ * is deliberately unpublished: `CustomMethodHandler` RESOLVES what a handler is
+ * handed, so nothing an author writes selects it, and a name for a supertype
+ * nobody spells would be surface tsudoi then owes an answer about. WHAT REVERSES
+ * THIS is at the type itself -- an author factoring a handler into its own FILE
+ * has nothing to annotate the parameter with.
+ *
+ * THROUGH THE INSTALLED CONSUMER AND NOT `typeCheckProbe`, and the two are not
+ * interchangeable here at all: every other arm about these types resolves
+ * `./src/types.ts` through a symlink, which is a file no stranger receives. What
+ * decides whether a name is PUBLISHED is what `dist/types.d.ts` declares.
+ *
+ * THE DIAGNOSTIC CODE IS ASSERTED AND IT IS NOT THE ONE A READER EXPECTS.
+ * MEASURED: TS2459, `declares 'BaseMethodContext' locally, but it is not
+ * exported` -- and NOT TS2305 `has no exported member`. The supertype IS in
+ * `dist/types.d.ts`, emitted there because `BaseRequestContext` extends it, so
+ * what the artifact does is DECLARE AND WITHHOLD rather than omit. That is the
+ * stronger reading of the property and the one to keep: TS2305 would also be
+ * produced by a subpath that shipped no such declaration at all, which is a
+ * different tree.
+ */
+test("a custom method's own names ship, and the context its notification handler receives does not", async () => {
+  const result = await consumer.typeCheck({
+    // WRITTEN OUT RATHER THAN BUILT BY `importsAndUses`, because one name here is
+    // GENERIC: it is imported bare and used with an argument, which that helper's
+    // one-name-one-use form cannot say. Every name is still USED, for the reason
+    // that helper gives -- an unused import is erased and proves nothing.
+    "custom-method-surface.ts": [
+      "import type {",
+      "  BaseMethodContext,",
+      "  BaseRequestContext,",
+      "  CustomMethodEntry,",
+      "  CustomMethodHandler,",
+      "  CustomMethodMap,",
+      "  NotificationGate,",
+      '} from "@atusy/tsudoi-language-server/types";',
+      "declare const useUnpublished: BaseMethodContext;",
+      "declare const useRequestContext: BaseRequestContext;",
+      "declare const useEntry: CustomMethodEntry;",
+      'declare const useHandler: CustomMethodHandler<"notification">;',
+      "declare const useMap: CustomMethodMap;",
+      "declare const useGate: NotificationGate;",
+      "",
+    ].join("\n"),
+  });
+
+  expect(result.code).not.toBe(0);
+  expect(result.output).toContain("TS2459");
+  expect(result.output).toContain("BaseMethodContext");
+  for (const published of [
+    "BaseRequestContext",
+    "CustomMethodEntry",
+    "CustomMethodHandler",
+    "CustomMethodMap",
+    "NotificationGate",
+  ]) {
+    expect(result.output).not.toContain(published);
+  }
+});
+
+/**
  * A NAME ON THE SUBPATH THAT IS NOT A PROTOCOL NAME AT ALL -- and this test
  * exists because that distinction leaves it otherwise UNDEFENDED. `TextDocument`
  * is not in `publicProtocolNames` and must not be: that list holds the PROTOCOL

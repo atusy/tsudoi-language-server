@@ -44,9 +44,13 @@ function snippetBlocks(): readonly string[] {
 
 test("the mock the README says satisfies nothing is refused, and it names the three members", async () => {
   const blocks = snippetBlocks();
-  // A THIRD BLOCK REDDENS HERE RATHER THAN BEING GRADED BY ORDINAL IN SILENCE:
-  // this arm knows which of two is which, and nothing more.
-  expect(blocks.length).toBe(2);
+  // A BLOCK ARRIVING REDDENS HERE RATHER THAN BEING GRADED BY ORDINAL IN
+  // SILENCE: this arm knows which of the first two is which, and the count is
+  // what forces whoever adds a third to say what happens to it. WHAT HAPPENED TO
+  // THE THIRD: it is the custom-method config, and it is COMPILED below beside
+  // the second rather than left to the specifiers row alone -- a documented
+  // config that does not type-check is the failure this whole file exists for.
+  expect(blocks.length).toBe(3);
 
   const refused = await typeCheckProbe({ "snippet.ts": preamble + (blocks[0] ?? "") });
   expect(refused.code).toBe(1);
@@ -64,8 +68,14 @@ test("the mock the README says satisfies nothing is refused, and it names the th
   }
 
   // THE PAIR, AND IT IS NOT DECORATION: a probe that refuses everything -- a
-  // broken tsconfig, an unmirrored dependency -- passes every line above.
-  const built = await typeCheckProbe({ "snippet.ts": preamble + (blocks[1] ?? "") });
-  expect(built.output).toBe("");
-  expect(built.code).toBe(0);
+  // broken tsconfig, an unmirrored dependency -- passes every line above. Each
+  // failure NAMES ITS BLOCK by that block's first line, since two blocks through
+  // one loop otherwise fail as `expected \"\"`.
+  for (const compiles of [blocks[1], blocks[2]]) {
+    const built = await typeCheckProbe({ "snippet.ts": preamble + (compiles ?? "") });
+    expect(`${(compiles ?? "").split("\n")[0] ?? ""}\n${built.output}`).toBe(
+      `${(compiles ?? "").split("\n")[0] ?? ""}\n`,
+    );
+    expect(built.code).toBe(0);
+  }
 });

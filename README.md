@@ -509,6 +509,75 @@ it, for the reason the section above gives. **tsudoi does not resolve code actio
 `codeAction/resolve` is not a handler key, so an action you offer has to arrive complete -- there
 is no second call in which to fill in an edit you deferred.
 
+## Methods tsudoi never heard of
+
+The keys above are the ones tsudoi enumerated. `customMethod`, beside `methods` rather than inside
+it, is where you declare the rest: `textDocument/didFocus`, an extension your own client speaks,
+anything with a name.
+
+**Registering one advertises nothing**, which is the first thing to know rather than the last.
+`initialize` has no capability to claim for a method the protocol never defined, so no editor sends
+one unless it already knew to -- these are for a client you control or an extension you and it
+have agreed on, not a way to make an editor ask you something new.
+
+**Each entry declares its kind, because its name cannot.** `textDocument/didFocus` says nothing
+about whether a client sends it as a request or as a notification, and by the time tsudoi sees a
+message the JSON-RPC layer beneath it has already decided. So the choice is made at registration,
+by you, and what your handler receives follows from it -- you never name a context type:
+
+<!-- snippet -->
+
+```ts
+import type { TsudoiConfig } from "@atusy/tsudoi-language-server/types";
+
+const config: TsudoiConfig = {
+  customMethod: {
+    // A REQUEST is answered. `{ result: null }` IS an answer; returning nothing is not.
+    "textDocument/didFocus": {
+      kind: "request",
+      handler: (context) => Promise.resolve({ result: context.tsudoi.rootUri }),
+    },
+    // A NOTIFICATION has no response, so it says WHEN it may run and returns nothing.
+    "textDocument/didBlur": {
+      kind: "notification",
+      gate: "lifecycle",
+      handler: (context) => Promise.resolve(void context.tsudoi.documents),
+    },
+  },
+};
+```
+
+**A request answers under `result`.** A typed row like hover says `Hover | null` and tells
+answering `null` apart from answering nothing by its own type; a custom method's result is
+`unknown` and cannot, so the wrapper carries the difference. `{ result: null }` reaches your editor
+as a null result with no error. Falling off the end is a handler failure instead: the method is
+named on stderr with the `tsudoi: ` prefix, and your editor is answered an error. Your handler is
+handed `context.signal` exactly as every other request handler is.
+
+**A notification must decide its gate**, and there is no default -- an entry that decides nothing
+does not type-check. `lifecycle` is what LSP asks for: outside the initialized window the message
+is dropped, silently, there being no response through which you could be told. `always` is for a
+message your client may send at any moment. There is no `context.signal` here, because there is no
+request to cancel.
+
+**A notification handler that answers, or rejects, is named on stderr once per method per session.**
+Once, and not per message: a handler on something your editor sends per keystroke would otherwise
+write a line per keystroke into the one channel you read. That report is the only thing that will
+ever tell you: tsudoi loads your config through a cast, so a config you never annotated is checked
+by nothing else at all.
+
+**A name tsudoi already serves is refused**, by the compiler if you annotated your config and by
+the loader either way, naming the method and telling you to declare it under `methods`. That is
+the request table plus `initialize`, and NOT the notifications tsudoi answers for itself.
+
+**So a built-in notification's name is accepted, and taking one DISPLACES tsudoi's own handler.**
+`textDocument/didOpen` passes both refusals, and the JSON-RPC layer beneath registers by
+assignment rather than by chaining -- so yours replaces the handler that fills
+`context.tsudoi.documents`. Measured: the hook runs with the right params and the store is empty
+for the whole session, silently, with nothing on stderr. Running a handler BESIDE a built-in is
+not built. The room is left open for it deliberately rather than by oversight, and until it exists
+those names are yours to avoid.
+
 ## Cleanup in a handler
 
 A `finally` inside a **completion or code-action handler** runs when the editor abandons the
