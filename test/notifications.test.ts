@@ -205,6 +205,57 @@ test("custom document hooks observe the state after each built-in operation", as
   expect(observed).toEqual(["opened", "changed", undefined]);
 });
 
+test("an asynchronous built-in fulfills before its custom hook starts", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const { connection, deliver } = recordingConnection();
+  const type = new NotificationType<{ value: string }>("test/asyncBuiltIn");
+  let releaseBuiltIn = () => {};
+  const builtInHeld = new Promise<void>((resolve) => {
+    releaseBuiltIn = resolve;
+  });
+  let markCustomStarted = () => {};
+  const customStarted = new Promise<void>((resolve) => {
+    markCustomStarted = resolve;
+  });
+  let releaseCustom = () => {};
+  const customHeld = new Promise<void>((resolve) => {
+    releaseCustom = resolve;
+  });
+  let customDidStart = false;
+  registerNotifications(
+    connection,
+    lifecycle,
+    [{ type, handler: async () => await builtInHeld, gate: "lifecycle" }],
+    [
+      {
+        method: type.method,
+        gate: "lifecycle",
+        run: async () => {
+          customDidStart = true;
+          markCustomStarted();
+          await customHeld;
+        },
+      },
+    ],
+  );
+
+  let deliverySettled = false;
+  const delivery = Promise.resolve(deliver(type.method, { value: "sent" })).then(() => {
+    deliverySettled = true;
+  });
+  await new Promise<void>((resolve) => queueMicrotask(resolve));
+  expect(customDidStart).toBeFalse();
+
+  releaseBuiltIn();
+  await customStarted;
+  expect(deliverySettled).toBeFalse();
+
+  releaseCustom();
+  await delivery;
+  expect(deliverySettled).toBeTrue();
+});
+
 test("a didChange waits for the preceding didOpen hook on the same document", async () => {
   const lifecycle = createLifecycle();
   lifecycle.initialize();
