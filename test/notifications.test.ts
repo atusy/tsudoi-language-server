@@ -271,6 +271,7 @@ test("a didChange waits for the preceding didOpen hook on the same document", as
   const openStarted = new Promise<void>((resolve) => {
     markOpenStarted = resolve;
   });
+  let changeDidStart = false;
   registerNotifications(
     connection,
     lifecycle,
@@ -284,6 +285,14 @@ test("a didChange waits for the preceding didOpen hook on the same document", as
           await openHeld;
         },
       },
+      {
+        method: "textDocument/didChange",
+        gate: "lifecycle",
+        run: () => {
+          changeDidStart = true;
+          return Promise.resolve();
+        },
+      },
     ],
   );
 
@@ -295,7 +304,10 @@ test("a didChange waits for the preceding didOpen hook on the same document", as
     textDocument: { uri, version: 2 },
     contentChanges: [{ text: "changed" }],
   });
+  await Promise.resolve();
+  await Promise.resolve();
 
+  expect(changeDidStart).toBeFalse();
   expect(documents.documents.get(uri)?.getText()).toBe("opened");
   releaseOpen();
   await Promise.all([opening, changing]);
